@@ -20,7 +20,7 @@ concrete recipe for each future adapter (React, Vue, Lit, Astro).
   dynamic-form config domain + runtime validation (`dynamic-config`),
   i18n message catalogs en/it/de/fr/es (`i18n`).
 
-**`@modyra/forms` — the Angular adapter (this repo's `projects/modyra`):**
+**`@modyra/angular` — the Angular adapter (this repo's `projects/modyra`):**
 
 - `angularReactivity()` — binds the contract to native Angular signals.
 - Thin typed wrappers (`MdyDeclarativeAdapter`, `mdyForm()`).
@@ -47,7 +47,7 @@ An adapter provides two things:
    (`value()`, `set()`, `markAsTouched()`, `errors()`), reusing the core's
    headless logic for the composite widgets.
 
-### React (`@modyra/react` — future)
+### React (`@modyra/react` — available, early)
 
 No native signals: run the engine on `vanillaReactivity()` and subscribe
 components through `useSyncExternalStore`:
@@ -68,7 +68,7 @@ export function useField<T>(handle: MdyFieldHandle<T>) {
 `useForm(schema, options)` memoizes `createForm()`; field components are
 plain controlled inputs over `useField`.
 
-### Vue (`@modyra/vue` — future)
+### Vue (`@modyra/vue` — available, early)
 
 Vue's reactivity maps 1:1 — the binding wraps `.value` access:
 
@@ -89,7 +89,7 @@ export function vueReactivity(): MdyReactivity {
 Components use `createForm(schema, { reactivity: vueReactivity() })` and
 bind with `v-model`-style wrappers over the handles.
 
-### Lit (`@modyra/lit` — future)
+### Lit (`@modyra/lit` — available, early)
 
 Run on `vanillaReactivity()`; a `ReactiveController` subscribes an element
 to the handles it renders:
@@ -127,6 +127,10 @@ is therefore mostly a recipe + an `astro` example, not a new binding.
 
 ## Package policy
 
-Per the scope policy, `@modyra/react|vue|lit|astro` are **not** published
-until they exist with implementation, tests and a maintenance story. The
-contract they will implement is stable and documented here.
+`@modyra/vue`, `@modyra/react` and `@modyra/lit` exist as **engine
+bindings** (0.1.0, implemented and tested): reactivity adapter + typed form
+factory (+ hooks/controller). They do not ship UI components yet — the
+renderer catalog remains Angular-only until the widget state machines are
+extracted (listbox and calendar keyboard navigation already live in
+`@modyra/core/keyboard`). `@modyra/astro` stays a recipe: core in SSR,
+bindings inside islands.

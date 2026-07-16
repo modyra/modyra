@@ -12,7 +12,7 @@ import {
   MdyTypedForm,
   MDY_MARKS_REQUIRED,
   ValidatorFn,
-} from "@modyra/forms";
+} from "@modyra/angular";
 import { Injector } from "@angular/core";
 import { z } from "zod";
 

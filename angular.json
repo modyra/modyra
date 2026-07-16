@@ -49,7 +49,7 @@
                             }
                         ],
                         "styles": [
-                            "@modyra/forms/styles/modyra-base.css",
+                            "@modyra/angular/styles/modyra-base.css",
                             "projects/demo/src/styles.scss"
                         ]
                     },

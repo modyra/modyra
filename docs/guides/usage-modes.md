@@ -1,6 +1,6 @@
 # Usage modes
 
-`@modyra/forms` has one Signals engine and three ways to drive it. All
+`@modyra/angular` has one Signals engine and three ways to drive it. All
 three share the same adapter, validators, renderers and devtools — you can mix
 them inside one application (and even inside one form) while migrating.
 
@@ -49,7 +49,7 @@ programmatically and drive submit with an async action (returned
 
 ```ts
 import { Injector, inject, signal } from "@angular/core";
-import { MdyDeclarativeAdapter, mdyRequired, mdyMin } from "@modyra/forms";
+import { MdyDeclarativeAdapter, mdyRequired, mdyMin } from "@modyra/angular";
 
 export class Component {
   private readonly injector = inject(Injector);
@@ -85,7 +85,7 @@ export class Component {
 
 Any object implementing the exported `MdyFormAdapter` interface works too.
 
-## Headless — `@modyra/forms/core`
+## Headless — `@modyra/angular/core`
 
 Bring your own design system: the `core` secondary entry point exposes the
 engine only — `mdyForm()`, the declarative adapter, validators, field/form
@@ -93,7 +93,7 @@ state types, DI tokens, i18n and utilities — with **no renderer components
 and no CSS**.
 
 ```ts
-import { mdyForm, field, mdyRequired } from "@modyra/forms/core";
+import { mdyForm, field, mdyRequired } from "@modyra/angular/core";
 
 const form = mdyForm({ email: field("", [mdyRequired()]) });
 // form.f.email.value(), errors(), pending() … drive your own widgets

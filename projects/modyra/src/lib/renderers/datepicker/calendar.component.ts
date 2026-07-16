@@ -13,14 +13,13 @@ import {
 } from "@angular/core";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import {
-  addDays,
   addMonths,
-  addYears,
   CalendarDate,
   daysInMonth,
   isDateInRange,
   today,
 } from "../../core/date-utils";
+import { calendarKeyboardTarget } from "@modyra/core/keyboard";
 import { MdyCalendarGridComponent } from "./calendar-grid.component";
 import { MdyCalendarHeaderComponent } from "./calendar-header.component";
 import { MdyMonthPickerComponent } from "./month-picker.component";
@@ -230,21 +229,8 @@ export class MdyCalendarComponent {
       return;
     }
     const focused = this.focusedDate();
-    let next: CalendarDate | null = null;
 
     switch (event.key) {
-      case "ArrowLeft":
-        next = addDays(focused, -1);
-        break;
-      case "ArrowRight":
-        next = addDays(focused, 1);
-        break;
-      case "ArrowUp":
-        next = addDays(focused, -7);
-        break;
-      case "ArrowDown":
-        next = addDays(focused, 7);
-        break;
       case "Enter":
       case " ":
         if (isDateInRange(focused, this.minDate(), this.maxDate())) {
@@ -252,28 +238,16 @@ export class MdyCalendarComponent {
           this.onDatePicked(focused);
         }
         return;
-      case "PageUp":
-        // Clamp the day so Feb 29 → Feb 28 on non-leap years (R6).
-        next = event.shiftKey ? addYears(focused, -1) : addMonths(focused, -1);
-        break;
-      case "PageDown":
-        next = event.shiftKey ? addYears(focused, 1) : addMonths(focused, 1);
-        break;
-      case "Home":
-        next = { year: focused.year, month: focused.month, day: 1 };
-        break;
-      case "End": {
-        const lastDay = daysInMonth(focused.year, focused.month);
-        next = { year: focused.year, month: focused.month, day: lastDay };
-        break;
-      }
       case "Escape":
         event.preventDefault();
         this.closed.emit();
         return;
-      default:
-        return; // Don't prevent default for unhandled keys
     }
+
+    // Grid navigation (arrows, PageUp/Down, Home/End) is a pure decision
+    // shared with every adapter — @modyra/core/keyboard.
+    const next = calendarKeyboardTarget(event.key, focused, event.shiftKey);
+    if (!next) return; // Don't prevent default for unhandled keys
 
     if (next) {
       event.preventDefault();

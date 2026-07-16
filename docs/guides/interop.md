@@ -1,4 +1,4 @@
-# Reactive Forms interop — `@modyra/forms/interop`
+# Reactive Forms interop — `@modyra/angular/interop`
 
 Adopt incrementally in an existing codebase: the `mdyCva` directive makes any
 renderer a `ControlValueAccessor`, so it plugs into `formControlName` /

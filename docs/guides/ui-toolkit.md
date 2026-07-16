@@ -122,7 +122,7 @@ Store configs in the versioned envelope and migrate old versions in your
 loader **before** parsing:
 
 ```ts
-import { parseDynamicFields, MdyDynamicField } from "@modyra/forms";
+import { parseDynamicFields, MdyDynamicField } from "@modyra/angular";
 
 function loadFields(raw: unknown): MdyDynamicField[] {
   // v0 legacy payloads used `type` instead of `kind` — migrate, then parse.

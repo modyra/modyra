@@ -4,7 +4,7 @@
  * Typed field trees, sync/async/cross-field validation, dirty/touched
  * tracking, drafts, undo/redo and change tracking, all written against a
  * minimal reactive contract ({@link MdyReactivity}). Framework packages
- * (e.g. `@modyra/forms` for Angular) bind that contract to their native
+ * (e.g. `@modyra/angular` for Angular) bind that contract to their native
  * signals; `vanillaReactivity()` runs the same engine in Node, CLIs and
  * plain unit tests.
  */
@@ -67,3 +67,6 @@ export * from "./options-utils.js";
 export * from "./serialize.js";
 export * from "./dynamic-config.js";
 export * from "./i18n.js";
+
+// ─── Keyboard interaction logic ───────────────────────────────────────────────
+export * from "./keyboard.js";

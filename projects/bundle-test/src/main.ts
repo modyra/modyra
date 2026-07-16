@@ -7,7 +7,7 @@
  */
 import { Component, provideZonelessChangeDetection } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
-import { field, mdyForm, mdyRequired } from "@modyra/forms";
+import { field, mdyForm, mdyRequired } from "@modyra/angular";
 
 @Component({
   selector: "app-root",

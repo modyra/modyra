@@ -1,5 +1,5 @@
 {
-  "name": "@modyra/forms",
+  "name": "@modyra/angular",
   "version": "0.1.0",
   "description": "Type-safe Angular forms built entirely on native Signals.",
   "funding": {
@@ -49,7 +49,7 @@
   },
   "exports": {
     ".": {
-      "import": "./fesm2022/modyra-forms.mjs"
+      "import": "./fesm2022/modyra-angular.mjs"
     },
     "./styles/ionic.css": {
       "default": "./styles/modyra-ionic.css"
@@ -70,8 +70,8 @@
   "sideEffects": [
     "**/*.css"
   ],
-  "main": "fesm2022/modyra-forms.mjs",
-  "module": "fesm2022/modyra-forms.mjs",
+  "main": "fesm2022/modyra-angular.mjs",
+  "module": "fesm2022/modyra-angular.mjs",
   "typings": "index.d.ts",
   "publishConfig": {
     "access": "public"

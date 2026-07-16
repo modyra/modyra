@@ -5,3 +5,4 @@ allowBuilds:
   msgpackr-extract: true
 packages:
   - "packages/*"
+linkWorkspacePackages: true

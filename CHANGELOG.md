@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `@modyra/forms` are documented here. The format
+All notable changes to `@modyra/angular` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com) and the project uses
 semantic versioning.
 

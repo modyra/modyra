@@ -56,10 +56,10 @@ import {
   MdyTimepickerComponent,
   MdyToggleComponent,
   MdyOptionsAutoLoadingDirective
-} from "@modyra/forms";
-import { MdyCvaDirective } from "@modyra/forms/interop";
+} from "@modyra/angular";
+import { MdyCvaDirective } from "@modyra/angular/interop";
 import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
-import { mdyFormFromSchema } from "@modyra/forms/zod";
+import { mdyFormFromSchema } from "@modyra/angular/zod";
 import { z } from "zod";
 import { toSignal, toObservable } from "@angular/core/rxjs-interop";
 import { concat, delay, of, switchMap } from "rxjs";
@@ -703,7 +703,7 @@ export class AppComponent {
     },
   );
 
-  // ── Zod schema-first form (@modyra/forms/zod) ────────────────────────────
+  // ── Zod schema-first form (@modyra/angular/zod) ────────────────────────────
 
   // ── CVA interop: classic Reactive Forms group ────────────────────────────────
 

@@ -1,7 +1,9 @@
 # Modyra
 
-**Type-safe Angular forms built entirely on native Signals** — published as
-`@modyra/forms`.
+**Type-safe forms on a framework-agnostic engine.** One core, native
+bindings per framework — Angular today (`@modyra/angular`, the most
+complete adapter), with early Vue/React/Lit bindings sharing the same
+engine.
 
 - No `FormControl`, `FormGroup` or RxJS — form state is signals and `computed`s
 - Compile-time checked field bindings: `[field]="form.f.email"`, typos don't compile
@@ -17,14 +19,14 @@
 ## Install
 
 ```bash
-npm install @modyra/forms
+npm install @modyra/angular
 ```
 
 Add the styles (skip this if you use the headless `/core` entry point):
 
 ```json
 "styles": [
-  "node_modules/@modyra/forms/styles/modyra.css",
+  "node_modules/@modyra/angular/styles/modyra.css",
   "src/styles.scss"
 ],
 ```
@@ -34,9 +36,16 @@ Add the styles (skip this if you use the headless `/core` entry point):
 ```ts
 import { Component } from "@angular/core";
 import {
-  field, group, mdyForm, mdyRequired, mdyEmail, mdyMin,
-  MdyFormComponent, MdyTextComponent, MdyNumberComponent,
-} from "@modyra/forms";
+  field,
+  group,
+  mdyForm,
+  mdyRequired,
+  mdyEmail,
+  mdyMin,
+  MdyFormComponent,
+  MdyTextComponent,
+  MdyNumberComponent,
+} from "@modyra/angular";
 
 @Component({
   selector: "app-signup",
@@ -47,7 +56,9 @@ import {
       <mdy-control-text [field]="form.f.email" label="Email" />
       <mdy-control-number [field]="form.f.age" label="Age" />
       <mdy-control-text [field]="form.f.address.city" label="City" />
-      <button type="submit" [disabled]="!form.state.canSubmit()">Sign up</button>
+      <button type="submit" [disabled]="!form.state.canSubmit()">
+        Sign up
+      </button>
     </mdy-form>
   `,
 })
@@ -84,7 +95,7 @@ and built-in async/cross-field validation, drafts, undo/redo and devtools.
 "No RxJS / no `@angular/forms`" means precisely: no runtime dependency, no
 Observables in the public API, none used internally. The optional `/interop`
 entry point is the single exception — it declares `@angular/forms` as an
-*optional* peer for CVA-based migration.
+_optional_ peer for CVA-based migration.
 
 Full, honest comparison: [Compared with Reactive Forms](docs/guides/comparison-reactive-forms.md).
 
@@ -110,13 +121,13 @@ same four-primitive reactive contract.
 
 ## Entry points
 
-| Import | Contents | Extra peer deps |
-| :--- | :--- | :--- |
-| `@modyra/core` (separate package) | Framework-agnostic form engine | — |
-| `@modyra/forms` | Angular binding: engine + renderers + tools | — |
-| `@modyra/forms/core` | Headless engine only, no components/CSS | — |
-| `@modyra/forms/zod` | `mdyFormFromSchema()` | `zod` (optional) |
-| `@modyra/forms/interop` | `mdyCva` for Reactive Forms | `@angular/forms` (optional) |
+| Import                            | Contents                                    | Extra peer deps             |
+| :-------------------------------- | :------------------------------------------ | :-------------------------- |
+| `@modyra/core` (separate package) | Framework-agnostic form engine              | —                           |
+| `@modyra/angular`                   | Angular binding: engine + renderers + tools | —                           |
+| `@modyra/angular/core`              | Headless engine only, no components/CSS     | —                           |
+| `@modyra/angular/zod`               | `mdyFormFromSchema()`                       | `zod` (optional)            |
+| `@modyra/angular/interop`           | `mdyCva` for Reactive Forms                 | `@angular/forms` (optional) |
 
 ## Documentation
 
