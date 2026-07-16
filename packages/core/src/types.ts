@@ -114,3 +114,14 @@ export interface MdyControlOption<TValue = string> {
 
 /** Alias for MdyControlOption — used by select/multiselect surfaces. */
 export type MdySelectOption<TValue = string> = MdyControlOption<TValue>;
+
+// ─── Date range ───────────────────────────────────────────────────────────────
+
+/**
+ * A date range as two ISO `yyyy-MM-dd` strings; either side may be `null`
+ * while the user is mid-selection.
+ */
+export interface MdyDateRange {
+  readonly start: string | null;
+  readonly end: string | null;
+}

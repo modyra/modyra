@@ -20,6 +20,28 @@ class SignupForm extends LitElement {
 }
 ```
 
-Because Lit ships web components, this is also the path to Modyra controls
-usable from any framework. Status: early (0.1.0) — controller and factory
-implemented and tested; ready-made elements are future work.
+## Control catalog
+
+`defineMdyElements()` registers one element per field kind — the same
+coverage as the Angular renderer catalog, in Lit syntax:
+
+`<mdy-text-field>` `<mdy-textarea-field>` `<mdy-number-field>`
+`<mdy-checkbox-field>` `<mdy-toggle-field>` `<mdy-radio-group-field>`
+`<mdy-segmented-field>` `<mdy-select-field>` `<mdy-multiselect-field>`
+`<mdy-slider-field>` `<mdy-datepicker-field>` `<mdy-daterange-field>`
+`<mdy-timepicker-field>` `<mdy-colors-field>` `<mdy-file-field>`
+
+All bind via `.field=${form.f.…}` (option-based ones also take
+`.options`), render in light DOM with the documented theme class
+structure — the shipped CSS themes apply unchanged — and wire label,
+required marker, `aria-invalid/required/describedby` and the error list
+from the shared engine. Validators are the core ones (`required`,
+`email`, `minLength`, `crossField`, …).
+
+Value models follow the engine's conventions: ISO `yyyy-MM-dd` dates,
+`HH:mm` times, hex colors, `File | File[] | null`. The date/time/color
+pickers currently use the platform-native inputs; richer overlay pickers
+can replace them without touching the field contract.
+
+Because Lit ships web components, this catalog is also the path to Modyra
+controls usable from any framework.
