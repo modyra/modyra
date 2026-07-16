@@ -20,9 +20,9 @@
     "test:adapters": "npm run build:packages && node --test packages/zod/test/*.test.mjs packages/vue/test/*.test.mjs packages/react/test/*.test.mjs packages/lit/test/*.test.mjs",
     "build:examples": "npm run build:packages && node scripts/build-examples.mjs",
     "demo:angular": "npm run build:lib && ng serve demo",
-    "demo:react": "npm run build:examples && node scripts/serve-example.mjs react",
-    "demo:vue": "npm run build:examples && node scripts/serve-example.mjs vue",
-    "demo:lit": "npm run build:examples && node scripts/serve-example.mjs lit"
+    "demo:react": "npm run build:examples && node scripts/serve-example.mjs react 4301",
+    "demo:vue": "npm run build:examples && node scripts/serve-example.mjs vue 4302",
+    "demo:lit": "npm run build:examples && node scripts/serve-example.mjs lit 4303"
   },
   "dependencies": {
     "@angular/animations": "^21.2.18",

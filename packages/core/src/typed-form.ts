@@ -386,6 +386,11 @@ export class MdyTypedForm<S extends MdyFormSchema>
     return this._engine.fieldNames;
   }
 
+  /** The reactive implementation this form runs on (adapters, devtools). */
+  get reactivity() {
+    return this._engine.reactivity;
+  }
+
   /** True when a stored draft was restored (requires the `draft` option). */
   get hasDraft(): MdySignal<boolean> {
     return this._engine.hasDraft;

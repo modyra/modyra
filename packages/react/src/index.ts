@@ -5,7 +5,7 @@
  * `vanillaReactivity()` and components subscribe through
  * `useSyncExternalStore`-compatible stores.
  */
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import {
   createForm,
   MdyCoreFormOptions,
@@ -103,6 +103,8 @@ export function useMdyField<T>(handle: MdyFieldHandle<T>): {
     () => createFieldStore(handle as MdyFieldHandle<unknown>),
     [handle],
   );
+  // The tracking effect must not outlive the component.
+  useEffect(() => () => store.destroy(), [store]);
   useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   return {
     value: handle.value(),
