@@ -27,6 +27,34 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./date-utils": {
+      "types": "./dist/date-utils.d.ts",
+      "default": "./dist/date-utils.js"
+    },
+    "./time-utils": {
+      "types": "./dist/time-utils.d.ts",
+      "default": "./dist/time-utils.js"
+    },
+    "./overlay-position": {
+      "types": "./dist/overlay-position.d.ts",
+      "default": "./dist/overlay-position.js"
+    },
+    "./options-utils": {
+      "types": "./dist/options-utils.d.ts",
+      "default": "./dist/options-utils.js"
+    },
+    "./serialize": {
+      "types": "./dist/serialize.d.ts",
+      "default": "./dist/serialize.js"
+    },
+    "./dynamic-config": {
+      "types": "./dist/dynamic-config.d.ts",
+      "default": "./dist/dynamic-config.js"
+    },
+    "./i18n": {
+      "types": "./dist/i18n.d.ts",
+      "default": "./dist/i18n.js"
     }
   },
   "files": [

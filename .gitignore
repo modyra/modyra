@@ -48,3 +48,6 @@ claude_podman_night_shift_hardened.sh
 
 # Local AI-assisted development workspace
 .modyra/
+
+# Build outputs of workspace packages
+packages/*/dist/

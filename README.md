@@ -126,6 +126,7 @@ same four-primitive reactive contract.
 - [UI toolkit](docs/guides/ui-toolkit.md) — 15-renderer catalog, enterprise select, dynamic forms, CSS tokens
 - [DevTools](docs/guides/devtools.md) — hotkey overlay, masking, production notes
 - [I18n](docs/guides/i18n.md) — UI strings (en/it/de/fr/es), date/time value models, localized parsing
+- [Multi-framework architecture](docs/guides/multi-framework.md) — what's in `@modyra/core`, adapter recipes for React/Vue/Lit/Astro
 - [Reactive Forms interop](docs/guides/interop.md)
 - [Compared with Reactive Forms](docs/guides/comparison-reactive-forms.md)
 - [Troubleshooting](docs/guides/troubleshooting.md) — why is `canSubmit()` false? why is a field pending?

@@ -58,3 +58,12 @@ export type {
   MdyGroupDescriptor,
   MdyWiden,
 } from "./typed-form.js";
+
+// ─── Shared headless logic (also available as subpath imports) ───────────────
+export * from "./date-utils.js";
+export * from "./time-utils.js";
+export * from "./overlay-position.js";
+export * from "./options-utils.js";
+export * from "./serialize.js";
+export * from "./dynamic-config.js";
+export * from "./i18n.js";
