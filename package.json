@@ -7,13 +7,15 @@
     "setup": "npm i && npm run build:lib",
     "start": "ng serve demo",
     "start:lib": "npm run build:lib && npm run start",
-    "build:lib": "ng build modyra --configuration production && rm -rf projects/modyra/dist/node_modules projects/modyra/dist/package-lock.json && cp README.md LICENSE projects/modyra/dist/ && npx postcss 'projects/modyra/dist/styles/**/*.css' --dir 'projects/modyra/dist/styles' --use cssnano --no-map && find projects/modyra/dist/ -name '*.map' -delete",
+    "build:lib": "npm run build:core && ng build modyra --configuration production && rm -rf projects/modyra/dist/node_modules projects/modyra/dist/package-lock.json && cp README.md LICENSE projects/modyra/dist/ && npx postcss 'projects/modyra/dist/styles/**/*.css' --dir 'projects/modyra/dist/styles' --use cssnano --no-map && find projects/modyra/dist/ -name '*.map' -delete",
     "pack:analyze": "(cd projects/modyra/dist && npm pack && PKG=modyra-forms-*.tgz && echo $PKG && echo '=== Uncompressed JS/CSS/TS ===' && tar tvf $PKG | grep -E 'package/(fesm2022/.*\\.mjs|styles/.*\\.css|types/.*\\.d\\.ts)$' | awk '{print $NF, $5/1024 \"KB\"; total+=$5} END {print \"TOTAL:\", total/1024 \"KB\"}' && echo '=== Tarball size ===' && du -sh $PKG && rm $PKG)",
     "build:demo": "ng build demo",
     "watch:lib": "ng build modyra --watch",
-    "test": "ng test modyra",
+    "test": "npm run build:core && ng test modyra",
     "lint": "ng lint",
-    "test:bundle": "ng build bundle-test && node scripts/check-bundle.mjs"
+    "test:bundle": "ng build bundle-test && node scripts/check-bundle.mjs",
+    "build:core": "tsc -p packages/core/tsconfig.json",
+    "test:core": "npm run build:core && node --test packages/core/test/*.test.mjs"
   },
   "dependencies": {
     "@angular/animations": "^21.2.18",
@@ -41,6 +43,7 @@
     "postcss": "^8.5.8",
     "postcss-cli": "^11.0.1",
     "typescript": "~5.9.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@modyra/core": "workspace:*"
   }
 }

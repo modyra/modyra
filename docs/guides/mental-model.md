@@ -86,3 +86,13 @@ Open the devtools (`mdyDevtools` + Ctrl+Shift+D) — every signal above is
 visible per field, errors carry their origin, and the JSON view shows the
 exact flat value the engine holds. See the
 [troubleshooting guide](./troubleshooting.md).
+
+## Where the engine lives
+
+Everything described above is implemented once, in the framework-agnostic
+`@modyra/core` package (`MdyFormEngine` + `createForm`), written against a
+four-primitive reactive contract (`signal`, `computed`, `effect`,
+`untracked`). The Angular package binds that contract to Angular's native
+signals via `angularReactivity`, so `MdyDeclarativeAdapter` and `mdyForm()`
+are thin Angular-typed wrappers — same objects, same semantics, and the
+whole engine also runs in plain Node on the built-in `vanillaReactivity()`.

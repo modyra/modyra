@@ -93,20 +93,27 @@ Full, honest comparison: [Compared with Reactive Forms](docs/guides/comparison-r
 ```text
  Typed API (mdyForm)   Declarative API    Dynamic JSON config
           \                  |                  /
-                    Shared Signals core
+              Shared Form Engine  (@modyra/core)
+                             |
+             Angular Signals binding (this package)
                              |
         Headless integrations  or  UI renderer catalog
 ```
 
-The core (`mdyForm()`, typed handles, validation, adapter) is the product.
-Renderers, wizard, dynamic forms, draft, history and devtools are ecosystem
-layers that never leak into the core.
+The form engine — typed field trees, validation, drafts, undo/redo — lives
+in [`@modyra/core`](packages/core), a framework-agnostic package with zero
+dependencies that runs in plain Node. This package binds it to Angular's
+native signals (`angularReactivity`), so form state participates in change
+detection with no bridging layer; renderers, wizard, dynamic forms and
+devtools are ecosystem layers on top. React/Vue adapters can implement the
+same four-primitive reactive contract.
 
 ## Entry points
 
 | Import | Contents | Extra peer deps |
 | :--- | :--- | :--- |
-| `@modyra/forms` | Everything: core + renderers + tools | — |
+| `@modyra/core` (separate package) | Framework-agnostic form engine | — |
+| `@modyra/forms` | Angular binding: engine + renderers + tools | — |
 | `@modyra/forms/core` | Headless engine only, no components/CSS | — |
 | `@modyra/forms/zod` | `mdyFormFromSchema()` | `zod` (optional) |
 | `@modyra/forms/interop` | `mdyCva` for Reactive Forms | `@angular/forms` (optional) |

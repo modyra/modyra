@@ -251,3 +251,7 @@ export {
 // ─── Angular forms/signals validator re-exports (schema-level) ───────────────
 // These are currently not exposed as they were tied to the legacy adapter.
 // Declarative validators are preferred via directives.
+
+// ─── Framework-agnostic engine binding ────────────────────────────────────────
+// The form engine lives in @modyra/core; this binds it to Angular signals.
+export { angularReactivity } from "./lib/core/reactivity-angular";
