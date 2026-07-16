@@ -16,6 +16,7 @@ for (const { name, entry, theme } of targets) {
   await build({
     entryPoints: [entry],
     bundle: true,
+    jsx: "automatic",
     format: "esm",
     outfile: `dist/examples/${name}/main.js`,
     minify: true,
