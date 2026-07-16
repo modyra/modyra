@@ -77,3 +77,5 @@ export function createLitForm<S extends MdyFormSchema>(
 }
 
 export * from "@modyra/core";
+
+export { defineMdyTextField, MdyTextFieldElement } from "./text-field.js";

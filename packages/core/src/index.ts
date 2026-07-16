@@ -70,3 +70,6 @@ export * from "./i18n.js";
 
 // ─── Keyboard interaction logic ───────────────────────────────────────────────
 export * from "./keyboard.js";
+
+// ─── Framework-agnostic devtools ─────────────────────────────────────────────
+export * from "./devtools.js";
