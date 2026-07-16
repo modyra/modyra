@@ -1,0 +1,227 @@
+@import './modyra.css';
+
+/*
+ * modyra — Ionic Theme
+ *
+ * A modern theme inspired by Ionic Framework's cross-platform design principles.
+ * Utilizes Ionic's signature color palette, sleek form control aesthetics, 
+ * and universal system-font stacks.
+ *
+ * References:
+ *   - https://ionicframework.com/docs/theming/colors
+ *   - https://ionicframework.com/docs/api/input
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LAYER: mdy.themes
+ * Theme overrides for the Ionic theme.
+ * Applies Ionic Framework colors and system-font stacks.
+ * All token overrides here are scoped to mdy.themes so they cascade AFTER
+ * mdy.tokens without relying on specificity hacks.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+@layer mdy.themes {
+
+:root {
+    /* Base Palette — Ionic Defaults */
+    --ion-color-primary: #3880ff;
+    --ion-color-primary-rgb: 56, 128, 255;
+
+    --ion-color-danger: #eb445a;
+    --ion-color-success: #2dd36f;
+    --ion-color-medium: #92949c;
+    --ion-color-light: #f4f5f8;
+    --ion-color-dark: #222428;
+
+    /* Typography */
+    --mdy-label-font-weight: 500;
+    --mdy-label-font-size: 0.875rem;
+    --mdy-input-font-size: 1rem;
+
+    /* Text fields — Ionic "Solid" style (Material Design look) */
+    --mdy-input-padding: 0.75rem 1rem;
+    --mdy-input-border: none;
+    /* We will use border-bottom manually */
+    --mdy-input-border-radius: 4px 4px 0 0;
+    --mdy-input-bg: var(--ion-color-light);
+    --mdy-input-color: var(--ion-color-dark);
+    --mdy-input-placeholder-color: var(--ion-color-medium);
+    --mdy-input-icon-color: var(--ion-color-medium);
+    --mdy-input-focus-color: var(--ion-color-primary);
+
+    /* Focus uses box-shadow to animate the bottom border */
+    --mdy-input-focus-shadow: 0 2px 0 0 var(--ion-color-primary);
+
+    /* Errors */
+    --mdy-error-color: var(--ion-color-danger);
+    --mdy-error-font-size: 0.75rem;
+    --mdy-error-focus-shadow: 0 2px 0 0 var(--ion-color-danger);
+
+    /* Checkbox — Ionic MD style is square with slight rounded corners */
+    --mdy-checkbox-size: 1.25rem;
+    --mdy-checkbox-accent: var(--ion-color-primary);
+    --mdy-checkbox-checkmark-color: #fff;
+    --mdy-checkbox-border: 2px solid var(--ion-color-medium);
+    --mdy-checkbox-border-radius: 2px;
+    --mdy-checkbox-gap: 0.75rem;
+
+    /* Toggle — Ionic toggle */
+    --mdy-toggle-width: 3.25rem;
+    --mdy-toggle-height: 1.75rem;
+    --mdy-toggle-thumb-size: 1.5rem;
+    --mdy-toggle-thumb-size-checked: 1.5rem;
+    --mdy-toggle-thumb-offset: 0.125rem;
+    --mdy-toggle-thumb-color: #fff;
+    --mdy-toggle-thumb-color-checked: #fff;
+    --mdy-toggle-bg: #e0e0e0;
+    --mdy-toggle-bg-checked: var(--ion-color-success);
+    /* Ionic toggles often default to success green */
+    --mdy-toggle-border: none;
+    --mdy-toggle-border-checked: none;
+    --mdy-toggle-transition: 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+
+    /* Multiselect / Chips — Ionic badge/chip style */
+    --mdy-multiselect-padding: 0.375rem 0.5rem;
+    --mdy-chip-height: 2rem;
+    --mdy-chip-padding: 0 0.75rem;
+    --mdy-chip-font-size: 0.8125rem;
+    --mdy-chip-border-radius: 1rem;
+    /* pill shape */
+    --mdy-chip-border: 1px solid rgba(0, 0, 0, 0.08);
+    --mdy-chip-bg: var(--ion-color-light);
+    --mdy-chip-color: var(--ion-color-dark);
+    --mdy-chip-selected-bg: rgba(var(--ion-color-primary-rgb), 0.15);
+    --mdy-chip-selected-color: var(--ion-color-primary);
+    --mdy-chip-selected-border: 1px solid rgba(var(--ion-color-primary-rgb), 0.3);
+
+    /* Hover states for chips */
+    --mdy-chip-hover-bg: #e4e5e9;
+    --mdy-chip-hover-color: var(--ion-color-dark);
+    --mdy-chip-selected-hover-bg: rgba(var(--ion-color-primary-rgb), 0.25);
+
+    /* Overlay dropddowns — Mobile action-sheet inspired */
+    --mdy-select-dropdown-bg: #ffffff;
+    --mdy-select-dropdown-border: 1px solid rgba(0, 0, 0, 0.05);
+    --mdy-select-dropdown-border-radius: 12px;
+    --mdy-select-dropdown-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
+
+    /* Datepicker styling */
+    --mdy-datepicker-cell-size: 2.25rem;
+    --mdy-datepicker-cell-border-radius: 50%;
+    --mdy-datepicker-selected-bg: var(--ion-color-primary);
+    --mdy-datepicker-selected-color: #fff;
+    --mdy-datepicker-today-ring: 2px solid var(--ion-color-primary);
+
+    /* Layout */
+    --mdy-renderer-margin-bottom: 0.5rem;
+}
+
+/* ─── Global Font ─────────────────────────────────────────────────────────── */
+.mdy-renderer {
+    font-family: var(--ion-font-family, -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Roboto", sans-serif);
+}
+
+/* ─── Inputs & Textareas — Authentic Ionic V8 Solid Pattern ─────────────── */
+.mdy-renderer input[type="text"],
+.mdy-renderer input[type="number"],
+.mdy-renderer input[type="date"],
+.mdy-renderer input[type="email"],
+.mdy-renderer textarea,
+.mdy-renderer select,
+.mdy-select__trigger,
+.mdy-datepicker__input {
+    background-color: var(--mdy-input-bg);
+    color: var(--mdy-input-color);
+    border: none;
+    border-bottom: 1px solid var(--ion-color-medium);
+    border-radius: var(--mdy-input-border-radius);
+    transition: background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+/* Hover slightly darkens the background */
+.mdy-renderer input:hover:not(:disabled):not(:focus),
+.mdy-renderer textarea:hover:not(:disabled):not(:focus),
+.mdy-renderer select:hover:not(:disabled):not(:focus),
+.mdy-select__trigger:hover:not(:disabled):not(:focus),
+.mdy-datepicker__input:hover:not(:disabled):not(:focus) {
+    background-color: #e9eaec;
+    /* Slightly darker than light */
+}
+
+/* Focus replaces the bottom border with a primary colored inner shadow */
+.mdy-renderer input:focus,
+.mdy-renderer textarea:focus,
+.mdy-renderer select:focus,
+.mdy-select__trigger:focus,
+.mdy-datepicker__input:focus {
+    border-bottom-color: var(--mdy-input-focus-color);
+    box-shadow: var(--mdy-input-focus-shadow);
+    background-color: #e9eaec;
+    outline: none;
+}
+
+/* Invalid States */
+.mdy-renderer input[aria-invalid="true"],
+.mdy-renderer textarea[aria-invalid="true"],
+.mdy-renderer select[aria-invalid="true"],
+.mdy-select__trigger[aria-invalid="true"],
+.mdy-datepicker__input[aria-invalid="true"] {
+    border-bottom-color: var(--mdy-error-color);
+}
+
+.mdy-renderer input[aria-invalid="true"]:focus,
+.mdy-renderer textarea[aria-invalid="true"]:focus,
+.mdy-renderer select[aria-invalid="true"]:focus,
+.mdy-select__trigger[aria-invalid="true"]:focus,
+.mdy-datepicker__input[aria-invalid="true"]:focus {
+    box-shadow: var(--mdy-error-focus-shadow);
+}
+
+/* Disabled */
+.mdy-renderer input:disabled,
+.mdy-renderer textarea:disabled,
+.mdy-renderer select:disabled,
+.mdy-select__trigger:disabled,
+.mdy-datepicker__input:disabled {
+    opacity: 0.4;
+    background-color: transparent;
+    border-bottom-style: dashed;
+    cursor: not-allowed;
+}
+
+/* ─── Ionic Labels ────────────────────────────────────────────────────────── */
+.mdy-renderer label,
+.mdy-renderer .mdy-label {
+    color: var(--ion-color-medium);
+}
+
+.mdy-renderer.mdy-floating-label .mdy-label--filled {
+    color: var(--ion-color-medium);
+    /* Keeps gray unless focused */
+}
+
+/* Ensure the datepicker buttons align correctly with the flat border */
+.mdy-datepicker__input-group>input {
+    border-bottom: 1px solid var(--ion-color-medium) !important;
+}
+
+.mdy-datepicker__input-group>input:focus {
+    box-shadow: var(--mdy-input-focus-shadow);
+    border-bottom-color: var(--ion-color-primary) !important;
+}
+
+.mdy-datepicker__input-group>button {
+    background: var(--mdy-input-bg);
+    border: none;
+    border-bottom: 1px solid var(--ion-color-medium);
+}
+
+/* ─── Checkbox & Toggle Shadows ───────────────────────────────────────────── */
+.mdy-toggle__thumb {
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.16), 0 3px 1px rgba(0, 0, 0, 0.1);
+}
+
+.mdy-checkbox input[type="checkbox"]:focus-visible+span::before {
+    box-shadow: var(--mdy-input-focus-shadow);
+}
+
+} /* end @layer mdy.themes */

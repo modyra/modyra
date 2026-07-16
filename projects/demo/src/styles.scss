@@ -1,0 +1,212 @@
+/* ─── Library theme — Modern Neutral ───────────────────────────────────────── */
+@use 'sass:color';
+
+/* ─── Reset & Base ─────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--mdy-ios-font, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    line-height: 1.5;
+    color: var(--mdy-on-surface);
+    /* Do NOT set background here — let the iOS theme's Liquid Glass gradient show */
+    margin: 0;
+    padding: 1.5rem;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+}
+
+/* ─── Demo Layout ─────────────────────────────────────────────────────────── */
+
+.demo-card {
+    max-width: 600px;
+    margin: 0 auto;
+    /* Liquid Glass card — background only, NO backdrop-filter on the element itself.
+       backdrop-filter directly on a container creates a new containing block for
+       position:fixed children (Angular overlays, dropdowns) — breaking their position.
+       We use ::after for the blur and ::before for the specular. */
+    background: rgba(255, 255, 255, 0.38);
+    padding: 2rem;
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.60);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        inset 1px 0 0 rgba(255, 255, 255, 0.40),
+        0 24px 64px rgba(0, 0, 0, 0.16),
+        0 8px 20px rgba(0, 0, 0, 0.08);
+    isolation: isolate;
+    position: relative;
+}
+
+/* Blur layer — position:absolute so it does NOT create a fixed-position containing block */
+.demo-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: -1;
+    backdrop-filter: blur(48px) saturate(280%) brightness(1.05);
+    -webkit-backdrop-filter: blur(48px) saturate(280%) brightness(1.05);
+}
+
+/* Specular rim on the card */
+.demo-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(ellipse 100% 35% at 50% -3%,
+            rgba(255, 255, 255, 0.75) 0%,
+            rgba(255, 255, 255, 0.18) 42%,
+            transparent 68%);
+}
+
+.demo-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.demo-card h1 {
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--mdy-primary);
+}
+
+.demo-card p.subtitle {
+    margin: 0 0 1.5rem;
+    color: var(--mdy-on-surface-variant);
+    font-size: 0.9rem;
+    letter-spacing: 0.01em;
+}
+
+@media (prefers-color-scheme: dark) {
+    .demo-card {
+        background: rgba(10, 10, 20, 0.45);
+        border-color: rgba(255, 255, 255, 0.14);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.14),
+            0 24px 64px rgba(0, 0, 0, 0.60),
+            0 8px 20px rgba(0, 0, 0, 0.40);
+    }
+
+    .demo-card::after {
+        backdrop-filter: blur(48px) saturate(200%) brightness(0.95);
+        -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(0.95);
+    }
+
+    .demo-card::before {
+        background:
+            radial-gradient(ellipse 100% 35% at 50% -3%,
+                rgba(255, 255, 255, 0.18) 0%,
+                rgba(255, 255, 255, 0.04) 42%,
+                transparent 68%);
+    }
+}
+
+/* ─── Form Row — side-by-side controls ─────────────────────────────────────── */
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+@media (max-width: 480px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-modifications {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 0 0 20px 0;
+}
+
+/* ─── Buttons ──────────────────────────────────────────────────────────────── */
+
+button[type="submit"] {
+    margin-top: 1rem;
+    padding: 0.75rem 2rem;
+    min-height: 2.75rem;
+    border: none;
+    border-radius: 9999px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--mdy-primary);
+    color: var(--mdy-on-primary);
+    width: 100%;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--mdy-primary), transparent 70%);
+}
+
+button[type="submit"]:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--mdy-primary), transparent 60%);
+    filter: brightness(1.1);
+}
+
+button[type="submit"]:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+button[type="submit"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--mdy-disabled-bg);
+    color: var(--mdy-disabled-color);
+    box-shadow: none;
+}
+
+/* ─── Submit result ────────────────────────────────────────────────────── */
+
+.submit-result {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--mdy-surface-container);
+    border: 1px solid var(--mdy-outline-variant);
+    border-radius: 12px;
+    font-size: 0.85rem;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.submit-result pre {
+    margin: 0.75rem 0 0;
+    white-space: pre-wrap;
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: var(--mdy-on-surface);
+}
+
+.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.playground-accordion {
+    overflow: hidden;
+}
