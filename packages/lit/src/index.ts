@@ -50,6 +50,7 @@ export class MdyFormController {
   }
 
   hostConnected(): void {
+    if (this._ref) return; // idempotent: Lit and manual wiring may both call
     const rx = vanillaReactivity();
     this._first = true;
     this._ref = rx.effect(() => {

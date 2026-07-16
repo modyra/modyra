@@ -3,12 +3,14 @@
  * a form running on ANY reactivity (it refreshes by polling, so it never
  * couples to the host graph). Sensitive-looking paths are masked.
  */
-import { MdySignal } from "./reactivity.js";
+import { MdyReactivity, MdySignal } from "./reactivity.js";
 import { MdyFormState } from "./types.js";
 
 interface InspectableForm {
   readonly state: MdyFormState;
   readonly fieldNames?: MdySignal<readonly string[]>;
+  /** Exposed by every engine-backed form — enables reactive rendering. */
+  readonly reactivity?: MdyReactivity;
   getField(name: string): (() => {
     value(): unknown;
     valid(): boolean;
@@ -61,9 +63,13 @@ export function mdyFormSnapshot(form: InspectableForm): {
 }
 
 /**
- * Mounts the inspector into `host` and refreshes it every `intervalMs`
- * (default 300). Returns a dispose function. Same information as the
- * Angular devtools panel, zero framework requirements:
+ * Mounts the inspector into `host` and returns a dispose function.
+ *
+ * Rendering is **reactive**: the panel subscribes an effect on the form's
+ * own reactive graph (`form.reactivity`), so it repaints in the same
+ * change-propagation cycle as the form itself — no polling, no lag. When
+ * the form exposes no effect-capable reactivity, it falls back to a
+ * `intervalMs` polling refresh (default 300 ms).
  *
  * ```ts
  * const dispose = mountMdyDevtools(form, document.getElementById("devtools")!);
@@ -97,6 +103,16 @@ export function mountMdyDevtools(
       `<th>valid</th><th>touched</th><th>dirty</th><th>pending</th><th align="left">errors</th></tr></thead>` +
       `<tbody>${rows}</tbody></table>`;
   };
+  const rx = form.reactivity;
+  if (rx && rx.canEffect) {
+    // Reactive path: mdyFormSnapshot reads every field signal inside the
+    // effect, so any change re-renders in the same propagation cycle.
+    const ref = rx.effect(() => render());
+    return () => {
+      ref.destroy();
+      host.innerHTML = "";
+    };
+  }
   render();
   const timer = setInterval(render, intervalMs);
   return () => {

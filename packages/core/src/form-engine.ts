@@ -253,6 +253,11 @@ export class MdyFormEngine
 
   readonly state: MdyFormState;
 
+  /** The reactive implementation this form runs on (adapters, devtools). */
+  get reactivity(): MdyReactivity {
+    return this._rx;
+  }
+
   /** Reactive signal emitting the current form value on every field change. */
   readonly value: MdySignal<Record<string, unknown>>;
 
