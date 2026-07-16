@@ -45,3 +45,6 @@ the project instructions
 
 # Local AI-assisted development workspace
 .modyra/
+
+# Build outputs of workspace packages
+packages/*/dist/

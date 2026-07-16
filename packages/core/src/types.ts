@@ -103,3 +103,14 @@ export interface MdyFormAdapter<T extends object> {
   setValue(value: T): void;
   reset(): void;
 }
+
+// ─── Options (select-like controls and dynamic configs) ─────────────────────
+
+export interface MdyControlOption<TValue = string> {
+  readonly value: TValue;
+  readonly label: string;
+  readonly disabled?: boolean;
+}
+
+/** Alias for MdyControlOption — used by select/multiselect surfaces. */
+export type MdySelectOption<TValue = string> = MdyControlOption<TValue>;
