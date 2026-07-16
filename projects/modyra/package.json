@@ -40,9 +40,12 @@
       "optional": true
     }
   },
-  "allowedNonPeerDependencies": [],
+  "allowedNonPeerDependencies": [
+    "@modyra/core"
+  ],
   "dependencies": {
-    "tslib": ">=2.3.0"
+    "tslib": ">=2.3.0",
+    "@modyra/core": "0.1.0"
   },
   "exports": {
     ".": {
