@@ -160,11 +160,14 @@ Project policies: [security](SECURITY.md) · [contributing](CONTRIBUTING.md) · 
 
 ## Examples
 
-`examples/{react,vue,lit}` are miniature apps that import the **built**
-`@modyra/*` packages from `node_modules` — the same artifacts users
-install, never the library sources (`npm run build:examples`, output in
-`dist/examples/*`). The Angular demo (`projects/demo`) likewise consumes
-the packaged `@modyra/angular` build.
+`examples/{react,vue,lit}` implement the **same signup form** (name +
+email, shared validators, agnostic devtools panel) so the adapters can be
+compared side by side — each on a different shipped theme (Material, iOS,
+default). They import the **built** `@modyra/*` packages from
+`node_modules` — the same artifacts users install, never the library
+sources. Run them with `npm run demo:react` / `demo:vue` / `demo:lit`
+(static server on :4300); `npm run demo:angular` serves the Angular demo
+over the packaged build.
 
 ## Local development
 

@@ -59,6 +59,10 @@
     "./keyboard": {
       "types": "./dist/keyboard.d.ts",
       "default": "./dist/keyboard.js"
+    },
+    "./devtools": {
+      "types": "./dist/devtools.d.ts",
+      "default": "./dist/devtools.js"
     }
   },
   "files": [

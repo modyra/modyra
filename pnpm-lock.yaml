@@ -93,6 +93,9 @@ importers:
       postcss-cli:
         specifier: ^11.0.1
         version: 11.0.1(jiti@2.6.1)(postcss@8.5.8)
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
       react-dom:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
@@ -113,6 +116,10 @@ importers:
       '@modyra/core':
         specifier: 0.1.0
         version: link:../core
+    devDependencies:
+      lit:
+        specifier: ^3.0.0
+        version: 3.3.3
 
   packages/react:
     dependencies:
