@@ -20,7 +20,7 @@ concrete recipe for each future adapter (React, Vue, Lit, Astro).
   dynamic-form config domain + runtime validation (`dynamic-config`),
   i18n message catalogs en/it/de/fr/es (`i18n`).
 
-**`@modyra/angular` — the Angular adapter (this repo's `projects/modyra`):**
+**`@modyra/angular` — the Angular adapter (this repo's `packages/angular`):**
 
 - `angularReactivity()` — binds the contract to native Angular signals.
 - Thin typed wrappers (`MdyDeclarativeAdapter`, `mdyForm()`).

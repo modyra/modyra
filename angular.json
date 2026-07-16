@@ -5,17 +5,17 @@
     "projects": {
         "modyra": {
             "projectType": "library",
-            "root": "projects/modyra",
-            "sourceRoot": "projects/modyra/src",
+            "root": "packages/angular",
+            "sourceRoot": "packages/angular/src",
             "architect": {
                 "build": {
                     "builder": "@angular-devkit/build-angular:ng-packagr",
                     "options": {
-                        "project": "projects/modyra/ng-package.json"
+                        "project": "packages/angular/ng-package.json"
                     },
                     "configurations": {
                         "production": {
-                            "tsConfig": "projects/modyra/tsconfig.lib.json"
+                            "tsConfig": "packages/angular/tsconfig.lib.json"
                         }
                     },
                     "defaultConfiguration": "production"
@@ -23,7 +23,7 @@
                 "test": {
                     "builder": "@angular-devkit/build-angular:jest",
                     "options": {
-                        "tsConfig": "projects/modyra/tsconfig.spec.json",
+                        "tsConfig": "packages/angular/tsconfig.spec.json",
                         "polyfills": []
                     }
                 }
@@ -44,12 +44,12 @@
                         "assets": [
                             {
                                 "glob": "**/*",
-                                "input": "projects/modyra/src/styles",
+                                "input": "packages/angular/src/styles",
                                 "output": "styles"
                             }
                         ],
                         "styles": [
-                            "@modyra/angular/styles/modyra-base.css",
+                            "@modyra/angular/styles/base.css",
                             "projects/demo/src/styles.scss"
                         ]
                     },

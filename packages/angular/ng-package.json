@@ -22,6 +22,7 @@
   ],
   "deleteDestPath": false,
   "allowedNonPeerDependencies": [
-    "@modyra/core"
+    "@modyra/core",
+    "@modyra/zod"
   ]
 }
