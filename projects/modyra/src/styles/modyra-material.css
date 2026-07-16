@@ -1,0 +1,1167 @@
+@import './modyra.css';
+
+/*
+ * modyra — Modern Neutral Theme
+ *
+ * A clean, professional zinc-based neutral palette.
+ * Follows M3 component structure with neutral color tokens.
+ *
+ * Usage:
+ *   @import 'modyra/styles/modyra-material.css';
+ */
+
+/*
+ * Color Tokens — High-Contrast Neutral (Zinc)
+ *
+ * primary:                   #18181b  (zinc-900)
+ * on-primary:                #ffffff
+ * primary-container:         #e4e4e7  (zinc-200)
+ * on-primary-container:      #09090b  (zinc-950)
+ * surface:                   #ffffff  (white)
+ * surface-container:         #f4f4f5  (zinc-100)
+ * surface-container-highest: #e4e4e7  (zinc-200)
+ * on-surface:                #09090b  (zinc-950)
+ * on-surface-variant:        #3f3f46  (zinc-700)
+ * outline:                   #71717a  (zinc-500)
+ * outline-variant:           #a1a1aa  (zinc-400)
+ * error:                     #dc2626  (red-600)
+ * on-error:                  #ffffff
+ * error-container:           #fef2f2  (red-50)
+ */
+
+/* ─── Custom property overrides ───────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LAYER: mdy.themes
+ * Theme overrides for the Modern Neutral (Zinc) theme.
+ * Provides a clean, professional high-contrast neutral palette over M3 defaults.
+ * All token overrides here are scoped to mdy.themes so they cascade AFTER
+ * mdy.tokens without relying on specificity hacks.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+@layer mdy.themes {
+
+    :root {
+        /* ─── Typography ───────────────────────────────────────────────────────── */
+        --mdy-font-family: "Outfit", "Inter", "Roboto", system-ui, -apple-system, sans-serif;
+        --mdy-font-weight-regular: 400;
+        --mdy-font-weight-medium: 500;
+        --mdy-font-weight-semibold: 600;
+        --mdy-label-font-weight: var(--mdy-font-weight-medium);
+        --mdy-input-placeholder-color: var(--mdy-outline);
+
+        /* ─── Key Palette (Zinc Neutral) ───────────────────────────────────────── */
+        --mdy-primary: #18181b;
+        --mdy-on-primary: #ffffff;
+        --mdy-error: #dc2626;
+        --mdy-on-error: #ffffff;
+
+        /* ─── Dynamic Tints (Mathematical derivation from Key Palette) ────────── */
+        /* Uses explicit 'white' base for precise zinc derivation (vs base's var(--mdy-base-bg)) */
+        --mdy-surface: color-mix(in srgb, var(--mdy-primary), white 96%);
+        --mdy-surface-container-lowest: #ffffff;
+        --mdy-surface-container-low: color-mix(in srgb, var(--mdy-primary), white 95%);
+        --mdy-surface-container: color-mix(in srgb, var(--mdy-primary), white 93%);
+        --mdy-surface-container-high: color-mix(in srgb, var(--mdy-primary), white 90%);
+        --mdy-surface-container-highest: color-mix(in srgb, var(--mdy-primary), white 88%);
+        --mdy-surface-container-highest-hover: color-mix(in srgb, var(--mdy-primary), white 82%);
+
+        --mdy-primary-container: var(--mdy-surface-container-highest);
+        --mdy-on-primary-container: color-mix(in srgb, var(--mdy-primary), black 80%);
+        --mdy-error-container: color-mix(in srgb, var(--mdy-error), white 94%);
+        --mdy-on-error-container: var(--mdy-error);
+
+        --mdy-on-surface: color-mix(in srgb, var(--mdy-primary), black 80%);
+        --mdy-on-surface-variant: color-mix(in srgb, var(--mdy-primary), black 40%);
+        --mdy-outline: color-mix(in srgb, var(--mdy-primary), black 20%);
+        --mdy-outline-variant: color-mix(in srgb, var(--mdy-primary), white 40%);
+        --mdy-outline-subtle: color-mix(in srgb, var(--mdy-primary), white 60%);
+
+        --mdy-disabled-bg: rgba(15, 23, 42, 0.04);
+        --mdy-disabled-color: rgba(15, 23, 42, 0.38);
+
+        /* ─── Select / Multiselect ─────────────────────────────────────────────── */
+        --mdy-select-dropdown-bg: var(--mdy-surface-container);
+        --mdy-select-option-hover-bg: rgba(24, 24, 27, 0.08);
+        --mdy-select-option-selected-bg: rgba(24, 24, 27, 0.12);
+        --mdy-multiselect-padding: 0.25rem 1rem;
+        --mdy-multiselect-max-height: 5.5rem;
+        --mdy-chip-color: var(--mdy-on-surface-variant);
+        --mdy-chip-max-width: 11rem;
+
+        /* ─── DatePicker M3 overrides (differ from base defaults) ─────────────── */
+        --mdy-datepicker-popup-border: 1px solid var(--mdy-outline-subtle);
+        /* base: none */
+        --mdy-datepicker-popup-border-radius: 20px;
+        /* base: var(--mdy-corner-medium) = 12px */
+        --mdy-datepicker-cell-size: 40px;
+        /* base: 2.25rem ≈ 36px, M3 spec: 40dp */
+        --mdy-datepicker-today-color: var(--mdy-primary);
+
+        /* ─── Date Range M3 overrides ──────────────────────────────────────────── */
+        --mdy-daterange-in-range-bg: var(--mdy-surface-container-highest);
+        --mdy-daterange-endpoint-bg: var(--mdy-primary);
+        --mdy-daterange-endpoint-color: var(--mdy-on-primary);
+
+        /* ─── Segmented Button ─────────────────────────────────────────────────── */
+        --mdy-segmented-btn-bg-selected-hover: color-mix(in srgb, var(--mdy-primary), white 8%);
+
+        /* ─── Error color bridge ────────────────────────────────────────────────── */
+        --mdy-error-color: var(--mdy-error);
+
+        /* ─── Select / Dropdown improvements ───────────────────────────────────── */
+        --mdy-select-option-hover-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
+        --mdy-select-option-selected-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 88%);
+        --mdy-select-dropdown-border-radius: var(--mdy-corner-small);
+
+        /* ─── Multiselect overlay ───────────────────────────────────────────────── */
+        --mdy-multiselect-overlay-bg: var(--mdy-surface-container);
+    }
+
+    /* ─── Global Font ─────────────────────────────────────────────────────────── */
+
+    .mdy-renderer,
+    .mdy-timepicker-container,
+    .mdy-datepicker__popup,
+    .mdy-datepicker__popup--modal,
+    .mdy-multiselect-overlay__panel,
+    .mdy-colors__dropdown,
+    .mdy-select__dropdown {
+        font-family: var(--mdy-font-family);
+        box-sizing: border-box;
+    }
+
+    /* ─── DatePicker popup — M3 Docked spec (360dp) ──────────────────────────── */
+
+    .mdy-datepicker__popup {
+        width: 360px;
+        max-width: calc(100vw - 32px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 0;
+        background: var(--mdy-datepicker-popup-bg);
+        border-radius: var(--mdy-datepicker-popup-border-radius);
+        box-shadow: var(--mdy-datepicker-popup-shadow);
+        z-index: 1000;
+    }
+
+    .mdy-renderer--open .mdy-datepicker__popup:not(.mdy-datepicker__popup--modal):not(.mdy-datepicker__popup--overlay),
+    .mdy-renderer--open .mdy-timepicker__popup:not(.mdy-timepicker__popup--overlay) {
+        position: fixed !important;
+        top: var(--mdy-overlay-top, auto);
+        bottom: var(--mdy-overlay-bottom, auto);
+        left: var(--mdy-overlay-left, auto);
+        right: var(--mdy-overlay-right, auto);
+        width: var(--mdy-overlay-width, 360px);
+        margin: 0;
+        margin-top: 4px;
+    }
+
+    /* ─── Filled text field surface ───────────────────────────────────────────── */
+    /* Active indicator is always 3px but visually 1px via a pseudo-element, so
+   the actual border-bottom never changes width → zero layout shift.          */
+
+    .mdy-renderer input[type="text"],
+    .mdy-renderer input[type="number"],
+    .mdy-renderer input[type="date"],
+    .mdy-renderer input[type="email"],
+    .mdy-renderer textarea,
+    .mdy-renderer select {
+        background-color: var(--mdy-surface-container-highest);
+        color: var(--mdy-input-color);
+        border: none;
+        border-bottom: 1px solid var(--mdy-on-surface-variant);
+        border-radius: var(--mdy-input-border-radius);
+        padding-bottom: calc(0.625rem + 2px);
+        transition: border-color 0.2s cubic-bezier(0.2, 0, 0, 1),
+            background 0.2s, color 0.2s;
+    }
+
+    /* Ensure inputs inside wrappers are transparent to show the wrapper's background */
+    .mdy-input-wrapper input,
+    .mdy-input-wrapper textarea,
+    .mdy-input-wrapper select {
+        background-color: transparent !important;
+        border-bottom: none !important;
+        box-shadow: none !important;
+    }
+
+    .mdy-renderer input:hover,
+    .mdy-renderer textarea:hover,
+    .mdy-renderer select:hover {
+        background-color: var(--mdy-surface-container-highest-hover);
+        border-bottom-color: var(--mdy-on-surface);
+    }
+
+    /* On focus: keep 1px border but add a 3px box-shadow to simulate the thick
+   indicator — this avoids the 2px height jump entirely. */
+    .mdy-renderer input:focus,
+    .mdy-renderer textarea:focus,
+    .mdy-renderer select:focus {
+        background-color: var(--mdy-surface-container-highest);
+        border-bottom-color: var(--mdy-input-focus-color);
+        box-shadow: inset 0 -2px 0 0 var(--mdy-input-focus-color);
+        outline: none;
+    }
+
+    .mdy-renderer input[aria-invalid="true"],
+    .mdy-renderer textarea[aria-invalid="true"],
+    .mdy-renderer select[aria-invalid="true"] {
+        border-bottom-color: var(--mdy-error-color);
+    }
+
+    .mdy-renderer input[aria-invalid="true"]:focus,
+    .mdy-renderer textarea[aria-invalid="true"]:focus {
+        border-bottom-color: var(--mdy-error-color);
+        box-shadow: inset 0 -2px 0 0 var(--mdy-error-color);
+    }
+
+    .mdy-renderer input:disabled,
+    .mdy-renderer textarea:disabled,
+    .mdy-renderer select:disabled {
+        background-color: var(--mdy-disabled-bg);
+        border-bottom-color: var(--mdy-disabled-color);
+        color: var(--mdy-disabled-color);
+    }
+
+    .mdy-renderer input::placeholder,
+    .mdy-renderer textarea::placeholder {
+        color: var(--mdy-input-placeholder-color);
+    }
+
+    .mdy-renderer input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: var(--mdy-calendar-icon-filter, none);
+    }
+
+    /* ─── Labels — on-surface-variant ─────────────────────────────────────────── */
+
+    .mdy-renderer .mdy-label {
+        color: var(--mdy-on-surface-variant);
+        letter-spacing: 0.006em;
+    }
+
+    /* ─── Custom select trigger (filled style) ────────────────────────────────── */
+
+    .mdy-select__trigger {
+        background: var(--mdy-surface-container-highest);
+        color: var(--mdy-input-color);
+        border: none;
+        border-bottom: 1px solid var(--mdy-on-surface-variant);
+        border-radius: var(--mdy-input-border-radius);
+        padding-bottom: calc(0.625rem + 2px);
+    }
+
+    .mdy-select__trigger:hover {
+        background: var(--mdy-surface-container-highest-hover);
+        border-bottom-color: var(--mdy-on-surface);
+    }
+
+    .mdy-select__trigger:focus {
+        background: var(--mdy-surface-container-highest);
+        border-bottom-color: var(--mdy-input-focus-color);
+        box-shadow: inset 0 -2px 0 0 var(--mdy-input-focus-color);
+        outline: none;
+    }
+
+    .mdy-select__trigger[aria-invalid="true"] {
+        border-bottom-color: var(--mdy-error-color);
+    }
+
+    .mdy-select__trigger[aria-invalid="true"]:focus {
+        box-shadow: inset 0 -2px 0 0 var(--mdy-error-color);
+    }
+
+    .mdy-select__trigger:disabled {
+        background: var(--mdy-disabled-bg);
+        border-bottom-color: var(--mdy-disabled-color);
+        color: var(--mdy-disabled-color);
+    }
+
+    .mdy-select__placeholder {
+        color: var(--mdy-outline);
+    }
+
+    .mdy-select__arrow {
+        color: var(--mdy-on-surface-variant);
+    }
+
+    .mdy-select__loader {
+        color: var(--mdy-primary);
+        animation: mdy-spin 1s linear infinite;
+        font-size: 1.25rem;
+    }
+
+    .mdy-select__loading-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        color: var(--mdy-outline);
+    }
+
+    @keyframes mdy-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* ─── Dropdown surface — M3 menu specs ────────────────────────────────────── */
+
+    .mdy-select__dropdown {
+        margin-top: 0.25rem;
+        background: var(--mdy-surface-container);
+    }
+
+    .mdy-select__search {
+        border-bottom-color: var(--mdy-outline-subtle);
+        font-size: 0.875rem;
+    }
+
+    .mdy-select__search:focus {
+        border-bottom-color: var(--mdy-input-focus-color);
+    }
+
+    .mdy-select__list {
+        padding: 0.5rem 0;
+    }
+
+    .mdy-select__no-results {
+        color: var(--mdy-outline);
+    }
+
+    .mdy-select__option {
+        border-radius: 0;
+        transition: background 0.15s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    /* ─── Toggle / Switch ─────────────────────────────────────────────────────── */
+
+    .mdy-toggle__track {
+        box-sizing: border-box;
+    }
+
+    .mdy-toggle__thumb {
+        box-shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.15),
+            0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    /* M3 checkmark icon in thumb when active */
+    .mdy-toggle input:checked+.mdy-toggle__track .mdy-toggle__thumb::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 10px;
+        height: 6px;
+        border: solid var(--mdy-toggle-bg-checked);
+        border-width: 0 0 2px 2px;
+        transform: translate(-50%, -75%) rotate(-45deg);
+    }
+
+    /* M3 focus: state layer around thumb */
+    .mdy-toggle input:focus-visible+.mdy-toggle__track {
+        outline: 2px solid var(--mdy-input-focus-color);
+        outline-offset: 2px;
+    }
+
+    /* ─── Radio Group — M3 spec (20dp outer, 10dp inner) ──────────────────────── */
+
+    .mdy-radio-group-label {
+        display: none;
+    }
+
+    .mdy-radio-item {
+        gap: 0.75rem;
+    }
+
+    .mdy-radio-circle {
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid var(--mdy-outline);
+        background: transparent;
+        transition: border-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .mdy-radio-circle::after {
+        width: 0.625rem;
+        height: 0.625rem;
+        background: var(--mdy-on-primary, #fff);
+        transform: translate(-50%, -50%) scale(0);
+    }
+
+    .mdy-radio-item input[type="radio"]:checked+.mdy-radio-circle {
+        border-color: var(--mdy-input-focus-color);
+        background: var(--mdy-input-focus-color);
+    }
+
+    /* State layer (hover/focus ring) */
+    .mdy-radio-item::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0.625rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        background: var(--mdy-input-focus-color);
+        border-radius: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+        transition: transform 0.2s, opacity 0.2s;
+        pointer-events: none;
+    }
+
+    .mdy-radio-item:hover::before {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.08;
+    }
+
+    .mdy-radio-item input[type="radio"]:focus-visible+.mdy-radio-circle {
+        outline: none;
+    }
+
+    .mdy-radio-item input[type="radio"]:focus-visible~.mdy-radio-label {
+        text-decoration: underline;
+    }
+
+    .mdy-radio-item input[type="radio"]:focus-visible::before {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.12;
+    }
+
+    .mdy-radio-item--disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+    }
+
+    /* ─── Slider — M3 spec (4dp track, 20dp thumb) ───────────────────────────── */
+
+    .mdy-slider {
+        background: var(--mdy-surface-container-highest);
+    }
+
+    .mdy-slider::-webkit-slider-thumb {
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
+        border: none;
+    }
+
+    .mdy-slider::-moz-range-thumb {
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
+        border: none;
+    }
+
+    .mdy-slider:focus-visible {
+        outline: none;
+    }
+
+    .mdy-slider-value {
+        color: var(--mdy-on-surface);
+        font-weight: var(--mdy-font-weight-medium);
+    }
+
+    .mdy-slider-container {
+        position: relative;
+        padding: 0.5rem 0;
+    }
+
+    /* ─── File Upload ────────────────────────────────────────────────────────── */
+
+    .mdy-file-container {
+        border-color: var(--mdy-outline-variant);
+        background: var(--mdy-surface-container-low);
+    }
+
+    .mdy-file-container--dragover {
+        border-color: var(--mdy-input-focus-color);
+        background: var(--mdy-surface-container-high);
+    }
+
+    .mdy-button {
+        background: var(--mdy-input-focus-color);
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    .mdy-file-placeholder {
+        color: var(--mdy-on-surface-variant);
+    }
+
+    .mdy-file-name {
+        color: var(--mdy-on-surface);
+        font-weight: var(--mdy-font-weight-medium);
+    }
+
+    .mdy-file-clear {
+        color: var(--mdy-error);
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+
+    .mdy-file-clear:hover {
+        opacity: 1;
+    }
+
+    /* ─── Chips ───────────────────────────────────────────────────────────────── */
+
+    .mdy-chip--removable {
+        padding-right: 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .mdy-chip {
+        border-color: var(--mdy-outline-variant);
+    }
+
+    .mdy-chip:hover:not(.mdy-chip--selected):not(:disabled) {
+        background-color: var(--mdy-surface-container-highest-hover);
+        border-color: var(--mdy-outline);
+    }
+
+    /* ─── Segmented Button — M3 Outlined Specification ───────────────────────── */
+
+    .mdy-segmented {
+        display: inline-flex;
+        background: transparent;
+        padding: 0;
+        border-radius: var(--mdy-segmented-border-radius);
+        border: 1px solid var(--mdy-outline-variant);
+        overflow: hidden;
+        gap: 1px;
+        width: fit-content;
+
+        /* Global Redistribution Variables */
+        --mdy-tick-w: 1.5rem;
+        /* 1rem icon + 0.5rem gap */
+        --mdy-tick-share: calc(var(--mdy-tick-w) / (2 * var(--mdy-segments-count, 1)));
+    }
+
+    .mdy-segmented__button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        /* gap creates space between the check icon (flex item) and the label */
+        gap: 0.5rem;
+        padding-left: 1.125rem;
+        padding-right: 1.125rem;
+        min-height: var(--mdy-segmented-height);
+        background: transparent;
+        border: none;
+        border-right: 1px solid var(--mdy-outline-variant);
+        margin-right: -1px;
+        color: var(--mdy-on-surface-variant);
+        font-size: 0.875rem;
+        font-weight: var(--mdy-font-weight-medium);
+        border-radius: 0;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        white-space: nowrap;
+    }
+
+    .mdy-segmented__button:last-of-type {
+        border-right: none;
+        margin-right: 0;
+    }
+
+    .mdy-segmented__button--selected {
+        background: var(--mdy-surface-container-highest);
+        color: var(--mdy-on-surface);
+        font-weight: var(--mdy-font-weight-medium);
+        box-shadow: none;
+    }
+
+    .mdy-segmented__button:hover:not(.mdy-segmented__button--selected):not(:disabled) {
+        background: var(--mdy-surface-container-highest-hover);
+        color: var(--mdy-on-surface);
+    }
+
+    .mdy-segmented__check {
+        /* flex item — visibility:hidden preserves its 1rem width so layout never shifts on selection */
+        width: 1rem;
+        height: 1rem;
+        animation: mdy-segmented-check-pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* ─── Multiselect ─────────────────────────────────────────────────────────── */
+
+    .mdy-multiselect__label {
+        color: var(--mdy-on-surface-variant);
+        letter-spacing: 0.006em;
+    }
+
+    .mdy-multiselect__search-btn {
+        color: var(--mdy-on-surface-variant);
+    }
+
+    .mdy-multiselect__search-btn:hover:not(:disabled) {
+        background: var(--mdy-select-option-hover-bg);
+        color: var(--mdy-select-option-hover-color);
+    }
+
+    .mdy-multiselect__options,
+    .mdy-select__list,
+    .mdy-multiselect-overlay__grid {
+        scrollbar-width: thin;
+        scrollbar-color: var(--mdy-outline-variant) transparent;
+    }
+
+    .mdy-multiselect-overlay__panel {
+        background: var(--mdy-surface);
+        border: 1px solid var(--mdy-outline-subtle);
+        border-radius: var(--mdy-select-dropdown-border-radius);
+        box-shadow: var(--mdy-select-dropdown-shadow);
+    }
+
+    .mdy-multiselect-overlay__input {
+        border-bottom-color: var(--mdy-surface-container-highest);
+    }
+
+    .mdy-multiselect-overlay__panel--above .mdy-multiselect-overlay__input {
+        border-top-color: var(--mdy-surface-container-highest);
+    }
+
+    .mdy-multiselect-overlay__input:focus {
+        border-color: var(--mdy-input-focus-color);
+    }
+
+    .mdy-multiselect-overlay__empty {
+        color: var(--mdy-outline);
+    }
+
+    /* ─── Inline errors — M3 supporting text ─────────────────────────────────── */
+
+    .mdy-control__inline-errors-tooltip {
+        letter-spacing: 0.025em;
+    }
+
+    .mdy-control__error {
+        letter-spacing: 0.025em;
+        line-height: var(--mdy-error-line-height);
+    }
+
+    /* ─── DatePicker — M3 visual overrides ───────────────────────────────────── */
+    /* Only rules that differ from base defaults are listed here.
+   Layout (grid/row/weekday structure) is handled by base using token values. */
+
+    .mdy-datepicker__grid {
+        padding: 0 12px 16px;
+        align-items: center;
+    }
+
+    .mdy-datepicker__weekdays {
+        margin-bottom: 8px;
+    }
+
+    .mdy-datepicker__weekday {
+        width: var(--mdy-datepicker-cell-size);
+        height: 32px;
+        /* Weekday labels are shorter than cells in M3 */
+        font-weight: var(--mdy-font-weight-medium);
+        color: var(--mdy-on-surface-variant);
+    }
+
+    .mdy-datepicker__row {
+        margin: 1px 0;
+    }
+
+    .mdy-datepicker__cell {
+        aspect-ratio: 1 / 1;
+        place-self: center;
+        z-index: 1;
+        font-size: 0.8125rem;
+        color: var(--mdy-on-surface);
+    }
+
+    .mdy-datepicker__cell:hover:not(.mdy-datepicker__cell--disabled):not(.mdy-datepicker__cell--selected) {
+        background: var(--mdy-surface-container-highest-hover);
+    }
+
+    .mdy-datepicker__cell--today:not(.mdy-datepicker__cell--selected) {
+        box-shadow: inset 0 0 0 1px var(--mdy-datepicker-today-color);
+        color: var(--mdy-datepicker-today-color);
+        font-weight: var(--mdy-font-weight-medium);
+    }
+
+    .mdy-datepicker__cell--outside {
+        visibility: hidden;
+        /* M3 hides outside-month cells completely (vs base opacity) */
+    }
+
+    .mdy-datepicker__cell--disabled {
+        opacity: 0.38;
+        /* M3 spec (vs base 0.25) */
+    }
+
+    .mdy-datepicker__cell--selected {
+        font-weight: var(--mdy-font-weight-medium);
+    }
+
+    /* ─── DatePicker header — M3 sizing ──────────────────────────────────────── */
+
+    .mdy-datepicker__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 0.75rem 0.75rem 1.5rem;
+        background: transparent;
+        height: 3rem;
+    }
+
+    .mdy-datepicker__nav-btn {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    .mdy-datepicker__nav-btn mdy-icon {
+        display: block;
+        width: 24px;
+        height: 24px;
+        font-size: 24px;
+    }
+
+    .mdy-datepicker__title {
+        min-width: 140px;
+        text-align: center;
+    }
+
+    .mdy-datepicker__view-toggle {
+        padding: 8px 12px;
+    }
+
+    .mdy-datepicker__month-cell,
+    .mdy-datepicker__year-cell {
+        min-height: 48px;
+        padding: 0 12px;
+    }
+
+    .mdy-datepicker__toggle {
+        background: var(--mdy-surface-container-highest);
+        border: none;
+        border-radius: 50%;
+        color: var(--mdy-on-surface-variant);
+    }
+
+    .mdy-datepicker__toggle:hover:not(:disabled) {
+        background: var(--mdy-surface-container-highest-hover);
+    }
+
+    /* ─── Host display helpers ────────────────────────────────────────────────── */
+
+    .mdy-datepicker,
+    .mdy-datepicker__calendar,
+    .mdy-range-calendar {
+        display: block;
+        width: 100%;
+    }
+
+    /* ─── Backdrop (M3 Scrim) ─────────────────────────────────────────────────── */
+
+    .mdy-datepicker__backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.32);
+        z-index: 999;
+    }
+
+    /* ─── DatePicker Modal — M3 Dialog spec ──────────────────────────────────── */
+
+    .mdy-datepicker__popup--modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 328px;
+        max-width: calc(100vw - 32px);
+        background: var(--mdy-datepicker-modal-bg);
+        border-radius: var(--mdy-datepicker-modal-radius);
+        box-shadow: var(--mdy-shadow-depth-3);
+        z-index: 1000;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        margin-top: 0 !important;
+        animation: mdy-modal-in 0.3s cubic-bezier(0.05, 0.7, 0.1, 1);
+    }
+
+    @keyframes mdy-modal-in {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -45%) scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+
+    .mdy-datepicker__modal-header {
+        background: var(--mdy-surface-container-low);
+        padding: 24px 24px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+        border-bottom: 1px solid var(--mdy-outline-subtle);
+    }
+
+    .mdy-datepicker__modal-label {
+        font-size: 0.75rem;
+        font-weight: var(--mdy-font-weight-medium);
+        text-transform: none;
+        letter-spacing: 0.1px;
+        color: var(--mdy-on-surface-variant);
+    }
+
+    .mdy-datepicker__modal-value {
+        display: block;
+        font-size: 2.125rem;
+        line-height: 2.75rem;
+        font-weight: var(--mdy-font-weight-regular);
+        letter-spacing: 0;
+        color: var(--mdy-on-surface);
+    }
+
+    .mdy-datepicker__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 1rem 1.5rem 1.5rem;
+    }
+
+    .mdy-datepicker__action-btn {
+        padding: 0.625rem 1rem;
+        background: transparent;
+        border: none;
+        border-radius: var(--mdy-corner-full);
+        color: var(--mdy-primary);
+        font-size: 0.875rem;
+        font-weight: var(--mdy-font-weight-medium);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .mdy-datepicker__action-btn:hover {
+        background: var(--mdy-surface-container-highest-hover);
+    }
+
+    .mdy-datepicker__action-btn--primary {
+        color: var(--mdy-primary);
+        font-weight: var(--mdy-font-weight-semibold);
+    }
+
+    /* ─── DatePicker input (filled style) ────────────────────────────────────── */
+
+    .mdy-datepicker__input {
+        background: var(--mdy-surface-container-highest);
+        color: var(--mdy-input-color);
+        border: none;
+        border-bottom: 1px solid var(--mdy-on-surface-variant);
+        border-radius: var(--mdy-input-border-radius);
+        padding-bottom: calc(0.625rem + 2px);
+    }
+
+    .mdy-datepicker__input:hover {
+        background: var(--mdy-surface-container-highest-hover);
+        border-bottom-color: var(--mdy-on-surface);
+    }
+
+    .mdy-datepicker__input:focus {
+        background: var(--mdy-surface-container-highest);
+        border-bottom-color: var(--mdy-input-focus-color);
+        box-shadow: inset 0 -2px 0 0 var(--mdy-input-focus-color);
+        outline: none;
+    }
+
+    .mdy-datepicker__input[aria-invalid="true"] {
+        border-bottom-color: var(--mdy-error-color);
+    }
+
+    .mdy-datepicker__input[aria-invalid="true"]:focus {
+        box-shadow: inset 0 -2px 0 0 var(--mdy-error-color);
+    }
+
+    .mdy-datepicker__input:disabled {
+        background: var(--mdy-disabled-bg);
+        border-bottom-color: var(--mdy-disabled-color);
+        color: var(--mdy-disabled-color);
+    }
+
+    /* ─── Date Range ──────────────────────────────────────────────────────────── */
+
+    .mdy-daterange__sep {
+        border: none;
+    }
+
+    .mdy-daterange__group .mdy-daterange__input {
+        background: var(--mdy-surface-container-highest);
+        border: none;
+        border-bottom: 1px solid var(--mdy-on-surface-variant);
+        border-radius: var(--mdy-input-border-radius);
+    }
+
+    .mdy-daterange__group:focus-within {
+        box-shadow: inset 0 -2px 0 0 var(--mdy-input-focus-color);
+        border-color: transparent;
+    }
+
+    .mdy-daterange__group .mdy-daterange__input:focus {
+        background: var(--mdy-surface-container-highest);
+        border-bottom-color: var(--mdy-input-focus-color);
+        box-shadow: none;
+        outline: none;
+    }
+
+    /* ─── Color Picker — M3 Filled Style ─────────────────────────────────────── */
+
+    .mdy-renderer--colors .mdy-input-wrapper {
+        height: 2.75rem !important;
+        background-color: var(--mdy-surface-container-highest);
+        border-radius: var(--mdy-input-border-radius);
+        border-bottom: 1px solid var(--mdy-on-surface-variant);
+        transition: background 0.2s, border-color 0.2s;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        box-sizing: border-box;
+    }
+
+    .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-input-wrapper {
+        height: var(--mdy-floating-input-height, var(--mdy-input-height)) !important;
+    }
+
+    .mdy-renderer--colors:hover .mdy-input-wrapper {
+        background-color: var(--mdy-surface-container-highest-hover);
+        border-bottom-color: var(--mdy-on-surface);
+    }
+
+    .mdy-renderer--colors.mdy-renderer--open .mdy-input-wrapper,
+    .mdy-renderer--colors:focus-within .mdy-input-wrapper {
+        border-bottom-color: var(--mdy-primary);
+        box-shadow: inset 0 -2px 0 0 var(--mdy-primary);
+    }
+
+    .mdy-input-wrapper__inliner {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        padding: 0 1rem;
+        box-sizing: border-box;
+        transition: padding-top 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-input-wrapper__inliner {
+        padding-top: var(--mdy-fl-pad-top);
+    }
+
+    .mdy-colors__primary-picker {
+        /* Button reset */
+        appearance: none;
+        background: none;
+        border: none;
+        padding: 0 0.5rem;
+        margin: 0;
+        /* Stretch to fill the full input wrapper height; fixed swatch width */
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        align-self: stretch;
+        flex-shrink: 0;
+        width: 3rem;
+        cursor: pointer;
+        border-radius: var(--mdy-corner-extra-small);
+        transition: background 0.2s;
+    }
+
+    .mdy-colors__primary-picker:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
+    }
+
+    .mdy-colors__primary-picker:focus-visible {
+        outline: 2px solid var(--mdy-primary);
+        outline-offset: -2px;
+    }
+
+    .mdy-colors__primary-picker:disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+    }
+
+    .mdy-colors__preview-swatch {
+        width: 1.625rem;
+        height: 1.125rem;
+        border-radius: var(--mdy-color-swatch-radius);
+        border: none !important;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+        pointer-events: none;
+    }
+
+    .mdy-colors__native-hidden {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0 !important;
+        cursor: pointer;
+        border: none;
+        margin: 0;
+        padding: 0;
+        z-index: 2;
+    }
+
+    .mdy-colors__hex-input {
+        flex: 1;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        font-size: var(--mdy-input-font-size) !important;
+        color: var(--mdy-input-color) !important;
+        height: auto !important;
+        font-family: inherit !important;
+    }
+
+    .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-colors__hex-input {
+        padding: 0 !important;
+        height: 100% !important;
+    }
+
+    .mdy-colors__toggle-area {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        width: 2.5rem;
+        margin-right: -0.75rem;
+    }
+
+    .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-colors__toggle-area {
+        padding-bottom: 0.625rem !important;
+        align-items: flex-end !important;
+        box-sizing: border-box;
+    }
+
+    .mdy-colors__arrow--open {
+        transform: rotate(180deg);
+    }
+
+    .mdy-colors__dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: var(--mdy-surface-container-high);
+        border: none;
+        box-shadow: var(--mdy-color-dropdown-shadow);
+        border-radius: var(--mdy-color-dropdown-radius);
+        padding: 1.5rem;
+        margin-top: 8px;
+        display: none;
+    }
+
+    .mdy-colors--open .mdy-colors__dropdown {
+        display: block;
+        position: fixed;
+        top: var(--mdy-overlay-top, auto);
+        bottom: var(--mdy-overlay-bottom, auto);
+        left: var(--mdy-overlay-left, auto);
+        right: var(--mdy-overlay-right, auto);
+        width: var(--mdy-overlay-width, 300px);
+        margin: 0;
+        margin-top: 4px;
+    }
+
+    .mdy-colors__dropdown--above {
+        bottom: 100%;
+        top: auto;
+        margin-top: 0;
+        margin-bottom: 8px;
+    }
+
+    .mdy-colors__dropdown--overlay {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: calc(100% - 3rem);
+        max-width: 340px;
+        margin: 0;
+        z-index: 9999;
+    }
+
+    .mdy-colors__dropdown-header {
+        color: var(--mdy-primary);
+        font-weight: var(--mdy-font-weight-semibold);
+    }
+
+    .mdy-color-swatch {
+        width: var(--mdy-color-swatch-size);
+        height: var(--mdy-color-swatch-size);
+        border-radius: var(--mdy-color-swatch-radius);
+    }
+
+    /* ─── Animations ──────────────────────────────────────────────────────────── */
+
+    @keyframes mdy-fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ─── Dark Mode — Zinc palette inversion ─────────────────────────────────── */
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            /* In dark mode, surface/container roles invert: dark bg, light text */
+            --mdy-surface: color-mix(in srgb, var(--mdy-primary), black 40%);
+            --mdy-surface-container-lowest: color-mix(in srgb, var(--mdy-primary), black 55%);
+            --mdy-surface-container-low: color-mix(in srgb, var(--mdy-primary), black 50%);
+            --mdy-surface-container: color-mix(in srgb, var(--mdy-primary), black 45%);
+            --mdy-surface-container-high: color-mix(in srgb, var(--mdy-primary), black 36%);
+            --mdy-surface-container-highest: color-mix(in srgb, var(--mdy-primary), black 28%);
+            --mdy-surface-container-highest-hover: color-mix(in srgb, var(--mdy-primary), black 18%);
+
+            --mdy-on-surface: color-mix(in srgb, var(--mdy-primary), white 90%);
+            --mdy-on-surface-variant: color-mix(in srgb, var(--mdy-primary), white 68%);
+            --mdy-outline: color-mix(in srgb, var(--mdy-primary), white 55%);
+            --mdy-outline-variant: color-mix(in srgb, var(--mdy-primary), white 28%);
+            --mdy-outline-subtle: color-mix(in srgb, var(--mdy-primary), white 14%);
+
+            --mdy-disabled-bg: rgba(255, 255, 255, 0.06);
+            --mdy-disabled-color: rgba(255, 255, 255, 0.38);
+
+            /* Error container in dark */
+            --mdy-error-container: color-mix(in srgb, var(--mdy-error), black 65%);
+            --mdy-on-error-container: color-mix(in srgb, var(--mdy-error), white 80%);
+
+            /* Select dropdown must be darker than surface */
+            --mdy-select-dropdown-bg: var(--mdy-surface-container);
+            --mdy-multiselect-overlay-bg: var(--mdy-surface-container);
+        }
+    }
+
+    /* ─── Reduced Motion ──────────────────────────────────────────────────────── */
+
+    @media (prefers-reduced-motion: reduce) {
+
+        .mdy-renderer *,
+        .mdy-datepicker__popup--modal,
+        .mdy-timepicker-container {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+
+}
+
+/* end @layer mdy.themes */

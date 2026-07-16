@@ -1,0 +1,2918 @@
+/*
+ * modyra.css — Default Theme
+ *
+ * Import this file in your application's global styles:
+ *   @import 'modyra/styles/modyra.css';
+ *
+ * Override any CSS custom property on :root or a scoped selector
+ * to create a custom theme.
+ *
+ * CSS @layer order:
+ *   mdy.tokens     — all CSS custom properties (:root bridge + dark-mode overrides)
+ *   mdy.base       — renderer layout, generic wrappers
+ *   mdy.components — every component (input, select, checkbox, toggle, datepicker…)
+ *   mdy.themes     — reserved for theme overrides (material, ionic, ios)
+ */
+
+@layer mdy.tokens, mdy.base, mdy.components, mdy.themes;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LAYER: mdy.tokens
+ * CSS custom properties — bridge from --mdy-sys-* / comp tokens
+ * to the short --mdy-* variables used by every component below.
+ * Dark-mode overrides are kept here so they cascade automatically.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+@layer mdy.tokens {
+
+    :root {
+        /* ── Color ──────────────────────────────────────────────────────────────── */
+        --mdy-primary: var(--mdy-sys-color-primary);
+        --mdy-on-primary: var(--mdy-sys-color-on-primary);
+        --mdy-primary-container: var(--mdy-sys-color-primary-container);
+        --mdy-on-primary-container: var(--mdy-sys-color-on-primary-container);
+        --mdy-error: var(--mdy-sys-color-error);
+        --mdy-on-error: var(--mdy-sys-color-on-error);
+        --mdy-error-container: var(--mdy-sys-color-error-container);
+        --mdy-on-error-container: var(--mdy-sys-color-on-error-container);
+        --mdy-surface: var(--mdy-sys-color-surface);
+        --mdy-on-surface: var(--mdy-sys-color-on-surface);
+        --mdy-on-surface-variant: var(--mdy-sys-color-on-surface-variant);
+        --mdy-surface-container-lowest: var(--mdy-sys-color-surface-container-lowest);
+        --mdy-surface-container-low: var(--mdy-sys-color-surface-container-low);
+        --mdy-surface-container: var(--mdy-sys-color-surface-container);
+        --mdy-surface-container-high: var(--mdy-sys-color-surface-container-high);
+        --mdy-surface-container-highest: var(--mdy-sys-color-surface-container-highest);
+        --mdy-surface-container-highest-hover: color-mix(in srgb, var(--mdy-surface-container-highest), var(--mdy-on-surface) 8%);
+        --mdy-outline: var(--mdy-sys-color-outline);
+        --mdy-outline-variant: var(--mdy-sys-color-outline-variant);
+        --mdy-outline-subtle: color-mix(in srgb, var(--mdy-outline-variant), transparent 40%);
+
+        /* ── Shape ──────────────────────────────────────────────────────────────── */
+        --mdy-corner-none: var(--mdy-sys-shape-corner-none);
+        --mdy-corner-extra-small: var(--mdy-sys-shape-corner-extra-small);
+        --mdy-corner-small: var(--mdy-sys-shape-corner-small);
+        --mdy-corner-medium: var(--mdy-sys-shape-corner-medium);
+        --mdy-corner-large: var(--mdy-sys-shape-corner-large);
+        --mdy-corner-extra-large: var(--mdy-sys-shape-corner-extra-large);
+        --mdy-corner-full: var(--mdy-sys-shape-corner-full);
+
+        /* ── State Layer Opacity ────────────────────────────────────────────────── */
+        --mdy-state-hover-opacity: var(--mdy-sys-state-hover-opacity);
+        --mdy-state-focus-opacity: var(--mdy-sys-state-focus-opacity);
+        --mdy-state-disabled-content-opacity: var(--mdy-sys-state-disabled-content-opacity);
+        --mdy-state-disabled-container-opacity: var(--mdy-sys-state-disabled-container-opacity);
+
+        /* ── Elevation ──────────────────────────────────────────────────────────── */
+        --mdy-shadow-depth-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+        --mdy-shadow-depth-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+
+        /* ── Text Field (Filled) ────────────────────────────────────────────────── */
+        --mdy-input-height: var(--mdy-comp-filled-text-field-container-height);
+        /* 56px */
+        --mdy-input-bg: var(--mdy-comp-filled-text-field-container-color);
+        --mdy-input-bg-hover: color-mix(in srgb, var(--mdy-input-bg), var(--mdy-on-surface) 8%);
+        --mdy-input-border-radius: var(--mdy-comp-filled-text-field-container-shape);
+        /* 4px */
+        --mdy-input-color: var(--mdy-comp-filled-text-field-input-text-color);
+        --mdy-input-placeholder-color: var(--mdy-comp-filled-text-field-label-text-color);
+        --mdy-input-focus-color: var(--mdy-comp-filled-text-field-focus-active-indicator-color);
+        --mdy-input-icon-color: var(--mdy-comp-filled-text-field-leading-icon-color);
+        --mdy-input-focus-shadow: inset 0 -2px 0 0 var(--mdy-input-focus-color);
+        --mdy-error-color: var(--mdy-comp-filled-text-field-error-active-indicator-color);
+        --mdy-error-focus-shadow: inset 0 -2px 0 0 var(--mdy-error-color);
+        --mdy-input-font-size: var(--mdy-sys-typescale-body-large-size);
+        /* 16px */
+        --mdy-input-line-height: var(--mdy-sys-typescale-body-large-line-height);
+        /* 24px */
+        --mdy-input-padding: 0.5rem 1rem;
+
+        /* ── Label & Helper Text ────────────────────────────────────────────────── */
+        --mdy-label-font-size: var(--mdy-sys-typescale-body-large-size);
+        --mdy-label-font-weight: var(--mdy-sys-typescale-label-large-weight);
+        --mdy-helper-font-size: var(--mdy-sys-typescale-body-small-size);
+        /* 12px */
+        --mdy-helper-line-height: var(--mdy-sys-typescale-body-small-line-height);
+        --mdy-helper-padding-top: 4px;
+        --mdy-error-font-size: var(--mdy-sys-typescale-body-small-size);
+        --mdy-error-line-height: var(--mdy-sys-typescale-body-small-line-height);
+
+        /* ── Renderer Layout ────────────────────────────────────────────────────── */
+        --mdy-renderer-gap: 0;
+        --mdy-renderer-margin-bottom: 1rem;
+
+        /* ── Disabled ───────────────────────────────────────────────────────────── */
+        --mdy-disabled-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 88%);
+        --mdy-disabled-color: color-mix(in srgb, var(--mdy-on-surface), transparent 62%);
+
+        /* ── Overlay ────────────────────────────────────────────────────────────── */
+        --mdy-overlay-backdrop-bg: rgba(0, 0, 0, 0.4);
+
+        /* ── Tooltip ────────────────────────────────────────────────────────────── */
+        --mdy-tooltip-border-radius: var(--mdy-corner-extra-small);
+
+        /* ── Checkbox ───────────────────────────────────────────────────────────── */
+        --mdy-checkbox-size: var(--mdy-comp-checkbox-container-size);
+        /* 18px */
+        --mdy-checkbox-border-radius: var(--mdy-comp-checkbox-container-shape);
+        /* 2px */
+        --mdy-checkbox-accent: var(--mdy-comp-checkbox-selected-container-color);
+        --mdy-checkbox-checkmark-color: var(--mdy-comp-checkbox-selected-icon-color);
+        --mdy-checkbox-border: var(--mdy-comp-checkbox-unselected-outline-width) solid var(--mdy-comp-checkbox-unselected-outline-color);
+        --mdy-checkbox-gap: 0.75rem;
+        --mdy-checkbox-transition: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Tick geometry — override per theme if needed */
+        --mdy-checkbox-tick-w: 0.3;
+        /* fraction of --mdy-checkbox-size */
+        --mdy-checkbox-tick-h: 0.55;
+        /* fraction of --mdy-checkbox-size */
+        --mdy-checkbox-tick-left: 0.35;
+        /* fraction of --mdy-checkbox-size for horizontal centering */
+        --mdy-checkbox-tick-offset: -158%;
+        /* translateY to optically center the rotated L-border */
+
+        /* ── Toggle / Switch ────────────────────────────────────────────────────── */
+        --mdy-toggle-width: var(--mdy-comp-switch-track-width);
+        /* 52px */
+        --mdy-toggle-height: var(--mdy-comp-switch-track-height);
+        /* 32px */
+        --mdy-toggle-bg: var(--mdy-comp-switch-track-color);
+        /* transparent */
+        --mdy-toggle-border: var(--mdy-comp-switch-track-outline-width) solid var(--mdy-comp-switch-track-outline-color);
+        --mdy-toggle-bg-checked: var(--mdy-comp-switch-selected-track-color);
+        --mdy-toggle-border-checked: 0px solid transparent;
+        --mdy-toggle-thumb-size: var(--mdy-comp-switch-handle-size);
+        /* 16px */
+        --mdy-toggle-thumb-size-checked: var(--mdy-comp-switch-selected-handle-size);
+        /* 24px */
+        --mdy-toggle-thumb-color: var(--mdy-comp-switch-handle-color);
+        --mdy-toggle-thumb-color-checked: var(--mdy-comp-switch-selected-handle-color);
+        --mdy-toggle-thumb-offset: 4px;
+        --mdy-toggle-gap: 0.75rem;
+        --mdy-toggle-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+        /* ── Radio ──────────────────────────────────────────────────────────────── */
+        --mdy-radio-size: var(--mdy-comp-radio-icon-size);
+        /* 20px */
+        --mdy-radio-selected-color: var(--mdy-comp-radio-selected-icon-color);
+        --mdy-radio-unselected-color: var(--mdy-comp-radio-unselected-icon-color);
+
+        /* ── Segmented Button ───────────────────────────────────────────────────── */
+        --mdy-segmented-height: var(--mdy-comp-segmented-button-height);
+        /* 40px */
+        --mdy-segmented-border-radius: var(--mdy-comp-segmented-button-shape);
+        /* 9999px */
+        --mdy-segmented-border-color: var(--mdy-comp-segmented-button-outline-color);
+        --mdy-segmented-selected-bg: var(--mdy-comp-segmented-button-selected-container-color);
+        --mdy-segmented-selected-color: var(--mdy-comp-segmented-button-selected-label-text-color);
+        --mdy-segmented-unselected-color: var(--mdy-comp-segmented-button-unselected-label-text-color);
+        --mdy-segmented-font-size: var(--mdy-comp-segmented-button-label-text-font-size);
+        /* 14px */
+        --mdy-segmented-font-weight: var(--mdy-comp-segmented-button-label-text-weight);
+        /* 500 */
+        --mdy-segmented-btn-bg-selected-hover: color-mix(in srgb, var(--mdy-segmented-selected-bg), var(--mdy-segmented-selected-color) 8%);
+
+        --mdy-button-radius: var(--mdy-corner-full);
+
+        /* ── Filter Chip ────────────────────────────────────────────────────────── */
+        --mdy-chip-height: var(--mdy-comp-filter-chip-container-height);
+        /* 32px */
+        --mdy-chip-border-radius: var(--mdy-comp-filter-chip-container-shape);
+        /* 8px */
+        --mdy-chip-padding: 0 0.75rem;
+        --mdy-chip-gap: 0.375rem;
+        --mdy-chip-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
+        --mdy-chip-bg: transparent;
+        --mdy-chip-color: var(--mdy-comp-filter-chip-label-text-color);
+        --mdy-chip-font-size: var(--mdy-sys-typescale-label-large-size);
+        /* 14px */
+        --mdy-chip-selected-bg: var(--mdy-comp-filter-chip-selected-container-color);
+        --mdy-chip-selected-color: var(--mdy-comp-filter-chip-selected-label-text-color);
+        --mdy-chip-selected-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
+        --mdy-chip-hover-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
+        --mdy-chip-hover-color: var(--mdy-on-surface);
+        --mdy-chip-hover-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
+        --mdy-chip-max-width: 11rem;
+        --mdy-chip-transition: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+        /* ── Slider ─────────────────────────────────────────────────────────────── */
+        --mdy-slider-track-height: var(--mdy-comp-slider-active-track-height);
+        /* 4px */
+        --mdy-slider-thumb-size: var(--mdy-comp-slider-handle-height);
+        /* 20px */
+        --mdy-slider-active-color: var(--mdy-comp-slider-active-track-color);
+        --mdy-slider-inactive-color: var(--mdy-comp-slider-inactive-track-color);
+        --mdy-slider-thumb-color: var(--mdy-comp-slider-handle-color);
+        /* --mdy-slider-fill-pct is set by the TS component on value change */
+        --mdy-slider-track-color: linear-gradient(to right,
+                var(--mdy-slider-active-color) var(--mdy-slider-fill-pct, 0%),
+                var(--mdy-slider-inactive-color) var(--mdy-slider-fill-pct, 0%));
+
+        /* ── Color Picker ───────────────────────────────────────────────────────── */
+        --mdy-color-swatch-size: var(--mdy-comp-color-picker-swatch-size);
+        /* 2.5rem */
+        --mdy-color-swatch-radius: var(--mdy-comp-color-picker-swatch-radius);
+        /* full */
+        --mdy-color-dropdown-radius: var(--mdy-comp-color-picker-dropdown-radius);
+        /* 12px */
+        --mdy-color-dropdown-shadow: var(--mdy-comp-color-picker-dropdown-shadow);
+
+        /* ── Spin Button ────────────────────────────────────────────────────────── */
+        --mdy-spin-btn-size: 1.5rem;
+        --mdy-spin-btn-border-radius: var(--mdy-corner-full);
+        --mdy-spin-btn-hover-bg: color-mix(in srgb, var(--mdy-primary), transparent 92%);
+
+        /* ── Select / Multiselect ───────────────────────────────────────────────── */
+        --mdy-select-dropdown-bg: var(--mdy-surface-container);
+        --mdy-select-dropdown-border: none;
+        --mdy-select-dropdown-border-radius: var(--mdy-corner-extra-small);
+        --mdy-select-dropdown-shadow: var(--mdy-shadow-depth-2);
+        --mdy-select-dropdown-max-height: 17.5rem;
+        --mdy-select-option-padding: 0.75rem 1rem;
+        --mdy-select-border-subtle: var(--mdy-outline-variant);
+        --mdy-select-no-results-color: var(--mdy-on-surface-variant);
+        --mdy-select-placeholder-color: var(--mdy-input-placeholder-color);
+        --mdy-select-option-hover-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
+        --mdy-select-option-hover-color: var(--mdy-on-surface);
+        --mdy-select-option-selected-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 88%);
+        --mdy-select-option-selected-color: var(--mdy-on-surface);
+        --mdy-select-option-selected-weight: 500;
+        --mdy-multiselect-padding: 0.5rem 1rem;
+        --mdy-multiselect-max-height: 5.5rem;
+
+        /* ── File Upload ────────────────────────────────────────────────────────── */
+        --mdy-file-container-border: 2px dashed var(--mdy-outline-variant);
+        --mdy-file-container-radius: var(--mdy-corner-medium);
+        --mdy-file-container-bg: var(--mdy-surface-container);
+
+        /* ── Date Picker ────────────────────────────────────────────────────────── */
+        --mdy-datepicker-cell-size: var(--mdy-comp-date-picker-cell-size);
+        /* 2.5rem */
+        --mdy-datepicker-cell-font-size: var(--mdy-comp-date-picker-cell-font-size);
+        /* 0.875rem */
+        --mdy-datepicker-popup-padding: var(--mdy-comp-date-picker-popup-padding);
+        --mdy-datepicker-popup-shadow: var(--mdy-comp-date-picker-popup-shadow);
+        --mdy-datepicker-popup-bg: var(--mdy-comp-date-picker-popup-bg);
+        --mdy-datepicker-hover-bg: var(--mdy-comp-date-picker-cell-hover-bg);
+        --mdy-datepicker-disabled-opacity: var(--mdy-comp-date-picker-cell-disabled-opacity);
+        --mdy-datepicker-today-color: var(--mdy-sys-color-primary);
+
+        /* ── Date Range ─────────────────────────────────────────────────────────── */
+        --mdy-daterange-in-range-bg: var(--mdy-comp-date-picker-in-range-bg);
+        --mdy-daterange-endpoint-bg: var(--mdy-comp-date-picker-endpoint-bg);
+        --mdy-daterange-endpoint-color: var(--mdy-comp-date-picker-endpoint-color);
+        --mdy-daterange-input-min-width: 8ch;
+        --mdy-daterange-input-padding: 0 0.5rem;
+        --mdy-daterange-sep-padding: 0 0.25rem;
+
+        /* ── Select Arrow ───────────────────────────────────────────────────────── */
+        --mdy-select-arrow-color: var(--mdy-on-surface-variant);
+
+        /* ── Multiselect Overlay ────────────────────────────────────────────────── */
+        --mdy-multiselect-overlay-bg: var(--mdy-surface);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --mdy-overlay-backdrop-bg: rgba(0, 0, 0, 0.6);
+            --mdy-shadow-depth-1: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 4px 1px rgba(0, 0, 0, 0.3);
+            --mdy-shadow-depth-2: 0 1px 3px rgba(0, 0, 0, 0.5), 0 2px 8px 2px rgba(0, 0, 0, 0.3);
+        }
+    }
+
+    @keyframes mdy-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+}
+
+/* end @layer mdy.tokens */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LAYER: mdy.base
+ * Renderer layout scaffold, generic input wrapper, label, floating label,
+ * and supporting text — the structural foundation every component builds on.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+@layer mdy.base {
+
+    /* ─── Custom Number Spin Buttons ─────────────────────────────────────────── */
+    .mdy-spin-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--mdy-spin-btn-size);
+        height: 1.25em;
+        border-radius: var(--mdy-spin-btn-border-radius);
+        color: var(--mdy-input-icon-color);
+        background: transparent;
+        border: none;
+        transition: background 0.15s, color 0.15s;
+        font-size: 1em;
+        line-height: 1;
+        box-shadow: none;
+        outline: none;
+    }
+
+    .mdy-spin-btn-up {
+        margin-bottom: 0.1em;
+    }
+
+    .mdy-spin-btn-down {
+        margin-top: 0.1em;
+    }
+
+    .mdy-spin-btn:hover,
+    .mdy-spin-btn:focus {
+        background: var(--mdy-spin-btn-hover-bg);
+        color: var(--mdy-input-focus-color);
+    }
+
+    .mdy-spin-btn:active {
+        background: var(--mdy-input-focus-color);
+        color: var(--mdy-on-error);
+    }
+
+    .mdy-spin-btn svg {
+        display: block;
+        width: 1em;
+        height: 1em;
+        pointer-events: none;
+    }
+
+    /* Stile coerente per input[type=number]: nasconde le freccette native */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="number"] {
+        appearance: textfield;
+        -moz-appearance: textfield;
+    }
+
+    input[type="date"] {
+        font-size: var(--mdy-input-font-size);
+    }
+
+    /* Rimuove l'outline di default (highlight blu) sui campi data in focus anche nella libreria */
+    input[type="date"]:focus,
+    .mdy-datepicker__input:focus,
+    .mdy-daterange__input:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    /*
+ * modyra — Default Theme
+ *
+ * Import this file in your application's global styles:
+ *   @import 'modyra/styles/modyra.css';
+ *
+ * Override any CSS custom property on :root or a scoped selector
+ * to create a custom theme.
+ */
+
+    /* ─── Custom Properties (theming API) ─────────────────────────────────────── */
+
+    /* All base tokens (color, shape, typography, elevation) are sourced from modyra-m3-base.css.
+   The block below bridges --mdy-* system/component tokens → --mdy-* component variables.
+   Theme files (material, ionic, ios) may override --mdy-primary etc. at the :root level after this. */
+
+    /* ─── Color Picker ─────────────────────────────────────────────────────── */
+
+    .mdy-colors {
+        position: relative;
+        width: 100%;
+    }
+
+    .mdy-colors .mdy-input-wrapper {
+        display: flex !important;
+        align-items: center !important;
+        padding: 0 !important;
+    }
+
+    .mdy-input-wrapper__inliner {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        padding: 0 0.25rem 0 0.75rem;
+        box-sizing: border-box;
+    }
+
+    .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-input-wrapper__inliner {
+        padding-top: var(--mdy-fl-pad-top);
+        padding-left: 1rem;
+        align-items: center;
+    }
+
+    .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-colors__hex-input {
+        padding: 0 !important;
+        height: 100% !important;
+        line-height: normal !important;
+    }
+
+
+
+    .mdy-colors__primary-picker {
+        /* Button reset */
+        appearance: none;
+        background: none;
+        border: none;
+        padding: 0 0.5rem;
+        margin: 0;
+        /* Stretch to fill the full input wrapper height; fixed swatch width */
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        align-self: stretch;
+        flex-shrink: 0;
+        width: 3rem;
+        cursor: pointer;
+        border-radius: var(--mdy-corner-extra-small);
+        transition: background 0.15s;
+    }
+
+    .mdy-colors__primary-picker:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
+    }
+
+    .mdy-colors__primary-picker:focus-visible {
+        outline: 2px solid var(--mdy-primary);
+        outline-offset: -2px;
+    }
+
+    .mdy-colors__primary-picker:disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+    }
+
+
+
+
+    .mdy-colors__preview-swatch {
+        width: 1.625rem;
+        height: 1.25rem;
+        border-radius: var(--mdy-color-swatch-radius);
+        border: 1px solid var(--mdy-outline-variant);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+        pointer-events: none;
+    }
+
+    .mdy-colors__primary-picker:hover:not(:disabled) .mdy-colors__preview-swatch {
+        transform: scale(1.05);
+    }
+
+    .mdy-colors__toggle-area {
+        appearance: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        align-self: stretch;
+        min-width: 2.75rem;
+        height: auto;
+        flex-shrink: 0;
+        padding: 0 0.75rem 0 0.5rem;
+        margin: 0 -0.25rem 0 0;
+        border-radius: 0 var(--mdy-input-border-radius) var(--mdy-input-border-radius) 0;
+        transition: background 0.15s, color 0.15s;
+    }
+
+    .mdy-colors__toggle-area:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
+    }
+
+    .mdy-colors__toggle-area:focus-visible {
+        outline: 2px solid var(--mdy-primary);
+        outline-offset: -2px;
+    }
+
+    .mdy-colors__toggle-area:disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+    }
+
+    .mdy-colors__arrow--open,
+    .mdy-select__arrow--open {
+        transform: rotate(180deg);
+    }
+
+    .mdy-colors__native-hidden {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0 !important;
+        cursor: pointer;
+        padding: 0;
+        margin: 0;
+        border: none;
+        z-index: 2;
+    }
+
+
+
+
+
+
+    .mdy-colors__native-picker::-webkit-color-swatch-wrapper {
+        padding: 0;
+    }
+
+    .mdy-colors__native-picker::-webkit-color-swatch {
+        border: none;
+        border-radius: var(--mdy-corner-extra-small);
+    }
+
+    .mdy-colors__hex-input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .mdy-colors__swatch-toggle {
+        width: 2.5rem;
+        height: var(--mdy-input-height);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--mdy-on-surface-variant);
+        transition: color 0.2s, transform 0.2s;
+    }
+
+    .mdy-colors__swatch-toggle:hover {
+        color: var(--mdy-primary);
+    }
+
+    .mdy-colors--open .mdy-colors__swatch-toggle {
+        color: var(--mdy-primary);
+        transform: rotate(180deg);
+    }
+
+    .mdy-colors__dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: var(--mdy-surface-container);
+        border: none;
+        border-radius: var(--mdy-color-dropdown-radius);
+        box-shadow: var(--mdy-color-dropdown-shadow);
+        padding: 1.25rem;
+        margin-top: 8px;
+        min-width: 280px;
+        display: none;
+    }
+
+    .mdy-colors--open .mdy-colors__dropdown {
+        display: block;
+        position: fixed;
+        top: var(--mdy-overlay-top, auto);
+        bottom: var(--mdy-overlay-bottom, auto);
+        left: var(--mdy-overlay-left, auto);
+        right: var(--mdy-overlay-right, auto);
+        /* Content-sized, not control-width */
+        width: auto;
+        min-width: 280px;
+        margin: 0;
+        margin-top: 4px;
+    }
+
+    .mdy-colors__dropdown--above {
+        bottom: 100%;
+        top: auto;
+        margin-top: 0;
+        margin-bottom: 8px;
+    }
+
+    .mdy-colors__dropdown--overlay {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: calc(100% - 2rem);
+        max-width: 320px;
+        margin: 0;
+        z-index: 9999;
+    }
+
+
+
+    .mdy-colors__dropdown-header {
+        font-size: var(--mdy-helper-font-size);
+        font-weight: var(--mdy-label-font-weight);
+        text-transform: none;
+        letter-spacing: 0.006em;
+        color: var(--mdy-on-surface-variant);
+        margin-bottom: 0.75rem;
+    }
+
+    .mdy-colors__presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.625rem;
+    }
+
+    .mdy-color-swatch {
+        width: var(--mdy-color-swatch-size);
+        /* M3-inspired: 40px */
+        height: var(--mdy-color-swatch-size);
+        border-radius: var(--mdy-color-swatch-radius);
+        /* full = circle */
+        border: 2px solid transparent;
+        cursor: pointer;
+        padding: 0;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: var(--color);
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+    }
+
+    .mdy-color-swatch:hover {
+        transform: scale(1.1);
+        outline-color: var(--mdy-outline);
+    }
+
+    .mdy-color-swatch--active {
+        transform: scale(1.1);
+        outline-color: var(--mdy-primary);
+        box-shadow: 0 0 0 2px var(--mdy-surface);
+    }
+
+    .mdy-renderer--colors.disabled .mdy-color-swatch {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+
+
+
+    /* Dark mode: --mdy-sys-* tokens are updated in modyra-m3-base.css.
+   The :root bridge above cascades automatically. Only add overrides not covered by base. */
+
+}
+
+/* end @layer mdy.base */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LAYER: mdy.components
+ * Individual component styles: standalone inputs, select, checkbox, toggle,
+ * radio, slider, segmented button, chips, multiselect, file upload, color
+ * picker, datepicker, timepicker, month/year picker, date range picker.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+@layer mdy.components {
+
+    /* ─── Renderer Layout ─────────────────────────────────────────────────────── */
+
+    .mdy-renderer {
+        display: flex;
+        flex-direction: column;
+        gap: var(--mdy-renderer-gap);
+        margin-bottom: var(--mdy-renderer-margin-bottom);
+        /* Density-aware height: density 0 = 56px, density -4 = 40px (same scale as floating label) */
+        --mdy-input-height: calc(3.5rem + (var(--mdy-floating-density, 0) * 0.25rem));
+    }
+
+
+
+    /* ─── Generic Input Wrapper (for prefix/suffix) ─────────────────────────── */
+
+    .mdy-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        /* Centered for standard inputs */
+        width: 100%;
+        min-height: var(--mdy-input-height);
+        /* M3 filled: 56px, consistent across all controls */
+        background-color: var(--mdy-input-bg);
+        /* M3 Filled: top corners rounded, bottom flat */
+        border-radius: var(--mdy-input-border-radius) var(--mdy-input-border-radius) 0 0;
+        /* Bottom indicator via box-shadow — never causes layout shift */
+        box-shadow: inset 0 -1px 0 0 var(--mdy-outline-variant);
+        transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+    /* For textareas, align decorators to the top */
+    .mdy-input-wrapper:has(textarea) {
+        align-items: flex-start;
+    }
+
+    .mdy-input-wrapper:hover:not(:focus-within) {
+        background-color: var(--mdy-input-bg-hover);
+    }
+
+    .mdy-input-wrapper:focus-within {
+        background-color: var(--mdy-input-bg-hover);
+        box-shadow: inset 0 -2px 0 0 var(--mdy-input-focus-color);
+    }
+
+    .mdy-input-wrapper--error {
+        box-shadow: inset 0 -2px 0 0 var(--mdy-error-color) !important;
+    }
+
+    .mdy-input-wrapper--disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .mdy-input-wrapper input,
+    .mdy-input-wrapper textarea {
+        flex: 1;
+        border: none !important;
+        box-shadow: none !important;
+        padding: var(--mdy-input-padding);
+        background: transparent;
+        outline: none;
+        color: var(--mdy-input-color);
+        font-size: var(--mdy-input-font-size);
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* Tighten padding when decorators are present */
+    .mdy-input-prefix+input,
+    .mdy-input-prefix+textarea {
+        padding-left: 0.25rem;
+    }
+
+    input:has(+ .mdy-input-suffix),
+    textarea:has(+ .mdy-input-suffix) {
+        padding-right: 0.25rem;
+    }
+
+    .mdy-input-prefix,
+    .mdy-input-suffix {
+        color: var(--mdy-input-icon-color);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s;
+    }
+
+    .mdy-input-wrapper:focus-within .mdy-input-prefix,
+    .mdy-input-wrapper:focus-within .mdy-input-suffix {
+        color: var(--mdy-input-focus-color);
+    }
+
+    .mdy-input-prefix {
+        padding-left: 0.75rem;
+        padding-right: 0.25rem;
+    }
+
+    .mdy-input-suffix {
+        padding-right: 0.75rem;
+        padding-left: 0.25rem;
+    }
+
+    /* If the decorator is in a textarea wrapper, add top padding */
+    .mdy-input-wrapper:has(textarea) .mdy-input-prefix,
+    .mdy-input-wrapper:has(textarea) .mdy-input-suffix {
+        padding-top: 1rem;
+    }
+
+    .mdy-supporting-text {
+        font-size: var(--mdy-helper-font-size);
+        color: var(--mdy-on-surface-variant);
+        line-height: var(--mdy-helper-line-height);
+        padding-top: var(--mdy-helper-padding-top);
+        padding-left: 1rem;
+        /* M3: aligned with input text start */
+        padding-right: 1rem;
+    }
+
+
+
+    /* ─── Labels ──────────────────────────────────────────────────────────────── */
+
+    .mdy-renderer .mdy-label {
+        display: block;
+        font-weight: var(--mdy-label-font-weight);
+        font-size: var(--mdy-label-font-size);
+        color: var(--mdy-on-surface-variant);
+        margin-bottom: 0;
+    }
+
+    /* ─── Floating Labels ─────────────────────────────────────────────────────── */
+
+    /* ─── Floating Labels ─────────────────────────────────────────────────────── */
+
+    /* 1. Base Setup: Parametrized Composition Math */
+    .mdy-renderer.mdy-floating-label {
+        /* Base Atomic Units */
+        --mdy-fl-density-val: var(--mdy-floating-density, 0);
+        /* M3 default: 0 → 56px height, 8px label-top */
+
+        /* Variable exposed for TS ResizeObserver to perfectly align label offset */
+        --mdy-fl-input-padding-with-prefix: 0.75rem;
+
+        --mdy-fl-label-height: 0.75rem;
+        /* Standard 12px for M3 floating labels */
+
+        /* Prefix Composition Math (3.25rem = 52px total shift) */
+        --mdy-prefix-pad-left: 1rem;
+        /* 16px */
+        --mdy-prefix-icon-area: 2rem;
+        /* 32px (includes icon + inner margin) */
+        --mdy-prefix-spacer: 0.25rem;
+        /* 4px gap to input text */
+        --mdy-fl-prefix-width: calc(var(--mdy-prefix-pad-left) + var(--mdy-prefix-icon-area) + var(--mdy-prefix-spacer));
+
+        /* Dynamic Heights */
+        --mdy-fl-height: calc(3.5rem + (var(--mdy-fl-density-val) * 0.25rem));
+        /* 56 -> 40px */
+        --mdy-floating-input-height: var(--mdy-fl-height);
+
+        /* Vertical Position: Margin + Label + Mid Gap */
+        --mdy-fl-label-active-top: calc(0.5rem + (var(--mdy-fl-density-val) * 0.0625rem));
+        /* Vertical Position: Margin + Label + Mid Gap (Reduced gap to give more room for line-height) */
+        --mdy-fl-gap-mid: calc(0.125rem + (var(--mdy-fl-density-val) * 0.03125rem));
+        /* 4px -> 2px */
+
+        /* Final Padding Top (Mathematical Baseline) */
+        --mdy-fl-pad-top: calc(var(--mdy-fl-label-active-top) + var(--mdy-fl-label-height) + var(--mdy-fl-gap-mid));
+
+        /* Baseline Bottom padding: 1.5rem is the allocated space for text with line-height 1.5 */
+        --mdy-fl-pad-bottom: calc(var(--mdy-floating-input-height) - var(--mdy-fl-pad-top) - 1.45rem);
+
+        --mdy-floating-input-padding: var(--mdy-fl-pad-top) 1rem var(--mdy-fl-pad-bottom);
+
+        position: relative;
+        margin-top: 0;
+    }
+
+    /* 2. Adjust the wrapper and children to respect the mathematical baseline */
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper {
+        height: var(--mdy-floating-input-height);
+        min-height: var(--mdy-floating-input-height);
+        align-items: stretch;
+    }
+
+    /* Permit textareas to have a larger top area for the label and grow naturally */
+    .mdy-renderer.mdy-floating-label.mdy-renderer--textarea {
+        --mdy-fl-pad-top-textarea: 2.25rem;
+        /* Increased to 36px to give a clear 'Above' feeling */
+    }
+
+    .mdy-renderer.mdy-floating-label.mdy-renderer--textarea .mdy-input-wrapper {
+        height: auto;
+        min-height: 6rem;
+        align-items: stretch;
+    }
+
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper input,
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper select,
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper textarea,
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper .mdy-select__trigger {
+        padding: var(--mdy-floating-input-padding) !important;
+        height: var(--mdy-floating-input-height) !important;
+        box-sizing: border-box;
+        line-height: inherit;
+        /* Rely solely on padding-top to push text, not flex alignment */
+    }
+
+    /* Explicitly push textarea text down to make room for the label at the top */
+    .mdy-renderer.mdy-floating-label.mdy-renderer--textarea .mdy-input-wrapper textarea {
+        height: auto !important;
+        padding-top: var(--mdy-fl-pad-top-textarea) !important;
+    }
+
+    /* Fix for native Select: its baseline is often irregular, forced alignment here to avoid bottom clip */
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper select {
+        padding-top: calc(var(--mdy-fl-pad-top) - 1px) !important;
+        padding-bottom: 0 !important;
+        line-height: var(--mdy-input-line-height) !important;
+    }
+
+    /* Custom trigger requires flex to align internal spans (Aligned to flex-start to match input padding) */
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper .mdy-select__trigger {
+        display: flex;
+        align-items: flex-start;
+    }
+
+    /* Fix for native Select & Custom Trigger: hide text when the label is resting in the center to avoid overlap with placeholder */
+    .mdy-renderer.mdy-floating-label:not(:has(:focus-within)):not(:has(.mdy-label--filled)) select,
+    .mdy-renderer.mdy-floating-label:not(:has(:focus-within)):not(:has(.mdy-label--filled)) .mdy-select__trigger {
+        color: transparent !important;
+    }
+
+    .mdy-renderer.mdy-floating-label:not(:has(:focus-within)):not(:has(.mdy-label--filled)) .mdy-select__value {
+        opacity: 0 !important;
+    }
+
+    /* Component-based decorators alignment (Centered Vertically by default) */
+    .mdy-renderer.mdy-floating-label .mdy-input-prefix,
+    .mdy-renderer.mdy-floating-label .mdy-input-suffix {
+        padding-top: 0;
+        align-items: center;
+        /* Always centered in the container for standard 56px inputs */
+        display: flex;
+    }
+
+    /* For textareas, icons must align at the top with the first line of text, not center in the huge box! */
+    .mdy-renderer.mdy-floating-label.mdy-renderer--textarea .mdy-input-prefix,
+    .mdy-renderer.mdy-floating-label.mdy-renderer--textarea .mdy-input-suffix {
+        align-items: flex-start;
+        padding-top: var(--mdy-fl-pad-top);
+    }
+
+    .mdy-renderer.mdy-floating-label .mdy-input-prefix {
+        box-sizing: border-box;
+        padding-left: 1rem;
+        padding-right: 0;
+        /* Rimosso per coerenza con il padding dell'input */
+    }
+
+    /* 3. Horizontal Shift Logic */
+    /* Quando presente un prefisso, l'input assorbe la spaziatura anziché raddoppiarla col prefisso */
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper:has(.mdy-input-prefix) input,
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper:has(.mdy-input-prefix) select,
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper:has(.mdy-input-prefix) textarea {
+        padding-left: var(--mdy-fl-input-padding-with-prefix) !important;
+    }
+
+    /* 
+ * NOTE: The --mdy-label-left-offset in presence of a prefix is NO LONGER computed heuristically here in CSS.
+ * It is now Perfectly calculated by MdyBaseControl via ResizeObserver measuring the EXACT rendered width
+ * of the prefix, eliminating all layout bugs related to icon sizes.
+ */
+
+    .mdy-renderer.mdy-floating-label .mdy-label {
+        position: absolute;
+        left: var(--mdy-label-left-offset, 1rem);
+        top: 0;
+        z-index: 10;
+        pointer-events: auto;
+        transform-origin: left top;
+        margin-bottom: 0;
+
+        font-size: var(--mdy-input-font-size);
+        color: var(--mdy-input-placeholder-color);
+        font-weight: 400;
+
+        /* Resting state perfectly centered between boundaries */
+        transform: translateY(calc((var(--mdy-floating-input-height) - 1.25rem) / 2)) scale(1);
+        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+            font-size 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+            color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* For textareas, the resting position should sit in the allocated top padding. */
+    .mdy-renderer.mdy-floating-label.mdy-renderer--textarea .mdy-label {
+        transform: translateY(0.625rem) scale(1);
+        /* Positioned at 10px from top as a header */
+    }
+
+    /* 4. Active Label State (Focused, Filled, or types that always float) */
+    /* M3 floating label moves to 8px from top (positive 8px) and scales to 12px (0.75x) */
+    .mdy-renderer.mdy-floating-label:has(.mdy-input-wrapper:focus-within) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-label--filled) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-label--has-error) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(input[type="date"]) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(input[type="time"]) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-select__option--selected) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-chip) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(input:not(:placeholder-shown)) .mdy-label,
+    .mdy-renderer.mdy-floating-label.mdy-renderer--open .mdy-label {
+        transform: translateY(var(--mdy-fl-label-active-top)) scale(0.75);
+        /* Scaled top distance based on density */
+        color: var(--mdy-on-surface-variant);
+        font-weight: 500;
+    }
+
+    /* 
+ * Highlight label color. 
+ * Error state (invalid) MUST take precedence over Focus state.
+ */
+    .mdy-renderer.mdy-floating-label:has(.mdy-input-wrapper:focus-within) .mdy-label {
+        color: var(--mdy-input-focus-color);
+    }
+
+    .mdy-renderer.mdy-floating-label.mdy-renderer--touched:has([aria-invalid="true"]) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-label--has-error) .mdy-label,
+    .mdy-label.mdy-label--has-error {
+        color: var(--mdy-error-color) !important;
+    }
+
+    /* 5. Handle Prefixes: offset the label rightwards if a prefix exists */
+    .mdy-renderer.mdy-floating-label:has(.mdy-input-prefix) {
+        --mdy-label-left-offset: 2.5rem;
+        /* 40px estimated */
+    }
+
+    /* 6. Placeholder Visibility: Hyper-robust direct selector.
+   If placeholder is shown AND field is not focused, force hide it.
+   This works regardless of parent classes or :has support. */
+    .mdy-renderer.mdy-floating-label input:placeholder-shown:not(:focus)::placeholder,
+    .mdy-renderer.mdy-floating-label textarea:placeholder-shown:not(:focus)::placeholder {
+        opacity: 0 !important;
+        color: transparent !important;
+        visibility: hidden !important;
+    }
+
+    /* Ensure placeholder is visible when focused OR filled (for transitions) */
+    .mdy-renderer.mdy-floating-label input:focus::placeholder,
+    .mdy-renderer.mdy-floating-label textarea:focus::placeholder,
+    .mdy-renderer.mdy-floating-label input:not(:placeholder-shown)::placeholder,
+    .mdy-renderer.mdy-floating-label textarea:not(:placeholder-shown)::placeholder {
+        opacity: 1 !important;
+        color: var(--mdy-input-placeholder-color) !important;
+        visibility: visible !important;
+    }
+
+    /* For Select (which doesn't have a placeholder-shown state same as inputs), we keep the class-based logic */
+    .mdy-renderer.mdy-floating-label:not(:has(:focus-within)):not(:has(.mdy-label--filled)) .mdy-select__placeholder {
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+
+    /* ─── Standalone Inputs (M3 Filled — no wrapper) ─────────────────────────── */
+
+    .mdy-renderer input[type="text"],
+    .mdy-renderer input[type="number"],
+    .mdy-renderer input[type="date"],
+    .mdy-renderer input[type="email"],
+    .mdy-renderer textarea,
+    .mdy-renderer select {
+        padding: var(--mdy-input-padding);
+        min-height: var(--mdy-input-height);
+        background-color: var(--mdy-input-bg);
+        border: none;
+        /* M3 Filled: top corners rounded, bottom flat */
+        border-radius: var(--mdy-input-border-radius) var(--mdy-input-border-radius) 0 0;
+        /* inset bottom indicator */
+        box-shadow: inset 0 -1px 0 0 var(--mdy-outline-variant);
+        font-size: var(--mdy-input-font-size);
+        color: var(--mdy-input-color);
+        transition: background-color 0.2s, box-shadow 0.2s;
+        outline: none;
+        width: 100%;
+    }
+
+    .mdy-renderer input:hover:not(:focus):not(:disabled),
+    .mdy-renderer textarea:hover:not(:focus):not(:disabled),
+    .mdy-renderer select:hover:not(:focus):not(:disabled) {
+        background-color: var(--mdy-input-bg-hover);
+    }
+
+    .mdy-renderer input::placeholder,
+    .mdy-renderer textarea::placeholder {
+        color: var(--mdy-input-placeholder-color);
+    }
+
+    .mdy-renderer input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: var(--mdy-calendar-icon-filter, none);
+    }
+
+    .mdy-renderer input:focus,
+    .mdy-renderer textarea:focus,
+    .mdy-renderer select:focus {
+        background-color: var(--mdy-input-bg-hover);
+        box-shadow: var(--mdy-input-focus-shadow);
+    }
+
+    .mdy-renderer--touched input[aria-invalid="true"],
+    .mdy-renderer--touched textarea[aria-invalid="true"],
+    .mdy-renderer--touched select[aria-invalid="true"] {
+        box-shadow: inset 0 -2px 0 0 var(--mdy-error-color);
+    }
+
+    .mdy-renderer--touched input[aria-invalid="true"]:focus,
+    .mdy-renderer--touched textarea[aria-invalid="true"]:focus {
+        box-shadow: var(--mdy-error-focus-shadow);
+    }
+
+    /* ─── Inputs INSIDE mdy-input-wrapper ─────────────────────────────────────────────────── */
+    /* The wrapper itself provides the M3 bg and border indicator.
+   Elements inside must be transparent and have no box-shadow. */
+
+    .mdy-input-wrapper input,
+    .mdy-input-wrapper textarea,
+    .mdy-input-wrapper select {
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        flex: 1;
+        min-width: 0;
+        padding: var(--mdy-input-padding);
+        width: 100%;
+        outline: none;
+        color: var(--mdy-input-color);
+        font-size: var(--mdy-input-font-size);
+        line-height: var(--mdy-input-line-height);
+    }
+
+    .mdy-renderer select,
+    .mdy-input-wrapper select,
+    .mdy-select__trigger {
+        background-color: transparent;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        cursor: pointer;
+        /* Use padding area for the arrow icon */
+        padding-right: 2.5rem !important;
+    }
+
+    /* 
+ * Standardized Select Arrow Positioning 
+ * Centers itself relative to the entire box height to match standard input design.
+ */
+    .mdy-input-wrapper .mdy-select__arrow {
+        position: absolute;
+        right: 0.75rem;
+        top: 0;
+        bottom: 0;
+        margin: auto 0;
+        pointer-events: none;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mdy-renderer--touched .mdy-input-wrapper:has(input[aria-invalid="true"]),
+    .mdy-renderer--touched .mdy-input-wrapper:has(select[aria-invalid="true"]),
+    .mdy-renderer--touched .mdy-input-wrapper:has([aria-invalid="true"]),
+    .mdy-renderer--touched .mdy-select:has([aria-invalid="true"]),
+    .mdy-renderer--touched .mdy-multiselect__options[aria-invalid="true"] {
+        box-shadow: inset 0 -2px 0 0 var(--mdy-error-color);
+    }
+
+    /* ─── Custom Checkbox (standalone) ─────────────────────────────────────────── */
+    /* Visually hidden native input + ::before (box) + ::after (checkmark).        */
+
+    .mdy-checkbox {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    .mdy-checkbox>span {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--mdy-checkbox-gap);
+        position: relative;
+    }
+
+    .mdy-checkbox input[type="checkbox"] {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* Box */
+    .mdy-checkbox input[type="checkbox"]+span::before {
+        content: '';
+        display: inline-flex;
+        flex-shrink: 0;
+        width: var(--mdy-checkbox-size);
+        height: var(--mdy-checkbox-size);
+        border: var(--mdy-checkbox-border);
+        border-radius: var(--mdy-checkbox-border-radius);
+        background: transparent;
+        transition: background var(--mdy-checkbox-transition),
+            border-color var(--mdy-checkbox-transition);
+        vertical-align: middle;
+    }
+
+    /* Checkmark */
+    .mdy-checkbox input[type="checkbox"]+span::after {
+        content: '';
+        position: absolute;
+        left: calc(var(--mdy-checkbox-size) * var(--mdy-checkbox-tick-left));
+        top: 50%;
+        width: calc(var(--mdy-checkbox-size) * var(--mdy-checkbox-tick-w));
+        height: calc(var(--mdy-checkbox-size) * var(--mdy-checkbox-tick-h));
+        border: solid var(--mdy-checkbox-checkmark-color);
+        border-width: 0 2px 2px 0;
+        transform: translateY(var(--mdy-checkbox-tick-offset)) rotate(45deg) scale(0);
+        transition: transform var(--mdy-checkbox-transition);
+    }
+
+    /* Checked state */
+    .mdy-checkbox input[type="checkbox"]:checked+span::before {
+        background: var(--mdy-checkbox-accent);
+        border-color: var(--mdy-checkbox-accent);
+    }
+
+    .mdy-checkbox input[type="checkbox"]:checked+span::after {
+        transform: translateY(var(--mdy-checkbox-tick-offset)) rotate(45deg) scale(1);
+    }
+
+    /* State layer (hover ring) — M3: 40px state layer */
+    .mdy-checkbox:has(input:not(:disabled)):hover input[type="checkbox"]+span::before {
+        box-shadow: 0 0 0 11px color-mix(in srgb, var(--mdy-checkbox-accent), transparent 92%);
+    }
+
+    .mdy-checkbox:has(input:checked:not(:disabled)):hover input[type="checkbox"]+span::before {
+        box-shadow: 0 0 0 11px color-mix(in srgb, var(--mdy-checkbox-accent), transparent 88%);
+    }
+
+    /* Focus ring */
+    .mdy-checkbox input[type="checkbox"]:focus-visible+span::before {
+        outline: 2px solid var(--mdy-checkbox-accent);
+        outline-offset: 2px;
+    }
+
+    /* Disabled */
+    .mdy-checkbox input[type="checkbox"]:disabled+span::before {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* ─── Toggle (switch) ─────────────────────────────────────────────────────── */
+
+    .mdy-toggle {
+        display: flex;
+        align-items: center;
+        gap: var(--mdy-toggle-gap);
+        cursor: pointer;
+    }
+
+    .mdy-toggle input[type="checkbox"] {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .mdy-toggle__track {
+        position: relative;
+        display: inline-block;
+        width: var(--mdy-toggle-width);
+        height: var(--mdy-toggle-height);
+        background: var(--mdy-toggle-bg);
+        border: var(--mdy-toggle-border);
+        border-radius: calc(var(--mdy-toggle-height) / 2);
+        transition: background var(--mdy-toggle-transition), border-color var(--mdy-toggle-transition);
+        flex-shrink: 0;
+    }
+
+    .mdy-toggle__thumb {
+        position: absolute;
+        top: 50%;
+        left: var(--mdy-toggle-thumb-offset);
+        width: var(--mdy-toggle-thumb-size);
+        height: var(--mdy-toggle-thumb-size);
+        transform: translateY(-50%);
+        background: var(--mdy-toggle-thumb-color);
+        border-radius: 50%;
+        transition: transform var(--mdy-toggle-transition), width var(--mdy-toggle-transition), height var(--mdy-toggle-transition), left var(--mdy-toggle-transition), background var(--mdy-toggle-transition);
+        box-shadow: var(--mdy-shadow-depth-1);
+    }
+
+    .mdy-toggle input:checked+.mdy-toggle__track {
+        background: var(--mdy-toggle-bg-checked);
+        border: var(--mdy-toggle-border-checked);
+    }
+
+    .mdy-toggle input:checked+.mdy-toggle__track .mdy-toggle__thumb {
+        width: var(--mdy-toggle-thumb-size-checked);
+        height: var(--mdy-toggle-thumb-size-checked);
+        background: var(--mdy-toggle-thumb-color-checked);
+        left: calc(var(--mdy-toggle-width) - var(--mdy-toggle-thumb-size-checked) - var(--mdy-toggle-thumb-offset));
+    }
+
+    .mdy-toggle input:focus-visible+.mdy-toggle__track {
+        outline: 2px solid var(--mdy-input-focus-color);
+        outline-offset: 2px;
+    }
+
+    .mdy-toggle input:disabled+.mdy-toggle__track {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* ─── Custom Radio Group ──────────────────────────────────────────────────── */
+
+    .mdy-radio-group-label {
+        display: none;
+    }
+
+    .mdy-radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .mdy-radio-group--horizontal {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .mdy-radio-item {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        gap: 0.5rem;
+    }
+
+    .mdy-radio-item input[type="radio"] {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* Outer Circle */
+    .mdy-radio-circle {
+        display: inline-flex;
+        width: var(--mdy-radio-size);
+        /* M3: 20px */
+        height: var(--mdy-radio-size);
+        border: 2px solid var(--mdy-radio-unselected-color);
+        border-radius: 50%;
+        background: transparent;
+        transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    /* Inner Dot */
+    .mdy-radio-circle::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0.625rem;
+        height: 0.625rem;
+        background: var(--mdy-on-primary);
+        border-radius: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        transition: transform 0.15s;
+    }
+
+    .mdy-radio-item:hover .mdy-radio-circle {
+        box-shadow: 0 0 0 10px color-mix(in srgb, var(--mdy-radio-unselected-color), transparent 92%);
+    }
+
+    .mdy-radio-item input[type="radio"]:checked+.mdy-radio-circle {
+        border-color: var(--mdy-radio-selected-color);
+        background: var(--mdy-radio-selected-color);
+    }
+
+    .mdy-radio-item:has(input:checked):hover .mdy-radio-circle {
+        box-shadow: 0 0 0 10px color-mix(in srgb, var(--mdy-radio-selected-color), transparent 92%);
+    }
+
+    .mdy-radio-item input[type="radio"]:checked+.mdy-radio-circle::after {
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    .mdy-radio-item input[type="radio"]:focus-visible+.mdy-radio-circle {
+        outline: 2px solid var(--mdy-radio-selected-color);
+        outline-offset: 2px;
+    }
+
+    .mdy-radio-item input[type="radio"]:disabled+.mdy-radio-circle {
+        opacity: 0.4;
+    }
+
+    .mdy-control__error+.mdy-radio-group {
+        margin-top: 0.25rem;
+    }
+
+    /* ─── Custom Slider ───────────────────────────────────────────────────────── */
+
+    .mdy-slider-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .mdy-slider {
+        flex: 1;
+        -webkit-appearance: none;
+        appearance: none;
+        height: var(--mdy-slider-track-height);
+        /* M3: 4px */
+        /* Split track: active portion left of thumb, inactive right.
+       Set --mdy-slider-fill-pct via JS on value change for accurate split. */
+        background: var(--mdy-slider-track-color);
+        outline: none;
+        cursor: pointer;
+        border-radius: var(--mdy-corner-full);
+    }
+
+    .mdy-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: var(--mdy-slider-thumb-size);
+        height: var(--mdy-slider-thumb-size);
+        background: var(--mdy-slider-thumb-color);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.1s ease;
+    }
+
+    .mdy-slider::-moz-range-thumb {
+        width: var(--mdy-slider-thumb-size);
+        height: var(--mdy-slider-thumb-size);
+        background: var(--mdy-slider-thumb-color);
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+    }
+
+    .mdy-label__required {
+        color: inherit;
+        /* Follows label color */
+        margin-left: 0.125rem;
+        transition: color 0.2s ease;
+    }
+
+    .mdy-label--has-error .mdy-label__required {
+        color: var(--mdy-error-color);
+    }
+
+    .mdy-label__required--filled {
+        opacity: 0.7;
+        /* Subtler when filled */
+    }
+
+    .mdy-slider-value {
+        min-width: 2.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--mdy-on-surface-variant);
+        text-align: right;
+    }
+
+    /* ─── Custom File Upload ──────────────────────────────────────────────────── */
+
+    .mdy-file-container {
+        border: var(--mdy-file-container-border);
+        border-radius: var(--mdy-file-container-radius);
+        padding: 1.5rem;
+        transition: border-color 0.2s, background 0.2s;
+        background: var(--mdy-file-container-bg);
+    }
+
+    .mdy-file-container--dragover {
+        border-color: var(--mdy-input-focus-color);
+        background: color-mix(in srgb, var(--mdy-input-focus-color), transparent 95%);
+    }
+
+    .mdy-file-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .mdy-file-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .mdy-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1.5rem;
+        background: var(--mdy-input-focus-color);
+        color: var(--mdy-on-primary);
+        border: none;
+        border-radius: var(--mdy-button-radius);
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        height: 2.5rem;
+        transition: opacity 0.2s;
+    }
+
+    .mdy-button:hover:not(:disabled) {
+        opacity: 0.9;
+    }
+
+    .mdy-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .mdy-file-icon {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+    }
+
+    .mdy-file-info {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .mdy-file-placeholder {
+        color: var(--mdy-on-surface-variant);
+        font-size: 0.875rem;
+    }
+
+    .mdy-file-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        width: 100%;
+    }
+
+    .mdy-file-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        color: var(--mdy-on-surface);
+        padding: 0.25rem 0;
+    }
+
+    .mdy-file-clear {
+        background: transparent;
+        border: none;
+        color: var(--mdy-error-color);
+        font-size: 1.25rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0.25rem;
+    }
+
+    /* ─── Custom Segmented Button ─────────────────────────────────────────────── */
+
+    .mdy-segmented-label {
+        display: none;
+    }
+
+    /* M3 Segmented Button: outlined container, no inner padding, buttons fill height */
+    .mdy-segmented {
+        display: inline-flex;
+        align-items: stretch;
+        background: transparent;
+        padding: 0;
+        height: var(--mdy-segmented-height);
+        /* M3: 40px */
+        border-radius: var(--mdy-segmented-border-radius);
+        /* M3: full = 9999px */
+        border: 1px solid var(--mdy-segmented-border-color);
+        overflow: hidden;
+        gap: 0;
+
+        /* Global Redistribution Variables */
+        --mdy-tick-w: 1.125rem;
+        /* 1rem icon + approx 0.125rem visible distance */
+        --mdy-tick-share: calc(var(--mdy-tick-w) / (2 * var(--mdy-segments-count, 1)));
+    }
+
+    .mdy-segmented__button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        padding-left: calc(1.25rem + var(--mdy-tick-share));
+        padding-right: calc(1.25rem + var(--mdy-tick-share));
+        flex: 1 0 auto;
+        background: transparent;
+        border: none;
+        border-left: 1px solid var(--mdy-segmented-border-color);
+        border-radius: 0;
+        cursor: pointer;
+        font-weight: var(--mdy-segmented-font-weight);
+        /* M3: 500 */
+        font-size: var(--mdy-segmented-font-size);
+        /* M3: 14px */
+        color: var(--mdy-segmented-unselected-color);
+        /* No padding in transition — internal shift on selection is instant, not animated */
+        transition: background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+            color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        white-space: nowrap;
+        position: relative;
+        user-select: none;
+        min-width: 3rem;
+    }
+
+    /* When a segment is selected, redistribute the tick-share from all buttons */
+    .mdy-segmented:has(.mdy-segmented__button--selected) .mdy-segmented__button {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+
+    .mdy-segmented__button:first-child {
+        border-left: none;
+    }
+
+    .mdy-segmented__button--selected {
+        background: var(--mdy-segmented-selected-bg);
+        /* M3: secondary-container */
+        color: var(--mdy-segmented-selected-color);
+        /* M3: on-secondary-container */
+        font-weight: 600;
+        padding-left: calc(1.25rem + var(--mdy-tick-w)) !important;
+        padding-right: 1.25rem !important;
+    }
+
+    .mdy-segmented__button:hover:not(.mdy-segmented__button--selected):not(:disabled) {
+        background: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
+        color: var(--mdy-on-surface);
+    }
+
+    .mdy-segmented__button--selected:hover:not(:disabled) {
+        background: var(--mdy-segmented-btn-bg-selected-hover);
+    }
+
+    .mdy-segmented__button:disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+    }
+
+    /* Reserve bold-width space so selecting a segment doesn't shift layout */
+    .mdy-segmented__text {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .mdy-segmented__text::after {
+        content: attr(data-text);
+        font-weight: 600;
+        visibility: hidden;
+        height: 0;
+        overflow: hidden;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .mdy-segmented__check {
+        position: absolute;
+        left: 1.125rem;
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+        animation: mdy-segmented-check-pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes mdy-segmented-check-pop {
+        0% {
+            transform: scale(0.5);
+            opacity: 0;
+        }
+
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* ─── Multiselect (Chips + Overlay) ────────────────────────────────────────── */
+
+    .mdy-multiselect__header {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        justify-content: end;
+    }
+
+    .mdy-multiselect__label {
+        font-weight: var(--mdy-label-font-weight);
+        font-size: var(--mdy-label-font-size);
+    }
+
+    .mdy-multiselect__search-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 0;
+        color: inherit;
+        border-radius: 50%;
+        transition: background 0.15s;
+    }
+
+    .mdy-multiselect__search-btn:hover:not(:disabled) {
+        background: var(--mdy-surface-container);
+    }
+
+    .mdy-multiselect__search-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .mdy-multiselect__search-btn svg {
+        width: 1rem;
+        height: 1rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+    }
+
+    .mdy-multiselect__options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--mdy-chip-gap);
+        max-height: var(--mdy-multiselect-max-height);
+        overflow-y: auto;
+        padding: var(--mdy-multiselect-padding);
+    }
+
+    .mdy-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        position: relative;
+        height: var(--mdy-chip-height);
+        max-width: var(--mdy-chip-max-width);
+        padding: var(--mdy-chip-padding);
+        font-size: var(--mdy-chip-font-size);
+        font-family: inherit;
+        line-height: var(--mdy-input-line-height);
+        border: var(--mdy-chip-border);
+        border-radius: var(--mdy-chip-border-radius);
+        background: var(--mdy-chip-bg);
+        color: var(--mdy-chip-color);
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+        transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .mdy-chip--centered {
+        --mdy-chip-w: 0.65rem;
+    }
+
+    .mdy-chip--centered::before,
+    .mdy-chip--centered::after {
+        content: '';
+        width: var(--mdy-chip-w);
+        flex-shrink: 0;
+        transition: width var(--mdy-chip-transition);
+    }
+
+    .mdy-chip--centered.mdy-chip--selected::before {
+        width: calc(var(--mdy-chip-w) * 2);
+    }
+
+    .mdy-chip--centered.mdy-chip--selected::after {
+        width: 0;
+    }
+
+    button.mdy-chip:hover:not(.mdy-chip--selected):not(:disabled) {
+        background: var(--mdy-chip-hover-bg);
+        color: var(--mdy-chip-hover-color);
+        border-color: var(--mdy-chip-hover-border);
+    }
+
+    .mdy-chip__check {
+        position: absolute;
+        left: 0.75rem;
+        width: 1em;
+        height: 1em;
+        flex-shrink: 0;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(0.5);
+        transition: opacity var(--mdy-chip-transition), transform var(--mdy-chip-transition), visibility var(--mdy-chip-transition);
+    }
+
+    .mdy-chip--selected .mdy-chip__check {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1);
+    }
+
+    .mdy-chip__label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        transition: transform var(--mdy-chip-transition);
+    }
+
+    .mdy-chip--centered.mdy-chip--selected .mdy-chip__label {
+        /* Stabilizza la posizione dell'etichetta senza trasformazioni che potrebbero intaccare altre modalità */
+        transform: none;
+    }
+
+    .mdy-chip--selected {
+        background: var(--mdy-chip-selected-bg);
+        color: var(--mdy-chip-selected-color);
+        border: var(--mdy-chip-selected-border);
+    }
+
+    .mdy-chip:focus-visible {
+        outline: 2px solid var(--mdy-chip-selected-bg);
+        outline-offset: 2px;
+    }
+
+    .mdy-chip:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* Counter chip (multi mode) */
+    .mdy-chip--counter {
+        gap: 0;
+        padding: 0;
+        overflow: hidden;
+        cursor: default;
+    }
+
+    .mdy-chip--counter .mdy-chip__label {
+        padding: 0 0.25rem;
+    }
+
+    .mdy-chip__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--mdy-chip-height);
+        height: 100%;
+        border: none;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font-family: inherit;
+        padding: 0;
+        transition: background 0.15s;
+    }
+
+    .mdy-chip__btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .mdy-chip__btn:disabled {
+        cursor: not-allowed;
+    }
+
+    .mdy-chip__btn svg {
+        width: 0.75rem;
+        height: 0.75rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+    }
+
+    .mdy-chip__count {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        opacity: 0.85;
+        min-width: 3ch;
+        text-align: center;
+    }
+
+    /* ─── Multiselect Search Overlay ──────────────────────────────────────────── */
+
+    .mdy-renderer--multiselect {
+        position: relative;
+    }
+
+    .mdy-multiselect__label {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .mdy-multiselect-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        background: transparent;
+    }
+
+    .mdy-multiselect-overlay__panel {
+        position: absolute;
+        z-index: 1000;
+        top: 100%;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        padding: 0;
+        background: var(--mdy-multiselect-overlay-bg);
+        border: var(--mdy-select-dropdown-border);
+        border-radius: var(--mdy-select-dropdown-border-radius);
+        box-shadow: var(--mdy-select-dropdown-shadow);
+        /* max-height frozen at open time via --mdy-overlay-max-height (set on host) */
+        max-height: var(--mdy-overlay-max-height, 50vh);
+        overflow: hidden;
+    }
+
+    .mdy-renderer--open .mdy-multiselect-overlay__panel:not(.mdy-multiselect-overlay__panel--overlay) {
+        position: fixed;
+        top: var(--mdy-overlay-top, auto);
+        bottom: var(--mdy-overlay-bottom, auto);
+        left: var(--mdy-overlay-left, auto);
+        right: var(--mdy-overlay-right, auto);
+        width: var(--mdy-overlay-width, auto);
+        margin: 0;
+        /* Gap is baked into coords via POPUP_GAP in computeCoordsForAnchor */
+    }
+
+    .mdy-multiselect-overlay__panel--above {
+        /* Reverse column so the search input sits at the bottom (near trigger) */
+        flex-direction: column-reverse;
+        /* max-height inherited from base rule via --mdy-overlay-max-height */
+    }
+
+    .mdy-multiselect-overlay__panel--overlay {
+        position: fixed;
+        z-index: 1000;
+        top: 50%;
+        left: 50%;
+        right: auto;
+        transform: translate(-50%, -50%);
+        margin: 0;
+        width: min(24rem, 90vw);
+        max-height: 70vh;
+    }
+
+    .mdy-multiselect-overlay__input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: none;
+        border-bottom: 1px solid var(--mdy-select-border-subtle);
+        border-radius: 0;
+        font-size: var(--mdy-input-font-size);
+        font-family: inherit;
+        color: var(--mdy-input-color);
+        outline: none;
+        background: transparent;
+        box-sizing: border-box;
+        flex-shrink: 0;
+    }
+
+    .mdy-multiselect-overlay__input::placeholder {
+        color: var(--mdy-input-placeholder-color);
+    }
+
+    .mdy-multiselect-overlay__panel--above .mdy-multiselect-overlay__input {
+        border-bottom: none;
+        border-top: 1px solid var(--mdy-select-border-subtle);
+    }
+
+    .mdy-multiselect-overlay__input:focus {
+        border-color: var(--mdy-input-focus-color);
+    }
+
+    /* Redundant overlay item styles removed; now using unified .mdy-chip system. */
+    .mdy-multiselect-overlay__grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--mdy-chip-gap);
+        padding: var(--mdy-multiselect-padding);
+        overflow-y: auto;
+        max-height: 100%;
+        scrollbar-width: thin;
+    }
+
+    .mdy-multiselect-overlay__empty {
+        width: 100%;
+        padding: var(--mdy-select-option-padding);
+        color: var(--mdy-select-no-results-color);
+        font-style: italic;
+        box-sizing: border-box;
+    }
+
+    /* ─── Block Errors (below input) ──────────────────────────────────────────── */
+
+    .mdy-control__errors {
+        list-style: none;
+        padding: 0 1rem;
+        margin: 0;
+        padding-top: var(--mdy-helper-padding-top);
+    }
+
+    .mdy-control__error {
+        color: var(--mdy-error-color);
+        font-size: var(--mdy-error-font-size);
+        line-height: var(--mdy-error-line-height);
+    }
+
+    /* ─── Custom Select Dropdown ──────────────────────────────────────────────── */
+
+    .mdy-select {
+        position: relative;
+    }
+
+    .mdy-select__trigger {
+        display: flex;
+        align-items: center;
+        /* Centering for standard inputs (non-floating) */
+        justify-content: space-between;
+        width: 100%;
+        padding: var(--mdy-input-padding);
+        border: none;
+        background: transparent;
+        font-size: var(--mdy-input-font-size);
+        line-height: var(--mdy-input-line-height);
+        color: var(--mdy-input-color);
+        cursor: pointer;
+        text-align: left;
+        outline: none;
+    }
+
+    /* Focus ring delegate to wrapper via :focus-within — no extra styles needed here */
+    .mdy-select__trigger:focus {
+        outline: none;
+    }
+
+    /* Error state: applied on the wrapper, not the trigger */
+    .mdy-renderer--touched .mdy-input-wrapper:has(.mdy-select__trigger[aria-invalid="true"]) {
+        box-shadow: inset 0 -2px 0 0 var(--mdy-error-color);
+    }
+
+    .mdy-select__trigger:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+
+    .mdy-select__value {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mdy-select__placeholder {
+        flex: 1;
+        color: var(--mdy-select-placeholder-color);
+    }
+
+    .mdy-select__arrow {
+        margin-left: 0.5rem;
+        width: 1rem;
+        height: 1rem;
+        color: var(--mdy-select-arrow-color);
+        transition: transform 0.2s;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mdy-select__arrow svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .mdy-select__dropdown {
+        position: absolute;
+        z-index: 1000;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin: 0.25rem 0 0;
+        background: var(--mdy-select-dropdown-bg);
+        border: var(--mdy-select-dropdown-border);
+        border-radius: var(--mdy-select-dropdown-border-radius);
+        box-shadow: var(--mdy-select-dropdown-shadow);
+        overflow: hidden;
+    }
+
+    .mdy-renderer--open .mdy-select__dropdown:not(.mdy-select__dropdown--overlay) {
+        position: fixed;
+        top: var(--mdy-overlay-top, auto);
+        bottom: var(--mdy-overlay-bottom, auto);
+        left: var(--mdy-overlay-left, auto);
+        right: var(--mdy-overlay-right, auto);
+        width: var(--mdy-overlay-width, auto);
+        margin: 0;
+        /* Gap is baked into coords via POPUP_GAP in computeCoordsForAnchor */
+    }
+
+    /* --above and --right positioning handled via CSS variables on the host.
+   No absolute-position fallbacks needed. */
+
+    .mdy-select__overlay-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        background: var(--mdy-overlay-backdrop-bg);
+        transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mdy-select__dropdown--overlay {
+        position: fixed;
+        z-index: 1000;
+        top: 50%;
+        left: 50%;
+        right: auto;
+        transform: translate(-50%, -50%);
+        margin: 0;
+        width: min(24rem, 90vw);
+        max-height: min(70vh, 24rem);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mdy-select__search {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: none;
+        border-bottom: 1px solid var(--mdy-select-border-subtle);
+        font-size: var(--mdy-input-font-size);
+        line-height: var(--mdy-input-line-height);
+        font-family: inherit;
+        color: var(--mdy-input-color);
+        outline: none;
+        background: transparent;
+        box-sizing: border-box;
+    }
+
+    .mdy-select__search::placeholder {
+        color: var(--mdy-input-placeholder-color);
+    }
+
+    .mdy-select__list {
+        list-style: none;
+        padding: 0.25rem 0;
+        margin: 0;
+        max-height: var(--mdy-select-dropdown-max-height);
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+    .mdy-select__no-results {
+        padding: var(--mdy-select-option-padding);
+        color: var(--mdy-select-no-results-color);
+        font-style: italic;
+    }
+
+    .mdy-select__option {
+        display: flex;
+        align-items: center;
+        padding: var(--mdy-select-option-padding);
+        font-size: var(--mdy-input-font-size);
+        line-height: var(--mdy-input-line-height);
+        cursor: pointer;
+        transition: background 0.1s;
+    }
+
+    .mdy-select__option--active {
+        background: var(--mdy-select-option-hover-bg);
+        color: var(--mdy-select-option-hover-color);
+    }
+
+    .mdy-select__option--selected {
+        background: var(--mdy-select-option-selected-bg);
+        color: var(--mdy-select-option-selected-color);
+        font-weight: var(--mdy-select-option-selected-weight);
+    }
+
+    /* ─── Inline Errors (icon + tooltip next to label) ────────────────────────── */
+
+    .mdy-control__inline-errors {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        margin-left: 0.25rem;
+        cursor: pointer;
+        vertical-align: middle;
+    }
+
+    .mdy-control__inline-errors-icon {
+        width: 1em;
+        height: 1em;
+        fill: var(--mdy-error-color);
+        flex-shrink: 0;
+    }
+
+    .mdy-control__inline-errors-tooltip {
+        opacity: 0;
+        visibility: hidden;
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 0.5rem);
+        transform: translateX(-50%) scale(0.95);
+        padding: 0.375rem 0.625rem;
+        border-radius: var(--mdy-tooltip-border-radius);
+        background: var(--mdy-error-color);
+        color: var(--mdy-on-error);
+        font-size: var(--mdy-error-font-size);
+        font-weight: 500;
+        line-height: 1.2;
+        white-space: nowrap;
+        z-index: 1000;
+        pointer-events: none;
+        transition: opacity 0.1s ease-out, transform 0.1s ease-out, visibility 0.1s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .mdy-control__inline-errors-tooltip::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: -4px;
+        transform: translateX(-50%);
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid var(--mdy-error-color);
+    }
+
+    .mdy-control__inline-errors:hover .mdy-control__inline-errors-tooltip,
+    .mdy-control__inline-errors:focus .mdy-control__inline-errors-tooltip,
+    .mdy-control__inline-errors:focus-within .mdy-control__inline-errors-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) scale(1);
+    }
+
+    /* ─── Date Picker ─────────────────────────────────────────────────────────── */
+
+    .mdy-datepicker {
+        position: relative;
+    }
+
+
+    .mdy-datepicker__input-group {
+        display: flex;
+        align-items: stretch;
+        border: none;
+        border-radius: var(--mdy-comp-date-picker-popup-radius);
+        background: var(--mdy-comp-date-picker-popup-bg);
+        padding: 0;
+        position: relative;
+    }
+
+    .mdy-datepicker__input-group input {
+        flex: 1;
+    }
+
+    /* Bordo inferiore animato per input group datepicker */
+
+    .mdy-datepicker__input-group::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background: var(--mdy-sys-color-outline);
+        border-radius: 0 0 var(--mdy-comp-date-picker-popup-radius) var(--mdy-comp-date-picker-popup-radius);
+        pointer-events: none;
+        z-index: 2;
+    }
+
+
+    .mdy-datepicker__input-group:focus-within::after {
+        background: var(--mdy-sys-color-primary);
+        height: 3px;
+    }
+
+
+    .mdy-datepicker__input-group:hover::after {
+        background: var(--mdy-sys-color-outline-variant);
+    }
+
+
+    .mdy-datepicker__input {
+        flex: 1 1 0%;
+        min-width: 10.5rem;
+        max-width: 100%;
+        padding: var(--mdy-comp-date-picker-input-padding);
+        border: none;
+        border-radius: 0;
+        font-size: var(--mdy-comp-date-picker-input-font-size);
+        font-family: var(--mdy-comp-date-picker-input-font-family);
+        color: var(--mdy-comp-date-picker-input-color);
+        outline: none;
+        background: transparent;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+
+    .mdy-datepicker__input:focus {
+        border-color: var(--mdy-sys-color-primary);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
+        z-index: 1;
+    }
+
+
+    .mdy-renderer--touched .mdy-datepicker__input[aria-invalid="true"] {
+        border-color: var(--mdy-sys-color-error);
+    }
+
+
+    .mdy-datepicker__input::placeholder {
+        color: var(--mdy-sys-color-on-surface-variant);
+    }
+
+
+    .mdy-datepicker__toggle {
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--mdy-sys-color-on-surface-variant);
+        border-radius: 50%;
+        transition: background-color 0.2s, color 0.2s;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        line-height: 0;
+    }
+
+    .mdy-datepicker__toggle svg {
+        width: 24px;
+        height: 24px;
+        display: block;
+    }
+
+
+    .mdy-datepicker__toggle:hover:not(:disabled),
+    .mdy-timepicker__toggle:hover:not(:disabled) {
+        background-color: var(--mdy-sys-color-surface-container-highest);
+    }
+
+    .mdy-datepicker__input {
+        padding-right: 40px !important;
+    }
+
+    .mdy-datepicker__toggle:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* The suffix that wraps the toggle should have no extra padding —
+   the toggle itself is absolutely positioned. */
+    .mdy-datepicker .mdy-input-suffix,
+    .mdy-timepicker .mdy-input-suffix {
+        padding: 0;
+        width: 40px;
+        position: relative;
+    }
+
+    /* ─── Time Picker Popup ───────────────────────────────────────────────────── */
+
+    /* Reset UA popover defaults on the popup shell.
+   Visual chrome (background, border-radius, shadow, padding) lives entirely
+   in .mdy-timepicker-container (SCSS). The shell must be transparent so it
+   does not leak a white background behind the container's 28px rounded corners,
+   and overflow:visible preserves the container's box-shadow. */
+    .mdy-timepicker__popup {
+        background: transparent;
+        border: none;
+        padding: 0;
+        margin: 0;
+        overflow: visible;
+        max-width: 95vw;
+        max-height: 95vh;
+    }
+
+
+    .mdy-datepicker__icon {
+        width: 1.5rem;
+        height: 1.5rem;
+        fill: currentColor;
+    }
+
+    /* ─── Date Picker Popup ───────────────────────────────────────────────────── */
+
+
+    .mdy-datepicker__popup {
+        position: absolute;
+        z-index: 1000;
+        top: 100%;
+        left: 0;
+        margin-top: 0.25rem;
+        padding: var(--mdy-comp-date-picker-popup-padding);
+        background: var(--mdy-comp-date-picker-popup-bg);
+        border: none;
+        border-radius: var(--mdy-comp-date-picker-popup-radius);
+        box-shadow: var(--mdy-comp-date-picker-popup-shadow);
+        max-width: 95vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+
+    .mdy-renderer--open .mdy-datepicker__popup:not(.mdy-datepicker__popup--overlay):not(.mdy-datepicker__popup--modal),
+    .mdy-renderer--open .mdy-timepicker__popup:not(.mdy-timepicker__popup--overlay):not(.mdy-timepicker__popup--modal) {
+        position: fixed;
+        top: var(--mdy-overlay-top, auto);
+        bottom: var(--mdy-overlay-bottom, auto);
+        left: var(--mdy-overlay-left, auto);
+        right: var(--mdy-overlay-right, auto);
+        /* Do NOT use --mdy-overlay-width: pickers are content-sized, not control-width */
+        width: auto;
+        margin: 0;
+        /* Gap is baked into coords via POPUP_GAP in computeCoordsForAnchor */
+    }
+
+    /* --above and --right positioning is handled entirely via
+   --mdy-overlay-{top,bottom,left,right} CSS variables set on the host.
+   No absolute-position fallbacks needed here. */
+
+    .mdy-datepicker__backdrop,
+    .mdy-timepicker__backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        background: var(--mdy-overlay-backdrop-bg, rgba(0, 0, 0, 0.4));
+        transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mdy-datepicker__popup--overlay,
+    .mdy-datepicker__popup--modal,
+    .mdy-timepicker__popup--overlay,
+    .mdy-timepicker__popup--modal {
+        position: fixed;
+        z-index: 1000;
+        top: 50%;
+        left: 50%;
+        right: auto;
+        transform: translate(-50%, -50%);
+        margin: 0;
+    }
+
+    /* ─── Calendar ────────────────────────────────────────────────────────────── */
+
+    .mdy-datepicker__calendar {
+        display: flex;
+        flex-direction: column;
+        outline: none;
+    }
+
+    /* Header: prev / title / next */
+
+    .mdy-datepicker__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--mdy-comp-date-picker-header-gap);
+        padding: var(--mdy-comp-date-picker-header-padding);
+        color: var(--mdy-comp-date-picker-header-color);
+        font-size: var(--mdy-comp-date-picker-header-font-size);
+        font-weight: var(--mdy-comp-date-picker-header-font-weight);
+    }
+
+
+
+
+
+
+    .mdy-datepicker__nav-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--mdy-comp-date-picker-nav-btn-size);
+        height: var(--mdy-comp-date-picker-nav-btn-size);
+        border: none;
+        border-radius: var(--mdy-comp-date-picker-nav-btn-radius);
+        background: transparent;
+        cursor: pointer;
+        color: inherit;
+        padding: 0;
+        transition: background 0.15s;
+    }
+
+
+    .mdy-datepicker__nav-btn:hover {
+        background: var(--mdy-comp-date-picker-nav-btn-hover-bg);
+    }
+
+    .mdy-datepicker__header-label {
+        display: flex;
+        align-items: center;
+    }
+
+    .mdy-datepicker__header-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+
+    .mdy-datepicker__view-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        background: transparent;
+        border: none;
+        border-radius: 100px;
+        color: var(--mdy-sys-color-on-surface);
+        font-family: inherit;
+        font-size: var(--mdy-comp-date-picker-title-font-size);
+        font-weight: var(--mdy-comp-date-picker-title-font-weight);
+        cursor: pointer;
+        transition: background 0.1s;
+    }
+
+
+    .mdy-datepicker__view-toggle:hover {
+        background: var(--mdy-comp-date-picker-cell-hover-bg);
+    }
+
+    .mdy-datepicker__view-icon {
+        display: block;
+        width: 1.125rem;
+        height: 1.125rem;
+        opacity: 0.7;
+    }
+
+
+    .mdy-datepicker__title {
+        color: var(--mdy-comp-date-picker-title-color);
+        font-weight: var(--mdy-comp-date-picker-title-font-weight);
+        font-size: var(--mdy-comp-date-picker-title-font-size);
+        user-select: none;
+    }
+
+
+    .mdy-datepicker__nav-btn svg {
+        width: 1.25rem;
+        height: 1.25rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    /* Grid */
+    .mdy-datepicker__grid {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mdy-datepicker__weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, var(--mdy-datepicker-cell-size));
+        gap: 0;
+    }
+
+
+    .mdy-datepicker__weekday {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: var(--mdy-comp-date-picker-cell-size);
+        font-size: var(--mdy-comp-date-picker-weekday-font-size);
+        font-weight: var(--mdy-comp-date-picker-weekday-font-weight);
+        color: var(--mdy-comp-date-picker-weekday-color);
+        user-select: none;
+    }
+
+    .mdy-datepicker__row {
+        display: grid;
+        grid-template-columns: repeat(7, var(--mdy-datepicker-cell-size));
+        gap: 0;
+    }
+
+    /* Cell */
+    .mdy-datepicker__cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--mdy-comp-date-picker-cell-size);
+        height: var(--mdy-comp-date-picker-cell-size);
+        border-radius: var(--mdy-comp-date-picker-cell-border-radius);
+        font-size: var(--mdy-comp-date-picker-cell-font-size);
+        font-family: var(--mdy-comp-date-picker-cell-font-family);
+        font-weight: var(--mdy-comp-date-picker-cell-font-weight);
+        color: var(--mdy-comp-date-picker-cell-color);
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.1s, color 0.1s;
+        outline: none;
+        box-shadow: none;
+        border: none;
+    }
+
+    .mdy-datepicker__cell:hover:not(.mdy-datepicker__cell--disabled):not(.mdy-datepicker__cell--selected) {
+        background: var(--mdy-comp-date-picker-cell-hover-bg);
+    }
+
+    .mdy-datepicker__cell--outside {
+        opacity: var(--mdy-comp-date-picker-cell-outside-opacity);
+    }
+
+
+    .mdy-datepicker__cell--today:not(.mdy-datepicker__cell--selected) {
+        outline: var(--mdy-comp-date-picker-cell-today-outline);
+        outline-offset: -2px;
+        box-shadow: none;
+    }
+
+    .mdy-datepicker__cell--selected {
+        background: var(--mdy-comp-date-picker-cell-selected-bg);
+        color: var(--mdy-comp-date-picker-cell-selected-color);
+        font-weight: 600;
+        box-shadow: none;
+        outline: none;
+        border-radius: var(--mdy-comp-date-picker-cell-border-radius);
+        border: none;
+    }
+
+
+    .mdy-datepicker__cell--focused:not(.mdy-datepicker__cell--selected) {
+        background: var(--mdy-comp-date-picker-cell-hover-bg);
+        outline: var(--mdy-comp-date-picker-cell-focus-outline);
+        outline-offset: -2px;
+    }
+
+    .mdy-datepicker__cell--disabled {
+        opacity: var(--mdy-comp-date-picker-cell-disabled-opacity);
+        cursor: not-allowed;
+    }
+
+    /* ─── Date Range Picker ───────────────────────────────────────────────────── */
+
+    /*
+ * Range cells use a two-layer approach:
+ *   • The cell itself shows the connecting band (in-range background).
+ *   • A ::before pseudo-element draws the pill-shaped endpoint circle
+ *     that sits on top of the band, matching the regular datepicker
+ *     selected-cell aesthetic.
+ */
+
+    /* ── In-range band (between endpoints) ──────────────────────────────────── */
+    .mdy-datepicker__cell--in-range {
+        background: var(--mdy-comp-date-picker-in-range-bg);
+        border-radius: 0;
+        outline: none;
+        box-shadow: none;
+        border: none;
+    }
+
+    /* Today inside a range: restore ring without breaking the band */
+    .mdy-datepicker__cell--today.mdy-datepicker__cell--in-range {
+        outline: var(--mdy-comp-date-picker-cell-today-outline);
+        outline-offset: -2px;
+    }
+
+    /* ── Endpoint base: position context for the pill pseudo-element ────────── */
+
+    .mdy-datepicker__cell--range-start,
+    .mdy-datepicker__cell--range-end {
+        position: relative;
+        z-index: 1;
+        color: var(--mdy-comp-date-picker-endpoint-color);
+        font-weight: 600;
+        background: var(--mdy-comp-date-picker-endpoint-bg);
+        border-radius: var(--mdy-comp-date-picker-cell-border-radius);
+        outline: var(--mdy-comp-date-picker-cell-focus-outline);
+        outline-offset: -2px;
+        box-shadow: none;
+        border: none;
+    }
+
+    /* Pill circle behind the number */
+    .mdy-datepicker__cell--range-start::before,
+    .mdy-datepicker__cell--range-end::before {
+        display: none;
+    }
+
+    /* Connecting band on the trailing side of range-start */
+    .mdy-datepicker__cell--range-start:not(.mdy-datepicker__cell--range-end) {
+        background: linear-gradient(to right,
+                var(--mdy-daterange-in-range-bg) 50%);
+        border-radius: 50% 0 0 50%;
+    }
+
+    /* Connecting band on the leading side of range-end */
+    .mdy-datepicker__cell--range-end:not(.mdy-datepicker__cell--range-start) {
+        background: linear-gradient(to left,
+                var(--mdy-daterange-in-range-bg) 50%);
+        border-radius: 0 50% 50% 0;
+    }
+
+    /* Same-day: no connecting band, full pill */
+    .mdy-datepicker__cell--range-start.mdy-datepicker__cell--range-end {
+        background: var(--mdy-daterange-endpoint-bg);
+        border-radius: 50%;
+    }
+
+    /* Hint text below the calendar grid */
+    .mdy-daterange__hint {
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--mdy-on-surface-variant);
+        padding-top: 0;
+        user-select: none;
+    }
+
+    /* ── Compact two-input layout ───────────────────────────────────────────── */
+
+    .mdy-daterange__group {
+        display: flex;
+        align-items: stretch;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    /* Container-level focus ring instead of per-input */
+    .mdy-daterange__group:focus-within {
+        border-color: var(--mdy-input-focus-color);
+        box-shadow: var(--mdy-input-focus-shadow);
+        z-index: 1;
+    }
+
+    /* Auto-sizing sizer wrapper: grid trick — pseudo mirrors the value to size the cell */
+    .mdy-daterange__input-sizer {
+        display: inline-grid;
+        align-items: center;
+        min-width: var(--mdy-daterange-input-min-width);
+    }
+
+    .mdy-daterange__input-sizer::after {
+        content: attr(data-value) "\00a0";
+        grid-area: 1 / 1;
+        visibility: hidden;
+        white-space: pre;
+        padding: var(--mdy-daterange-input-padding);
+        font-size: var(--mdy-input-font-size);
+        font-variant-numeric: tabular-nums;
+        pointer-events: none;
+    }
+
+    /* Compact inputs — fill the auto-sized sizer cell */
+    .mdy-input-wrapper.mdy-daterange__group .mdy-daterange__input {
+        grid-area: 1 / 1;
+        width: 100% !important;
+        min-width: 0 !important;
+        text-align: center;
+        padding: var(--mdy-daterange-input-padding) !important;
+        font-variant-numeric: tabular-nums;
+        font-size: var(--mdy-input-font-size);
+    }
+
+    /* Kill individual input focus — the group handles it */
+    .mdy-daterange__group .mdy-daterange__input:focus {
+        border-color: inherit;
+        box-shadow: none;
+        outline: none;
+        z-index: auto;
+    }
+
+    /* First input: round left, flat right */
+    .mdy-daterange__group .mdy-daterange__input:first-of-type {
+        border-right: none;
+        border-radius: var(--mdy-input-border-radius) 0 0 var(--mdy-input-border-radius);
+        box-shadow: none;
+        outline: none;
+    }
+
+    /* Second input: flat both sides */
+    .mdy-daterange__group .mdy-daterange__input:nth-of-type(2) {
+        border-left: none;
+        border-right: none;
+        border-radius: 0;
+        box-shadow: none;
+        outline: none;
+    }
+
+    /* Push the calendar toggle and any suffix to the far right */
+    .mdy-input-wrapper.mdy-daterange__group .mdy-input-suffix {
+        margin-left: auto !important;
+    }
+
+    .mdy-input-wrapper.mdy-daterange__group .mdy-datepicker__toggle {
+        flex-shrink: 0;
+    }
+
+    /* Thin separator between inputs */
+    .mdy-daterange__sep {
+        display: flex;
+        align-items: center;
+        padding: var(--mdy-daterange-sep-padding);
+        font-size: var(--mdy-datepicker-cell-font-size, 0.875rem);
+        color: var(--mdy-on-surface-variant);
+        user-select: none;
+        border: none;
+    }
+
+    /* Rimuove l'outline di default su tutti i campi data */
+    .mdy-datepicker__input-group {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    /* ─── Month & Year Picker ─────────────────────────────────────────────────── */
+
+    .mdy-datepicker__month-picker,
+    .mdy-datepicker__year-picker {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        padding: var(--mdy-comp-date-picker-popup-padding);
+    }
+
+    .mdy-datepicker__year-picker {
+        max-height: 280px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+    .mdy-datepicker__month-cell,
+    .mdy-datepicker__year-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.75rem;
+        padding: 0.5rem 0.75rem;
+        background: transparent;
+        border: none;
+        border-radius: var(--mdy-corner-medium);
+        color: var(--mdy-on-surface);
+        font-family: inherit;
+        font-size: var(--mdy-datepicker-cell-font-size, 0.875rem);
+        cursor: pointer;
+        transition: background 0.1s, color 0.1s;
+        outline: none;
+    }
+
+
+    .mdy-datepicker__month-cell:hover,
+    .mdy-datepicker__year-cell:hover {
+        background: var(--mdy-surface-container-highest-hover);
+        color: var(--mdy-on-surface);
+    }
+
+    .mdy-datepicker__month-cell:focus-visible,
+    .mdy-datepicker__year-cell:focus-visible {
+        background: var(--mdy-surface-container-highest-hover);
+        outline: 2px solid var(--mdy-primary);
+        outline-offset: -2px;
+    }
+
+    .mdy-datepicker__month-cell--selected,
+    .mdy-datepicker__year-cell--selected {
+        background: var(--mdy-primary) !important;
+        color: var(--mdy-on-primary) !important;
+        font-weight: 600;
+    }
+
+    .mdy-datepicker__month-cell:disabled,
+    .mdy-datepicker__year-cell:disabled {
+        opacity: var(--mdy-datepicker-disabled-opacity, 0.25);
+        cursor: not-allowed;
+        background: transparent !important;
+    }
+
+}
+
+/* end @layer mdy.components */

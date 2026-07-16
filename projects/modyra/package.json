@@ -1,0 +1,76 @@
+{
+  "name": "@modyra/forms",
+  "version": "0.1.0",
+  "description": "Type-safe Angular forms built entirely on native Signals.",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/lorenzomusche"
+  },
+  "keywords": [
+    "angular",
+    "forms",
+    "signals",
+    "signal-forms",
+    "reactive-forms",
+    "declarative"
+  ],
+  "author": "Lorenzo Muscher\u00e0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.personal/modyra/modyra.git",
+    "directory": "projects/modyra"
+  },
+  "bugs": {
+    "url": "https://github.com/modyra/modyra/issues"
+  },
+  "homepage": "https://github.com/modyra/modyra#readme",
+  "peerDependencies": {
+    "@angular/core": ">=21.0.0",
+    "@angular/common": ">=21.0.0",
+    "@angular/platform-browser": ">=21.0.0",
+    "@angular/forms": ">=21.0.0",
+    "zod": ">=3.25.0"
+  },
+  "peerDependenciesMeta": {
+    "@angular/forms": {
+      "optional": true
+    },
+    "zod": {
+      "optional": true
+    }
+  },
+  "allowedNonPeerDependencies": [],
+  "dependencies": {
+    "tslib": ">=2.3.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./fesm2022/modyra-forms.mjs"
+    },
+    "./styles/ionic.css": {
+      "default": "./styles/modyra-ionic.css"
+    },
+    "./styles/ios.css": {
+      "default": "./styles/modyra-ios.css"
+    },
+    "./styles/base.css": {
+      "default": "./styles/modyra-base.css"
+    },
+    "./styles/material.css": {
+      "default": "./styles/modyra-material.css"
+    },
+    "./styles/default.css": {
+      "default": "./styles/modyra.css"
+    }
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "main": "fesm2022/modyra-forms.mjs",
+  "module": "fesm2022/modyra-forms.mjs",
+  "typings": "index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  }
+}

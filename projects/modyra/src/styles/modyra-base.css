@@ -1,0 +1,400 @@
+/*
+ * modyra-m3-base.css
+ *
+ * Material Design 3 — Design Tokens (CSS Custom Properties)
+ *
+ * Include in your project before any theme or component CSS.
+ *
+ *
+ * This file defines all --md-sys-* and --md-comp-* variables for both light and dark themes.
+ *
+ * Source: https://gist.githubusercontent.com/lorenzomusche/cf062827e5dda441153bab936b4caf06/raw/c93c335b14e4ebe5de19d13e7e765d5d5170f4b0/Material%20Design%203.md
+ *
+ * CSS @layer: mdy.tokens
+ * Declaring this layer here ensures the order is established even if this file
+ * is the first one loaded.
+ */
+
+@layer mdy.tokens, mdy.base, mdy.components, mdy.themes;
+
+@layer mdy.tokens {
+
+:root {
+    /* Date Picker — Range & Popup (additional tokens for full mapping) */
+    --mdy-comp-date-picker-popup-padding: 1.25rem;
+    --mdy-comp-date-picker-popup-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.18);
+    --mdy-comp-date-picker-cell-size: 2.5rem;
+    --mdy-comp-date-picker-cell-border-radius: 50%;
+    --mdy-comp-date-picker-cell-font-size: 0.875rem;
+    --mdy-comp-date-picker-hover-bg: var(--mdy-sys-color-surface-container-highest);
+    --mdy-comp-date-picker-selected-bg: var(--mdy-sys-color-primary);
+    --mdy-comp-date-picker-selected-color: var(--mdy-sys-color-on-primary);
+    --mdy-comp-date-picker-in-range-bg: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 75%);
+    --mdy-comp-date-picker-endpoint-bg: var(--mdy-sys-color-primary);
+    --mdy-comp-date-picker-endpoint-color: var(--mdy-sys-color-on-primary);
+    --mdy-comp-date-picker-disabled-opacity: 0.25;
+    --mdy-comp-date-picker-outside-opacity: 0.5;
+    --mdy-comp-date-picker-header-gap: 0.5rem;
+    --mdy-comp-date-picker-nav-btn-size: 2rem;
+    /* Color System — Light Theme */
+    --mdy-sys-color-primary: #6750A4;
+    --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 95%);
+    --mdy-sys-color-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 85%);
+    --mdy-sys-color-on-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
+    --mdy-sys-color-secondary: color-mix(in srgb, var(--mdy-sys-color-primary), #888 60%);
+    --mdy-sys-color-on-secondary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 90%);
+    --mdy-sys-color-secondary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
+    --mdy-sys-color-on-secondary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
+    --mdy-sys-color-tertiary: color-mix(in srgb, var(--mdy-sys-color-primary), #c96 60%);
+    --mdy-sys-color-on-tertiary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 90%);
+    --mdy-sys-color-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 95%);
+    --mdy-sys-color-on-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
+    --mdy-sys-color-error: #B3261E;
+    --mdy-sys-color-on-error: color-mix(in srgb, var(--mdy-sys-color-error), #fff 90%);
+    --mdy-sys-color-error-container: color-mix(in srgb, var(--mdy-sys-color-error), #fff 85%);
+    --mdy-sys-color-on-error-container: color-mix(in srgb, var(--mdy-sys-color-error), #000 80%);
+    --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 96%);
+    --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
+    --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #eee 80%);
+    --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #49454E 60%);
+    --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 100%);
+    --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 96%);
+    --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 92%);
+    --mdy-sys-color-surface-container-high: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 88%);
+    --mdy-sys-color-surface-container-highest: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
+    --mdy-sys-color-background: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 98%);
+    --mdy-sys-color-on-background: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
+    --mdy-sys-color-outline: color-mix(in srgb, var(--mdy-sys-color-primary), #79747E 60%);
+    --mdy-sys-color-outline-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #CAC4D0 80%);
+    --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #313033 80%);
+    --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
+    --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), #D0BCFF 60%);
+    --mdy-sys-color-scrim: color-mix(in srgb, var(--mdy-sys-color-primary), #000 90%);
+    --mdy-sys-color-shadow: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
+
+    /* Typography */
+    --mdy-sys-typescale-display-large-font: Roboto;
+    --mdy-sys-typescale-display-large-size: 57px;
+    --mdy-sys-typescale-display-large-line-height: 64px;
+    --mdy-sys-typescale-display-large-weight: 400;
+    --mdy-sys-typescale-display-large-tracking: -0.25px;
+    --mdy-sys-typescale-display-medium-font: Roboto;
+    --mdy-sys-typescale-display-medium-size: 45px;
+    --mdy-sys-typescale-display-medium-line-height: 52px;
+    --mdy-sys-typescale-display-medium-weight: 400;
+    --mdy-sys-typescale-display-small-font: Roboto;
+    --mdy-sys-typescale-display-small-size: 36px;
+    --mdy-sys-typescale-display-small-line-height: 44px;
+    --mdy-sys-typescale-display-small-weight: 400;
+    --mdy-sys-typescale-headline-large-font: Roboto;
+    --mdy-sys-typescale-headline-large-size: 32px;
+    --mdy-sys-typescale-headline-large-line-height: 40px;
+    --mdy-sys-typescale-headline-large-weight: 400;
+    --mdy-sys-typescale-headline-medium-font: Roboto;
+    --mdy-sys-typescale-headline-medium-size: 28px;
+    --mdy-sys-typescale-headline-medium-line-height: 36px;
+    --mdy-sys-typescale-headline-medium-weight: 400;
+    --mdy-sys-typescale-headline-small-font: Roboto;
+    --mdy-sys-typescale-headline-small-size: 24px;
+    --mdy-sys-typescale-headline-small-line-height: 32px;
+    --mdy-sys-typescale-headline-small-weight: 400;
+    --mdy-sys-typescale-title-large-font: Roboto;
+    --mdy-sys-typescale-title-large-size: 22px;
+    --mdy-sys-typescale-title-large-line-height: 28px;
+    --mdy-sys-typescale-title-large-weight: 400;
+    --mdy-sys-typescale-title-medium-font: Roboto;
+    --mdy-sys-typescale-title-medium-size: 16px;
+    --mdy-sys-typescale-title-medium-line-height: 24px;
+    --mdy-sys-typescale-title-medium-weight: 500;
+    --mdy-sys-typescale-title-medium-tracking: 0.15px;
+    --mdy-sys-typescale-title-small-font: Roboto;
+    --mdy-sys-typescale-title-small-size: 14px;
+    --mdy-sys-typescale-title-small-line-height: 20px;
+    --mdy-sys-typescale-title-small-weight: 500;
+    --mdy-sys-typescale-title-small-tracking: 0.1px;
+    --mdy-sys-typescale-body-large-font: Roboto;
+    --mdy-sys-typescale-body-large-size: 16px;
+    --mdy-sys-typescale-body-large-line-height: 24px;
+    --mdy-sys-typescale-body-large-weight: 400;
+    --mdy-sys-typescale-body-large-tracking: 0.5px;
+    --mdy-sys-typescale-body-medium-font: Roboto;
+    --mdy-sys-typescale-body-medium-size: 14px;
+    --mdy-sys-typescale-body-medium-line-height: 20px;
+    --mdy-sys-typescale-body-medium-weight: 400;
+    --mdy-sys-typescale-body-medium-tracking: 0.25px;
+    --mdy-sys-typescale-body-small-font: Roboto;
+    --mdy-sys-typescale-body-small-size: 12px;
+    --mdy-sys-typescale-body-small-line-height: 16px;
+    --mdy-sys-typescale-body-small-weight: 400;
+    --mdy-sys-typescale-body-small-tracking: 0.4px;
+    --mdy-sys-typescale-label-large-font: Roboto;
+    --mdy-sys-typescale-label-large-size: 14px;
+    --mdy-sys-typescale-label-large-line-height: 20px;
+    --mdy-sys-typescale-label-large-weight: 500;
+    --mdy-sys-typescale-label-large-tracking: 0.1px;
+    --mdy-sys-typescale-label-medium-font: Roboto;
+    --mdy-sys-typescale-label-medium-size: 12px;
+    --mdy-sys-typescale-label-medium-line-height: 16px;
+    --mdy-sys-typescale-label-medium-weight: 500;
+    --mdy-sys-typescale-label-medium-tracking: 0.5px;
+    --mdy-sys-typescale-label-small-font: Roboto;
+    --mdy-sys-typescale-label-small-size: 11px;
+    --mdy-sys-typescale-label-small-line-height: 16px;
+    --mdy-sys-typescale-label-small-weight: 500;
+    --mdy-sys-typescale-label-small-tracking: 0.5px;
+
+    /* Shape */
+    --mdy-sys-shape-corner-none: 0px;
+    --mdy-sys-shape-corner-extra-small: 4px;
+    --mdy-sys-shape-corner-small: 8px;
+    --mdy-sys-shape-corner-medium: 12px;
+    --mdy-sys-shape-corner-large: 16px;
+    --mdy-sys-shape-corner-extra-large: 28px;
+    --mdy-sys-shape-corner-full: 9999px;
+
+    /* Elevation */
+    --mdy-sys-elevation-level0: 0px;
+    --mdy-sys-elevation-level1: 1px;
+    --mdy-sys-elevation-level2: 3px;
+    --mdy-sys-elevation-level3: 6px;
+    --mdy-sys-elevation-level4: 8px;
+    --mdy-sys-elevation-level5: 12px;
+
+    /* State Layer Opacity */
+    --mdy-sys-state-hover-opacity: 0.08;
+    --mdy-sys-state-focus-opacity: 0.10;
+    --mdy-sys-state-pressed-opacity: 0.10;
+    --mdy-sys-state-dragged-opacity: 0.16;
+    --mdy-sys-state-disabled-container-opacity: 0.12;
+    --mdy-sys-state-disabled-content-opacity: 0.38;
+}
+
+/* --- Date Picker: Full M3 Token Set --- */
+:root {
+    /* Grid & Cell */
+    --mdy-comp-date-picker-grid-gap: 0;
+    --mdy-comp-date-picker-cell-size: 2.5rem;
+    --mdy-comp-date-picker-cell-font-size: 0.875rem;
+    --mdy-comp-date-picker-cell-border-radius: 50%;
+    --mdy-comp-date-picker-cell-font-family: inherit;
+    --mdy-comp-date-picker-cell-font-weight: 400;
+    --mdy-comp-date-picker-cell-color: var(--mdy-sys-color-on-surface);
+    --mdy-comp-date-picker-cell-hover-bg: var(--mdy-sys-color-surface-container-highest);
+    --mdy-comp-date-picker-cell-selected-bg: var(--mdy-sys-color-primary);
+    --mdy-comp-date-picker-cell-selected-color: var(--mdy-sys-color-on-primary);
+    --mdy-comp-date-picker-cell-disabled-opacity: 0.25;
+    --mdy-comp-date-picker-cell-outside-opacity: 0.5;
+    --mdy-comp-date-picker-cell-today-outline: 2px solid var(--mdy-sys-color-primary);
+    --mdy-comp-date-picker-cell-focus-outline: 2px solid var(--mdy-sys-color-primary);
+    /* Header */
+    --mdy-comp-date-picker-header-gap: 0.5rem;
+    --mdy-comp-date-picker-header-padding: 0.5rem 1rem 0.25rem 1rem;
+    --mdy-comp-date-picker-header-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-date-picker-header-font-size: 1rem;
+    --mdy-comp-date-picker-header-font-weight: 500;
+    /* Navigation */
+    --mdy-comp-date-picker-nav-btn-size: 2rem;
+    --mdy-comp-date-picker-nav-btn-radius: 50%;
+    --mdy-comp-date-picker-nav-btn-hover-bg: var(--mdy-sys-color-surface-container-highest);
+    /* Popup/Modal */
+    --mdy-comp-date-picker-popup-padding: 1.25rem;
+    --mdy-comp-date-picker-popup-radius: var(--mdy-comp-date-picker-modal-container-shape);
+    --mdy-comp-date-picker-popup-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.18);
+    --mdy-comp-date-picker-popup-bg: var(--mdy-comp-date-picker-modal-container-color);
+    /* Range */
+    --mdy-comp-date-picker-in-range-bg: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 75%);
+    --mdy-comp-date-picker-endpoint-bg: var(--mdy-sys-color-primary);
+    --mdy-comp-date-picker-endpoint-color: var(--mdy-sys-color-on-primary);
+    /* Input */
+    --mdy-comp-date-picker-input-padding: 0.75rem 1rem;
+    --mdy-comp-date-picker-input-radius: var(--mdy-comp-date-picker-modal-container-shape);
+    --mdy-comp-date-picker-input-bg: var(--mdy-sys-color-surface-container-highest);
+    --mdy-comp-date-picker-input-color: var(--mdy-sys-color-on-surface);
+    --mdy-comp-date-picker-input-font-size: 1rem;
+    --mdy-comp-date-picker-input-font-family: inherit;
+    /* Misc */
+    --mdy-comp-date-picker-weekday-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-date-picker-weekday-font-size: 0.75rem;
+    --mdy-comp-date-picker-weekday-font-weight: 500;
+    --mdy-comp-date-picker-title-color: var(--mdy-sys-color-on-surface);
+    --mdy-comp-date-picker-title-font-size: 0.875rem;
+    --mdy-comp-date-picker-title-font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
+        --mdy-sys-color-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 60%);
+        --mdy-sys-color-on-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
+        --mdy-sys-color-secondary: color-mix(in srgb, var(--mdy-sys-color-primary), #888 40%);
+        --mdy-sys-color-on-secondary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 70%);
+        --mdy-sys-color-secondary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 80%);
+        --mdy-sys-color-on-secondary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
+        --mdy-sys-color-tertiary: color-mix(in srgb, var(--mdy-sys-color-primary), #c96 40%);
+        --mdy-sys-color-on-tertiary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 70%);
+        --mdy-sys-color-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 90%);
+        --mdy-sys-color-on-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
+        --mdy-sys-color-error: #B3261E;
+        --mdy-sys-color-on-error: color-mix(in srgb, var(--mdy-sys-color-error), #fff 80%);
+        --mdy-sys-color-error-container: color-mix(in srgb, var(--mdy-sys-color-error), #18181b 70%);
+        --mdy-sys-color-on-error-container: color-mix(in srgb, var(--mdy-sys-color-error), #fff 60%);
+        --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 85%);
+        --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
+        --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #49454F 60%);
+        --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
+        --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 100%);
+        --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 88%);
+        --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 80%);
+        --mdy-sys-color-surface-container-high: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 70%);
+        --mdy-sys-color-surface-container-highest: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 58%);
+        --mdy-sys-color-background: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 95%);
+        --mdy-sys-color-on-background: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
+        --mdy-sys-color-outline: color-mix(in srgb, var(--mdy-sys-color-primary), #938F99 40%);
+        --mdy-sys-color-outline-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #49454F 60%);
+        --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
+        --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 60%);
+        --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 40%);
+    }
+}
+
+/*
+ * Component tokens (partial, add more as needed)
+ * Example: Text Fields, Checkbox, Date Picker, etc.
+ *
+ * For brevity, only a subset is included here. Extend as needed from the gist.
+ */
+
+:root {
+    /* Text Fields */
+    --mdy-comp-filled-text-field-container-color: var(--mdy-sys-color-surface-container-highest);
+    --mdy-comp-filled-text-field-container-shape: var(--mdy-sys-shape-corner-extra-small);
+    --mdy-comp-filled-text-field-container-height: 56px;
+    --mdy-comp-filled-text-field-label-text-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-filled-text-field-focus-label-text-color: var(--mdy-sys-color-primary);
+    --mdy-comp-filled-text-field-input-text-color: var(--mdy-sys-color-on-surface);
+    --mdy-comp-filled-text-field-active-indicator-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-filled-text-field-focus-active-indicator-color: var(--mdy-sys-color-primary);
+    --mdy-comp-filled-text-field-active-indicator-height: 1px;
+    --mdy-comp-filled-text-field-focus-active-indicator-height: 2px;
+    --mdy-comp-filled-text-field-leading-icon-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-filled-text-field-trailing-icon-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-filled-text-field-supporting-text-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-filled-text-field-error-active-indicator-color: var(--mdy-sys-color-error);
+    --mdy-comp-filled-text-field-error-label-text-color: var(--mdy-sys-color-error);
+    /* Outlined Text Field */
+    --mdy-comp-outlined-text-field-container-height: 56px;
+    --mdy-comp-outlined-text-field-label-text-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-outlined-text-field-focus-label-text-color: var(--mdy-sys-color-primary);
+    --mdy-comp-outlined-text-field-input-text-color: var(--mdy-sys-color-on-surface);
+    --mdy-comp-outlined-text-field-outline-color: var(--mdy-sys-color-outline);
+    --mdy-comp-outlined-text-field-focus-outline-color: var(--mdy-sys-color-primary);
+    --mdy-comp-outlined-text-field-outline-width: 1px;
+    --mdy-comp-outlined-text-field-focus-outline-width: 2px;
+    --mdy-comp-outlined-text-field-container-shape: var(--mdy-sys-shape-corner-extra-small);
+    --mdy-comp-outlined-text-field-supporting-text-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-outlined-text-field-error-outline-color: var(--mdy-sys-color-error);
+    --mdy-comp-outlined-text-field-error-label-text-color: var(--mdy-sys-color-error);
+
+    /* Checkbox */
+    --mdy-comp-checkbox-container-size: 18px;
+    --mdy-comp-checkbox-container-shape: 2px;
+    --mdy-comp-checkbox-state-layer-size: 40px;
+    --mdy-comp-checkbox-state-layer-shape: var(--mdy-sys-shape-corner-full);
+    --mdy-comp-checkbox-icon-size: 18px;
+    --mdy-comp-checkbox-selected-container-color: var(--mdy-sys-color-primary);
+    --mdy-comp-checkbox-selected-icon-color: var(--mdy-sys-color-on-primary);
+    --mdy-comp-checkbox-selected-state-layer-color: var(--mdy-sys-color-primary);
+    --mdy-comp-checkbox-unselected-outline-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-checkbox-unselected-outline-width: 2px;
+    --mdy-comp-checkbox-unselected-state-layer-color: var(--mdy-sys-color-on-surface);
+    --mdy-comp-checkbox-error-container-color: var(--mdy-sys-color-error);
+    --mdy-comp-checkbox-error-icon-color: var(--mdy-sys-color-on-error);
+    --mdy-comp-checkbox-disabled-selected-container-color: var(--mdy-sys-color-on-surface);
+    --mdy-comp-checkbox-disabled-outline-color: var(--mdy-sys-color-on-surface);
+
+    /* Switch */
+    --mdy-comp-switch-track-width: 52px;
+    --mdy-comp-switch-track-height: 32px;
+    --mdy-comp-switch-track-shape: 9999px;
+    --mdy-comp-switch-track-color: transparent;
+    --mdy-comp-switch-track-outline-color: var(--mdy-sys-color-outline);
+    --mdy-comp-switch-track-outline-width: 2px;
+    --mdy-comp-switch-selected-track-color: var(--mdy-sys-color-primary);
+    --mdy-comp-switch-handle-size: 16px;
+    --mdy-comp-switch-selected-handle-size: 24px;
+    --mdy-comp-switch-handle-color: var(--mdy-sys-color-outline);
+    --mdy-comp-switch-selected-handle-color: var(--mdy-sys-color-on-primary);
+    --mdy-comp-switch-handle-shape: var(--mdy-sys-shape-corner-full);
+
+    /* Radio Button */
+    --mdy-comp-radio-icon-size: 20px;
+    --mdy-comp-radio-state-layer-size: 40px;
+    --mdy-comp-radio-selected-icon-color: var(--mdy-sys-color-primary);
+    --mdy-comp-radio-unselected-icon-color: var(--mdy-sys-color-on-surface-variant);
+
+    /* Slider */
+    --mdy-comp-slider-active-track-height: 4px;
+    --mdy-comp-slider-inactive-track-height: 4px;
+    --mdy-comp-slider-handle-height: 20px;
+    --mdy-comp-slider-handle-width: 20px;
+    --mdy-comp-slider-handle-shape: var(--mdy-sys-shape-corner-full);
+    --mdy-comp-slider-active-track-color: var(--mdy-sys-color-primary);
+    --mdy-comp-slider-inactive-track-color: var(--mdy-sys-color-secondary-container);
+    --mdy-comp-slider-handle-color: var(--mdy-sys-color-primary);
+    --mdy-comp-slider-track-shape: var(--mdy-sys-shape-corner-full);
+
+    /* Segmented Button */
+    --mdy-comp-segmented-button-height: 40px;
+    --mdy-comp-segmented-button-shape: var(--mdy-sys-shape-corner-full);
+    --mdy-comp-segmented-button-outline-color: var(--mdy-sys-color-outline);
+    --mdy-comp-segmented-button-selected-container-color: var(--mdy-sys-color-secondary-container);
+    --mdy-comp-segmented-button-selected-label-text-color: var(--mdy-sys-color-on-secondary-container);
+    --mdy-comp-segmented-button-unselected-label-text-color: var(--mdy-sys-color-on-surface);
+    --mdy-comp-segmented-button-label-text-font-size: var(--mdy-sys-typescale-label-large-size);
+    --mdy-comp-segmented-button-label-text-weight: var(--mdy-sys-typescale-label-large-weight);
+
+    /* Filter Chip (Multiselect) */
+    --mdy-comp-filter-chip-container-height: 32px;
+    --mdy-comp-filter-chip-container-shape: var(--mdy-sys-shape-corner-small);
+    --mdy-comp-filter-chip-outline-color: var(--mdy-sys-color-outline);
+    --mdy-comp-filter-chip-selected-container-color: var(--mdy-sys-color-secondary-container);
+    --mdy-comp-filter-chip-selected-label-text-color: var(--mdy-sys-color-on-secondary-container);
+    --mdy-comp-filter-chip-label-text-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-filter-chip-hover-state-layer-color: var(--mdy-sys-color-on-surface);
+
+    /* Time Picker */
+    --mdy-comp-time-picker-container-color: var(--mdy-sys-color-surface-container-high);
+    --mdy-comp-time-picker-container-shape: var(--mdy-sys-shape-corner-extra-large);
+    --mdy-comp-time-picker-input-container-color: var(--mdy-sys-color-surface-container-highest);
+    --mdy-comp-time-picker-input-container-shape: var(--mdy-sys-shape-corner-small);
+    --mdy-comp-time-picker-input-segment-width: 96px;
+    --mdy-comp-time-picker-input-segment-height: 80px;
+    --mdy-comp-time-picker-clock-dial-container-color: var(--mdy-sys-color-surface-container-highest);
+    --mdy-comp-time-picker-clock-dial-size: 256px;
+    --mdy-comp-time-picker-headline-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-time-picker-selected-segment-color: var(--mdy-sys-color-primary);
+    --mdy-comp-time-picker-selected-segment-container-color: var(--mdy-sys-color-primary-container);
+    --mdy-comp-time-picker-period-outline-color: var(--mdy-sys-color-outline);
+
+    /* Color Picker (custom — not in M3 spec, inspired by Text Field + Menu) */
+    --mdy-comp-color-picker-swatch-size: 2.5rem;
+    --mdy-comp-color-picker-swatch-height: 1.25rem;
+    --mdy-comp-color-picker-swatch-radius: var(--mdy-sys-shape-corner-full);
+    --mdy-comp-color-picker-dropdown-radius: var(--mdy-sys-shape-corner-medium);
+    --mdy-comp-color-picker-dropdown-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.3);
+
+    /* Date Picker (Docked & Modal) */
+    --mdy-comp-date-picker-docked-container-color: var(--mdy-sys-color-surface-container-high);
+    --mdy-comp-date-picker-docked-header-color: var(--mdy-sys-color-on-surface-variant);
+    --mdy-comp-date-picker-docked-selected-date-container-color: var(--mdy-sys-color-primary);
+    --mdy-comp-date-picker-docked-selected-date-label-color: var(--mdy-sys-color-on-primary);
+    --mdy-comp-date-picker-docked-today-date-color: var(--mdy-sys-color-primary);
+    --mdy-comp-date-picker-docked-date-label-color: var(--mdy-sys-color-on-surface);
+    --mdy-comp-date-picker-docked-weekday-color: var(--mdy-sys-color-on-surface);
+    --mdy-comp-date-picker-modal-container-color: var(--mdy-sys-color-surface-container-high);
+    --mdy-comp-date-picker-modal-container-shape: var(--mdy-sys-shape-corner-extra-large);
+    --mdy-comp-date-picker-modal-headline-color: var(--mdy-sys-color-on-surface);
+    --mdy-comp-date-picker-modal-supporting-text-color: var(--mdy-sys-color-on-surface-variant);
+}
+
+} /* end @layer mdy.tokens */

@@ -1,0 +1,1009 @@
+@import './modyra.css';
+
+/*
+ * modyra — iOS / Apple HIG Theme (iOS 26, Liquid Glass)
+ *
+ * A theme that follows Apple's Human Interface Guidelines and the
+ * iOS 26 "Liquid Glass" material language:
+ *   - Glass (backdrop blur/vibrancy) is reserved for FLOATING chrome that
+ *     sits above content: popovers, action sheets, context menus, dropdowns.
+ *   - Form controls that live IN the content (text fields, cards, rows) use
+ *     flat, opaque system fills — exactly like Settings.app / any UIKit form.
+ *     Real iOS text fields are NOT glass.
+ *   - This file never touches `body` or any host-page background. A theme
+ *     must not assume, and must not create, a colorful backdrop for its own
+ *     blur effects to look good against — it has to work on any host page.
+ *
+ * References:
+ *   - https://developer.apple.com/design/human-interface-guidelines/materials
+ *   - https://developer.apple.com/design/human-interface-guidelines/buttons
+ *   - https://developer.apple.com/design/human-interface-guidelines/text-fields
+ *   - https://developer.apple.com/design/human-interface-guidelines/toggles
+ *
+ * ── Usage ───────────────────────────────────────────────────────────────
+ *   @import 'modyra/styles/modyra-ios.css';
+ *
+ * See IOS-THEME-NOTES.md alongside this file for the full rationale behind
+ * every token and the audit of what the previous version got wrong.
+ */
+
+@layer mdy.themes {
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * TOKENS — iOS System Colors (raw palette, single source of truth)
+     * ═══════════════════════════════════════════════════════════════════ */
+    :root {
+        /* Accent / semantic system colors — iOS light mode */
+        --mdy-ios-blue: #007AFF;
+        --mdy-ios-red: #FF3B30;
+        --mdy-ios-green: #34C759;
+        --mdy-ios-gray: #8E8E93;
+        --mdy-ios-gray2: #AEAEB2;
+        --mdy-ios-gray3: #C7C7CC;
+        --mdy-ios-gray4: #D1D1D6;
+        --mdy-ios-gray5: #E5E5EA;
+        --mdy-ios-gray6: #F2F2F7;
+
+        /* Label colors */
+        --mdy-ios-label: #000000;
+        --mdy-ios-secondary-label: rgba(60, 60, 67, 0.60);
+        --mdy-ios-tertiary-label: rgba(60, 60, 67, 0.30);
+        --mdy-ios-placeholder: rgba(60, 60, 67, 0.30);
+
+        /* Backgrounds */
+        --mdy-ios-bg: #FFFFFF;
+        --mdy-ios-secondary-bg: #F2F2F7;
+
+        /* Fills — flat, opaque-looking system fill used INSIDE content
+       (text fields, segmented track, search bars). Never blurred. */
+        --mdy-ios-fill: rgba(118, 118, 128, 0.12);
+        --mdy-ios-fill-strong: rgba(118, 118, 128, 0.20);
+
+        /* Separator */
+        --mdy-ios-separator: rgba(60, 60, 67, 0.29);
+
+        /* Glass material — ONLY for floating overlay chrome (popovers,
+       sheets, dropdowns, context menus). Recipe transcribed from the Apple
+       "Liquid Glass" material spec (Fill+Shadow + Glass Effect layers):
+       translucent tint + real backdrop blur/saturate (Figma fakes the blur;
+       CSS doesn't have to) + a pair of 1.25px hairline edge lines (not a
+       full border) + thin top/bottom "lens" bands + one soft outer shadow. */
+        --mdy-ios-glass-tint: rgba(255, 255, 255, 0.62);
+        --mdy-ios-glass-blur: blur(20px) saturate(180%);
+        --mdy-ios-glass-edge: rgba(219, 219, 219, 0.9);
+        --mdy-ios-glass-lens-dark: rgba(40, 40, 40, 0.30);
+        --mdy-ios-glass-lens-light: rgba(255, 255, 255, 0.55);
+        --mdy-ios-glass-border: none;
+        --mdy-ios-glass-shadow:
+            1.25px 0 0 -0.75px var(--mdy-ios-glass-edge),
+            -1.25px 0 0 -0.75px var(--mdy-ios-glass-edge),
+            0 0 0 0.5px var(--mdy-ios-glass-edge),
+            inset 0 40px 10px -40px var(--mdy-ios-glass-lens-dark),
+            inset 0 -40px 10px -40px var(--mdy-ios-glass-lens-dark),
+            inset 0 40px 30px -40px var(--mdy-ios-glass-lens-light),
+            0 8px 48px rgba(0, 0, 0, 0.25);
+        /* Solid fallback for browsers without backdrop-filter support */
+        --mdy-ios-glass-bg-fallback: #F7F7FA;
+
+        /* ── Typography — SF Pro ───────────────────────────────────────── */
+        --mdy-ios-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+            'Helvetica Neue', Helvetica, Arial, sans-serif;
+        /* Exact SF Pro optical weights used throughout the iOS 27 kit (not the
+       generic 400/500/600 web triad): 510 for medium emphasis (field values),
+       590 for semibold (titles, selected segment, button labels). */
+        --mdy-font-weight-regular: 400;
+        --mdy-font-weight-medium: 510;
+        --mdy-font-weight-semibold: 590;
+        --mdy-label-font-weight: var(--mdy-font-weight-regular);
+        --mdy-label-font-size: 0.9375rem;
+        /* 15pt */
+        --mdy-ios-tracking-body: -0.43px;
+        /* 17px body/value text */
+        --mdy-ios-tracking-footnote: -0.08px;
+        /* 13.3px footnote/segmented label */
+
+        /* ── Text fields — 44pt min hit target, flat fill, 10pt corner ──── */
+        --mdy-input-padding: 0.6875rem 0.875rem;
+        /* ~11×14px, keeps 44pt height with 15pt text */
+        --mdy-input-border: none;
+        --mdy-input-border-radius: 10px;
+        --mdy-input-color: var(--mdy-ios-label);
+        --mdy-input-placeholder-color: var(--mdy-ios-placeholder);
+        /* Real value/placeholder text in this kit's fields is 17px, weight 510,
+       tracking -0.43px — not the 15px footnote size used for standalone labels. */
+        --mdy-input-font-size: 1.0625rem;
+        --mdy-input-icon-color: var(--mdy-ios-gray);
+        --mdy-input-focus-color: var(--mdy-ios-blue);
+        --mdy-input-focus-shadow: 0 0 0 3.5px rgba(0, 122, 255, 0.25);
+        --mdy-calendar-icon-filter: none;
+
+        /* ── Errors ──────────────────────────────────────────────────── */
+        --mdy-error-color: var(--mdy-ios-red);
+        --mdy-error-font-size: 0.75rem;
+        --mdy-error-line-height: 1.33;
+        --mdy-error-focus-shadow: 0 0 0 3.5px rgba(255, 59, 48, 0.2);
+
+        /* ── Checkbox — iOS "Reminders"-style circular check ───────────── */
+        --mdy-checkbox-size: 1.375rem;
+        --mdy-checkbox-accent: var(--mdy-ios-blue);
+        --mdy-checkbox-checkmark-color: var(--mdy-ios-bg);
+        --mdy-checkbox-border: 1.5px solid var(--mdy-ios-gray3);
+        --mdy-checkbox-border-radius: 50%;
+        --mdy-checkbox-gap: 0.625rem;
+        --mdy-checkbox-transition: 0.15s ease;
+
+        /* ── Toggle — exact node geometry from Toggles/StateIdle*: 64×28pt
+       track, 38×24pt PILL-shaped thumb (iOS 27's thumb is a capsule, not a
+       circle), 2px inset all around. Off-track fill is a translucent gray,
+       not the previous flat gray5. ──────────────────────────────────── */
+        --mdy-toggle-width: 4rem;
+        /* 64px */
+        --mdy-toggle-height: 1.75rem;
+        /* 28px */
+        --mdy-toggle-thumb-width: 2.375rem;
+        /* 38px */
+        --mdy-toggle-thumb-height: 1.5rem;
+        /* 24px */
+        --mdy-toggle-thumb-offset: 0.125rem;
+        /* 2px */
+        --mdy-toggle-thumb-color: var(--mdy-ios-bg);
+        --mdy-toggle-thumb-color-checked: var(--mdy-ios-bg);
+        --mdy-toggle-bg: rgba(60, 60, 67, 0.3);
+        --mdy-toggle-bg-checked: var(--mdy-ios-green);
+        --mdy-toggle-border: none;
+        --mdy-toggle-border-checked: none;
+        --mdy-toggle-gap: 0.625rem;
+        --mdy-toggle-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+        /* ── Multiselect / Chips — capsule pills ────────────────────────── */
+        --mdy-multiselect-padding: 0.25rem 0;
+        --mdy-multiselect-max-height: 5.5rem;
+        --mdy-chip-height: 2rem;
+        --mdy-chip-padding: 0 0.75rem;
+        --mdy-chip-gap: 0.375rem;
+        --mdy-chip-font-size: 0.8125rem;
+        --mdy-chip-border-radius: 9999px;
+        --mdy-chip-border: 1px solid transparent;
+        --mdy-chip-bg: var(--mdy-ios-fill);
+        --mdy-chip-color: var(--mdy-ios-label);
+        --mdy-chip-selected-bg: var(--mdy-ios-blue);
+        --mdy-chip-selected-color: #ffffff;
+        --mdy-chip-selected-border: 1px solid transparent;
+        --mdy-chip-max-width: 11rem;
+        --mdy-chip-transition: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        --mdy-chip-hover-bg: var(--mdy-ios-fill-strong);
+        --mdy-chip-hover-border: transparent;
+        --mdy-chip-hover-color: var(--mdy-ios-label);
+        --mdy-chip-selected-hover-bg: color-mix(in srgb, var(--mdy-ios-blue), black 12%);
+        --mdy-chip-selected-hover-color: #fff;
+
+        /* ── Select / dropdown — floating glass sheet ───────────────────── */
+        --mdy-select-dropdown-bg: var(--mdy-ios-glass-bg-fallback);
+        --mdy-select-dropdown-border: var(--mdy-ios-glass-border);
+        --mdy-select-dropdown-border-radius: 14px;
+        --mdy-select-dropdown-shadow: var(--mdy-ios-glass-shadow);
+        --mdy-select-dropdown-max-height: calc(var(--mdy-multiselect-max-height) + 40px);
+        --mdy-select-option-padding: 0.625rem 0.75rem;
+        --mdy-select-option-hover-bg: var(--mdy-ios-fill);
+        --mdy-select-option-hover-color: var(--mdy-ios-label);
+        --mdy-select-option-selected-bg: color-mix(in srgb, var(--mdy-ios-blue), transparent 90%);
+        --mdy-select-option-selected-color: var(--mdy-ios-blue);
+        --mdy-select-option-selected-weight: var(--mdy-font-weight-semibold);
+        --mdy-select-placeholder-color: var(--mdy-input-placeholder-color);
+
+        /* ── Segmented Control — exact node geometry: 28pt pill indicator,
+       3px vertical / 6px horizontal inset, 13.333px/590/-0.08 label ──── */
+        --mdy-segmented-font-size: 0.8333rem;
+        --mdy-segmented-font-weight: var(--mdy-font-weight-semibold);
+        --mdy-select-arrow-color: var(--mdy-ios-gray);
+        --mdy-select-border-subtle: var(--mdy-ios-gray5);
+        --mdy-select-no-results-color: var(--mdy-ios-gray);
+        --mdy-multiselect-overlay-bg: var(--mdy-ios-glass-bg-fallback);
+
+        /* ── Primary / semantic bridge ────────────────────────────────── */
+        --mdy-primary: var(--mdy-ios-blue);
+        --mdy-on-primary: #ffffff;
+        --mdy-base-bg: var(--mdy-ios-secondary-bg);
+        --mdy-surface: var(--mdy-ios-bg);
+        --mdy-surface-container: var(--mdy-ios-gray6);
+        --mdy-surface-container-highest: var(--mdy-ios-gray5);
+        --mdy-surface-container-highest-hover: var(--mdy-ios-gray4);
+        --mdy-on-surface: var(--mdy-ios-label);
+        --mdy-on-surface-variant: var(--mdy-ios-secondary-label);
+        --mdy-outline: var(--mdy-ios-gray);
+        --mdy-outline-variant: var(--mdy-ios-gray3);
+        --mdy-outline-subtle: var(--mdy-ios-separator);
+        --mdy-disabled-bg: rgba(120, 120, 128, 0.08);
+        --mdy-disabled-color: rgba(60, 60, 67, 0.30);
+
+        /* ── Date Picker ─────────────────────────────────────────────── */
+        --mdy-datepicker-cell-size: 2.25rem;
+        --mdy-datepicker-cell-font-size: 1rem;
+        --mdy-datepicker-today-ring: 1.5px solid var(--mdy-ios-blue);
+        --mdy-datepicker-selected-bg: var(--mdy-ios-blue);
+        --mdy-datepicker-selected-color: #ffffff;
+        --mdy-datepicker-hover-bg: var(--mdy-ios-fill);
+        --mdy-datepicker-outside-opacity: 0.3;
+        --mdy-datepicker-disabled-opacity: 0.25;
+        --mdy-datepicker-header-gap: 0.25rem;
+        --mdy-datepicker-nav-btn-size: 2.25rem;
+        --mdy-datepicker-popup-padding: 0.5rem;
+        --mdy-datepicker-popup-bg: var(--mdy-ios-glass-bg-fallback);
+        --mdy-datepicker-popup-border: var(--mdy-ios-glass-border);
+        --mdy-datepicker-popup-border-radius: 14px;
+        --mdy-datepicker-popup-shadow: var(--mdy-ios-glass-shadow);
+        --mdy-datepicker-icon-size: 1.25rem;
+        --mdy-datepicker-today-color: var(--mdy-ios-blue);
+
+        /* Date Range */
+        --mdy-daterange-in-range-bg: color-mix(in srgb, var(--mdy-ios-blue), transparent 88%);
+        --mdy-daterange-endpoint-bg: var(--mdy-ios-blue);
+        --mdy-daterange-endpoint-color: var(--mdy-ios-bg);
+
+        /* Layout — compact, matches iOS row density */
+        --mdy-renderer-gap: 0.25rem;
+        --mdy-renderer-margin-bottom: 0.375rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * DARK MODE — iOS System Colors
+     * ═══════════════════════════════════════════════════════════════════ */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --mdy-ios-blue: #0A84FF;
+            --mdy-ios-red: #FF453A;
+            --mdy-ios-green: #30D158;
+            --mdy-ios-gray: #8E8E93;
+            --mdy-ios-gray2: #636366;
+            --mdy-ios-gray3: #48484A;
+            --mdy-ios-gray4: #3A3A3C;
+            --mdy-ios-gray5: #2C2C2E;
+            --mdy-ios-gray6: #1C1C1E;
+
+            --mdy-ios-label: #FFFFFF;
+            --mdy-ios-secondary-label: rgba(235, 235, 245, 0.60);
+            --mdy-ios-tertiary-label: rgba(235, 235, 245, 0.30);
+            --mdy-ios-placeholder: rgba(235, 235, 245, 0.30);
+
+            --mdy-ios-bg: #000000;
+            --mdy-ios-secondary-bg: #1C1C1E;
+
+            --mdy-ios-fill: rgba(120, 120, 128, 0.24);
+            --mdy-ios-fill-strong: rgba(120, 120, 128, 0.36);
+            --mdy-ios-separator: rgba(84, 84, 88, 0.60);
+
+            --mdy-ios-glass-tint: rgba(28, 28, 30, 0.68);
+            --mdy-ios-glass-edge: rgba(0, 0, 0, 0.55);
+            --mdy-ios-glass-lens-dark: rgba(0, 0, 0, 0.45);
+            --mdy-ios-glass-lens-light: rgba(255, 255, 255, 0.14);
+            --mdy-ios-glass-shadow:
+                1.25px 0 0 -0.75px var(--mdy-ios-glass-edge),
+                -1.25px 0 0 -0.75px var(--mdy-ios-glass-edge),
+                0 0 0 0.5px var(--mdy-ios-glass-edge),
+                inset 0 40px 10px -40px var(--mdy-ios-glass-lens-dark),
+                inset 0 -40px 10px -40px var(--mdy-ios-glass-lens-dark),
+                inset 0 40px 30px -40px var(--mdy-ios-glass-lens-light),
+                0 8px 48px rgba(0, 0, 0, 0.45);
+            --mdy-ios-glass-bg-fallback: #1E1E22;
+
+            /* Toggle off-track — exact dark-mode fig node value (not gray5) */
+            --mdy-toggle-bg: rgba(235, 235, 245, 0.3);
+
+            --mdy-disabled-bg: rgba(120, 120, 128, 0.18);
+            --mdy-disabled-color: rgba(235, 235, 245, 0.30);
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * GLOBAL FONT
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-renderer,
+    .mdy-timepicker-container,
+    .mdy-datepicker__popup,
+    .mdy-datepicker__popup--modal,
+    .mdy-multiselect-overlay__panel,
+    .mdy-colors__dropdown,
+    .mdy-select__dropdown {
+        font-family: var(--mdy-ios-font);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        letter-spacing: -0.022em;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * TEXT FIELDS — flat opaque fill (Settings.app style), 10pt corner.
+     * Glass is reserved for floating chrome (see overlay section below).
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-input-wrapper {
+        background-color: var(--mdy-ios-fill);
+        border-radius: var(--mdy-input-border-radius);
+        box-shadow: none;
+        transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .mdy-input-wrapper:hover:not(:focus-within) {
+        background-color: var(--mdy-ios-fill-strong);
+    }
+
+    .mdy-input-wrapper:focus-within {
+        background-color: var(--mdy-ios-fill-strong);
+        box-shadow: 0 0 0 3.5px rgba(0, 122, 255, 0.25);
+    }
+
+    .mdy-input-wrapper--error {
+        box-shadow: 0 0 0 1.5px var(--mdy-ios-red);
+    }
+
+    .mdy-input-wrapper--error:focus-within,
+    .mdy-renderer--touched .mdy-input-wrapper--error {
+        box-shadow: 0 0 0 3.5px rgba(255, 59, 48, 0.20);
+    }
+
+    .mdy-input-wrapper--disabled {
+        background-color: var(--mdy-disabled-bg);
+    }
+
+    .mdy-renderer input[type="text"],
+    .mdy-renderer input[type="number"],
+    .mdy-renderer input[type="date"],
+    .mdy-renderer input[type="email"],
+    .mdy-renderer textarea,
+    .mdy-renderer select {
+        color: var(--mdy-input-color);
+        border-radius: var(--mdy-input-border-radius);
+        font-weight: var(--mdy-font-weight-medium);
+        letter-spacing: var(--mdy-ios-tracking-body);
+    }
+
+    .mdy-renderer input:focus,
+    .mdy-renderer textarea:focus,
+    .mdy-renderer select:focus {
+        /* Focus ring lives on .mdy-input-wrapper via :focus-within. */
+        box-shadow: none;
+        outline: none;
+    }
+
+    .mdy-renderer input[aria-invalid="true"],
+    .mdy-renderer textarea[aria-invalid="true"],
+    .mdy-renderer select[aria-invalid="true"] {
+        color: var(--mdy-input-color);
+    }
+
+    .mdy-renderer input:disabled,
+    .mdy-renderer textarea:disabled,
+    .mdy-renderer select:disabled {
+        color: var(--mdy-disabled-color);
+        cursor: not-allowed;
+    }
+
+    .mdy-renderer input::placeholder,
+    .mdy-renderer textarea::placeholder {
+        color: var(--mdy-input-placeholder-color);
+        font-weight: var(--mdy-font-weight-regular);
+    }
+
+    .mdy-renderer input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: var(--mdy-calendar-icon-filter, none);
+    }
+
+    .mdy-renderer label {
+        color: var(--mdy-on-surface);
+        letter-spacing: -0.01em;
+    }
+
+    /* ── Custom select trigger — transparent, wrapper provides the fill ─── */
+    .mdy-select__trigger {
+        background: transparent;
+        color: var(--mdy-input-color);
+        border: none;
+        box-shadow: none;
+        outline: none;
+        border-radius: var(--mdy-input-border-radius);
+        width: 100%;
+        height: 100%;
+        min-height: unset;
+    }
+
+    .mdy-select__trigger:focus,
+    .mdy-select__trigger:focus-visible {
+        outline: none;
+        box-shadow: none;
+    }
+
+    .mdy-select__placeholder {
+        color: var(--mdy-input-placeholder-color);
+    }
+
+    .mdy-select__arrow {
+        color: var(--mdy-outline);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * FLOATING GLASS CHROME — dropdowns, popovers, sheets, timepicker.
+     * One clean material: translucent tint + blur/saturate + hairline
+     * border + soft shadow. Works against ANY host-page background —
+     * that is the entire point of backdrop-filter.
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-select__dropdown,
+    .mdy-multiselect-overlay__panel,
+    .mdy-datepicker__popup,
+    .mdy-colors__dropdown,
+    .mdy-timepicker-container {
+        position: fixed;
+        isolation: isolate;
+        background: var(--mdy-ios-glass-bg-fallback);
+        border: var(--mdy-ios-glass-border);
+        box-shadow: var(--mdy-ios-glass-shadow);
+    }
+
+    @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+
+        .mdy-select__dropdown,
+        .mdy-multiselect-overlay__panel,
+        .mdy-datepicker__popup,
+        .mdy-colors__dropdown,
+        .mdy-timepicker-container {
+            background: var(--mdy-ios-glass-tint);
+            backdrop-filter: var(--mdy-ios-glass-blur);
+            -webkit-backdrop-filter: var(--mdy-ios-glass-blur);
+        }
+    }
+
+    /* Progressive enhancement: lens-style edge refraction (Chromium only). */
+    @supports (backdrop-filter: url('#x')) {
+
+        .mdy-select__dropdown,
+        .mdy-multiselect-overlay__panel,
+        .mdy-datepicker__popup,
+        .mdy-colors__dropdown,
+        .mdy-timepicker-container {
+            backdrop-filter: url('liquid-glass-filter.svg#liquid-glass-lens') blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+        }
+    }
+
+    .mdy-select__dropdown {
+        margin-top: 0.375rem;
+    }
+
+    .mdy-select__search {
+        background: var(--mdy-ios-fill);
+        border: none;
+        border-radius: 10px;
+        margin: 0.5rem 0.75rem 0.25rem;
+        padding: 0.5rem 0.75rem;
+        width: calc(100% - 1.5rem);
+        box-sizing: border-box;
+        font-size: var(--mdy-input-font-size);
+        box-shadow: none;
+        outline: none;
+        transition: background 0.15s ease;
+    }
+
+    .mdy-select__search:focus {
+        background: var(--mdy-ios-fill-strong);
+    }
+
+    .mdy-select__no-results {
+        color: var(--mdy-outline);
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .mdy-select__option {
+        border-radius: 8px;
+        margin: 0 0.375rem;
+        padding: 0.5rem 0.625rem;
+        transition: background 0.12s ease;
+    }
+
+    .mdy-select__option:hover,
+    .mdy-select__option:focus {
+        background: rgba(120, 120, 128, 0.16);
+    }
+
+    .mdy-select__option[aria-selected="true"],
+    .mdy-select__option--selected {
+        background: color-mix(in srgb, var(--mdy-ios-blue), transparent 90%);
+        color: var(--mdy-ios-blue);
+        font-weight: var(--mdy-font-weight-semibold);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * TOGGLE / SWITCH — exact figma node geometry: 64×28pt track, 38×24pt
+     * pill-shaped thumb (iOS 27's thumb is a capsule, not a circle), 2px
+     * inset. Off = translucent rgba(60,60,67,.3), On = system green.
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-toggle__track {
+        box-sizing: border-box;
+        position: relative;
+        border-radius: 9999px;
+        background: var(--mdy-toggle-bg);
+        border: var(--mdy-toggle-border);
+        transition: background 0.25s ease;
+    }
+
+    .mdy-toggle input:checked+.mdy-toggle__track {
+        background: var(--mdy-toggle-bg-checked);
+        border-color: transparent;
+    }
+
+    .mdy-toggle__thumb {
+        background: var(--mdy-toggle-thumb-color);
+        width: var(--mdy-toggle-thumb-width);
+        height: var(--mdy-toggle-thumb-height);
+        border-radius: 9999px;
+        top: 50%;
+        transform: translateY(-50%);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        position: absolute;
+        left: var(--mdy-toggle-thumb-offset);
+        transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mdy-toggle input:checked+.mdy-toggle__track .mdy-toggle__thumb {
+        left: calc(var(--mdy-toggle-width) - var(--mdy-toggle-thumb-width) - var(--mdy-toggle-thumb-offset));
+    }
+
+    .mdy-toggle input:focus-visible+.mdy-toggle__track {
+        outline: 3.5px solid rgba(0, 122, 255, 0.4);
+        outline-offset: 2px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * CHECKBOX — circular, "Reminders"-style
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-checkbox input[type="checkbox"]:focus-visible+span::before {
+        outline: 3.5px solid rgba(0, 122, 255, 0.4);
+        outline-offset: 2px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * MULTISELECT / CHIPS
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-multiselect__label {
+        color: var(--mdy-on-surface);
+        letter-spacing: -0.01em;
+    }
+
+    .mdy-multiselect__search-btn:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--mdy-ios-blue), transparent 92%);
+        color: var(--mdy-ios-blue);
+    }
+
+    .mdy-multiselect__options,
+    .mdy-select__list,
+    .mdy-multiselect-overlay__grid {
+        scrollbar-width: thin;
+        scrollbar-color: var(--mdy-ios-gray3) transparent;
+    }
+
+    .mdy-chip:hover:not(:disabled):not(.mdy-chip--selected) {
+        background: var(--mdy-chip-hover-bg);
+        color: var(--mdy-chip-hover-color);
+    }
+
+    .mdy-chip--selected:hover:not(:disabled):not(.mdy-chip--counter) {
+        background: var(--mdy-chip-selected-hover-bg);
+        color: var(--mdy-chip-selected-hover-color);
+    }
+
+    .mdy-multiselect-overlay__input {
+        background: var(--mdy-ios-fill);
+        border: none;
+        border-radius: 10px;
+        margin: 0.5rem 0.75rem 0.25rem;
+        padding: 0.5rem 0.75rem;
+        width: calc(100% - 1.5rem);
+        box-sizing: border-box;
+        box-shadow: none;
+        transition: background 0.15s ease;
+    }
+
+    .mdy-multiselect-overlay__input:focus {
+        background: var(--mdy-ios-fill-strong);
+    }
+
+    .mdy-multiselect-overlay__option {
+        border-radius: 8px;
+        margin: 0 0.375rem;
+        padding: 0.5rem 0.625rem;
+        transition: background 0.12s ease;
+    }
+
+    .mdy-multiselect-overlay__option:hover,
+    .mdy-multiselect-overlay__option:focus {
+        background: rgba(120, 120, 128, 0.16);
+    }
+
+    .mdy-multiselect-overlay__option--selected {
+        background: color-mix(in srgb, var(--mdy-ios-blue), transparent 90%);
+        color: var(--mdy-ios-blue);
+    }
+
+    .mdy-multiselect-overlay__empty {
+        color: var(--mdy-outline);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * INLINE / BLOCK ERRORS
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-control__inline-errors-tooltip {
+        border-radius: 12px;
+        font-size: 0.8125rem;
+        letter-spacing: -0.01em;
+    }
+
+    .mdy-renderer:not(.mdy-inline-errors)::after {
+        padding-top: 0.25rem;
+    }
+
+    .mdy-control__error {
+        letter-spacing: -0.01em;
+        padding-top: 0.25rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * INPUT-GROUP MERGING (date input + trailing toggle button)
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-datepicker__input-group>input,
+    .mdy-datepicker__input-group>.mdy-datepicker__input {
+        border-radius: var(--mdy-input-border-radius) 0 0 var(--mdy-input-border-radius);
+    }
+
+    .mdy-datepicker__input-group>button:last-child,
+    .mdy-datepicker__input-group>.mdy-datepicker__toggle {
+        border-radius: 0 var(--mdy-input-border-radius) var(--mdy-input-border-radius) 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * DATE PICKER
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-datepicker__input {
+        background: transparent;
+        color: var(--mdy-input-color);
+    }
+
+    .mdy-datepicker__input:focus {
+        box-shadow: none;
+        outline: none;
+        z-index: 1;
+    }
+
+    .mdy-datepicker__input:disabled {
+        background: transparent;
+        color: var(--mdy-disabled-color);
+    }
+
+    .mdy-datepicker__toggle {
+        background: transparent;
+        color: var(--mdy-input-focus-color);
+        outline: none;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .mdy-datepicker__toggle:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--mdy-ios-blue), transparent 92%);
+    }
+
+    .mdy-datepicker__toggle:focus,
+    .mdy-datepicker__toggle:focus-visible {
+        outline: none;
+        box-shadow: none;
+    }
+
+    .mdy-datepicker__nav-btn {
+        border-radius: 50%;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .mdy-datepicker__nav-btn:hover {
+        background: rgba(120, 120, 128, 0.16);
+        color: var(--mdy-ios-blue);
+    }
+
+    .mdy-datepicker__cell {
+        border: 2px solid transparent;
+        background-clip: padding-box;
+    }
+
+    .mdy-datepicker__cell--in-range {
+        border-left-width: 0;
+        border-right-width: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .mdy-datepicker__cell--range-start:not(.mdy-datepicker__cell--range-end) {
+        border-right-width: 0;
+    }
+
+    .mdy-datepicker__cell--range-end:not(.mdy-datepicker__cell--range-start) {
+        border-left-width: 0;
+    }
+
+    .mdy-datepicker__cell--selected {
+        font-weight: var(--mdy-font-weight-medium);
+        background: var(--mdy-datepicker-selected-bg);
+        color: var(--mdy-datepicker-selected-color);
+    }
+
+    .mdy-datepicker__cell--today:not(.mdy-datepicker__cell--selected) {
+        box-shadow: inset 0 0 0 1.5px var(--mdy-ios-blue);
+        color: var(--mdy-ios-blue);
+        font-weight: var(--mdy-font-weight-medium);
+    }
+
+    .mdy-datepicker__title {
+        color: var(--mdy-on-surface);
+        letter-spacing: -0.01em;
+        font-weight: var(--mdy-font-weight-semibold);
+    }
+
+    .mdy-daterange__sep {
+        border: none;
+    }
+
+    .mdy-daterange__group .mdy-daterange__input:first-of-type {
+        border-radius: var(--mdy-input-border-radius) 0 0 var(--mdy-input-border-radius);
+    }
+
+    .mdy-daterange__group .mdy-daterange__input:nth-of-type(2) {
+        border-radius: 0;
+    }
+
+    .mdy-daterange__group:focus-within {
+        box-shadow: 0 0 0 3.5px rgba(0, 122, 255, 0.3);
+    }
+
+    .mdy-daterange__group .mdy-daterange__input:focus {
+        box-shadow: none;
+        outline: none;
+    }
+
+    .mdy-datepicker__month-cell:hover:not(:disabled),
+    .mdy-datepicker__year-cell:hover:not(:disabled) {
+        background: rgba(120, 120, 128, 0.12);
+        color: var(--mdy-on-surface);
+    }
+
+    .mdy-datepicker__month-cell--selected,
+    .mdy-datepicker__year-cell--selected {
+        background: color-mix(in srgb, var(--mdy-ios-blue), transparent 85%);
+        color: var(--mdy-ios-blue);
+        font-weight: var(--mdy-font-weight-semibold);
+    }
+
+    .mdy-datepicker__weekday {
+        color: var(--mdy-on-surface-variant);
+        font-size: 0.75rem;
+        font-weight: var(--mdy-font-weight-semibold);
+    }
+
+    .mdy-timepicker-container {
+        border-radius: 14px;
+    }
+
+    .mdy-timepicker-dial,
+    .mdy-timepicker-dial__face {
+        border-radius: 50%;
+        background: rgba(120, 120, 128, 0.10);
+        box-shadow: none;
+    }
+
+    .mdy-timepicker-segment-input:not(.mdy-timepicker-segment--active>.mdy-timepicker-segment-input) {
+        background: var(--mdy-ios-fill);
+    }
+
+    .mdy-timepicker-segment--active>.mdy-timepicker-segment-input {
+        background: color-mix(in srgb, var(--mdy-ios-blue), transparent 85%);
+        color: var(--mdy-ios-blue);
+        border-color: transparent;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * FOCUS RINGS
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-select__trigger:focus-visible,
+    .mdy-datepicker__toggle:focus-visible,
+    .mdy-datepicker__nav-btn:focus-visible,
+    .mdy-segmented__button:focus-visible,
+    .mdy-button:focus-visible {
+        outline: 3.5px solid rgba(0, 122, 255, 0.4);
+        outline-offset: 2px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * RADIO — circular dot
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-radio-circle {
+        border: 2px solid var(--mdy-ios-gray3);
+    }
+
+    .mdy-radio-item input[type="radio"]:checked+.mdy-radio-circle {
+        border-color: var(--mdy-ios-blue);
+        background: var(--mdy-ios-blue);
+    }
+
+    .mdy-radio-item input[type="radio"]:focus-visible+.mdy-radio-circle {
+        outline: 3.5px solid rgba(0, 122, 255, 0.4);
+        outline-offset: 2px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * SEGMENTED BUTTON — exact node geometry: solid white/systemBackground
+     * pill indicator (not glass), 3px vertical inset, shadow 0 2px 20px
+     * rgba(0,0,0,.06), label 13.333px/590/-0.08 tracking.
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-segmented {
+        background: var(--mdy-ios-fill);
+        border: none;
+        padding: 3px;
+        gap: 2px;
+        position: relative;
+        overflow: hidden;
+        font-size: var(--mdy-segmented-font-size);
+        font-weight: var(--mdy-font-weight-semibold);
+        letter-spacing: var(--mdy-ios-tracking-footnote);
+    }
+
+    .mdy-segmented::before {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: calc((100% - 6px) / var(--mdy-segments-count, 3));
+        height: calc(100% - 6px);
+        border-radius: var(--mdy-corner-large);
+        pointer-events: none;
+        z-index: 0;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: var(--mdy-ios-bg);
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .mdy-segmented:not(:has(.mdy-segmented__button--selected))::before {
+        display: none;
+    }
+
+    .mdy-segmented:has(> .mdy-segmented__button:nth-child(1).mdy-segmented__button--selected)::before {
+        left: 3px;
+    }
+
+    .mdy-segmented:has(> .mdy-segmented__button:nth-child(2).mdy-segmented__button--selected)::before {
+        left: calc(3px + 1 * (100% - 6px) / var(--mdy-segments-count, 3));
+    }
+
+    .mdy-segmented:has(> .mdy-segmented__button:nth-child(3).mdy-segmented__button--selected)::before {
+        left: calc(3px + 2 * (100% - 6px) / var(--mdy-segments-count, 3));
+    }
+
+    .mdy-segmented:has(> .mdy-segmented__button:nth-child(4).mdy-segmented__button--selected)::before {
+        left: calc(3px + 3 * (100% - 6px) / var(--mdy-segments-count, 3));
+    }
+
+    .mdy-segmented:has(> .mdy-segmented__button:nth-child(5).mdy-segmented__button--selected)::before {
+        left: calc(3px + 4 * (100% - 6px) / var(--mdy-segments-count, 3));
+    }
+
+    .mdy-segmented:has(> .mdy-segmented__button:nth-child(6).mdy-segmented__button--selected)::before {
+        left: calc(3px + 5 * (100% - 6px) / var(--mdy-segments-count, 3));
+    }
+
+    .mdy-segmented:has(> .mdy-segmented__button:nth-child(7).mdy-segmented__button--selected)::before {
+        left: calc(3px + 6 * (100% - 6px) / var(--mdy-segments-count, 3));
+    }
+
+    .mdy-segmented:has(> .mdy-segmented__button:nth-child(8).mdy-segmented__button--selected)::before {
+        left: calc(3px + 7 * (100% - 6px) / var(--mdy-segments-count, 3));
+    }
+
+    .mdy-segmented__button {
+        position: relative;
+        z-index: 1;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+        margin-right: 0;
+        border-radius: var(--mdy-corner-large);
+        color: var(--mdy-ios-label);
+        transition: color 0.15s ease;
+    }
+
+    .mdy-segmented__button--selected {
+        font-weight: var(--mdy-font-weight-semibold);
+        color: var(--mdy-ios-label);
+    }
+
+    .mdy-segmented__check {
+        display: none;
+    }
+
+    .mdy-segmented__button:hover:not(.mdy-segmented__button--selected):not(:disabled) {
+        background: rgba(120, 120, 128, 0.1);
+        color: var(--mdy-ios-label);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .mdy-segmented::before {
+            transition: none;
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * SLIDER
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-slider::-webkit-slider-thumb {
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.20), 0 0 1px rgba(0, 0, 0, 0.1);
+    }
+
+    .mdy-slider::-moz-range-thumb {
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.20), 0 0 1px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * FILE UPLOAD
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-file-container {
+        border: 1.5px dashed var(--mdy-ios-gray3);
+        border-radius: 14px;
+        background: var(--mdy-ios-gray6);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * BUTTON — filled, pill-shaped, 44pt min height
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-button {
+        background: var(--mdy-ios-blue);
+        color: #ffffff;
+        border-radius: var(--mdy-corner-full);
+        height: 2.75rem;
+        padding: 0 1.5rem;
+        font-size: 0.9375rem;
+        font-weight: var(--mdy-font-weight-semibold);
+        letter-spacing: -0.01em;
+        box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+        transition: opacity 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+    }
+
+    .mdy-button:hover:not(:disabled) {
+        box-shadow: 0 4px 14px rgba(0, 122, 255, 0.32);
+    }
+
+    .mdy-button:active:not(:disabled) {
+        transform: scale(0.97);
+        box-shadow: 0 1px 4px rgba(0, 122, 255, 0.20);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * FLOATING LABEL
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-renderer.mdy-floating-label:has(.mdy-input-wrapper:focus-within) .mdy-label {
+        color: var(--mdy-ios-blue);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * REDUCED MOTION
+     * ═══════════════════════════════════════════════════════════════════ */
+    @media (prefers-reduced-motion: reduce) {
+
+        .mdy-renderer *,
+        .mdy-datepicker__popup--modal,
+        .mdy-timepicker-container {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+
+        .mdy-select__dropdown,
+        .mdy-multiselect-overlay__panel,
+        .mdy-datepicker__popup,
+        .mdy-colors__dropdown,
+        .mdy-timepicker-container {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+    }
+
+}
+
+/* end @layer mdy.themes */

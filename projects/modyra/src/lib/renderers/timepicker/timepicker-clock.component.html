@@ -1,0 +1,74 @@
+<div class="mdy-timepicker-container" [class.mdy-timepicker--dial]="viewMode() === 'dial'">
+  <div class="mdy-timepicker-content">
+    
+    <!-- Unified M3 Header (Used by both Input and Dial variants) -->
+    <mdy-timepicker-header
+      [hour]="hourDisplay()"
+      [minute]="minuteDisplay()"
+      [period]="periodDisplay()"
+      [format]="format()"
+      [focusedField]="focusedField()"
+      [viewMode]="viewMode()"
+      [disabled]="disabled()"
+      (hourInput)="onHourInput($event)"
+      (minuteInput)="onMinuteInput($event)"
+      (fieldFocus)="focusedField.set($event)"
+      (fieldClick)="focusedField.set($event)"
+      (periodChange)="togglePeriod($event)"
+    />
+
+    @if (viewMode() === 'dial') {
+      <!-- M3 Dial Variant (Only shows the clock below the header) -->
+      <div class="mdy-timepicker-dial-variant">
+        <div class="mdy-timepicker-dial">
+          <div
+            #dialFace
+            class="mdy-timepicker-dial__face"
+            (mousedown)="onDragStart($event)"
+            (touchstart)="onDragStart($event)"
+          >
+            <div class="mdy-timepicker-dial__hand" [style.transform]="'rotate(' + handRotation() + 'deg)'"></div>
+            @if (focusedField() === 'hour') {
+              @for (h of [12,1,2,3,4,5,6,7,8,9,10,11]; track h) {
+                <div class="mdy-timepicker-dial__number"
+                     [class.mdy-timepicker-dial__number--selected]="h === numericHour()"
+                     [style.--index]="h">
+                  {{h}}
+                </div>
+              }
+            } @else {
+              @for (m of [0,5,10,15,20,25,30,35,40,45,50,55]; track m; let i = $index) {
+                <div class="mdy-timepicker-dial__number"
+                     [class.mdy-timepicker-dial__number--selected]="m === (Math.round(numericMinute() / 5) * 5) % 60"
+                     [style.--index]="i === 0 ? 12 : i">
+                  {{m < 10 ? '0' + m : m}}
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="mdy-timepicker-actions">
+    <button
+      type="button"
+      class="mdy-timepicker-mode-toggle"
+      [attr.aria-label]="viewMode() === 'input' ? i18n.timepickerSwitchToDial : i18n.timepickerSwitchToInput"
+      (click)="setViewMode(viewMode() === 'input' ? 'dial' : 'input')">
+      @if (viewMode() === 'input') {
+        <!-- Switch to dial icon (clock) -->
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z" fill="currentColor"/></svg>
+      } @else {
+        <!-- Switch to keyboard icon -->
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 5H5v-2h2v2zm10 0H7v-2h10v2zm0-3h-2v-2h2v2zm0-3h-2V8h2v2zm3 6h-2v-2h2v2z" fill="currentColor"/></svg>
+      }
+    </button>
+
+    <div class="mdy-timepicker-spacer"></div>
+
+    <button type="button" class="mdy-timepicker-action-btn" (click)="cancelClicked.emit()">{{ i18n.timepickerCancel }}</button>
+    <button type="button" class="mdy-timepicker-action-btn mdy-timepicker-action-btn--confirm" (click)="confirmClicked.emit()">{{ i18n.timepickerConfirm }}</button>
+  </div>
+</div>
