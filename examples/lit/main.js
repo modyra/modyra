@@ -4,11 +4,14 @@
 // the theme stylesheet applies to its markup directly.
 import { html, LitElement } from "lit";
 import {
-  createLitForm, crossField, defineMdyTextField, email, field, minLength,
+  createLitForm, crossField, defineMdyElements, email, field, minLength,
   MdyFormController, mountMdyDevtools, required,
 } from "@modyra/lit";
 
-defineMdyTextField();
+// Registers the whole control catalog: text, textarea, number, checkbox,
+// toggle, radio group, segmented, select, multiselect, slider, datepicker,
+// daterange, timepicker, colors, file.
+defineMdyElements();
 
 class SignupApp extends LitElement {
   form = createLitForm(
@@ -35,6 +38,24 @@ class SignupApp extends LitElement {
     this.form.canUndo,
     this.form.canRedo,
   ]);
+
+  // A second, standalone form exercising every element of the catalog.
+  gallery = createLitForm({
+    topic: field(null, [required()]),
+    plan: field("free"),
+    billing: field("monthly"),
+    channels: field([]),
+    teamSize: field(5),
+    budget: field(null),
+    startDate: field(null),
+    trial: field(null),
+    standup: field(null),
+    brand: field("#3366ff"),
+    notifications: field(true),
+    terms: field(false, [required()]),
+    notes: field(""),
+    attachments: field(null),
+  });
 
   createRenderRoot() { return this; } // light DOM: the theme applies
 
@@ -74,6 +95,55 @@ class SignupApp extends LitElement {
           </div>
         </form>
         <div id="devtools"></div>
+
+        <h2>Control catalog</h2>
+        <form class="mdy-form" style="display:grid;gap:1rem">
+          <mdy-select-field label="Topic" placeholder="Pick one…"
+            .field=${this.gallery.f.topic}
+            .options=${[
+              { value: "sales", label: "Sales" },
+              { value: "support", label: "Support" },
+            ]}></mdy-select-field>
+          <mdy-radio-group-field label="Plan"
+            .field=${this.gallery.f.plan}
+            .options=${[
+              { value: "free", label: "Free" },
+              { value: "pro", label: "Pro" },
+            ]}></mdy-radio-group-field>
+          <mdy-segmented-field label="Billing"
+            .field=${this.gallery.f.billing}
+            .options=${[
+              { value: "monthly", label: "Monthly" },
+              { value: "yearly", label: "Yearly" },
+            ]}></mdy-segmented-field>
+          <mdy-multiselect-field label="Channels"
+            .field=${this.gallery.f.channels}
+            .options=${[
+              { value: "mail", label: "Email" },
+              { value: "sms", label: "SMS" },
+              { value: "push", label: "Push" },
+            ]}></mdy-multiselect-field>
+          <mdy-slider-field label="Team size" min="1" max="50"
+            .field=${this.gallery.f.teamSize}></mdy-slider-field>
+          <mdy-number-field label="Budget" min="0" step="100"
+            .field=${this.gallery.f.budget}></mdy-number-field>
+          <mdy-datepicker-field label="Start date"
+            .field=${this.gallery.f.startDate}></mdy-datepicker-field>
+          <mdy-daterange-field label="Trial period"
+            .field=${this.gallery.f.trial}></mdy-daterange-field>
+          <mdy-timepicker-field label="Daily standup"
+            .field=${this.gallery.f.standup}></mdy-timepicker-field>
+          <mdy-colors-field label="Brand color"
+            .field=${this.gallery.f.brand}></mdy-colors-field>
+          <mdy-toggle-field label="Notifications"
+            .field=${this.gallery.f.notifications}></mdy-toggle-field>
+          <mdy-checkbox-field label="Accept terms"
+            .field=${this.gallery.f.terms}></mdy-checkbox-field>
+          <mdy-textarea-field label="Notes" rows="3"
+            .field=${this.gallery.f.notes}></mdy-textarea-field>
+          <mdy-file-field label="Attachments" multiple
+            .field=${this.gallery.f.attachments}></mdy-file-field>
+        </form>
       </main>`;
   }
 }
