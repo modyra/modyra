@@ -158,6 +158,14 @@ Project policies: [security](SECURITY.md) · [contributing](CONTRIBUTING.md) · 
   (`npm test`, `npm run test:bundle`); browser, axe and visual tests are
   planned. Pin your version and read release notes.
 
+## Examples
+
+`examples/{react,vue,lit}` are miniature apps that import the **built**
+`@modyra/*` packages from `node_modules` — the same artifacts users
+install, never the library sources (`npm run build:examples`, output in
+`dist/examples/*`). The Angular demo (`projects/demo`) likewise consumes
+the packaged `@modyra/angular` build.
+
 ## Local development
 
 ```bash
