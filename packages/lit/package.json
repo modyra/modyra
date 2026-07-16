@@ -1,0 +1,19 @@
+{
+  "name": "@modyra/lit",
+  "version": "0.1.0",
+  "description": "Lit binding for the Modyra form engine — a ReactiveController over the framework-agnostic core.",
+  "license": "MIT",
+  "author": "Lorenzo Muscherà",
+  "repository": { "type": "git", "url": "git+ssh://git@github.personal/modyra/modyra.git", "directory": "packages/lit" },
+  "bugs": { "url": "https://github.com/modyra/modyra/issues" },
+  "homepage": "https://github.com/modyra/modyra#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["dist", "README.md"],
+  "scripts": { "build": "tsc -p tsconfig.json", "test": "node --test test/*.test.mjs" },
+  "sideEffects": false,
+  "dependencies": { "@modyra/core": "0.1.0" },
+  "publishConfig": { "access": "public" }
+}

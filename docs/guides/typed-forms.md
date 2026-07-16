@@ -6,7 +6,7 @@ on a field path is a compile error**. Groups nest arbitrarily and map to
 dotted adapter paths (`address.city`).
 
 ```ts
-import { field, group, mdyForm, mdyRequired, mdyEmail, mdyMin } from "@modyra/forms";
+import { field, group, mdyForm, mdyRequired, mdyEmail, mdyMin } from "@modyra/angular";
 
 export class SignupComponent {
   readonly form = mdyForm({
@@ -151,14 +151,14 @@ touched), steps stay alive when hidden (values survive navigation), the step
 header allows jumping backwards freely and forwards only across valid steps.
 Combine with `draft:` for long forms that survive a browser crash.
 
-## Zod adapter — `@modyra/forms/zod`
+## Zod adapter — `@modyra/angular/zod`
 
 One source of truth for types, validators, messages and required flags — the
 same schema your backend/tRPC layer already uses. Ships as a secondary entry
 point with `zod` as an **optional** peer: zero weight if you don't use it.
 
 ```ts
-import { mdyFormFromSchema } from "@modyra/forms/zod";
+import { mdyFormFromSchema } from "@modyra/angular/zod";
 import { z } from "zod";
 
 readonly form = mdyFormFromSchema(

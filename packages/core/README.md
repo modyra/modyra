@@ -29,7 +29,7 @@ fine-grained reactivity (Solid, Preact Signals, Vue, Angular Signals, and
 the TC39 Signals proposal). It is **not** an Angular API: Angular is just
 one binding of the contract.
 
-- **Angular** — `@modyra/forms` passes native Angular signals, so form
+- **Angular** — `@modyra/angular` passes native Angular signals, so form
   state participates in change detection (zoneless included).
 - **Vue** — `ref`/`computed`/`watchEffect` map 1:1 (wrap `.value` access).
 - **Solid** — `createSignal`/`createMemo`/`createEffect` map directly.

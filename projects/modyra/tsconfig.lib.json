@@ -23,6 +23,6 @@
   ],
   "angularCompilerOptions": {
     "compilationMode": "partial",
-    "flatModuleId": "@modyra/forms"
+    "flatModuleId": "@modyra/angular"
   }
 }

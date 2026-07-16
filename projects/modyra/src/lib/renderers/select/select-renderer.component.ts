@@ -20,6 +20,7 @@ import {
   viewChild,
   WritableSignal,
 } from "@angular/core";
+import { listboxNextIndex } from "@modyra/core/keyboard";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -419,15 +420,20 @@ export class MdySelectComponent<TValue = string>
     const isSearchFocused =
       this.searchInputRef()?.nativeElement === document.activeElement;
 
+    // Home/End move the text cursor while the search input is focused —
+    // only the arrows are hijacked for list navigation in that case.
+    const navigates =
+      !isSearchFocused || event.key === "ArrowDown" || event.key === "ArrowUp";
+    const nextIndex = navigates
+      ? listboxNextIndex(event.key, idx, opts.length)
+      : null;
+    if (nextIndex !== null) {
+      event.preventDefault();
+      this.activeIndex.set(nextIndex);
+      return;
+    }
+
     switch (event.key) {
-      case "ArrowDown":
-        event.preventDefault();
-        this.activeIndex.set(Math.min(idx + 1, opts.length - 1));
-        break;
-      case "ArrowUp":
-        event.preventDefault();
-        this.activeIndex.set(Math.max(idx - 1, 0));
-        break;
       case "Enter":
         event.preventDefault();
         if (idx >= 0 && idx < opts.length) {

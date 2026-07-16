@@ -1,5 +1,5 @@
 /*
- * Public API Surface of @modyra/forms/zod
+ * Public API Surface of @modyra/angular/zod
  *
  * Optional Zod adapter: derive a fully typed MdyTypedForm from a z.object()
  * schema — types, validators, required flags and cross-field refinements

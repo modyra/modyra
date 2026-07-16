@@ -6,10 +6,10 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 const entries = {
-  "@modyra/forms": "projects/modyra/dist/types/modyra-forms.d.ts",
-  "@modyra/forms/core": "projects/modyra/dist/types/modyra-forms-core.d.ts",
-  "@modyra/forms/zod": "projects/modyra/dist/types/modyra-forms-zod.d.ts",
-  "@modyra/forms/interop": "projects/modyra/dist/types/modyra-forms-interop.d.ts",
+  "@modyra/angular": "projects/modyra/dist/types/modyra-angular.d.ts",
+  "@modyra/angular/core": "projects/modyra/dist/types/modyra-angular-core.d.ts",
+  "@modyra/angular/zod": "projects/modyra/dist/types/modyra-angular-zod.d.ts",
+  "@modyra/angular/interop": "projects/modyra/dist/types/modyra-angular-interop.d.ts",
 };
 
 let md = `# Public API surface

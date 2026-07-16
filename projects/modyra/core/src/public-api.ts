@@ -1,5 +1,5 @@
 /*
- * Public API Surface of @modyra/forms/core — the headless entry point.
+ * Public API Surface of @modyra/angular/core — the headless entry point.
  *
  * Exposes the form engine only: typed form model, declarative adapter,
  * validators, field/form state types, DI tokens, i18n and utilities — no
@@ -8,8 +8,8 @@
  * catalog on the same engine.
  *
  * The symbols are re-exported from the primary entry point (same module
- * instances, same DI tokens): mixing `@modyra/forms/core` and
- * `@modyra/forms` imports in one app is safe.
+ * instances, same DI tokens): mixing `@modyra/angular/core` and
+ * `@modyra/angular` imports in one app is safe.
  */
 
 // ─── Typed form (mdyForm) ─────────────────────────────────────────────────────
@@ -18,7 +18,7 @@ export {
   group,
   mdyForm,
   MdyTypedForm,
-} from "@modyra/forms";
+} from "@modyra/angular";
 export type {
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
@@ -32,11 +32,11 @@ export type {
   MdyFormValue,
   MdyGroupDescriptor,
   MdyTypedFormLike,
-} from "@modyra/forms";
+} from "@modyra/angular";
 
 // ─── Declarative adapter (engine) ─────────────────────────────────────────────
-export { MdyDeclarativeAdapter } from "@modyra/forms";
-export type { MdyDeclarativeRegistry } from "@modyra/forms";
+export { MdyDeclarativeAdapter } from "@modyra/angular";
+export type { MdyDeclarativeRegistry } from "@modyra/angular";
 
 // ─── Core types ───────────────────────────────────────────────────────────────
 export type {
@@ -58,7 +58,7 @@ export type {
   MdySelectOption,
   MdySubmitMode,
   ValidatorFn,
-} from "@modyra/forms";
+} from "@modyra/angular";
 
 // ─── Validators ───────────────────────────────────────────────────────────────
 export {
@@ -73,7 +73,7 @@ export {
   mdyPattern,
   mdyRequired,
   MDY_MARKS_REQUIRED,
-} from "@modyra/forms";
+} from "@modyra/angular";
 
 // ─── i18n ─────────────────────────────────────────────────────────────────────
 export {
@@ -84,12 +84,12 @@ export {
   MDY_I18N_MESSAGES_FR,
   MDY_I18N_MESSAGES_IT,
   provideModyraLocale,
-} from "@modyra/forms";
+} from "@modyra/angular";
 export type {
   MdyBuiltInLocale,
   MdyI18nMessages,
   MdyLocaleOptions,
-} from "@modyra/forms";
+} from "@modyra/angular";
 
 // ─── Date / time / option utilities ──────────────────────────────────────────
 export {
@@ -100,5 +100,5 @@ export {
   parseAnyTime,
   parseTime,
   to24Hour,
-} from "@modyra/forms";
-export type { MdyTimeFormat, ParsedTime } from "@modyra/forms";
+} from "@modyra/angular";
+export type { MdyTimeFormat, ParsedTime } from "@modyra/angular";

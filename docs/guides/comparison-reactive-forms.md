@@ -19,7 +19,7 @@ readonly form = new FormGroup({
 ```
 
 ```ts
-// @modyra/forms
+// @modyra/angular
 readonly form = mdyForm({
   email: field("", [mdyRequired(), mdyEmail()]),
   address: group({ city: field("Rome") }),
@@ -30,7 +30,7 @@ readonly form = mdyForm({
 
 ## Concrete differences
 
-| Aspect | Reactive Forms | @modyra/forms |
+| Aspect | Reactive Forms | @modyra/angular |
 | :--- | :--- | :--- |
 | State model | `FormControl`/`FormGroup` classes, RxJS streams | Signals: `value()`, `valid()`, `pending()` are `computed` |
 | Field binding | `formControlName="email"` (string) | `[field]="form.f.email"` (compile-checked) |

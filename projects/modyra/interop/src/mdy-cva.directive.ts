@@ -14,7 +14,7 @@ import {
   MdyFieldState,
   MDY_DECLARATIVE_REGISTRY,
   MDY_FORM_ADAPTER,
-} from "@modyra/forms";
+} from "@modyra/angular";
 
 declare const ngDevMode: boolean | undefined;
 

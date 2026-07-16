@@ -1,5 +1,5 @@
 /*
- * Public API Surface of @modyra/forms/interop
+ * Public API Surface of @modyra/angular/interop
  *
  * Interop with classic @angular/forms: the `mdyCva` directive makes every
  * modyra renderer usable inside Reactive Forms / ngModel for
