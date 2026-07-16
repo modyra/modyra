@@ -2,7 +2,10 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "../../out-tsc/bundle-test",
-    "types": []
+    "types": [],
+    "paths": {}
   },
-  "files": ["src/main.ts"]
+  "files": [
+    "src/main.ts"
+  ]
 }

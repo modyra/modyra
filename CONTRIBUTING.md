@@ -39,5 +39,5 @@ Node 22+, pnpm workspace (the npm scripts wrap it).
 
 1. Full test run, `test:bundle`, `pack:analyze`, `pnpm audit --prod` clean.
 2. Bump the version (semver), update CHANGELOG.md.
-3. `npm run build:lib`, `npm pack` from `projects/modyra/dist`, publish.
+3. `npm run build:lib`, `npm pack` from `packages/angular/dist`, publish.
    Release candidates precede majors.

@@ -1,9 +1,21 @@
+/**
+ * @modyra/zod — framework-agnostic Zod adapter for the Modyra form engine.
+ *
+ * One source of truth for TypeScript types, validators, messages and
+ * required flags: nested `z.object()`s become groups, defaults/optionals
+ * seed initial values, pieces that reject empty values drive `required`,
+ * and object-level `refine()`/`superRefine()` issues surface as cross-field
+ * errors. Framework packages reuse {@link buildZodTree} and
+ * {@link buildZodRefinementValidator} to offer the same API on their own
+ * reactivity; {@link createZodForm} runs it anywhere (Node included).
+ */
 import {
+  createForm,
   field,
   group,
-  mdyForm,
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
+  MdyCoreFormOptions,
   MdyFieldDescriptor,
   MdyFormSchema,
   MdyFormValidatorFn,
@@ -12,15 +24,14 @@ import {
   MdyTypedForm,
   MDY_MARKS_REQUIRED,
   ValidatorFn,
-} from "@modyra/angular";
-import { Injector } from "@angular/core";
+} from "@modyra/core";
 import { z } from "zod";
 
 /**
- * Maps a Zod object shape to an modyra schema tree at the type
- * level: nested `z.object()`s become groups, every other schema becomes a
- * leaf field typed `z.output<Piece> | null` (`null` = not filled in yet —
- * the Zod validators reject it at submit time when the piece is required).
+ * Maps a Zod object shape to a Modyra schema tree at the type level:
+ * nested `z.object()`s become groups, every other schema becomes a leaf
+ * field typed `z.output<Piece> | null` (`null` = not filled in yet — the
+ * Zod validators reject it at submit time when the piece is required).
  */
 export type MdyZodSchemaTree<Shape extends z.ZodRawShape> = {
   [K in keyof Shape]: Shape[K] extends z.ZodObject<infer Inner>
@@ -30,58 +41,46 @@ export type MdyZodSchemaTree<Shape extends z.ZodRawShape> = {
 
 export interface MdyZodFormOptions<
   TValue extends Record<string, unknown> = Record<string, unknown>,
-> {
-  readonly submitMode?: "valid-only" | "always" | "manual";
-  readonly injector?: Injector;
+> extends Omit<MdyCoreFormOptions<TValue>, "validators"> {
   /** Extra form-level validators, merged after the schema's refinements. */
   readonly validators?: ReadonlyArray<MdyFormValidatorFn<TValue>>;
 }
 
 /**
- * Builds a typed form from a `z.object()` schema — one source of truth for
- * TypeScript types, validators, messages and required flags.
+ * Builds a typed form from a `z.object()` schema, on any reactivity
+ * (default: the core's vanilla graph).
  *
  * ```ts
- * const form = mdyFormFromSchema(z.object({
+ * const form = createZodForm(z.object({
  *   email: z.string().email(),
- *   age: z.number().min(18),
- *   address: z.object({ city: z.string(), zip: z.string() }),
- * }).refine(v => v.age > 20 || v.address.city !== "", {
- *   path: ["address", "city"],
- *   message: "City required under 21",
+ *   address: z.object({ city: z.string().min(1) }),
  * }));
+ * form.f.address.city.errors(); // messages come from the Zod schema
  * ```
- *
- * - every leaf runs its own Zod piece as a field validator (messages from
- *   the schema); pieces that reject `undefined`/`null` mark the field
- *   required for aria
- * - defaults (`.default(...)`) and optionals seed the initial value
- * - object-level `.refine()`/`.superRefine()` issues become cross-field
- *   errors on the path they declare (or on the whole form without a path)
  */
-export function mdyFormFromSchema<T extends z.ZodObject>(
+export function createZodForm<T extends z.ZodObject>(
   schema: T,
   options?: MdyZodFormOptions<MdyFormValue<MdyZodSchemaTree<T["shape"]>>>,
 ): MdyTypedForm<MdyZodSchemaTree<T["shape"]>> {
-  const tree = buildTree(schema) as MdyZodSchemaTree<T["shape"]>;
-  const refinementValidator = buildRefinementValidator<
+  const tree = buildZodTree(schema) as MdyZodSchemaTree<T["shape"]>;
+  const refinementValidator = buildZodRefinementValidator<
     MdyFormValue<MdyZodSchemaTree<T["shape"]>>
   >(schema);
-  return mdyForm(tree, {
-    ...(options?.submitMode !== undefined && { submitMode: options.submitMode }),
-    ...(options?.injector !== undefined && { injector: options.injector }),
+  return createForm(tree, {
+    ...options,
     validators: [refinementValidator, ...(options?.validators ?? [])],
   });
 }
 
 // ─── Runtime tree construction ───────────────────────────────────────────────
 
-function buildTree(objectSchema: z.ZodObject): MdyFormSchema {
+/** Zod object → Modyra schema tree (fields with Zod-backed validators). */
+export function buildZodTree(objectSchema: z.ZodObject): MdyFormSchema {
   const out: Record<string, MdyAnyFieldDescriptor | MdyAnyGroupDescriptor> = {};
   for (const [key, piece] of Object.entries<z.ZodType>(objectSchema.shape)) {
     out[key] =
       piece instanceof z.ZodObject
-        ? group(buildTree(piece))
+        ? group(buildZodTree(piece))
         : field<unknown>(initialFor(piece), [pieceValidator(piece)]);
   }
   return out as MdyFormSchema;
@@ -143,7 +142,8 @@ function normalizeForParse(
 
 // ─── Object-level refinements → cross-field errors ───────────────────────────
 
-function buildRefinementValidator<
+/** Object-level `refine`/`superRefine` issues as a form-level validator. */
+export function buildZodRefinementValidator<
   TValue extends Record<string, unknown>,
 >(schema: z.ZodObject): MdyFormValidatorFn<TValue> {
   return (value) => {

@@ -5,4 +5,5 @@ allowBuilds:
   msgpackr-extract: true
 packages:
   - "packages/*"
+  - "!packages/angular"
 linkWorkspacePackages: true

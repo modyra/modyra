@@ -28,25 +28,16 @@
         ],
         "paths": {
             "@modyra/angular": [
-                "projects/modyra/src/public-api.ts"
+                "packages/angular/src/public-api.ts"
             ],
             "@modyra/angular/zod": [
-                "projects/modyra/zod/src/public-api.ts"
+                "packages/angular/zod/src/public-api.ts"
             ],
             "@modyra/angular/core": [
-                "projects/modyra/core/src/public-api.ts"
+                "packages/angular/core/src/public-api.ts"
             ],
             "@modyra/angular/interop": [
-                "projects/modyra/interop/src/public-api.ts"
-            ],
-            "@modyra/angular/styles/*": [
-                "projects/modyra/src/styles/*"
-            ],
-            "@modyra/angular-compiled": [
-                "node_modules/@modyra/angular-compiled"
-            ],
-            "@modyra/angular-compiled/*": [
-                "node_modules/@modyra/angular-compiled/*"
+                "packages/angular/interop/src/public-api.ts"
             ]
         }
     },

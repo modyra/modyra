@@ -19,7 +19,7 @@
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.personal/modyra/modyra.git",
-    "directory": "projects/modyra"
+    "directory": "packages/angular"
   },
   "bugs": {
     "url": "https://github.com/modyra/modyra/issues"
@@ -45,7 +45,8 @@
   ],
   "dependencies": {
     "tslib": ">=2.3.0",
-    "@modyra/core": "0.1.0"
+    "@modyra/core": "0.1.0",
+    "@modyra/zod": "0.1.0"
   },
   "exports": {
     ".": {

@@ -51,12 +51,15 @@ importers:
       '@angular/compiler-cli':
         specifier: ^21.2.18
         version: 21.2.18(@angular/compiler@21.2.18)(typescript@5.9.3)
-      '@modyra/angular-compiled':
-        specifier: link:./projects/modyra/dist
-        version: link:projects/modyra/dist
+      '@modyra/angular':
+        specifier: link:./packages/angular/dist
+        version: link:packages/angular/dist
       '@modyra/core':
         specifier: workspace:*
         version: link:packages/core
+      '@modyra/zod':
+        specifier: workspace:*
+        version: link:packages/zod
       '@types/jest':
         specifier: ^29.5.14
         version: 29.5.14
@@ -115,6 +118,16 @@ importers:
       '@vue/reactivity':
         specifier: ^3.5.0
         version: 3.5.39
+
+  packages/zod:
+    dependencies:
+      '@modyra/core':
+        specifier: 0.1.0
+        version: link:../core
+    devDependencies:
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
 
 packages:
 
