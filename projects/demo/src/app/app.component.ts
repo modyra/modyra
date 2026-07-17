@@ -9,28 +9,17 @@ import {
   viewChild,
 } from "@angular/core";
 import { toObservable, toSignal } from "@angular/core/rxjs-interop";
-import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
-import {
-  field,
-  group,
-  mdyForm,
-  MdyFormSubmitEvent,
-  MdySelectOption,
-} from "@modyra/angular/adapter";
-import { MdyCvaDirective } from "@modyra/angular/interop";
+import { MdyFormSubmitEvent, MdySelectOption } from "@modyra/angular/adapter";
 import {
   MdyCheckboxComponent,
   MdyColorsComponent,
   MdyConditionalOptionsDirective,
   MdyDatePickerComponent,
   MdyDateRangePickerComponent,
-  MdyDevtoolsDirective,
-  MdyDynamicFormComponent,
   MdyEmailDirective,
   MdyFileComponent,
   MdyFloatingLabelsDirective,
   MdyFormComponent,
-  MdyFormWizardComponent,
   MdyInlineErrorsDirective,
   MdyLoadOptionsDirective,
   MdyMaxDirective,
@@ -54,19 +43,13 @@ import {
   MdyTextComponent,
   MdyTimepickerComponent,
   MdyToggleComponent,
-  MdyWizardStepComponent
 } from "@modyra/angular/ui";
-import { mdyFormFromSchema } from "@modyra/angular/zod";
-import {
-  crossField,
-  type MdyDynamicField,
-  email as mdyEmail,
-  mdyFormSerialize,
-  min as mdyMin,
-  required as mdyRequiredValidator,
-} from "@modyra/core";
+import { mdyFormSerialize } from "@modyra/core";
 import { concat, delay, of, switchMap } from "rxjs";
-import { z } from "zod";
+import { CvaInteropSectionComponent } from "./sections/cva-interop-section.component";
+import { DynamicFormSectionComponent } from "./sections/dynamic-form-section.component";
+import { TypedFormSectionComponent } from "./sections/typed-form-section.component";
+import { ZodFormSectionComponent } from "./sections/zod-form-section.component";
 
 @Component({
   selector: "app-root",
@@ -74,13 +57,7 @@ import { z } from "zod";
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MdyFormComponent,
-    MdyCvaDirective,
-    MdyDynamicFormComponent,
-    MdyDevtoolsDirective,
-    MdyFormWizardComponent,
     MdyLoadOptionsDirective,
-    ReactiveFormsModule,
-    MdyWizardStepComponent,
     MdyTextComponent,
     MdyNumberComponent,
     MdySelectComponent,
@@ -111,6 +88,11 @@ import { z } from "zod";
     MdyMinLengthDirective,
     MdyMaxLengthDirective,
     MdyOptionsAutoLoadingDirective,
+    // Feature sections
+    TypedFormSectionComponent,
+    ZodFormSectionComponent,
+    CvaInteropSectionComponent,
+    DynamicFormSectionComponent,
   ],
   template: `
     <main class="demo-card">
@@ -442,169 +424,13 @@ import { z } from "zod";
         }
       </section>
 
-      <!-- ── Typed form (mdyForm) demo ─────────────────────────────────── -->
-      <section class="demo-section">
-        <h2>Typed form — mdyForm()</h2>
-        <p style="font-size: 0.8125rem; color: var(--mdy-on-surface-variant);">
-          Schema-first: initial values and validators live in TypeScript,
-          <code>[field]="typedForm.f.…"</code> replaces the stringly
-          <code>name</code> attribute — a typo does not compile. Nested
-          groups map to <code>address.city</code> paths.
-        </p>
+      <app-typed-form-section />
 
-        <mdy-form [form]="typedForm" mdyDevtools (submitted)="onSubmitted($event)">
-          <div class="form-row">
-            <mdy-control-text
-              [field]="typedForm.f.fullName"
-              label="Full Name"
-              mdyInlineErrors
-            />
-            <mdy-control-text
-              [field]="typedForm.f.email"
-              label="Email"
-              type="email"
-              mdyInlineErrors
-            />
-          </div>
+      <app-zod-form-section />
 
-          <div class="form-row">
-            <mdy-control-number
-              [field]="typedForm.f.age"
-              label="Age (18+)"
-              mdyInlineErrors
-            />
-            <mdy-control-text
-              [field]="typedForm.f.address.city"
-              label="City"
-              mdyInlineErrors
-            />
-            <mdy-control-text
-              [field]="typedForm.f.address.zip"
-              label="ZIP"
-              mdyInlineErrors
-            />
-          </div>
+      <app-cva-interop-section />
 
-          <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem;">
-            <button type="submit" [disabled]="!typedForm.state.canSubmit()">
-              Submit typed
-            </button>
-            <button class="mdy-button" type="button" (click)="typedForm.reset()">
-              Reset
-            </button>
-            <button
-              class="mdy-button"
-              type="button"
-              (click)="typedForm.patch({ address: { city: 'Milan' } })"
-            >
-              Patch city → Milan
-            </button>
-            <button
-              class="mdy-button"
-              type="button"
-              [disabled]="!typedForm.canUndo()"
-              (click)="typedForm.undo()"
-            >
-              Undo
-            </button>
-            <button
-              class="mdy-button"
-              type="button"
-              [disabled]="!typedForm.canRedo()"
-              (click)="typedForm.redo()"
-            >
-              Redo
-            </button>
-            <code style="font-size: 0.75rem;">
-              valid: {{ typedForm.state.valid() }} ·
-              city: {{ typedForm.f.address.city.value() }}
-            </code>
-          </div>
-        </mdy-form>
-
-        <p style="font-size: 0.75rem; color: var(--mdy-on-surface-variant); margin-top: 1rem;">
-          🔍 Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> to inspect the
-          focused form in a draggable devtools overlay (✕ or Esc to close).
-        </p>
-      </section>
-
-      <!-- ── Zod schema-first demo ─────────────────────────────────────── -->
-      <section class="demo-section">
-        <h2>Schema-first — Zod adapter</h2>
-        <p style="font-size: 0.8125rem; color: var(--mdy-on-surface-variant);">
-          <code>mdyFormFromSchema(z.object(…))</code> from
-          <code>&#64;mdy-signals/forms/zod</code>: types, validators, messages
-          and the cross-field <code>refine()</code> all come from the same
-          schema the backend already uses.
-        </p>
-
-        <mdy-form [form]="zodForm" mdyDevtools (submitted)="onSubmitted($event)">
-          <mdy-form-wizard (finished)="submitZodForm()">
-            <mdy-wizard-step label="Account" [fields]="[zodForm.f.username]">
-              <div class="form-row">
-                <mdy-control-text
-                  [field]="zodForm.f.username"
-                  label="Username"
-                  mdyInlineErrors
-                />
-              </div>
-            </mdy-wizard-step>
-            <mdy-wizard-step
-              label="Security"
-              [fields]="[zodForm.f.password, zodForm.f.confirm]"
-            >
-              <div class="form-row">
-                <mdy-control-text
-                  [field]="zodForm.f.password"
-                  label="Password"
-                  type="password"
-                  mdyInlineErrors
-                />
-                <mdy-control-text
-                  [field]="zodForm.f.confirm"
-                  label="Confirm password"
-                  type="password"
-                  mdyInlineErrors
-                />
-              </div>
-            </mdy-wizard-step>
-          </mdy-form-wizard>
-        </mdy-form>
-      </section>
-
-      <!-- ── CVA interop: renderer inside Reactive Forms ───────────────── -->
-      <section class="demo-section">
-        <h2>Interop — renderers inside Reactive Forms</h2>
-        <p style="font-size: 0.8125rem; color: var(--mdy-on-surface-variant);">
-          <code>mdyCva</code> from <code>&#64;mdy-signals/forms/interop</code>:
-          any renderer works with <code>formControlName</code> — incremental
-          adoption in existing codebases, no <code>&lt;mdy-form&gt;</code> needed.
-        </p>
-        <form [formGroup]="legacyGroup">
-          <mdy-control-text
-            mdyCva
-            name="legacyEmail"
-            formControlName="email"
-            label="Email (FormControl)"
-          />
-          <code style="font-size: 0.75rem;">
-            control value: {{ legacyGroup.controls.email.value }}
-          </code>
-        </form>
-      </section>
-
-      <!-- ── Dynamic form from JSON config ─────────────────────────────── -->
-      <section class="demo-section">
-        <h2>Dynamic form — from serializable config</h2>
-        <p style="font-size: 0.8125rem; color: var(--mdy-on-surface-variant);">
-          <code>&lt;mdy-dynamic-form [fields]&gt;</code> renders at runtime
-          from a JSON-safe discriminated union — CMS / form-builder territory,
-          signal-native and typed.
-        </p>
-        <mdy-dynamic-form [fields]="dynamicFields" (submitted)="onSubmitted($event)">
-          <button type="submit">Send survey</button>
-        </mdy-dynamic-form>
-      </section>
+      <app-dynamic-form-section />
 
       <!-- ── Enterprise select: server-side search + tagging ───────────── -->
       <section class="demo-section">
@@ -681,69 +507,6 @@ export class AppComponent {
     });
   }
 
-  // ── Typed form (mdyForm) ─────────────────────────────────────────────────────
-
-  readonly typedForm = mdyForm(
-    {
-      fullName: field("", [mdyRequiredValidator()]),
-      email: field("", [mdyRequiredValidator(), mdyEmail()]),
-      age: field<number | null>(null, [mdyMin(18)]),
-      address: group({
-        city: field("Rome"),
-        zip: field(""),
-      }),
-    },
-    {
-      // Cross-field rule: a ZIP without its city is invalid on both fields.
-      validators: [
-        crossField(["address.city", "address.zip"], (v: { readonly address: { readonly city: string; readonly zip: string } }) =>
-          v.address.zip !== "" && v.address.city === ""
-            ? "ZIP requires a city"
-            : null,
-        ),
-      ],
-      history: true, // enables undo()/redo()
-      draft: "demo-typed-form", // autosaved to localStorage, restored on reload
-    },
-  );
-
-  // ── Zod schema-first form (@modyra/angular/zod) ────────────────────────────
-
-  // ── CVA interop: classic Reactive Forms group ────────────────────────────────
-
-  readonly legacyGroup = new FormGroup({
-    email: new FormControl("from@reactive.forms"),
-  });
-
-  // ── Dynamic form config (could come from a CMS as JSON) ─────────────────────
-
-  readonly dynamicFields: ReadonlyArray<MdyDynamicField> = [
-    {
-      kind: "text",
-      name: "fullName",
-      label: "Full name",
-      validators: { required: true, minLength: 2 },
-    },
-    {
-      kind: "email",
-      name: "contactEmail",
-      label: "Email",
-      validators: { required: true, email: true },
-    },
-    {
-      kind: "select",
-      name: "topic",
-      label: "Topic",
-      options: [
-        { value: "sales", label: "Sales" },
-        { value: "support", label: "Support" },
-      ],
-      validators: { required: true },
-    },
-    { kind: "slider", name: "satisfaction", label: "Satisfaction", min: 0, max: 10, initialValue: 5 },
-    { kind: "toggle", name: "newsletter", label: "Subscribe to newsletter" },
-  ];
-
   // ── Enterprise select: simulated server-side city search ─────────────────────
 
   private readonly allCities: string[] = [
@@ -763,27 +526,6 @@ export class AppComponent {
     this.allCities.push(name); // next searches will find it
     console.log("City created:", name);
   }
-
-  /** Last-step confirm of the wizard: submit the schema-first form. */
-  submitZodForm(): void {
-    void this.zodForm.submit((value) => {
-      console.log("Registered:", value);
-      return undefined;
-    });
-  }
-
-  readonly zodForm = mdyFormFromSchema(
-    z
-      .object({
-        username: z.string().min(3, "At least 3 characters"),
-        password: z.string().min(8, "At least 8 characters").default(""),
-        confirm: z.string().default(""),
-      })
-      .refine((v) => v.password === v.confirm, {
-        path: ["confirm"],
-        message: "Passwords do not match",
-      }),
-  );
 
   // ── Initial values ────────────────────────────────────────────────────────────
 
