@@ -6,7 +6,12 @@ on a field path is a compile error**. Groups nest arbitrarily and map to
 dotted adapter paths (`address.city`).
 
 ```ts
-import { field, group, mdyForm, mdyRequired, mdyEmail, mdyMin } from "@modyra/angular";
+import { field, group, mdyForm } from "@modyra/angular/adapter";
+import {
+  email as mdyEmail,
+  min as mdyMin,
+  required as mdyRequired,
+} from "@modyra/core";
 
 export class SignupComponent {
   readonly form = mdyForm({
@@ -44,19 +49,19 @@ paths, wrong value types and incomplete `setValue()` calls do not compile).
 
 ## Model operations — exact semantics
 
-| Operation | Semantics |
-| :--- | :--- |
-| `getValue()` | Nested typed value of every schema field |
-| `setValue(v)` | **Replace**: requires the complete model; schema fields absent from `v` are reset to `null` |
-| `patch(p)` | Deep-partial merge — only the given paths change |
-| `reset()` | Back to the **schema initial values**; clears touched/dirty and the last submit errors |
-| `getChanges()` | Minimal nested patch: only fields whose value differs (`Object.is`) from the schema initials |
+| Operation        | Semantics                                                                                                                                  |
+| :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| `getValue()`     | Nested typed value of every schema field                                                                                                   |
+| `setValue(v)`    | **Replace**: requires the complete model; schema fields absent from `v` are reset to `null`                                                |
+| `patch(p)`       | Deep-partial merge — only the given paths change                                                                                           |
+| `reset()`        | Back to the **schema initial values**; clears touched/dirty and the last submit errors                                                     |
+| `getChanges()`   | Minimal nested patch: only fields whose value differs (`Object.is`) from the schema initials                                               |
 | `submit(action)` | No-op (marks all touched) when `canSubmit()` is false; sets `submitting`, runs `action`, stores returned `MdyFormError[]` as server errors |
 
 Limits worth knowing:
 
 - `getChanges()` compares leaf values with `Object.is` — an array or object
-  leaf that was mutated in place *and* replaced with an equal copy still
+  leaf that was mutated in place _and_ replaced with an equal copy still
   counts as changed (reference comparison, no deep equality).
 - `dirty` is set by user interaction in renderers (and `markAsDirty()`);
   programmatic `set()`/`patch()` does not flip it.
@@ -80,9 +85,9 @@ username: field("", [mdyRequired()], {
 
 ```ts
 const form = mdyForm(schema, { history: { maxEntries: 100, debounceMs: 300 } });
-form.undo();      // restore previous snapshot
-form.redo();      // re-apply
-form.canUndo();   // reactive — drive toolbar buttons
+form.undo(); // restore previous snapshot
+form.redo(); // re-apply
+form.canUndo(); // reactive — drive toolbar buttons
 ```
 
 - Pass `history: true` for defaults (100 entries, no debounce).
@@ -99,9 +104,9 @@ form.canUndo();   // reactive — drive toolbar buttons
 const form = mdyForm(schema, {
   draft: {
     key: "signup",
-    exclude: ["password"],   // never persisted nor restored
-    ttlMs: 24 * 3600_000,    // discard drafts older than a day
-    version: 1,              // bump when the form shape changes
+    exclude: ["password"], // never persisted nor restored
+    ttlMs: 24 * 3600_000, // discard drafts older than a day
+    version: 1, // bump when the form shape changes
     debounceMs: 400,
   },
 });
@@ -141,7 +146,9 @@ progress header and navigation:
     <mdy-wizard-step label="Account" [fields]="[form.f.email, form.f.password]">
       <mdy-control-text [field]="form.f.email" label="Email" />
     </mdy-wizard-step>
-    <mdy-wizard-step label="Address" [fields]="[form.f.address.city]">…</mdy-wizard-step>
+    <mdy-wizard-step label="Address" [fields]="[form.f.address.city]"
+      >…</mdy-wizard-step
+    >
   </mdy-form-wizard>
 </mdy-form>
 ```
