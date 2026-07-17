@@ -10,8 +10,6 @@ import {
   signal,
   viewChild,
 } from "@angular/core";
-import { MDY_I18N_MESSAGES } from "../../core/i18n";
-import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
 import {
   angleToHour,
   angleToMinute,
@@ -19,12 +17,14 @@ import {
   formatTime,
   getPointerCoords,
   hourToAngle,
-  minuteToAngle,
   MdyTimeFormat,
+  minuteToAngle,
   parseTime,
   pointerAngle,
   to24Hour,
-} from "../../core/time-utils";
+} from "@modyra/core/time-utils";
+import { MDY_I18N_MESSAGES } from "../../core/i18n";
+import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
 
 /**
  * Dumb UI component for the Material 3 Timepicker Clock/Input.
@@ -42,22 +42,22 @@ import {
 export class MdyTimepickerClockComponent {
   protected readonly Math = Math;
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
-  readonly value        = input<string | null>(null);
-  readonly disabled     = input<boolean>(false);
+  readonly value = input<string | null>(null);
+  readonly disabled = input<boolean>(false);
   /**
    * Header display format. The clock's internal model and the emitted
    * `timePicked` strings stay canonical 12h — the renderer converts at
    * the value boundary.
    */
-  readonly format       = input<MdyTimeFormat>("12h");
-  readonly timePicked   = output<string>();
-  readonly cancelClicked  = output<void>();
+  readonly format = input<MdyTimeFormat>("12h");
+  readonly timePicked = output<string>();
+  readonly cancelClicked = output<void>();
   readonly confirmClicked = output<void>();
 
-  protected readonly viewMode    = signal<"input" | "dial">("input");
+  protected readonly viewMode = signal<"input" | "dial">("input");
   protected readonly focusedField = signal<"hour" | "minute">("hour");
-  protected readonly isDragging   = signal(false);
-  protected readonly dragAngle    = signal<number | null>(null);
+  protected readonly isDragging = signal(false);
+  protected readonly dragAngle = signal<number | null>(null);
 
   /** Tracks the field that was active when drag *started*, so
    *  onDragMove always uses the same field until the drag ends. */

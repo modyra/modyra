@@ -18,7 +18,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.personal/modyra/modyra.git",
+    "url": "git+https://github.com/modyra/modyra.git",
     "directory": "packages/angular"
   },
   "bugs": {
@@ -30,10 +30,14 @@
     "@angular/common": ">=21.0.0",
     "@angular/platform-browser": ">=21.0.0",
     "@angular/forms": ">=21.0.0",
+    "@modyra/zod": ">=0.1.0",
     "zod": ">=3.25.0"
   },
   "peerDependenciesMeta": {
     "@angular/forms": {
+      "optional": true
+    },
+    "@modyra/zod": {
       "optional": true
     },
     "zod": {
@@ -41,36 +45,32 @@
     }
   },
   "allowedNonPeerDependencies": [
-    "@modyra/core"
+    "@modyra/core",
+    "@modyra/widgets"
   ],
   "dependencies": {
     "tslib": ">=2.3.0",
     "@modyra/core": "0.1.0",
-    "@modyra/zod": "0.1.0"
+    "@modyra/widgets": "0.1.0"
   },
   "exports": {
     ".": {
       "import": "./fesm2022/modyra-angular.mjs"
     },
-    "./styles/ionic.css": {
-      "default": "./styles/modyra-ionic.css"
+    "./adapter": {
+      "import": "./fesm2022/modyra-angular-adapter.mjs"
     },
-    "./styles/ios.css": {
-      "default": "./styles/modyra-ios.css"
+    "./ui": {
+      "import": "./fesm2022/modyra-angular-ui.mjs"
     },
-    "./styles/base.css": {
-      "default": "./styles/modyra-base.css"
+    "./interop": {
+      "import": "./fesm2022/modyra-angular-interop.mjs"
     },
-    "./styles/material.css": {
-      "default": "./styles/modyra-material.css"
-    },
-    "./styles/default.css": {
-      "default": "./styles/modyra.css"
+    "./zod": {
+      "import": "./fesm2022/modyra-angular-zod.mjs"
     }
   },
-  "sideEffects": [
-    "**/*.css"
-  ],
+  "sideEffects": false,
   "main": "fesm2022/modyra-angular.mjs",
   "module": "fesm2022/modyra-angular.mjs",
   "typings": "index.d.ts",

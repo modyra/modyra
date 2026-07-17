@@ -1,5 +1,14 @@
 import { NgTemplateOutlet } from "@angular/common";
-import { ChangeDetectionStrategy, Component, input } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+  OnInit,
+} from "@angular/core";
+import { createFieldController, type MdyFieldController } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -45,10 +54,10 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [disabled]="isDisabled()"
         [attr.autocomplete]="autocomplete()"
         (input)="onInput($event)"
-        (blur)="markAsTouched()"
-        [attr.aria-invalid]="hasErrors()"
-        [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
-        [attr.aria-required]="ariaRequired() || isRequired()"
+        (blur)="onBlur()"
+        [attr.aria-invalid]="inputAriaInvalid()"
+        [attr.aria-describedby]="inputAriaDescribedby()"
+        [attr.aria-required]="inputAriaRequired()"
         [attr.aria-disabled]="effectiveAriaDisabled()"
         [attr.aria-label]="label() || null"
       />
@@ -68,16 +77,59 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
     }
   `,
 })
-export class MdyTextComponent extends MdyBaseControl<string> {
+export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
   readonly placeholder = input<string>("");
   readonly type = input<string>("text");
   readonly autocomplete = input<string | null>(null);
 
   protected readonly fieldId = `mdy-control-text-${MdyBaseControl.nextId()}`;
+  private fieldController?: MdyFieldController<string>;
+  private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly fieldView = computed(() => this.fieldController?.view());
+
+  protected readonly inputAriaInvalid = computed(
+    () => this.fieldView()?.parts.input?.attributes["aria-invalid"] ?? this.hasErrors(),
+  );
+  protected readonly inputAriaRequired = computed(
+    () => this.fieldView()?.parts.input?.attributes["aria-required"] ?? this.isRequired(),
+  );
+  protected readonly inputAriaDescribedby = computed(() => {
+    const describedBy = this.fieldView()?.parts.input?.attributes["aria-describedby"];
+    if (describedBy) return describedBy;
+    return this.inlineErrors && this.touched() && this.hasErrors() ? `${this.fieldId}-errors` : null;
+  });
+
+  ngOnInit(): void {
+    const handle = this.field();
+    const autocomplete = this.autocomplete();
+    if (handle) {
+      this.fieldController = createFieldController({
+        widgetId: this.fieldId,
+        handle: handle as never,
+        inputType: this.type(),
+        ...(autocomplete ? { autocomplete } : {}),
+      });
+    }
+    this.destroyRef.onDestroy(() => this.fieldController?.destroy());
+    super.ngOnInit();
+  }
 
   protected onInput(event: Event): void {
     const target = event.target as HTMLInputElement;
-    this.setValue(target.value);
-    this.markAsDirty();
+    if (this.fieldController) {
+      this.fieldController.dispatch({ type: "input", value: target.value });
+    } else {
+      this.setValue(target.value);
+      this.markAsDirty();
+    }
+  }
+
+  protected onBlur(): void {
+    if (this.fieldController) {
+      this.fieldController.dispatch({ type: "blur" });
+    } else {
+      this.markAsTouched();
+    }
   }
 }

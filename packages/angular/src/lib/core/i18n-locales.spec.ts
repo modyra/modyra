@@ -1,13 +1,15 @@
 import { InjectionToken, ValueProvider } from "@angular/core";
-import { MDY_DATE_LOCALE, MdyDateLocale } from "./date-locale";
-import { MDY_I18N_MESSAGES, MdyI18nMessages } from "./i18n";
 import {
   MDY_I18N_MESSAGES_DE,
   MDY_I18N_MESSAGES_ES,
   MDY_I18N_MESSAGES_FR,
   MDY_I18N_MESSAGES_IT,
-  provideModyraLocale,
-} from "./i18n-locales";
+  type MdyDateLocale,
+  type MdyI18nMessages,
+} from "@modyra/core";
+import { MDY_DATE_LOCALE } from "./date-locale";
+import { MDY_I18N_MESSAGES } from "./i18n";
+import { provideModyraLocale } from "./i18n-locales";
 
 function findValue<T>(
   providers: ReadonlyArray<unknown>,

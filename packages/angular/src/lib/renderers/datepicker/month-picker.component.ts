@@ -6,8 +6,8 @@ import {
   input,
   output,
 } from "@angular/core";
+import { CalendarDate } from "@modyra/core/date-utils";
 import { MDY_DATE_LOCALE } from "../../core/date-locale";
-import { CalendarDate } from "../../core/date-utils";
 
 @Component({
   selector: "mdy-month-picker",

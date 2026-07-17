@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   forwardRef,
   inject,
@@ -16,7 +17,6 @@ import {
   MdyDeclarativeAdapter,
   MdyDeclarativeRegistry,
 } from "../core/declarative-form-adapter";
-import { MdyTypedFormLike } from "../core/typed-form";
 import { MDY_DECLARATIVE_REGISTRY, MDY_FORM_ADAPTER } from "../core/tokens";
 import {
   MdyAsyncValidatorFn,
@@ -31,8 +31,36 @@ import {
   ValidatorFn,
 } from "../core/types";
 
+declare const ngDevMode: boolean | undefined;
+
 /** Constant empty field list for adapters without introspection. */
 const NO_FIELD_NAMES: Signal<readonly string[]> = signal([]).asReadonly();
+
+/**
+ * True when an explicit `[adapter]` can also act as the declarative registry
+ * (claims, validators, disabled/readonly providers). Adapters without these
+ * methods fall back to the internal registry, but then declarative controls
+ * cannot affect the displayed state — a mismatch we warn about in dev mode.
+ */
+function isDeclarativeRegistry(value: unknown): value is MdyDeclarativeRegistry {
+  if (typeof value !== "object" || value === null) return false;
+  return (
+    typeof Reflect.get(value, "claimField") === "function" &&
+    typeof Reflect.get(value, "removeField") === "function" &&
+    typeof Reflect.get(value, "upsertValidators") === "function" &&
+    typeof Reflect.get(value, "upsertAsyncValidators") === "function" &&
+    typeof Reflect.get(value, "removeValidators") === "function" &&
+    typeof Reflect.get(value, "setInitialValue") === "function" &&
+    typeof Reflect.get(value, "setDisabled") === "function" &&
+    typeof Reflect.get(value, "setReadonly") === "function"
+  );
+}
+
+function hasFieldNames<T extends Record<string, unknown>>(
+  adapter: MdyFormAdapter<T>,
+): adapter is MdyFormAdapter<T> & { readonly fieldNames: Signal<readonly string[]> } {
+  return typeof Reflect.get(adapter, "fieldNames") === "function";
+}
 
 /**
  * Host component for a declarative signal-driven form.
@@ -94,7 +122,7 @@ export class MdyFormComponent<
    * internal declarative adapter; `[adapter]` still wins over both.
    * `[formValue]` is ignored in this mode — initial values live in the schema.
    */
-  readonly form = input<MdyTypedFormLike | undefined>(undefined);
+  readonly form = input<(MdyFormAdapter<T> & MdyDeclarativeRegistry) | undefined>(undefined);
 
   readonly action = input<
     | ((value: T) => Promise<MdyFormError[] | void> | MdyFormError[] | void)
@@ -136,12 +164,21 @@ export class MdyFormComponent<
   /** Last seed applied from [formValue] — used to diff per key (B2). */
   private _lastSeed: Partial<Record<string, unknown>> | undefined;
 
+  /** One-shot guard for the registry-incompatible [adapter] dev warning. */
+  private _warnedAdapterRegistry = false;
+
   constructor() {
     this._declarativeAdapter = new MdyDeclarativeAdapter(
       computed(() => this.formValue()),
       computed(() => this.submitMode()),
       inject(Injector),
     );
+
+    // The injector owns the adapter's Angular effects, but the engine also
+    // holds timers, undo/redo stacks and field maps — release them with the
+    // component. External [form]/[adapter] models stay untouched: their
+    // lifetime belongs to whoever created them.
+    inject(DestroyRef).onDestroy(() => this._declarativeAdapter.destroy());
 
     // Sync formValue input to the adapter reactively.
     // Only keys whose seed value actually changed (Object.is) are patched:
@@ -193,13 +230,36 @@ export class MdyFormComponent<
 
   /** Active adapter: [adapter] wins, then [form], then the internal one. */
   private get _active(): MdyFormAdapter<T> {
-    return (this.adapter() ??
-      this.form() ??
-      this._declarativeAdapter) as MdyFormAdapter<T>;
+    return this.adapter() ?? this.form() ?? this._declarativeAdapter as MdyFormAdapter<T>;
   }
 
-  /** Registry target for controls/directives: [form] or the internal adapter. */
+  /**
+   * Registry target for controls/directives. Must resolve to the same object
+   * as {@link _active}: claims and validators registered on a different
+   * adapter than the one whose value is displayed would silently diverge
+   * (required not applied, wrong field released on destroy).
+   */
   private get _registry(): MdyDeclarativeRegistry {
+    const adapter = this.adapter();
+    if (adapter !== undefined) {
+      if (isDeclarativeRegistry(adapter)) return adapter;
+      // Explicit adapter without registry support: declarative controls and
+      // validator directives cannot reach it. Surface the mismatch instead
+      // of registering on an adapter the UI does not read from.
+      if (
+        !this._warnedAdapterRegistry &&
+        typeof ngDevMode !== "undefined" &&
+        ngDevMode
+      ) {
+        this._warnedAdapterRegistry = true;
+        console.warn(
+          "[modyra] [adapter] does not implement MdyDeclarativeRegistry: " +
+          "declarative controls and validator directives are ignored in " +
+          "this mode. Use an adapter that supports the registry (e.g. " +
+          "MdyDeclarativeAdapter / mdyForm()) or bind [form] instead.",
+        );
+      }
+    }
     return this.form() ?? this._declarativeAdapter;
   }
 
@@ -254,10 +314,8 @@ export class MdyFormComponent<
    * `[adapter]` that does not expose them) — used by the devtools.
    */
   get fieldNames(): Signal<readonly string[]> {
-    const active = this._active as Partial<
-      Record<"fieldNames", Signal<readonly string[]>>
-    >;
-    return active.fieldNames ?? NO_FIELD_NAMES;
+    const active = this._active;
+    return hasFieldNames(active) ? active.fieldNames : NO_FIELD_NAMES;
   }
 
   get value(): Signal<T> {

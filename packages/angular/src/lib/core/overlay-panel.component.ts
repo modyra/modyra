@@ -9,7 +9,7 @@ import {
   output,
   viewChild,
 } from "@angular/core";
-import { ComputedPosition, getOverlayStyles, OverlayAlignment, OverlayPosition } from "./overlay-position";
+import { ComputedPosition, getOverlayStyles, OverlayAlignment, OverlayPosition } from "@modyra/core/overlay-position";
 
 /**
  * Unified overlay panel container.

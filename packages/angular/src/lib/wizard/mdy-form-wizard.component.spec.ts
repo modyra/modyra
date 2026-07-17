@@ -1,7 +1,7 @@
 import { Component, viewChild } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
+import { required } from "@modyra/core";
 import { field, mdyForm, MdyTypedForm } from "../core/typed-form";
-import { required } from "../core/validators";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyFormWizardComponent } from "./mdy-form-wizard.component";
 import { MdyWizardStepComponent } from "./mdy-wizard-step.component";

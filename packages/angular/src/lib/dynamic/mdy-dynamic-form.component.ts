@@ -7,6 +7,11 @@ import {
   untracked,
   viewChild,
 } from "@angular/core";
+import {
+  buildDynamicValidators,
+  MdyDynamicField,
+} from "@modyra/core/dynamic-config";
+import { MdyFormSubmitEvent } from "../core/types";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyCheckboxComponent } from "../renderers/checkbox/checkbox-renderer.component";
 import { MdyDatePickerComponent } from "../renderers/datepicker/datepicker.component";
@@ -20,11 +25,6 @@ import { MdyTextComponent } from "../renderers/text/text-renderer.component";
 import { MdyTextareaComponent } from "../renderers/textarea/textarea-renderer.component";
 import { MdyTimepickerComponent } from "../renderers/timepicker";
 import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.component";
-import { MdyFormSubmitEvent } from "../core/types";
-import {
-  buildDynamicValidators,
-  MdyDynamicField,
-} from "./dynamic-form-config";
 
 /**
  * Runtime form rendering from a serializable config — CMS, form builders,

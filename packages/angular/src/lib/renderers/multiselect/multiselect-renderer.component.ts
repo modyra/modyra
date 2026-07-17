@@ -14,16 +14,16 @@ import {
   TemplateRef,
   viewChild,
 } from "@angular/core";
+import { filterOptionsByQuery } from "@modyra/core/options-utils";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
 import { MdyOptionDirective } from "../../control/option.directive";
+import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyOptionsOverlayControl } from "../../core/options-overlay-control.directive";
-import { filterOptionsByQuery } from "../../core/options-utils";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MDY_OPTIONS_CONTROL } from "../../core/tokens";
-import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyOptionsControl, MdySelectOption } from "../../core/types";
 
 /**

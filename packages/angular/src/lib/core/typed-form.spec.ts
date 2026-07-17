@@ -1,7 +1,7 @@
 import { ApplicationRef, Injector } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
+import { crossField, email, min, required } from "@modyra/core";
 import { field, group, mdyForm, MdyTypedForm } from "./typed-form";
-import { crossField, email, min, required } from "./validators";
 
 function makeForm(): MdyTypedForm<{
   email: ReturnType<typeof field<string>>;

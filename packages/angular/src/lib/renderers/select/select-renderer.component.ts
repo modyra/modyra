@@ -20,7 +20,8 @@ import {
   viewChild,
   WritableSignal,
 } from "@angular/core";
-import { listboxNextIndex } from "@modyra/core/keyboard";
+import { filterOptionsByQuery } from "@modyra/core/options-utils";
+import { MdyAngularSelectAdapter, MdyWidgetRuntime } from "../../widget-runtime";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -29,10 +30,26 @@ import { MdyOptionDirective } from "../../control/option.directive";
 import { MdyGlassDirective } from "../../core/directives/glass.directive";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyOptionsOverlayControl } from "../../core/options-overlay-control.directive";
-import { filterOptionsByQuery } from "../../core/options-utils";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MDY_OPTIONS_CONTROL } from "../../core/tokens";
 import { MdyOptionsControl, MdySelectOption } from "../../core/types";
+
+function mapKeyToMoveTarget(
+  key: string,
+): "next" | "previous" | "first" | "last" | null {
+  switch (key) {
+    case "ArrowDown":
+      return "next";
+    case "ArrowUp":
+      return "previous";
+    case "Home":
+      return "first";
+    case "End":
+      return "last";
+    default:
+      return null;
+  }
+}
 
 /**
  * Select renderer component.
@@ -172,7 +189,6 @@ import { MdyOptionsControl, MdySelectOption } from "../../core/types";
                   [class.mdy-select__option--active]="activeIndex() === i"
                   [class.mdy-select__option--selected]="opt.value == value()"
                   [attr.aria-selected]="opt.value == value()"
-                  (mouseenter)="activeIndex.set(i)"
                   (click)="selectOption(opt)"
                 >
                   @if (optionTpl(); as tpl) {
@@ -281,12 +297,55 @@ export class MdySelectComponent<TValue = string>
   public override readonly isDisabled = computed(() => this.disabled() || this.fieldState().disabled());
   protected override readonly minSpace = 250;
   private readonly injector = inject(Injector);
+  private readonly runtime = inject(MdyWidgetRuntime);
+  private selectAdapter!: MdyAngularSelectAdapter<TValue>;
   private readonly _parkedValue: WritableSignal<TValue | null> = signal<TValue | null>(null);
   public readonly parkedValue: Signal<TValue | null> = this._parkedValue.asReadonly();
 
 
   constructor() {
     super();
+
+    this.selectAdapter = new MdyAngularSelectAdapter<TValue>(
+      {
+        widgetId: this.fieldId,
+        options: this.effectiveOptions(),
+        value: this.value(),
+        disabled: this.isDisabled(),
+        readonly: this.fieldState().readonly(),
+        invalid: this.hasErrors(),
+        loading: this.effectiveLoading(),
+        onChange: (value: TValue | null) => {
+          if (value !== this.value()) {
+            this.setValue(value);
+            this.markAsDirty();
+            const opt = this.effectiveOptions().find((o) => String(o.value) === String(value));
+            if (opt) this.selectionChange.emit(opt);
+          }
+        },
+      },
+      this.runtime,
+      this.injector,
+    );
+
+    this.selectAdapter.connectHandlers({
+      setOpen: () => {
+        // Open/close is driven by the component; controller commands are ignored here.
+      },
+      onChange: () => {
+        // value change is already handled by the adapter's onChange callback.
+      },
+      onTouched: () => this.markAsTouched(),
+      onDirty: () => this.markAsDirty(),
+    });
+
+    // Sync adapter with changing component inputs.
+    effect(() => this.selectAdapter.setOptions(this.effectiveOptions()), { injector: this.injector });
+    effect(() => this.selectAdapter.setValue(this.value()), { injector: this.injector });
+    effect(() => this.selectAdapter.setDisabled(this.isDisabled()), { injector: this.injector });
+    effect(() => this.selectAdapter.setReadonly(this.fieldState().readonly()), { injector: this.injector });
+    effect(() => this.selectAdapter.setInvalid(this.hasErrors()), { injector: this.injector });
+    effect(() => this.selectAdapter.setLoading(this.effectiveLoading()), { injector: this.injector });
 
     // Synchronization effect: when options change, re-verify the current value.
     // - Value found (loose match): normalize to the exact option value.
@@ -339,7 +398,15 @@ export class MdySelectComponent<TValue = string>
   );
 
   /** Index of the keyboard-active option (for arrow navigation). */
-  protected readonly activeIndex = signal(-1);
+  protected readonly activeIndex = computed(() => {
+    const key = this.selectAdapter.state().activeKey;
+    if (key === null) return -1;
+    return this.filteredOptions().findIndex((o) => this.optionKey(o) === key);
+  });
+
+  private optionKey(option: MdySelectOption<TValue>): string {
+    return String(option.value);
+  }
 
   /** The currently selected option object (for rendering in trigger). */
   protected readonly selectedOption = computed<MdySelectOption<TValue> | null>(
@@ -356,7 +423,7 @@ export class MdySelectComponent<TValue = string>
 
   /** Options filtered by the current search query. */
   protected readonly filteredOptions = computed(() =>
-    filterOptionsByQuery(this.effectiveOptions(), this.searchQuery()),
+    filterOptionsByQuery(this.effectiveOptions(), this.selectAdapter.state().query),
   );
 
   /** Show the "create" row: tagging enabled, query set, no exact label match. */
@@ -381,14 +448,18 @@ export class MdySelectComponent<TValue = string>
 
   // ── Custom dropdown interactions ────────────────────────────────────────────
 
+  protected override openOverlay(event?: Event): void {
+    super.openOverlay(event);
+    this.selectAdapter.setOpen(true);
+  }
+
+  public override closeOverlay(): void {
+    super.closeOverlay();
+    this.selectAdapter.setOpen(false);
+  }
+
   protected override onBeforeOpen(): void {
     this.searchQuery.set("");
-    const filtered = this.filteredOptions();
-    const v = this.value();
-    const idx = filtered.findIndex(
-      (o: MdySelectOption<TValue>) => String(o.value) === String(v),
-    );
-    this.activeIndex.set(idx >= 0 ? idx : 0);
 
     // Focus search input after DOM renders
     if (this.searchable()) {
@@ -397,10 +468,7 @@ export class MdySelectComponent<TValue = string>
   }
 
   protected selectOption(opt: MdySelectOption<TValue>): void {
-    this.setValue(opt.value);
-    this.markAsDirty();
-    this.selectionChange.emit(opt);
-    this.closeOverlay();
+    this.selectAdapter.dispatch({ type: "select", optionKey: this.optionKey(opt) });
   }
 
   protected onBlur(event: FocusEvent): void {
@@ -408,56 +476,67 @@ export class MdySelectComponent<TValue = string>
     // (click on non-focusable element), onDocumentClick handles closing.
     const next = event.relatedTarget as Node | null;
     if (next && !this.wrapperRef()?.nativeElement.contains(next)) {
-      this.closeOverlay();
-      this.markAsTouched();
+      this.selectAdapter.dispatch({ type: "blur" });
     }
   }
 
   protected onKeydown(event: KeyboardEvent): void {
-    if (!this.open()) return;
-    const opts = this.filteredOptions();
-    const idx = this.activeIndex();
     const isSearchFocused =
       this.searchInputRef()?.nativeElement === document.activeElement;
 
-    // Home/End move the text cursor while the search input is focused —
-    // only the arrows are hijacked for list navigation in that case.
+    // Navigation keys open the overlay if closed and move the active option.
     const navigates =
       !isSearchFocused || event.key === "ArrowDown" || event.key === "ArrowUp";
-    const nextIndex = navigates
-      ? listboxNextIndex(event.key, idx, opts.length)
-      : null;
-    if (nextIndex !== null) {
+    const moveTarget = mapKeyToMoveTarget(event.key);
+
+    if (moveTarget && navigates) {
       event.preventDefault();
-      this.activeIndex.set(nextIndex);
+      if (!this.open()) {
+        this.openOverlay();
+      }
+      this.selectAdapter.dispatch({ type: "move", target: moveTarget });
       return;
     }
 
     switch (event.key) {
       case "Enter":
         event.preventDefault();
-        if (idx >= 0 && idx < opts.length) {
-          const opt = opts[idx];
-          if (opt) this.selectOption(opt);
-        } else if (this.showCreateOption()) {
-          // No active option: Enter activates the tagging row (R24).
+        if (this.showCreateOption()) {
           this.onCreateOption();
+          return;
+        }
+        if (this.open()) {
+          const key = this.selectAdapter.state().activeKey;
+          if (key) this.selectAdapter.dispatch({ type: "select", optionKey: key });
+        } else {
+          this.openOverlay();
         }
         break;
       case " ":
         if (!isSearchFocused) {
           event.preventDefault();
-          if (idx >= 0 && idx < opts.length) {
-            const opt = opts[idx];
-            if (opt) this.selectOption(opt);
+          if (this.open()) {
+            const key = this.selectAdapter.state().activeKey;
+            if (key) this.selectAdapter.dispatch({ type: "select", optionKey: key });
+          } else {
+            this.openOverlay();
           }
         }
         break;
       case "Escape":
-        event.preventDefault();
-        this.closeOverlay();
+        if (this.open()) {
+          event.preventDefault();
+          this.selectAdapter.dispatch({ type: "close", restoreFocus: true });
+        }
         break;
     }
+  }
+
+  protected override onSearchInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.searchQuery.set(value);
+    this.searchChanged.emit(value);
+    this.selectAdapter.dispatch({ type: "search", query: value });
   }
 
   // ── Native select fallback ──────────────────────────────────────────────────

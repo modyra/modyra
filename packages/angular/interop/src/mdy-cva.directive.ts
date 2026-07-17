@@ -10,11 +10,11 @@ import {
 } from "@angular/core";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from "@angular/forms";
 import {
-  MdyDeclarativeAdapter,
-  MdyFieldState,
   MDY_DECLARATIVE_REGISTRY,
   MDY_FORM_ADAPTER,
-} from "@modyra/angular";
+  MdyDeclarativeAdapter,
+  MdyFieldState,
+} from "@modyra/angular/adapter";
 
 declare const ngDevMode: boolean | undefined;
 

@@ -8,8 +8,8 @@ import {
   Signal,
   signal,
 } from "@angular/core";
+import { mdyFormSerialize } from "@modyra/core/serialize";
 import { MdyFieldHandle, MdyTypedFormLike } from "../core/typed-form";
-import { mdyFormSerialize } from "../core/utils";
 
 interface DevtoolsFieldRow {
   readonly path: string;

@@ -1,21 +1,13 @@
 import { Provider } from "@angular/core";
-import { buildDateLocale, MDY_DATE_LOCALE } from "./date-locale";
 import {
+  buildDateLocale,
   MDY_I18N_DEFAULT_TAGS,
   MDY_I18N_PRESETS,
   MdyBuiltInLocale,
   MdyI18nMessages,
 } from "@modyra/core";
+import { MDY_DATE_LOCALE } from "./date-locale";
 import { MDY_I18N_MESSAGES } from "./i18n";
-
-// Catalogs are shared, framework-agnostic data from @modyra/core.
-export {
-  MDY_I18N_MESSAGES_DE,
-  MDY_I18N_MESSAGES_ES,
-  MDY_I18N_MESSAGES_FR,
-  MDY_I18N_MESSAGES_IT,
-} from "@modyra/core";
-export type { MdyBuiltInLocale } from "@modyra/core";
 
 const PRESETS = MDY_I18N_PRESETS;
 const DEFAULT_TAGS = MDY_I18N_DEFAULT_TAGS;

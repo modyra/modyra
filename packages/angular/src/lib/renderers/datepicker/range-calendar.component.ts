@@ -19,12 +19,12 @@ import {
   formatIsoDate,
   isDateInRange,
   today,
-} from "../../core/date-utils";
+} from "@modyra/core/date-utils";
 import { calendarKeyboardTarget } from "@modyra/core/keyboard";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyCalendarHeaderComponent } from "./calendar-header.component";
-import { MdyRangeCalendarGridComponent } from "./range-calendar-grid.component";
 import { MdyMonthPickerComponent } from "./month-picker.component";
+import { MdyRangeCalendarGridComponent } from "./range-calendar-grid.component";
 import { MdyYearPickerComponent } from "./year-picker.component";
 
 /** Selection phase for range picking. */

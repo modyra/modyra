@@ -9,9 +9,9 @@
  */
 import { ApplicationRef, Injector, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
+import { required } from "@modyra/core";
 import { MdyDeclarativeAdapter } from "./declarative-form-adapter";
 import { field, group, mdyForm } from "./typed-form";
-import { required } from "./validators";
 
 function bench(label: string, fn: () => void): number {
   const start = performance.now();

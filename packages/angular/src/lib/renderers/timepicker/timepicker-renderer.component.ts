@@ -9,13 +9,6 @@ import {
   input,
   signal,
 } from "@angular/core";
-import { MdyBaseControl } from "../../control/control.directive";
-import { MdyErrorListComponent } from "../../control/error-list.component";
-import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
-import { MdyIconComponent } from "../../control/mdy-icon.component";
-import { MDY_I18N_MESSAGES } from "../../core/i18n";
-import { MdyOverlayControl } from "../../core/overlay-control.directive";
-import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import {
   formatTime,
   formatTimeAs,
@@ -23,7 +16,14 @@ import {
   MdyTimeFormat,
   parseAnyTime,
   parseTime,
-} from "../../core/time-utils";
+} from "@modyra/core/time-utils";
+import { MdyBaseControl } from "../../control/control.directive";
+import { MdyErrorListComponent } from "../../control/error-list.component";
+import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
+import { MdyIconComponent } from "../../control/mdy-icon.component";
+import { MDY_I18N_MESSAGES } from "../../core/i18n";
+import { MdyOverlayControl } from "../../core/overlay-control.directive";
+import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
 
 /**

@@ -1,5 +1,5 @@
 import { Directive, input } from "@angular/core";
-import { minLength } from "../../core/validators";
+import { minLength } from "@modyra/core";
 import { MdyValidatorBaseDirective } from "./validator-base.directive";
 
 /**
