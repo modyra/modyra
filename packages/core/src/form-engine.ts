@@ -18,10 +18,17 @@ import {
   MdySubmitMode,
   ValidatorFn,
 } from "./types.js";
+import { MdyDraftManager, MdyDraftOptions } from "./draft-manager.js";
+import { MdyHistoryManager } from "./history-manager.js";
+import { isSafeFieldPath } from "./path-utils.js";
+
+export type { MdyDraftOptions, MdyDraftStorage } from "./draft-manager.js";
 
 // ─── Registry interface ───────────────────────────────────────────────────────
 
-export interface MdyFormRegistry {
+export interface MdyFormRegistry<
+  TBooleanSignal = MdySignal<boolean>,
+> {
   /**
    * Registers type-specific validators for a named field.
    * Validators added through this method cannot be updated or removed later;
@@ -56,8 +63,8 @@ export interface MdyFormRegistry {
     options?: MdyAsyncValidatorOptions,
   ): void;
   setInitialValue(name: string, value: unknown): void;
-  setDisabled(name: string, disabled: MdySignal<boolean>): void;
-  setReadonly(name: string, readonly: MdySignal<boolean>): void;
+  setDisabled(name: string, disabled: TBooleanSignal): void;
+  setReadonly(name: string, readonly: TBooleanSignal): void;
   /**
    * Declares that a control instance owns the named field. Claims are
    * reference-counted: the field state is dropped only when the last
@@ -95,112 +102,6 @@ interface FieldRecord {
 }
 
 let _legacyValidatorKey = 0;
-
-// ─── Draft persistence types ──────────────────────────────────────────────────
-
-/** Pluggable storage for {@link MdyFormEngine.enableDraft}. */
-export interface MdyDraftStorage {
-  read(key: string): string | null;
-  write(key: string, value: string): void;
-  remove(key: string): void;
-}
-
-export interface MdyDraftOptions {
-  /** Storage key the draft is persisted under. */
-  readonly key: string;
-  /** Defaults to `localStorage` (inert when unavailable: SSR, Node). */
-  readonly storage?: MdyDraftStorage;
-  /** Milliseconds of inactivity before the draft is written. Default 400. */
-  readonly debounceMs?: number;
-  /**
-   * Field paths never persisted (nor restored) — use for passwords, tokens,
-   * card numbers and any other sensitive value. The default storage is
-   * `localStorage`, which is plain-text and shared by every script on the
-   * origin: treat everything you persist as readable.
-   */
-  readonly exclude?: readonly string[];
-  /**
-   * Drafts older than this many milliseconds are discarded on restore
-   * instead of being applied. Omit for no expiry.
-   */
-  readonly ttlMs?: number;
-  /**
-   * Schema version of the draft (default 1). A stored draft with a different
-   * version is discarded on restore — bump it when the form's shape changes
-   * incompatibly.
-   */
-  readonly version?: number;
-}
-
-/** Envelope every draft is stored in (adds expiry + versioning metadata). */
-interface DraftEnvelope {
-  readonly __mdyDraft: number;
-  readonly savedAt: number;
-  readonly value: Record<string, unknown>;
-}
-
-function isDraftEnvelope(parsed: unknown): parsed is DraftEnvelope {
-  return (
-    typeof parsed === "object" &&
-    parsed !== null &&
-    typeof (parsed as DraftEnvelope).__mdyDraft === "number" &&
-    typeof (parsed as DraftEnvelope).value === "object"
-  );
-}
-
-/**
- * Default browser storage — inert when `localStorage` is unavailable or
- * blocked (SSR, Node, sandboxed iframes, browsers that throw SecurityError
- * on access when cookies/site data are disabled).
- */
-function localStorageDraftStorage(): MdyDraftStorage {
-  let available = false;
-  try {
-    available = typeof localStorage !== "undefined" && localStorage !== null;
-  } catch {
-    // Accessing `localStorage` itself throws in restrictive modes.
-  }
-  return {
-    read: (key) => {
-      if (!available) return null;
-      try {
-        return localStorage.getItem(key);
-      } catch {
-        return null;
-      }
-    },
-    write: (key, value) => {
-      if (available) localStorage.setItem(key, value);
-    },
-    remove: (key) => {
-      if (!available) return;
-      try {
-        localStorage.removeItem(key);
-      } catch {
-        // Ignore: nothing to clean up if the storage is unreachable.
-      }
-    },
-  };
-}
-
-/** True when the value is (or contains) a File — not draft-serializable. */
-function containsFile(value: unknown): boolean {
-  if (typeof File === "undefined" || value === null) return false;
-  if (value instanceof File) return true;
-  if (Array.isArray(value)) return value.some(containsFile);
-  return false;
-}
-
-/** Shallow key/value equality between two flat form-value records. */
-function shallowEqualRecords(
-  a: Record<string, unknown>,
-  b: Record<string, unknown>,
-): boolean {
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-  if (aKeys.length !== bKeys.length) return false;
-  return aKeys.every(k => Object.is(a[k], b[k]));
-}
 
 export interface MdyFormEngineOptions {
   /** Emit console warnings for suspicious usage. Default true. */
@@ -264,6 +165,16 @@ export class MdyFormEngine
   /** Reactive list of the registered field names (flat, dotted for groups). */
   readonly fieldNames: MdySignal<readonly string[]>;
 
+  /** True when a stored draft was found and restored by {@link enableDraft}. */
+  readonly hasDraft: MdySignal<boolean>;
+  /** True when {@link undo} has state to restore (see {@link enableHistory}). */
+  readonly canUndo: MdySignal<boolean>;
+  /** True when {@link redo} has state to restore. */
+  readonly canRedo: MdySignal<boolean>;
+
+  private readonly _draftManager: MdyDraftManager;
+  private readonly _historyManager: MdyHistoryManager;
+
   constructor(
     protected readonly _rx: MdyReactivity,
     private readonly _formValue: MdySignal<
@@ -274,6 +185,23 @@ export class MdyFormEngine
     options?: MdyFormEngineOptions,
   ) {
     this._devWarnings = options?.devWarnings ?? true;
+    const hasDraft = _rx.signal(false);
+    this.hasDraft = hasDraft.asReadonly();
+    this._draftManager = new MdyDraftManager({
+      rx: _rx,
+      getValue: () => this.value(),
+      patchValue: (value) => this.patchValue(value),
+      hasDraft,
+      warn: (message) => this._warn(message),
+    });
+    this._historyManager = new MdyHistoryManager({
+      rx: _rx,
+      getValue: () => this.value(),
+      setValue: (value) => this.setValue(value),
+      warn: (message) => this._warn(message),
+    });
+    this.canUndo = this._historyManager.canUndo;
+    this.canRedo = this._historyManager.canRedo;
     this._fieldNames = _rx.signal<readonly string[]>([]);
     this.fieldNames = this._fieldNames.asReadonly();
     this._formValidators = _rx.signal<
@@ -283,12 +211,6 @@ export class MdyFormEngine
     this._submitCount = _rx.signal(0);
     this._lastSubmitErrors = _rx.signal<ReadonlyArray<MdyFormError>>([]);
     this._submitSnapshot = _rx.signal<Record<string, unknown> | null>(null);
-    this._hasDraft = _rx.signal(false);
-    this._canUndo = _rx.signal(false);
-    this._canRedo = _rx.signal(false);
-    this.hasDraft = this._hasDraft.asReadonly();
-    this.canUndo = this._canUndo.asReadonly();
-    this.canRedo = this._canRedo.asReadonly();
 
     this.value = _rx.computed(() =>
       Object.fromEntries(
@@ -496,11 +418,11 @@ export class MdyFormEngine
       const globalErrors =
         path === ""
           ? [
-              ...this._lastSubmitErrors().filter(
-                e => e.path === null || !this._fields.has(e.path),
-              ),
-              ...this._crossErrors().filter(e => e.path === null),
-            ]
+            ...this._lastSubmitErrors().filter(
+              e => e.path === null || !this._fields.has(e.path),
+            ),
+            ...this._crossErrors().filter(e => e.path === null),
+          ]
           : [];
       return [...fieldErrors, ...globalErrors];
     });
@@ -586,20 +508,6 @@ export class MdyFormEngine
 
   // ── Draft persistence ────────────────────────────────────────────────────────
 
-  private _draftKey: string | null = null;
-  private _draftStorage: MdyDraftStorage | null = null;
-  private _draftEffect: MdyEffectRef | null = null;
-  private _draftTimer: ReturnType<typeof setTimeout> | null = null;
-  private _draftExclude: ReadonlySet<string> = new Set();
-  private _draftVersion = 1;
-  /** Serialized value at enable time — a pristine form writes no draft. */
-  private _draftBaseline: string | null = null;
-  private _draftLastWritten: string | null = null;
-  private readonly _hasDraft: MdyWritableSignal<boolean>;
-
-  /** True when a stored draft was found and restored by {@link enableDraft}. */
-  readonly hasDraft: MdySignal<boolean>;
-
   /**
    * Persists the form value under `key` on every (debounced) change and
    * restores an existing draft immediately. The draft is cleared
@@ -607,248 +515,34 @@ export class MdyFormEngine
    * {@link clearDraft}. `File` values are skipped (not serializable).
    */
   enableDraft(options: MdyDraftOptions): void {
-    if (this._draftEffect) return;
-    if (!this._rx.canEffect) {
-      this._warn(
-        "enableDraft() needs an effect-capable reactivity " +
-          "(with the Angular adapter: construct it with an Injector).",
-      );
-      return;
-    }
-    this._draftKey = options.key;
-    this._draftStorage = options.storage ?? localStorageDraftStorage();
-    this._draftExclude = new Set(options.exclude ?? []);
-    this._draftVersion = options.version ?? 1;
-    const debounceMs = options.debounceMs ?? 400;
-
-    // Restore an existing draft before recording starts.
-    const stored = this._draftStorage.read(this._draftKey);
-    if (stored !== null) {
-      const value = this._parseDraft(stored, options.ttlMs);
-      if (value !== null) {
-        this.patchValue(
-          Object.fromEntries(
-            Object.entries(value).filter(([k]) => !this._draftExclude.has(k)),
-          ),
-        );
-        this._hasDraft.set(true);
-        this._draftLastWritten = this._serializeDraft(value);
-      } else {
-        this._draftStorage.remove(this._draftKey);
-      }
-    }
-    this._draftBaseline = this._serializeDraft(
-      this._rx.untracked(() => this.value()),
-    );
-
-    this._draftEffect = this._rx.effect((onCleanup) => {
-      const current = this.value();
-      this._rx.untracked(() => {
-        if (this._draftTimer !== null) clearTimeout(this._draftTimer);
-        this._draftTimer = setTimeout(() => {
-          this._draftTimer = null;
-          this._writeDraft(current);
-        }, debounceMs);
-      });
-      onCleanup(() => {
-        if (this._draftTimer !== null) {
-          clearTimeout(this._draftTimer);
-          this._draftTimer = null;
-        }
-      });
-    });
+    this._draftManager.enableDraft(options);
   }
 
   /** Removes the stored draft (also called after an error-free submit). */
   clearDraft(): void {
-    if (this._draftKey && this._draftStorage) {
-      this._draftStorage.remove(this._draftKey);
-    }
-    this._hasDraft.set(false);
-    this._draftLastWritten = null;
-    // The current (submitted) value becomes the new baseline.
-    this._draftBaseline = this._serializeDraft(
-      this._rx.untracked(() => this.value()),
-    );
-  }
-
-  /**
-   * Parses a stored draft, returning its value or `null` when it must be
-   * discarded (corrupt JSON, version mismatch, expired TTL). Envelope-less
-   * payloads written by pre-versioning releases are still accepted.
-   */
-  private _parseDraft(
-    stored: string,
-    ttlMs: number | undefined,
-  ): Record<string, unknown> | null {
-    try {
-      const parsed: unknown = JSON.parse(stored);
-      if (isDraftEnvelope(parsed)) {
-        if (parsed.__mdyDraft !== this._draftVersion) return null;
-        if (ttlMs !== undefined && Date.now() - parsed.savedAt > ttlMs) {
-          return null;
-        }
-        return parsed.value;
-      }
-      if (typeof parsed === "object" && parsed !== null) {
-        return parsed as Record<string, unknown>; // legacy plain draft
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  }
-
-  private _serializeDraft(value: Record<string, unknown>): string {
-    const serializable = Object.fromEntries(
-      Object.entries(value).filter(
-        ([k, v]) => !this._draftExclude.has(k) && !containsFile(v),
-      ),
-    );
-    return JSON.stringify(serializable);
-  }
-
-  private _writeDraft(value: Record<string, unknown>): void {
-    if (!this._draftKey || !this._draftStorage) return;
-    const serialized = this._serializeDraft(value);
-    // Nothing the user changed → no draft; unchanged → no rewrite.
-    if (serialized === this._draftLastWritten) return;
-    if (this._draftLastWritten === null && serialized === this._draftBaseline) {
-      return;
-    }
-    const envelope: DraftEnvelope = {
-      __mdyDraft: this._draftVersion,
-      savedAt: Date.now(),
-      value: JSON.parse(serialized) as Record<string, unknown>,
-    };
-    try {
-      this._draftStorage.write(this._draftKey, JSON.stringify(envelope));
-      this._draftLastWritten = serialized;
-    } catch {
-      // Quota errors and private-mode restrictions must not break the form.
-    }
+    this._draftManager.clearDraft();
   }
 
   // ── History (undo/redo) and change tracking ─────────────────────────────────
 
-  private readonly _undoStack: Array<Record<string, unknown>> = [];
-  private readonly _redoStack: Array<Record<string, unknown>> = [];
-  private _lastSnapshot: Record<string, unknown> | null = null;
-  private _historyEffect: MdyEffectRef | null = null;
-  private _historyTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly _canUndo: MdyWritableSignal<boolean>;
-  private readonly _canRedo: MdyWritableSignal<boolean>;
-
-  /** True when {@link undo} has state to restore (see {@link enableHistory}). */
-  readonly canUndo: MdySignal<boolean>;
-  /** True when {@link redo} has state to restore. */
-  readonly canRedo: MdySignal<boolean>;
-
   /**
    * Starts recording value snapshots for {@link undo}/{@link redo}. Idempotent.
-   *
-   * `debounceMs` batches rapid changes (e.g. keystrokes) into a single
-   * history entry — without it every value change becomes an undo step.
-   * Only the form **value** is recorded: touched/dirty flags, server errors
-   * and validation state are not restored by undo/redo.
    */
   enableHistory(options?: {
     readonly maxEntries?: number;
     readonly debounceMs?: number;
   }): void {
-    if (this._historyEffect) return;
-    if (!this._rx.canEffect) {
-      this._warn(
-        "enableHistory() needs an effect-capable reactivity " +
-          "(with the Angular adapter: construct it with an Injector).",
-      );
-      return;
-    }
-    const max = options?.maxEntries ?? 100;
-    const debounceMs = options?.debounceMs ?? 0;
-    const record = (current: Record<string, unknown>): void => {
-      const last = this._lastSnapshot;
-      if (last !== null && shallowEqualRecords(last, current)) return;
-      if (last !== null) {
-        this._undoStack.push(last);
-        if (this._undoStack.length > max) this._undoStack.shift();
-        this._redoStack.length = 0;
-        this._canUndo.set(true);
-        this._canRedo.set(false);
-      }
-      this._lastSnapshot = current;
-    };
-    this._historyEffect = this._rx.effect((onCleanup) => {
-      const current = this.value();
-      this._rx.untracked(() => {
-        if (debounceMs <= 0) {
-          record(current);
-          return;
-        }
-        // First value seeds the snapshot immediately so the pre-typing
-        // state is undoable; later changes are batched.
-        if (this._lastSnapshot === null) {
-          record(current);
-          return;
-        }
-        if (this._historyTimer !== null) clearTimeout(this._historyTimer);
-        this._historyTimer = setTimeout(() => {
-          this._historyTimer = null;
-          record(current);
-        }, debounceMs);
-      });
-      onCleanup(() => {
-        if (this._historyTimer !== null) {
-          clearTimeout(this._historyTimer);
-          this._historyTimer = null;
-        }
-      });
-    });
-  }
-
-  /**
-   * Flushes a pending debounced snapshot so undo/redo act on the latest
-   * value instead of the last recorded batch.
-   */
-  private _flushHistory(): void {
-    if (this._historyTimer === null) return;
-    clearTimeout(this._historyTimer);
-    this._historyTimer = null;
-    const current = this._rx.untracked(() => this.value());
-    const last = this._lastSnapshot;
-    if (last !== null && !shallowEqualRecords(last, current)) {
-      this._undoStack.push(last);
-      this._redoStack.length = 0;
-    }
-    this._lastSnapshot = current;
+    this._historyManager.enableHistory(options);
   }
 
   /** Restores the previous recorded form value (no-op when history is empty). */
   undo(): void {
-    this._flushHistory();
-    const prev = this._undoStack.pop();
-    if (!prev) return;
-    const current = this._rx.untracked(() => this.value());
-    this._redoStack.push(current);
-    // Pre-setting the snapshot makes the history effect treat the restored
-    // value as already recorded instead of pushing it again.
-    this._lastSnapshot = prev;
-    this.setValue(prev);
-    this._canUndo.set(this._undoStack.length > 0);
-    this._canRedo.set(true);
+    this._historyManager.undo();
   }
 
   /** Re-applies the value undone by the last {@link undo}. */
   redo(): void {
-    this._flushHistory();
-    const next = this._redoStack.pop();
-    if (!next) return;
-    const current = this._rx.untracked(() => this.value());
-    this._undoStack.push(current);
-    this._lastSnapshot = next;
-    this.setValue(next);
-    this._canRedo.set(this._redoStack.length > 0);
-    this._canUndo.set(true);
+    this._historyManager.redo();
   }
 
   /**
@@ -867,9 +561,56 @@ export class MdyFormEngine
     return out;
   }
 
+  // ── Lifecycle ────────────────────────────────────────────────────────────────
+
+  private _destroyed = false;
+
+  /** True once {@link destroy} has run. */
+  get destroyed(): boolean {
+    return this._destroyed;
+  }
+
+  /**
+   * Releases every resource the engine owns: async validator runners, the
+   * draft and history effects, all pending timers, field records and the
+   * undo/redo stacks. Idempotent. After destruction the engine is inert —
+   * effect-driven features cannot be re-enabled and in-flight async results
+   * are discarded. Bindings must call this when their host scope goes away
+   * (component unmount, effect-scope dispose, element disconnect).
+   */
+  destroy(): void {
+    if (this._destroyed) return;
+    this._destroyed = true;
+    this._fields.forEach(rec => {
+      rec.asyncRunner?.destroy();
+      rec.asyncRunner = null;
+      // Bumping the run id makes any in-flight promise resolve as stale.
+      rec.asyncRunId++;
+    });
+    this._draftManager.destroy();
+    this._historyManager.destroy();
+    this._fields.clear();
+    this._claims.clear();
+    this._initialValues.clear();
+    this._rx.untracked(() => {
+      this._fieldNames.set([]);
+    });
+  }
+
   // ── Private helpers ─────────────────────────────────────────────────────────
 
   private _getOrCreate(name: string): FieldRecord {
+    if (!isSafeFieldPath(name)) {
+      throw new Error(
+        `[modyra] Invalid field path "${name}": reserved or empty path segments are not allowed.`,
+      );
+    }
+    if (this._destroyed) {
+      this._warn(
+        `Field "${name}" requested on a destroyed form engine — the record ` +
+        "is created detached and no validation effects will run.",
+      );
+    }
     let rec = this._fields.get(name);
     if (!rec) {
       rec = this._createFieldRecord(name);
@@ -978,11 +719,11 @@ export class MdyFormEngine
 
   /** Lazily creates the effect that runs async validators for a field. */
   private _ensureAsyncRunner(name: string, rec: FieldRecord): void {
-    if (rec.asyncRunner) return;
+    if (this._destroyed || rec.asyncRunner) return;
     if (!this._rx.canEffect) {
       this._warn(
         `Async validators for "${name}" need an effect-capable reactivity ` +
-          `(with the Angular adapter: construct it with an Injector).`,
+        `(with the Angular adapter: construct it with an Injector).`,
       );
       return;
     }

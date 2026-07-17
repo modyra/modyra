@@ -2,14 +2,17 @@
  * The "decisive test" of the domain-model extraction: the whole form engine
  * runs in plain Node — no framework, no DI, no DOM.
  */
-import { test } from "node:test";
 import assert from "node:assert/strict";
+import { test } from "node:test";
 import {
+  buildDateLocale,
+  buildDynamicValidators,
   createForm,
   crossField,
   field,
   group,
   min,
+  parseDynamicFields,
   required,
 } from "../dist/index.js";
 
@@ -125,4 +128,124 @@ test("submit gates on validity and snapshots server errors", async () => {
   );
   form.f.name.set("edited"); // editing clears the server error
   assert.deepEqual(form.f.name.errors(), []);
+});
+
+test("dynamic validators skip invalid/oversized regexp patterns", () => {
+  const invalid = buildDynamicValidators({ pattern: "[" });
+  assert.equal(invalid.validators.length, 0);
+
+  const longPattern = "a".repeat(257);
+  const oversized = buildDynamicValidators({ pattern: longPattern });
+  assert.equal(oversized.validators.length, 0);
+});
+
+test("draft persistence skips nested File values", {
+  skip: typeof File === "undefined",
+}, async () => {
+  const data = new Map();
+  const storage = {
+    read: (k) => data.get(k) ?? null,
+    write: (k, v) => void data.set(k, v),
+    remove: (k) => void data.delete(k),
+  };
+
+  const form = createForm(
+    { attachment: field(null), note: field("") },
+    { draft: { key: "nested-file", storage, debounceMs: 1 } },
+  );
+  await tick();
+  form.f.attachment.set({
+    nested: { file: new File(["x"], "a.txt") },
+  });
+  form.f.note.set("keep-me");
+  await tick();
+  await new Promise((r) => setTimeout(r, 10));
+
+  const stored = data.get("nested-file");
+  assert.ok(stored.includes("keep-me"));
+  assert.ok(!stored.includes("attachment"));
+});
+
+test("engine rejects reserved path segments", () => {
+  const form = createForm({ name: field("") });
+  assert.throws(
+    () => form.getField("__proto__.admin"),
+    /Invalid field path/,
+  );
+});
+
+test("parseDynamicFields drops malformed and duplicate entries", () => {
+  const parsed = parseDynamicFields([
+    { name: "email", kind: "email", validators: { required: true } },
+    { name: "email", kind: "text" },
+    { name: "broken-dot.path", kind: "text" },
+    { name: "num", kind: "number", min: 10, max: 1 },
+    { name: "sel", kind: "select", options: [{ value: 1, label: "One" }] },
+    { name: "badOptions", kind: "select", options: [{ label: "Missing" }] },
+    { name: "v", kind: "text", validators: { minLength: 5, maxLength: 1 } },
+  ]);
+
+  assert.equal(parsed.length, 2);
+  assert.deepEqual(
+    parsed.map((field) => field.name),
+    ["email", "sel"],
+  );
+});
+
+test("draft persistence excludes BigInt-bearing fields instead of mutating their type", async () => {
+  const data = new Map();
+  const storage = {
+    read: (k) => data.get(k) ?? null,
+    write: (k, v) => void data.set(k, v),
+    remove: (k) => void data.delete(k),
+  };
+
+  const form = createForm(
+    { meta: field({}), note: field("") },
+    { draft: { key: "bigint", storage, debounceMs: 1 } },
+  );
+
+  // A JSON round-trip would restore count as a string — the field must be
+  // skipped entirely rather than silently changing type.
+  form.f.meta.set({ count: BigInt(42) });
+  form.f.note.set("kept");
+  await tick();
+  await new Promise((r) => setTimeout(r, 10));
+
+  const stored = data.get("bigint");
+  assert.ok(stored);
+  assert.ok(!stored.includes("count"));
+  assert.ok(stored.includes('"note":"kept"'));
+});
+
+test("draft persistence skips circular values without throwing", async () => {
+  const data = new Map();
+  const storage = {
+    read: (k) => data.get(k) ?? null,
+    write: (k, v) => void data.set(k, v),
+    remove: (k) => void data.delete(k),
+  };
+
+  const form = createForm(
+    { meta: field({}) },
+    { draft: { key: "cycle", storage, debounceMs: 1 } },
+  );
+
+  const cyclic = {};
+  cyclic.self = cyclic;
+  form.f.meta.set(cyclic);
+  await tick();
+  await new Promise((r) => setTimeout(r, 10));
+
+  assert.equal(data.has("cycle"), false);
+});
+
+test("buildDateLocale produces complete locale bundles", () => {
+  const locale = buildDateLocale("en-US");
+  assert.equal(locale.locale, "en-US");
+  assert.equal(locale.monthNamesLong.length, 12);
+  assert.equal(locale.monthNamesShort.length, 12);
+  assert.equal(locale.dayNamesNarrow.length, 7);
+  assert.equal(locale.dayNamesShort.length, 7);
+  assert.ok(locale.firstDayOfWeek >= 0 && locale.firstDayOfWeek <= 6);
 });

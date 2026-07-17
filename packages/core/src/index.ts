@@ -9,14 +9,14 @@
  * plain unit tests.
  */
 export {
-  vanillaReactivity,
+  vanillaReactivity
 } from "./reactivity.js";
 export type {
   MdyEffectRef,
   MdyOnCleanup,
   MdyReactivity,
   MdySignal,
-  MdyWritableSignal,
+  MdyWritableSignal
 } from "./reactivity.js";
 
 export * from "./types.js";
@@ -32,18 +32,25 @@ export {
   min,
   minLength,
   pattern,
-  required,
+  required
 } from "./validators.js";
 
+export { isSafeFieldPath } from "./path-utils.js";
 export { MdyFormEngine } from "./form-engine.js";
 export type {
   MdyDraftOptions,
   MdyDraftStorage,
   MdyFormEngineOptions,
-  MdyFormRegistry,
+  MdyFormRegistry
 } from "./form-engine.js";
 
-export { createForm, field, group, MdyTypedForm } from "./typed-form.js";
+export {
+  createForm,
+  field,
+  group,
+  MdyTypedForm,
+  MdyTypedFormBase,
+} from "./typed-form.js";
 export type {
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
@@ -56,17 +63,19 @@ export type {
   MdyFormSchema,
   MdyFormValue,
   MdyGroupDescriptor,
-  MdyWiden,
+  MdyTypedFormBaseOptions,
+  MdyWiden
 } from "./typed-form.js";
 
 // ─── Shared headless logic (also available as subpath imports) ───────────────
+export * from "./date-locale.js";
 export * from "./date-utils.js";
-export * from "./time-utils.js";
-export * from "./overlay-position.js";
-export * from "./options-utils.js";
-export * from "./serialize.js";
 export * from "./dynamic-config.js";
 export * from "./i18n.js";
+export * from "./options-utils.js";
+export * from "./overlay-position.js";
+export * from "./serialize.js";
+export * from "./time-utils.js";
 
 // ─── Keyboard interaction logic ───────────────────────────────────────────────
 export * from "./keyboard.js";

@@ -1,9 +1,10 @@
-import { MdyReactivity, MdySignal, vanillaReactivity } from "./reactivity.js";
 import {
   MdyDraftOptions,
   MdyFormEngine,
   MdyFormRegistry,
 } from "./form-engine.js";
+import { isSafeFieldPath } from "./path-utils.js";
+import { MdyReactivity, MdySignal, vanillaReactivity } from "./reactivity.js";
 import {
   MdyAsyncValidatorFn,
   MdyFieldError,
@@ -62,19 +63,19 @@ export interface MdyFormSchema {
 /** The value type a schema produces — `form.getValue()` returns this. */
 export type MdyFormValue<S extends MdyFormSchema> = {
   [K in keyof S]: S[K] extends MdyFieldDescriptor<infer V>
-    ? V
-    : S[K] extends MdyGroupDescriptor<infer C>
-      ? MdyFormValue<C>
-      : never;
+  ? V
+  : S[K] extends MdyGroupDescriptor<infer C>
+  ? MdyFormValue<C>
+  : never;
 };
 
 /** Deep partial of the schema value — accepted by `patch`. */
 export type MdyFormPatch<S extends MdyFormSchema> = {
   readonly [K in keyof S]?: S[K] extends MdyFieldDescriptor<infer V>
-    ? V
-    : S[K] extends MdyGroupDescriptor<infer C>
-      ? MdyFormPatch<C>
-      : never;
+  ? V
+  : S[K] extends MdyGroupDescriptor<infer C>
+  ? MdyFormPatch<C>
+  : never;
 };
 
 // ─── Field handles ────────────────────────────────────────────────────────────
@@ -102,10 +103,10 @@ export interface MdyFieldHandle<TValue> {
 /** The typed handle tree mirroring the schema shape (`form.f.address.city`). */
 export type MdyFieldHandleTree<S extends MdyFormSchema> = {
   readonly [K in keyof S]: S[K] extends MdyFieldDescriptor<infer V>
-    ? MdyFieldHandle<V>
-    : S[K] extends MdyGroupDescriptor<infer C>
-      ? MdyFieldHandleTree<C>
-      : never;
+  ? MdyFieldHandle<V>
+  : S[K] extends MdyGroupDescriptor<infer C>
+  ? MdyFieldHandleTree<C>
+  : never;
 };
 
 // ─── Factories ────────────────────────────────────────────────────────────────
@@ -127,20 +128,20 @@ export interface MdyFieldOptions<TValue> {
 export type MdyWiden<T> = T extends string
   ? string
   : T extends number
-    ? number
-    : T extends boolean
-      ? boolean
-      : T;
+  ? number
+  : T extends boolean
+  ? boolean
+  : T;
 
 /** Declares a typed leaf field of a {@link createForm} schema. */
 export function field<TValue>(
-  initial: TValue,
+  initial: MdyWiden<TValue>,
   validators: ReadonlyArray<ValidatorFn<MdyWiden<TValue>>> = [],
   options?: MdyFieldOptions<MdyWiden<TValue>>,
 ): MdyFieldDescriptor<MdyWiden<TValue>> {
   return {
     kind: "field",
-    initial: initial as MdyWiden<TValue>,
+    initial,
     validators,
     asyncValidators: options?.asyncValidators ?? [],
     asyncDebounceMs: options?.asyncDebounceMs ?? 0,
@@ -176,8 +177,8 @@ export interface MdyCoreFormOptions<
    * no debounce).
    */
   readonly history?:
-    | boolean
-    | { readonly maxEntries?: number; readonly debounceMs?: number };
+  | boolean
+  | { readonly maxEntries?: number; readonly debounceMs?: number };
   /**
    * Autosaves the form value under `key` and restores an existing draft on
    * creation. Cleared automatically after an error-free submit. Use
@@ -214,34 +215,65 @@ export function createForm<S extends MdyFormSchema>(
 /** Owner key for validators registered from the schema. */
 const SCHEMA_KEY = "mdy-schema";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function hasRequiredMarker(fn: ValidatorFn<never>): boolean {
+  return Reflect.get(fn, MDY_MARKS_REQUIRED) === true;
+}
+
 /**
- * Typed form model over the flat {@link MdyFormEngine}.
- *
- * Implements `MdyFormAdapter` (with the nested, inferred value type) and
- * `MdyFormRegistry`, so bindings that speak the flat path protocol keep
- * working next to the typed handle tree.
+ * Options shared by every typed-form specialization (core and adapters).
+ * Framework-specific constructors supply their own reactivity / submit-mode
+ * handling, then forward the rest to {@link MdyTypedFormBase}.
  */
-export class MdyTypedForm<S extends MdyFormSchema>
-  implements MdyFormAdapter<MdyFormValue<S>>, MdyFormRegistry
-{
-  private readonly _engine: MdyFormEngine;
+export interface MdyTypedFormBaseOptions<
+  TValue extends Record<string, unknown> = Record<string, unknown>,
+> {
+  readonly validators?: ReadonlyArray<MdyFormValidatorFn<TValue>>;
+  readonly history?:
+  | boolean
+  | { readonly maxEntries?: number; readonly debounceMs?: number };
+  readonly draft?: string | MdyDraftOptions;
+}
+
+/**
+ * Framework-agnostic typed form implementation shared by core and Angular.
+ *
+ * The base owns the schema registration, handle-tree building, nested value
+ * mapping and the flat-path delegation surface. Subclasses only provide:
+ * - the underlying {@link MdyFormEngine} (or an Angular-branded extension);
+ * - a `_buildHandle` factory matching their signal type;
+ * - the public `value` / `f` declarations with the correct signal/handle types.
+ */
+export abstract class MdyTypedFormBase<
+  S extends MdyFormSchema,
+  THandle,
+  TBooleanSignal extends MdySignal<boolean> = MdySignal<boolean>,
+> implements MdyFormAdapter<MdyFormValue<S>>, MdyFormRegistry<TBooleanSignal> {
+  protected readonly _schema: S;
+  protected readonly _adapter: MdyFormEngine;
   /** Leaf paths in schema order. */
-  private readonly _leafPaths: readonly string[];
+  protected readonly _leafPaths: readonly string[];
   /** Group prefixes — used to flatten nested patches. */
-  private readonly _groupPaths: ReadonlySet<string>;
+  protected readonly _groupPaths: ReadonlySet<string>;
 
-  /** Typed handle tree mirroring the schema (`form.f.address.city`). */
-  readonly f: MdyFieldHandleTree<S>;
-  readonly state: MdyFormState;
-  readonly value: MdySignal<MdyFormValue<S>>;
+  /**
+   * Concrete handle tree type is declared by subclasses (core uses
+   * {@link MdyFieldHandleTree}, Angular uses Signal-based handles).
+   */
+  abstract readonly f: unknown;
+  abstract readonly state: MdyFormState;
+  abstract readonly value: MdySignal<MdyFormValue<S>>;
 
-  constructor(schema: S, options?: MdyCoreFormOptions<MdyFormValue<S>>) {
-    const rx = options?.reactivity ?? vanillaReactivity();
-    this._engine = new MdyFormEngine(
-      rx,
-      () => undefined,
-      () => options?.submitMode ?? "valid-only",
-    );
+  constructor(
+    schema: S,
+    adapter: MdyFormEngine,
+    options?: MdyTypedFormBaseOptions<MdyFormValue<S>>,
+  ) {
+    this._schema = schema;
+    this._adapter = adapter;
 
     const leafPaths: string[] = [];
     const groupPaths = new Set<string>();
@@ -251,43 +283,35 @@ export class MdyTypedForm<S extends MdyFormSchema>
 
     const history = options?.history;
     if (history === true) {
-      this._engine.enableHistory();
+      this._adapter.enableHistory();
     } else if (history) {
-      this._engine.enableHistory(history);
+      this._adapter.enableHistory(history);
     }
 
     const draft = options?.draft;
     if (typeof draft === "string") {
-      this._engine.enableDraft({ key: draft });
+      this._adapter.enableDraft({ key: draft });
     } else if (draft) {
-      this._engine.enableDraft(draft);
+      this._adapter.enableDraft(draft);
     }
 
     const formValidators = options?.validators ?? [];
     if (formValidators.length > 0) {
       // Cross-field validators see the nested typed value; the errors they
-      // return use the same dotted paths the flat engine stores fields under.
-      this._engine.setFormValidators(
+      // return use the same dotted paths the flat adapter stores fields under.
+      this._adapter.setFormValidators(
         formValidators.map(
           (fn) => (flat: Record<string, unknown>) =>
-            fn(this._unflatten(flat) as MdyFormValue<S>),
+            fn(this._flatToValue(flat)),
         ),
       );
     }
-
-    // The cast is the single typed/stringly boundary: the tree is built to
-    // mirror the schema shape walked above.
-    this.f = this._buildHandleTree(schema, "") as MdyFieldHandleTree<S>;
-    this.state = this._engine.state;
-    this.value = rx.computed(
-      () => this._unflatten(this._engine.value()) as MdyFormValue<S>,
-    );
   }
 
   // ── MdyFormAdapter ──────────────────────────────────────────────────────────
 
   getValue(): MdyFormValue<S> {
-    return this._unflatten(this._engine.getValue()) as MdyFormValue<S>;
+    return this._flatToValue(this._adapter.getValue());
   }
 
   getField<K extends keyof MdyFormValue<S>>(
@@ -295,13 +319,13 @@ export class MdyTypedForm<S extends MdyFormSchema>
   ): MdyFieldRef<MdyFormValue<S>[K]> | null;
   getField(name: string): MdyFieldRef<unknown> | null;
   getField(name: string): MdyFieldRef<unknown> | null {
-    return this._engine.getField(name);
+    return this._adapter.getField(name);
   }
 
   errorsFor(
     path: keyof MdyFormValue<S> | string,
   ): MdySignal<ReadonlyArray<MdyFormError>> {
-    return this._engine.errorsFor(String(path));
+    return this._adapter.errorsFor(String(path));
   }
 
   async submit(
@@ -309,13 +333,13 @@ export class MdyTypedForm<S extends MdyFormSchema>
       value: MdyFormValue<S>,
     ) => Promise<MdyFormError[] | void> | MdyFormError[] | void,
   ): Promise<void> {
-    return this._engine.submit((flat) =>
-      action(this._unflatten(flat) as MdyFormValue<S>),
+    return this._adapter.submit((flat) =>
+      action(this._flatToValue(flat)),
     );
   }
 
   markAllTouched(): void {
-    this._engine.markAllTouched();
+    this._adapter.markAllTouched();
   }
 
   buildSubmitEvent(value: MdyFormValue<S>): MdyFormSubmitEvent<MdyFormValue<S>> {
@@ -327,50 +351,46 @@ export class MdyTypedForm<S extends MdyFormSchema>
   }
 
   patchValue(partial: Partial<MdyFormValue<S>>): void {
-    this._engine.patchValue(
-      this._flattenPatch(partial as Record<string, unknown>),
-    );
+    this._adapter.patchValue(this._flattenPatch(partial));
   }
 
   /** Deeply-typed variant of {@link patchValue} for nested groups. */
   patch(partial: MdyFormPatch<S>): void {
-    this._engine.patchValue(
-      this._flattenPatch(partial as Record<string, unknown>),
-    );
+    this._adapter.patchValue(this._flattenPatch(partial));
   }
 
   setValue(value: MdyFormValue<S>): void {
     const flat: Record<string, unknown> = {};
     for (const path of this._leafPaths) {
-      flat[path] = this._pathGet(value as Record<string, unknown>, path);
+      flat[path] = this._pathGet(value, path);
     }
-    this._engine.setValue(flat);
+    this._adapter.setValue(flat);
   }
 
   reset(): void {
-    this._engine.reset();
+    this._adapter.reset();
   }
 
   // ── History and change tracking ─────────────────────────────────────────────
 
   /** True when {@link undo} has state to restore (requires `history` option). */
   get canUndo(): MdySignal<boolean> {
-    return this._engine.canUndo;
+    return this._adapter.canUndo;
   }
 
   /** True when {@link redo} has state to restore. */
   get canRedo(): MdySignal<boolean> {
-    return this._engine.canRedo;
+    return this._adapter.canRedo;
   }
 
   /** Restores the previous recorded form value. */
   undo(): void {
-    this._engine.undo();
+    this._adapter.undo();
   }
 
   /** Re-applies the value undone by the last {@link undo}. */
   redo(): void {
-    this._engine.redo();
+    this._adapter.redo();
   }
 
   /**
@@ -378,27 +398,41 @@ export class MdyTypedForm<S extends MdyFormSchema>
    * schema's initial values — ready for an API PATCH request.
    */
   getChanges(): MdyFormPatch<S> {
-    return this._unflatten(this._engine.getChanges()) as MdyFormPatch<S>;
+    return this._flatToPatch(this._adapter.getChanges());
   }
 
   /** Reactive flat field paths (dotted for groups) — devtools/inspection. */
   get fieldNames(): MdySignal<readonly string[]> {
-    return this._engine.fieldNames;
+    return this._adapter.fieldNames;
   }
 
   /** The reactive implementation this form runs on (adapters, devtools). */
   get reactivity() {
-    return this._engine.reactivity;
+    return this._adapter.reactivity;
   }
 
   /** True when a stored draft was restored (requires the `draft` option). */
   get hasDraft(): MdySignal<boolean> {
-    return this._engine.hasDraft;
+    return this._adapter.hasDraft;
   }
 
   /** Removes the stored draft (also happens after an error-free submit). */
   clearDraft(): void {
-    this._engine.clearDraft();
+    this._adapter.clearDraft();
+  }
+
+  /** True once {@link destroy} has run. */
+  get destroyed(): boolean {
+    return this._adapter.destroyed;
+  }
+
+  /**
+   * Releases every resource the form owns (async runners, draft/history
+   * effects, timers, field records). Idempotent — call it when the owning
+   * scope goes away (unmount, dispose, disconnect).
+   */
+  destroy(): void {
+    this._adapter.destroy();
   }
 
   // ── MdyFormRegistry (bindings speaking the flat path protocol) ──────────────
@@ -408,7 +442,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
     validators: ReadonlyArray<ValidatorFn<T>>,
     isRequired?: boolean,
   ): void {
-    this._engine.addValidators(name, validators, isRequired);
+    this._adapter.addValidators(name, validators, isRequired);
   }
 
   upsertValidators<T>(
@@ -417,11 +451,11 @@ export class MdyTypedForm<S extends MdyFormSchema>
     validators: ReadonlyArray<ValidatorFn<T>>,
     marksRequired?: boolean,
   ): void {
-    this._engine.upsertValidators(name, key, validators, marksRequired);
+    this._adapter.upsertValidators(name, key, validators, marksRequired);
   }
 
   removeValidators(name: string, key: string): void {
-    this._engine.removeValidators(name, key);
+    this._adapter.removeValidators(name, key);
   }
 
   upsertAsyncValidators<T>(
@@ -430,32 +464,32 @@ export class MdyTypedForm<S extends MdyFormSchema>
     validators: ReadonlyArray<MdyAsyncValidatorFn<T>>,
     options?: { readonly debounceMs?: number },
   ): void {
-    this._engine.upsertAsyncValidators(name, key, validators, options);
+    this._adapter.upsertAsyncValidators(name, key, validators, options);
   }
 
   setInitialValue(name: string, value: unknown): void {
-    this._engine.setInitialValue(name, value);
+    this._adapter.setInitialValue(name, value);
   }
 
-  setDisabled(name: string, disabled: MdySignal<boolean>): void {
-    this._engine.setDisabled(name, disabled);
+  setDisabled(name: string, disabled: TBooleanSignal): void {
+    this._adapter.setDisabled(name, disabled);
   }
 
-  setReadonly(name: string, readonly: MdySignal<boolean>): void {
-    this._engine.setReadonly(name, readonly);
+  setReadonly(name: string, readonly: TBooleanSignal): void {
+    this._adapter.setReadonly(name, readonly);
   }
 
   claimField(name: string): void {
-    this._engine.claimField(name);
+    this._adapter.claimField(name);
   }
 
   removeField(name: string): void {
-    this._engine.removeField(name);
+    this._adapter.removeField(name);
   }
 
-  // ── Private helpers ─────────────────────────────────────────────────────────
+  // ── Protected helpers ───────────────────────────────────────────────────────
 
-  private _registerSchema(
+  protected _registerSchema(
     nodes: MdyFormSchema,
     prefix: string,
     leafPaths: string[],
@@ -465,22 +499,17 @@ export class MdyTypedForm<S extends MdyFormSchema>
       const path = prefix ? `${prefix}.${key}` : key;
       if (node.kind === "field") {
         leafPaths.push(path);
-        this._engine.setInitialValue(path, node.initial);
-        this._engine.getField(path);
-        const marksRequired = node.validators.some(
-          (fn) =>
-            (fn as { readonly [MDY_MARKS_REQUIRED]?: boolean })[
-              MDY_MARKS_REQUIRED
-            ] === true,
-        );
-        this._engine.upsertValidators(
+        this._adapter.setInitialValue(path, node.initial);
+        this._adapter.getField(path);
+        const marksRequired = node.validators.some((fn) => hasRequiredMarker(fn));
+        this._adapter.upsertValidators(
           path,
           SCHEMA_KEY,
           node.validators,
           marksRequired,
         );
         if (node.asyncValidators.length > 0) {
-          this._engine.upsertAsyncValidators(
+          this._adapter.upsertAsyncValidators(
             path,
             SCHEMA_KEY,
             node.asyncValidators,
@@ -494,7 +523,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
     }
   }
 
-  private _buildHandleTree(
+  protected _buildHandleTree(
     nodes: MdyFormSchema,
     prefix: string,
   ): Record<string, unknown> {
@@ -506,11 +535,162 @@ export class MdyTypedForm<S extends MdyFormSchema>
           ? this._buildHandle(path)
           : this._buildHandleTree(node.children, path);
     }
+    if (this._isFieldHandleTree(out, nodes)) {
+      return out;
+    }
+    throw new Error("[modyra] Failed to build typed handle tree");
+  }
+
+  protected abstract _buildHandle(path: string): THandle;
+
+  /** Rebuilds the nested value shape from the adapter's flat dotted paths. */
+  protected _unflatten(flat: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    for (const [path, v] of Object.entries(flat)) {
+      // Engine paths are validated at field creation; this guard covers
+      // records from outside the engine (defense against prototype pollution).
+      if (!isSafeFieldPath(path)) continue;
+      const parts = path.split(".");
+      let target = out;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        if (part === undefined) continue;
+        const existing = target[part];
+        if (isRecord(existing)) {
+          target = existing;
+        } else {
+          const next: Record<string, unknown> = {};
+          target[part] = next;
+          target = next;
+        }
+      }
+      const leaf = parts[parts.length - 1];
+      if (leaf !== undefined) target[leaf] = v;
+    }
     return out;
   }
 
-  private _buildHandle(path: string): MdyFieldHandle<unknown> {
-    const ref = this._engine.getField(path);
+  /** Flattens a (possibly nested) patch object into dotted adapter paths. */
+  protected _flattenPatch(
+    partial: Partial<MdyFormValue<S>> | MdyFormPatch<S>,
+  ): Record<string, unknown> {
+    const flat: Record<string, unknown> = {};
+    const walk = (node: unknown, prefix: string): void => {
+      if (!isRecord(node)) return;
+      for (const [key, v] of Object.entries(node)) {
+        const path = prefix ? `${prefix}.${key}` : key;
+        if (
+          this._groupPaths.has(path) &&
+          v !== null &&
+          isRecord(v)
+        ) {
+          walk(v, path);
+        } else {
+          flat[path] = v;
+        }
+      }
+    };
+    walk(partial, "");
+    return flat;
+  }
+
+  protected _pathGet(value: unknown, path: string): unknown {
+    let current: unknown = value;
+    for (const part of path.split(".")) {
+      if (!isRecord(current)) return null;
+      current = current[part];
+    }
+    return current === undefined ? null : current;
+  }
+
+  protected _flatToValue(flat: Record<string, unknown>): MdyFormValue<S> {
+    return this._unflatten(flat) as MdyFormValue<S>;
+  }
+
+  protected _flatToPatch(flat: Record<string, unknown>): MdyFormPatch<S> {
+    return this._unflatten(flat) as MdyFormPatch<S>;
+  }
+
+  protected _isSchemaValue(
+    value: unknown,
+    nodes: MdyFormSchema,
+  ): value is MdyFormValue<S> {
+    if (!isRecord(value)) return false;
+    for (const [key, node] of Object.entries(nodes)) {
+      if (!(key in value)) return false;
+      const child = value[key];
+      if (node.kind === "field") continue;
+      if (!this._isSchemaValue(child, node.children)) return false;
+    }
+    return true;
+  }
+
+  protected _isSchemaPatch(
+    value: unknown,
+    nodes: MdyFormSchema,
+  ): value is MdyFormPatch<S> {
+    if (!isRecord(value)) return false;
+    for (const [key, child] of Object.entries(value)) {
+      const node = nodes[key];
+      if (node === undefined) return false;
+      if (node.kind === "field") continue;
+      if (!this._isSchemaPatch(child, node.children)) return false;
+    }
+    return true;
+  }
+
+  protected _isFieldHandleTree(
+    value: unknown,
+    nodes: MdyFormSchema,
+  ): boolean {
+    if (!isRecord(value)) return false;
+    for (const [key, node] of Object.entries(nodes)) {
+      const entry = value[key];
+      if (node.kind === "group") {
+        if (!this._isFieldHandleTree(entry, node.children)) return false;
+        continue;
+      }
+      if (!isRecord(entry)) return false;
+      if (typeof entry.path !== "string") return false;
+      if (typeof entry.set !== "function") return false;
+      if (typeof entry.markAsTouched !== "function") return false;
+      if (typeof entry.markAsDirty !== "function") return false;
+    }
+    return true;
+  }
+}
+
+/**
+ * Typed form model over the flat {@link MdyFormEngine}.
+ *
+ * Implements `MdyFormAdapter` (with the nested, inferred value type) and
+ * `MdyFormRegistry`, so bindings that speak the flat path protocol keep
+ * working next to the typed handle tree.
+ */
+export class MdyTypedForm<S extends MdyFormSchema>
+  extends MdyTypedFormBase<S, MdyFieldHandle<unknown>>
+  implements MdyFormAdapter<MdyFormValue<S>>, MdyFormRegistry {
+  readonly state: MdyFormState;
+  readonly f: MdyFieldHandleTree<S>;
+  readonly value: MdySignal<MdyFormValue<S>>;
+
+  constructor(schema: S, options?: MdyCoreFormOptions<MdyFormValue<S>>) {
+    const rx = options?.reactivity ?? vanillaReactivity();
+    const engine = new MdyFormEngine(
+      rx,
+      () => undefined,
+      () => options?.submitMode ?? "valid-only",
+    );
+    super(schema, engine, options);
+    this.state = engine.state;
+    this.value = rx.computed(
+      () => this._flatToValue(this._adapter.getValue()),
+    );
+    this.f = this._buildHandleTree(schema, "") as MdyFieldHandleTree<S>;
+  }
+
+  protected _buildHandle(path: string): MdyFieldHandle<unknown> {
+    const ref = this._adapter.getField(path);
     if (!ref) {
       throw new Error(`[modyra] Field "${path}" was not registered`);
     }
@@ -531,57 +711,21 @@ export class MdyTypedForm<S extends MdyFormSchema>
     };
   }
 
-  /** Rebuilds the nested value shape from the engine's flat dotted paths. */
-  private _unflatten(flat: Record<string, unknown>): Record<string, unknown> {
-    const out: Record<string, unknown> = {};
-    for (const [path, v] of Object.entries(flat)) {
-      const parts = path.split(".");
-      let target = out;
-      for (let i = 0; i < parts.length - 1; i++) {
-        const part = parts[i];
-        if (part === undefined) continue;
-        const existing = target[part];
-        if (existing !== null && typeof existing === "object") {
-          target = existing as Record<string, unknown>;
-        } else {
-          const next: Record<string, unknown> = {};
-          target[part] = next;
-          target = next;
-        }
-      }
-      const leaf = parts[parts.length - 1];
-      if (leaf !== undefined) target[leaf] = v;
+  /** Core validates the unflattened value against the schema shape. */
+  protected override _flatToValue(flat: Record<string, unknown>): MdyFormValue<S> {
+    const nested = this._unflatten(flat);
+    if (this._isSchemaValue(nested, this._schema)) {
+      return nested;
     }
-    return out;
+    throw new Error("[modyra] Flat value does not match schema shape");
   }
 
-  /** Flattens a (possibly nested) patch object into dotted engine paths. */
-  private _flattenPatch(partial: Record<string, unknown>): Record<string, unknown> {
-    const flat: Record<string, unknown> = {};
-    const walk = (node: Record<string, unknown>, prefix: string): void => {
-      for (const [key, v] of Object.entries(node)) {
-        const path = prefix ? `${prefix}.${key}` : key;
-        if (
-          this._groupPaths.has(path) &&
-          v !== null &&
-          typeof v === "object"
-        ) {
-          walk(v as Record<string, unknown>, path);
-        } else {
-          flat[path] = v;
-        }
-      }
-    };
-    walk(partial, "");
-    return flat;
-  }
-
-  private _pathGet(value: Record<string, unknown>, path: string): unknown {
-    let current: unknown = value;
-    for (const part of path.split(".")) {
-      if (current === null || typeof current !== "object") return null;
-      current = (current as Record<string, unknown>)[part];
+  /** Core validates the unflattened patch against the schema shape. */
+  protected override _flatToPatch(flat: Record<string, unknown>): MdyFormPatch<S> {
+    const nested = this._unflatten(flat);
+    if (this._isSchemaPatch(nested, this._schema)) {
+      return nested;
     }
-    return current === undefined ? null : current;
+    throw new Error("[modyra] Flat patch does not match schema shape");
   }
 }
