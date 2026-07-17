@@ -8,33 +8,31 @@ import {
   signal,
   viewChild,
 } from "@angular/core";
+import { toObservable, toSignal } from "@angular/core/rxjs-interop";
+import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
 import {
-  crossField,
   field,
   group,
-  mdyEmail,
   mdyForm,
-  mdyMin,
-  mdyRequired as mdyRequiredValidator,
+  MdyFormSubmitEvent,
+  MdySelectOption,
+} from "@modyra/angular/adapter";
+import { MdyCvaDirective } from "@modyra/angular/interop";
+import {
   MdyCheckboxComponent,
   MdyColorsComponent,
-  MdyDynamicFormComponent,
-  MdyDynamicField,
-  MdyDevtoolsDirective,
-  MdyFormWizardComponent,
-  MdyLoadOptionsDirective,
-  MdyOptionsLoader,
-  MdyWizardStepComponent,
   MdyConditionalOptionsDirective,
   MdyDatePickerComponent,
   MdyDateRangePickerComponent,
+  MdyDevtoolsDirective,
+  MdyDynamicFormComponent,
   MdyEmailDirective,
   MdyFileComponent,
   MdyFloatingLabelsDirective,
   MdyFormComponent,
-  mdyFormSerialize,
-  MdyFormSubmitEvent,
+  MdyFormWizardComponent,
   MdyInlineErrorsDirective,
+  MdyLoadOptionsDirective,
   MdyMaxDirective,
   MdyMaxLengthDirective,
   MdyMinDirective,
@@ -42,12 +40,13 @@ import {
   MdyMultiselectComponent,
   MdyNumberComponent,
   MdyOptionDirective,
+  MdyOptionsAutoLoadingDirective,
+  MdyOptionsLoader,
   MdyPrefixDirective,
   MdyRadioGroupComponent,
   MdyRequiredDirective,
   MdySegmentedButtonComponent,
   MdySelectComponent,
-  MdySelectOption,
   MdySliderComponent,
   MdySuffixDirective,
   MdySupportingTextDirective,
@@ -55,14 +54,19 @@ import {
   MdyTextComponent,
   MdyTimepickerComponent,
   MdyToggleComponent,
-  MdyOptionsAutoLoadingDirective
-} from "@modyra/angular";
-import { MdyCvaDirective } from "@modyra/angular/interop";
-import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
+  MdyWizardStepComponent
+} from "@modyra/angular/ui";
 import { mdyFormFromSchema } from "@modyra/angular/zod";
-import { z } from "zod";
-import { toSignal, toObservable } from "@angular/core/rxjs-interop";
+import {
+  crossField,
+  type MdyDynamicField,
+  email as mdyEmail,
+  mdyFormSerialize,
+  min as mdyMin,
+  required as mdyRequiredValidator,
+} from "@modyra/core";
 import { concat, delay, of, switchMap } from "rxjs";
+import { z } from "zod";
 
 @Component({
   selector: "app-root",
@@ -692,7 +696,7 @@ export class AppComponent {
     {
       // Cross-field rule: a ZIP without its city is invalid on both fields.
       validators: [
-        crossField(["address.city", "address.zip"], (v) =>
+        crossField(["address.city", "address.zip"], (v: { readonly address: { readonly city: string; readonly zip: string } }) =>
           v.address.zip !== "" && v.address.city === ""
             ? "ZIP requires a city"
             : null,
@@ -911,7 +915,7 @@ export class AppComponent {
   // ── Async Loading Demo ──────────────────────────────────────────────────────
 
   private readonly _asyncReloadTrigger = signal(0);
-  
+
   readonly asyncOptions = toSignal(
     toObservable(this._asyncReloadTrigger).pipe(
       switchMap(() => concat(

@@ -1,13 +1,14 @@
 /**
  * Tree-shaking proof app.
  *
- * Imports ONLY the typed core from the primary entry point. The bundle
+ * Imports ONLY the typed adapter surface. The bundle
  * check (`npm run test:bundle`) then asserts that no renderer, devtools,
  * wizard or dynamic-form code survives in the production output.
  */
 import { Component, provideZonelessChangeDetection } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
-import { field, mdyForm, mdyRequired } from "@modyra/angular";
+import { field, mdyForm } from "@modyra/angular/adapter";
+import { required as mdyRequired } from "@modyra/core";
 
 @Component({
   selector: "app-root",

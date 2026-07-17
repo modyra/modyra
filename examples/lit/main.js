@@ -2,11 +2,18 @@
 // draft persistence (reload the page mid-typing), undo/redo history and a
 // simulated server-side error. <mdy-text-field> renders in light DOM, so
 // the theme stylesheet applies to its markup directly.
-import { html, LitElement } from "lit";
 import {
-  createLitForm, crossField, defineMdyElements, email, field, minLength,
-  MdyFormController, mountMdyDevtools, required,
-} from "@modyra/lit";
+  createLitForm,
+  crossField,
+  email,
+  field,
+  MdyFormController,
+  minLength,
+  mountMdyDevtools,
+  required,
+} from "@modyra/lit/adapter";
+import { defineMdyElements } from "@modyra/lit/ui";
+import { html, LitElement } from "lit";
 
 // Registers the whole control catalog: text, textarea, number, checkbox,
 // toggle, radio group, segmented, select, multiselect, slider, datepicker,
@@ -123,28 +130,28 @@ class SignupApp extends LitElement {
           <mdy-select-field label="Topic" placeholder="Pick one…"
             .field=${this.gallery.f.topic}
             .options=${[
-              { value: "sales", label: "Sales" },
-              { value: "support", label: "Support" },
-            ]}></mdy-select-field>
+        { value: "sales", label: "Sales" },
+        { value: "support", label: "Support" },
+      ]}></mdy-select-field>
           <mdy-radio-group-field label="Plan"
             .field=${this.gallery.f.plan}
             .options=${[
-              { value: "free", label: "Free" },
-              { value: "pro", label: "Pro" },
-            ]}></mdy-radio-group-field>
+        { value: "free", label: "Free" },
+        { value: "pro", label: "Pro" },
+      ]}></mdy-radio-group-field>
           <mdy-segmented-field label="Billing"
             .field=${this.gallery.f.billing}
             .options=${[
-              { value: "monthly", label: "Monthly" },
-              { value: "yearly", label: "Yearly" },
-            ]}></mdy-segmented-field>
+        { value: "monthly", label: "Monthly" },
+        { value: "yearly", label: "Yearly" },
+      ]}></mdy-segmented-field>
           <mdy-multiselect-field label="Channels"
             .field=${this.gallery.f.channels}
             .options=${[
-              { value: "mail", label: "Email" },
-              { value: "sms", label: "SMS" },
-              { value: "push", label: "Push" },
-            ]}></mdy-multiselect-field>
+        { value: "mail", label: "Email" },
+        { value: "sms", label: "SMS" },
+        { value: "push", label: "Push" },
+      ]}></mdy-multiselect-field>
           <mdy-slider-field label="Team size" min="1" max="50"
             .field=${this.gallery.f.teamSize}></mdy-slider-field>
           <mdy-number-field label="Budget" min="0" step="100"
