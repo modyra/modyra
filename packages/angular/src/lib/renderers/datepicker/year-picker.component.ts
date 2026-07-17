@@ -8,7 +8,7 @@ import {
   output,
   viewChildren,
 } from "@angular/core";
-import { CalendarDate } from "../../core/date-utils";
+import { CalendarDate } from "@modyra/core/date-utils";
 
 @Component({
   selector: "mdy-year-picker",
@@ -43,12 +43,12 @@ export class MdyYearPickerComponent {
   constructor() {
     // Scroll to the current year after the view renders
     afterNextRender(() => {
-        const btns = this.yearButtons();
-        const years = this.years();
-        const selectedIndex = years.findIndex(y => y === this.currentYear());
-        if (selectedIndex !== -1 && btns[selectedIndex]) {
-            btns[selectedIndex].nativeElement.scrollIntoView({ block: 'center', behavior: 'instant' });
-        }
+      const btns = this.yearButtons();
+      const years = this.years();
+      const selectedIndex = years.findIndex(y => y === this.currentYear());
+      if (selectedIndex !== -1 && btns[selectedIndex]) {
+        btns[selectedIndex].nativeElement.scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
     });
   }
 
@@ -65,7 +65,7 @@ export class MdyYearPickerComponent {
 
     const result: number[] = [];
     for (let i = startYear; i <= endYear; i++) {
-       result.push(i);
+      result.push(i);
     }
     return result;
   });

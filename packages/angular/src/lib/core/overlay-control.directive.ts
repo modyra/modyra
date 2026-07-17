@@ -7,9 +7,6 @@ import {
   signal,
   viewChild,
 } from "@angular/core";
-import { MdyBaseControl } from "../control/control.directive";
-import { MdyA11yAnnouncer } from "./a11y-announcer";
-import { MDY_I18N_MESSAGES } from "./i18n";
 import {
   computeCoordsForAnchor,
   ComputedPosition,
@@ -17,7 +14,10 @@ import {
   OverlayAlignment,
   OverlayAnchor,
   OverlayPosition,
-} from "./overlay-position";
+} from "@modyra/core/overlay-position";
+import { MdyBaseControl } from "../control/control.directive";
+import { MdyA11yAnnouncer } from "./a11y-announcer";
+import { MDY_I18N_MESSAGES } from "./i18n";
 
 
 /**

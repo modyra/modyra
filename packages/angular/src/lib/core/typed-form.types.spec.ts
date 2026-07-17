@@ -7,20 +7,20 @@
  * blocks only exist so the file runs as a (trivially green) jest suite.
  */
 import { Signal } from "@angular/core";
+import { crossField, email, min, minLength, required } from "@modyra/core";
 import {
   field,
   group,
-  mdyForm,
   MdyFieldHandle,
+  mdyForm,
   MdyTypedFormLike,
 } from "./typed-form";
-import { crossField, email, min, minLength, required } from "./validators";
 
 /** `true` iff `A` and `B` are identical types. */
 type Equal<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
-    ? true
-    : false;
+  ? true
+  : false;
 
 /** Compile-time assertion — only callable when the type argument is `true`. */
 function assertType<T extends true>(): T | void {

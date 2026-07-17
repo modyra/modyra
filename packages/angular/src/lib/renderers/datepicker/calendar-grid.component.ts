@@ -7,7 +7,6 @@ import {
   output,
   viewChildren,
 } from "@angular/core";
-import { MDY_DATE_LOCALE } from "../../core/date-locale";
 import {
   buildMonthGrid,
   CalendarCell,
@@ -15,7 +14,8 @@ import {
   isDateInRange,
   isSameDay,
   today,
-} from "../../core/date-utils";
+} from "@modyra/core/date-utils";
+import { MDY_DATE_LOCALE } from "../../core/date-locale";
 import { MdyCalendarCellComponent } from "./calendar-cell.component";
 
 /**

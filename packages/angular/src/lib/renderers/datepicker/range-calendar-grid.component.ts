@@ -8,18 +8,18 @@ import {
   output,
   viewChildren,
 } from "@angular/core";
-import { MDY_DATE_LOCALE } from "../../core/date-locale";
 import {
   buildMonthGrid,
   CalendarCell,
   CalendarDate,
-  isDateBetween,
   formatIsoDate,
+  isDateBetween,
   isDateInRange,
   isSameDay,
   orderDates,
   today,
-} from "../../core/date-utils";
+} from "@modyra/core/date-utils";
+import { MDY_DATE_LOCALE } from "../../core/date-locale";
 
 /**
  * Range-aware month grid — renders a 7-column × 6-row calendar body

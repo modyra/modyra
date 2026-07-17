@@ -1,6 +1,6 @@
 import { Directive, ElementRef, inject, input, OnInit, Renderer2 } from "@angular/core";
+import { MDY_ICONS } from "@modyra/core/icons";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
-import { MDY_ICONS } from "../../core/icons";
 
 /**
  * @description
@@ -27,7 +27,7 @@ export class MdyNumberSpinButtonsDirective implements OnInit {
   constructor(
     private readonly el: ElementRef<HTMLInputElement>,
     private readonly renderer: Renderer2,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const enabled = this.mdyNumberSpinButtons();

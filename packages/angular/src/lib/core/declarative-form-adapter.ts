@@ -1,15 +1,12 @@
 import { Injector, Signal, signal } from "@angular/core";
-import { MdyFormEngine } from "@modyra/core";
+import { MdyFormEngine, type MdyFormRegistry } from "@modyra/core";
 import { angularReactivity } from "./reactivity-angular";
 import {
-  MdyAsyncValidatorFn,
-  MdyAsyncValidatorOptions,
   MdyFieldRef,
   MdyFormAdapter,
   MdyFormError,
   MdyFormState,
   MdySubmitMode,
-  ValidatorFn,
 } from "./types";
 
 declare const ngDevMode: boolean | undefined;
@@ -21,58 +18,10 @@ export type { MdyDraftOptions, MdyDraftStorage } from "@modyra/core";
 // ─── Registry interface ───────────────────────────────────────────────────────
 
 /**
- * The flat path protocol controls and validator directives speak — the
- * Angular-typed view of the engine's registry.
+ * The flat path protocol controls and validator directives speak.
+ * Angular specialization of the framework-agnostic core registry contract.
  */
-export interface MdyDeclarativeRegistry {
-  /**
-   * Registers type-specific validators for a named field.
-   * Validators added through this method cannot be updated or removed later;
-   * directives should prefer {@link upsertValidators} with a stable key.
-   */
-  addValidators<T>(
-    name: string,
-    validators: ReadonlyArray<ValidatorFn<T>>,
-    isRequired?: boolean,
-  ): void;
-  /**
-   * Registers (or replaces) the validators owned by `key` for a named field.
-   * Re-invoking with the same key swaps the previous set, so directives can
-   * react to input changes. `marksRequired` flags the field as required for
-   * as long as the key is registered with it set.
-   */
-  upsertValidators<T>(
-    name: string,
-    key: string,
-    validators: ReadonlyArray<ValidatorFn<T>>,
-    marksRequired?: boolean,
-  ): void;
-  /** Removes the sync and async validators owned by `key` from a named field. */
-  removeValidators(name: string, key: string): void;
-  /**
-   * Registers (or replaces) async validators owned by `key`.
-   * While they run, the field's `pending` signal is true; results follow
-   * last-wins semantics (stale runs are discarded).
-   */
-  upsertAsyncValidators<T>(
-    name: string,
-    key: string,
-    validators: ReadonlyArray<MdyAsyncValidatorFn<T>>,
-    options?: MdyAsyncValidatorOptions,
-  ): void;
-  setInitialValue(name: string, value: unknown): void;
-  setDisabled(name: string, disabled: Signal<boolean>): void;
-  setReadonly(name: string, readonly: Signal<boolean>): void;
-  /**
-   * Declares that a control instance owns the named field.
-   * Claims are reference-counted: the field state is dropped only when the
-   * last claiming control calls {@link removeField}. A second claim on the
-   * same name logs a dev-mode warning (two controls sharing state is almost
-   * always an authoring mistake).
-   */
-  claimField(name: string): void;
-  removeField(name: string): void;
-}
+export type MdyDeclarativeRegistry = MdyFormRegistry<Signal<boolean>>;
 
 // ─── Declarative Adapter ──────────────────────────────────────────────────────
 
@@ -90,8 +39,7 @@ export interface MdyDeclarativeRegistry {
  */
 export class MdyDeclarativeAdapter
   extends MdyFormEngine
-  implements MdyFormAdapter<Record<string, unknown>>, MdyDeclarativeRegistry
-{
+  implements MdyFormAdapter<Record<string, unknown>>, MdyDeclarativeRegistry {
   constructor(
     formValue: Signal<Record<string, unknown> | undefined>,
     submitMode: Signal<MdySubmitMode> = signal("valid-only"),

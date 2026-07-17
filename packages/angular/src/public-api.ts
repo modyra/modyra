@@ -10,6 +10,9 @@
 
 // ─── Core types ──────────────────────────────────────────────────────────────
 export type {
+  // Validator
+  MdyAsyncValidatorFn,
+  MdyAsyncValidatorOptions,
   // Control / renderer helpers
   MdyControlOption,
   MdyControlRendererConfig,
@@ -27,15 +30,9 @@ export type {
   // Form-level
   MdyFormError,
   MdyFormState,
-  MdyFormSubmitEvent,
-  MdyOptionsControl,
+  MdyFormSubmitEvent, MdyFormValidatorFn, MdyOptionsControl,
   MdySelectOption,
-  MdySubmitMode,
-  // Validator
-  MdyAsyncValidatorFn,
-  MdyAsyncValidatorOptions,
-  MdyFormValidatorFn,
-  ValidatorFn
+  MdySubmitMode, ValidatorFn
 } from "./lib/core/types";
 
 // ─── DI tokens ────────────────────────────────────────────────────────────────
@@ -48,58 +45,15 @@ export {
 } from "./lib/core/tokens";
 
 // ─── UI string i18n ──────────────────────────────────────────────────────────
-export { MDY_I18N_MESSAGES, MDY_I18N_MESSAGES_DEFAULT } from "./lib/core/i18n";
-export type { MdyI18nMessages } from "./lib/core/i18n";
+export { MDY_I18N_MESSAGES } from "./lib/core/i18n";
 export {
-  MDY_I18N_MESSAGES_DE,
-  MDY_I18N_MESSAGES_ES,
-  MDY_I18N_MESSAGES_FR,
-  MDY_I18N_MESSAGES_IT,
-  provideModyraLocale,
+  provideModyraLocale
 } from "./lib/core/i18n-locales";
-export type { MdyBuiltInLocale, MdyLocaleOptions } from "./lib/core/i18n-locales";
+export type { MdyLocaleOptions } from "./lib/core/i18n-locales";
 
 // ─── Date locale (i18n) ──────────────────────────────────────────────────────
-export { buildDateLocale, MDY_DATE_LOCALE } from "./lib/core/date-locale";
-export type { MdyDateLocale } from "./lib/core/date-locale";
-
-// ─── Date utilities (ISO) ────────────────────────────────────────────────────
-export {
-  addDays, addMonths,
-  addYears, buildMonthGrid, compareDates,
-  // Date arithmetic utilities
-  daysInMonth,
-  firstWeekday, formatIsoDate, isDateBetween, isDateInRange, today as isoToday, isSameDay,
-  localeDateOrder, orderDates, parseIsoDate, parseLocalizedDate
-} from "./lib/core/date-utils";
-export type { CalendarCell, CalendarDate } from "./lib/core/date-utils";
-
-// ─── Time utilities (HH:MM AM/PM) ────────────────────────────────────────────
-export {
-  angleToHour,
-  angleToMinute, buildTimeString,
-  formatTime as formatTimeString,
-  formatTimeAs,
-  // Time arithmetic utilities
-  getCurrentTime, getPointerCoords, hourToAngle,
-  minuteToAngle, parse24Time, parseAnyTime, parseTime, pointerAngle,
-  to24Hour
-} from "./lib/core/time-utils";
-export type { MdyTimeFormat, ParsedTime } from "./lib/core/time-utils";
-
-// ─── Overlay positioning ─────────────────────────────────────────────────────
-export {
-  computeCoordsForAnchor, computeOverlayPosition,
-  // Overlay helper utilities
-  getOverlayStyles
-} from "./lib/core/overlay-position";
-export type {
-  ComputedPosition,
-  OverlayAlignment,
-  OverlayAnchor,
-  OverlayPosition,
-  OverlayPositionConfig
-} from "./lib/core/overlay-position";
+// Only Angular DI wiring stays in this package. Locale builders/types live in @modyra/core.
+export { MDY_DATE_LOCALE } from "./lib/core/date-locale";
 
 // ─── Declarative adapter ──────────────────────────────────────────────────────
 export { MdyDeclarativeAdapter } from "./lib/core/declarative-form-adapter";
@@ -119,39 +73,23 @@ export type {
   MdyFormSchema,
   MdyFormValue,
   MdyGroupDescriptor,
-  MdyTypedFormLike,
+  MdyTypedFormLike
 } from "./lib/core/typed-form";
 
 // ─── Form component ───────────────────────────────────────────────────────────
-export { MdyFormComponent } from "./lib/form/mdy-form.component";
 export { MdyFormArrayComponent } from "./lib/form-array/mdy-form-array.component";
+export { MdyFormComponent } from "./lib/form/mdy-form.component";
 
 // ─── Devtools ─────────────────────────────────────────────────────────────────
-export { MdyFormsDevtoolsComponent } from "./lib/devtools/mdy-forms-devtools.component";
-export { MdyFormsDevtoolsOverlayComponent } from "./lib/devtools/mdy-forms-devtools-overlay.component";
-export {
-  MdyFormsDevtoolsService,
-  MDY_DEVTOOLS_HOTKEY,
-} from "./lib/devtools/mdy-forms-devtools.service";
 export { MdyDevtoolsDirective } from "./lib/devtools/mdy-devtools.directive";
+export { MdyFormsDevtoolsOverlayComponent } from "./lib/devtools/mdy-forms-devtools-overlay.component";
+export { MdyFormsDevtoolsComponent } from "./lib/devtools/mdy-forms-devtools.component";
+export {
+  MDY_DEVTOOLS_HOTKEY, MdyFormsDevtoolsService
+} from "./lib/devtools/mdy-forms-devtools.service";
 
 // ─── Dynamic forms ────────────────────────────────────────────────────────────
 export { MdyDynamicFormComponent } from "./lib/dynamic/mdy-dynamic-form.component";
-export {
-  buildDynamicValidators,
-  MDY_DYNAMIC_FIELD_KINDS,
-  parseDynamicFields,
-} from "./lib/dynamic/dynamic-form-config";
-export type {
-  MdyDynamicBooleanField,
-  MdyDynamicFormConfig,
-  MdyDynamicDateField,
-  MdyDynamicField,
-  MdyDynamicNumberField,
-  MdyDynamicOptionsField,
-  MdyDynamicTextField,
-  MdyDynamicValidators,
-} from "./lib/dynamic/dynamic-form-config";
 
 // ─── Wizard ───────────────────────────────────────────────────────────────────
 export { MdyFormWizardComponent } from "./lib/wizard/mdy-form-wizard.component";
@@ -160,7 +98,7 @@ export { MdyWizardStepComponent } from "./lib/wizard/mdy-wizard-step.component";
 // ─── Draft persistence ────────────────────────────────────────────────────────
 export type {
   MdyDraftOptions,
-  MdyDraftStorage,
+  MdyDraftStorage
 } from "./lib/core/declarative-form-adapter";
 
 // ─── Control base class & optional wrapper ───────────────────────────────────
@@ -176,14 +114,14 @@ export { MdyOptionDirective } from "./lib/control/option.directive";
 export { MdyPrefixDirective } from "./lib/control/prefix.directive";
 export { MdySuffixDirective } from "./lib/control/suffix.directive";
 export { MdySupportingTextDirective } from "./lib/control/supporting-text.directive";
+export { MdyOptionsAutoLoadingDirective } from "./lib/core/directives/auto-loading.directive";
 export { MdyGlassDirective } from "./lib/core/directives/glass.directive";
+export { MdyLoadOptionsDirective } from "./lib/core/directives/load-options.directive";
+export type { MdyOptionsLoader } from "./lib/core/directives/load-options.directive";
 export { MdyOptionsOverlayControl } from "./lib/core/options-overlay-control.directive";
 export { MdyOverlayControl } from "./lib/core/overlay-control.directive";
 export { MDY_FLOATING_LABELS } from "./lib/core/tokens";
 export { MdyFloatingLabelsDirective } from "./lib/form/mdy-floating-labels.directive";
-export { MdyOptionsAutoLoadingDirective } from "./lib/core/directives/auto-loading.directive";
-export { MdyLoadOptionsDirective } from "./lib/core/directives/load-options.directive";
-export type { MdyOptionsLoader } from "./lib/core/directives/load-options.directive";
 
 // ─── Built-in renderer components ────────────────────────────────────────────
 export { MdyCheckboxComponent } from "./lib/renderers/checkbox/checkbox-renderer.component";
@@ -213,28 +151,9 @@ export { MdyTimepickerComponent } from "./lib/renderers/timepicker";
 
 // ─── Icon system ─────────────────────────────────────────────────────────────
 export { MdyIconComponent } from "./lib/control/mdy-icon.component";
-export { MDY_ICONS } from "./lib/core/icons";
-export type { MdyIconName } from "./lib/core/icons";
 
 // Utilities
 export { MdyA11yAnnouncer } from "./lib/core/a11y-announcer";
-export { filterOptionsByQuery } from "./lib/core/options-utils";
-export { mdyFormSerialize } from "./lib/core/utils";
-
-// ─── Built-in validators (pure functions) ────────────────────────────────────
-export {
-  compose as mdyCompose,
-  composeFirst as mdyComposeFirst,
-  crossField,
-  email as mdyEmail,
-  max as mdyMax,
-  maxLength as mdyMaxLength,
-  min as mdyMin,
-  minLength as mdyMinLength,
-  pattern as mdyPattern,
-  required as mdyRequired,
-  MDY_MARKS_REQUIRED
-} from "./lib/core/validators";
 
 // ─── Declarative validator directives ────────────────────────────────────────
 export {
@@ -255,3 +174,16 @@ export {
 // ─── Framework-agnostic engine binding ────────────────────────────────────────
 // The form engine lives in @modyra/core; this binds it to Angular signals.
 export { angularReactivity } from "./lib/core/reactivity-angular";
+
+// ─── Widget runtime ───────────────────────────────────────────────────────────
+// Headless widget controllers from @modyra/widgets bound to Angular lifecycle.
+export { MdyWidgetRuntime } from "./lib/widget-runtime/widget-runtime";
+export type {
+  MdyAngularCommandHandlers,
+  MdyElementRefMap,
+  MdyItemRefLookup,
+} from "./lib/widget-runtime/widget-runtime";
+export { MdyAngularSelectAdapter } from "./lib/widget-runtime/select-adapter";
+export type {
+  MdyAngularSelectAdapterOptions,
+} from "./lib/widget-runtime/select-adapter";

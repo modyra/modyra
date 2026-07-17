@@ -1,5 +1,5 @@
 import { Directive, input } from "@angular/core";
-import { pattern } from "../../core/validators";
+import { pattern } from "@modyra/core";
 import { MdyValidatorBaseDirective } from "./validator-base.directive";
 
 /**

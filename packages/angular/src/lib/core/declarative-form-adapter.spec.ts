@@ -1,8 +1,8 @@
 import { ApplicationRef, Injector, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
+import { min, required } from "@modyra/core";
 import { MdyDeclarativeAdapter } from "./declarative-form-adapter";
 import { MdyFormError, MdySubmitMode } from "./types";
-import { min, required } from "./validators";
 
 function makeAdapter(
   seed?: Record<string, unknown>,

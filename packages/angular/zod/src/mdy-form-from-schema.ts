@@ -4,7 +4,7 @@ import {
   MdyFormValidatorFn,
   MdyFormValue,
   MdyTypedForm,
-} from "@modyra/angular";
+} from "@modyra/angular/adapter";
 import {
   buildZodRefinementValidator,
   buildZodTree,

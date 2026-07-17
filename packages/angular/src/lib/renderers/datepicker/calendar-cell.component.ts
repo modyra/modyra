@@ -6,7 +6,7 @@ import {
   input,
   output,
 } from "@angular/core";
-import { CalendarCell, CalendarDate } from "../../core/date-utils";
+import { CalendarCell, CalendarDate } from "@modyra/core/date-utils";
 
 /**
  * A single day cell in the calendar grid.
