@@ -1,5 +1,4 @@
 import {
-  MdyEffectRef,
   MdyReactivity,
   MdySignal,
   MdyWritableSignal,
@@ -9,7 +8,6 @@ import {
   MdyAsyncValidatorOptions,
   MdyFieldError,
   MdyFieldRef,
-  MdyFieldState,
   MdyFormAdapter,
   MdyFormError,
   MdyFormState,
@@ -19,6 +17,11 @@ import {
   ValidatorFn,
 } from "./types.js";
 import { MdyDraftManager, MdyDraftOptions } from "./draft-manager.js";
+import {
+  createAsyncRunner,
+  createFieldRecord,
+  type FieldRecord,
+} from "./field-record.js";
 import { MdyHistoryManager } from "./history-manager.js";
 import { isSafeFieldPath } from "./path-utils.js";
 
@@ -72,33 +75,6 @@ export interface MdyFormRegistry<
    */
   claimField(name: string): void;
   removeField(name: string): void;
-}
-
-// ─── Internal field record ────────────────────────────────────────────────────
-
-interface AsyncValidatorEntry {
-  readonly fns: ReadonlyArray<MdyAsyncValidatorFn<unknown>>;
-  readonly debounceMs: number;
-}
-
-interface FieldRecord {
-  readonly state: MdyFieldState<unknown>;
-  /** Sync validators keyed by owner. */
-  readonly validators: MdyWritableSignal<
-    ReadonlyMap<string, ReadonlyArray<ValidatorFn<unknown>>>
-  >;
-  /** Async validators keyed by owner. */
-  readonly asyncValidators: MdyWritableSignal<
-    ReadonlyMap<string, AsyncValidatorEntry>
-  >;
-  readonly asyncErrors: MdyWritableSignal<ReadonlyArray<MdyFieldError>>;
-  readonly pending: MdyWritableSignal<boolean>;
-  /** Keys whose validator sets mark the field as required. */
-  readonly requiredKeys: MdyWritableSignal<ReadonlySet<string>>;
-  readonly disabled: MdyWritableSignal<MdySignal<boolean>>;
-  readonly readonly: MdyWritableSignal<MdySignal<boolean>>;
-  asyncRunId: number;
-  asyncRunner: MdyEffectRef | null;
 }
 
 let _legacyValidatorKey = 0;
@@ -623,72 +599,18 @@ export class MdyFormEngine
   }
 
   private _createFieldRecord(name: string): FieldRecord {
-    const rx = this._rx;
     // Untracked so no reactive dependency on the seed value is created when
     // called from inside a computed. has() (not ??) so an explicit initial
     // value of null wins over the seed.
     const initialValue = this._initialValues.has(name)
       ? this._initialValues.get(name)
-      : rx.untracked(() => this._formValue())?.[name] ?? null;
+      : this._rx.untracked(() => this._formValue())?.[name] ?? null;
 
-    const value = rx.signal<unknown>(initialValue);
-    const touched = rx.signal(false);
-    const dirty = rx.signal(false);
-    const requiredKeys = rx.signal<ReadonlySet<string>>(new Set());
-    // Dynamic signals provided by bindings, defaulting to false.
-    const disabledSignal = rx.signal<MdySignal<boolean>>(() => false);
-    const readonlySignal = rx.signal<MdySignal<boolean>>(() => false);
-
-    const validators = rx.signal<
-      ReadonlyMap<string, ReadonlyArray<ValidatorFn<unknown>>>
-    >(new Map());
-    const asyncValidators = rx.signal<ReadonlyMap<string, AsyncValidatorEntry>>(
-      new Map(),
+    return createFieldRecord(
+      this._rx,
+      initialValue,
+      (v) => [...this._crossErrorsFor(name), ...this._serverErrorsFor(name, v)],
     );
-    const asyncErrors = rx.signal<ReadonlyArray<MdyFieldError>>([]);
-    const pending = rx.signal(false);
-
-    const errors = rx.computed<ReadonlyArray<MdyFieldError>>(() => {
-      const v = value();
-      const syncErrors = Array.from(validators().values()).flatMap(fns =>
-        fns.flatMap(fn =>
-          fn(v).map(
-            message => ({ kind: "validation", message }) as MdyFieldError,
-          ),
-        ),
-      );
-      return [
-        ...syncErrors,
-        ...asyncErrors(),
-        ...this._crossErrorsFor(name),
-        ...this._serverErrorsFor(name, v),
-      ];
-    });
-
-    const state: MdyFieldState<unknown> = {
-      value,
-      touched,
-      dirty,
-      required: rx.computed(() => requiredKeys().size > 0),
-      valid: rx.computed(() => errors().length === 0),
-      errors,
-      disabled: rx.computed(() => disabledSignal()()),
-      readonly: rx.computed(() => readonlySignal()()),
-      pending: pending.asReadonly(),
-    };
-
-    return {
-      state,
-      validators,
-      asyncValidators,
-      asyncErrors,
-      pending,
-      requiredKeys,
-      disabled: disabledSignal,
-      readonly: readonlySignal,
-      asyncRunId: 0,
-      asyncRunner: null,
-    };
   }
 
   /** Cross-field errors attributed to the named field. */
@@ -727,51 +649,6 @@ export class MdyFormEngine
       );
       return;
     }
-    rec.asyncRunner = this._rx.effect((onCleanup) => {
-      const v = rec.state.value();
-      const entries = Array.from(rec.asyncValidators().values());
-      const fns = entries.flatMap(e => e.fns);
-      const runId = ++rec.asyncRunId;
-      if (fns.length === 0) {
-        this._rx.untracked(() => {
-          rec.pending.set(false);
-          rec.asyncErrors.set([]);
-        });
-        return;
-      }
-      // Pending covers the whole debounce+run window, so canSubmit stays
-      // false while a check is outstanding.
-      this._rx.untracked(() => rec.pending.set(true));
-      const run = (): void => {
-        void Promise.all(fns.map(fn => fn(v)))
-          .then(results => {
-            if (runId !== rec.asyncRunId) return; // stale run: last-wins
-            rec.asyncErrors.set(
-              results
-                .flat()
-                .map(message => ({ kind: "async", message }) as MdyFieldError),
-            );
-            rec.pending.set(false);
-          })
-          .catch((e: unknown) => {
-            if (runId !== rec.asyncRunId) return;
-            rec.asyncErrors.set([{
-              kind: "async",
-              message: e instanceof Error ? e.message : String(e),
-            }]);
-            rec.pending.set(false);
-          });
-      };
-      const debounceMs = entries.reduce(
-        (max, e) => Math.max(max, e.debounceMs),
-        0,
-      );
-      if (debounceMs > 0) {
-        const timer = setTimeout(run, debounceMs);
-        onCleanup(() => clearTimeout(timer));
-      } else {
-        run();
-      }
-    });
+    rec.asyncRunner = createAsyncRunner(rec, this._rx);
   }
 }
