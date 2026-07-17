@@ -87,6 +87,93 @@ export const MDY_DYNAMIC_FIELD_KINDS = [
   "datepicker", "timepicker",
 ] as const;
 
+const MDY_MAX_DYNAMIC_PATTERN_LENGTH = 256;
+const MDY_FORBIDDEN_DYNAMIC_NAMES = new Set([
+  "__proto__",
+  "prototype",
+  "constructor",
+]);
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function hasValidOptions(options: unknown): options is ReadonlyArray<MdySelectOption<unknown>> {
+  if (!Array.isArray(options)) return false;
+  return options.every((option) => {
+    if (typeof option !== "object" || option === null) return false;
+    const candidate = option as Partial<MdySelectOption<unknown>>;
+    if (!("value" in candidate)) return false;
+    if (typeof candidate.label !== "string") return false;
+    if (
+      candidate.disabled !== undefined &&
+      typeof candidate.disabled !== "boolean"
+    ) {
+      return false;
+    }
+    return true;
+  });
+}
+
+function hasValidValidatorConfig(
+  validators: unknown,
+  fieldName: string,
+): validators is MdyDynamicValidators {
+  if (validators === undefined) return true;
+  if (typeof validators !== "object" || validators === null) {
+    warnDev(
+      `Dropped dynamic field "${fieldName}": validators must be an object.`,
+    );
+    return false;
+  }
+  const config = validators as Partial<MdyDynamicValidators>;
+  const boolKeys = ["required", "email"] as const;
+  for (const key of boolKeys) {
+    const value = config[key];
+    if (value !== undefined && typeof value !== "boolean") {
+      warnDev(
+        `Dropped dynamic field "${fieldName}": validators.${key} must be a boolean.`,
+      );
+      return false;
+    }
+  }
+  const numberKeys = ["min", "max", "minLength", "maxLength"] as const;
+  for (const key of numberKeys) {
+    const value = config[key];
+    if (value !== undefined && !isFiniteNumber(value)) {
+      warnDev(
+        `Dropped dynamic field "${fieldName}": validators.${key} must be a finite number.`,
+      );
+      return false;
+    }
+  }
+  if (
+    config.minLength !== undefined &&
+    config.maxLength !== undefined &&
+    config.minLength > config.maxLength
+  ) {
+    warnDev(
+      `Dropped dynamic field "${fieldName}": validators.minLength cannot exceed validators.maxLength.`,
+    );
+    return false;
+  }
+  if (config.pattern !== undefined) {
+    if (typeof config.pattern !== "string") {
+      warnDev(
+        `Dropped dynamic field "${fieldName}": validators.pattern must be a string.`,
+      );
+      return false;
+    }
+    if (config.pattern.length > MDY_MAX_DYNAMIC_PATTERN_LENGTH) {
+      warnDev(
+        `Dropped dynamic field "${fieldName}": validators.pattern length exceeds max ${MDY_MAX_DYNAMIC_PATTERN_LENGTH}.`,
+      );
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * Versioned envelope for storing a dynamic form config in a CMS/backend.
  * Bump `version` when the field shape changes incompatibly and migrate in
@@ -128,6 +215,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     warnDev("Dynamic form config is neither a field array nor a config envelope.");
     return [];
   }
+  const seenNames = new Set<string>();
   return items.filter((item): item is MdyDynamicField => {
     if (typeof item !== "object" || item === null) {
       warnDev(`Dropped non-object dynamic field: ${JSON.stringify(item)}`);
@@ -138,17 +226,72 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       warnDev(`Dropped dynamic field without a name: ${JSON.stringify(item)}`);
       return false;
     }
+    if (f.name.includes(".") || MDY_FORBIDDEN_DYNAMIC_NAMES.has(f.name)) {
+      warnDev(
+        `Dropped dynamic field "${f.name}": name is reserved or contains forbidden path separators.`,
+      );
+      return false;
+    }
+    if (seenNames.has(f.name)) {
+      warnDev(`Dropped duplicate dynamic field name "${f.name}".`);
+      return false;
+    }
+    seenNames.add(f.name);
     if (!(MDY_DYNAMIC_FIELD_KINDS as readonly unknown[]).includes(f.kind)) {
       warnDev(`Dropped dynamic field "${f.name}" with unknown kind "${String(f.kind)}".`);
       return false;
     }
-    const needsOptions = ["select", "radio", "multiselect", "segmented"];
-    if (
-      needsOptions.includes(f.kind as string) &&
-      !Array.isArray((f as { options?: unknown }).options)
-    ) {
-      warnDev(`Dropped dynamic field "${f.name}": kind "${String(f.kind)}" requires an options array.`);
+    if (f.label !== undefined && typeof f.label !== "string") {
+      warnDev(`Dropped dynamic field "${f.name}": label must be a string.`);
       return false;
+    }
+    if (f.placeholder !== undefined && typeof f.placeholder !== "string") {
+      warnDev(
+        `Dropped dynamic field "${f.name}": placeholder must be a string.`,
+      );
+      return false;
+    }
+    if (!hasValidValidatorConfig(f.validators, f.name)) {
+      return false;
+    }
+    if (f.kind === "number" || f.kind === "slider") {
+      const numberField = f as Partial<MdyDynamicNumberField>;
+      if (numberField.min !== undefined && !isFiniteNumber(numberField.min)) {
+        warnDev(`Dropped dynamic field "${f.name}": min must be a finite number.`);
+        return false;
+      }
+      if (numberField.max !== undefined && !isFiniteNumber(numberField.max)) {
+        warnDev(`Dropped dynamic field "${f.name}": max must be a finite number.`);
+        return false;
+      }
+      if (
+        numberField.min !== undefined &&
+        numberField.max !== undefined &&
+        numberField.min > numberField.max
+      ) {
+        warnDev(`Dropped dynamic field "${f.name}": min cannot exceed max.`);
+        return false;
+      }
+      if (numberField.step !== undefined) {
+        if (!isFiniteNumber(numberField.step)) {
+          warnDev(`Dropped dynamic field "${f.name}": step must be a finite number.`);
+          return false;
+        }
+        if (numberField.step <= 0) {
+          warnDev(`Dropped dynamic field "${f.name}": step must be greater than zero.`);
+          return false;
+        }
+      }
+    }
+    const needsOptions = ["select", "radio", "multiselect", "segmented"];
+    if (needsOptions.includes(f.kind as string)) {
+      const options = (f as { options?: unknown }).options;
+      if (!hasValidOptions(options)) {
+        warnDev(
+          `Dropped dynamic field "${f.name}": kind "${String(f.kind)}" requires a valid options array.`,
+        );
+        return false;
+      }
     }
     return true;
   });
@@ -178,7 +321,19 @@ export function buildDynamicValidators(config: MdyDynamicValidators): {
     out.push(maxLength(config.maxLength) as ValidatorFn<never>);
   }
   if (config.pattern !== undefined) {
-    out.push(pattern(new RegExp(config.pattern)) as ValidatorFn<never>);
+    if (config.pattern.length > MDY_MAX_DYNAMIC_PATTERN_LENGTH) {
+      warnDev(
+        `Skipped dynamic pattern validator: pattern length ${config.pattern.length} exceeds max ${MDY_MAX_DYNAMIC_PATTERN_LENGTH}.`,
+      );
+    } else {
+      try {
+        out.push(pattern(new RegExp(config.pattern)) as ValidatorFn<never>);
+      } catch {
+        warnDev(
+          `Skipped dynamic pattern validator: invalid RegExp source "${config.pattern}".`,
+        );
+      }
+    }
   }
   return { validators: out, marksRequired: config.required === true };
 }

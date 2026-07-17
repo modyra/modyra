@@ -6,7 +6,7 @@
   "author": "Lorenzo Muscher\u00e0",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.personal/modyra/modyra.git",
+    "url": "git+https://github.com/modyra/modyra.git",
     "directory": "packages/core"
   },
   "bugs": {
@@ -31,6 +31,10 @@
     "./date-utils": {
       "types": "./dist/date-utils.d.ts",
       "default": "./dist/date-utils.js"
+    },
+    "./date-locale": {
+      "types": "./dist/date-locale.d.ts",
+      "default": "./dist/date-locale.js"
     },
     "./time-utils": {
       "types": "./dist/time-utils.d.ts",
@@ -67,6 +71,26 @@
     "./icons": {
       "types": "./dist/icons.d.ts",
       "default": "./dist/icons.js"
+    },
+    "./form": {
+      "types": "./dist/form.d.ts",
+      "default": "./dist/form.js"
+    },
+    "./validation": {
+      "types": "./dist/validation.d.ts",
+      "default": "./dist/validation.js"
+    },
+    "./datetime": {
+      "types": "./dist/datetime.d.ts",
+      "default": "./dist/datetime.js"
+    },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "default": "./dist/ui.js"
+    },
+    "./localization": {
+      "types": "./dist/localization.d.ts",
+      "default": "./dist/localization.js"
     }
   },
   "files": [
