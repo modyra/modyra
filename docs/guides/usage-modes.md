@@ -4,11 +4,11 @@
 three share the same adapter, validators, renderers and devtools — you can mix
 them inside one application (and even inside one form) while migrating.
 
-| Mode | Source of truth | Best for |
-| :--- | :--- | :--- |
+| Mode                    | Source of truth   | Best for                                       |
+| :---------------------- | :---------------- | :--------------------------------------------- |
 | **Typed** (`mdyForm()`) | TypeScript schema | New code — compile-time checked field bindings |
-| **Declarative** | Template | Small forms, prototypes, template-only teams |
-| **Explicit adapter** | Component class | Programmatic registration, custom integrations |
+| **Declarative**         | Template          | Small forms, prototypes, template-only teams   |
+| **Explicit adapter**    | Component class   | Programmatic registration, custom integrations |
 
 The typed mode is the recommended default: it is the reason this library
 exists. See the [typed forms guide](./typed-forms.md).
@@ -49,7 +49,8 @@ programmatically and drive submit with an async action (returned
 
 ```ts
 import { Injector, inject, signal } from "@angular/core";
-import { MdyDeclarativeAdapter, mdyRequired, mdyMin } from "@modyra/angular";
+import { MdyDeclarativeAdapter } from "@modyra/angular/adapter";
+import { min as mdyMin, required as mdyRequired } from "@modyra/core";
 
 export class Component {
   private readonly injector = inject(Injector);
@@ -85,15 +86,16 @@ export class Component {
 
 Any object implementing the exported `MdyFormAdapter` interface works too.
 
-## Headless — `@modyra/angular/core`
+## Headless — `@modyra/angular/adapter`
 
-Bring your own design system: the `core` secondary entry point exposes the
+Bring your own design system: the `adapter` secondary entry point exposes the
 engine only — `mdyForm()`, the declarative adapter, validators, field/form
 state types, DI tokens, i18n and utilities — with **no renderer components
 and no CSS**.
 
 ```ts
-import { mdyForm, field, mdyRequired } from "@modyra/angular/core";
+import { mdyForm, field } from "@modyra/angular/adapter";
+import { required as mdyRequired } from "@modyra/core";
 
 const form = mdyForm({ email: field("", [mdyRequired()]) });
 // form.f.email.value(), errors(), pending() … drive your own widgets
@@ -106,7 +108,7 @@ fields and the ready-made renderers can coexist during a migration.
 
 1. **Directives** — `mdyRequired`, `mdyEmail`, … in templates.
 2. **Pure functions** — compose `mdyRequired()`, `mdyMin()`, … with
-   `mdyCompose`/`mdyComposeFirst`; register via `upsertValidators` or an
+   `compose`/`composeFirst`; register via `upsertValidators` or an
    `mdyForm()` schema.
 3. **Async validators** — in the schema
    (`field("", [], { asyncValidators: [checkUnique], asyncDebounceMs: 300 })`)

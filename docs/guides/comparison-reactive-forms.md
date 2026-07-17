@@ -30,16 +30,16 @@ readonly form = mdyForm({
 
 ## Concrete differences
 
-| Aspect | Reactive Forms | @modyra/angular |
-| :--- | :--- | :--- |
-| State model | `FormControl`/`FormGroup` classes, RxJS streams | Signals: `value()`, `valid()`, `pending()` are `computed` |
-| Field binding | `formControlName="email"` (string) | `[field]="form.f.email"` (compile-checked) |
-| RxJS | Required (`valueChanges`, async validators) | Not used: no runtime dependency, no Observables in the public API, none internally |
-| Async validation | `AsyncValidatorFn` (Observable/Promise) | Promise-based, debounce + last-wins built in |
-| UI controls | Bring your own / Material | Optional built-in renderer catalog, or headless `/core` |
-| Change detection | Works everywhere | Signals-first; zoneless-friendly |
-| Stability & ecosystem | Official, mature, huge ecosystem | Young, one maintainer, smaller surface tested |
-| Migration cost | — | Incremental via `mdyCva` (CVA interop) |
+| Aspect                | Reactive Forms                                  | @modyra/angular                                                                    |
+| :-------------------- | :---------------------------------------------- | :--------------------------------------------------------------------------------- |
+| State model           | `FormControl`/`FormGroup` classes, RxJS streams | Signals: `value()`, `valid()`, `pending()` are `computed`                          |
+| Field binding         | `formControlName="email"` (string)              | `[field]="form.f.email"` (compile-checked)                                         |
+| RxJS                  | Required (`valueChanges`, async validators)     | Not used: no runtime dependency, no Observables in the public API, none internally |
+| Async validation      | `AsyncValidatorFn` (Observable/Promise)         | Promise-based, debounce + last-wins built in                                       |
+| UI controls           | Bring your own / Material                       | Optional built-in renderer catalog, or headless `/adapter`                         |
+| Change detection      | Works everywhere                                | Signals-first; zoneless-friendly                                                   |
+| Stability & ecosystem | Official, mature, huge ecosystem                | Young, one maintainer, smaller surface tested                                      |
+| Migration cost        | —                                               | Incremental via `mdyCva` (CVA interop)                                             |
 
 ## Choose this library if…
 

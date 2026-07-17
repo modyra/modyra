@@ -6,23 +6,23 @@ whole catalog (standalone components, standard tree shaking).
 
 ## Component catalog
 
-| Selector                  | Component                     | Value type               |
-| :------------------------ | :---------------------------- | :----------------------- |
-| `mdy-control-text`        | `MdyTextComponent`            | `string`                 |
-| `mdy-control-textarea`    | `MdyTextareaComponent`        | `string`                 |
-| `mdy-control-number`      | `MdyNumberComponent`          | `number \| null`         |
-| `mdy-control-checkbox`    | `MdyCheckboxComponent`        | `boolean`                |
-| `mdy-control-toggle`      | `MdyToggleComponent`          | `boolean`                |
-| `mdy-control-radio`       | `MdyRadioGroupComponent`      | `TValue \| null`         |
-| `mdy-control-segmented`   | `MdySegmentedButtonComponent` | `TValue \| null`         |
-| `mdy-control-slider`      | `MdySliderComponent`          | `number`                 |
-| `mdy-control-select`      | `MdySelectComponent`          | `TValue \| null`         |
-| `mdy-control-multiselect` | `MdyMultiselectComponent`     | `TValue[]`               |
-| `mdy-control-datepicker`  | `MdyDatePickerComponent`      | `string` (ISO `yyyy-MM-dd`, a calendar date — no timezone) |
-| `mdy-control-daterange`   | `MdyDateRangePickerComponent` | `MdyDateRange`           |
+| Selector                  | Component                     | Value type                                                       |
+| :------------------------ | :---------------------------- | :--------------------------------------------------------------- |
+| `mdy-control-text`        | `MdyTextComponent`            | `string`                                                         |
+| `mdy-control-textarea`    | `MdyTextareaComponent`        | `string`                                                         |
+| `mdy-control-number`      | `MdyNumberComponent`          | `number \| null`                                                 |
+| `mdy-control-checkbox`    | `MdyCheckboxComponent`        | `boolean`                                                        |
+| `mdy-control-toggle`      | `MdyToggleComponent`          | `boolean`                                                        |
+| `mdy-control-radio`       | `MdyRadioGroupComponent`      | `TValue \| null`                                                 |
+| `mdy-control-segmented`   | `MdySegmentedButtonComponent` | `TValue \| null`                                                 |
+| `mdy-control-slider`      | `MdySliderComponent`          | `number`                                                         |
+| `mdy-control-select`      | `MdySelectComponent`          | `TValue \| null`                                                 |
+| `mdy-control-multiselect` | `MdyMultiselectComponent`     | `TValue[]`                                                       |
+| `mdy-control-datepicker`  | `MdyDatePickerComponent`      | `string` (ISO `yyyy-MM-dd`, a calendar date — no timezone)       |
+| `mdy-control-daterange`   | `MdyDateRangePickerComponent` | `MdyDateRange`                                                   |
 | `mdy-control-timepicker`  | `MdyTimepickerComponent`      | `string` (`"HH:mm AM/PM"`, or `"HH:mm"` 24h with `format="24h"`) |
-| `mdy-control-colors`      | `MdyColorsComponent`          | `string` (hex)           |
-| `mdy-control-file`        | `MdyFileComponent`            | `File \| File[] \| null` |
+| `mdy-control-colors`      | `MdyColorsComponent`          | `string` (hex)                                                   |
+| `mdy-control-file`        | `MdyFileComponent`            | `File \| File[] \| null`                                         |
 
 ## UI enhancements
 
@@ -122,14 +122,22 @@ Store configs in the versioned envelope and migrate old versions in your
 loader **before** parsing:
 
 ```ts
-import { parseDynamicFields, MdyDynamicField } from "@modyra/angular";
+import {
+  parseDynamicFields,
+  type MdyDynamicField,
+} from "@modyra/core/dynamic-config";
 
 function loadFields(raw: unknown): MdyDynamicField[] {
   // v0 legacy payloads used `type` instead of `kind` — migrate, then parse.
-  const migrated =
-    Array.isArray(raw)
-      ? { version: 1 as const, fields: raw.map((f) => ({ kind: (f as { type?: string }).type, ...(f as object) })) }
-      : raw;
+  const migrated = Array.isArray(raw)
+    ? {
+        version: 1 as const,
+        fields: raw.map((f) => ({
+          kind: (f as { type?: string }).type,
+          ...(f as object),
+        })),
+      }
+    : raw;
   return parseDynamicFields(migrated); // drops anything still invalid
 }
 ```
@@ -145,7 +153,7 @@ const data = mdyFormSerialize(adapter.getValue());
 ```
 
 Converts a form value into a JSON-serializable object; `File` objects become
-descriptive strings (`"[File: resume.pdf (12345 bytes)]"`) — file *contents*
+descriptive strings (`"[File: resume.pdf (12345 bytes)]"`) — file _contents_
 are never read or serialized.
 
 ## Theming — CSS token customization
