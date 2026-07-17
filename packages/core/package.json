@@ -63,6 +63,10 @@
     "./devtools": {
       "types": "./dist/devtools.d.ts",
       "default": "./dist/devtools.js"
+    },
+    "./icons": {
+      "types": "./dist/icons.d.ts",
+      "default": "./dist/icons.js"
     }
   },
   "files": [
