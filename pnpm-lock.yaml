@@ -66,6 +66,9 @@ importers:
       '@modyra/vue':
         specifier: workspace:*
         version: link:packages/vue
+      '@modyra/widgets':
+        specifier: workspace:*
+        version: link:packages/widgets
       '@modyra/zod':
         specifier: workspace:*
         version: link:packages/zod
@@ -116,6 +119,9 @@ importers:
       '@modyra/core':
         specifier: 0.1.0
         version: link:../core
+      '@modyra/widgets':
+        specifier: 0.1.0
+        version: link:../widgets
     devDependencies:
       lit:
         specifier: ^3.0.0
@@ -126,6 +132,9 @@ importers:
       '@modyra/core':
         specifier: 0.1.0
         version: link:../core
+      '@modyra/widgets':
+        specifier: 0.1.0
+        version: link:../widgets
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -134,15 +143,26 @@ importers:
         specifier: ^19.0.0
         version: 19.2.7
 
+  packages/styles: {}
+
   packages/vue:
     dependencies:
       '@modyra/core':
         specifier: 0.1.0
         version: link:../core
+      '@modyra/widgets':
+        specifier: 0.1.0
+        version: link:../widgets
     devDependencies:
       '@vue/reactivity':
         specifier: ^3.5.0
         version: 3.5.39
+
+  packages/widgets:
+    dependencies:
+      '@modyra/core':
+        specifier: 0.1.0
+        version: link:../core
 
   packages/zod:
     dependencies:
