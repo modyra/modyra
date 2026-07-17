@@ -5,8 +5,8 @@
  */
 import { build } from "/Users/lorenzo.local/projects/test/ngx-signal-forms/node_modules/.pnpm/esbuild@0.27.4/node_modules/esbuild/lib/main.js";
 
-// Every demo ships all the packaged themes (plain CSS from the built
-// @modyra/angular package) and starts on a different one; a runtime
+// Every demo ships all the packaged themes (plain CSS from the agnostic
+// @modyra/styles package source) and starts on a different one; a runtime
 // switcher in each page swaps the stylesheet.
 // Copied with their original filenames: the variants @import "./modyra.css"
 // internally, so renaming them would break relative resolution.
@@ -40,7 +40,7 @@ for (const { name, entry } of targets) {
   copyFileSync(`examples/${name}/index.html`, `dist/examples/${name}/index.html`);
   mkdirSync(`dist/examples/${name}/themes`, { recursive: true });
   for (const file of THEME_FILES) {
-    copyFileSync(`packages/angular/dist/styles/${file}`, `dist/examples/${name}/themes/${file}`);
+    copyFileSync(`packages/styles/src/${file}`, `dist/examples/${name}/themes/${file}`);
   }
   console.log(`examples/${name} → dist/examples/${name} (${THEME_FILES.length} themes)`);
 }
