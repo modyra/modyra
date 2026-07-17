@@ -2,7 +2,7 @@
 // draft persistence (reload the page mid-typing), undo/redo history and a
 // simulated server-side error. Form state is native Vue reactivity, so
 // plain computed() wrappers are all the glue a component needs.
-import { computed, createApp, onMounted, onUnmounted } from "vue";
+import { computed, createApp, onMounted, onUnmounted, ref, watchEffect } from "vue";
 import {
   createVueForm, crossField, email, field, minLength, mountMdyDevtools, required,
 } from "@modyra/vue";
@@ -51,13 +51,23 @@ const TextField = {
     </div>`,
 };
 
+const THEMES = ["default", "material", "ios", "ionic", "base"];
+
 createApp({
   components: { TextField },
   setup() {
+    // Swaps the theme stylesheet at runtime — every packaged theme works
+    // with the same markup, so switching is just a different href.
+    const theme = ref("ios");
+    watchEffect(() => {
+      document.getElementById("theme").href = `./themes/${theme.value}.css`;
+    });
     let dispose;
     onMounted(() => { dispose = mountMdyDevtools(form, document.getElementById("devtools")); });
     onUnmounted(() => dispose?.());
     return {
+      theme,
+      themes: THEMES,
       form,
       canSubmit: computed(() => form.state.canSubmit()),
       canUndo: computed(() => form.canUndo()),
@@ -75,6 +85,12 @@ createApp({
   template: `
     <main style="max-width:30rem;margin:2rem auto;display:grid;gap:1rem">
       <h1>Modyra × Vue</h1>
+      <label class="mdy-label" style="display:flex;gap:.5rem;align-items:center">
+        Theme
+        <select v-model="theme">
+          <option v-for="t in themes" :key="t" :value="t">{{ t }}</option>
+        </select>
+      </label>
       <p>Try <code>taken@example.com</code> to see a server error. Reload mid-typing: the draft survives.</p>
       <form class="mdy-form" @submit.prevent="submit()">
         <text-field label="Name" :handle="form.f.name" />

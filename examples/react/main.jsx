@@ -3,11 +3,30 @@
 // simulated server-side error. The devtools panel at the bottom shows the
 // live engine state; sensitive fields (password) are masked automatically.
 import { createRoot } from "react-dom/client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   crossField, email, field, minLength, mountMdyDevtools, required,
   useMdyField, useMdyForm,
 } from "@modyra/react";
+
+const THEMES = ["default", "material", "ios", "ionic", "base"];
+
+// Swaps the theme stylesheet at runtime — every packaged theme works with
+// the same markup, so switching is just a different href.
+function ThemeSwitcher() {
+  const [theme, setTheme] = useState("material");
+  useEffect(() => {
+    document.getElementById("theme").href = `./themes/${theme}.css`;
+  }, [theme]);
+  return (
+    <label className="mdy-label" style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
+      Theme
+      <select value={theme} onChange={(e) => setTheme(e.target.value)}>
+        {THEMES.map((t) => <option key={t} value={t}>{t}</option>)}
+      </select>
+    </label>
+  );
+}
 
 function TextField({ label, handle, type = "text" }) {
   const f = useMdyField(handle);
@@ -80,6 +99,7 @@ function Signup() {
   return (
     <main style={{ maxWidth: "30rem", margin: "2rem auto", display: "grid", gap: "1rem" }}>
       <h1>Modyra × React</h1>
+      <ThemeSwitcher />
       <p>Try <code>taken@example.com</code> to see a server error. Reload mid-typing: the draft survives.</p>
       <form className="mdy-form" onSubmit={submit}>
         <TextField label="Name" handle={form.f.name} />

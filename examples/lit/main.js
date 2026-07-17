@@ -13,7 +13,18 @@ import {
 // daterange, timepicker, colors, file.
 defineMdyElements();
 
+const THEMES = ["default", "material", "ios", "ionic", "base"];
+
 class SignupApp extends LitElement {
+  static properties = { theme: { state: true } };
+
+  // Swaps the theme stylesheet at runtime — every packaged theme works
+  // with the same markup, so switching is just a different href.
+  #setTheme = (theme) => {
+    this.theme = theme;
+    document.getElementById("theme").href = `./themes/${theme}.css`;
+  };
+
   form = createLitForm(
     {
       name: field("", [required(), minLength(2)]),
@@ -57,6 +68,11 @@ class SignupApp extends LitElement {
     attachments: field(null),
   });
 
+  constructor() {
+    super();
+    this.theme = "default";
+  }
+
   createRenderRoot() { return this; } // light DOM: the theme applies
 
   firstUpdated() {
@@ -82,6 +98,12 @@ class SignupApp extends LitElement {
     return html`
       <main style="max-width:30rem;margin:2rem auto;display:grid;gap:1rem">
         <h1>Modyra × Lit</h1>
+        <label class="mdy-label" style="display:flex;gap:.5rem;align-items:center">
+          Theme
+          <select @change=${(e) => this.#setTheme(e.target.value)}>
+            ${THEMES.map((t) => html`<option value=${t} ?selected=${t === this.theme}>${t}</option>`)}
+          </select>
+        </label>
         <p>Try <code>taken@example.com</code> to see a server error. Reload mid-typing: the draft survives.</p>
         <form class="mdy-form" @submit=${this.#submit}>
           <mdy-text-field label="Name" .field=${this.form.f.name}></mdy-text-field>
