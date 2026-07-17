@@ -5,14 +5,6 @@
  * templates and watchers react to it natively.
  */
 import {
-  computed as vueComputed,
-  effect as vueEffect,
-  pauseTracking,
-  resetTracking,
-  shallowRef,
-  stop,
-} from "@vue/reactivity";
-import {
   createForm,
   MdyCoreFormOptions,
   MdyFormSchema,
@@ -22,6 +14,16 @@ import {
   MdyTypedForm,
   MdyWritableSignal,
 } from "@modyra/core";
+import {
+  getCurrentScope,
+  onScopeDispose,
+  pauseTracking,
+  resetTracking,
+  shallowRef,
+  stop,
+  computed as vueComputed,
+  effect as vueEffect,
+} from "@vue/reactivity";
 
 /** Modyra's reactive contract implemented on @vue/reactivity. */
 export function vueReactivity(): MdyReactivity {
@@ -85,4 +87,20 @@ export function createVueForm<S extends MdyFormSchema>(
   return createForm(schema, { ...options, reactivity: vueReactivity() });
 }
 
+/**
+ * Vue composable variant of {@link createVueForm}: when called inside an
+ * active effect scope, the form is automatically destroyed on scope dispose.
+ */
+export function useVueForm<S extends MdyFormSchema>(
+  schema: S,
+  options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, "reactivity">,
+): MdyTypedForm<S> {
+  const form = createVueForm(schema, options);
+  if (getCurrentScope() !== undefined) {
+    onScopeDispose(() => form.destroy());
+  }
+  return form;
+}
+
 export * from "@modyra/core";
+export * from "./widgets/index.js";

@@ -4,18 +4,44 @@
   "description": "Vue binding for the Modyra form engine — type-safe forms on @vue/reactivity.",
   "license": "MIT",
   "author": "Lorenzo Muscherà",
-  "repository": { "type": "git", "url": "git+ssh://git@github.personal/modyra/modyra.git", "directory": "packages/vue" },
-  "bugs": { "url": "https://github.com/modyra/modyra/issues" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modyra/modyra.git",
+    "directory": "packages/vue"
+  },
+  "bugs": {
+    "url": "https://github.com/modyra/modyra/issues"
+  },
   "homepage": "https://github.com/modyra/modyra#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
-  "files": ["dist", "README.md"],
-  "scripts": { "build": "tsc -p tsconfig.json", "test": "node --test test/*.test.mjs" },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
   "sideEffects": false,
-  "dependencies": { "@modyra/core": "0.1.0" },
-  "peerDependencies": { "@vue/reactivity": ">=3.4.0" },
-  "devDependencies": { "@vue/reactivity": "^3.5.0" },
-  "publishConfig": { "access": "public" }
+  "dependencies": {
+    "@modyra/core": "0.1.0",
+    "@modyra/widgets": "0.1.0"
+  },
+  "peerDependencies": {
+    "@vue/reactivity": ">=3.4.0"
+  },
+  "devDependencies": {
+    "@vue/reactivity": "^3.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }
