@@ -5,17 +5,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  contentChild,
   effect,
   ElementRef,
   forwardRef,
   inject,
-  Injector,
   input,
   output,
   Signal,
   signal,
-  TemplateRef,
   untracked,
   viewChild,
   WritableSignal,
@@ -26,13 +23,11 @@ import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
-import { MdyOptionDirective } from "../../control/option.directive";
 import { MdyGlassDirective } from "../../core/directives/glass.directive";
-import { MDY_I18N_MESSAGES } from "../../core/i18n";
-import { MdyOptionsOverlayControl } from "../../core/options-overlay-control.directive";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MDY_OPTIONS_CONTROL } from "../../core/tokens";
 import { MdyOptionsControl, MdySelectOption } from "../../core/types";
+import { MdyDropdownBase } from "../dropdown-base";
 
 function mapKeyToMoveTarget(
   key: string,
@@ -280,9 +275,8 @@ function mapKeyToMoveTarget(
   `,
 })
 export class MdySelectComponent<TValue = string>
-  extends MdyOptionsOverlayControl<TValue | null, TValue>
+  extends MdyDropdownBase<TValue | null, TValue>
   implements MdyOptionsControl<TValue> {
-  protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly placeholder = input<string>("");
   readonly disabled = input<boolean>(false);
   /**
@@ -291,12 +285,9 @@ export class MdySelectComponent<TValue = string>
    * the consumer adds the option to its list and sets the value.
    */
   readonly allowCreate = input(false, { transform: booleanAttribute });
-  readonly selectionChange = output<MdySelectOption<TValue>>();
   /** Fires with the trimmed query when the user picks the create row. */
   readonly optionCreated = output<string>();
   public override readonly isDisabled = computed(() => this.disabled() || this.fieldState().disabled());
-  protected override readonly minSpace = 250;
-  private readonly injector = inject(Injector);
   private readonly runtime = inject(MdyWidgetRuntime);
   private selectAdapter!: MdyAngularSelectAdapter<TValue>;
   private readonly _parkedValue: WritableSignal<TValue | null> = signal<TValue | null>(null);
@@ -381,12 +372,6 @@ export class MdySelectComponent<TValue = string>
     }, { injector: this.injector });
   }
 
-  /** Custom option template provided via `<ng-template mdyOption>`. */
-
-  protected readonly optionTpl = contentChild(MdyOptionDirective, {
-    read: TemplateRef,
-  });
-
   protected readonly fieldId = `mdy-control-select-${MdyBaseControl.nextId()}`;
 
   /** Whether the dropdown opens above the trigger. */
@@ -459,7 +444,7 @@ export class MdySelectComponent<TValue = string>
   }
 
   protected override onBeforeOpen(): void {
-    this.searchQuery.set("");
+    super.onBeforeOpen();
 
     // Focus search input after DOM renders
     if (this.searchable()) {
