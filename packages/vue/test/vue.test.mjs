@@ -1,7 +1,7 @@
-import { test } from "node:test";
+import { effectScope, computed as vueComputed } from "@vue/reactivity";
 import assert from "node:assert/strict";
-import { computed as vueComputed } from "@vue/reactivity";
-import { createVueForm, field, required } from "../dist/index.js";
+import { test } from "node:test";
+import { createVueForm, field, required, useVueForm } from "../dist/index.js";
 
 test("form state participates in Vue reactivity", () => {
   const form = createVueForm({ email: field("", [required()]) });
@@ -24,4 +24,13 @@ test("effects (async validators) run on the Vue graph", async () => {
   form.f.user.set("taken");
   await new Promise((r) => setTimeout(r, 0));
   assert.deepEqual(form.f.user.errors().map((e) => e.message), ["Name taken"]);
+});
+
+test("useVueForm auto-destroys when scope is disposed", () => {
+  const scope = effectScope();
+  const form = scope.run(() => useVueForm({ email: field("", [required()]) }));
+  assert.ok(form);
+  assert.equal(form?.destroyed, false);
+  scope.stop();
+  assert.equal(form?.destroyed, true);
 });

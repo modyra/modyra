@@ -4,18 +4,45 @@
   "description": "React binding for the Modyra form engine — type-safe forms via useSyncExternalStore.",
   "license": "MIT",
   "author": "Lorenzo Muscherà",
-  "repository": { "type": "git", "url": "git+ssh://git@github.personal/modyra/modyra.git", "directory": "packages/react" },
-  "bugs": { "url": "https://github.com/modyra/modyra/issues" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modyra/modyra.git",
+    "directory": "packages/react"
+  },
+  "bugs": {
+    "url": "https://github.com/modyra/modyra/issues"
+  },
   "homepage": "https://github.com/modyra/modyra#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
-  "files": ["dist", "README.md"],
-  "scripts": { "build": "tsc -p tsconfig.json", "test": "node --test test/*.test.mjs" },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
   "sideEffects": false,
-  "dependencies": { "@modyra/core": "0.1.0" },
-  "peerDependencies": { "react": ">=18.0.0" },
-  "devDependencies": { "react": "^19.0.0", "@types/react": "^19.0.0" },
-  "publishConfig": { "access": "public" }
+  "dependencies": {
+    "@modyra/core": "0.1.0",
+    "@modyra/widgets": "0.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "react": "^19.0.0",
+    "@types/react": "^19.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

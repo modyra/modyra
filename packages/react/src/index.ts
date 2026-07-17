@@ -5,7 +5,6 @@
  * `vanillaReactivity()` and components subscribe through
  * `useSyncExternalStore`-compatible stores.
  */
-import { useEffect, useMemo, useSyncExternalStore } from "react";
 import {
   createForm,
   MdyCoreFormOptions,
@@ -16,6 +15,7 @@ import {
   MdyTypedForm,
   vanillaReactivity,
 } from "@modyra/core";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 
 /** A `useSyncExternalStore`-compatible view over reactive Modyra state. */
 export interface MdyStore {
@@ -84,7 +84,11 @@ export function useMdyForm<S extends MdyFormSchema>(
   options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, "reactivity">,
 ): MdyTypedForm<S> {
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => createForm(schema(), options), []);
+  const form = useMemo(() => createForm(schema(), options), []);
+  // The form owns effects/timers (draft/history/async validators), so the
+  // component unmount must release them.
+  useEffect(() => () => form.destroy(), [form]);
+  return form;
 }
 
 /** Subscribes the component to one field and returns its current state. */
@@ -120,3 +124,4 @@ export function useMdyField<T>(handle: MdyFieldHandle<T>): {
 }
 
 export * from "@modyra/core";
+export * from "./widgets/index.js";
