@@ -39,9 +39,14 @@ from the shared engine. Validators are the core ones (`required`,
 `email`, `minLength`, `crossField`, …).
 
 Value models follow the engine's conventions: ISO `yyyy-MM-dd` dates,
-`HH:mm` times, hex colors, `File | File[] | null`. The date/time/color
-pickers currently use the platform-native inputs; richer overlay pickers
-can replace them without touching the field contract.
+`HH:mm` times, hex colors, `File | File[] | null`. The composite pickers
+ship their own overlays, styled by the same theme classes as the Angular
+renderers: the datepicker opens a keyboard-navigable month grid (arrows,
+PageUp/Down, Home/End — powered by the shared calendar math), the
+timepicker an hour/minute segment editor with confirm/cancel actions, the
+colors control a preset palette with an escape hatch to the platform
+picker. Select and multiselect are trigger + listbox dropdowns with the
+shared keyboard navigation.
 
 Because Lit ships web components, this catalog is also the path to Modyra
 controls usable from any framework.
