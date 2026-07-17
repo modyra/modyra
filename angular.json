@@ -24,7 +24,7 @@
                     "builder": "@angular-devkit/build-angular:jest",
                     "options": {
                         "tsConfig": "packages/angular/tsconfig.spec.json",
-                        "polyfills": []
+                        "polyfills": ["@angular/compiler"]
                     }
                 }
             }
@@ -44,12 +44,12 @@
                         "assets": [
                             {
                                 "glob": "**/*",
-                                "input": "packages/angular/src/styles",
+                                "input": "packages/styles/src",
                                 "output": "styles"
                             }
                         ],
                         "styles": [
-                            "@modyra/angular/styles/base.css",
+                            "packages/styles/src/modyra-base.css",
                             "projects/demo/src/styles.scss"
                         ]
                     },
