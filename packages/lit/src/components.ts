@@ -9,6 +9,10 @@
  */
 import { html, nothing, PropertyDeclarations } from "lit";
 import {
+  buildMonthGrid,
+  CalendarCell,
+  calendarKeyboardTarget,
+  formatIsoDate,
   formatTimeAs,
   listboxNextIndex,
   MdyDateRange,
@@ -18,18 +22,16 @@ import {
   parseIsoDate,
   parseLocalizedDate,
   parseTime,
+  today,
 } from "@modyra/core";
 import { MdyFieldElement, mdyIcon } from "./base.js";
 
 /** Visually hidden native input used as the platform picker behind a styled control. */
+const POPUP_ANCHOR_STYLE = "position:relative";
+const POPUP_STYLE = "position:absolute;top:calc(100% + 4px);left:0;z-index:1000";
+
 const NATIVE_HIDDEN_STYLE =
   "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0";
-
-function toIso(date: { year: number; month: number; day: number }): string {
-  const mm = String(date.month).padStart(2, "0");
-  const dd = String(date.day).padStart(2, "0");
-  return `${date.year}-${mm}-${dd}`;
-}
 
 // ─── Text-like ────────────────────────────────────────────────────────────────
 
@@ -579,33 +581,199 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
 
 /**
  * ISO `yyyy-MM-dd` value model — identical to the engine's convention.
- * Styled text input (typed dates parsed in the page locale or as ISO) plus
- * a calendar toggle that opens the platform date picker.
+ * Styled text input (typed dates parsed in the page locale or as ISO) with
+ * a calendar toggle opening a full keyboard-navigable month grid — the
+ * same structure and classes the themes style for the Angular renderer.
  */
 export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   static override properties: PropertyDeclarations = {
     min: { type: String },
     max: { type: String },
     placeholder: { type: String },
+    firstDayOfWeek: { type: Number, attribute: "first-day-of-week" },
+    _open: { state: true },
+    _viewYear: { state: true },
+    _viewMonth: { state: true },
+    _focusedIso: { state: true },
   };
   declare min?: string;
   declare max?: string;
   declare placeholder: string;
+  /** 0 = Sunday, 1 = Monday (default). */
+  declare firstDayOfWeek: number;
+  declare _open: boolean;
+  declare _viewYear: number;
+  declare _viewMonth: number;
+  declare _focusedIso: string;
   protected override readonly rendererClass = "mdy-renderer--datepicker";
 
   constructor() {
     super();
     this.placeholder = "";
+    this.firstDayOfWeek = 1;
+    this._open = false;
+    const now = today();
+    this._viewYear = now.year;
+    this._viewMonth = now.month;
+    this._focusedIso = formatIsoDate(now);
+  }
+
+  private get locale(): string {
+    return typeof navigator !== "undefined" ? navigator.language : "en-US";
   }
 
   private parse(raw: string): string | null {
     if (!raw) return null;
-    const locale = typeof navigator !== "undefined" ? navigator.language : "en-US";
-    const parsed = parseLocalizedDate(raw, locale) ?? parseIsoDate(raw);
-    return parsed ? toIso(parsed) : null;
+    const parsed = parseLocalizedDate(raw, this.locale) ?? parseIsoDate(raw);
+    return parsed ? formatIsoDate(parsed) : null;
+  }
+
+  private weekdayNames(): string[] {
+    const format = new Intl.DateTimeFormat(this.locale, { weekday: "narrow" });
+    // 2024-01-01 is a Monday; build the week from the configured first day.
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = ((this.firstDayOfWeek + i + 6) % 7) + 1; // 1 = Monday … 7 = Sunday
+      return format.format(new Date(Date.UTC(2024, 0, day)));
+    });
+  }
+
+  private rows(): CalendarCell[][] {
+    const cells = buildMonthGrid(this._viewYear, this._viewMonth, this.firstDayOfWeek);
+    const rows: CalendarCell[][] = [];
+    for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7) as CalendarCell[]);
+    return rows;
+  }
+
+  private openPopup(handle: MdyFieldHandle<string | null>): void {
+    const selected = handle.value() ? parseIsoDate(handle.value() ?? "") : null;
+    const base = selected ?? today();
+    this._viewYear = base.year;
+    this._viewMonth = base.month;
+    this._focusedIso = formatIsoDate(base);
+    this._open = true;
+  }
+
+  private closePopup(handle: MdyFieldHandle<string | null>, refocus = true): void {
+    if (!this._open) return;
+    this._open = false;
+    handle.markAsTouched();
+    if (refocus) this.querySelector<HTMLInputElement>(".mdy-datepicker__input")?.focus();
+  }
+
+  private navigateMonths(delta: number): void {
+    const moved = new Date(Date.UTC(this._viewYear, this._viewMonth - 1 + delta, 1));
+    this._viewYear = moved.getUTCFullYear();
+    this._viewMonth = moved.getUTCMonth() + 1;
+  }
+
+  private pick(handle: MdyFieldHandle<string | null>, iso: string): void {
+    handle.set(iso);
+    handle.markAsDirty();
+    this.closePopup(handle);
+  }
+
+  private onGridKeydown(e: KeyboardEvent, handle: MdyFieldHandle<string | null>): void {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      this.closePopup(handle);
+      return;
+    }
+    const focused = parseIsoDate(this._focusedIso) ?? today();
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      this.pick(handle, formatIsoDate(focused));
+      return;
+    }
+    // Grid navigation is a pure decision shared with every adapter.
+    const next = calendarKeyboardTarget(e.key, focused, e.shiftKey);
+    if (!next) return;
+    e.preventDefault();
+    this._focusedIso = formatIsoDate(next);
+    if (next.year !== this._viewYear || next.month !== this._viewMonth) {
+      this._viewYear = next.year;
+      this._viewMonth = next.month;
+    }
+  }
+
+  protected override updated(): void {
+    if (this._open) {
+      this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused")?.focus();
+    }
+  }
+
+  private renderPopup(handle: MdyFieldHandle<string | null>): unknown {
+    const monthLabel = new Intl.DateTimeFormat(this.locale, { month: "long" }).format(
+      new Date(Date.UTC(this._viewYear, this._viewMonth - 1, 1)),
+    );
+    const selectedIso = handle.value();
+    const todayIso = formatIsoDate(today());
+    const inRange = (iso: string): boolean =>
+      (!this.min || iso >= this.min) && (!this.max || iso <= this.max);
+    return html`
+      <div
+        class="mdy-datepicker__calendar"
+        role="dialog"
+        aria-label=${this.label || "Choose date"}
+        style=${POPUP_STYLE}
+        @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
+      >
+        <div class="mdy-datepicker__header-label">
+          <span class="mdy-datepicker__title">${monthLabel} ${this._viewYear}</span>
+        </div>
+        <div class="mdy-datepicker__header-nav">
+          <button
+            type="button"
+            class="mdy-datepicker__nav-btn"
+            aria-label="Previous month"
+            @click=${() => this.navigateMonths(-1)}
+          >
+            ${mdyIcon("CHEVRON_LEFT", "")}
+          </button>
+          <button
+            type="button"
+            class="mdy-datepicker__nav-btn"
+            aria-label="Next month"
+            @click=${() => this.navigateMonths(1)}
+          >
+            ${mdyIcon("CHEVRON_RIGHT", "")}
+          </button>
+        </div>
+        <div class="mdy-datepicker__weekdays" role="row">
+          ${this.weekdayNames().map(
+            (name) => html`<span class="mdy-datepicker__weekday" role="columnheader">${name}</span>`,
+          )}
+        </div>
+        ${this.rows().map(
+          (row) => html`<div class="mdy-datepicker__row" role="row">
+            ${row.map((cell) => {
+              const disabled = !inRange(cell.iso);
+              const classes = [
+                "mdy-datepicker__cell",
+                cell.inMonth ? "" : "mdy-datepicker__cell--outside",
+                cell.iso === todayIso ? "mdy-datepicker__cell--today" : "",
+                cell.iso === selectedIso ? "mdy-datepicker__cell--selected" : "",
+                cell.iso === this._focusedIso ? "mdy-datepicker__cell--focused" : "",
+                disabled ? "mdy-datepicker__cell--disabled" : "",
+              ].join(" ");
+              return html`<button
+                type="button"
+                class=${classes}
+                tabindex=${cell.iso === this._focusedIso ? "0" : "-1"}
+                aria-selected=${cell.iso === selectedIso ? "true" : "false"}
+                ?disabled=${disabled}
+                @click=${() => this.pick(handle, cell.iso)}
+              >
+                ${cell.date.day}
+              </button>`;
+            })}
+          </div>`,
+        )}
+      </div>
+    `;
   }
 
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
+    this.classList.toggle("mdy-renderer--open", this._open);
     return html`
       <input
         id=${this.fieldId}
@@ -615,6 +783,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         .value=${handle.value() ?? ""}
         ?disabled=${handle.disabled()}
         aria-haspopup="dialog"
+        aria-expanded=${this._open ? "true" : "false"}
         aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
         aria-required=${handle.required() ? "true" : "false"}
         aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
@@ -633,28 +802,21 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           class="mdy-datepicker__toggle"
           ?disabled=${handle.disabled()}
           aria-label="Open date picker"
-          @click=${() => {
-            const native = this.querySelector<HTMLInputElement>("input[type=date]");
-            native?.showPicker?.();
-          }}
+          aria-expanded=${this._open ? "true" : "false"}
+          @click=${() => (this._open ? this.closePopup(handle) : this.openPopup(handle))}
         >
           ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
         </button>
       </div>
-      <input
-        type="date"
-        tabindex="-1"
-        style=${NATIVE_HIDDEN_STYLE}
-        min=${this.min ?? nothing}
-        max=${this.max ?? nothing}
-        .value=${handle.value() ?? ""}
-        @change=${(e: Event) => {
-          handle.set((e.target as HTMLInputElement).value || null);
-          handle.markAsDirty();
-          handle.markAsTouched();
-        }}
-      />
+      ${this._open ? this.renderPopup(handle) : nothing}
     `;
+  }
+
+  override render(): unknown {
+    const handle = this.field;
+    if (!handle) return nothing;
+    const base = super.render();
+    return html`<div style=${POPUP_ANCHOR_STYLE}>${base}</div>`;
   }
 }
 
@@ -694,21 +856,128 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
 
 /**
  * `HH:mm` (24h) value model. Styled text input (accepts `14:30`, `2:30 pm`,
- * `1430`…) plus a clock toggle that opens the platform time picker.
+ * `1430`…) with a clock toggle opening the hour/minute segment editor —
+ * the same field structure the themes style for the Angular renderer.
  */
 export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   static override properties: PropertyDeclarations = {
     placeholder: { type: String },
+    _open: { state: true },
+    _hour: { state: true },
+    _minute: { state: true },
   };
   declare placeholder: string;
+  declare _open: boolean;
+  declare _hour: number;
+  declare _minute: number;
   protected override readonly rendererClass = "mdy-renderer--timepicker";
 
   constructor() {
     super();
     this.placeholder = "";
+    this._open = false;
+    this._hour = 12;
+    this._minute = 0;
+  }
+
+  private openPopup(handle: MdyFieldHandle<string | null>): void {
+    const parsed = parse24Time(handle.value());
+    if (parsed) {
+      this._hour = parsed.period === "PM" ? (parsed.hour % 12) + 12 : parsed.hour % 12;
+      this._minute = parsed.minute;
+    }
+    this._open = true;
+  }
+
+  private closePopup(handle: MdyFieldHandle<string | null>): void {
+    if (!this._open) return;
+    this._open = false;
+    handle.markAsTouched();
+    this.querySelector<HTMLInputElement>(".mdy-timepicker__input")?.focus();
+  }
+
+  private confirm(handle: MdyFieldHandle<string | null>): void {
+    const hh = String(this._hour).padStart(2, "0");
+    const mm = String(this._minute).padStart(2, "0");
+    handle.set(`${hh}:${mm}`);
+    handle.markAsDirty();
+    this.closePopup(handle);
+  }
+
+  private renderSegment(
+    label: string,
+    value: number,
+    max: number,
+    apply: (next: number) => void,
+  ): unknown {
+    const clamp = (n: number): number => ((n % (max + 1)) + max + 1) % (max + 1);
+    return html`<div class="mdy-timepicker-segment">
+      <input
+        type="number"
+        class="mdy-timepicker-segment-input"
+        .value=${String(value).padStart(2, "0")}
+        min="0"
+        max=${max}
+        aria-label=${label}
+        @input=${(e: Event) => {
+          const n = (e.target as HTMLInputElement).valueAsNumber;
+          if (!Number.isNaN(n)) apply(clamp(n));
+        }}
+        @keydown=${(e: KeyboardEvent) => {
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            apply(clamp(value + 1));
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            apply(clamp(value - 1));
+          }
+        }}
+      />
+      <span class="mdy-timepicker-segment-label">${label}</span>
+    </div>`;
+  }
+
+  private renderPopup(handle: MdyFieldHandle<string | null>): unknown {
+    return html`
+      <div
+        class="mdy-timepicker-content"
+        role="dialog"
+        aria-label=${this.label || "Choose time"}
+        style=${POPUP_STYLE}
+        @keydown=${(e: KeyboardEvent) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            this.closePopup(handle);
+          }
+        }}
+      >
+        <div class="mdy-timepicker-fields">
+          ${this.renderSegment("Hours", this._hour, 23, (n) => (this._hour = n))}
+          <span class="mdy-timepicker-separator" aria-hidden="true">:</span>
+          ${this.renderSegment("Minutes", this._minute, 59, (n) => (this._minute = n))}
+        </div>
+        <div class="mdy-timepicker-actions">
+          <button
+            type="button"
+            class="mdy-timepicker-action-btn"
+            @click=${() => this.closePopup(handle)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="mdy-timepicker-action-btn mdy-timepicker-action-btn--confirm"
+            @click=${() => this.confirm(handle)}
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    `;
   }
 
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
+    this.classList.toggle("mdy-renderer--open", this._open);
     return html`
       <input
         id=${this.fieldId}
@@ -718,6 +987,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
         .value=${handle.value() ?? ""}
         ?disabled=${handle.disabled()}
         aria-haspopup="dialog"
+        aria-expanded=${this._open ? "true" : "false"}
         aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
         aria-required=${handle.required() ? "true" : "false"}
         aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
@@ -737,26 +1007,20 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           class="mdy-timepicker__toggle"
           ?disabled=${handle.disabled()}
           aria-label="Open time picker"
-          @click=${() => {
-            const native = this.querySelector<HTMLInputElement>("input[type=time]");
-            native?.showPicker?.();
-          }}
+          aria-expanded=${this._open ? "true" : "false"}
+          @click=${() => (this._open ? this.closePopup(handle) : this.openPopup(handle))}
         >
           ${mdyIcon("CLOCK", "mdy-timepicker__icon")}
         </button>
       </div>
-      <input
-        type="time"
-        tabindex="-1"
-        style=${NATIVE_HIDDEN_STYLE}
-        .value=${handle.value() ?? ""}
-        @change=${(e: Event) => {
-          handle.set((e.target as HTMLInputElement).value || null);
-          handle.markAsDirty();
-          handle.markAsTouched();
-        }}
-      />
+      ${this._open ? this.renderPopup(handle) : nothing}
     `;
+  }
+
+  override render(): unknown {
+    const handle = this.field;
+    if (!handle) return nothing;
+    return html`<div style=${POPUP_ANCHOR_STYLE}>${super.render()}</div>`;
   }
 }
 
@@ -768,28 +1032,98 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
  * structure the themes style for the Angular renderer.
  */
 export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
+  static override properties: PropertyDeclarations = {
+    presets: { attribute: false },
+    _open: { state: true },
+  };
+  /** Preset swatches shown in the dropdown. */
+  declare presets: readonly string[];
+  declare _open: boolean;
   protected override readonly rendererClass = "mdy-renderer--colors";
 
+  constructor() {
+    super();
+    this.presets = [
+      "#4361ee", "#3a0ca3", "#7209b7", "#f72585", "#e63946",
+      "#f77f00", "#fcbf49", "#2a9d8f", "#43aa8b", "#264653",
+      "#1d3557", "#000000", "#6c757d", "#ffffff",
+    ];
+    this._open = false;
+  }
+
+  private set(handle: MdyFieldHandle<string | null>, value: string): void {
+    const v = value.trim();
+    handle.set(/^#[0-9a-fA-F]{3,8}$/.test(v) ? v : v === "" ? null : handle.value());
+    handle.markAsDirty();
+  }
+
+  private close(handle: MdyFieldHandle<string | null>): void {
+    if (!this._open) return;
+    this._open = false;
+    handle.markAsTouched();
+  }
+
+  private renderDropdown(handle: MdyFieldHandle<string | null>): unknown {
+    return html`
+      <div
+        class="mdy-colors__dropdown"
+        role="listbox"
+        aria-label="Color presets"
+        style=${POPUP_STYLE}
+        @keydown=${(e: KeyboardEvent) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            this.close(handle);
+          }
+        }}
+      >
+        <div class="mdy-colors__dropdown-header">Presets</div>
+        <div class="mdy-colors__presets">
+          ${this.presets.map(
+            (preset) => html`<button
+              type="button"
+              class="mdy-color-swatch ${handle.value() === preset ? "mdy-color-swatch--active" : ""}"
+              role="option"
+              aria-selected=${handle.value() === preset ? "true" : "false"}
+              aria-label=${preset}
+              style="background-color:${preset}"
+              @click=${() => {
+                this.set(handle, preset);
+                this.close(handle);
+              }}
+            ></button>`,
+          )}
+        </div>
+        <button
+          type="button"
+          class="mdy-colors__primary-picker"
+          @click=${() => {
+            this.querySelector<HTMLInputElement>("input[type=color]")?.showPicker?.();
+          }}
+        >
+          Custom…
+        </button>
+      </div>
+    `;
+  }
+
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
-    const set = (value: string): void => {
-      const v = value.trim();
-      handle.set(/^#[0-9a-fA-F]{3,8}$/.test(v) ? v : v === "" ? null : handle.value());
-      handle.markAsDirty();
-    };
+    this.classList.toggle("mdy-renderer--open", this._open);
     return html`
       <button
         type="button"
         class="mdy-colors__toggle-area"
         ?disabled=${handle.disabled()}
-        aria-label=${`${this.label} — open color picker`}
-        @click=${() => {
-          this.querySelector<HTMLInputElement>("input[type=color]")?.showPicker?.();
-        }}
+        aria-haspopup="listbox"
+        aria-expanded=${this._open ? "true" : "false"}
+        aria-label=${`${this.label} — open color presets`}
+        @click=${() => (this._open ? this.close(handle) : (this._open = true))}
       >
         <div
           class="mdy-colors__preview-swatch"
           style="background-color:${handle.value() ?? "#4361ee"}"
         ></div>
+        ${mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}
       </button>
       <input
         type="color"
@@ -814,10 +1148,17 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
         aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
         aria-required=${handle.required() ? "true" : "false"}
         ?disabled=${handle.disabled()}
-        @change=${(e: Event) => set((e.target as HTMLInputElement).value)}
+        @change=${(e: Event) => this.set(handle, (e.target as HTMLInputElement).value)}
         @blur=${() => handle.markAsTouched()}
       />
+      ${this._open ? this.renderDropdown(handle) : nothing}
     `;
+  }
+
+  override render(): unknown {
+    const handle = this.field;
+    if (!handle) return nothing;
+    return html`<div style=${POPUP_ANCHOR_STYLE}>${super.render()}</div>`;
   }
 }
 
