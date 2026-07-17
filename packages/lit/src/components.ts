@@ -1,15 +1,19 @@
 /**
- * The Modyra control catalog for Lit — one element per field kind, all
- * bound to typed field handles and styled by the shipped theme CSS.
+ * The Modyra control catalog for Lit — one element per field kind, with
+ * the same DOM structure and class contract as the Angular renderers, so
+ * the shipped themes style both identically.
  *
  * Value models match the engine's conventions: dates are ISO
  * `yyyy-MM-dd` strings, times are `HH:mm`, colors are hex strings, files
- * are `File | File[] | null`. Composite pickers use the platform-native
- * inputs; keyboard-navigated custom overlays can replace them without
- * touching the field contract.
+ * are `File | File[] | null`.
  */
 import { html, nothing, PropertyDeclarations } from "lit";
-import { MdyDateRange, MdyFieldHandle, MdySelectOption } from "@modyra/core";
+import {
+  listboxNextIndex,
+  MdyDateRange,
+  MdyFieldHandle,
+  MdySelectOption,
+} from "@modyra/core";
 import { MdyFieldElement } from "./base.js";
 
 // ─── Text-like ────────────────────────────────────────────────────────────────
@@ -53,7 +57,10 @@ export class MdyTextFieldElement extends MdyFieldElement<string | null> {
 }
 
 export class MdyTextareaFieldElement extends MdyFieldElement<string | null> {
-  static override properties: PropertyDeclarations = { rows: { type: Number }, placeholder: { type: String } };
+  static override properties: PropertyDeclarations = {
+    rows: { type: Number },
+    placeholder: { type: String },
+  };
   declare rows: number;
   declare placeholder: string;
   protected override readonly rendererClass = "mdy-renderer--textarea";
@@ -119,193 +126,395 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
 export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
   protected override readonly rendererClass = "mdy-renderer--checkbox";
 
-  protected override renderControl(handle: MdyFieldHandle<boolean>): unknown {
-    return html`<input
-      id=${this.fieldId}
-      type="checkbox"
-      class="mdy-checkbox"
-      .checked=${handle.value() === true}
-      ?disabled=${handle.disabled()}
-      aria-required=${handle.required() ? "true" : "false"}
-      @change=${(e: Event) => {
-        handle.set((e.target as HTMLInputElement).checked);
-        handle.markAsDirty();
-        handle.markAsTouched();
-      }}
-    />`;
+  protected override renderControl(): unknown {
+    return nothing;
+  }
+
+  /** Same structure as the Angular renderer: label wraps input + text. */
+  override render(): unknown {
+    const handle = this.field;
+    if (!handle) return nothing;
+    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    return html`
+      <label class="mdy-checkbox">
+        <input
+          id=${this.fieldId}
+          type="checkbox"
+          .checked=${handle.value() === true}
+          ?disabled=${handle.disabled()}
+          aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+          aria-required=${handle.required() ? "true" : "false"}
+          aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
+          @change=${(e: Event) => {
+            handle.set((e.target as HTMLInputElement).checked);
+            handle.markAsDirty();
+          }}
+          @blur=${() => handle.markAsTouched()}
+        />
+        <span class="mdy-label">
+          ${this.label}
+          ${this.label && handle.required()
+            ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
+            : nothing}
+        </span>
+      </label>
+      ${this.renderErrors(handle)}
+    `;
   }
 }
 
 export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
   protected override readonly rendererClass = "mdy-renderer--toggle";
 
-  protected override renderControl(handle: MdyFieldHandle<boolean>): unknown {
-    return html`<input
-      id=${this.fieldId}
-      type="checkbox"
-      class="mdy-toggle"
-      role="switch"
-      .checked=${handle.value() === true}
-      ?disabled=${handle.disabled()}
-      aria-checked=${handle.value() === true ? "true" : "false"}
-      @change=${(e: Event) => {
-        handle.set((e.target as HTMLInputElement).checked);
-        handle.markAsDirty();
-        handle.markAsTouched();
-      }}
-    />`;
+  protected override renderControl(): unknown {
+    return nothing;
+  }
+
+  /** Same structure as the Angular renderer: input + track/thumb + label. */
+  override render(): unknown {
+    const handle = this.field;
+    if (!handle) return nothing;
+    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    return html`
+      <label class="mdy-toggle">
+        <input
+          id=${this.fieldId}
+          type="checkbox"
+          role="switch"
+          .checked=${handle.value() === true}
+          ?disabled=${handle.disabled()}
+          aria-checked=${handle.value() === true ? "true" : "false"}
+          aria-required=${handle.required() ? "true" : "false"}
+          @change=${(e: Event) => {
+            handle.set((e.target as HTMLInputElement).checked);
+            handle.markAsDirty();
+          }}
+          @blur=${() => handle.markAsTouched()}
+        />
+        <span class="mdy-toggle__track" aria-hidden="true">
+          <span class="mdy-toggle__thumb"></span>
+        </span>
+        ${this.label
+          ? html`<span class="mdy-toggle__label">
+              ${this.label}
+              ${handle.required()
+                ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
+                : nothing}
+            </span>`
+          : nothing}
+      </label>
+      ${this.renderErrors(handle)}
+    `;
   }
 }
 
 // ─── Option-based ────────────────────────────────────────────────────────────
 
 abstract class MdyOptionsFieldElement<T> extends MdyFieldElement<T> {
-  static override properties: PropertyDeclarations = { options: { attribute: false } };
+  static override properties: PropertyDeclarations = {
+    options: { attribute: false },
+  };
   declare options: ReadonlyArray<MdySelectOption<unknown>>;
 
   constructor() {
     super();
     this.options = [];
   }
+
+  protected get labelId(): string {
+    return `${this.fieldId}-label`;
+  }
+
+  /** Group label: real id, no `for` (there is no single input to point to). */
+  protected renderGroupLabel(handle: MdyFieldHandle<T>): unknown {
+    return html`<label class="mdy-label" id=${this.labelId}>
+      ${this.label}
+      ${handle.required()
+        ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
+        : nothing}
+    </label>`;
+  }
 }
 
 export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | null> {
   protected override readonly rendererClass = "mdy-renderer--radio-group";
-  protected override get useWrapper(): boolean {
-    return false;
+
+  protected override renderControl(): unknown {
+    return nothing;
   }
 
-  protected override renderControl(handle: MdyFieldHandle<unknown | null>): unknown {
-    return html`<div class="mdy-radio-group" role="radiogroup" aria-required=${handle.required() ? "true" : "false"}>
-      ${this.options.map(
-        (option, index) => html`<label class="mdy-radio-item">
-          <input
-            type="radio"
-            class="mdy-radio-circle"
-            name=${this.fieldId}
-            id=${index === 0 ? this.fieldId : nothing}
-            .checked=${handle.value() === option.value}
-            ?disabled=${handle.disabled() || option.disabled === true}
-            @change=${() => {
-              handle.set(option.value);
-              handle.markAsDirty();
-              handle.markAsTouched();
-            }}
-          />
-          <span class="mdy-radio-label">${option.label}</span>
-        </label>`,
-      )}
-    </div>`;
+  override render(): unknown {
+    const handle = this.field;
+    if (!handle) return nothing;
+    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    return html`
+      ${this.renderGroupLabel(handle)}
+      <div
+        class="mdy-radio-group"
+        role="radiogroup"
+        aria-labelledby=${this.label ? this.labelId : nothing}
+      >
+        ${this.options.map(
+          (option) => html`<label
+            class="mdy-radio-item ${handle.disabled() ? "mdy-radio-item--disabled" : ""}"
+          >
+            <input
+              type="radio"
+              name=${this.fieldId}
+              .checked=${handle.value() === option.value}
+              ?disabled=${handle.disabled() || option.disabled === true}
+              aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+              aria-required=${handle.required() ? "true" : "false"}
+              @change=${() => {
+                handle.set(option.value);
+                handle.markAsDirty();
+              }}
+              @blur=${() => handle.markAsTouched()}
+            />
+            <span class="mdy-radio-circle"></span>
+            <span class="mdy-radio-label">${option.label}</span>
+          </label>`,
+        )}
+      </div>
+      ${this.renderErrors(handle)}
+    `;
   }
 }
 
 export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | null> {
   protected override readonly rendererClass = "mdy-renderer--segmented";
-  protected override get useWrapper(): boolean {
-    return false;
+
+  protected override renderControl(): unknown {
+    return nothing;
   }
 
-  protected override renderControl(handle: MdyFieldHandle<unknown | null>): unknown {
-    return html`<div class="mdy-segmented" role="radiogroup">
-      ${this.options.map(
-        (option) => html`<button
-          type="button"
-          class="mdy-segment ${handle.value() === option.value ? "mdy-segment--selected" : ""}"
-          role="radio"
-          aria-checked=${handle.value() === option.value ? "true" : "false"}
-          ?disabled=${handle.disabled() || option.disabled === true}
-          @click=${() => {
-            handle.set(option.value);
-            handle.markAsDirty();
-            handle.markAsTouched();
-          }}
-        >
-          ${option.label}
-        </button>`,
-      )}
-    </div>`;
+  override render(): unknown {
+    const handle = this.field;
+    if (!handle) return nothing;
+    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    const last = this.options.length - 1;
+    return html`
+      ${this.renderGroupLabel(handle)}
+      <div
+        class="mdy-segmented"
+        role="radiogroup"
+        aria-labelledby=${this.label ? this.labelId : nothing}
+      >
+        ${this.options.map((option, index) => {
+          const selected = handle.value() === option.value;
+          const classes = [
+            "mdy-segmented__button",
+            index === 0 ? "mdy-segmented__button--first" : "",
+            index === last ? "mdy-segmented__button--last" : "",
+            selected ? "mdy-segmented__button--selected" : "",
+          ].join(" ");
+          return html`<button
+            type="button"
+            class=${classes}
+            role="radio"
+            aria-checked=${selected ? "true" : "false"}
+            ?disabled=${handle.disabled() || option.disabled === true}
+            @click=${() => {
+              handle.set(option.value);
+              handle.markAsDirty();
+              handle.markAsTouched();
+            }}
+          >
+            ${option.label}
+          </button>`;
+        })}
+      </div>
+      ${this.renderErrors(handle)}
+    `;
   }
 }
 
-export class MdySelectFieldElement extends MdyOptionsFieldElement<unknown | null> {
-  static override properties: PropertyDeclarations = { placeholder: { type: String } };
+// ─── Dropdown select / multiselect ───────────────────────────────────────────
+
+abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<T> {
+  static override properties: PropertyDeclarations = {
+    placeholder: { type: String },
+    _open: { state: true },
+    _activeIndex: { state: true },
+  };
   declare placeholder: string;
-  protected override readonly rendererClass = "mdy-renderer--select";
+  declare _open: boolean;
+  declare _activeIndex: number;
 
   constructor() {
     super();
     this.placeholder = "";
+    this._open = false;
+    this._activeIndex = -1;
   }
 
-  protected override renderControl(handle: MdyFieldHandle<unknown | null>): unknown {
-    const current = handle.value();
-    const selectedIndex = this.options.findIndex((o) => o.value === current);
-    return html`<select
-      id=${this.fieldId}
-      ?disabled=${handle.disabled()}
-      aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-      aria-required=${handle.required() ? "true" : "false"}
-      @change=${(e: Event) => {
-        const index = (e.target as HTMLSelectElement).selectedIndex - 1;
-        handle.set(index >= 0 ? (this.options[index]?.value ?? null) : null);
-        handle.markAsDirty();
-        handle.markAsTouched();
-      }}
-    >
-      <option value="" ?selected=${selectedIndex === -1}>${this.placeholder}</option>
-      ${this.options.map(
-        (option, index) => html`<option
-          ?selected=${index === selectedIndex}
-          ?disabled=${option.disabled === true}
+  protected abstract isSelected(handle: MdyFieldHandle<T>, value: unknown): boolean;
+  protected abstract pick(handle: MdyFieldHandle<T>, value: unknown): void;
+  protected abstract triggerText(handle: MdyFieldHandle<T>): string;
+  protected get multiselectable(): boolean {
+    return false;
+  }
+
+  protected toggleOpen(handle: MdyFieldHandle<T>): void {
+    if (handle.disabled()) return;
+    this._open = !this._open;
+    if (!this._open) handle.markAsTouched();
+  }
+
+  protected close(handle: MdyFieldHandle<T>): void {
+    if (!this._open) return;
+    this._open = false;
+    handle.markAsTouched();
+  }
+
+  protected onKeydown(e: KeyboardEvent, handle: MdyFieldHandle<T>): void {
+    if (!this._open) {
+      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        this._open = true;
+      }
+      return;
+    }
+    // Navigation is a pure decision shared with every adapter.
+    const next = listboxNextIndex(e.key, this._activeIndex, this.options.length);
+    if (next !== null) {
+      e.preventDefault();
+      this._activeIndex = next;
+      return;
+    }
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      const option = this.options[this._activeIndex];
+      if (option) this.pick(handle, option.value);
+      if (!this.multiselectable) this.close(handle);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      this.close(handle);
+    }
+  }
+
+  protected override renderControl(): unknown {
+    return nothing;
+  }
+
+  override render(): unknown {
+    const handle = this.field;
+    if (!handle) return nothing;
+    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    this.classList.toggle("mdy-renderer--open", this._open);
+    const text = this.triggerText(handle);
+    return html`
+      <label class="mdy-label" id=${this.labelId} for=${this.fieldId}>
+        ${this.label}
+        ${handle.required()
+          ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
+          : nothing}
+      </label>
+      <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
+        <button
+          type="button"
+          class="mdy-select__trigger"
+          id=${this.fieldId}
+          aria-haspopup="listbox"
+          aria-expanded=${this._open ? "true" : "false"}
+          aria-labelledby=${this.labelId}
+          aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+          aria-required=${handle.required() ? "true" : "false"}
+          ?disabled=${handle.disabled()}
+          @click=${() => this.toggleOpen(handle)}
+          @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
+          @blur=${() => setTimeout(() => this.close(handle), 120)}
         >
-          ${option.label}
-        </option>`,
-      )}
-    </select>`;
+          ${text
+            ? html`<span class="mdy-select__value">${text}</span>`
+            : html`<span class="mdy-select__placeholder">${this.placeholder}</span>`}
+          <span class="mdy-select__arrow" aria-hidden="true"></span>
+        </button>
+        ${this._open
+          ? html`<div class="mdy-select__dropdown">
+              <ul
+                class="mdy-select__list"
+                role="listbox"
+                aria-multiselectable=${this.multiselectable ? "true" : nothing}
+              >
+                ${this.options.map((option, index) => {
+                  const selected = this.isSelected(handle, option.value);
+                  const classes = [
+                    "mdy-select__option",
+                    selected ? "mdy-select__option--selected" : "",
+                    index === this._activeIndex ? "mdy-select__option--active" : "",
+                  ].join(" ");
+                  return html`<li
+                    class=${classes}
+                    role="option"
+                    aria-selected=${selected ? "true" : "false"}
+                    @pointerdown=${(e: Event) => e.preventDefault()}
+                    @click=${() => {
+                      this.pick(handle, option.value);
+                      if (!this.multiselectable) this.close(handle);
+                    }}
+                  >
+                    <span class="mdy-select__option-label">${option.label}</span>
+                  </li>`;
+                })}
+              </ul>
+            </div>`
+          : nothing}
+      </div>
+      ${this.renderErrors(handle)}
+    `;
   }
 }
 
-export class MdyMultiselectFieldElement extends MdyOptionsFieldElement<readonly unknown[]> {
-  static override properties: PropertyDeclarations = { size: { type: Number } };
-  declare size: number;
+export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | null> {
+  protected override readonly rendererClass = "mdy-renderer--select";
+
+  protected override isSelected(handle: MdyFieldHandle<unknown | null>, value: unknown): boolean {
+    return handle.value() === value;
+  }
+
+  protected override pick(handle: MdyFieldHandle<unknown | null>, value: unknown): void {
+    handle.set(value);
+    handle.markAsDirty();
+  }
+
+  protected override triggerText(handle: MdyFieldHandle<unknown | null>): string {
+    return this.options.find((o) => o.value === handle.value())?.label ?? "";
+  }
+}
+
+export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly unknown[]> {
   protected override readonly rendererClass = "mdy-renderer--multiselect";
 
-  constructor() {
-    super();
-    this.size = 4;
+  protected override get multiselectable(): boolean {
+    return true;
   }
 
-  protected override renderControl(handle: MdyFieldHandle<readonly unknown[]>): unknown {
+  protected override isSelected(handle: MdyFieldHandle<readonly unknown[]>, value: unknown): boolean {
+    return (handle.value() ?? []).includes(value);
+  }
+
+  protected override pick(handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
     const current = handle.value() ?? [];
-    return html`<select
-      id=${this.fieldId}
-      multiple
-      size=${this.size}
-      ?disabled=${handle.disabled()}
-      aria-required=${handle.required() ? "true" : "false"}
-      @change=${(e: Event) => {
-        const picked = Array.from((e.target as HTMLSelectElement).selectedOptions)
-          .map((o) => this.options[Number(o.dataset["index"])]?.value)
-          .filter((v) => v !== undefined);
-        handle.set(picked);
-        handle.markAsDirty();
-        handle.markAsTouched();
-      }}
-    >
-      ${this.options.map(
-        (option, index) => html`<option
-          data-index=${index}
-          ?selected=${current.includes(option.value)}
-          ?disabled=${option.disabled === true}
-        >
-          ${option.label}
-        </option>`,
-      )}
-    </select>`;
+    handle.set(
+      current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value],
+    );
+    handle.markAsDirty();
+  }
+
+  protected override triggerText(handle: MdyFieldHandle<readonly unknown[]>): string {
+    const current = handle.value() ?? [];
+    if (current.length === 0) return "";
+    return this.options
+      .filter((o) => current.includes(o.value))
+      .map((o) => o.label)
+      .join(", ");
   }
 }
 
-// ─── Range / slider ──────────────────────────────────────────────────────────
+// ─── Slider ──────────────────────────────────────────────────────────────────
 
 export class MdySliderFieldElement extends MdyFieldElement<number> {
   static override properties: PropertyDeclarations = {
@@ -326,23 +535,27 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
   }
 
   protected override renderControl(handle: MdyFieldHandle<number>): unknown {
+    const value = handle.value() ?? this.min;
+    const pct = ((value - this.min) / (this.max - this.min || 1)) * 100;
     return html`<div class="mdy-slider-container">
       <input
         id=${this.fieldId}
         type="range"
         class="mdy-slider"
+        style="--mdy-slider-fill-pct: ${pct}%"
         min=${this.min}
         max=${this.max}
         step=${this.step}
-        .value=${String(handle.value() ?? this.min)}
+        .value=${String(value)}
         ?disabled=${handle.disabled()}
+        aria-required=${handle.required() ? "true" : "false"}
         @input=${(e: Event) => {
           handle.set((e.target as HTMLInputElement).valueAsNumber);
           handle.markAsDirty();
         }}
         @change=${() => handle.markAsTouched()}
       />
-      <output class="mdy-slider-value" for=${this.fieldId}>${handle.value()}</output>
+      <span class="mdy-slider-value">${handle.value()}</span>
     </div>`;
   }
 }
@@ -351,7 +564,10 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
 
 /** ISO `yyyy-MM-dd` value model — identical to the engine's convention. */
 export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
-  static override properties: PropertyDeclarations = { min: { type: String }, max: { type: String } };
+  static override properties: PropertyDeclarations = {
+    min: { type: String },
+    max: { type: String },
+  };
   declare min?: string;
   declare max?: string;
   protected override readonly rendererClass = "mdy-renderer--datepicker";
@@ -462,7 +678,10 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
 }
 
 export class MdyFileFieldElement extends MdyFieldElement<File | File[] | null> {
-  static override properties: PropertyDeclarations = { multiple: { type: Boolean }, accept: { type: String } };
+  static override properties: PropertyDeclarations = {
+    multiple: { type: Boolean },
+    accept: { type: String },
+  };
   declare multiple: boolean;
   declare accept: string;
   protected override readonly rendererClass = "mdy-renderer--file";

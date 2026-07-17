@@ -13,7 +13,7 @@ import {
 // daterange, timepicker, colors, file.
 defineMdyElements();
 
-const THEMES = ["default", "material", "ios", "ionic", "base"];
+const THEMES = { default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
 
 class SignupApp extends LitElement {
   static properties = { theme: { state: true } };
@@ -22,7 +22,7 @@ class SignupApp extends LitElement {
   // with the same markup, so switching is just a different href.
   #setTheme = (theme) => {
     this.theme = theme;
-    document.getElementById("theme").href = `./themes/${theme}.css`;
+    document.getElementById("theme").href = `./themes/${THEMES[theme]}`;
   };
 
   form = createLitForm(
@@ -101,7 +101,7 @@ class SignupApp extends LitElement {
         <label class="mdy-label" style="display:flex;gap:.5rem;align-items:center">
           Theme
           <select @change=${(e) => this.#setTheme(e.target.value)}>
-            ${THEMES.map((t) => html`<option value=${t} ?selected=${t === this.theme}>${t}</option>`)}
+            ${Object.keys(THEMES).map((t) => html`<option value=${t} ?selected=${t === this.theme}>${t}</option>`)}
           </select>
         </label>
         <p>Try <code>taken@example.com</code> to see a server error. Reload mid-typing: the draft survives.</p>

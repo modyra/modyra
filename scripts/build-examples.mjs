@@ -8,13 +8,15 @@ import { build } from "/Users/lorenzo.local/projects/test/ngx-signal-forms/node_
 // Every demo ships all the packaged themes (plain CSS from the built
 // @modyra/angular package) and starts on a different one; a runtime
 // switcher in each page swaps the stylesheet.
-const THEMES = {
-  default: "modyra.css",
-  material: "modyra-material.css",
-  ios: "modyra-ios.css",
-  ionic: "modyra-ionic.css",
-  base: "modyra-base.css",
-};
+// Copied with their original filenames: the variants @import "./modyra.css"
+// internally, so renaming them would break relative resolution.
+const THEME_FILES = [
+  "modyra.css",
+  "modyra-material.css",
+  "modyra-ios.css",
+  "modyra-ionic.css",
+  "modyra-base.css",
+];
 const targets = [
   { name: "react", entry: "examples/react/main.jsx" },
   { name: "vue", entry: "examples/vue/main.js" },
@@ -37,8 +39,8 @@ for (const { name, entry } of targets) {
   mkdirSync(`dist/examples/${name}`, { recursive: true });
   copyFileSync(`examples/${name}/index.html`, `dist/examples/${name}/index.html`);
   mkdirSync(`dist/examples/${name}/themes`, { recursive: true });
-  for (const [alias, file] of Object.entries(THEMES)) {
-    copyFileSync(`packages/angular/dist/styles/${file}`, `dist/examples/${name}/themes/${alias}.css`);
+  for (const file of THEME_FILES) {
+    copyFileSync(`packages/angular/dist/styles/${file}`, `dist/examples/${name}/themes/${file}`);
   }
-  console.log(`examples/${name} → dist/examples/${name} (${Object.keys(THEMES).length} themes)`);
+  console.log(`examples/${name} → dist/examples/${name} (${THEME_FILES.length} themes)`);
 }

@@ -71,6 +71,16 @@ export abstract class MdyFieldElement<T> extends LitElement {
     return handle.touched() && handle.errors().length > 0;
   }
 
+  /** Error list block (rendered only once the field was touched). */
+  protected renderErrors(handle: MdyFieldHandle<T>): unknown {
+    if (!this.showErrors(handle)) return nothing;
+    return html`<ul class="mdy-control__errors" id=${this.errorsId} role="alert">
+      ${handle.errors().map(
+        (er) => html`<li class="mdy-control__error">${er.message}</li>`,
+      )}
+    </ul>`;
+  }
+
   override render(): unknown {
     const handle = this.field;
     if (!handle) return nothing;
@@ -88,13 +98,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
             ${control}
           </div>`
         : control}
-      ${this.showErrors(handle)
-        ? html`<ul class="mdy-control__errors" id=${this.errorsId} role="alert">
-            ${handle.errors().map(
-              (er) => html`<li class="mdy-control__error">${er.message}</li>`,
-            )}
-          </ul>`
-        : nothing}
+      ${this.renderErrors(handle)}
     `;
   }
 }
