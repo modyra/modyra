@@ -1,0 +1,50 @@
+{
+    "name": "@modyra/styles",
+    "version": "0.1.0",
+    "description": "Framework-agnostic style themes for modyra components.",
+    "license": "MIT",
+    "author": "Lorenzo Muscherà",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/modyra/modyra.git",
+        "directory": "packages/styles"
+    },
+    "bugs": {
+        "url": "https://github.com/modyra/modyra/issues"
+    },
+    "homepage": "https://github.com/modyra/modyra#readme",
+    "keywords": [
+        "css",
+        "styles",
+        "theme",
+        "design-system",
+        "framework-agnostic"
+    ],
+    "exports": {
+        "./default.css": {
+            "default": "./src/modyra.css"
+        },
+        "./material.css": {
+            "default": "./src/modyra-material.css"
+        },
+        "./ios.css": {
+            "default": "./src/modyra-ios.css"
+        },
+        "./ionic.css": {
+            "default": "./src/modyra-ionic.css"
+        },
+        "./base.css": {
+            "default": "./src/modyra-base.css"
+        }
+    },
+    "files": [
+        "src",
+        "README.md"
+    ],
+    "sideEffects": [
+        "**/*.css"
+    ],
+    "publishConfig": {
+        "access": "public"
+    }
+}
