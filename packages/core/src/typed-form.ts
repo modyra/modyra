@@ -3,8 +3,18 @@ import {
   MdyFormEngine,
   MdyFormRegistry,
 } from "./form-engine.js";
-import { isSafeFieldPath } from "./path-utils.js";
 import { MdyReactivity, MdySignal, vanillaReactivity } from "./reactivity.js";
+import {
+  collectSchemaPaths,
+  flattenPatch,
+  hasRequiredMarker,
+  isFieldHandleTree,
+  isSchemaPatch,
+  isSchemaValue,
+  pathGet,
+  unflatten,
+  walkSchema,
+} from "./schema-utils.js";
 import {
   MdyAsyncValidatorFn,
   MdyFieldError,
@@ -17,7 +27,6 @@ import {
   MdySubmitMode,
   ValidatorFn,
 } from "./types.js";
-import { MDY_MARKS_REQUIRED } from "./validators.js";
 
 // ─── Schema descriptors ───────────────────────────────────────────────────────
 
@@ -215,14 +224,6 @@ export function createForm<S extends MdyFormSchema>(
 /** Owner key for validators registered from the schema. */
 const SCHEMA_KEY = "mdy-schema";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function hasRequiredMarker(fn: ValidatorFn<never>): boolean {
-  return Reflect.get(fn, MDY_MARKS_REQUIRED) === true;
-}
-
 /**
  * Options shared by every typed-form specialization (core and adapters).
  * Framework-specific constructors supply their own reactivity / submit-mode
@@ -275,11 +276,10 @@ export abstract class MdyTypedFormBase<
     this._schema = schema;
     this._adapter = adapter;
 
-    const leafPaths: string[] = [];
-    const groupPaths = new Set<string>();
-    this._registerSchema(schema, "", leafPaths, groupPaths);
-    this._leafPaths = leafPaths;
-    this._groupPaths = groupPaths;
+    const paths = collectSchemaPaths(schema);
+    this._leafPaths = paths.leafPaths;
+    this._groupPaths = paths.groupPaths;
+    this._registerSchema(schema);
 
     const history = options?.history;
     if (history === true) {
@@ -489,38 +489,26 @@ export abstract class MdyTypedFormBase<
 
   // ── Protected helpers ───────────────────────────────────────────────────────
 
-  protected _registerSchema(
-    nodes: MdyFormSchema,
-    prefix: string,
-    leafPaths: string[],
-    groupPaths: Set<string>,
-  ): void {
-    for (const [key, node] of Object.entries(nodes)) {
-      const path = prefix ? `${prefix}.${key}` : key;
-      if (node.kind === "field") {
-        leafPaths.push(path);
-        this._adapter.setInitialValue(path, node.initial);
-        this._adapter.getField(path);
-        const marksRequired = node.validators.some((fn) => hasRequiredMarker(fn));
-        this._adapter.upsertValidators(
+  protected _registerSchema(nodes: MdyFormSchema): void {
+    walkSchema(nodes, "", (path, node) => {
+      this._adapter.setInitialValue(path, node.initial);
+      this._adapter.getField(path);
+      const marksRequired = node.validators.some((fn) => hasRequiredMarker(fn));
+      this._adapter.upsertValidators(
+        path,
+        SCHEMA_KEY,
+        node.validators,
+        marksRequired,
+      );
+      if (node.asyncValidators.length > 0) {
+        this._adapter.upsertAsyncValidators(
           path,
           SCHEMA_KEY,
-          node.validators,
-          marksRequired,
+          node.asyncValidators,
+          { debounceMs: node.asyncDebounceMs },
         );
-        if (node.asyncValidators.length > 0) {
-          this._adapter.upsertAsyncValidators(
-            path,
-            SCHEMA_KEY,
-            node.asyncValidators,
-            { debounceMs: node.asyncDebounceMs },
-          );
-        }
-      } else {
-        groupPaths.add(path);
-        this._registerSchema(node.children, path, leafPaths, groupPaths);
       }
-    }
+    });
   }
 
   protected _buildHandleTree(
@@ -535,7 +523,7 @@ export abstract class MdyTypedFormBase<
           ? this._buildHandle(path)
           : this._buildHandleTree(node.children, path);
     }
-    if (this._isFieldHandleTree(out, nodes)) {
+    if (isFieldHandleTree(out, nodes)) {
       return out;
     }
     throw new Error("[modyra] Failed to build typed handle tree");
@@ -544,119 +532,23 @@ export abstract class MdyTypedFormBase<
   protected abstract _buildHandle(path: string): THandle;
 
   /** Rebuilds the nested value shape from the adapter's flat dotted paths. */
-  protected _unflatten(flat: Record<string, unknown>): Record<string, unknown> {
-    const out: Record<string, unknown> = {};
-    for (const [path, v] of Object.entries(flat)) {
-      // Engine paths are validated at field creation; this guard covers
-      // records from outside the engine (defense against prototype pollution).
-      if (!isSafeFieldPath(path)) continue;
-      const parts = path.split(".");
-      let target = out;
-      for (let i = 0; i < parts.length - 1; i++) {
-        const part = parts[i];
-        if (part === undefined) continue;
-        const existing = target[part];
-        if (isRecord(existing)) {
-          target = existing;
-        } else {
-          const next: Record<string, unknown> = {};
-          target[part] = next;
-          target = next;
-        }
-      }
-      const leaf = parts[parts.length - 1];
-      if (leaf !== undefined) target[leaf] = v;
-    }
-    return out;
+  protected _flatToValue(flat: Record<string, unknown>): MdyFormValue<S> {
+    return unflatten(flat) as MdyFormValue<S>;
+  }
+
+  protected _flatToPatch(flat: Record<string, unknown>): MdyFormPatch<S> {
+    return unflatten(flat) as MdyFormPatch<S>;
   }
 
   /** Flattens a (possibly nested) patch object into dotted adapter paths. */
   protected _flattenPatch(
     partial: Partial<MdyFormValue<S>> | MdyFormPatch<S>,
   ): Record<string, unknown> {
-    const flat: Record<string, unknown> = {};
-    const walk = (node: unknown, prefix: string): void => {
-      if (!isRecord(node)) return;
-      for (const [key, v] of Object.entries(node)) {
-        const path = prefix ? `${prefix}.${key}` : key;
-        if (
-          this._groupPaths.has(path) &&
-          v !== null &&
-          isRecord(v)
-        ) {
-          walk(v, path);
-        } else {
-          flat[path] = v;
-        }
-      }
-    };
-    walk(partial, "");
-    return flat;
+    return flattenPatch(partial as Record<string, unknown>, this._groupPaths);
   }
 
   protected _pathGet(value: unknown, path: string): unknown {
-    let current: unknown = value;
-    for (const part of path.split(".")) {
-      if (!isRecord(current)) return null;
-      current = current[part];
-    }
-    return current === undefined ? null : current;
-  }
-
-  protected _flatToValue(flat: Record<string, unknown>): MdyFormValue<S> {
-    return this._unflatten(flat) as MdyFormValue<S>;
-  }
-
-  protected _flatToPatch(flat: Record<string, unknown>): MdyFormPatch<S> {
-    return this._unflatten(flat) as MdyFormPatch<S>;
-  }
-
-  protected _isSchemaValue(
-    value: unknown,
-    nodes: MdyFormSchema,
-  ): value is MdyFormValue<S> {
-    if (!isRecord(value)) return false;
-    for (const [key, node] of Object.entries(nodes)) {
-      if (!(key in value)) return false;
-      const child = value[key];
-      if (node.kind === "field") continue;
-      if (!this._isSchemaValue(child, node.children)) return false;
-    }
-    return true;
-  }
-
-  protected _isSchemaPatch(
-    value: unknown,
-    nodes: MdyFormSchema,
-  ): value is MdyFormPatch<S> {
-    if (!isRecord(value)) return false;
-    for (const [key, child] of Object.entries(value)) {
-      const node = nodes[key];
-      if (node === undefined) return false;
-      if (node.kind === "field") continue;
-      if (!this._isSchemaPatch(child, node.children)) return false;
-    }
-    return true;
-  }
-
-  protected _isFieldHandleTree(
-    value: unknown,
-    nodes: MdyFormSchema,
-  ): boolean {
-    if (!isRecord(value)) return false;
-    for (const [key, node] of Object.entries(nodes)) {
-      const entry = value[key];
-      if (node.kind === "group") {
-        if (!this._isFieldHandleTree(entry, node.children)) return false;
-        continue;
-      }
-      if (!isRecord(entry)) return false;
-      if (typeof entry.path !== "string") return false;
-      if (typeof entry.set !== "function") return false;
-      if (typeof entry.markAsTouched !== "function") return false;
-      if (typeof entry.markAsDirty !== "function") return false;
-    }
-    return true;
+    return pathGet(value, path);
   }
 }
 
@@ -713,8 +605,8 @@ export class MdyTypedForm<S extends MdyFormSchema>
 
   /** Core validates the unflattened value against the schema shape. */
   protected override _flatToValue(flat: Record<string, unknown>): MdyFormValue<S> {
-    const nested = this._unflatten(flat);
-    if (this._isSchemaValue(nested, this._schema)) {
+    const nested = unflatten(flat);
+    if (isSchemaValue(nested, this._schema)) {
       return nested;
     }
     throw new Error("[modyra] Flat value does not match schema shape");
@@ -722,8 +614,8 @@ export class MdyTypedForm<S extends MdyFormSchema>
 
   /** Core validates the unflattened patch against the schema shape. */
   protected override _flatToPatch(flat: Record<string, unknown>): MdyFormPatch<S> {
-    const nested = this._unflatten(flat);
-    if (this._isSchemaPatch(nested, this._schema)) {
+    const nested = unflatten(flat);
+    if (isSchemaPatch(nested, this._schema)) {
       return nested;
     }
     throw new Error("[modyra] Flat patch does not match schema shape");
