@@ -9,20 +9,20 @@ import {
   useMdyField, useMdyForm,
 } from "@modyra/react";
 
-const THEMES = ["default", "material", "ios", "ionic", "base"];
+const THEMES = { default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
 
 // Swaps the theme stylesheet at runtime — every packaged theme works with
 // the same markup, so switching is just a different href.
 function ThemeSwitcher() {
   const [theme, setTheme] = useState("material");
   useEffect(() => {
-    document.getElementById("theme").href = `./themes/${theme}.css`;
+    document.getElementById("theme").href = `./themes/${THEMES[theme]}`;
   }, [theme]);
   return (
     <label className="mdy-label" style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
       Theme
       <select value={theme} onChange={(e) => setTheme(e.target.value)}>
-        {THEMES.map((t) => <option key={t} value={t}>{t}</option>)}
+        {Object.keys(THEMES).map((t) => <option key={t} value={t}>{t}</option>)}
       </select>
     </label>
   );

@@ -51,7 +51,7 @@ const TextField = {
     </div>`,
 };
 
-const THEMES = ["default", "material", "ios", "ionic", "base"];
+const THEMES = { default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
 
 createApp({
   components: { TextField },
@@ -60,7 +60,7 @@ createApp({
     // with the same markup, so switching is just a different href.
     const theme = ref("ios");
     watchEffect(() => {
-      document.getElementById("theme").href = `./themes/${theme.value}.css`;
+      document.getElementById("theme").href = `./themes/${THEMES[theme.value]}`;
     });
     let dispose;
     onMounted(() => { dispose = mountMdyDevtools(form, document.getElementById("devtools")); });
@@ -88,7 +88,7 @@ createApp({
       <label class="mdy-label" style="display:flex;gap:.5rem;align-items:center">
         Theme
         <select v-model="theme">
-          <option v-for="t in themes" :key="t" :value="t">{{ t }}</option>
+          <option v-for="t in Object.keys(themes)" :key="t" :value="t">{{ t }}</option>
         </select>
       </label>
       <p>Try <code>taken@example.com</code> to see a server error. Reload mid-typing: the draft survives.</p>
