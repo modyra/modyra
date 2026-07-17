@@ -4,14 +4,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  contentChild,
   ElementRef,
   forwardRef,
-  inject,
-  Injector,
   input,
-  output,
-  TemplateRef,
   viewChild,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
@@ -19,12 +14,10 @@ import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
-import { MdyOptionDirective } from "../../control/option.directive";
-import { MDY_I18N_MESSAGES } from "../../core/i18n";
-import { MdyOptionsOverlayControl } from "../../core/options-overlay-control.directive";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MDY_OPTIONS_CONTROL } from "../../core/tokens";
-import { MdyOptionsControl, MdySelectOption } from "../../core/types";
+import { MdyOptionsControl } from "../../core/types";
+import { MdyDropdownBase } from "../dropdown-base";
 
 /**
  * Multiselect renderer component.
@@ -244,14 +237,9 @@ import { MdyOptionsControl, MdySelectOption } from "../../core/types";
   `,
 })
 export class MdyMultiselectComponent<TValue = string>
-  extends MdyOptionsOverlayControl<ReadonlyArray<TValue>, TValue>
+  extends MdyDropdownBase<ReadonlyArray<TValue>, TValue>
   implements MdyOptionsControl<TValue> {
-  protected readonly i18n = inject(MDY_I18N_MESSAGES);
-  protected override readonly minSpace = 250;
-  private readonly injector = inject(Injector);
-
   readonly mode = input<"single" | "multi">("single");
-  readonly selectionChange = output<MdySelectOption<TValue>>();
 
   /**
    * Optional filter predicate applied to options before display.
@@ -259,11 +247,6 @@ export class MdyMultiselectComponent<TValue = string>
    * When absent, all options are shown.
    */
   readonly filterFn = input<((value: TValue) => boolean) | undefined>(undefined);
-
-  /** Custom option template provided via `<ng-template mdyOption>`. */
-  protected readonly optionTpl = contentChild(MdyOptionDirective, {
-    read: TemplateRef,
-  });
 
   protected readonly fieldId = `mdy-control-multiselect-${MdyBaseControl.nextId()}`;
 
@@ -308,7 +291,7 @@ export class MdyMultiselectComponent<TValue = string>
   // ── Overlay hooks ───────────────────────────────────────────────────────────
 
   protected override onBeforeOpen(): void {
-    this.searchQuery.set("");
+    super.onBeforeOpen();
     afterNextRender(() => this.overlayInputRef()?.nativeElement.focus(), { injector: this.injector });
   }
 
