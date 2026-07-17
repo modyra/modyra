@@ -5,6 +5,14 @@ Lit binding for the [Modyra](https://github.com/modyra/modyra) form engine:
 the form state it tracks changes. Structural typing — no hard dependency
 on lit itself.
 
+## Entry points
+
+- `@modyra/lit/adapter` — headless engine binding (`createLitForm`,
+  `MdyFormController`, pure validators and helpers re-exported from core)
+- `@modyra/lit/ui` — custom elements (`defineMdyElements`, base classes,
+  full control catalog)
+- `@modyra/lit` — convenience aggregate (`adapter + ui`)
+
 ```ts
 class SignupForm extends LitElement {
   private form = createLitForm({ email: field("", [required()]) });
@@ -14,8 +22,11 @@ class SignupForm extends LitElement {
     this.form.state.valid,
   ]);
   render() {
-    return html`<input .value=${this.form.f.email.value()}
-      @input=${(e: Event) => this.form.f.email.set((e.target as HTMLInputElement).value)} />`;
+    return html`<input
+      .value=${this.form.f.email.value()}
+      @input=${(e: Event) =>
+        this.form.f.email.set((e.target as HTMLInputElement).value)}
+    />`;
   }
 }
 ```

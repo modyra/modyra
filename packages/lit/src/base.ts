@@ -1,7 +1,7 @@
+import { MDY_ICONS, MdyFieldHandle } from "@modyra/core";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
-import { MDY_ICONS, MdyFieldHandle } from "@modyra/core";
-import { MdyFormController } from "./index.js";
+import { MdyFormController } from "./adapter.js";
 
 /** Renders an icon from the shared library (same SVGs as every adapter). */
 export function mdyIcon(name: keyof typeof MDY_ICONS, className: string): unknown {
@@ -98,8 +98,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
     if (!this.showErrors(handle)) return nothing;
     return html`<ul class="mdy-control__errors" id=${this.errorsId} role="alert">
       ${handle.errors().map(
-        (er) => html`<li class="mdy-control__error">${er.message}</li>`,
-      )}
+      (er) => html`<li class="mdy-control__error">${er.message}</li>`,
+    )}
     </ul>`;
   }
 
@@ -116,8 +116,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
       >
         ${this.label}
         ${handle.required()
-          ? html`<span class="mdy-label__required ${filled ? "mdy-label__required--filled" : ""}" aria-hidden="true">*</span>`
-          : nothing}
+        ? html`<span class="mdy-label__required ${filled ? "mdy-label__required--filled" : ""}" aria-hidden="true">*</span>`
+        : nothing}
       </label>
       ${this.useWrapper
         ? html`<div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
