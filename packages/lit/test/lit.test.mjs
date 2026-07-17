@@ -1,6 +1,8 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
+import { test } from "node:test";
+import * as adapterApi from "../dist/adapter.js";
 import { createLitForm, field, MdyFormController, required } from "../dist/index.js";
+import * as uiApi from "../dist/ui.js";
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
@@ -24,4 +26,11 @@ test("controller requests host updates when tracked state changes", async () => 
   form.f.email.set("x@y.z");
   await tick();
   assert.equal(updates, frozen); // disconnected hosts stop updating
+});
+
+test("adapter/ui entrypoints expose expected symbols", () => {
+  assert.equal(typeof adapterApi.createLitForm, "function");
+  assert.equal(typeof adapterApi.MdyFormController, "function");
+  assert.equal(typeof uiApi.defineMdyElements, "function");
+  assert.equal(typeof uiApi.MdyTextFieldElement, "function");
 });
