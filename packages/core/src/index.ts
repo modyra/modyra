@@ -73,3 +73,6 @@ export * from "./keyboard.js";
 
 // ─── Framework-agnostic devtools ─────────────────────────────────────────────
 export * from "./devtools.js";
+
+// ─── Shared SVG icon library ─────────────────────────────────────────────────
+export * from "./icons.js";

@@ -1,6 +1,22 @@
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
-import { MdyFieldHandle } from "@modyra/core";
+import { unsafeSVG } from "lit/directives/unsafe-svg.js";
+import { MDY_ICONS, MdyFieldHandle } from "@modyra/core";
 import { MdyFormController } from "./index.js";
+
+/** Renders an icon from the shared library (same SVGs as every adapter). */
+export function mdyIcon(name: keyof typeof MDY_ICONS, className: string): unknown {
+  const icon = MDY_ICONS[name];
+  return html`<svg
+    class=${className}
+    viewBox=${icon.viewBox}
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    style="display:inline-flex;flex-shrink:0;width:1.25em;height:1.25em"
+  >${unsafeSVG(icon.content)}</svg>`;
+}
 
 let nextId = 0;
 
@@ -71,6 +87,12 @@ export abstract class MdyFieldElement<T> extends LitElement {
     return handle.touched() && handle.errors().length > 0;
   }
 
+  /** Whether the field currently holds a value (drives label styling). */
+  protected isFilled(handle: MdyFieldHandle<T>): boolean {
+    const v = handle.value();
+    return v !== null && v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0);
+  }
+
   /** Error list block (rendered only once the field was touched). */
   protected renderErrors(handle: MdyFieldHandle<T>): unknown {
     if (!this.showErrors(handle)) return nothing;
@@ -86,11 +108,15 @@ export abstract class MdyFieldElement<T> extends LitElement {
     if (!handle) return nothing;
     this.classList.toggle("mdy-renderer--touched", handle.touched());
     const control = this.renderControl(handle);
+    const filled = this.isFilled(handle);
     return html`
-      <label class="mdy-label" for=${this.fieldId}>
+      <label
+        class="mdy-label ${filled ? "mdy-label--filled" : ""} ${this.showErrors(handle) ? "mdy-label--has-error" : ""}"
+        for=${this.fieldId}
+      >
         ${this.label}
         ${handle.required()
-          ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
+          ? html`<span class="mdy-label__required ${filled ? "mdy-label__required--filled" : ""}" aria-hidden="true">*</span>`
           : nothing}
       </label>
       ${this.useWrapper

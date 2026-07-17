@@ -9,12 +9,27 @@
  */
 import { html, nothing, PropertyDeclarations } from "lit";
 import {
+  formatTimeAs,
   listboxNextIndex,
   MdyDateRange,
   MdyFieldHandle,
   MdySelectOption,
+  parse24Time,
+  parseIsoDate,
+  parseLocalizedDate,
+  parseTime,
 } from "@modyra/core";
-import { MdyFieldElement } from "./base.js";
+import { MdyFieldElement, mdyIcon } from "./base.js";
+
+/** Visually hidden native input used as the platform picker behind a styled control. */
+const NATIVE_HIDDEN_STYLE =
+  "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0";
+
+function toIso(date: { year: number; month: number; day: number }): string {
+  const mm = String(date.month).padStart(2, "0");
+  const dd = String(date.day).padStart(2, "0");
+  return `${date.year}-${mm}-${dd}`;
+}
 
 // ─── Text-like ────────────────────────────────────────────────────────────────
 
@@ -428,7 +443,7 @@ abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<T> {
           ${text
             ? html`<span class="mdy-select__value">${text}</span>`
             : html`<span class="mdy-select__placeholder">${this.placeholder}</span>`}
-          <span class="mdy-select__arrow" aria-hidden="true"></span>
+          ${mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}
         </button>
         ${this._open
           ? html`<div class="mdy-select__dropdown">
@@ -562,32 +577,84 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
 
 // ─── Date & time ─────────────────────────────────────────────────────────────
 
-/** ISO `yyyy-MM-dd` value model — identical to the engine's convention. */
+/**
+ * ISO `yyyy-MM-dd` value model — identical to the engine's convention.
+ * Styled text input (typed dates parsed in the page locale or as ISO) plus
+ * a calendar toggle that opens the platform date picker.
+ */
 export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   static override properties: PropertyDeclarations = {
     min: { type: String },
     max: { type: String },
+    placeholder: { type: String },
   };
   declare min?: string;
   declare max?: string;
+  declare placeholder: string;
   protected override readonly rendererClass = "mdy-renderer--datepicker";
 
+  constructor() {
+    super();
+    this.placeholder = "";
+  }
+
+  private parse(raw: string): string | null {
+    if (!raw) return null;
+    const locale = typeof navigator !== "undefined" ? navigator.language : "en-US";
+    const parsed = parseLocalizedDate(raw, locale) ?? parseIsoDate(raw);
+    return parsed ? toIso(parsed) : null;
+  }
+
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
-    return html`<input
-      id=${this.fieldId}
-      type="date"
-      min=${this.min ?? nothing}
-      max=${this.max ?? nothing}
-      .value=${handle.value() ?? ""}
-      ?disabled=${handle.disabled()}
-      aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-      aria-required=${handle.required() ? "true" : "false"}
-      @change=${(e: Event) => {
-        handle.set((e.target as HTMLInputElement).value || null);
-        handle.markAsDirty();
-        handle.markAsTouched();
-      }}
-    />`;
+    return html`
+      <input
+        id=${this.fieldId}
+        type="text"
+        class="mdy-datepicker__input"
+        placeholder=${this.placeholder}
+        .value=${handle.value() ?? ""}
+        ?disabled=${handle.disabled()}
+        aria-haspopup="dialog"
+        aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+        aria-required=${handle.required() ? "true" : "false"}
+        aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
+        @change=${(e: Event) => {
+          const el = e.target as HTMLInputElement;
+          const iso = this.parse(el.value);
+          handle.set(iso);
+          el.value = iso ?? "";
+          handle.markAsDirty();
+        }}
+        @blur=${() => handle.markAsTouched()}
+      />
+      <div class="mdy-input-suffix">
+        <button
+          type="button"
+          class="mdy-datepicker__toggle"
+          ?disabled=${handle.disabled()}
+          aria-label="Open date picker"
+          @click=${() => {
+            const native = this.querySelector<HTMLInputElement>("input[type=date]");
+            native?.showPicker?.();
+          }}
+        >
+          ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
+        </button>
+      </div>
+      <input
+        type="date"
+        tabindex="-1"
+        style=${NATIVE_HIDDEN_STYLE}
+        min=${this.min ?? nothing}
+        max=${this.max ?? nothing}
+        .value=${handle.value() ?? ""}
+        @change=${(e: Event) => {
+          handle.set((e.target as HTMLInputElement).value || null);
+          handle.markAsDirty();
+          handle.markAsTouched();
+        }}
+      />
+    `;
   }
 }
 
@@ -605,6 +672,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       <input
         id=${this.fieldId}
         type="date"
+        class="mdy-datepicker__input"
         .value=${range.start ?? ""}
         max=${range.end ?? nothing}
         ?disabled=${handle.disabled()}
@@ -613,6 +681,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       <span aria-hidden="true">–</span>
       <input
         type="date"
+        class="mdy-datepicker__input"
         .value=${range.end ?? ""}
         min=${range.start ?? nothing}
         ?disabled=${handle.disabled()}
@@ -623,55 +692,130 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 }
 
-/** `HH:mm` (24h) value model. */
+/**
+ * `HH:mm` (24h) value model. Styled text input (accepts `14:30`, `2:30 pm`,
+ * `1430`…) plus a clock toggle that opens the platform time picker.
+ */
 export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
+  static override properties: PropertyDeclarations = {
+    placeholder: { type: String },
+  };
+  declare placeholder: string;
   protected override readonly rendererClass = "mdy-renderer--timepicker";
 
+  constructor() {
+    super();
+    this.placeholder = "";
+  }
+
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
-    return html`<input
-      id=${this.fieldId}
-      type="time"
-      .value=${handle.value() ?? ""}
-      ?disabled=${handle.disabled()}
-      aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-      aria-required=${handle.required() ? "true" : "false"}
-      @change=${(e: Event) => {
-        handle.set((e.target as HTMLInputElement).value || null);
-        handle.markAsDirty();
-        handle.markAsTouched();
-      }}
-    />`;
+    return html`
+      <input
+        id=${this.fieldId}
+        type="text"
+        class="mdy-timepicker__input"
+        placeholder=${this.placeholder}
+        .value=${handle.value() ?? ""}
+        ?disabled=${handle.disabled()}
+        aria-haspopup="dialog"
+        aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+        aria-required=${handle.required() ? "true" : "false"}
+        aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
+        @change=${(e: Event) => {
+          const el = e.target as HTMLInputElement;
+          const parsed = parse24Time(el.value) ?? parseTime(el.value);
+          const value = parsed ? formatTimeAs(parsed, "24h") : null;
+          handle.set(value);
+          el.value = value ?? "";
+          handle.markAsDirty();
+        }}
+        @blur=${() => handle.markAsTouched()}
+      />
+      <div class="mdy-input-suffix">
+        <button
+          type="button"
+          class="mdy-timepicker__toggle"
+          ?disabled=${handle.disabled()}
+          aria-label="Open time picker"
+          @click=${() => {
+            const native = this.querySelector<HTMLInputElement>("input[type=time]");
+            native?.showPicker?.();
+          }}
+        >
+          ${mdyIcon("CLOCK", "mdy-timepicker__icon")}
+        </button>
+      </div>
+      <input
+        type="time"
+        tabindex="-1"
+        style=${NATIVE_HIDDEN_STYLE}
+        .value=${handle.value() ?? ""}
+        @change=${(e: Event) => {
+          handle.set((e.target as HTMLInputElement).value || null);
+          handle.markAsDirty();
+          handle.markAsTouched();
+        }}
+      />
+    `;
   }
 }
 
 // ─── Color & file ────────────────────────────────────────────────────────────
 
-/** Hex string value model (`#rrggbb`). */
+/**
+ * Hex string value model (`#rrggbb`). Preview swatch opening the platform
+ * color picker, plus the accessible hex text input — the same closed-state
+ * structure the themes style for the Angular renderer.
+ */
 export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
   protected override readonly rendererClass = "mdy-renderer--colors";
 
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
     const set = (value: string): void => {
-      handle.set(value || null);
+      const v = value.trim();
+      handle.set(/^#[0-9a-fA-F]{3,8}$/.test(v) ? v : v === "" ? null : handle.value());
       handle.markAsDirty();
-      handle.markAsTouched();
     };
     return html`
-      <input
-        id=${this.fieldId}
-        type="color"
-        .value=${handle.value() ?? "#000000"}
+      <button
+        type="button"
+        class="mdy-colors__toggle-area"
         ?disabled=${handle.disabled()}
-        @input=${(e: Event) => set((e.target as HTMLInputElement).value)}
+        aria-label=${`${this.label} — open color picker`}
+        @click=${() => {
+          this.querySelector<HTMLInputElement>("input[type=color]")?.showPicker?.();
+        }}
+      >
+        <div
+          class="mdy-colors__preview-swatch"
+          style="background-color:${handle.value() ?? "#4361ee"}"
+        ></div>
+      </button>
+      <input
+        type="color"
+        class="mdy-colors__native-hidden"
+        tabindex="-1"
+        style=${NATIVE_HIDDEN_STYLE}
+        .value=${handle.value() ?? "#000000"}
+        @input=${(e: Event) => {
+          handle.set((e.target as HTMLInputElement).value);
+          handle.markAsDirty();
+          handle.markAsTouched();
+        }}
       />
       <input
+        id=${this.fieldId}
         type="text"
-        class="mdy-color-hex"
+        class="mdy-colors__hex-input"
+        spellcheck="false"
         .value=${handle.value() ?? ""}
         placeholder="#000000"
         aria-label=${`${this.label} (hex)`}
+        aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+        aria-required=${handle.required() ? "true" : "false"}
         ?disabled=${handle.disabled()}
         @change=${(e: Event) => set((e.target as HTMLInputElement).value)}
+        @blur=${() => handle.markAsTouched()}
       />
     `;
   }
@@ -681,41 +825,92 @@ export class MdyFileFieldElement extends MdyFieldElement<File | File[] | null> {
   static override properties: PropertyDeclarations = {
     multiple: { type: Boolean },
     accept: { type: String },
+    placeholder: { type: String },
   };
   declare multiple: boolean;
   declare accept: string;
+  declare placeholder: string;
   protected override readonly rendererClass = "mdy-renderer--file";
 
   constructor() {
     super();
     this.multiple = false;
     this.accept = "";
+    this.placeholder = "";
+  }
+
+  private _dragOver = false;
+
+  protected override get useWrapper(): boolean {
+    return false;
   }
 
   protected override renderControl(handle: MdyFieldHandle<File | File[] | null>): unknown {
     const current = handle.value();
     const files = current === null ? [] : Array.isArray(current) ? current : [current];
+    const pick = (picked: File[]): void => {
+      handle.set(this.multiple ? picked : (picked[0] ?? null));
+      handle.markAsDirty();
+      handle.markAsTouched();
+    };
     return html`
-      <input
-        id=${this.fieldId}
-        type="file"
-        class="mdy-file-input"
-        ?multiple=${this.multiple}
-        accept=${this.accept || nothing}
-        ?disabled=${handle.disabled()}
-        aria-required=${handle.required() ? "true" : "false"}
-        @change=${(e: Event) => {
-          const picked = Array.from((e.target as HTMLInputElement).files ?? []);
-          handle.set(this.multiple ? picked : (picked[0] ?? null));
-          handle.markAsDirty();
-          handle.markAsTouched();
+      <div
+        class="mdy-file-container ${this._dragOver ? "mdy-file-container--dragover" : ""}"
+        @dragover=${(e: DragEvent) => {
+          e.preventDefault();
+          this._dragOver = true;
+          this.requestUpdate();
         }}
-      />
-      ${files.length > 0
-        ? html`<ul class="mdy-file-list">
-            ${files.map((f) => html`<li class="mdy-file-item">${f.name} (${f.size} B)</li>`)}
-          </ul>`
-        : nothing}
+        @dragleave=${() => {
+          this._dragOver = false;
+          this.requestUpdate();
+        }}
+        @drop=${(e: DragEvent) => {
+          e.preventDefault();
+          this._dragOver = false;
+          pick(Array.from(e.dataTransfer?.files ?? []));
+        }}
+      >
+        <input
+          id=${this.fieldId}
+          type="file"
+          class="mdy-file-input"
+          ?multiple=${this.multiple}
+          accept=${this.accept || nothing}
+          ?disabled=${handle.disabled()}
+          aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+          aria-required=${handle.required() ? "true" : "false"}
+          @change=${(e: Event) => pick(Array.from((e.target as HTMLInputElement).files ?? []))}
+          @blur=${() => handle.markAsTouched()}
+        />
+        <div class="mdy-file-content">
+          ${mdyIcon("PLUS", "mdy-file-icon")}
+          <div class="mdy-file-info">
+            ${files.length === 0
+              ? html`<span class="mdy-file-placeholder">${this.placeholder || "Choose a file or drop it here"}</span>`
+              : html`<ul class="mdy-file-list">
+                  ${files.map(
+                    (f, i) => html`<li class="mdy-file-item">
+                      <span class="mdy-file-name">${f.name}</span>
+                      <button
+                        type="button"
+                        class="mdy-file-clear"
+                        aria-label=${`Remove ${f.name}`}
+                        @click=${(e: Event) => {
+                          e.preventDefault();
+                          const rest = files.filter((_, j) => j !== i);
+                          handle.set(this.multiple ? rest : null);
+                          handle.markAsDirty();
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </li>`,
+                  )}
+                </ul>`}
+          </div>
+        </div>
+      </div>
     `;
   }
 }
