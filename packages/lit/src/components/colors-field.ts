@@ -89,48 +89,71 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
     this.classList.toggle("mdy-renderer--open", this._open);
     return html`
-      <button
-        type="button"
-        class="mdy-colors__toggle-area"
-        ?disabled=${handle.disabled()}
-        aria-haspopup="listbox"
-        aria-expanded=${this._open ? "true" : "false"}
-        aria-label=${`${this.label} — open color presets`}
-        @click=${() => (this._open ? this.close(handle) : (this._open = true))}
-      >
-        <div
-          class="mdy-colors__preview-swatch"
-          style="background-color:${handle.value() ?? "#4361ee"}"
-        ></div>
-        ${mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}
-      </button>
-      <input
-        type="color"
-        class="mdy-colors__native-hidden"
-        tabindex="-1"
-        style=${NATIVE_HIDDEN_STYLE}
-        .value=${handle.value() ?? "#000000"}
-        @input=${(e: Event) => {
-          handle.set((e.target as HTMLInputElement).value);
-          handle.markAsDirty();
-          handle.markAsTouched();
-        }}
-      />
-      <input
-        id=${this.fieldId}
-        type="text"
-        class="mdy-colors__hex-input"
-        spellcheck="false"
-        .value=${handle.value() ?? ""}
-        placeholder="#000000"
-        aria-label=${`${this.label} (hex)`}
-        aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-        aria-required=${handle.required() ? "true" : "false"}
-        ?disabled=${handle.disabled()}
-        @change=${(e: Event) => this.set(handle, (e.target as HTMLInputElement).value)}
-        @blur=${() => handle.markAsTouched()}
-      />
-      ${this._open ? this.renderDropdown(handle) : nothing}
+      <div class="mdy-colors ${this._open ? "mdy-colors--open" : ""}">
+        <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
+          <div class="mdy-input-wrapper__inliner">
+            <button
+              type="button"
+              class="mdy-colors__primary-picker"
+              ?disabled=${handle.disabled()}
+              aria-expanded=${this._open ? "true" : "false"}
+              aria-haspopup="dialog"
+              aria-label=${this.label || "Color"}
+              @click=${() => (this._open ? this.close(handle) : (this._open = true))}
+            >
+              <div
+                class="mdy-colors__preview-swatch"
+                style="background-color:${handle.value() ?? "#4361ee"}"
+              ></div>
+              <input
+                type="color"
+                class="mdy-colors__native-hidden"
+                tabindex="-1"
+                style=${NATIVE_HIDDEN_STYLE}
+                .value=${handle.value() ?? "#000000"}
+                ?disabled=${handle.disabled()}
+                @input=${(e: Event) => {
+                  handle.set((e.target as HTMLInputElement).value);
+                  handle.markAsDirty();
+                  handle.markAsTouched();
+                }}
+                @click=${(e: Event) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              />
+            </button>
+            <input
+              id=${this.fieldId}
+              type="text"
+              class="mdy-colors__hex-input"
+              spellcheck="false"
+              .value=${handle.value() ?? ""}
+              placeholder="#000000"
+              aria-label=${`${this.label} (hex)`}
+              aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+              aria-required=${handle.required() ? "true" : "false"}
+              ?disabled=${handle.disabled()}
+              @change=${(e: Event) => this.set(handle, (e.target as HTMLInputElement).value)}
+              @blur=${() => handle.markAsTouched()}
+            />
+            <button
+              type="button"
+              class="mdy-colors__toggle-area mdy-input-suffix"
+              ?disabled=${handle.disabled()}
+              aria-haspopup="listbox"
+              aria-expanded=${this._open ? "true" : "false"}
+              aria-label=${`${this.label} — open color presets`}
+              @click=${() => (this._open ? this.close(handle) : (this._open = true))}
+            >
+              <span class="mdy-select__arrow ${this._open ? "mdy-select__arrow--open" : ""}">
+                ${mdyIcon("CHEVRON_DOWN", "")}
+              </span>
+            </button>
+          </div>
+        </div>
+        ${this._open ? this.renderDropdown(handle) : nothing}
+      </div>
     `;
   }
 
