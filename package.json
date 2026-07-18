@@ -20,6 +20,7 @@
     "build:styles": "cd packages/styles && npm run build",
     "test:adapters": "npm run build:packages && node --test packages/zod/test/*.test.mjs packages/vue/test/*.test.mjs packages/react/test/*.test.mjs packages/lit/test/*.test.mjs",
     "test:widgets": "npm run build:packages && node --test packages/widgets/test/*.spec.mjs",
+    "test:themes": "node scripts/audit-theme-classes.mjs --check",
     "build:examples": "npm run build:packages && node scripts/build-examples.mjs",
     "demo:angular": "npm run build:lib && ng serve demo",
     "demo:react": "npm run build:examples && node scripts/serve-example.mjs react 4301",
