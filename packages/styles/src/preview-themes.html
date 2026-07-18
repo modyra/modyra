@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>modyra — theme preview &amp; switcher</title>
+<link rel="stylesheet" href="modyra-base.css">
+<link rel="stylesheet" href="modyra.css" id="theme-link">
+<style>
+  body { font-family: var(--mdy-ref-font-family, system-ui, sans-serif); margin: 0; padding: 2rem; background: var(--mdy-sys-color-background, #fff); color: var(--mdy-sys-color-on-background, #111); }
+  .bar { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 2rem; }
+  .bar select { font: inherit; padding: 0.4rem 0.75rem; }
+  h1 { font-size: 1.4rem; margin: 0 1rem 0 0; }
+  h2 { font-size: 1rem; margin: 2.5rem 0 1rem; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.06em; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.75rem; }
+  .sw { border-radius: 8px; border: 1px solid var(--mdy-sys-color-outline-variant, #ccc); overflow: hidden; font-size: 0.72rem; }
+  .sw > div:first-child { height: 44px; }
+  .sw > div:last-child { padding: 0.4rem 0.5rem; font-family: ui-monospace, monospace; background: var(--mdy-sys-color-surface-container-lowest, #fff); color: var(--mdy-sys-color-on-surface, #111); }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; align-items: start; }
+  .cell { background: var(--mdy-sys-color-surface, #fff); border: 1px solid var(--mdy-sys-color-outline-variant, #ddd); border-radius: 12px; padding: 1.25rem; }
+  .cell > h3 { margin: 0 0 1rem; font-size: 0.8rem; opacity: 0.6; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1>modyra theme preview</h1>
+  <label>Theme:
+    <select id="picker">
+      <option value="modyra.css">default (brand)</option>
+      <option value="modyra-material.css">material</option>
+      <option value="modyra-ios.css">ios</option>
+      <option value="modyra-ionic.css">ionic</option>
+    </select>
+  </label>
+</div>
+
+<h2>System colors (resolved)</h2>
+<div class="swatches" id="swatches"></div>
+
+<h2>Components (frozen .mdy-* hooks)</h2>
+<div class="gallery">
+  <div class="cell"><h3>Text field</h3>
+    <div class="mdy-renderer">
+      <label class="mdy-label">Full name</label>
+      <div class="mdy-input-wrapper"><input type="text" placeholder="Jane Appleseed"></div>
+      <div class="mdy-supporting-text">Helper text</div>
+    </div>
+    <div class="mdy-renderer mdy-renderer--touched">
+      <label class="mdy-label mdy-label--has-error">Email<span class="mdy-label__required">*</span></label>
+      <div class="mdy-input-wrapper mdy-input-wrapper--error"><input type="text" value="not-an-email" aria-invalid="true"></div>
+      <div class="mdy-control__errors"><div class="mdy-control__error">Enter a valid email address</div></div>
+    </div>
+  </div>
+  <div class="cell"><h3>Select (closed)</h3>
+    <div class="mdy-renderer">
+      <label class="mdy-label">City</label>
+      <div class="mdy-input-wrapper">
+        <button class="mdy-select__trigger" type="button">
+          <span class="mdy-select__value">Lisbon</span>
+          <span class="mdy-select__arrow"><svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1.5 6 6.5 11 1.5" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="cell"><h3>Checkbox &amp; toggle</h3>
+    <label class="mdy-checkbox"><input type="checkbox" checked><span>Subscribe to updates</span></label>
+    <label class="mdy-checkbox"><input type="checkbox"><span>Optional add-on</span></label>
+    <div style="height:0.75rem"></div>
+    <label class="mdy-toggle"><input type="checkbox" checked><span class="mdy-toggle__track"><span class="mdy-toggle__thumb"></span></span></label>
+    <label class="mdy-toggle"><input type="checkbox"><span class="mdy-toggle__track"><span class="mdy-toggle__thumb"></span></span></label>
+  </div>
+  <div class="cell"><h3>Radio group</h3>
+    <div class="mdy-radio-group-label">Plan</div>
+    <div class="mdy-radio-group">
+      <label class="mdy-radio-item"><input type="radio" name="plan" checked><span class="mdy-radio-circle"></span>Starter</label>
+      <label class="mdy-radio-item"><input type="radio" name="plan"><span class="mdy-radio-circle"></span>Team</label>
+      <label class="mdy-radio-item"><input type="radio" name="plan" disabled><span class="mdy-radio-circle"></span>Enterprise</label>
+    </div>
+  </div>
+  <div class="cell"><h3>Segmented</h3>
+    <div class="mdy-segmented" style="--mdy-segments-count: 3">
+      <button class="mdy-segmented__button mdy-segmented__button--selected" type="button"><span class="mdy-segmented__text">Day</span></button>
+      <button class="mdy-segmented__button" type="button"><span class="mdy-segmented__text">Week</span></button>
+      <button class="mdy-segmented__button" type="button"><span class="mdy-segmented__text">Month</span></button>
+    </div>
+  </div>
+  <div class="cell"><h3>Chips &amp; button</h3>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
+      <button class="mdy-chip mdy-chip--selected" type="button"><span class="mdy-chip__check">✓</span><span class="mdy-chip__label">Design</span></button>
+      <button class="mdy-chip" type="button"><span class="mdy-chip__label">Engineering</span></button>
+      <button class="mdy-chip" type="button" disabled><span class="mdy-chip__label">Archived</span></button>
+    </div>
+    <div style="height:0.75rem"></div>
+    <button class="mdy-button" type="button">Upload file</button>
+  </div>
+  <div class="cell"><h3>Slider</h3>
+    <div class="mdy-slider-container">
+      <input type="range" class="mdy-slider" min="0" max="100" value="60" style="--mdy-slider-fill-pct: 60%">
+      <span class="mdy-slider-value">60</span>
+    </div>
+  </div>
+  <div class="cell"><h3>Datepicker (static)</h3>
+    <div class="mdy-datepicker__calendar" style="position:static; box-shadow:none">
+      <div class="mdy-datepicker__header">
+        <button class="mdy-datepicker__nav-btn" type="button">‹</button>
+        <span class="mdy-datepicker__header-label">July 2026</span>
+        <button class="mdy-datepicker__nav-btn" type="button">›</button>
+      </div>
+      <div class="mdy-datepicker__grid">
+        <div class="mdy-datepicker__weekdays">
+          <span class="mdy-datepicker__weekday">M</span><span class="mdy-datepicker__weekday">T</span><span class="mdy-datepicker__weekday">W</span><span class="mdy-datepicker__weekday">T</span><span class="mdy-datepicker__weekday">F</span><span class="mdy-datepicker__weekday">S</span><span class="mdy-datepicker__weekday">S</span>
+        </div>
+        <div class="mdy-datepicker__row">
+          <button class="mdy-datepicker__cell mdy-datepicker__cell--outside" type="button">29</button>
+          <button class="mdy-datepicker__cell" type="button">30</button>
+          <button class="mdy-datepicker__cell" type="button">1</button>
+          <button class="mdy-datepicker__cell mdy-datepicker__cell--in-range mdy-datepicker__cell--range-start" type="button">2</button>
+          <button class="mdy-datepicker__cell mdy-datepicker__cell--in-range" type="button">3</button>
+          <button class="mdy-datepicker__cell mdy-datepicker__cell--in-range mdy-datepicker__cell--range-end mdy-datepicker__cell--selected" type="button">4</button>
+          <button class="mdy-datepicker__cell" type="button">5</button>
+        </div>
+        <div class="mdy-datepicker__row">
+          <button class="mdy-datepicker__cell" type="button">6</button>
+          <button class="mdy-datepicker__cell" type="button">7</button>
+          <button class="mdy-datepicker__cell mdy-datepicker__cell--today" type="button">8</button>
+          <button class="mdy-datepicker__cell" type="button">9</button>
+          <button class="mdy-datepicker__cell" type="button">10</button>
+          <button class="mdy-datepicker__cell mdy-datepicker__cell--disabled" type="button" disabled>11</button>
+          <button class="mdy-datepicker__cell mdy-datepicker__cell--disabled" type="button" disabled>12</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const picker = document.getElementById("picker");
+  const link = document.getElementById("theme-link");
+  const q = new URLSearchParams(location.search).get("theme");
+  if (q) { link.href = q; picker.value = q; }
+  picker.addEventListener("change", () => { link.href = picker.value; setTimeout(renderSwatches, 300); });
+
+  const TOKENS = ["primary","on-primary","primary-container","on-primary-container","secondary","on-secondary","secondary-container","tertiary","on-tertiary","error","on-error","error-container","surface","on-surface","surface-variant","on-surface-variant","surface-container","surface-container-highest","background","on-background","outline","outline-variant"];
+  function renderSwatches() {
+    const cs = getComputedStyle(document.documentElement);
+    document.getElementById("swatches").innerHTML = TOKENS.map((t) => {
+      const v = cs.getPropertyValue("--mdy-sys-color-" + t).trim();
+      return '<div class="sw"><div style="background:' + (v || "transparent") + '"></div><div>' + t + "</div></div>";
+    }).join("");
+  }
+  renderSwatches();
+</script>
+</body>
+</html>
