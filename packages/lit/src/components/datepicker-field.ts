@@ -31,34 +31,42 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     max: { type: String },
     placeholder: { type: String },
     firstDayOfWeek: { type: Number, attribute: "first-day-of-week" },
+    variant: { type: String },
     _open: { state: true },
     _view: { state: true },
     _viewYear: { state: true },
     _viewMonth: { state: true },
     _focusedIso: { state: true },
+    _draftValue: { state: true },
   };
   declare min?: string;
   declare max?: string;
   declare placeholder: string;
   /** 0 = Sunday, 1 = Monday (default). */
   declare firstDayOfWeek: number;
+  /** `"docked"` (default) opens inline; `"modal"` shows a header and Cancel/OK actions. */
+  declare variant: "docked" | "modal";
   declare _open: boolean;
   declare _view: CalendarView;
   declare _viewYear: number;
   declare _viewMonth: number;
   declare _focusedIso: string;
+  /** Temporary value used while the modal variant is open. */
+  declare _draftValue: string | null;
   protected override readonly rendererClass = "mdy-renderer--datepicker";
 
   constructor() {
     super();
     this.placeholder = "";
     this.firstDayOfWeek = 1;
+    this.variant = "docked";
     this._open = false;
     this._view = "calendar";
     const now = today();
     this._viewYear = now.year;
     this._viewMonth = now.month;
     this._focusedIso = formatIsoDate(now);
+    this._draftValue = null;
   }
 
   private get locale(): string {
@@ -101,6 +109,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     this._viewMonth = base.month;
     this._focusedIso = formatIsoDate(base);
     this._view = "calendar";
+    this._draftValue = handle.value() ?? null;
     this._open = true;
   }
 
@@ -125,8 +134,25 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private pick(handle: MdyFieldHandle<string | null>, iso: string): void {
+    if (this.variant === "modal") {
+      this._draftValue = iso;
+      this._focusedIso = iso;
+      return;
+    }
     handle.set(iso);
     handle.markAsDirty();
+    this.closePopup(handle);
+  }
+
+  private confirmModal(handle: MdyFieldHandle<string | null>): void {
+    if (this._draftValue !== null) {
+      handle.set(this._draftValue);
+      handle.markAsDirty();
+    }
+    this.closePopup(handle);
+  }
+
+  private cancelModal(handle: MdyFieldHandle<string | null>): void {
     this.closePopup(handle);
   }
 
@@ -286,7 +312,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private renderCalendarGrid(handle: MdyFieldHandle<string | null>): unknown {
-    const selectedIso = handle.value();
+    const selectedIso = this.variant === "modal" ? this._draftValue : handle.value();
     const todayIso = formatIsoDate(today());
     const inRange = (iso: string): boolean =>
       (!this.min || iso >= this.min) && (!this.max || iso <= this.max);
@@ -324,10 +350,54 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     `;
   }
 
+  private modalDisplayValue(): string {
+    const parsed = this._draftValue ? parseIsoDate(this._draftValue) : null;
+    if (!parsed) return this.label || "Select date";
+    try {
+      return new Intl.DateTimeFormat(this.locale, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      }).format(new Date(parsed.year, parsed.month - 1, parsed.day));
+    } catch {
+      return (this._draftValue ?? this.label) || "Select date";
+    }
+  }
+
   private renderPopup(handle: MdyFieldHandle<string | null>): unknown {
     const monthLabel = new Intl.DateTimeFormat(this.locale, { month: "long" }).format(
       new Date(Date.UTC(this._viewYear, this._viewMonth - 1, 1)),
     );
+    const modalHeader =
+      this.variant === "modal"
+        ? html`
+            <div class="mdy-datepicker__modal-header">
+              <span class="mdy-datepicker__modal-label">${this.label || "Select date"}</span>
+              <span class="mdy-datepicker__modal-value">${this.modalDisplayValue()}</span>
+            </div>
+          `
+        : nothing;
+    const actions =
+      this.variant === "modal"
+        ? html`
+            <div class="mdy-datepicker__actions">
+              <button
+                type="button"
+                class="mdy-datepicker__action-btn"
+                @click=${() => this.cancelModal(handle)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="mdy-datepicker__action-btn mdy-datepicker__action-btn--primary"
+                @click=${() => this.confirmModal(handle)}
+              >
+                OK
+              </button>
+            </div>
+          `
+        : nothing;
     return html`
       <div
         class="mdy-datepicker__calendar"
@@ -335,6 +405,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         aria-label=${this.label || "Choose date"}
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
       >
+        ${modalHeader}
         <div class="mdy-datepicker__header">
           <div class="mdy-datepicker__header-label">
             <button
@@ -375,6 +446,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           : this._view === "month"
             ? this.renderMonthPicker(handle)
             : this.renderYearPicker()}
+        ${actions}
       </div>
     `;
   }
