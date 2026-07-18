@@ -1,0 +1,30 @@
+{
+  "_comment": "Temporary allowlist of known Angular→Lit class-parity gaps (type-a defects in audit-theme-classes.mjs). Tracked in .modyra/framework/LIT-STATUS.md; remove entries as the Lit renderers reach parity. Entries that are no longer defects are reported as stale by the audit script.",
+  "radio-group": ["mdy-radio-group--horizontal"],
+  "datepicker": [
+    "mdy-datepicker",
+    "mdy-datepicker__action-btn",
+    "mdy-datepicker__action-btn--primary",
+    "mdy-datepicker__actions",
+    "mdy-datepicker__grid",
+    "mdy-datepicker__header",
+    "mdy-datepicker__modal-header",
+    "mdy-datepicker__modal-label",
+    "mdy-datepicker__modal-value"
+  ],
+  "daterange": [
+    "mdy-datepicker",
+    "mdy-datepicker__action-btn",
+    "mdy-datepicker__action-btn--primary",
+    "mdy-datepicker__actions",
+    "mdy-datepicker__grid",
+    "mdy-datepicker__header",
+    "mdy-datepicker__modal-header",
+    "mdy-datepicker__modal-label",
+    "mdy-datepicker__modal-value",
+    "mdy-daterange__group",
+    "mdy-daterange__input-sizer"
+  ],
+  "timepicker": ["mdy-timepicker-period-toggle--compact"],
+  "colors": ["mdy-colors__dropdown--above", "mdy-colors__dropdown--overlay"]
+}
