@@ -23,6 +23,20 @@ interface InspectableForm {
 
 const SENSITIVE = /password|passwd|secret|token|card|cvv|ssn|iban/i;
 
+/**
+ * Escapes a string for safe interpolation into the panel's innerHTML.
+ * Field paths, values and error messages can carry user- or server-supplied
+ * text (SECURITY.md: never render external strings as HTML).
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /** One immutable snapshot of a form's state — also handy in tests/logs. */
 export function mdyFormSnapshot(form: InspectableForm): {
   readonly valid: boolean;
@@ -88,10 +102,10 @@ export function mountMdyDevtools(
     const rows = s.fields
       .map(
         (f) =>
-          `<tr><td>${f.path}</td><td>${JSON.stringify(f.value)}</td>` +
+          `<tr><td>${escapeHtml(f.path)}</td><td>${escapeHtml(JSON.stringify(f.value) ?? "undefined")}</td>` +
           `<td>${f.valid ? "✓" : "✗"}</td><td>${f.touched ? "✓" : "·"}</td>` +
           `<td>${f.dirty ? "✓" : "·"}</td><td>${f.pending ? "…" : "·"}</td>` +
-          `<td style="color:#d33">${f.errors.join(" | ")}</td></tr>`,
+          `<td style="color:#d33">${escapeHtml(f.errors.join(" | "))}</td></tr>`,
       )
       .join("");
     host.innerHTML =
