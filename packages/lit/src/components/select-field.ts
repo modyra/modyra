@@ -3,9 +3,8 @@ import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from 
 import { mdyIcon } from "../base.js";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
 import {
+  MdyLitOverlayController,
   renderOverlayPanel,
-  resolveOverlayAlignment,
-  resolveOverlayPosition,
 } from "./popup-styles.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 
@@ -22,6 +21,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
 
   protected override readonly rendererClass = "mdy-renderer--select";
   private selectAdapter?: MdyLitSelectAdapter<unknown>;
+  private readonly overlay = new MdyLitOverlayController(this);
 
   constructor() {
     super();
@@ -95,7 +95,12 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     this.selectAdapter.connectHandlers({
       setOpen: (open) => {
         this._open = open;
-        if (!open) handle.markAsTouched();
+        if (open) {
+          this.overlay.open();
+        } else {
+          this.overlay.close();
+          handle.markAsTouched();
+        }
         this.requestUpdate();
       },
       onTouched: () => handle.markAsTouched(),
@@ -104,6 +109,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
   }
 
   override disconnectedCallback(): void {
+    this.overlay.close();
     this.selectAdapter?.destroy();
     this.selectAdapter = undefined;
     super.disconnectedCallback();
@@ -164,6 +170,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       case " ":
         e.preventDefault();
         if (!this._open) {
+          this.overlay.open();
           this.selectAdapter?.dispatch({ type: "open", source: "keyboard" });
           return;
         }
@@ -211,8 +218,8 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     this.syncStateClasses(handle);
     this.classList.toggle("mdy-renderer--open", this._open);
 
-    const position = resolveOverlayPosition(this);
-    const alignment = resolveOverlayAlignment(this);
+    const position = this.overlay.state.position;
+    const alignment = this.overlay.state.alignment;
 
     const dropdown = html`
       <div
@@ -298,7 +305,10 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             aria-required=${handle.required() ? "true" : "false"}
             aria-label=${this.label || nothing}
             ?disabled=${handle.disabled()}
-            @click=${() => this.toggleOpen(handle)}
+            @click=${(e: Event) => {
+              if (!this._open) this.overlay.open(e);
+              this.toggleOpen(handle);
+            }}
             @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
           >
             ${text
@@ -312,9 +322,11 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             <slot name="suffix"></slot>
           </div>
         </div>
-        ${renderOverlayPanel(dropdown, this._open, this, {
+        ${renderOverlayPanel(dropdown, this._open, {
           modal: position === "overlay",
           alignment,
+          position,
+          panelDisplayContents: true,
         })}
       </div>
       ${showBlockErrors ? this.renderErrors(handle) : this.renderSupportingText()}

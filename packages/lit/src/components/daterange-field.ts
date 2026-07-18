@@ -17,7 +17,11 @@ import {
   today,
 } from "@modyra/core";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { POPUP_ANCHOR_STYLE, renderOverlayPanel } from "./popup-styles.js";
+import {
+  MdyLitOverlayController,
+  POPUP_ANCHOR_STYLE,
+  renderOverlayPanel,
+} from "./popup-styles.js";
 
 // ─── Date range ──────────────────────────────────────────────────────────────
 
@@ -66,6 +70,9 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   declare _pendingEndIso: string | null;
   declare _hoverIso: string | null;
   protected override readonly rendererClass = "mdy-renderer--daterange";
+  private readonly overlay = new MdyLitOverlayController(this, () => this, {
+    widthMode: "auto-content",
+  });
 
   constructor() {
     super();
@@ -149,7 +156,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     return rows;
   }
 
-  private openPopup(handle: MdyFieldHandle<MdyDateRange | null>): void {
+  private openPopup(handle: MdyFieldHandle<MdyDateRange | null>, event?: Event): void {
     const value = handle.value();
     const start = value?.start ? parseIsoDate(value.start) : null;
     const end = value?.end ? parseIsoDate(value.end) : null;
@@ -163,11 +170,13 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     this._hoverIso = null;
     this._view = "calendar";
     this._open = true;
+    this.overlay.open(event);
   }
 
   private closePopup(handle: MdyFieldHandle<MdyDateRange | null>, refocus = true): void {
     if (!this._open) return;
     this._open = false;
+    this.overlay.close();
     this._view = "calendar";
     handle.markAsTouched();
     if (refocus) {
@@ -371,6 +380,11 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
         });
       }
     }
+  }
+
+  override disconnectedCallback(): void {
+    this.overlay.close();
+    super.disconnectedCallback();
   }
 
   private effectiveRange(): readonly [CalendarDate | null, CalendarDate | null] {
@@ -681,13 +695,18 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               aria-label="Open date range picker"
               aria-expanded=${this._open ? "true" : "false"}
               tabindex="-1"
-              @click=${() => (this._open ? this.closePopup(handle) : this.openPopup(handle))}
+              @click=${(e: Event) => (this._open ? this.closePopup(handle) : this.openPopup(handle, e))}
             >
               ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
             </button>
           </div>
         </div>
-        ${renderOverlayPanel(this.renderPopup(handle), this._open, this)}
+        ${renderOverlayPanel(this.renderPopup(handle), this._open, {
+          position: this.overlay.state.position,
+          alignment: this.overlay.state.alignment,
+          modal: this.overlay.state.position === "overlay" || this.variant === "modal",
+          panelStyle: this.overlay.state.panelStyle,
+        })}
       </div>
     `;
   }

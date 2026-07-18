@@ -2,10 +2,10 @@ import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
+  MdyLitOverlayController,
   NATIVE_HIDDEN_STYLE,
   POPUP_ANCHOR_STYLE,
   renderOverlayPanel,
-  resolveOverlayPosition,
 } from "./popup-styles.js";
 
 // ─── Color & file ────────────────────────────────────────────────────────────
@@ -24,6 +24,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
   declare presets: readonly string[];
   declare _open: boolean;
   protected override readonly rendererClass = "mdy-renderer--colors";
+  private readonly overlay = new MdyLitOverlayController(this);
 
   constructor() {
     super();
@@ -44,11 +45,17 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
   private close(handle: MdyFieldHandle<string | null>): void {
     if (!this._open) return;
     this._open = false;
+    this.overlay.close();
     handle.markAsTouched();
   }
 
+  override disconnectedCallback(): void {
+    this.overlay.close();
+    super.disconnectedCallback();
+  }
+
   private renderDropdown(handle: MdyFieldHandle<string | null>): unknown {
-    const position = resolveOverlayPosition(this);
+    const position = this.overlay.state.position;
     return html`
       <div
         class="mdy-colors__dropdown ${position === "above"
@@ -106,7 +113,14 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               aria-expanded=${this._open ? "true" : "false"}
               aria-haspopup="dialog"
               aria-label=${this.label || "Color"}
-              @click=${() => (this._open ? this.close(handle) : (this._open = true))}
+              @click=${(e: Event) => {
+                if (this._open) {
+                  this.close(handle);
+                } else {
+                  this.overlay.open(e);
+                  this._open = true;
+                }
+              }}
             >
               <div
                 class="mdy-colors__preview-swatch"
@@ -151,7 +165,14 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               aria-haspopup="listbox"
               aria-expanded=${this._open ? "true" : "false"}
               aria-label=${`${this.label} — open color presets`}
-              @click=${() => (this._open ? this.close(handle) : (this._open = true))}
+              @click=${(e: Event) => {
+                if (this._open) {
+                  this.close(handle);
+                } else {
+                  this.overlay.open(e);
+                  this._open = true;
+                }
+              }}
             >
               <span class="mdy-select__arrow ${this._open ? "mdy-select__arrow--open" : ""}">
                 ${mdyIcon("CHEVRON_DOWN", "")}
@@ -159,7 +180,12 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
             </button>
           </div>
         </div>
-        ${renderOverlayPanel(this.renderDropdown(handle), this._open, this)}
+        ${renderOverlayPanel(this.renderDropdown(handle), this._open, {
+          position: this.overlay.state.position,
+          alignment: this.overlay.state.alignment,
+          modal: this.overlay.state.position === "overlay",
+          panelDisplayContents: true,
+        })}
       </div>
     `;
   }
