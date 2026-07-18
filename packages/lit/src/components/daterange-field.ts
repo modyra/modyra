@@ -37,6 +37,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     endPlaceholder: { type: String, attribute: "end-placeholder" },
     firstDayOfWeek: { type: Number, attribute: "first-day-of-week" },
     dateFilter: { attribute: false },
+    variant: { type: String },
     _open: { state: true },
     _view: { state: true },
     _viewYear: { state: true },
@@ -53,6 +54,8 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   declare endPlaceholder: string;
   declare firstDayOfWeek: number;
   declare dateFilter?: (date: string) => boolean;
+  /** `"docked"` (default) opens inline; `"modal"` shows a header and Cancel/OK actions. */
+  declare variant: "docked" | "modal";
   declare _open: boolean;
   declare _view: CalendarView;
   declare _viewYear: number;
@@ -69,6 +72,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     this.startPlaceholder = "Start";
     this.endPlaceholder = "End";
     this.firstDayOfWeek = 1;
+    this.variant = "docked";
     this._open = false;
     this._view = "calendar";
     const now = today();
@@ -206,7 +210,23 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     const [s, e] = compareDates(start, date) <= 0 ? [start, date] : [date, start];
     this._pendingStartIso = formatIsoDate(s);
     this._pendingEndIso = formatIsoDate(e);
+    if (this.variant === "modal") {
+      this._phase = "pick-start";
+      this._hoverIso = null;
+      return;
+    }
     this.commitRange(handle, this._pendingStartIso, this._pendingEndIso);
+    this.closePopup(handle);
+  }
+
+  private confirmModal(handle: MdyFieldHandle<MdyDateRange | null>): void {
+    if (this._pendingStartIso && this._pendingEndIso) {
+      this.commitRange(handle, this._pendingStartIso, this._pendingEndIso);
+    }
+    this.closePopup(handle);
+  }
+
+  private cancelModal(handle: MdyFieldHandle<MdyDateRange | null>): void {
     this.closePopup(handle);
   }
 
@@ -481,11 +501,59 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     `;
   }
 
+  private modalDisplayValue(): string {
+    const start = this._pendingStartIso ? parseIsoDate(this._pendingStartIso) : null;
+    const end = this._pendingEndIso ? parseIsoDate(this._pendingEndIso) : null;
+    if (!start) return this.label || "Select range";
+    const fmt = (d: CalendarDate): string => {
+      try {
+        return new Intl.DateTimeFormat(this.locale, { month: "short", day: "numeric" }).format(
+          new Date(d.year, d.month - 1, d.day),
+        );
+      } catch {
+        return formatIsoDate(d);
+      }
+    };
+    const startStr = fmt(start);
+    if (!end) return `${startStr} – …`;
+    return `${startStr} – ${fmt(end)}`;
+  }
+
   private renderPopup(handle: MdyFieldHandle<MdyDateRange | null>): unknown {
     const monthLabel = new Intl.DateTimeFormat(this.locale, { month: "long" }).format(
       new Date(Date.UTC(this._viewYear, this._viewMonth - 1, 1)),
     );
     const hint = this._phase === "pick-start" ? "Select start date" : "Select end date";
+    const modalHeader =
+      this.variant === "modal"
+        ? html`
+            <div class="mdy-datepicker__modal-header">
+              <span class="mdy-datepicker__modal-label">${this.label || "Select range"}</span>
+              <span class="mdy-datepicker__modal-value">${this.modalDisplayValue()}</span>
+            </div>
+          `
+        : nothing;
+    const actions =
+      this.variant === "modal"
+        ? html`
+            <div class="mdy-datepicker__actions">
+              <button
+                type="button"
+                class="mdy-datepicker__action-btn"
+                @click=${() => this.cancelModal(handle)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="mdy-datepicker__action-btn mdy-datepicker__action-btn--primary"
+                @click=${() => this.confirmModal(handle)}
+              >
+                OK
+              </button>
+            </div>
+          `
+        : nothing;
     return html`
       <div
         class="mdy-datepicker__calendar"
@@ -493,6 +561,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
         aria-label=${this.label || "Choose date range"}
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
       >
+        ${modalHeader}
         <div class="mdy-datepicker__header">
           <div class="mdy-datepicker__header-label">
             <button
@@ -534,6 +603,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
           : this._view === "month"
             ? this.renderMonthPicker()
             : this.renderYearPicker()}
+        ${actions}
       </div>
     `;
   }
