@@ -9,6 +9,8 @@ import { join } from "node:path";
 
 const dir = "dist/bundle-test/browser";
 const files = readdirSync(dir).filter((f) => f.endsWith(".js"));
+const BUDGET_KB = 120;
+
 let total = 0;
 let text = "";
 for (const f of files) {
@@ -36,6 +38,12 @@ for (const marker of forbidden) {
   console.log(`${marker}: ${present ? "PRESENT ✗" : "absent ✓"}`);
 }
 console.log(`total JS: ${(total / 1024).toFixed(1)} KB`);
+if (total > BUDGET_KB * 1024) {
+  console.error(
+    `Bundle size regression: total JS ${(total / 1024).toFixed(1)} KB exceeds ${BUDGET_KB} KB budget.`,
+  );
+  process.exit(1);
+}
 if (failed) {
   console.error("Tree-shaking regression: unused features leaked into the core-only bundle.");
   process.exit(1);
