@@ -31,7 +31,7 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
   override render(): unknown {
     const handle = this.field;
     if (!handle) return nothing;
-    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    this.syncStateClasses(handle);
     const inputAttrs = this.fieldController?.view().parts.input.attributes;
     return html`
       <label class="mdy-toggle">
