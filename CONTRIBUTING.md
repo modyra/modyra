@@ -5,7 +5,7 @@
 ```bash
 npm run setup        # install deps + build the library
 npm start            # demo app at localhost:4200
-npm test             # 16 suites (unit + compile-time type tests, zoneless)
+npm test             # Angular unit + compile-time type tests (zoneless)
 npm run test:bundle  # tree-shaking proof
 npm run build:lib    # all four entry points
 ```
