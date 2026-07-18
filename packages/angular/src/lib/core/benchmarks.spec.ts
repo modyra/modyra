@@ -35,7 +35,7 @@ describe("core benchmarks", () => {
   it("creates 10 / 100 / 1000 validated fields", () => {
     expect(bench("create 10 fields", () => makeAdapter(10))).toBeLessThan(500);
     expect(bench("create 100 fields", () => makeAdapter(100))).toBeLessThan(1000);
-    expect(bench("create 1000 fields", () => makeAdapter(1000))).toBeLessThan(5000);
+    expect(bench("create 1000 fields", () => makeAdapter(1000))).toBeLessThan(50);
   });
 
   it("updates a single field in a 1000-field form without global recompute", () => {
@@ -49,7 +49,7 @@ describe("core benchmarks", () => {
         f.valid();
       }
     });
-    expect(ms).toBeLessThan(2000);
+    expect(ms).toBeLessThan(15);
   });
 
   it("recomputes whole-form validity and value on demand", () => {
@@ -66,7 +66,7 @@ describe("core benchmarks", () => {
       bench("re-validate after 1000 writes", () => {
         expect(adapter.state.valid()).toBe(true);
       }),
-    ).toBeLessThan(2000);
+    ).toBeLessThan(20);
   });
 
   it("getChanges over 1000 fields", () => {
@@ -100,7 +100,7 @@ describe("core benchmarks", () => {
       for (let i = 0; i < 30; i++) form.redo();
     });
     expect(form.f.name.value()).toBe("v29");
-    expect(msRecord).toBeLessThan(5000);
+    expect(msRecord).toBeLessThan(4);
     expect(msUndo).toBeLessThan(2000);
   });
 
@@ -140,7 +140,7 @@ describe("core benchmarks", () => {
     // eslint-disable-next-line no-console
     console.log(`[bench] 50x async validate round-trip: ${ms.toFixed(2)}ms`);
     expect(f.pending()).toBe(false);
-    expect(ms).toBeLessThan(3000);
+    expect(ms).toBeLessThan(180);
   });
 
   it("repeated form construction and teardown does not accumulate fields", () => {
