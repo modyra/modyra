@@ -226,10 +226,11 @@ function stripComments(ts) {
 function extractLitAllTokens(ts) {
   // Scan the whole file for mdy-* tokens. This is robust against nested
   // template literals and conditional class strings. Tokens ending in `-`
-  // are placeholders (e.g. mdy-field-) and are ignored.
+  // are placeholders (e.g. mdy-field-) and are ignored. CSS custom property
+  // names (--mdy-*) are not class names and are skipped.
   const code = stripComments(ts);
   const classes = [];
-  const tokenRe = /mdy-[A-Za-z0-9_-]+/g;
+  const tokenRe = /(?<!-)mdy-[A-Za-z0-9_-]+/g;
   let m;
   while ((m = tokenRe.exec(code)) !== null) {
     const token = m[0];
