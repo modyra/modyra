@@ -33,6 +33,7 @@
     --ion-color-dark: #222428;
 
     /* Typography */
+    --ion-font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Roboto", sans-serif;
     --mdy-label-font-weight: 500;
     --mdy-label-font-size: 0.875rem;
     --mdy-input-font-size: 1rem;

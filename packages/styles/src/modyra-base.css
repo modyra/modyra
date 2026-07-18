@@ -1,14 +1,12 @@
 /*
- * modyra-m3-base.css
+ * modyra-base.css
  *
- * Material Design 3 — Design Tokens (CSS Custom Properties)
+ * Design tokens (CSS custom properties) — three tiers:
+ *   --mdy-ref-*   reference/brand tokens — raw values; never used by components
+ *   --mdy-sys-*   semantic system tokens — THE theme surface (light + dark)
+ *   --mdy-comp-*  component tokens — default to sys vars, exist for overrides
  *
  * Include in your project before any theme or component CSS.
- *
- *
- * This file defines all --md-sys-* and --md-comp-* variables for both light and dark themes.
- *
- * Source: https://gist.githubusercontent.com/lorenzomusche/cf062827e5dda441153bab936b4caf06/raw/c93c335b14e4ebe5de19d13e7e765d5d5170f4b0/Material%20Design%203.md
  *
  * CSS @layer: mdy.tokens
  * Declaring this layer here ensures the order is established even if this file
@@ -18,6 +16,19 @@
 @layer mdy.tokens, mdy.base, mdy.components, mdy.themes;
 
 @layer mdy.tokens {
+
+:root {
+    /* ── Reference tier (--mdy-ref-*): brand palette & type. Raw values only. ── */
+    --mdy-ref-color-indigo: #7067FF;  /* primary */
+    --mdy-ref-color-violet: #A855F7;  /* secondary */
+    --mdy-ref-color-coral: #FF6577;   /* accent / action */
+    --mdy-ref-color-night: #0E0F16;   /* dark surface */
+    --mdy-ref-color-cloud: #F8FAFC;   /* light surface / text-on-dark */
+    --mdy-ref-color-slate: #94A3B8;   /* muted text, borders */
+    --mdy-ref-color-error: #B3261E;
+    /* Satoshi woff2 is not shipped (owner approval required) — fallback chain only */
+    --mdy-ref-font-family: "Satoshi", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
 
 :root {
     /* Date Picker — Range & Popup (additional tokens for full mapping) */
@@ -37,107 +48,107 @@
     --mdy-comp-date-picker-header-gap: 0.5rem;
     --mdy-comp-date-picker-nav-btn-size: 2rem;
     /* Color System — Light Theme */
-    --mdy-sys-color-primary: #6750A4;
-    --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 95%);
-    --mdy-sys-color-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 85%);
-    --mdy-sys-color-on-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
-    --mdy-sys-color-secondary: color-mix(in srgb, var(--mdy-sys-color-primary), #888 60%);
-    --mdy-sys-color-on-secondary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 90%);
-    --mdy-sys-color-secondary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
-    --mdy-sys-color-on-secondary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
-    --mdy-sys-color-tertiary: color-mix(in srgb, var(--mdy-sys-color-primary), #c96 60%);
-    --mdy-sys-color-on-tertiary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 90%);
-    --mdy-sys-color-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 95%);
-    --mdy-sys-color-on-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
-    --mdy-sys-color-error: #B3261E;
-    --mdy-sys-color-on-error: color-mix(in srgb, var(--mdy-sys-color-error), #fff 90%);
-    --mdy-sys-color-error-container: color-mix(in srgb, var(--mdy-sys-color-error), #fff 85%);
-    --mdy-sys-color-on-error-container: color-mix(in srgb, var(--mdy-sys-color-error), #000 80%);
-    --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 96%);
-    --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
-    --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #eee 80%);
-    --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #49454E 60%);
-    --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 100%);
-    --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 96%);
-    --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 92%);
-    --mdy-sys-color-surface-container-high: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 88%);
-    --mdy-sys-color-surface-container-highest: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
-    --mdy-sys-color-background: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 98%);
-    --mdy-sys-color-on-background: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
-    --mdy-sys-color-outline: color-mix(in srgb, var(--mdy-sys-color-primary), #79747E 60%);
-    --mdy-sys-color-outline-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #CAC4D0 80%);
-    --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #313033 80%);
-    --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
-    --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), #D0BCFF 60%);
-    --mdy-sys-color-scrim: color-mix(in srgb, var(--mdy-sys-color-primary), #000 90%);
-    --mdy-sys-color-shadow: color-mix(in srgb, var(--mdy-sys-color-primary), #000 80%);
+    --mdy-sys-color-primary: var(--mdy-ref-color-indigo);
+    --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 95%);
+    --mdy-sys-color-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 85%);
+    --mdy-sys-color-on-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+    --mdy-sys-color-secondary: var(--mdy-ref-color-violet);
+    --mdy-sys-color-on-secondary: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 90%);
+    --mdy-sys-color-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 80%);
+    --mdy-sys-color-on-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-night) 80%);
+    --mdy-sys-color-tertiary: var(--mdy-ref-color-coral);
+    --mdy-sys-color-on-tertiary: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 90%);
+    --mdy-sys-color-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 95%);
+    --mdy-sys-color-on-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-night) 80%);
+    --mdy-sys-color-error: var(--mdy-ref-color-error);
+    --mdy-sys-color-on-error: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 90%);
+    --mdy-sys-color-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 85%);
+    --mdy-sys-color-on-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-night) 80%);
+    --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 96%);
+    --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+    --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-cloud), var(--mdy-ref-color-slate) 18%) 80%);
+    --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 45%) 60%);
+    --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 100%);
+    --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 96%);
+    --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 92%);
+    --mdy-sys-color-surface-container-high: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 88%);
+    --mdy-sys-color-surface-container-highest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+    --mdy-sys-color-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 98%);
+    --mdy-sys-color-on-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+    --mdy-sys-color-outline: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-slate) 60%);
+    --mdy-sys-color-outline-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-slate), var(--mdy-ref-color-cloud) 45%) 80%);
+    --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+    --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+    --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
+    --mdy-sys-color-scrim: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 90%);
+    --mdy-sys-color-shadow: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
 
     /* Typography */
-    --mdy-sys-typescale-display-large-font: Roboto;
+    --mdy-sys-typescale-display-large-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-display-large-size: 57px;
     --mdy-sys-typescale-display-large-line-height: 64px;
     --mdy-sys-typescale-display-large-weight: 400;
     --mdy-sys-typescale-display-large-tracking: -0.25px;
-    --mdy-sys-typescale-display-medium-font: Roboto;
+    --mdy-sys-typescale-display-medium-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-display-medium-size: 45px;
     --mdy-sys-typescale-display-medium-line-height: 52px;
     --mdy-sys-typescale-display-medium-weight: 400;
-    --mdy-sys-typescale-display-small-font: Roboto;
+    --mdy-sys-typescale-display-small-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-display-small-size: 36px;
     --mdy-sys-typescale-display-small-line-height: 44px;
     --mdy-sys-typescale-display-small-weight: 400;
-    --mdy-sys-typescale-headline-large-font: Roboto;
+    --mdy-sys-typescale-headline-large-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-headline-large-size: 32px;
     --mdy-sys-typescale-headline-large-line-height: 40px;
     --mdy-sys-typescale-headline-large-weight: 400;
-    --mdy-sys-typescale-headline-medium-font: Roboto;
+    --mdy-sys-typescale-headline-medium-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-headline-medium-size: 28px;
     --mdy-sys-typescale-headline-medium-line-height: 36px;
     --mdy-sys-typescale-headline-medium-weight: 400;
-    --mdy-sys-typescale-headline-small-font: Roboto;
+    --mdy-sys-typescale-headline-small-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-headline-small-size: 24px;
     --mdy-sys-typescale-headline-small-line-height: 32px;
     --mdy-sys-typescale-headline-small-weight: 400;
-    --mdy-sys-typescale-title-large-font: Roboto;
+    --mdy-sys-typescale-title-large-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-title-large-size: 22px;
     --mdy-sys-typescale-title-large-line-height: 28px;
     --mdy-sys-typescale-title-large-weight: 400;
-    --mdy-sys-typescale-title-medium-font: Roboto;
+    --mdy-sys-typescale-title-medium-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-title-medium-size: 16px;
     --mdy-sys-typescale-title-medium-line-height: 24px;
     --mdy-sys-typescale-title-medium-weight: 500;
     --mdy-sys-typescale-title-medium-tracking: 0.15px;
-    --mdy-sys-typescale-title-small-font: Roboto;
+    --mdy-sys-typescale-title-small-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-title-small-size: 14px;
     --mdy-sys-typescale-title-small-line-height: 20px;
     --mdy-sys-typescale-title-small-weight: 500;
     --mdy-sys-typescale-title-small-tracking: 0.1px;
-    --mdy-sys-typescale-body-large-font: Roboto;
+    --mdy-sys-typescale-body-large-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-body-large-size: 16px;
     --mdy-sys-typescale-body-large-line-height: 24px;
     --mdy-sys-typescale-body-large-weight: 400;
     --mdy-sys-typescale-body-large-tracking: 0.5px;
-    --mdy-sys-typescale-body-medium-font: Roboto;
+    --mdy-sys-typescale-body-medium-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-body-medium-size: 14px;
     --mdy-sys-typescale-body-medium-line-height: 20px;
     --mdy-sys-typescale-body-medium-weight: 400;
     --mdy-sys-typescale-body-medium-tracking: 0.25px;
-    --mdy-sys-typescale-body-small-font: Roboto;
+    --mdy-sys-typescale-body-small-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-body-small-size: 12px;
     --mdy-sys-typescale-body-small-line-height: 16px;
     --mdy-sys-typescale-body-small-weight: 400;
     --mdy-sys-typescale-body-small-tracking: 0.4px;
-    --mdy-sys-typescale-label-large-font: Roboto;
+    --mdy-sys-typescale-label-large-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-label-large-size: 14px;
     --mdy-sys-typescale-label-large-line-height: 20px;
     --mdy-sys-typescale-label-large-weight: 500;
     --mdy-sys-typescale-label-large-tracking: 0.1px;
-    --mdy-sys-typescale-label-medium-font: Roboto;
+    --mdy-sys-typescale-label-medium-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-label-medium-size: 12px;
     --mdy-sys-typescale-label-medium-line-height: 16px;
     --mdy-sys-typescale-label-medium-weight: 500;
     --mdy-sys-typescale-label-medium-tracking: 0.5px;
-    --mdy-sys-typescale-label-small-font: Roboto;
+    --mdy-sys-typescale-label-small-font: var(--mdy-ref-font-family);
     --mdy-sys-typescale-label-small-size: 11px;
     --mdy-sys-typescale-label-small-line-height: 16px;
     --mdy-sys-typescale-label-small-weight: 500;
@@ -223,37 +234,37 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
-        --mdy-sys-color-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 60%);
-        --mdy-sys-color-on-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
-        --mdy-sys-color-secondary: color-mix(in srgb, var(--mdy-sys-color-primary), #888 40%);
-        --mdy-sys-color-on-secondary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 70%);
-        --mdy-sys-color-secondary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 80%);
-        --mdy-sys-color-on-secondary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
-        --mdy-sys-color-tertiary: color-mix(in srgb, var(--mdy-sys-color-primary), #c96 40%);
-        --mdy-sys-color-on-tertiary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 70%);
-        --mdy-sys-color-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 90%);
-        --mdy-sys-color-on-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
-        --mdy-sys-color-error: #B3261E;
-        --mdy-sys-color-on-error: color-mix(in srgb, var(--mdy-sys-color-error), #fff 80%);
-        --mdy-sys-color-error-container: color-mix(in srgb, var(--mdy-sys-color-error), #18181b 70%);
-        --mdy-sys-color-on-error-container: color-mix(in srgb, var(--mdy-sys-color-error), #fff 60%);
-        --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 85%);
-        --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
-        --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #49454F 60%);
-        --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
-        --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 100%);
-        --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 88%);
-        --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 80%);
-        --mdy-sys-color-surface-container-high: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 70%);
-        --mdy-sys-color-surface-container-highest: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 58%);
-        --mdy-sys-color-background: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 95%);
-        --mdy-sys-color-on-background: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 80%);
-        --mdy-sys-color-outline: color-mix(in srgb, var(--mdy-sys-color-primary), #938F99 40%);
-        --mdy-sys-color-outline-variant: color-mix(in srgb, var(--mdy-sys-color-primary), #49454F 60%);
-        --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
-        --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), #18181b 60%);
-        --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 40%);
+        --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+        --mdy-sys-color-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 60%);
+        --mdy-sys-color-on-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-secondary: color-mix(in srgb, var(--mdy-ref-color-violet), var(--mdy-ref-color-cloud) 20%);
+        --mdy-sys-color-on-secondary: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 70%);
+        --mdy-sys-color-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-night) 80%);
+        --mdy-sys-color-on-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-tertiary: color-mix(in srgb, var(--mdy-ref-color-coral), var(--mdy-ref-color-cloud) 15%);
+        --mdy-sys-color-on-tertiary: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 70%);
+        --mdy-sys-color-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-night) 90%);
+        --mdy-sys-color-on-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-error: var(--mdy-ref-color-error);
+        --mdy-sys-color-on-error: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 80%);
+        --mdy-sys-color-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-night) 70%);
+        --mdy-sys-color-on-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 85%);
+        --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+        --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 35%) 60%);
+        --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 100%);
+        --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 88%);
+        --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+        --mdy-sys-color-surface-container-high: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 70%);
+        --mdy-sys-color-surface-container-highest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 58%);
+        --mdy-sys-color-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 95%);
+        --mdy-sys-color-on-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+        --mdy-sys-color-outline: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-slate) 40%);
+        --mdy-sys-color-outline-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 35%) 60%);
+        --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 60%);
+        --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 40%);
     }
 }
 
@@ -395,6 +406,20 @@
     --mdy-comp-date-picker-modal-container-shape: var(--mdy-sys-shape-corner-extra-large);
     --mdy-comp-date-picker-modal-headline-color: var(--mdy-sys-color-on-surface);
     --mdy-comp-date-picker-modal-supporting-text-color: var(--mdy-sys-color-on-surface-variant);
+}
+
+:root {
+    /* Runtime-injected variables — base-tier defaults so every var() resolves.
+       --mdy-segments-count is intentionally NOT defined: default and iOS themes
+       use different inline fallbacks (1 vs 3); a :root value would override
+       the iOS fallback path. It is whitelisted in the token audit instead. */
+    --mdy-floating-density: 0;
+    --mdy-slider-fill-pct: 0%;
+    --mdy-overlay-top: auto;
+    --mdy-overlay-bottom: auto;
+    --mdy-overlay-left: auto;
+    --mdy-overlay-right: auto;
+    --mdy-overlay-max-height: 50vh;
 }
 
 } /* end @layer mdy.tokens */
