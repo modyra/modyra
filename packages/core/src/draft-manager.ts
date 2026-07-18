@@ -54,11 +54,6 @@ interface DraftEnvelope {
   readonly value: Record<string, unknown>;
 }
 
-interface SerializedDraft {
-  readonly serialized: string;
-  readonly value: Record<string, unknown>;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -214,14 +209,14 @@ export class MdyDraftManager {
           ),
         );
         this._hasDraft.set(true);
-        this._lastWritten = this._serialize(value)?.serialized ?? null;
+        this._lastWritten = this._serialize(value) ?? null;
       } else {
         this._storage.remove(this._key);
       }
     }
     this._baseline = this._serialize(
       this._rx.untracked(() => this._getValue()),
-    )?.serialized ?? null;
+    ) ?? null;
 
     this._effect = this._rx.effect((onCleanup) => {
       const current = this._getValue();
@@ -251,7 +246,7 @@ export class MdyDraftManager {
     // The current (submitted) value becomes the new baseline.
     this._baseline = this._serialize(
       this._rx.untracked(() => this._getValue()),
-    )?.serialized ?? null;
+    ) ?? null;
   }
 
   /** Releases timers and effects and resets the hasDraft signal. */
@@ -292,7 +287,7 @@ export class MdyDraftManager {
     }
   }
 
-  private _serialize(value: Record<string, unknown>): SerializedDraft | null {
+  private _serialize(value: Record<string, unknown>): string | null {
     const serializable = Object.fromEntries(
       Object.entries(value).filter(
         ([k, v]) => !this._exclude.has(k) && !containsFile(v),
@@ -300,7 +295,7 @@ export class MdyDraftManager {
     );
     const seen = new WeakSet<object>();
     try {
-      const serialized = JSON.stringify(serializable, (_key, raw) => {
+      return JSON.stringify(serializable, (_key, raw) => {
         // BigInt-bearing fields are filtered out before serialization; one
         // surfacing here (e.g. via toJSON) must skip the write, not mutate
         // the restored type to string.
@@ -315,12 +310,6 @@ export class MdyDraftManager {
         }
         return raw;
       });
-      const parsed = JSON.parse(serialized);
-      if (!isRecord(parsed)) return null;
-      return {
-        serialized,
-        value: parsed,
-      };
     } catch {
       this._warn(
         "Skipped draft write: value is not JSON-serializable (cycle or unsupported type).",
@@ -331,21 +320,18 @@ export class MdyDraftManager {
 
   private _write(value: Record<string, unknown>): void {
     if (!this._key || !this._storage) return;
-    const draft = this._serialize(value);
-    if (draft === null) return;
-    const { serialized, value: serializableValue } = draft;
+    const serialized = this._serialize(value);
+    if (serialized === null) return;
     // Nothing the user changed → no draft; unchanged → no rewrite.
     if (serialized === this._lastWritten) return;
     if (this._lastWritten === null && serialized === this._baseline) {
       return;
     }
-    const envelope: DraftEnvelope = {
-      __mdyDraft: this._version,
-      savedAt: Date.now(),
-      value: serializableValue,
-    };
+    // Build the envelope around the already-serialized payload so the value
+    // is stringified only once per write.
+    const envelope = `{"__mdyDraft":${this._version},"savedAt":${Date.now()},"value":${serialized}}`;
     try {
-      this._storage.write(this._key, JSON.stringify(envelope));
+      this._storage.write(this._key, envelope);
       this._lastWritten = serialized;
     } catch {
       // Quota errors and private-mode restrictions must not break the form.
