@@ -13,7 +13,7 @@ import {
   today,
 } from "@modyra/core";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { POPUP_ANCHOR_STYLE, POPUP_STYLE } from "./popup-styles.js";
+import { POPUP_ANCHOR_STYLE, renderOverlayPanel } from "./popup-styles.js";
 
 // ─── Date & time ─────────────────────────────────────────────────────────────
 
@@ -333,7 +333,6 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         class="mdy-datepicker__calendar"
         role="dialog"
         aria-label=${this.label || "Choose date"}
-        style=${POPUP_STYLE}
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
       >
         <div class="mdy-datepicker__header-label">
@@ -412,7 +411,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
         </button>
       </div>
-      ${this._open ? this.renderPopup(handle) : nothing}
+      ${renderOverlayPanel(this.renderPopup(handle), this._open)}
     `;
   }
 

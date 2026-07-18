@@ -17,7 +17,7 @@ import {
   type MdyTimeFormat,
 } from "@modyra/core";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { POPUP_ANCHOR_STYLE, POPUP_STYLE } from "./popup-styles.js";
+import { POPUP_ANCHOR_STYLE, renderOverlayPanel } from "./popup-styles.js";
 
 // ─── Time picker ─────────────────────────────────────────────────────────────
 
@@ -391,7 +391,6 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
         class="mdy-timepicker-container ${this._viewMode === "dial" ? "mdy-timepicker--dial" : ""}"
         role="dialog"
         aria-label=${this.label || "Choose time"}
-        style=${POPUP_STYLE}
         @keydown=${(e: KeyboardEvent) => {
           if (e.key === "Escape") {
             e.preventDefault();
@@ -500,7 +499,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             </button>
           </div>
         </div>
-        ${this._open ? this.renderPopup(handle) : nothing}
+        ${renderOverlayPanel(this.renderPopup(handle), this._open)}
       </div>
     `;
   }
