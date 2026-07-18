@@ -121,12 +121,12 @@ export abstract class MdyFieldElement<T> extends LitElement {
   }
 
   /** Shared label block, matching the Angular control-label component. */
-  protected renderLabel(handle: MdyFieldHandle<T>): unknown {
+  protected renderLabel(handle: MdyFieldHandle<T>, forId = this.fieldId): unknown {
     const filled = this.isFilled(handle);
     const hasError = this.showErrors(handle);
     return html`<label
       class="mdy-label ${filled ? "mdy-label--filled" : ""} ${hasError ? "mdy-label--has-error" : ""}"
-      for=${this.fieldId}
+      for=${forId}
     >
       ${this.label}
       ${handle.required()
