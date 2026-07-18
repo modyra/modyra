@@ -411,7 +411,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
         </button>
       </div>
-      ${renderOverlayPanel(this.renderPopup(handle), this._open)}
+      ${renderOverlayPanel(this.renderPopup(handle), this._open, this)}
     `;
   }
 

@@ -600,7 +600,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
           ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
         </button>
       </div>
-      ${renderOverlayPanel(this.renderPopup(handle), this._open)}
+      ${renderOverlayPanel(this.renderPopup(handle), this._open, this)}
     `;
   }
 

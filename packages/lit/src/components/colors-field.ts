@@ -155,7 +155,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
             </button>
           </div>
         </div>
-        ${renderOverlayPanel(this.renderDropdown(handle), this._open)}
+        ${renderOverlayPanel(this.renderDropdown(handle), this._open, this)}
       </div>
     `;
   }
