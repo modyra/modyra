@@ -109,7 +109,11 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    */
   protected toggleOverlay(event?: Event): void {
     if (this.isDisabled()) return;
-    this.open() ? this.closeOverlay() : this.openOverlay(event);
+    if (this.open()) {
+      this.closeOverlay();
+    } else {
+      this.openOverlay(event);
+    }
   }
 
   /** Minimum space required below or above to anchor the overlay. Default 128px. */
@@ -263,7 +267,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    * Hook called just before the overlay opens.
    * Useful for syncing draft values or search queries.
    */
-  protected onBeforeOpen(): void { }
+  protected onBeforeOpen(): void { /* no-op by default — subclasses override */ }
 
   /** Bound handler registered on document only while the overlay is open (B31). */
   private readonly handleDocumentClick = (event: Event): void =>

@@ -1,4 +1,4 @@
-import { Directive, TemplateRef } from "@angular/core";
+import { Directive, inject, TemplateRef } from "@angular/core";
 
 /**
  * Marks a template or element as an input prefix (leading content).
@@ -8,5 +8,5 @@ import { Directive, TemplateRef } from "@angular/core";
   standalone: true,
 })
 export class MdyPrefixDirective {
-  constructor(public readonly template: TemplateRef<unknown>) {}
+  readonly template = inject<TemplateRef<unknown>>(TemplateRef);
 }

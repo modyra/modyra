@@ -52,7 +52,7 @@ export class MdyAngularSelectAdapter<TValue = string> {
   private readonly itemElements = new Map<string, ElementRef<HTMLElement>>();
 
   /** Callbacks to the host component. */
-  private handlers: MdyAngularCommandHandlers = { setOpen: () => {} };
+  private handlers: MdyAngularCommandHandlers = { setOpen: () => { /* no-op until the host registers handlers */ } };
 
   constructor(
     options: MdyAngularSelectAdapterOptions<TValue>,

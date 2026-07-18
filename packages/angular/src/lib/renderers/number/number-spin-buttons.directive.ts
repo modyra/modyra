@@ -23,11 +23,8 @@ export class MdyNumberSpinButtonsDirective implements OnInit {
   readonly mdyNumberSpinButtons = input.required<boolean | string>();
 
   private readonly i18n = inject(MDY_I18N_MESSAGES);
-
-  constructor(
-    private readonly el: ElementRef<HTMLInputElement>,
-    private readonly renderer: Renderer2,
-  ) { }
+  private readonly el = inject<ElementRef<HTMLInputElement>>(ElementRef);
+  private readonly renderer = inject(Renderer2);
 
   ngOnInit(): void {
     const enabled = this.mdyNumberSpinButtons();

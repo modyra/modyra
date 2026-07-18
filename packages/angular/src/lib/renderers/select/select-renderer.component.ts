@@ -203,6 +203,7 @@ function mapKeyToMoveTarget(
                 <li
                   class="mdy-select__option mdy-select__option--create"
                   role="option"
+                  [attr.aria-selected]="false"
                   (click)="onCreateOption()"
                 >
                   {{ i18n.selectCreateOption(searchQuery().trim()) }}

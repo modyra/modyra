@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
-import { mdyFormFromSchema } from "@modyra/angular/zod";
 import {
   MdyDevtoolsDirective,
   MdyFormComponent,
@@ -7,6 +6,7 @@ import {
   MdyTextComponent,
   MdyWizardStepComponent,
 } from "@modyra/angular/ui";
+import { mdyFormFromSchema } from "@modyra/angular/zod";
 import { z } from "zod";
 
 @Component({

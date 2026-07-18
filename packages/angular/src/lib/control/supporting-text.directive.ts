@@ -1,4 +1,4 @@
-import { Directive, TemplateRef } from "@angular/core";
+import { Directive, inject, TemplateRef } from "@angular/core";
 
 /**
  * Marks a template or element as supporting text (helper text).
@@ -8,5 +8,5 @@ import { Directive, TemplateRef } from "@angular/core";
   standalone: true,
 })
 export class MdySupportingTextDirective {
-  constructor(public readonly template: TemplateRef<unknown>) {}
+  readonly template = inject<TemplateRef<unknown>>(TemplateRef);
 }

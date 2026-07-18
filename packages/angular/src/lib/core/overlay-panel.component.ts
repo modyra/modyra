@@ -68,6 +68,9 @@ export class MdyOverlayPanelComponent {
   readonly widthMode = input<"match-anchor" | "auto-content">("match-anchor");
   readonly panelClass = input<string>("");
 
+  // "close" mirrors the dialog element's vocabulary and is part of the
+  // published API; renaming it would be a breaking change.
+  // eslint-disable-next-line @angular-eslint/no-output-native
   readonly close = output<void>();
 
   readonly panelRef = viewChild<ElementRef<HTMLElement>>("panel");
@@ -94,13 +97,13 @@ export class MdyOverlayPanelComponent {
       if (isOpen) {
         try {
           panel.showPopover();
-        } catch (e) {
+        } catch {
           // Ignores if already showing or other non-critical errors
         }
       } else {
         try {
           panel.hidePopover();
-        } catch (e) {
+        } catch {
           // Ignores if already hidden
         }
       }
@@ -114,13 +117,13 @@ export class MdyOverlayPanelComponent {
 
     // Compute direct positioning properties so the overlay works regardless of theme.
     // The theme CSS can still override via !important for custom styling.
-    let top: string | null = null;
-    let bottom: string | null = null;
-    let left: string | null = null;
-    let right: string | null = null;
+    let top: string | null;
+    let bottom: string | null;
+    let left: string | null;
+    let right: string | null;
     let transform: string | null = null;
-    let width: string | null = null;
-    let maxHeight: string | null = null;
+    let width: string | null;
+    let maxHeight: string | null;
 
     if (isOverlay) {
       // Centered modal: perfectly centered in viewport.
