@@ -11,7 +11,9 @@ export const NATIVE_HIDDEN_STYLE =
 
 const POPUP_MIN_SPACE = 200;
 
-function resolveOverlayPosition(anchorEl?: HTMLElement): "below" | "above" | "overlay" {
+export function resolveOverlayPosition(
+  anchorEl?: HTMLElement,
+): "below" | "above" | "overlay" {
   if (typeof window === "undefined" || !anchorEl) return "below";
   const rect = anchorEl.getBoundingClientRect();
   const vh = window.innerHeight;
@@ -20,6 +22,22 @@ function resolveOverlayPosition(anchorEl?: HTMLElement): "below" | "above" | "ov
   if (spaceBelow >= POPUP_MIN_SPACE) return "below";
   if (spaceAbove >= POPUP_MIN_SPACE) return "above";
   return "overlay";
+}
+
+export function resolveOverlayAlignment(
+  anchorEl?: HTMLElement,
+): "left" | "right" {
+  if (typeof window === "undefined" || !anchorEl) return "left";
+  const rect = anchorEl.getBoundingClientRect();
+  const hw = window.innerWidth / 2;
+  return rect.left + rect.width / 2 > hw ? "right" : "left";
+}
+
+export interface RenderOverlayPanelOptions {
+  /** When true the panel has a backdrop and emits `--modal`. */
+  modal?: boolean;
+  /** Horizontal alignment of the panel, emits `--right` when `'right'`. */
+  alignment?: "left" | "right";
 }
 
 /**
@@ -33,6 +51,7 @@ export function renderOverlayPanel(
   content: unknown,
   open: boolean,
   anchorEl?: HTMLElement,
+  options?: RenderOverlayPanelOptions,
 ): unknown {
   if (!open) return nothing;
   const position = resolveOverlayPosition(anchorEl);
@@ -42,9 +61,14 @@ export function renderOverlayPanel(
       : position === "overlay"
         ? " mdy-overlay-panel--overlay"
         : "";
+  const modalClass = options?.modal ? " mdy-overlay-panel--modal" : "";
+  const rightClass = options?.alignment === "right" ? " mdy-overlay-panel--right" : "";
   return html`
     <div class="mdy-overlay-backdrop"></div>
-    <div class="mdy-overlay-panel mdy-overlay-panel--visible${positionClass}" style=${POPUP_STYLE}>
+    <div
+      class="mdy-overlay-panel mdy-overlay-panel--visible${positionClass}${modalClass}${rightClass}"
+      style=${POPUP_STYLE}
+    >
       ${content}
     </div>
   `;

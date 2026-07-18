@@ -5,18 +5,27 @@ import {
 } from "@modyra/core";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { mdyIcon } from "../base.js";
+import {
+  renderOverlayPanel,
+  resolveOverlayAlignment,
+  resolveOverlayPosition,
+} from "./popup-styles.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 
 export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly unknown[]> {
   static override properties: PropertyDeclarations = {
     searchable: { type: Boolean },
+    loading: { type: Boolean },
     mode: { type: String },
     filterFn: { attribute: false },
+    optionTemplate: { attribute: false },
     _query: { state: true },
   };
   declare searchable: boolean;
+  declare loading: boolean;
   declare mode: "single" | "multi";
   declare filterFn?: (value: unknown) => boolean;
+  declare optionTemplate?: unknown;
   declare _query: string;
 
   protected override readonly rendererClass = "mdy-renderer--multiselect";
@@ -24,6 +33,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   constructor() {
     super();
     this.searchable = false;
+    this.loading = false;
     this.mode = "single";
     this._query = "";
   }
@@ -149,6 +159,36 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     this.classList.toggle("mdy-renderer--open", this._open);
 
     const triggerId = `${this.fieldId}-trigger`;
+    const position = resolveOverlayPosition(this);
+    const alignment = resolveOverlayAlignment(this);
+
+    const overlay = html`
+      <input
+        type="text"
+        class="mdy-multiselect-overlay__input"
+        .value=${this._query}
+        @input=${this.onSearchInput}
+        placeholder="Search..."
+      />
+      ${this.optionTemplate
+        ? html`<button type="button" class="mdy-chip-wrapper">Custom option</button>`
+        : nothing}
+      ${this.searchResults(handle).length === 0
+        ? html`<div class="mdy-multiselect-overlay__empty">
+            ${this.loading
+              ? html`<div class="mdy-select__loading-content">
+                  ${mdyIcon("LOADER", "mdy-select__loader")}
+                  <span>Loading…</span>
+                </div>`
+              : html`No results`}
+          </div>`
+        : html`<div class="mdy-multiselect__options mdy-multiselect-overlay__grid">
+            ${this.searchResults(handle).map((option) =>
+              this.renderOptionChip(handle, option),
+            )}
+          </div>`}
+    `;
+
     return html`
       ${this.renderLabel(handle, triggerId)}
       <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
@@ -183,24 +223,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         </div>
         <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
       </div>
-      ${this._open
-        ? html`<div class="mdy-select__dropdown mdy-multiselect-overlay__panel">
-            <input
-              type="text"
-              class="mdy-multiselect-overlay__input"
-              .value=${this._query}
-              @input=${this.onSearchInput}
-              placeholder="Search..."
-            />
-            ${this.searchResults(handle).length === 0
-              ? html`<div class="mdy-multiselect-overlay__empty">No results</div>`
-              : html`<div class="mdy-multiselect__options mdy-multiselect-overlay__grid">
-                  ${this.searchResults(handle).map((option) =>
-                    this.renderOptionChip(handle, option),
-                  )}
-                </div>`}
-          </div>`
-        : nothing}
+      ${renderOverlayPanel(overlay, this._open, this, {
+        modal: position === "overlay",
+        alignment,
+      })}
       ${showBlockErrors ? this.renderErrors(handle) : this.renderSupportingText()}
     `;
   }

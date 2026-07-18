@@ -2,15 +2,23 @@ import { filterOptionsByQuery, type MdyFieldHandle } from "@modyra/core";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { mdyIcon } from "../base.js";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
+import {
+  renderOverlayPanel,
+  resolveOverlayAlignment,
+  resolveOverlayPosition,
+} from "./popup-styles.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 
 export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | null> {
   static override properties: PropertyDeclarations = {
     searchable: { type: Boolean },
     loading: { type: Boolean },
+    allowCreate: { type: Boolean, attribute: "allow-create" },
   };
   declare searchable: boolean;
   declare loading: boolean;
+  /** When true, searchable selects show a "Create …" row for unknown queries. */
+  declare allowCreate: boolean;
 
   protected override readonly rendererClass = "mdy-renderer--select";
   private selectAdapter?: MdyLitSelectAdapter<unknown>;
@@ -19,6 +27,24 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     super();
     this.searchable = false;
     this.loading = false;
+    this.allowCreate = false;
+  }
+
+  private showCreateOption(
+    query: string,
+    filtered: ReadonlyArray<{ label: string }>,
+  ): boolean {
+    if (!this.allowCreate || !this.searchable) return false;
+    const q = query.trim().toLowerCase();
+    if (!q) return false;
+    return !filtered.some((o) => o.label.trim().toLowerCase() === q);
+  }
+
+  private onCreateOption(query: string): void {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    this.dispatchEvent(new CustomEvent("option-created", { detail: trimmed }));
+    this.selectAdapter?.dispatch({ type: "close", restoreFocus: true });
   }
 
   override connectedCallback(): void {
@@ -185,6 +211,75 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     this.syncStateClasses(handle);
     this.classList.toggle("mdy-renderer--open", this._open);
 
+    const position = resolveOverlayPosition(this);
+    const alignment = resolveOverlayAlignment(this);
+
+    const dropdown = html`
+      <div
+        class="mdy-select__dropdown mdy-glass-effect ${position === "above"
+          ? "mdy-select__dropdown--above"
+          : ""} ${position === "overlay" ? "mdy-select__dropdown--overlay" : ""} ${alignment === "right"
+          ? "mdy-select__dropdown--right"
+          : ""}"
+      >
+        ${this.searchable
+          ? html`<input
+              type="text"
+              class="mdy-select__search"
+              .value=${state.query}
+              @input=${this.onSearchInput}
+            />`
+          : nothing}
+        <ul
+          class="mdy-select__list"
+          id=${listbox.id}
+          role="listbox"
+          aria-labelledby=${trigger.id}
+        >
+          ${filtered.map((option) => {
+            const key = this.optionKey(option.value);
+            const part = view.parts[key];
+            const selected = state.selectedKey === key;
+            const active = state.activeKey === key;
+            return html`<li
+              class="mdy-select__option ${selected ? "mdy-select__option--selected" : ""} ${active
+                ? "mdy-select__option--active"
+                : ""}"
+              id=${part.id}
+              role="option"
+              aria-selected=${selected ? "true" : "false"}
+              aria-disabled=${option.disabled ? "true" : nothing}
+              @pointerdown=${(e: Event) => e.preventDefault()}
+              @click=${() => {
+                if (!option.disabled) this.pick(handle, option.value);
+              }}
+            >
+              <span class="mdy-select__option-label">${option.label}</span>
+            </li>`;
+          })}
+          ${this.showCreateOption(state.query, filtered)
+            ? html`<li
+                class="mdy-select__option mdy-select__option--create"
+                role="option"
+                @click=${() => this.onCreateOption(state.query)}
+              >
+                Create “${state.query.trim()}”
+              </li>`
+            : nothing}
+          ${filtered.length === 0 && !this.showCreateOption(state.query, filtered)
+            ? html`<li class="mdy-select__no-results" role="presentation">
+                ${state.loading
+                  ? html`<div class="mdy-select__loading-content">
+                      ${mdyIcon("LOADER", "mdy-select__loader")}
+                      <span>Loading…</span>
+                    </div>`
+                  : html`No results`}
+              </li>`
+            : nothing}
+        </ul>
+      </div>
+    `;
+
     return html`
       ${this.renderLabel(handle, trigger.id)}
       <div class="mdy-select">
@@ -192,7 +287,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
           <button
             type="button"
-            class=${trigger.classes.join(" ")}
+            class="mdy-select__trigger ${trigger.classes.slice(1).join(" ")}"
             id=${trigger.id}
             aria-haspopup=${trigger.attributes["aria-haspopup"]}
             aria-expanded=${trigger.attributes["aria-expanded"] ? "true" : "false"}
@@ -217,42 +312,10 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             <slot name="suffix"></slot>
           </div>
         </div>
-        ${this._open
-          ? html`<div class="mdy-select__dropdown mdy-glass-effect">
-            ${this.searchable
-              ? html`<input
-                type="text"
-                class="mdy-select__search"
-                .value=${state.query}
-                @input=${this.onSearchInput}
-              />`
-              : nothing}
-            <ul
-              class="mdy-select__list"
-              id=${listbox.id}
-              role="listbox"
-              aria-labelledby=${trigger.id}
-            >
-              ${filtered.map((option) => {
-                const key = this.optionKey(option.value);
-                const part = view.parts[key];
-                return html`<li
-                  class=${part.classes.join(" ")}
-                  id=${part.id}
-                  role="option"
-                  aria-selected=${state.selectedKey === key ? "true" : "false"}
-                  aria-disabled=${option.disabled ? "true" : nothing}
-                  @pointerdown=${(e: Event) => e.preventDefault()}
-                  @click=${() => {
-                    if (!option.disabled) this.pick(handle, option.value);
-                  }}
-                >
-                  <span class="mdy-select__option-label">${option.label}</span>
-                </li>`;
-              })}
-            </ul>
-          </div>`
-          : nothing}
+        ${renderOverlayPanel(dropdown, this._open, this, {
+          modal: position === "overlay",
+          alignment,
+        })}
       </div>
       ${showBlockErrors ? this.renderErrors(handle) : this.renderSupportingText()}
     `;
