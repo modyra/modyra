@@ -33,7 +33,7 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
   override render(): unknown {
     const handle = this.field;
     if (!handle) return nothing;
-    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    this.syncStateClasses(handle);
     const input = this.fieldController?.view().parts.input;
     const inputAttrs = input?.attributes;
     return html`

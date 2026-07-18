@@ -74,7 +74,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
   override render(): unknown {
     const handle = this.field;
     if (!handle) return nothing;
-    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    this.syncStateClasses(handle);
     this.classList.toggle("mdy-renderer--open", this._open);
     const text = this.triggerText(handle);
     return html`
