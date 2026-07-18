@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, output, viewChild } from "@angular/core";
+import { MdySelectOption } from "@modyra/angular/adapter";
 import {
   MdyColorsComponent,
   MdyFormComponent,
@@ -6,7 +7,6 @@ import {
   MdySelectComponent,
   MdyToggleComponent,
 } from "@modyra/angular/ui";
-import { MdySelectOption } from "@modyra/angular/adapter";
 
 export interface DesignSystemConfig {
   readonly theme: "default" | "material" | "ios" | "ionic";
