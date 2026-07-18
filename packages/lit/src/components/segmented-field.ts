@@ -1,6 +1,7 @@
 import { html, nothing } from "lit";
 import { type MdySelectOption } from "@modyra/core";
 import { createOptionFieldController, type MdyOptionFieldController } from "@modyra/widgets";
+import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
 
 export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | null> {
@@ -35,6 +36,7 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
     this.classList.toggle("mdy-renderer--touched", handle.touched());
     const view = this.fieldController?.view();
     const last = this.options.length - 1;
+    const showBlockErrors = !this.inlineErrors && this.showErrors(handle);
     return html`
       ${this.renderGroupLabel(handle)}
       <div
@@ -69,11 +71,19 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
               }
             }}
           >
-            ${option.label}
+            <span
+              class="mdy-segmented__check"
+              style="visibility:${selected ? "visible" : "hidden"}"
+              aria-hidden=${selected ? nothing : "true"}
+            >
+              ${mdyIcon("CHECKMARK", "")}
+            </span>
+            <span class="mdy-segmented__text" data-text=${option.label}>${option.label}</span>
           </button>`;
         })}
       </div>
-      ${this.renderErrors(handle)}
+      ${this.renderSupportingText()}
+      ${showBlockErrors ? this.renderErrors(handle) : nothing}
     `;
   }
 }

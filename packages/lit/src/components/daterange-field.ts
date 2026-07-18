@@ -94,6 +94,15 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     return `${this.fieldId}-start`;
   }
 
+  protected override get labelForId(): string {
+    return this.startInputId;
+  }
+
+  /** Date-range inputs always look filled because the two inputs are present. */
+  protected override isFilled(_handle: MdyFieldHandle<MdyDateRange | null>): boolean {
+    return true;
+  }
+
   private parseMin(): CalendarDate | null {
     return this.min ? parseIsoDate(this.min) : null;
   }

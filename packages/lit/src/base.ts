@@ -85,6 +85,11 @@ export abstract class MdyFieldElement<T> extends LitElement {
     return true;
   }
 
+  /** Id the label points to. Override when the rendered input id differs (daterange). */
+  protected get labelForId(): string {
+    return this.fieldId;
+  }
+
   protected get errorsId(): string {
     return `${this.fieldId}-errors`;
   }
@@ -120,13 +125,25 @@ export abstract class MdyFieldElement<T> extends LitElement {
     </span>`;
   }
 
-  /** Shared label block, matching the Angular control-label component. */
-  protected renderLabel(handle: MdyFieldHandle<T>, forId = this.fieldId): unknown {
+  /**
+   * Shared label block, matching the Angular `mdy-control-label` component.
+   * - `labelId` is used for group renderers (radio, segmented); when set, no
+   *   `for` attribute is emitted and the radiogroup references it via
+   *   `aria-labelledby`.
+   * - Renders nothing when the label is empty, exactly like the Angular side.
+   */
+  protected renderLabel(
+    handle: MdyFieldHandle<T>,
+    forId = this.labelForId,
+    labelId = "",
+  ): unknown {
+    if (!this.label) return nothing;
     const filled = this.isFilled(handle);
     const hasError = this.showErrors(handle);
     return html`<label
       class="mdy-label ${filled ? "mdy-label--filled" : ""} ${hasError ? "mdy-label--has-error" : ""}"
-      for=${forId}
+      id=${labelId || nothing}
+      for=${labelId ? nothing : forId}
     >
       ${this.label}
       ${handle.required()
