@@ -34,10 +34,14 @@ export abstract class MdyFieldElement<T> extends LitElement {
   static properties: PropertyDeclarations = {
     field: { attribute: false },
     label: { type: String },
+    inlineErrors: { type: Boolean, attribute: "inline-errors" },
+    floatingLabel: { type: Boolean, attribute: "floating-label" },
   };
 
   declare field: MdyFieldHandle<T> | undefined;
   declare label: string;
+  declare inlineErrors: boolean;
+  declare floatingLabel: boolean;
 
   protected readonly fieldId = `mdy-field-${nextId++}`;
   private _tracker: MdyFormController | null = null;
@@ -48,6 +52,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
   constructor() {
     super();
     this.label = "";
+    this.inlineErrors = false;
+    this.floatingLabel = false;
   }
 
   /** Light DOM so the global theme stylesheets reach the markup. */
@@ -93,13 +99,63 @@ export abstract class MdyFieldElement<T> extends LitElement {
     return v !== null && v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0);
   }
 
+  /** Error text joined for inline display. */
+  protected inlineErrorText(handle: MdyFieldHandle<T>): string {
+    return handle.errors()
+      .map((e) => e.message)
+      .filter((msg) => !!msg && msg.trim() !== "")
+      .join(", ");
+  }
+
+  /** Inline error icon + tooltip rendered inside the label. */
+  protected renderInlineErrorIcon(handle: MdyFieldHandle<T>): unknown {
+    const text = this.inlineErrorText(handle);
+    return html`<span
+      class="mdy-control__inline-errors"
+      role="img"
+      aria-label=${text}
+    >
+      ${mdyIcon("ERROR", "mdy-control__inline-errors-icon")}
+      <span class="mdy-control__inline-errors-tooltip">${text}</span>
+    </span>`;
+  }
+
+  /** Shared label block, matching the Angular control-label component. */
+  protected renderLabel(handle: MdyFieldHandle<T>): unknown {
+    const filled = this.isFilled(handle);
+    const hasError = this.showErrors(handle);
+    return html`<label
+      class="mdy-label ${filled ? "mdy-label--filled" : ""} ${hasError ? "mdy-label--has-error" : ""}"
+      for=${this.fieldId}
+    >
+      ${this.label}
+      ${handle.required()
+        ? html`<span
+          class="mdy-label__required ${filled ? "mdy-label__required--filled" : ""}"
+          aria-hidden="true"
+        >*</span>`
+        : nothing}
+      ${this.inlineErrors && hasError ? this.renderInlineErrorIcon(handle) : nothing}
+    </label>`;
+  }
+
+  /** Helper text slot rendered when no block errors are shown. */
+  protected renderSupportingText(): unknown {
+    return html`<div class="mdy-supporting-text"><slot name="supporting-text"></slot></div>`;
+  }
+
   /** Error list block (rendered only once the field was touched). */
   protected renderErrors(handle: MdyFieldHandle<T>): unknown {
     if (!this.showErrors(handle)) return nothing;
-    return html`<ul class="mdy-control__errors" id=${this.errorsId} role="alert">
+    return html`<ul
+      class="mdy-control__errors"
+      id=${this.errorsId}
+      role="alert"
+      aria-live="polite"
+    >
       ${handle.errors().map(
-      (er) => html`<li class="mdy-control__error">${er.message}</li>`,
-    )}
+        (er) => html`<li class="mdy-control__error">${er.message}</li>`,
+      )}
     </ul>`;
   }
 
@@ -107,24 +163,24 @@ export abstract class MdyFieldElement<T> extends LitElement {
     const handle = this.field;
     if (!handle) return nothing;
     this.classList.toggle("mdy-renderer--touched", handle.touched());
+    this.classList.toggle("mdy-floating-label", this.floatingLabel);
+    this.classList.toggle("mdy-inline-errors", this.inlineErrors);
     const control = this.renderControl(handle);
-    const filled = this.isFilled(handle);
+    const showBlockErrors = !this.inlineErrors && this.showErrors(handle);
     return html`
-      <label
-        class="mdy-label ${filled ? "mdy-label--filled" : ""} ${this.showErrors(handle) ? "mdy-label--has-error" : ""}"
-        for=${this.fieldId}
-      >
-        ${this.label}
-        ${handle.required()
-        ? html`<span class="mdy-label__required ${filled ? "mdy-label__required--filled" : ""}" aria-hidden="true">*</span>`
-        : nothing}
-      </label>
+      ${this.renderLabel(handle)}
       ${this.useWrapper
-        ? html`<div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
-            ${control}
-          </div>`
+        ? html`<div
+          class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}"
+        >
+          <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
+          ${control}
+          <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
+        </div>`
         : control}
-      ${this.renderErrors(handle)}
+      ${showBlockErrors
+        ? this.renderErrors(handle)
+        : this.renderSupportingText()}
     `;
   }
 }
