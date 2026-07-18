@@ -10,6 +10,7 @@ import {
   InputSignal,
   OnInit,
   Signal,
+  signal,
   untracked
 } from "@angular/core";
 import { MDY_DECLARATIVE_REGISTRY, MDY_FLOATING_LABELS, MDY_FORM_ADAPTER, MDY_INLINE_ERRORS } from "../core/tokens";
@@ -171,14 +172,44 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   /** Supporting text (helper text) provided via `mdySupportingText` directive. */
   protected readonly supportingText = contentChild(MdySupportingTextDirective);
 
+  /**
+   * Inert state served while `name`/`[field]` are still unresolved. Input
+   * signals are not set during construction, so any computed chained to
+   * {@link fieldState} (value, errors, …) must stay readable there instead
+   * of throwing; the constructor effect reports controls that are STILL
+   * unresolved after init. Per instance — never shared.
+   */
+  private _detachedState?: MdyFieldState<TValue>;
+
+  private _detached(): MdyFieldState<TValue> {
+    if (!this._detachedState) {
+      const value = signal(null as TValue);
+      const touched = signal(false);
+      const dirty = signal(false);
+      const off: Signal<boolean> = computed(() => false);
+      this._detachedState = {
+        value,
+        touched,
+        dirty,
+        required: off,
+        valid: computed(() => true),
+        errors: computed(() => []),
+        disabled: off,
+        readonly: off,
+        pending: off,
+      } as MdyFieldState<TValue>;
+    }
+    return this._detachedState;
+  }
+
   /** Resolved field state — reactive to name/[field] changes. */
   protected readonly fieldState: Signal<MdyFieldState<TValue>> = computed(
     () => {
       const n = this.effectiveName();
       if (!n) {
-        throw new Error(
-          "[modyra] Control needs a name attribute or a [field] handle",
-        );
+        // Constructor-time read (inputs unresolved) or a control with
+        // neither binding: stay inert, the init effect warns on the latter.
+        return this._detached();
       }
       const ref = this.adapter.getField(n);
       if (!ref) {
