@@ -103,6 +103,13 @@ export class MdyFormEngine
   private readonly _initialValues = new Map<string, unknown>();
   /** Reference count of controls claiming each field name. */
   private readonly _claims = new Map<string, number>();
+  /**
+   * Cached value record used by the incremental `value` computed. Rebuilt when
+   * field names change; otherwise mutated by single-key copy-on-write so a
+   * single field update does not re-assemble the whole object.
+   */
+  private _valueSnapshot: Record<string, unknown> = {};
+  private _valueSnapshotNames: readonly string[] = [];
 
   /** Form-level (cross-field) validators. */
   private readonly _formValidators: MdyWritableSignal<
@@ -188,11 +195,34 @@ export class MdyFormEngine
     this._lastSubmitErrors = _rx.signal<ReadonlyArray<MdyFormError>>([]);
     this._submitSnapshot = _rx.signal<Record<string, unknown> | null>(null);
 
-    this.value = _rx.computed(() =>
-      Object.fromEntries(
-        this._fieldNames().map(n => [n, this._fields.get(n)?.state.value() ?? null]),
-      ),
-    );
+    this.value = _rx.computed(() => {
+      const names = this._fieldNames();
+      const namesChanged =
+        names.length !== this._valueSnapshotNames.length ||
+        names.some((n, i) => n !== this._valueSnapshotNames[i]);
+      if (namesChanged) {
+        const next: Record<string, unknown> = {};
+        for (const n of names) {
+          next[n] = this._fields.get(n)?.state.value() ?? null;
+        }
+        this._valueSnapshot = next;
+        this._valueSnapshotNames = names.slice();
+        return next;
+      }
+      let next: Record<string, unknown> | null = null;
+      for (const n of names) {
+        const v = this._fields.get(n)!.state.value();
+        if (next) {
+          next[n] = v;
+        } else if (!Object.is(this._valueSnapshot[n], v)) {
+          next = { ...this._valueSnapshot, [n]: v };
+        }
+      }
+      if (next) {
+        this._valueSnapshot = next;
+      }
+      return this._valueSnapshot;
+    });
     this._crossErrors = _rx.computed(() => {
       const fns = this._formValidators();
       if (fns.length === 0) return [];

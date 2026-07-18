@@ -52,6 +52,26 @@ describe("core benchmarks", () => {
     expect(ms).toBeLessThan(15);
   });
 
+  it("updates a single field with a cross-field validator registered", () => {
+    const adapter = makeAdapter(1000);
+    adapter.setFormValidators([
+      (value) =>
+        value.f0 === value.f999
+          ? []
+          : [{ kind: "validation", message: "mismatch", path: "f0" }],
+    ]);
+    adapter.state.valid(); // settle the computed graph
+    const f = adapter.getField("f500")!();
+    const ms = bench("1000x single-field update + read with cross-field validator", () => {
+      for (let i = 0; i < 1000; i++) {
+        f.value.set(`v${i}`);
+        f.errors();
+        f.valid();
+      }
+    });
+    expect(ms).toBeLessThan(1000);
+  });
+
   it("recomputes whole-form validity and value on demand", () => {
     const adapter = makeAdapter(1000);
     expect(
