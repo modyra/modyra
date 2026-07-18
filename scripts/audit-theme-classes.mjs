@@ -203,14 +203,6 @@ function buildAngularVocabulary() {
 
 // ─── Lit extraction ──────────────────────────────────────────────────────────
 
-function findLitTemplates(ts) {
-  const templates = [];
-  const re = /html`([\s\S]*?)`/g;
-  let m;
-  while ((m = re.exec(ts)) !== null) templates.push(m[1]);
-  return templates;
-}
-
 function extractLitTemplateClasses(template) {
   // Lit templates are inside html`...`. Every mdy-* token in the template
   // body is a class name (the few element/function names like mdyIcon are
@@ -218,7 +210,31 @@ function extractLitTemplateClasses(template) {
   const classes = [];
   const tokenRe = /mdy-[A-Za-z0-9_-]+/g;
   let m;
-  while ((m = tokenRe.exec(template)) !== null) classes.push(m[0]);
+  while ((m = tokenRe.exec(template)) !== null) {
+    const token = m[0];
+    if (!token.endsWith("-")) classes.push(token);
+  }
+  return classes;
+}
+
+function stripComments(ts) {
+  return ts
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/[^\n]*/g, "");
+}
+
+function extractLitAllTokens(ts) {
+  // Scan the whole file for mdy-* tokens. This is robust against nested
+  // template literals and conditional class strings. Tokens ending in `-`
+  // are placeholders (e.g. mdy-field-) and are ignored.
+  const code = stripComments(ts);
+  const classes = [];
+  const tokenRe = /mdy-[A-Za-z0-9_-]+/g;
+  let m;
+  while ((m = tokenRe.exec(code)) !== null) {
+    const token = m[0];
+    if (!token.endsWith("-")) classes.push(token);
+  }
   return classes;
 }
 
@@ -242,7 +258,7 @@ function litFileForKind(kind) {
 function buildLitVocabulary() {
   const baseTs = readText(LIT_BASE);
   const baseClasses = new Set([
-    ...findLitTemplates(baseTs).flatMap(extractLitTemplateClasses),
+    ...extractLitAllTokens(baseTs),
     ...extractLitDynamicClasses(baseTs),
   ]);
 
@@ -252,9 +268,7 @@ function buildLitVocabulary() {
     const path = litFileForKind(kind);
     if (readText(path)) {
       const ts = readText(path);
-      for (const t of findLitTemplates(ts)) {
-        for (const c of extractLitTemplateClasses(t)) classes.add(c);
-      }
+      for (const c of extractLitAllTokens(ts)) classes.add(c);
       for (const c of extractLitDynamicClasses(ts)) classes.add(c);
     }
     vocab.set(kind, classes);
