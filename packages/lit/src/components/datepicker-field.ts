@@ -335,39 +335,43 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         aria-label=${this.label || "Choose date"}
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
       >
-        <div class="mdy-datepicker__header-label">
-          <button
-            type="button"
-            class="mdy-datepicker__view-toggle"
-            aria-label="Change view"
-            @click=${this.onToggleView}
-          >
-            <span class="mdy-datepicker__title">${monthLabel} ${this._viewYear}</span>
-            ${mdyIcon("CHEVRON_DOWN", "mdy-datepicker__view-icon")}
-          </button>
-        </div>
-        <div class="mdy-datepicker__header-nav">
-          <button
-            type="button"
-            class="mdy-datepicker__nav-btn"
-            aria-label="Previous month"
-            ?disabled=${this._view !== "calendar"}
-            @click=${() => this.navigateMonths(-1)}
-          >
-            ${mdyIcon("CHEVRON_LEFT", "")}
-          </button>
-          <button
-            type="button"
-            class="mdy-datepicker__nav-btn"
-            aria-label="Next month"
-            ?disabled=${this._view !== "calendar"}
-            @click=${() => this.navigateMonths(1)}
-          >
-            ${mdyIcon("CHEVRON_RIGHT", "")}
-          </button>
+        <div class="mdy-datepicker__header">
+          <div class="mdy-datepicker__header-label">
+            <button
+              type="button"
+              class="mdy-datepicker__view-toggle"
+              aria-label="Change view"
+              @click=${this.onToggleView}
+            >
+              <span class="mdy-datepicker__title">${monthLabel} ${this._viewYear}</span>
+              ${mdyIcon("CHEVRON_DOWN", "mdy-datepicker__view-icon")}
+            </button>
+          </div>
+          <div class="mdy-datepicker__header-nav">
+            <button
+              type="button"
+              class="mdy-datepicker__nav-btn"
+              aria-label="Previous month"
+              ?disabled=${this._view !== "calendar"}
+              @click=${() => this.navigateMonths(-1)}
+            >
+              ${mdyIcon("CHEVRON_LEFT", "")}
+            </button>
+            <button
+              type="button"
+              class="mdy-datepicker__nav-btn"
+              aria-label="Next month"
+              ?disabled=${this._view !== "calendar"}
+              @click=${() => this.navigateMonths(1)}
+            >
+              ${mdyIcon("CHEVRON_RIGHT", "")}
+            </button>
+          </div>
         </div>
         ${this._view === "calendar"
-          ? this.renderCalendarGrid(handle)
+          ? html`<div class="mdy-datepicker__grid">
+              ${this.renderCalendarGrid(handle)}
+            </div>`
           : this._view === "month"
             ? this.renderMonthPicker(handle)
             : this.renderYearPicker()}
@@ -378,40 +382,42 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
     this.classList.toggle("mdy-renderer--open", this._open);
     return html`
-      <input
-        id=${this.fieldId}
-        type="text"
-        class="mdy-datepicker__input"
-        placeholder=${this.placeholder}
-        .value=${handle.value() ?? ""}
-        ?disabled=${handle.disabled()}
-        aria-haspopup="dialog"
-        aria-expanded=${this._open ? "true" : "false"}
-        aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-        aria-required=${handle.required() ? "true" : "false"}
-        aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
-        @change=${(e: Event) => {
-          const el = e.target as HTMLInputElement;
-          const iso = this.parse(el.value);
-          handle.set(iso);
-          el.value = iso ?? "";
-          handle.markAsDirty();
-        }}
-        @blur=${() => handle.markAsTouched()}
-      />
-      <div class="mdy-input-suffix">
-        <button
-          type="button"
-          class="mdy-datepicker__toggle"
+      <div class="mdy-datepicker">
+        <input
+          id=${this.fieldId}
+          type="text"
+          class="mdy-datepicker__input"
+          placeholder=${this.placeholder}
+          .value=${handle.value() ?? ""}
           ?disabled=${handle.disabled()}
-          aria-label="Open date picker"
+          aria-haspopup="dialog"
           aria-expanded=${this._open ? "true" : "false"}
-          @click=${() => (this._open ? this.closePopup(handle) : this.openPopup(handle))}
-        >
-          ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
-        </button>
+          aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+          aria-required=${handle.required() ? "true" : "false"}
+          aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
+          @change=${(e: Event) => {
+            const el = e.target as HTMLInputElement;
+            const iso = this.parse(el.value);
+            handle.set(iso);
+            el.value = iso ?? "";
+            handle.markAsDirty();
+          }}
+          @blur=${() => handle.markAsTouched()}
+        />
+        <div class="mdy-input-suffix">
+          <button
+            type="button"
+            class="mdy-datepicker__toggle"
+            ?disabled=${handle.disabled()}
+            aria-label="Open date picker"
+            aria-expanded=${this._open ? "true" : "false"}
+            @click=${() => (this._open ? this.closePopup(handle) : this.openPopup(handle))}
+          >
+            ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
+          </button>
+        </div>
+        ${renderOverlayPanel(this.renderPopup(handle), this._open, this)}
       </div>
-      ${renderOverlayPanel(this.renderPopup(handle), this._open, this)}
     `;
   }
 
