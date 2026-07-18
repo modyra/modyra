@@ -65,6 +65,7 @@
         /* ── Elevation ──────────────────────────────────────────────────────────── */
         --mdy-shadow-depth-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
         --mdy-shadow-depth-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+        --mdy-shadow-depth-3: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 8px 3px rgba(0, 0, 0, 0.15);
 
         /* ── Text Field (Filled) ────────────────────────────────────────────────── */
         --mdy-input-height: var(--mdy-comp-filled-text-field-container-height);
@@ -252,6 +253,8 @@
         --mdy-datepicker-popup-padding: var(--mdy-comp-date-picker-popup-padding);
         --mdy-datepicker-popup-shadow: var(--mdy-comp-date-picker-popup-shadow);
         --mdy-datepicker-popup-bg: var(--mdy-comp-date-picker-popup-bg);
+        --mdy-datepicker-modal-bg: var(--mdy-comp-date-picker-modal-container-color);
+        --mdy-datepicker-modal-radius: var(--mdy-comp-date-picker-modal-container-shape);
         --mdy-datepicker-hover-bg: var(--mdy-comp-date-picker-cell-hover-bg);
         --mdy-datepicker-disabled-opacity: var(--mdy-comp-date-picker-cell-disabled-opacity);
         --mdy-datepicker-today-color: var(--mdy-sys-color-primary);
@@ -276,6 +279,7 @@
             --mdy-overlay-backdrop-bg: rgba(0, 0, 0, 0.6);
             --mdy-shadow-depth-1: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 4px 1px rgba(0, 0, 0, 0.3);
             --mdy-shadow-depth-2: 0 1px 3px rgba(0, 0, 0, 0.5), 0 2px 8px 2px rgba(0, 0, 0, 0.3);
+            --mdy-shadow-depth-3: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 12px 6px rgba(0, 0, 0, 0.3);
         }
     }
 
@@ -632,7 +636,7 @@
         cursor: pointer;
         padding: 0;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        background-color: var(--color);
+        background-color: var(--color, transparent);
         outline: 2px solid transparent;
         outline-offset: 2px;
     }
@@ -2486,6 +2490,307 @@
         right: auto;
         transform: translate(-50%, -50%);
         margin: 0;
+    }
+
+    /* ─── Time Picker Container / Dial ────────────────────────────────────────── */
+
+    .mdy-timepicker-container {
+        --tp-primary: var(--mdy-tp-primary, var(--mdy-primary));
+        --tp-on-primary: var(--mdy-tp-on-primary, var(--mdy-on-primary));
+        --tp-primary-container: var(--mdy-tp-primary-container, var(--mdy-primary-container));
+        --tp-on-primary-container: var(--mdy-tp-on-primary-container, var(--mdy-on-primary-container));
+        --tp-surface: var(--mdy-tp-surface, var(--mdy-surface));
+        --tp-surface-variant: var(--mdy-tp-surface-variant, var(--mdy-surface-container));
+        --tp-outline: var(--mdy-tp-outline, var(--mdy-outline-variant));
+        --tp-border-radius: var(--mdy-tp-border-radius, var(--mdy-datepicker-popup-border-radius, var(--mdy-input-border-radius)));
+        --tp-font-family: var(--mdy-font-family, "Roboto", sans-serif);
+        --tp-font-weight: var(--mdy-tp-font-weight, 400);
+        --tp-period-font-weight: var(--mdy-tp-period-font-weight, 500);
+        --tp-dial-size: var(--mdy-comp-time-picker-clock-dial-size, 256px);
+        --tp-num-size: 40px;
+        --tp-hand-length: calc(var(--tp-dial-size) / 2 - (var(--tp-num-size) / 2) - 8px);
+        --tp-seg-width: var(--mdy-comp-time-picker-input-segment-width, 96px);
+        --tp-seg-height: var(--mdy-comp-time-picker-input-segment-height, 80px);
+
+        background-color: var(--mdy-comp-time-picker-container-color, var(--tp-surface));
+        border: none;
+        border-radius: var(--mdy-comp-time-picker-container-shape, var(--tp-border-radius));
+        box-shadow: var(--mdy-datepicker-popup-shadow, var(--mdy-select-dropdown-shadow, 0 4px 12px rgba(0, 0, 0, 0.12)));
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        width: fit-content;
+        max-width: 95vw;
+        max-height: 95vh;
+        overflow-y: auto;
+        box-sizing: border-box;
+        font-family: var(--tp-font-family);
+    }
+
+    .mdy-timepicker-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .mdy-timepicker-header {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .mdy-timepicker-fields {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .mdy-timepicker-segment {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .mdy-timepicker-segment-input {
+        width: var(--tp-seg-width) !important;
+        height: var(--tp-seg-height) !important;
+        background-color: var(--mdy-comp-time-picker-input-container-color, var(--tp-surface-variant)) !important;
+        border: 1.5px solid transparent !important;
+        border-radius: var(--mdy-comp-time-picker-input-container-shape, var(--tp-border-radius)) !important;
+        font-size: 45px !important;
+        font-weight: var(--tp-font-weight) !important;
+        text-align: center !important;
+        color: var(--tp-on-primary-container) !important;
+        outline: none !important;
+        box-shadow: none !important;
+        transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+        font-family: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: text;
+        padding: 0 !important;
+    }
+
+    .mdy-timepicker-segment-input--readonly {
+        cursor: pointer !important;
+    }
+
+    .mdy-timepicker-segment-input::-webkit-inner-spin-button,
+    .mdy-timepicker-segment-input::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .mdy-timepicker-segment-input:hover:not(:disabled) {
+        background-color: color-mix(in srgb, var(--mdy-comp-time-picker-input-container-color, var(--tp-surface-variant)), var(--mdy-on-surface, #000) 8%) !important;
+    }
+
+    .mdy-timepicker-segment--active .mdy-timepicker-segment-input {
+        background-color: var(--tp-primary) !important;
+        border-color: var(--tp-primary) !important;
+        color: var(--tp-on-primary) !important;
+    }
+
+    .mdy-timepicker-segment-label {
+        font-size: 0.75rem;
+        color: var(--tp-outline);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-left: 4px;
+    }
+
+    .mdy-timepicker-separator {
+        font-size: 45px;
+        color: var(--tp-on-primary-container);
+        font-weight: var(--tp-font-weight);
+        align-self: flex-start;
+        height: var(--tp-seg-height);
+        display: flex;
+        align-items: center;
+    }
+
+    .mdy-timepicker-period-toggle {
+        display: flex;
+        flex-direction: column;
+        border: 1.5px solid var(--mdy-comp-time-picker-period-outline-color, var(--tp-outline));
+        border-radius: var(--mdy-comp-time-picker-input-container-shape, var(--tp-border-radius));
+        overflow: hidden;
+        height: var(--tp-seg-height);
+    }
+
+    .mdy-timepicker-period-toggle--compact {
+        height: auto;
+        align-self: center;
+        margin-left: 8px;
+    }
+
+    .mdy-timepicker-period-btn {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 0;
+        width: 52px;
+        font-size: 0.875rem;
+        font-weight: var(--tp-period-font-weight);
+        font-family: inherit;
+        cursor: pointer;
+        color: var(--mdy-on-surface-variant, #3f3f46);
+        transition: background-color 0.15s, color 0.15s;
+    }
+
+    .mdy-timepicker-period-btn:first-child {
+        border-bottom: 1.5px solid var(--mdy-comp-time-picker-period-outline-color, var(--tp-outline));
+    }
+
+    .mdy-timepicker-period-btn--selected {
+        background-color: var(--tp-primary);
+        color: var(--tp-on-primary);
+        font-weight: 600;
+    }
+
+    .mdy-timepicker-period-btn:hover:not(:disabled):not(.mdy-timepicker-period-btn--selected) {
+        background-color: var(--mdy-datepicker-hover-bg, rgba(0, 0, 0, 0.06));
+    }
+
+    .mdy-timepicker-period-btn:disabled {
+        opacity: 0.4;
+        cursor: default;
+    }
+
+    .mdy-timepicker-dial {
+        width: var(--tp-dial-size);
+        height: var(--tp-dial-size);
+        background-color: var(--mdy-comp-time-picker-clock-dial-container-color, var(--tp-surface-variant));
+        border-radius: 50%;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        user-select: none;
+        touch-action: none;
+    }
+
+    .mdy-timepicker-dial__face {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    .mdy-timepicker-dial__number {
+        position: absolute;
+        width: var(--tp-num-size);
+        height: var(--tp-num-size);
+        aspect-ratio: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.9rem;
+        font-weight: 500;
+        line-height: 1;
+        color: var(--tp-on-primary-container);
+        z-index: 10;
+        pointer-events: none;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(calc(var(--index) * 30deg)) translateY(calc(var(--tp-hand-length) * -1)) rotate(calc(var(--index) * -30deg));
+        transition: color 0.12s;
+    }
+
+    .mdy-timepicker-dial__number--selected {
+        color: var(--tp-on-primary);
+    }
+
+    .mdy-timepicker-dial__hand {
+        position: absolute;
+        bottom: 50%;
+        left: calc(50% - 1px);
+        width: 2px;
+        height: var(--tp-hand-length);
+        background-color: var(--tp-primary);
+        transform-origin: bottom center;
+    }
+
+    .mdy-timepicker-dial__hand::after {
+        content: "";
+        position: absolute;
+        top: calc(var(--tp-num-size) / -2);
+        left: calc(var(--tp-num-size) / -2 + 1px);
+        width: var(--tp-num-size);
+        height: var(--tp-num-size);
+        aspect-ratio: 1;
+        background-color: var(--tp-primary);
+        border-radius: 50%;
+        z-index: 2;
+    }
+
+    .mdy-timepicker-dial__hand::before {
+        content: "";
+        position: absolute;
+        bottom: -4px;
+        left: -3px;
+        width: 8px;
+        height: 8px;
+        background-color: var(--tp-primary);
+        border-radius: 50%;
+    }
+
+    .mdy-timepicker-actions {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        gap: 4px;
+    }
+
+    .mdy-timepicker-spacer {
+        flex: 1;
+    }
+
+    .mdy-timepicker-mode-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: var(--mdy-on-surface-variant, #3f3f46);
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 50%;
+        transition: background-color 0.15s;
+        width: 32px;
+        height: 32px;
+    }
+
+    .mdy-timepicker-mode-toggle:hover {
+        background-color: var(--mdy-datepicker-hover-bg, rgba(0, 0, 0, 0.06));
+    }
+
+    .mdy-timepicker-mode-toggle svg {
+        display: block;
+    }
+
+    .mdy-timepicker-action-btn {
+        background: none;
+        border: none;
+        color: var(--tp-primary);
+        font-weight: 600;
+        font-size: 0.875rem;
+        font-family: inherit;
+        padding: 6px 12px;
+        border-radius: var(--tp-border-radius);
+        cursor: pointer;
+        letter-spacing: 0.04em;
+        transition: background-color 0.15s;
+    }
+
+    .mdy-timepicker-action-btn:hover {
+        background-color: var(--mdy-datepicker-hover-bg, rgba(0, 0, 0, 0.06));
+    }
+
+    .mdy-timepicker-action-btn--confirm {
+        font-weight: 700;
     }
 
     /* ─── Calendar ────────────────────────────────────────────────────────────── */
