@@ -182,10 +182,8 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     const filtered = filterOptionsByQuery(this.options, state.query);
     const showBlockErrors = !this.inlineErrors && this.showErrors(handle);
 
-    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    this.syncStateClasses(handle);
     this.classList.toggle("mdy-renderer--open", this._open);
-    this.classList.toggle("mdy-floating-label", this.floatingLabel);
-    this.classList.toggle("mdy-inline-errors", this.inlineErrors);
 
     return html`
       ${this.renderLabel(handle, trigger.id)}

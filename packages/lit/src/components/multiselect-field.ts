@@ -145,10 +145,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     const handle = this.field;
     if (!handle) return nothing;
     const showBlockErrors = !this.inlineErrors && this.showErrors(handle);
-    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    this.syncStateClasses(handle);
     this.classList.toggle("mdy-renderer--open", this._open);
-    this.classList.toggle("mdy-floating-label", this.floatingLabel);
-    this.classList.toggle("mdy-inline-errors", this.inlineErrors);
 
     const triggerId = `${this.fieldId}-trigger`;
     return html`
