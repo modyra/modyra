@@ -230,7 +230,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             ?disabled=${handle.disabled() || count === 0}
             @click=${() => this.decrement(handle, option.value)}
           >
-            ${mdyIcon("MINUS", "mdy-chip__btn-icon")}
+            ${mdyIcon("MINUS", "")}
           </button>
           <span class="mdy-chip__label">${option.label}</span>
           <span class="mdy-chip__count">×${count}</span>
@@ -240,7 +240,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             ?disabled=${handle.disabled()}
             @click=${() => this.increment(handle, option.value)}
           >
-            ${mdyIcon("PLUS", "mdy-chip__btn-icon")}
+            ${mdyIcon("PLUS", "")}
           </button>
         </div>`;
       },
@@ -262,7 +262,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           ?disabled=${count === 0}
           @click=${() => this.decrement(handle, option.value)}
         >
-          ${mdyIcon("MINUS", "mdy-chip__btn-icon")}
+          ${mdyIcon("MINUS", "")}
         </button>
         <span class="mdy-chip__label">${option.label}</span>
         <span class="mdy-chip__count">×${count}</span>
@@ -271,7 +271,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           class="mdy-chip__btn"
           @click=${() => this.increment(handle, option.value)}
         >
-          ${mdyIcon("PLUS", "mdy-chip__btn-icon")}
+          ${mdyIcon("PLUS", "")}
         </button>
       </div>`;
     }
