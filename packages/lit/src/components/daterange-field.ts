@@ -493,39 +493,43 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
         aria-label=${this.label || "Choose date range"}
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
       >
-        <div class="mdy-datepicker__header-label">
-          <button
-            type="button"
-            class="mdy-datepicker__view-toggle"
-            aria-label="Change view"
-            @click=${this.onToggleView}
-          >
-            <span class="mdy-datepicker__title">${monthLabel} ${this._viewYear}</span>
-            ${mdyIcon("CHEVRON_DOWN", "mdy-datepicker__view-icon")}
-          </button>
-        </div>
-        <div class="mdy-datepicker__header-nav">
-          <button
-            type="button"
-            class="mdy-datepicker__nav-btn"
-            aria-label="Previous month"
-            ?disabled=${this._view !== "calendar"}
-            @click=${() => this.navigateMonths(-1)}
-          >
-            ${mdyIcon("CHEVRON_LEFT", "")}
-          </button>
-          <button
-            type="button"
-            class="mdy-datepicker__nav-btn"
-            aria-label="Next month"
-            ?disabled=${this._view !== "calendar"}
-            @click=${() => this.navigateMonths(1)}
-          >
-            ${mdyIcon("CHEVRON_RIGHT", "")}
-          </button>
+        <div class="mdy-datepicker__header">
+          <div class="mdy-datepicker__header-label">
+            <button
+              type="button"
+              class="mdy-datepicker__view-toggle"
+              aria-label="Change view"
+              @click=${this.onToggleView}
+            >
+              <span class="mdy-datepicker__title">${monthLabel} ${this._viewYear}</span>
+              ${mdyIcon("CHEVRON_DOWN", "mdy-datepicker__view-icon")}
+            </button>
+          </div>
+          <div class="mdy-datepicker__header-nav">
+            <button
+              type="button"
+              class="mdy-datepicker__nav-btn"
+              aria-label="Previous month"
+              ?disabled=${this._view !== "calendar"}
+              @click=${() => this.navigateMonths(-1)}
+            >
+              ${mdyIcon("CHEVRON_LEFT", "")}
+            </button>
+            <button
+              type="button"
+              class="mdy-datepicker__nav-btn"
+              aria-label="Next month"
+              ?disabled=${this._view !== "calendar"}
+              @click=${() => this.navigateMonths(1)}
+            >
+              ${mdyIcon("CHEVRON_RIGHT", "")}
+            </button>
+          </div>
         </div>
         ${this._view === "calendar"
-          ? html`${this.renderCalendarGrid(handle)}
+          ? html`<div class="mdy-datepicker__grid">
+              ${this.renderCalendarGrid(handle)}
+            </div>
             <div class="mdy-daterange__hint" aria-live="polite">${hint}</div>`
           : this._view === "month"
             ? this.renderMonthPicker()
@@ -539,68 +543,82 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     const range = handle.value() ?? { start: null, end: null };
     const baseLabel = this.label ? `${this.label} — ` : "";
     return html`
-      <input
-        id=${this.startInputId}
-        type="text"
-        class="mdy-datepicker__input mdy-daterange__input"
-        placeholder=${this.startPlaceholder}
-        .value=${range.start ?? ""}
-        ?disabled=${handle.disabled()}
-        aria-haspopup="dialog"
-        aria-expanded=${this._open ? "true" : "false"}
-        aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-        aria-required=${handle.required() ? "true" : "false"}
-        aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
-        aria-label=${`${baseLabel}Start date`}
-        autocomplete="off"
-        @change=${(e: Event) => {
-          const raw = (e.target as HTMLInputElement).value.trim();
-          const current = handle.value() ?? { start: null, end: null };
-          const parsed = raw ? parseIsoDate(raw) : null;
-          const iso = parsed ? formatIsoDate(parsed) : null;
-          this.commitRange(handle, iso, current.end);
-          (e.target as HTMLInputElement).value = iso ?? "";
-        }}
-        @blur=${() => handle.markAsTouched()}
-      />
-      <span class="mdy-daterange__sep" aria-hidden="true">–</span>
-      <input
-        type="text"
-        class="mdy-datepicker__input mdy-daterange__input"
-        placeholder=${this.endPlaceholder}
-        .value=${range.end ?? ""}
-        ?disabled=${handle.disabled()}
-        aria-haspopup="dialog"
-        aria-expanded=${this._open ? "true" : "false"}
-        aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-        aria-required=${handle.required() ? "true" : "false"}
-        aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
-        aria-label=${`${baseLabel}End date`}
-        autocomplete="off"
-        @change=${(e: Event) => {
-          const raw = (e.target as HTMLInputElement).value.trim();
-          const current = handle.value() ?? { start: null, end: null };
-          const parsed = raw ? parseIsoDate(raw) : null;
-          const iso = parsed ? formatIsoDate(parsed) : null;
-          this.commitRange(handle, current.start, iso);
-          (e.target as HTMLInputElement).value = iso ?? "";
-        }}
-        @blur=${() => handle.markAsTouched()}
-      />
-      <div class="mdy-input-suffix">
-        <button
-          type="button"
-          class="mdy-datepicker__toggle"
-          ?disabled=${handle.disabled()}
-          aria-label="Open date range picker"
-          aria-expanded=${this._open ? "true" : "false"}
-          tabindex="-1"
-          @click=${() => (this._open ? this.closePopup(handle) : this.openPopup(handle))}
-        >
-          ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
-        </button>
+      <div class="mdy-datepicker">
+        <div class="mdy-input-wrapper mdy-daterange__group">
+          <span
+            class="mdy-daterange__input-sizer"
+            data-value=${range.start ?? this.startPlaceholder}
+          >
+            <input
+              id=${this.startInputId}
+              type="text"
+              class="mdy-datepicker__input mdy-daterange__input"
+              placeholder=${this.startPlaceholder}
+              .value=${range.start ?? ""}
+              ?disabled=${handle.disabled()}
+              aria-haspopup="dialog"
+              aria-expanded=${this._open ? "true" : "false"}
+              aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+              aria-required=${handle.required() ? "true" : "false"}
+              aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
+              aria-label=${`${baseLabel}Start date`}
+              autocomplete="off"
+              @change=${(e: Event) => {
+                const raw = (e.target as HTMLInputElement).value.trim();
+                const current = handle.value() ?? { start: null, end: null };
+                const parsed = raw ? parseIsoDate(raw) : null;
+                const iso = parsed ? formatIsoDate(parsed) : null;
+                this.commitRange(handle, iso, current.end);
+                (e.target as HTMLInputElement).value = iso ?? "";
+              }}
+              @blur=${() => handle.markAsTouched()}
+            />
+          </span>
+          <span class="mdy-daterange__sep" aria-hidden="true">–</span>
+          <span
+            class="mdy-daterange__input-sizer"
+            data-value=${range.end ?? this.endPlaceholder}
+          >
+            <input
+              type="text"
+              class="mdy-datepicker__input mdy-daterange__input"
+              placeholder=${this.endPlaceholder}
+              .value=${range.end ?? ""}
+              ?disabled=${handle.disabled()}
+              aria-haspopup="dialog"
+              aria-expanded=${this._open ? "true" : "false"}
+              aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+              aria-required=${handle.required() ? "true" : "false"}
+              aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
+              aria-label=${`${baseLabel}End date`}
+              autocomplete="off"
+              @change=${(e: Event) => {
+                const raw = (e.target as HTMLInputElement).value.trim();
+                const current = handle.value() ?? { start: null, end: null };
+                const parsed = raw ? parseIsoDate(raw) : null;
+                const iso = parsed ? formatIsoDate(parsed) : null;
+                this.commitRange(handle, current.start, iso);
+                (e.target as HTMLInputElement).value = iso ?? "";
+              }}
+              @blur=${() => handle.markAsTouched()}
+            />
+          </span>
+          <div class="mdy-input-suffix">
+            <button
+              type="button"
+              class="mdy-datepicker__toggle"
+              ?disabled=${handle.disabled()}
+              aria-label="Open date range picker"
+              aria-expanded=${this._open ? "true" : "false"}
+              tabindex="-1"
+              @click=${() => (this._open ? this.closePopup(handle) : this.openPopup(handle))}
+            >
+              ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
+            </button>
+          </div>
+        </div>
+        ${renderOverlayPanel(this.renderPopup(handle), this._open, this)}
       </div>
-      ${renderOverlayPanel(this.renderPopup(handle), this._open, this)}
     `;
   }
 
