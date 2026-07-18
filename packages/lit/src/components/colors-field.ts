@@ -5,6 +5,7 @@ import {
   NATIVE_HIDDEN_STYLE,
   POPUP_ANCHOR_STYLE,
   renderOverlayPanel,
+  resolveOverlayPosition,
 } from "./popup-styles.js";
 
 // ─── Color & file ────────────────────────────────────────────────────────────
@@ -47,9 +48,12 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
   }
 
   private renderDropdown(handle: MdyFieldHandle<string | null>): unknown {
+    const position = resolveOverlayPosition(this);
     return html`
       <div
-        class="mdy-colors__dropdown"
+        class="mdy-colors__dropdown ${position === "above"
+          ? "mdy-colors__dropdown--above"
+          : ""} ${position === "overlay" ? "mdy-colors__dropdown--overlay" : ""}"
         role="listbox"
         aria-label="Color presets"
         @keydown=${(e: KeyboardEvent) => {

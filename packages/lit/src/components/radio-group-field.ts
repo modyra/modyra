@@ -1,11 +1,22 @@
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdySelectOption } from "@modyra/core";
 import { createOptionFieldController, type MdyOptionFieldController } from "@modyra/widgets";
 import { MdyOptionsFieldElement } from "./options-field.js";
 
 export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | null> {
+  static override properties: PropertyDeclarations = {
+    layout: { type: String },
+  };
+  /** `"vertical"` (default) or `"horizontal"`. */
+  declare layout: "vertical" | "horizontal";
+
   protected override readonly rendererClass = "mdy-renderer--radio-group";
   private fieldController?: MdyOptionFieldController<unknown>;
+
+  constructor() {
+    super();
+    this.layout = "vertical";
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -39,7 +50,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
     return html`
       ${this.renderGroupLabel(handle)}
       <div
-        class="mdy-radio-group"
+        class="mdy-radio-group ${this.layout === "horizontal" ? "mdy-radio-group--horizontal" : ""}"
         role="radiogroup"
         aria-labelledby=${this.label ? this.labelId : nothing}
         aria-invalid=${groupAttrs?.["aria-invalid"] ?? (handle.errors().length > 0 ? "true" : "false")}

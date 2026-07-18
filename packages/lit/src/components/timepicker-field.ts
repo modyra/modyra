@@ -33,6 +33,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   static override properties: PropertyDeclarations = {
     placeholder: { type: String },
     format: { type: String },
+    compact: { type: Boolean },
     _open: { state: true },
     _viewMode: { state: true },
     _focusedField: { state: true },
@@ -43,6 +44,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   declare placeholder: string;
   /** `"12h"` or `"24h"`. */
   declare format: MdyTimeFormat;
+  /** Compact period-toggle layout. */
+  declare compact: boolean;
   declare _open: boolean;
   declare _viewMode: TimepickerViewMode;
   declare _focusedField: TimeField;
@@ -58,6 +61,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     super();
     this.placeholder = "";
     this.format = "12h";
+    this.compact = false;
     this._open = false;
     this._viewMode = "input";
     this._focusedField = "hour";
@@ -325,7 +329,11 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
         </div>
         ${this.format === "12h"
           ? html`
-              <div class="mdy-timepicker-period-toggle">
+              <div
+                class="mdy-timepicker-period-toggle ${this.compact
+                  ? "mdy-timepicker-period-toggle--compact"
+                  : ""}"
+              >
                 <button
                   type="button"
                   class="mdy-timepicker-period-btn ${this.periodDisplay() === "AM" ? "mdy-timepicker-period-btn--selected" : ""}"
