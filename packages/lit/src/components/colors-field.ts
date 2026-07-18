@@ -1,7 +1,11 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { NATIVE_HIDDEN_STYLE, POPUP_ANCHOR_STYLE, POPUP_STYLE } from "./popup-styles.js";
+import {
+  NATIVE_HIDDEN_STYLE,
+  POPUP_ANCHOR_STYLE,
+  renderOverlayPanel,
+} from "./popup-styles.js";
 
 // ─── Color & file ────────────────────────────────────────────────────────────
 
@@ -48,7 +52,6 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
         class="mdy-colors__dropdown"
         role="listbox"
         aria-label="Color presets"
-        style=${POPUP_STYLE}
         @keydown=${(e: KeyboardEvent) => {
           if (e.key === "Escape") {
             e.preventDefault();
@@ -152,7 +155,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
             </button>
           </div>
         </div>
-        ${this._open ? this.renderDropdown(handle) : nothing}
+        ${renderOverlayPanel(this.renderDropdown(handle), this._open)}
       </div>
     `;
   }

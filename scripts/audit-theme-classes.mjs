@@ -256,6 +256,17 @@ function litFileForKind(kind) {
   return join(LIT_DIR, baseName);
 }
 
+function resolveLitImportPath(fromFile, specifier) {
+  if (!specifier.startsWith(".")) return null;
+  // Lit TS sources are imported with a .js extension in ESM.
+  const base = resolve(dirname(fromFile), specifier.replace(/\.js$/, ""));
+  const candidates = [`${base}.ts`, `${base}.js`];
+  for (const c of candidates) {
+    if (readText(c)) return c;
+  }
+  return null;
+}
+
 function buildLitVocabulary() {
   const baseTs = readText(LIT_BASE);
   const baseClasses = new Set([
@@ -267,11 +278,27 @@ function buildLitVocabulary() {
   for (const kind of KINDS) {
     const classes = new Set(baseClasses);
     const path = litFileForKind(kind);
-    if (readText(path)) {
-      const ts = readText(path);
-      for (const c of extractLitAllTokens(ts)) classes.add(c);
-      for (const c of extractLitDynamicClasses(ts)) classes.add(c);
+    if (!readText(path)) {
+      vocab.set(kind, classes);
+      continue;
     }
+    const ts = readText(path);
+    for (const c of extractLitAllTokens(ts)) classes.add(c);
+    for (const c of extractLitDynamicClasses(ts)) classes.add(c);
+
+    // Pull in shared style/helper files explicitly imported by this component
+    // (e.g. popup-styles.ts with renderOverlayPanel) without blindly following
+    // every relative import, which would over-attribute shared base classes.
+    const sharedImportRe = /from\s+['"](\.\/[^'"]*(?:popup-styles|overlay)[^'"]*)['"];/g;
+    let m;
+    while ((m = sharedImportRe.exec(ts)) !== null) {
+      const resolved = resolveLitImportPath(path, m[1]);
+      if (!resolved) continue;
+      const sharedTs = readText(resolved);
+      for (const c of extractLitAllTokens(sharedTs)) classes.add(c);
+      for (const c of extractLitDynamicClasses(sharedTs)) classes.add(c);
+    }
+
     vocab.set(kind, classes);
   }
   return vocab;
