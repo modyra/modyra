@@ -176,12 +176,21 @@ export abstract class MdyFieldElement<T> extends LitElement {
     </ul>`;
   }
 
-  override render(): unknown {
-    const handle = this.field;
-    if (!handle) return nothing;
+  /**
+   * Single-source host state classes shared with the Angular host bindings.
+   * Subclasses with extra host modifiers (e.g. `--open`) call this and then
+   * toggle their own class.
+   */
+  protected syncStateClasses(handle: MdyFieldHandle<T>): void {
     this.classList.toggle("mdy-renderer--touched", handle.touched());
     this.classList.toggle("mdy-floating-label", this.floatingLabel);
     this.classList.toggle("mdy-inline-errors", this.inlineErrors);
+  }
+
+  override render(): unknown {
+    const handle = this.field;
+    if (!handle) return nothing;
+    this.syncStateClasses(handle);
     const control = this.renderControl(handle);
     const showBlockErrors = !this.inlineErrors && this.showErrors(handle);
     return html`

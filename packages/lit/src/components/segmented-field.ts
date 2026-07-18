@@ -33,7 +33,7 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
   override render(): unknown {
     const handle = this.field;
     if (!handle) return nothing;
-    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    this.syncStateClasses(handle);
     const view = this.fieldController?.view();
     const last = this.options.length - 1;
     const showBlockErrors = !this.inlineErrors && this.showErrors(handle);

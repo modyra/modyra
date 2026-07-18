@@ -32,7 +32,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
   override render(): unknown {
     const handle = this.field;
     if (!handle) return nothing;
-    this.classList.toggle("mdy-renderer--touched", handle.touched());
+    this.syncStateClasses(handle);
     const view = this.fieldController?.view();
     const groupAttrs = view?.parts.group.attributes;
     const showBlockErrors = !this.inlineErrors && this.showErrors(handle);
