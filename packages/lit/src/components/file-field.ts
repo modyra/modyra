@@ -65,7 +65,15 @@ export class MdyFileFieldElement extends MdyFieldElement<File | File[] | null> {
           @blur=${() => handle.markAsTouched()}
         />
         <div class="mdy-file-content">
-          ${mdyIcon("PLUS", "mdy-file-icon")}
+          <button
+            type="button"
+            class="mdy-button"
+            ?disabled=${handle.disabled()}
+            @click=${() => this.querySelector<HTMLInputElement>("input[type=file]")?.click()}
+          >
+            ${mdyIcon("PLUS", "mdy-file-icon")}
+            ${this.multiple ? "Select files" : "Select file"}
+          </button>
           <div class="mdy-file-info">
             ${files.length === 0
               ? html`<span class="mdy-file-placeholder">${this.placeholder || "Choose a file or drop it here"}</span>`

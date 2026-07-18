@@ -444,56 +444,64 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     `;
   }
 
+  protected override get useWrapper(): boolean {
+    return false;
+  }
+
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
     this.classList.toggle("mdy-renderer--open", this._open);
     return html`
-      <input
-        id=${this.fieldId}
-        type="text"
-        class="mdy-timepicker__input"
-        placeholder=${this.effectivePlaceholder}
-        .value=${handle.value() ?? ""}
-        ?disabled=${handle.disabled()}
-        aria-haspopup="dialog"
-        aria-expanded=${this._open ? "true" : "false"}
-        aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-        aria-required=${handle.required() ? "true" : "false"}
-        aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
-        autocomplete="off"
-        @change=${(e: Event) => {
-          const input = e.target as HTMLInputElement;
-          const raw = input.value.trim().toUpperCase();
-          if (!raw) {
-            handle.set(null);
-            handle.markAsDirty();
-            return;
-          }
-          const parsed = parseAnyTime(raw, this.format);
-          if (parsed) {
-            const formatted = formatTimeAs(parsed, this.format);
-            if (handle.value() !== formatted) {
-              handle.set(formatted);
-              handle.markAsDirty();
-            }
-          }
-          input.value = handle.value() ?? "";
-        }}
-        @blur=${() => handle.markAsTouched()}
-      />
-      <div class="mdy-input-suffix">
-        <button
-          type="button"
-          class="mdy-timepicker__toggle"
-          ?disabled=${handle.disabled()}
-          aria-label="Open time picker"
-          aria-expanded=${this._open ? "true" : "false"}
-          tabindex="-1"
-          @click=${() => (this._open ? this.closePopup(handle) : this.openPopup(handle))}
-        >
-          ${mdyIcon("CLOCK", "mdy-timepicker__icon")}
-        </button>
+      <div class="mdy-timepicker">
+        <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
+          <input
+            id=${this.fieldId}
+            type="text"
+            class="mdy-timepicker__input"
+            placeholder=${this.effectivePlaceholder}
+            .value=${handle.value() ?? ""}
+            ?disabled=${handle.disabled()}
+            aria-haspopup="dialog"
+            aria-expanded=${this._open ? "true" : "false"}
+            aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+            aria-required=${handle.required() ? "true" : "false"}
+            aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
+            autocomplete="off"
+            @change=${(e: Event) => {
+              const input = e.target as HTMLInputElement;
+              const raw = input.value.trim().toUpperCase();
+              if (!raw) {
+                handle.set(null);
+                handle.markAsDirty();
+                return;
+              }
+              const parsed = parseAnyTime(raw, this.format);
+              if (parsed) {
+                const formatted = formatTimeAs(parsed, this.format);
+                if (handle.value() !== formatted) {
+                  handle.set(formatted);
+                  handle.markAsDirty();
+                }
+              }
+              input.value = handle.value() ?? "";
+            }}
+            @blur=${() => handle.markAsTouched()}
+          />
+          <div class="mdy-input-suffix">
+            <button
+              type="button"
+              class="mdy-timepicker__toggle"
+              ?disabled=${handle.disabled()}
+              aria-label="Open time picker"
+              aria-expanded=${this._open ? "true" : "false"}
+              tabindex="-1"
+              @click=${() => (this._open ? this.closePopup(handle) : this.openPopup(handle))}
+            >
+              ${mdyIcon("CLOCK", "mdy-timepicker__icon")}
+            </button>
+          </div>
+        </div>
+        ${this._open ? this.renderPopup(handle) : nothing}
       </div>
-      ${this._open ? this.renderPopup(handle) : nothing}
     `;
   }
 
