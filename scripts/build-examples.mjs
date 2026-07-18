@@ -3,7 +3,7 @@
  * packages from node_modules — the same artifacts users install — never
  * the library sources.
  */
-import { build } from "/Users/lorenzo.local/projects/test/modyra/node_modules/.pnpm/esbuild@0.27.4/node_modules/esbuild/lib/main.js";
+import { build } from "esbuild";
 
 // Every demo ships all the packaged themes (minified CSS from the agnostic
 // @modyra/styles package dist) and starts on a different one; a runtime

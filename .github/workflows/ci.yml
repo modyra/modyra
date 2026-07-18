@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm run build:packages
+
+      - name: Core tests
+        run: pnpm run test:core
+
+      - name: Adapter tests
+        run: pnpm run test:adapters
+
+      - name: Widget tests
+        run: pnpm run test:widgets
+
+      - name: Build Angular library
+        run: pnpm run build:lib
+
+      - name: Angular tests
+        run: pnpm test
+
+      - name: Bundle / tree-shaking check
+        run: pnpm run test:bundle
+
+      # Known Lit parity gaps are allowlisted in
+      # scripts/theme-parity-allowlist.json; new regressions fail the check.
+      - name: Theme class parity
+        run: pnpm run test:themes
+
+      - name: Production dependency audit
+        run: pnpm audit --prod
