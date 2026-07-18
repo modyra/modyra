@@ -35,6 +35,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
     this.classList.toggle("mdy-renderer--touched", handle.touched());
     const view = this.fieldController?.view();
     const groupAttrs = view?.parts.group.attributes;
+    const showBlockErrors = !this.inlineErrors && this.showErrors(handle);
     return html`
       ${this.renderGroupLabel(handle)}
       <div
@@ -78,7 +79,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
           },
         )}
       </div>
-      ${this.renderErrors(handle)}
+      ${showBlockErrors ? this.renderErrors(handle) : this.renderSupportingText()}
     `;
   }
 }
