@@ -44,12 +44,12 @@
                         "assets": [
                             {
                                 "glob": "**/*",
-                                "input": "packages/styles/src",
+                                "input": "packages/styles/dist",
                                 "output": "styles"
                             }
                         ],
                         "styles": [
-                            "packages/styles/src/modyra-base.css",
+                            "packages/styles/dist/modyra-base.css",
                             "projects/demo/src/styles.scss"
                         ]
                     },

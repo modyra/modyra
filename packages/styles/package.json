@@ -20,25 +20,28 @@
         "design-system",
         "framework-agnostic"
     ],
+    "scripts": {
+        "build": "node build.mjs"
+    },
     "exports": {
         "./default.css": {
-            "default": "./src/modyra.css"
+            "default": "./dist/modyra.css"
         },
         "./material.css": {
-            "default": "./src/modyra-material.css"
+            "default": "./dist/modyra-material.css"
         },
         "./ios.css": {
-            "default": "./src/modyra-ios.css"
+            "default": "./dist/modyra-ios.css"
         },
         "./ionic.css": {
-            "default": "./src/modyra-ionic.css"
+            "default": "./dist/modyra-ionic.css"
         },
         "./base.css": {
-            "default": "./src/modyra-base.css"
+            "default": "./dist/modyra-base.css"
         }
     },
     "files": [
-        "src",
+        "dist",
         "README.md"
     ],
     "sideEffects": [
