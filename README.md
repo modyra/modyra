@@ -1,6 +1,6 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/readme-banner-dark.png">
-  <img src="docs/assets/brand/readme-banner-light.png" alt="Modyra — Model once. Render anywhere.">
+  <img src="docs/assets/brand/readme-banner-dark.png" alt="Modyra — Model once. Render anywhere.">
 </picture>
 
 # Modyra
@@ -23,16 +23,16 @@ core, one shared headless widget layer, one shared theme package.
 
 ## Packages
 
-| Package                             | What it is                                                                    | Peer deps                       |
-| :---------------------------------- | :---------------------------------------------------------------------------- | :------------------------------ |
-| [`@modyra/core`](packages/core)     | Framework-agnostic form engine: typed field trees, validation, drafts, undo/redo, i18n/date/time utilities | —                               |
-| [`@modyra/widgets`](packages/widgets) | Headless widget controllers + universal interaction/accessibility contract   | —                               |
-| [`@modyra/angular`](packages/angular) | Angular binding on native signals — the most complete adapter (UI catalog, devtools, wizard, interop) | `@angular/*` ≥21                |
-| [`@modyra/react`](packages/react)   | React binding via `useSyncExternalStore`                                       | `react` ≥18                     |
-| [`@modyra/vue`](packages/vue)       | Vue binding on `@vue/reactivity`                                               | `@vue/reactivity` ≥3.4          |
-| [`@modyra/lit`](packages/lit)       | Lit binding — ReactiveController + themable form elements                      | `lit` ≥3                        |
-| [`@modyra/zod`](packages/zod)       | Framework-agnostic Zod adapter — schema-first typed forms                      | `zod` ≥3.25                     |
-| [`@modyra/styles`](packages/styles) | CSS themes (`default`, `material`, `ios`, `ionic`, `base`) for every adapter   | —                               |
+| Package                               | What it is                                                                                                 | Peer deps              |
+| :------------------------------------ | :--------------------------------------------------------------------------------------------------------- | :--------------------- |
+| [`@modyra/core`](packages/core)       | Framework-agnostic form engine: typed field trees, validation, drafts, undo/redo, i18n/date/time utilities | —                      |
+| [`@modyra/widgets`](packages/widgets) | Headless widget controllers + universal interaction/accessibility contract                                 | —                      |
+| [`@modyra/angular`](packages/angular) | Angular binding on native signals — the most complete adapter (UI catalog, devtools, wizard, interop)      | `@angular/*` ≥21       |
+| [`@modyra/react`](packages/react)     | React binding via `useSyncExternalStore`                                                                   | `react` ≥18            |
+| [`@modyra/vue`](packages/vue)         | Vue binding on `@vue/reactivity`                                                                           | `@vue/reactivity` ≥3.4 |
+| [`@modyra/lit`](packages/lit)         | Lit binding — ReactiveController + themable form elements                                                  | `lit` ≥3               |
+| [`@modyra/zod`](packages/zod)         | Framework-agnostic Zod adapter — schema-first typed forms                                                  | `zod` ≥3.25            |
+| [`@modyra/styles`](packages/styles)   | CSS themes (`default`, `material`, `ios`, `ionic`, `base`) for every adapter                               | —                      |
 
 ## Install (Angular)
 
@@ -166,13 +166,13 @@ ReactiveController.
 
 ## Angular entry points
 
-| Import                    | Contents                                  | Extra peer deps                        |
-| :------------------------ | :---------------------------------------- | :------------------------------------- |
-| `@modyra/angular`         | Full bundle: adapter + UI + tools         | —                                      |
-| `@modyra/angular/adapter` | Headless Angular adapter layer only       | —                                      |
-| `@modyra/angular/ui`      | UI primitives and built-in renderers only | —                                      |
-| `@modyra/angular/zod`     | `mdyFormFromSchema()`                     | `@modyra/zod` + `zod` (optional)       |
-| `@modyra/angular/interop` | `mdyCva` for Reactive Forms               | `@angular/forms` (optional)            |
+| Import                    | Contents                                  | Extra peer deps                  |
+| :------------------------ | :---------------------------------------- | :------------------------------- |
+| `@modyra/angular`         | Full bundle: adapter + UI + tools         | —                                |
+| `@modyra/angular/adapter` | Headless Angular adapter layer only       | —                                |
+| `@modyra/angular/ui`      | UI primitives and built-in renderers only | —                                |
+| `@modyra/angular/zod`     | `mdyFormFromSchema()`                     | `@modyra/zod` + `zod` (optional) |
+| `@modyra/angular/interop` | `mdyCva` for Reactive Forms               | `@angular/forms` (optional)      |
 
 ## Documentation
 
