@@ -17,8 +17,11 @@ import {
   type MdyTimeFormat,
 } from "@modyra/core";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { POPUP_ANCHOR_STYLE, renderOverlayPanel } from "./popup-styles.js";
-
+import {
+  MdyLitOverlayController,
+  POPUP_ANCHOR_STYLE,
+  renderOverlayPanel,
+} from "./popup-styles.js";
 // ─── Time picker ─────────────────────────────────────────────────────────────
 
 type TimepickerViewMode = "input" | "dial";
@@ -57,6 +60,9 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   private dragField: TimeField = "hour";
   private switchTimer: ReturnType<typeof setTimeout> | null = null;
 
+  private readonly overlay = new MdyLitOverlayController(this, () => this, {
+    widthMode: "auto-content",
+  });
   constructor() {
     super();
     this.placeholder = "";
@@ -71,6 +77,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   override disconnectedCallback(): void {
+    this.overlay.close();
     super.disconnectedCallback();
     if (this.switchTimer !== null) clearTimeout(this.switchTimer);
     this.teardownDragListeners();
@@ -80,17 +87,19 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     return this.placeholder || (this.format === "24h" ? "HH:mm" : "hh:mm AM/PM");
   }
 
-  private openPopup(handle: MdyTimepickerFieldElement["field"]): void {
+  private openPopup(handle: MdyTimepickerFieldElement["field"], event?: Event): void {
     const parsed = parseAnyTime(handle?.value() ?? null, this.format);
     this._draftValue = parsed ? formatTime(parsed) : getCurrentTime();
     this._viewMode = "input";
     this._focusedField = "hour";
     this._open = true;
+    this.overlay.open(event);
   }
 
   private closePopup(handle: MdyFieldHandle<string | null>): void {
     if (!this._open) return;
     this._open = false;
+    this.overlay.close();
     handle.markAsTouched();
     this.querySelector<HTMLInputElement>(".mdy-timepicker__input")?.focus();
   }
@@ -501,13 +510,18 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
               aria-label="Open time picker"
               aria-expanded=${this._open ? "true" : "false"}
               tabindex="-1"
-              @click=${() => (this._open ? this.closePopup(handle) : this.openPopup(handle))}
+              @click=${(e: Event) => (this._open ? this.closePopup(handle) : this.openPopup(handle, e))}
             >
               ${mdyIcon("CLOCK", "mdy-timepicker__icon")}
             </button>
           </div>
         </div>
-        ${renderOverlayPanel(this.renderPopup(handle), this._open, this)}
+        ${renderOverlayPanel(this.renderPopup(handle), this._open, {
+          position: this.overlay.state.position,
+          alignment: this.overlay.state.alignment,
+          modal: this.overlay.state.position === "overlay",
+          panelStyle: this.overlay.state.panelStyle,
+        })}
       </div>
     `;
   }

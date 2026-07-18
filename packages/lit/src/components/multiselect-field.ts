@@ -6,9 +6,8 @@ import {
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { mdyIcon } from "../base.js";
 import {
+  MdyLitOverlayController,
   renderOverlayPanel,
-  resolveOverlayAlignment,
-  resolveOverlayPosition,
 } from "./popup-styles.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 
@@ -29,6 +28,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   declare _query: string;
 
   protected override readonly rendererClass = "mdy-renderer--multiselect";
+  private readonly overlay = new MdyLitOverlayController(this);
 
   constructor() {
     super();
@@ -121,13 +121,24 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   protected override toggleOpen(handle: MdyFieldHandle<readonly unknown[]>): void {
     if (handle.disabled()) return;
     this._open = !this._open;
-    if (!this._open) handle.markAsTouched();
+    if (this._open) {
+      this.overlay.open();
+    } else {
+      this.overlay.close();
+      handle.markAsTouched();
+    }
   }
 
   protected override close(handle: MdyFieldHandle<readonly unknown[]>): void {
     if (!this._open) return;
     this._open = false;
+    this.overlay.close();
     handle.markAsTouched();
+  }
+
+  override disconnectedCallback(): void {
+    this.overlay.close();
+    super.disconnectedCallback();
   }
 
   private onSearchInput(e: Event): void {
@@ -147,6 +158,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     }
     if (!this._open && (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ")) {
       e.preventDefault();
+      this.overlay.open();
       this._open = true;
     }
   }
@@ -159,8 +171,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     this.classList.toggle("mdy-renderer--open", this._open);
 
     const triggerId = `${this.fieldId}-trigger`;
-    const position = resolveOverlayPosition(this);
-    const alignment = resolveOverlayAlignment(this);
+    const position = this.overlay.state.position;
+    const alignment = this.overlay.state.alignment;
 
     const overlay = html`
       <input
@@ -212,7 +224,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                       type="button"
                       class="mdy-multiselect__search-btn"
                       ?disabled=${handle.disabled()}
-                      @click=${() => this.toggleOpen(handle)}
+                      @click=${(e: Event) => {
+                        if (!this._open) this.overlay.open(e);
+                        this.toggleOpen(handle);
+                      }}
                       aria-label="Search options"
                     >
                       ${mdyIcon("SEARCH", "mdy-select__search")}
@@ -223,9 +238,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         </div>
         <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
       </div>
-      ${renderOverlayPanel(overlay, this._open, this, {
+      ${renderOverlayPanel(overlay, this._open, {
         modal: position === "overlay",
         alignment,
+        position,
+        panelDisplayContents: true,
       })}
       ${showBlockErrors ? this.renderErrors(handle) : this.renderSupportingText()}
     `;

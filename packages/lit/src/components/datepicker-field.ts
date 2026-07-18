@@ -13,7 +13,11 @@ import {
   today,
 } from "@modyra/core";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { POPUP_ANCHOR_STYLE, renderOverlayPanel } from "./popup-styles.js";
+import {
+  MdyLitOverlayController,
+  POPUP_ANCHOR_STYLE,
+  renderOverlayPanel,
+} from "./popup-styles.js";
 
 // ─── Date & time ─────────────────────────────────────────────────────────────
 
@@ -54,6 +58,9 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   /** Temporary value used while the modal variant is open. */
   declare _draftValue: string | null;
   protected override readonly rendererClass = "mdy-renderer--datepicker";
+  private readonly overlay = new MdyLitOverlayController(this, () => this, {
+    widthMode: "auto-content",
+  });
 
   constructor() {
     super();
@@ -102,7 +109,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     return rows;
   }
 
-  private openPopup(handle: MdyFieldHandle<string | null>): void {
+  private openPopup(handle: MdyFieldHandle<string | null>, event?: Event): void {
     const selected = handle.value() ? parseIsoDate(handle.value() ?? "") : null;
     const base = selected ?? today();
     this._viewYear = base.year;
@@ -111,11 +118,13 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     this._view = "calendar";
     this._draftValue = handle.value() ?? null;
     this._open = true;
+    this.overlay.open(event);
   }
 
   private closePopup(handle: MdyFieldHandle<string | null>, refocus = true): void {
     if (!this._open) return;
     this._open = false;
+    this.overlay.close();
     this._view = "calendar";
     handle.markAsTouched();
     if (refocus) this.querySelector<HTMLInputElement>(".mdy-datepicker__input")?.focus();
@@ -264,6 +273,11 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         });
       }
     }
+  }
+
+  override disconnectedCallback(): void {
+    this.overlay.close();
+    super.disconnectedCallback();
   }
 
   private renderMonthPicker(handle: MdyFieldHandle<string | null>): unknown {
@@ -483,12 +497,17 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             ?disabled=${handle.disabled()}
             aria-label="Open date picker"
             aria-expanded=${this._open ? "true" : "false"}
-            @click=${() => (this._open ? this.closePopup(handle) : this.openPopup(handle))}
+            @click=${(e: Event) => (this._open ? this.closePopup(handle) : this.openPopup(handle, e))}
           >
             ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
           </button>
         </div>
-        ${renderOverlayPanel(this.renderPopup(handle), this._open, this)}
+        ${renderOverlayPanel(this.renderPopup(handle), this._open, {
+          position: this.overlay.state.position,
+          alignment: this.overlay.state.alignment,
+          modal: this.overlay.state.position === "overlay" || this.variant === "modal",
+          panelStyle: this.overlay.state.panelStyle,
+        })}
       </div>
     `;
   }
