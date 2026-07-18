@@ -90,9 +90,9 @@ form.redo(); // re-apply
 form.canUndo(); // reactive — drive toolbar buttons
 ```
 
-- Pass `history: true` for defaults (100 entries, no debounce).
-- `debounceMs` batches rapid keystrokes into a single undo step — recommended
-  for text-heavy forms, otherwise every keystroke becomes an entry.
+- Pass `history: true` for defaults (100 entries, `debounceMs: 0`).
+- Because the default records every keystroke, set `debounceMs` for text-heavy
+  forms so rapid typing collapses into a single undo step.
 - Only the **value** is recorded: touched/dirty flags, server errors and
   validation state are not restored by undo/redo.
 - `undo()`/`redo()` flush a pending debounced snapshot first, so no typing is
