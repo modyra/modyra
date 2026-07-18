@@ -1,8 +1,11 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import {
+  addMonths,
   buildMonthGrid,
   type CalendarCell,
+  type CalendarDate,
   calendarKeyboardTarget,
+  daysInMonth,
   formatIsoDate,
   type MdyFieldHandle,
   parseIsoDate,
@@ -13,6 +16,8 @@ import { MdyFieldElement, mdyIcon } from "../base.js";
 import { POPUP_ANCHOR_STYLE, POPUP_STYLE } from "./popup-styles.js";
 
 // ─── Date & time ─────────────────────────────────────────────────────────────
+
+type CalendarView = "calendar" | "month" | "year";
 
 /**
  * ISO `yyyy-MM-dd` value model — identical to the engine's convention.
@@ -27,6 +32,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     placeholder: { type: String },
     firstDayOfWeek: { type: Number, attribute: "first-day-of-week" },
     _open: { state: true },
+    _view: { state: true },
     _viewYear: { state: true },
     _viewMonth: { state: true },
     _focusedIso: { state: true },
@@ -37,6 +43,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   /** 0 = Sunday, 1 = Monday (default). */
   declare firstDayOfWeek: number;
   declare _open: boolean;
+  declare _view: CalendarView;
   declare _viewYear: number;
   declare _viewMonth: number;
   declare _focusedIso: string;
@@ -47,6 +54,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     this.placeholder = "";
     this.firstDayOfWeek = 1;
     this._open = false;
+    this._view = "calendar";
     const now = today();
     this._viewYear = now.year;
     this._viewMonth = now.month;
@@ -72,6 +80,13 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     });
   }
 
+  private monthNamesShort(): string[] {
+    const format = new Intl.DateTimeFormat(this.locale, { month: "short" });
+    return Array.from({ length: 12 }, (_, i) =>
+      format.format(new Date(Date.UTC(2024, i, 1))),
+    );
+  }
+
   private rows(): CalendarCell[][] {
     const cells = buildMonthGrid(this._viewYear, this._viewMonth, this.firstDayOfWeek);
     const rows: CalendarCell[][] = [];
@@ -85,20 +100,28 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     this._viewYear = base.year;
     this._viewMonth = base.month;
     this._focusedIso = formatIsoDate(base);
+    this._view = "calendar";
     this._open = true;
   }
 
   private closePopup(handle: MdyFieldHandle<string | null>, refocus = true): void {
     if (!this._open) return;
     this._open = false;
+    this._view = "calendar";
     handle.markAsTouched();
     if (refocus) this.querySelector<HTMLInputElement>(".mdy-datepicker__input")?.focus();
   }
 
   private navigateMonths(delta: number): void {
-    const moved = new Date(Date.UTC(this._viewYear, this._viewMonth - 1 + delta, 1));
-    this._viewYear = moved.getUTCFullYear();
-    this._viewMonth = moved.getUTCMonth() + 1;
+    const moved = addMonths(
+      { year: this._viewYear, month: this._viewMonth, day: 1 },
+      delta,
+    );
+    this._viewYear = moved.year;
+    this._viewMonth = moved.month;
+    const focused = parseIsoDate(this._focusedIso) ?? today();
+    const newFocused = addMonths(focused, delta);
+    this._focusedIso = formatIsoDate(newFocused);
   }
 
   private pick(handle: MdyFieldHandle<string | null>, iso: string): void {
@@ -107,12 +130,86 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     this.closePopup(handle);
   }
 
+  private onToggleView(): void {
+    if (this._view === "calendar") {
+      this._view = "year";
+    } else {
+      this._view = "calendar";
+    }
+  }
+
+  private onMonthSelected(_handle: MdyFieldHandle<string | null>, month: number): void {
+    this._viewMonth = month;
+    this._view = "calendar";
+    const focused = parseIsoDate(this._focusedIso) ?? today();
+    const day = Math.min(focused.day, daysInMonth(focused.year, month));
+    this._focusedIso = formatIsoDate({ ...focused, month, day });
+  }
+
+  private onYearSelected(year: number): void {
+    this._viewYear = year;
+    this._view = "month";
+    const focused = parseIsoDate(this._focusedIso) ?? today();
+    const day = Math.min(focused.day, daysInMonth(year, focused.month));
+    this._focusedIso = formatIsoDate({ ...focused, year, day });
+  }
+
+  private parseMin(): CalendarDate | null {
+    return this.min ? parseIsoDate(this.min) : null;
+  }
+
+  private parseMax(): CalendarDate | null {
+    return this.max ? parseIsoDate(this.max) : null;
+  }
+
+  private isMonthDisabled(month: number): boolean {
+    const min = this.parseMin();
+    const max = this.parseMax();
+    const year = this._viewYear;
+    if (min) {
+      if (year < min.year) return true;
+      if (year === min.year && month < min.month) return true;
+    }
+    if (max) {
+      if (year > max.year) return true;
+      if (year === max.year && month > max.month) return true;
+    }
+    return false;
+  }
+
+  private isYearDisabled(year: number): boolean {
+    const min = this.parseMin();
+    const max = this.parseMax();
+    if (min && year < min.year) return true;
+    if (max && year > max.year) return true;
+    return false;
+  }
+
+  private yearRange(): number[] {
+    const min = this.parseMin();
+    const max = this.parseMax();
+    const minYear = min?.year ?? 1920;
+    const maxYear = max?.year ?? 2120;
+    const startYear = Math.min(minYear, this._viewYear - 100, 1920);
+    const endYear = Math.max(maxYear, this._viewYear + 100, 2120);
+    const result: number[] = [];
+    for (let y = startYear; y <= endYear; y++) result.push(y);
+    return result;
+  }
+
   private onGridKeydown(e: KeyboardEvent, handle: MdyFieldHandle<string | null>): void {
     if (e.key === "Escape") {
       e.preventDefault();
-      this.closePopup(handle);
+      if (this._view !== "calendar") {
+        this._view = "calendar";
+      } else {
+        this.closePopup(handle);
+      }
       return;
     }
+
+    if (this._view !== "calendar") return;
+
     const focused = parseIsoDate(this._focusedIso) ?? today();
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -132,18 +229,105 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
 
   protected override updated(): void {
     if (this._open) {
-      this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused")?.focus();
+      if (this._view === "calendar") {
+        this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused")?.focus();
+      } else if (this._view === "year") {
+        this.querySelector<HTMLElement>(".mdy-datepicker__year-cell--selected")?.scrollIntoView({
+          block: "center",
+          behavior: "instant",
+        });
+      }
     }
+  }
+
+  private renderMonthPicker(handle: MdyFieldHandle<string | null>): unknown {
+    return html`
+      <div class="mdy-datepicker__month-picker">
+        ${this.monthNamesShort().map(
+          (name, i) => html`
+            <button
+              type="button"
+              class="mdy-datepicker__month-cell ${i + 1 === this._viewMonth
+                ? "mdy-datepicker__month-cell--selected"
+                : ""}"
+              ?disabled=${this.isMonthDisabled(i + 1)}
+              @click=${() => this.onMonthSelected(handle, i + 1)}
+            >
+              ${name}
+            </button>
+          `,
+        )}
+      </div>
+    `;
+  }
+
+  private renderYearPicker(): unknown {
+    const years = this.yearRange();
+    return html`
+      <div class="mdy-datepicker__year-picker">
+        <div class="mdy-datepicker__year-grid">
+          ${years.map(
+            (year) => html`
+              <button
+                type="button"
+                class="mdy-datepicker__year-cell ${year === this._viewYear
+                  ? "mdy-datepicker__year-cell--selected"
+                  : ""}"
+                ?disabled=${this.isYearDisabled(year)}
+                @click=${() => this.onYearSelected(year)}
+              >
+                ${year}
+              </button>
+            `,
+          )}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderCalendarGrid(handle: MdyFieldHandle<string | null>): unknown {
+    const selectedIso = handle.value();
+    const todayIso = formatIsoDate(today());
+    const inRange = (iso: string): boolean =>
+      (!this.min || iso >= this.min) && (!this.max || iso <= this.max);
+    return html`
+      <div class="mdy-datepicker__weekdays" role="row">
+        ${this.weekdayNames().map(
+          (name) => html`<span class="mdy-datepicker__weekday" role="columnheader">${name}</span>`,
+        )}
+      </div>
+      ${this.rows().map(
+        (row) => html`<div class="mdy-datepicker__row" role="row">
+          ${row.map((cell) => {
+            const disabled = !inRange(cell.iso);
+            const classes = [
+              "mdy-datepicker__cell",
+              cell.inMonth ? "" : "mdy-datepicker__cell--outside",
+              cell.iso === todayIso ? "mdy-datepicker__cell--today" : "",
+              cell.iso === selectedIso ? "mdy-datepicker__cell--selected" : "",
+              cell.iso === this._focusedIso ? "mdy-datepicker__cell--focused" : "",
+              disabled ? "mdy-datepicker__cell--disabled" : "",
+            ].join(" ");
+            return html`<button
+              type="button"
+              class=${classes}
+              tabindex=${cell.iso === this._focusedIso ? "0" : "-1"}
+              aria-selected=${cell.iso === selectedIso ? "true" : "false"}
+              ?disabled=${disabled}
+              @click=${() => this.pick(handle, cell.iso)}
+            >
+              ${cell.date.day}
+            </button>`;
+          })}
+        </div>`,
+      )}
+    `;
   }
 
   private renderPopup(handle: MdyFieldHandle<string | null>): unknown {
     const monthLabel = new Intl.DateTimeFormat(this.locale, { month: "long" }).format(
       new Date(Date.UTC(this._viewYear, this._viewMonth - 1, 1)),
     );
-    const selectedIso = handle.value();
-    const todayIso = formatIsoDate(today());
-    const inRange = (iso: string): boolean =>
-      (!this.min || iso >= this.min) && (!this.max || iso <= this.max);
     return html`
       <div
         class="mdy-datepicker__calendar"
@@ -153,13 +337,22 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
       >
         <div class="mdy-datepicker__header-label">
-          <span class="mdy-datepicker__title">${monthLabel} ${this._viewYear}</span>
+          <button
+            type="button"
+            class="mdy-datepicker__view-toggle"
+            aria-label="Change view"
+            @click=${this.onToggleView}
+          >
+            <span class="mdy-datepicker__title">${monthLabel} ${this._viewYear}</span>
+            ${mdyIcon("CHEVRON_DOWN", "mdy-datepicker__view-icon")}
+          </button>
         </div>
         <div class="mdy-datepicker__header-nav">
           <button
             type="button"
             class="mdy-datepicker__nav-btn"
             aria-label="Previous month"
+            ?disabled=${this._view !== "calendar"}
             @click=${() => this.navigateMonths(-1)}
           >
             ${mdyIcon("CHEVRON_LEFT", "")}
@@ -168,41 +361,17 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             type="button"
             class="mdy-datepicker__nav-btn"
             aria-label="Next month"
+            ?disabled=${this._view !== "calendar"}
             @click=${() => this.navigateMonths(1)}
           >
             ${mdyIcon("CHEVRON_RIGHT", "")}
           </button>
         </div>
-        <div class="mdy-datepicker__weekdays" role="row">
-          ${this.weekdayNames().map(
-            (name) => html`<span class="mdy-datepicker__weekday" role="columnheader">${name}</span>`,
-          )}
-        </div>
-        ${this.rows().map(
-          (row) => html`<div class="mdy-datepicker__row" role="row">
-            ${row.map((cell) => {
-              const disabled = !inRange(cell.iso);
-              const classes = [
-                "mdy-datepicker__cell",
-                cell.inMonth ? "" : "mdy-datepicker__cell--outside",
-                cell.iso === todayIso ? "mdy-datepicker__cell--today" : "",
-                cell.iso === selectedIso ? "mdy-datepicker__cell--selected" : "",
-                cell.iso === this._focusedIso ? "mdy-datepicker__cell--focused" : "",
-                disabled ? "mdy-datepicker__cell--disabled" : "",
-              ].join(" ");
-              return html`<button
-                type="button"
-                class=${classes}
-                tabindex=${cell.iso === this._focusedIso ? "0" : "-1"}
-                aria-selected=${cell.iso === selectedIso ? "true" : "false"}
-                ?disabled=${disabled}
-                @click=${() => this.pick(handle, cell.iso)}
-              >
-                ${cell.date.day}
-              </button>`;
-            })}
-          </div>`,
-        )}
+        ${this._view === "calendar"
+          ? this.renderCalendarGrid(handle)
+          : this._view === "month"
+            ? this.renderMonthPicker(handle)
+            : this.renderYearPicker()}
       </div>
     `;
   }
