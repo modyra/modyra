@@ -187,71 +187,73 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
 
     return html`
       ${this.renderLabel(handle, trigger.id)}
-      <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
-        <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
-        <button
-          type="button"
-          class=${trigger.classes.join(" ")}
-          id=${trigger.id}
-          aria-haspopup=${trigger.attributes["aria-haspopup"]}
-          aria-expanded=${trigger.attributes["aria-expanded"] ? "true" : "false"}
-          aria-controls=${trigger.attributes["aria-controls"]}
-          aria-activedescendant=${trigger.attributes["aria-activedescendant"] ?? nothing}
-          aria-disabled=${trigger.attributes["aria-disabled"] ? "true" : nothing}
-          aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-          aria-required=${handle.required() ? "true" : "false"}
-          aria-label=${this.label || nothing}
-          ?disabled=${handle.disabled()}
-          @click=${() => this.toggleOpen(handle)}
-          @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
-        >
-          ${text
-            ? html`<span class="mdy-select__value">${text}</span>`
-            : html`<span class="mdy-select__placeholder">${this.placeholder || "\u00A0"}</span>`}
-        </button>
-        <div class="mdy-input-suffix">
-          ${state.loading
-            ? mdyIcon("LOADER", "mdy-select__loader")
-            : mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}
-          <slot name="suffix"></slot>
+      <div class="mdy-select">
+        <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
+          <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
+          <button
+            type="button"
+            class=${trigger.classes.join(" ")}
+            id=${trigger.id}
+            aria-haspopup=${trigger.attributes["aria-haspopup"]}
+            aria-expanded=${trigger.attributes["aria-expanded"] ? "true" : "false"}
+            aria-controls=${trigger.attributes["aria-controls"]}
+            aria-activedescendant=${trigger.attributes["aria-activedescendant"] ?? nothing}
+            aria-disabled=${trigger.attributes["aria-disabled"] ? "true" : nothing}
+            aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
+            aria-required=${handle.required() ? "true" : "false"}
+            aria-label=${this.label || nothing}
+            ?disabled=${handle.disabled()}
+            @click=${() => this.toggleOpen(handle)}
+            @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
+          >
+            ${text
+              ? html`<span class="mdy-select__value">${text}</span>`
+              : html`<span class="mdy-select__placeholder">${this.placeholder || "\u00A0"}</span>`}
+          </button>
+          <div class="mdy-input-suffix">
+            ${state.loading
+              ? mdyIcon("LOADER", "mdy-select__loader")
+              : mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}
+            <slot name="suffix"></slot>
+          </div>
         </div>
+        ${this._open
+          ? html`<div class="mdy-select__dropdown mdy-glass-effect">
+            ${this.searchable
+              ? html`<input
+                type="text"
+                class="mdy-select__search"
+                .value=${state.query}
+                @input=${this.onSearchInput}
+              />`
+              : nothing}
+            <ul
+              class="mdy-select__list"
+              id=${listbox.id}
+              role="listbox"
+              aria-labelledby=${trigger.id}
+            >
+              ${filtered.map((option) => {
+                const key = this.optionKey(option.value);
+                const part = view.parts[key];
+                return html`<li
+                  class=${part.classes.join(" ")}
+                  id=${part.id}
+                  role="option"
+                  aria-selected=${state.selectedKey === key ? "true" : "false"}
+                  aria-disabled=${option.disabled ? "true" : nothing}
+                  @pointerdown=${(e: Event) => e.preventDefault()}
+                  @click=${() => {
+                    if (!option.disabled) this.pick(handle, option.value);
+                  }}
+                >
+                  <span class="mdy-select__option-label">${option.label}</span>
+                </li>`;
+              })}
+            </ul>
+          </div>`
+          : nothing}
       </div>
-      ${this._open
-        ? html`<div
-          class=${listbox.classes.join(" ")}
-          id=${listbox.id}
-          role="listbox"
-          aria-labelledby=${trigger.id}
-        >
-          ${this.searchable
-            ? html`<input
-              type="text"
-              class="mdy-select__search"
-              .value=${state.query}
-              @input=${this.onSearchInput}
-            />`
-            : nothing}
-          <ul class="mdy-select__list" role="presentation">
-            ${filtered.map((option) => {
-              const key = this.optionKey(option.value);
-              const part = view.parts[key];
-              return html`<li
-                class=${part.classes.join(" ")}
-                id=${part.id}
-                role="option"
-                aria-selected=${state.selectedKey === key ? "true" : "false"}
-                aria-disabled=${option.disabled ? "true" : nothing}
-                @pointerdown=${(e: Event) => e.preventDefault()}
-                @click=${() => {
-                  if (!option.disabled) this.pick(handle, option.value);
-                }}
-              >
-                <span class="mdy-select__option-label">${option.label}</span>
-              </li>`;
-            })}
-          </ul>
-        </div>`
-        : nothing}
       ${showBlockErrors ? this.renderErrors(handle) : this.renderSupportingText()}
     `;
   }

@@ -154,7 +154,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
         <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
         <div
-          class="mdy-multiselect"
+          class="mdy-multiselect ${this._open ? "mdy-multiselect--open" : ""}"
           id=${triggerId}
           role="group"
           aria-label=${this.label || nothing}
@@ -165,16 +165,20 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           ${this.mode === "multi"
             ? this.renderCounterChips(handle)
             : this.renderToggleChips(handle)}
-          ${this.searchable
-            ? html`<button
-                type="button"
-                class="mdy-multiselect__search-btn"
-                ?disabled=${handle.disabled()}
-                @click=${() => this.toggleOpen(handle)}
-                aria-label="Search options"
-              >
-                ${mdyIcon("SEARCH", "mdy-select__search")}
-              </button>`
+          ${this.searchable || this.label
+            ? html`<div class="mdy-multiselect__header">
+                ${this.searchable
+                  ? html`<button
+                      type="button"
+                      class="mdy-multiselect__search-btn"
+                      ?disabled=${handle.disabled()}
+                      @click=${() => this.toggleOpen(handle)}
+                      aria-label="Search options"
+                    >
+                      ${mdyIcon("SEARCH", "mdy-select__search")}
+                    </button>`
+                  : nothing}
+              </div>`
             : nothing}
         </div>
         <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
@@ -188,11 +192,13 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               @input=${this.onSearchInput}
               placeholder="Search..."
             />
-            <div class="mdy-multiselect__options mdy-multiselect-overlay__grid">
-              ${this.searchResults(handle).map((option) =>
-                this.renderOptionChip(handle, option),
-              )}
-            </div>
+            ${this.searchResults(handle).length === 0
+              ? html`<div class="mdy-multiselect-overlay__empty">No results</div>`
+              : html`<div class="mdy-multiselect__options mdy-multiselect-overlay__grid">
+                  ${this.searchResults(handle).map((option) =>
+                    this.renderOptionChip(handle, option),
+                  )}
+                </div>`}
           </div>`
         : nothing}
       ${showBlockErrors ? this.renderErrors(handle) : this.renderSupportingText()}
