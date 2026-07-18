@@ -240,6 +240,41 @@ test("draft persistence skips circular values without throwing", async () => {
   assert.equal(data.has("cycle"), false);
 });
 
+test("draft write is idempotent for semantically identical values", async () => {
+  const data = new Map();
+  const storage = {
+    read: (k) => data.get(k) ?? null,
+    write: (k, v) => void data.set(k, v),
+    remove: (k) => void data.delete(k),
+  };
+
+  const form = createForm(
+    { email: field(""), name: field("") },
+    { draft: { key: "idempotent", storage, debounceMs: 1 } },
+  );
+  await tick();
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(data.has("idempotent"), false);
+
+  form.f.name.set("Bob");
+  await tick();
+  await new Promise((r) => setTimeout(r, 10));
+  const firstWrite = data.get("idempotent");
+  assert.ok(firstWrite);
+
+  // Setting the same value again (new string instance) must not rewrite.
+  form.f.name.set("Bob");
+  await tick();
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(data.get("idempotent"), firstWrite);
+
+  // Re-setting an unchanged field must also not rewrite.
+  form.f.email.set("");
+  await tick();
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(data.get("idempotent"), firstWrite);
+});
+
 test("buildDateLocale produces complete locale bundles", () => {
   const locale = buildDateLocale("en-US");
   assert.equal(locale.locale, "en-US");
