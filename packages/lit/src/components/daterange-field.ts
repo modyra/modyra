@@ -479,7 +479,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     const hint = this._phase === "pick-start" ? "Select start date" : "Select end date";
     return html`
       <div
-        class="mdy-datepicker__calendar mdy-datepicker__calendar--range"
+        class="mdy-datepicker__calendar"
         role="dialog"
         aria-label=${this.label || "Choose date range"}
         style=${POPUP_STYLE}
