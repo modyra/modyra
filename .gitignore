@@ -28,9 +28,10 @@ yarn-debug.log*
 yarn-error.log*
 packages/angular/dist/
 
-# Ignore all hidden files and folders except .gitignore
+# Ignore all hidden files and folders except .gitignore and CI workflows
 .*
 !.gitignore
+!.github/
 
 # macOS system files
 .DS_Store
@@ -39,7 +40,6 @@ packages/angular/dist/
 .vscode/
 .antigravity/
 .ralph/
-.github
 
 # Claude Code (personal, not for team)
 .claudeignore

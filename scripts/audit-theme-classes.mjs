@@ -23,6 +23,25 @@ const LIT_DIR = join(ROOT, "packages/lit/src/components");
 const LIT_BASE = join(ROOT, "packages/lit/src/base.ts");
 const STYLES_DIR = join(ROOT, "packages/styles/src");
 
+// Known Angular→Lit parity gaps: type-a defects listed here are reported as
+// "pending" instead of failing --check, so the contract stays enforceable
+// for new regressions while the Lit renderers catch up. Stale entries
+// (no longer defects) are flagged so the list only ever shrinks.
+const ALLOWLIST_PATH = join(ROOT, "scripts/theme-parity-allowlist.json");
+
+function loadParityAllowlist() {
+  try {
+    const raw = JSON.parse(readFileSync(ALLOWLIST_PATH, "utf8"));
+    const map = new Map();
+    for (const [kind, classes] of Object.entries(raw)) {
+      if (!kind.startsWith("_")) map.set(kind, new Set(classes));
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
 const KINDS = [
   "text",
   "textarea",
@@ -346,15 +365,19 @@ function defectsC(themes, angular, lit) {
   return [...themes].filter((c) => !angular.has(c) && !lit.has(c)).sort();
 }
 
-function buildMatrix(angularVocab, litVocab, themeVocab) {
+function buildMatrix(angularVocab, litVocab, themeVocab, allowlist) {
   const matrix = [];
   for (const kind of KINDS) {
     const angular = angularVocab.get(kind) ?? new Set();
     const lit = litVocab.get(kind) ?? new Set();
-    const a = defectsA(angular, lit);
+    const allowed = allowlist.get(kind) ?? new Set();
+    const aAll = defectsA(angular, lit);
+    const a = aAll.filter((c) => !allowed.has(c));
+    const aPending = aAll.filter((c) => allowed.has(c));
+    const aStale = [...allowed].filter((c) => !aAll.includes(c)).sort();
     const b = defectsB(lit, angular, themeVocab.all);
     const c = defectsC(themeVocab.all, angular, lit);
-    matrix.push({ kind, a, b, c });
+    matrix.push({ kind, a, aPending, aStale, b, c });
   }
   return matrix;
 }
@@ -366,14 +389,26 @@ function printMatrix(matrix) {
   let totalA = 0;
   let totalB = 0;
   let totalC = 0;
-  for (const { kind, a, b, c } of matrix) {
+  let totalPending = 0;
+  let totalStale = 0;
+  for (const { kind, a, aPending, aStale, b, c } of matrix) {
     totalA += a.length;
     totalB += b.length;
     totalC += c.length;
+    totalPending += aPending.length;
+    totalStale += aStale.length;
     console.log(`## ${kind}`);
     if (a.length) {
       console.log(`  (a) Angular classes missing in Lit (${a.length}):`);
       for (const cls of a) console.log(`      - ${cls}`);
+    }
+    if (aPending.length) {
+      console.log(`  (a*) Known pending parity gaps, allowlisted (${aPending.length}):`);
+      for (const cls of aPending) console.log(`      - ${cls}`);
+    }
+    if (aStale.length) {
+      console.log(`  (!) Stale allowlist entries — parity reached, remove from allowlist (${aStale.length}):`);
+      for (const cls of aStale) console.log(`      - ${cls}`);
     }
     if (b.length) {
       console.log(`  (b) Lit-only classes not in Angular or themes (${b.length}):`);
@@ -385,8 +420,12 @@ function printMatrix(matrix) {
     }
     console.log();
   }
-  console.log(`Totals: (a) ${totalA}, (b) ${totalB}, (c) ${totalC}`);
-  return { totalA, totalB, totalC };
+  console.log(
+    `Totals: (a) ${totalA}, (b) ${totalB}, (c) ${totalC}` +
+      (totalPending ? `, pending allowlisted ${totalPending}` : "") +
+      (totalStale ? `, stale allowlist ${totalStale}` : ""),
+  );
+  return { totalA, totalB, totalC, totalPending, totalStale };
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
@@ -394,13 +433,23 @@ function printMatrix(matrix) {
 const angularVocab = buildAngularVocabulary();
 const litVocab = buildLitVocabulary();
 const themeVocab = buildThemeVocabulary();
-const matrix = buildMatrix(angularVocab, litVocab, themeVocab);
-const { totalA, totalB, totalC } = printMatrix(matrix);
+const matrix = buildMatrix(angularVocab, litVocab, themeVocab, loadParityAllowlist());
+const { totalA, totalB, totalPending, totalStale } = printMatrix(matrix);
 
 if (process.argv.includes("--check")) {
   if (totalA > 0 || totalB > 0) {
     process.stderr.write(`Theme class-contract failed: (a) ${totalA}, (b) ${totalB}\n`);
     process.exit(1);
+  }
+  if (totalPending > 0) {
+    process.stderr.write(
+      `Theme class-contract passed with ${totalPending} allowlisted pending parity gap(s) (scripts/theme-parity-allowlist.json)\n`,
+    );
+  }
+  if (totalStale > 0) {
+    process.stderr.write(
+      `Warning: ${totalStale} stale allowlist entr(y/ies) — parity reached, prune scripts/theme-parity-allowlist.json\n`,
+    );
   }
 }
 
