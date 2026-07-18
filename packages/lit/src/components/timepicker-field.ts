@@ -499,7 +499,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             </button>
           </div>
         </div>
-        ${renderOverlayPanel(this.renderPopup(handle), this._open)}
+        ${renderOverlayPanel(this.renderPopup(handle), this._open, this)}
       </div>
     `;
   }
