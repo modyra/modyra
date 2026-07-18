@@ -1,12 +1,25 @@
-import { html, nothing } from "lit";
-import { type MdyFieldHandle } from "@modyra/core";
+import { filterOptionsByQuery, type MdyFieldHandle } from "@modyra/core";
+import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { mdyIcon } from "../base.js";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 
 export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | null> {
+  static override properties: PropertyDeclarations = {
+    searchable: { type: Boolean },
+    loading: { type: Boolean },
+  };
+  declare searchable: boolean;
+  declare loading: boolean;
+
   protected override readonly rendererClass = "mdy-renderer--select";
   private selectAdapter?: MdyLitSelectAdapter<unknown>;
+
+  constructor() {
+    super();
+    this.searchable = false;
+    this.loading = false;
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -22,17 +35,32 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         disabled: handle.disabled(),
         readonly: false,
         invalid: handle.errors().length > 0,
-        loading: false,
+        loading: this.loading,
         onChange: (value) => {
           handle.set(value);
           handle.markAsDirty();
         },
       },
       (part, key) => {
-        if (part === "trigger") return this.renderRoot.querySelector<HTMLElement>(`#${this.fieldId}`) ?? undefined;
-        if (part === "listbox") return this.renderRoot.querySelector<HTMLElement>(`#${this.fieldId}-listbox`) ?? undefined;
+        const view = this.selectAdapter?.view;
+        if (!view) return undefined;
+        if (part === "trigger") {
+          return (
+            this.renderRoot.querySelector<HTMLElement>(`#${view.parts.trigger.id}`) ??
+            undefined
+          );
+        }
+        if (part === "listbox") {
+          return (
+            this.renderRoot.querySelector<HTMLElement>(`#${view.parts.listbox.id}`) ??
+            undefined
+          );
+        }
         if (part === "option" && key !== undefined) {
-          return this.renderRoot.querySelector<HTMLElement>(`#${this.fieldId}-opt-${key}`) ?? undefined;
+          return (
+            this.renderRoot.querySelector<HTMLElement>(`#${view.parts[key].id}`) ??
+            undefined
+          );
         }
         return undefined;
       },
@@ -49,12 +77,34 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     });
   }
 
+  override disconnectedCallback(): void {
+    this.selectAdapter?.destroy();
+    this.selectAdapter = undefined;
+    super.disconnectedCallback();
+  }
+
+  protected override willUpdate(changedProperties: PropertyValueMap<this>): void {
+    super.willUpdate(changedProperties);
+    const handle = this.field;
+    if (!this.selectAdapter || !handle) return;
+    this.selectAdapter.setDisabled(handle.disabled());
+    this.selectAdapter.setReadonly(false);
+    this.selectAdapter.setInvalid(handle.errors().length > 0);
+    this.selectAdapter.setLoading(this.loading);
+    // Keep the local open flag in sync with the controller before rendering.
+    this._open = this.selectAdapter.state.open;
+  }
+
+  private optionKey(value: unknown): string {
+    return String(value);
+  }
+
   protected override isSelected(handle: MdyFieldHandle<unknown | null>, value: unknown): boolean {
     return handle.value() === value;
   }
 
   protected override pick(_handle: MdyFieldHandle<unknown | null>, value: unknown): void {
-    this.selectAdapter?.dispatch({ type: "select", optionKey: String(value) });
+    this.selectAdapter?.dispatch({ type: "select", optionKey: this.optionKey(value) });
   }
 
   protected override triggerText(handle: MdyFieldHandle<unknown | null>): string {
@@ -79,9 +129,6 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     const moveTarget = mapKeyToMoveTarget(e.key);
     if (moveTarget) {
       e.preventDefault();
-      if (!this._open) {
-        this.selectAdapter?.dispatch({ type: "open", source: "keyboard" });
-      }
       this.selectAdapter?.dispatch({ type: "move", target: moveTarget });
       return;
     }
@@ -105,82 +152,109 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           this.selectAdapter?.dispatch({ type: "close", restoreFocus: true });
         }
         break;
+      default:
+        if (
+          this.searchable &&
+          e.key.length === 1 &&
+          !e.ctrlKey &&
+          !e.metaKey &&
+          !e.altKey
+        ) {
+          this.selectAdapter?.dispatch({ type: "search", query: e.key });
+        }
+        break;
     }
+  }
+
+  private onSearchInput(e: Event): void {
+    const value = (e.target as HTMLInputElement).value;
+    this.selectAdapter?.dispatch({ type: "search", query: value });
   }
 
   override render(): unknown {
     const handle = this.field;
     if (!handle || !this.selectAdapter) return super.render();
-
     const state = this.selectAdapter.state;
-    const activeKey = state.activeKey;
+    const view = this.selectAdapter.view;
+    const trigger = view.parts.trigger;
+    const listbox = view.parts.listbox;
+    const text = this.triggerText(handle);
+    const filtered = filterOptionsByQuery(this.options, state.query);
+    const showBlockErrors = !this.inlineErrors && this.showErrors(handle);
+
     this.classList.toggle("mdy-renderer--touched", handle.touched());
     this.classList.toggle("mdy-renderer--open", this._open);
-    const text = this.triggerText(handle);
+    this.classList.toggle("mdy-floating-label", this.floatingLabel);
+    this.classList.toggle("mdy-inline-errors", this.inlineErrors);
 
     return html`
-      <label class="mdy-label" id=${this.labelId} for=${this.fieldId}>
-        ${this.label}
-        ${handle.required()
-          ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
-          : nothing}
-      </label>
+      ${this.renderLabel(handle, trigger.id)}
       <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
+        <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
         <button
           type="button"
-          class="mdy-select__trigger"
-          id=${this.fieldId}
-          aria-haspopup="listbox"
-          aria-expanded=${this._open ? "true" : "false"}
-          aria-labelledby=${this.labelId}
-          aria-activedescendant=${activeKey ? `${this.fieldId}-opt-${activeKey}` : nothing}
+          class=${trigger.classes.join(" ")}
+          id=${trigger.id}
+          aria-haspopup=${trigger.attributes["aria-haspopup"]}
+          aria-expanded=${trigger.attributes["aria-expanded"] ? "true" : "false"}
+          aria-controls=${trigger.attributes["aria-controls"]}
+          aria-activedescendant=${trigger.attributes["aria-activedescendant"] ?? nothing}
+          aria-disabled=${trigger.attributes["aria-disabled"] ? "true" : nothing}
           aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
           aria-required=${handle.required() ? "true" : "false"}
+          aria-label=${this.label || nothing}
           ?disabled=${handle.disabled()}
           @click=${() => this.toggleOpen(handle)}
           @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
-          @blur=${() => setTimeout(() => this.close(handle), 120)}
         >
           ${text
             ? html`<span class="mdy-select__value">${text}</span>`
-            : html`<span class="mdy-select__placeholder">${this.placeholder}</span>`}
-          ${mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}
+            : html`<span class="mdy-select__placeholder">${this.placeholder || "\u00A0"}</span>`}
         </button>
-        ${this._open
-          ? html`<div class="mdy-select__dropdown">
-              <ul
-                class="mdy-select__list"
-                id=${`${this.fieldId}-listbox`}
-                role="listbox"
-              >
-                ${this.options.map((option) => {
-                  const selected = this.isSelected(handle, option.value);
-                  const key = String(option.value);
-                  const classes = [
-                    "mdy-select__option",
-                    selected ? "mdy-select__option--selected" : "",
-                    key === activeKey ? "mdy-select__option--active" : "",
-                    option.disabled ? "mdy-select__option--disabled" : "",
-                  ].join(" ");
-                  return html`<li
-                    class=${classes}
-                    id=${`${this.fieldId}-opt-${key}`}
-                    role="option"
-                    aria-selected=${selected ? "true" : "false"}
-                    aria-disabled=${option.disabled ? "true" : nothing}
-                    @pointerdown=${(e: Event) => e.preventDefault()}
-                    @click=${() => {
-                      if (!option.disabled) this.pick(handle, option.value);
-                    }}
-                  >
-                    <span class="mdy-select__option-label">${option.label}</span>
-                  </li>`;
-                })}
-              </ul>
-            </div>`
-          : nothing}
+        <div class="mdy-input-suffix">
+          ${state.loading
+            ? mdyIcon("LOADER", "mdy-select__loader")
+            : mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}
+          <slot name="suffix"></slot>
+        </div>
       </div>
-      ${this.renderErrors(handle)}
+      ${this._open
+        ? html`<div
+          class=${listbox.classes.join(" ")}
+          id=${listbox.id}
+          role="listbox"
+          aria-labelledby=${trigger.id}
+        >
+          ${this.searchable
+            ? html`<input
+              type="text"
+              class="mdy-select__search"
+              .value=${state.query}
+              @input=${this.onSearchInput}
+            />`
+            : nothing}
+          <ul class="mdy-select__list" role="presentation">
+            ${filtered.map((option) => {
+              const key = this.optionKey(option.value);
+              const part = view.parts[key];
+              return html`<li
+                class=${part.classes.join(" ")}
+                id=${part.id}
+                role="option"
+                aria-selected=${state.selectedKey === key ? "true" : "false"}
+                aria-disabled=${option.disabled ? "true" : nothing}
+                @pointerdown=${(e: Event) => e.preventDefault()}
+                @click=${() => {
+                  if (!option.disabled) this.pick(handle, option.value);
+                }}
+              >
+                <span class="mdy-select__option-label">${option.label}</span>
+              </li>`;
+            })}
+          </ul>
+        </div>`
+        : nothing}
+      ${showBlockErrors ? this.renderErrors(handle) : this.renderSupportingText()}
     `;
   }
 }
