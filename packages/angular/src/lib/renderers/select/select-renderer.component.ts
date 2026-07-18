@@ -297,15 +297,18 @@ export class MdySelectComponent<TValue = string>
   constructor() {
     super();
 
+    // Inert initial state: inputs ([field]/name) are not set yet at
+    // construction time, so reading value()/fieldState() here throws.
+    // The sync effects below push the real values on their first run.
     this.selectAdapter = new MdyAngularSelectAdapter<TValue>(
       {
         widgetId: this.fieldId,
-        options: this.effectiveOptions(),
-        value: this.value(),
-        disabled: this.isDisabled(),
-        readonly: this.fieldState().readonly(),
-        invalid: this.hasErrors(),
-        loading: this.effectiveLoading(),
+        options: [],
+        value: null,
+        disabled: false,
+        readonly: false,
+        invalid: false,
+        loading: false,
         onChange: (value: TValue | null) => {
           if (value !== this.value()) {
             this.setValue(value);
