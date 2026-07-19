@@ -1,6 +1,6 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/readme-banner-dark.png">
-  <img src="docs/assets/brand/readme-banner-dark.png" alt="Modyra — Model once. Render anywhere.">
+  <img src="docs/assets/brand/readme-banner-light.png" alt="Modyra — Model once. Render anywhere.">
 </picture>
 
 # Modyra
@@ -81,12 +81,17 @@ import {
       <button type="submit" [disabled]="!form.state.canSubmit()">
         Sign up
       </button>
+      <button type="button" (click)="form.reset()">Reset</button>
     </mdy-form>
   `,
 })
 export class SignupComponent {
   readonly form = mdyForm({
-    email: field("", [mdyRequired(), mdyEmail()]),
+    email: field("", [mdyRequired(), mdyEmail()], {
+      // runs after the sync validators pass, debounced while typing
+      asyncValidators: [async (v) => (await isTaken(v)) ? ["Email taken"] : []],
+      asyncDebounceMs: 300,
+    }),
     age: field<number | null>(null, [mdyMin(18)]),
     address: group({ city: field("Rome"), zip: field("") }),
   });
@@ -94,11 +99,22 @@ export class SignupComponent {
   // Runs on submit while the form is valid; the typed value is inferred:
   // { email: string; age: number | null; address: { city: string; zip: string } }
   save = async (value: Record<string, unknown>) => {
-    console.log(value); // call your API here;
-    // return MdyFormError[] to show server errors on the matching fields
+    const res = await api.signup(value);
+    if (!res.ok) {
+      // returned errors land on the matching field, or the form itself
+      // when path is null — canSubmit() flips back to true automatically
+      return [{ path: "email", kind: "server", message: "Email already registered" }];
+    }
   };
 }
 ```
+
+> **Validators are factories, not values:** write `required()`, not
+> `required` (Angular Reactive Forms muscle memory trips here — the
+> resulting TS error is easy to misread). Validation errors come back as
+> **arrays of message strings** (`["Name taken"]`), not `{ required: true }`
+> keyed objects. To stop at the first failing validator instead of collecting
+> all of them, use `composeFirst()` in place of `compose()`.
 
 Every handle on `form.f` is a typed bundle of signals — `value()`, `errors()`,
 `touched()`, `dirty()`, `valid()`, `pending()`, `set(v)` — and a typo on a
