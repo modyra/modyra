@@ -7,7 +7,7 @@
  * blocks only exist so the file runs as a (trivially green) jest suite.
  */
 import { Signal } from "@angular/core";
-import { crossField, email, min, minLength, required } from "@modyra/core";
+import { crossField, email, min, minLength, required, serverValidator } from "@modyra/core";
 import {
   field,
   group,
@@ -135,6 +135,21 @@ describe("typed form — compile-time contracts", () => {
     form.f.meta.set({ source: "web" });
 
     expect(form.getValue().meta).toEqual({ source: "web" });
+  });
+
+  it("serverValidator infers the check value from the field descriptor", () => {
+    const form = mdyForm({
+      email: field("", [], serverValidator(async (v) => {
+        assertType<Equal<typeof v, string>>();
+        return v.includes("@") ? null : "Invalid email";
+      })),
+      age: field<number | null>(null, [], serverValidator(async (v) => {
+        assertType<Equal<typeof v, number | null>>();
+        return v !== null && v < 0 ? "Invalid age" : null;
+      })),
+    });
+
+    expect(form.f.email.path).toBe("email");
   });
 
   it("MdyTypedFormLike is a structural supertype of every typed form", () => {
