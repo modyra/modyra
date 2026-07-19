@@ -13,6 +13,7 @@ import type {
   MdyWritableSignal,
 } from "./reactivity.js";
 import type {
+  MdyAsyncValidationContext,
   MdyAsyncValidatorFn,
   MdyFieldError,
   MdyFieldState,
@@ -22,6 +23,19 @@ import type {
 export interface AsyncValidatorEntry {
   readonly fns: ReadonlyArray<MdyAsyncValidatorFn<unknown>>;
   readonly debounceMs: number;
+  readonly dependsOn: ReadonlyArray<string>;
+  readonly timeoutMs: number;
+  readonly when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
+}
+
+/** Host services the async runner needs from the owning form engine. */
+export interface MdyAsyncRunnerHost {
+  /** Dotted path of the field the runner belongs to. */
+  readonly fieldPath: string;
+  /** Flat form value (dotted keys). */
+  formValue(): Record<string, unknown>;
+  /** State of a field by dotted path, or null if not (yet) registered. */
+  fieldState(path: string): MdyFieldState<unknown> | null;
 }
 
 export interface FieldRecord {
@@ -114,17 +128,31 @@ export function createFieldRecord(
 
 /**
  * Creates the effect that runs a field's async validators with last-wins
- * semantics and debounce.
+ * semantics, debounce, cancellation (AbortSignal), cross-field retrigger
+ * (`dependsOn`), timeout, and a `when` precondition.
  */
 export function createAsyncRunner(
   rec: FieldRecord,
   rx: MdyReactivity,
+  host: MdyAsyncRunnerHost,
 ): MdyEffectRef {
   return rx.effect((onCleanup) => {
     const v = rec.state.value();
     const entries = Array.from(rec.asyncValidators().values());
-    const fns = entries.flatMap(e => e.fns);
+    // Touch dependsOn field values so their changes retrigger this effect.
+    for (const e of entries) {
+      for (const dep of e.dependsOn) host.fieldState(dep)?.value();
+    }
     const runId = ++rec.asyncRunId;
+    const controller = new AbortController();
+    onCleanup(() => controller.abort());
+
+    const formValue = rx.untracked(() => host.formValue());
+    const applicable = entries.filter(
+      e => e.when === null || e.when(v, formValue),
+    );
+    const fns = applicable.flatMap(e => e.fns);
+
     if (fns.length === 0) {
       rx.untracked(() => {
         rec.pending.set(false);
@@ -135,9 +163,34 @@ export function createAsyncRunner(
     // Pending covers the whole debounce+run window, so canSubmit stays
     // false while a check is outstanding.
     rx.untracked(() => rec.pending.set(true));
+
+    const ctx: MdyAsyncValidationContext = {
+      signal: controller.signal,
+      path: host.fieldPath,
+      form: {
+        value: () => host.formValue(),
+        fieldValue: (p) => host.fieldState(p)?.value(),
+      },
+    };
+
     const run = (): void => {
-      void Promise.all(fns.map(fn => fn(v)))
+      const timeoutMs = applicable.reduce(
+        (max, e) => Math.max(max, e.timeoutMs),
+        0,
+      );
+      let timedOut = false;
+      const timeout = timeoutMs > 0 ? setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+        if (runId !== rec.asyncRunId) return;
+        rec.asyncErrors.set([{ kind: "async-timeout", message: "Validation timed out" }]);
+        rec.pending.set(false);
+      }, timeoutMs) : null;
+
+      void Promise.all(fns.map(fn => fn(v, ctx)))
         .then(results => {
+          if (timeout) clearTimeout(timeout);
+          if (timedOut || controller.signal.aborted) return;
           if (runId !== rec.asyncRunId) return; // stale run: last-wins
           rec.asyncErrors.set(
             results
@@ -147,6 +200,8 @@ export function createAsyncRunner(
           rec.pending.set(false);
         })
         .catch((e: unknown) => {
+          if (timeout) clearTimeout(timeout);
+          if (timedOut || controller.signal.aborted) return; // abort ≠ error
           if (runId !== rec.asyncRunId) return;
           rec.asyncErrors.set([{
             kind: "async",
@@ -155,7 +210,8 @@ export function createAsyncRunner(
           rec.pending.set(false);
         });
     };
-    const debounceMs = entries.reduce(
+
+    const debounceMs = applicable.reduce(
       (max, e) => Math.max(max, e.debounceMs),
       0,
     );

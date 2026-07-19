@@ -8,11 +8,32 @@ export type ValidatorFn<TValue = unknown> = (
 ) => readonly string[];
 
 /**
+ * Context passed as the second argument to an async validator: cancellation
+ * signal, the field's own path, and read-only access to the owning form.
+ */
+export interface MdyAsyncValidationContext {
+  /** Aborted when the run is superseded (last-wins), re-debounced, or the form is destroyed. */
+  readonly signal: AbortSignal;
+  /** Dotted path of the field under validation. */
+  readonly path: string;
+  /** Read-only live view of the owning form. */
+  readonly form: {
+    /** Whole flat form value (dotted keys). */
+    value(): Record<string, unknown>;
+    /** Current value of any field by dotted path; undefined if the field doesn't exist yet. */
+    fieldValue(path: string): unknown;
+  };
+}
+
+/**
  * Async validator: current value → promise of error messages. While it runs,
  * the field's `pending` signal is true; results follow last-wins semantics.
+ * The second `ctx` argument is optional to keep single-argument validators
+ * assignable to this type.
  */
 export type MdyAsyncValidatorFn<TValue = unknown> = (
   value: TValue,
+  ctx: MdyAsyncValidationContext,
 ) => Promise<readonly string[]>;
 
 export interface MdyAsyncValidatorOptions {
@@ -22,6 +43,12 @@ export interface MdyAsyncValidatorOptions {
    * window, so `canSubmit` stays false while a check is outstanding.
    */
   readonly debounceMs?: number;
+  /** Dotted paths whose changes re-run the async validators (cross-field server checks). */
+  readonly dependsOn?: ReadonlyArray<string>;
+  /** After N ms the run fails with kind "async-timeout" and pending settles. */
+  readonly timeoutMs?: number;
+  /** Precondition evaluated before pending turns on; false → skip the server call. */
+  readonly when?: (value: unknown, formValue: Record<string, unknown>) => boolean;
 }
 
 /**
