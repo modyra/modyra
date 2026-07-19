@@ -1,3 +1,3 @@
 {
-  "_comment": "Temporary allowlist of known Angular→Lit class-parity gaps (type-a defects in audit-theme-classes.mjs). Tracked in .modyra/framework/LIT-STATUS.md; remove entries as the Lit renderers reach parity. Entries that are no longer defects are reported as stale by the audit script."
+  "_comment": "Temporary allowlist of known Angular→Lit class-parity gaps (type-a defects in audit-theme-classes.mjs). Tracked in docs/LIT-STATUS.md; remove entries as the Lit renderers reach parity. Entries that are no longer defects are reported as stale by the audit script."
 }
