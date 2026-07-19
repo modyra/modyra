@@ -22,9 +22,10 @@ pending and each error with its origin (`[validation]`, `[async]`,
 ## Why is a field still `pending`?
 
 `pending` covers the whole debounce window **plus** the validator run. If it
-never settles: your async validator's promise never resolves (add a timeout
-in your fetch layer — the library does not impose one), or the value keeps
-changing (every change restarts debounce).
+never settles: your async validator's promise never resolves — pass
+`timeoutMs` to `serverValidator()`/`upsertAsyncValidators()` so the run
+aborts and settles with a `kind: "async-timeout"` error instead of hanging
+forever — or the value keeps changing (every change restarts debounce).
 
 ## Why was a server error cleared?
 

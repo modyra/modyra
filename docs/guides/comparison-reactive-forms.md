@@ -35,11 +35,17 @@ readonly form = mdyForm({
 | State model           | `FormControl`/`FormGroup` classes, RxJS streams | Signals: `value()`, `valid()`, `pending()` are `computed`                          |
 | Field binding         | `formControlName="email"` (string)              | `[field]="form.f.email"` (compile-checked)                                         |
 | RxJS                  | Required (`valueChanges`, async validators)     | Not used: no runtime dependency, no Observables in the public API, none internally |
-| Async validation      | `AsyncValidatorFn` (Observable/Promise)         | Promise-based, debounce + last-wins built in                                       |
+| Async validation      | `AsyncValidatorFn` (Observable/Promise)         | Promise-based, debounce + cancellation + last-wins + timeout + cross-field built in |
 | UI controls           | Bring your own / Material                       | Optional built-in renderer catalog, or headless `/adapter`                         |
 | Change detection      | Works everywhere                                | Signals-first; zoneless-friendly                                                   |
 | Stability & ecosystem | Official, mature, huge ecosystem                | Young, one maintainer, smaller surface tested                                      |
 | Migration cost        | —                                               | Incremental via `mdyCva` (CVA interop)                                             |
+
+`serverValidator()` also differs from the newer Angular signal forms
+`validateHttp`: there's no inline URL to couple to a service — you call your
+own service method and get `ctx.signal`/`ctx.form` for cancellation and
+cross-field reads, so the library handles the plumbing without owning the
+HTTP layer.
 
 ## Choose this library if…
 

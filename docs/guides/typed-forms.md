@@ -68,9 +68,34 @@ Limits worth knowing:
 
 ## Async validation
 
+The ergonomic path is `serverValidator()` — you call your own service method,
+the library handles debounce, cancellation, pending, last-wins and timeout:
+
+```ts
+import { field, serverValidator } from "@modyra/core";
+
+phone: field("", [mdyRequired()], serverValidator(
+  async (phone, ctx) => {
+    const country = ctx.form.fieldValue("country"); // read a sibling field
+    const res = await api.phoneLookup(phone, country, { signal: ctx.signal }); // cancellable
+    return res.valid ? null : "Phone number not reachable";
+  },
+  {
+    dependsOn: ["country"], // re-run when this field changes
+    debounceMs: 400,
+    timeoutMs: 5000,        // settle pending even if the call hangs
+    when: (v) => PHONE_RE.test(v), // skip the call for obviously invalid input
+  },
+)),
+```
+
+The lower-level `asyncValidators`/`asyncDebounceMs` (and their `dependsOn`/
+`timeoutMs`/`when` siblings) are still available on `field()`'s options if
+you'd rather write the validator function directly:
+
 ```ts
 username: field("", [mdyRequired()], {
-  asyncValidators: [async (v) => (await isTaken(v)) ? ["Name taken"] : []],
+  asyncValidators: [async (v, ctx) => (await isTaken(v, { signal: ctx.signal })) ? ["Name taken"] : []],
   asyncDebounceMs: 300,
 }),
 ```
@@ -78,8 +103,20 @@ username: field("", [mdyRequired()], {
 - `pending()` covers the whole debounce+run window; `canSubmit()` waits.
 - Results are last-wins: out-of-order responses for stale values are dropped.
 - A rejected promise becomes an `"async"` error with the rejection message.
-- There is no built-in `AbortSignal` cancellation yet — stale results are
-  discarded, but in-flight requests are not aborted.
+- `ctx.signal` is an `AbortSignal` aborted when the run is superseded
+  (last-wins), re-debounced, or the form is destroyed — pass it to `fetch`
+  or your own service call to cancel in-flight requests. An aborted run
+  never produces an error.
+- `ctx.form.value()` / `ctx.form.fieldValue(path)` give read-only access to
+  the rest of the form for cross-field server checks.
+- `dependsOn` fields must already exist in the schema — with the typed API
+  this is always true, since `mdyForm()`/`createForm()` register every field
+  upfront.
+- `timeoutMs` bounds how long a field can stay `pending`: past the deadline
+  the run is aborted and the field gets a `kind: "async-timeout"` error.
+- `when(value, formValue)` is evaluated before `pending` turns on; returning
+  `false` skips the call entirely (useful to avoid paying for calls to a
+  billed API on obviously-invalid input).
 
 ## Undo / redo
 
