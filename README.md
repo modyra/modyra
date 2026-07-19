@@ -11,7 +11,7 @@ core, one shared headless widget layer, one shared theme package.
 
 - No `FormControl`, `FormGroup` or RxJS — form state is signals and `computed`s
 - Compile-time checked field bindings: `[field]="form.f.email"`, typos don't compile
-- Sync, async (debounced, last-wins) and cross-field validation
+- Sync, async (debounced, cancellable, last-wins) and cross-field validation
 - Drafts (autosave/restore), undo/redo, devtools
 - Headless core or accessible ready-made controls — your design system or ours
 - Incremental Angular adoption through Reactive Forms interop (`mdyCva`)
