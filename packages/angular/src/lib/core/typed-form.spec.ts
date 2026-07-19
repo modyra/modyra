@@ -1,6 +1,6 @@
 import { ApplicationRef, Injector } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
-import { crossField, email, min, required } from "@modyra/core";
+import { crossField, email, min, required, serverValidator } from "@modyra/core";
 import { field, group, mdyForm, MdyTypedForm } from "./typed-form";
 
 function makeForm(): MdyTypedForm<{
@@ -291,6 +291,38 @@ describe("mdyForm", () => {
       expect(form.f.user.errors().map((e) => e.message)).toEqual([
         "Name taken",
       ]);
+    });
+
+    it("serverValidator + dependsOn retriggers on the dependency and stays pending until settled", async () => {
+      let calls = 0;
+      const form = mdyForm(
+        {
+          country: field("IT"),
+          phone: field("000", [], serverValidator(
+            async (_v, ctx) => {
+              calls++;
+              return ctx.form.fieldValue("country") === "IT" ? "Invalid for IT" : null;
+            },
+            { dependsOn: ["country"] },
+          )),
+        },
+        { injector: TestBed.inject(Injector) },
+      );
+
+      TestBed.inject(ApplicationRef).tick();
+      await flushAsync();
+      expect(form.f.phone.errors().map((e) => e.message)).toEqual([
+        "Invalid for IT",
+      ]);
+      const callsAfterInitial = calls;
+
+      form.f.country.set("FR"); // phone value unchanged
+      TestBed.inject(ApplicationRef).tick();
+      await flushAsync();
+
+      expect(calls).toBeGreaterThan(callsAfterInitial);
+      expect(form.f.phone.pending()).toBe(false);
+      expect(form.f.phone.errors()).toHaveLength(0);
     });
   });
 
