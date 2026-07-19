@@ -7,7 +7,7 @@
     "setup": "pnpm install && pnpm run build:lib",
     "start": "ng serve demo",
     "start:lib": "npm run build:lib && npm run start",
-    "build:lib": "pnpm run build:core && tsc -p packages/widgets/tsconfig.json && ng build modyra --configuration production && rm -rf packages/angular/dist/node_modules packages/angular/dist/package-lock.json && cp README.md LICENSE packages/angular/dist/ && find packages/angular/dist/ -name '*.map' -delete",
+    "build:lib": "pnpm run build:core && tsc -p packages/widgets/tsconfig.json && tsc -p packages/zod/tsconfig.json && ng build modyra --configuration production && rm -rf packages/angular/dist/node_modules packages/angular/dist/package-lock.json && cp README.md LICENSE packages/angular/dist/ && find packages/angular/dist/ -name '*.map' -delete",
     "pack:analyze": "node scripts/pack-analyze.mjs",
     "build:demo": "npm run build:lib && ng build demo",
     "watch:lib": "ng build modyra --watch",
