@@ -35,6 +35,9 @@ export {
   required
 } from "./validators.js";
 
+export { serverValidator } from "./server-validator.js";
+export type { MdyServerValidatorOptions } from "./server-validator.js";
+
 export { isSafeFieldPath } from "./path-utils.js";
 export { MdyFormEngine } from "./form-engine.js";
 export type {

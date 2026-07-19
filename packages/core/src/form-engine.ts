@@ -57,7 +57,10 @@ export interface MdyFormRegistry<
   removeValidators(name: string, key: string): void;
   /**
    * Registers (or replaces) async validators owned by `key`. While they run
-   * the field is `pending`; results follow last-wins semantics.
+   * the field is `pending`; results follow last-wins semantics. Each run
+   * gets an `AbortSignal` (aborted on supersede/re-debounce/destroy),
+   * `dependsOn` fields retrigger the run, `timeoutMs` bounds pending, and
+   * `when` gates the call before pending turns on.
    */
   upsertAsyncValidators<T>(
     name: string,
@@ -370,6 +373,9 @@ export class MdyFormEngine
       next.set(key, {
         fns: validators as ReadonlyArray<MdyAsyncValidatorFn<unknown>>,
         debounceMs: options?.debounceMs ?? 0,
+        dependsOn: options?.dependsOn ?? [],
+        timeoutMs: options?.timeoutMs ?? 0,
+        when: options?.when ?? null,
       });
       return next;
     });
@@ -679,6 +685,10 @@ export class MdyFormEngine
       );
       return;
     }
-    rec.asyncRunner = createAsyncRunner(rec, this._rx);
+    rec.asyncRunner = createAsyncRunner(rec, this._rx, {
+      fieldPath: name,
+      formValue: () => this.getValue(),
+      fieldState: (p) => this._fields.get(p)?.state ?? null,
+    });
   }
 }

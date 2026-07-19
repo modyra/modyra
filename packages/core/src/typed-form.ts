@@ -17,6 +17,7 @@ import {
 } from "./schema-utils.js";
 import {
   MdyAsyncValidatorFn,
+  MdyAsyncValidatorOptions,
   MdyFieldError,
   MdyFieldRef,
   MdyFormAdapter,
@@ -37,6 +38,9 @@ export interface MdyFieldDescriptor<TValue> {
   readonly validators: ReadonlyArray<ValidatorFn<TValue>>;
   readonly asyncValidators: ReadonlyArray<MdyAsyncValidatorFn<TValue>>;
   readonly asyncDebounceMs: number;
+  readonly asyncDependsOn: ReadonlyArray<string>;
+  readonly asyncTimeoutMs: number;
+  readonly asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
 }
 
 /** Group descriptor produced by {@link group}. */
@@ -55,6 +59,9 @@ export interface MdyAnyFieldDescriptor {
   readonly validators: ReadonlyArray<ValidatorFn<never>>;
   readonly asyncValidators: ReadonlyArray<MdyAsyncValidatorFn<never>>;
   readonly asyncDebounceMs: number;
+  readonly asyncDependsOn: ReadonlyArray<string>;
+  readonly asyncTimeoutMs: number;
+  readonly asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
 }
 
 export interface MdyAnyGroupDescriptor {
@@ -127,6 +134,12 @@ export interface MdyFieldOptions<TValue> {
    * validators (the field stays `pending` for the whole window).
    */
   readonly asyncDebounceMs?: number;
+  /** Dotted paths whose changes re-run the async validators (cross-field server checks). */
+  readonly asyncDependsOn?: ReadonlyArray<string>;
+  /** After N ms the run fails with kind "async-timeout" and pending settles. */
+  readonly asyncTimeoutMs?: number;
+  /** Precondition evaluated before pending turns on; false → skip the server call. */
+  readonly asyncWhen?: (value: TValue, formValue: Record<string, unknown>) => boolean;
 }
 
 /**
@@ -154,6 +167,9 @@ export function field<TValue>(
     validators,
     asyncValidators: options?.asyncValidators ?? [],
     asyncDebounceMs: options?.asyncDebounceMs ?? 0,
+    asyncDependsOn: options?.asyncDependsOn ?? [],
+    asyncTimeoutMs: options?.asyncTimeoutMs ?? 0,
+    asyncWhen: (options?.asyncWhen as MdyFieldDescriptor<MdyWiden<TValue>>["asyncWhen"]) ?? null,
   };
 }
 
@@ -462,7 +478,7 @@ export abstract class MdyTypedFormBase<
     name: string,
     key: string,
     validators: ReadonlyArray<MdyAsyncValidatorFn<T>>,
-    options?: { readonly debounceMs?: number },
+    options?: MdyAsyncValidatorOptions,
   ): void {
     this._adapter.upsertAsyncValidators(name, key, validators, options);
   }
@@ -505,7 +521,12 @@ export abstract class MdyTypedFormBase<
           path,
           SCHEMA_KEY,
           node.asyncValidators,
-          { debounceMs: node.asyncDebounceMs },
+          {
+            debounceMs: node.asyncDebounceMs,
+            dependsOn: node.asyncDependsOn,
+            timeoutMs: node.asyncTimeoutMs,
+            when: node.asyncWhen ?? undefined,
+          },
         );
       }
     });
