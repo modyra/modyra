@@ -12,6 +12,7 @@
     "build:demo": "npm run build:lib && ng build demo",
     "watch:lib": "ng build modyra --watch",
     "test": "npm run build:core && tsc -p packages/zod/tsconfig.json && ng test modyra",
+    "test:perf": "ng run modyra:test-perf || true",
     "lint": "ng lint",
     "test:bundle": "ng build bundle-test && node scripts/check-bundle.mjs",
     "build:core": "tsc -p packages/core/tsconfig.json",
