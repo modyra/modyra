@@ -26,6 +26,21 @@
             "tsConfig": "packages/angular/tsconfig.spec.json",
             "polyfills": [
               "@angular/compiler"
+            ],
+            "exclude": [
+              "**/benchmarks.spec.ts"
+            ]
+          }
+        },
+        "test-perf": {
+          "builder": "@angular-devkit/build-angular:jest",
+          "options": {
+            "tsConfig": "packages/angular/tsconfig.spec.json",
+            "polyfills": [
+              "@angular/compiler"
+            ],
+            "include": [
+              "**/benchmarks.spec.ts"
             ]
           }
         },
