@@ -49,5 +49,13 @@ jobs:
       - name: Theme class parity
         run: pnpm run test:themes
 
+      # Browser smoke test (Playwright + Chromium): non-blocking while it
+      # stabilizes — flip continue-on-error to false after a few green weeks.
+      - name: Browser smoke test
+        run: |
+          npx playwright install --with-deps chromium
+          pnpm run test:e2e
+        continue-on-error: true
+
       - name: Production dependency audit
         run: pnpm audit --prod
