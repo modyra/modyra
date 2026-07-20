@@ -34,11 +34,78 @@ class LoadOptionsHostComponent {
   loader: MdyOptionsLoader = async () => [];
 }
 
-describe("MdyLoadOptionsDirective", () => {
-  async function settle(ms: number): Promise<void> {
-    await new Promise((r) => setTimeout(r, ms));
+// ─── Concurrency helpers ─────────────────────────────────────────────────────
+// No wall-clock sleeps: response ordering is driven by explicitly-resolved
+// deferreds, and every wait is a condition poll over observable state with
+// a generous deadline — a failure surfaces as a clear timeout, never as a
+// racing assertion.
+
+interface Deferred<T> {
+  readonly promise: Promise<T>;
+  resolve(value: T): void;
+  reject(reason: unknown): void;
+}
+
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+/** Polls a condition, yielding macrotasks so real (debounce) timers can fire. */
+async function waitFor(
+  condition: () => boolean,
+  description: string,
+): Promise<void> {
+  const deadline = Date.now() + 2000;
+  while (!condition()) {
+    if (Date.now() > deadline) {
+      throw new Error(`timed out waiting for ${description}`);
+    }
+    await flush();
+  }
+}
+
+/** Drains pending microtasks (a resolved deferred's .then handlers). */
+function flush(): Promise<void> {
+  return new Promise((r) => setTimeout(r, 0));
+}
+
+type Options = ReadonlyArray<MdySelectOption<string>>;
+
+/**
+ * Loader whose responses the test resolves by hand: each call is recorded
+ * and its promise is stored per query.
+ */
+class ScriptedLoader {
+  readonly calls: string[] = [];
+  private readonly pending = new Map<string, Deferred<Options>>();
+
+  readonly loader: MdyOptionsLoader = (query) => {
+    this.calls.push(query);
+    const d = deferred<Options>();
+    this.pending.set(query, d);
+    return d.promise;
+  };
+
+  resolveWith(query: string, options: Options): void {
+    const d = this.pending.get(query);
+    if (!d) throw new Error(`no pending fetch for query "${query}"`);
+    d.resolve(options);
   }
 
+  rejectWith(query: string, reason: unknown): void {
+    const d = this.pending.get(query);
+    if (!d) throw new Error(`no pending fetch for query "${query}"`);
+    d.reject(reason);
+  }
+}
+
+describe("MdyLoadOptionsDirective", () => {
   beforeEach(() => {
     fake.searchQuery.set("");
     fake.overrideOptions.set(null);
@@ -46,65 +113,98 @@ describe("MdyLoadOptionsDirective", () => {
   });
 
   it("loads options for the query with loading state, debounced", async () => {
-    const calls: string[] = [];
+    const scripted = new ScriptedLoader();
     const fixture = TestBed.createComponent(LoadOptionsHostComponent);
-    fixture.componentInstance.loader = async (q) => {
-      calls.push(q);
-      return [{ value: q, label: q.toUpperCase() }];
-    };
+    fixture.componentInstance.loader = scripted.loader;
     fixture.detectChanges();
 
     expect(fake.loadingOverride()).toBe(true); // initial load scheduled
-    await settle(30);
-    expect(calls).toEqual([""]); // initial empty-query load
-    expect(fake.loadingOverride()).toBe(false);
+    await waitFor(() => scripted.calls.includes(""), "initial load");
+    scripted.resolveWith("", [{ value: "", label: "" }]);
+    await waitFor(
+      () => fake.loadingOverride() === false,
+      "initial load to settle",
+    );
 
     fake.searchQuery.set("ro");
     fixture.detectChanges();
     expect(fake.loadingOverride()).toBe(true);
-    await settle(30);
-    expect(calls).toEqual(["", "ro"]);
+    await waitFor(() => scripted.calls.includes("ro"), '"ro" fetch');
+    scripted.resolveWith("ro", [{ value: "ro", label: "RO" }]);
+    await waitFor(
+      () => fake.overrideOptions() !== null,
+      '"ro" options applied',
+    );
+    expect(scripted.calls).toEqual(["", "ro"]);
     expect(fake.overrideOptions()).toEqual([{ value: "ro", label: "RO" }]);
+    expect(fake.loadingOverride()).toBe(false);
   });
 
   it("applies last-wins on out-of-order responses", async () => {
+    const scripted = new ScriptedLoader();
     const fixture = TestBed.createComponent(LoadOptionsHostComponent);
-    fixture.componentInstance.loader = async (q) => {
-      // The earlier query resolves later than the newer one.
-      await settle(q === "slow" ? 60 : 0);
-      return [{ value: q, label: q }];
-    };
+    fixture.componentInstance.loader = scripted.loader;
     fixture.detectChanges();
-    await settle(20);
+    await waitFor(() => scripted.calls.includes(""), "initial load");
+    scripted.resolveWith("", []);
+    await waitFor(
+      () => fake.loadingOverride() === false,
+      "initial load to settle",
+    );
 
     fake.searchQuery.set("slow");
     fixture.detectChanges();
-    await settle(15); // "slow" fetch in flight
+    await waitFor(() => scripted.calls.includes("slow"), '"slow" fetch');
+
     fake.searchQuery.set("fast");
     fixture.detectChanges();
-    await settle(30); // "fast" resolves first
+    await waitFor(() => scripted.calls.includes("fast"), '"fast" fetch');
 
+    // The newer query resolves first → applied.
+    scripted.resolveWith("fast", [{ value: "fast", label: "fast" }]);
+    await waitFor(
+      () => fake.overrideOptions() !== null,
+      '"fast" options applied',
+    );
     expect(fake.overrideOptions()).toEqual([{ value: "fast", label: "fast" }]);
-    await settle(80); // "slow" resolves late → discarded
+
+    // The stale response arrives late → discarded (last-wins), loading
+    // state untouched (already settled by the winning run). Flush so the
+    // stale .then handler has actually run before asserting.
+    scripted.resolveWith("slow", [{ value: "slow", label: "slow" }]);
+    await flush();
     expect(fake.overrideOptions()).toEqual([{ value: "fast", label: "fast" }]);
     expect(fake.loadingOverride()).toBe(false);
   });
 
   it("falls back to empty options when the loader rejects", async () => {
+    const scripted = new ScriptedLoader();
     const fixture = TestBed.createComponent(LoadOptionsHostComponent);
-    fixture.componentInstance.loader = async () => {
-      throw new Error("network");
-    };
+    fixture.componentInstance.loader = scripted.loader;
     fixture.detectChanges();
-    await settle(30);
+    await waitFor(() => scripted.calls.includes(""), "initial load");
+
+    scripted.rejectWith("", new Error("network"));
+    await waitFor(
+      () => fake.overrideOptions() !== null,
+      "rejection fallback applied",
+    );
     expect(fake.overrideOptions()).toEqual([]);
     expect(fake.loadingOverride()).toBe(false);
   });
 
   it("clears overrides on destroy", async () => {
+    const scripted = new ScriptedLoader();
     const fixture = TestBed.createComponent(LoadOptionsHostComponent);
+    fixture.componentInstance.loader = scripted.loader;
     fixture.detectChanges();
-    await settle(30);
+    await waitFor(() => scripted.calls.includes(""), "initial load");
+    scripted.resolveWith("", []);
+    await waitFor(
+      () => fake.loadingOverride() === false,
+      "initial load to settle",
+    );
+
     fixture.destroy();
     expect(fake.overrideOptions()).toBeNull();
     expect(fake.loadingOverride()).toBeNull();
