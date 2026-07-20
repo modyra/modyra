@@ -46,6 +46,7 @@ server validation, submit with server errors, drafts — in each binding:
 | Document | What it covers |
 | :------- | :------------- |
 | [UI toolkit](guides/ui-toolkit.md) | Renderer catalog, enterprise select, dynamic forms, CSS tokens |
+| [AI-generated forms](guides/ai-generated-forms.md) | LLM output → `parseDynamicFields()` → render: JSON contract, system prompt template, safe pipeline |
 | [I18n](guides/i18n.md) | UI strings (en/it/de/fr/es), date/time value models, localized parsing |
 | [DevTools](guides/devtools.md) | Hotkey overlay, masking, production notes |
 
