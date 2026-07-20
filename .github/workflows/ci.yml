@@ -36,10 +36,10 @@ jobs:
         run: pnpm run test:widgets
 
       - name: Build Angular library
-        run: pnpm run build:lib
+        run: pnpm run build:angular
 
       - name: Angular tests
-        run: pnpm test
+        run: pnpm run test:angular
 
       - name: Bundle / tree-shaking check
         run: pnpm run test:bundle
