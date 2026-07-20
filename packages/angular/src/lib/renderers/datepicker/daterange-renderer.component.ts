@@ -81,7 +81,6 @@ import { MdyRangeCalendarComponent } from "./range-calendar.component";
             [attr.aria-required]="ariaRequired() || isRequired()"
             [attr.aria-disabled]="effectiveAriaDisabled()"
             [attr.aria-label]="(label() ? label() + ' — ' : '') + i18n.daterangeStartLabel"
-            [attr.aria-expanded]="open()"
             [attr.aria-haspopup]="'dialog'"
             autocomplete="off"
           />
@@ -105,7 +104,6 @@ import { MdyRangeCalendarComponent } from "./range-calendar.component";
             [attr.aria-required]="ariaRequired() || isRequired()"
             [attr.aria-disabled]="effectiveAriaDisabled()"
             [attr.aria-label]="(label() ? label() + ' — ' : '') + i18n.daterangeEndLabel"
-            [attr.aria-expanded]="open()"
             [attr.aria-haspopup]="'dialog'"
             autocomplete="off"
           />
@@ -116,6 +114,8 @@ import { MdyRangeCalendarComponent } from "./range-calendar.component";
             class="mdy-datepicker__toggle"
             [disabled]="isDisabled()"
             [attr.aria-label]="i18n.datepickerToggleLabel"
+            [attr.aria-expanded]="open()"
+            [attr.aria-haspopup]="'dialog'"
             tabindex="-1"
             (click)="toggleOverlay($event)"
           >

@@ -75,7 +75,6 @@ import { MdyCalendarComponent } from "./calendar.component";
           [disabled]="isDisabled()"
           (change)="onInputChange($event)"
           (blur)="onInputBlur($event)"
-          [attr.aria-expanded]="open()"
           [attr.aria-haspopup]="'dialog'"
           [attr.aria-invalid]="hasErrors()"
           [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
@@ -93,6 +92,8 @@ import { MdyCalendarComponent } from "./calendar.component";
                 [disabled]="isDisabled()"
                 (click)="toggleOverlay($event)"
                 [attr.aria-label]="i18n.datepickerToggleLabel"
+                [attr.aria-expanded]="open()"
+                [attr.aria-haspopup]="'dialog'"
               >
                  <mdy-icon name="CALENDAR" class="mdy-datepicker__icon" />
               </button>
