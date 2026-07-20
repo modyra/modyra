@@ -1,0 +1,44 @@
+{
+  "name": "@modyra/standard-schema",
+  "version": "0.2.0",
+  "description": "Framework-agnostic Standard Schema adapter for the Modyra form engine — works with Zod, Valibot, ArkType and any Standard Schema v1 library.",
+  "license": "MIT",
+  "author": "Lorenzo Muscherà",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modyra/modyra.git",
+    "directory": "packages/standard-schema"
+  },
+  "bugs": {
+    "url": "https://github.com/modyra/modyra/issues"
+  },
+  "homepage": "https://github.com/modyra/modyra#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@modyra/core": "0.2.0"
+  },
+  "devDependencies": {
+    "valibot": "^1.4.2",
+    "zod": "^4.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

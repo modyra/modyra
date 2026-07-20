@@ -76,6 +76,9 @@ importers:
       '@modyra/react':
         specifier: workspace:*
         version: link:packages/react
+      '@modyra/standard-schema':
+        specifier: workspace:*
+        version: link:packages/standard-schema
       '@modyra/vue':
         specifier: workspace:*
         version: link:packages/vue
@@ -203,6 +206,19 @@ importers:
       react:
         specifier: ^19.0.0
         version: 19.2.7
+
+  packages/standard-schema:
+    dependencies:
+      '@modyra/core':
+        specifier: 0.2.0
+        version: link:../core
+    devDependencies:
+      valibot:
+        specifier: ^1.4.2
+        version: 1.4.2(typescript@5.9.3)
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
 
   packages/styles: {}
 
@@ -6319,6 +6335,14 @@ packages:
   v8-to-istanbul@9.3.0:
     resolution: {integrity: sha512-kiGUalWN+rgBJ/1OHZsBtU4rXZOfj/7rKQxULKlIzwzQSvMJUUNgPwJEEh7gU6xEVxC0ahoOBvN2YI8GH6FNgA==}
     engines: {node: '>=10.12.0'}
+
+  valibot@1.4.2:
+    resolution: {integrity: sha512-gjdCvJ6d3RyHAneqxMYMW9QMCwYMb3jpOO0IyHZV1bnRHFBHrX3VkIILt5XYR0WhwHiH7Mty8ovuPZ/O3gamrg==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   validate-npm-package-name@7.0.2:
     resolution: {integrity: sha512-hVDIBwsRruT73PbK7uP5ebUt+ezEtCmzZz3F59BSr2F6OVFnJ/6h8liuvdLrQ88Xmnk6/+xGGuq+pG9WwTuy3A==}
@@ -13503,6 +13527,10 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.31
       '@types/istanbul-lib-coverage': 2.0.6
       convert-source-map: 2.0.0
+
+  valibot@1.4.2(typescript@5.9.3):
+    optionalDependencies:
+      typescript: 5.9.3
 
   validate-npm-package-name@7.0.2: {}
 

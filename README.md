@@ -35,6 +35,7 @@ core, one shared headless widget layer, one shared theme package.
 | [`@modyra/vue`](packages/vue)         | Vue binding on `@vue/reactivity`                                                                         | `@vue/reactivity` ≥3.4 |
 | [`@modyra/lit`](packages/lit)         | Lit binding — ReactiveController + themable form elements                                                | `lit` ≥3               |
 | [`@modyra/zod`](packages/zod)         | Framework-agnostic Zod adapter — schema-first typed forms                                                | `zod` ≥3.25            |
+| [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter — one adapter for Zod, Valibot, ArkType and every v1 vendor          | —                      |
 | [`@modyra/styles`](packages/styles)   | CSS themes (`default`, `material`, `ios`, `ionic`, `base`) for every adapter                             | —                      |
 
 ## The engine in 60 seconds (framework-agnostic)
@@ -300,6 +301,7 @@ The full index lives in [docs/README.md](docs/README.md). The shortlist:
 
 - [Mental model](docs/guides/mental-model.md) — the state graph, field lifecycle, operation semantics
 - [Typed forms](docs/guides/typed-forms.md) — schema, handles, `patch`/`getChanges`, async validation, field arrays, undo/redo, **drafts (read the security note)**, wizard, Zod
+- [Schema adapters](docs/guides/schemas.md) — Zod vs Standard Schema (Valibot, ArkType, …): which model, which trade-offs
 - [Usage modes](docs/guides/usage-modes.md) — declarative, explicit adapter, headless, validation semantics
 - [UI toolkit](docs/guides/ui-toolkit.md) — renderer catalog, enterprise select, dynamic forms, CSS tokens
 - [DevTools](docs/guides/devtools.md) — hotkey overlay, masking, production notes
