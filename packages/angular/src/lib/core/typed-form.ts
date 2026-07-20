@@ -7,6 +7,7 @@ import {
   Signal,
 } from "@angular/core";
 import {
+  array as coreArray,
   field as coreField,
   group as coreGroup,
   MdyTypedFormBase,
@@ -30,8 +31,11 @@ import {
 // Re-export core descriptor/model types through local aliases so the Angular
 // package surface stays self-contained and stable.
 import type {
+  MdyAnyArrayDescriptor as CoreAnyArrayDescriptor,
   MdyAnyFieldDescriptor as CoreAnyFieldDescriptor,
   MdyAnyGroupDescriptor as CoreAnyGroupDescriptor,
+  MdyArrayDescriptor as CoreArrayDescriptor,
+  MdyArrayItemValue as CoreArrayItemValue,
   MdyFieldDescriptor as CoreFieldDescriptor,
   MdyFieldOptions as CoreFieldOptions,
   MdyFormPatch as CoreFormPatch,
@@ -41,8 +45,11 @@ import type {
   MdyWiden as CoreWiden,
 } from "@modyra/core";
 
+export type MdyAnyArrayDescriptor = CoreAnyArrayDescriptor;
 export type MdyAnyFieldDescriptor = CoreAnyFieldDescriptor;
 export type MdyAnyGroupDescriptor = CoreAnyGroupDescriptor;
+export type MdyArrayDescriptor<TItem> = CoreArrayDescriptor<TItem>;
+export type MdyArrayItemValue<I> = CoreArrayItemValue<I>;
 export type MdyFieldDescriptor<TValue> = CoreFieldDescriptor<TValue>;
 export type MdyFieldOptions<TValue> = CoreFieldOptions<TValue>;
 export type MdyFormPatch<S extends CoreFormSchema> = CoreFormPatch<S>;
@@ -75,12 +82,36 @@ export interface MdyFieldHandle<TValue> {
   markAsDirty(): void;
 }
 
+/** Typed handle for a repeatable array item, exposed on `form.f` (`form.f.items`). */
+export interface MdyArrayHandle<TItemHandle, TItemValue> {
+  readonly path: string;
+  readonly length: Signal<number>;
+  readonly rows: Signal<ReadonlyArray<TItemHandle>>;
+  readonly errors: Signal<ReadonlyArray<MdyFieldError>>;
+  readonly valid: Signal<boolean>;
+  push(value: TItemValue): void;
+  insert(index: number, value: TItemValue): void;
+  remove(index: number): void;
+  move(from: number, to: number): void;
+  setAll(values: ReadonlyArray<TItemValue>): void;
+  at(index: number): TItemHandle | null;
+}
+
+/** The handle tree for a single array item — a field handle or nested group tree. */
+export type MdyItemHandleTree<I> = I extends MdyGroupDescriptor<infer C>
+  ? MdyFieldHandleTree<C>
+  : I extends MdyFieldDescriptor<infer V>
+  ? MdyFieldHandle<V>
+  : never;
+
 /** The typed handle tree mirroring the schema shape (`form.f.address.city`). */
 export type MdyFieldHandleTree<S extends MdyFormSchema> = {
   readonly [K in keyof S]: S[K] extends MdyFieldDescriptor<infer V>
   ? MdyFieldHandle<V>
   : S[K] extends MdyGroupDescriptor<infer C>
   ? MdyFieldHandleTree<C>
+  : S[K] extends MdyArrayDescriptor<infer I>
+  ? MdyArrayHandle<MdyItemHandleTree<I>, MdyArrayItemValue<I>>
   : never;
 };
 
@@ -100,6 +131,17 @@ export function group<TChildren extends MdyFormSchema>(
   children: TChildren,
 ): MdyGroupDescriptor<TChildren> {
   return coreGroup(children);
+}
+
+/** Declares a repeatable array of fields or groups (`items.0.name` paths on the adapter). */
+export function array<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescriptor>(
+  item: TItem,
+  options?: {
+    readonly initial?: ReadonlyArray<unknown>;
+    readonly validators?: ReadonlyArray<ValidatorFn<readonly unknown[]>>;
+  },
+): MdyArrayDescriptor<TItem> {
+  return coreArray(item, options);
 }
 
 export interface MdyFormOptions<

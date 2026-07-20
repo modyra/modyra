@@ -8,6 +8,7 @@ export type {
 } from "./reactivity.js";
 
 export {
+    array,
     createForm,
     field,
     group,
@@ -15,8 +16,12 @@ export {
     MdyTypedFormBase,
 } from "./typed-form.js";
 export type {
+    MdyAnyArrayDescriptor,
     MdyAnyFieldDescriptor,
     MdyAnyGroupDescriptor,
+    MdyArrayDescriptor,
+    MdyArrayHandle,
+    MdyArrayItemValue,
     MdyCoreFormOptions,
     MdyFieldDescriptor,
     MdyFieldHandle,
@@ -26,6 +31,7 @@ export type {
     MdyFormSchema,
     MdyFormValue,
     MdyGroupDescriptor,
+    MdyItemHandleTree,
     MdyTypedFormBaseOptions,
     MdyWiden
 } from "./typed-form.js";

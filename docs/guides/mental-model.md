@@ -9,7 +9,10 @@ Every mode (typed, declarative, adapter, Zod, dynamic) drives the same engine:
 (`"email"`, `"address.city"` — dots are naming, not nesting). `MdyTypedForm`
 adds the nested typed view on top: it flattens patches going in and unflattens
 values coming out. There is exactly **one source of truth per field**: the
-`WritableSignal` holding its value inside the adapter record.
+`WritableSignal` holding its value inside the adapter record. `array()` rows
+are no exception — indexed paths (`"items.0.name"`) are just field paths; a
+row-count-aware manager registers/removes them as the array's value changes
+shape (see "Field arrays" in `typed-forms.md`).
 
 ## The state graph
 

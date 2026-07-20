@@ -12,6 +12,7 @@ core, one shared headless widget layer, one shared theme package.
 - No `FormControl`, `FormGroup` or RxJS — form state is signals and `computed`s
 - Compile-time checked field bindings: `[field]="form.f.email"`, typos don't compile
 - Sync, async (debounced, cancellable, last-wins) and cross-field validation
+- Typed field arrays (`array()`) for repeatable rows — push/insert/remove/move
 - Drafts (autosave/restore), undo/redo, devtools
 - Headless core or accessible ready-made controls — your design system or ours
 - Incremental Angular adoption through Reactive Forms interop (`mdyCva`)
@@ -193,7 +194,7 @@ ReactiveController.
 ## Documentation
 
 - [Mental model](docs/guides/mental-model.md) — the state graph, field lifecycle, operation semantics
-- [Typed forms](docs/guides/typed-forms.md) — schema, handles, `patch`/`getChanges`, async validation, undo/redo, **drafts (read the security note)**, wizard, Zod
+- [Typed forms](docs/guides/typed-forms.md) — schema, handles, `patch`/`getChanges`, async validation, field arrays, undo/redo, **drafts (read the security note)**, wizard, Zod
 - [Usage modes](docs/guides/usage-modes.md) — declarative, explicit adapter, headless, validation semantics
 - [UI toolkit](docs/guides/ui-toolkit.md) — renderer catalog, enterprise select, dynamic forms, CSS tokens
 - [DevTools](docs/guides/devtools.md) — hotkey overlay, masking, production notes

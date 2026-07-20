@@ -1,7 +1,9 @@
 import { isSafeFieldPath } from "./path-utils.js";
 import { MDY_MARKS_REQUIRED } from "./validators.js";
 import type {
+  MdyAnyArrayDescriptor,
   MdyAnyFieldDescriptor,
+  MdyAnyGroupDescriptor,
   MdyFormPatch,
   MdyFormSchema,
   MdyFormValue,
@@ -12,6 +14,7 @@ import type { ValidatorFn } from "./types.js";
 export interface MdySchemaPaths {
   readonly leafPaths: readonly string[];
   readonly groupPaths: ReadonlySet<string>;
+  readonly arrayPaths: ReadonlySet<string>;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -25,36 +28,43 @@ export function hasRequiredMarker(fn: ValidatorFn<never>): boolean {
 
 /**
  * Walks a schema, calling `onField` for every leaf and `onGroup` for every
- * nested group prefix. The order is deterministic (object insertion order).
+ * nested group prefix. Array nodes are not descended into (their rows are
+ * dynamic, not part of the static schema shape) — `onArray` is called
+ * instead. The order is deterministic (object insertion order).
  */
 export function walkSchema(
   nodes: MdyFormSchema,
   prefix: string,
   onField: (path: string, node: MdyAnyFieldDescriptor) => void,
   onGroup?: (path: string) => void,
+  onArray?: (path: string, node: MdyAnyArrayDescriptor) => void,
 ): void {
   for (const [key, node] of Object.entries(nodes)) {
     const path = prefix ? `${prefix}.${key}` : key;
     if (node.kind === "field") {
       onField(path, node);
+    } else if (node.kind === "array") {
+      onArray?.(path, node);
     } else {
       onGroup?.(path);
-      walkSchema(node.children, path, onField, onGroup);
+      walkSchema(node.children, path, onField, onGroup, onArray);
     }
   }
 }
 
-/** Collects leaf paths and group prefixes from a schema. */
+/** Collects leaf paths, group prefixes and array paths from a schema. */
 export function collectSchemaPaths(nodes: MdyFormSchema): MdySchemaPaths {
   const leafPaths: string[] = [];
   const groupPaths = new Set<string>();
+  const arrayPaths = new Set<string>();
   walkSchema(
     nodes,
     "",
     (path) => leafPaths.push(path),
     (path) => groupPaths.add(path),
+    (path) => arrayPaths.add(path),
   );
-  return { leafPaths, groupPaths };
+  return { leafPaths, groupPaths, arrayPaths };
 }
 
 /** Rebuilds the nested value shape from a flat dotted-path record. */
@@ -86,20 +96,64 @@ export function unflatten(
   return out;
 }
 
+/** True for a record whose keys are all canonical array indices ("0", "1", …). */
+function isIndexRecord(value: unknown): value is Record<string, unknown> {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value);
+  return keys.length > 0 && keys.every((k) => /^\d+$/.test(k) && String(Number(k)) === k);
+}
+
+/**
+ * Converts the index-keyed records `unflatten` produces at array paths
+ * (`{ items: { "0": {...}, "1": {...} } }`) into real JS arrays, in index
+ * order. Non-array paths, and array paths with no rows, are left as-is.
+ */
+export function numericKeysToArrays(
+  nested: Record<string, unknown>,
+  arrayPaths: ReadonlySet<string>,
+): Record<string, unknown> {
+  if (arrayPaths.size === 0) return nested;
+  const walk = (node: unknown, prefix: string): unknown => {
+    if (!isRecord(node)) return node;
+    const out: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(node)) {
+      const path = prefix ? `${prefix}.${key}` : key;
+      if (arrayPaths.has(path)) {
+        out[key] = isIndexRecord(v)
+          ? Object.keys(v)
+            .map(Number)
+            .sort((a, b) => a - b)
+            .map((i) => v[String(i)])
+          : [];
+      } else {
+        out[key] = walk(v, path);
+      }
+    }
+    return out;
+  };
+  return walk(nested, "") as Record<string, unknown>;
+}
+
 /**
  * Flattens a (possibly nested) patch object into dotted adapter paths,
- * recursing only through keys that match registered group prefixes.
+ * recursing only through keys that match registered group prefixes. Values
+ * under `arrayPaths` are treated as leaves (replaced wholesale) — descending
+ * into them would produce partial row patches outside the array manager's
+ * control.
  */
 export function flattenPatch(
   partial: Record<string, unknown>,
   groupPaths: ReadonlySet<string>,
+  arrayPaths: ReadonlySet<string> = new Set(),
 ): Record<string, unknown> {
   const flat: Record<string, unknown> = {};
   const walk = (node: unknown, prefix: string): void => {
     if (!isRecord(node)) return;
     for (const [key, v] of Object.entries(node)) {
       const path = prefix ? `${prefix}.${key}` : key;
-      if (groupPaths.has(path) && v !== null && isRecord(v)) {
+      if (arrayPaths.has(path)) {
+        flat[path] = v;
+      } else if (groupPaths.has(path) && v !== null && isRecord(v)) {
         walk(v, path);
       } else {
         flat[path] = v;
@@ -120,6 +174,14 @@ export function pathGet(value: unknown, path: string): unknown {
   return current === undefined ? null : current;
 }
 
+/** Type guard: an array item matches the item descriptor's shape. */
+function isSchemaItemValue(
+  value: unknown,
+  item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor,
+): boolean {
+  return item.kind === "field" ? true : isSchemaValue(value, item.children);
+}
+
 /** Type guard: the value contains every key declared by the schema. */
 export function isSchemaValue<S extends MdyFormSchema>(
   value: unknown,
@@ -130,6 +192,11 @@ export function isSchemaValue<S extends MdyFormSchema>(
     if (!(key in value)) return false;
     const child = value[key];
     if (node.kind === "field") continue;
+    if (node.kind === "array") {
+      if (!Array.isArray(child)) return false;
+      if (!child.every((row) => isSchemaItemValue(row, node.item))) return false;
+      continue;
+    }
     if (!isSchemaValue(child, node.children)) return false;
   }
   return true;
@@ -145,6 +212,11 @@ export function isSchemaPatch<S extends MdyFormSchema>(
     const node = nodes[key];
     if (node === undefined) return false;
     if (node.kind === "field") continue;
+    if (node.kind === "array") {
+      if (!Array.isArray(child)) return false;
+      if (!child.every((row) => isSchemaItemValue(row, node.item))) return false;
+      continue;
+    }
     if (!isSchemaPatch(child, node.children)) return false;
   }
   return true;
@@ -158,6 +230,14 @@ export function isFieldHandleTree(
   if (!isRecord(value)) return false;
   for (const [key, node] of Object.entries(nodes)) {
     const entry = value[key];
+    if (node.kind === "array") {
+      if (!isRecord(entry)) return false;
+      if (typeof entry.path !== "string") return false;
+      if (typeof entry.push !== "function") return false;
+      if (typeof entry.remove !== "function") return false;
+      if (typeof (entry.rows as (() => unknown) | undefined) !== "function") return false;
+      continue;
+    }
     if (node.kind === "group") {
       if (!isFieldHandleTree(entry, node.children)) return false;
       continue;
