@@ -1,6 +1,6 @@
 {
   "name": "@modyra/vue",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Vue binding for the Modyra form engine — type-safe forms on @vue/reactivity.",
   "license": "MIT",
   "author": "Lorenzo Muscherà",
@@ -32,8 +32,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "0.1.0",
-    "@modyra/widgets": "0.1.0"
+    "@modyra/core": "0.2.0",
+    "@modyra/widgets": "0.2.0"
   },
   "peerDependencies": {
     "@vue/reactivity": ">=3.4.0"
