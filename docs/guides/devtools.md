@@ -1,7 +1,13 @@
 # DevTools — live form inspector
 
-"Why is my form invalid?" answered in one panel. Mark a form as inspectable
-and press **Ctrl+Shift+D**:
+"Why is my form invalid?" answered in one panel. There are two flavors of
+the same inspector: the **Angular overlay** (`mdyDevtools`, hotkey-driven,
+most of this guide) and the **framework-agnostic headless panel**
+(`mountMdyDevtools`, works with any binding — see the last section).
+
+## Angular: the hotkey overlay
+
+Mark a form as inspectable and press **Ctrl+Shift+D**:
 
 ```html
 <mdy-form [form]="form" mdyDevtools>…</mdy-form>
@@ -48,6 +54,21 @@ File contents are never shown — `File` values render as
 ```ts
 inject(MdyFormsDevtoolsService).toggle(form); // open/close the overlay
 ```
+
+## React, Vue, Lit (or plain JS): the headless panel
+
+The same inspector ships in `@modyra/core` as a DOM panel mountable
+anywhere — no Angular involved. The `examples/{react,vue,lit}` apps use it:
+
+```ts
+import { mountMdyDevtools } from "@modyra/react"; // or core / vue / lit
+
+const unmount = mountMdyDevtools(form, document.getElementById("panel")!);
+// re-renders on an interval; call unmount() to dispose
+```
+
+It shows the same masked state/value table and is styled by the same theme
+variables (`mdy-devtools` class).
 
 ## Hotkey configuration
 

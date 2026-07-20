@@ -1,9 +1,10 @@
 # @modyra/angular
 
 Angular binding for the [Modyra](https://github.com/modyra/modyra) form
-engine — the most complete adapter: typed forms on native signals, a full
-accessible UI catalog, devtools, multi-step wizard, declarative mode and
-Reactive Forms interop. No `FormControl`, no `FormGroup`, no RxJS.
+engine — one of four first-class bindings (React, Vue, Lit are the others),
+and the one shipping a ready-made UI layer: typed forms on native signals,
+a full accessible UI catalog, devtools, multi-step wizard, declarative mode
+and Reactive Forms interop. No `FormControl`, no `FormGroup`, no RxJS.
 
 ## Install
 

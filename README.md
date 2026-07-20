@@ -9,34 +9,36 @@
 engine with native bindings for Angular, React, Vue and Lit — one shared
 core, one shared headless widget layer, one shared theme package.
 
-- No `FormControl`, `FormGroup` or RxJS — form state is signals and `computed`s
-- Compile-time checked field bindings: `[field]="form.f.email"`, typos don't compile
+- No framework runtime, no RxJS — form state is plain signals and `computed`s
+- Compile-time checked field bindings: `form.f.email` — typos don't compile
 - Sync, async (debounced, cancellable, cross-field) and form-level validation
 - Typed field arrays (`array()`) for repeatable rows — push/insert/remove/move
 - Drafts (autosave/restore), undo/redo, minimal-patch change tracking, devtools
 - Headless core or accessible ready-made controls — your design system or ours
-- Incremental Angular adoption through Reactive Forms interop (`mdyCva`)
+- Incremental adoption paths — e.g. Reactive Forms interop (`mdyCva`) on Angular
 
 [![CI](https://github.com/modyra/modyra/actions/workflows/ci.yml/badge.svg)](https://github.com/modyra/modyra/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@modyra/angular)](https://www.npmjs.com/package/@modyra/angular)
-[![Angular](https://img.shields.io/badge/Angular-21%2B-red)](https://angular.dev)
+[![npm](https://img.shields.io/npm/v/@modyra/core)](https://www.npmjs.com/package/@modyra/core)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?style=flat&logo=github-sponsors)](https://github.com/sponsors/lorenzomusche)
 
 ## Packages
 
-| Package                               | What it is                                                                                               | Peer deps              |
-| :------------------------------------ | :------------------------------------------------------------------------------------------------------- | :--------------------- |
-| [`@modyra/core`](packages/core)       | Framework-agnostic form engine: typed field trees, arrays, validation, drafts, undo/redo, i18n utilities | —                      |
-| [`@modyra/widgets`](packages/widgets) | Headless widget controllers + universal interaction/accessibility contract                               | —                      |
-| [`@modyra/angular`](packages/angular) | Angular binding on native signals — the most complete adapter (UI catalog, devtools, wizard, interop)    | `@angular/*` ≥21       |
-| [`@modyra/react`](packages/react)     | React binding via `useSyncExternalStore`                                                                 | `react` ≥18            |
-| [`@modyra/vue`](packages/vue)         | Vue binding on `@vue/reactivity`                                                                         | `@vue/reactivity` ≥3.4 |
-| [`@modyra/lit`](packages/lit)         | Lit binding — ReactiveController + themable form elements                                                | `lit` ≥3               |
-| [`@modyra/zod`](packages/zod)         | Framework-agnostic Zod adapter — schema-first typed forms                                                | `zod` ≥3.25            |
-| [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter — one adapter for Zod, Valibot, ArkType and every v1 vendor          | —                      |
-| [`@modyra/styles`](packages/styles)   | CSS themes (`default`, `material`, `ios`, `ionic`, `base`) for every adapter                             | —                      |
+| Package                               | What it is                                                                                               | UI layer                                                       | Peer deps              |
+| :------------------------------------ | :------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- | :--------------------- |
+| [`@modyra/core`](packages/core)       | Framework-agnostic form engine: typed field trees, arrays, validation, drafts, undo/redo, i18n utilities | headless                                                       | —                      |
+| [`@modyra/widgets`](packages/widgets) | Headless widget controllers + universal interaction/accessibility contract                               | headless                                                       | —                      |
+| [`@modyra/angular`](packages/angular) | Angular binding on native signals                                                                        | full renderer catalog, themes, devtools, wizard, interop       | `@angular/*` ≥21       |
+| [`@modyra/react`](packages/react)     | React binding via `useSyncExternalStore`                                                                 | headless — bring your own UI                                   | `react` ≥18            |
+| [`@modyra/vue`](packages/vue)         | Vue binding on `@vue/reactivity`                                                                         | headless — bring your own UI                                   | `@vue/reactivity` ≥3.4 |
+| [`@modyra/lit`](packages/lit)         | Lit binding — ReactiveController                                                                         | themable form elements                                         | `lit` ≥3               |
+| [`@modyra/zod`](packages/zod)         | Framework-agnostic Zod adapter — schema-first typed forms                                                | —                                                              | `zod` ≥3.25            |
+| [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter — one adapter for Zod, Valibot, ArkType and every v1 vendor          | —                                                              | —                      |
+| [`@modyra/styles`](packages/styles)   | CSS themes (`default`, `material`, `ios`, `ionic`, `base`) for every adapter                             | themes                                                         | —                      |
+
+Every binding is a first-class citizen over the same engine: pick the one
+for your framework, keep everything else identical.
 
 ## The engine in 60 seconds (framework-agnostic)
 
@@ -58,7 +60,7 @@ form.getValue().address.city; // "Rome" — fully typed, typos don't compile
 ```
 
 > **Validators are factories, not values:** write `required()`, not
-> `required` (Angular Reactive Forms muscle memory trips here — the
+> `required` (value-style-validator muscle memory trips here — the
 > resulting TS error is easy to misread). Validation errors come back as
 > **arrays of message strings** (`["Name taken"]`), not `{ required: true }`
 > keyed objects. To stop at the first failing validator instead of
@@ -248,20 +250,15 @@ implemented end-to-end, side by side, in:
 Adapter recipes, the four-primitive reactive contract and the Astro note:
 [Multi-framework architecture](docs/guides/multi-framework.md).
 
-## Why not Reactive Forms?
+## Coming from Angular Reactive Forms?
 
-Reactive Forms is official, mature and battle-tested — if that is what your
-team needs, keep it. This library trades ecosystem maturity for:
-compile-checked field paths, signal-based state (zoneless-friendly, no RxJS)
-and built-in async/cross-field validation, typed arrays, drafts, undo/redo
-and devtools.
-
-"No RxJS / no `@angular/forms`" means precisely: no runtime dependency, no
-Observables in the public API, none used internally. The optional `/interop`
-entry point is the single exception — it declares `@angular/forms` as an
-_optional_ peer for CVA-based migration.
-
-Full, honest comparison: [Compared with Reactive Forms](docs/guides/comparison-reactive-forms.md).
+This library trades ecosystem maturity for compile-checked field paths,
+signal-based state (zoneless-friendly, no RxJS — no runtime dependency, no
+Observables in the public API, none used internally) and built-in
+async/cross-field validation, typed arrays, drafts, undo/redo and devtools.
+The `/interop` entry point (`mdyCva`, optional `@angular/forms` peer) covers
+incremental adoption. Full, honest comparison:
+[Compared with Reactive Forms](docs/guides/comparison-reactive-forms.md).
 
 ## Layers
 
@@ -320,15 +317,15 @@ Project policies: [security](SECURITY.md) · [contributing](CONTRIBUTING.md) · 
   own adapter package.
 - TypeScript strict mode; the library compiles with `strict` and
   `strictTemplates`.
-- Status: young library, actively developed, single maintainer. Unit and
-  type tests cover the core engine, every adapter and the widget layer
-  (`npm test`, `npm run test:core`, `npm run test:adapters`,
-  `npm run test:widgets`), plus a tree-shaking bundle check
+- Status: young library, actively developed, single maintainer. `npm test`
+  runs the whole matrix — core engine, every adapter, the widget layer and
+  the Angular package (`test:core`, `test:adapters`, `test:widgets`,
+  `test:angular` individually) — plus a tree-shaking bundle check
   (`npm run test:bundle`), axe-core accessibility tests over the main
-  Angular renderers (jest + jsdom, runs with `npm test`) and a Playwright
-  browser smoke test over the packaged demo (`npm run test:e2e`, currently
-  non-blocking in CI while it stabilizes); visual regression tests are
-  still planned. Pin your version and read release notes.
+  Angular renderers (jest + jsdom, inside `test:angular`) and a Playwright
+  browser smoke test over the packaged Angular demo (`npm run test:e2e`,
+  currently non-blocking in CI while it stabilizes); visual regression
+  tests are still planned. Pin your version and read release notes.
 
 ## Examples
 
@@ -337,6 +334,10 @@ Project policies: [security](SECURITY.md) · [contributing](CONTRIBUTING.md) · 
 `examples/stackblitz` is a minimal Angular signup form that runs against the
 **published** `@modyra/angular` package — the fastest way to try the library
 without cloning anything.
+
+`examples/angular` is the full Angular demo app (typed, declarative, dynamic
+and Zod sections over the whole renderer catalog) — one demo app per
+framework, same engine.
 
 `examples/{react,vue,lit}` implement the **same signup form** (name +
 email, shared validators, agnostic devtools panel) so the adapters can be
@@ -356,11 +357,10 @@ npm run demo:lit       # http://localhost:4303
 
 ```bash
 pnpm install             # workspace deps use the workspace: protocol — use pnpm
-npm run build:lib        # core + widgets + zod + Angular library build
-npm run build:packages   # core + widgets + zod/vue/react/lit + styles
-npm start                # Angular demo app
-npm test                 # Angular unit + type tests
-npm run test:adapters    # zod/vue/react/lit node tests
+npm run build:packages   # core + widgets + schema adapters + react/vue/lit + styles
+npm run build:angular    # the Angular package (kept as build:lib alias)
+npm test                 # the whole matrix: core, adapters, widgets, Angular
+npm run demo:angular     # one demo per framework: demo:react / demo:vue / demo:lit
 ```
 
 ## Brand

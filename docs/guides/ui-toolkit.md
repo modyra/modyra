@@ -1,8 +1,10 @@
 # UI toolkit — renderers, dynamic forms, theming
 
-The renderer catalog is an **ecosystem layer** on top of the Signals core:
-the core never depends on it, and importing one control does not pull in the
-whole catalog (standalone components, standard tree shaking).
+This is the **Angular UI layer** (`@modyra/angular/ui`): the engine and the
+other three bindings stay UI-free. The renderer catalog is an **ecosystem
+layer** on top of the core: the core never depends on it, and importing one
+control does not pull in the whole catalog (standalone components, standard
+tree shaking).
 
 ## Component catalog
 
