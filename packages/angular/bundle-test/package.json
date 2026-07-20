@@ -1,0 +1,9 @@
+{
+  "name": "@modyra/angular-bundle-test",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Tree-shaking proof app for @modyra/angular — built by npm run test:bundle at the repo root. Tooling, not a package: never published.",
+  "scripts": {
+    "build": "ng build"
+  }
+}

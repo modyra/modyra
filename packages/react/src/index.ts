@@ -83,7 +83,7 @@ export function useMdyForm<S extends MdyFormSchema>(
   schema: () => S,
   options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, "reactivity">,
 ): MdyTypedForm<S> {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Intentional empty deps: one form per component instance.
   const form = useMemo(() => createForm(schema(), options), []);
   // The form owns effects/timers (draft/history/async validators), so the
   // component unmount must release them.

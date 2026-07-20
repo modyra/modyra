@@ -15,8 +15,10 @@ import {
 import { vueReactivity } from "../index.js";
 import { executeVueCommands } from "./runtime.js";
 
-export interface UseMdyFieldOptions<TValue>
-  extends Omit<MdyFieldControllerOptions<TValue>, "handle"> {}
+export type UseMdyFieldOptions<TValue> = Omit<
+  MdyFieldControllerOptions<TValue>,
+  "handle"
+>;
 
 export interface MdyVueFieldApi<TValue> {
   readonly state: MdyFieldState<TValue>;
@@ -56,7 +58,7 @@ export function useMdyField<TValue>(
       controller.dispatch(intent),
       () => undefined,
       {
-        setOpen: () => {},
+        setOpen: () => undefined, // no overlay in this control
         onTouched: () => handle.markAsTouched(),
         onDirty: () => handle.markAsDirty(),
       },

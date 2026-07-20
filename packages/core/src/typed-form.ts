@@ -88,12 +88,12 @@ export interface MdyAnyArrayDescriptor {
 }
 
 /** A form schema: field descriptors and (arbitrarily nested) groups or arrays. */
-export interface MdyFormSchema {
-  readonly [key: string]:
-  | MdyAnyFieldDescriptor
-  | MdyAnyGroupDescriptor
-  | MdyAnyArrayDescriptor;
-}
+export type MdyFormSchema = Readonly<
+  Record<
+    string,
+    MdyAnyFieldDescriptor | MdyAnyGroupDescriptor | MdyAnyArrayDescriptor
+  >
+>;
 
 // ─── Inferred model types ─────────────────────────────────────────────────────
 

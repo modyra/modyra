@@ -6,8 +6,18 @@ const angular = require("angular-eslint");
 
 module.exports = defineConfig([
   {
-    // Build artifacts and bundled output are not lint targets.
-    ignores: ["**/dist/**", "dist/**", ".angular/**"],
+    // Build artifacts, bundled output and generated/copied assets are not
+    // lint targets. bundle-test is a tree-shaking probe app, not product
+    // code; packages/styles previews are static HTML, not templates.
+    ignores: [
+      "**/dist/**",
+      "dist/**",
+      ".angular/**",
+      "**/.styles/**",
+      "**/bundle-test/**",
+      "packages/styles/src/*.html",
+      "**/stackblitz/**",
+    ],
   },
   {
     files: ["**/*.ts"],
@@ -22,6 +32,15 @@ module.exports = defineConfig([
       // The codebase deliberately uses ReadonlyArray<T> for readonly public
       // API surfaces (see CONTRACTS.md); don't fight the convention.
       "@typescript-eslint/array-type": "off",
+      // Interface implementations/overrides often can't drop a parameter:
+      // the leading-underscore convention marks them as intentionally unused.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
       "@angular-eslint/directive-selector": [
         "error",
         {

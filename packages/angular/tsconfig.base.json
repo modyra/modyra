@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@modyra/angular": [
+        "packages/angular/src/public-api.ts"
+      ],
+      "@modyra/angular/adapter": [
+        "packages/angular/adapter/src/public-api.ts"
+      ],
+      "@modyra/angular/ui": [
+        "packages/angular/ui/src/public-api.ts"
+      ],
+      "@modyra/angular/zod": [
+        "packages/angular/zod/src/public-api.ts"
+      ],
+      "@modyra/angular/interop": [
+        "packages/angular/interop/src/public-api.ts"
+      ]
+    }
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  }
+}

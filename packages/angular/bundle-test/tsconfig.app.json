@@ -1,15 +1,12 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../out-tsc/app",
+    "outDir": "../../../out-tsc/bundle-test",
     "types": [],
     "paths": {}
   },
   "files": [
     "src/main.ts"
-  ],
-  "include": [
-    "src/**/*.d.ts"
   ],
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

@@ -1,0 +1,12 @@
+{
+  "name": "@modyra/example-angular",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Angular demo app for the Modyra workspace — one demo per framework. Tooling, not a package: never published.",
+  "scripts": {
+    "prebuild": "node prepare-styles.mjs",
+    "build": "ng build",
+    "prestart": "node prepare-styles.mjs",
+    "start": "ng serve"
+  }
+}

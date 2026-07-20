@@ -16,6 +16,13 @@ The repo is a **framework-agnostic monorepo**: `@modyra/core` and
 `@modyra/widgets` are zero-dependency and must stay that way; each
 framework binding (`angular`, `react`, `vue`, `lit`) is a peer package of
 equal rank — new shared capability goes in the core, not in one adapter.
+There is **no root `angular.json`**: the root is plain TypeScript tooling,
+and every framework keeps its own toolchain inside its folder — the Angular
+package builds with standalone `ng-packagr` and tests with
+`jest-preset-angular` (`packages/angular/jest.config.cjs`), its
+tree-shaking probe app lives in `packages/angular/bundle-test`, and the
+Angular demo app is self-contained in `examples/angular` (own
+`angular.json`, own scripts).
 
 ## Ground rules
 

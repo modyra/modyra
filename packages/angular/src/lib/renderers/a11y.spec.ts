@@ -1,6 +1,6 @@
 import { Component, Injector, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
-import axe from "axe-core";
+import * as axe from "axe-core";
 import { MdyDeclarativeAdapter } from "../core/declarative-form-adapter";
 import { MdySelectOption } from "../core/types";
 import { MdyFormComponent } from "../form/mdy-form.component";

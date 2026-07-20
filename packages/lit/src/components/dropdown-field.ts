@@ -25,6 +25,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
   protected abstract isSelected(handle: MdyFieldHandle<T>, value: unknown): boolean;
   protected abstract pick(handle: MdyFieldHandle<T>, value: unknown): void;
   protected abstract triggerText(handle: MdyFieldHandle<T>): string;
+  // eslint-disable-next-line @typescript-eslint/class-literal-property-style -- subclasses override this accessor (multiselect returns true)
   protected get multiselectable(): boolean {
     return false;
   }

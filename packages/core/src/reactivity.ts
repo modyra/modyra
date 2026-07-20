@@ -11,6 +11,7 @@
 
 /** Read-only reactive value — call it to read (and track) the value. */
 export interface MdySignal<T> {
+  // eslint-disable-next-line @typescript-eslint/prefer-function-type -- interface form is intentional: MdyWritableSignal extends it
   (): T;
 }
 
@@ -104,6 +105,7 @@ class VanillaComputed<T> implements ProducerNode, Consumer {
     if (this._dirty) {
       dropDependencies(this);
       const prev = activeConsumer;
+      // eslint-disable-next-line @typescript-eslint/no-this-alias -- subscriber stack: save/restore around recompute
       activeConsumer = this;
       try {
         this._value = this._fn();
@@ -139,6 +141,7 @@ class VanillaEffect implements Consumer {
     this._runCleanups();
     dropDependencies(this);
     const prev = activeConsumer;
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- subscriber stack: save/restore around recompute
     activeConsumer = this;
     try {
       this._fn((cleanup) => this._cleanups.push(cleanup));
