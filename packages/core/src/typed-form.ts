@@ -30,6 +30,7 @@ import {
   MdySubmitMode,
   ValidatorFn,
 } from "./types.js";
+import { MdySanitizer, MdySecurityPolicy } from "./security.js";
 
 // ─── Schema descriptors ───────────────────────────────────────────────────────
 
@@ -43,6 +44,8 @@ export interface MdyFieldDescriptor<TValue> {
   readonly asyncDependsOn: ReadonlyArray<string>;
   readonly asyncTimeoutMs: number;
   readonly asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
+  /** Per-field sanitizer override; null → the form-level policy applies. */
+  readonly sanitize: MdySanitizer | null;
 }
 
 /** Group descriptor produced by {@link group}. */
@@ -64,6 +67,7 @@ export interface MdyAnyFieldDescriptor {
   readonly asyncDependsOn: ReadonlyArray<string>;
   readonly asyncTimeoutMs: number;
   readonly asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
+  readonly sanitize: MdySanitizer | null;
 }
 
 export interface MdyAnyGroupDescriptor {
@@ -196,6 +200,12 @@ export interface MdyFieldOptions<TValue> {
   readonly asyncTimeoutMs?: number;
   /** Precondition evaluated before pending turns on; false → skip the server call. */
   readonly asyncWhen?: (value: TValue, formValue: Record<string, unknown>) => boolean;
+  /**
+   * Per-field sanitizer override (see `MdySecurityPolicy.sanitize`). Use
+   * `"off"` to exempt a field from the form-level policy (e.g. a code
+   * editor), or a function for custom allow-listing (e.g. DOMPurify).
+   */
+  readonly sanitize?: MdySanitizer;
 }
 
 /**
@@ -226,6 +236,7 @@ export function field<TValue>(
     asyncDependsOn: options?.asyncDependsOn ?? [],
     asyncTimeoutMs: options?.asyncTimeoutMs ?? 0,
     asyncWhen: (options?.asyncWhen as MdyFieldDescriptor<MdyWiden<TValue>>["asyncWhen"]) ?? null,
+    sanitize: options?.sanitize ?? null,
   };
 }
 
@@ -289,6 +300,14 @@ export interface MdyCoreFormOptions<
    * and `version` for schema migrations.
    */
   readonly draft?: string | MdyDraftOptions;
+  /**
+   * Injection-prevention policy for field values: sanitization profiles
+   * (`"text"`/`"strict"` or a custom function), string length caps and a
+   * violation telemetry hook. Opt-in in 0.x (`sanitize` defaults to
+   * `"off"`); the structural checks (draft shape, server-error paths) are
+   * always on. See docs/guides/security.md.
+   */
+  readonly security?: MdySecurityPolicy;
 }
 
 /**
@@ -331,6 +350,8 @@ export interface MdyTypedFormBaseOptions<
   | boolean
   | { readonly maxEntries?: number; readonly debounceMs?: number };
   readonly draft?: string | MdyDraftOptions;
+  /** Injection-prevention policy — see {@link MdyCoreFormOptions.security}. */
+  readonly security?: MdySecurityPolicy;
 }
 
 /**
@@ -604,6 +625,10 @@ export abstract class MdyTypedFormBase<
     this._adapter.setInitialValue(name, value);
   }
 
+  setSanitizer(name: string, sanitizer: MdySanitizer): void {
+    this._adapter.setSanitizer(name, sanitizer);
+  }
+
   setDisabled(name: string, disabled: TBooleanSignal): void {
     this._adapter.setDisabled(name, disabled);
   }
@@ -624,6 +649,9 @@ export abstract class MdyTypedFormBase<
 
   protected _registerSchema(nodes: MdyFormSchema): void {
     walkSchema(nodes, "", (path, node) => {
+      if (node.sanitize !== null) {
+        this._adapter.setSanitizer(path, node.sanitize);
+      }
       this._adapter.setInitialValue(path, node.initial);
       this._adapter.getField(path);
       const marksRequired = node.validators.some((fn) => hasRequiredMarker(fn));
@@ -797,6 +825,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       rx,
       () => undefined,
       () => options?.submitMode ?? "valid-only",
+      { security: options?.security },
     );
     super(schema, engine, options);
     this.state = engine.state;

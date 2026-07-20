@@ -1,5 +1,9 @@
 import { Injector, Signal, signal } from "@angular/core";
-import { MdyFormEngine, type MdyFormRegistry } from "@modyra/core";
+import {
+  MdyFormEngine,
+  type MdyFormRegistry,
+  type MdySecurityPolicy,
+} from "@modyra/core";
 import { angularReactivity } from "./reactivity-angular";
 import {
   MdyFieldRef,
@@ -45,9 +49,12 @@ export class MdyDeclarativeAdapter
     submitMode: Signal<MdySubmitMode> = signal("valid-only"),
     /** Needed to run async validators, drafts and history. */
     injector?: Injector,
+    /** Injection-prevention policy for field values (see `@modyra/core` security). */
+    security?: MdySecurityPolicy,
   ) {
     super(angularReactivity(injector), formValue, submitMode, {
       devWarnings: typeof ngDevMode !== "undefined" && !!ngDevMode,
+      ...(security !== undefined && { security }),
     });
   }
 

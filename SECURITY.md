@@ -31,6 +31,16 @@ comes first.
   config strings and error messages are rendered via Angular text
   interpolation (auto-escaped), never `innerHTML`. Dynamic form configs
   from the network should still be validated with `parseDynamicFields()`.
+- **Injection prevention** (`security:` option, since 0.2): field values
+  can be sanitized at the engine's single write choke point — user input,
+  `patch`/`setValue`, draft restore and array operations are all covered.
+  Two built-in zero-dependency profiles (`"text"` strips control/bidi/
+  zero-width characters, `"strict"` also strips markup characters), a
+  custom-function escape hatch (plug DOMPurify or any allow-list), string
+  length caps, and a violation telemetry hook. Always-on and not
+  configurable: restored draft entries are shape-checked against the
+  declared field type, and server errors with prototype-polluting paths
+  are dropped. See `docs/guides/security.md`.
 - **Runtime dependencies** are minimal by policy: `tslib` only; `zod` and
   `@angular/forms` are optional peers scoped to their entry points.
   Dependency audits run via `pnpm audit` (production audit must be clean

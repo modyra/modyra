@@ -17,6 +17,11 @@ export type {
   MdyFormError,
   MdyFormSubmitEvent,
   MdyFormValidatorFn,
+  MdySanitizer,
+  MdySanitizeProfile,
+  MdySecurityPolicy,
+  MdySecurityViolation,
+  MdySecurityViolationKind,
   MdySelectOption,
   MdySubmitMode,
   ValidatorFn

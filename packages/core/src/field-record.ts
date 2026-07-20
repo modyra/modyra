@@ -61,13 +61,27 @@ export interface FieldRecord {
 /**
  * Creates a reactive field record with the given initial value and an
  * `extraErrors` callback that supplies cross-field and server errors.
+ *
+ * `beforeWrite` is the engine's security choke point: when provided, every
+ * write to the field's value signal — user input, `patch`/`setValue`,
+ * draft restore, array operations, bindings writing the signal directly —
+ * passes through it before reaching the underlying signal.
  */
 export function createFieldRecord(
   rx: MdyReactivity,
   initialValue: unknown,
   extraErrors: (value: unknown) => ReadonlyArray<MdyFieldError>,
+  beforeWrite?: (value: unknown) => unknown,
 ): FieldRecord {
-  const value = rx.signal<unknown>(initialValue);
+  const rawValue = rx.signal<unknown>(initialValue);
+  const value: MdyWritableSignal<unknown> = beforeWrite
+    ? Object.assign(() => rawValue(), {
+      set: (v: unknown) => rawValue.set(beforeWrite(v)),
+      update: (fn: (v: unknown) => unknown) =>
+        rawValue.set(beforeWrite(fn(rawValue()))),
+      asReadonly: () => rawValue.asReadonly(),
+    })
+    : rawValue;
   const touched = rx.signal(false);
   const dirty = rx.signal(false);
   const requiredKeys = rx.signal<ReadonlySet<string>>(new Set());

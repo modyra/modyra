@@ -27,6 +27,7 @@ import {
   MdyFormState,
   MdyFormSubmitEvent,
   MdyFormValidatorFn,
+  MdySanitizer,
   MdySubmitMode,
   ValidatorFn,
 } from "../core/types";
@@ -293,6 +294,10 @@ export class MdyFormComponent<
 
   setInitialValue(name: string, value: unknown): void {
     this._registry.setInitialValue(name, value);
+  }
+
+  setSanitizer(name: string, sanitizer: MdySanitizer): void {
+    this._registry.setSanitizer(name, sanitizer);
   }
 
   setDisabled(name: string, disabled: Signal<boolean>): void {

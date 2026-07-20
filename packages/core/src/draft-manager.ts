@@ -142,6 +142,11 @@ interface DraftManagerDeps {
   readonly patchValue: (value: Record<string, unknown>) => void;
   readonly hasDraft: MdyWritableSignal<boolean>;
   readonly warn: (message: string) => void;
+  /**
+   * Extra always-on gate for restored entries (draft shape validation).
+   * Return false to drop the entry.
+   */
+  readonly filterRestoredEntry?: (key: string, value: unknown) => boolean;
 }
 
 /**
@@ -153,6 +158,9 @@ export class MdyDraftManager {
   private readonly _patchValue: (value: Record<string, unknown>) => void;
   private readonly _hasDraft: MdyWritableSignal<boolean>;
   private readonly _warn: (message: string) => void;
+  private readonly _filterRestoredEntry:
+    | ((key: string, value: unknown) => boolean)
+    | undefined;
 
   private _key: string | null = null;
   private _storage: MdyDraftStorage | null = null;
@@ -170,6 +178,7 @@ export class MdyDraftManager {
     this._patchValue = deps.patchValue;
     this._hasDraft = deps.hasDraft;
     this._warn = deps.warn;
+    this._filterRestoredEntry = deps.filterRestoredEntry;
   }
 
   /**
@@ -198,13 +207,17 @@ export class MdyDraftManager {
     if (stored !== null) {
       const value = this._parse(stored, options.ttlMs);
       if (value !== null) {
-        // Stored drafts are untrusted input: drop excluded keys and any
-        // reserved/empty path segment (__proto__ etc.) instead of letting
-        // field creation throw mid-restore.
+        // Stored drafts are untrusted input: drop excluded keys, any
+        // reserved/empty path segment (__proto__ etc.) — instead of letting
+        // field creation throw mid-restore — and entries that fail the
+        // engine's shape validation (tampered storage).
         this._patchValue(
           Object.fromEntries(
             Object.entries(value).filter(
-              ([k]) => !this._exclude.has(k) && isSafeFieldPath(k),
+              ([k, v]) =>
+                !this._exclude.has(k) &&
+                isSafeFieldPath(k) &&
+                (this._filterRestoredEntry?.(k, v) ?? true),
             ),
           ),
         );

@@ -24,6 +24,21 @@ import {
 } from "./field-record.js";
 import { MdyHistoryManager } from "./history-manager.js";
 import { isSafeFieldPath } from "./path-utils.js";
+import {
+  applyValueSecurity,
+  draftShapeMatches,
+  MdySanitizer,
+  MdySecurityPolicy,
+  MdySecurityViolation,
+} from "./security.js";
+
+export type {
+  MdySanitizer,
+  MdySanitizeProfile,
+  MdySecurityPolicy,
+  MdySecurityViolation,
+  MdySecurityViolationKind,
+} from "./security.js";
 
 export type { MdyDraftOptions, MdyDraftStorage } from "./draft-manager.js";
 
@@ -69,6 +84,13 @@ export interface MdyFormRegistry<
     options?: MdyAsyncValidatorOptions,
   ): void;
   setInitialValue(name: string, value: unknown): void;
+  /**
+   * Overrides the form-level sanitizer for a single field
+   * (`field(initial, validators, { sanitize })`). Resolution happens on
+   * every write, so it can be registered before or after the field record
+   * is created.
+   */
+  setSanitizer(name: string, sanitizer: MdySanitizer): void;
   setDisabled(name: string, disabled: TBooleanSignal): void;
   setReadonly(name: string, readonly: TBooleanSignal): void;
   /**
@@ -85,6 +107,12 @@ let _legacyValidatorKey = 0;
 export interface MdyFormEngineOptions {
   /** Emit console warnings for suspicious usage. Default true. */
   readonly devWarnings?: boolean;
+  /**
+   * Injection-prevention policy for field values (sanitization, length
+   * caps, violation telemetry). Structural checks (draft shape, server
+   * error paths) are always on regardless. See security.ts.
+   */
+  readonly security?: MdySecurityPolicy;
 }
 
 // ─── Form engine ─────────────────────────────────────────────────────────────
@@ -137,6 +165,9 @@ export class MdyFormEngine
   > | null>;
 
   private readonly _devWarnings: boolean;
+  private readonly _security: MdySecurityPolicy;
+  /** Per-field sanitizer overrides (schema-level), keyed by dotted path. */
+  private readonly _fieldSanitizers = new Map<string, MdySanitizer>();
 
   readonly state: MdyFormState;
 
@@ -171,6 +202,7 @@ export class MdyFormEngine
     options?: MdyFormEngineOptions,
   ) {
     this._devWarnings = options?.devWarnings ?? true;
+    this._security = options?.security ?? {};
     const hasDraft = _rx.signal(false);
     this.hasDraft = hasDraft.asReadonly();
     this._draftManager = new MdyDraftManager({
@@ -179,6 +211,7 @@ export class MdyFormEngine
       patchValue: (value) => this.patchValue(value),
       hasDraft,
       warn: (message) => this._warn(message),
+      filterRestoredEntry: (key, value) => this._draftEntryAllowed(key, value),
     });
     this._historyManager = new MdyHistoryManager({
       rx: _rx,
@@ -295,15 +328,24 @@ export class MdyFormEngine
         this._fieldNames.update(names => names.filter(n => n !== name)),
       );
       this._initialValues.delete(name);
+      this._fieldSanitizers.delete(name);
     }
   }
 
   setInitialValue(name: string, value: unknown): void {
-    this._initialValues.set(name, value);
+    // Sanitized once here so reset()/getChanges() compare against the value
+    // the field actually holds; the record write below re-applies the
+    // (idempotent) sanitizer harmlessly.
+    const sanitized = this._applySecurity(name, value);
+    this._initialValues.set(name, sanitized);
     const rec = this._fields.get(name);
     if (rec) {
-      rec.state.value.set(value);
+      rec.state.value.set(sanitized);
     }
+  }
+
+  setSanitizer(name: string, sanitizer: MdySanitizer): void {
+    this._fieldSanitizers.set(name, sanitizer);
   }
 
   addValidators<T>(
@@ -503,9 +545,20 @@ export class MdyFormEngine
     const value = this.getValue();
     try {
       const errors = (await action(value)) ?? [];
-      this._lastSubmitErrors.set(errors);
-      this._submitSnapshot.set(errors.length > 0 ? value : null);
-      if (errors.length === 0) this.clearDraft(); // successful submit: draft done
+      // Server-returned errors are untrusted: an unsafe path (__proto__
+      // and friends) is dropped instead of being stored and surfaced.
+      const checked = errors.filter((e) => {
+        if (e.path === null || isSafeFieldPath(e.path)) return true;
+        this._report({
+          kind: "error-path",
+          path: e.path,
+          detail: `Server error with unsafe path "${e.path}" dropped.`,
+        });
+        return false;
+      });
+      this._lastSubmitErrors.set(checked);
+      this._submitSnapshot.set(checked.length > 0 ? value : null);
+      if (checked.length === 0) this.clearDraft(); // successful submit: draft done
     } catch (e: unknown) {
       this._lastSubmitErrors.set([{
         path: null,
@@ -644,9 +697,62 @@ export class MdyFormEngine
 
     return createFieldRecord(
       this._rx,
-      initialValue,
+      this._applySecurity(name, initialValue),
       (v) => [...this._crossErrorsFor(name), ...this._serverErrorsFor(name, v)],
+      (v) => this._applySecurity(name, v),
     );
+  }
+
+  // ── Security (see security.ts) ─────────────────────────────────────────────
+
+  /**
+   * The single choke point every field write passes through (the field
+   * record wraps its value signal with this). Resolution order: per-field
+   * override → form policy → "off".
+   */
+  private _applySecurity(name: string, value: unknown): unknown {
+    const sanitizer = this._fieldSanitizers.get(name) ??
+      this._security.sanitize ?? "off";
+    const maxValueLength = this._security.maxValueLength;
+    if (sanitizer === "off" && maxValueLength === undefined) return value;
+    const { value: next, actions } = applyValueSecurity(value, {
+      sanitizer,
+      maxValueLength,
+    });
+    for (const action of actions) {
+      this._report({ kind: action.kind, path: name, detail: action.detail });
+    }
+    return next;
+  }
+
+  /**
+   * Always-on draft restore check: entries whose shape cannot have been
+   * produced by the declared field are dropped (type confusion via a
+   * tampered localStorage draft). Fields without a registered initial
+   * (raw-engine usage, where drafts legitimately create fields) restore
+   * as-is.
+   */
+  private _draftEntryAllowed(key: string, value: unknown): boolean {
+    if (!this._initialValues.has(key)) return true;
+    if (draftShapeMatches(this._initialValues.get(key), value)) return true;
+    this._report({
+      kind: "draft-shape",
+      path: key,
+      detail:
+        `Draft entry "${key}" dropped: stored value shape does not match ` +
+        "the field's declared type.",
+    });
+    return false;
+  }
+
+  private _report(violation: MdySecurityViolation): void {
+    try {
+      this._security.onViolation?.(violation);
+    } catch (e: unknown) {
+      this._warn(
+        `onViolation hook threw: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
   }
 
   /** Cross-field errors attributed to the named field. */
