@@ -5,6 +5,10 @@ Lit binding for the [Modyra](https://github.com/modyra/modyra) form engine:
 the form state it tracks changes. Structural typing — no hard dependency
 on lit itself.
 
+```bash
+npm install @modyra/lit
+```
+
 ## Entry points
 
 - `@modyra/lit/adapter` — headless engine binding (`createLitForm`,
@@ -30,6 +34,11 @@ class SignupForm extends LitElement {
   }
 }
 ```
+
+Typed arrays, cancellable async validation, drafts and undo/redo come from
+the same core API: `array()`, `serverValidator()`, `crossField()`, … are
+re-exported from the adapter entry. A complete checkout example lives in
+[docs/examples/lit.md](https://github.com/modyra/modyra/blob/main/docs/examples/lit.md).
 
 ## Control catalog
 
@@ -61,3 +70,7 @@ shared keyboard navigation.
 
 Because Lit ships web components, this catalog is also the path to Modyra
 controls usable from any framework.
+
+## License
+
+MIT © [Lorenzo Muscherà](https://github.com/lorenzomusche)
