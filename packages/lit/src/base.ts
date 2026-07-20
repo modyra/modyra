@@ -81,6 +81,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   protected abstract renderControl(handle: MdyFieldHandle<T>): unknown;
 
   /** Whether the wrapper div should be rendered (radio groups skip it). */
+  // eslint-disable-next-line @typescript-eslint/class-literal-property-style -- subclasses override this accessor
   protected get useWrapper(): boolean {
     return true;
   }

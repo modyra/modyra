@@ -110,8 +110,8 @@ export function minuteToAngle(minute: number): number {
  */
 export function angleToHour(angle: number): number {
   // Normalise to [0, 360)
-  let a = ((angle % 360) + 360) % 360;
-  let h = Math.round(a / 30) % 12;
+  const a = ((angle % 360) + 360) % 360;
+  const h = Math.round(a / 30) % 12;
   return h === 0 ? 12 : h;
 }
 
@@ -120,8 +120,8 @@ export function angleToHour(angle: number): number {
  * Returns minutes 0–59. Handles 360°/0° wrap gracefully.
  */
 export function angleToMinute(angle: number): number {
-  let a = ((angle % 360) + 360) % 360;
-  let m = Math.round(a / 6) % 60;
+  const a = ((angle % 360) + 360) % 360;
+  const m = Math.round(a / 6) % 60;
   return m;
 }
 

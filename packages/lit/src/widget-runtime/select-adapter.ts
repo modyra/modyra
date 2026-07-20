@@ -31,7 +31,9 @@ export class MdyLitSelectAdapter<TValue = unknown> {
   private readonly host: LitElement;
   private readonly controller: MdySelectController<TValue>;
   private readonly lookup: MdyElementLookup;
-  private handlers: MdyLitCommandHandlers = { setOpen: () => {} };
+  private handlers: MdyLitCommandHandlers = {
+    setOpen: () => undefined, // replaced by the host element
+  };
 
   constructor(
     host: LitElement,

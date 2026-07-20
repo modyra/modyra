@@ -7,7 +7,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const entries = {
   "@modyra/angular": "packages/angular/dist/types/modyra-angular.d.ts",
-  "@modyra/angular/core": "packages/angular/dist/types/modyra-angular-core.d.ts",
+  "@modyra/angular/adapter": "packages/angular/dist/types/modyra-angular-adapter.d.ts",
+  "@modyra/angular/ui": "packages/angular/dist/types/modyra-angular-ui.d.ts",
   "@modyra/angular/zod": "packages/angular/dist/types/modyra-angular-zod.d.ts",
   "@modyra/angular/interop": "packages/angular/dist/types/modyra-angular-interop.d.ts",
 };

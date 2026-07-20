@@ -15,8 +15,10 @@ import {
 
 import { useMdyCommandQueue } from "./runtime.js";
 
-export interface UseMdyFieldOptions<TValue>
-  extends Omit<MdyFieldControllerOptions<TValue>, "handle"> {}
+export type UseMdyFieldOptions<TValue> = Omit<
+  MdyFieldControllerOptions<TValue>,
+  "handle"
+>;
 
 export interface MdyReactFieldApi<TValue> {
   readonly state: MdyFieldState<TValue>;
@@ -42,7 +44,7 @@ export function useMdyField<TValue>(
   const { execute } = useMdyCommandQueue(
     () => undefined,
     {
-      setOpen: () => {},
+      setOpen: () => undefined, // no overlay in this control
       onTouched: () => handle.markAsTouched(),
       onDirty: () => handle.markAsDirty(),
     },
