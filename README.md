@@ -304,6 +304,7 @@ The full index lives in [docs/README.md](docs/README.md). The shortlist:
 - [Schema adapters](docs/guides/schemas.md) — Zod vs Standard Schema (Valibot, ArkType, …): which model, which trade-offs
 - [Usage modes](docs/guides/usage-modes.md) — declarative, explicit adapter, headless, validation semantics
 - [UI toolkit](docs/guides/ui-toolkit.md) — renderer catalog, enterprise select, dynamic forms, CSS tokens
+- [AI-generated forms](docs/guides/ai-generated-forms.md) — LLM output → `parseDynamicFields()` → render: the safe pipeline + system prompt template
 - [DevTools](docs/guides/devtools.md) — hotkey overlay, masking, production notes
 - [I18n](docs/guides/i18n.md) — UI strings (en/it/de/fr/es), date/time value models, localized parsing
 - [Reactive Forms interop](docs/guides/interop.md) · [Comparison](docs/guides/comparison-reactive-forms.md) · [Troubleshooting](docs/guides/troubleshooting.md)
