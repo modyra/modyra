@@ -1,0 +1,49 @@
+body {
+  margin: 0;
+  padding: 2rem;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  background: #f6f7f9;
+}
+
+.demo-card {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgb(0 0 0 / 8%);
+}
+
+.demo-card h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.4rem;
+}
+
+.demo-card .subtitle {
+  margin: 0 0 1.5rem;
+  color: #667;
+  font-size: 0.9rem;
+}
+
+mdy-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.submit-result {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #e8f5e9;
+  font-size: 0.85rem;
+}
+
+.submit-result pre {
+  margin: 0.5rem 0 0;
+  white-space: pre-wrap;
+}

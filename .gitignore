@@ -49,3 +49,8 @@ the project instructions
 
 # Build outputs of workspace packages
 packages/*/dist/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/

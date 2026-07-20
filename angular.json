@@ -28,7 +28,8 @@
               "@angular/compiler"
             ],
             "exclude": [
-              "**/benchmarks.spec.ts"
+              "**/benchmarks.spec.ts",
+              "e2e/**/*"
             ]
           }
         },
