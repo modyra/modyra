@@ -59,16 +59,16 @@
     },
     "demo": {
       "projectType": "application",
-      "root": "projects/demo",
-      "sourceRoot": "projects/demo/src",
+      "root": "examples/angular",
+      "sourceRoot": "examples/angular/src",
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
             "outputPath": "dist/demo",
-            "index": "projects/demo/src/index.html",
-            "browser": "projects/demo/src/main.ts",
-            "tsConfig": "projects/demo/tsconfig.app.json",
+            "index": "examples/angular/src/index.html",
+            "browser": "examples/angular/src/main.ts",
+            "tsConfig": "examples/angular/tsconfig.app.json",
             "assets": [
               {
                 "glob": "**/*",
@@ -78,7 +78,7 @@
             ],
             "styles": [
               "packages/styles/dist/modyra-base.css",
-              "projects/demo/src/styles.scss"
+              "examples/angular/src/styles.scss"
             ]
           },
           "configurations": {
@@ -116,10 +116,10 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "lintFilePatterns": [
-              "projects/demo/**/*.ts",
-              "projects/demo/**/*.html"
+              "examples/angular/**/*.ts",
+              "examples/angular/**/*.html"
             ],
-            "eslintConfig": "projects/demo/eslint.config.js"
+            "eslintConfig": "examples/angular/eslint.config.js"
           }
         }
       }
