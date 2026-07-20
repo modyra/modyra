@@ -1,9 +1,9 @@
 {
   "name": "@modyra/lit",
-  "version": "0.1.0",
-  "description": "Lit binding for the Modyra form engine \u2014 ReactiveController plus themable form elements.",
+  "version": "0.2.0",
+  "description": "Lit binding for the Modyra form engine — ReactiveController plus themable form elements.",
   "license": "MIT",
-  "author": "Lorenzo Muscher\u00e0",
+  "author": "Lorenzo Muscherà",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/modyra/modyra.git",
@@ -40,8 +40,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "0.1.0",
-    "@modyra/widgets": "0.1.0"
+    "@modyra/core": "0.2.0",
+    "@modyra/widgets": "0.2.0"
   },
   "publishConfig": {
     "access": "public"
