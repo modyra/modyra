@@ -13,7 +13,7 @@ const packages = [
 
 for (const pkg of packages) {
   const expectedVersion = readPackageVersion(`${pkg.dir}/package.json`);
-  const publishedVersion = readPublishedVersion(pkg.name);
+  const publishedVersion = await readPublishedVersion(pkg.name);
   if (publishedVersion === expectedVersion) {
     console.log(`Skipping ${pkg.name}@${expectedVersion} (already published)`);
     continue;
@@ -31,12 +31,12 @@ for (const pkg of packages) {
   if (shouldUseProvenance()) {
     publishArgs.push("--provenance");
   }
-  runNpm(publishArgs, pkg.dir);
+  await publishPackage(pkg.name, pkg.dir, publishArgs, expectedVersion);
 }
 
 for (const pkg of packages) {
   const expectedVersion = readPackageVersion(`${pkg.dir}/package.json`);
-  const publishedVersion = waitForPublishedVersion(pkg.name, expectedVersion);
+  const publishedVersion = await waitForPublishedVersion(pkg.name, expectedVersion);
   if (publishedVersion !== expectedVersion) {
     throw new Error(
       `${pkg.name} published as ${publishedVersion ?? "missing"}, expected ${expectedVersion}`,
@@ -50,23 +50,24 @@ function readPackageVersion(packageJsonPath) {
   return JSON.parse(readFileSync(packageJsonPath, "utf8")).version;
 }
 
-function readPublishedVersion(packageName) {
-  try {
-    return execFileSync("npm", ["view", packageName, "version"], {
-      encoding: "utf8",
-    }).trim();
-  } catch (error) {
-    if (String(error.stderr ?? "").includes("E404")) {
-      return null;
-    }
-    throw error;
+async function readPublishedVersion(packageName) {
+  const response = await fetch(
+    `https://registry.npmjs.org/${encodeURIComponent(packageName)}`,
+  );
+  if (response.status === 404) {
+    return null;
   }
+  if (!response.ok) {
+    throw new Error(`Failed to read ${packageName} from npm: ${response.status}`);
+  }
+  const metadata = await response.json();
+  return metadata["dist-tags"]?.latest ?? null;
 }
 
-function waitForPublishedVersion(packageName, expectedVersion) {
+async function waitForPublishedVersion(packageName, expectedVersion) {
   const maxAttempts = 12;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const publishedVersion = readPublishedVersion(packageName);
+    const publishedVersion = await readPublishedVersion(packageName);
     if (publishedVersion === expectedVersion) {
       return publishedVersion;
     }
@@ -74,19 +75,29 @@ function waitForPublishedVersion(packageName, expectedVersion) {
       return publishedVersion;
     }
     if (attempt < maxAttempts) {
-      execFileSync("node", ["-e", "setTimeout(() => {}, 5000)"], {
-        stdio: "ignore",
-      });
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }
   return null;
 }
 
-function runNpm(args, cwd) {
-  execFileSync("npm", args, {
-    cwd,
-    stdio: "inherit",
-  });
+async function publishPackage(packageName, cwd, args, expectedVersion) {
+  try {
+    execFileSync("npm", args, {
+      cwd,
+      stdio: "inherit",
+    });
+  } catch (error) {
+    const message = String(error.stderr ?? error.message ?? "");
+    if (message.includes("You cannot publish over the previously published versions")) {
+      const publishedVersion = await waitForPublishedVersion(packageName, expectedVersion);
+      if (publishedVersion === expectedVersion) {
+        console.log(`Skipping ${packageName}@${expectedVersion} (already published during retry)`);
+        return;
+      }
+    }
+    throw error;
+  }
 }
 
 function shouldUseProvenance() {
