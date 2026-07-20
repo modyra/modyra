@@ -5,12 +5,23 @@ const angularPackagePath = "packages/angular/dist/package.json";
 const angularPackage = JSON.parse(readFileSync(angularPackagePath, "utf8"));
 const expectedVersion = angularPackage.version;
 
-const publishArgs = ["publish", "--access", "public"];
-if (shouldUseProvenance()) {
-  publishArgs.push("--provenance");
-}
+const currentAngularVersion = readPublishedVersion("@modyra/angular");
+if (currentAngularVersion === expectedVersion) {
+  console.log(`Skipping @modyra/angular@${expectedVersion} (already published)`);
+} else {
+  if (currentAngularVersion !== null) {
+    throw new Error(
+      `@modyra/angular published as ${currentAngularVersion}, expected ${expectedVersion}`,
+    );
+  }
 
-runNpm(publishArgs, "packages/angular/dist");
+  const publishArgs = ["publish", "--access", "public"];
+  if (shouldUseProvenance()) {
+    publishArgs.push("--provenance");
+  }
+
+  runNpm(publishArgs, "packages/angular/dist");
+}
 
 const packages = [
   "@modyra/core",
@@ -37,6 +48,19 @@ for (const packageName of packages) {
 }
 
 console.log(`Angular published and all packages resolve to ${expectedVersion}`);
+
+function readPublishedVersion(packageName) {
+  try {
+    return execFileSync("npm", ["view", packageName, "version"], {
+      encoding: "utf8" },
+    ).trim();
+  } catch (error) {
+    if (String(error.stderr ?? "").includes("E404")) {
+      return null;
+    }
+    throw error;
+  }
+}
 
 function runNpm(args, cwd) {
   execFileSync("npm", args, {
