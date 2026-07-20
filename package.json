@@ -28,7 +28,7 @@
     "demo:vue": "npm run build:examples && node scripts/serve-example.mjs vue 4302",
     "demo:lit": "npm run build:examples && node scripts/serve-example.mjs lit 4303",
     "version": "changeset version && pnpm install --lockfile-only",
-    "release": "npm run build:packages && npm run build:lib && changeset publish && node scripts/publish-angular.mjs",
+    "release": "npm run build:packages && npm run build:lib && node scripts/publish-workspace.mjs && node scripts/publish-angular.mjs",
     "release:angular": "node scripts/publish-angular.mjs"
   },
   "dependencies": {
