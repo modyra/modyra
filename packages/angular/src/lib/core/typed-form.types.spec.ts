@@ -9,6 +9,7 @@
 import { Signal } from "@angular/core";
 import { crossField, email, min, minLength, required, serverValidator } from "@modyra/core";
 import {
+  array,
   field,
   group,
   MdyFieldHandle,
@@ -150,6 +151,28 @@ describe("typed form — compile-time contracts", () => {
     });
 
     expect(form.f.email.path).toBe("email");
+  });
+
+  it("array() infers row and value types from the item descriptor", () => {
+    const form = mdyForm({
+      items: array(
+        group({ name: field(""), qty: field<number>(1) }),
+        { initial: [{ name: "First", qty: 2 }] },
+      ),
+    });
+
+    assertType<Equal<ReturnType<typeof form.getValue>["items"][number], {
+      name: string;
+      qty: number;
+    }>>();
+
+    form.f.items.at(0)?.name.set("x");
+    // @ts-expect-error — qty is a number field, not a string
+    form.f.items.at(0)?.qty.set("x");
+    // @ts-expect-error — "typo" does not exist on the row's handle tree
+    form.f.items.at(0)?.typo;
+
+    expect(form.f.items.path).toBe("items");
   });
 
   it("MdyTypedFormLike is a structural supertype of every typed form", () => {

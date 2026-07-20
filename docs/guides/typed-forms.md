@@ -135,6 +135,66 @@ form.canUndo(); // reactive — drive toolbar buttons
 - `undo()`/`redo()` flush a pending debounced snapshot first, so no typing is
   silently lost.
 
+## Field arrays
+
+`array()` declares a repeatable list of fields or groups — order lines,
+passengers, phone numbers. Rows are typed: a typo on a row's field path is a
+compile error, same as everywhere else on `form.f`.
+
+```ts
+import { array, field, group, minLength, mdyForm, required } from "@modyra/angular/adapter";
+
+const form = mdyForm({
+  items: array(
+    group({ name: field("", [required()]), qty: field<number>(1) }),
+    { initial: [{ name: "First", qty: 2 }], validators: [minLength(1)] },
+  ),
+});
+
+form.f.items.length();                 // Signal<number>
+form.f.items.rows();                   // Signal<ReadonlyArray<row handle>>
+form.f.items.at(0)?.name.set("x");
+form.f.items.push({ name: "", qty: 1 });
+form.f.items.insert(1, { name: "b", qty: 3 });
+form.f.items.remove(0);
+form.f.items.move(0, 2);
+form.f.items.errors();                 // array-level errors (e.g. minLength)
+form.getValue().items;                 // Array<{ name: string; qty: number }>
+```
+
+```html
+@for (row of form.f.items.rows(); track $index) {
+  <mdy-control-text [field]="row.name" label="Item" />
+}
+<button type="button" (click)="form.f.items.push({ name: '', qty: 1 })">Add item</button>
+```
+
+`array(field(""))` (a leaf item, not a group) makes `rows()` a list of plain
+`MdyFieldHandle`s instead of nested group handles.
+
+**Structure follows value — rebuild-on-structure-change semantics (v1):**
+`push`/`insert`/`remove`/`move`/`setAll`, and any `patch()`/`setValue()`/
+`reset()` that touches the array's path, fully rebuild the array's rows
+(remove every row, re-register the new set) instead of reindexing fields in
+place. This is intentional — no ghost state survives a reindex — but it
+means **touched/dirty and per-row errors reset on every structural change**,
+even for rows that did not move. Editing a value inside an existing row
+(`row.name.set(...)`) never touches structure and does not reset anything.
+
+**History/draft interaction:** `undo()`/`redo()` and draft restore write
+through the flat engine directly. Growing the array this way (draft restore
+introducing more rows, or `redo()` re-applying a `push`) is fully reconciled:
+new rows get their validators registered reactively. Undoing *across* a
+structural change (e.g. undoing a `push`) restores every row's **values**
+correctly, but the extra row's fields stay registered (with null values)
+until the next structural operation prunes them — `undo()` does not shrink
+`rows()` on its own. Plain value edits inside rows undo/redo like any other
+field.
+
+Array-level validators (`{ validators: [minLength(1)] }`) run against the
+whole array value and gate `state.valid` and `form.f.items.errors()`, same
+as `errorsFor("items")`.
+
 ## Draft autosave
 
 ```ts

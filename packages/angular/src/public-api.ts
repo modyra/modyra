@@ -60,10 +60,14 @@ export { MdyDeclarativeAdapter } from "./lib/core/declarative-form-adapter";
 export type { MdyDeclarativeRegistry } from "./lib/core/declarative-form-adapter";
 
 // ─── Typed form (mdyForm) ─────────────────────────────────────────────────────
-export { field, group, mdyForm, MdyTypedForm } from "./lib/core/typed-form";
+export { array, field, group, mdyForm, MdyTypedForm } from "./lib/core/typed-form";
 export type {
+  MdyAnyArrayDescriptor,
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
+  MdyArrayDescriptor,
+  MdyArrayHandle,
+  MdyArrayItemValue,
   MdyFieldDescriptor,
   MdyFieldHandle,
   MdyFieldHandleTree,
@@ -73,6 +77,7 @@ export type {
   MdyFormSchema,
   MdyFormValue,
   MdyGroupDescriptor,
+  MdyItemHandleTree,
   MdyTypedFormLike
 } from "./lib/core/typed-form";
 

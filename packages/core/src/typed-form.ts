@@ -4,6 +4,7 @@ import {
   MdyFormRegistry,
 } from "./form-engine.js";
 import { MdyReactivity, MdySignal, vanillaReactivity } from "./reactivity.js";
+import { MdyArrayManager } from "./array-manager.js";
 import {
   collectSchemaPaths,
   flattenPatch,
@@ -11,6 +12,7 @@ import {
   isFieldHandleTree,
   isSchemaPatch,
   isSchemaValue,
+  numericKeysToArrays,
   pathGet,
   unflatten,
   walkSchema,
@@ -69,12 +71,38 @@ export interface MdyAnyGroupDescriptor {
   readonly children: MdyFormSchema;
 }
 
-/** A form schema: field descriptors and (arbitrarily nested) groups. */
+/** Array descriptor produced by {@link array}. Rows follow the value — see array-manager.ts. */
+export interface MdyArrayDescriptor<TItem> {
+  readonly kind: "array";
+  /** Item schema: a group descriptor (rows are objects) or a field descriptor (rows are leaves). */
+  readonly item: TItem;
+  readonly initial: ReadonlyArray<unknown>;
+  readonly validators: ReadonlyArray<ValidatorFn<readonly unknown[]>>;
+}
+
+export interface MdyAnyArrayDescriptor {
+  readonly kind: "array";
+  readonly item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
+  readonly initial: ReadonlyArray<unknown>;
+  readonly validators: ReadonlyArray<ValidatorFn<never>>;
+}
+
+/** A form schema: field descriptors and (arbitrarily nested) groups or arrays. */
 export interface MdyFormSchema {
-  readonly [key: string]: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
+  readonly [key: string]:
+  | MdyAnyFieldDescriptor
+  | MdyAnyGroupDescriptor
+  | MdyAnyArrayDescriptor;
 }
 
 // ─── Inferred model types ─────────────────────────────────────────────────────
+
+/** The value an array item descriptor produces — a row of {@link MdyFormValue} or a leaf. */
+export type MdyArrayItemValue<I> = I extends MdyGroupDescriptor<infer C>
+  ? MdyFormValue<C>
+  : I extends MdyFieldDescriptor<infer V>
+  ? V
+  : never;
 
 /** The value type a schema produces — `form.getValue()` returns this. */
 export type MdyFormValue<S extends MdyFormSchema> = {
@@ -82,6 +110,8 @@ export type MdyFormValue<S extends MdyFormSchema> = {
   ? V
   : S[K] extends MdyGroupDescriptor<infer C>
   ? MdyFormValue<C>
+  : S[K] extends MdyArrayDescriptor<infer I>
+  ? MdyArrayItemValue<I>[]
   : never;
 };
 
@@ -91,6 +121,8 @@ export type MdyFormPatch<S extends MdyFormSchema> = {
   ? V
   : S[K] extends MdyGroupDescriptor<infer C>
   ? MdyFormPatch<C>
+  : S[K] extends MdyArrayDescriptor<infer I>
+  ? ReadonlyArray<MdyArrayItemValue<I>>
   : never;
 };
 
@@ -116,12 +148,36 @@ export interface MdyFieldHandle<TValue> {
   markAsDirty(): void;
 }
 
+/** Typed handle for a repeatable array item, exposed on `form.f` (`form.f.items`). */
+export interface MdyArrayHandle<TItemHandle, TItemValue> {
+  readonly path: string;
+  readonly length: MdySignal<number>;
+  readonly rows: MdySignal<ReadonlyArray<TItemHandle>>;
+  readonly errors: MdySignal<ReadonlyArray<MdyFieldError>>;
+  readonly valid: MdySignal<boolean>;
+  push(value: TItemValue): void;
+  insert(index: number, value: TItemValue): void;
+  remove(index: number): void;
+  move(from: number, to: number): void;
+  setAll(values: ReadonlyArray<TItemValue>): void;
+  at(index: number): TItemHandle | null;
+}
+
+/** The handle tree for a single array item — a field handle or nested group tree. */
+export type MdyItemHandleTree<I> = I extends MdyGroupDescriptor<infer C>
+  ? MdyFieldHandleTree<C>
+  : I extends MdyFieldDescriptor<infer V>
+  ? MdyFieldHandle<V>
+  : never;
+
 /** The typed handle tree mirroring the schema shape (`form.f.address.city`). */
 export type MdyFieldHandleTree<S extends MdyFormSchema> = {
   readonly [K in keyof S]: S[K] extends MdyFieldDescriptor<infer V>
   ? MdyFieldHandle<V>
   : S[K] extends MdyGroupDescriptor<infer C>
   ? MdyFieldHandleTree<C>
+  : S[K] extends MdyArrayDescriptor<infer I>
+  ? MdyArrayHandle<MdyItemHandleTree<I>, MdyArrayItemValue<I>>
   : never;
 };
 
@@ -178,6 +234,28 @@ export function group<TChildren extends MdyFormSchema>(
   children: TChildren,
 ): MdyGroupDescriptor<TChildren> {
   return { kind: "group", children };
+}
+
+/**
+ * Declares a repeatable array of fields or groups (`items.0.name` paths on
+ * the engine). Rows follow the value: structure is rebuilt whenever the
+ * array changes shape (`push`/`insert`/`remove`/`move`/`setAll`, or a
+ * `patch`/`setValue`/`reset` that touches this path) — touched/dirty/errors
+ * of affected rows reset on structural changes (v1 semantics, see docs).
+ */
+export function array<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescriptor>(
+  item: TItem,
+  options?: {
+    readonly initial?: ReadonlyArray<unknown>;
+    readonly validators?: ReadonlyArray<ValidatorFn<readonly unknown[]>>;
+  },
+): MdyArrayDescriptor<TItem> {
+  return {
+    kind: "array",
+    item,
+    initial: options?.initial ?? [],
+    validators: options?.validators ?? [],
+  };
 }
 
 export interface MdyCoreFormOptions<
@@ -238,7 +316,7 @@ export function createForm<S extends MdyFormSchema>(
 // ─── Typed form ───────────────────────────────────────────────────────────────
 
 /** Owner key for validators registered from the schema. */
-const SCHEMA_KEY = "mdy-schema";
+export const SCHEMA_KEY = "mdy-schema";
 
 /**
  * Options shared by every typed-form specialization (core and adapters).
@@ -275,6 +353,10 @@ export abstract class MdyTypedFormBase<
   protected readonly _leafPaths: readonly string[];
   /** Group prefixes — used to flatten nested patches. */
   protected readonly _groupPaths: ReadonlySet<string>;
+  /** Array prefixes — used to flatten patches and unflatten values. */
+  protected readonly _arrayPaths: ReadonlySet<string>;
+  /** One {@link MdyArrayManager} per array node, keyed by dotted path. */
+  protected readonly _arrays: ReadonlyMap<string, MdyArrayManager>;
 
   /**
    * Concrete handle tree type is declared by subclasses (core uses
@@ -295,7 +377,29 @@ export abstract class MdyTypedFormBase<
     const paths = collectSchemaPaths(schema);
     this._leafPaths = paths.leafPaths;
     this._groupPaths = paths.groupPaths;
+    this._arrayPaths = paths.arrayPaths;
+
+    const arrays = new Map<string, MdyArrayManager>();
+    walkSchema(
+      schema,
+      "",
+      () => { /* fields registered below, by _registerSchema */ },
+      undefined,
+      (path, node) => {
+        arrays.set(
+          path,
+          new MdyArrayManager(
+            { rx: adapter.reactivity, engine: adapter, path, item: node.item },
+            node.initial,
+          ),
+        );
+      },
+    );
+    this._arrays = arrays;
+
     this._registerSchema(schema);
+
+    const arrayValidators = this._buildArrayValidators(schema);
 
     const history = options?.history;
     if (history === true) {
@@ -312,15 +416,18 @@ export abstract class MdyTypedFormBase<
     }
 
     const formValidators = options?.validators ?? [];
-    if (formValidators.length > 0) {
+    if (formValidators.length > 0 || arrayValidators.length > 0) {
       // Cross-field validators see the nested typed value; the errors they
       // return use the same dotted paths the flat adapter stores fields under.
-      this._adapter.setFormValidators(
-        formValidators.map(
+      // Array-level validators (e.g. minLength on the array itself) are
+      // merged in here too — setFormValidators replaces the whole list.
+      this._adapter.setFormValidators([
+        ...formValidators.map(
           (fn) => (flat: Record<string, unknown>) =>
             fn(this._flatToValue(flat)),
         ),
-      );
+        ...arrayValidators,
+      ]);
     }
   }
 
@@ -367,12 +474,12 @@ export abstract class MdyTypedFormBase<
   }
 
   patchValue(partial: Partial<MdyFormValue<S>>): void {
-    this._adapter.patchValue(this._flattenPatch(partial));
+    this._applyFlatWithArrays(this._flattenPatch(partial));
   }
 
   /** Deeply-typed variant of {@link patchValue} for nested groups. */
   patch(partial: MdyFormPatch<S>): void {
-    this._adapter.patchValue(this._flattenPatch(partial));
+    this._applyFlatWithArrays(this._flattenPatch(partial));
   }
 
   setValue(value: MdyFormValue<S>): void {
@@ -380,11 +487,20 @@ export abstract class MdyTypedFormBase<
     for (const path of this._leafPaths) {
       flat[path] = this._pathGet(value, path);
     }
+    // Plain fields first — replace semantics null out stale array rows too,
+    // which the array setAll below then rebuilds with the new values.
     this._adapter.setValue(flat);
+    for (const [path, manager] of this._arrays) {
+      const arr = this._pathGet(value, path);
+      manager.setAll(Array.isArray(arr) ? arr : []);
+    }
   }
 
   reset(): void {
     this._adapter.reset();
+    for (const manager of this._arrays.values()) {
+      manager.resetToInitial();
+    }
   }
 
   // ── History and change tracking ─────────────────────────────────────────────
@@ -448,6 +564,7 @@ export abstract class MdyTypedFormBase<
    * scope goes away (unmount, dispose, disconnect).
    */
   destroy(): void {
+    for (const manager of this._arrays.values()) manager.destroy();
     this._adapter.destroy();
   }
 
@@ -539,10 +656,13 @@ export abstract class MdyTypedFormBase<
     const out: Record<string, unknown> = {};
     for (const [key, node] of Object.entries(nodes)) {
       const path = prefix ? `${prefix}.${key}` : key;
-      out[key] =
-        node.kind === "field"
-          ? this._buildHandle(path)
-          : this._buildHandleTree(node.children, path);
+      if (node.kind === "field") {
+        out[key] = this._buildHandle(path);
+      } else if (node.kind === "array") {
+        out[key] = this._buildArrayHandle(path, node);
+      } else {
+        out[key] = this._buildHandleTree(node.children, path);
+      }
     }
     if (isFieldHandleTree(out, nodes)) {
       return out;
@@ -552,20 +672,104 @@ export abstract class MdyTypedFormBase<
 
   protected abstract _buildHandle(path: string): THandle;
 
+  private _buildArrayHandle(
+    path: string,
+    node: MdyAnyArrayDescriptor,
+  ): MdyArrayHandle<unknown, unknown> {
+    const manager = this._arrays.get(path);
+    if (!manager) {
+      throw new Error(`[modyra] Array "${path}" was not registered`);
+    }
+    const rx = this._adapter.reactivity;
+    const rows = rx.computed(() =>
+      Array.from({ length: manager.rowCount() }, (_, i) =>
+        node.item.kind === "field"
+          ? this._buildHandle(`${path}.${i}`)
+          : this._buildHandleTree(node.item.children, `${path}.${i}`),
+      ),
+    );
+    const errors = this._adapter.errorsFor(path);
+    return {
+      path,
+      length: manager.rowCount,
+      rows,
+      errors,
+      valid: rx.computed(() => errors().length === 0),
+      push: (value: unknown) => manager.push(value),
+      insert: (index: number, value: unknown) => manager.insert(index, value),
+      remove: (index: number) => manager.remove(index),
+      move: (from: number, to: number) => manager.move(from, to),
+      setAll: (values: ReadonlyArray<unknown>) => manager.setAll(values),
+      at: (index: number) => rows()[index] ?? null,
+    };
+  }
+
   /** Rebuilds the nested value shape from the adapter's flat dotted paths. */
   protected _flatToValue(flat: Record<string, unknown>): MdyFormValue<S> {
-    return unflatten(flat) as MdyFormValue<S>;
+    return numericKeysToArrays(unflatten(flat), this._arrayPaths) as MdyFormValue<S>;
   }
 
   protected _flatToPatch(flat: Record<string, unknown>): MdyFormPatch<S> {
-    return unflatten(flat) as MdyFormPatch<S>;
+    return numericKeysToArrays(unflatten(flat), this._arrayPaths) as MdyFormPatch<S>;
   }
 
   /** Flattens a (possibly nested) patch object into dotted adapter paths. */
   protected _flattenPatch(
     partial: Partial<MdyFormValue<S>> | MdyFormPatch<S>,
   ): Record<string, unknown> {
-    return flattenPatch(partial as Record<string, unknown>, this._groupPaths);
+    return flattenPatch(
+      partial as Record<string, unknown>,
+      this._groupPaths,
+      this._arrayPaths,
+    );
+  }
+
+  /** Routes array-path entries to their manager, the rest to the flat adapter. */
+  protected _applyFlatWithArrays(flat: Record<string, unknown>): void {
+    const plain: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(flat)) {
+      const manager = this._arrays.get(key);
+      if (manager) {
+        manager.setAll(Array.isArray(v) ? v : []);
+      } else {
+        plain[key] = v;
+      }
+    }
+    if (Object.keys(plain).length > 0) {
+      this._adapter.patchValue(plain);
+    }
+  }
+
+  /** Wraps each array node's own validators as a form-level validator (A.6). */
+  private _buildArrayValidators(
+    schema: MdyFormSchema,
+  ): ReadonlyArray<MdyFormValidatorFn<Record<string, unknown>>> {
+    const out: Array<MdyFormValidatorFn<Record<string, unknown>>> = [];
+    walkSchema(
+      schema,
+      "",
+      () => { /* fields are not array-level */ },
+      undefined,
+      (path, node) => {
+        if (node.validators.length === 0) return;
+        out.push((flat) => {
+          const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths);
+          const value = this._pathGet(nested, path);
+          const arr = Array.isArray(value) ? value : [];
+          // Cast at the storage boundary, like upsertValidators does for
+          // fields: node.validators is erased to ValidatorFn<never> in the
+          // schema union, but the runtime value always matches the array.
+          return node.validators.flatMap((fn) =>
+            (fn as ValidatorFn<unknown[]>)(arr).map((message) => ({
+              path,
+              kind: "array",
+              message,
+            })),
+          );
+        });
+      },
+    );
+    return out;
   }
 
   protected _pathGet(value: unknown, path: string): unknown {
@@ -626,7 +830,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
 
   /** Core validates the unflattened value against the schema shape. */
   protected override _flatToValue(flat: Record<string, unknown>): MdyFormValue<S> {
-    const nested = unflatten(flat);
+    const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths);
     if (isSchemaValue(nested, this._schema)) {
       return nested;
     }
@@ -635,7 +839,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
 
   /** Core validates the unflattened patch against the schema shape. */
   protected override _flatToPatch(flat: Record<string, unknown>): MdyFormPatch<S> {
-    const nested = unflatten(flat);
+    const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths);
     if (isSchemaPatch(nested, this._schema)) {
       return nested;
     }

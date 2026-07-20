@@ -12,14 +12,19 @@
 
 // Typed form (mdyForm)
 export {
+    array,
     field,
     group,
     mdyForm,
     MdyTypedForm
 } from "@modyra/angular";
 export type {
+    MdyAnyArrayDescriptor,
     MdyAnyFieldDescriptor,
     MdyAnyGroupDescriptor,
+    MdyArrayDescriptor,
+    MdyArrayHandle,
+    MdyArrayItemValue,
     MdyFieldDescriptor,
     MdyFieldHandle,
     MdyFieldHandleTree,
@@ -29,6 +34,7 @@ export type {
     MdyFormSchema,
     MdyFormValue,
     MdyGroupDescriptor,
+    MdyItemHandleTree,
     MdyTypedFormLike
 } from "@modyra/angular";
 

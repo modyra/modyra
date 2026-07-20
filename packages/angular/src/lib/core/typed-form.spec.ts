@@ -1,7 +1,7 @@
 import { ApplicationRef, Injector } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { crossField, email, min, required, serverValidator } from "@modyra/core";
-import { field, group, mdyForm, MdyTypedForm } from "./typed-form";
+import { array, field, group, mdyForm, MdyTypedForm } from "./typed-form";
 
 function makeForm(): MdyTypedForm<{
   email: ReturnType<typeof field<string>>;
@@ -685,6 +685,58 @@ describe("mdyForm", () => {
       expect(form.f.user.errors().map((e) => e.message)).toEqual([
         "Name taken",
       ]);
+    });
+  });
+
+  describe("array fields", () => {
+    function makeOrderForm(): MdyTypedForm<{
+      items: ReturnType<
+        typeof array<
+          ReturnType<
+            typeof group<{
+              name: ReturnType<typeof field<string>>;
+              qty: ReturnType<typeof field<number>>;
+            }>
+          >
+        >
+      >;
+    }> {
+      return mdyForm({
+        items: array(
+          group({ name: field("", [required()]), qty: field<number>(1) }),
+          { initial: [{ name: "First", qty: 2 }] },
+        ),
+      });
+    }
+
+    it("builds rows from the schema initial value", () => {
+      const form = makeOrderForm();
+      expect(form.f.items.length()).toBe(1);
+      expect(form.f.items.rows()[0]!.name.value()).toBe("First");
+      expect(form.getValue().items).toEqual([{ name: "First", qty: 2 }]);
+    });
+
+    it("push/remove update rows() for template binding (@for)", () => {
+      const form = makeOrderForm();
+      form.f.items.push({ name: "Second", qty: 3 });
+      expect(form.f.items.length()).toBe(2);
+      expect(form.f.items.rows().map((r) => r.name.value())).toEqual([
+        "First",
+        "Second",
+      ]);
+
+      form.f.items.remove(0);
+      expect(form.f.items.length()).toBe(1);
+      expect(form.f.items.rows()[0]!.name.value()).toBe("Second");
+      expect(form.getValue().items).toEqual([{ name: "Second", qty: 3 }]);
+    });
+
+    it("a required error on a pushed row's field gates state.valid", () => {
+      const form = makeOrderForm();
+      form.f.items.push({ name: "", qty: 1 });
+      expect(form.state.valid()).toBe(false);
+      form.f.items.rows()[1]!.name.set("Second");
+      expect(form.state.valid()).toBe(true);
     });
   });
 });
