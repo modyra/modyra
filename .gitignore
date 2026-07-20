@@ -28,10 +28,11 @@ yarn-debug.log*
 yarn-error.log*
 packages/angular/dist/
 
-# Ignore all hidden files and folders except .gitignore and CI workflows
+# Ignore all hidden files and folders except .gitignore, CI workflows and changesets
 .*
 !.gitignore
 !.github/
+!.changeset/
 
 # macOS system files
 .DS_Store

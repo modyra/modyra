@@ -6,7 +6,6 @@ allowBuilds:
   unrs-resolver: true
 packages:
   - "packages/*"
-  - "!packages/angular"
 linkWorkspacePackages: true
 overrides:
   esbuild: "^0.28.1"
