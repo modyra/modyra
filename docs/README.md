@@ -48,6 +48,7 @@ server validation, submit with server errors, drafts — in each binding:
 | [UI toolkit](guides/ui-toolkit.md) | Renderer catalog, enterprise select, dynamic forms, CSS tokens |
 | [AI-generated forms](guides/ai-generated-forms.md) | LLM output → `parseDynamicFields()` → render: JSON contract, system prompt template, safe pipeline |
 | [Injection prevention](guides/security.md) | Sanitization profiles at the engine's write choke point, violation telemetry, always-on draft/server structural checks |
+| [Headless recipes](guides/headless-recipes.md) | shadcn/ui, Radix, shadcn-vue/Reka: tested props-mappers from field handles to your component library |
 | [I18n](guides/i18n.md) | UI strings (en/it/de/fr/es), date/time value models, localized parsing |
 | [DevTools](guides/devtools.md) | Hotkey overlay, masking, production notes |
 
