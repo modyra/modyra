@@ -1,6 +1,6 @@
 {
   "name": "@modyra/zod",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Framework-agnostic Zod adapter for the Modyra form engine — schema-first typed forms.",
   "license": "MIT",
   "author": "Lorenzo Muscherà",
@@ -32,7 +32,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "0.1.0"
+    "@modyra/core": "0.2.0"
   },
   "peerDependencies": {
     "zod": ">=3.25.0"

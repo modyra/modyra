@@ -1,9 +1,9 @@
 {
   "name": "@modyra/core",
-  "version": "0.1.0",
-  "description": "Framework-agnostic type-safe form engine \u2014 typed field trees, sync/async/cross-field validation, drafts and undo/redo over a minimal reactive contract.",
+  "version": "0.2.0",
+  "description": "Framework-agnostic type-safe form engine — typed field trees, sync/async/cross-field validation, drafts and undo/redo over a minimal reactive contract.",
   "license": "MIT",
-  "author": "Lorenzo Muscher\u00e0",
+  "author": "Lorenzo Muscherà",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/modyra/modyra.git",
