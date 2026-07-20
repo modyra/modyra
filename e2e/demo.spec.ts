@@ -35,3 +35,29 @@ test("demo boots, accepts input and enforces required fields", async ({
     contactForm.getByRole("button", { name: "Submit", exact: true }),
   ).toBeDisabled();
 });
+
+/**
+ * The typed-form section runs a debounced, cancellable serverValidator on
+ * the username: a pending indicator appears while the mock endpoint runs,
+ * then the "taken" error surfaces on blur.
+ */
+test("typed form validates the username against the server", async ({
+  page,
+}) => {
+  await page.goto("/");
+  // Scope to the typed-form section (the Zod wizard has a Username too).
+  const section = page.locator("section", {
+    has: page.getByRole("heading", { name: /Typed form/ }),
+  });
+  const username = section.getByLabel("Username", { exact: true });
+
+  await username.fill("admin");
+  await expect(
+    section.getByRole("status").filter({ hasText: "checking…" }),
+  ).toBeVisible();
+
+  await username.blur();
+  await expect(
+    section.getByText("Username is already taken"),
+  ).toBeVisible();
+});

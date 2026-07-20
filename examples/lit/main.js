@@ -1,7 +1,8 @@
 // Signup form demo: schema-defined validators, cross-field password check,
-// draft persistence (reload the page mid-typing), undo/redo history and a
-// simulated server-side error. <mdy-text-field> renders in light DOM, so
-// the theme stylesheet applies to its markup directly.
+// draft persistence (reload the page mid-typing), undo/redo history, a
+// cancellable server-side username check and a simulated server error on
+// submit. <mdy-text-field> renders in light DOM, so the theme stylesheet
+// applies to its markup directly.
 import {
   createLitForm,
   crossField,
@@ -11,9 +12,22 @@ import {
   minLength,
   mountMdyDevtools,
   required,
+  serverValidator,
 } from "@modyra/lit/adapter";
 import { defineMdyElements } from "@modyra/lit/ui";
-import { html, LitElement } from "lit";
+import { html, LitElement, nothing } from "lit";
+
+// Simulated availability endpoint. The abort signal cancels the request
+// when a newer keystroke supersedes the run (last-wins), so stale replies
+// never land on the field.
+const isUsernameTaken = (value, signal) =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => resolve(["admin", "root"].includes(value)), 350);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(new DOMException("aborted", "AbortError"));
+    });
+  });
 
 // Registers the whole control catalog: text, textarea, number, checkbox,
 // toggle, radio group, segmented, select, multiselect, slider, datepicker,
@@ -34,6 +48,17 @@ class SignupApp extends LitElement {
 
   form = createLitForm(
     {
+      // Debounced, cancellable availability check with a 2s timeout —
+      // try "admin" or "root".
+      username: field(
+        "",
+        [required(), minLength(3)],
+        serverValidator(
+          async (value, { signal }) =>
+            (await isUsernameTaken(value, signal)) ? "Username is already taken" : null,
+          { debounceMs: 300, timeoutMs: 2000 },
+        ),
+      ),
       name: field("", [required(), minLength(2)]),
       email: field("", [required(), email()]),
       password: field("", [required(), minLength(8)]),
@@ -55,6 +80,7 @@ class SignupApp extends LitElement {
     this.form.state.canSubmit,
     this.form.canUndo,
     this.form.canRedo,
+    this.form.f.username.pending,
   ]);
 
   // A second, standalone form exercising every element of the catalog.
@@ -111,8 +137,12 @@ class SignupApp extends LitElement {
             ${Object.keys(THEMES).map((t) => html`<option value=${t} ?selected=${t === this.theme}>${t}</option>`)}
           </select>
         </label>
-        <p>Try <code>taken@example.com</code> to see a server error. Reload mid-typing: the draft survives.</p>
+        <p>Try username <code>admin</code> for a cancellable server check, <code>taken@example.com</code> for a server error. Reload mid-typing: the draft survives.</p>
         <form class="mdy-form" @submit=${this.#submit}>
+          <mdy-text-field label="Username" .field=${this.form.f.username}></mdy-text-field>
+          ${this.form.f.username.pending()
+            ? html`<div class="mdy-supporting-text" role="status">checking…</div>`
+            : nothing}
           <mdy-text-field label="Name" .field=${this.form.f.name}></mdy-text-field>
           <mdy-text-field label="Email" type="email" .field=${this.form.f.email}></mdy-text-field>
           <mdy-text-field label="Password" type="password" .field=${this.form.f.password}></mdy-text-field>

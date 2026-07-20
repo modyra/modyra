@@ -11,7 +11,21 @@ import {
   email as mdyEmail,
   min as mdyMin,
   required as mdyRequiredValidator,
+  serverValidator,
 } from "@modyra/core";
+
+// Simulated availability endpoint. The abort signal cancels the request
+// when a newer keystroke supersedes the run (last-wins), so stale replies
+// never land on the field.
+function isUsernameTaken(value: string, signal?: AbortSignal): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => resolve(["admin", "root"].includes(value)), 350);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(new DOMException("aborted", "AbortError"));
+    });
+  });
+}
 
 @Component({
   selector: "app-typed-form-section",
@@ -30,10 +44,23 @@ import {
         Schema-first: initial values and validators live in TypeScript,
         <code>[field]="typedForm.f.…"</code> replaces the stringly
         <code>name</code> attribute — a typo does not compile. Nested
-        groups map to <code>address.city</code> paths.
+        groups map to <code>address.city</code> paths. The username runs a
+        debounced, cancellable <code>serverValidator</code> — try
+        <code>admin</code> or <code>root</code>.
       </p>
 
       <mdy-form [form]="typedForm" mdyDevtools (submitted)="onSubmitted($event)">
+        <div class="form-row" style="align-items: center;">
+          <mdy-control-text
+            [field]="typedForm.f.username"
+            label="Username"
+            mdyInlineErrors
+          />
+          @if (typedForm.f.username.pending()) {
+            <span class="mdy-supporting-text" role="status">checking…</span>
+          }
+        </div>
+
         <div class="form-row">
           <mdy-control-text
             [field]="typedForm.f.fullName"
@@ -113,6 +140,16 @@ import {
 export class TypedFormSectionComponent {
   readonly typedForm = mdyForm(
     {
+      // Debounced, cancellable availability check with a 2s timeout.
+      username: field(
+        "",
+        [mdyRequiredValidator()],
+        serverValidator(
+          async (value, { signal }) =>
+            (await isUsernameTaken(value, signal)) ? "Username is already taken" : null,
+          { debounceMs: 300, timeoutMs: 2000 },
+        ),
+      ),
       fullName: field("", [mdyRequiredValidator()]),
       email: field("", [mdyRequiredValidator(), mdyEmail()]),
       age: field<number | null>(null, [mdyMin(18)]),

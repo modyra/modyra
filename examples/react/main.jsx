@@ -1,13 +1,26 @@
 // Signup form demo: schema-defined validators, cross-field password check,
-// draft persistence (reload the page mid-typing), undo/redo history and a
-// simulated server-side error. The devtools panel at the bottom shows the
-// live engine state; sensitive fields (password) are masked automatically.
+// draft persistence (reload the page mid-typing), undo/redo history, a
+// cancellable server-side username check and a simulated server error on
+// submit. The devtools panel at the bottom shows the live engine state;
+// sensitive fields (password) are masked automatically.
 import { createRoot } from "react-dom/client";
 import { useEffect, useRef, useState } from "react";
 import {
   crossField, email, field, minLength, mountMdyDevtools, required,
-  useMdyField, useMdyForm,
+  serverValidator, useMdyField, useMdyForm,
 } from "@modyra/react";
+
+// Simulated availability endpoint. The abort signal cancels the request
+// when a newer keystroke supersedes the run (last-wins), so stale replies
+// never land on the field.
+const isUsernameTaken = (value, signal) =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => resolve(["admin", "root"].includes(value)), 350);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(new DOMException("aborted", "AbortError"));
+    });
+  });
 
 const THEMES = { default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
 
@@ -48,6 +61,10 @@ function TextField({ label, handle, type = "text" }) {
           onBlur={f.markAsTouched}
         />
       </div>
+      {/* Async validators keep the field pending until the run settles */}
+      {f.pending && (
+        <div className="mdy-supporting-text" role="status">checking…</div>
+      )}
       {showErrors && (
         <ul className="mdy-control__errors" role="alert">
           {f.errors.map((er) => <li className="mdy-control__error" key={er.message}>{er.message}</li>)}
@@ -60,6 +77,17 @@ function TextField({ label, handle, type = "text" }) {
 function Signup() {
   const form = useMdyForm(
     () => ({
+      // Debounced, cancellable availability check with a 2s timeout —
+      // try "admin" or "root".
+      username: field(
+        "",
+        [required(), minLength(3)],
+        serverValidator(
+          async (value, { signal }) =>
+            (await isUsernameTaken(value, signal)) ? "Username is already taken" : null,
+          { debounceMs: 300, timeoutMs: 2000 },
+        ),
+      ),
       name: field("", [required(), minLength(2)]),
       email: field("", [required(), email()]),
       password: field("", [required(), minLength(8)]),
@@ -100,8 +128,9 @@ function Signup() {
     <main style={{ maxWidth: "30rem", margin: "2rem auto", display: "grid", gap: "1rem" }}>
       <h1>Modyra × React</h1>
       <ThemeSwitcher />
-      <p>Try <code>taken@example.com</code> to see a server error. Reload mid-typing: the draft survives.</p>
+      <p>Try username <code>admin</code> for a cancellable server check, <code>taken@example.com</code> for a server error. Reload mid-typing: the draft survives.</p>
       <form className="mdy-form" onSubmit={submit}>
+        <TextField label="Username" handle={form.f.username} />
         <TextField label="Name" handle={form.f.name} />
         <TextField label="Email" handle={form.f.email} type="email" />
         <TextField label="Password" handle={form.f.password} type="password" />

@@ -1,14 +1,39 @@
 // Signup form demo: schema-defined validators, cross-field password check,
-// draft persistence (reload the page mid-typing), undo/redo history and a
-// simulated server-side error. Form state is native Vue reactivity, so
-// plain computed() wrappers are all the glue a component needs.
+// draft persistence (reload the page mid-typing), undo/redo history, a
+// cancellable server-side username check and a simulated server error on
+// submit. Form state is native Vue reactivity, so plain computed()
+// wrappers are all the glue a component needs.
 import { computed, createApp, onMounted, onUnmounted, ref, watchEffect } from "vue";
 import {
   createVueForm, crossField, email, field, minLength, mountMdyDevtools, required,
+  serverValidator,
 } from "@modyra/vue";
+
+// Simulated availability endpoint. The abort signal cancels the request
+// when a newer keystroke supersedes the run (last-wins), so stale replies
+// never land on the field.
+const isUsernameTaken = (value, signal) =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => resolve(["admin", "root"].includes(value)), 350);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(new DOMException("aborted", "AbortError"));
+    });
+  });
 
 const form = createVueForm(
   {
+    // Debounced, cancellable availability check with a 2s timeout —
+    // try "admin" or "root".
+    username: field(
+      "",
+      [required(), minLength(3)],
+      serverValidator(
+        async (value, { signal }) =>
+          (await isUsernameTaken(value, signal)) ? "Username is already taken" : null,
+        { debounceMs: 300, timeoutMs: 2000 },
+      ),
+    ),
     name: field("", [required(), minLength(2)]),
     email: field("", [required(), email()]),
     password: field("", [required(), minLength(8)]),
@@ -34,6 +59,8 @@ const TextField = {
       invalid: computed(() => !props.handle.valid()),
       isRequired: computed(() => props.handle.required()),
       touched: computed(() => props.handle.touched()),
+      // Async validators keep the field pending until the run settles.
+      pending: computed(() => props.handle.pending()),
     };
   },
   template: `
@@ -45,6 +72,7 @@ const TextField = {
         <input :type="type" :value="value" :aria-invalid="invalid" :aria-required="isRequired"
                @input="handle.set($event.target.value)" @blur="handle.markAsTouched()" />
       </div>
+      <div v-if="pending" class="mdy-supporting-text" role="status">checking…</div>
       <ul v-if="errors.length" class="mdy-control__errors" role="alert">
         <li v-for="er in errors" :key="er.message" class="mdy-control__error">{{ er.message }}</li>
       </ul>
@@ -91,8 +119,9 @@ createApp({
           <option v-for="t in Object.keys(themes)" :key="t" :value="t">{{ t }}</option>
         </select>
       </label>
-      <p>Try <code>taken@example.com</code> to see a server error. Reload mid-typing: the draft survives.</p>
+      <p>Try username <code>admin</code> for a cancellable server check, <code>taken@example.com</code> for a server error. Reload mid-typing: the draft survives.</p>
       <form class="mdy-form" @submit.prevent="submit()">
+        <text-field label="Username" :handle="form.f.username" />
         <text-field label="Name" :handle="form.f.name" />
         <text-field label="Email" :handle="form.f.email" type="email" />
         <text-field label="Password" :handle="form.f.password" type="password" />
