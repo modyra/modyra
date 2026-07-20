@@ -215,6 +215,7 @@ export function mdyForm<S extends MdyFormSchema>(
     ...(options?.validators !== undefined && { validators: options.validators }),
     ...(options?.history !== undefined && { history: options.history }),
     ...(options?.draft !== undefined && { draft: options.draft }),
+    ...(options?.security !== undefined && { security: options.security }),
     ...(injector !== undefined && { injector }),
   });
   // Tie the form's resources (async runners, draft/history timers) to the
@@ -246,6 +247,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       signal(undefined),
       signal(options?.submitMode ?? "valid-only"),
       options?.injector,
+      options?.security,
     );
     super(schema, adapter, options);
     this.state = adapter.state;

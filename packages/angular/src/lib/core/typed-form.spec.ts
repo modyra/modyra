@@ -740,3 +740,50 @@ describe("mdyForm", () => {
     });
   });
 });
+
+describe("security policy", () => {
+  it("sanitizes values at the write choke point per the form policy", () => {
+    const violations: Array<{ kind: string; path: string }> = [];
+    const form = mdyForm(
+      { name: field("") },
+      {
+        security: {
+          sanitize: "text",
+          onViolation: (v) => violations.push({ kind: v.kind, path: v.path }),
+        },
+      },
+    );
+    form.f.name.set("admin\u202E");
+    expect(form.f.name.value()).toBe("admin");
+    expect(violations).toEqual([{ kind: "sanitized", path: "name" }]);
+  });
+
+  it("per-field override exempts a field from the form policy", () => {
+    const form = mdyForm(
+      {
+        name: field(""),
+        code: field("", [], { sanitize: "off" }),
+      },
+      { security: { sanitize: "strict" } },
+    );
+    form.f.name.set("<b>x</b>");
+    expect(form.f.name.value()).toBe("bx/b");
+    form.f.code.set("<b>x</b>");
+    expect(form.f.code.value()).toBe("<b>x</b>");
+  });
+
+  it("server errors with unsafe paths are dropped and reported", async () => {
+    const violations: Array<{ kind: string; path: string }> = [];
+    const form = mdyForm(
+      { name: field("") },
+      { security: { onViolation: (v) => violations.push({ kind: v.kind, path: v.path }) } },
+    );
+    form.f.name.set("x");
+    await form.submit(() => [
+      { path: "__proto__", kind: "server", message: "evil" },
+      { path: "name", kind: "server", message: "taken" },
+    ]);
+    expect(form.f.name.errors().map((e) => e.message)).toEqual(["taken"]);
+    expect(violations).toEqual([{ kind: "error-path", path: "__proto__" }]);
+  });
+});

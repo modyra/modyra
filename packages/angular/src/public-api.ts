@@ -31,6 +31,12 @@ export type {
   MdyFormError,
   MdyFormState,
   MdyFormSubmitEvent, MdyFormValidatorFn, MdyOptionsControl,
+  // Security (injection prevention)
+  MdySanitizer,
+  MdySanitizeProfile,
+  MdySecurityPolicy,
+  MdySecurityViolation,
+  MdySecurityViolationKind,
   MdySelectOption,
   MdySubmitMode, ValidatorFn
 } from "./lib/core/types";

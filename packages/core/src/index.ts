@@ -39,6 +39,15 @@ export { serverValidator } from "./server-validator.js";
 export type { MdyServerValidatorOptions } from "./server-validator.js";
 
 export { isSafeFieldPath } from "./path-utils.js";
+export { applyValueSecurity, draftShapeMatches } from "./security.js";
+export type {
+  MdySanitizer,
+  MdySanitizeProfile,
+  MdySecurityPolicy,
+  MdySecurityViolation,
+  MdySecurityViolationKind,
+  MdyValueSecurityResult
+} from "./security.js";
 export { MdyFormEngine } from "./form-engine.js";
 export type {
   MdyDraftOptions,

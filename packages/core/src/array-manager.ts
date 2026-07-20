@@ -163,6 +163,9 @@ export class MdyArrayManager {
     const { engine } = this._deps;
     if (node.kind === "field") {
       const v = value === undefined ? node.initial : value;
+      if (node.sanitize !== null) {
+        engine.setSanitizer(fullPath, node.sanitize);
+      }
       engine.setInitialValue(fullPath, v);
       engine.getField(fullPath);
       const marksRequired = node.validators.some((fn) => hasRequiredMarker(fn));

@@ -14,7 +14,11 @@ const files = readdirSync(dir).filter((f) => f.endsWith(".js"));
 // array-level validator composition) even for schemas with no array() field
 // — it isn't tree-shakeable away, unlike a renderer/control. Real total after
 // the feature: 120.6 KB; budget kept tight just above it.
-const BUDGET_KB = 122;
+// 122 -> 125 (2026-07-20, injection prevention): the engine statically wires
+// the security module (sanitizer profiles, draft-shape/server-path checks)
+// at the value-write choke point — always linked by design, like the
+// array-manager. Real total after the feature: 123.7 KB.
+const BUDGET_KB = 125;
 
 let total = 0;
 let text = "";
