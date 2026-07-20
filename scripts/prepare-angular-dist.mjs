@@ -1,5 +1,6 @@
 /**
- * Post-processes ng-packagr's generated packages/angular/dist/package.json.
+ * Post-processes ng-packagr's generated Angular dist/ so it is publish-ready
+ * on every OS.
  *
  * packages/angular/package.json is "private": true — it is the ng-packagr
  * build *source*, not the publishable unit (dist/ is; root's own
@@ -8,9 +9,45 @@
  * would make `npm publish` refuse to ship it — strip it here so dist/ is
  * always publish-ready after a build.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import {
+	copyFileSync,
+	existsSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	statSync,
+	writeFileSync,
+} from "node:fs";
+import path from "node:path";
 
-const path = "packages/angular/dist/package.json";
-const pkg = JSON.parse(readFileSync(path, "utf8"));
+const distDir = "packages/angular/dist";
+const packageJsonPath = path.join(distDir, "package.json");
+
+removeIfPresent(path.join(distDir, "node_modules"));
+removeIfPresent(path.join(distDir, "package-lock.json"));
+copyFileSync("README.md", path.join(distDir, "README.md"));
+copyFileSync("LICENSE", path.join(distDir, "LICENSE"));
+deleteSourceMaps(distDir);
+
+const pkg = JSON.parse(readFileSync(packageJsonPath, "utf8"));
 delete pkg.private;
-writeFileSync(path, JSON.stringify(pkg, null, 2) + "\n");
+writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + "\n");
+
+function removeIfPresent(targetPath) {
+	if (!existsSync(targetPath)) return;
+	rmSync(targetPath, { force: true, recursive: true });
+}
+
+function deleteSourceMaps(dirPath) {
+	for (const entry of readdirSync(dirPath)) {
+		const entryPath = path.join(dirPath, entry);
+		const entryStat = statSync(entryPath);
+		if (entryStat.isDirectory()) {
+			deleteSourceMaps(entryPath);
+			continue;
+		}
+		if (entryPath.endsWith(".map")) {
+			rmSync(entryPath, { force: true });
+		}
+	}
+}

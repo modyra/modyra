@@ -152,10 +152,10 @@ importers:
         specifier: '>=21.0.0'
         version: 21.2.18(@angular/animations@21.2.18(@angular/core@21.2.18(@angular/compiler@21.2.18)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.18(@angular/core@21.2.18(@angular/compiler@21.2.18)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.18(@angular/compiler@21.2.18)(rxjs@7.8.2)(zone.js@0.15.1))
       '@modyra/core':
-        specifier: ^0.1.0
+        specifier: ^0.2.0
         version: link:../core
       '@modyra/widgets':
-        specifier: ^0.1.0
+        specifier: ^0.2.0
         version: link:../widgets
       '@modyra/zod':
         specifier: '>=0.1.0'
@@ -172,10 +172,10 @@ importers:
   packages/lit:
     dependencies:
       '@modyra/core':
-        specifier: 0.1.0
+        specifier: 0.2.0
         version: link:../core
       '@modyra/widgets':
-        specifier: 0.1.0
+        specifier: 0.2.0
         version: link:../widgets
     devDependencies:
       lit:
@@ -185,10 +185,10 @@ importers:
   packages/react:
     dependencies:
       '@modyra/core':
-        specifier: 0.1.0
+        specifier: 0.2.0
         version: link:../core
       '@modyra/widgets':
-        specifier: 0.1.0
+        specifier: 0.2.0
         version: link:../widgets
     devDependencies:
       '@types/react':
@@ -203,10 +203,10 @@ importers:
   packages/vue:
     dependencies:
       '@modyra/core':
-        specifier: 0.1.0
+        specifier: 0.2.0
         version: link:../core
       '@modyra/widgets':
-        specifier: 0.1.0
+        specifier: 0.2.0
         version: link:../widgets
     devDependencies:
       '@vue/reactivity':
@@ -216,13 +216,13 @@ importers:
   packages/widgets:
     dependencies:
       '@modyra/core':
-        specifier: 0.1.0
+        specifier: 0.2.0
         version: link:../core
 
   packages/zod:
     dependencies:
       '@modyra/core':
-        specifier: 0.1.0
+        specifier: 0.2.0
         version: link:../core
     devDependencies:
       zod:
