@@ -9,7 +9,12 @@ import { join } from "node:path";
 
 const dir = "dist/bundle-test/browser";
 const files = readdirSync(dir).filter((f) => f.endsWith(".js"));
-const BUDGET_KB = 120;
+// 120 -> 122 (2026-07-20, FASE A field arrays): MdyTypedFormBase always links
+// the array-manager wiring (constructor bookkeeping, handle-tree branch,
+// array-level validator composition) even for schemas with no array() field
+// — it isn't tree-shakeable away, unlike a renderer/control. Real total after
+// the feature: 120.6 KB; budget kept tight just above it.
+const BUDGET_KB = 122;
 
 let total = 0;
 let text = "";
