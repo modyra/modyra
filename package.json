@@ -7,7 +7,7 @@
     "setup": "pnpm install && pnpm run build:lib",
     "start": "ng serve demo",
     "start:lib": "npm run build:lib && npm run start",
-    "build:lib": "pnpm run build:core && tsc -p packages/widgets/tsconfig.json && tsc -p packages/zod/tsconfig.json && ng build modyra --configuration production && rm -rf packages/angular/dist/node_modules packages/angular/dist/package-lock.json && cp README.md LICENSE packages/angular/dist/ && find packages/angular/dist/ -name '*.map' -delete",
+    "build:lib": "pnpm run build:core && tsc -p packages/widgets/tsconfig.json && tsc -p packages/zod/tsconfig.json && ng build modyra --configuration production && rm -rf packages/angular/dist/node_modules packages/angular/dist/package-lock.json && cp README.md LICENSE packages/angular/dist/ && find packages/angular/dist/ -name '*.map' -delete && node scripts/prepare-angular-dist.mjs",
     "pack:analyze": "node scripts/pack-analyze.mjs",
     "build:demo": "npm run build:lib && ng build demo",
     "watch:lib": "ng build modyra --watch",
@@ -26,7 +26,10 @@
     "demo:angular": "npm run build:lib && ng serve demo",
     "demo:react": "npm run build:examples && node scripts/serve-example.mjs react 4301",
     "demo:vue": "npm run build:examples && node scripts/serve-example.mjs vue 4302",
-    "demo:lit": "npm run build:examples && node scripts/serve-example.mjs lit 4303"
+    "demo:lit": "npm run build:examples && node scripts/serve-example.mjs lit 4303",
+    "version": "changeset version && pnpm install --lockfile-only",
+    "release": "npm run build:packages && npm run build:lib && changeset publish && npm run release:angular",
+    "release:angular": "cd packages/angular/dist && npm publish --access public"
   },
   "dependencies": {
     "@angular/animations": "^21.2.18",
@@ -46,6 +49,7 @@
     "@angular-eslint/builder": "21.4.0",
     "@angular/cli": "^21.2.19",
     "@angular/compiler-cli": "^21.2.18",
+    "@changesets/cli": "^2.31.1",
     "@eslint/js": "^10.0.1",
     "@modyra/angular": "link:packages/angular/dist",
     "@modyra/core": "workspace:*",
