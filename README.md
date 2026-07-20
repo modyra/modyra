@@ -17,6 +17,8 @@ core, one shared headless widget layer, one shared theme package.
 - Headless core or accessible ready-made controls — your design system or ours
 - Incremental Angular adoption through Reactive Forms interop (`mdyCva`)
 
+[![CI](https://github.com/modyra/modyra/actions/workflows/ci.yml/badge.svg)](https://github.com/modyra/modyra/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@modyra/angular)](https://www.npmjs.com/package/@modyra/angular)
 [![Angular](https://img.shields.io/badge/Angular-21%2B-red)](https://angular.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
