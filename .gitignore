@@ -52,3 +52,8 @@ claude_podman_night_shift_hardened.sh
 
 # Build outputs of workspace packages
 packages/*/dist/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/

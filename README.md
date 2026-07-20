@@ -321,10 +321,19 @@ Project policies: [security](SECURITY.md) · [contributing](CONTRIBUTING.md) · 
   type tests cover the core engine, every adapter and the widget layer
   (`npm test`, `npm run test:core`, `npm run test:adapters`,
   `npm run test:widgets`), plus a tree-shaking bundle check
-  (`npm run test:bundle`); browser, axe and visual tests are planned.
-  Pin your version and read release notes.
+  (`npm run test:bundle`), axe-core accessibility tests over the main
+  Angular renderers (jest + jsdom, runs with `npm test`) and a Playwright
+  browser smoke test over the packaged demo (`npm run test:e2e`, currently
+  non-blocking in CI while it stabilizes); visual regression tests are
+  still planned. Pin your version and read release notes.
 
 ## Examples
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz)
+
+`examples/stackblitz` is a minimal Angular signup form that runs against the
+**published** `@modyra/angular` package — the fastest way to try the library
+without cloning anything.
 
 `examples/{react,vue,lit}` implement the **same signup form** (name +
 email, shared validators, agnostic devtools panel) so the adapters can be
