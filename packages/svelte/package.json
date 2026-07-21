@@ -1,0 +1,54 @@
+{
+  "name": "@modyra/svelte",
+  "version": "0.3.0",
+  "description": "Svelte binding for the Modyra form engine — typed forms as Svelte stores.",
+  "keywords": [
+    "svelte",
+    "forms",
+    "typescript",
+    "stores",
+    "validation"
+  ],
+  "license": "MIT",
+  "author": "Lorenzo Muscherà",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modyra/modyra.git",
+    "directory": "packages/svelte"
+  },
+  "bugs": {
+    "url": "https://github.com/modyra/modyra/issues"
+  },
+  "homepage": "https://github.com/modyra/modyra#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@modyra/core": "0.3.0",
+    "@modyra/widgets": "0.3.0"
+  },
+  "peerDependencies": {
+    "svelte": ">=4.0.0"
+  },
+  "devDependencies": {
+    "svelte": "^5.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
