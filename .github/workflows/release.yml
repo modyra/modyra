@@ -10,11 +10,10 @@ jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -22,7 +21,7 @@ jobs:
         with:
           version: 10
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -63,10 +62,10 @@ jobs:
       - name: Production dependency audit
         run: pnpm audit --prod
 
-      - name: Create release PR or publish
-        uses: changesets/action@v1
-        with:
-          publish: pnpm run release:stage
+      # Org policy currently blocks GitHub Actions from creating PRs with
+      # GITHUB_TOKEN. Versioning remains changesets-driven, but the version
+      # bump PR is created/merged by maintainers.
+      - name: Publish staged release from committed versions
+        run: pnpm run release:stage
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true

@@ -18,6 +18,7 @@ core, one shared headless widget layer, one shared theme package.
 - Incremental adoption paths — e.g. Reactive Forms interop (`mdyCva`) on Angular
 
 [![CI](https://github.com/modyra/modyra/actions/workflows/ci.yml/badge.svg)](https://github.com/modyra/modyra/actions/workflows/ci.yml)
+[![Release](https://github.com/modyra/modyra/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/modyra/modyra/actions/workflows/release.yml)
 [![npm](https://img.shields.io/npm/v/@modyra/core)](https://www.npmjs.com/package/@modyra/core)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -25,17 +26,17 @@ core, one shared headless widget layer, one shared theme package.
 
 ## Packages
 
-| Package                               | What it is                                                                                               | UI layer                                                       | Peer deps              |
-| :------------------------------------ | :------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- | :--------------------- |
-| [`@modyra/core`](packages/core)       | Framework-agnostic form engine: typed field trees, arrays, validation, drafts, undo/redo, i18n utilities | headless                                                       | —                      |
-| [`@modyra/widgets`](packages/widgets) | Headless widget controllers + universal interaction/accessibility contract                               | headless                                                       | —                      |
-| [`@modyra/angular`](packages/angular) | Angular binding on native signals                                                                        | full renderer catalog, themes, devtools, wizard, interop       | `@angular/*` ≥21       |
-| [`@modyra/react`](packages/react)     | React binding via `useSyncExternalStore`                                                                 | headless — bring your own UI                                   | `react` ≥18            |
-| [`@modyra/vue`](packages/vue)         | Vue binding on `@vue/reactivity`                                                                         | headless — bring your own UI                                   | `@vue/reactivity` ≥3.4 |
-| [`@modyra/lit`](packages/lit)         | Lit binding — ReactiveController                                                                         | themable form elements                                         | `lit` ≥3               |
-| [`@modyra/zod`](packages/zod)         | Framework-agnostic Zod adapter — schema-first typed forms                                                | —                                                              | `zod` ≥3.25            |
-| [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter — one adapter for Zod, Valibot, ArkType and every v1 vendor          | —                                                              | —                      |
-| [`@modyra/styles`](packages/styles)   | CSS themes (`default`, `material`, `ios`, `ionic`, `base`) for every adapter                             | themes                                                         | —                      |
+| Package                                               | What it is                                                                                               | UI layer                                                 | Peer deps              |
+| :---------------------------------------------------- | :------------------------------------------------------------------------------------------------------- | :------------------------------------------------------- | :--------------------- |
+| [`@modyra/core`](packages/core)                       | Framework-agnostic form engine: typed field trees, arrays, validation, drafts, undo/redo, i18n utilities | headless                                                 | —                      |
+| [`@modyra/widgets`](packages/widgets)                 | Headless widget controllers + universal interaction/accessibility contract                               | headless                                                 | —                      |
+| [`@modyra/angular`](packages/angular)                 | Angular binding on native signals                                                                        | full renderer catalog, themes, devtools, wizard, interop | `@angular/*` ≥21       |
+| [`@modyra/react`](packages/react)                     | React binding via `useSyncExternalStore`                                                                 | headless — bring your own UI                             | `react` ≥18            |
+| [`@modyra/vue`](packages/vue)                         | Vue binding on `@vue/reactivity`                                                                         | headless — bring your own UI                             | `@vue/reactivity` ≥3.4 |
+| [`@modyra/lit`](packages/lit)                         | Lit binding — ReactiveController                                                                         | themable form elements                                   | `lit` ≥3               |
+| [`@modyra/zod`](packages/zod)                         | Framework-agnostic Zod adapter — schema-first typed forms                                                | —                                                        | `zod` ≥3.25            |
+| [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter — one adapter for Zod, Valibot, ArkType and every v1 vendor                      | —                                                        | —                      |
+| [`@modyra/styles`](packages/styles)                   | CSS themes (`default`, `material`, `ios`, `ionic`, `base`) for every adapter                             | themes                                                   | —                      |
 
 Every binding is a first-class citizen over the same engine: pick the one
 for your framework, keep everything else identical.
