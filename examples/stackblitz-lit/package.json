@@ -1,0 +1,21 @@
+{
+  "name": "modyra-stackblitz-lit-demo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Minimal Modyra signup form + control catalog on Lit — runs on StackBlitz against the published npm packages.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@modyra/core": "^0.3.0",
+    "@modyra/lit": "^0.3.0",
+    "@modyra/styles": "^0.3.0",
+    "lit": "^3.3.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}
