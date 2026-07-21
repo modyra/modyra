@@ -4,9 +4,9 @@
 // submit. The devtools panel at the bottom shows the live engine state;
 // sensitive fields (password) are masked automatically.
 import { createRoot } from "react-dom/client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
-  crossField, email, field, minLength, required,
+  createStore, crossField, email, field, minLength, required,
   serverValidator, useMdyField, useMdyForm,
 } from "@modyra/react";
 import { mountMdyDevtools } from "@modyra/core/devtools";
@@ -111,6 +111,16 @@ function Signup() {
 
   // Reading a field via useMdyField keeps the component subscribed.
   useMdyField(form.f.name);
+  // Buttons below read form-level state (canSubmit/canUndo/canRedo), which
+  // no per-field useMdyField call above is subscribed to — without this,
+  // an async validator settling on a field the parent doesn't track (e.g.
+  // username) never re-renders Signup, and the buttons go stale.
+  const formStore = useMemo(
+    () => createStore([form.state.valid, form.state.pending, form.canUndo, form.canRedo]),
+    [form],
+  );
+  useEffect(() => () => formStore.destroy(), [formStore]);
+  useSyncExternalStore(formStore.subscribe, formStore.getSnapshot, formStore.getSnapshot);
   const devtools = useRef(null);
   useEffect(() => mountMdyDevtools(form, devtools.current), [form]);
 
