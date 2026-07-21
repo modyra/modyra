@@ -54,6 +54,9 @@ jobs:
       - name: Bundle / tree-shaking check
         run: pnpm run test:bundle
 
+      - name: Core bundle budgets
+        run: pnpm run test:core-bundle
+
       - name: Theme class parity
         run: pnpm run test:themes
 

@@ -37,7 +37,7 @@ import {
   MdyTimepickerComponent,
   MdyToggleComponent,
 } from "@modyra/angular/ui";
-import { mdyFormSerialize } from "@modyra/core";
+import { mdyFormSerialize } from "@modyra/core/serialize";
 import { concat, delay, of, switchMap } from "rxjs";
 import type { DesignSystemConfig } from "./design-system-section.component";
 

@@ -1,21 +1,6 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
-import {
-  angleToHour,
-  angleToMinute,
-  buildTimeString,
-  formatTime,
-  formatTimeAs,
-  getCurrentTime,
-  getPointerCoords,
-  hourToAngle,
-  type MdyFieldHandle,
-  minuteToAngle,
-  parseAnyTime,
-  parseTime,
-  pointerAngle,
-  to24Hour,
-  type MdyTimeFormat,
-} from "@modyra/core";
+import { type MdyFieldHandle } from "@modyra/core";
+import { angleToHour, angleToMinute, buildTimeString, formatTime, formatTimeAs, getCurrentTime, getPointerCoords, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
   MdyLitOverlayController,
@@ -118,7 +103,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this._draftValue = time;
   }
 
-  private parsed(): import("@modyra/core").ParsedTime | null {
+  private parsed(): import("@modyra/core/datetime").ParsedTime | null {
     return parseTime(this._draftValue);
   }
 

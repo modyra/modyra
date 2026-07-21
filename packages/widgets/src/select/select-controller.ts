@@ -2,7 +2,8 @@
  * Headless single-select controller.
  */
 
-import { filterOptionsByQuery, vanillaReactivity } from "@modyra/core";
+import { vanillaReactivity } from "@modyra/core";
+import { filterOptionsByQuery } from "@modyra/core/ui";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 
 import type { MdyUiCommand } from "../commands.js";

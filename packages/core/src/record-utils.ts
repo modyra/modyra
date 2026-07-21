@@ -2,6 +2,11 @@
  * Shallow equality helpers for flat form-value records.
  */
 
+/** Type guard for non-null objects (records). */
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 /** Shallow key/value equality between two flat form-value records. */
 export function shallowEqualRecords(
   a: Record<string, unknown>,

@@ -12,6 +12,8 @@ import type {
   MdyWritableSignal,
 } from "./reactivity.js";
 import { isSafeFieldPath } from "./path-utils.js";
+import { MDY_DEV } from "./dev-flags.js";
+import { isRecord } from "./record-utils.js";
 
 /** Pluggable storage for {@link MdyDraftManager.enableDraft}. */
 export interface MdyDraftStorage {
@@ -52,10 +54,6 @@ interface DraftEnvelope {
   readonly __mdyDraft: number;
   readonly savedAt: number;
   readonly value: Record<string, unknown>;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 function isDraftEnvelope(parsed: unknown): parsed is DraftEnvelope {
@@ -190,7 +188,7 @@ export class MdyDraftManager {
   enableDraft(options: MdyDraftOptions): void {
     if (this._effect) return;
     if (!this._rx.canEffect) {
-      this._warn(
+      if (MDY_DEV) this._warn(
         "enableDraft() needs an effect-capable reactivity " +
         "(with the Angular adapter: construct it with an Injector).",
       );
@@ -324,7 +322,7 @@ export class MdyDraftManager {
         return raw;
       });
     } catch {
-      this._warn(
+      if (MDY_DEV) this._warn(
         "Skipped draft write: value is not JSON-serializable (cycle or unsupported type).",
       );
       return null;

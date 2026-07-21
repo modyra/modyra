@@ -1,5 +1,5 @@
 import { InjectionToken } from "@angular/core";
-import { buildDateLocale, type MdyDateLocale } from "@modyra/core";
+import { buildDateLocale, type MdyDateLocale } from "@modyra/core/datetime";
 
 /**
  * DI token that provides locale configuration for date components.

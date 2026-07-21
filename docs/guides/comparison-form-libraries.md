@@ -59,12 +59,18 @@ what your pipeline tree-shakes.
 | Package | esbuild | rollup |
 |---|---|---|
 | react-final-form stack | 10.2 KB | 9.8 KB |
+| **@modyra/core** | **10.7 KB** | **10.4 KB** |
 | react-hook-form | 13.3 KB | 12.7 KB |
 | vee-validate | 13.6 KB | 34.6 KB ⚠ |
 | formik | 14.8 KB | 14.5 KB |
-| **@modyra/core** | 17.2 KB | 16.8 KB |
 | @tanstack/react-form | 19.1 KB | 18.1 KB |
 | @angular/forms | 18.1 KB | 18.1 KB |
+
+> *@modyra/core re-measured 2026-07-21 after phase J of the
+> [roadmap](../../ROADMAP.md): satellite utilities (i18n, icons, datetime,
+> devtools, overlay positioning) moved to curated subpath entries
+> (`@modyra/core/datetime`, `/ui`, …) — they remain in the package, but the
+> main entry now ships only the form engine. Previous figure: 17.2 KB.*
 
 ### The schema-validator add-on (applies to every library)
 
@@ -93,9 +99,12 @@ locale issue).
   includes features most competitors don't ship at all (drafts,
   undo/redo, sanitization). final-form's stack is close (11.0 / 10.6 KB)
   but covers a fraction of the feature set (§3).
-- On the **whole-entry** metric Modyra (~17 KB) is mid-pack: heavier
-  than react-hook-form, formik and the final-form stack; lighter than
-  TanStack Form and `@angular/forms`.
+- On the **whole-entry** metric Modyra (10.7 / 10.4 KB) is second only
+  to the final-form stack (10.2 / 9.8 KB) — lighter than react-hook-form,
+  formik, vee-validate, TanStack Form and `@angular/forms`. Phase J of
+  the roadmap relocated satellite utilities (i18n, icons, datetime,
+  devtools) to curated subpath entries; the main entry still carries the
+  full engine including drafts and undo/redo.
 - `@angular/forms` is not directly comparable: Angular apps pay for the
   framework regardless; it ships no tree-shakeable form surface.
 - Per-feature byte cost, Modyra is the most efficient package in this

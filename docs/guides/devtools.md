@@ -61,7 +61,7 @@ The same inspector ships in `@modyra/core` as a DOM panel mountable
 anywhere — no Angular involved. The `examples/{react,vue,lit}` apps use it:
 
 ```ts
-import { mountMdyDevtools } from "@modyra/react"; // or core / vue / lit
+import { mountMdyDevtools } from "@modyra/core/devtools"; // framework-agnostic subpath entry
 
 const unmount = mountMdyDevtools(form, document.getElementById("panel")!);
 // re-renders on an interval; call unmount() to dispose

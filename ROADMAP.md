@@ -12,7 +12,7 @@ that produced the comparison.
 | Leaderboard | Modyra today | Leader | Gap |
 |---|---|---|---|
 | Realistic form surface (gzip) | **#1 — 9.4/9.1 KB** | Modyra | defend |
-| Whole-entry bundle (gzip) | #5 — 17.2/16.8 KB | final-form stack 9.8 | −6.9 KB to top-3, −7.4 to #1 |
+| Whole-entry bundle (gzip) | #2 — 10.7/10.4 KB | final-form stack 10.2/9.8 | −0.5/−0.6 KB to #1 |
 | Feature matrix | **#1** (drafts, undo, wizard, security unique) | Modyra | defend |
 | Framework breadth | #2 — 4 + vanilla core | TanStack Form, 7 | +3 adapters |
 | npm presence / adoption | last — not published | RHF ~2.7M dl/week | publish + grow |
@@ -54,21 +54,30 @@ against the registry tarball.**
 ## Phase J — Whole-entry slimming (bundle leaderboard)
 
 Goal: **whole entry ≤ 13 KB gzip (from 17.2) without losing features.**
-Findings from the 2026-07-21 exploration (draft+history always linked,
-devWarnings strings, micro-dupes) become action:
+✅ **Achieved 2026-07-21: 10.7 KB esbuild / 10.4 KB rollup (−38%).**
+The dominant cut came from an unplanned lever: satellite utilities
+(datetime, localization, icons/keyboard/options/overlay, serialize,
+devtools) relocated to curated subpath entries (`@modyra/core/datetime`,
+`/ui`, …) — still shipped in the package, no longer forced into the main
+entry. Findings from the 2026-07-21 exploration (draft+history always
+linked, devWarnings strings, micro-dupes) became action:
 
 - [ ] Draft/history managers pay-as-you-go: keep the current API but make
       the managers lazily referenced so bundlers can drop them when
       `enableDraft`/`enableHistory` are never called (expected −1.5/−2 KB
       gzip). If the API-compatible approach cannot shake them, schedule
-      the opt-in composition for 1.0 and document the trade-off
-- [ ] `MDY_DEV` compile-time define: dev warnings/paths strippable in
-      production builds (−0.3/−0.5 KB), documented for esbuild/rollup/vite
-- [ ] Micro-golf: dedupe `isRecord`/`isPlainObject` across modules,
-      dead-branch review (−0.1/−0.3 KB)
-- [ ] CI guard: `check-core-bundle.mjs` measuring the realistic surface
-      (budget 10 KB) and the whole entry (budget ratchets down each phase)
-      — the same discipline the Angular bundle test already enforces
+      the opt-in composition for 1.0 and document the trade-off.
+      **Deferred** — the ≤13 KB goal was met via subpath relocation; this
+      remains the known lever for the final −0.5/−0.6 KB to #1
+- [x] `MDY_DEV` compile-time define: dev warnings/paths strippable in
+      production builds (−0.2 KB measured: 10.7 → 10.5 KB), documented
+      for esbuild/rollup/vite
+- [x] Micro-golf: `isRecord` deduplicated into `record-utils.ts`
+      (draft/array managers), dead-branch review
+- [x] CI guard: `check-core-bundle.mjs` measuring the realistic surface
+      (budget 10 KB) and the whole entry (budget 11 KB, ratchets down
+      each phase) — wired into `test:core-bundle`, `ci.yml` and
+      `release.yml`; same discipline the Angular bundle test enforces
 
 **Metric: whole-entry ≤ 13 KB gzip; realistic surface stays ≤ 9.5 KB;
 feature matrix untouched. Honest framing stays: whole-entry rewards fewer

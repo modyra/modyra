@@ -1,8 +1,5 @@
-import {
-  filterOptionsByQuery,
-  type MdyFieldHandle,
-  type MdySelectOption,
-} from "@modyra/core";
+import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
+import { filterOptionsByQuery } from "@modyra/core/ui";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { mdyIcon } from "../base.js";
 import {

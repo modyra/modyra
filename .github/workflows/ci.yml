@@ -44,6 +44,11 @@ jobs:
       - name: Bundle / tree-shaking check
         run: pnpm run test:bundle
 
+      # Whole-entry + realistic-surface budgets for @modyra/core (the
+      # comparison-doc numbers). See scripts/check-core-bundle.mjs.
+      - name: Core bundle budgets
+        run: pnpm run test:core-bundle
+
       # Known Lit parity gaps are allowlisted in
       # scripts/theme-parity-allowlist.json; new regressions fail the check.
       - name: Theme class parity
