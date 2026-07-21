@@ -29,8 +29,9 @@ jobs:
 
       - name: Upgrade npm for staged publishing
         run: |
-          npm i -g npm@11.5.1
+          npm i -g npm@12.0.1
           npm --version
+          npm help stage >/dev/null
 
       - name: Install
         run: pnpm install --frozen-lockfile
