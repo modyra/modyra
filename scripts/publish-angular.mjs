@@ -11,12 +11,6 @@ const currentAngularVersion = await readPublishedVersion("@modyra/angular");
 if (currentAngularVersion === expectedVersion) {
   console.log(`Skipping @modyra/angular@${expectedVersion} (already published)`);
 } else {
-  if (currentAngularVersion !== null) {
-    throw new Error(
-      `@modyra/angular published as ${currentAngularVersion}, expected ${expectedVersion}`,
-    );
-  }
-
   const publishArgs = stageMode
     ? ["stage", "publish", "--access", "public"]
     : ["publish", "--access", "public"];
@@ -39,12 +33,14 @@ const packages = [
   "@modyra/angular",
 ];
 
-for (const packageName of packages) {
-  const publishedVersion = await waitForPublishedVersion(packageName, expectedVersion);
-  if (publishedVersion !== expectedVersion) {
-    throw new Error(
-      `${packageName} published as ${publishedVersion}, expected ${expectedVersion}`,
-    );
+if (!stageMode) {
+  for (const packageName of packages) {
+    const publishedVersion = await waitForPublishedVersion(packageName, expectedVersion);
+    if (publishedVersion !== expectedVersion) {
+      throw new Error(
+        `${packageName} published as ${publishedVersion}, expected ${expectedVersion}`,
+      );
+    }
   }
 }
 

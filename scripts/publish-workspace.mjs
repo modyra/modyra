@@ -21,11 +21,6 @@ for (const pkg of packages) {
     console.log(`Skipping ${pkg.name}@${expectedVersion} (already published)`);
     continue;
   }
-  if (publishedVersion !== null) {
-    throw new Error(
-      `${pkg.name} published as ${publishedVersion}, expected ${expectedVersion}`,
-    );
-  }
 
   const publishArgs = stageMode ? ["stage", "publish"] : ["publish"];
   if (pkg.name !== "@modyra/styles") {
@@ -37,13 +32,15 @@ for (const pkg of packages) {
   await publishPackage(pkg.name, pkg.dir, publishArgs, expectedVersion);
 }
 
-for (const pkg of packages) {
-  const expectedVersion = readPackageVersion(`${pkg.dir}/package.json`);
-  const publishedVersion = await waitForPublishedVersion(pkg.name, expectedVersion);
-  if (publishedVersion !== expectedVersion) {
-    throw new Error(
-      `${pkg.name} published as ${publishedVersion ?? "missing"}, expected ${expectedVersion}`,
-    );
+if (!stageMode) {
+  for (const pkg of packages) {
+    const expectedVersion = readPackageVersion(`${pkg.dir}/package.json`);
+    const publishedVersion = await waitForPublishedVersion(pkg.name, expectedVersion);
+    if (publishedVersion !== expectedVersion) {
+      throw new Error(
+        `${pkg.name} published as ${publishedVersion ?? "missing"}, expected ${expectedVersion}`,
+      );
+    }
   }
 }
 
