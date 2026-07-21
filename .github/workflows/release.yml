@@ -27,6 +27,11 @@ jobs:
           cache: pnpm
           registry-url: "https://registry.npmjs.org"
 
+      - name: Upgrade npm for staged publishing
+        run: |
+          npm i -g npm@11.5.1
+          npm --version
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
