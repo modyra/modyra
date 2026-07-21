@@ -34,6 +34,9 @@ core, one shared headless widget layer, one shared theme package.
 | [`@modyra/react`](packages/react)                     | React binding via `useSyncExternalStore`                                                                 | headless — bring your own UI                             | `react` ≥18            |
 | [`@modyra/vue`](packages/vue)                         | Vue binding on `@vue/reactivity`                                                                         | headless — bring your own UI                             | `@vue/reactivity` ≥3.4 |
 | [`@modyra/lit`](packages/lit)                         | Lit binding — ReactiveController                                                                         | themable form elements                                   | `lit` ≥3               |
+| [`@modyra/solid`](packages/solid)                     | Solid binding on native signals + headless widgets              | headless — bring your own UI                             | `solid-js` ≥1.8        |
+| [`@modyra/preact`](packages/preact)                   | Preact binding — thin variant of the React adapter               | headless — bring your own UI                             | `preact` ≥10.19        |
+| [`@modyra/svelte`](packages/svelte)                   | Svelte binding — `vanillaReactivity()` + a `toStore()` bridge to real Svelte stores + headless widgets (no `examples/` entry yet) | headless — bring your own UI | `svelte` ≥4 |
 | [`@modyra/zod`](packages/zod)                         | Framework-agnostic Zod adapter — schema-first typed forms                                                | —                                                        | `zod` ≥3.25            |
 | [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter — one adapter for Zod, Valibot, ArkType and every v1 vendor                      | —                                                        | —                      |
 | [`@modyra/styles`](packages/styles)                   | CSS themes (`default`, `material`, `ios`, `ionic`, `base`) for every adapter                             | themes                                                   | —                      |
@@ -300,6 +303,7 @@ The full index lives in [docs/README.md](docs/README.md). The shortlist:
 - [Mental model](docs/guides/mental-model.md) — the state graph, field lifecycle, operation semantics
 - [Typed forms](docs/guides/typed-forms.md) — schema, handles, `patch`/`getChanges`, async validation, field arrays, undo/redo, **drafts (read the security note)**, wizard, Zod
 - [Schema adapters](docs/guides/schemas.md) — Zod vs Standard Schema (Valibot, ArkType, …): which model, which trade-offs
+- [Server validation](docs/guides/server-validation.md) — one schema, two sides: `serverValidate()` with Next.js/Express/Hono
 - [Usage modes](docs/guides/usage-modes.md) — declarative, explicit adapter, headless, validation semantics
 - [UI toolkit](docs/guides/ui-toolkit.md) — renderer catalog, enterprise select, dynamic forms, CSS tokens
 - [AI-generated forms](docs/guides/ai-generated-forms.md) — LLM output → `parseDynamicFields()` → render: the safe pipeline + system prompt template
@@ -330,28 +334,45 @@ Project policies: [security](SECURITY.md) · [contributing](CONTRIBUTING.md) · 
 
 ## Examples
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz)
+Fastest way to try the library — no cloning, no workspace, each runs
+against the **published** npm packages:
 
-`examples/stackblitz` is a minimal Angular signup form that runs against the
-**published** `@modyra/angular` package — the fastest way to try the library
-without cloning anything.
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz)
+Angular ([`examples/stackblitz`](examples/stackblitz))
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-react)
+React ([`examples/stackblitz-react`](examples/stackblitz-react))
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-vue)
+Vue ([`examples/stackblitz-vue`](examples/stackblitz-vue))
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-lit)
+Lit ([`examples/stackblitz-lit`](examples/stackblitz-lit))
+
+Each is a real, verified, buildable Vite project (`npm install && npm run
+dev`) with the same signup demo (schema validators, cross-field password
+check, draft persistence, undo/redo, cancellable server-side check) — not
+just a code snippet. Solid and Preact don't have one yet (tracked in
+[`ROADMAP.md`](ROADMAP.md)).
 
 `examples/angular` is the full Angular demo app (typed, declarative, dynamic
 and Zod sections over the whole renderer catalog) — one demo app per
 framework, same engine.
 
-`examples/{react,vue,lit}` implement the **same signup form** (name +
-email, shared validators, agnostic devtools panel) so the adapters can be
-compared side by side, with a runtime switcher across the shipped themes
-(default, Material, iOS, Ionic). They import the **built** `@modyra/*`
-packages from `node_modules` — the same artifacts users install, never the
-library sources.
+`examples/{react,vue,lit,preact,solid}` implement the **same signup form**
+(name + email, shared validators, agnostic devtools panel) so the adapters
+can be compared side by side, with a runtime switcher across the shipped
+themes (default, Material, iOS, Ionic) — React/Vue/Lit only; Preact/Solid
+use a single theme for now. They import the **built** `@modyra/*` packages
+from `node_modules` — the same artifacts users install, never the library
+sources.
 
 ```bash
 npm run demo:angular   # Angular demo over the packaged build
 npm run demo:react     # http://localhost:4301
 npm run demo:vue       # http://localhost:4302
 npm run demo:lit       # http://localhost:4303
+npm run demo:preact    # http://localhost:4304
 ```
 
 ## Local development
