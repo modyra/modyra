@@ -1,0 +1,54 @@
+{
+  "name": "@modyra/preact",
+  "version": "0.3.0",
+  "description": "Preact binding for the Modyra form engine — a thin variant of the React adapter on preact/hooks.",
+  "keywords": [
+    "preact",
+    "forms",
+    "typescript",
+    "hooks",
+    "validation"
+  ],
+  "license": "MIT",
+  "author": "Lorenzo Muscherà",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modyra/modyra.git",
+    "directory": "packages/preact"
+  },
+  "bugs": {
+    "url": "https://github.com/modyra/modyra/issues"
+  },
+  "homepage": "https://github.com/modyra/modyra#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@modyra/core": "0.3.0",
+    "@modyra/widgets": "0.3.0"
+  },
+  "peerDependencies": {
+    "preact": ">=10.19.0"
+  },
+  "devDependencies": {
+    "preact": "^10.29.7"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
