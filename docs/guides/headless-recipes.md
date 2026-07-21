@@ -1,17 +1,19 @@
 # Headless recipes: shadcn/ui, Radix, Reka & friends
 
 Modyra's engine is headless by design: `@modyra/core` owns the form state,
-the framework adapters (`@modyra/react`, `@modyra/vue`) own reactivity, and
-**you** own the markup. `@modyra/widgets` and `@modyra/styles` are one
-ready-made UI on top — but if your design system is shadcn/ui, Radix,
-shadcn-vue/Reka, Naive UI or plain Tailwind, the binding glue is a handful
-of props-mappers.
+the framework adapters (`@modyra/react`, `@modyra/vue`, `@modyra/solid`,
+`@modyra/preact`) own reactivity, and **you** own the markup.
+`@modyra/widgets` and `@modyra/styles` are one ready-made UI on top — but
+if your design system is shadcn/ui, Radix, shadcn-vue/Reka, Kobalte, Naive
+UI or plain Tailwind, the binding glue is a handful of props-mappers.
 
 This guide's helpers are not pseudocode: they are mirrored verbatim in the
 adapter test suites (`packages/react/test/headless-recipes.test.mjs`,
-`packages/vue/test/headless-recipes.test.mjs`) and exercised against the
-real engine on every CI run. Copy them into your project and tweak freely —
-that is the headless ethos (and shadcn's own philosophy).
+`packages/vue/test/headless-recipes.test.mjs`,
+`packages/solid/test/headless-recipes.test.mjs`,
+`packages/preact/test/headless-recipes.test.mjs`) and exercised against
+the real engine on every CI run. Copy them into your project and tweak
+freely — that is the headless ethos (and shadcn's own philosophy).
 
 ## The three binding contracts
 
@@ -169,6 +171,18 @@ the server errors and `markAllTouched()`-style display is already handled;
 call `form.markAllTouched()` yourself when rendering without a submit
 handler.
 
+### Preact: the same recipes, unchanged
+
+`@modyra/preact` is a thin variant of the React adapter on `preact/hooks` —
+every function above works with zero edits, since they only ever touch the
+framework-agnostic field handle (`handle.value()`, `.set()`, `.errors()`…),
+never a React-specific API. `packages/preact/test/headless-recipes.test.mjs`
+is this section's code copied byte-for-byte (only the file header comment
+differs) as proof, not just a claim. Swap the imports for
+`useMdyForm`/`useMdyField` from `@modyra/preact` and the rest of this
+section applies as written — including the shadcn component snippets,
+since Preact's JSX output is React-compatible.
+
 ## Vue + shadcn-vue / Reka UI
 
 Form state is real Vue reactivity under the hood, so the recipes are plain
@@ -262,6 +276,63 @@ const locked = computed(() => account.value.locked);
 form.setDisabled("email", () => locked.value);
 ```
 
+## Solid + Kobalte / shadcn-solid
+
+Solid's fine-grained reactivity means a field handle is read directly as
+an accessor inside JSX — no subscription hook needed at all. The same
+props-mapper functions from the React section work completely unchanged
+here too (proof: `packages/solid/test/headless-recipes.test.mjs` is that
+same code, byte-for-byte), because they only call the field handle's own
+methods. The one thing that differs is *when* you call them: not once per
+render (Solid components run once), but inline in the JSX expression that
+should track them.
+
+```tsx
+import { createSolidForm, field, required, email } from "@modyra/solid";
+
+const form = createSolidForm({
+  email: field("", [required(), email()]),
+  terms: field<boolean | null>(null, [required()]),
+});
+```
+
+```tsx
+import { Checkbox } from "@kobalte/core/checkbox";
+
+function EmailField(props: { handle: MdyFieldHandle<string> }) {
+  const { handle } = props;
+  return (
+    <div class="grid gap-2">
+      <label for="email">
+        Email {handle.required() && <span aria-hidden="true">*</span>}
+      </label>
+      {/* Call mdyInputProps() inline — Solid's compiler tracks each
+          accessor read (handle.value(), handle.errors()…) individually,
+          so only the affected attribute updates, never the whole node. */}
+      <input id="email" type="email" {...mdyInputProps(handle)} />
+      {handle.pending() && <p role="status">checking…</p>}
+      {mdyTouchedErrors(handle).length > 0 && (
+        <ul role="alert">
+          {mdyTouchedErrors(handle).map((e) => <li>{e.message}</li>)}
+        </ul>
+      )}
+    </div>
+  );
+}
+```
+
+```tsx
+<Checkbox.Root {...mdyCheckedProps(form.f.terms)}>
+  <Checkbox.Input />
+  <Checkbox.Control />
+</Checkbox.Root>
+```
+
+No `useMdyField` call, no re-render bookkeeping — this is the clearest
+demonstration of "native signals map almost 1:1 onto the engine's
+contract" (see `examples/solid/main.jsx` for the full signup form built
+this way).
+
 ## Accessibility checklist
 
 The recipes encode these; keep them when customizing:
@@ -283,10 +354,13 @@ The recipes encode these; keep them when customizing:
 - **Async validators:** `f.pending` covers the whole debounce+run window —
   render a spinner next to the input, and keep the submit button bound to
   `form.state.canSubmit`.
-- **Full apps:** [`examples/react`](../../examples/react/main.jsx) and
-  [`examples/vue`](../../examples/vue/main.js) are complete single-file
-  demos (cross-field validation, drafts, undo/redo, cancellable server
-  checks) using the same handle pattern with Modyra's own theme CSS.
+- **Full apps:** [`examples/react`](../../examples/react/main.jsx),
+  [`examples/vue`](../../examples/vue/main.js),
+  [`examples/preact`](../../examples/preact/main.jsx) and
+  [`examples/solid`](../../examples/solid/main.jsx) are complete
+  single-file demos (cross-field validation, drafts, undo/redo,
+  cancellable server checks) using the same handle pattern with Modyra's
+  own theme CSS.
 - **Where to put the mappers:** they are plain functions — colocate them
   with your components (e.g. `src/lib/modyra-props.ts`) and extend them as
   your design system grows (date pickers, comboboxes, sliders).
