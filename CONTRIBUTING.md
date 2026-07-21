@@ -56,8 +56,8 @@ Releases run in CI (`.github/workflows/release.yml`) via
 
 1. Every feature PR adds a changeset (see above).
 2. A maintainer creates/updates the **"Version Packages"** PR (for example
-  with `pnpm changeset version`), committing version bumps and
-  `CHANGELOG.md` updates. All `@modyra/*` remain fixed-versioned together.
+   with `pnpm changeset version`), committing version bumps and
+   `CHANGELOG.md` updates. All `@modyra/*` remain fixed-versioned together.
 3. Merging that PR triggers the publish job: full gate (build, all test
    suites, bundle/tree-shaking check, theme parity, `pnpm audit --prod`),
    then `npm run release:stage` stages every `@modyra/*` package with
