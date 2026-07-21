@@ -1,0 +1,21 @@
+{
+  "name": "modyra-stackblitz-vue-demo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Minimal Modyra signup form on Vue — runs on StackBlitz against the published npm packages.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@modyra/core": "^0.3.0",
+    "@modyra/styles": "^0.3.0",
+    "@modyra/vue": "^0.3.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}
