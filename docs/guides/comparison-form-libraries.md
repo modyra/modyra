@@ -24,15 +24,18 @@ months from now.
 - Cross-check: our whole-entry figures land within ~5–10% of
   [Bundlephobia](https://bundlephobia.com) for every package (e.g.
   `@angular/forms`: 18.1 KB everywhere), which validates the harness.
-- `@modyra/core` is measured from the workspace build (`npm run
-  build:core`) because it is **not published on npm** at the time of
-  writing.
+- `@modyra/core` figures are cross-checked against the **real published
+  registry tarball** (`npm install @modyra/core@0.3.0` in a scratch
+  directory, same esbuild+gzip pass against `node_modules/@modyra/core`)
+  — not just the workspace build. Both agree exactly: 10.7 KB / 9.4 KB
+  gzip. (At an earlier writing this line said "not published at time of
+  writing" — that's no longer true, verified 2026-07-22.)
 
 Exact versions measured: react-hook-form **7.82.0** · formik **2.4.9** ·
 @tanstack/react-form **1.33.2** (+ @tanstack/form-core 1.33.2) ·
 final-form **5.0.1** + react-final-form **7.0.1** + final-form-arrays
 **4.0.1** · vee-validate **4.15.1** · zod **4.4.3** · @angular/forms
-**22.0.7** · @modyra/core **0.2.0**.
+**22.0.7** · @modyra/core **0.3.0** (published on npm).
 
 ## 2. Measured bundle sizes (min + gzip, both bundlers)
 
@@ -185,7 +188,49 @@ locale issue).
 6. **Measured realistic weight**: lightest form surface in this
    comparison (9.4 KB gzip) despite shipping more features.
 
-## 6. Cold decision guide
+## 6. Measured performance (Modyra internals)
+
+**Not a head-to-head.** The numbers below come from Modyra's own
+reproducible benchmark suite (`packages/angular/src/lib/core/benchmarks.spec.ts`,
+run via `npm run test:perf`) — they show Modyra's own cost model, not a
+comparison against react-hook-form/Formik/TanStack Form. A real competitive
+benchmark needs those libraries installed as dependencies to drive an
+equivalent React harness; that is a separate, larger batch (needs approval
+to add the deps) and is not done here. Publishing an honest Modyra-only
+number beats publishing no number, per this project's own rule that a gap
+gets stated, not hidden.
+
+Methodology: wall-clock (`performance.now`) inside Jest/jsdom, zoneless (no
+`zone.js`), Angular's `MdyDeclarativeAdapter`. Numbers vary ±10-20% run to
+run on shared CI hardware — treat them as an order-of-magnitude signal, not
+a precise SLA. Reproduce with `npm run test:perf`.
+
+| Scenario | Measured (2026-07-21) |
+| --- | --- |
+| Create 1,000 validated fields | ~16-28 ms |
+| 1,000× single-field update + read (no cross-field validator) | ~2-3 ms |
+| 1,000× single-field update + read **with** a cross-field validator registered | ~370-390 ms |
+| Full validity recompute, 1,000 invalid fields | ~0.2 ms |
+| Re-validate after 1,000 writes | ~1.4 ms |
+| `getChanges()` over 1,000 fields (500 changed) | ~1-1.7 ms |
+| Record 30 undo/redo snapshots | ~1-1.2 ms |
+| Undo ×30 + redo ×30 | ~0.3 ms |
+| 100× nested `patch()` | ~0.3-0.4 ms |
+| 100× `submit()` (no-op action) | ~2 ms |
+| 50× async validator round-trip | ~66-72 ms |
+
+**Where this is honest about a real cost**: a form-level (cross-field)
+validator re-runs on *every* field write, not just the one that changed —
+the ~150× jump between the plain single-field-update row and the
+cross-field-validator row above is that O(fields) recompute, not measurement
+noise (reproduced identically across repeated runs). For most forms this is
+free; for a 1,000-field form with a cross-field validator and rapid
+keystrokes it is the one case worth profiling before shipping. There is no
+current mitigation beyond keeping cross-field validators cheap or scoping
+them to the fields they actually need — noted here rather than left
+undocumented.
+
+## 7. Cold decision guide
 
 | Your situation | Reasonable choice |
 |---|---|
