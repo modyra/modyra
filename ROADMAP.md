@@ -248,6 +248,16 @@ Goal: **make choosing Modyra the easy decision the data already supports.**
       home page and two guide pages (titles, tables, zero console
       errors). Caught and fixed a real high-severity CVE in the
       scaffold's own `sharp` dependency before it ever shipped.
+      Follow-up closed same-session: a full 22-page link crawl found all
+      68 relative cross-doc/repo/package links dead (Astro/Starlight
+      doesn't auto-resolve `.md` links to routes) — fixed by rewriting
+      them in the sync script (docs-internal → Starlight routes,
+      docs-external → real `github.com` blob/tree URLs), plus the
+      auto-generated "Edit this page" link (pointed at a nonsense path)
+      via an explicit per-page `editUrl`. Re-crawl: 0/86 broken. Also
+      deleted a genuine pre-existing dead link in `docs/README.md`
+      (`LIT-STATUS.md`, removed from the repo in an earlier commit but
+      never unlinked).
 - [ ] Migration guides: _from react-hook-form_, _from Formik_, _from
       Angular Reactive Forms_ — each with a side-by-side runnable example.
       **Partial**: the Reactive Forms guide's side-by-side snippet is now
