@@ -10,17 +10,20 @@ months from now.
 
 - Packages installed from npm with `--save-exact`; versions below are the
   exact ones measured.
-- Every library is bundled with **esbuild 0.25** (`--bundle --minify
-  --format=esm`, `gzip -9`), from its published ESM entry, with peer
-  frameworks external (`react`, `vue`, `@angular/*`, `rxjs`, `zone.js`) —
-  you pay for your framework anyway.
-- Two measurements per library:
+- Every library is bundled **twice**: with **esbuild 0.25** (`--bundle
+  --minify --format=esm`) and with **rollup 4** (`@rollup/plugin-node-resolve`
+  + `commonjs` + `terser`), then `gzip -9`. Both bundlers matter: Vite
+  dev/optimize and many CLIs use esbuild; Vite production builds, Angular
+  and most library authors use rollup/webpack-class tree-shaking. Peer
+  frameworks are external in both (`react`, `vue`, `@angular/*`, `rxjs`,
+  `zone.js`) — you pay for your framework anyway.
+- Two surfaces per library:
   - **whole entry** — the entire package entry, worst case;
   - **realistic form surface** — only the exports a typical typed form
     with array fields and validation actually imports.
-- Cross-check: our esbuild whole-entry figures land within ~5–10% of
+- Cross-check: our whole-entry figures land within ~5–10% of
   [Bundlephobia](https://bundlephobia.com) for every package (e.g.
-  `@angular/forms`: 18.1 KB both), which validates the harness.
+  `@angular/forms`: 18.1 KB everywhere), which validates the harness.
 - `@modyra/core` is measured from the workspace build (`npm run
   build:core`) because it is **not published on npm** at the time of
   writing.
@@ -31,31 +34,37 @@ final-form **5.0.1** + react-final-form **7.0.1** + final-form-arrays
 **4.0.1** · vee-validate **4.15.1** · zod **4.4.3** · @angular/forms
 **22.0.7** · @modyra/core **0.2.0**.
 
-## 2. Measured bundle sizes (min + gzip)
+## 2. Measured bundle sizes (min + gzip, both bundlers)
 
 ### Realistic form surface (what a real typed form with arrays pays)
 
-| Package | Minified | **Min+gzip** | Surface imported |
+| Package | esbuild | rollup | Surface imported |
 |---|---|---|---|
-| **@modyra/core** | 31.2 KB | **9.4 KB** | `createForm, field, group, array, 8 validators, serverValidator, oneOf` — includes drafts, undo/redo, security |
-| final-form + react-final-form + final-form-arrays | 33.2 KB | **11.0 KB** | `createForm, arrayMutators, Form, Field` |
-| react-hook-form | 34.8 KB | **12.5 KB** | `useForm, useFieldArray, Controller` |
-| vee-validate | 36.7 KB | **12.7 KB** | `useForm, useFieldArray, Field, Form, ErrorMessage` |
-| formik | 40.4 KB | **13.7 KB** | `Formik, Form, Field, FieldArray, ErrorMessage` |
-| @tanstack/react-form | 65.9 KB | **17.3 KB** | `useForm` |
-| @angular/forms | 94.5 KB | **18.1 KB** | Framework package; no per-export surface (see note) |
+| **@modyra/core** | **9.4 KB** | **9.1 KB** | `createForm, field, group, array, 8 validators, serverValidator, oneOf` — includes drafts, undo/redo, security |
+| final-form + react-final-form + final-form-arrays | 11.0 KB | 10.6 KB | `createForm, arrayMutators, Form, Field` |
+| react-hook-form | 12.5 KB | 11.9 KB | `useForm, useFieldArray, Controller` |
+| vee-validate | 12.7 KB | **33.4 KB** ⚠ | `useForm, useFieldArray, Field, Form, ErrorMessage` |
+| formik | 13.7 KB | 13.2 KB | `Formik, Form, Field, FieldArray, ErrorMessage` |
+| @tanstack/react-form | 17.3 KB | 16.5 KB | `useForm` |
+| @angular/forms | 18.1 KB | 18.1 KB | Framework package; no per-export surface (see note) |
+
+⚠ **vee-validate is bundler-sensitive**: rollup keeps its optional
+`@vue/devtools-api` integration (~21 KB gzip of dev-only tooling) while
+esbuild drops it. In a production rollup/webpack build you pay for the
+devtools hook; with esbuild you don't. Neither number is wrong — check
+what your pipeline tree-shakes.
 
 ### Whole entry (worst case, everything exported)
 
-| Package | Minified | **Min+gzip** |
+| Package | esbuild | rollup |
 |---|---|---|
-| react-final-form stack | 31.2 KB | **10.2 KB** |
-| react-hook-form | 36.8 KB | **13.3 KB** |
-| vee-validate | 40.6 KB | **13.6 KB** |
-| formik | 44.6 KB | **14.8 KB** |
-| **@modyra/core** | 56.5 KB | **17.2 KB** |
-| @tanstack/react-form | 72.6 KB | **19.1 KB** |
-| @angular/forms | 94.5 KB | **18.1 KB** |
+| react-final-form stack | 10.2 KB | 9.8 KB |
+| react-hook-form | 13.3 KB | 12.7 KB |
+| vee-validate | 13.6 KB | 34.6 KB ⚠ |
+| formik | 14.8 KB | 14.5 KB |
+| **@modyra/core** | 17.2 KB | 16.8 KB |
+| @tanstack/react-form | 19.1 KB | 18.1 KB |
+| @angular/forms | 18.1 KB | 18.1 KB |
 
 ### The schema-validator add-on (applies to every library)
 
@@ -65,32 +74,38 @@ Using zod with *any* of these libraries (Modyra included, via
 | Scenario | Min+gzip |
 |---|---|
 | esbuild, realistic `z.object` schema | **63.1 KB** |
-| rollup, minimal `z.boolean()` | **9.1 KB** |
+| rollup, same realistic schema | **16.7 KB** |
+| rollup, minimal `z.boolean()` | 9.1 KB |
 | zod's own published figure (rollup) | ~5.4 KB [^1^] |
 
 The spread is real and bundler-dependent: zod v4's root entry pulls in all
 ~40 locales (198 KB min — 62% of the bundle) and **esbuild does not
 tree-shake them out, rollup does**. If your app builds with esbuild, a
-schema validator is the single largest line item in this comparison; if it
-builds with rollup/webpack, it is a rounding error. `zod/mini` helps less
-than expected under esbuild (57.1 KB gzip measured, same locale issue).
+schema validator can be the single largest line item in this comparison;
+if it builds with rollup/webpack, it shrinks dramatically. `zod/mini`
+helps less than expected under esbuild (57.1 KB gzip measured, same
+locale issue).
 
 ### Reading the numbers honestly
 
 - On the **realistic surface** Modyra is the lightest package measured
-  (9.4 KB gzip) — and that surface still includes features most
-  competitors don't ship at all (drafts, undo/redo, sanitization).
-  final-form's stack is close (11.0 KB) but covers a fraction of the
-  feature set (§3).
-- On the **whole-entry** metric Modyra (17.2 KB) is mid-pack: heavier
-  than react-hook-form, vee-validate, formik and the final-form stack;
-  lighter than TanStack Form and `@angular/forms`.
+  under *both* bundlers (9.4 / 9.1 KB gzip) — and that surface still
+  includes features most competitors don't ship at all (drafts,
+  undo/redo, sanitization). final-form's stack is close (11.0 / 10.6 KB)
+  but covers a fraction of the feature set (§3).
+- On the **whole-entry** metric Modyra (~17 KB) is mid-pack: heavier
+  than react-hook-form, formik and the final-form stack; lighter than
+  TanStack Form and `@angular/forms`.
 - `@angular/forms` is not directly comparable: Angular apps pay for the
   framework regardless; it ships no tree-shakeable form surface.
 - Per-feature byte cost, Modyra is the most efficient package in this
   table; absolute whole-entry weight, it is not the lightest. Both
   statements are true; choose which metric matches your bundler's
   tree-shaking reality.
+- Zero-dependency packages (Modyra, react-hook-form) are **bundler-stable**
+  (≤0.4 KB swing between esbuild and rollup). The two big swings in this
+  table (zod locales, vee-validate devtools) both come from dependency
+  code, not from the form engine itself.
 
 ## 3. Feature coverage matrix
 
