@@ -5,6 +5,7 @@ const packages = [
   { name: "@modyra/core", dir: "packages/core" },
   { name: "@modyra/widgets", dir: "packages/widgets" },
   { name: "@modyra/zod", dir: "packages/zod" },
+  { name: "@modyra/standard-schema", dir: "packages/standard-schema" },
   { name: "@modyra/vue", dir: "packages/vue" },
   { name: "@modyra/react", dir: "packages/react" },
   { name: "@modyra/lit", dir: "packages/lit" },

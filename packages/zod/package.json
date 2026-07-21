@@ -2,6 +2,13 @@
   "name": "@modyra/zod",
   "version": "0.2.0",
   "description": "Framework-agnostic Zod adapter for the Modyra form engine — schema-first typed forms.",
+  "keywords": [
+    "zod",
+    "schema",
+    "forms",
+    "typescript",
+    "validation"
+  ],
   "license": "MIT",
   "author": "Lorenzo Muscherà",
   "repository": {

@@ -2,6 +2,13 @@
   "name": "@modyra/vue",
   "version": "0.2.0",
   "description": "Vue binding for the Modyra form engine — type-safe forms on @vue/reactivity.",
+  "keywords": [
+    "vue",
+    "forms",
+    "typescript",
+    "composables",
+    "validation"
+  ],
   "license": "MIT",
   "author": "Lorenzo Muscherà",
   "repository": {

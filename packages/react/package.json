@@ -2,6 +2,13 @@
   "name": "@modyra/react",
   "version": "0.2.0",
   "description": "React binding for the Modyra form engine — type-safe forms via useSyncExternalStore.",
+  "keywords": [
+    "react",
+    "forms",
+    "typescript",
+    "hooks",
+    "validation"
+  ],
   "license": "MIT",
   "author": "Lorenzo Muscherà",
   "repository": {
