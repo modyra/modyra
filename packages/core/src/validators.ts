@@ -78,6 +78,40 @@ export const max = (maximum: number, message?: string): ValidatorFn<number | nul
   };
 
 /**
+ * Option whitelist: the value must be one of `values` (compared with
+ * `Object.is`). This is the client-side anti-tampering guard for
+ * option-based fields — a select offering "one"/"two" must not accept a
+ * scripted `set("three")`. Empty values pass (pair with `required()` to
+ * mandate a choice). Remember client-side checks are defense-in-depth:
+ * the server must re-validate (see docs/guides/security.md).
+ */
+export const oneOf = (
+  values: readonly unknown[],
+  message?: string,
+): ValidatorFn<unknown> =>
+  (value) => {
+    if (value === null || value === undefined || value === "") return [];
+    return values.some((allowed) => Object.is(allowed, value))
+      ? []
+      : [message ?? `Value must be one of: ${values.map(String).join(", ")}`];
+  };
+
+/**
+ * Array variant of {@link oneOf} (multiselects, checkbox groups): every
+ * element must be in `values`. Non-array and empty values pass.
+ */
+export const eachOneOf = (
+  values: readonly unknown[],
+  message?: string,
+): ValidatorFn<readonly unknown[] | null> =>
+  (value) => {
+    if (!Array.isArray(value) || value.length === 0) return [];
+    return value.every((item) => values.some((allowed) => Object.is(allowed, item)))
+      ? []
+      : [message ?? `Every value must be one of: ${values.map(String).join(", ")}`];
+  };
+
+/**
  * Compose multiple validators into one.
  * Runs all validators and merges their errors.
  * Use `composeFirst` to stop at the first failing validator instead.

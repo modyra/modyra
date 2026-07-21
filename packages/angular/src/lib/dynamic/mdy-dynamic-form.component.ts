@@ -8,7 +8,7 @@ import {
   viewChild,
 } from "@angular/core";
 import {
-  buildDynamicValidators,
+  buildDynamicFieldValidators,
   MdyDynamicField,
 } from "@modyra/core/dynamic-config";
 import { MdyFormSubmitEvent } from "../core/types";
@@ -207,9 +207,9 @@ export class MdyDynamicFormComponent {
       const form = this.form();
       untracked(() => {
         for (const f of fields) {
-          const { validators, marksRequired } = buildDynamicValidators(
-            f.validators ?? {},
-          );
+          // buildDynamicFieldValidators includes the automatic option
+          // whitelist (anti-tampering) for select/radio/segmented/multiselect.
+          const { validators, marksRequired } = buildDynamicFieldValidators(f);
           form.upsertValidators(f.name, "mdy-dynamic", validators, marksRequired);
         }
       });

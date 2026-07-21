@@ -109,6 +109,62 @@ never have produced.
 - **Secure by default at 1.0:** the default profile is planned to flip to
   `"text"` in the next major. The changelog will call it out.
 
+## Trust model: option whitelisting and anti-tampering
+
+"If the select offers `one` and `two`, `three` must not be accepted."
+Two different defenses answer that, and both ship with Modyra:
+
+**Client-side (UX + first line).** The `oneOf`/`eachOneOf` validators
+whitelist a field's value against the allowed options:
+
+```ts
+import { field, oneOf, eachOneOf, required } from "@modyra/core";
+
+const form = createForm({
+  plan: field(null, [required(), oneOf(["one", "two"])]),
+  tags: field([], [eachOneOf(["a", "b"])]), // multiselect: every element
+});
+form.f.plan.set("three"); // scripted tampering → field invalid, submit gated
+```
+
+For option-based **dynamic fields** the whitelist is automatic:
+`buildDynamicFieldValidators()` constrains `select`/`radio`/`segmented`
+values and every `multiselect` element to the declared `options` — so a
+CMS/LLM-generated form is tamper-resistant client-side with zero extra
+code (see the [AI-generated forms guide](ai-generated-forms.md)).
+
+**Server-side (the real boundary).** Client-side checks are
+defense-in-depth, never proof: anything in the browser can be bypassed
+with curl/Postman/DevTools. The honest anti-tampering story is the
+*isomorphic* one — Modyra's engine runs in plain Node, so **one schema
+can drive the form and gate the API**:
+
+```ts
+// shared/order-schema.ts — one schema, both sides
+import { z } from "zod";
+export const orderSchema = z.object({
+  plan: z.enum(["one", "two"]),
+  qty: z.number().int().min(1).max(10),
+});
+
+// client: schema-driven form (@modyra/zod)
+import { createZodForm } from "@modyra/zod";
+const form = createZodForm(orderSchema, { initial: { plan: "one", qty: 1 } });
+
+// server: the SAME schema gates the payload
+app.post("/order", (req, res) => {
+  const result = orderSchema.safeParse(req.body);
+  if (!result.success) return res.status(422).json(result.error.issues);
+  // …accept
+});
+```
+
+This exact flow is executable — a scripted `form.f.plan.set("three")` is
+invalid client-side, and a forged `POST {"plan": "three"}` gets a 422
+from `safeParse` (verified against the built packages in CI-adjacent
+tests). Any Standard Schema library (valibot, arktype…) works the same
+way via `@modyra/standard-schema`.
+
 ## What this is not
 
 - **Not a substitute for output encoding.** Sanitization reduces what a

@@ -34,6 +34,11 @@ Treat model output with the same trust level as a `?q=` URL parameter:
   partially-hallucinated config still renders its valid fields.
 - Validator `pattern` sources are capped (256 chars) and compiled inside
   `try/catch`: an invalid regex is skipped, not thrown.
+- **Option values are whitelisted automatically.** `select`/`radio`/
+  `segmented`/`multiselect` fields declare their options in the config —
+  the engine constrains the field value to them (`oneOf`/`eachOneOf` via
+  `buildDynamicFieldValidators`). A hallucinated `initialValue` outside
+  the option list, or a scripted `set()` with one, is simply invalid.
 - The model cannot reach code: there is no `kind` that runs functions,
   loads URLs or fetches options by itself.
 

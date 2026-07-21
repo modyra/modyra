@@ -1,10 +1,12 @@
 import { MdySelectOption, ValidatorFn } from "./types.js";
 import {
+  eachOneOf,
   email,
   max,
   maxLength,
   min,
   minLength,
+  oneOf,
   pattern,
   required,
 } from "./validators.js";
@@ -50,7 +52,12 @@ export interface MdyDynamicBooleanField extends MdyDynamicFieldBase {
   readonly kind: "checkbox" | "toggle";
 }
 
-/** Option-based kinds. */
+/**
+ * Option-based kinds. The declared options are also a whitelist:
+ * {@link buildDynamicFieldValidators} automatically constrains the field
+ * value to them (`oneOf` / `eachOneOf`), so a value outside the list —
+ * scripted `set()`, tampered draft, LLM hallucination — fails validation.
+ */
 export interface MdyDynamicOptionsField extends MdyDynamicFieldBase {
   readonly kind: "select" | "radio" | "multiselect" | "segmented";
   readonly options: ReadonlyArray<MdySelectOption<unknown>>;
@@ -336,4 +343,39 @@ export function buildDynamicValidators(config: MdyDynamicValidators): {
     }
   }
   return { validators: out, marksRequired: config.required === true };
+}
+
+/**
+ * Builds the full validator set for one dynamic field: the configured
+ * validators ({@link buildDynamicValidators}) plus, for option-based
+ * kinds, an automatic whitelist of the declared option values — the
+ * client-side anti-tampering guard ("select offers one/two → three is
+ * invalid"). `select`/`radio`/`segmented` get `oneOf`, `multiselect` gets
+ * `eachOneOf`. Prefer this over {@link buildDynamicValidators} whenever
+ * the whole field config is available.
+ */
+export function buildDynamicFieldValidators(field: MdyDynamicField): {
+  readonly validators: ReadonlyArray<ValidatorFn<never>>;
+  readonly marksRequired: boolean;
+} {
+  const base = buildDynamicValidators(field.validators ?? {});
+  if (
+    field.kind === "select" ||
+    field.kind === "radio" ||
+    field.kind === "segmented"
+  ) {
+    const values = field.options.map((option) => option.value);
+    return {
+      validators: [...base.validators, oneOf(values) as ValidatorFn<never>],
+      marksRequired: base.marksRequired,
+    };
+  }
+  if (field.kind === "multiselect") {
+    const values = field.options.map((option) => option.value);
+    return {
+      validators: [...base.validators, eachOneOf(values) as ValidatorFn<never>],
+      marksRequired: base.marksRequired,
+    };
+  }
+  return base;
 }

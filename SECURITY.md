@@ -41,6 +41,12 @@ comes first.
   configurable: restored draft entries are shape-checked against the
   declared field type, and server errors with prototype-polluting paths
   are dropped. See `docs/guides/security.md`.
+- **Option whitelisting** (`oneOf`/`eachOneOf` validators, automatic for
+  option-based dynamic fields): a select offering "one"/"two" rejects a
+  scripted `set("three")` client-side. Client checks are defense-in-depth
+  only — the server must re-validate; the engine runs in Node so one
+  schema can drive the form and gate the API (isomorphic pattern in
+  `docs/guides/security.md`).
 - **Runtime dependencies** are minimal by policy: `tslib` only; `zod` and
   `@angular/forms` are optional peers scoped to their entry points.
   Dependency audits run via `pnpm audit` (production audit must be clean
