@@ -1,6 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
+const stageMode = process.argv.includes("--stage");
+
 const packages = [
   { name: "@modyra/core", dir: "packages/core" },
   { name: "@modyra/widgets", dir: "packages/widgets" },
@@ -25,7 +27,7 @@ for (const pkg of packages) {
     );
   }
 
-  const publishArgs = ["publish"];
+  const publishArgs = stageMode ? ["stage", "publish"] : ["publish"];
   if (pkg.name !== "@modyra/styles") {
     publishArgs.push("--access", "public");
   }
@@ -45,7 +47,9 @@ for (const pkg of packages) {
   }
 }
 
-console.log("Workspace packages published coherently");
+console.log(
+  `Workspace packages ${stageMode ? "staged" : "published"} coherently`,
+);
 
 function readPackageVersion(packageJsonPath) {
   return JSON.parse(readFileSync(packageJsonPath, "utf8")).version;

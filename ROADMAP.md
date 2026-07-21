@@ -9,17 +9,17 @@ that produced the comparison.
 
 ## Current standings (measured, 2026-07-21)
 
-| Leaderboard | Modyra today | Leader | Gap |
-|---|---|---|---|
-| Realistic form surface (gzip) | **#1 — 9.4/9.1 KB** | Modyra | defend |
-| Whole-entry bundle (gzip) | #2 — 10.7/10.4 KB | final-form stack 10.2/9.8 | −0.5/−0.6 KB to #1 |
-| Feature matrix | **#1** (drafts, undo, wizard, security unique) | Modyra | defend |
-| Framework breadth | #2 — 4 + vanilla core | TanStack Form, 7 | +3 adapters |
-| npm presence / adoption | last — not published | RHF ~2.7M dl/week | publish + grow |
-| SSR / server validation | #2 — documented pattern | TanStack `createServerValidate` | first-class API |
-| React Native | untested | RHF / Formik / TanStack | verify + document |
-| Non-Angular UI kits | headless recipes only | (nobody ships full kits; TanStack/RHF headless too) | parity is achievable |
-| Measured perf claims | none published | — | produce the data |
+| Leaderboard                   | Modyra today                                   | Leader                                              | Gap                  |
+| ----------------------------- | ---------------------------------------------- | --------------------------------------------------- | -------------------- |
+| Realistic form surface (gzip) | **#1 — 9.4/9.1 KB**                            | Modyra                                              | defend               |
+| Whole-entry bundle (gzip)     | #2 — 10.7/10.4 KB                              | final-form stack 10.2/9.8                           | −0.5/−0.6 KB to #1   |
+| Feature matrix                | **#1** (drafts, undo, wizard, security unique) | Modyra                                              | defend               |
+| Framework breadth             | #2 — 4 + vanilla core                          | TanStack Form, 7                                    | +3 adapters          |
+| npm presence / adoption       | last — not published                           | RHF ~2.7M dl/week                                   | publish + grow       |
+| SSR / server validation       | #2 — documented pattern                        | TanStack `createServerValidate`                     | first-class API      |
+| React Native                  | untested                                       | RHF / Formik / TanStack                             | verify + document    |
+| Non-Angular UI kits           | headless recipes only                          | (nobody ships full kits; TanStack/RHF headless too) | parity is achievable |
+| Measured perf claims          | none published                                 | —                                                   | produce the data     |
 
 ---
 
@@ -31,22 +31,23 @@ release itself.
 
 - [x] Release CI: `changesets/action` workflow (version PR → publish on
       merge), npm **provenance** via OIDC trusted publishing — no tokens
-      in CI *(verified in place: `release.yml` with `id-token: write` +
-      `NPM_CONFIG_PROVENANCE`)*
+      in CI _(verified in place: `release.yml` with `id-token: write` +
+      `NPM_CONFIG_PROVENANCE`)_
 - [x] Pre-release checklist automated: full matrix, lint, bundle budgets
-      *(verified: the release job re-runs the entire CI gate + audit)*
+      _(verified: the release job re-runs the entire CI gate + audit)_
 - [x] npm metadata per package: description/keywords/repository/sideEffects
-      audit *(keywords added where missing; `@modyra/standard-schema`
-      added to the publish scripts — it would have been silently skipped)*
+      audit _(keywords added where missing; `@modyra/standard-schema`
+      added to the publish scripts — it would have been silently skipped)_
 - [x] README badges: npm version per package, bundle size (measured,
-      link to comparison), CI, license *(verified in place)*
+      link to comparison), CI, license _(verified in place)_
 - [x] Verify `npm i @modyra/core` in a clean project and replay the
-      comparison measurement against the **packed** tarball *(tarball
+      comparison measurement against the **packed** tarball _(tarball
       smoke test: core + zod + standard-schema; realistic surface
-      reproduced exactly at 9.4 KB gzip from the tarball)*
-- [ ] **Owner action**: one-time npm setup (granular `NPM_TOKEN` secret
-      or OIDC trusted publishing per CONTRIBUTING → Release process),
-      then merge the "Version Packages" PR to publish
+      reproduced exactly at 9.4 KB gzip from the tarball)_
+- [ ] **Owner action**: one-time npm trusted-publisher setup for each
+      `@modyra/*` package (GitHub Actions, `release.yml`, action
+      `npm stage publish`), then merge the "Version Packages" PR;
+      after first successful staged release, remove `NPM_TOKEN`
 
 **Metric: `npm view @modyra/core` returns 0.2.0; comparison doc re-run
 against the registry tarball.**
@@ -136,8 +137,8 @@ Goal: **make choosing Modyra the easy decision the data already supports.**
 
 - [ ] Docs site (Starlight or similar) generated from `docs/` — the
       markdown is already the source of truth
-- [ ] Migration guides: *from react-hook-form*, *from Formik*, *from
-      Angular Reactive Forms* — each with a side-by-side runnable example
+- [ ] Migration guides: _from react-hook-form_, _from Formik_, _from
+      Angular Reactive Forms_ — each with a side-by-side runnable example
       (the reactive-forms one largely exists)
 - [ ] Interactive starters (StackBlitz/CodeSandbox) per framework,
       linked from README

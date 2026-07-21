@@ -7,20 +7,20 @@ trying to do. New here? Start with the [main README](../README.md), run a
 
 ## Getting started
 
-| Document | What it covers |
-| :------- | :------------- |
-| [Main README](../README.md) | Install, 60-second engine, real-world agnostic scenarios, packages |
-| [Framework examples](examples/) | The same checkout app in Angular, React, Vue and Lit |
+| Document                             | What it covers                                                        |
+| :----------------------------------- | :-------------------------------------------------------------------- |
+| [Main README](../README.md)          | Install, 60-second engine, real-world agnostic scenarios, packages    |
+| [Framework examples](examples/)      | The same checkout app in Angular, React, Vue and Lit                  |
 | [Usage modes](guides/usage-modes.md) | Typed API vs declarative vs headless vs dynamic JSON — pick your mode |
 
 ## Core concepts
 
-| Document | What it covers |
-| :------- | :------------- |
-| [Mental model](guides/mental-model.md) | The state graph, field lifecycle, operation semantics (`set`/`patch`/`reset`) |
-| [Typed forms](guides/typed-forms.md) | Schema, handles, field arrays, async validation, drafts **(security note)**, undo/redo, `getChanges`, wizard, Zod |
-| [Schema adapters](guides/schemas.md) | `@modyra/zod` vs `@modyra/standard-schema` (Valibot, ArkType, …) — which model, which trade-offs |
-| [Troubleshooting](guides/troubleshooting.md) | Why is `canSubmit()` false? Why is a field stuck in `pending`? |
+| Document                                     | What it covers                                                                                                    |
+| :------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| [Mental model](guides/mental-model.md)       | The state graph, field lifecycle, operation semantics (`set`/`patch`/`reset`)                                     |
+| [Typed forms](guides/typed-forms.md)         | Schema, handles, field arrays, async validation, drafts **(security note)**, undo/redo, `getChanges`, wizard, Zod |
+| [Schema adapters](guides/schemas.md)         | `@modyra/zod` vs `@modyra/standard-schema` (Valibot, ArkType, …) — which model, which trade-offs                  |
+| [Troubleshooting](guides/troubleshooting.md) | Why is `canSubmit()` false? Why is a field stuck in `pending`?                                                    |
 
 ## Framework examples
 
@@ -34,33 +34,34 @@ server validation, submit with server errors, drafts — in each binding:
 
 ## Adapters and architecture
 
-| Document | What it covers |
-| :------- | :------------- |
-| [Multi-framework architecture](guides/multi-framework.md) | What's in `@modyra/core`, the four-primitive reactive contract, adapter recipes (React/Vue/Lit/Astro) |
-| [Reactive Forms interop](guides/interop.md) | `mdyCva` — embed Modyra controls in existing Angular Reactive Forms |
-| [Compared with Reactive Forms](guides/comparison-reactive-forms.md) | Honest trade-offs, migration paths |
-| [Form library comparison](guides/comparison-form-libraries.md) | Measured bundle sizes + feature matrix vs RHF, TanStack Form, Formik, Final Form, VeeValidate — updated 2026-07-21 |
-| [Lit adapter status](LIT-STATUS.md) | Feature parity tracker for the Lit UI catalog |
+| Document                                                            | What it covers                                                                                                     |
+| :------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------- |
+| [Multi-framework architecture](guides/multi-framework.md)           | What's in `@modyra/core`, the four-primitive reactive contract, adapter recipes (React/Vue/Lit/Astro)              |
+| [Reactive Forms interop](guides/interop.md)                         | `mdyCva` — embed Modyra controls in existing Angular Reactive Forms                                                |
+| [Compared with Reactive Forms](guides/comparison-reactive-forms.md) | Honest trade-offs, migration paths                                                                                 |
+| [Form library comparison](guides/comparison-form-libraries.md)      | Measured bundle sizes + feature matrix vs RHF, TanStack Form, Formik, Final Form, VeeValidate — updated 2026-07-21 |
+| [Lit adapter status](LIT-STATUS.md)                                 | Feature parity tracker for the Lit UI catalog                                                                      |
 
 ## UI, theming and tools
 
-| Document | What it covers |
-| :------- | :------------- |
-| [UI toolkit](guides/ui-toolkit.md) | Renderer catalog, enterprise select, dynamic forms, CSS tokens |
-| [AI-generated forms](guides/ai-generated-forms.md) | LLM output → `parseDynamicFields()` → render: JSON contract, system prompt template, safe pipeline |
-| [Injection prevention](guides/security.md) | Sanitization profiles at the engine's write choke point, violation telemetry, always-on draft/server structural checks |
-| [Headless recipes](guides/headless-recipes.md) | shadcn/ui, Radix, shadcn-vue/Reka: tested props-mappers from field handles to your component library |
-| [I18n](guides/i18n.md) | UI strings (en/it/de/fr/es), date/time value models, localized parsing |
-| [DevTools](guides/devtools.md) | Hotkey overlay, masking, production notes |
+| Document                                           | What it covers                                                                                                         |
+| :------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| [UI toolkit](guides/ui-toolkit.md)                 | Renderer catalog, enterprise select, dynamic forms, CSS tokens                                                         |
+| [AI-generated forms](guides/ai-generated-forms.md) | LLM output → `parseDynamicFields()` → render: JSON contract, system prompt template, safe pipeline                     |
+| [Injection prevention](guides/security.md)         | Sanitization profiles at the engine's write choke point, violation telemetry, always-on draft/server structural checks |
+| [Headless recipes](guides/headless-recipes.md)     | shadcn/ui, Radix, shadcn-vue/Reka: tested props-mappers from field handles to your component library                   |
+| [I18n](guides/i18n.md)                             | UI strings (en/it/de/fr/es), date/time value models, localized parsing                                                 |
+| [DevTools](guides/devtools.md)                     | Hotkey overlay, masking, production notes                                                                              |
 
 ## Project
 
-| Document | What it covers |
-| :------- | :------------- |
-| [Security policy](../SECURITY.md) | Threat model, reporting, draft/SSR notes |
-| [Contributing](../CONTRIBUTING.md) | Setup, conventions, PR checklist |
-| [Changelog](../CHANGELOG.md) | Release history |
-| [Brand assets](assets/brand/) | Logo, palette, typography |
+| Document                                                                       | What it covers                                                           |
+| :----------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
+| [Security policy](../SECURITY.md)                                              | Threat model, reporting, draft/SSR notes                                 |
+| [Contributing](../CONTRIBUTING.md)                                             | Setup, conventions, PR checklist                                         |
+| [Trusted Publishing admin runbook](guides/release-admin-trusted-publishing.md) | npm OIDC setup, Changesets integration checks, staged release operations |
+| [Changelog](../CHANGELOG.md)                                                   | Release history                                                          |
+| [Brand assets](assets/brand/)                                                  | Logo, palette, typography                                                |
 
 ## Conventions for new documents
 

@@ -32,6 +32,7 @@
     "demo:lit": "npm run build:examples && node scripts/serve-example.mjs lit 4303",
     "version": "changeset version && pnpm install --lockfile-only",
     "release": "npm run build:packages && npm run build:angular && node scripts/publish-workspace.mjs && node scripts/publish-angular.mjs",
+    "release:stage": "npm run build:packages && npm run build:angular && node scripts/publish-workspace.mjs --stage && node scripts/publish-angular.mjs --stage",
     "release:angular": "node scripts/publish-angular.mjs"
   },
   "devDependencies": {
