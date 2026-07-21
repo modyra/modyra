@@ -20,6 +20,7 @@ trying to do. New here? Start with the [main README](../README.md), run a
 | [Mental model](guides/mental-model.md)       | The state graph, field lifecycle, operation semantics (`set`/`patch`/`reset`)                                     |
 | [Typed forms](guides/typed-forms.md)         | Schema, handles, field arrays, async validation, drafts **(security note)**, undo/redo, `getChanges`, wizard, Zod |
 | [Schema adapters](guides/schemas.md)         | `@modyra/zod` vs `@modyra/standard-schema` (Valibot, ArkType, …) — which model, which trade-offs                  |
+| [Server validation](guides/server-validation.md) | One schema, two sides — `serverValidate()` with Next.js/Express/Hono, tested runnable examples                |
 | [Troubleshooting](guides/troubleshooting.md) | Why is `canSubmit()` false? Why is a field stuck in `pending`?                                                    |
 
 ## Framework examples

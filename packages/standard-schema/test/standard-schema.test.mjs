@@ -6,6 +6,7 @@ import { array, field, group, required } from "@modyra/core";
 import {
   buildStandardValidator,
   createStandardForm,
+  serverValidate,
 } from "../dist/index.js";
 
 // The same use case expressed with two different Standard Schema vendors:
@@ -191,4 +192,45 @@ test("buildStandardValidator works standalone and reports global issues", () => 
   assert.equal(errors[0].path, null); // no path → global form error
   assert.equal(errors[0].kind, "schema");
   assert.equal(errors[0].message, "Always invalid");
+});
+
+for (const [vendor, schema] of [
+  ["zod", zodSchema],
+  ["valibot", valibotSchema],
+]) {
+  test(`${vendor}: serverValidate rejects a forged payload with submit-shaped errors`, async () => {
+    const errors = await serverValidate(schema, { email: "bad", age: 10 });
+    assert.deepEqual(
+      errors.map((e) => ({ path: e.path, kind: e.kind, message: e.message })),
+      [
+        { path: "email", kind: "schema", message: "Invalid email" },
+        { path: "age", kind: "schema", message: "18+ only" },
+      ],
+    );
+  });
+
+  test(`${vendor}: serverValidate returns no errors for a valid payload`, async () => {
+    const errors = await serverValidate(schema, {
+      email: "a@b.co",
+      age: 20,
+    });
+    assert.deepEqual(errors, []);
+  });
+}
+
+test("serverValidate awaits async schemas (unlike the sync form-level validator)", async () => {
+  const asyncSchema = v.objectAsync({
+    email: v.pipeAsync(
+      v.string(),
+      v.checkAsync(async (value) => value.includes("@"), "Invalid email"),
+    ),
+  });
+
+  assert.deepEqual(await serverValidate(asyncSchema, { email: "a@b.co" }), []);
+  assert.deepEqual(
+    (await serverValidate(asyncSchema, { email: "nope" })).map(
+      (e) => e.message,
+    ),
+    ["Invalid email"],
+  );
 });

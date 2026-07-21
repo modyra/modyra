@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { z } from "zod";
-import { createZodForm } from "../dist/index.js";
+import { createZodForm, serverValidate } from "../dist/index.js";
 
 test("schema-first form in plain Node: types, defaults, required, refinements", async () => {
   const form = createZodForm(
@@ -61,4 +61,29 @@ test("z.array() of a scalar becomes an array of leaf field handles", () => {
   form.f.tags.push("b");
   assert.deepEqual(form.getValue().tags, ["a", "b"]);
   assert.equal(form.f.tags.rows()[0].value(), "a");
+});
+
+test("serverValidate rejects a forged payload with submit-shaped errors", () => {
+  const schema = z.object({
+    email: z.string().email("Invalid email"),
+    address: z.object({ city: z.string().min(1, "City required") }),
+  });
+
+  const errors = serverValidate(schema, {
+    email: "not-an-email",
+    address: { city: "" },
+  });
+
+  assert.deepEqual(
+    errors.map((e) => ({ path: e.path, kind: e.kind, message: e.message })),
+    [
+      { path: "email", kind: "schema", message: "Invalid email" },
+      { path: "address.city", kind: "schema", message: "City required" },
+    ],
+  );
+});
+
+test("serverValidate returns no errors for a valid payload", () => {
+  const schema = z.object({ email: z.string().email() });
+  assert.deepEqual(serverValidate(schema, { email: "a@b.co" }), []);
 });
