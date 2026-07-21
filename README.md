@@ -298,7 +298,10 @@ contract on its framework's native reactivity: Angular signals,
 
 ## Documentation
 
-The full index lives in [docs/README.md](docs/README.md). The shortlist:
+The full index lives in [docs/README.md](docs/README.md), also published
+as a searchable site (`npm run docs:build` — [`site/`](site/), an
+Astro/Starlight project generated from `docs/`; that directory stays the
+single source of truth). The shortlist:
 
 - [Mental model](docs/guides/mental-model.md) — the state graph, field lifecycle, operation semantics
 - [Typed forms](docs/guides/typed-forms.md) — schema, handles, `patch`/`getChanges`, async validation, field arrays, undo/redo, **drafts (read the security note)**, wizard, Zod
