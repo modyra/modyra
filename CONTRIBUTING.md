@@ -51,8 +51,28 @@ Angular demo app is self-contained in `examples/angular` (own
 
 ## Release process
 
-1. Full test run (`npm test`), `test:bundle`, `pack:analyze`,
-   `pnpm audit --prod` clean.
-2. `npm run version` to apply changesets (bumps versions, updates
-   CHANGELOG.md), commit, `npm run release` to publish.
-   Release candidates precede majors.
+Releases run in CI (`.github/workflows/release.yml`) via
+[changesets/action](https://github.com/changesets/action):
+
+1. Every feature PR adds a changeset (see above). On merge to `main` the
+   workflow opens/refreshes a **"Version Packages"** PR (versions bumped,
+   `CHANGELOG.md` updated — fixed versioning: all `@modyra/*` move
+   together).
+2. Merging that PR triggers the publish job: full gate (build, all test
+   suites, bundle/tree-shaking check, theme parity, `pnpm audit --prod`),
+   then `npm run release` publishes every `@modyra/*` package with
+   `--provenance` (sigstore attestations link each tarball to the exact
+   commit and workflow run).
+3. Release candidates precede majors.
+
+### One-time npm setup (repo admins)
+
+- Create the npm org/packages' publisher: either a **granular access
+  token** stored as the `NPM_TOKEN` repo secret, or — better — **trusted
+  publishing** (npmjs.com → package settings → GitHub Actions, workflow
+  `release.yml` on `main`), which needs no long-lived token at all.
+- Provenance requires publishing from this exact workflow; local
+  `npm publish` is intentionally not the path.
+- `scripts/publish-workspace.mjs` and `scripts/publish-angular.mjs` skip
+  already-published versions and fail on version mismatches, so a partial
+  publish can simply be re-run.

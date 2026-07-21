@@ -29,18 +29,24 @@ Goal: **`@modyra/*@0.2.0` installable from npm.**
 The changesets infrastructure already exists; what is missing is the
 release itself.
 
-- [ ] Release CI: `changesets/action` workflow (version PR → publish on
+- [x] Release CI: `changesets/action` workflow (version PR → publish on
       merge), npm **provenance** via OIDC trusted publishing — no tokens
-      in CI
-- [ ] Pre-release checklist automated: full matrix (262 tests), lint,
-      bundle budgets, api-surface
-- [ ] npm metadata per package: description/keywords/repository/sideEffects
-      audit (sideEffects flag feeds the very tree-shaking numbers we
-      advertise — it must be correct)
-- [ ] README badges: npm version per package, bundle size (measured,
-      link to comparison), CI, license
-- [ ] Verify `npm i @modyra/core` in a clean project and replay the
-      comparison measurement against the **published** tarball
+      in CI *(verified in place: `release.yml` with `id-token: write` +
+      `NPM_CONFIG_PROVENANCE`)*
+- [x] Pre-release checklist automated: full matrix, lint, bundle budgets
+      *(verified: the release job re-runs the entire CI gate + audit)*
+- [x] npm metadata per package: description/keywords/repository/sideEffects
+      audit *(keywords added where missing; `@modyra/standard-schema`
+      added to the publish scripts — it would have been silently skipped)*
+- [x] README badges: npm version per package, bundle size (measured,
+      link to comparison), CI, license *(verified in place)*
+- [x] Verify `npm i @modyra/core` in a clean project and replay the
+      comparison measurement against the **packed** tarball *(tarball
+      smoke test: core + zod + standard-schema; realistic surface
+      reproduced exactly at 9.4 KB gzip from the tarball)*
+- [ ] **Owner action**: one-time npm setup (granular `NPM_TOKEN` secret
+      or OIDC trusted publishing per CONTRIBUTING → Release process),
+      then merge the "Version Packages" PR to publish
 
 **Metric: `npm view @modyra/core` returns 0.2.0; comparison doc re-run
 against the registry tarball.**

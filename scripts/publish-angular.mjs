@@ -27,6 +27,7 @@ const packages = [
   "@modyra/core",
   "@modyra/widgets",
   "@modyra/zod",
+  "@modyra/standard-schema",
   "@modyra/vue",
   "@modyra/react",
   "@modyra/lit",
