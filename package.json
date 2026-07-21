@@ -31,6 +31,8 @@
     "demo:vue": "npm run build:examples && node scripts/serve-example.mjs vue 4302",
     "demo:lit": "npm run build:examples && node scripts/serve-example.mjs lit 4303",
     "version": "changeset version && pnpm install --lockfile-only",
+    "release:integrate": "pnpm changeset status && pnpm changeset version && pnpm install --lockfile-only && git add -A && VERSION=$(node -p \"require('./packages/core/package.json').version\") && git commit -m \"chore(release): version packages to v$VERSION\" && git tag -a \"v$VERSION\" -m \"v$VERSION\"",
+    "release:integrate:push": "git push origin HEAD --follow-tags",
     "release": "npm run build:packages && npm run build:angular && node scripts/publish-workspace.mjs && node scripts/publish-angular.mjs",
     "release:stage": "npm run build:packages && npm run build:angular && node scripts/publish-workspace.mjs --stage && node scripts/publish-angular.mjs --stage",
     "release:angular": "node scripts/publish-angular.mjs"
