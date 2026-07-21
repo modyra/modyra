@@ -25,12 +25,14 @@ export {
   compose,
   composeFirst,
   crossField,
+  eachOneOf,
   email,
   max,
   maxLength,
   MDY_MARKS_REQUIRED,
   min,
   minLength,
+  oneOf,
   pattern,
   required
 } from "./validators.js";

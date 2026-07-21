@@ -6,12 +6,15 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   buildDateLocale,
+  buildDynamicFieldValidators,
   buildDynamicValidators,
   createForm,
   crossField,
+  eachOneOf,
   field,
   group,
   min,
+  oneOf,
   parseDynamicFields,
   required,
 } from "../dist/index.js";
@@ -137,6 +140,88 @@ test("dynamic validators skip invalid/oversized regexp patterns", () => {
   const longPattern = "a".repeat(257);
   const oversized = buildDynamicValidators({ pattern: longPattern });
   assert.equal(oversized.validators.length, 0);
+});
+
+test("oneOf: whitelists scalar values, empties pass, Object.is semantics", () => {
+  const v = oneOf(["one", "two"]);
+  assert.deepEqual(v("one"), []);
+  assert.deepEqual(v("two"), []);
+  assert.equal(v("three").length, 1); // the Reddit case: rejected
+  assert.deepEqual(v(""), []); // empty passes — required() owns presence
+  assert.deepEqual(v(null), []);
+  assert.deepEqual(v(undefined), []);
+
+  const numeric = oneOf([1, 2]);
+  assert.deepEqual(numeric(1), []);
+  assert.equal(numeric("1").length, 1); // no coercion: string ≠ number
+});
+
+test("eachOneOf: every array element must be whitelisted", () => {
+  const v = eachOneOf(["a", "b"]);
+  assert.deepEqual(v(["a"]), []);
+  assert.deepEqual(v(["a", "b"]), []);
+  assert.deepEqual(v([]), []); // empty passes
+  assert.deepEqual(v(null), []);
+  assert.equal(v(["a", "x"]).length, 1);
+  assert.equal(v("not-an-array" ).length, 0); // non-arrays pass (wrong shape ≠ this validator's job)
+});
+
+test("buildDynamicFieldValidators auto-whitelists declared options", () => {
+  const select = buildDynamicFieldValidators({
+    name: "plan",
+    kind: "select",
+    options: [
+      { value: "one", label: "One" },
+      { value: "two", label: "Two" },
+    ],
+  });
+  const [check] = select.validators;
+  assert.deepEqual(check("one"), []);
+  assert.equal(check("three").length, 1);
+
+  const radio = buildDynamicFieldValidators({
+    name: "r",
+    kind: "radio",
+    options: [{ value: 1, label: "One" }],
+  });
+  assert.equal(radio.validators[0](2).length, 1);
+
+  const multi = buildDynamicFieldValidators({
+    name: "tags",
+    kind: "multiselect",
+    options: [
+      { value: "a", label: "A" },
+      { value: "b", label: "B" },
+    ],
+  });
+  assert.deepEqual(multi.validators[0](["a", "b"]), []);
+  assert.equal(multi.validators[0](["a", "x"]).length, 1);
+
+  // Non-option kinds are untouched.
+  const text = buildDynamicFieldValidators({ name: "t", kind: "text" });
+  assert.equal(text.validators.length, 0);
+});
+
+test("dynamic form end-to-end: out-of-options initial value is invalid at creation", () => {
+  // An LLM/CMS config with a hallucinated initial value must not produce a
+  // "valid" form — the auto-whitelist catches it immediately.
+  const fields = parseDynamicFields([
+    {
+      name: "plan",
+      kind: "select",
+      initialValue: "three",
+      options: [
+        { value: "one", label: "One" },
+        { value: "two", label: "Two" },
+      ],
+    },
+  ]);
+  const { validators } = buildDynamicFieldValidators(fields[0]);
+  const form = createForm({ plan: field("three", validators) });
+  assert.equal(form.state.valid(), false);
+  assert.match(form.f.plan.errors()[0].message, /must be one of/);
+  form.f.plan.set("two");
+  assert.equal(form.state.valid(), true);
 });
 
 test("draft persistence skips nested File values", {
