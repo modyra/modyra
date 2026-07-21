@@ -5,6 +5,11 @@ trying to do. New here? Start with the [main README](../README.md), run a
 [framework example](#framework-examples), then read the two core guides
 (mental model → typed forms).
 
+This same content is also published as a searchable site — see
+[`../site/`](../site/), generated from these files by
+`npm run docs:build` (`../scripts/sync-docs-site.mjs`). Edit the markdown
+here; the site is a build artifact, never hand-edited.
+
 ## Getting started
 
 | Document                             | What it covers                                                        |
