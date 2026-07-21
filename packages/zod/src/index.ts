@@ -20,6 +20,7 @@ import {
   MdyArrayDescriptor,
   MdyCoreFormOptions,
   MdyFieldDescriptor,
+  MdyFormError,
   MdyFormSchema,
   MdyFormValidatorFn,
   MdyFormValue,
@@ -234,4 +235,25 @@ function isCoveredByPiece(
     !parsed.success &&
     parsed.error.issues.some((i) => i.message === issue.message)
   );
+}
+
+// ─── Server-side validation ───────────────────────────────────────────────────
+
+/**
+ * Validates a raw payload (e.g. a parsed request body) against the same
+ * schema used on the client. Errors are shaped exactly like the ones a
+ * `form.submit()` action returns, so one handler feeds both the client
+ * form's error display and a direct/forged API request's rejection.
+ */
+export function serverValidate(
+  schema: z.ZodObject,
+  payload: unknown,
+): ReadonlyArray<MdyFormError> {
+  const result = schema.safeParse(payload);
+  if (result.success) return [];
+  return result.error.issues.map((issue) => ({
+    path: issue.path.length > 0 ? issue.path.join(".") : null,
+    kind: "schema",
+    message: issue.message,
+  }));
 }

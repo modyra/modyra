@@ -28,6 +28,7 @@ import {
   MdyArrayDescriptor,
   MdyCoreFormOptions,
   MdyFieldDescriptor,
+  MdyFormError,
   MdyFormSchema,
   MdyFormValidatorFn,
   MdyFormValue,
@@ -196,6 +197,29 @@ export function buildStandardValidator<
     }
     return [];
   };
+}
+
+// ─── Server-side validation ───────────────────────────────────────────────────
+
+/**
+ * Validates a raw payload (e.g. a parsed request body) against the same
+ * Standard Schema used on the client. Errors are shaped exactly like the
+ * ones a `form.submit()` action returns, so one handler feeds both the
+ * client form's error display and a direct/forged API request's rejection.
+ * Awaits the schema's `validate` unconditionally — unlike
+ * {@link buildStandardValidator}, an async schema is fine here.
+ */
+export async function serverValidate(
+  schema: MdyStandardSchemaV1,
+  payload: unknown,
+): Promise<ReadonlyArray<MdyFormError>> {
+  const result = await schema["~standard"].validate(payload);
+  if (!result.issues) return [];
+  return result.issues.map((issue) => ({
+    path: issuePath(issue),
+    kind: "schema",
+    message: issue.message,
+  }));
 }
 
 // ─── Internals ───────────────────────────────────────────────────────────────
