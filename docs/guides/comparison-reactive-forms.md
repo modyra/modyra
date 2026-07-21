@@ -4,6 +4,11 @@ An honest comparison — Reactive Forms is a good, official API. This library
 exists because Signals allow a different trade-off, not because Reactive
 Forms is "wrong".
 
+The side-by-side snippet below is not pseudocode: it's mirrored verbatim in
+[`comparison-reactive-forms.spec.ts`](../../packages/angular/src/lib/core/comparison-reactive-forms.spec.ts),
+which builds both forms and asserts they agree on the same invalid → valid
+transition for the same inputs.
+
 ## Side by side
 
 The same form in both APIs:
