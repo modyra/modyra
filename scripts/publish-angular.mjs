@@ -1,6 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
+const stageMode = process.argv.includes("--stage");
+
 const angularPackagePath = "packages/angular/dist/package.json";
 const angularPackage = JSON.parse(readFileSync(angularPackagePath, "utf8"));
 const expectedVersion = angularPackage.version;
@@ -15,7 +17,9 @@ if (currentAngularVersion === expectedVersion) {
     );
   }
 
-  const publishArgs = ["publish", "--access", "public"];
+  const publishArgs = stageMode
+    ? ["stage", "publish", "--access", "public"]
+    : ["publish", "--access", "public"];
   if (shouldUseProvenance()) {
     publishArgs.push("--provenance");
   }
@@ -44,7 +48,9 @@ for (const packageName of packages) {
   }
 }
 
-console.log(`Angular published and all packages resolve to ${expectedVersion}`);
+console.log(
+  `Angular ${stageMode ? "staged" : "published"} and all packages resolve to ${expectedVersion}`,
+);
 
 async function readPublishedVersion(packageName) {
   const response = await fetch(

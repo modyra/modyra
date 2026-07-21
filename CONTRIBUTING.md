@@ -60,17 +60,26 @@ Releases run in CI (`.github/workflows/release.yml`) via
    together).
 2. Merging that PR triggers the publish job: full gate (build, all test
    suites, bundle/tree-shaking check, theme parity, `pnpm audit --prod`),
-   then `npm run release` publishes every `@modyra/*` package with
+   then `npm run release:stage` stages every `@modyra/*` package with
    `--provenance` (sigstore attestations link each tarball to the exact
    commit and workflow run).
 3. Release candidates precede majors.
+4. A maintainer approves the staged publish with 2FA (`npm stage approve`
+   or npmjs.com UI) to make the release public.
 
 ### One-time npm setup (repo admins)
 
-- Create the npm org/packages' publisher: either a **granular access
-  token** stored as the `NPM_TOKEN` repo secret, or — better — **trusted
-  publishing** (npmjs.com → package settings → GitHub Actions, workflow
-  `release.yml` on `main`), which needs no long-lived token at all.
+- Configure **trusted publishing** for every `@modyra/*` package:
+  npmjs.com → package settings → GitHub Actions publisher.
+- Trusted publisher fields must match exactly:
+  GitHub org/user, repository `modyra`, workflow filename `release.yml`,
+  allowed action `npm stage publish`.
+- Use GitHub-hosted runners only (self-hosted runners are not supported by
+  npm trusted publishing).
+- After the first successful staged release, remove `NPM_TOKEN` from GitHub
+  secrets and set package publishing access to disallow token-based publish.
+- Full admin checklist and troubleshooting:
+  `docs/guides/release-admin-trusted-publishing.md`.
 - Provenance requires publishing from this exact workflow; local
   `npm publish` is intentionally not the path.
 - `scripts/publish-workspace.mjs` and `scripts/publish-angular.mjs` skip
