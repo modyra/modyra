@@ -4,20 +4,8 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import {
-  buildDateLocale,
-  buildDynamicFieldValidators,
-  buildDynamicValidators,
-  createForm,
-  crossField,
-  eachOneOf,
-  field,
-  group,
-  min,
-  oneOf,
-  parseDynamicFields,
-  required,
-} from "../dist/index.js";
+import { buildDynamicFieldValidators, buildDynamicValidators, createForm, crossField, eachOneOf, field, group, min, oneOf, parseDynamicFields, required } from "../dist/index.js";
+import { buildDateLocale } from "../dist/datetime.js";
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 

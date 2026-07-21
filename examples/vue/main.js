@@ -5,9 +5,10 @@
 // wrappers are all the glue a component needs.
 import { computed, createApp, onMounted, onUnmounted, ref, watchEffect } from "vue";
 import {
-  createVueForm, crossField, email, field, minLength, mountMdyDevtools, required,
+  createVueForm, crossField, email, field, minLength, required,
   serverValidator,
 } from "@modyra/vue";
+import { mountMdyDevtools } from "@modyra/core/devtools";
 
 // Simulated availability endpoint. The abort signal cancels the request
 // when a newer keystroke supersedes the run (last-wins), so stale replies

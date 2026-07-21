@@ -1,5 +1,6 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
-import { type MdyFieldHandle, listboxNextIndex } from "@modyra/core";
+import { type MdyFieldHandle } from "@modyra/core";
+import { listboxNextIndex } from "@modyra/core/ui";
 import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
 

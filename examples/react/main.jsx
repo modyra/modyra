@@ -6,9 +6,10 @@
 import { createRoot } from "react-dom/client";
 import { useEffect, useRef, useState } from "react";
 import {
-  crossField, email, field, minLength, mountMdyDevtools, required,
+  crossField, email, field, minLength, required,
   serverValidator, useMdyField, useMdyForm,
 } from "@modyra/react";
+import { mountMdyDevtools } from "@modyra/core/devtools";
 
 // Simulated availability endpoint. The abort signal cancels the request
 // when a newer keystroke supersedes the run (last-wins), so stale replies

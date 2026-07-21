@@ -1,11 +1,6 @@
 import { Provider } from "@angular/core";
-import {
-  buildDateLocale,
-  MDY_I18N_DEFAULT_TAGS,
-  MDY_I18N_PRESETS,
-  MdyBuiltInLocale,
-  MdyI18nMessages,
-} from "@modyra/core";
+import { buildDateLocale } from "@modyra/core/datetime";
+import { MDY_I18N_DEFAULT_TAGS, MDY_I18N_PRESETS, MdyBuiltInLocale, MdyI18nMessages } from "@modyra/core/localization";
 import { MDY_DATE_LOCALE } from "./date-locale";
 import { MDY_I18N_MESSAGES } from "./i18n";
 

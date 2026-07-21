@@ -27,6 +27,7 @@ import type {
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
 } from "./typed-form.js";
+import { isRecord } from "./record-utils.js";
 
 /** A row's own schema node — arrays cannot nest inside an array's item in v1. */
 type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
@@ -43,10 +44,6 @@ function assertNotNestedArray(
 
 /** Owner key for validators the array manager registers (schema namespace). */
 const ROW_SCHEMA_KEY = "mdy-schema";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 export interface MdyArrayManagerDeps {
   readonly rx: MdyReactivity;

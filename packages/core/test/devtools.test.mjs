@@ -5,7 +5,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { mdyFormSnapshot, mountMdyDevtools } from "../dist/index.js";
+import { mdyFormSnapshot, mountMdyDevtools } from "../dist/devtools.js";
 
 const makeForm = (path, value, message) => ({
   state: {

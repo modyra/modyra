@@ -1,17 +1,7 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
-import {
-  addMonths,
-  buildMonthGrid,
-  type CalendarCell,
-  type CalendarDate,
-  calendarKeyboardTarget,
-  daysInMonth,
-  formatIsoDate,
-  type MdyFieldHandle,
-  parseIsoDate,
-  parseLocalizedDate,
-  today,
-} from "@modyra/core";
+import { type MdyFieldHandle } from "@modyra/core";
+import { addMonths, buildMonthGrid, type CalendarCell, type CalendarDate, daysInMonth, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
+import { calendarKeyboardTarget } from "@modyra/core/ui";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
   MdyLitOverlayController,

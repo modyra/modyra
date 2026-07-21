@@ -1,4 +1,5 @@
-import { filterOptionsByQuery, type MdyFieldHandle } from "@modyra/core";
+import { type MdyFieldHandle } from "@modyra/core";
+import { filterOptionsByQuery } from "@modyra/core/ui";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { mdyIcon } from "../base.js";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";

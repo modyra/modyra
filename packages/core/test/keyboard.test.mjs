@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calendarKeyboardTarget, listboxNextIndex } from "../dist/index.js";
+import { calendarKeyboardTarget, listboxNextIndex } from "../dist/ui.js";
 
 test("listboxNextIndex follows the WAI-ARIA listbox pattern", () => {
   assert.equal(listboxNextIndex("ArrowDown", -1, 5), 0); // enter the list

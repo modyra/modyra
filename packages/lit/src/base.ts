@@ -1,4 +1,5 @@
-import { MDY_ICONS, MdyFieldHandle } from "@modyra/core";
+import { MdyFieldHandle } from "@modyra/core";
+import { MDY_ICONS } from "@modyra/core/ui";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import { MdyFormController } from "./adapter.js";

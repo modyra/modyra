@@ -24,6 +24,7 @@ import {
 } from "./field-record.js";
 import { MdyHistoryManager } from "./history-manager.js";
 import { isSafeFieldPath } from "./path-utils.js";
+import { MDY_DEV } from "./dev-flags.js";
 import {
   applyValueSecurity,
   draftShapeMatches,
@@ -302,7 +303,7 @@ export class MdyFormEngine
     const count = (this._claims.get(name) ?? 0) + 1;
     this._claims.set(name, count);
     this._getOrCreate(name);
-    if (count > 1) {
+    if (MDY_DEV && count > 1) {
       this._warn(
         `Duplicate control name "${name}": ${count} controls now share the same field state.`,
       );
@@ -670,7 +671,7 @@ export class MdyFormEngine
         `[modyra] Invalid field path "${name}": reserved or empty path segments are not allowed.`,
       );
     }
-    if (this._destroyed) {
+    if (MDY_DEV && this._destroyed) {
       this._warn(
         `Field "${name}" requested on a destroyed form engine — the record ` +
         "is created detached and no validation effects will run.",
@@ -749,9 +750,11 @@ export class MdyFormEngine
     try {
       this._security.onViolation?.(violation);
     } catch (e: unknown) {
-      this._warn(
-        `onViolation hook threw: ${e instanceof Error ? e.message : String(e)}`,
-      );
+      if (MDY_DEV) {
+        this._warn(
+          `onViolation hook threw: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
     }
   }
 
@@ -785,7 +788,7 @@ export class MdyFormEngine
   private _ensureAsyncRunner(name: string, rec: FieldRecord): void {
     if (this._destroyed || rec.asyncRunner) return;
     if (!this._rx.canEffect) {
-      this._warn(
+      if (MDY_DEV) this._warn(
         `Async validators for "${name}" need an effect-capable reactivity ` +
         `(with the Angular adapter: construct it with an Injector).`,
       );

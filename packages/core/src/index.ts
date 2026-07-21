@@ -87,21 +87,11 @@ export type {
   MdyWiden
 } from "./typed-form.js";
 
-// ─── Shared headless logic (also available as subpath imports) ───────────────
-export * from "./date-locale.js";
-export * from "./date-utils.js";
+// ─── Dynamic forms (AI/CMS-declared configs) ─────────────────────────────────
 export * from "./dynamic-config.js";
-export * from "./i18n.js";
-export * from "./options-utils.js";
-export * from "./overlay-position.js";
-export * from "./serialize.js";
-export * from "./time-utils.js";
 
-// ─── Keyboard interaction logic ───────────────────────────────────────────────
-export * from "./keyboard.js";
-
-// ─── Framework-agnostic devtools ─────────────────────────────────────────────
-export * from "./devtools.js";
-
-// ─── Shared SVG icon library ─────────────────────────────────────────────────
-export * from "./icons.js";
+// NOTE: satellite utilities (date/time, i18n, icons, keyboard, overlay
+// positioning, serialize, devtools, options-utils) are intentionally NOT
+// re-exported here — import them from their subpath entries
+// (@modyra/core/datetime, /localization, /ui, /serialize, /devtools, ...)
+// so the main entry bundles only the form engine. See ROADMAP phase J.

@@ -16,6 +16,7 @@
     "test:perf": "jest -c packages/angular/jest.perf.cjs || true",
     "lint": "eslint .",
     "test:bundle": "npm --prefix packages/angular/bundle-test run build && node scripts/check-bundle.mjs",
+    "test:core-bundle": "npm run build:core && node scripts/check-core-bundle.mjs",
     "build:core": "tsc -p packages/core/tsconfig.json",
     "test:core": "npm run build:core && node --test packages/core/test/*.test.mjs",
     "build:packages": "npm run build:core && tsc -p packages/widgets/tsconfig.json && tsc -p packages/zod/tsconfig.json && tsc -p packages/standard-schema/tsconfig.json && tsc -p packages/vue/tsconfig.json && tsc -p packages/react/tsconfig.json && tsc -p packages/lit/tsconfig.json && npm run build:styles",

@@ -10,10 +10,10 @@ import {
   field,
   MdyFormController,
   minLength,
-  mountMdyDevtools,
   required,
   serverValidator,
 } from "@modyra/lit/adapter";
+import { mountMdyDevtools } from "@modyra/core/devtools";
 import { defineMdyElements } from "@modyra/lit/ui";
 import { html, LitElement, nothing } from "lit";
 
