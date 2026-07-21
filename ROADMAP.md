@@ -233,8 +233,21 @@ keeps `✗` with a one-line reason. No unverified checkmarks.**
 
 Goal: **make choosing Modyra the easy decision the data already supports.**
 
-- [ ] Docs site (Starlight or similar) generated from `docs/` — the
-      markdown is already the source of truth
+- [x] Docs site (Starlight or similar) generated from `docs/` — the
+      markdown is already the source of truth. Shipped: Astro + Starlight
+      in `site/`, content synced from `docs/**/*.md` by
+      `scripts/sync-docs-site.mjs` (injects the `title` frontmatter
+      Starlight requires, pulled from each file's first heading; strips
+      the heading from the body so it isn't rendered twice; strips
+      inline-code/emphasis markers so titles don't show literal
+      backticks). `site/src/content/docs/` is gitignored — a regenerated
+      build artifact, never hand-edited, so `docs/` stays the one real
+      source. `npm run docs:build`/`docs:dev`/`docs:preview` from the
+      repo root. Verified end-to-end: real `npm install`, a full build
+      (23 pages, search index), and a headless-browser pass over the
+      home page and two guide pages (titles, tables, zero console
+      errors). Caught and fixed a real high-severity CVE in the
+      scaffold's own `sharp` dependency before it ever shipped.
 - [ ] Migration guides: _from react-hook-form_, _from Formik_, _from
       Angular Reactive Forms_ — each with a side-by-side runnable example.
       **Partial**: the Reactive Forms guide's side-by-side snippet is now
