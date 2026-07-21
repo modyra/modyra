@@ -11,8 +11,7 @@ This runbook is for npm/package admins and repository admins who manage release 
 Verify these files before setting publishers on npmjs.com:
 
 1. `.github/workflows/release.yml`
-   - uses `changesets/action@v1`
-   - publish command is `pnpm run release:stage`
+   - runs `pnpm run release:stage`
    - workflow permissions include `id-token: write`
    - no `NODE_AUTH_TOKEN` / `NPM_TOKEN` in publish env
 2. `package.json`
@@ -50,13 +49,15 @@ Notes:
 This repo is Changesets-driven:
 
 1. Contributors add a changeset file under `.changeset/` for user-facing changes.
-2. On merge to `main`, `changesets/action` opens or updates the "Version Packages" PR.
+2. A maintainer creates/updates the "Version Packages" PR by running `pnpm changeset version` and committing the result.
 3. When the "Version Packages" PR is merged, the release workflow runs full checks.
 4. The workflow runs `pnpm run release:stage`, which executes:
    - `node scripts/publish-workspace.mjs --stage`
    - `node scripts/publish-angular.mjs --stage`
 5. Artifacts are staged, not immediately public.
 6. A maintainer approves stage with 2FA (`npm stage approve` or npmjs.com UI).
+
+Why manual PR creation: organization policy disables GitHub Actions PR creation/approval with `GITHUB_TOKEN`.
 
 ## Step 3: Post-setup verification
 

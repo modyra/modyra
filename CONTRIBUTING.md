@@ -52,19 +52,19 @@ Angular demo app is self-contained in `examples/angular` (own
 ## Release process
 
 Releases run in CI (`.github/workflows/release.yml`) via
-[changesets/action](https://github.com/changesets/action):
+[changesets](https://github.com/changesets/changesets):
 
-1. Every feature PR adds a changeset (see above). On merge to `main` the
-   workflow opens/refreshes a **"Version Packages"** PR (versions bumped,
-   `CHANGELOG.md` updated — fixed versioning: all `@modyra/*` move
-   together).
-2. Merging that PR triggers the publish job: full gate (build, all test
+1. Every feature PR adds a changeset (see above).
+2. A maintainer creates/updates the **"Version Packages"** PR (for example
+  with `pnpm changeset version`), committing version bumps and
+  `CHANGELOG.md` updates. All `@modyra/*` remain fixed-versioned together.
+3. Merging that PR triggers the publish job: full gate (build, all test
    suites, bundle/tree-shaking check, theme parity, `pnpm audit --prod`),
    then `npm run release:stage` stages every `@modyra/*` package with
    `--provenance` (sigstore attestations link each tarball to the exact
    commit and workflow run).
-3. Release candidates precede majors.
-4. A maintainer approves the staged publish with 2FA (`npm stage approve`
+4. Release candidates precede majors.
+5. A maintainer approves the staged publish with 2FA (`npm stage approve`
    or npmjs.com UI) to make the release public.
 
 ### One-time npm setup (repo admins)
