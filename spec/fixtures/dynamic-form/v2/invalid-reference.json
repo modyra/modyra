@@ -1,0 +1,1 @@
+{"version":2,"fields":[{"name":"email","kind":"email"}],"layout":[{"kind":"section","id":"bad","children":["missing"]}],"rules":[{"effect":"visible","target":"missing","when":{"field":"email","operator":"equals","value":"x"}}]}

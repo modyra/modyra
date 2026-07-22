@@ -1,0 +1,389 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://modyra.dev/schemas/dynamic-form-v2.schema.json",
+  "title": "Modyra Dynamic Form Contract v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version"
+  ],
+  "properties": {
+    "version": {
+      "const": 2
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/field"
+      }
+    },
+    "layout": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/layout"
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    },
+    "schema": {
+      "$ref": "#/$defs/node"
+    }
+  },
+  "$defs": {
+    "validators": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "email": {
+          "type": "boolean"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "minLength": {
+          "type": "number"
+        },
+        "maxLength": {
+          "type": "number"
+        },
+        "pattern": {
+          "type": "string",
+          "maxLength": 256
+        }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "label"
+      ],
+      "properties": {
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "disabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "required": [
+        "name",
+        "kind"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "enum": [
+              "__proto__",
+              "prototype",
+              "constructor"
+            ]
+          },
+          "pattern": "^[^.]+$"
+        },
+        "kind": {
+          "enum": [
+            "text",
+            "textarea",
+            "email",
+            "password",
+            "number",
+            "slider",
+            "checkbox",
+            "toggle",
+            "select",
+            "radio",
+            "multiselect",
+            "segmented",
+            "datepicker",
+            "timepicker"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "initialValue": {},
+        "validators": {
+          "$ref": "#/$defs/validators"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/option"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "select",
+                  "radio",
+                  "multiselect",
+                  "segmented"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "options"
+            ]
+          }
+        }
+      ]
+    },
+    "layout": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id",
+            "children"
+          ],
+          "properties": {
+            "kind": {
+              "const": "section"
+            },
+            "id": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id",
+            "columns"
+          ],
+          "properties": {
+            "kind": {
+              "const": "columns"
+            },
+            "id": {
+              "type": "string"
+            },
+            "columns": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effect",
+        "target",
+        "when"
+      ],
+      "properties": {
+        "effect": {
+          "enum": [
+            "visible",
+            "hidden",
+            "enabled",
+            "disabled"
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
+        "when": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "field",
+            "operator"
+          ],
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "operator": {
+              "enum": [
+                "equals",
+                "notEquals",
+                "in",
+                "notIn",
+                "isEmpty",
+                "isNotEmpty",
+                "greaterThan",
+                "greaterThanOrEqual",
+                "lessThan",
+                "lessThanOrEqual"
+              ]
+            },
+            "value": {}
+          }
+        }
+      }
+    },
+    "fieldNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "field"
+      ],
+      "properties": {
+        "node": {
+          "const": "field"
+        },
+        "field": {
+          "$ref": "#/$defs/field"
+        }
+      }
+    },
+    "groupNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "children"
+      ],
+      "properties": {
+        "node": {
+          "const": "group"
+        },
+        "label": {
+          "type": "string"
+        },
+        "children": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[^.]+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      }
+    },
+    "arrayNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "item"
+      ],
+      "properties": {
+        "node": {
+          "const": "array"
+        },
+        "label": {
+          "type": "string"
+        },
+        "item": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/fieldNode"
+            },
+            {
+              "$ref": "#/$defs/groupNode"
+            }
+          ]
+        },
+        "initialValue": {
+          "type": "array",
+          "maxItems": 100
+        },
+        "minItems": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxItems": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "node": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/fieldNode"
+        },
+        {
+          "$ref": "#/$defs/groupNode"
+        },
+        {
+          "$ref": "#/$defs/arrayNode"
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "fields"
+      ]
+    },
+    {
+      "required": [
+        "schema"
+      ]
+    }
+  ]
+}

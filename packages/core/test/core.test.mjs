@@ -357,3 +357,50 @@ test("buildDateLocale produces complete locale bundles", () => {
   assert.equal(locale.dayNamesShort.length, 7);
   assert.ok(locale.firstDayOfWeek >= 0 && locale.firstDayOfWeek <= 6);
 });
+
+test("parseDynamicForm validates v2 layout and rules in strict/lenient modes", async () => {
+  const { parseDynamicForm } = await import("../dist/dynamic-config.js");
+  const valid = parseDynamicForm({
+    version: 2,
+    fields: [
+      { name: "type", kind: "select", options: [{ value: "business", label: "Business" }] },
+      { name: "vat", kind: "text" },
+    ],
+    layout: [{ kind: "section", id: "identity", children: ["type", "vat"] }],
+    rules: [{ effect: "visible", target: "vat", when: { field: "type", operator: "equals", value: "business" } }],
+  }, { mode: "strict" });
+  assert.equal(valid.ok, true);
+  assert.equal(valid.version, 2);
+  assert.equal(valid.layout.length, 1);
+  assert.equal(valid.rules.length, 1);
+
+  const bad = parseDynamicForm({
+    version: 2,
+    fields: [{ name: "email", kind: "email" }],
+    layout: [{ kind: "section", id: "bad", children: ["missing"] }],
+  }, { mode: "strict" });
+  assert.equal(bad.ok, false);
+  assert.equal(bad.fields.length, 0);
+  assert.equal(bad.diagnostics[0].code, "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE");
+});
+
+test("Contract v2 recursively flattens group and array nodes", async () => {
+  const { parseDynamicForm } = await import("../dist/dynamic-config.js");
+  const result = parseDynamicForm({
+    version: 2,
+    schema: { node: "group", children: {
+      shipping: { node: "group", children: {
+        city: { node: "field", field: { kind: "text", label: "City", validators: { required: true } } },
+      } },
+      items: { node: "array", initialValue: [{ sku: "A", qty: 2 }], item: {
+        node: "group", children: {
+          sku: { node: "field", field: { kind: "text", label: "SKU" } },
+          qty: { node: "field", field: { kind: "number", label: "Qty", min: 1 } },
+        },
+      } },
+    } },
+  }, { mode: "strict" });
+  assert.equal(result.ok, true, JSON.stringify(result.diagnostics));
+  assert.deepEqual(result.fields.map((field) => field.name), ["shipping.city", "items.0.sku", "items.0.qty"]);
+  assert.equal(result.fields.find((field) => field.name === "items.0.qty")?.initialValue, 2);
+});
