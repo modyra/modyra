@@ -46,6 +46,7 @@ server validation, submit with server errors, drafts — in each binding:
 | [Reactive Forms interop](guides/interop.md)                         | `mdyCva` — embed Modyra controls in existing Angular Reactive Forms                                                |
 | [Compared with Reactive Forms](guides/comparison-reactive-forms.md) | Honest trade-offs, migration paths                                                                                 |
 | [Form library comparison](guides/comparison-form-libraries.md)      | Measured bundle sizes + feature matrix vs RHF, TanStack Form, Formik, Final Form, VeeValidate — updated 2026-07-21 |
+| [Writing a reactivity adapter](guides/reactivity-adapter-guide.md)   | The `MdyReactivity` contract, capability honesty, ownership/scope, the conformance suite — for building the next framework adapter |
 
 ## UI, theming and tools
 

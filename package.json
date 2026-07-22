@@ -33,6 +33,7 @@
     "demo:lit": "npm run build:examples && node scripts/serve-example.mjs lit 4303",
     "demo:preact": "npm run build:examples && node scripts/serve-example.mjs preact 4304",
     "demo:solid": "npm run build:examples && node scripts/serve-example.mjs solid 4305",
+    "docs:reactivity-matrix": "npm run build:core && node scripts/reactivity-capability-matrix.mjs",
     "docs:sync": "node scripts/sync-docs-site.mjs",
     "docs:dev": "npm --prefix site run dev",
     "docs:build": "npm --prefix site run build",
