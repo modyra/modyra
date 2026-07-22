@@ -1,0 +1,11 @@
+[package]
+name = "modyra-contract"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Typed Rust models and validation for the Modyra Dynamic Form Contract"
+repository = "https://github.com/modyra/modyra"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

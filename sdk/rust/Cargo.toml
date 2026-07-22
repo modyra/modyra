@@ -1,0 +1,7 @@
+[workspace]
+members = [
+  "modyra-contract",
+  "examples/post-form",
+  "examples/axum-form-server",
+]
+resolver = "2"
