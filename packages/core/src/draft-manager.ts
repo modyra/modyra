@@ -153,6 +153,15 @@ interface DraftManagerDeps {
    * call, per piano-modyra-reactivity-adapter-api.md §5.
    */
   readonly scope?: MdyReactiveScope;
+  /**
+   * True while the owning {@link import("./form-engine.js").MdyFormEngine}
+   * is deactivated (constructed with `autoActivate: false`, or paused via
+   * `deactivate()`) — see piano §10.5. While true, `enableDraft()` only
+   * records the config: it defers reading storage, restoring a value and
+   * starting the write effect until `resume()` — construction must stay
+   * pure and storage-free (SSR-safe) until activation.
+   */
+  readonly isDeactivated: () => boolean;
 }
 
 /**
@@ -168,6 +177,11 @@ export class MdyDraftManager {
     | ((key: string, value: unknown) => boolean)
     | undefined;
   private readonly _scope: MdyReactiveScope | undefined;
+  private readonly _isDeactivated: () => boolean;
+  /** Config from enableDraft(), recorded but not yet started (deactivated at the time). */
+  private _pendingOptions: MdyDraftOptions | null = null;
+  /** True once `_start()` has run at least once — resume() then just restarts the effect. */
+  private _hasStarted = false;
 
   private _key: string | null = null;
   private _storage: MdyDraftStorage | null = null;
@@ -175,6 +189,7 @@ export class MdyDraftManager {
   private _timer: ReturnType<typeof setTimeout> | null = null;
   private _exclude: ReadonlySet<string> = new Set();
   private _version = 1;
+  private _debounceMs = 400;
   /** Serialized value at enable time — a pristine form writes no draft. */
   private _baseline: string | null = null;
   private _lastWritten: string | null = null;
@@ -186,6 +201,7 @@ export class MdyDraftManager {
     this._hasDraft = deps.hasDraft;
     this._warn = deps.warn;
     this._filterRestoredEntry = deps.filterRestoredEntry;
+    this._isDeactivated = deps.isDeactivated;
     this._scope = deps.scope;
   }
 
@@ -196,7 +212,7 @@ export class MdyDraftManager {
    * {@link clearDraft}. `File` values are skipped (not serializable).
    */
   enableDraft(options: MdyDraftOptions): void {
-    if (this._effect) return;
+    if (this._effect || this._pendingOptions) return;
     if (!this._rx.canEffect) {
       if (MDY_DEV) this._warn(
         "enableDraft() needs an effect-capable reactivity " +
@@ -204,11 +220,21 @@ export class MdyDraftManager {
       );
       return;
     }
+    if (this._isDeactivated()) {
+      // Construction must stay pure and storage-free until activation
+      // (piano §10.5/§10.7) — record the config, do nothing else yet.
+      this._pendingOptions = options;
+      return;
+    }
+    this._start(options);
+  }
+
+  private _start(options: MdyDraftOptions): void {
     this._key = options.key;
     this._storage = options.storage ?? localStorageDraftStorage();
     this._exclude = new Set(options.exclude ?? []);
     this._version = options.version ?? 1;
-    const debounceMs = options.debounceMs ?? 400;
+    this._debounceMs = options.debounceMs ?? 400;
 
     // Restore an existing draft before recording starts.
     const stored = this._storage.read(this._key);
@@ -239,6 +265,11 @@ export class MdyDraftManager {
       this._rx.untracked(() => this._getValue()),
     ) ?? null;
 
+    this._hasStarted = true;
+    this._startEffect();
+  }
+
+  private _startEffect(): void {
     this._effect = this._rx.effect((onCleanup) => {
       const current = this._getValue();
       this._rx.untracked(() => {
@@ -246,7 +277,7 @@ export class MdyDraftManager {
         this._timer = setTimeout(() => {
           this._timer = null;
           this._write(current);
-        }, debounceMs);
+        }, this._debounceMs);
       });
       onCleanup(() => {
         if (this._timer !== null) {
@@ -255,6 +286,37 @@ export class MdyDraftManager {
         }
       });
     }, { scope: this._scope, debugName: "modyra:draft" });
+  }
+
+  /**
+   * Stops the write effect and its pending debounce timer without losing
+   * any state (key/storage/baseline/hasDraft) — `resume()` restarts it
+   * exactly where it left off. Called by the owning form's `deactivate()`.
+   */
+  pause(): void {
+    this._effect?.destroy();
+    this._effect = null;
+    if (this._timer !== null) {
+      clearTimeout(this._timer);
+      this._timer = null;
+    }
+  }
+
+  /**
+   * Restarts what `pause()` stopped, or performs the deferred first start
+   * if `enableDraft()` was called while deactivated. A no-op if draft was
+   * never enabled, or is already running. Called by the owning form's
+   * `activate()`.
+   */
+  resume(): void {
+    if (this._effect) return;
+    if (this._pendingOptions) {
+      const options = this._pendingOptions;
+      this._pendingOptions = null;
+      this._start(options);
+      return;
+    }
+    if (this._hasStarted) this._startEffect();
   }
 
   /** Removes the stored draft (also called after an error-free submit). */

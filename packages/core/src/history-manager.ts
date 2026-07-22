@@ -25,6 +25,13 @@ interface HistoryManagerDeps {
   readonly scope?: MdyReactiveScope;
   /** True while {@link import("./form-engine.js").MdyFormEngine.mutate} is running a callback. */
   readonly isMutating: () => boolean;
+  /**
+   * True while the owning `MdyFormEngine` is deactivated (constructed with
+   * `autoActivate: false`, or paused via `deactivate()`) — see piano
+   * §10.5. `enableHistory()` records the config but defers starting the
+   * snapshot effect until `resume()`.
+   */
+  readonly isDeactivated: () => boolean;
 }
 
 /**
@@ -45,6 +52,11 @@ export class MdyHistoryManager {
    * the pre- nor post-restore snapshot, pushing spurious entries.
    */
   private _restoring = false;
+  private readonly _isDeactivated: () => boolean;
+  /** Config from enableHistory(), recorded but not yet started (deactivated at the time). */
+  private _pending: { maxEntries?: number; debounceMs?: number } | null = null;
+  /** True once the effect has started at least once — resume() then just restarts it. */
+  private _hasStarted = false;
 
   private readonly _undoStack: Array<Record<string, unknown>> = [];
   private readonly _redoStack: Array<Record<string, unknown>> = [];
@@ -52,6 +64,7 @@ export class MdyHistoryManager {
   private _effect: MdyEffectRef | null = null;
   private _timer: ReturnType<typeof setTimeout> | null = null;
   private _maxEntries = 100;
+  private _debounceMs = 0;
   private readonly _canUndo: MdyWritableSignal<boolean>;
   private readonly _canRedo: MdyWritableSignal<boolean>;
 
@@ -67,6 +80,7 @@ export class MdyHistoryManager {
     this._warn = deps.warn;
     this._scope = deps.scope;
     this._isMutating = deps.isMutating;
+    this._isDeactivated = deps.isDeactivated;
     this._canUndo = deps.rx.signal(false);
     this._canRedo = deps.rx.signal(false);
     this.canUndo = this._canUndo.asReadonly();
@@ -85,7 +99,7 @@ export class MdyHistoryManager {
     readonly maxEntries?: number;
     readonly debounceMs?: number;
   }): void {
-    if (this._effect) return;
+    if (this._effect || this._pending) return;
     if (!this._rx.canEffect) {
       if (MDY_DEV) this._warn(
         "enableHistory() needs an effect-capable reactivity " +
@@ -93,8 +107,21 @@ export class MdyHistoryManager {
       );
       return;
     }
+    if (this._isDeactivated()) {
+      this._pending = { maxEntries: options?.maxEntries, debounceMs: options?.debounceMs };
+      return;
+    }
+    this._start(options);
+  }
+
+  private _start(options?: { readonly maxEntries?: number; readonly debounceMs?: number }): void {
     this._maxEntries = options?.maxEntries ?? 100;
-    const debounceMs = options?.debounceMs ?? 0;
+    this._debounceMs = options?.debounceMs ?? 0;
+    this._hasStarted = true;
+    this._startEffect();
+  }
+
+  private _startEffect(): void {
     this._effect = this._rx.effect((onCleanup) => {
       // Always read (and therefore track) the current value, even while a
       // mutate() block is in progress below — otherwise a synchronous-effect
@@ -103,7 +130,7 @@ export class MdyHistoryManager {
       const current = this._getValue();
       if (this._isMutating() || this._restoring) return;
       this._rx.untracked(() => {
-        if (debounceMs <= 0) {
+        if (this._debounceMs <= 0) {
           this._record(current);
           return;
         }
@@ -117,7 +144,7 @@ export class MdyHistoryManager {
         this._timer = setTimeout(() => {
           this._timer = null;
           this._record(current);
-        }, debounceMs);
+        }, this._debounceMs);
       });
       onCleanup(() => {
         if (this._timer !== null) {
@@ -126,6 +153,37 @@ export class MdyHistoryManager {
         }
       });
     }, { scope: this._scope, debugName: "modyra:history" });
+  }
+
+  /**
+   * Stops the snapshot effect and its pending debounce timer without
+   * losing the undo/redo stacks — `resume()` restarts it exactly where it
+   * left off. Called by the owning form's `deactivate()`.
+   */
+  pause(): void {
+    this._effect?.destroy();
+    this._effect = null;
+    if (this._timer !== null) {
+      clearTimeout(this._timer);
+      this._timer = null;
+    }
+  }
+
+  /**
+   * Restarts what `pause()` stopped, or performs the deferred first start
+   * if `enableHistory()` was called while deactivated. A no-op if history
+   * was never enabled, or is already running. Called by the owning form's
+   * `activate()`.
+   */
+  resume(): void {
+    if (this._effect) return;
+    if (this._pending) {
+      const pending = this._pending;
+      this._pending = null;
+      this._start(pending);
+      return;
+    }
+    if (this._hasStarted) this._startEffect();
   }
 
   private _record(current: Record<string, unknown>): void {

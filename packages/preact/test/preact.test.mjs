@@ -24,6 +24,35 @@ test("field store notifies subscribers and bumps its snapshot", async () => {
   store.destroy();
 });
 
+test("useMdyForm's activate/deactivate sequence tolerates a double-mount-style cycle", async () => {
+  // Simulates exactly what useMdyForm's useEffect now does (construct with
+  // autoActivate: false, activate() on mount, deactivate() on cleanup)
+  // instead of rendering a component — hooks aren't invoked directly in
+  // this suite (no renderer here).
+  const form = createForm(
+    { email: field("", [required()]) },
+    { history: true, autoActivate: false },
+  );
+  assert.equal(form.deactivated, true, "construction must stay paused");
+
+  form.activate();
+  form.deactivate();
+  form.activate();
+  await tick();
+
+  assert.equal(form.deactivated, false);
+  form.f.email.set("a@b.co");
+  await tick();
+  assert.equal(form.canUndo(), true, "history must be recording after the double-mount settles");
+  assert.equal(form.f.email.value(), "a@b.co");
+
+  form.deactivate();
+  assert.equal(form.f.email.value(), "a@b.co");
+  assert.equal(form.canUndo(), true);
+
+  form.destroy();
+});
+
 /**
  * Independent minimal reactive engine, deliberately NOT vanillaReactivity
  * and unaware of its module-global dependency graph. Before M5,

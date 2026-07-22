@@ -309,6 +309,13 @@ export interface MdyCoreFormOptions<
    * always on. See docs/guides/security.md.
    */
   readonly security?: MdySecurityPolicy;
+  /**
+   * `false` defers draft/history/async-validator effects until
+   * {@link MdyTypedFormBase.activate} is called — see
+   * {@link import("./form-engine.js").MdyFormEngineOptions.autoActivate}.
+   * Default `true`.
+   */
+  readonly autoActivate?: boolean;
 }
 
 /**
@@ -353,6 +360,8 @@ export interface MdyTypedFormBaseOptions<
   readonly draft?: string | MdyDraftOptions;
   /** Injection-prevention policy — see {@link MdyCoreFormOptions.security}. */
   readonly security?: MdySecurityPolicy;
+  /** See {@link MdyCoreFormOptions.autoActivate}. */
+  readonly autoActivate?: boolean;
 }
 
 /**
@@ -560,6 +569,28 @@ export abstract class MdyTypedFormBase<
    */
   mutate(fn: () => void): void {
     this._adapter.mutate(fn);
+  }
+
+  /** True while effect-dependent features are paused — see {@link activate}/{@link deactivate}. */
+  get deactivated(): boolean {
+    return this._adapter.deactivated;
+  }
+
+  /**
+   * Starts (or resumes) draft persistence, history recording and async
+   * validators — see {@link MdyFormEngine.activate}. Idempotent.
+   */
+  activate(): void {
+    this._adapter.activate();
+  }
+
+  /**
+   * Pauses draft persistence, history recording and async validators
+   * without losing any state — see {@link MdyFormEngine.deactivate}.
+   * Idempotent.
+   */
+  deactivate(): void {
+    this._adapter.deactivate();
   }
 
   /**
@@ -841,7 +872,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       rx,
       () => undefined,
       () => options?.submitMode ?? "valid-only",
-      { security: options?.security },
+      { security: options?.security, autoActivate: options?.autoActivate },
     );
     super(schema, engine, options);
     this.state = engine.state;
