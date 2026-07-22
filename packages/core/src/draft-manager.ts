@@ -9,6 +9,7 @@
 import type {
   MdyEffectRef,
   MdyReactivity,
+  MdyReactiveScope,
   MdyWritableSignal,
 } from "./reactivity.js";
 import { isSafeFieldPath } from "./path-utils.js";
@@ -145,6 +146,13 @@ interface DraftManagerDeps {
    * Return false to drop the entry.
    */
   readonly filterRestoredEntry?: (key: string, value: unknown) => boolean;
+  /**
+   * Form-owned scope (when the reactivity adapter provides one). The draft
+   * effect registers with it so destroying the scope tears the effect down
+   * too — a backstop alongside the explicit {@link MdyDraftManager.destroy}
+   * call, per piano-modyra-reactivity-adapter-api.md §5.
+   */
+  readonly scope?: MdyReactiveScope;
 }
 
 /**
@@ -159,6 +167,7 @@ export class MdyDraftManager {
   private readonly _filterRestoredEntry:
     | ((key: string, value: unknown) => boolean)
     | undefined;
+  private readonly _scope: MdyReactiveScope | undefined;
 
   private _key: string | null = null;
   private _storage: MdyDraftStorage | null = null;
@@ -177,6 +186,7 @@ export class MdyDraftManager {
     this._hasDraft = deps.hasDraft;
     this._warn = deps.warn;
     this._filterRestoredEntry = deps.filterRestoredEntry;
+    this._scope = deps.scope;
   }
 
   /**
@@ -244,7 +254,7 @@ export class MdyDraftManager {
           this._timer = null;
         }
       });
-    });
+    }, { scope: this._scope, debugName: "modyra:draft" });
   }
 
   /** Removes the stored draft (also called after an error-free submit). */

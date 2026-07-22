@@ -1,5 +1,6 @@
 import {
   MdyReactivity,
+  MdyReactiveScope,
   MdySignal,
   MdyWritableSignal,
 } from "./reactivity.js";
@@ -192,6 +193,13 @@ export class MdyFormEngine
 
   private readonly _draftManager: MdyDraftManager;
   private readonly _historyManager: MdyHistoryManager;
+  /**
+   * Root ownership scope for this form (undefined when the adapter hasn't
+   * implemented `createScope` yet — piano-modyra-reactivity-adapter-api.md
+   * Milestone 2). Draft/history/async-validator effects register with it
+   * as a backstop alongside their existing explicit `destroy()` calls.
+   */
+  private readonly _scope: MdyReactiveScope | undefined;
 
   constructor(
     protected readonly _rx: MdyReactivity,
@@ -204,6 +212,7 @@ export class MdyFormEngine
   ) {
     this._devWarnings = options?.devWarnings ?? true;
     this._security = options?.security ?? {};
+    this._scope = _rx.createScope?.({ debugName: "modyra:form" });
     const hasDraft = _rx.signal(false);
     this.hasDraft = hasDraft.asReadonly();
     this._draftManager = new MdyDraftManager({
@@ -213,12 +222,14 @@ export class MdyFormEngine
       hasDraft,
       warn: (message) => this._warn(message),
       filterRestoredEntry: (key, value) => this._draftEntryAllowed(key, value),
+      scope: this._scope,
     });
     this._historyManager = new MdyHistoryManager({
       rx: _rx,
       getValue: () => this.value(),
       setValue: (value) => this.setValue(value),
       warn: (message) => this._warn(message),
+      scope: this._scope,
     });
     this.canUndo = this._historyManager.canUndo;
     this.canRedo = this._historyManager.canRedo;
@@ -661,6 +672,12 @@ export class MdyFormEngine
     this._rx.untracked(() => {
       this._fieldNames.set([]);
     });
+    // Backstop: any effect registered with the scope (draft/history/async
+    // validators, and anything a future migrated adapter attaches to it)
+    // is torn down here even if its own manager's destroy() above didn't
+    // run for some reason. Idempotent — the individual destroy() calls
+    // above already covered the documented paths.
+    this._scope?.destroy();
   }
 
   // ── Private helpers ─────────────────────────────────────────────────────────
@@ -794,10 +811,15 @@ export class MdyFormEngine
       );
       return;
     }
-    rec.asyncRunner = createAsyncRunner(rec, this._rx, {
-      fieldPath: name,
-      formValue: () => this.getValue(),
-      fieldState: (p) => this._fields.get(p)?.state ?? null,
-    });
+    rec.asyncRunner = createAsyncRunner(
+      rec,
+      this._rx,
+      {
+        fieldPath: name,
+        formValue: () => this.getValue(),
+        fieldState: (p) => this._fields.get(p)?.state ?? null,
+      },
+      this._scope,
+    );
   }
 }

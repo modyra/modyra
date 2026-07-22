@@ -8,6 +8,7 @@
 
 import type {
   MdyEffectRef,
+  MdyReactiveScope,
   MdyReactivity,
   MdySignal,
   MdyWritableSignal,
@@ -149,6 +150,7 @@ export function createAsyncRunner(
   rec: FieldRecord,
   rx: MdyReactivity,
   host: MdyAsyncRunnerHost,
+  scope?: MdyReactiveScope,
 ): MdyEffectRef {
   return rx.effect((onCleanup) => {
     const v = rec.state.value();
@@ -235,5 +237,5 @@ export function createAsyncRunner(
     } else {
       run();
     }
-  });
+  }, { scope, debugName: `modyra:async-validator:${host.fieldPath}` });
 }
