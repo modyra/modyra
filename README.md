@@ -18,7 +18,7 @@ core, one shared headless widget layer, one shared theme package.
 - Incremental adoption paths — e.g. Reactive Forms interop (`mdyCva`) on Angular
 
 [![CI](https://github.com/modyra/modyra/actions/workflows/ci.yml/badge.svg)](https://github.com/modyra/modyra/actions/workflows/ci.yml)
-[![Release](https://github.com/modyra/modyra/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/modyra/modyra/actions/workflows/release.yml)
+[![Release](https://github.com/modyra/modyra/actions/workflows/release.yml/badge.svg)](https://github.com/modyra/modyra/actions/workflows/release.yml)
 [![npm](https://img.shields.io/npm/v/@modyra/core)](https://www.npmjs.com/package/@modyra/core)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
