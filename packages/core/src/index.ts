@@ -12,12 +12,44 @@ export {
   vanillaReactivity
 } from "./reactivity.js";
 export type {
+  MdyComputedOptions,
+  MdyEffectOptions,
   MdyEffectRef,
+  MdyEqualityFn,
   MdyOnCleanup,
+  MdyReactiveScope,
   MdyReactivity,
+  MdyReactivityCapabilities,
+  MdyScopeOptions,
   MdySignal,
+  MdySignalOptions,
   MdyWritableSignal
 } from "./reactivity.js";
+
+export {
+  MdyActivationError,
+  MdyAdapterContractError,
+  MdyCrossRuntimeObservationError,
+  MdyDestroyedScopeError,
+  MdyUnsupportedCapabilityError
+} from "./reactivity-errors.js";
+
+export {
+  createConsoleDiagnostics,
+  createSilentDiagnostics,
+  MDY_ADAPTER_CONTRACT_VIOLATION,
+  MDY_ASYNC_FEATURE_DISABLED,
+  MDY_CROSS_RUNTIME_OBSERVATION,
+  MDY_EFFECTS_UNAVAILABLE,
+  MDY_SCOPE_DESTROYED,
+  MDY_SSR_SNAPSHOT_MISMATCH,
+  MDY_UNSUPPORTED_ADAPTER_OPTION
+} from "./reactivity-diagnostics.js";
+export type {
+  MdyDiagnostic,
+  MdyDiagnosticSeverity,
+  MdyDiagnostics
+} from "./reactivity-diagnostics.js";
 
 export * from "./types.js";
 
