@@ -91,6 +91,10 @@
     "./localization": {
       "types": "./dist/localization.d.ts",
       "default": "./dist/localization.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "default": "./dist/testing/index.js"
     }
   },
   "files": [
