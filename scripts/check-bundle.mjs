@@ -18,7 +18,16 @@ const files = readdirSync(dir).filter((f) => f.endsWith(".js"));
 // the security module (sanitizer profiles, draft-shape/server-path checks)
 // at the value-write choke point — always linked by design, like the
 // array-manager. Real total after the feature: 123.7 KB.
-const BUDGET_KB = 125;
+// 125 -> 129 (2026-07-22, reactivity-adapter-api plan M1-M8 + construction/
+// activation split): MdyFormEngine/MdyTypedFormBase gained real methods
+// every consumer links regardless of use — same non-tree-shakeable-class
+// shape as the array-manager/security additions above, not accidental
+// bloat: MdyReactiveScope + activate()/deactivate()/mutate(), the typed
+// error classes (reactivity-errors.ts, used by the Angular adapter itself
+// for its typed-error-instead-of-silent-no-op fix), and reactive-owner.ts's
+// WeakMap-based handle-ownership registry. Real total after the change:
+// 127.8 KB; budget kept tight just above it, same pattern as before.
+const BUDGET_KB = 129;
 
 let total = 0;
 let text = "";
