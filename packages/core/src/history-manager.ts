@@ -23,6 +23,8 @@ interface HistoryManagerDeps {
   readonly warn: (message: string) => void;
   /** Form-owned scope — see {@link import("./draft-manager.js").MdyDraftManager}'s equivalent field. */
   readonly scope?: MdyReactiveScope;
+  /** True while {@link import("./form-engine.js").MdyFormEngine.mutate} is running a callback. */
+  readonly isMutating: () => boolean;
 }
 
 /**
@@ -34,12 +36,22 @@ export class MdyHistoryManager {
   private readonly _setValue: (value: Record<string, unknown>) => void;
   private readonly _warn: (message: string) => void;
   private readonly _scope: MdyReactiveScope | undefined;
+  private readonly _isMutating: () => boolean;
+  /**
+   * True while undo()/redo() is writing the restored value back. Restoring
+   * multiple fields isn't atomic either (setValue() writes them one at a
+   * time), so a synchronous-effect adapter (Vue/Solid) would otherwise see
+   * the history effect fire mid-restore on a state that matches neither
+   * the pre- nor post-restore snapshot, pushing spurious entries.
+   */
+  private _restoring = false;
 
   private readonly _undoStack: Array<Record<string, unknown>> = [];
   private readonly _redoStack: Array<Record<string, unknown>> = [];
   private _lastSnapshot: Record<string, unknown> | null = null;
   private _effect: MdyEffectRef | null = null;
   private _timer: ReturnType<typeof setTimeout> | null = null;
+  private _maxEntries = 100;
   private readonly _canUndo: MdyWritableSignal<boolean>;
   private readonly _canRedo: MdyWritableSignal<boolean>;
 
@@ -54,6 +66,7 @@ export class MdyHistoryManager {
     this._setValue = deps.setValue;
     this._warn = deps.warn;
     this._scope = deps.scope;
+    this._isMutating = deps.isMutating;
     this._canUndo = deps.rx.signal(false);
     this._canRedo = deps.rx.signal(false);
     this.canUndo = this._canUndo.asReadonly();
@@ -80,37 +93,30 @@ export class MdyHistoryManager {
       );
       return;
     }
-    const max = options?.maxEntries ?? 100;
+    this._maxEntries = options?.maxEntries ?? 100;
     const debounceMs = options?.debounceMs ?? 0;
-    const record = (current: Record<string, unknown>): void => {
-      const last = this._lastSnapshot;
-      if (last !== null && shallowEqualRecords(last, current)) return;
-      if (last !== null) {
-        this._undoStack.push(last);
-        if (this._undoStack.length > max) this._undoStack.shift();
-        this._redoStack.length = 0;
-        this._canUndo.set(true);
-        this._canRedo.set(false);
-      }
-      this._lastSnapshot = current;
-    };
     this._effect = this._rx.effect((onCleanup) => {
+      // Always read (and therefore track) the current value, even while a
+      // mutate() block is in progress below — otherwise a synchronous-effect
+      // adapter (Vue/Solid) would stop tracking the fields written during
+      // the block and never rerun after it ends.
       const current = this._getValue();
+      if (this._isMutating() || this._restoring) return;
       this._rx.untracked(() => {
         if (debounceMs <= 0) {
-          record(current);
+          this._record(current);
           return;
         }
         // First value seeds the snapshot immediately so the pre-typing
         // state is undoable; later changes are batched.
         if (this._lastSnapshot === null) {
-          record(current);
+          this._record(current);
           return;
         }
         if (this._timer !== null) clearTimeout(this._timer);
         this._timer = setTimeout(() => {
           this._timer = null;
-          record(current);
+          this._record(current);
         }, debounceMs);
       });
       onCleanup(() => {
@@ -120,6 +126,36 @@ export class MdyHistoryManager {
         }
       });
     }, { scope: this._scope, debugName: "modyra:history" });
+  }
+
+  private _record(current: Record<string, unknown>): void {
+    const last = this._lastSnapshot;
+    if (last !== null && shallowEqualRecords(last, current)) return;
+    if (last !== null) {
+      this._undoStack.push(last);
+      if (this._undoStack.length > this._maxEntries) this._undoStack.shift();
+      this._redoStack.length = 0;
+      this._canUndo.set(true);
+      this._canRedo.set(false);
+    }
+    this._lastSnapshot = current;
+  }
+
+  /**
+   * Forces one immediate, coalesced snapshot of the current value — called
+   * by {@link import("./form-engine.js").MdyFormEngine.mutate} right after
+   * its callback returns, so a burst of field writes inside `mutate()`
+   * becomes exactly one undo entry regardless of whether the adapter's
+   * effects run synchronously (Vue/Solid) or are scheduler-deferred
+   * (vanilla/Angular). A no-op when history isn't enabled.
+   */
+  recordNow(): void {
+    if (!this._effect) return;
+    if (this._timer !== null) {
+      clearTimeout(this._timer);
+      this._timer = null;
+    }
+    this._record(this._rx.untracked(() => this._getValue()));
   }
 
   /**
@@ -149,7 +185,12 @@ export class MdyHistoryManager {
     // Pre-setting the snapshot makes the history effect treat the restored
     // value as already recorded instead of pushing it again.
     this._lastSnapshot = prev;
-    this._setValue(prev);
+    this._restoring = true;
+    try {
+      this._setValue(prev);
+    } finally {
+      this._restoring = false;
+    }
     this._canUndo.set(this._undoStack.length > 0);
     this._canRedo.set(true);
   }
@@ -162,7 +203,12 @@ export class MdyHistoryManager {
     const current = this._rx.untracked(() => this._getValue());
     this._undoStack.push(current);
     this._lastSnapshot = next;
-    this._setValue(next);
+    this._restoring = true;
+    try {
+      this._setValue(next);
+    } finally {
+      this._restoring = false;
+    }
     this._canRedo.set(this._redoStack.length > 0);
     this._canUndo.set(true);
   }

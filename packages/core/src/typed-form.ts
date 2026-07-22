@@ -548,6 +548,21 @@ export abstract class MdyTypedFormBase<
   }
 
   /**
+   * Groups every field write inside `fn` into exactly one history entry
+   * (when history is enabled) — see {@link MdyFormEngine.mutate}.
+   *
+   * ```ts
+   * form.mutate(() => {
+   *   form.f.firstName.set("Lorenzo");
+   *   form.f.lastName.set("Muscherà");
+   * });
+   * ```
+   */
+  mutate(fn: () => void): void {
+    this._adapter.mutate(fn);
+  }
+
+  /**
    * Minimal nested patch: only the fields whose value differs from the
    * schema's initial values — ready for an API PATCH request.
    */

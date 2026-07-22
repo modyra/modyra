@@ -63,6 +63,17 @@ export interface MdyEffectOptions {
  * riflettere comportamento reale, mai la sola presenza di un metodo
  * (§8.1 "nessuna capability fittizia").
  */
+/**
+ * Optional Level-B capability (piano §6.1): a real runtime-coalescing
+ * `batch()`, distinct from `MdyFormEngine.mutate()`'s domain-level
+ * coalescing (history/notifications) — `mutate()` delegates to this when
+ * an adapter reports `capabilities.batching: true`, and works correctly
+ * without it otherwise. No shipped adapter implements this yet.
+ */
+export interface MdyBatchingCapability {
+  batch<T>(fn: () => T): T;
+}
+
 export interface MdyReactivityCapabilities {
   readonly effects: boolean;
   readonly effectOwnership: boolean;

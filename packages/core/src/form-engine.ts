@@ -1,9 +1,20 @@
 import {
+  MdyBatchingCapability,
   MdyReactivity,
   MdyReactiveScope,
   MdySignal,
   MdyWritableSignal,
 } from "./reactivity.js";
+
+/** Narrows to a reactivity that honestly reports (and implements) real runtime batching. */
+function hasBatchingCapability(
+  rx: MdyReactivity,
+): rx is MdyReactivity & MdyBatchingCapability {
+  return (
+    rx.capabilities?.batching === true &&
+    typeof (rx as Partial<MdyBatchingCapability>).batch === "function"
+  );
+}
 import {
   MdyAsyncValidatorFn,
   MdyAsyncValidatorOptions,
@@ -200,6 +211,8 @@ export class MdyFormEngine
    * as a backstop alongside their existing explicit `destroy()` calls.
    */
   private readonly _scope: MdyReactiveScope | undefined;
+  /** True while {@link mutate} is running its callback. */
+  private _mutating = false;
 
   constructor(
     protected readonly _rx: MdyReactivity,
@@ -226,6 +239,7 @@ export class MdyFormEngine
     });
     this._historyManager = new MdyHistoryManager({
       rx: _rx,
+      isMutating: () => this._mutating,
       getValue: () => this.value(),
       setValue: (value) => this.setValue(value),
       warn: (message) => this._warn(message),
@@ -620,6 +634,40 @@ export class MdyFormEngine
   /** Re-applies the value undone by the last {@link undo}. */
   redo(): void {
     this._historyManager.redo();
+  }
+
+  /**
+   * Groups every field write inside `fn` into exactly one history entry
+   * (when history is enabled), regardless of whether the reactivity
+   * adapter's effects run synchronously (Vue/Solid) or are scheduler-
+   * deferred (vanilla/Angular). Delegates to the adapter's own `batch()`
+   * when it reports the capability (none do yet — piano Milestone 3); works
+   * correctly without it either way.
+   *
+   * ```ts
+   * form.mutate(() => {
+   *   form.f.firstName.set("Lorenzo");
+   *   form.f.lastName.set("Muscherà");
+   * });
+   * ```
+   */
+  mutate(fn: () => void): void {
+    if (this._mutating) {
+      // Nested call: the outermost mutate() owns the single coalesced entry.
+      fn();
+      return;
+    }
+    this._mutating = true;
+    try {
+      if (hasBatchingCapability(this._rx)) {
+        this._rx.batch(fn);
+      } else {
+        fn();
+      }
+    } finally {
+      this._mutating = false;
+      this._historyManager.recordNow();
+    }
   }
 
   /**
