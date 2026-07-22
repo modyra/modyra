@@ -196,7 +196,20 @@ function drainPendingEffects(): void {
   while (pendingEffects.size > 0) {
     const snapshot = [...pendingEffects];
     pendingEffects.clear();
-    for (const effectNode of snapshot) effectNode.runIfPending();
+    for (const effectNode of snapshot) {
+      try {
+        effectNode.runIfPending();
+      } catch (error) {
+        // One effect's uncaught error (no onError given — VanillaEffect's
+        // own try/catch already handled it if one was provided) must not
+        // stop sibling effects in this same drain pass from running, nor
+        // corrupt the scheduler. Reporting via console.error (not a
+        // rethrow): re-throwing from inside a microtask callback would
+        // itself become an *unhandled* exception, which crashes a Node
+        // process with no global handler — worse than the bug this fixes.
+        console.error("[modyra] Uncaught error in effect:", error);
+      }
+    }
   }
 }
 

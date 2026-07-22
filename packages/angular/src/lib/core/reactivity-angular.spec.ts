@@ -125,6 +125,37 @@ describe("angularReactivity", () => {
       expect(runs).toBe(1);
       ref.destroy();
     });
+
+    it("onError catches a thrown error and the effect keeps running on later changes", () => {
+      const rx = angularReactivity(TestBed.inject(Injector));
+      const s = rx.signal(0);
+      const caught: unknown[] = [];
+      let runs = 0;
+      const ref = rx.effect(
+        () => {
+          runs++;
+          if (s() === 1) throw new Error("boom");
+        },
+        { onError: (error) => caught.push(error) },
+      );
+      TestBed.inject(ApplicationRef).tick();
+      expect(runs).toBe(1);
+      expect(caught).toHaveLength(0);
+
+      s.set(1);
+      TestBed.inject(ApplicationRef).tick();
+      expect(runs).toBe(2);
+      expect(caught).toHaveLength(1);
+      expect((caught[0] as Error).message).toBe("boom");
+
+      // The effect must keep running after a caught error, not stop silently.
+      s.set(2);
+      TestBed.inject(ApplicationRef).tick();
+      expect(runs).toBe(3);
+      expect(caught).toHaveLength(1);
+
+      ref.destroy();
+    });
   });
 
   describe("without an Injector", () => {

@@ -127,7 +127,17 @@ export function angularReactivity(
         return { destroy: () => undefined, destroyed: true };
       }
       let destroyed = false;
-      const ref = effect((onCleanup) => fn(onCleanup), { injector });
+      const ref = effect((onCleanup) => {
+        try {
+          fn(onCleanup);
+        } catch (error) {
+          // Respect onError when given (piano §4.2/§8.3 — an accepted
+          // option must not be silently ignored). Without one, rethrow so
+          // Angular's own ErrorHandler receives it, same as today.
+          if (effectOptions?.onError) effectOptions.onError(error);
+          else throw error;
+        }
+      }, { injector });
       const wrapped: MdyEffectRef = {
         destroy: () => {
           if (destroyed) return;
