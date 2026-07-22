@@ -4,6 +4,7 @@ import {
   MdyFormRegistry,
 } from "./form-engine.js";
 import { MdyReactivity, MdySignal, vanillaReactivity } from "./reactivity.js";
+import { registerHandleOwner } from "./reactive-owner.js";
 import { MdyArrayManager } from "./array-manager.js";
 import {
   collectSchemaPaths,
@@ -841,7 +842,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       throw new Error(`[modyra] Field "${path}" was not registered`);
     }
     const state = ref();
-    return {
+    const handle: MdyFieldHandle<unknown> = {
       path,
       value: state.value,
       errors: state.errors,
@@ -855,6 +856,8 @@ export class MdyTypedForm<S extends MdyFormSchema>
       markAsTouched: (): void => state.touched.set(true),
       markAsDirty: (): void => state.dirty.set(true),
     };
+    registerHandleOwner(handle, this._adapter.reactivity);
+    return handle;
   }
 
   /** Core validates the unflattened value against the schema shape. */

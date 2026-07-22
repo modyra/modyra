@@ -9,10 +9,12 @@
  */
 import {
   createForm,
+  getFieldHandleOwner,
   MdyCoreFormOptions,
   MdyFieldHandle,
   MdyFormSchema,
   MdyFormValue,
+  MdyReactivity,
   MdySignal,
   MdyTypedForm,
   vanillaReactivity,
@@ -31,11 +33,18 @@ export interface MdyStore {
  * Builds a store that notifies whenever any of the given signals change.
  * Framework-free (testable in Node); the Preact hooks below are thin
  * wrappers over it.
+ *
+ * `reactivity` must be the runtime that actually owns `signals` — observing
+ * them from an unrelated instance is the cross-runtime bug
+ * piano-modyra-reactivity-adapter-api.md §10.1 forbids. Defaults to a fresh
+ * `vanillaReactivity()` only for direct callers that don't have a handle to
+ * resolve an owner from (matches this function's pre-M5 behavior).
  */
 export function createStore(
   signals: ReadonlyArray<MdySignal<unknown>>,
+  reactivity: MdyReactivity = vanillaReactivity(),
 ): MdyStore & { destroy(): void } {
-  const rx = vanillaReactivity();
+  const rx = reactivity;
   const listeners = new Set<() => void>();
   let version = 0;
   let first = true;
@@ -58,19 +67,27 @@ export function createStore(
   };
 }
 
-/** Store over everything a field row usually renders. */
+/**
+ * Store over everything a field row usually renders. Observes through the
+ * reactivity that actually created `handle` (resolved via
+ * {@link getFieldHandleOwner}) instead of a fresh, unrelated instance — see
+ * `@modyra/react`'s equivalent for the cross-runtime bug this fixes.
+ */
 export function createFieldStore(
   handle: MdyFieldHandle<unknown>,
 ): MdyStore & { destroy(): void } {
-  return createStore([
-    handle.value,
-    handle.errors,
-    handle.touched,
-    handle.dirty,
-    handle.valid,
-    handle.pending,
-    handle.disabled,
-  ]);
+  return createStore(
+    [
+      handle.value,
+      handle.errors,
+      handle.touched,
+      handle.dirty,
+      handle.valid,
+      handle.pending,
+      handle.disabled,
+    ],
+    getFieldHandleOwner(handle),
+  );
 }
 
 /**

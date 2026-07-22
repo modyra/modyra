@@ -23,3 +23,73 @@ test("field store notifies subscribers and bumps its snapshot", async () => {
   assert.equal(notified, after); // unsubscribed
   store.destroy();
 });
+
+/**
+ * Independent minimal reactive engine, deliberately NOT vanillaReactivity
+ * and unaware of its module-global dependency graph. Before M5,
+ * createFieldStore() always built a fresh `vanillaReactivity()` internally
+ * to observe a handle's signals — harmless for THIS package's own
+ * vanilla-backed useMdyForm(), but silently inert for a handle owned by any
+ * other runtime (Vue/Solid/Angular, or — as here — a custom one).
+ */
+function customReactivity() {
+  let activeEffect = null;
+  function signal(initial) {
+    const subs = new Set();
+    let value = initial;
+    const read = () => {
+      if (activeEffect) subs.add(activeEffect);
+      return value;
+    };
+    read.set = (v) => {
+      if (Object.is(value, v)) return;
+      value = v;
+      for (const fn of [...subs]) fn();
+    };
+    read.update = (fn) => read.set(fn(value));
+    read.asReadonly = () => () => read();
+    return read;
+  }
+  return {
+    canEffect: true,
+    signal,
+    computed: (fn) => () => fn(),
+    effect: (fn) => {
+      let destroyed = false;
+      const run = () => {
+        if (destroyed) return;
+        activeEffect = run;
+        try {
+          fn(() => {});
+        } finally {
+          activeEffect = null;
+        }
+      };
+      run();
+      return { destroy: () => { destroyed = true; }, get destroyed() { return destroyed; } };
+    },
+    untracked: (fn) => {
+      const prev = activeEffect;
+      activeEffect = null;
+      try {
+        return fn();
+      } finally {
+        activeEffect = prev;
+      }
+    },
+  };
+}
+
+test("createFieldStore observes through the handle's real owner, not a fresh vanilla instance", () => {
+  const rx = customReactivity();
+  const form = createForm({ email: field("", [required()]) }, { reactivity: rx });
+  const store = createFieldStore(form.f.email);
+  let notified = 0;
+  const unsubscribe = store.subscribe(() => notified++);
+
+  form.f.email.set("a@b.co"); // customReactivity's effect runs synchronously — no microtask wait needed
+  assert.ok(notified >= 1, "the store must react to a write on a non-vanilla, unrelated reactivity");
+
+  unsubscribe();
+  store.destroy();
+});

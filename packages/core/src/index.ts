@@ -26,6 +26,8 @@ export type {
   MdyWritableSignal
 } from "./reactivity.js";
 
+export { getFieldHandleOwner } from "./reactive-owner.js";
+
 export {
   MdyActivationError,
   MdyAdapterContractError,
