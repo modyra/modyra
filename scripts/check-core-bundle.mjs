@@ -17,8 +17,17 @@ import { join } from "node:path";
 
 // 2026-07-21 (phase J): whole entry 10.7 KB gzip after satellites moved to
 // subpath entries; realistic surface 9.3 KB. Budgets just above.
-const WHOLE_BUDGET_KB = 11;
-const SURFACE_BUDGET_KB = 10;
+// 2026-07-22 (reactivity-adapter-api plan M1-M8 + construction/activation
+// split): MdyReactiveScope, the typed error classes (reactivity-errors.ts),
+// structured diagnostics (reactivity-diagnostics.ts), the handle-ownership
+// WeakMap registry (reactive-owner.ts) and vanillaReactivity()'s real
+// batch()/flush()/observe() are all real new code, always reachable from
+// the main entry (not satellite/opt-in like i18n/datetime/icons) — same
+// "deliberate feature, not a leak" shape as every budget bump above this
+// one. Real total after the change: whole entry 14.1 KB gzip, realistic
+// surface 10.6 KB gzip. Budgets kept tight just above both.
+const WHOLE_BUDGET_KB = 15;
+const SURFACE_BUDGET_KB = 11;
 
 const outDir = join(tmpdir(), "mdy-core-bundle-check");
 mkdirSync(outDir, { recursive: true });
