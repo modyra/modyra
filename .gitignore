@@ -60,3 +60,6 @@ packages/*/dist/
 
 # Angular demo: styles copied from packages/styles/dist at prebuild
 /examples/angular/.styles/
+
+# Rust
+sdk/rust/target
