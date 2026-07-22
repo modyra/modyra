@@ -1,1 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><path fill-rule="evenodd" d="M81 36 64 0 47 36l-1 2-9-10a6 6 0 0 0-9 9l10 10h-2L0 64l36 17h2L28 91a6 6 0 1 0 9 9l9-10 1 2 17 36 17-36v-2l9 10a6 6 0 1 0 9-9l-9-9 2-1 36-17-36-17-2-1 9-9a6 6 0 1 0-9-9l-9 10v-2Zm-17 2-2 5c-4 8-11 15-19 19l-5 2 5 2c8 4 15 11 19 19l2 5 2-5c4-8 11-15 19-19l5-2-5-2c-8-4-15-11-19-19l-2-5Z" clip-rule="evenodd"/><path d="M118 19a6 6 0 0 0-9-9l-3 3a6 6 0 1 0 9 9l3-3Zm-96 4c-2 2-6 2-9 0l-3-3a6 6 0 1 1 9-9l3 3c3 2 3 6 0 9Zm0 82c-2-2-6-2-9 0l-3 3a6 6 0 1 0 9 9l3-3c3-2 3-6 0-9Zm96 4a6 6 0 0 1-9 9l-3-3a6 6 0 1 1 9-9l3 3Z"/><style>path{fill:#000}@media (prefers-color-scheme:dark){path{fill:#fff}}</style></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="384" height="384" viewBox="0 0 384 384"><defs>
+  <linearGradient id="mdy-top" x1="0" y1="222" x2="338" y2="118" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#6B61F2"/><stop offset="0.45" stop-color="#A855F7"/><stop offset="1" stop-color="#DC66A8"/>
+  </linearGradient>
+  <linearGradient id="mdy-left" x1="0" y1="150" x2="60" y2="380" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#7067FF"/><stop offset="1" stop-color="#A855F7"/>
+  </linearGradient>
+  <linearGradient id="mdy-right" x1="338" y1="170" x2="250" y2="380" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#FF7A85"/><stop offset="1" stop-color="#FF556F"/>
+  </linearGradient></defs><g transform="translate(22.0,0) scale(1.0)"><path d="M 0.00 148.00 Q 0.00 118.00 24.87 101.22 L 147.45 18.54 Q 169.00 4.00 190.55 18.54 L 313.13 101.22 Q 338.00 118.00 338.00 148.00 L 338.00 198.00 Q 338.00 222.00 317.67 209.25 L 194.41 131.94 Q 169.00 116.00 143.59 131.94 L 20.33 209.25 Q 0.00 222.00 0.00 198.00 Z" fill="url(#mdy-top)"/><path d="M 0.00 214.00 Q 0.00 160.00 45.61 188.91 L 104.84 226.45 Q 142.00 250.00 142.00 294.00 L 142.00 314.00 Q 142.00 368.00 96.39 339.09 L 37.16 301.55 Q 0.00 278.00 0.00 234.00 Z" fill="url(#mdy-left)"/><path d="M 338.00 214.00 Q 338.00 160.00 292.39 188.91 L 233.16 226.45 Q 196.00 250.00 196.00 294.00 L 196.00 314.00 Q 196.00 368.00 241.61 339.09 L 300.84 301.55 Q 338.00 278.00 338.00 234.00 Z" fill="url(#mdy-right)"/></g></svg>

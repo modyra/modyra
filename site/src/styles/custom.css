@@ -1,0 +1,93 @@
+/* Modyra brand — fonts, colors, Starlight theme overrides.
+   Source: modyra-brand kit (02-color/modyra-tokens.css, 03-typography). */
+
+@font-face {
+	font-family: 'Satoshi';
+	src: url('../assets/fonts/Satoshi-Light.woff2') format('woff2');
+	font-weight: 300;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Satoshi';
+	src: url('../assets/fonts/Satoshi-Regular.woff2') format('woff2');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Satoshi';
+	src: url('../assets/fonts/Satoshi-Medium.woff2') format('woff2');
+	font-weight: 500;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Satoshi';
+	src: url('../assets/fonts/Satoshi-Bold.woff2') format('woff2');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Satoshi';
+	src: url('../assets/fonts/Satoshi-Black.woff2') format('woff2');
+	font-weight: 900;
+	font-style: normal;
+	font-display: swap;
+}
+
+:root {
+	--mdy-indigo: #7067ff;
+	--mdy-violet: #a855f7;
+	--mdy-coral: #ff6577;
+	--mdy-night: #0e0f16;
+	--mdy-cloud: #f8fafc;
+	--mdy-slate: #94a3b8;
+
+	--sl-font: 'Satoshi', system-ui, sans-serif;
+	--sl-font-system: 'Satoshi', system-ui, sans-serif;
+}
+
+/* Dark theme (Starlight default root palette) */
+:root {
+	--sl-color-accent-low: #241d5c;
+	--sl-color-accent: var(--mdy-indigo);
+	--sl-color-accent-high: #c8c3ff;
+	--sl-color-white: var(--mdy-cloud);
+	--sl-color-gray-1: #eaecf3;
+	--sl-color-gray-2: #b8bcd4;
+	--sl-color-gray-3: var(--mdy-slate);
+	--sl-color-gray-4: #494d6b;
+	--sl-color-gray-5: #2c2f47;
+	--sl-color-gray-6: #1c1e30;
+	--sl-color-black: var(--mdy-night);
+}
+
+/* Light theme overrides */
+:root[data-theme='light'] {
+	--sl-color-accent-low: #e6e3ff;
+	--sl-color-accent: var(--mdy-indigo);
+	--sl-color-accent-high: #4a3fd6;
+	--sl-color-white: var(--mdy-night);
+	--sl-color-gray-1: #1c1e30;
+	--sl-color-gray-2: #383c5c;
+	--sl-color-gray-3: var(--mdy-slate);
+	--sl-color-gray-4: #c3c9db;
+	--sl-color-gray-5: #e4e7f0;
+	--sl-color-gray-6: #f0f2f8;
+	--sl-color-gray-7: var(--mdy-cloud);
+	--sl-color-black: #ffffff;
+}
+
+/* Brand gradient accent on the sidebar's active link marker */
+:root {
+	--mdy-gradient-brand: linear-gradient(90deg, #7067ff 0%, #a855f7 50%, #ff6577 100%);
+}
+
+a[aria-current='page'] {
+	background-image: var(--mdy-gradient-brand);
+	background-clip: text;
+	-webkit-background-clip: text;
+	color: transparent;
+}
