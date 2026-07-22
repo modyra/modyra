@@ -1,94 +1,128 @@
 /**
- * Syncs docs/**\/*.md into site/src/content/docs/ as Starlight pages.
+ * Sync every Markdown file under docs/ into generated Starlight pages.
  *
- * docs/ stays the single source of truth — nothing here is hand-edited
- * content, it's a generated mirror. Each file gets Starlight's required
- * frontmatter (title, pulled from the first `# heading`) injected, and
- * the heading itself stripped from the body so Starlight doesn't render
- * the title twice (its own page header already shows it).
- *
- * Relative markdown links are rewritten too — Astro/Starlight does not
- * auto-resolve `./foo.md`-style links to routes, so left untouched they
- * 404 on every page (confirmed with a real crawl, not assumed: every
- * `docs/**` file that cross-references another doc, a repo README, or a
- * source file broke). Links that stay inside docs/ become Starlight
- * routes (`.md` stripped, trailing slash, anchor preserved); links that
- * escape docs/ (repo READMEs, each package's own README, example source
- * files) become real github.com blob/tree URLs instead.
+ * docs/ remains the single source of truth. The sync step:
+ * - injects Starlight frontmatter using the first H1 as the title;
+ * - removes that H1 from the body to avoid rendering it twice;
+ * - rewrites links between docs pages to deployed Starlight routes;
+ * - prefixes internal routes with the GitHub Pages base path;
+ * - rewrites links outside docs/ to the corresponding GitHub URL;
+ * - preserves anchors, query strings, optional Markdown titles, and images.
  */
 import {
+  existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   rmSync,
+  statSync,
   writeFileSync,
-} from "node:fs";
-import { dirname, join, posix, relative } from "node:path";
-import { fileURLToPath } from "node:url";
+} from 'node:fs';
+import { dirname, join, posix, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const docsDir = join(root, "docs");
-const targetDir = join(root, "site/src/content/docs");
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const docsDir = join(root, 'docs');
+const targetDir = join(root, 'site/src/content/docs');
 
-const REPO_BLOB = "https://github.com/modyra/modyra/blob/main/";
-const REPO_TREE = "https://github.com/modyra/modyra/tree/main/";
+const DOCS_BASE = '/modyra';
+const REPO_ROOT = 'https://github.com/modyra/modyra';
+const REPO_BLOB = `${REPO_ROOT}/blob/main/`;
+const REPO_TREE = `${REPO_ROOT}/tree/main/`;
+const REPO_EDIT = `${REPO_ROOT}/edit/main/`;
 
 function walk(dir) {
   const out = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) out.push(...walk(full));
-    else if (entry.name.endsWith(".md")) out.push(full);
+    else if (entry.name.endsWith('.md')) out.push(full);
   }
   return out;
 }
 
-/** Escapes a title for YAML frontmatter (only `"` and `\` need it here). */
 function yamlString(value) {
-  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+function splitTarget(target) {
+  const match = target.match(/^([^?#]*)(\?[^#]*)?(#.*)?$/);
+  return match
+    ? { path: match[1], query: match[2] ?? '', hash: match[3] ?? '' }
+    : { path: target, query: '', hash: '' };
+}
+
+function docsRoute(docsRel) {
+  let route = docsRel.replace(/\.md$/i, '');
+  if (posix.basename(route).toLowerCase() === 'readme') {
+    route = posix.dirname(route);
+    if (route === '.') route = '';
+  }
+
+  const clean = route.replace(/^\/+|\/+$/g, '');
+  return clean ? `${DOCS_BASE}/${clean}/` : `${DOCS_BASE}/`;
+}
+
+function repoUrl(repoRel, isDirectory, query = '', hash = '') {
+  const encoded = repoRel
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+  return `${isDirectory ? REPO_TREE : REPO_BLOB}${encoded}${query}${hash}`;
+}
+
+function filesystemPath(repoRel) {
+  return join(root, ...repoRel.split('/'));
+}
+
+function isDirectoryTarget(repoRel, explicitDirectory) {
+  if (explicitDirectory) return true;
+  const full = filesystemPath(repoRel);
+  return existsSync(full) && statSync(full).isDirectory();
 }
 
 /**
- * Rewrites every relative markdown link in `content`. `fileDocsRelDir` is
- * the POSIX directory of the source file relative to docs/ (e.g. "."
- * for docs/README.md, "guides" for docs/guides/schemas.md).
+ * Rewrites inline Markdown links and images. fileDocsRelDir is the POSIX
+ * directory of the source file relative to docs/.
  */
 function rewriteLinks(content, fileDocsRelDir) {
   return content.replace(
     /(!?)\[([^\]]*)\]\(([^)\s]+)((?:\s+"[^"]*")?)\)/g,
-    (whole, bang, text, url, titlePart) => {
-      if (bang) return whole; // images: left as-is
-      if (/^[a-z][a-z0-9+.-]*:/i.test(url)) return whole; // has a scheme
-      if (url.startsWith("#")) return whole; // same-page anchor
+    (whole, bang, text, rawTarget, titlePart) => {
+      if (/^[a-z][a-z0-9+.-]*:/i.test(rawTarget)) return whole;
+      if (rawTarget.startsWith('//') || rawTarget.startsWith('#')) return whole;
 
-      const hashIdx = url.indexOf("#");
-      const pathPart = hashIdx >= 0 ? url.slice(0, hashIdx) : url;
-      const hashPart = hashIdx >= 0 ? url.slice(hashIdx) : "";
+      const { path: pathPart, query, hash } = splitTarget(rawTarget);
       if (!pathPart) return whole;
 
-      const isDir = pathPart.endsWith("/");
-      const repoRel = posix.normalize(posix.join("docs", fileDocsRelDir, pathPart));
+      // A leading slash in source docs means docs-root-relative, not domain-root.
+      const sourceRelative = pathPart.startsWith('/')
+        ? pathPart.slice(1)
+        : posix.join(fileDocsRelDir, pathPart);
+      const repoRel = posix.normalize(posix.join('docs', sourceRelative));
+      const staysInDocs = repoRel === 'docs' || repoRel.startsWith('docs/');
+      const explicitDirectory = pathPart.endsWith('/');
 
-      if (repoRel === "docs" || repoRel.startsWith("docs/")) {
-        const docsRel = repoRel === "docs" ? "" : repoRel.slice("docs/".length);
-        if (!isDir && docsRel.endsWith(".md")) {
-          let route = docsRel.slice(0, -3);
-          if (posix.basename(route) === "README") {
-            route = posix.dirname(route);
-            if (route === ".") route = "";
-          }
-          return `[${text}](/${route}${route ? "/" : ""}${hashPart}${titlePart})`;
+      let rewritten;
+      if (staysInDocs) {
+        const docsRel = repoRel === 'docs' ? '' : repoRel.slice('docs/'.length);
+        const isMarkdownPage = !explicitDirectory && /\.md$/i.test(docsRel);
+
+        if (!bang && isMarkdownPage) {
+          rewritten = `${docsRoute(docsRel)}${query}${hash}`;
+        } else {
+          // Images, downloads, directories, and non-Markdown assets remain
+          // source artifacts and therefore link to GitHub rather than a
+          // non-existent Starlight route.
+          const directory = isDirectoryTarget(repoRel, explicitDirectory);
+          rewritten = repoUrl(repoRel, directory, query, hash);
         }
-        // A docs/ subdirectory (or non-.md file) has no Starlight page of
-        // its own — link to the real thing on GitHub instead of a 404.
-        return `[${text}](${REPO_TREE}${repoRel}${titlePart})`;
+      } else {
+        const directory = isDirectoryTarget(repoRel, explicitDirectory);
+        rewritten = repoUrl(repoRel, directory, query, hash);
       }
 
-      // Escaped outside docs/ entirely: a real repo file or directory.
-      const target = isDir
-        ? `${REPO_TREE}${repoRel}`
-        : `${REPO_BLOB}${repoRel}${hashPart}`;
-      return `[${text}](${target}${titlePart})`;
+      return `${bang}[${text}](${rewritten}${titlePart})`;
     },
   );
 }
@@ -98,38 +132,37 @@ mkdirSync(targetDir, { recursive: true });
 
 let count = 0;
 for (const file of walk(docsDir)) {
-  const raw = readFileSync(file, "utf8");
-  const lines = raw.split("\n");
-  const titleIndex = lines.findIndex((l) => l.startsWith("# "));
-  // Frontmatter `title` is rendered as plain text by Starlight, not
-  // markdown — strip the inline code/emphasis markers so `` `mdyForm()` ``
-  // doesn't show its literal backticks in the page header.
+  const raw = readFileSync(file, 'utf8');
+  const lines = raw.split('\n');
+  const titleIndex = lines.findIndex((line) => line.startsWith('# '));
   const title =
     titleIndex >= 0
-      ? lines[titleIndex].slice(2).trim().replace(/[`*_]/g, "")
-      : "Modyra";
+      ? lines[titleIndex].slice(2).trim().replace(/[`*_]/g, '')
+      : 'Modyra';
   const body =
     titleIndex >= 0
-      ? [...lines.slice(0, titleIndex), ...lines.slice(titleIndex + 1)].join("\n")
+      ? [...lines.slice(0, titleIndex), ...lines.slice(titleIndex + 1)].join('\n')
       : raw;
 
-  const rel = relative(docsDir, file).split("\\").join("/"); // posix, even on Windows
+  const rel = relative(docsDir, file).split('\\').join('/');
   const fileDocsRelDir = posix.dirname(rel);
   const rewritten = rewriteLinks(body, fileDocsRelDir);
 
-  const outPath = join(targetDir, rel === "README.md" ? "index.md" : rel);
+  const outRel = rel === 'README.md' ? 'index.md' : rel;
+  const outPath = join(targetDir, outRel);
   mkdirSync(dirname(outPath), { recursive: true });
-  // Starlight's automatic editLink derives the URL from this file's path
-  // inside the *site* project (site/src/content/docs/<rel>) — since that
-  // tree is a generated, gitignored mirror, the automatic link 404s. An
-  // explicit per-page editUrl overrides it with the real docs/ source.
-  const editUrl = `https://github.com/modyra/modyra/edit/main/docs/${rel}`;
-  writeFileSync(
-    outPath,
-    `---\ntitle: ${yamlString(title)}\neditUrl: ${yamlString(editUrl)}\n---\n${rewritten.replace(/^\n+/, "")}`,
-    "utf8",
-  );
-  count++;
+
+  const editUrl = `${REPO_EDIT}docs/${rel}`;
+  const generated = [
+    '---',
+    `title: ${yamlString(title)}`,
+    `editUrl: ${yamlString(editUrl)}`,
+    '---',
+    rewritten.replace(/^\n+/, ''),
+  ].join('\n');
+
+  writeFileSync(outPath, generated, 'utf8');
+  count += 1;
 }
 
 console.log(`docs/ (${count} files) -> site/src/content/docs/`);
