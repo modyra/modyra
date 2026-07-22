@@ -12,7 +12,33 @@
  * `node:test`/`node:assert` (or Jest equivalents) from its own `.mjs`/`.spec.ts`.
  */
 
-import type { MdyReactivity } from "../reactivity.js";
+import type {
+  MdyBatchingCapability,
+  MdyFlushCapability,
+  MdyObserveCapability,
+  MdyReactivity,
+} from "../reactivity.js";
+
+function asBatching(rx: MdyReactivity): MdyBatchingCapability | undefined {
+  return rx.capabilities?.batching === true &&
+    typeof (rx as Partial<MdyBatchingCapability>).batch === "function"
+    ? (rx as MdyReactivity & MdyBatchingCapability)
+    : undefined;
+}
+
+function asFlush(rx: MdyReactivity): MdyFlushCapability | undefined {
+  return rx.capabilities?.deterministicFlush === true &&
+    typeof (rx as Partial<MdyFlushCapability>).flush === "function"
+    ? (rx as MdyReactivity & MdyFlushCapability)
+    : undefined;
+}
+
+function asObserve(rx: MdyReactivity): MdyObserveCapability | undefined {
+  return rx.capabilities?.directObservation === true &&
+    typeof (rx as Partial<MdyObserveCapability>).observe === "function"
+    ? (rx as MdyReactivity & MdyObserveCapability)
+    : undefined;
+}
 
 /** One harness instance per test — see piano §14.1. */
 export interface MdyReactivityTestHarness {
@@ -224,6 +250,84 @@ export function runReactivityContractTests(
     scope.destroy();
 
     assert.throws(() => scope.onCleanup(() => undefined), /MdyDestroyedScopeError|destroyed/i);
+    destroy();
+  });
+
+  test(`${name}: batch() coalesces effect runs (if capable)`, async () => {
+    const { reactivity: rx, flushIfSupported, destroy } = createHarness();
+    const batching = asBatching(rx);
+    if (!batching) {
+      destroy();
+      return;
+    }
+    const s1 = rx.signal(0);
+    const s2 = rx.signal(0);
+    let runs = 0;
+    const ref = rx.effect(() => {
+      runs++;
+      s1();
+      s2();
+    });
+    await flushIfSupported();
+    assert.equal(runs, 1);
+
+    batching.batch(() => {
+      s1.set(1);
+      s2.set(2);
+    });
+    assert.equal(runs, 2, "one batch() of two writes must produce exactly one extra run");
+    ref.destroy();
+    destroy();
+  });
+
+  test(`${name}: flush() settles pending effects deterministically (if capable)`, () => {
+    const { reactivity: rx, destroy } = createHarness();
+    const flushable = asFlush(rx);
+    if (!flushable) {
+      destroy();
+      return;
+    }
+    const s = rx.signal(0);
+    let runs = 0;
+    const ref = rx.effect(() => {
+      runs++;
+      s();
+    });
+    assert.equal(runs, 1);
+    s.set(1);
+    return Promise.resolve(flushable.flush()).then(() => {
+      assert.equal(runs, 2, "flush() must have run the pending effect by the time it resolves");
+      ref.destroy();
+      destroy();
+    });
+  });
+
+  test(`${name}: observe() only fires on an actual change, never on the initial run (if capable)`, async () => {
+    const { reactivity: rx, flushIfSupported, destroy } = createHarness();
+    const observable = asObserve(rx);
+    if (!observable) {
+      destroy();
+      return;
+    }
+    const s = rx.signal(1);
+    const seen: Array<[number, number]> = [];
+    const ref = observable.observe(
+      () => s(),
+      (value, previous) => seen.push([value, previous]),
+    );
+    await flushIfSupported();
+    assert.equal(seen.length, 0, "observe() must not fire on its initial run");
+
+    s.set(2);
+    await flushIfSupported();
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0]?.[0], 2);
+    assert.equal(seen[0]?.[1], 1);
+
+    ref.destroy();
+    s.set(3);
+    await flushIfSupported();
+    assert.equal(seen.length, 1, "observe() must not fire after destroy");
     destroy();
   });
 }
