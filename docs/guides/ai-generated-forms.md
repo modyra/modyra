@@ -171,3 +171,137 @@ onSubmitted(event: { value: Record<string, unknown> }): void {
 - Keep the schema of *your* domain out of the prompt when possible: a
   smaller, fixed contract is what makes the output predictable enough to
   validate.
+
+### Contract v2: layout and declarative rules
+
+Version 2 preserves the v1 field contract and adds optional `layout` and
+`rules`. Both remain data-only: rules use a fixed operator allowlist and may
+only reference declared field names. There are no expressions, callbacks,
+HTML fragments, or arbitrary URLs.
+
+```json
+{
+  "version": 2,
+  "id": "business-signup",
+  "fields": [
+    {
+      "name": "customerType",
+      "kind": "select",
+      "options": [
+        { "value": "private", "label": "Private" },
+        { "value": "business", "label": "Business" }
+      ]
+    },
+    { "name": "vatNumber", "kind": "text", "label": "VAT number" }
+  ],
+  "layout": [
+    {
+      "kind": "section",
+      "id": "identity",
+      "children": ["customerType", "vatNumber"]
+    }
+  ],
+  "rules": [
+    {
+      "effect": "visible",
+      "target": "vatNumber",
+      "when": {
+        "field": "customerType",
+        "operator": "equals",
+        "value": "business"
+      }
+    }
+  ]
+}
+```
+
+Use `parseDynamicForm(input, { mode: "lenient" })` for AI previews: valid
+fields survive and diagnostics explain rejected fields, layout nodes, and
+rules. Use `mode: "strict"` before publishing a stored contract or accepting
+it into an API registry: any diagnostic makes `ok` false and returns no
+renderable fields. `parseDynamicFields()` remains backward compatible and
+accepts v1, v2, and the legacy bare field array.
+
+The machine-readable schema is `spec/dynamic-form-v2.schema.json`. Rust
+services can use the matching `sdk/rust/modyra-contract` crate; TypeScript
+and Rust run against the same conformance fixtures.
+
+### Rust business object to Angular renderer
+
+The Rust workspace includes a runnable Axum example that demonstrates the
+same contract without an LLM. Rust converts a checkout business configuration
+(countries, defaults, quantity constraints) into Contract v2 and exposes it at
+`GET /v1/forms/checkout`. The Angular demo fetches the response as `unknown`,
+runs `parseDynamicForm(input, { mode: "strict" })`, and passes only accepted
+fields to `<mdy-dynamic-form>`.
+
+```text
+Rust CheckoutConfiguration
+  -> DynamicFormV2
+  -> GET /v1/forms/checkout
+  -> Angular HttpClient<unknown>
+  -> parseDynamicForm(..., { mode: "strict" })
+  -> <mdy-dynamic-form [fields]="parsed.fields">
+```
+
+Run the Rust server and Angular demo in separate terminals:
+
+```bash
+cargo run --manifest-path sdk/rust/Cargo.toml \
+  -p modyra-axum-form-server-example
+npm run demo:angular
+```
+
+The demo also sends the completed value to Rust at
+`POST /v1/forms/checkout/submissions` and displays either the generated
+submission ID or normalized field errors. CORS is restricted to the Angular
+dev origin (`http://localhost:4200`).
+
+The cross-language checkout now uses recursive Contract v2 nodes. Rust emits
+a `shipping` group and an `items` array; strict parsing expands the accepted
+initial structure to `shipping.city`, `shipping.zip`, `items.0.sku`, and
+`items.0.qty` for the current Angular renderer.
+
+#### Recursive `group` and `array` nodes
+
+Contract v2 can use a recursive root `schema` instead of the legacy flat
+`fields` list. A group maps named children to dotted paths; an array repeats
+a field/group item descriptor and expands its initial rows to indexed paths.
+The parser enforces a maximum depth of 8, 500 total nodes, and 100 initial
+array rows before anything reaches the renderer.
+
+```json
+{
+  "version": 2,
+  "schema": {
+    "node": "group",
+    "children": {
+      "shipping": {
+        "node": "group",
+        "children": {
+          "city": { "node": "field", "field": { "kind": "text" } },
+          "zip": { "node": "field", "field": { "kind": "text" } }
+        }
+      },
+      "items": {
+        "node": "array",
+        "initialValue": [{ "sku": "TSHIRT-BLK-M", "qty": 2 }],
+        "item": {
+          "node": "group",
+          "children": {
+            "sku": { "node": "field", "field": { "kind": "text" } },
+            "qty": { "node": "field", "field": { "kind": "number", "min": 1 } }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+For the current Angular renderer, recursive nodes compile to safe dotted and
+indexed field paths such as `shipping.city`, `items.0.sku`, and
+`items.0.qty`. This preserves nested submission semantics and real initial
+array rows. Interactive row insertion/removal remains owned by the typed
+`array()` renderer path; Contract v2 currently renders the rows declared in
+`initialValue`.
