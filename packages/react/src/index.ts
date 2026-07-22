@@ -98,16 +98,31 @@ export function createFieldStore(
  * const email = useMdyField(form.f.email);
  * <input value={email.value} onChange={(e) => form.f.email.set(e.target.value)} />
  * ```
+ *
+ * Construction stays pure (`autoActivate: false` — piano §10.5/§10.7): no
+ * timer, storage read or network call happens until the component actually
+ * mounts. `useEffect` calls `form.activate()` on mount and `form.deactivate()`
+ * on cleanup instead of `form.destroy()` — this makes the hook tolerant of
+ * React Strict Mode's dev-only mount→unmount→remount cycle (activate/
+ * deactivate are idempotent and preserve all state, so the extra cycle is a
+ * harmless no-op) and safe to call during SSR (the server-rendered pass
+ * never runs `useEffect` at all, so nothing client-only ever starts).
+ * `form.destroy()` remains available if you need a hard, final teardown
+ * (releasing field records) — call it yourself; the hook no longer does.
  */
 export function useMdyForm<S extends MdyFormSchema>(
   schema: () => S,
   options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, "reactivity">,
 ): MdyTypedForm<S> {
   // Intentional empty deps: one form per component instance.
-  const form = useMemo(() => createForm(schema(), options), []);
-  // The form owns effects/timers (draft/history/async validators), so the
-  // component unmount must release them.
-  useEffect(() => () => form.destroy(), [form]);
+  const form = useMemo(
+    () => createForm(schema(), { ...options, autoActivate: false }),
+    [],
+  );
+  useEffect(() => {
+    form.activate();
+    return () => form.deactivate();
+  }, [form]);
   return form;
 }
 

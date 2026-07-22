@@ -126,6 +126,15 @@ export interface MdyFormEngineOptions {
    * error paths) are always on regardless. See security.ts.
    */
   readonly security?: MdySecurityPolicy;
+  /**
+   * `false` defers every effect-dependent feature (draft, history, async
+   * validators) until {@link MdyFormEngine.activate} is called instead of
+   * starting them at construction time — piano §10.5/§10.7: construction
+   * stays pure (no timers, no storage/network reads), so it's safe during
+   * SSR and tolerant of React/Preact Strict Mode's dev-only double-invoke.
+   * Default `true` (today's behavior: effects start immediately).
+   */
+  readonly autoActivate?: boolean;
 }
 
 // ─── Form engine ─────────────────────────────────────────────────────────────
@@ -213,6 +222,14 @@ export class MdyFormEngine
   private readonly _scope: MdyReactiveScope | undefined;
   /** True while {@link mutate} is running its callback. */
   private _mutating = false;
+  /**
+   * True when effect-dependent features (draft, history, async validators)
+   * are paused — either constructed with `autoActivate: false` and never
+   * {@link activate}d yet, or paused via {@link deactivate}. Field state,
+   * undo/redo stacks and the draft baseline all survive; only the running
+   * effects/timers stop. See piano §10.5/§10.7.
+   */
+  private _deactivated: boolean;
 
   constructor(
     protected readonly _rx: MdyReactivity,
@@ -225,6 +242,7 @@ export class MdyFormEngine
   ) {
     this._devWarnings = options?.devWarnings ?? true;
     this._security = options?.security ?? {};
+    this._deactivated = options?.autoActivate === false;
     this._scope = _rx.createScope?.({ debugName: "modyra:form" });
     const hasDraft = _rx.signal(false);
     this.hasDraft = hasDraft.asReadonly();
@@ -235,11 +253,13 @@ export class MdyFormEngine
       hasDraft,
       warn: (message) => this._warn(message),
       filterRestoredEntry: (key, value) => this._draftEntryAllowed(key, value),
+      isDeactivated: () => this._deactivated,
       scope: this._scope,
     });
     this._historyManager = new MdyHistoryManager({
       rx: _rx,
       isMutating: () => this._mutating,
+      isDeactivated: () => this._deactivated,
       getValue: () => this.value(),
       setValue: (value) => this.setValue(value),
       warn: (message) => this._warn(message),
@@ -695,6 +715,46 @@ export class MdyFormEngine
     return this._destroyed;
   }
 
+  /** True while effect-dependent features are paused — see {@link activate}/{@link deactivate}. */
+  get deactivated(): boolean {
+    return this._deactivated;
+  }
+
+  /**
+   * Starts (or resumes) effect-dependent features: draft persistence,
+   * history recording and per-field async validators. Idempotent, and
+   * safe to call repeatedly (React/Preact Strict Mode's dev-only
+   * mount→unmount→remount dance calls this on every mount). No-op if the
+   * engine wasn't constructed with `autoActivate: false` and was never
+   * {@link deactivate}d — those already start immediately.
+   */
+  activate(): void {
+    if (this._destroyed || !this._deactivated) return;
+    this._deactivated = false;
+    this._draftManager.resume();
+    this._historyManager.resume();
+    this._fields.forEach((rec, name) => this._ensureAsyncRunner(name, rec));
+  }
+
+  /**
+   * Pauses draft persistence, history recording and per-field async
+   * validators — releasing their timers/network calls/effects — without
+   * losing any state (field values, undo/redo stacks, draft baseline).
+   * Unlike {@link destroy}, the form can be {@link activate}d again.
+   * Idempotent. Intended for a binding's own lifecycle (e.g. React/Preact
+   * Strict Mode's transient unmount, or pausing an inactive tab/route).
+   */
+  deactivate(): void {
+    if (this._destroyed || this._deactivated) return;
+    this._deactivated = true;
+    this._draftManager.pause();
+    this._historyManager.pause();
+    this._fields.forEach(rec => {
+      rec.asyncRunner?.destroy();
+      rec.asyncRunner = null;
+    });
+  }
+
   /**
    * Releases every resource the engine owns: async validator runners, the
    * draft and history effects, all pending timers, field records and the
@@ -851,7 +911,7 @@ export class MdyFormEngine
 
   /** Lazily creates the effect that runs async validators for a field. */
   private _ensureAsyncRunner(name: string, rec: FieldRecord): void {
-    if (this._destroyed || rec.asyncRunner) return;
+    if (this._destroyed || this._deactivated || rec.asyncRunner) return;
     if (!this._rx.canEffect) {
       if (MDY_DEV) this._warn(
         `Async validators for "${name}" need an effect-capable reactivity ` +
