@@ -181,6 +181,61 @@ function hasValidValidatorConfig(
   return true;
 }
 
+
+/** Recursive Contract v2 node: a renderable leaf, structural group, or repeatable array. */
+export interface MdyDynamicFieldNode {
+  readonly node: "field";
+  readonly field: Omit<MdyDynamicField, "name">;
+}
+export interface MdyDynamicGroupNode {
+  readonly node: "group";
+  readonly label?: string;
+  readonly children: Readonly<Record<string, MdyDynamicNode>>;
+}
+export interface MdyDynamicArrayNode {
+  readonly node: "array";
+  readonly label?: string;
+  readonly item: MdyDynamicFieldNode | MdyDynamicGroupNode;
+  readonly initialValue?: ReadonlyArray<unknown>;
+  readonly minItems?: number;
+  readonly maxItems?: number;
+}
+export type MdyDynamicNode = MdyDynamicFieldNode | MdyDynamicGroupNode | MdyDynamicArrayNode;
+
+/** Flattens a recursive schema to the dotted/indexed paths consumed by the current renderer. */
+export function flattenDynamicSchema(schema: MdyDynamicGroupNode): MdyDynamicField[] {
+  const out: MdyDynamicField[] = [];
+  const visit = (node: MdyDynamicNode, path: string, initial: unknown): void => {
+    if (node.node === "field") {
+      const candidate = { ...node.field, name: path, initialValue: initial ?? node.field.initialValue } as MdyDynamicField;
+      // Generated dotted/index paths are trusted structure; validate the leaf with
+      // a temporary safe name, then restore the generated path.
+      const parsed = parseDynamicFields([{ ...candidate, name: "leaf" }]);
+      if (parsed[0]) out.push({ ...parsed[0], name: path } as MdyDynamicField);
+      return;
+    }
+    if (node.node === "group") {
+      const value = isRecordValue(initial) ? initial : {};
+      for (const [key, child] of Object.entries(node.children)) {
+        if (!isSafeDynamicSegment(key)) continue;
+        visit(child, path ? `${path}.${key}` : key, value[key]);
+      }
+      return;
+    }
+    const rows = Array.isArray(initial) ? initial : Array.isArray(node.initialValue) ? node.initialValue : [];
+    rows.forEach((row, index) => visit(node.item, `${path}.${index}`, row));
+  };
+  visit(schema, "", undefined);
+  return out;
+}
+
+function isRecordValue(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isSafeDynamicSegment(value: string): boolean {
+  return value.length > 0 && !value.includes(".") && !MDY_FORBIDDEN_DYNAMIC_NAMES.has(value);
+}
+
 /**
  * Versioned envelope for storing a dynamic form config in a CMS/backend.
  * Bump `version` when the field shape changes incompatibly and migrate in
@@ -189,6 +244,71 @@ function hasValidValidatorConfig(
 export interface MdyDynamicFormConfig {
   readonly version: 1;
   readonly fields: ReadonlyArray<MdyDynamicField>;
+}
+
+export type MdyDynamicRuleOperator =
+  | "equals" | "notEquals" | "in" | "notIn"
+  | "isEmpty" | "isNotEmpty"
+  | "greaterThan" | "greaterThanOrEqual"
+  | "lessThan" | "lessThanOrEqual";
+
+export interface MdyDynamicRule {
+  readonly effect: "visible" | "hidden" | "enabled" | "disabled";
+  readonly target: string;
+  readonly when: {
+    readonly field: string;
+    readonly operator: MdyDynamicRuleOperator;
+    readonly value?: unknown;
+  };
+}
+
+export interface MdyDynamicSection {
+  readonly kind: "section";
+  readonly id: string;
+  readonly label?: string;
+  readonly children: ReadonlyArray<string>;
+}
+
+export interface MdyDynamicColumns {
+  readonly kind: "columns";
+  readonly id: string;
+  readonly columns: ReadonlyArray<ReadonlyArray<string>>;
+}
+
+export type MdyDynamicLayoutNode = MdyDynamicSection | MdyDynamicColumns;
+
+/** Contract v2 adds declarative layout and conditions, never executable code. */
+export interface MdyDynamicFormConfigV2 {
+  readonly version: 2;
+  readonly id?: string;
+  readonly fields?: ReadonlyArray<MdyDynamicField>;
+  readonly schema?: MdyDynamicGroupNode;
+  readonly layout?: ReadonlyArray<MdyDynamicLayoutNode>;
+  readonly rules?: ReadonlyArray<MdyDynamicRule>;
+}
+
+export type MdyDynamicFormDocument =
+  | MdyDynamicFormConfig
+  | MdyDynamicFormConfigV2;
+
+export type MdyDynamicParseMode = "lenient" | "strict";
+
+export interface MdyDynamicDiagnostic {
+  readonly code: string;
+  readonly severity: "warning" | "error";
+  readonly path: string;
+  readonly message: string;
+}
+
+export interface MdyDynamicFormParseResult {
+  readonly ok: boolean;
+  readonly version: 1 | 2 | null;
+  readonly fields: ReadonlyArray<MdyDynamicField>;
+  readonly layout: ReadonlyArray<MdyDynamicLayoutNode>;
+  readonly rules: ReadonlyArray<MdyDynamicRule>;
+  readonly diagnostics: ReadonlyArray<MdyDynamicDiagnostic>;
+  readonly acceptedCount: number;
+  readonly rejectedCount: number;
 }
 
 /**
@@ -210,9 +330,9 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     "fields" in input
   ) {
     const envelope = input as { version?: unknown; fields?: unknown };
-    if (envelope.version !== 1) {
+    if (envelope.version !== 1 && envelope.version !== 2) {
       warnDev(
-        `Unsupported dynamic form config version ${String(envelope.version)} — expected 1.`,
+        `Unsupported dynamic form config version ${String(envelope.version)} — expected 1 or 2.`,
       );
       return [];
     }
@@ -304,8 +424,134 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
   });
 }
 
+let diagnosticSink: ((message: string) => void) | undefined;
+
 function warnDev(message: string): void {
+  diagnosticSink?.(message);
   console.warn(`[modyra] ${message}`);
+}
+
+function diagnosticCode(message: string): string {
+  if (message.includes("Unsupported dynamic form config version")) return "MDY_DYNAMIC_UNSUPPORTED_VERSION";
+  if (message.includes("duplicate dynamic field")) return "MDY_DYNAMIC_DUPLICATE_NAME";
+  if (message.includes("reserved or contains forbidden")) return "MDY_DYNAMIC_UNSAFE_NAME";
+  if (message.includes("unknown kind")) return "MDY_DYNAMIC_UNKNOWN_KIND";
+  if (message.includes("requires a valid options")) return "MDY_DYNAMIC_OPTIONS_REQUIRED";
+  if (message.includes("pattern length")) return "MDY_DYNAMIC_PATTERN_TOO_LONG";
+  return "MDY_DYNAMIC_INVALID_FIELD";
+}
+
+function validFieldReference(name: unknown, names: ReadonlySet<string>): name is string {
+  return typeof name === "string" && names.has(name);
+}
+
+function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
+  const out: MdyDynamicDiagnostic[] = [];
+  let count = 0;
+  const visit = (raw: unknown, path: string, depth: number): void => {
+    count += 1;
+    if (depth > 8 || count > 500) { out.push({ code: "MDY_DYNAMIC_SCHEMA_LIMIT", severity: "error", path, message: "schema exceeds depth/node limits." }); return; }
+    if (!isRecordValue(raw) || !["field", "group", "array"].includes(String(raw["node"]))) { out.push({ code: "MDY_DYNAMIC_INVALID_NODE", severity: "error", path, message: "node must be field, group, or array." }); return; }
+    if (raw["node"] === "field") {
+      if (!isRecordValue(raw["field"])) out.push({ code: "MDY_DYNAMIC_INVALID_FIELD", severity: "error", path: `${path}/field`, message: "field node requires a field object." });
+      return;
+    }
+    if (raw["node"] === "group") {
+      if (!isRecordValue(raw["children"])) { out.push({ code: "MDY_DYNAMIC_INVALID_GROUP", severity: "error", path, message: "group requires children." }); return; }
+      for (const [key, child] of Object.entries(raw["children"])) {
+        if (!isSafeDynamicSegment(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/children/${key}`, message: "unsafe child name." });
+        else visit(child, `${path}/children/${key}`, depth + 1);
+      }
+      return;
+    }
+    if (!isRecordValue(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path, message: "array requires an item node." });
+    else visit(raw["item"], `${path}/item`, depth + 1);
+    if (raw["initialValue"] !== undefined && !Array.isArray(raw["initialValue"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path: `${path}/initialValue`, message: "array initialValue must be an array." });
+    if (Array.isArray(raw["initialValue"]) && raw["initialValue"].length > 100) out.push({ code: "MDY_DYNAMIC_SCHEMA_LIMIT", severity: "error", path: `${path}/initialValue`, message: "array initialValue exceeds 100 rows." });
+  };
+  visit(input, "/schema", 0);
+  return out;
+}
+
+/** Parses v1/v2 untrusted input with structured diagnostics. */
+export function parseDynamicForm(
+  input: unknown,
+  options: { readonly mode?: MdyDynamicParseMode } = {},
+): MdyDynamicFormParseResult {
+  const diagnostics: MdyDynamicDiagnostic[] = [];
+  const previousSink = diagnosticSink;
+  diagnosticSink = (message) => diagnostics.push({
+    code: diagnosticCode(message), severity: "error", path: "/fields", message,
+  });
+  const rawEnvelope = typeof input === "object" && input !== null && !Array.isArray(input)
+    ? input as { version?: unknown; schema?: unknown }
+    : undefined;
+  let fields: MdyDynamicField[];
+  try {
+    fields = rawEnvelope?.version === 2 && rawEnvelope.schema !== undefined
+      ? []
+      : parseDynamicFields(input);
+  } finally { diagnosticSink = previousSink; }
+
+  const envelope = typeof input === "object" && input !== null && !Array.isArray(input)
+    ? input as { version?: unknown; fields?: unknown; schema?: unknown; layout?: unknown; rules?: unknown }
+    : undefined;
+  const version: 1 | 2 | null = Array.isArray(input) || envelope?.version === 1
+    ? 1 : envelope?.version === 2 ? 2 : null;
+  if (version === 2 && envelope?.schema !== undefined) {
+    const schemaDiagnostics = validateDynamicSchema(envelope.schema);
+    diagnostics.push(...schemaDiagnostics);
+    if (schemaDiagnostics.length === 0) fields = flattenDynamicSchema(envelope.schema as MdyDynamicGroupNode);
+  }
+  const names = new Set(fields.map((field) => field.name));
+  const layout: MdyDynamicLayoutNode[] = [];
+  const rules: MdyDynamicRule[] = [];
+
+  if (version === 2 && envelope) {
+    if (envelope.layout !== undefined && !Array.isArray(envelope.layout)) {
+      diagnostics.push({ code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path: "/layout", message: "layout must be an array." });
+    } else for (const [index, raw] of (envelope.layout ?? []).entries()) {
+      if (typeof raw !== "object" || raw === null) {
+        diagnostics.push({ code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path: `/layout/${index}`, message: "layout node must be an object." });
+        continue;
+      }
+      const node = raw as Partial<MdyDynamicLayoutNode>;
+      const refs = node.kind === "section" ? node.children : node.kind === "columns" ? node.columns?.flat() : undefined;
+      if (typeof node.id !== "string" || !refs || refs.some((ref) => !validFieldReference(ref, names))) {
+        diagnostics.push({ code: "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", severity: "error", path: `/layout/${index}`, message: "layout references an unknown field or has an invalid shape." });
+        continue;
+      }
+      layout.push(raw as MdyDynamicLayoutNode);
+    }
+    if (envelope.rules !== undefined && !Array.isArray(envelope.rules)) {
+      diagnostics.push({ code: "MDY_DYNAMIC_INVALID_RULE", severity: "error", path: "/rules", message: "rules must be an array." });
+    } else for (const [index, raw] of (envelope.rules ?? []).entries()) {
+      if (typeof raw !== "object" || raw === null) {
+        diagnostics.push({ code: "MDY_DYNAMIC_INVALID_RULE", severity: "error", path: `/rules/${index}`, message: "rule must be an object." });
+        continue;
+      }
+      const rule = raw as Partial<MdyDynamicRule>;
+      const effects = ["visible", "hidden", "enabled", "disabled"];
+      const operators = ["equals", "notEquals", "in", "notIn", "isEmpty", "isNotEmpty", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual"];
+      if (!effects.includes(rule.effect ?? "") || !validFieldReference(rule.target, names) || !rule.when || !validFieldReference(rule.when.field, names) || !operators.includes(rule.when.operator)) {
+        diagnostics.push({ code: "MDY_DYNAMIC_INVALID_RULE", severity: "error", path: `/rules/${index}`, message: "rule has an unsupported effect/operator or references an unknown field." });
+        continue;
+      }
+      rules.push(raw as MdyDynamicRule);
+    }
+  }
+
+  const sourceCount = Array.isArray(input) ? input.length : Array.isArray(envelope?.fields) ? envelope.fields.length : fields.length;
+  const rejectedCount = Math.max(0, sourceCount - fields.length) + diagnostics.filter((d) => d.path.startsWith("/layout/") || d.path.startsWith("/rules/")).length;
+  const strict = options.mode === "strict";
+  return {
+    ok: version !== null && (!strict || diagnostics.length === 0),
+    version,
+    fields: strict && diagnostics.length > 0 ? [] : fields,
+    layout: strict && diagnostics.length > 0 ? [] : layout,
+    rules: strict && diagnostics.length > 0 ? [] : rules,
+    diagnostics, acceptedCount: fields.length, rejectedCount,
+  };
 }
 
 /**
