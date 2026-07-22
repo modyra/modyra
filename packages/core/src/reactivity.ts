@@ -74,6 +74,31 @@ export interface MdyBatchingCapability {
   batch<T>(fn: () => T): T;
 }
 
+/** Optional Level-B capability (piano §6.2): a deterministic settle point. */
+export interface MdyFlushCapability {
+  flush(): void | Promise<void>;
+}
+
+export interface MdyObserveOptions<T> {
+  equal?: MdyEqualityFn<T>;
+  timing?: "sync" | "runtime";
+}
+
+/**
+ * Optional Level-B capability (piano §6.3): a selector-based subscription
+ * that only notifies on an actual change (per `equal`), skipping the
+ * initial run. Must be executed by the runtime that owns the observed
+ * signals — never bridged through an unrelated reactivity instance
+ * (piano §10.1's cross-runtime rule applies here too).
+ */
+export interface MdyObserveCapability {
+  observe<T>(
+    selector: () => T,
+    listener: (value: T, previous: T) => void,
+    options?: MdyObserveOptions<T>,
+  ): MdyEffectRef;
+}
+
 export interface MdyReactivityCapabilities {
   readonly effects: boolean;
   readonly effectOwnership: boolean;
@@ -142,6 +167,38 @@ interface ProducerNode {
 }
 
 let activeConsumer: Consumer | null = null;
+
+// ─── Shared effect scheduler (piano §6.1/§6.2: batch()/flush()) ───────────────
+//
+// Every VanillaEffect schedules itself into one shared pending set instead of
+// queueing its own microtask. This is what makes batch() and flush() real:
+// batch() suppresses the drain while its callback runs and then drains once,
+// synchronously, before returning; flush() drains synchronously too. Neither
+// changes the default (non-batch, non-flush) timing — the first effect to go
+// stale still queues exactly one microtask, same as before this milestone.
+
+const pendingEffects = new Set<VanillaEffect>();
+let drainScheduled = false;
+let batchDepth = 0;
+
+function scheduleEffect(effectNode: VanillaEffect): void {
+  pendingEffects.add(effectNode);
+  if (batchDepth > 0 || drainScheduled) return;
+  drainScheduled = true;
+  queueMicrotask(() => {
+    drainScheduled = false;
+    if (batchDepth === 0) drainPendingEffects();
+  });
+}
+
+/** Runs every pending effect, looping until none remain (settles chained re-triggers too). */
+function drainPendingEffects(): void {
+  while (pendingEffects.size > 0) {
+    const snapshot = [...pendingEffects];
+    pendingEffects.clear();
+    for (const effectNode of snapshot) effectNode.runIfPending();
+  }
+}
 
 function track(producer: ProducerNode): void {
   if (activeConsumer) {
@@ -224,7 +281,6 @@ class VanillaComputed<T> implements ProducerNode, Consumer {
 
 class VanillaEffect implements Consumer {
   readonly producers = new Set<ProducerNode>();
-  private _scheduled = false;
   private _destroyed = false;
   private _cleanups: Array<() => void> = [];
 
@@ -240,12 +296,14 @@ class VanillaEffect implements Consumer {
   }
 
   markStale(): void {
-    if (this._scheduled || this._destroyed) return;
-    this._scheduled = true;
-    queueMicrotask(() => {
-      this._scheduled = false;
-      if (!this._destroyed) this._run();
-    });
+    if (this._destroyed) return;
+    scheduleEffect(this);
+  }
+
+  /** Called only from the shared drain — set membership was the schedule marker. */
+  runIfPending(): void {
+    if (this._destroyed) return;
+    this._run();
   }
 
   private _run(): void {
@@ -273,6 +331,7 @@ class VanillaEffect implements Consumer {
   destroy(): void {
     if (this._destroyed) return;
     this._destroyed = true;
+    pendingEffects.delete(this);
     this._runCleanups();
     dropDependencies(this);
   }
@@ -336,14 +395,16 @@ class VanillaScope implements MdyReactiveScope {
  * (`await Promise.resolve()`) after writes when asserting on
  * effect-driven state (async validators, drafts, history).
  */
-export function vanillaReactivity(): MdyReactivity {
+export function vanillaReactivity(): MdyReactivity &
+  MdyBatchingCapability &
+  MdyFlushCapability &
+  MdyObserveCapability {
   return {
     id: Symbol("vanilla"),
     kind: "vanilla",
-    // batching/deterministicFlush/directObservation/writableComputed/
-    // graphInspection/serverSnapshots are not implemented yet (piano
-    // Milestone 3) — reporting them true here would be exactly the
-    // "fictitious capability" the plan's §8.1 forbids.
+    // writableComputed/graphInspection/serverSnapshots are not implemented
+    // (out of scope per piano §6.4-§6.5/§10.7 — reporting them true would
+    // be exactly the "fictitious capability" the plan's §8.1 forbids).
     capabilities: {
       effects: true,
       effectOwnership: true,
@@ -355,9 +416,9 @@ export function vanillaReactivity(): MdyReactivity {
       // computed/effect from re-running. Best-effort per piano §4.2, not a
       // full glitch-free guarantee, so this stays false.
       computedEquality: false,
-      batching: false,
-      deterministicFlush: false,
-      directObservation: false,
+      batching: true,
+      deterministicFlush: true,
+      directObservation: true,
       writableComputed: false,
       graphInspection: false,
       serverSnapshots: false,
@@ -401,6 +462,53 @@ export function vanillaReactivity(): MdyReactivity {
         options?.debugName,
         options?.parent as VanillaScope | undefined,
       );
+    },
+    batch<T>(fn: () => T): T {
+      batchDepth++;
+      try {
+        return fn();
+      } finally {
+        batchDepth--;
+        if (batchDepth === 0) drainPendingEffects();
+      }
+    },
+    flush(): Promise<void> {
+      // Deterministic, not "wait one tick": drainPendingEffects() loops
+      // until settled, so a chain of effects each triggering the next all
+      // resolve within this one flush() rather than needing N awaits.
+      return Promise.resolve().then(() => {
+        drainPendingEffects();
+      });
+    },
+    observe<T>(
+      selector: () => T,
+      listener: (value: T, previous: T) => void,
+      options?: MdyObserveOptions<T>,
+    ): MdyEffectRef {
+      // `options.timing` is accepted but not differentiated: vanilla only
+      // has one timing model (microtask-scheduled, same as effect()) —
+      // best-effort per piano §4.2 rather than rejecting the option.
+      const equal = options?.equal ?? Object.is;
+      let hasPrevious = false;
+      let previous: T;
+      const node = new VanillaEffect(() => {
+        const current = selector();
+        if (!hasPrevious) {
+          hasPrevious = true;
+          previous = current;
+          return; // no "previous" to report yet — only fire on later changes
+        }
+        if (equal(previous, current)) return;
+        const prev = previous;
+        previous = current;
+        listener(current, prev);
+      });
+      return {
+        destroy: () => node.destroy(),
+        get destroyed() {
+          return node.destroyed;
+        },
+      };
     },
   };
 }
