@@ -123,4 +123,58 @@ export function runReactivityContract(name, factory, options = {}) {
     await flush();
     assert.equal(runs, 2, "effect should not run after destroy");
   });
+
+  // ─── Optional, capability-gated checks (piano-modyra-reactivity-adapter-api) ──
+  // Adapters not yet migrated to the extended contract simply have no
+  // `capabilities`/`createScope` and these tests are skipped for them —
+  // additive, not a regression gate, until each adapter's own milestone.
+
+  test(`${name}: capabilities never claim a fictitious guarantee`, () => {
+    const rx = factory();
+    if (!rx.capabilities) return;
+    for (const [key, value] of Object.entries(rx.capabilities)) {
+      assert.equal(typeof value, "boolean", `capabilities.${key} must be a boolean`);
+    }
+    assert.equal(
+      rx.capabilities.effects,
+      rx.canEffect,
+      "capabilities.effects must agree with the deprecated canEffect alias",
+    );
+  });
+
+  test(`${name}: scope destroy is idempotent and cascades to children`, () => {
+    const rx = factory();
+    if (!rx.createScope) return;
+
+    const root = rx.createScope({ debugName: "root" });
+    const child = rx.createScope({ debugName: "child", parent: root });
+
+    let rootCleaned = 0;
+    let childCleaned = 0;
+    root.onCleanup(() => rootCleaned++);
+    child.onCleanup(() => childCleaned++);
+
+    assert.equal(root.destroyed, false);
+    assert.equal(child.destroyed, false);
+
+    root.destroy();
+    assert.equal(root.destroyed, true, "root should be destroyed");
+    assert.equal(child.destroyed, true, "destroying a parent must destroy its children");
+    assert.equal(rootCleaned, 1);
+    assert.equal(childCleaned, 1);
+
+    // Idempotent: a second destroy() must not re-run cleanups.
+    root.destroy();
+    assert.equal(rootCleaned, 1, "destroy must be idempotent");
+  });
+
+  test(`${name}: registering on a destroyed scope throws a typed error`, () => {
+    const rx = factory();
+    if (!rx.createScope) return;
+
+    const scope = rx.createScope();
+    scope.destroy();
+
+    assert.throws(() => scope.onCleanup(() => {}), /MdyDestroyedScopeError|destroyed/i);
+  });
 }
