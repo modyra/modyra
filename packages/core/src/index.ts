@@ -12,6 +12,7 @@ export {
   vanillaReactivity
 } from "./reactivity.js";
 export type {
+  MdyBatchingCapability,
   MdyComputedOptions,
   MdyEffectOptions,
   MdyEffectRef,
