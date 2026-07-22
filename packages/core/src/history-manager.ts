@@ -9,6 +9,7 @@
 import type {
   MdyEffectRef,
   MdyReactivity,
+  MdyReactiveScope,
   MdySignal,
   MdyWritableSignal,
 } from "./reactivity.js";
@@ -20,6 +21,8 @@ interface HistoryManagerDeps {
   readonly getValue: () => Record<string, unknown>;
   readonly setValue: (value: Record<string, unknown>) => void;
   readonly warn: (message: string) => void;
+  /** Form-owned scope — see {@link import("./draft-manager.js").MdyDraftManager}'s equivalent field. */
+  readonly scope?: MdyReactiveScope;
 }
 
 /**
@@ -30,6 +33,7 @@ export class MdyHistoryManager {
   private readonly _getValue: () => Record<string, unknown>;
   private readonly _setValue: (value: Record<string, unknown>) => void;
   private readonly _warn: (message: string) => void;
+  private readonly _scope: MdyReactiveScope | undefined;
 
   private readonly _undoStack: Array<Record<string, unknown>> = [];
   private readonly _redoStack: Array<Record<string, unknown>> = [];
@@ -49,6 +53,7 @@ export class MdyHistoryManager {
     this._getValue = deps.getValue;
     this._setValue = deps.setValue;
     this._warn = deps.warn;
+    this._scope = deps.scope;
     this._canUndo = deps.rx.signal(false);
     this._canRedo = deps.rx.signal(false);
     this.canUndo = this._canUndo.asReadonly();
@@ -114,7 +119,7 @@ export class MdyHistoryManager {
           this._timer = null;
         }
       });
-    });
+    }, { scope: this._scope, debugName: "modyra:history" });
   }
 
   /**
