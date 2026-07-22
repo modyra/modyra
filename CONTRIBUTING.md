@@ -62,9 +62,12 @@ Releases run in CI (`.github/workflows/release.yml`) via
    Equivalent manual flow remains valid: `pnpm changeset version` +
    lockfile/changelog update + commit + tag. All `@modyra/*` remain
    fixed-versioned together.
-3. Merging that PR triggers the publish job: full gate (build, all test
-   suites, bundle/tree-shaking check, theme parity, `pnpm audit --prod`),
-   then `npm run release:stage` stages every `@modyra/*` package with
+3. `release.yml` triggers only on a pushed `v*` tag (not on every push to
+   `main`), so ordinary commits never start a publish attempt — pushing
+   the version-bump commit's tag (step 2's `release:integrate:push`) is
+   what starts it: full gate (build, all test suites, bundle/tree-shaking
+   check, theme parity, `pnpm audit --prod`), then `npm run release:stage`
+   stages every `@modyra/*` package with
    `--provenance` (sigstore attestations link each tarball to the exact
    commit and workflow run).
 4. Release candidates precede majors.
