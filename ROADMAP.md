@@ -80,9 +80,16 @@ Goal: 7 supported frameworks.
       injection, link rewriting docs→routes / repo→GitHub). 0/86 broken
       links after a full crawl. Fixed a high-severity `sharp` CVE in the
       scaffold before shipping.
-- [ ] Migration guides (RHF/Formik/Reactive Forms) — **partial**: Reactive
-      Forms guide genuinely tested (3/3, no new dep). RHF/Formik need new
-      devDependencies, approval-gated.
+- [x] Migration guides (RHF/Formik/Reactive Forms) — **done 2026-07-23**.
+      Reactive Forms guide tested (3/3, no new dep). RHF/Formik guides
+      added with new devDependencies (`react-hook-form`, `formik`,
+      `jsdom` — approved): each side-by-side snippet is proven by a real
+      jsdom + react-dom test (`docs/examples/{rhf,formik}-migration/`)
+      that builds both forms and asserts the same invalid → valid
+      transitions. Found and documented two real gotchas along the way:
+      RHF's `formState` is a lazily-tracked proxy (a key only updates
+      once read during render); Formik's `isValid` is dirty-gated and can
+      read `true` for an untouched required field.
 - [x] StackBlitz starters — **all 6 done** (Angular/React/Vue/Lit/Solid/Preact):
       real, verified Vite projects, own isolated `package.json`, real
       `npm install` + build + dev server + Playwright pass (2026-07-23 for
