@@ -10,10 +10,13 @@
 import {
   createForm,
   getFieldHandleOwner,
+  MdyBatchingCapability,
   MdyCoreFormOptions,
   MdyFieldHandle,
+  MdyFlushCapability,
   MdyFormSchema,
   MdyFormValue,
+  MdyObserveCapability,
   MdyReactivity,
   MdySignal,
   MdyTypedForm,
@@ -21,6 +24,19 @@ import {
 } from "@modyra/core";
 import { useSyncExternalStore } from "preact/compat";
 import { useEffect, useMemo } from "preact/hooks";
+
+/**
+ * `vanillaReactivity()` tagged `kind: "preact"` — same reasoning as
+ * `@modyra/react`'s `reactReactivity()`: `useMdyForm` already runs on the
+ * vanilla graph by default, this just gives the capability matrix
+ * (`scripts/reactivity-capability-matrix.mjs`) a named export to introspect.
+ */
+export function preactReactivity(): MdyReactivity &
+  MdyBatchingCapability &
+  MdyFlushCapability &
+  MdyObserveCapability {
+  return { ...vanillaReactivity(), kind: "preact" };
+}
 
 /** A `useSyncExternalStore`-compatible view over reactive Modyra state. */
 export interface MdyStore {

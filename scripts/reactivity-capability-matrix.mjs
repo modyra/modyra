@@ -10,6 +10,10 @@
  */
 import { writeFileSync } from "node:fs";
 import { vanillaReactivity } from "../packages/core/dist/index.js";
+import { reactReactivity } from "../packages/react/dist/index.js";
+import { preactReactivity } from "../packages/preact/dist/index.js";
+import { svelteReactivity } from "../packages/svelte/dist/index.js";
+import { litReactivity } from "../packages/lit/dist/adapter.js";
 
 const CAPABILITY_ORDER = [
   "effects",
@@ -75,11 +79,23 @@ rows.push({
   note: "source-verified by reactivity-angular.spec.ts, not live-imported (see script comment)",
 });
 
-for (const name of ["vue", "solid", "preact", "svelte", "lit", "react"]) {
+// React/Preact/Svelte/Lit have no native signal primitive of their own, so
+// they already run on vanillaReactivity()'s real capabilities by default
+// (createForm()'s own fallback) — these named exports (Phase P1) just make
+// that visible to this script instead of showing "—" for a gap that isn't
+// actually there at runtime.
+rows.push({ name: "react", capabilities: reactReactivity().capabilities, note: "= vanilla (no signal primitive of its own)" });
+rows.push({ name: "preact", capabilities: preactReactivity().capabilities, note: "= vanilla (no signal primitive of its own)" });
+rows.push({ name: "svelte", capabilities: svelteReactivity().capabilities, note: "= vanilla (no signal primitive of its own); toStore() bridges to a Readable" });
+rows.push({ name: "lit", capabilities: litReactivity().capabilities, note: "= vanilla (no signal primitive of its own)" });
+
+// Vue and Solid have real native reactivity of their own and genuinely
+// don't declare capabilities/createScope yet (Phase P2/P3).
+for (const name of ["vue", "solid"]) {
   rows.push({
     name,
     capabilities: undefined,
-    note: "not yet migrated to declare capabilities (piano Milestones 2-5 continued)",
+    note: "real native reactivity, not yet migrated to declare capabilities (ROADMAP Phase P2/P3)",
   });
 }
 
