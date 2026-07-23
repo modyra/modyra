@@ -8,6 +8,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
+- Svelte example (`examples/svelte`), compiled through `esbuild-svelte` — closes framework breadth to 7/7, all with a working example.
+- Tested react-hook-form and Formik migration guides (`docs/guides/comparison-react-hook-form.md`, `comparison-formik.md`) — each side-by-side snippet is proven by a real jsdom + react-dom test, not just described.
+- StackBlitz starters for Solid and Preact (React, Vue and Lit shipped in 0.3.0/0.4.0's Unreleased cycle already).
+- React Native / Hermes compatibility re-verified with the real compiler (`hermes-compiler`, the exact one React Native 0.86.0 depends on): compiles clean, zero errors — see `docs/guides/react-native.md`.
+- Conference/meetup pitch deck, published as a page on the docs site (`site/src/pages/pitch.astro`).
+
+### Fixed
+
+- `scripts/publish-workspace.mjs`'s hardcoded package list predated the Solid/Preact/Svelte adapters, so a clean release bumped their `package.json` without ever publishing them — fixed, all `@modyra/*@0.4.0` now live on npm.
+
+## [0.4.0] - 2026-07-23
+
+### Added
+
 - Starlight documentation site with GitHub Pages deployment and Modyra branding.
 - Solid, Preact, and Svelte adapters, widgets integrations, examples, and documentation.
 - StackBlitz starters for React, Vue, and Lit.
@@ -15,7 +29,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Reactivity/adapter API redesign (`@modyra/core`, `@modyra/angular`, `@modyra/react`, `@modyra/preact`): optional `capabilities`/`createScope`/`MdyReactiveScope` on `MdyReactivity`, typed errors, structured diagnostics; real `batch()`/`flush()`/`observe()` on `vanillaReactivity()`; `form.mutate()` for coalesced history entries; `MdyFormEngineOptions.autoActivate` plus `activate()`/`deactivate()` for pausing/resuming draft, history and async validators without losing state; `@modyra/core/testing` (`runReactivityContractTests`) as a public conformance-suite API.
 - `@modyra/react`/`@modyra/preact`'s `useMdyForm` now constructs with `autoActivate: false` and activates/deactivates from its effect instead of destroying on unmount — tolerant of React Strict Mode's dev-only double-invoke and safe during SSR.
 - Dynamic Form Contract v2 (`@modyra/core`): data-only layout (sections/columns), declarative visibility/enabled rules, structured strict/lenient parser diagnostics, recursive `group`/`array` schema nodes, a shared JSON Schema and conformance fixtures (`spec/`). Contract v1 and `parseDynamicFields()` remain fully supported.
-- `modyra-contract` Rust crate (`sdk/rust/`) implementing Contract v2, plus runnable `reqwest`/Axum examples; the Angular dynamic-form demo now round-trips against a real Rust API.
+- `modyra-contract` Rust crate (`sdk/rust/`) implementing Contract v2, plus runnable `reqwest`/Axum examples; the Angular dynamic-form demo now round-trips against a real Rust API. Not published to crates.io yet — a separate decision.
 - Generated reactivity adapter capability matrix (`npm run docs:reactivity-matrix` → `docs/reactivity-capability-matrix.md`) and a new adapter-authoring guide (`docs/guides/reactivity-adapter-guide.md`).
 
 ### Fixed
@@ -98,6 +112,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Separated performance benchmarks from the blocking Angular test suite.
 - Removed unused widget testing stubs.
 
-[Unreleased]: https://github.com/modyra/modyra/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/modyra/modyra/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/modyra/modyra/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/modyra/modyra/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/modyra/modyra/releases/tag/v0.2.0
