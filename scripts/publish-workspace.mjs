@@ -12,6 +12,13 @@ const packages = [
   { name: "@modyra/react", dir: "packages/react" },
   { name: "@modyra/lit", dir: "packages/lit" },
   { name: "@modyra/styles", dir: "packages/styles" },
+  // Added 2026-07-23: this list predated these three adapters, so the
+  // v0.4.0 release bumped their package.json (fixed changesets group)
+  // without ever actually publishing them — found via `npm view
+  // @modyra/solid version` returning 404 after the release ran clean.
+  { name: "@modyra/solid", dir: "packages/solid" },
+  { name: "@modyra/preact", dir: "packages/preact" },
+  { name: "@modyra/svelte", dir: "packages/svelte" },
 ];
 
 for (const pkg of packages) {
