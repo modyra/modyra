@@ -304,15 +304,22 @@ Astro/Starlight project generated from `docs/`; that directory stays the
 single source of truth). The shortlist:
 
 - [Mental model](docs/guides/mental-model.md) — the state graph, field lifecycle, operation semantics
-- [Typed forms](docs/guides/typed-forms.md) — schema, handles, `patch`/`getChanges`, async validation, field arrays, undo/redo, **drafts (read the security note)**, wizard, Zod
+- [Typed forms](docs/guides/typed-forms.md) — schema, handles, `patch`/`getChanges`, async validation, field arrays, undo/redo, `mutate()`, construction/activation (SSR, Strict Mode), **drafts (read the security note)**, wizard, Zod
 - [Schema adapters](docs/guides/schemas.md) — Zod vs Standard Schema (Valibot, ArkType, …): which model, which trade-offs
 - [Server validation](docs/guides/server-validation.md) — one schema, two sides: `serverValidate()` with Next.js/Express/Hono
 - [Usage modes](docs/guides/usage-modes.md) — declarative, explicit adapter, headless, validation semantics
 - [UI toolkit](docs/guides/ui-toolkit.md) — renderer catalog, enterprise select, dynamic forms, CSS tokens
-- [AI-generated forms](docs/guides/ai-generated-forms.md) — LLM output → `parseDynamicFields()` → render: the safe pipeline + system prompt template
+- [AI-generated forms](docs/guides/ai-generated-forms.md) — LLM output → `parseDynamicFields()` → render: the safe pipeline + system prompt template, including the Contract v2 layout/rules extension
+- [Writing a reactivity adapter](docs/guides/reactivity-adapter-guide.md) · [capability matrix](docs/reactivity-capability-matrix.md) — the `MdyReactivity` contract for building the next framework binding
 - [DevTools](docs/guides/devtools.md) — hotkey overlay, masking, production notes
 - [I18n](docs/guides/i18n.md) — UI strings (en/it/de/fr/es), date/time value models, localized parsing
 - [Reactive Forms interop](docs/guides/interop.md) · [Comparison](docs/guides/comparison-reactive-forms.md) · [Troubleshooting](docs/guides/troubleshooting.md)
+
+**Rust SDK**: [`sdk/rust/`](sdk/rust/) — `modyra-contract`, a network-independent
+crate for reading/writing/validating Dynamic Form Contract v2, plus runnable
+`reqwest` and Axum examples (the Angular dynamic-form demo round-trips
+against the Axum one). Shares its conformance fixtures with the TypeScript
+implementation (`spec/`). Not published to crates.io yet.
 
 Project policies: [security](SECURITY.md) · [contributing](CONTRIBUTING.md) · [changelog](CHANGELOG.md)
 
