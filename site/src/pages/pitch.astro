@@ -166,6 +166,59 @@ const based = (path: string) =>
     </section>
 
     <section>
+      <p class="eyebrow">The scoreboard</p>
+      <h2>Six features. Nobody else ships any of them built in.</h2>
+      <p class="lede">
+        Draft autosave, undo/redo, wizard gating, injection prevention,
+        dynamic/AI-declared forms, bundled UI — same six rows as the feature
+        matrix above, counted per library. Not "fewer" — zero.
+      </p>
+      <div class="chart">
+        <div class="bar-row is-modyra">
+          <span class="name">Modyra</span>
+          <div class="bar-track"><div class="bar-fill" style="width: 100%"></div></div>
+          <span class="value tabular">6 / 6</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">TanStack Form</span>
+          <div class="bar-track"><div class="bar-fill" style="width: 4%"></div></div>
+          <span class="value tabular">0 / 6*</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">vee-validate</span>
+          <div class="bar-track"></div>
+          <span class="value tabular">0 / 6</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">react-hook-form</span>
+          <div class="bar-track"></div>
+          <span class="value tabular">0 / 6</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">Formik</span>
+          <div class="bar-track"></div>
+          <span class="value tabular">0 / 6</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">final-form</span>
+          <div class="bar-track"></div>
+          <span class="value tabular">0 / 6</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">Angular Reactive Forms</span>
+          <div class="bar-track"></div>
+          <span class="value tabular">0 / 6</span>
+        </div>
+      </div>
+      <p class="chart-caption">
+        * TanStack Form lists persistence APIs on its v1 roadmap, unshipped
+        at time of writing — counted as not built-in. Full row-by-row
+        matrix: <a href={based('guides/comparison-form-libraries/')}>the comparison doc</a>.
+      </p>
+      <div class="page-num">04 — SCOREBOARD</div>
+    </section>
+
+    <section>
       <p class="eyebrow">Bring your framework</p>
       <h2>One engine. Seven native bindings.</h2>
       <p class="lede">
@@ -183,7 +236,7 @@ const based = (path: string) =>
         <span class="fw-chip is-full">Preact</span>
         <span class="fw-chip">Svelte — reactivity + widgets</span>
       </div>
-      <div class="page-num">04 — FRAMEWORKS</div>
+      <div class="page-num">05 — FRAMEWORKS</div>
     </section>
 
     <section>
@@ -214,7 +267,7 @@ const based = (path: string) =>
           rather publish that trade than a quieter number.
         </p>
       </div>
-      <div class="page-num">05 — HONESTY</div>
+      <div class="page-num">06 — HONESTY</div>
     </section>
 
     <section>
@@ -240,7 +293,7 @@ const based = (path: string) =>
         >
         <a href={based('')}>Back to docs →</a>
       </div>
-      <div class="page-num">06 — TRY IT</div>
+      <div class="page-num">07 — TRY IT</div>
     </section>
   </body>
 </html>
