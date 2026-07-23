@@ -65,6 +65,32 @@ test("mounting the checkout fixture renders its real tree and node count", () =>
   assert.match(host.innerHTML, /9 nodes/);
 });
 
+test("at-a-glance tree indicators reflect checkout's real validators (no need to open the inspector)", () => {
+  const host = createFakeHost();
+  mountStudio(host, createCheckoutProject());
+
+  function nodeMarkup(nodeId) {
+    const match = host.innerHTML.match(new RegExp(`<div class="node"[^>]*data-node="${nodeId}">[\\s\\S]*?<\\/div>`));
+    assert.ok(match, `expected a .node element for ${nodeId}`);
+    return match[0];
+  }
+
+  // city: exactly one "required" validator -> required marker only, no count badge.
+  const cityNode = nodeMarkup("nd_city");
+  assert.match(cityNode, /indicator required/);
+  assert.doesNotMatch(cityNode, /indicator count/);
+
+  // zip: "required" + "pattern" -> required marker AND a count badge of 1 (the non-required validator).
+  const zipNode = nodeMarkup("nd_zip");
+  assert.match(zipNode, /indicator required/);
+  assert.match(zipNode, /indicator count"[^>]*>1</);
+
+  // coupon: has a serverValidator -> the server indicator, no field-level validators at all.
+  const couponNode = nodeMarkup("nd_coupon");
+  assert.match(couponNode, /indicator server/);
+  assert.doesNotMatch(couponNode, /indicator required/);
+});
+
 test("P5 gate: checkout's real coupon server validator renders debounce/timeout/skip-empty/implementation", () => {
   const project = createCheckoutProject();
   const idx = buildIndexes(project);
@@ -72,7 +98,6 @@ test("P5 gate: checkout's real coupon server validator renders debounce/timeout/
 
   const markup = serverValidatorMarkup(project, idx, coupon);
 
-  assert.match(markup, /Server validation/);
   assert.match(markup, /value="400"/); // debounceMs
   assert.match(markup, /value="5000"/); // timeoutMs
   assert.match(markup, /data-server-skip-empty checked/); // coupon's skipWhen is isEmpty(self)
@@ -87,7 +112,6 @@ test("P5 gate: checkout's real items-length form validator renders in the Form v
 
   const markup = formValidatorsMarkup(project, idx, draft);
 
-  assert.match(markup, /Form validators/);
   assert.match(markup, /Add at least one item to the order/);
   assert.match(markup, /depends on: items/);
   assert.match(markup, /error target: items/);

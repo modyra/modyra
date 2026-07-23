@@ -59,7 +59,9 @@ test("number field's add-validator list never offers email/pattern (incompatible
 test("select field: add/edit/remove options through the inspector", async ({ page }) => {
   await page.locator('[data-template="select"]').click();
 
-  await expect(page.locator(".options h3")).toHaveText("Options");
+  const optionsSection = page.locator('details[data-section="options"]');
+  await expect(optionsSection.locator("summary")).toContainText("Options");
+  await optionsSection.locator("summary").click();
   // createNodeFromTemplate seeds one default option.
   await expect(page.locator(".option-row")).toHaveCount(1);
 
@@ -80,8 +82,9 @@ test("select field: add/edit/remove options through the inspector", async ({ pag
   await expect(page.locator(".option-row").first().locator("[data-option-value]")).toHaveValue("XL");
 });
 
-test("a group node shows no Validation/Options sections (not a field)", async ({ page }) => {
+test("a group node shows no Validation/Options/Server validation sections (not a field)", async ({ page }) => {
   await page.locator('[data-template="group"]').click();
-  await expect(page.locator(".validators")).toHaveCount(0);
-  await expect(page.locator(".options")).toHaveCount(0);
+  await expect(page.locator('details[data-section="validation"]')).toHaveCount(0);
+  await expect(page.locator('details[data-section="options"]')).toHaveCount(0);
+  await expect(page.locator('details[data-section="server"]')).toHaveCount(0);
 });

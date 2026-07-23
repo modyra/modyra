@@ -6,6 +6,11 @@ import { expect, test } from "@playwright/test";
  * section (add/edit/remove, condition templates — not a general recursive
  * expression builder, see STATUS.md gap note). All refs are picked from
  * <select>s populated from the tree, never typed (P5 gate: "no path typing").
+ *
+ * Both live behind interaction the inspector redesign introduced: "Server
+ * validation" is a collapsed-by-default accordion (open it via its summary),
+ * and form validators live on a separate "Form rules" tab, not the default
+ * "Field" tab — both deliberate, see the UX redesign note in STATUS.md.
  */
 
 test.beforeEach(async ({ page }) => {
@@ -13,12 +18,21 @@ test.beforeEach(async ({ page }) => {
   await page.waitForSelector(".studio");
 });
 
+async function openServerValidationSection(page: import("@playwright/test").Page) {
+  await page.locator('details[data-section="server"] summary').click();
+}
+
+async function openFormRulesTab(page: import("@playwright/test").Page) {
+  await page.locator('[data-inspector-tab="form"]').click();
+}
+
 test("enable server validation, configure it, create a stub, then remove it", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
+  await openServerValidationSection(page);
 
   await expect(page.locator("[data-enable-server-validator]")).toBeVisible();
   await page.locator("[data-enable-server-validator]").click();
-  await expect(page.locator(".server-validator h3")).toHaveText("Server validation");
+  await expect(page.locator("[data-server-debounce]")).toBeVisible();
 
   await page.locator("[data-server-debounce]").fill("500");
   await page.locator("[data-server-debounce]").blur();
@@ -40,6 +54,9 @@ test("enable server validation, configure it, create a stub, then remove it", as
   const selectedLabel = await implSelect.locator("option:checked").textContent();
   expect(selectedLabel).toMatch(/^validate/);
 
+  // The "Server validation" accordion badge reflects the on/off state at a glance.
+  await expect(page.locator('details[data-section="server"] summary')).toContainText("on");
+
   await page.locator("[data-remove-server-validator]").click();
   await expect(page.locator("[data-enable-server-validator]")).toBeVisible();
 });
@@ -47,9 +64,10 @@ test("enable server validation, configure it, create a stub, then remove it", as
 test("server validator dependency checkboxes are the only way to pick a dependency (no typing)", async ({ page }) => {
   await page.locator('[data-template="group"]').click();
   await page.locator('[data-template="text"]').click();
+  await openServerValidationSection(page);
   await page.locator("[data-enable-server-validator]").click();
 
-  const countryDep = page.locator('[data-server-dependency]').first();
+  const countryDep = page.locator("[data-server-dependency]").first();
   await countryDep.check();
   await expect(countryDep).toBeChecked();
   await countryDep.uncheck();
@@ -58,8 +76,9 @@ test("server validator dependency checkboxes are the only way to pick a dependen
 
 test("add a form validator (is not empty) and remove it", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
+  await openFormRulesTab(page);
 
-  await expect(page.locator(".form-validators h2")).toHaveText("Form validators");
+  await expect(page.locator(".tab-hint")).toContainText("Rules that apply to the whole form");
   await page.locator("[data-fv-op]").selectOption("isNotEmpty");
   await expect(page.locator("[data-fv-literal]")).toHaveCount(0);
   await page.locator("[data-fv-message]").fill("This field is required");
@@ -69,12 +88,17 @@ test("add a form validator (is not empty) and remove it", async ({ page }) => {
   await expect(row).toHaveCount(1);
   await expect(row.locator("[data-form-validator-message]")).toHaveValue("This field is required");
 
+  // The "Form rules" tab badge reflects the count at a glance, from the Field tab too.
+  await expect(page.locator('[data-inspector-tab="form"]')).toContainText("1");
+
   await row.locator("[data-remove-form-validator]").click();
   await expect(page.locator(".form-validator-row")).toHaveCount(0);
 });
 
 test("form validator condition needing a literal (equals) shows the value input; toggling op hides it again", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
+  await openFormRulesTab(page);
+
   await page.locator("[data-fv-op]").selectOption("equals");
   await expect(page.locator("[data-fv-literal]")).toBeVisible();
 
@@ -91,6 +115,8 @@ test("form validator condition needing a literal (equals) shows the value input;
 
 test("inline-editing an existing form validator's message commits without recreating it", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
+  await openFormRulesTab(page);
+
   await page.locator("[data-fv-op]").selectOption("isEmpty");
   await page.locator("[data-fv-message]").fill("Original message");
   await page.locator("[data-add-form-validator]").click();

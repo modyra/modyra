@@ -115,7 +115,16 @@ function escapeHtml(value: unknown): string {
   return String(value ?? "").replace(/[&<>"']/g, (char) => entities[char]!);
 }
 
-/** P5: "Validation" inspector section — add/edit/remove, only ever offering registry-compatible kinds. */
+/** Native, stateless disclosure — `open` reflects tracked state so it survives the next full re-render. */
+function accordionMarkup(id: string, title: string, badge: string, expanded: boolean, bodyHtml: string): string {
+  return `
+    <details class="accordion" data-section="${id}" ${expanded ? "open" : ""}>
+      <summary>${escapeHtml(title)}${badge ? ` <span class="badge">${escapeHtml(badge)}</span>` : ""}</summary>
+      <div class="accordion-body">${bodyHtml}</div>
+    </details>`;
+}
+
+/** P5: "Validation" section body — add/edit/remove, only ever offering registry-compatible kinds. */
 function validatorsMarkup(node: FieldNode): string {
   const used = new Set(node.validators.map((v) => v.kind));
   const available = compatibleValidatorKinds(node.valueType).filter((kind) => !used.has(kind) || isDuplicateKindAllowed(kind));
@@ -144,16 +153,12 @@ function validatorsMarkup(node: FieldNode): string {
     .join("");
 
   return `
-    <div class="validators">
-      <h3>Validation</h3>
-      <ul class="validator-list">${rows}</ul>
-      ${available.length ? `<select data-add-validator aria-label="Add validator"><option value="">+ Add validator</option>${options}</select>` : ""}
-    </div>`;
+    <ul class="validator-list">${rows}</ul>
+    ${available.length ? `<select data-add-validator aria-label="Add validator"><option value="">+ Add validator</option>${options}</select>` : ""}`;
 }
 
-/** P5: "Options" inspector section, select/multiselect only (plan section 8 "properties options"). */
+/** P5: "Options" section body, select/multiselect only (plan section 8 "properties options"). */
 function optionsMarkup(node: FieldNode): string {
-  if (node.fieldKind !== "select" && node.fieldKind !== "multiselect") return "";
   const rows = (node.options ?? [])
     .map(
       (opt, index) => `
@@ -165,11 +170,8 @@ function optionsMarkup(node: FieldNode): string {
     )
     .join("");
   return `
-    <div class="options">
-      <h3>Options</h3>
-      <ul class="option-list">${rows}</ul>
-      <button data-add-option>+ Add option</button>
-    </div>`;
+    <ul class="option-list">${rows}</ul>
+    <button data-add-option>+ Add option</button>`;
 }
 
 /** All nodes by derived path, for a <select> — the only way any ref is ever picked (no path typing, R3/P5 gate). */
@@ -185,11 +187,7 @@ function nodeRefOptionsMarkup(idx: StudioIndexes, currentId: string): string {
 export function serverValidatorMarkup(project: MdyStudioProject, idx: StudioIndexes, node: FieldNode): string {
   const sv = node.serverValidator;
   if (!sv) {
-    return `
-      <div class="server-validator">
-        <h3>Server validation</h3>
-        <button data-enable-server-validator>+ Enable server validation</button>
-      </div>`;
+    return `<button data-enable-server-validator>+ Enable server validation</button>`;
   }
 
   const implOptions = Object.values(project.implementations)
@@ -209,25 +207,22 @@ export function serverValidatorMarkup(project: MdyStudioProject, idx: StudioInde
     .join("");
 
   return `
-    <div class="server-validator">
-      <h3>Server validation</h3>
-      <label>Implementation
-        <select data-server-impl>
-          <option value="">— none —</option>
-          ${implOptions}
-        </select>
-      </label>
-      <button data-new-server-impl>+ New stub</button>
-      <label>Debounce (ms)<input type="number" data-server-debounce value="${sv.debounceMs ?? 0}"></label>
-      <label>Timeout (ms)<input type="number" data-server-timeout value="${sv.timeoutMs ?? 0}"></label>
-      <label class="dep-row"><input type="checkbox" data-server-skip-empty ${skipsWhenEmpty ? "checked" : ""}> Skip when this field is empty</label>
-      <label>Error message<input data-server-message value="${escapeHtml(sv.errorMessage ?? "")}"></label>
-      <fieldset class="server-deps">
-        <legend>Depends on</legend>
-        ${depRows}
-      </fieldset>
-      <button data-remove-server-validator>Remove server validation</button>
-    </div>`;
+    <label>Implementation
+      <select data-server-impl>
+        <option value="">— none —</option>
+        ${implOptions}
+      </select>
+    </label>
+    <button data-new-server-impl>+ New stub</button>
+    <label>Debounce (ms)<input type="number" data-server-debounce value="${sv.debounceMs ?? 0}"></label>
+    <label>Timeout (ms)<input type="number" data-server-timeout value="${sv.timeoutMs ?? 0}"></label>
+    <label class="dep-row"><input type="checkbox" data-server-skip-empty ${skipsWhenEmpty ? "checked" : ""}> Skip when this field is empty</label>
+    <label>Error message<input data-server-message value="${escapeHtml(sv.errorMessage ?? "")}"></label>
+    <fieldset class="server-deps">
+      <legend>Depends on</legend>
+      ${depRows}
+    </fieldset>
+    <button data-remove-server-validator>Remove server validation</button>`;
 }
 
 /** Draft state for the "add a form validator" mini-form — templates, not a general recursive expression tree
@@ -296,7 +291,7 @@ export function formValidatorsMarkup(project: MdyStudioProject, idx: StudioIndex
 
   return `
     <div class="form-validators">
-      <h2>Form validators</h2>
+      <p class="tab-hint">Rules that apply to the whole form, not a single field — e.g. "at least one item", cross-field checks.</p>
       <ul class="form-validator-list">${rows}</ul>
       <div class="fv-draft">
         <label>Field<select data-fv-ref>${nodeRefOptionsMarkup(idx, draft.refNodeId)}</select></label>
@@ -326,6 +321,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     errorTargetId: "",
     message: "",
   };
+  let inspectorTab: "node" | "form" = "node";
+  /** Which accordion sections are open — Validation starts open, everything else starts collapsed
+      (the whole point of this structure: show little by default, let the user open what they need). */
+  const expandedSections = new Set<string>(["validation"]);
   const history = new CommandHistory();
 
   function commit(command: Command, focusTarget: string = selected): void {
@@ -371,6 +370,23 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     return node && node.node === "field" ? node : null;
   }
 
+  /** At-a-glance indicators — validators/server-validation don't require opening the inspector to spot. */
+  function nodeIndicatorsMarkup(n: StudioSchemaNode): string {
+    if (n.node !== "field" && n.node !== "array") return "";
+    const badges: string[] = [];
+    if (n.validators.some((v) => v.kind === "required")) {
+      badges.push(`<span class="indicator required" title="Required">*</span>`);
+    }
+    const otherCount = n.validators.filter((v) => v.kind !== "required").length;
+    if (otherCount) {
+      badges.push(`<span class="indicator count" title="${otherCount} validator${otherCount > 1 ? "s" : ""}">${otherCount}</span>`);
+    }
+    if (n.node === "field" && n.serverValidator) {
+      badges.push(`<span class="indicator server" title="Server validation enabled">⇄</span>`);
+    }
+    return badges.length ? `<span class="node-indicators">${badges.join("")}</span>` : "";
+  }
+
   function markup(n: StudioSchemaNode): string {
     const isRoot = n.id === project.schema.id;
     const label = escapeHtml(n.label || n.name);
@@ -392,7 +408,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
       <li class="tree-node ${selected === n.id ? "selected" : ""}">
         <div class="drop-zone" data-before="${n.id}">Before</div>
         <div class="node" draggable="${!isRoot}" tabindex="0" data-node="${n.id}">
-          <button class="select" data-select="${n.id}">${label}<small>${n.node}</small></button>
+          <button class="select" data-select="${n.id}">
+            <span class="node-label">${label}${nodeIndicatorsMarkup(n)}</span>
+            <small>${n.node}</small>
+          </button>
           ${actions}
         </div>
         ${children}
@@ -438,16 +457,65 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
             }
           </section>
           <aside class="inspector">
-            <h2>Inspector</h2>
-            <label>Name<input data-name value="${escapeHtml(current.name)}"></label>
-            <label>Label<input data-label value="${escapeHtml(current.label ?? "")}"></label>
-            <label>Description<textarea data-description>${escapeHtml(current.description ?? "")}</textarea></label>
-            ${current.node === "field" ? validatorsMarkup(current) + optionsMarkup(current) + serverValidatorMarkup(project, idx, current) : ""}
-            <dl>
-              <dt>Path</dt><dd>${escapeHtml(idx.pathByNode.get(current.id) || "root")}</dd>
-              <dt>Stable ID</dt><dd>${escapeHtml(current.id)}</dd>
-            </dl>
-            ${formValidatorsMarkup(project, idx, formValidatorDraft)}
+            <div class="inspector-tabs" role="tablist">
+              <button type="button" role="tab" data-inspector-tab="node" aria-selected="${inspectorTab === "node"}">
+                ${current.node === "field" ? "Field" : current.node === "group" ? "Group" : "Array"}
+              </button>
+              <button type="button" role="tab" data-inspector-tab="form" aria-selected="${inspectorTab === "form"}">
+                Form rules${project.formValidators.length ? ` <span class="badge">${project.formValidators.length}</span>` : ""}
+              </button>
+            </div>
+            <div class="inspector-body">
+              ${
+                inspectorTab === "form"
+                  ? formValidatorsMarkup(project, idx, formValidatorDraft)
+                  : `
+                    <label>Name<input data-name value="${escapeHtml(current.name)}"></label>
+                    <label>Label<input data-label value="${escapeHtml(current.label ?? "")}"></label>
+                    <label>Description<textarea data-description>${escapeHtml(current.description ?? "")}</textarea></label>
+                    ${
+                      current.node === "field"
+                        ? accordionMarkup(
+                            "validation",
+                            "Validation",
+                            String(current.validators.length || ""),
+                            expandedSections.has("validation"),
+                            validatorsMarkup(current),
+                          )
+                        : ""
+                    }
+                    ${
+                      current.node === "field" && (current.fieldKind === "select" || current.fieldKind === "multiselect")
+                        ? accordionMarkup(
+                            "options",
+                            "Options",
+                            String((current.options ?? []).length || ""),
+                            expandedSections.has("options"),
+                            optionsMarkup(current),
+                          )
+                        : ""
+                    }
+                    ${
+                      current.node === "field"
+                        ? accordionMarkup(
+                            "server",
+                            "Server validation",
+                            current.serverValidator ? "on" : "",
+                            expandedSections.has("server"),
+                            serverValidatorMarkup(project, idx, current),
+                          )
+                        : ""
+                    }
+                    ${accordionMarkup(
+                      "details",
+                      "Details",
+                      "",
+                      expandedSections.has("details"),
+                      `<dl><dt>Path</dt><dd>${escapeHtml(idx.pathByNode.get(current.id) || "root")}</dd><dt>Stable ID</dt><dd>${escapeHtml(current.id)}</dd></dl>`,
+                    )}
+                  `
+              }
+            </div>
           </aside>
         </main>
         <footer role="status" aria-live="polite">
@@ -592,6 +660,24 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
       if (!field) return;
       commit(createSetFieldOptionsCommand(selected, [...(field.options ?? []), { value: "", label: "" }]));
     });
+
+    host.querySelectorAll<HTMLElement>("[data-inspector-tab]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const tab = el.dataset.inspectorTab as "node" | "form";
+        inspectorTab = tab;
+        focusSelector = `[data-inspector-tab="${tab}"]`;
+        render();
+      }),
+    );
+    // Native <details> already toggled itself in the DOM by the time this fires — just keep our
+    // tracked state in sync so it survives the *next* full re-render (innerHTML replace forgets it).
+    host.querySelectorAll<HTMLDetailsElement>("details.accordion").forEach((el) =>
+      el.addEventListener("toggle", () => {
+        const id = el.dataset.section!;
+        if (el.open) expandedSections.add(id);
+        else expandedSections.delete(id);
+      }),
+    );
 
     host.querySelector<HTMLElement>("[data-enable-server-validator]")?.addEventListener("click", () => {
       commit(
