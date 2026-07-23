@@ -123,18 +123,13 @@ body {
   grid-template-columns: 210px minmax(400px, 1fr) 270px;
 }
 
-.palette,
-.inspector {
-  padding: 18px;
-}
 .palette {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px;
   border-right: 1px solid var(--mdy-border);
 }
-.inspector {
-  border-left: 1px solid var(--mdy-border);
-}
-.palette h2,
-.inspector h2 {
+.palette h2 {
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
@@ -142,6 +137,83 @@ body {
   color: var(--mdy-text-muted);
   margin: 0 0 14px;
 }
+.inspector {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--mdy-border);
+}
+.inspector-body {
+  padding: 18px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.inspector-tabs {
+  display: flex;
+  flex-shrink: 0;
+}
+.inspector-tabs button {
+  flex: 1;
+  border: none;
+  border-bottom: 2px solid var(--mdy-border);
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mdy-text-muted);
+}
+.inspector-tabs button[aria-selected="true"] {
+  color: var(--mdy-text);
+  border-bottom-color: var(--mdy-indigo);
+}
+.inspector-tabs button:hover {
+  color: var(--mdy-text);
+}
+
+.badge {
+  display: inline-block;
+  background: color-mix(in srgb, var(--mdy-indigo) 30%, transparent);
+  color: color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-cloud));
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.accordion {
+  border-top: 1px solid var(--mdy-border);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+.accordion summary {
+  cursor: pointer;
+  padding: 10px 2px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mdy-text-muted);
+  list-style: revert;
+}
+.accordion summary::marker {
+  color: var(--mdy-text-muted);
+}
+.accordion[open] summary {
+  color: var(--mdy-text);
+}
+.accordion-body {
+  padding: 4px 2px 12px;
+}
+
+.tab-hint {
+  font-size: 12px;
+  color: var(--mdy-text-muted);
+  margin: 0 0 14px;
+}
+
 .palette button {
   display: block;
   width: 100%;
@@ -204,10 +276,47 @@ body {
   flex: 1;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   text-align: left;
+}
+.node-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 .node small {
   color: var(--mdy-text-muted);
+}
+
+.node-indicators {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1;
+}
+.indicator.required {
+  color: var(--mdy-coral);
+  font-size: 14px;
+  font-weight: 700;
+}
+.indicator.count {
+  background: color-mix(in srgb, var(--mdy-indigo) 30%, transparent);
+  color: color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-cloud));
+  border-radius: 999px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  font-weight: 700;
+}
+.indicator.server {
+  color: var(--mdy-violet);
+  font-size: 12px;
 }
 
 .drop-zone {
@@ -274,20 +383,23 @@ body {
   overflow-wrap: anywhere;
 }
 
-.validators,
-.options {
-  margin: 18px 0;
-  padding-top: 14px;
-  border-top: 1px solid var(--mdy-border);
-}
-.validators h3,
-.options h3 {
+.accordion-body select,
+.accordion-body input:not([type="checkbox"]) {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  background: transparent;
+  color: var(--mdy-text);
+  border: 1px solid var(--mdy-border);
+  border-radius: 6px;
+  padding: 7px;
   font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+}
+.accordion-body label {
+  display: block;
   color: var(--mdy-text-muted);
-  margin: 0 0 10px;
+  font-size: 12px;
+  margin: 10px 0;
 }
 .validator-list,
 .option-list {
@@ -324,46 +436,7 @@ body {
 .option-row input {
   flex: 1 1 80px;
 }
-.validators select {
-  width: 100%;
-  background: transparent;
-  color: var(--mdy-text);
-  border: 1px solid var(--mdy-border);
-  border-radius: 6px;
-  padding: 7px;
-}
 
-.server-validator {
-  margin: 18px 0;
-  padding-top: 14px;
-  border-top: 1px solid var(--mdy-border);
-}
-.server-validator h3 {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--mdy-text-muted);
-  margin: 0 0 10px;
-}
-.server-validator label {
-  display: block;
-  color: var(--mdy-text-muted);
-  font-size: 12px;
-  margin: 10px 0;
-}
-.server-validator select,
-.server-validator input:not([type="checkbox"]) {
-  display: block;
-  width: 100%;
-  margin-top: 4px;
-  background: transparent;
-  color: var(--mdy-text);
-  border: 1px solid var(--mdy-border);
-  border-radius: 6px;
-  padding: 7px;
-  font-size: 12px;
-}
 .dep-row {
   display: flex !important;
   align-items: center;
@@ -384,16 +457,6 @@ body {
   padding: 0 4px;
 }
 
-.form-validators {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--mdy-border);
-}
-.form-validators h2 {
-  font-size: 15px;
-  font-weight: 700;
-  margin: 0 0 12px;
-}
 .form-validator-list {
   list-style: none;
   padding: 0;
