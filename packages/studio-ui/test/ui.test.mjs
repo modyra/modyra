@@ -8,7 +8,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { mountStudio } from "../dist/index.js";
+import { buildIndexes } from "../../studio-model/dist/index.js";
+import { mountStudio, serverValidatorMarkup, formValidatorsMarkup } from "../dist/index.js";
 import { createCheckoutProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";
 
 globalThis.confirm ??= () => true;
@@ -62,6 +63,34 @@ test("mounting the checkout fixture renders its real tree and node count", () =>
   }
   // 8 non-root nodes in the fixture: country, shipping, city, zip, items, item, sku, qty, coupon = 9.
   assert.match(host.innerHTML, /9 nodes/);
+});
+
+test("P5 gate: checkout's real coupon server validator renders debounce/timeout/skip-empty/implementation", () => {
+  const project = createCheckoutProject();
+  const idx = buildIndexes(project);
+  const coupon = idx.nodeById.get("nd_coupon");
+
+  const markup = serverValidatorMarkup(project, idx, coupon);
+
+  assert.match(markup, /Server validation/);
+  assert.match(markup, /value="400"/); // debounceMs
+  assert.match(markup, /value="5000"/); // timeoutMs
+  assert.match(markup, /data-server-skip-empty checked/); // coupon's skipWhen is isEmpty(self)
+  assert.match(markup, new RegExp(`value="impl_validate_coupon"\\s+selected`));
+  assert.match(markup, /validateCoupon/); // the implementation's displayName, in the <option> list
+});
+
+test("P5 gate: checkout's real items-length form validator renders in the Form validators section", () => {
+  const project = createCheckoutProject();
+  const idx = buildIndexes(project);
+  const draft = { kind: "form", refNodeId: project.schema.id, op: "isNotEmpty", literal: "", errorTargetId: "", message: "" };
+
+  const markup = formValidatorsMarkup(project, idx, draft);
+
+  assert.match(markup, /Form validators/);
+  assert.match(markup, /Add at least one item to the order/);
+  assert.match(markup, /depends on: items/);
+  assert.match(markup, /error target: items/);
 });
 
 test("package has no React dependency and source has no React/JSX reference", () => {
