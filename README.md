@@ -5,9 +5,12 @@
 
 # Modyra
 
-**Model once. Render anywhere.** A framework-agnostic, type-safe form
-engine with native bindings for Angular, React, Vue and Lit — one shared
-core, one shared headless widget layer, one shared theme package.
+**Model once. Render anywhere.** `@modyra/core` is a type-safe form engine
+that knows nothing about any UI framework — it runs the same in Node, a
+CLI, a worker, or a unit test. Seven thin adapters (Angular, React, Vue,
+Lit, Solid, Preact, Svelte) bind that one engine to each framework's own
+reactivity, natively — no adapter reimplements form logic, they just wire
+signals to a render.
 
 - No framework runtime, no RxJS — form state is plain signals and `computed`s
 - Compile-time checked field bindings: `form.f.email` — typos don't compile
@@ -36,7 +39,7 @@ core, one shared headless widget layer, one shared theme package.
 | [`@modyra/lit`](packages/lit)                         | Lit binding — ReactiveController                                                                         | themable form elements                                   | `lit` ≥3               |
 | [`@modyra/solid`](packages/solid)                     | Solid binding on native signals + headless widgets              | headless — bring your own UI                             | `solid-js` ≥1.8        |
 | [`@modyra/preact`](packages/preact)                   | Preact binding — thin variant of the React adapter               | headless — bring your own UI                             | `preact` ≥10.19        |
-| [`@modyra/svelte`](packages/svelte)                   | Svelte binding — `vanillaReactivity()` + a `toStore()` bridge to real Svelte stores + headless widgets (no `examples/` entry yet) | headless — bring your own UI | `svelte` ≥4 |
+| [`@modyra/svelte`](packages/svelte)                   | Svelte binding — `vanillaReactivity()` + a `toStore()` bridge to real Svelte stores + headless widgets | headless — bring your own UI | `svelte` ≥4 |
 | [`@modyra/zod`](packages/zod)                         | Framework-agnostic Zod adapter — schema-first typed forms                                                | —                                                        | `zod` ≥3.25            |
 | [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter — one adapter for Zod, Valibot, ArkType and every v1 vendor                      | —                                                        | —                      |
 | [`@modyra/styles`](packages/styles)                   | CSS themes (`default`, `material`, `ios`, `ionic`, `base`) for every adapter                             | themes                                                   | —                      |
@@ -47,7 +50,8 @@ for your framework, keep everything else identical.
 ## The engine in 60 seconds (framework-agnostic)
 
 Everything below runs in plain TypeScript — Node, a CLI, a worker, a unit
-test, or any of the four framework adapters. No framework in sight:
+test, or any of the seven framework adapters. No framework in sight —
+this is the whole point: the engine doesn't need one.
 
 ```ts
 import { createForm, field, group, required, email, min } from "@modyra/core";
@@ -67,8 +71,17 @@ form.getValue().address.city; // "Rome" — fully typed, typos don't compile
 > `required` (value-style-validator muscle memory trips here — the
 > resulting TS error is easy to misread). Validation errors come back as
 > **arrays of message strings** (`["Name taken"]`), not `{ required: true }`
-> keyed objects. To stop at the first failing validator instead of
-> collecting all of them, use `composeFirst()` in place of `compose()`.
+> keyed objects. `compose(...)` runs every validator in a list and
+> collects all failing messages; `composeFirst(...)` — same signature,
+> used in its place — stops at the first failure instead, useful when
+> showing more than one error per field would be noise (e.g. "required"
+> and "min length" on the same empty field).
+
+**In a hurry?** Skip straight to the [full documentation index](docs/README.md),
+pick your [framework example](#the-same-app-seven-frameworks), or read the
+[typed forms guide](docs/guides/typed-forms.md) — the three scenarios
+below are worth reading once, but nothing past this point is required to
+get started.
 
 ## Real-world scenarios, handled by the engine
 
@@ -239,7 +252,7 @@ form.f.passengers.push({ fullName: "Ada Lovelace", infant: false });
 `zod` is an _optional_ peer (`>=3.25`, Zod 4 supported): apps that don't
 use schemas never download it.
 
-## The same app, four frameworks
+## The same app, seven frameworks
 
 The engine is identical everywhere — only the reactive binding and the
 rendering idiom change. A complete checkout form (nested groups, typed
@@ -250,9 +263,12 @@ implemented end-to-end, side by side, in:
 - [React](docs/examples/react.md) — `useMdyForm` / `useMdyField`, array rows with `.map()`
 - [Vue](docs/examples/vue.md) — `createVueForm` on `@vue/reactivity`
 - [Lit](docs/examples/lit.md) — `createLitForm` + `<mdy-*-field>` custom elements
+- [Solid](docs/examples/solid.md) — `createSolidForm`, fields read as accessors
+- [Preact](docs/examples/preact.md) — same hooks as React, thinner runtime
+- [Svelte](docs/examples/svelte.md) — `createSvelteForm` + `toStore()` for native `$store` bindings
 
-Adapter recipes, the four-primitive reactive contract and the Astro note:
-[Multi-framework architecture](docs/guides/multi-framework.md).
+Adapter recipes, the reactive contract every binding implements, and the
+Astro note: [Multi-framework architecture](docs/guides/multi-framework.md).
 
 ## Coming from Angular Reactive Forms?
 
@@ -273,18 +289,23 @@ incremental adoption. Full, honest comparison:
                                 |
              Headless widget layer  (@modyra/widgets)
                                 |
-     Angular ─ React ─ Vue ─ Lit  (one native binding each)
+  Angular ─ React ─ Vue ─ Lit ─ Solid ─ Preact ─ Svelte  (one binding each)
                                 |
         Headless integrations  or  UI catalogs + @modyra/styles themes
 ```
 
 The form engine — typed field trees, arrays, validation, drafts, undo/redo —
 lives in [`@modyra/core`](packages/core), a zero-dependency package that
-runs in plain Node. [`@modyra/widgets`](packages/widgets) adds headless
-widget controllers and the interaction/accessibility contract shared by
-every renderer. Each adapter implements the same four-primitive reactive
-contract on its framework's native reactivity: Angular signals,
-`@vue/reactivity`, React's `useSyncExternalStore`, Lit's ReactiveController.
+runs in plain Node and has never heard of any of the frameworks below it.
+[`@modyra/widgets`](packages/widgets) adds headless widget controllers and
+the interaction/accessibility contract shared by every renderer. Each
+adapter implements the same `MdyReactivity` contract on its framework's
+own native reactivity where one exists (Angular signals, `@vue/reactivity`,
+Solid's signals) or on the engine's built-in `vanillaReactivity()` bridged
+through the framework's external-store hook where it doesn't (React's
+`useSyncExternalStore`, Preact, Svelte's stores, Lit's ReactiveController)
+— see [Multi-framework architecture](docs/guides/multi-framework.md) for
+the full contract and per-adapter notes.
 
 ## Angular entry points
 

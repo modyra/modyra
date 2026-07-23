@@ -194,17 +194,23 @@ above).
   listener/lifecycle management is per-framework by nature.
 - **A11y announcer, devtools UI, Angular's renderer catalog**:
   framework-native forever, by design (Layer 3).
-- **Reactivity contract migration**: Vue, Solid, Preact, Svelte and Lit
-  don't declare real `capabilities`/`createScope` yet (only vanilla and
-  Angular do) — see the
-  [generated capability matrix](../reactivity-capability-matrix.md).
+- **Reactivity contract migration**: React, Vue, Solid, Preact, Svelte and
+  Lit don't declare real `capabilities`/`createScope` yet (only vanilla
+  and Angular do) — see the
+  [generated capability matrix](../reactivity-capability-matrix.md) and
+  [`ROADMAP.md`'s Phase P](../../ROADMAP.md) for the planned per-adapter
+  fix. Worth noting: React/Preact/Svelte/Lit already *run* on vanilla's
+  real capabilities by default (`createForm()` defaults to
+  `vanillaReactivity()`) — what's missing there is a named, introspectable
+  export, not the underlying behavior. Vue and Solid have real native
+  reactivity of their own and genuinely don't declare capabilities yet.
 
 ## Package policy
 
 `@modyra/vue`, `@modyra/react`, `@modyra/solid`, `@modyra/preact`,
 `@modyra/svelte` and `@modyra/lit` are shipped, tested engine bindings
-(published on npm at `0.3.0`, a `0.4.0` reactivity-plan bump pending) —
-reactivity adapter + typed form factory (+ hooks/controller/composable),
+published on npm at `0.4.0` — reactivity adapter + typed form factory
+(+ hooks/controller/composable),
 plus headless field/select controllers via `@modyra/widgets`. They do not
 ship a themed UI component library the way `@modyra/angular`'s renderer
 catalog does (Lit ships its own custom elements, which is closer to a UI

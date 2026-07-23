@@ -5,17 +5,20 @@
 ```bash
 npm run setup          # install deps + build core/widgets/zod + the Angular package
 npm test               # the whole matrix: core + adapters (zod, standard-schema,
-                       # react, vue, lit) + widgets + Angular unit/type tests
+                       # react, vue, lit, solid, preact, svelte) + widgets +
+                       # Angular unit/type tests + tested guide examples
 npm run test:bundle    # tree-shaking proof
-npm run demo:angular   # one demo per framework: demo:react / demo:vue / demo:lit
+npm run demo:angular   # one demo per framework: demo:react / demo:vue / demo:lit /
+                       # demo:solid / demo:preact / demo:svelte
 ```
 
 Node 22+, pnpm workspace (the npm scripts wrap it).
 
 The repo is a **framework-agnostic monorepo**: `@modyra/core` and
 `@modyra/widgets` are zero-dependency and must stay that way; each
-framework binding (`angular`, `react`, `vue`, `lit`) is a peer package of
-equal rank — new shared capability goes in the core, not in one adapter.
+framework binding (`angular`, `react`, `vue`, `lit`, `solid`, `preact`,
+`svelte`) is a peer package of equal rank — new shared capability goes in
+the core, not in one adapter.
 There is **no root `angular.json`**: the root is plain TypeScript tooling,
 and every framework keeps its own toolchain inside its folder — the Angular
 package builds with standalone `ng-packagr` and tests with
