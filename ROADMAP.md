@@ -18,6 +18,7 @@ numbers — losses stated, not hidden.
 | React Native | compiles clean on current Hermes (2026-07-23), no integration yet | RHF/Formik/TanStack | `AsyncStorage` draft adapter + `<TextInput>` recipe (Phase M) |
 | Non-Angular UI kits | headless recipes only | nobody ships full kits either | achievable |
 | Measured perf | Modyra-only numbers, no competitor bench | — | needs new deps, approval-gated |
+| Reactivity capability parity | Angular declares `capabilities`/`createScope`; the other 6 don't (4 of them already run the real capabilities by default — visibility gap, not a runtime one) | Angular (internal) | Phase P, planned |
 
 ---
 
@@ -143,6 +144,52 @@ migration to real `capabilities`/`createScope`.
 
 **Released**: shipped as part of `0.4.0` (2026-07-23), changeset
 `reactivity-adapter-api.md` (minor, core+angular+react+preact).
+
+## Phase P — Adapter parity (planned, not started)
+
+Goal: close the real gap between Angular (the most mature adapter — native
+signals, `capabilities`/`createScope` already declared since Phase O M4)
+and the other six. First finding, worth stating plainly: **the gap is
+smaller than it looks.** `createForm()` defaults to
+`options?.reactivity ?? vanillaReactivity()` (`packages/core/src/typed-form.ts`),
+so React, Preact, Svelte and Lit already run on `vanillaReactivity()`'s
+real `batch()`/`flush()`/`observe()` capabilities (from Phase O M3) by
+default — nothing to fix at runtime for those four. What's actually
+missing is visibility and two real native-adapter gaps:
+
+- [ ] **P1 — React/Preact/Svelte/Lit**: none of the four packages exports
+      its own `kind`-tagged reactivity constructor, so
+      `scripts/reactivity-capability-matrix.mjs` can't introspect one and
+      shows `—` for a gap that doesn't exist at runtime. Fix: each adapter
+      exports e.g. `reactReactivity()` = `{ ...vanillaReactivity(), kind: "react" }`,
+      ~1 file per adapter, low risk. Regenerate the matrix after.
+- [ ] **P2 — Vue** (`packages/vue/src/index.ts`): real native reactivity
+      (`@vue/reactivity`'s `shallowRef`/`vueComputed`/`vueEffect`), but
+      `vueEffect()` runs with no scheduler — every `set()` is synchronous,
+      no real batching today. Already imports `getCurrentScope`/
+      `onScopeDispose` but doesn't expose them as `createScope()`. Real
+      adapter work: declare honest capabilities (`batching: false` until
+      a scheduler is added — **approval-gated**, adding one changes
+      observable timing) and wire `createScope()` via `effectScope()`.
+- [ ] **P3 — Solid** (`packages/solid/src/index.ts`): native
+      `createSignal`/`createEffect`/`createRoot`, already has an
+      owner-tree disposal model (`createRoot`/`onCleanup`) — a natural
+      fit for `createScope()`, not yet exposed/declared.
+- [ ] **P4 — Missing pages**: `docs/examples/{solid,preact,svelte}.md`
+      don't exist yet (only angular/react/vue/lit.md do);
+      `examples/stackblitz-svelte/` is the only adapter without a
+      StackBlitz starter.
+
+**Explicitly out of scope here, not silently dropped**: the "no
+renderer/UI catalog" gap (Angular's ~30 controls, Lit's 19 components vs.
+headless-only for React/Vue/Solid/Preact/Svelte) is real but large — it
+stays tracked under "Later / watchlist" below ("React/Vue widget kits")
+rather than being folded into Phase P, since building UI kits is a
+different order of effort than a reactivity-contract migration.
+
+Each sub-item ships as its own batch (own commit, own contract-test run
+via `@modyra/core/testing`'s `runReactivityContractTests`), same pattern
+as Phase O's milestones — pick one to greenlight next.
 
 ## Later / watchlist
 
