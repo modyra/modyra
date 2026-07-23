@@ -6,13 +6,31 @@
  */
 import {
     createForm,
+    MdyBatchingCapability,
     MdyCoreFormOptions,
+    MdyFlushCapability,
     MdyFormSchema,
     MdyFormValue,
+    MdyObserveCapability,
+    MdyReactivity,
     MdySignal,
     MdyTypedForm,
     vanillaReactivity,
 } from "@modyra/core";
+
+/**
+ * `vanillaReactivity()` tagged `kind: "lit"` — same reasoning as
+ * `@modyra/react`'s `reactReactivity()`: `createLitForm`/`MdyFormController`
+ * already run on the vanilla graph by default, this just gives the
+ * capability matrix (`scripts/reactivity-capability-matrix.mjs`) a named
+ * export to introspect.
+ */
+export function litReactivity(): MdyReactivity &
+    MdyBatchingCapability &
+    MdyFlushCapability &
+    MdyObserveCapability {
+    return { ...vanillaReactivity(), kind: "lit" };
+}
 
 /** Structural subset of Lit's ReactiveControllerHost. */
 export interface MdyControllerHost {

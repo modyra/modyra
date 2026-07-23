@@ -8,16 +8,36 @@
 import {
   createForm,
   getFieldHandleOwner,
+  MdyBatchingCapability,
   MdyCoreFormOptions,
   MdyFieldHandle,
+  MdyFlushCapability,
   MdyFormSchema,
   MdyFormValue,
+  MdyObserveCapability,
   MdyReactivity,
   MdySignal,
   MdyTypedForm,
   vanillaReactivity,
 } from "@modyra/core";
 import { useEffect, useMemo, useSyncExternalStore } from "react";
+
+/**
+ * `vanillaReactivity()` tagged `kind: "react"` — React has no signal
+ * primitive of its own, so `useMdyForm` already runs on the vanilla graph
+ * by default (`createForm`'s own fallback). This named export exists so
+ * the capability matrix (`scripts/reactivity-capability-matrix.mjs`) has
+ * something to introspect instead of showing "—" for a gap that isn't
+ * actually there at runtime: the real batch()/flush()/observe()
+ * capabilities are already active, just not previously visible under a
+ * `@modyra/react`-owned name.
+ */
+export function reactReactivity(): MdyReactivity &
+  MdyBatchingCapability &
+  MdyFlushCapability &
+  MdyObserveCapability {
+  return { ...vanillaReactivity(), kind: "react" };
+}
 
 /** A `useSyncExternalStore`-compatible view over reactive Modyra state. */
 export interface MdyStore {

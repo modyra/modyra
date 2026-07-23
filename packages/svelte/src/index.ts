@@ -20,14 +20,31 @@
  */
 import {
   createForm,
+  MdyBatchingCapability,
   MdyCoreFormOptions,
+  MdyFlushCapability,
   MdyFormSchema,
   MdyFormValue,
+  MdyObserveCapability,
+  MdyReactivity,
   MdySignal,
   MdyTypedForm,
   vanillaReactivity,
 } from "@modyra/core";
 import type { Readable, Subscriber, Unsubscriber } from "svelte/store";
+
+/**
+ * `vanillaReactivity()` tagged `kind: "svelte"` — same reasoning as
+ * `@modyra/react`'s `reactReactivity()`: `createSvelteForm` already runs on
+ * the vanilla graph by default, this just gives the capability matrix
+ * (`scripts/reactivity-capability-matrix.mjs`) a named export to introspect.
+ */
+export function svelteReactivity(): MdyReactivity &
+  MdyBatchingCapability &
+  MdyFlushCapability &
+  MdyObserveCapability {
+  return { ...vanillaReactivity(), kind: "svelte" };
+}
 
 /**
  * `createForm` preconfigured with the vanilla reactive graph:
