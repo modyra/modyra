@@ -196,6 +196,8 @@ export function compileToContract(project: MdyStudioProject): CompileResult {
       severity: "warning",
       message: `Form validator "${v.id}" (${v.kind}) has no Contract v2 equivalent (Contract v2's "rules" are visibility/enable effects, not validation-with-a-message) and was omitted`,
       validatorId: v.id,
+      // errorTarget, when set, is the most useful "where does this show up" node for a UI to point at.
+      ...(v.errorTarget ? { nodeId: v.errorTarget.nodeId } : {}),
     });
   }
 
