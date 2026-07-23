@@ -3,6 +3,8 @@
  * (source: modyra-brand kit 02-color/modyra-tokens.css, 03-typography).
  * Kept self-contained (not relying on Starlight's --sl-* variables) so the
  * standalone apps/studio build renders on-brand with no other stylesheet.
+ * Dark by default, matching the docs site's own default (unqualified :root)
+ * palette in custom.css — deliberately plain/flat, not a boxy IDE chrome.
  */
 
 @font-face {
@@ -12,7 +14,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: "Satoshi";
   src: url("./fonts/Satoshi-Medium.woff2") format("woff2");
@@ -20,7 +21,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: "Satoshi";
   src: url("./fonts/Satoshi-Bold.woff2") format("woff2");
@@ -29,7 +29,7 @@
   font-display: swap;
 }
 
-.studio {
+:root {
   --mdy-indigo: #7067ff;
   --mdy-violet: #a855f7;
   --mdy-coral: #ff6577;
@@ -38,22 +38,34 @@
   --mdy-slate: #94a3b8;
   --mdy-gradient-brand: linear-gradient(90deg, #7067ff 0%, #a855f7 50%, #ff6577 100%);
 
-  --mdy-bg: var(--mdy-cloud);
-  --mdy-panel: color-mix(in srgb, var(--mdy-cloud) 88%, white);
-  --mdy-panel-raised: color-mix(in srgb, var(--mdy-night) 82%, white);
-  --mdy-border: color-mix(in srgb, var(--mdy-cloud) 70%, white);
-  --mdy-border-accent: color-mix(in srgb, var(--mdy-indigo) 45%, var(--mdy-cloud));
+  --mdy-bg: var(--mdy-night);
+  --mdy-panel: color-mix(in srgb, var(--mdy-night) 92%, white);
+  --mdy-border: color-mix(in srgb, var(--mdy-night) 80%, white);
+  --mdy-border-accent: color-mix(in srgb, var(--mdy-indigo) 40%, var(--mdy-night));
   --mdy-text: var(--mdy-cloud);
   --mdy-text-muted: var(--mdy-slate);
   --mdy-focus-ring: color-mix(in srgb, var(--mdy-indigo) 35%, transparent);
+}
 
+/* This stylesheet is always loaded on a page dedicated entirely to Studio
+   (apps/studio/index.html, site/src/pages/studio/index.astro) — fill the
+   whole viewport with the brand background up front, not just .studio's
+   own box, so there's no UA-default flash before/around the mounted app. */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--mdy-bg);
+}
+
+.studio {
   color-scheme: dark;
-  min-height: 720px;
+  min-height: 100dvh;
   background: var(--mdy-bg);
   color: var(--mdy-text);
   font: 14px "Satoshi", system-ui, sans-serif;
   display: grid;
-  grid-template-rows: 64px 1fr 36px;
+  grid-template-rows: 56px 1fr 32px;
 }
 
 .studio * {
@@ -65,23 +77,18 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
-  background: var(--mdy-panel);
   border-bottom: 1px solid var(--mdy-border);
 }
-
 .studio header div {
   display: grid;
 }
-
 .studio header strong {
   font-weight: 700;
 }
-
 .studio header span {
   color: var(--mdy-text-muted);
   font-size: 11px;
 }
-
 .studio nav {
   display: flex;
   gap: 7px;
@@ -92,22 +99,19 @@
 .studio textarea {
   font: inherit;
 }
-
 .studio button {
-  background: var(--mdy-panel-raised);
+  background: transparent;
   color: var(--mdy-text);
   border: 1px solid var(--mdy-border);
-  border-radius: 7px;
-  padding: 7px 10px;
+  border-radius: 6px;
+  padding: 6px 10px;
   cursor: pointer;
 }
-
 .studio button:hover,
 .studio button:focus-visible {
   border-color: var(--mdy-indigo);
   outline: 2px solid var(--mdy-focus-ring);
 }
-
 .studio button:disabled {
   opacity: 0.4;
   cursor: default;
@@ -122,51 +126,55 @@
 .palette,
 .inspector {
   padding: 18px;
-  background: var(--mdy-panel);
 }
-
 .palette {
   border-right: 1px solid var(--mdy-border);
 }
-
 .inspector {
   border-left: 1px solid var(--mdy-border);
 }
-
 .palette h2,
 .inspector h2 {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mdy-text-muted);
   margin: 0 0 14px;
 }
-
 .palette button {
   display: block;
   width: 100%;
   text-align: left;
-  margin: 6px 0;
+  margin: 4px 0;
   text-transform: capitalize;
+  border-color: transparent;
+}
+.palette button:hover {
+  background: var(--mdy-panel);
 }
 
 .canvas {
   overflow: auto;
-  padding: 20px 26px;
-  background: radial-gradient(circle at 50% 0, var(--mdy-panel-raised) 0%, var(--mdy-night) 45%);
+  padding: 24px 28px;
 }
-
 .title {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 20px;
 }
-
 .title h1 {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 700;
   background-image: var(--mdy-gradient-brand);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
+}
+.title span {
+  color: var(--mdy-text-muted);
+  font-size: 12px;
 }
 
 .tree,
@@ -175,10 +183,9 @@
   padding: 0;
   margin: 0;
 }
-
 .tree ul {
   border-left: 1px solid var(--mdy-border);
-  margin-left: 20px;
+  margin-left: 18px;
   padding-left: 14px;
 }
 
@@ -186,24 +193,19 @@
   display: flex;
   gap: 6px;
   align-items: center;
-  background: var(--mdy-panel-raised);
   border: 1px solid var(--mdy-border);
-  border-radius: 8px;
+  border-radius: 7px;
   padding: 6px;
 }
-
-.selected>.node {
+.selected > .node {
   border-color: var(--mdy-indigo);
-  box-shadow: 0 0 0 2px var(--mdy-focus-ring);
 }
-
 .node .select {
   flex: 1;
   display: flex;
   justify-content: space-between;
   text-align: left;
 }
-
 .node small {
   color: var(--mdy-text-muted);
 }
@@ -217,7 +219,6 @@
   font-size: 11px;
   transition: 0.12s;
 }
-
 .drop-zone:hover,
 .drop-zone.inside {
   height: 25px;
@@ -227,23 +228,23 @@
 }
 
 .array-item {
-  margin: 5px 0 5px 20px;
+  margin: 5px 0 5px 18px;
   padding: 8px;
   border: 1px solid var(--mdy-border);
-  border-radius: 8px;
+  border-radius: 7px;
 }
-
 .array-item b {
   color: var(--mdy-violet);
+  font-size: 12px;
 }
 
 .empty {
   margin: 40px auto;
-  max-width: 520px;
+  max-width: 480px;
   text-align: center;
-  border: 1px dashed var(--mdy-border-accent);
-  padding: 35px;
-  border-radius: 12px;
+  border: 1px dashed var(--mdy-border);
+  padding: 32px;
+  border-radius: 10px;
   color: var(--mdy-text-muted);
 }
 
@@ -253,23 +254,20 @@
   font-size: 12px;
   margin: 15px 0;
 }
-
 .inspector input,
 .inspector textarea {
   display: block;
   width: 100%;
   margin-top: 6px;
-  background: var(--mdy-night);
+  background: transparent;
   color: var(--mdy-text);
   border: 1px solid var(--mdy-border);
-  border-radius: 7px;
+  border-radius: 6px;
   padding: 8px;
 }
-
 .inspector textarea {
   min-height: 80px;
 }
-
 .inspector dd {
   margin: 3px 0;
   color: color-mix(in srgb, var(--mdy-violet) 55%, var(--mdy-cloud));
@@ -281,7 +279,6 @@
   align-items: center;
   padding: 0 15px;
   border-top: 1px solid var(--mdy-border);
-  background: var(--mdy-panel);
   color: var(--mdy-text-muted);
   font-size: 11px;
 }
@@ -290,17 +287,14 @@
   .studio main {
     grid-template-columns: 170px 1fr;
   }
-
   .inspector {
     display: none;
   }
 }
-
 @media (max-width: 600px) {
   .studio main {
     grid-template-columns: 1fr;
   }
-
   .palette {
     display: none;
   }
