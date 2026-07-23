@@ -114,16 +114,20 @@ locale issue).
 ### Reading the numbers honestly
 
 - On the **realistic surface** Modyra is the lightest package measured
-  under *both* bundlers (9.4 / 9.1 KB gzip) — and that surface still
+  under *both* bundlers (10.6 / 10.3 KB gzip) — and that surface still
   includes features most competitors don't ship at all (drafts,
   undo/redo, sanitization). final-form's stack is close (11.0 / 10.6 KB)
   but covers a fraction of the feature set (§3).
-- On the **whole-entry** metric Modyra (10.7 / 10.4 KB) is second only
-  to the final-form stack (10.2 / 9.8 KB) — lighter than react-hook-form,
-  formik, vee-validate, TanStack Form and `@angular/forms`. Phase J of
-  the roadmap relocated satellite utilities (i18n, icons, datetime,
-  devtools) to curated subpath entries; the main entry still carries the
-  full engine including drafts and undo/redo.
+- On the **whole-entry** metric Modyra (14.1 / 13.8 KB) is fourth —
+  behind react-final-form's stack (10.2 / 9.8 KB), react-hook-form
+  (13.3 / 12.7 KB) and vee-validate's esbuild number (13.6 KB, see the ⚠
+  caveat above) — but still lighter than formik, TanStack Form and
+  `@angular/forms`. This is a real regression from an earlier 10.7/10.4 KB
+  (see the dated note above): Phase J relocated satellite utilities
+  (i18n, icons, datetime, devtools) to curated subpath entries, then the
+  reactivity-adapter-api work added always-linked scope/lifecycle/error
+  machinery back on top. Not silently absorbed — stated here and in
+  `ROADMAP.md`.
 - `@angular/forms` is not directly comparable: Angular apps pay for the
   framework regardless; it ships no tree-shakeable form surface.
 - Per-feature byte cost, Modyra is the most efficient package in this
@@ -207,7 +211,7 @@ locale issue).
    `dependsOn` + timeout + `when` as first-class field options (TanStack
    Form matches debounce+cancellation; others are manual).
 6. **Measured realistic weight**: lightest form surface in this
-   comparison (9.4 KB gzip) despite shipping more features.
+   comparison (10.6 KB gzip) despite shipping more features.
 
 ## 6. Measured performance (Modyra internals)
 
