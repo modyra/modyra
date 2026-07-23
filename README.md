@@ -314,6 +314,7 @@ single source of truth). The shortlist:
 - [DevTools](docs/guides/devtools.md) — hotkey overlay, masking, production notes
 - [I18n](docs/guides/i18n.md) — UI strings (en/it/de/fr/es), date/time value models, localized parsing
 - [Reactive Forms interop](docs/guides/interop.md) · [Comparison](docs/guides/comparison-reactive-forms.md) · [Troubleshooting](docs/guides/troubleshooting.md)
+- Coming from React? [react-hook-form](docs/guides/comparison-react-hook-form.md) · [Formik](docs/guides/comparison-formik.md) — tested side-by-side snippets, migration guidance
 
 **Rust SDK**: [`sdk/rust/`](sdk/rust/) — `modyra-contract`, a network-independent
 crate for reading/writing/validating Dynamic Form Contract v2, plus runnable
