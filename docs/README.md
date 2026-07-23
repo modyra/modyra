@@ -48,6 +48,7 @@ server validation, submit with server errors, drafts — in each binding:
 | [Compared with react-hook-form](guides/comparison-react-hook-form.md) | Side-by-side snippet (tested), the `formState` proxy gotcha, migration guidance                                  |
 | [Compared with Formik](guides/comparison-formik.md)                 | Side-by-side snippet (tested), the `isValid` dirty-gating gotcha, migration guidance                             |
 | [Form library comparison](guides/comparison-form-libraries.md)      | Measured bundle sizes + feature matrix vs RHF, TanStack Form, Formik, Final Form, VeeValidate — updated 2026-07-21 |
+| [React Native](guides/react-native.md)                              | Hermes-compatibility verification (real `hermesc`), what's still missing for a real RN integration                |
 | [Writing a reactivity adapter](guides/reactivity-adapter-guide.md)   | The `MdyReactivity` contract, capability honesty, ownership/scope, the conformance suite — for building the next framework adapter |
 | [Reactivity capability matrix](reactivity-capability-matrix.md)      | Generated (not hand-maintained) table of what each adapter's `MdyReactivity` actually declares — `npm run docs:reactivity-matrix` regenerates it |
 

@@ -158,7 +158,7 @@ locale issue).
 | Bundled UI components | ✓ Angular renderer catalog (~30 controls) + theme pkg + headless widgets | ✗ headless only | ✗ | ✗ | ✗ | ✗ | ✗ framework directives |
 | i18n | ✓ core module | ✗ | ✗ | ✗ | ✗ | ✗ | framework-level |
 | Devtools | ✓ core, UI-agnostic | ✓ | ✓ `@hookform/devtools` (external) | ✗ | ✗ | ~ Vue devtools | ~ framework |
-| React Native | ✗ untested | ✓ | ✓ | ✓ | ~ | ✗ | ✗ |
+| React Native | ~ compiles clean on Hermes, no integration [^6^] | ✓ | ✓ | ✓ | ~ | ✗ | ✗ |
 | Server-side reuse of validation | ✓ engine runs in Node; same schema gates API | ✓ first-class SSR API [^3^] | ~ resolvers run anywhere; no server API | ~ | ~ | ~ | ✗ |
 | On npm at time of writing | **✓ — `@modyra/*@0.4.0`** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
@@ -178,8 +178,11 @@ locale issue).
    first-class SSR feature [^3^]; Modyra's isomorphic pattern (same zod
    schema client/server) works but is a documented pattern, not a
    framework-integrated API.
-4. **React Native.** RHF, Formik and TanStack Form support it; Modyra
-   does not (web-only, untested on RN).
+4. **React Native.** RHF, Formik and TanStack Form ship real RN
+   integrations; Modyra's compiled output is Hermes-compatible (verified,
+   see the [React Native guide](react-native.md)) but there's no
+   `<TextInput>` binding, no AsyncStorage-backed draft adapter, and no
+   example app yet.
 5. **Non-Angular UI.** Modyra's full renderer catalog (~30 controls,
    theme, dynamic form) ships for Angular only; React/Vue/Lit get the
    adapter + headless recipes — you bring or compose your own components.
@@ -269,6 +272,7 @@ undocumented.
 [^3^]: TanStack Form v1 announcement (Standard Schema, async AbortSignal, SSR, persistence roadmap): https://tanstack.com/blog/announcing-tanstack-form-v1
 [^4^]: TanStack Form vs React Hook Form (stars, comparison 2025): https://blog.logrocket.com/tanstack-form-vs-react-hook-form/
 [^5^]: TanStack Form product page (weekly downloads, stars): https://tanstack.com/form/latest
+[^6^]: Compiled cleanly to Hermes bytecode with the real compiler React Native 0.86.0 depends on (`hermes-compiler@250829098.0.14`) — zero errors. No native-input renderer or example app yet. Full writeup: [React Native guide](react-native.md).
 
 All bundle figures: local esbuild 0.25 / rollup 4 measurements per §1,
 2026-07-21, cross-checked against https://bundlephobia.com (within ~10%).
