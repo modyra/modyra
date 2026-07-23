@@ -109,7 +109,12 @@ Goal: 7 supported frameworks.
       (`comparison-form-libraries.md` §6), one honest weak spot flagged
       (cross-field validator O(fields)). Competitor head-to-head needs new
       deps, approval-gated.
-- [ ] Reddit follow-ups, conference/meetup deck
+- [x] Conference/meetup deck — 6-section pitch built from this doc's real
+      numbers, published both as a Claude Artifact and as a page on the
+      docs site (`site/src/pages/pitch.astro`, `/modyra/pitch`), including
+      a feature-scoreboard chart (6/6 built-in vs. 0/6 everywhere else).
+- [ ] Reddit follow-ups — posting itself is a manual/social action, not
+      done here.
 
 ## Phase O — Reactivity/adapter API redesign ✅ DONE (correctness, not a leaderboard)
 
