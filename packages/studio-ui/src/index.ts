@@ -13,6 +13,7 @@ import {
   isDuplicateKindAllowed,
   type FieldNode,
   type MdyStudioProject,
+  type StudioDiagnostic,
   type StudioExpression,
   type StudioExpressionOp,
   type StudioFormValidator,
@@ -34,6 +35,7 @@ import {
   createRemoveValidatorCommand,
   createSetFieldOptionsCommand,
   createSetServerValidatorCommand,
+  createUpdateBehaviorCommand,
   createUpdateFormValidatorCommand,
   createUpdateNodeCommand,
   createUpdateValidatorCommand,
@@ -41,6 +43,7 @@ import {
   type Command,
   type Placement,
 } from "@modyra/studio-editor";
+import { compileToContract } from "@modyra/studio-contract";
 import "./studio.css";
 
 type Drag = { nodeId: string } | { template: string };
@@ -321,10 +324,13 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     errorTargetId: "",
     message: "",
   };
-  let inspectorTab: "node" | "form" = "node";
+  let inspectorTab: "node" | "form" | "diagnostics" = "node";
   /** Which accordion sections are open — Validation starts open, everything else starts collapsed
       (the whole point of this structure: show little by default, let the user open what they need). */
   const expandedSections = new Set<string>(["validation"]);
+  /** Node IDs referenced by the current diagnostics — recomputed at the top of every render(),
+      read by nodeIndicatorsMarkup() so the tree shows an at-a-glance error marker too. */
+  let diagnosticNodeIds = new Set<string>();
   const history = new CommandHistory();
 
   function commit(command: Command, focusTarget: string = selected): void {
@@ -372,19 +378,58 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
 
   /** At-a-glance indicators — validators/server-validation don't require opening the inspector to spot. */
   function nodeIndicatorsMarkup(n: StudioSchemaNode): string {
-    if (n.node !== "field" && n.node !== "array") return "";
     const badges: string[] = [];
-    if (n.validators.some((v) => v.kind === "required")) {
-      badges.push(`<span class="indicator required" title="Required">*</span>`);
+    if (diagnosticNodeIds.has(n.id)) {
+      badges.push(`<span class="indicator issue" title="Has a diagnostic — see the Diagnostics tab">!</span>`);
     }
-    const otherCount = n.validators.filter((v) => v.kind !== "required").length;
-    if (otherCount) {
-      badges.push(`<span class="indicator count" title="${otherCount} validator${otherCount > 1 ? "s" : ""}">${otherCount}</span>`);
-    }
-    if (n.node === "field" && n.serverValidator) {
-      badges.push(`<span class="indicator server" title="Server validation enabled">⇄</span>`);
+    if (n.node === "field" || n.node === "array") {
+      if (n.validators.some((v) => v.kind === "required")) {
+        badges.push(`<span class="indicator required" title="Required">*</span>`);
+      }
+      const otherCount = n.validators.filter((v) => v.kind !== "required").length;
+      if (otherCount) {
+        badges.push(`<span class="indicator count" title="${otherCount} validator${otherCount > 1 ? "s" : ""}">${otherCount}</span>`);
+      }
+      if (n.node === "field" && n.serverValidator) {
+        badges.push(`<span class="indicator server" title="Server validation enabled">⇄</span>`);
+      }
     }
     return badges.length ? `<span class="node-indicators">${badges.join("")}</span>` : "";
+  }
+
+  /** One-click fix for a diagnostic — dispatches an existing command, never a bespoke mutation (plan §9 "Fixes use normal commands"). */
+  function quickFixMarkup(d: StudioDiagnostic): string {
+    if (d.code === "BAD_PATTERN" && d.nodeId && d.validatorId) {
+      return `<button data-fix-clear-pattern="${d.validatorId}" data-fix-node="${d.nodeId}">Clear pattern</button>`;
+    }
+    if (d.code === "SELECT_WITHOUT_OPTIONS" && d.nodeId) {
+      return `<button data-fix-add-option="${d.nodeId}">Add a default option</button>`;
+    }
+    if (d.code === "SENSITIVE_FIELD_IN_DRAFT" && d.nodeId) {
+      return `<button data-fix-exclude-draft="${d.nodeId}">Exclude from draft</button>`;
+    }
+    return "";
+  }
+
+  function diagnosticsMarkup(diagnostics: StudioDiagnostic[]): string {
+    if (!diagnostics.length) {
+      return `<p class="tab-hint">No issues found — checkout strict-valid.</p>`;
+    }
+    const rows = diagnostics
+      .map((d) => {
+        const goto = d.nodeId ? `<button data-goto-node="${d.nodeId}">Go to</button>` : "";
+        const fix = quickFixMarkup(d);
+        return `
+          <li class="diagnostic-row severity-${d.severity}">
+            <span class="diag-severity">${escapeHtml(d.severity)}</span>
+            <span class="diag-message">${escapeHtml(d.message)}</span>
+            <span class="diag-actions">${goto}${fix}</span>
+          </li>`;
+      })
+      .join("");
+    return `
+      <p class="tab-hint">Model checks and Contract v2 export checks, together — errors block export, warnings just mean something was omitted.</p>
+      <ul class="diagnostic-list">${rows}</ul>`;
   }
 
   function markup(n: StudioSchemaNode): string {
@@ -425,6 +470,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     const current = idx.nodeById.get(selected) ?? project.schema;
     selected = current.id;
     const rootChildren = project.schema.node === "group" ? project.schema.children : [];
+    const { diagnostics } = compileToContract(project);
+    diagnosticNodeIds = new Set(diagnostics.filter((d) => d.nodeId).map((d) => d.nodeId!));
+    const errorCount = diagnostics.filter((d) => d.severity === "error").length;
 
     host.innerHTML = `
       <div class="studio">
@@ -464,12 +512,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
               <button type="button" role="tab" data-inspector-tab="form" aria-selected="${inspectorTab === "form"}">
                 Form rules${project.formValidators.length ? ` <span class="badge">${project.formValidators.length}</span>` : ""}
               </button>
+              <button type="button" role="tab" data-inspector-tab="diagnostics" aria-selected="${inspectorTab === "diagnostics"}">
+                Diagnostics${diagnostics.length ? ` <span class="badge ${errorCount ? "badge-error" : ""}">${diagnostics.length}</span>` : ""}
+              </button>
             </div>
             <div class="inspector-body">
               ${
-                inspectorTab === "form"
-                  ? formValidatorsMarkup(project, idx, formValidatorDraft)
-                  : `
+                inspectorTab === "diagnostics"
+                  ? diagnosticsMarkup(diagnostics)
+                  : inspectorTab === "form"
+                    ? formValidatorsMarkup(project, idx, formValidatorDraft)
+                    : `
                     <label>Name<input data-name value="${escapeHtml(current.name)}"></label>
                     <label>Label<input data-label value="${escapeHtml(current.label ?? "")}"></label>
                     <label>Description<textarea data-description>${escapeHtml(current.description ?? "")}</textarea></label>
@@ -663,7 +716,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
 
     host.querySelectorAll<HTMLElement>("[data-inspector-tab]").forEach((el) =>
       el.addEventListener("click", () => {
-        const tab = el.dataset.inspectorTab as "node" | "form";
+        const tab = el.dataset.inspectorTab as "node" | "form" | "diagnostics";
         inspectorTab = tab;
         focusSelector = `[data-inspector-tab="${tab}"]`;
         render();
@@ -676,6 +729,34 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
         const id = el.dataset.section!;
         if (el.open) expandedSections.add(id);
         else expandedSections.delete(id);
+      }),
+    );
+
+    host.querySelectorAll<HTMLElement>("[data-goto-node]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const nodeId = el.dataset.gotoNode!;
+        selected = nodeId;
+        inspectorTab = "node";
+        focusSelector = `[data-node="${nodeId}"]`;
+        render();
+      }),
+    );
+    host.querySelectorAll<HTMLElement>("[data-fix-clear-pattern]").forEach((el) =>
+      el.addEventListener("click", () =>
+        commit(createUpdateValidatorCommand(el.dataset.fixNode!, el.dataset.fixClearPattern!, { pattern: "" })),
+      ),
+    );
+    host.querySelectorAll<HTMLElement>("[data-fix-add-option]").forEach((el) =>
+      el.addEventListener("click", () =>
+        commit(createSetFieldOptionsCommand(el.dataset.fixAddOption!, [{ value: "option", label: "Option" }])),
+      ),
+    );
+    host.querySelectorAll<HTMLElement>("[data-fix-exclude-draft]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const nodeId = el.dataset.fixExcludeDraft!;
+        const currentDraft = project.behaviors.draft;
+        const exclude = [...(currentDraft?.exclude ?? []), { nodeId }];
+        commit(createUpdateBehaviorCommand({ draft: { key: currentDraft?.key ?? "draft", exclude } }));
       }),
     );
 

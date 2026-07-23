@@ -313,6 +313,9 @@ importers:
 
   packages/studio-ui:
     dependencies:
+      '@modyra/studio-contract':
+        specifier: workspace:*
+        version: link:../studio-contract
       '@modyra/studio-editor':
         specifier: workspace:*
         version: link:../studio-editor

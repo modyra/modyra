@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "@modyra/studio-model": "workspace:*",
-    "@modyra/studio-editor": "workspace:*"
+    "@modyra/studio-editor": "workspace:*",
+    "@modyra/studio-contract": "workspace:*"
   },
   "sideEffects": [
     "*.css"

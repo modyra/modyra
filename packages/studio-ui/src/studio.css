@@ -318,6 +318,61 @@ body {
   color: var(--mdy-violet);
   font-size: 12px;
 }
+.indicator.issue {
+  color: var(--mdy-coral);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.badge-error {
+  background: color-mix(in srgb, var(--mdy-coral) 30%, transparent);
+  color: color-mix(in srgb, var(--mdy-coral) 60%, var(--mdy-cloud));
+}
+
+.diagnostic-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.diagnostic-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--mdy-border);
+  border-left: 3px solid var(--mdy-text-muted);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.diagnostic-row.severity-error {
+  border-left-color: var(--mdy-coral);
+}
+.diagnostic-row.severity-warning {
+  border-left-color: color-mix(in srgb, var(--mdy-violet) 70%, var(--mdy-coral));
+}
+.diag-severity {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--mdy-text-muted);
+}
+.severity-error .diag-severity {
+  color: var(--mdy-coral);
+}
+.diag-message {
+  flex: 1 1 100%;
+  font-size: 12px;
+}
+.diag-actions {
+  display: flex;
+  gap: 6px;
+}
+.diag-actions button {
+  font-size: 11px;
+  padding: 5px 8px;
+}
 
 .drop-zone {
   height: 8px;
