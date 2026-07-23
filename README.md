@@ -359,11 +359,16 @@ Vue ([`examples/stackblitz-vue`](examples/stackblitz-vue))
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-lit)
 Lit ([`examples/stackblitz-lit`](examples/stackblitz-lit))
 
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-solid)
+Solid ([`examples/stackblitz-solid`](examples/stackblitz-solid))
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-preact)
+Preact ([`examples/stackblitz-preact`](examples/stackblitz-preact))
+
 Each is a real, verified, buildable Vite project (`npm install && npm run
 dev`) with the same signup demo (schema validators, cross-field password
 check, draft persistence, undo/redo, cancellable server-side check) — not
-just a code snippet. Solid and Preact don't have one yet (tracked in
-[`ROADMAP.md`](ROADMAP.md)).
+just a code snippet.
 
 `examples/angular` is the full Angular demo app (typed, declarative, dynamic
 and Zod sections over the whole renderer catalog) — one demo app per
