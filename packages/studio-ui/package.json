@@ -1,0 +1,28 @@
+{
+  "name": "@modyra/studio-ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./studio.css": {
+      "default": "./dist/studio.css"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && cp src/studio.css dist/studio.css && mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
+    "test": "npm run build && node --import ./test/support/register.mjs --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@modyra/studio-model": "workspace:*",
+    "@modyra/studio-editor": "workspace:*"
+  },
+  "sideEffects": [
+    "*.css"
+  ]
+}

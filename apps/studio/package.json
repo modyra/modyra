@@ -1,0 +1,17 @@
+{
+  "name": "@modyra/studio-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "npm run build && node server.mjs",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@modyra/studio-ui": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
+  }
+}
