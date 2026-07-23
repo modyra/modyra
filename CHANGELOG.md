@@ -12,11 +12,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Solid, Preact, and Svelte adapters, widgets integrations, examples, and documentation.
 - StackBlitz starters for React, Vue, and Lit.
 - Server-side `serverValidate()` support for Zod and Standard Schema.
+- Reactivity/adapter API redesign (`@modyra/core`, `@modyra/angular`, `@modyra/react`, `@modyra/preact`): optional `capabilities`/`createScope`/`MdyReactiveScope` on `MdyReactivity`, typed errors, structured diagnostics; real `batch()`/`flush()`/`observe()` on `vanillaReactivity()`; `form.mutate()` for coalesced history entries; `MdyFormEngineOptions.autoActivate` plus `activate()`/`deactivate()` for pausing/resuming draft, history and async validators without losing state; `@modyra/core/testing` (`runReactivityContractTests`) as a public conformance-suite API.
+- `@modyra/react`/`@modyra/preact`'s `useMdyForm` now constructs with `autoActivate: false` and activates/deactivates from its effect instead of destroying on unmount — tolerant of React Strict Mode's dev-only double-invoke and safe during SSR.
+- Dynamic Form Contract v2 (`@modyra/core`): data-only layout (sections/columns), declarative visibility/enabled rules, structured strict/lenient parser diagnostics, recursive `group`/`array` schema nodes, a shared JSON Schema and conformance fixtures (`spec/`). Contract v1 and `parseDynamicFields()` remain fully supported.
+- `modyra-contract` Rust crate (`sdk/rust/`) implementing Contract v2, plus runnable `reqwest`/Axum examples; the Angular dynamic-form demo now round-trips against a real Rust API.
+- Generated reactivity adapter capability matrix (`npm run docs:reactivity-matrix` → `docs/reactivity-capability-matrix.md`) and a new adapter-authoring guide (`docs/guides/reactivity-adapter-guide.md`).
 
 ### Fixed
 
 - Documentation-site relative links and edit-page URLs.
 - React and Preact examples now react correctly to form-level `canSubmit`, undo, and redo state.
+- `createStore()` in `@modyra/react`/`@modyra/preact` no longer builds an unrelated `vanillaReactivity()` instance to observe a field handle — it resolves the handle's real owning reactivity, fixing a latent cross-runtime observation bug.
+- `undo()`/`redo()` no longer push spurious history entries when restoring a value on a synchronous-effect adapter.
+- `@modyra/angular`'s reactivity adapter no longer silently returns a no-op effect without an `Injector` (throws a typed error by default) and no longer silently ignores the `onError` effect option.
+- Vanilla's effect scheduler no longer lets one effect's uncaught error stop sibling effects scheduled in the same batch from running.
+
+### Changed
+
+- CI's release workflow now triggers only on a pushed version tag (`v*`), not on every push to `main`.
+- Bundle size budgets (`scripts/check-bundle.mjs`, `scripts/check-core-bundle.mjs`) raised to reflect the reactivity/adapter API additions above — see `docs/guides/comparison-form-libraries.md` for the measured before/after numbers.
 
 ## [0.3.0] - 2026-07-21
 
