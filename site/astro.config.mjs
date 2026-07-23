@@ -62,7 +62,7 @@ export default defineConfig({
 			// Do not configure editLink.baseUrl here. Synced pages receive an
 			// explicit editUrl pointing to docs/, the canonical source tree.
 			sidebar: [
-				{ label: 'Start here', slug: 'index' },
+				{ label: 'Start here', slug: 'start-here' },
 				{
 					label: 'Guides',
 					items: [{ autogenerate: { directory: 'guides' } }],
