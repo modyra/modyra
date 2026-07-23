@@ -2,16 +2,18 @@
 
 Modyra's engine is headless by design: `@modyra/core` owns the form state,
 the framework adapters (`@modyra/react`, `@modyra/vue`, `@modyra/solid`,
-`@modyra/preact`) own reactivity, and **you** own the markup.
-`@modyra/widgets` and `@modyra/styles` are one ready-made UI on top — but
-if your design system is shadcn/ui, Radix, shadcn-vue/Reka, Kobalte, Naive
-UI or plain Tailwind, the binding glue is a handful of props-mappers.
+`@modyra/preact`, `@modyra/svelte`) own reactivity, and **you** own the
+markup. `@modyra/widgets` and `@modyra/styles` are one ready-made UI on
+top — but if your design system is shadcn/ui, Radix, shadcn-vue/Reka,
+Kobalte, Naive UI or plain Tailwind, the binding glue is a handful of
+props-mappers.
 
 This guide's helpers are not pseudocode: they are mirrored verbatim in the
 adapter test suites (`packages/react/test/headless-recipes.test.mjs`,
 `packages/vue/test/headless-recipes.test.mjs`,
 `packages/solid/test/headless-recipes.test.mjs`,
-`packages/preact/test/headless-recipes.test.mjs`) and exercised against
+`packages/preact/test/headless-recipes.test.mjs`,
+`packages/svelte/test/headless-recipes.test.mjs`) and exercised against
 the real engine on every CI run. Copy them into your project and tweak
 freely — that is the headless ethos (and shadcn's own philosophy).
 
@@ -182,6 +184,22 @@ differs) as proof, not just a claim. Swap the imports for
 `useMdyForm`/`useMdyField` from `@modyra/preact` and the rest of this
 section applies as written — including the shadcn component snippets,
 since Preact's JSX output is React-compatible.
+
+### Svelte: same recipe logic, wrap reads in a store
+
+`@modyra/svelte` runs on `vanillaReactivity()` (Svelte 5 runes are
+compiler macros a library's own build step can't resolve — see the
+package README), so its field handles are the same framework-agnostic
+shape as React/Preact's. The recipe functions above work unchanged as
+plain logic — proof: `packages/svelte/test/headless-recipes.test.mjs` is
+that same code, byte-for-byte (only the header comment differs), and it
+passes with zero edits. The one real difference: a `.svelte` template
+auto-subscribes to a `$store` value, not a raw function call the way
+Solid's compiler tracks an accessor — so wrap each handle read through
+`toStore()` (or the `useMdyField`/`useMdySelect` widgets bridge, which
+already returns `state`/`view` as real Svelte `Readable`s) before binding
+it in markup, rather than calling `handle.value()` directly in a
+template expression.
 
 ## Vue + shadcn-vue / Reka UI
 

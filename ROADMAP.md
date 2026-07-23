@@ -13,7 +13,7 @@ numbers — losses stated, not hidden.
 | Whole-entry (gzip) | #4 — 14.1/13.8 KB (was #2, 10.7/10.4), published at `0.4.0` | final-form 10.2/9.8 | regressed by Phase O; violates Phase J's own ≤13 KB goal (not yet reopened as its own item) |
 | Feature matrix | **#1** (drafts, undo, wizard, security) | Modyra | defend |
 | Framework breadth | #2 — 6 full + Svelte (reactivity+widgets, no example) | TanStack Form, 7 | Svelte example + recipes |
-| npm presence | **published `@modyra/*@0.4.0`** (core/angular/react/vue/lit/widgets/zod/standard-schema/styles, verified 2026-07-23) | RHF ~2.7M dl/wk | downloads not tracked; **solid/preact/svelte still 404** — `publish-workspace.mjs`'s hardcoded list predated them, so v0.4.0 bumped their `package.json` without publishing; script fixed 2026-07-23, actual first publish not yet triggered (needs go-ahead) |
+| npm presence | **published, all 12 `@modyra/*@0.4.0`** incl. solid/preact/svelte (manually published + trusted publisher configured 2026-07-23, after `publish-workspace.mjs`'s list — which had predated them — was fixed) | RHF ~2.7M dl/wk | downloads not tracked |
 | SSR/server validation | **#1** — `serverValidate()`, tested Next/Express/Hono | TanStack | defend |
 | React Native | untested, honest reason recorded (Phase M) | RHF/Formik/TanStack | needs real `react-native` or current Hermes binary, approval-gated |
 | Non-Angular UI kits | headless recipes only | nobody ships full kits either | achievable |
@@ -30,7 +30,7 @@ Goal: `@modyra/*` installable from npm. Achieved and surpassed.
 - [x] npm metadata audited (keywords, `@modyra/standard-schema` added to publish scripts)
 - [x] README badges (version/bundle/CI/license)
 - [x] Tarball smoke test vs. the comparison measurement
-- [x] **Owner action, done**: OIDC trusted-publisher live. `0.4.0` verified on the registry for core/angular/react/vue/lit/widgets/zod/standard-schema/styles (2026-07-23). **Not published**: `@modyra/solid`/`preact`/`svelte` — real bug, see standings table.
+- [x] **Owner action, done**: OIDC trusted-publisher live for all 12 `@modyra/*` packages. `0.4.0` verified on the registry for every package (2026-07-23) — solid/preact/svelte needed a manual first publish + trusted-publisher setup (npm requires an existing package before OIDC can be configured for it), done same day.
 
 ## Phase J — Whole-entry slimming ✅ DONE (2026-07-21), now regressed by Phase O
 
@@ -63,8 +63,8 @@ Goal: 7 supported frameworks.
 
 - [x] Solid — native signals ~1:1, widgets bridge, example, headless recipes. Gotcha: Node needs `--conditions=browser` (SSR-stub condition otherwise).
 - [x] Preact — thin React variant, widgets, headless recipes ported verbatim, example. Gap: `useSyncExternalStore` takes 2 args not 3 (no `getServerSnapshot`).
-- [x] Svelte — **stores-based, not runes** (runes are compiler macros, confirmed by trying — can't build with plain `tsc`/`node --test`). `vanillaReactivity()` + `toStore()` bridge to real `Readable`. Widgets bridge shipped. Missing: `examples/svelte` (needs `@sveltejs/vite-plugin-svelte`), headless-recipes doc section.
-- [ ] Comparison doc "7 frameworks" claim — only once Svelte's example+recipes land
+- [x] Svelte — **stores-based, not runes** (runes are compiler macros, confirmed by trying — can't build with plain `tsc`/`node --test`). `vanillaReactivity()` + `toStore()` bridge to real `Readable`. Widgets bridge shipped. Headless-recipes doc section + verbatim-ported test done 2026-07-23 (7/7, zero edits — same proof as Preact/Solid). Still missing: `examples/svelte` (needs `@sveltejs/vite-plugin-svelte`, a new toolchain decision, approval-gated).
+- [ ] Comparison doc "7 frameworks" claim — only once Svelte's example lands (last remaining piece, approval-gated on the toolchain above)
 
 ## Phase M — React Native (Blocked, honest reason recorded)
 
@@ -83,10 +83,12 @@ Goal: 7 supported frameworks.
 - [ ] Migration guides (RHF/Formik/Reactive Forms) — **partial**: Reactive
       Forms guide genuinely tested (3/3, no new dep). RHF/Formik need new
       devDependencies, approval-gated.
-- [x] StackBlitz starters — **partial**: React/Vue/Lit done (real, verified
-      Vite projects, own isolated `package.json`). Solid/Preact blocked on
-      npm publish (see standings). CodeSandbox tried and declined — GitHub
-      import hits a Cloudflare bot-check (403), can't verify like StackBlitz.
+- [x] StackBlitz starters — **all 6 done** (Angular/React/Vue/Lit/Solid/Preact):
+      real, verified Vite projects, own isolated `package.json`, real
+      `npm install` + build + dev server + Playwright pass (2026-07-23 for
+      Solid/Preact, unblocked once their npm publish landed). CodeSandbox
+      tried and declined — GitHub import hits a Cloudflare bot-check (403),
+      can't verify like StackBlitz.
 - [x] Measured perf comparison — Modyra's own numbers published
       (`comparison-form-libraries.md` §6), one honest weak spot flagged
       (cross-field validator O(fields)). Competitor head-to-head needs new
