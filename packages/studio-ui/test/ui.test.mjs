@@ -117,6 +117,27 @@ test("P5 gate: checkout's real items-length form validator renders in the Form v
   assert.match(markup, /error target: items/);
 });
 
+test("P6: the Diagnostics tab badge reflects checkout's real 2 warnings (form + server validator, both unmappable), 0 errors", () => {
+  const host = createFakeHost();
+  mountStudio(host, createCheckoutProject());
+
+  // Tab button badge is always rendered (not gated behind which tab is active).
+  const tabMatch = host.innerHTML.match(/data-inspector-tab="diagnostics"[^>]*>\s*Diagnostics\s*(<span[^>]*>(\d+)<\/span>)?/);
+  assert.ok(tabMatch, "expected the Diagnostics tab button in the markup");
+  assert.equal(tabMatch[2], "2");
+  assert.doesNotMatch(tabMatch[1] ?? "", /badge-error/); // 2 warnings, 0 errors -> not the error-colored badge
+
+  // The coupon's server validator is the one diagnostic with a concrete nodeId -> tree shows the "!" marker there.
+  const couponNode = host.innerHTML.match(/<div class="node"[^>]*data-node="nd_coupon">[\s\S]*?<\/div>/)[0];
+  assert.match(couponNode, /indicator issue/);
+});
+
+test("P6: a blank project is diagnostic-free (Diagnostics tab badge shows nothing)", () => {
+  const host = createFakeHost();
+  mountStudio(host);
+  assert.doesNotMatch(host.innerHTML, /data-inspector-tab="diagnostics"[^>]*>\s*Diagnostics\s*<span/);
+});
+
 test("package has no React dependency and source has no React/JSX reference", () => {
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
