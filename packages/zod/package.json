@@ -1,6 +1,6 @@
 {
   "name": "@modyra/zod",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Framework-agnostic Zod adapter for the Modyra form engine — schema-first typed forms.",
   "keywords": [
     "zod",
@@ -39,7 +39,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "0.3.0"
+    "@modyra/core": "0.4.0"
   },
   "peerDependencies": {
     "zod": ">=3.25.0"
