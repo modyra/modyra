@@ -104,19 +104,21 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
   let drag: Drag | null = null;
   let picked: string | null = null;
   let status = "Blank project ready";
-  let focusId: string | null = null;
+  /** CSS selector re-focused after the next render — every action must set this, win or lose (R9/plan §7 "Restore focus after command"). */
+  let focusSelector: string | null = null;
   const history = new CommandHistory();
 
-  function commit(command: Command): void {
+  function commit(command: Command, focusTarget: string = selected): void {
     try {
       project = history.apply(project, command);
       status = command.description;
-      focusId = selected;
     } catch (error) {
       status = error instanceof CommandRejectedError
         ? error.diagnostics.map((d) => d.message).join(". ")
         : String(error);
     }
+    // Restore focus regardless of success/failure — a rejected command must not strand the keyboard user.
+    focusSelector = `[data-node="${focusTarget}"]`;
     render();
   }
 
@@ -124,13 +126,12 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     if (!drag) return;
     if ("template" in drag) {
       const created = createNodeFromTemplate(drag.template);
-      commit(createInsertCommand(created, placement));
       selected = created.id;
+      commit(createInsertCommand(created, placement));
     } else {
       commit(createMoveCommand(drag.nodeId, placement));
     }
     drag = null;
-    render();
   }
 
   function remove(id: string): void {
@@ -141,9 +142,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     ) {
       return;
     }
-    commit(createDeleteCommand(id, true));
     selected = project.schema.id;
-    render();
+    commit(createDeleteCommand(id, true));
   }
 
   function markup(n: StudioSchemaNode): string {
@@ -197,7 +197,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
             <h2>Elements</h2>
             ${TEMPLATES.map((t) => `<button draggable="true" data-template="${t}">＋ ${t}</button>`).join("")}
           </aside>
-          <section class="canvas">
+          <section class="canvas" tabindex="-1">
             <div class="title">
               <h1>${escapeHtml(project.name)}</h1>
               <span>${idx.nodeById.size - 1} nodes</span>
@@ -229,10 +229,13 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
       </div>`;
 
     bind();
-    if (focusId) {
-      host.querySelector<HTMLElement>(`[data-node="${focusId}"]`)?.focus();
-      focusId = null;
-    }
+    // Fall back to the canvas region (tabindex=-1, programmatic-only) when the requested target
+    // no longer exists — e.g. deleting the tree's last node leaves no [data-node] to focus.
+    // Focus must never silently fall through to <body>.
+    const primaryTarget = focusSelector ? host.querySelector<HTMLElement>(focusSelector) : null;
+    const focusTarget = primaryTarget ?? host.querySelector<HTMLElement>(".canvas");
+    focusTarget?.focus();
+    focusSelector = null;
   }
 
   function bind(): void {
@@ -267,26 +270,30 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
       el.addEventListener("click", () => {
         const created = createNodeFromTemplate(el.dataset.template!);
         const index = project.schema.node === "group" ? project.schema.children.length : 0;
-        commit(createInsertCommand(created, { kind: "inside", parentId: project.schema.id, index }));
         selected = created.id;
-        render();
+        commit(createInsertCommand(created, { kind: "inside", parentId: project.schema.id, index }));
       }),
     );
 
     host.querySelector<HTMLElement>("[data-undo]")?.addEventListener("click", () => {
       project = history.undo(project);
       status = "Undo";
+      // Undo may just have run out (button about to go `disabled`, which refuses focus) —
+      // Redo is always enabled right after a successful undo, so it's a safe fallback target.
+      focusSelector = history.canUndo() ? "[data-undo]" : "[data-redo]";
       render();
     });
     host.querySelector<HTMLElement>("[data-redo]")?.addEventListener("click", () => {
       project = history.redo(project);
       status = "Redo";
+      focusSelector = history.canRedo() ? "[data-redo]" : "[data-undo]";
       render();
     });
     host.querySelector<HTMLElement>("[data-new]")?.addEventListener("click", () => {
       project = createBlankProject();
       selected = project.schema.id;
       status = "New blank project";
+      focusSelector = "[data-new]";
       render();
     });
 
@@ -319,12 +326,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
       event.preventDefault();
       picked = id;
       status = `Picked up ${idx.nodeById.get(id)?.label ?? id}`;
+      focusSelector = `[data-node="${id}"]`;
       render();
       return;
     }
     if (event.key === "Escape" && picked) {
-      picked = null;
       status = "Move cancelled";
+      focusSelector = `[data-node="${picked}"]`;
+      picked = null;
       render();
       return;
     }
@@ -337,24 +346,27 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     if ((event.key === "ArrowUp" || event.key === "ArrowDown") && position >= 0) {
       event.preventDefault();
       const target = siblings[position + (event.key === "ArrowUp" ? -1 : 1)];
-      if (target) commit(createMoveCommand(picked, { kind: event.key === "ArrowUp" ? "before" : "after", targetId: target }));
+      if (target) {
+        commit(createMoveCommand(picked, { kind: event.key === "ArrowUp" ? "before" : "after", targetId: target }), picked);
+      }
     } else if (event.key === "ArrowRight") {
       event.preventDefault();
       const previousSibling = siblings[position - 1];
       const container = previousSibling ? idx.nodeById.get(previousSibling) : null;
       if (container?.node === "group") {
-        commit(createMoveCommand(picked, { kind: "inside", parentId: container.id, index: container.children.length }));
+        commit(createMoveCommand(picked, { kind: "inside", parentId: container.id, index: container.children.length }), picked);
       }
     } else if (event.key === "ArrowLeft" && parent) {
       const grandparent = idx.parentById.get(parent);
       if (grandparent) {
         event.preventDefault();
-        commit(createMoveCommand(picked, { kind: "after", targetId: parent }));
+        commit(createMoveCommand(picked, { kind: "after", targetId: parent }), picked);
       }
     } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      picked = null;
       status = "Drop completed";
+      focusSelector = `[data-node="${picked}"]`;
+      picked = null;
       render();
     }
   }
