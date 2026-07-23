@@ -55,8 +55,12 @@ function splitTarget(target) {
 function docsRoute(docsRel) {
   let route = docsRel.replace(/\.md$/i, '');
   if (posix.basename(route).toLowerCase() === 'readme') {
-    route = posix.dirname(route);
-    if (route === '.') route = '';
+    const dir = posix.dirname(route);
+    // The root docs/README.md now lands on its own route: the site root
+    // (`/`) is a hand-authored marketing splash (site/src/pages/index.astro),
+    // outside this sync pipeline. A nested README (none exist today) still
+    // collapses to its directory route, same as before.
+    route = dir === '.' ? 'start-here' : dir;
   }
 
   const clean = route.replace(/^\/+|\/+$/g, '');
@@ -127,6 +131,14 @@ function rewriteLinks(content, fileDocsRelDir) {
   );
 }
 
+// Pages that should stay reachable by direct link (linked from CONTRIBUTING.md
+// and docs/README.md) but not clutter the public sidebar alongside user-facing
+// guides — internal maintainer runbooks, not usage docs. Keyed by docs/-relative
+// path; a change here is a presentation decision only, so it lives in the site
+// generator rather than as Starlight-specific frontmatter in the portable
+// markdown source.
+const SIDEBAR_HIDDEN = new Set(['guides/release-admin-trusted-publishing.md']);
+
 rmSync(targetDir, { recursive: true, force: true });
 mkdirSync(targetDir, { recursive: true });
 
@@ -148,7 +160,10 @@ for (const file of walk(docsDir)) {
   const fileDocsRelDir = posix.dirname(rel);
   const rewritten = rewriteLinks(body, fileDocsRelDir);
 
-  const outRel = rel === 'README.md' ? 'index.md' : rel;
+  // The root docs/README.md moves to its own route — `/` is now the
+  // hand-authored splash at site/src/pages/index.astro, untouched by this
+  // script (and by the rmSync wipe above, since it lives outside targetDir).
+  const outRel = rel === 'README.md' ? 'start-here.md' : rel;
   const outPath = join(targetDir, outRel);
   mkdirSync(dirname(outPath), { recursive: true });
 
@@ -157,6 +172,7 @@ for (const file of walk(docsDir)) {
     '---',
     `title: ${yamlString(title)}`,
     `editUrl: ${yamlString(editUrl)}`,
+    ...(SIDEBAR_HIDDEN.has(rel) ? ['sidebar:', '  hidden: true'] : []),
     '---',
     rewritten.replace(/^\n+/, ''),
   ].join('\n');
