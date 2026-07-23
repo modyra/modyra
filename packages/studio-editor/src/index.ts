@@ -12,7 +12,12 @@ export {
   createSetFieldOptionsCommand,
   createUpdateBehaviorCommand,
   createAddFormValidatorCommand,
+  createRemoveFormValidatorCommand,
+  createUpdateFormValidatorCommand,
+  createSetServerValidatorCommand,
+  createAddImplementationCommand,
   inspectDelete,
   type ValidatorPatch,
+  type FormValidatorPatch,
 } from "./commands.js";
 export { CommandHistory, CommandRejectedError } from "./history.js";

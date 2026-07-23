@@ -16,8 +16,10 @@ import type {
   StudioDiagnostic,
   StudioFieldValidator,
   StudioFormValidator,
+  StudioImplementationRef,
   StudioOption,
   StudioSchemaNode,
+  StudioServerValidator,
 } from "@modyra/studio-model";
 import { validatePlacement, validateRename } from "./placement.js";
 import type { Command, Placement } from "./types.js";
@@ -475,26 +477,124 @@ export function createAddFormValidatorCommand(validator: StudioFormValidator): C
       return copy;
     },
     inverse(): Command {
-      return createRemoveFormValidatorCommand(validator);
+      return createRemoveFormValidatorCommand(validator.id);
     },
   };
 }
 
-function createRemoveFormValidatorCommand(validator: StudioFormValidator): Command {
+export function createRemoveFormValidatorCommand(validatorId: string): Command {
   return {
     kind: "removeFormValidator",
-    description: `Remove ${validator.id}`,
-    affectedIds: [validator.id],
+    description: `Remove ${validatorId}`,
+    affectedIds: [validatorId],
+    validate(project: MdyStudioProject): StudioDiagnostic[] {
+      return project.formValidators.some((v) => v.id === validatorId)
+        ? []
+        : error("MALFORMED_COMMAND", "Form validator does not exist");
+    },
+    apply(project: MdyStudioProject): MdyStudioProject {
+      const copy = structuredClone(project);
+      copy.formValidators = copy.formValidators.filter((v) => v.id !== validatorId);
+      return copy;
+    },
+    inverse(before: MdyStudioProject): Command {
+      const validator = before.formValidators.find((v) => v.id === validatorId)!;
+      return createAddFormValidatorCommand(structuredClone(validator));
+    },
+  };
+}
+
+export type FormValidatorPatch = Partial<Omit<StudioFormValidator, "id" | "kind">>;
+
+/** Edits an existing form/cross-field validator's dependencies/condition/message/errorTarget in place. */
+export function createUpdateFormValidatorCommand(validatorId: string, patch: FormValidatorPatch): Command {
+  return {
+    kind: "updateFormValidator",
+    description: `Update form validator ${validatorId}`,
+    affectedIds: [validatorId],
+    validate(project: MdyStudioProject): StudioDiagnostic[] {
+      return project.formValidators.some((v) => v.id === validatorId)
+        ? []
+        : error("MALFORMED_COMMAND", "Form validator does not exist");
+    },
+    apply(project: MdyStudioProject): MdyStudioProject {
+      const copy = structuredClone(project);
+      const validator = copy.formValidators.find((v) => v.id === validatorId);
+      if (!validator) throw new Error(`updateFormValidator: "${validatorId}" missing`);
+      applyPatch(validator as unknown as Record<string, unknown>, patch);
+      return copy;
+    },
+    inverse(before: MdyStudioProject): Command {
+      const validator = before.formValidators.find((v) => v.id === validatorId);
+      if (!validator) throw new Error(`updateFormValidator.inverse: "${validatorId}" missing`);
+      const original = capturePatch(validator as unknown as Record<string, unknown>, patch);
+      return createUpdateFormValidatorCommand(validatorId, original as FormValidatorPatch);
+    },
+  };
+}
+
+/** Adds, replaces, or (passing `null`) removes a field's server validator wholesale. */
+export function createSetServerValidatorCommand(nodeId: string, serverValidator: StudioServerValidator | null): Command {
+  return {
+    kind: "setServerValidator",
+    description: serverValidator ? `Set server validator on ${nodeId}` : `Remove server validator from ${nodeId}`,
+    affectedIds: [nodeId],
+    validate(project: MdyStudioProject): StudioDiagnostic[] {
+      const node = buildIndexes(project).nodeById.get(nodeId);
+      return !node || node.node !== "field" ? error("INVALID_VALIDATOR_TARGET", "Server validator target must be a field", nodeId) : [];
+    },
+    apply(project: MdyStudioProject): MdyStudioProject {
+      const copy = structuredClone(project);
+      const node = findNode(copy.schema, nodeId);
+      if (!node || node.node !== "field") throw new Error(`setServerValidator: field "${nodeId}" missing`);
+      if (serverValidator) node.serverValidator = structuredClone(serverValidator);
+      else delete node.serverValidator;
+      return copy;
+    },
+    inverse(before: MdyStudioProject): Command {
+      const node = findNode(before.schema, nodeId);
+      if (!node || node.node !== "field") throw new Error(`setServerValidator.inverse: field "${nodeId}" missing`);
+      return createSetServerValidatorCommand(nodeId, node.serverValidator ? structuredClone(node.serverValidator) : null);
+    },
+  };
+}
+
+/** Registers a symbolic implementation stub (R7: symbolic reference + generated stub, never inline code). */
+export function createAddImplementationCommand(ref: StudioImplementationRef): Command {
+  return {
+    kind: "addImplementation",
+    description: `Add implementation ${ref.displayName}`,
+    affectedIds: [ref.id],
+    validate(project: MdyStudioProject): StudioDiagnostic[] {
+      return project.implementations[ref.id] ? error("DUPLICATE_ID", "Implementation ID exists") : [];
+    },
+    apply(project: MdyStudioProject): MdyStudioProject {
+      const copy = structuredClone(project);
+      copy.implementations[ref.id] = structuredClone(ref);
+      return copy;
+    },
+    inverse(): Command {
+      return createRemoveImplementationCommand(ref.id);
+    },
+  };
+}
+
+function createRemoveImplementationCommand(implementationId: string): Command {
+  return {
+    kind: "removeImplementation",
+    description: `Remove implementation ${implementationId}`,
+    affectedIds: [implementationId],
     validate(): StudioDiagnostic[] {
       return [];
     },
     apply(project: MdyStudioProject): MdyStudioProject {
       const copy = structuredClone(project);
-      copy.formValidators = copy.formValidators.filter((v) => v.id !== validator.id);
+      delete copy.implementations[implementationId];
       return copy;
     },
-    inverse(): Command {
-      return createAddFormValidatorCommand(validator);
+    inverse(before: MdyStudioProject): Command {
+      const ref = before.implementations[implementationId]!;
+      return createAddImplementationCommand(structuredClone(ref));
     },
   };
 }

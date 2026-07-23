@@ -17,6 +17,11 @@ import {
   createRemoveValidatorCommand,
   createUpdateValidatorCommand,
   createSetFieldOptionsCommand,
+  createAddFormValidatorCommand,
+  createRemoveFormValidatorCommand,
+  createUpdateFormValidatorCommand,
+  createSetServerValidatorCommand,
+  createAddImplementationCommand,
   inspectDelete,
   CommandHistory,
   CommandRejectedError,
@@ -334,4 +339,76 @@ test("P5: setFieldOptions replaces options wholesale and round-trips; rejects du
     { value: "IT", label: "Duplicate" },
   ]);
   assert.ok(dup.validate(project).some((d) => d.code === "DUPLICATE_OPTION_VALUE"));
+});
+
+test("P5b2: setServerValidator removes the checkout coupon's server validator and round-trips", () => {
+  const project = createCheckoutProject();
+  const command = createSetServerValidatorCommand("nd_coupon", null);
+  assert.deepEqual(command.validate(project), []);
+  const applied = roundTrip(project, command);
+  const coupon = applied.schema.children.find((n) => n.id === "nd_coupon");
+  assert.equal("serverValidator" in coupon, false);
+});
+
+test("P5b2: setServerValidator adds a fresh server validator to a field that had none, round-trips", () => {
+  const project = createCheckoutProject();
+  const serverValidator = {
+    id: "val_city_server",
+    kind: "server",
+    implementationRef: "impl_validate_city",
+    dependencies: [{ nodeId: "nd_country" }],
+    debounceMs: 300,
+  };
+  const command = createSetServerValidatorCommand("nd_city", serverValidator);
+  assert.deepEqual(command.validate(project), []);
+  const applied = roundTrip(project, command);
+  const city = applied.schema.children.find((n) => n.id === "nd_shipping").children.find((n) => n.id === "nd_city");
+  assert.deepEqual(city.serverValidator, serverValidator);
+});
+
+test("P5b2: setServerValidator rejects a non-field target", () => {
+  const project = createCheckoutProject();
+  const command = createSetServerValidatorCommand("nd_shipping", null);
+  assert.ok(command.validate(project).some((d) => d.code === "INVALID_VALIDATOR_TARGET"));
+});
+
+test("P5b2: updateFormValidator edits message/dependencies in place, id/kind unchanged, round-trips", () => {
+  const project = createCheckoutProject();
+  const command = createUpdateFormValidatorCommand("val_items_min_one", { message: "Add at least one product" });
+  const applied = roundTrip(project, command);
+  const validator = applied.formValidators.find((v) => v.id === "val_items_min_one");
+  assert.equal(validator.message, "Add at least one product");
+  assert.equal(validator.kind, "form");
+});
+
+test("P5b2: addFormValidator + removeFormValidator round-trip", () => {
+  const project = createCheckoutProject();
+  const validator = {
+    id: "val_zip_matches_country",
+    kind: "crossField",
+    dependencies: [{ nodeId: "nd_country" }, { nodeId: "nd_zip" }],
+    condition: { op: "isNotEmpty", operand: { nodeId: "nd_zip" } },
+    message: "Zip required",
+    errorTarget: { nodeId: "nd_zip" },
+  };
+  const add = createAddFormValidatorCommand(validator);
+  assert.deepEqual(add.validate(project), []);
+  const applied = roundTrip(project, add);
+  assert.ok(applied.formValidators.some((v) => v.id === "val_zip_matches_country"));
+
+  const remove = createRemoveFormValidatorCommand("val_items_min_one");
+  assert.deepEqual(remove.validate(project), []);
+  roundTrip(project, remove);
+});
+
+test("P5b2: addImplementation registers a stub and round-trips; rejects duplicate id", () => {
+  const project = createCheckoutProject();
+  const ref = { id: "impl_validate_zip_country", role: "serverValidator", displayName: "validateZipForCountry", mode: "stub" };
+  const command = createAddImplementationCommand(ref);
+  assert.deepEqual(command.validate(project), []);
+  const applied = roundTrip(project, command);
+  assert.deepEqual(applied.implementations.impl_validate_zip_country, ref);
+
+  const dup = createAddImplementationCommand({ ...ref, displayName: "different" });
+  assert.ok(dup.validate(applied).some((d) => d.code === "DUPLICATE_ID"));
 });
