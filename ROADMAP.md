@@ -18,7 +18,7 @@ numbers — losses stated, not hidden.
 | React Native | compiles clean on current Hermes (2026-07-23), no integration yet | RHF/Formik/TanStack | `AsyncStorage` draft adapter + `<TextInput>` recipe (Phase M) |
 | Non-Angular UI kits | headless recipes only | nobody ships full kits either | achievable |
 | Measured perf | Modyra-only numbers, no competitor bench | — | needs new deps, approval-gated |
-| Reactivity capability parity | 6/7 declare real capabilities (all but Solid) — Vue now has real batch/flush/observe via its own scheduler + native `effectScope()` (P2, 2026-07-23), matching or exceeding Angular's own | Angular (internal) | Phase P3 (Solid) |
+| Reactivity capability parity | **7/7 declare real capabilities** (Phase P done 2026-07-23) — Solid uniquely has `computedEquality: true`, Vue/Solid both exceed Angular on batch/flush/observe | Modyra | defend |
 
 ---
 
@@ -145,7 +145,7 @@ migration to real `capabilities`/`createScope`.
 **Released**: shipped as part of `0.4.0` (2026-07-23), changeset
 `reactivity-adapter-api.md` (minor, core+angular+react+preact).
 
-## Phase P — Adapter parity (3/4 done — only P3/Solid left)
+## Phase P — Adapter parity ✅ DONE (2026-07-23)
 
 Goal: close the real gap between Angular (the most mature adapter — native
 signals, `capabilities`/`createScope` already declared since Phase O M4)
@@ -184,10 +184,30 @@ missing is visibility and two real native-adapter gaps:
       regenerated (Vue now matches vanilla on every Level-A/B capability
       except `computedEquality`, and exceeds Angular on batching/flush/
       observe, which Angular doesn't implement at all).
-- [ ] **P3 — Solid** (`packages/solid/src/index.ts`): native
-      `createSignal`/`createEffect`/`createRoot`, already has an
-      owner-tree disposal model (`createRoot`/`onCleanup`) — a natural
-      fit for `createScope()`, not yet exposed/declared.
+- [x] **P3 — Solid, done 2026-07-23**: no custom scheduler needed —
+      verified directly (not assumed) that Solid's own `batch()` already
+      settles synchronously by the time it returns, including chained
+      effect-triggers-effect cascades, and that a bare effect chain
+      settles within one microtask without any batch wrapper. `batch()`
+      is a thin wrap over Solid's own; `flush()` is
+      `Promise.resolve().then(() => {})`. `createScope()` is an explicit
+      parent/child tree over Solid's own disposal roots
+      (`createRoot`/`runWithOwner`) — `createRoot()` has no "nest under
+      the current scope" primitive the way Vue's `effectScope()` does,
+      so cascade-on-destroy is managed the same way `vanillaReactivity()`'s
+      own scope is. `signal()`/`computed()` now honor a custom
+      `options.equal` via Solid's real `equals` comparator — **uniquely
+      among all 7 adapters, `computedEquality: true`** (verified: a
+      memo's own `equals` stops staleness from propagating to downstream
+      consumers too, a stronger guarantee than vanilla's or Vue's own
+      conservative `false`). `docs:reactivity-matrix` now runs with
+      `--conditions=browser` (solid-js's inert-SSR-stub gotcha applies to
+      this script too). Full suite green (103+119+24+135+5), all 24
+      Solid tests pass with zero test changes needed (its effect timing
+      was unaffected — unlike Vue, Solid was already microtask-scheduled
+      natively).
+      **Phase P is now fully done: all 7 adapters declare real
+      capabilities.**
 - [x] **P4 — Missing pages, done 2026-07-23**: `docs/examples/{solid,preact,svelte}.md`
       (docs revision batch) and `examples/stackblitz-svelte/` (same
       signup-form scenario as stackblitz-preact/-solid, own Vite +

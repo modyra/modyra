@@ -7,6 +7,10 @@
  * instance instead of a hand-maintained table, so the doc can't silently
  * drift from what the code actually declares. Run after `npm run build:packages`
  * (and `npm run build:lib` for the Angular row).
+ *
+ * Must run with `--conditions=browser` (see `npm run docs:reactivity-matrix`):
+ * solid-js's package.json maps the plain Node import condition to a
+ * non-reactive SSR stub, same gotcha as packages/solid/test's own script.
  */
 import { writeFileSync } from "node:fs";
 import { vanillaReactivity } from "../packages/core/dist/index.js";
@@ -15,6 +19,7 @@ import { preactReactivity } from "../packages/preact/dist/index.js";
 import { svelteReactivity } from "../packages/svelte/dist/index.js";
 import { litReactivity } from "../packages/lit/dist/adapter.js";
 import { vueReactivity } from "../packages/vue/dist/index.js";
+import { solidReactivity } from "../packages/solid/dist/index.js";
 
 const CAPABILITY_ORDER = [
   "effects",
@@ -100,12 +105,16 @@ rows.push({
   note: "native @vue/reactivity; effect() scheduler + createScope() via effectScope() (Phase P2, 2026-07-23)",
 });
 
-// Solid has real native reactivity of its own and genuinely doesn't
-// declare capabilities/createScope yet (Phase P3).
+// Solid's effect() (initial run included) is natively microtask-deferred,
+// and its own batch() genuinely settles synchronously by the time it
+// returns (verified directly, including chained-effect cascades) --
+// createScope() is an explicit parent/child tree over Solid's own
+// disposal roots (createRoot has no "nest under the current scope"
+// primitive the way Vue's effectScope() does). Phase P3, 2026-07-23.
 rows.push({
   name: "solid",
-  capabilities: undefined,
-  note: "real native reactivity, not yet migrated to declare capabilities (ROADMAP Phase P3)",
+  capabilities: solidReactivity().capabilities,
+  note: "native createSignal/createMemo/createEffect; equals comparator honored on both signal and memo (Phase P3, 2026-07-23)",
 });
 
 function cell(value) {
