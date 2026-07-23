@@ -1,0 +1,25 @@
+{
+  "name": "@modyra/studio-contract",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Modyra Studio: MdyStudioProject -> Dynamic Form Contract v2 compiler, strict-verified against the real @modyra/core parser.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@modyra/core": "workspace:*",
+    "@modyra/studio-model": "workspace:*"
+  }
+}
