@@ -141,7 +141,7 @@ own timing model, not a regression (see any test awaiting a tick after a
 the way Angular's native one does, and reimplementing computed by hand
 around a raw effect would stop being *native* Vue reactivity.
 
-### Solid (`@modyra/solid` — shipped)
+### Solid (`@modyra/solid` — shipped, full capabilities)
 
 Solid's primitives map almost 1:1: `createSignal` → signal, `createMemo`
 → computed, `untrack` → untracked. The one gap is a manually-destroyable
@@ -150,8 +150,25 @@ outside any component (async validators/drafts/history), so each
 `effect()` wraps `createEffect` in its own `createRoot`. Testing/SSR note:
 solid-js's plain Node import condition resolves to a non-reactive SSR
 stub, so any Node consumer (`node --test`, ts-node, a server-rendered
-handler) needs `--conditions=browser` or every signal silently goes
-inert. Headless field/select controllers come from `@modyra/widgets`.
+handler, and now `scripts/reactivity-capability-matrix.mjs` itself) needs
+`--conditions=browser` or every signal silently goes inert. Headless
+field/select controllers come from `@modyra/widgets`.
+
+Since Phase P3 (2026-07-23), this adapter declares full capabilities —
+uniquely among all seven, `computedEquality: true` (verified directly:
+`createMemo`'s own `equals` comparator stops staleness from propagating
+to downstream consumers, a stronger guarantee than vanilla's or Vue's).
+`batch()` is a thin wrap over Solid's own `batch()` — no custom scheduler
+needed, since a batch of writes (including a chained cascade where one
+effect's write triggers another) settles synchronously by the time
+Solid's `batch()` returns; this was verified empirically before writing
+any code, not assumed. `flush()` is `Promise.resolve().then(() => {})` —
+Solid's own scheduler settles even a multi-hop chain within one microtask
+(also verified directly). `createScope()` is an explicit parent/child
+tree over Solid's own disposal roots (`createRoot`/`runWithOwner`): unlike
+Vue's `effectScope()`, `createRoot()` has no "nest under the currently
+active scope" primitive, so cascade-on-destroy is managed the same way
+`vanillaReactivity()`'s own scope is — bookkeeping, not a Solid feature.
 
 ### Svelte (`@modyra/svelte` — shipped)
 
@@ -205,14 +222,14 @@ above).
   listener/lifecycle management is per-framework by nature.
 - **A11y announcer, devtools UI, Angular's renderer catalog**:
   framework-native forever, by design (Layer 3).
-- **Reactivity contract migration — Solid only now**: React, Preact,
-  Svelte, Lit and Vue all declare real `capabilities` (React/Preact/
-  Svelte/Lit via a named export forwarding vanilla's own, already-active
-  capabilities; Vue with genuine native ones — real scheduler,
-  `createScope()` via `effectScope()`, Phase P2). Solid has real native
-  reactivity of its own and is the one adapter left without this — see
-  the [generated capability matrix](../reactivity-capability-matrix.md)
-  and [`ROADMAP.md`'s Phase P](../../ROADMAP.md).
+- ~~**Reactivity contract migration**~~ — **done, all 7 adapters, 2026-07-23**
+  (`ROADMAP.md`'s Phase P): React/Preact/Svelte/Lit via a named export
+  forwarding vanilla's own, already-active capabilities; Vue and Solid
+  with genuine native ones (real schedulers/native batching, `createScope()`
+  via `effectScope()`/an explicit disposal-root tree respectively). Only
+  Angular's `createScope()` and per-adapter migration to child scopes for
+  array rows remain, tracked in "Later / watchlist". Full detail: the
+  [generated capability matrix](../reactivity-capability-matrix.md).
 
 ## Package policy
 
