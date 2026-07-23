@@ -124,6 +124,47 @@ test("polluted/semantically invalid project surfaces diagnostics instead of sile
   assert.ok(codes.includes("MISSING_IMPLEMENTATION"));
 });
 
+test("P6: bad regex pattern, select without options, and an un-excluded sensitive field are all diagnosed", () => {
+  const project = createCheckoutProject();
+  const shipping = project.schema.children.find((n) => n.id === "nd_shipping");
+  shipping.children.find((n) => n.id === "nd_zip").validators.find((v) => v.kind === "pattern").pattern = "([unclosed";
+  project.schema.children.find((n) => n.id === "nd_country").options = [];
+  project.schema.children.push({
+    node: "field",
+    id: "nd_password",
+    name: "password",
+    fieldKind: "text",
+    valueType: "string",
+    initialValue: "",
+    validators: [],
+  });
+
+  const { diagnostics } = normalize(project);
+  const codes = diagnostics.map((d) => d.code);
+
+  assert.ok(diagnostics.some((d) => d.code === "BAD_PATTERN" && d.nodeId === "nd_zip"));
+  assert.ok(diagnostics.some((d) => d.code === "SELECT_WITHOUT_OPTIONS" && d.nodeId === "nd_country"));
+  assert.ok(diagnostics.some((d) => d.code === "SENSITIVE_FIELD_IN_DRAFT" && d.nodeId === "nd_password"));
+  assert.equal(codes.filter((c) => c === "SENSITIVE_FIELD_IN_DRAFT").length, 1); // coupon is excluded from draft already
+});
+
+test("P6: excluding a sensitive field from the draft silences the warning", () => {
+  const project = createCheckoutProject();
+  project.schema.children.push({
+    node: "field",
+    id: "nd_secret_code",
+    name: "secretCode",
+    fieldKind: "text",
+    valueType: "string",
+    initialValue: "",
+    validators: [],
+  });
+  project.behaviors.draft.exclude.push({ nodeId: "nd_secret_code" });
+
+  const { diagnostics } = normalize(project);
+  assert.ok(!diagnostics.some((d) => d.code === "SENSITIVE_FIELD_IN_DRAFT" && d.nodeId === "nd_secret_code"));
+});
+
 test("package has zero runtime dependencies (framework-neutral model layer)", () => {
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
   assert.deepEqual(pkg.dependencies ?? {}, {});
