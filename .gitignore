@@ -54,6 +54,9 @@ claude_podman_night_shift_hardened.sh
 packages/*/dist/
 apps/*/dist/
 
+# apps/studio's built bundle, copied in for the Astro embed (scripts/copy-studio-app.mjs)
+site/public/studio-app/
+
 # Playwright
 /test-results/
 /playwright-report/

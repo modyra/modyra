@@ -27,16 +27,33 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # Studio (apps/studio + packages/studio-*) needs the full pnpm workspace —
+      # site/ itself stays on its own isolated npm install below, untouched.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install workspace (for Studio only)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build + sync Studio into site/public/studio-app
+        run: npm run sync:studio-app
+
       - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: site/package-lock.json
 
-      - name: Install
+      - name: Install site
         run: npm ci --prefix site
 
-      - name: Build
+      - name: Build site
         run: npm run build --prefix site
 
       - uses: actions/configure-pages@v5
