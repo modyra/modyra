@@ -24,12 +24,15 @@ months from now.
 - Cross-check: our whole-entry figures land within ~5–10% of
   [Bundlephobia](https://bundlephobia.com) for every package (e.g.
   `@angular/forms`: 18.1 KB everywhere), which validates the harness.
-- `@modyra/core` figures are cross-checked against the **real published
-  registry tarball** (`npm install @modyra/core@0.3.0` in a scratch
-  directory, same esbuild+gzip pass against `node_modules/@modyra/core`)
-  — not just the workspace build. Both agree exactly: 10.7 KB / 9.4 KB
-  gzip. (At an earlier writing this line said "not published at time of
-  writing" — that's no longer true, verified 2026-07-22.)
+- `@modyra/core` figures were originally cross-checked against the real
+  published registry tarball (`npm install @modyra/core@0.3.0`), agreeing
+  exactly with the workspace build at the time (10.7 KB / 9.4 KB gzip).
+  The 2026-07-22 re-measurement below is **workspace-only** — the
+  reactivity-adapter-api plan (all 12 `@modyra/*` packages pending a
+  `minor` version bump via `.changeset/reactivity-adapter-api.md`) hasn't
+  been published yet, so there is no newer tarball to cross-check against
+  until that release ships. Re-verify against the published tarball once
+  it does.
 
 Exact versions measured: react-hook-form **7.82.0** · formik **2.4.9** ·
 @tanstack/react-form **1.33.2** (+ @tanstack/form-core 1.33.2) ·
@@ -43,7 +46,7 @@ final-form **5.0.1** + react-final-form **7.0.1** + final-form-arrays
 
 | Package | esbuild | rollup | Surface imported |
 |---|---|---|---|
-| **@modyra/core** | **9.4 KB** | **9.1 KB** | `createForm, field, group, array, 8 validators, serverValidator, oneOf` — includes drafts, undo/redo, security |
+| **@modyra/core** | **10.6 KB** | **10.3 KB** | `createForm, field, group, array, 8 validators, serverValidator, oneOf` — includes drafts, undo/redo, security, `mutate()`, `MdyReactiveScope`, activate/deactivate |
 | final-form + react-final-form + final-form-arrays | 11.0 KB | 10.6 KB | `createForm, arrayMutators, Form, Field` |
 | react-hook-form | 12.5 KB | 11.9 KB | `useForm, useFieldArray, Controller` |
 | vee-validate | 12.7 KB | **33.4 KB** ⚠ | `useForm, useFieldArray, Field, Form, ErrorMessage` |
@@ -62,8 +65,8 @@ what your pipeline tree-shakes.
 | Package | esbuild | rollup |
 |---|---|---|
 | react-final-form stack | 10.2 KB | 9.8 KB |
-| **@modyra/core** | **10.7 KB** | **10.4 KB** |
 | react-hook-form | 13.3 KB | 12.7 KB |
+| **@modyra/core** | **14.1 KB** | **13.8 KB** |
 | vee-validate | 13.6 KB | 34.6 KB ⚠ |
 | formik | 14.8 KB | 14.5 KB |
 | @tanstack/react-form | 19.1 KB | 18.1 KB |
@@ -74,6 +77,20 @@ what your pipeline tree-shakes.
 > devtools, overlay positioning) moved to curated subpath entries
 > (`@modyra/core/datetime`, `/ui`, …) — they remain in the package, but the
 > main entry now ships only the form engine. Previous figure: 17.2 KB.*
+>
+> *Re-measured again 2026-07-22 after the reactivity-adapter-api plan
+> (`.modyra/piano-modyra-reactivity-adapter-api.md`, 8 milestones):
+> **whole-entry regressed from 10.7/10.4 KB to 14.1/13.8 KB gzip, losing
+> the #2 spot** to react-hook-form. Real, not a leak — `MdyReactiveScope`,
+> `activate()`/`deactivate()`/`mutate()`, typed error classes and the
+> handle-ownership registry are all always-linked additions the whole-entry
+> "every export" measurement necessarily includes; the realistic surface
+> (what an actual consumer's bundler keeps) only grew 9.4→10.6 KB / 9.1→10.3
+> KB and Modyra still holds #1 there, just by a narrower margin against
+> final-form's 11.0/10.6 KB. Bundle budgets in `scripts/check-bundle.mjs`
+> and `scripts/check-core-bundle.mjs` were raised with the same measured
+> numbers and reasoning. Not treated as a bug to silently work around: the
+> capability/scope/lifecycle contract is the deliverable this session shipped.*
 
 ### The schema-validator add-on (applies to every library)
 

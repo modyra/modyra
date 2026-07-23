@@ -7,12 +7,12 @@ measurable goal, and ships only when the metric moves. Principles: zero
 runtime dependencies, everything tested, honest numbers — the same rules
 that produced the comparison.
 
-## Current standings (measured, 2026-07-21)
+## Current standings (measured, 2026-07-21; bundle rows re-measured 2026-07-22)
 
 | Leaderboard                   | Modyra today                                   | Leader                                              | Gap                  |
 | ----------------------------- | ---------------------------------------------- | --------------------------------------------------- | -------------------- |
-| Realistic form surface (gzip) | **#1 — 9.4/9.1 KB**                            | Modyra                                              | defend               |
-| Whole-entry bundle (gzip)     | #2 — 10.7/10.4 KB                              | final-form stack 10.2/9.8                           | −0.5/−0.6 KB to #1   |
+| Realistic form surface (gzip) | **#1 — 10.6/10.3 KB** (was 9.4/9.1)            | Modyra                                              | narrower margin — final-form stack is 11.0/10.6 |
+| Whole-entry bundle (gzip)     | #4 — 14.1/13.8 KB (was #2, 10.7/10.4)          | final-form stack 10.2/9.8                           | regressed after the reactivity-adapter-api plan (M1-M8) — see comparison doc's 2026-07-22 note; unpublished (workspace-only) |
 | Feature matrix                | **#1** (drafts, undo, wizard, security unique) | Modyra                                              | defend               |
 | Framework breadth             | #2 — 6 full (Angular/React/Vue/Lit/Preact/Solid) + Svelte (reactivity+widgets, no example) + vanilla core | TanStack Form, 7 | Svelte example + recipes to reach 7 full |
 | npm presence / adoption       | **published** (`@modyra/*@0.3.0`, verified live 2026-07-22), downloads not yet tracked | RHF ~2.7M dl/week | grow + track weekly downloads honestly |
@@ -304,6 +304,76 @@ Goal: **make choosing Modyra the easy decision the data already supports.**
 
 **Metric: npm weekly downloads tracked and reported honestly in the
 comparison doc, including when they are small.**
+
+## Phase O — Reactivity/adapter API redesign (correctness, not a leaderboard) ✅ DONE
+
+Goal: **a minimal, verifiable reactive protocol every adapter is honestly
+tested against**, not a bigger vanilla runtime. Full spec:
+`.modyra/piano-modyra-reactivity-adapter-api.md` (local planning doc, not
+committed — see `.modyra/framework/STATUS.md`'s "Reactivity Plan Status"
+section for the session log). Unlike the other phases, this doesn't move
+a leaderboard number directly — it moved the whole-entry bundle row
+*backwards* (see standings table above) in exchange for real correctness
+fixes. All 8 milestones done:
+
+- [x] **M1** — `capabilities`/`createScope`/`MdyReactiveScope`, typed
+      errors, structured diagnostics — all optional additions, zero
+      breakage to existing adapters.
+- [x] **M2** — form ownership scope wired into draft/history/async
+      validator effects (teardown backstop, verified by destroying a
+      captured scope directly, bypassing `form.destroy()`).
+- [x] **M3** — real `batch()`/`flush()`/`observe()` for
+      `vanillaReactivity()`, via a shared-drain scheduler redesign that
+      settles chained effect triggers in one flush instead of one
+      microtask per hop.
+- [x] **M4** — Angular adapter hardened: `effect()` without an `Injector`
+      throws a typed error by default instead of a silent no-op; real
+      capabilities; `onError` actually respected (found silently ignored
+      during a later audit, fixed same session).
+- [x] **M5** — fixed a real, if latent, cross-runtime observation bug in
+      `@modyra/react`/`@modyra/preact`'s `createStore()` (a fresh
+      `vanillaReactivity()` observing a handle it didn't own — worked by
+      accident for same-adapter forms, silently broke for a foreign one).
+- [x] **M6** — `form.mutate()` (coalesces a burst of writes into one
+      history entry regardless of adapter effect timing) + a real
+      pre-existing `undo()`/`redo()` bug found and fixed along the way.
+- [x] **M7** — `@modyra/core/testing` (`runReactivityContractTests`), the
+      conformance suite adapters are tested against, now a documented
+      public API instead of an internal helper.
+- [x] **M8** — leak/churn tests, a capability matrix generated from real
+      `capabilities` (not hand-maintained — `npm run docs:reactivity-matrix`
+      → `docs/reactivity-capability-matrix.md`), an adapter-authoring guide
+      (`docs/guides/reactivity-adapter-guide.md`).
+- [x] **Follow-up** (closing 3 acceptance criteria left after M8):
+      construction/activation separation (`autoActivate`, `activate()`/
+      `deactivate()`), making `@modyra/react`/`@modyra/preact`'s
+      `useMdyForm` tolerant of React Strict Mode's dev-only double-invoke
+      and safe during SSR (construction stays pure — no timer/storage/
+      network call until `activate()`, which only ever runs client-side).
+- [x] **Follow-up** (found during a `.modyra/piano-modyra-reactivity-adapter-api.md`
+      §18 checklist audit): a second scheduler bug — an effect throwing
+      without `onError` used to abort the shared drain loop, silently
+      starving sibling effects scheduled in the same batch. Fixed by
+      catching per-effect and reporting via `console.error` (a rethrow
+      from inside a microtask would itself become an unhandled exception
+      — confirmed empirically that this crashes `node --test`'s whole
+      file, and would do the same to a real Node process with no global
+      handler).
+
+Not done, explicitly deferred (see STATUS.md, none of these block the
+contract): native `createScope`/`DestroyRef` mapping for Angular; child
+scopes for array rows; memoized snapshot/selector/shared-registry API for
+React/Preact beyond the M5 fix; async-validator coalescing inside
+`mutate()`; migrating Vue/Solid/Preact/Svelte/Lit/React to declare real
+`capabilities`/`createScope` and call the conformance suite directly
+instead of through the compatibility shim.
+
+**Pending release**: `.changeset/reactivity-adapter-api.md` — `minor` bump
+across the fixed `@modyra/*` group (`pnpm changeset status` confirms a
+clean minor, no majors, alongside the already-pending
+`dynamic-contract-v2.md` changeset). Not yet published — needs the
+version-bump PR + tag push (`release.yml` now triggers only on a `v*` tag,
+not every push to `main` — see Phase I's release engineering notes).
 
 ## Later / watchlist (not scheduled)
 
