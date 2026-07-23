@@ -3,6 +3,12 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  # Manual re-run for cases like "a package was missed by the publish
+  # script and needs to catch up to a version already tagged/released" —
+  # publish-workspace.mjs already skips anything whose package.json
+  # version matches the registry, so a manual run is safe to fire even
+  # when most packages have nothing new to publish.
+  workflow_dispatch: {}
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
