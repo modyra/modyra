@@ -12,7 +12,7 @@ numbers — losses stated, not hidden.
 | Realistic surface (gzip) | **#1 — 10.6/10.3 KB** (was 9.4/9.1) | Modyra | narrower — final-form 11.0/10.6 |
 | Whole-entry (gzip) | #4 — 14.1/13.8 KB (was #2, 10.7/10.4), published at `0.4.0` | final-form 10.2/9.8 | regressed by Phase O; violates Phase J's own ≤13 KB goal (not yet reopened as its own item) |
 | Feature matrix | **#1** (drafts, undo, wizard, security) | Modyra | defend |
-| Framework breadth | #2 — 6 full + Svelte (reactivity+widgets, no example) | TanStack Form, 7 | Svelte example + recipes |
+| Framework breadth | **tied #1 — 7/7** (Angular/React/Vue/Lit/Preact/Solid/Svelte, all with examples) | TanStack Form, 7 | defend |
 | npm presence | **published, all 12 `@modyra/*@0.4.0`** incl. solid/preact/svelte (manually published + trusted publisher configured 2026-07-23, after `publish-workspace.mjs`'s list — which had predated them — was fixed) | RHF ~2.7M dl/wk | downloads not tracked |
 | SSR/server validation | **#1** — `serverValidate()`, tested Next/Express/Hono | TanStack | defend |
 | React Native | untested, honest reason recorded (Phase M) | RHF/Formik/TanStack | needs real `react-native` or current Hermes binary, approval-gated |
@@ -57,14 +57,14 @@ Goal: match TanStack's `createServerValidate`.
 - [x] "One schema, two sides" guide — Next.js/Express/Hono, tests wired into `test:guides`
 - [x] `applyServerErrors()` convenience — deliberately not added, `submit(action)` already covers it
 
-## Phase L — Framework breadth (Partial — 6.5/7)
+## Phase L — Framework breadth ✅ DONE (7/7)
 
 Goal: 7 supported frameworks.
 
 - [x] Solid — native signals ~1:1, widgets bridge, example, headless recipes. Gotcha: Node needs `--conditions=browser` (SSR-stub condition otherwise).
 - [x] Preact — thin React variant, widgets, headless recipes ported verbatim, example. Gap: `useSyncExternalStore` takes 2 args not 3 (no `getServerSnapshot`).
-- [x] Svelte — **stores-based, not runes** (runes are compiler macros, confirmed by trying — can't build with plain `tsc`/`node --test`). `vanillaReactivity()` + `toStore()` bridge to real `Readable`. Widgets bridge shipped. Headless-recipes doc section + verbatim-ported test done 2026-07-23 (7/7, zero edits — same proof as Preact/Solid). Still missing: `examples/svelte` (needs `@sveltejs/vite-plugin-svelte`, a new toolchain decision, approval-gated).
-- [ ] Comparison doc "7 frameworks" claim — only once Svelte's example lands (last remaining piece, approval-gated on the toolchain above)
+- [x] Svelte — **stores-based, not runes** (runes are compiler macros, confirmed by trying — can't build with plain `tsc`/`node --test`). `vanillaReactivity()` + `toStore()` bridge to real `Readable`. Widgets bridge shipped. Headless-recipes doc section + verbatim-ported test done 2026-07-23 (7/7, zero edits — same proof as Preact/Solid). `examples/svelte` shipped 2026-07-23 via `esbuild-svelte` (kept the whole example pipeline on esbuild, same call as Solid's `esbuild-plugin-solid` — no Vite toolchain switch needed) — Playwright-verified: async username check, draft persistence across reload, undo, server error on submit, theme switcher, zero console errors.
+- [x] Comparison doc "7 frameworks" claim — now backed by all 7 examples.
 
 ## Phase M — React Native (Blocked, honest reason recorded)
 
