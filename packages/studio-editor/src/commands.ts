@@ -8,7 +8,7 @@
  * requires exactly one item; there is no valid "empty" intermediate state).
  * Replace it via `insertNode` targeting an `arrayItem` placement instead.
  */
-import { buildIndexes, createId } from "@modyra/studio-model";
+import { buildIndexes, createId, isDuplicateKindAllowed, isValidatorCompatible } from "@modyra/studio-model";
 import type {
   ArrayNode,
   GroupNode,
@@ -16,6 +16,7 @@ import type {
   StudioDiagnostic,
   StudioFieldValidator,
   StudioFormValidator,
+  StudioOption,
   StudioSchemaNode,
 } from "@modyra/studio-model";
 import { validatePlacement, validateRename } from "./placement.js";
@@ -319,6 +320,16 @@ export function createAddValidatorCommand(nodeId: string, validator: StudioField
       const node = buildIndexes(project).nodeById.get(nodeId);
       if (!node || node.node !== "field") return error("INVALID_VALIDATOR_TARGET", "Validator target must be a field", nodeId);
       if (node.validators.some((v) => v.id === validator.id)) return error("DUPLICATE_ID", "Validator ID exists", nodeId);
+      if (!isValidatorCompatible(validator.kind, node.valueType)) {
+        return error(
+          "INCOMPATIBLE_VALIDATOR_TYPE",
+          `Validator "${validator.kind}" does not support value type "${node.valueType}"`,
+          nodeId,
+        );
+      }
+      if (!isDuplicateKindAllowed(validator.kind) && node.validators.some((v) => v.kind === validator.kind)) {
+        return error("DUPLICATE_VALIDATOR_KIND", `Field already has a "${validator.kind}" validator`, nodeId);
+      }
       return [];
     },
     apply(project: MdyStudioProject): MdyStudioProject {
@@ -361,6 +372,71 @@ export function createRemoveValidatorCommand(nodeId: string, validatorId: string
       if (!node || node.node !== "field") throw new Error(`removeValidator.inverse: field "${nodeId}" missing`);
       const validator = node.validators.find((v) => v.id === validatorId)!;
       return createAddValidatorCommand(nodeId, structuredClone(validator));
+    },
+  };
+}
+
+export type ValidatorPatch = Partial<Omit<StudioFieldValidator, "id" | "kind">>;
+
+/** Edits an existing validator's config (e.g. a pattern's regex) without changing its id or kind. */
+export function createUpdateValidatorCommand(nodeId: string, validatorId: string, patch: ValidatorPatch): Command {
+  return {
+    kind: "updateValidator",
+    description: `Update validator ${validatorId}`,
+    affectedIds: [nodeId, validatorId],
+    validate(project: MdyStudioProject): StudioDiagnostic[] {
+      const node = buildIndexes(project).nodeById.get(nodeId);
+      if (!node || node.node !== "field" || !node.validators.some((v) => v.id === validatorId)) {
+        return error("MALFORMED_COMMAND", "Validator does not exist", nodeId);
+      }
+      return [];
+    },
+    apply(project: MdyStudioProject): MdyStudioProject {
+      const copy = structuredClone(project);
+      const node = findNode(copy.schema, nodeId);
+      if (!node || node.node !== "field") throw new Error(`updateValidator: field "${nodeId}" missing`);
+      const validator = node.validators.find((v) => v.id === validatorId);
+      if (!validator) throw new Error(`updateValidator: validator "${validatorId}" missing`);
+      applyPatch(validator as unknown as Record<string, unknown>, patch);
+      return copy;
+    },
+    inverse(before: MdyStudioProject): Command {
+      const node = findNode(before.schema, nodeId);
+      if (!node || node.node !== "field") throw new Error(`updateValidator.inverse: field "${nodeId}" missing`);
+      const validator = node.validators.find((v) => v.id === validatorId);
+      if (!validator) throw new Error(`updateValidator.inverse: validator "${validatorId}" missing`);
+      const original = capturePatch(validator as unknown as Record<string, unknown>, patch);
+      return createUpdateValidatorCommand(nodeId, validatorId, original as ValidatorPatch);
+    },
+  };
+}
+
+/** Replaces a select/multiselect field's option list wholesale (plan section 8 "properties options"). */
+export function createSetFieldOptionsCommand(nodeId: string, options: StudioOption[]): Command {
+  return {
+    kind: "setFieldOptions",
+    description: `Update options for ${nodeId}`,
+    affectedIds: [nodeId],
+    validate(project: MdyStudioProject): StudioDiagnostic[] {
+      const node = buildIndexes(project).nodeById.get(nodeId);
+      if (!node || node.node !== "field") return error("INVALID_VALIDATOR_TARGET", "Options target must be a field", nodeId);
+      const values = options.map((o) => o.value);
+      if (new Set(values).size !== values.length) {
+        return error("DUPLICATE_OPTION_VALUE", "Option values must be unique", nodeId);
+      }
+      return [];
+    },
+    apply(project: MdyStudioProject): MdyStudioProject {
+      const copy = structuredClone(project);
+      const node = findNode(copy.schema, nodeId);
+      if (!node || node.node !== "field") throw new Error(`setFieldOptions: field "${nodeId}" missing`);
+      node.options = structuredClone(options);
+      return copy;
+    },
+    inverse(before: MdyStudioProject): Command {
+      const node = findNode(before.schema, nodeId);
+      if (!node || node.node !== "field") throw new Error(`setFieldOptions.inverse: field "${nodeId}" missing`);
+      return createSetFieldOptionsCommand(nodeId, structuredClone(node.options ?? []));
     },
   };
 }

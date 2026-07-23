@@ -13,6 +13,10 @@ import {
   createUpdateNodeCommand,
   createUpdateBehaviorCommand,
   createDuplicateCommand,
+  createAddValidatorCommand,
+  createRemoveValidatorCommand,
+  createUpdateValidatorCommand,
+  createSetFieldOptionsCommand,
   inspectDelete,
   CommandHistory,
   CommandRejectedError,
@@ -269,4 +273,65 @@ test("updateBehavior round-trips exactly when patching a previously-unset behavi
   const command = createUpdateBehaviorCommand({ serverErrorMapping: "flat" });
   const applied = roundTrip(project, command);
   assert.equal(applied.behaviors.serverErrorMapping, "flat");
+});
+
+test("P5: addValidator rejects a validator incompatible with the field's value type", () => {
+  const project = createCheckoutProject();
+  // nd_qty is valueType "number" — "email" only supports "string".
+  const command = createAddValidatorCommand("nd_qty", { id: "val_bad", kind: "email" });
+  const diagnostics = command.validate(project);
+  assert.ok(diagnostics.some((d) => d.code === "INCOMPATIBLE_VALIDATOR_TYPE"));
+});
+
+test("P5: addValidator rejects a second validator of a kind that doesn't allow duplicates", () => {
+  const project = createCheckoutProject();
+  // nd_city already has a "required" validator (val_city_required).
+  const command = createAddValidatorCommand("nd_city", { id: "val_city_required_2", kind: "required" });
+  const diagnostics = command.validate(project);
+  assert.ok(diagnostics.some((d) => d.code === "DUPLICATE_VALIDATOR_KIND"));
+});
+
+test("P5: addValidator allows a second validator of a kind that does allow duplicates (pattern)", () => {
+  const project = createCheckoutProject();
+  const command = createAddValidatorCommand("nd_zip", { id: "val_zip_pattern_2", kind: "pattern", pattern: "^[0-9]+$" });
+  assert.deepEqual(command.validate(project), []);
+});
+
+test("P5: addValidator + removeValidator round-trip", () => {
+  const project = createCheckoutProject();
+  const command = createAddValidatorCommand("nd_qty", { id: "val_qty_max", kind: "max", value: 99 });
+  assert.deepEqual(command.validate(project), []);
+  roundTrip(project, command);
+});
+
+test("P5: updateValidator edits config in place (id/kind unchanged) and round-trips", () => {
+  const project = createCheckoutProject();
+  const command = createUpdateValidatorCommand("nd_zip", "val_zip_pattern", { pattern: "^\\d{4}$", message: "4 digits" });
+  const applied = roundTrip(project, command);
+  const zip = applied.schema.children.find((n) => n.id === "nd_shipping").children.find((n) => n.id === "nd_zip");
+  const validator = zip.validators.find((v) => v.id === "val_zip_pattern");
+  assert.equal(validator.pattern, "^\\d{4}$");
+  assert.equal(validator.message, "4 digits");
+  assert.equal(validator.kind, "pattern");
+});
+
+test("P5: setFieldOptions replaces options wholesale and round-trips; rejects duplicate values", () => {
+  const project = createCheckoutProject();
+  const command = createSetFieldOptionsCommand("nd_country", [
+    { value: "IT", label: "Italy" },
+    { value: "FR", label: "France" },
+  ]);
+  assert.deepEqual(command.validate(project), []);
+  const applied = roundTrip(project, command);
+  const country = applied.schema.children.find((n) => n.id === "nd_country");
+  assert.deepEqual(country.options, [
+    { value: "IT", label: "Italy" },
+    { value: "FR", label: "France" },
+  ]);
+
+  const dup = createSetFieldOptionsCommand("nd_country", [
+    { value: "IT", label: "Italy" },
+    { value: "IT", label: "Duplicate" },
+  ]);
+  assert.ok(dup.validate(project).some((d) => d.code === "DUPLICATE_OPTION_VALUE"));
 });
