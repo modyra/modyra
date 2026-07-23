@@ -135,6 +135,55 @@ form.canUndo(); // reactive — drive toolbar buttons
 - `undo()`/`redo()` flush a pending debounced snapshot first, so no typing is
   silently lost.
 
+## Batching changes — `form.mutate()`
+
+```ts
+form.mutate(() => {
+  form.f.firstName.set("Lorenzo");
+  form.f.lastName.set("Muscherà");
+});
+```
+
+Groups every field write inside the callback into **exactly one** history
+entry (when `history` is enabled) — `form.undo()` afterwards restores both
+fields together, not one write at a time. Works the same way regardless of
+which adapter the form runs on, including ones whose effects run
+synchronously rather than being scheduler-deferred: `mutate()` doesn't rely
+on a particular effect-timing model to coalesce correctly. Nested
+`mutate()` calls collapse into the outermost call's single entry. A form
+with no `history` option still runs the callback normally — `mutate()` is
+never required, only useful.
+
+## Construction vs activation (SSR, Strict Mode)
+
+```ts
+const form = createForm(schema, { autoActivate: false });
+// ... later, once you actually want draft/history/async validators running:
+form.activate();
+// ... to pause them again without losing any state:
+form.deactivate();
+```
+
+By default (`autoActivate: true`, unchanged from before this option
+existed) draft persistence, history recording and async validators all
+start the moment the form is constructed. Passing `autoActivate: false`
+defers all three until you call `activate()` — construction does nothing
+but build the field graph: no timer, no storage read, no network call.
+`deactivate()` pauses them again without losing any state (field values,
+undo/redo stacks, the draft baseline all survive); `activate()` resumes
+exactly where it left off. Both are idempotent and safe to call any
+number of times in any order.
+
+This is what makes `@modyra/react` and `@modyra/preact`'s `useMdyForm`
+safe under React Strict Mode's dev-only mount→unmount→remount cycle and
+during SSR: the hook constructs with `autoActivate: false` and calls
+`form.activate()` in its effect / `form.deactivate()` on cleanup, instead
+of the effect ever running before hydration or corrupting state across the
+extra dev-mode cycle. Angular, Vue, Solid, Svelte and Lit forms typically
+never need to touch `autoActivate`/`activate()`/`deactivate()` directly —
+their construction model already matches the default (`autoActivate:
+true`) behavior.
+
 ## Field arrays
 
 `array()` declares a repeatable list of fields or groups — order lines,
