@@ -8,11 +8,9 @@
  *
  * A reactive reconciliation effect additionally absorbs rows that appear via
  * a raw flat write bypassing this manager (draft restore, undo/redo): it
- * registers validators for newly-present row indices. It cannot detect rows
- * disappearing this way (the engine only nulls values on `setValue`, it
- * never removes fields on its own) — undo across a structural boundary
- * (e.g. undoing a `push`) leaves the extra row registered with null values
- * until the next structural operation prunes it.
+ * registers validators for newly-present row indices and cleans up rows
+ * that have disappeared. This prevents field record accumulation when
+ * undo/redo happens across structural boundaries.
  */
 import { MdyFormEngine } from "./form-engine.js";
 import {
@@ -62,6 +60,8 @@ export class MdyArrayManager {
   private readonly _initial: ReadonlyArray<unknown>;
   private readonly _rowCountSig: MdyWritableSignal<number>;
   private readonly _reconcile: MdyEffectRef | null;
+  /** Track the last known indices for cleanup detection. */
+  private _lastPresentIndices: Set<number> = new Set();
 
   /** Current number of registered rows. */
   readonly rowCount: MdySignal<number>;
@@ -148,6 +148,8 @@ export class MdyArrayManager {
     for (let i = 0; i < prevCount; i++) this._removeRow(i);
     values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v));
     this._rowCountSig.set(values.length);
+    // Update tracking after rebuild (structural ops are always atomic)
+    this._lastPresentIndices = new Set(Array.from({length: values.length}, (_, i) => i));
   }
 
   private _registerNode(
@@ -228,10 +230,15 @@ export class MdyArrayManager {
     return out;
   }
 
-  /** Registers validators for rows that appeared via a raw flat write (draft/undo/redo). */
+  /**
+   * Registers validators for rows that appeared via a raw flat write (draft/undo/redo)
+   * and removes rows that disappeared via undo across a structural boundary.
+   */
   private _absorb(present: ReadonlySet<number>): void {
     const count = this._rowCountSig();
     let maxIndex = -1;
+
+    // Register new rows that appeared (e.g., from draft restore or undo of a delete)
     for (const idx of present) {
       if (idx > maxIndex) maxIndex = idx;
       if (idx >= count) {
@@ -239,7 +246,18 @@ export class MdyArrayManager {
         this._registerNode(`${this._deps.path}.${idx}`, this._deps.item, value);
       }
     }
+
+    // Clean up rows that disappeared (e.g., undo of a push leaves a stale field)
+    for (const idx of this._lastPresentIndices) {
+      if (!present.has(idx)) {
+        this._removeRow(idx);
+      }
+    }
+
     const grown = maxIndex + 1;
     if (grown > count) this._rowCountSig.set(grown);
+
+    // Update tracking for next reconciliation
+    this._lastPresentIndices = new Set(present);
   }
 }
