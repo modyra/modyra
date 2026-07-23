@@ -181,6 +181,16 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
+  apps/studio:
+    dependencies:
+      '@modyra/studio-ui':
+        specifier: workspace:*
+        version: link:../../packages/studio-ui
+    devDependencies:
+      esbuild:
+        specifier: ^0.28.1
+        version: 0.28.1
+
   packages/angular:
     dependencies:
       '@angular/common':
@@ -280,6 +290,23 @@ importers:
       zod:
         specifier: ^4.0.0
         version: 4.4.3
+
+  packages/studio-editor:
+    dependencies:
+      '@modyra/studio-model':
+        specifier: workspace:*
+        version: link:../studio-model
+
+  packages/studio-model: {}
+
+  packages/studio-ui:
+    dependencies:
+      '@modyra/studio-editor':
+        specifier: workspace:*
+        version: link:../studio-editor
+      '@modyra/studio-model':
+        specifier: workspace:*
+        version: link:../studio-model
 
   packages/styles: {}
 

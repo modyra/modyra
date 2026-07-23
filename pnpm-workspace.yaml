@@ -6,6 +6,7 @@ allowBuilds:
   unrs-resolver: true
 packages:
   - "packages/*"
+  - "apps/*"
 linkWorkspacePackages: true
 overrides:
   esbuild: "^0.28.1"
