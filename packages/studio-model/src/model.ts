@@ -128,13 +128,45 @@ function diagnoseProject(project: MdyStudioProject, idx: StudioIndexes): StudioD
       });
     }
   };
+  const draftExcluded = new Set((project.behaviors.draft?.exclude ?? []).map((ref) => ref.nodeId));
   const visit = (node: StudioSchemaNode): void => {
     if (node.node === "field") {
       for (const validator of node.validators) {
         checkImplementationRef(validator.implementationRef, validator.id);
+        if (validator.kind === "pattern" && validator.pattern !== undefined) {
+          try {
+            new RegExp(validator.pattern);
+          } catch {
+            diagnostics.push({
+              code: "BAD_PATTERN",
+              severity: "error",
+              message: `Invalid regular expression "${validator.pattern}"`,
+              nodeId: node.id,
+              validatorId: validator.id,
+            });
+          }
+        }
       }
       if (node.serverValidator) {
         checkImplementationRef(node.serverValidator.implementationRef, node.serverValidator.id);
+      }
+      if ((node.fieldKind === "select" || node.fieldKind === "multiselect") && !node.options?.length) {
+        diagnostics.push({
+          code: "SELECT_WITHOUT_OPTIONS",
+          severity: "error",
+          message: `Field "${node.name}" is a ${node.fieldKind} with no options`,
+          nodeId: node.id,
+        });
+      }
+      if (SENSITIVE_FIELD_NAME.test(node.name) || (node.label && SENSITIVE_FIELD_NAME.test(node.label))) {
+        if (!draftExcluded.has(node.id)) {
+          diagnostics.push({
+            code: "SENSITIVE_FIELD_IN_DRAFT",
+            severity: "warning",
+            message: `Field "${node.name}" looks sensitive and is not excluded from the draft (behaviors.draft.exclude)`,
+            nodeId: node.id,
+          });
+        }
       }
     }
     if (node.node === "group") {
@@ -150,6 +182,8 @@ function diagnoseProject(project: MdyStudioProject, idx: StudioIndexes): StudioD
 
   return diagnostics;
 }
+
+const SENSITIVE_FIELD_NAME = /password|secret|token|ssn|credit.?card|cvv|\bpin\b/i;
 
 /** Deep-clones input — normalize never mutates its argument (plan section 5 rule). */
 export function normalize(project: MdyStudioProject): NormalizeResult {
