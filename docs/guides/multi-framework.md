@@ -105,20 +105,24 @@ A thin variant of the React adapter: same `vanillaReactivity()` +
 via `preact/compat` (no `getServerSnapshot` third argument — Preact's
 signature differs from React's here, the one real API gap between them).
 
-### Vue (`@modyra/vue` — shipped)
+### Vue (`@modyra/vue` — shipped, full capabilities)
 
 Vue's reactivity maps 1:1 onto the contract — the binding wraps
-`shallowRef`/`computed`/`watchEffect`:
+`shallowRef`/`computed`, and (since Phase P2, 2026-07-23) a real
+scheduler and Vue's own `effectScope()`:
 
 ```ts
-export function vueReactivity(): MdyReactivity {
+export function vueReactivity(): MdyReactivity & /* Batching/Flush/Observe */ {
   return {
-    canEffect: true,
-    signal: (v) => { const r = shallowRef(v); const s = () => r.value;
-      s.set = (x) => (r.value = x); /* update/asReadonly analogous */ return s; },
+    kind: "vue",
+    capabilities: { effects: true, effectOwnership: true, signalEquality: true,
+      batching: true, deterministicFlush: true, directObservation: true, /* … */ },
+    signal: (v, opts) => { const r = shallowRef(v); /* opts.equal gates the write, not just Vue's own same-value check */ },
     computed: (fn) => { const c = computed(fn); return () => c.value; },
-    effect: (fn) => { const runner = vueEffect(() => fn(...));
-      return { destroy: () => stop(runner) }; },
+    effect: (fn) => { const runner = vueEffect(() => fn(...), { scheduler: () => scheduleEffect(runner) });
+      /* scheduler queues into a shared microtask-drained pending set — same design as vanillaReactivity()'s own Milestone 3 */ },
+    createScope: (opts) => /* wraps effectScope() — native nesting/cascade-on-dispose */,
+    batch, flush, observe, // all real, built on the same scheduler
     untracked: (fn) => { pauseTracking(); try { return fn(); } finally { resetTracking(); } },
   };
 }
@@ -127,8 +131,15 @@ export function vueReactivity(): MdyReactivity {
 Components use `createVueForm(schema)` (or `useVueForm` inside an active
 effect scope, for automatic disposal) and bind with `v-model`-style
 wrappers over the handles. Headless field/select controllers come from
-`@modyra/widgets`. Not yet migrated to declare real `capabilities`/
-`createScope` (tracked as a reactivity-plan follow-up).
+`@modyra/widgets`. One real behavior change worth knowing: adding a
+scheduler means `effect()` (and anything built on it, like the widget
+layer's internal state-sync) is now microtask-batched instead of always
+synchronous — bringing Vue in line with vanilla/React/Preact/Svelte/Lit's
+own timing model, not a regression (see any test awaiting a tick after a
+`dispatch()`/`set()` for why). `computedEquality` stays honestly `false`:
+`@vue/reactivity`'s own `computed()` has no public custom-comparator hook
+the way Angular's native one does, and reimplementing computed by hand
+around a raw effect would stop being *native* Vue reactivity.
 
 ### Solid (`@modyra/solid` — shipped)
 
@@ -194,16 +205,14 @@ above).
   listener/lifecycle management is per-framework by nature.
 - **A11y announcer, devtools UI, Angular's renderer catalog**:
   framework-native forever, by design (Layer 3).
-- **Reactivity contract migration**: React, Vue, Solid, Preact, Svelte and
-  Lit don't declare real `capabilities`/`createScope` yet (only vanilla
-  and Angular do) — see the
-  [generated capability matrix](../reactivity-capability-matrix.md) and
-  [`ROADMAP.md`'s Phase P](../../ROADMAP.md) for the planned per-adapter
-  fix. Worth noting: React/Preact/Svelte/Lit already *run* on vanilla's
-  real capabilities by default (`createForm()` defaults to
-  `vanillaReactivity()`) — what's missing there is a named, introspectable
-  export, not the underlying behavior. Vue and Solid have real native
-  reactivity of their own and genuinely don't declare capabilities yet.
+- **Reactivity contract migration — Solid only now**: React, Preact,
+  Svelte, Lit and Vue all declare real `capabilities` (React/Preact/
+  Svelte/Lit via a named export forwarding vanilla's own, already-active
+  capabilities; Vue with genuine native ones — real scheduler,
+  `createScope()` via `effectScope()`, Phase P2). Solid has real native
+  reactivity of its own and is the one adapter left without this — see
+  the [generated capability matrix](../reactivity-capability-matrix.md)
+  and [`ROADMAP.md`'s Phase P](../../ROADMAP.md).
 
 ## Package policy
 

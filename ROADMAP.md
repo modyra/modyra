@@ -18,7 +18,7 @@ numbers — losses stated, not hidden.
 | React Native | compiles clean on current Hermes (2026-07-23), no integration yet | RHF/Formik/TanStack | `AsyncStorage` draft adapter + `<TextInput>` recipe (Phase M) |
 | Non-Angular UI kits | headless recipes only | nobody ships full kits either | achievable |
 | Measured perf | Modyra-only numbers, no competitor bench | — | needs new deps, approval-gated |
-| Reactivity capability parity | React/Preact/Svelte/Lit now declare real capabilities too (P1, 2026-07-23); Vue and Solid still don't — real native-reactivity work, not a re-export | Angular (internal) | Phase P2/P3 |
+| Reactivity capability parity | 6/7 declare real capabilities (all but Solid) — Vue now has real batch/flush/observe via its own scheduler + native `effectScope()` (P2, 2026-07-23), matching or exceeding Angular's own | Angular (internal) | Phase P3 (Solid) |
 
 ---
 
@@ -145,7 +145,7 @@ migration to real `capabilities`/`createScope`.
 **Released**: shipped as part of `0.4.0` (2026-07-23), changeset
 `reactivity-adapter-api.md` (minor, core+angular+react+preact).
 
-## Phase P — Adapter parity (in progress)
+## Phase P — Adapter parity (3/4 done — only P3/Solid left)
 
 Goal: close the real gap between Angular (the most mature adapter — native
 signals, `capabilities`/`createScope` already declared since Phase O M4)
@@ -163,14 +163,27 @@ missing is visibility and two real native-adapter gaps:
       `litReactivity()` = `{ ...vanillaReactivity(), kind: "x" }`). The
       capability matrix now shows real capabilities for all four (identical
       to vanilla) instead of `—`. Full suite green (103+119+24+135+5).
-- [ ] **P2 — Vue** (`packages/vue/src/index.ts`): real native reactivity
-      (`@vue/reactivity`'s `shallowRef`/`vueComputed`/`vueEffect`), but
-      `vueEffect()` runs with no scheduler — every `set()` is synchronous,
-      no real batching today. Already imports `getCurrentScope`/
-      `onScopeDispose` but doesn't expose them as `createScope()`. Real
-      adapter work: declare honest capabilities (`batching: false` until
-      a scheduler is added — **approval-gated**, adding one changes
-      observable timing) and wire `createScope()` via `effectScope()`.
+- [x] **P2 — Vue, done 2026-07-23**: real scheduler added to `effect()` —
+      `vueEffect(fn, { scheduler })` now queues into a shared,
+      microtask-drained pending set (same design as vanilla's own
+      Milestone 3), making `batch()`/`flush()` genuinely real rather than
+      `Promise.resolve()` aliases. `createScope()` wraps Vue's own
+      `effectScope()` (nesting/cascade-on-dispose is native Vue behavior,
+      not reimplemented). `signal()` now honors a custom `options.equal`
+      (was silently accepted-and-ignored before — piano §4.2 violation,
+      fixed alongside). Capabilities: `effects`/`effectOwnership`/
+      `signalEquality`/`batching`/`deterministicFlush`/`directObservation`
+      all honestly `true`; `computedEquality` stays `false` — `@vue/reactivity`'s
+      `computed()` has no public custom-comparator hook the way Angular's
+      native one does, and faking it would mean not using Vue's own
+      `computed()` at all. **Real behavior change, approved**: `effect()`
+      (and the widget layer's internal state-sync built on it) is now
+      microtask-batched instead of always-synchronous — 2 widget tests
+      updated to await a tick, matching every other adapter's own timing
+      model. Full suite green (103+119+24+135+5); capability matrix
+      regenerated (Vue now matches vanilla on every Level-A/B capability
+      except `computedEquality`, and exceeds Angular on batching/flush/
+      observe, which Angular doesn't implement at all).
 - [ ] **P3 — Solid** (`packages/solid/src/index.ts`): native
       `createSignal`/`createEffect`/`createRoot`, already has an
       owner-tree disposal model (`createRoot`/`onCleanup`) — a natural
