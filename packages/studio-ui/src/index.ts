@@ -6,19 +6,28 @@
  */
 import {
   buildIndexes,
+  compatibleValidatorKinds,
   createBlankProject,
   createId,
+  getFieldValidatorRegistryEntry,
+  isDuplicateKindAllowed,
+  type FieldNode,
   type MdyStudioProject,
   type StudioSchemaNode,
+  type StudioValidatorKind,
 } from "@modyra/studio-model";
 import {
   CommandHistory,
   CommandRejectedError,
+  createAddValidatorCommand,
   createDeleteCommand,
   createDuplicateCommand,
   createInsertCommand,
   createMoveCommand,
+  createRemoveValidatorCommand,
+  createSetFieldOptionsCommand,
   createUpdateNodeCommand,
+  createUpdateValidatorCommand,
   inspectDelete,
   type Command,
   type Placement,
@@ -97,6 +106,63 @@ function escapeHtml(value: unknown): string {
   return String(value ?? "").replace(/[&<>"']/g, (char) => entities[char]!);
 }
 
+/** P5: "Validation" inspector section — add/edit/remove, only ever offering registry-compatible kinds. */
+function validatorsMarkup(node: FieldNode): string {
+  const used = new Set(node.validators.map((v) => v.kind));
+  const available = compatibleValidatorKinds(node.valueType).filter((kind) => !used.has(kind) || isDuplicateKindAllowed(kind));
+
+  const rows = node.validators
+    .map((v) => {
+      const displayName = getFieldValidatorRegistryEntry(v.kind)?.displayName ?? v.kind;
+      const configInput =
+        v.kind === "pattern"
+          ? `<input data-validator-pattern="${v.id}" placeholder="regex" value="${escapeHtml(v.pattern ?? "")}">
+             <input data-validator-message="${v.id}" placeholder="message" value="${escapeHtml(v.message ?? "")}">`
+          : v.kind === "min" || v.kind === "max" || v.kind === "minLength" || v.kind === "maxLength"
+            ? `<input type="number" data-validator-value="${v.id}" value="${escapeHtml(String(v.value ?? 0))}">`
+            : "";
+      return `
+        <li class="validator-row">
+          <span>${escapeHtml(displayName)}</span>
+          ${configInput}
+          <button data-remove-validator="${v.id}" aria-label="Remove ${escapeHtml(displayName)} validator">×</button>
+        </li>`;
+    })
+    .join("");
+
+  const options = available
+    .map((kind) => `<option value="${kind}">${escapeHtml(getFieldValidatorRegistryEntry(kind)?.displayName ?? kind)}</option>`)
+    .join("");
+
+  return `
+    <div class="validators">
+      <h3>Validation</h3>
+      <ul class="validator-list">${rows}</ul>
+      ${available.length ? `<select data-add-validator aria-label="Add validator"><option value="">+ Add validator</option>${options}</select>` : ""}
+    </div>`;
+}
+
+/** P5: "Options" inspector section, select/multiselect only (plan section 8 "properties options"). */
+function optionsMarkup(node: FieldNode): string {
+  if (node.fieldKind !== "select" && node.fieldKind !== "multiselect") return "";
+  const rows = (node.options ?? [])
+    .map(
+      (opt, index) => `
+        <li class="option-row">
+          <input data-option-value="${index}" placeholder="value" value="${escapeHtml(opt.value)}">
+          <input data-option-label="${index}" placeholder="label" value="${escapeHtml(opt.label)}">
+          <button data-remove-option="${index}" aria-label="Remove option ${escapeHtml(opt.label || opt.value)}">×</button>
+        </li>`,
+    )
+    .join("");
+  return `
+    <div class="options">
+      <h3>Options</h3>
+      <ul class="option-list">${rows}</ul>
+      <button data-add-option>+ Add option</button>
+    </div>`;
+}
+
 /** Mounts the Studio editor into `host`. Returns a disposer that clears the host. */
 export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () => void {
   let project = initial ? structuredClone(initial) : createBlankProject();
@@ -144,6 +210,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     }
     selected = project.schema.id;
     commit(createDeleteCommand(id, true));
+  }
+
+  function getSelectedField(): FieldNode | null {
+    const node = buildIndexes(project).nodeById.get(selected);
+    return node && node.node === "field" ? node : null;
   }
 
   function markup(n: StudioSchemaNode): string {
@@ -217,6 +288,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
             <label>Name<input data-name value="${escapeHtml(current.name)}"></label>
             <label>Label<input data-label value="${escapeHtml(current.label ?? "")}"></label>
             <label>Description<textarea data-description>${escapeHtml(current.description ?? "")}</textarea></label>
+            ${current.node === "field" ? validatorsMarkup(current) + optionsMarkup(current) : ""}
             <dl>
               <dt>Path</dt><dd>${escapeHtml(idx.pathByNode.get(current.id) || "root")}</dd>
               <dt>Stable ID</dt><dd>${escapeHtml(current.id)}</dd>
@@ -306,6 +378,65 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     host.querySelector<HTMLTextAreaElement>("[data-description]")?.addEventListener("change", (e) =>
       commit(createUpdateNodeCommand(selected, { description: (e.target as HTMLTextAreaElement).value })),
     );
+
+    host.querySelector<HTMLSelectElement>("[data-add-validator]")?.addEventListener("change", (e) => {
+      const kind = (e.target as HTMLSelectElement).value as StudioValidatorKind | "";
+      if (!kind) return;
+      const entry = getFieldValidatorRegistryEntry(kind);
+      commit(createAddValidatorCommand(selected, { id: createId("val"), kind, ...entry?.defaultConfig() }));
+    });
+    host.querySelectorAll<HTMLElement>("[data-remove-validator]").forEach((el) =>
+      el.addEventListener("click", () => commit(createRemoveValidatorCommand(selected, el.dataset.removeValidator!))),
+    );
+    host.querySelectorAll<HTMLInputElement>("[data-validator-pattern]").forEach((el) =>
+      el.addEventListener("change", () =>
+        commit(createUpdateValidatorCommand(selected, el.dataset.validatorPattern!, { pattern: el.value })),
+      ),
+    );
+    host.querySelectorAll<HTMLInputElement>("[data-validator-message]").forEach((el) =>
+      el.addEventListener("change", () =>
+        commit(createUpdateValidatorCommand(selected, el.dataset.validatorMessage!, { message: el.value })),
+      ),
+    );
+    host.querySelectorAll<HTMLInputElement>("[data-validator-value]").forEach((el) =>
+      el.addEventListener("change", () =>
+        commit(createUpdateValidatorCommand(selected, el.dataset.validatorValue!, { value: Number(el.value) })),
+      ),
+    );
+
+    host.querySelectorAll<HTMLInputElement>("[data-option-value]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const field = getSelectedField();
+        if (!field) return;
+        const options = [...(field.options ?? [])];
+        const index = Number(el.dataset.optionValue);
+        options[index] = { ...options[index]!, value: el.value };
+        commit(createSetFieldOptionsCommand(selected, options));
+      }),
+    );
+    host.querySelectorAll<HTMLInputElement>("[data-option-label]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const field = getSelectedField();
+        if (!field) return;
+        const options = [...(field.options ?? [])];
+        const index = Number(el.dataset.optionLabel);
+        options[index] = { ...options[index]!, label: el.value };
+        commit(createSetFieldOptionsCommand(selected, options));
+      }),
+    );
+    host.querySelectorAll<HTMLElement>("[data-remove-option]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const field = getSelectedField();
+        if (!field) return;
+        const index = Number(el.dataset.removeOption);
+        commit(createSetFieldOptionsCommand(selected, (field.options ?? []).filter((_, i) => i !== index)));
+      }),
+    );
+    host.querySelector<HTMLElement>("[data-add-option]")?.addEventListener("click", () => {
+      const field = getSelectedField();
+      if (!field) return;
+      commit(createSetFieldOptionsCommand(selected, [...(field.options ?? []), { value: "", label: "" }]));
+    });
 
     host.querySelectorAll<HTMLElement>("[data-node]").forEach((el) =>
       el.addEventListener("keydown", (e) => keyboard(e, el.dataset.node!)),
