@@ -49,6 +49,7 @@ the project instructions
 
 # Build outputs of workspace packages
 packages/*/dist/
+apps/*/dist/
 
 # Playwright
 /test-results/
