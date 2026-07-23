@@ -333,6 +333,120 @@ body {
   padding: 7px;
 }
 
+.server-validator {
+  margin: 18px 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--mdy-border);
+}
+.server-validator h3 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mdy-text-muted);
+  margin: 0 0 10px;
+}
+.server-validator label {
+  display: block;
+  color: var(--mdy-text-muted);
+  font-size: 12px;
+  margin: 10px 0;
+}
+.server-validator select,
+.server-validator input:not([type="checkbox"]) {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  background: transparent;
+  color: var(--mdy-text);
+  border: 1px solid var(--mdy-border);
+  border-radius: 6px;
+  padding: 7px;
+  font-size: 12px;
+}
+.dep-row {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 !important;
+}
+.server-deps {
+  border: 1px solid var(--mdy-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 10px 0;
+  max-height: 140px;
+  overflow: auto;
+}
+.server-deps legend {
+  font-size: 11px;
+  color: var(--mdy-text-muted);
+  padding: 0 4px;
+}
+
+.form-validators {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--mdy-border);
+}
+.form-validators h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+.form-validator-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+  display: grid;
+  gap: 8px;
+}
+.form-validator-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid var(--mdy-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.fv-summary {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+}
+.fv-summary strong {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--mdy-violet);
+}
+.fv-meta {
+  font-size: 11px;
+  color: var(--mdy-text-muted);
+}
+.fv-draft {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+.fv-draft label {
+  display: block;
+  color: var(--mdy-text-muted);
+  font-size: 12px;
+}
+.fv-draft select,
+.fv-draft input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  background: transparent;
+  color: var(--mdy-text);
+  border: 1px solid var(--mdy-border);
+  border-radius: 6px;
+  padding: 7px;
+  font-size: 12px;
+}
+
 .studio footer {
   display: flex;
   align-items: center;
