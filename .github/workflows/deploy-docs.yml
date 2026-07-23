@@ -6,6 +6,8 @@ on:
     paths:
       - "docs/**"
       - "site/**"
+      - "apps/studio/**"
+      - "packages/studio-*/**"
       - "scripts/sync-docs-site.mjs"
       - ".github/workflows/deploy-docs.yml"
   workflow_dispatch:
