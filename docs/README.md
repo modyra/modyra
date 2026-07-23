@@ -1,7 +1,9 @@
 # Modyra documentation
 
-Everything about the engine and the adapters, organized by what you are
-trying to do. New here? Start with the [main README](../README.md), run a
+Modyra is one framework-agnostic form engine (`@modyra/core`) with seven
+thin adapters on top (Angular, React, Vue, Lit, Solid, Preact, Svelte).
+Everything here is organized by what you are trying to do. New here?
+Start with the [main README](../README.md), run a
 [framework example](#framework-examples), then read the two core guides
 (mental model → typed forms).
 
@@ -15,7 +17,7 @@ here; the site is a build artifact, never hand-edited.
 | Document                             | What it covers                                                        |
 | :----------------------------------- | :-------------------------------------------------------------------- |
 | [Main README](../README.md)          | Install, 60-second engine, real-world agnostic scenarios, packages    |
-| [Framework examples](examples/)      | The same checkout app in Angular, React, Vue and Lit                  |
+| [Framework examples](examples/)      | The same checkout app across all 7 adapters                          |
 | [Usage modes](guides/usage-modes.md) | Typed API vs declarative vs headless vs dynamic JSON — pick your mode |
 
 ## Core concepts
@@ -37,12 +39,15 @@ server validation, submit with server errors, drafts — in each binding:
 - [React](examples/react.md) — `useMdyForm` / `useMdyField`, headless controlled inputs
 - [Vue](examples/vue.md) — `createVueForm` on `@vue/reactivity`
 - [Lit](examples/lit.md) — `createLitForm` + `<mdy-*-field>` custom elements
+- [Solid](examples/solid.md) — `useSolidForm`, fields read as accessors, no hook needed
+- [Preact](examples/preact.md) — identical shape to the React binding, thinner runtime
+- [Svelte](examples/svelte.md) — `createSvelteForm` + `toStore()` for native `$store` bindings
 
 ## Adapters and architecture
 
 | Document                                                            | What it covers                                                                                                     |
 | :------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------- |
-| [Multi-framework architecture](guides/multi-framework.md)           | What's in `@modyra/core`, the four-primitive reactive contract, adapter recipes (React/Vue/Lit/Astro)              |
+| [Multi-framework architecture](guides/multi-framework.md)           | What's in the agnostic `@modyra/core`, the `MdyReactivity` contract every adapter implements, per-adapter recipes (Angular/React/Vue/Lit/Solid/Preact/Svelte/Astro) |
 | [Reactive Forms interop](guides/interop.md)                         | `mdyCva` — embed Modyra controls in existing Angular Reactive Forms                                                |
 | [Compared with Reactive Forms](guides/comparison-reactive-forms.md) | Honest trade-offs, migration paths                                                                                 |
 | [Compared with react-hook-form](guides/comparison-react-hook-form.md) | Side-by-side snippet (tested), the `formState` proxy gotcha, migration guidance                                  |

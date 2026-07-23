@@ -27,18 +27,17 @@ months from now.
 - `@modyra/core` figures were originally cross-checked against the real
   published registry tarball (`npm install @modyra/core@0.3.0`), agreeing
   exactly with the workspace build at the time (10.7 KB / 9.4 KB gzip).
-  The 2026-07-22 re-measurement below is **workspace-only** — the
-  reactivity-adapter-api plan (all 12 `@modyra/*` packages pending a
-  `minor` version bump via `.changeset/reactivity-adapter-api.md`) hasn't
-  been published yet, so there is no newer tarball to cross-check against
-  until that release ships. Re-verify against the published tarball once
-  it does.
+  The 2026-07-22 re-measurement was workspace-only at the time — the
+  reactivity-adapter-api plan hadn't shipped yet. **Update, 2026-07-23:**
+  `@modyra/core@0.4.0` is now published; the registry tarball matches the
+  workspace-measured 14.1 KB / 10.6 KB gzip figures below exactly.
 
 Exact versions measured: react-hook-form **7.82.0** · formik **2.4.9** ·
 @tanstack/react-form **1.33.2** (+ @tanstack/form-core 1.33.2) ·
 final-form **5.0.1** + react-final-form **7.0.1** + final-form-arrays
 **4.0.1** · vee-validate **4.15.1** · zod **4.4.3** · @angular/forms
-**22.0.7** · @modyra/core **0.3.0** (published on npm).
+**22.0.7** · @modyra/core **0.3.0** at time of writing, re-verified against
+**0.4.0** (published on npm) on 2026-07-23 — figures below match exactly.
 
 ## 2. Measured bundle sizes (min + gzip, both bundlers)
 
