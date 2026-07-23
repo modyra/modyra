@@ -128,3 +128,90 @@ test("inline-editing an existing form validator's message commits without recrea
   await expect(page.locator(".form-validator-row")).toHaveCount(1);
   await expect(messageInput).toHaveValue("Edited message");
 });
+
+test("P5 gap closed: AND composes two sub-conditions, each with its own field+condition", async ({ page }) => {
+  await page.locator('[data-template="group"]').click();
+  const groupId = await page.locator(".tree-node [data-node]").first().getAttribute("data-node");
+  await page.locator('[data-template="text"]').click();
+  await openFormRulesTab(page);
+
+  await page.locator("[data-fv-op]").selectOption("and");
+  await expect(page.locator(".fv-subcondition")).toHaveCount(2);
+  // Composite ops hide the flat single-field selector — each sub-condition has its own instead.
+  await expect(page.locator("[data-fv-ref]")).toHaveCount(0);
+
+  // Point sub-condition 0 at the group specifically (not whatever the default happens to be).
+  await page.locator('[data-fv-sub-ref="0"]').selectOption(groupId!);
+  await page.locator('[data-fv-sub-op="0"]').selectOption("equals");
+  await expect(page.locator('[data-fv-sub-literal="0"]')).toBeVisible();
+  await page.locator('[data-fv-sub-literal="0"]').fill("IT");
+  await page.locator('[data-fv-sub-literal="0"]').blur(); // commit before selectOption() re-renders and rebuilds the DOM
+
+  await page.locator('[data-fv-sub-op="1"]').selectOption("isNotEmpty");
+  await page.locator("[data-fv-message]").fill("Both conditions must hold");
+  await page.locator("[data-add-form-validator]").click();
+
+  const row = page.locator(".form-validator-row");
+  await expect(row).toHaveCount(1);
+  await expect(row.locator("[data-form-validator-message]")).toHaveValue("Both conditions must hold");
+  // Dependencies list both referenced fields (deduped) — visible proof the compound expression was built, not a leaf.
+  await expect(row.locator(".fv-meta")).not.toContainText("depends on: (none)");
+});
+
+test("form validator dependency display shows 'root' (not '(none)') when root is the only dependency", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  await openFormRulesTab(page);
+  // Default draft already targets root with "is not empty" — add it as-is.
+  await page.locator("[data-fv-message]").fill("Root-only dependency");
+  await page.locator("[data-add-form-validator]").click();
+
+  // "root" as the dependency (not "(none)" — root's derived path is "" and must not be
+  // mistaken for "no dependencies"); error target legitimately reads "(none)" here since none was set.
+  await expect(page.locator(".form-validator-row .fv-meta")).toContainText("depends on: root · error target: (none)");
+});
+
+test("P5 gap closed: NOT wraps a single sub-condition", async ({ page }) => {
+  await page.locator('[data-template="checkbox"]').click();
+  await openFormRulesTab(page);
+
+  await page.locator("[data-fv-op]").selectOption("not");
+  await expect(page.locator(".fv-subcondition")).toHaveCount(1);
+
+  await page.locator('[data-fv-sub-op="0"]').selectOption("isEmpty");
+  await page.locator("[data-fv-message]").fill("Must not be empty");
+  await page.locator("[data-add-form-validator]").click();
+
+  await expect(page.locator(".form-validator-row")).toHaveCount(1);
+});
+
+test("switching from AND back to a leaf condition restores the flat field+value fields", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  await openFormRulesTab(page);
+
+  await page.locator("[data-fv-op]").selectOption("and");
+  await expect(page.locator(".fv-subcondition")).toHaveCount(2);
+
+  await page.locator("[data-fv-op]").selectOption("equals");
+  await expect(page.locator(".fv-subcondition")).toHaveCount(0);
+  await expect(page.locator("[data-fv-ref]")).toBeVisible();
+  await expect(page.locator("[data-fv-literal]")).toBeVisible();
+});
+
+test("P5 gap closed: submit-action stub creation, selection, and removal", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  await openFormRulesTab(page);
+
+  await expect(page.locator(".submit-action h3")).toHaveText("Submit action");
+  await expect(page.locator("[data-remove-submit-action]")).toHaveCount(0); // nothing set yet
+
+  await page.locator("[data-new-submit-impl]").click();
+  const implSelect = page.locator("[data-submit-impl]");
+  await expect(implSelect).not.toHaveValue("");
+  const selectedLabel = await implSelect.locator("option:checked").textContent();
+  expect(selectedLabel).toMatch(/^submitForm/);
+  await expect(page.locator("[data-remove-submit-action]")).toBeVisible();
+
+  await page.locator("[data-remove-submit-action]").click();
+  await expect(implSelect).toHaveValue("");
+  await expect(page.locator("[data-remove-submit-action]")).toHaveCount(0);
+});

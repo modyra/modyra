@@ -512,6 +512,40 @@ body {
   padding: 0 4px;
 }
 
+.submit-action {
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--mdy-border);
+}
+.submit-action h3 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mdy-text-muted);
+  margin: 0 0 10px;
+}
+.submit-action label {
+  display: block;
+  color: var(--mdy-text-muted);
+  font-size: 12px;
+  margin: 10px 0;
+}
+.submit-action select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  background: transparent;
+  color: var(--mdy-text);
+  border: 1px solid var(--mdy-border);
+  border-radius: 6px;
+  padding: 7px;
+  font-size: 12px;
+}
+.submit-action button {
+  margin-right: 6px;
+}
+
 .form-validator-list {
   list-style: none;
   padding: 0;
@@ -563,6 +597,15 @@ body {
   border-radius: 6px;
   padding: 7px;
   font-size: 12px;
+}
+.fv-subcondition {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--mdy-border);
+  border-radius: 6px;
 }
 
 .studio footer {
