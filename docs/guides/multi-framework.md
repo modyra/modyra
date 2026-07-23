@@ -1,28 +1,48 @@
 # Multi-framework architecture
 
 What is framework-agnostic today, what is deliberately Angular, and the
-concrete recipe for each future adapter (React, Vue, Lit, Astro).
+concrete recipe each adapter follows.
 
 ## The split as it stands
 
 **`@modyra/core` — zero dependencies, runs in plain Node:**
 
 - Form engine: fields, sync/async/cross-field validation, submit + server
-  errors, drafts, undo/redo, `getChanges()` (`MdyFormEngine`).
-- Typed layer: `createForm()`, `field()`, `group()`, handle tree.
+  errors, drafts, undo/redo, `mutate()` (coalesced history entries),
+  `getChanges()` (`MdyFormEngine`).
+- Typed layer: `createForm()`, `field()`, `group()`, `array()`, handle tree.
 - Validators (`required`, `min`, …, `crossField`).
 - The reactive contract (`MdyReactivity`: `signal`/`computed`/`effect`/
-  `untracked`) plus `vanillaReactivity()`.
+  `untracked`, plus optional `capabilities`/`createScope`/
+  `MdyReactiveScope`, typed errors and structured diagnostics — see
+  [Writing a reactivity adapter](reactivity-adapter-guide.md)) plus
+  `vanillaReactivity()`, the reference implementation (real `batch()`/
+  `flush()`/`observe()` too).
+- `@modyra/core/testing` — `runReactivityContractTests`, the conformance
+  suite every adapter below is checked against.
 - Headless widget logic: calendar math and localized date parsing
   (`date-utils`), time parsing/formatting and clock geometry
   (`time-utils`), overlay positioning geometry (`overlay-position`),
   option filtering (`options-utils`), value serialization (`serialize`),
-  dynamic-form config domain + runtime validation (`dynamic-config`),
+  dynamic-form config domain + runtime validation (`dynamic-config`,
+  Contract v1 and v2 — see [AI-generated forms](ai-generated-forms.md)),
   i18n message catalogs en/it/de/fr/es (`i18n`).
+
+**`@modyra/widgets` — headless widget controllers, framework-free:**
+
+Field/boolean/option field controllers and a select controller (listbox
+navigation, active descendant, search-to-select) — state machines that
+used to live only inside the Angular components, now shared by every
+adapter that binds `@modyra/widgets` (React, Vue, Solid, Preact, Svelte
+all do; see [headless recipes](headless-recipes.md) for shadcn/Radix/
+Kobalte prop-mappers over them).
 
 **`@modyra/angular` — the Angular adapter (this repo's `packages/angular`):**
 
-- `angularReactivity()` — binds the contract to native Angular signals.
+- `angularReactivity()` — binds the contract to native Angular signals;
+  hardened (real `capabilities`, typed error instead of a silent no-op
+  effect without an `Injector`, `onError` respected) — see the reactivity
+  adapter guide.
 - Thin typed wrappers (`MdyDeclarativeAdapter`, `mdyForm()`).
 - DI plumbing: tokens (`MDY_I18N_MESSAGES`, `MDY_DATE_LOCALE`, …),
   `provideModyraLocale()`.
@@ -30,66 +50,113 @@ concrete recipe for each future adapter (React, Vue, Lit, Astro).
   directives.** These are intentionally Angular: templates, content
   projection, signal inputs, host bindings. A renderer is Layer 3 — it is
   *supposed* to be framework-native.
+- **Datepicker and timepicker interaction state machines** (grid focus
+  movement, segment editing) — still Angular-only; see "not extracted
+  yet" below.
 
-So: yes, the controls are Angular-centric — by design. What was wrong (and
-is now fixed) is that ~1.5k lines of pure logic (dates, time, overlay
-geometry, i18n data, dynamic config) lived in the Angular package; they are
-now core modules the Angular files simply re-export.
+So: yes, the renderer catalog is Angular-centric — by design. Field-level
+interaction logic (select, boolean, text) is not: it moved to
+`@modyra/widgets` once the other adapters needed it too.
 
 ## What each adapter implements
 
 An adapter provides two things:
 
-1. **A reactivity binding** (or uses `vanillaReactivity()`): four
-   primitives, nothing Angular-shaped about them — they map to Solid,
-   Preact Signals, Vue and the TC39 Signals proposal.
-2. **Bindings/components** that connect DOM inputs to field handles
-   (`value()`, `set()`, `markAsTouched()`, `errors()`), reusing the core's
-   headless logic for the composite widgets.
+1. **A reactivity binding** (or uses `vanillaReactivity()`): the
+   `MdyReactivity` contract, nothing framework-shaped about its shape —
+   real implementations exist for Angular, Vue and Solid signals today.
+2. **Bindings/hooks** that connect DOM inputs to field handles
+   (`value()`, `set()`, `markAsTouched()`, `errors()`), reusing
+   `@modyra/widgets`' headless controllers for composite widgets
+   (select, checkbox/switch) instead of reimplementing their state
+   machines per framework.
 
-### React (`@modyra/react` — available, early)
+### React (`@modyra/react` — shipped)
 
-No native signals: run the engine on `vanillaReactivity()` and subscribe
-components through `useSyncExternalStore`:
+No native signals: the engine runs on `vanillaReactivity()` and
+components subscribe through `useSyncExternalStore`. `createFieldStore()`
+resolves the reactivity that actually created a field handle via
+`getFieldHandleOwner()` instead of building an unrelated one — building a
+fresh `vanillaReactivity()` just to observe someone else's signals is the
+cross-runtime bug [the reactivity adapter guide](reactivity-adapter-guide.md#5-cross-runtime-observation-is-a-bug-not-a-shortcut)
+warns against (found and fixed in this package during the
+reactivity-adapter-api plan):
 
 ```ts
-// sketch — the adapter's whole bridging surface
-export function useField<T>(handle: MdyFieldHandle<T>) {
-  const subscribe = (notify: () => void) => {
-    const rx = vanillaReactivity();
-    const ref = rx.effect(() => { handle.value(); handle.errors(); notify(); });
-    return () => ref.destroy();
-  };
-  const value = useSyncExternalStore(subscribe, () => handle.value());
-  return { value, set: handle.set, errors: handle.errors, ... };
+// packages/react/src/index.ts, simplified
+export function createFieldStore(handle: MdyFieldHandle<unknown>) {
+  return createStore(
+    [handle.value, handle.errors, handle.touched, handle.dirty, handle.valid, handle.pending, handle.disabled],
+    getFieldHandleOwner(handle), // the handle's REAL owner, not a fresh instance
+  );
 }
 ```
 
-`useForm(schema, options)` memoizes `createForm()`; field components are
-plain controlled inputs over `useField`.
+`useMdyForm(schema, options)` constructs with `autoActivate: false` and
+activates/deactivates from its own `useEffect` — safe under React Strict
+Mode's dev-only double-invoke and during SSR (see
+[Typed forms](typed-forms.md#construction-vs-activation-ssr-strict-mode)).
+Headless field/select controllers come from `@modyra/widgets`.
 
-### Vue (`@modyra/vue` — available, early)
+### Preact (`@modyra/preact` — shipped)
 
-Vue's reactivity maps 1:1 — the binding wraps `.value` access:
+A thin variant of the React adapter: same `vanillaReactivity()` +
+`getFieldHandleOwner()` + `autoActivate: false` pattern, `useSyncExternalStore`
+via `preact/compat` (no `getServerSnapshot` third argument — Preact's
+signature differs from React's here, the one real API gap between them).
+
+### Vue (`@modyra/vue` — shipped)
+
+Vue's reactivity maps 1:1 onto the contract — the binding wraps
+`shallowRef`/`computed`/`watchEffect`:
 
 ```ts
 export function vueReactivity(): MdyReactivity {
   return {
     canEffect: true,
-    signal: (v) => { const r = ref(v); const s = () => r.value;
+    signal: (v) => { const r = shallowRef(v); const s = () => r.value;
       s.set = (x) => (r.value = x); /* update/asReadonly analogous */ return s; },
     computed: (fn) => { const c = computed(fn); return () => c.value; },
-    effect: (fn) => { const stop = watchEffect((onCleanup) => fn(onCleanup));
-      return { destroy: stop }; },
-    untracked: (fn) => { /* pause tracking */ return fn(); },
+    effect: (fn) => { const runner = vueEffect(() => fn(...));
+      return { destroy: () => stop(runner) }; },
+    untracked: (fn) => { pauseTracking(); try { return fn(); } finally { resetTracking(); } },
   };
 }
 ```
 
-Components use `createForm(schema, { reactivity: vueReactivity() })` and
-bind with `v-model`-style wrappers over the handles.
+Components use `createVueForm(schema)` (or `useVueForm` inside an active
+effect scope, for automatic disposal) and bind with `v-model`-style
+wrappers over the handles. Headless field/select controllers come from
+`@modyra/widgets`. Not yet migrated to declare real `capabilities`/
+`createScope` (tracked as a reactivity-plan follow-up).
 
-### Lit (`@modyra/lit` — available, early)
+### Solid (`@modyra/solid` — shipped)
+
+Solid's primitives map almost 1:1: `createSignal` → signal, `createMemo`
+→ computed, `untrack` → untracked. The one gap is a manually-destroyable
+effect handle — the engine calls `effect(...).destroy()` imperatively
+outside any component (async validators/drafts/history), so each
+`effect()` wraps `createEffect` in its own `createRoot`. Testing/SSR note:
+solid-js's plain Node import condition resolves to a non-reactive SSR
+stub, so any Node consumer (`node --test`, ts-node, a server-rendered
+handler) needs `--conditions=browser` or every signal silently goes
+inert. Headless field/select controllers come from `@modyra/widgets`.
+
+### Svelte (`@modyra/svelte` — shipped, reactivity + widgets only)
+
+Svelte 5 runes (`$state`/`$derived`) are compiler macros meant to be
+transformed by the *consumer's* bundler, not something a library's own
+build step can resolve — confirmed by trying: the compiled output still
+contained literal `$state(...)` calls. So this adapter runs the engine on
+`vanillaReactivity()`, same shape as React, and `toStore()` bridges it to
+a real Svelte `Readable` store (`svelte/store`'s `writable`/`derived`/`get`
+run as plain, uncompiled JavaScript — no compiler needed). One caveat:
+`toStore()`-backed state is microtask-batched, unlike Svelte's own
+synchronous `writable()` — await a tick after a write before asserting.
+No `examples/svelte` yet (needs the `@sveltejs/vite-plugin-svelte`
+toolchain decision) or headless-recipes doc section.
+
+### Lit (`@modyra/lit` — shipped)
 
 Run on `vanillaReactivity()`; a `ReactiveController` subscribes an element
 to the handles it renders:
@@ -103,34 +170,42 @@ class FieldController implements ReactiveController {
 
 Because Lit ships web components, this adapter is also the path to using
 Modyra controls *inside any framework* — including Angular-free pages.
+Ships its own themable custom elements (`<mdy-*-field>`), not just a
+headless binding.
 
-### Astro (`@modyra/astro` — future / documentation)
+### Astro (recipe, not a new binding)
 
 Astro has no client reactivity of its own: the engine already works
 server-side (no DOM, storage inert), so `createForm()` can render initial
 markup in `.astro` frontmatter; interactive islands then use whichever
-adapter matches the island's framework (React/Vue/Lit above). Astro support
-is therefore mostly a recipe + an `astro` example, not a new binding.
+adapter matches the island's framework (React/Vue/Lit/Preact/Solid/Svelte
+above).
 
 ## What is NOT extracted yet (honest list)
 
-- **Widget state machines**: the keyboard/focus logic of select
-  (listbox navigation, active descendant), datepicker (grid focus
-  movement) and timepicker (segment editing) still lives inside the
-  Angular components. Full "headless UI" extraction (à la Zag/TanStack)
-  means porting those interaction state machines to core with
-  DOM-attribute outputs. Planned as exploratory work — the math they rely
-  on is already in core.
+- **Datepicker and timepicker interaction state machines** (grid focus
+  movement, segment editing) still live inside the Angular components —
+  unlike select/boolean/text, which moved to `@modyra/widgets`. Same
+  "the math is already in core" situation `@modyra/core/keyboard`/
+  `date-utils`/`time-utils` describe; the remaining work is the
+  stateful navigation logic itself.
 - **Overlay orchestration**: positioning *geometry* is core; the
   listener/lifecycle management is per-framework by nature.
-- **A11y announcer, devtools UI, renderers**: framework-native forever.
+- **A11y announcer, devtools UI, Angular's renderer catalog**:
+  framework-native forever, by design (Layer 3).
+- **Reactivity contract migration**: Vue, Solid, Preact, Svelte and Lit
+  don't declare real `capabilities`/`createScope` yet (only vanilla and
+  Angular do) — see the
+  [generated capability matrix](../reactivity-capability-matrix.md).
 
 ## Package policy
 
-`@modyra/vue`, `@modyra/react` and `@modyra/lit` exist as **engine
-bindings** (0.1.0, implemented and tested): reactivity adapter + typed form
-factory (+ hooks/controller). They do not ship UI components yet — the
-renderer catalog remains Angular-only until the widget state machines are
-extracted (listbox and calendar keyboard navigation already live in
-`@modyra/core/keyboard`). `@modyra/astro` stays a recipe: core in SSR,
-bindings inside islands.
+`@modyra/vue`, `@modyra/react`, `@modyra/solid`, `@modyra/preact`,
+`@modyra/svelte` and `@modyra/lit` are shipped, tested engine bindings
+(published on npm at `0.3.0`, a `0.4.0` reactivity-plan bump pending) —
+reactivity adapter + typed form factory (+ hooks/controller/composable),
+plus headless field/select controllers via `@modyra/widgets`. They do not
+ship a themed UI component library the way `@modyra/angular`'s renderer
+catalog does (Lit ships its own custom elements, which is closer to a UI
+kit than the others); see [headless recipes](headless-recipes.md) for
+pairing them with shadcn/Radix/Kobalte/your own design system.
