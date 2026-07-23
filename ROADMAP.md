@@ -18,7 +18,7 @@ numbers — losses stated, not hidden.
 | React Native | compiles clean on current Hermes (2026-07-23), no integration yet | RHF/Formik/TanStack | `AsyncStorage` draft adapter + `<TextInput>` recipe (Phase M) |
 | Non-Angular UI kits | headless recipes only | nobody ships full kits either | achievable |
 | Measured perf | Modyra-only numbers, no competitor bench | — | needs new deps, approval-gated |
-| Reactivity capability parity | Angular declares `capabilities`/`createScope`; the other 6 don't (4 of them already run the real capabilities by default — visibility gap, not a runtime one) | Angular (internal) | Phase P, planned |
+| Reactivity capability parity | React/Preact/Svelte/Lit now declare real capabilities too (P1, 2026-07-23); Vue and Solid still don't — real native-reactivity work, not a re-export | Angular (internal) | Phase P2/P3 |
 
 ---
 
@@ -100,12 +100,12 @@ Goal: 7 supported frameworks.
       RHF's `formState` is a lazily-tracked proxy (a key only updates
       once read during render); Formik's `isValid` is dirty-gated and can
       read `true` for an untouched required field.
-- [x] StackBlitz starters — **all 6 done** (Angular/React/Vue/Lit/Solid/Preact):
+- [x] StackBlitz starters — **all 7 done** (Angular/React/Vue/Lit/Solid/Preact/Svelte):
       real, verified Vite projects, own isolated `package.json`, real
       `npm install` + build + dev server + Playwright pass (2026-07-23 for
-      Solid/Preact, unblocked once their npm publish landed). CodeSandbox
-      tried and declined — GitHub import hits a Cloudflare bot-check (403),
-      can't verify like StackBlitz.
+      Solid/Preact/Svelte, unblocked once their npm publish landed).
+      CodeSandbox tried and declined — GitHub import hits a Cloudflare
+      bot-check (403), can't verify like StackBlitz.
 - [x] Measured perf comparison — Modyra's own numbers published
       (`comparison-form-libraries.md` §6), one honest weak spot flagged
       (cross-field validator O(fields)). Competitor head-to-head needs new
@@ -145,7 +145,7 @@ migration to real `capabilities`/`createScope`.
 **Released**: shipped as part of `0.4.0` (2026-07-23), changeset
 `reactivity-adapter-api.md` (minor, core+angular+react+preact).
 
-## Phase P — Adapter parity (planned, not started)
+## Phase P — Adapter parity (in progress)
 
 Goal: close the real gap between Angular (the most mature adapter — native
 signals, `capabilities`/`createScope` already declared since Phase O M4)
@@ -157,12 +157,12 @@ real `batch()`/`flush()`/`observe()` capabilities (from Phase O M3) by
 default — nothing to fix at runtime for those four. What's actually
 missing is visibility and two real native-adapter gaps:
 
-- [ ] **P1 — React/Preact/Svelte/Lit**: none of the four packages exports
-      its own `kind`-tagged reactivity constructor, so
-      `scripts/reactivity-capability-matrix.mjs` can't introspect one and
-      shows `—` for a gap that doesn't exist at runtime. Fix: each adapter
-      exports e.g. `reactReactivity()` = `{ ...vanillaReactivity(), kind: "react" }`,
-      ~1 file per adapter, low risk. Regenerate the matrix after.
+- [x] **P1 — React/Preact/Svelte/Lit, done 2026-07-23**: each package now
+      exports its own `kind`-tagged reactivity constructor
+      (`reactReactivity()`/`preactReactivity()`/`svelteReactivity()`/
+      `litReactivity()` = `{ ...vanillaReactivity(), kind: "x" }`). The
+      capability matrix now shows real capabilities for all four (identical
+      to vanilla) instead of `—`. Full suite green (103+119+24+135+5).
 - [ ] **P2 — Vue** (`packages/vue/src/index.ts`): real native reactivity
       (`@vue/reactivity`'s `shallowRef`/`vueComputed`/`vueEffect`), but
       `vueEffect()` runs with no scheduler — every `set()` is synchronous,
@@ -175,10 +175,12 @@ missing is visibility and two real native-adapter gaps:
       `createSignal`/`createEffect`/`createRoot`, already has an
       owner-tree disposal model (`createRoot`/`onCleanup`) — a natural
       fit for `createScope()`, not yet exposed/declared.
-- [ ] **P4 — Missing pages**: `docs/examples/{solid,preact,svelte}.md`
-      don't exist yet (only angular/react/vue/lit.md do);
-      `examples/stackblitz-svelte/` is the only adapter without a
-      StackBlitz starter.
+- [x] **P4 — Missing pages, done 2026-07-23**: `docs/examples/{solid,preact,svelte}.md`
+      (docs revision batch) and `examples/stackblitz-svelte/` (same
+      signup-form scenario as stackblitz-preact/-solid, own Vite +
+      `@sveltejs/vite-plugin-svelte` toolchain, verified with real
+      `npm install` + build + preview + Playwright). All 7 adapters now
+      have a StackBlitz starter — was the last one missing.
 
 **Explicitly out of scope here, not silently dropped**: the "no
 renderer/UI catalog" gap (Angular's ~30 controls, Lit's 19 components vs.
