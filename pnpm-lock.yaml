@@ -294,6 +294,15 @@ importers:
         specifier: ^4.0.0
         version: 4.4.3
 
+  packages/studio-contract:
+    dependencies:
+      '@modyra/core':
+        specifier: workspace:*
+        version: link:../core
+      '@modyra/studio-model':
+        specifier: workspace:*
+        version: link:../studio-model
+
   packages/studio-editor:
     dependencies:
       '@modyra/studio-model':
