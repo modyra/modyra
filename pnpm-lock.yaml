@@ -187,6 +187,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/studio-ui
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.61.1
+        version: 1.61.1
       esbuild:
         specifier: ^0.28.1
         version: 0.28.1

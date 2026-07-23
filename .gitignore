@@ -58,6 +58,8 @@ apps/*/dist/
 /test-results/
 /playwright-report/
 /playwright/.cache/
+apps/*/test-results/
+apps/*/playwright-report/
 
 # Angular demo: styles copied from packages/styles/dist at prebuild
 /examples/angular/.styles/
