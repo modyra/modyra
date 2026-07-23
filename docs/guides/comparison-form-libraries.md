@@ -140,9 +140,9 @@ locale issue).
 
 ✓ built-in · ~ partial / external package / manual · ✗ not available
 
-| Feature | Modyra 0.2 | TanStack Form 1.33 | react-hook-form 7.82 | formik 2.4 | final-form 5.0 | vee-validate 4.15 | Angular Reactive Forms 22 |
+| Feature | Modyra 0.4 | TanStack Form 1.33 | react-hook-form 7.82 | formik 2.4 | final-form 5.0 | vee-validate 4.15 | Angular Reactive Forms 22 |
 |---|---|---|---|---|---|---|---|
-| Frameworks | NG/React/Vue/Lit + vanilla core | 7: React, Preact, Vue, Angular, Solid, Lit, Svelte [^2^] | React (incl. RN) | React (incl. RN) | Agnostic core + official React | Vue | Angular |
+| Frameworks | 7: Angular, React, Vue, Lit, Solid, Preact, Svelte + vanilla core | 7: React, Preact, Vue, Angular, Solid, Lit, Svelte [^2^] | React (incl. RN) | React (incl. RN) | Agnostic core + official React | Vue | Angular |
 | Typed form API | ✓ descriptor inference | ✓ deep inference (DeepKeys) | ✓ generics + Path types | ~ weaker generics | ~ | ✓ | ✓ (since v14) |
 | Standard Schema / schema-lib validation | ✓ (`@modyra/standard-schema`, `@modyra/zod`) | ✓ built-in [^3^] | ✓ via `@hookform/resolvers` (external) | ~ Yup first-class; zod community | ✗ validate fns only | ✓ zod/yup/valibot resolvers | ✗ validator fns only |
 | Sync validation | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -160,7 +160,7 @@ locale issue).
 | Devtools | ✓ core, UI-agnostic | ✓ | ✓ `@hookform/devtools` (external) | ✗ | ✗ | ~ Vue devtools | ~ framework |
 | React Native | ✗ untested | ✓ | ✓ | ✓ | ~ | ✗ | ✗ |
 | Server-side reuse of validation | ✓ engine runs in Node; same schema gates API | ✓ first-class SSR API [^3^] | ~ resolvers run anywhere; no server API | ~ | ~ | ~ | ✗ |
-| On npm at time of writing | **✗ (pre-release)** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| On npm at time of writing | **✓ — `@modyra/*@0.4.0`** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ## 4. Where Modyra is behind (read this before adopting)
 
@@ -168,10 +168,12 @@ locale issue).
    2025 [^4^]), formik and final-form have years of production mileage,
    Stack Overflow coverage and UI-library integrations (MUI, AntD…).
    TanStack Form alone reports ~2.5M weekly downloads [^5^]. Modyra is
-   pre-1.0, not yet on npm, with a small community and no third-party
+   pre-1.0 (`0.4.0`, on npm), with a small community and no third-party
    integrations.
-2. **Framework breadth.** TanStack Form covers 7 frameworks including
-   Solid, Svelte and Preact [^2^]; Modyra covers 4 plus a vanilla core.
+2. **Framework breadth.** Tied — Modyra now covers the same 7 frameworks
+   as TanStack Form (Angular, React, Vue, Lit, Solid, Preact, Svelte
+   [^2^]), each with a working example. Ecosystem depth per framework
+   (community integrations, third-party plugins) still favors TanStack.
 3. **Server-side story.** TanStack Form's `createServerValidate` is a
    first-class SSR feature [^3^]; Modyra's isomorphic pattern (same zod
    schema client/server) works but is a documented pattern, not a

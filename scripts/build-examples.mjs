@@ -5,6 +5,7 @@
  */
 import { build } from "esbuild";
 import { solidPlugin } from "esbuild-plugin-solid";
+import sveltePlugin from "esbuild-svelte";
 
 // Every demo ships all the packaged themes (minified CSS from the agnostic
 // @modyra/styles package dist) and starts on a different one; a runtime
@@ -31,6 +32,10 @@ const targets = [
   // esbuild's native JSX handling. Small, targeted addition to this one
   // build call rather than switching the whole example pipeline to Vite.
   { name: "solid", entry: "examples/solid/main.jsx", plugins: [solidPlugin()] },
+  // Svelte components compile to imperative DOM ops at build time too —
+  // same reasoning as Solid above, through `esbuild-svelte` instead of
+  // `esbuild-plugin-solid`.
+  { name: "svelte", entry: "examples/svelte/main.js", plugins: [sveltePlugin()] },
 ];
 for (const { name, entry, jsxImportSource, plugins } of targets) {
   await build({

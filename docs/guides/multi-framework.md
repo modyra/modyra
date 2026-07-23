@@ -142,7 +142,7 @@ stub, so any Node consumer (`node --test`, ts-node, a server-rendered
 handler) needs `--conditions=browser` or every signal silently goes
 inert. Headless field/select controllers come from `@modyra/widgets`.
 
-### Svelte (`@modyra/svelte` — shipped, reactivity + widgets only)
+### Svelte (`@modyra/svelte` — shipped)
 
 Svelte 5 runes (`$state`/`$derived`) are compiler macros meant to be
 transformed by the *consumer's* bundler, not something a library's own
@@ -153,8 +153,9 @@ a real Svelte `Readable` store (`svelte/store`'s `writable`/`derived`/`get`
 run as plain, uncompiled JavaScript — no compiler needed). One caveat:
 `toStore()`-backed state is microtask-batched, unlike Svelte's own
 synchronous `writable()` — await a tick after a write before asserting.
-No `examples/svelte` yet (needs the `@sveltejs/vite-plugin-svelte`
-toolchain decision) or headless-recipes doc section.
+`examples/svelte` compiles through `esbuild-svelte` — the same "keep the
+example pipeline on esbuild" call as Solid's `esbuild-plugin-solid`, no
+separate Vite toolchain needed.
 
 ### Lit (`@modyra/lit` — shipped)
 

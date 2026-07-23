@@ -72,6 +72,9 @@ importers:
       '@modyra/standard-schema':
         specifier: workspace:*
         version: link:packages/standard-schema
+      '@modyra/svelte':
+        specifier: workspace:*
+        version: link:packages/svelte
       '@modyra/vue':
         specifier: workspace:*
         version: link:packages/vue
@@ -102,6 +105,9 @@ importers:
       esbuild-plugin-solid:
         specifier: ^0.6.0
         version: 0.6.0(esbuild@0.28.1)(solid-js@1.9.14)
+      esbuild-svelte:
+        specifier: 0.9.5
+        version: 0.9.5(esbuild@0.28.1)(svelte@5.56.7(@typescript-eslint/types@8.64.0))
       eslint:
         specifier: ^10.3.0
         version: 10.7.0(jiti@2.7.0)
@@ -3904,6 +3910,13 @@ packages:
     peerDependencies:
       esbuild: ^0.28.1
       solid-js: '>= 1.0'
+
+  esbuild-svelte@0.9.5:
+    resolution: {integrity: sha512-16FUSj64aiS28CCxYeK3hVxCyU4PwGBSkeArawAtnWSV7l0Gc+frIOP88MNj8Q7tDAGyEJAHT6OpOvM24BG46w==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      esbuild: ^0.28.1
+      svelte: '>=4.2.1 <6'
 
   esbuild-wasm@0.28.1:
     resolution: {integrity: sha512-p/GD4E8oYRjg3kjdKrnMb0s4PzXgJF42e0MF4H0+ACyK/kIlFRp3e0fzOleIG+wBBm6MM3XQrbpe7soEA+vJIA==}
@@ -10880,6 +10893,12 @@ snapshots:
       solid-js: 1.9.14
     transitivePeerDependencies:
       - supports-color
+
+  esbuild-svelte@0.9.5(esbuild@0.28.1)(svelte@5.56.7(@typescript-eslint/types@8.64.0)):
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.31
+      esbuild: 0.28.1
+      svelte: 5.56.7(@typescript-eslint/types@8.64.0)
 
   esbuild-wasm@0.28.1: {}
 
