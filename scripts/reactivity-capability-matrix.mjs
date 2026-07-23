@@ -14,6 +14,7 @@ import { reactReactivity } from "../packages/react/dist/index.js";
 import { preactReactivity } from "../packages/preact/dist/index.js";
 import { svelteReactivity } from "../packages/svelte/dist/index.js";
 import { litReactivity } from "../packages/lit/dist/adapter.js";
+import { vueReactivity } from "../packages/vue/dist/index.js";
 
 const CAPABILITY_ORDER = [
   "effects",
@@ -89,15 +90,23 @@ rows.push({ name: "preact", capabilities: preactReactivity().capabilities, note:
 rows.push({ name: "svelte", capabilities: svelteReactivity().capabilities, note: "= vanilla (no signal primitive of its own); toStore() bridges to a Readable" });
 rows.push({ name: "lit", capabilities: litReactivity().capabilities, note: "= vanilla (no signal primitive of its own)" });
 
-// Vue and Solid have real native reactivity of their own and genuinely
-// don't declare capabilities/createScope yet (Phase P2/P3).
-for (const name of ["vue", "solid"]) {
-  rows.push({
-    name,
-    capabilities: undefined,
-    note: "real native reactivity, not yet migrated to declare capabilities (ROADMAP Phase P2/P3)",
-  });
-}
+// Vue's own effect() now runs on a real scheduler (Phase P2, mirrors
+// vanilla's Milestone 3 design) and createScope() wraps Vue's native
+// effectScope() -- real capabilities on real native reactivity, not a
+// re-export like the four above.
+rows.push({
+  name: "vue",
+  capabilities: vueReactivity().capabilities,
+  note: "native @vue/reactivity; effect() scheduler + createScope() via effectScope() (Phase P2, 2026-07-23)",
+});
+
+// Solid has real native reactivity of its own and genuinely doesn't
+// declare capabilities/createScope yet (Phase P3).
+rows.push({
+  name: "solid",
+  capabilities: undefined,
+  note: "real native reactivity, not yet migrated to declare capabilities (ROADMAP Phase P3)",
+});
 
 function cell(value) {
   if (value === undefined) return "—";
