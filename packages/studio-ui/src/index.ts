@@ -230,50 +230,131 @@ export function serverValidatorMarkup(project: MdyStudioProject, idx: StudioInde
 
 /** Draft state for the "add a form validator" mini-form — templates, not a general recursive expression tree
     (see .modyra/framework/STATUS.md P5 batch 2 note: and/or/not composition is a deferred gap). */
+/** One leaf condition: a field, a comparison op, and (if the op needs one) a literal. */
+interface ConditionDraft {
+  refNodeId: string;
+  op: StudioExpressionOp;
+  literal: string;
+}
+
 interface FormValidatorDraft {
   kind: "form" | "crossField";
   refNodeId: string;
   op: StudioExpressionOp;
   literal: string;
+  /** Used when `op` is "and"/"or" (both entries) or "not" (first entry only). */
+  subConditions: [ConditionDraft, ConditionDraft];
   errorTargetId: string;
   message: string;
 }
 
-const CONDITION_TEMPLATES: { op: StudioExpressionOp; label: string; needsLiteral: boolean; literalKind: "text" | "number" }[] = [
-  { op: "isEmpty", label: "is empty", needsLiteral: false, literalKind: "text" },
-  { op: "isNotEmpty", label: "is not empty", needsLiteral: false, literalKind: "text" },
-  { op: "equals", label: "equals", needsLiteral: true, literalKind: "text" },
-  { op: "notEquals", label: "does not equal", needsLiteral: true, literalKind: "text" },
-  { op: "greaterThan", label: "is greater than", needsLiteral: true, literalKind: "number" },
-  { op: "lessThan", label: "is less than", needsLiteral: true, literalKind: "number" },
-  { op: "matches", label: "matches pattern", needsLiteral: true, literalKind: "text" },
-  { op: "lengthAtLeast", label: "has length at least", needsLiteral: true, literalKind: "number" },
-  { op: "lengthAtMost", label: "has length at most", needsLiteral: true, literalKind: "number" },
+/** `composite`: 0 = leaf (single field+op+literal), 1 = unary ("not" wraps one sub-condition),
+    2 = binary ("and"/"or" combine two). This is the P5 gap this batch closes — and/or/not
+    composition, one level deep (a sub-condition is always a leaf, never itself composite;
+    a fully general recursive tree editor is a further-out gap, see STATUS.md). */
+interface ConditionTemplate {
+  op: StudioExpressionOp;
+  label: string;
+  needsLiteral: boolean;
+  literalKind: "text" | "number";
+  composite: 0 | 1 | 2;
+}
+
+const CONDITION_TEMPLATES: ConditionTemplate[] = [
+  { op: "isEmpty", label: "is empty", needsLiteral: false, literalKind: "text", composite: 0 },
+  { op: "isNotEmpty", label: "is not empty", needsLiteral: false, literalKind: "text", composite: 0 },
+  { op: "equals", label: "equals", needsLiteral: true, literalKind: "text", composite: 0 },
+  { op: "notEquals", label: "does not equal", needsLiteral: true, literalKind: "text", composite: 0 },
+  { op: "greaterThan", label: "is greater than", needsLiteral: true, literalKind: "number", composite: 0 },
+  { op: "lessThan", label: "is less than", needsLiteral: true, literalKind: "number", composite: 0 },
+  { op: "matches", label: "matches pattern", needsLiteral: true, literalKind: "text", composite: 0 },
+  { op: "lengthAtLeast", label: "has length at least", needsLiteral: true, literalKind: "number", composite: 0 },
+  { op: "lengthAtMost", label: "has length at most", needsLiteral: true, literalKind: "number", composite: 0 },
+  { op: "and", label: "All of (AND)", needsLiteral: false, literalKind: "text", composite: 2 },
+  { op: "or", label: "Any of (OR)", needsLiteral: false, literalKind: "text", composite: 2 },
+  { op: "not", label: "Not (negate)", needsLiteral: false, literalKind: "text", composite: 1 },
 ];
+const LEAF_CONDITION_TEMPLATES = CONDITION_TEMPLATES.filter((t) => t.composite === 0);
+
+function buildLeafExpression(sub: ConditionDraft): StudioExpression {
+  const template = LEAF_CONDITION_TEMPLATES.find((t) => t.op === sub.op)!;
+  const ref = { nodeId: sub.refNodeId };
+  const literalValue: string | number = template.literalKind === "number" ? Number(sub.literal || "0") : sub.literal;
+  return template.needsLiteral ? { op: sub.op, operands: [ref, literalValue] } : { op: sub.op, operand: ref };
+}
 
 function buildFormValidatorFromDraft(draft: FormValidatorDraft): StudioFormValidator {
   const template = CONDITION_TEMPLATES.find((t) => t.op === draft.op)!;
-  const ref = { nodeId: draft.refNodeId };
-  const literalValue: string | number = template.literalKind === "number" ? Number(draft.literal || "0") : draft.literal;
-  const condition: StudioExpression = template.needsLiteral
-    ? { op: draft.op, operands: [ref, literalValue] }
-    : { op: draft.op, operand: ref };
+  let condition: StudioExpression;
+  let dependencyIds: string[];
+
+  if (template.composite === 2) {
+    const [a, b] = draft.subConditions;
+    condition = { op: draft.op, operands: [buildLeafExpression(a), buildLeafExpression(b)] };
+    dependencyIds = [a.refNodeId, b.refNodeId];
+  } else if (template.composite === 1) {
+    const [a] = draft.subConditions;
+    condition = { op: draft.op, operand: buildLeafExpression(a) };
+    dependencyIds = [a.refNodeId];
+  } else {
+    condition = buildLeafExpression({ refNodeId: draft.refNodeId, op: draft.op, literal: draft.literal });
+    dependencyIds = [draft.refNodeId];
+  }
+
   return {
     id: createId("val"),
     kind: draft.kind,
-    dependencies: [{ nodeId: draft.refNodeId }],
+    dependencies: [...new Set(dependencyIds)].map((nodeId) => ({ nodeId })),
     condition,
     message: draft.message || "Invalid value",
     errorTarget: draft.errorTargetId ? { nodeId: draft.errorTargetId } : null,
   };
 }
 
+function subConditionMarkup(idx: StudioIndexes, sub: ConditionDraft, index: number): string {
+  const template = LEAF_CONDITION_TEMPLATES.find((t) => t.op === sub.op)!;
+  const opOptions = LEAF_CONDITION_TEMPLATES.map(
+    (t) => `<option value="${t.op}" ${t.op === sub.op ? "selected" : ""}>${escapeHtml(t.label)}</option>`,
+  ).join("");
+  return `
+    <div class="fv-subcondition">
+      <label>Field<select data-fv-sub-ref="${index}">${nodeRefOptionsMarkup(idx, sub.refNodeId)}</select></label>
+      <label>Condition<select data-fv-sub-op="${index}">${opOptions}</select></label>
+      ${template.needsLiteral ? `<label>Value<input data-fv-sub-literal="${index}" value="${escapeHtml(sub.literal)}"></label>` : ""}
+    </div>`;
+}
+
+/** P5 gap closed: submit-action stub UI, mirroring the server-validator implementation picker. */
+function submitActionMarkup(project: MdyStudioProject): string {
+  const submitRef = project.behaviors.submit?.implementationRef;
+  const implOptions = Object.values(project.implementations)
+    .filter((impl) => impl.role === "submitAction")
+    .map((impl) => `<option value="${impl.id}" ${submitRef === impl.id ? "selected" : ""}>${escapeHtml(impl.displayName)}</option>`)
+    .join("");
+  return `
+    <div class="submit-action">
+      <h3>Submit action</h3>
+      <label>Implementation
+        <select data-submit-impl>
+          <option value="">— none —</option>
+          ${implOptions}
+        </select>
+      </label>
+      <button data-new-submit-impl>+ New stub</button>
+      ${submitRef ? `<button data-remove-submit-action>Remove</button>` : ""}
+    </div>`;
+}
+
 /** P5b2: project-level "Form validators" section — always visible (not tied to node selection). */
 export function formValidatorsMarkup(project: MdyStudioProject, idx: StudioIndexes, draft: FormValidatorDraft): string {
   const rows = project.formValidators
     .map((v) => {
-      const depsPaths = v.dependencies.map((d) => idx.pathByNode.get(d.nodeId) ?? d.nodeId).join(", ") || "(none)";
-      const targetPath = v.errorTarget ? (idx.pathByNode.get(v.errorTarget.nodeId) ?? v.errorTarget.nodeId) : "(none)";
+      // Root's derived path is "" by design (P1) — `|| "(none)"` on the joined string would wrongly
+      // read a real root-only dependency as "no dependencies" (empty-string path -> falsy join result).
+      // Show "root" explicitly instead, and gate the empty-state on array length, not string truthiness.
+      const pathOrRoot = (nodeId: string) => idx.pathByNode.get(nodeId) || "root";
+      const depsPaths = v.dependencies.length ? v.dependencies.map((d) => pathOrRoot(d.nodeId)).join(", ") : "(none)";
+      const targetPath = v.errorTarget ? pathOrRoot(v.errorTarget.nodeId) : "(none)";
       return `
         <li class="form-validator-row">
           <div class="fv-summary">
@@ -292,14 +373,21 @@ export function formValidatorsMarkup(project: MdyStudioProject, idx: StudioIndex
   ).join("");
   const targetOptions = `<option value="">— none —</option>${nodeRefOptionsMarkup(idx, draft.errorTargetId)}`;
 
+  const conditionFields =
+    template.composite > 0
+      ? Array.from({ length: template.composite }, (_, i) => subConditionMarkup(idx, draft.subConditions[i]!, i)).join("")
+      : `
+        <label>Field<select data-fv-ref>${nodeRefOptionsMarkup(idx, draft.refNodeId)}</select></label>
+        ${template.needsLiteral ? `<label>Value<input data-fv-literal value="${escapeHtml(draft.literal)}"></label>` : ""}`;
+
   return `
     <div class="form-validators">
+      ${submitActionMarkup(project)}
       <p class="tab-hint">Rules that apply to the whole form, not a single field — e.g. "at least one item", cross-field checks.</p>
       <ul class="form-validator-list">${rows}</ul>
       <div class="fv-draft">
-        <label>Field<select data-fv-ref>${nodeRefOptionsMarkup(idx, draft.refNodeId)}</select></label>
         <label>Condition<select data-fv-op>${opOptions}</select></label>
-        ${template.needsLiteral ? `<label>Value<input data-fv-literal value="${escapeHtml(draft.literal)}"></label>` : ""}
+        ${conditionFields}
         <label>Error target<select data-fv-target>${targetOptions}</select></label>
         <label>Message<input data-fv-message value="${escapeHtml(draft.message)}"></label>
         <button data-add-form-validator>+ Add form validator</button>
@@ -321,6 +409,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     refNodeId: project.schema.id,
     op: "isNotEmpty",
     literal: "",
+    subConditions: [
+      { refNodeId: project.schema.id, op: "isNotEmpty", literal: "" },
+      { refNodeId: project.schema.id, op: "isNotEmpty", literal: "" },
+    ],
     errorTargetId: "",
     message: "",
   };
@@ -837,6 +929,31 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     host.querySelector<HTMLInputElement>("[data-fv-literal]")?.addEventListener("change", (e) => {
       formValidatorDraft = { ...formValidatorDraft, literal: (e.target as HTMLInputElement).value };
     });
+    host.querySelectorAll<HTMLSelectElement>("[data-fv-sub-ref]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const index = Number(el.dataset.fvSubRef) as 0 | 1;
+        const subConditions: [ConditionDraft, ConditionDraft] = [...formValidatorDraft.subConditions];
+        subConditions[index] = { ...subConditions[index], refNodeId: el.value };
+        formValidatorDraft = { ...formValidatorDraft, subConditions };
+      }),
+    );
+    host.querySelectorAll<HTMLSelectElement>("[data-fv-sub-op]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const index = Number(el.dataset.fvSubOp) as 0 | 1;
+        const subConditions: [ConditionDraft, ConditionDraft] = [...formValidatorDraft.subConditions];
+        subConditions[index] = { ...subConditions[index], op: el.value as StudioExpressionOp };
+        formValidatorDraft = { ...formValidatorDraft, subConditions };
+        render();
+      }),
+    );
+    host.querySelectorAll<HTMLInputElement>("[data-fv-sub-literal]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const index = Number(el.dataset.fvSubLiteral) as 0 | 1;
+        const subConditions: [ConditionDraft, ConditionDraft] = [...formValidatorDraft.subConditions];
+        subConditions[index] = { ...subConditions[index], literal: el.value };
+        formValidatorDraft = { ...formValidatorDraft, subConditions };
+      }),
+    );
     host.querySelector<HTMLSelectElement>("[data-fv-target]")?.addEventListener("change", (e) => {
       formValidatorDraft = { ...formValidatorDraft, errorTargetId: (e.target as HTMLSelectElement).value };
     });
@@ -855,6 +972,20 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
         commit(createUpdateFormValidatorCommand(el.dataset.formValidatorMessage!, { message: el.value })),
       ),
     );
+
+    host.querySelector<HTMLSelectElement>("[data-submit-impl]")?.addEventListener("change", (e) => {
+      const value = (e.target as HTMLSelectElement).value;
+      commit(createUpdateBehaviorCommand({ submit: value ? { implementationRef: value } : undefined }));
+    });
+    host.querySelector<HTMLElement>("[data-new-submit-impl]")?.addEventListener("click", () => {
+      const id = createId("impl");
+      const ref = { id, role: "submitAction" as const, displayName: `submitForm${id.slice(-5)}`, mode: "stub" as const };
+      commit(createAddImplementationCommand(ref));
+      commit(createUpdateBehaviorCommand({ submit: { implementationRef: ref.id } }));
+    });
+    host.querySelector<HTMLElement>("[data-remove-submit-action]")?.addEventListener("click", () => {
+      commit(createUpdateBehaviorCommand({ submit: undefined }));
+    });
 
     host.querySelectorAll<HTMLElement>("[data-node]").forEach((el) =>
       el.addEventListener("keydown", (e) => keyboard(e, el.dataset.node!)),

@@ -115,6 +115,11 @@ test("P5 gate: checkout's real items-length form validator renders in the Form v
   assert.match(markup, /Add at least one item to the order/);
   assert.match(markup, /depends on: items/);
   assert.match(markup, /error target: items/);
+
+  // P5 gap closed: checkout's real submit action (impl_create_order) renders, selected.
+  assert.match(markup, /Submit action/);
+  assert.match(markup, new RegExp(`value="impl_create_order"\\s+selected`));
+  assert.match(markup, /createOrder/);
 });
 
 test("P6: the Diagnostics tab badge reflects checkout's real 2 warnings (form + server validator, both unmappable), 0 errors", () => {
