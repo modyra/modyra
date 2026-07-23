@@ -114,8 +114,8 @@ export function createCheckoutProject() {
         kind: "form",
         dependencies: [{ nodeId: "nd_items" }],
         condition: {
-          op: "greaterThan",
-          operands: [{ op: "lengthAtLeast", operand: { nodeId: "nd_items" } }, 0],
+          op: "lengthAtLeast",
+          operands: [{ nodeId: "nd_items" }, 1],
         },
         message: "Add at least one item to the order",
         errorTarget: { nodeId: "nd_items" },
