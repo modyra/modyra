@@ -1,0 +1,442 @@
+---
+// Standalone marketing splash page — deliberately outside the Starlight
+// content collection (docs/**/*.md → site/src/content/docs/, regenerated
+// by scripts/sync-docs-site.mjs). This page is hand-maintained, like
+// custom.css, not synced from docs/. Numbers sourced from
+// docs/guides/comparison-form-libraries.md — keep in sync manually if
+// that doc's measurements change.
+import '../styles/custom.css';
+
+// BASE_URL isn't guaranteed a trailing slash (it wasn't, here) — normalize
+// the same way astro.config.mjs's own `based()` helper does, so a link
+// never silently concatenates into "/modyraguides/...".
+const based = (path: string) =>
+  `${import.meta.env.BASE_URL.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modyra — the measured pitch</title>
+    <meta
+      name="description"
+      content="Modyra's bundle size, feature matrix and framework breadth, measured against react-hook-form, Formik, TanStack Form, final-form and vee-validate."
+    />
+  </head>
+  <body>
+    <section class="hero">
+      <p class="eyebrow">Modyra · form engine for TypeScript</p>
+      <h1>
+        Every form library makes<br /><span class="gradient-text">you choose.</span
+        ><br />We measured the choice away.
+      </h1>
+      <p class="lede">
+        Typed forms, arrays, async validation, drafts, undo/redo, injection
+        prevention, one schema for client and server — in the smallest
+        realistic bundle of any library we measured, across seven frameworks.
+      </p>
+      <div class="hero-install">
+        <span class="prompt">$</span> npm install @modyra/core @modyra/react
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="num tabular gradient-text">#1</div>
+          <div class="label">realistic bundle size</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num tabular">7</div>
+          <div class="label">framework adapters</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num tabular">0</div>
+          <div class="label">runtime dependencies</div>
+        </div>
+      </div>
+      <div class="page-num">01 — MODYRA</div>
+    </section>
+
+    <section>
+      <p class="eyebrow">The bundle that matters</p>
+      <h2>What a real form actually costs you</h2>
+      <p class="lede">
+        Not the whole-package worst case — the exports a typed form with
+        array fields and validation actually imports, minified and gzipped,
+        measured with both esbuild and rollup.
+      </p>
+      <div class="chart">
+        <div class="bar-row is-modyra">
+          <span class="name">Modyra</span>
+          <div class="bar-track"><div class="bar-fill" style="width: 96%"></div></div>
+          <span class="value tabular">10.6 KB</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">final-form stack</span>
+          <div class="bar-track"><div class="bar-fill" style="width: 100%"></div></div>
+          <span class="value tabular">11.0 KB</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">react-hook-form</span>
+          <div class="bar-track"><div class="bar-fill" style="width: 114%"></div></div>
+          <span class="value tabular">12.5 KB</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">vee-validate</span>
+          <div class="bar-track"><div class="bar-fill" style="width: 115%"></div></div>
+          <span class="value tabular">12.7 KB</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">Formik</span>
+          <div class="bar-track"><div class="bar-fill" style="width: 125%"></div></div>
+          <span class="value tabular">13.7 KB</span>
+        </div>
+        <div class="bar-row">
+          <span class="name">TanStack Form</span>
+          <div class="bar-track"><div class="bar-fill" style="width: 157%"></div></div>
+          <span class="value tabular">17.3 KB</span>
+        </div>
+      </div>
+      <p class="chart-caption">
+        esbuild gzip, measured 2026-07-21 against the published packages —
+        <a href={based('guides/comparison-form-libraries/')}
+          >the full methodology</a
+        > has the rollup numbers, exact versions and per-package breakdown. And
+        Modyra's 10.6 KB already includes drafts, undo/redo and injection
+        prevention — none of the others on this chart ship any of the three.
+      </p>
+      <div class="page-num">02 — BUNDLE</div>
+    </section>
+
+    <section>
+      <p class="eyebrow">One engine, unique by default</p>
+      <h2>The features you'd otherwise reach for a second library to get</h2>
+      <div class="feature-grid">
+        <div class="feature-cell">
+          <span class="badge">✓ built in</span>
+          <div class="name">Draft autosave</div>
+          <div class="desc">
+            Debounced localStorage persistence, restored on load, cleared on a
+            clean submit. Exclude sensitive fields by name.
+          </div>
+        </div>
+        <div class="feature-cell">
+          <span class="badge">✓ built in</span>
+          <div class="name">Undo / redo</div>
+          <div class="desc">
+            Real history, debounced so a burst of keystrokes is one step.
+            <code class="mono">form.mutate()</code> coalesces programmatic bursts
+            too.
+          </div>
+        </div>
+        <div class="feature-cell">
+          <span class="badge">✓ built in</span>
+          <div class="name">Injection prevention</div>
+          <div class="desc">
+            Sanitization at the engine's write choke point, length caps,
+            structural checks on drafts and server payloads — on by default.
+          </div>
+        </div>
+        <div class="feature-cell">
+          <span class="badge">✓ built in</span>
+          <div class="name">serverValidate()</div>
+          <div class="desc">
+            One schema for the client and a forged-payload-proof server check —
+            same error shape either side.
+          </div>
+        </div>
+        <div class="feature-cell">
+          <span class="badge">✓ built in</span>
+          <div class="name">Typed field arrays</div>
+          <div class="desc">
+            Repeatable rows with a compile error on a typo'd row path — not a
+            stringly-keyed escape hatch.
+          </div>
+        </div>
+        <div class="feature-cell">
+          <span class="badge">✓ built in</span>
+          <div class="name">Cancellable async validation</div>
+          <div class="desc">
+            Debounce, timeout and AbortSignal wired through by default —
+            last-wins, no stale server replies land on a field.
+          </div>
+        </div>
+      </div>
+      <div class="page-num">03 — FEATURES</div>
+    </section>
+
+    <section>
+      <p class="eyebrow">Bring your framework</p>
+      <h2>One engine. Seven native bindings.</h2>
+      <p class="lede">
+        Angular gets real signals. Solid gets real signals. Vue gets real
+        reactivity. Everyone else gets <code class="mono">vanillaReactivity()</code>
+        and a proper external-store bridge — never a second, competing
+        reactive graph bolted onto the framework's own.
+      </p>
+      <div class="fw-row">
+        <span class="fw-chip is-full">Angular</span>
+        <span class="fw-chip is-full">React</span>
+        <span class="fw-chip is-full">Vue</span>
+        <span class="fw-chip is-full">Lit</span>
+        <span class="fw-chip is-full">Solid</span>
+        <span class="fw-chip is-full">Preact</span>
+        <span class="fw-chip">Svelte — reactivity + widgets</span>
+      </div>
+      <div class="page-num">04 — FRAMEWORKS</div>
+    </section>
+
+    <section>
+      <p class="eyebrow">Where we lose</p>
+      <h2>The honest line, because we said we would draw it</h2>
+      <p class="lede">
+        We spent this cycle hardening the reactivity contract every adapter is
+        tested against instead of defending a leaderboard number — and we're
+        not hiding what that cost.
+      </p>
+      <div class="callout">
+        <p class="eyebrow">Whole-entry bundle regressed</p>
+        <p>
+          Importing the <strong>entire</strong> package (not what a real consumer's
+          bundler keeps) grew from 10.7 KB to 14.1 KB gzip after this cycle's
+          reactivity work — real ownership scopes, typed errors and a hardened
+          effect scheduler, not dead code. It cost us the #2 spot on that
+          specific measurement.
+        </p>
+        <p>
+          <strong
+            >The realistic surface — what you actually ship — only moved 9.4 →
+            10.6 KB</strong
+          >, and still beats every library we measured. Two of the four bugs
+          this hardening pass caught were already live in shipped code: a
+          cross-runtime observation bug in the React/Preact stores, and a
+          scheduler bug that could silently starve sibling effects. We'd
+          rather publish that trade than a quieter number.
+        </p>
+      </div>
+      <div class="page-num">05 — HONESTY</div>
+    </section>
+
+    <section>
+      <p class="eyebrow">Try it in one tab</p>
+      <h2>No install. Real published packages.</h2>
+      <p class="lede">
+        Every framework starter below runs on <code class="mono"
+          >@modyra/*@0.4.0</code
+        > straight from npm — not a mocked demo.
+      </p>
+      <div class="link-row">
+        <a href="https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz">Angular →</a>
+        <a href="https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-react">React →</a>
+        <a href="https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-vue">Vue →</a>
+        <a href="https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-lit">Lit →</a>
+        <a href="https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-solid">Solid →</a>
+        <a href="https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-preact">Preact →</a>
+      </div>
+      <div class="link-row" style="margin-top: 1rem;">
+        <a href="https://github.com/modyra/modyra">GitHub →</a>
+        <a href={based('guides/comparison-form-libraries/')}
+          >Full measurement methodology →</a
+        >
+        <a href={based('')}>Back to docs →</a>
+      </div>
+      <div class="page-num">06 — TRY IT</div>
+    </section>
+  </body>
+</html>
+
+<style>
+  :root {
+    --bg: var(--mdy-night);
+    --bg-card: #1c1e30;
+    --fg: var(--mdy-cloud);
+    --fg-muted: var(--mdy-slate);
+    --border: #2c2f47;
+    --accent-strong: #c8c3ff;
+    --good: #4ade80;
+    --warn: var(--mdy-coral);
+    --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: var(--mdy-cloud);
+      --bg-card: #ffffff;
+      --fg: var(--mdy-night);
+      --fg-muted: #52577a;
+      --border: #e1e4ef;
+      --accent-strong: #4a3fd6;
+      --good: #16a34a;
+      --warn: #d1465a;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: var(--mdy-night); --bg-card: #1c1e30; --fg: var(--mdy-cloud);
+    --fg-muted: var(--mdy-slate); --border: #2c2f47; --accent-strong: #c8c3ff;
+    --good: #4ade80; --warn: var(--mdy-coral);
+  }
+  :root[data-theme='light'] {
+    --bg: var(--mdy-cloud); --bg-card: #ffffff; --fg: var(--mdy-night);
+    --fg-muted: #52577a; --border: #e1e4ef; --accent-strong: #4a3fd6;
+    --good: #16a34a; --warn: #d1465a;
+  }
+
+  html, body {
+    margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+    font-family: 'Satoshi', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--mdy-indigo); color: white; }
+
+  section {
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(2rem, 6vw, 6rem) clamp(1.5rem, 8vw, 8rem);
+    position: relative;
+    border-bottom: 1px solid var(--border);
+    box-sizing: border-box;
+  }
+  section:last-of-type { border-bottom: none; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    margin: 0 0 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 1.5rem; height: 2px;
+    background: var(--mdy-gradient-brand);
+    display: inline-block;
+  }
+
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  h1 {
+    font-weight: 900;
+    font-size: clamp(2.6rem, 7vw, 5.5rem);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    max-width: 18ch;
+  }
+  h2 {
+    font-weight: 700;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    max-width: 20ch;
+    margin-bottom: 1rem;
+  }
+  .lede {
+    font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+    line-height: 1.55;
+    color: var(--fg-muted);
+    max-width: 62ch;
+    margin: 1.5rem 0 0;
+  }
+  .gradient-text {
+    background: var(--mdy-gradient-brand);
+    background-clip: text; -webkit-background-clip: text;
+    color: transparent;
+  }
+  code, .mono { font-family: var(--mono); }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  .hero {
+    background:
+      radial-gradient(ellipse 80% 60% at 15% -10%, color-mix(in srgb, var(--mdy-indigo) 22%, transparent), transparent),
+      radial-gradient(ellipse 60% 50% at 90% 10%, color-mix(in srgb, var(--mdy-coral) 14%, transparent), transparent);
+  }
+  .hero-install {
+    margin-top: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0.6rem;
+    padding: 0.85rem 1.25rem;
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    width: fit-content;
+  }
+  .hero-install .prompt { color: var(--fg-muted); }
+  .hero-stats {
+    display: flex;
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    margin-top: 3rem;
+    flex-wrap: wrap;
+  }
+  .hero-stat .num { font-weight: 900; font-size: clamp(1.8rem, 3.2vw, 2.6rem); line-height: 1; }
+  .hero-stat .label { font-size: 0.85rem; color: var(--fg-muted); margin-top: 0.4rem; }
+
+  .chart { margin-top: 2.5rem; display: flex; flex-direction: column; gap: 0.9rem; max-width: 46rem; }
+  .bar-row { display: grid; grid-template-columns: 11rem 1fr 5.5rem; align-items: center; gap: 1rem; }
+  .bar-row .name { font-size: 0.95rem; color: var(--fg-muted); }
+  .bar-row.is-modyra .name { color: var(--fg); font-weight: 700; }
+  .bar-track { height: 1.6rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.4rem; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 0.35rem; background: var(--border); }
+  .bar-row.is-modyra .bar-fill { background: var(--mdy-gradient-brand); }
+  .bar-row .value { font-family: var(--mono); font-size: 0.95rem; text-align: right; color: var(--fg-muted); }
+  .bar-row.is-modyra .value { color: var(--fg); font-weight: 700; }
+  .chart-caption { margin-top: 1rem; font-size: 0.85rem; color: var(--fg-muted); max-width: 46rem; }
+  .chart-caption a { color: var(--fg-muted); }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    margin-top: 2.5rem;
+    max-width: 64rem;
+  }
+  .feature-cell { background: var(--bg-card); padding: 1.5rem; }
+  .feature-cell .name { font-weight: 700; font-size: 1.05rem; margin-bottom: 0.5rem; }
+  .feature-cell .desc { font-size: 0.9rem; color: var(--fg-muted); line-height: 1.5; }
+  .feature-cell .badge {
+    display: inline-block; font-family: var(--mono); font-size: 0.7rem;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--good); margin-bottom: 0.6rem;
+  }
+
+  .fw-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 2.5rem; }
+  .fw-chip {
+    font-family: var(--mono); font-size: 0.85rem; padding: 0.55rem 1rem;
+    border: 1px solid var(--border); border-radius: 999px; color: var(--fg-muted); background: var(--bg-card);
+  }
+  .fw-chip.is-full { color: var(--fg); border-color: var(--mdy-indigo); }
+
+  .callout {
+    margin-top: 2.5rem; max-width: 52rem; border-left: 3px solid var(--warn);
+    background: var(--bg-card); padding: 1.5rem 1.75rem; border-radius: 0 0.6rem 0.6rem 0;
+  }
+  .callout .eyebrow { color: var(--warn); }
+  .callout .eyebrow::before { background: var(--warn); }
+  .callout p { margin: 0.6rem 0 0; color: var(--fg-muted); line-height: 1.6; font-size: 0.98rem; }
+  .callout p strong { color: var(--fg); }
+
+  .link-row { display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 3rem; }
+  .link-row a {
+    color: var(--fg); text-decoration: none; font-weight: 500;
+    border-bottom: 1px solid var(--border); padding-bottom: 0.2rem; transition: border-color 0.15s ease;
+  }
+  .link-row a:hover, .link-row a:focus-visible { border-color: var(--mdy-indigo); }
+  .link-row a:focus-visible { outline: 2px solid var(--mdy-indigo); outline-offset: 4px; }
+
+  .page-num {
+    position: absolute; bottom: 1.5rem; right: clamp(1.5rem, 8vw, 8rem);
+    font-family: var(--mono); font-size: 0.75rem; color: var(--fg-muted); letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 640px) {
+    .bar-row { grid-template-columns: 6.5rem 1fr 4rem; gap: 0.6rem; }
+  }
+</style>
