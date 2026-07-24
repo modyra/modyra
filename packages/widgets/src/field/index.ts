@@ -56,3 +56,23 @@ export type {
   MdyOptionFieldState,
   MdyOptionFieldVariant,
 } from "./option-field-types.js";
+
+export { createMultiselectFieldController } from "./multiselect-field-controller.js";
+export type { MdyMultiselectFieldController } from "./multiselect-field-controller.js";
+
+export {
+  multiselectFieldPartIds,
+  multiselectFieldRootClasses,
+  projectMultiselectFieldA11y,
+} from "./multiselect-field-a11y.js";
+
+export type {
+  MdyMultiselectFieldA11yOptions,
+} from "./multiselect-field-a11y.js";
+
+export type {
+  MdyMultiselectFieldControllerOptions,
+  MdyMultiselectFieldIntent,
+  MdyMultiselectFieldMode,
+  MdyMultiselectFieldState,
+} from "./multiselect-field-types.js";

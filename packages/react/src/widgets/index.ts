@@ -27,3 +27,9 @@ export type {
   MdyReactOptionFieldApi,
   UseMdyOptionFieldOptions,
 } from "./option-field.js";
+
+export { useMdyMultiselectField } from "./multiselect-field.js";
+export type {
+  MdyReactMultiselectFieldApi,
+  UseMdyMultiselectFieldOptions,
+} from "./multiselect-field.js";

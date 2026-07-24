@@ -170,7 +170,8 @@ onSubmitted(event: { value: Record<string, unknown> }): void {
   `buildDynamicFieldValidators()` Angular's component calls — same value/
   validation/error semantics, but you render the JSX yourself (pair it
   with `useMdyField`/`useMdySelect`/`useMdyBooleanField`/`useMdyOptionField`
-  (radio/segmented) from `@modyra/react`, or your own controls). On Vue/Lit, the contract and `parseDynamicFields()` work the
+  (radio/segmented)/`useMdyMultiselectField` from `@modyra/react`, or your
+  own controls). On Vue/Lit, the contract and `parseDynamicFields()` work the
   same — map each `MdyDynamicField.kind` to your own controls over the
   headless handles (see [Usage modes](usage-modes.md)). Neither renderer
   applies `layout`/`rules` yet — both are flat-fields-only today.
