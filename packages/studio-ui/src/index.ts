@@ -11,6 +11,7 @@ import {
   createId,
   getFieldValidatorRegistryEntry,
   isDuplicateKindAllowed,
+  type ArrayNode,
   type FieldNode,
   type GroupNode,
   type MdyStudioProject,
@@ -904,6 +905,55 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       return select;
     };
 
+    const arrays = Array.from(idx.nodeById.values())
+      .filter((node): node is ArrayNode => node.node === "array")
+      .sort((a, b) => (idx.pathByNode.get(a.id)?.split(".").length ?? 0) - (idx.pathByNode.get(b.id)?.split(".").length ?? 0));
+
+    for (const array of arrays) {
+      const arrayPath = idx.pathByNode.get(array.id);
+      if (!arrayPath) continue;
+
+      const section = document.createElement("section");
+      section.className = "plain-canvas-array";
+      section.dataset.plainArray = array.id;
+      section.dataset.arrayPath = arrayPath;
+      section.dataset.node = array.id;
+      section.classList.toggle("selected", array.id === selected);
+      section.setAttribute("aria-label", `${array.name}, array field`);
+
+      const header = document.createElement("header");
+      header.className = "plain-canvas-array-header";
+      const select = document.createElement("button");
+      select.type = "button";
+      select.className = "plain-canvas-array-select";
+      select.dataset.plainSelect = array.id;
+      select.setAttribute("aria-pressed", String(array.id === selected));
+      select.setAttribute("aria-label", `Select array ${array.name} in Studio`);
+      select.textContent = array.label || array.name;
+      const count = document.createElement("span");
+      count.className = "plain-canvas-array-count";
+      count.textContent = `${array.initialRows.length} initial row${array.initialRows.length === 1 ? "" : "s"}`;
+      header.append(select, count);
+
+      const body = document.createElement("div");
+      body.className = "plain-canvas-array-body";
+      if (array.initialRows.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "plain-canvas-array-empty";
+        empty.textContent = "No initial rows";
+        body.append(empty);
+      } else {
+        array.initialRows.forEach((_row, index) => {
+          const row = document.createElement("div");
+          row.className = "plain-canvas-array-row";
+          row.textContent = `Initial row ${index + 1}`;
+          body.append(row);
+        });
+      }
+      section.append(header, body);
+      plainHost.append(section);
+    }
+
     const groups = Array.from(idx.nodeById.values())
       .filter((node): node is GroupNode => node.node === "group" && node.id !== project.schema.id)
       .sort((a, b) => (idx.pathByNode.get(a.id)?.split(".").length ?? 0) - (idx.pathByNode.get(b.id)?.split(".").length ?? 0));
@@ -1246,11 +1296,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         instrumentPlainCanvas(plainHost, fields, idx);
 
         const hasVisualNodes = plainHost.querySelector(
-          ".plain-canvas-field, .plain-canvas-group",
+          ".plain-canvas-field, .plain-canvas-group, .plain-canvas-array",
         );
 
         if (!hasVisualNodes) {
-          plainHost.innerHTML = `<div class="plain-canvas-unavailable" role="status">The Contract has no renderable fields or groups yet.</div>`;
+          plainHost.innerHTML = `<div class="plain-canvas-unavailable" role="status">The Contract has no renderable fields, groups, or arrays yet.</div>`;
         }
 
         canvasController.elements.refresh(canvas ?? plainHost);
