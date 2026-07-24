@@ -622,7 +622,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   let diagnosticNodeIds = new Set<string>();
   const history = new CommandHistory();
 
-  function commit(command: Command, focusTarget: string = selected): void {
+  function commit(command: Command, focusTarget: string = selected, focusOverride?: string): void {
     try {
       project = history.apply(project, command);
       status = command.description;
@@ -633,7 +633,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         : String(error);
     }
     // Restore focus regardless of success/failure — a rejected command must not strand the keyboard user.
-    focusSelector = `[data-node="${focusTarget}"]`;
+    focusSelector = focusOverride ?? `[data-node="${focusTarget}"]`;
     render();
   }
 
@@ -859,6 +859,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     const nodeIdByPath = new Map(Array.from(idx.pathByNode, ([nodeId, path]) => [path, nodeId]));
     const fieldRoots = Array.from(plainHost.children).filter((element): element is HTMLElement => element instanceof HTMLElement);
 
+    const insertionPoint = (placement: "before" | "after", nodeId: string): HTMLButtonElement => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "plain-canvas-insert";
+      button.dataset.plainInsert = placement;
+      button.dataset.plainInsertTarget = nodeId;
+      button.setAttribute("aria-label", `Insert text field ${placement} this field`);
+      button.textContent = "+ Add field";
+      return button;
+    };
+
     fields.forEach((field, index) => {
       const root = fieldRoots[index];
       const nodeId = nodeIdByPath.get(field.name);
@@ -894,6 +905,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
       actions.append(duplicateButton, deleteButton);
       root.prepend(selectButton, actions);
+      root.before(insertionPoint("before", nodeId));
+      if (index === fields.length - 1) root.after(insertionPoint("after", nodeId));
     });
   }
 
@@ -1074,6 +1087,21 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         status = next === "form" ? "Live form canvas" : "Structure canvas";
         focusSelector = `[data-canvas-mode="${next}"]`;
         render();
+      }),
+    );
+
+    host.querySelectorAll<HTMLButtonElement>("[data-plain-insert]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const targetId = button.dataset.plainInsertTarget;
+        const placementKind = button.dataset.plainInsert;
+        if (!targetId || (placementKind !== "before" && placementKind !== "after")) return;
+        const created = createNodeFromTemplate("text");
+        selected = created.id;
+        commit(
+          createInsertCommand(created, { kind: placementKind, targetId }),
+          created.id,
+          `[data-plain-select="${created.id}"]`,
+        );
       }),
     );
 

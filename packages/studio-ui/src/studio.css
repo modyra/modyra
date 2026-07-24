@@ -427,6 +427,24 @@ body {
 .plain-canvas-actions [data-delete] {
   color: var(--mdy-coral);
 }
+.plain-canvas-insert {
+  display: block;
+  width: min(100%, 220px) !important;
+  margin: 4px auto;
+  padding: 4px 10px;
+  border: 1px dashed transparent;
+  background: transparent;
+  color: var(--mdy-text-muted);
+  font-size: 10px;
+  opacity: 0.35;
+}
+.plain-canvas-insert:hover,
+.plain-canvas-insert:focus-visible {
+  border-color: var(--mdy-indigo);
+  background: color-mix(in srgb, var(--mdy-indigo) 10%, transparent);
+  color: var(--mdy-text);
+  opacity: 1;
+}
 @media (prefers-reduced-motion: reduce) {
   .plain-canvas-actions {
     transition: none;
