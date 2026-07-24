@@ -33,6 +33,8 @@ packages/angular/dist/
 !.gitignore
 !.github/
 !.changeset/
+!sdk/java/modyra-contract/.mvn/
+!sdk/java/modyra-contract/.mvn/**
 
 # macOS system files
 .DS_Store
@@ -69,3 +71,6 @@ apps/*/playwright-report/
 
 # Rust
 sdk/rust/target
+
+# Java
+sdk/java/modyra-contract/target
