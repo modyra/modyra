@@ -1,42 +1,23 @@
 /**
- * Real behavioral tests (executes the shipped module, not a source-text
- * grep) — needs the CSS stub loader registered via `--import
- * ./test/support/register.mjs` (see package.json "test" script) since
- * Node has no native CSS loader and `dist/index.js` imports "./studio.css"
- * (correct for esbuild/Vite consumers).
+ * Real behavioral tests (executes the shipped module against a real jsdom
+ * DOM, not a source-text grep) — needs the CSS stub loader registered via
+ * `--import ./test/support/register.mjs` (see package.json "test" script)
+ * since Node has no native CSS loader and `dist/index.js` imports
+ * "./studio.css" (correct for esbuild/Vite consumers).
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { buildIndexes } from "../../studio-model/dist/index.js";
-import { mountStudio, serverValidatorMarkup, formValidatorsMarkup } from "../dist/index.js";
-import { createCheckoutProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";
+import { installDomGlobals, createHost } from "./support/dom-env.mjs";
 
-globalThis.confirm ??= () => true;
+installDomGlobals();
 
-function createFakeHost() {
-  return {
-    _html: "",
-    get innerHTML() {
-      return this._html;
-    },
-    set innerHTML(value) {
-      this._html = value;
-    },
-    querySelectorAll() {
-      return [];
-    },
-    querySelector() {
-      return null;
-    },
-    replaceChildren() {
-      this._html = "";
-    },
-  };
-}
+const { buildIndexes } = await import("../../studio-model/dist/index.js");
+const { mountStudio, serverValidatorMarkup, formValidatorsMarkup } = await import("../dist/index.js");
+const { createCheckoutProject } = await import("../../studio-model/test/fixtures/checkout.fixture.mjs");
 
 test("mounting a blank project renders the on-brand shell without throwing", () => {
-  const host = createFakeHost();
+  const host = createHost();
   const dispose = mountStudio(host);
 
   assert.match(host.innerHTML, /class="studio"/);
@@ -54,7 +35,7 @@ test("mounting a blank project renders the on-brand shell without throwing", () 
 });
 
 test("mounting the checkout fixture renders its real tree and node count", () => {
-  const host = createFakeHost();
+  const host = createHost();
   mountStudio(host, createCheckoutProject());
 
   assert.match(host.innerHTML, /<ul class="tree">/);
@@ -66,7 +47,7 @@ test("mounting the checkout fixture renders its real tree and node count", () =>
 });
 
 test("at-a-glance tree indicators reflect checkout's real validators (no need to open the inspector)", () => {
-  const host = createFakeHost();
+  const host = createHost();
   mountStudio(host, createCheckoutProject());
 
   function nodeMarkup(nodeId) {
@@ -123,7 +104,7 @@ test("P5 gate: checkout's real items-length form validator renders in the Form v
 });
 
 test("P6: the Diagnostics tab badge reflects checkout's real 2 warnings (form + server validator, both unmappable), 0 errors", () => {
-  const host = createFakeHost();
+  const host = createHost();
   mountStudio(host, createCheckoutProject());
 
   // Tab button badge is always rendered (not gated behind which tab is active).
@@ -138,7 +119,7 @@ test("P6: the Diagnostics tab badge reflects checkout's real 2 warnings (form + 
 });
 
 test("P6: a blank project is diagnostic-free (Diagnostics tab badge shows nothing)", () => {
-  const host = createFakeHost();
+  const host = createHost();
   mountStudio(host);
   assert.doesNotMatch(host.innerHTML, /data-inspector-tab="diagnostics"[^>]*>\s*Diagnostics\s*<span/);
 });
@@ -153,7 +134,7 @@ test("package has no actual React runtime dependency and source has no JSX (stud
 });
 
 test("Patch 4: shell exposes Structure and Live form canvas modes without mounting DOM in a fake host", () => {
-  const host = createFakeHost();
+  const host = createHost();
   mountStudio(host, createCheckoutProject());
 
   assert.match(host.innerHTML, /data-canvas-mode="structure" aria-pressed="true"/);
