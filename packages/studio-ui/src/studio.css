@@ -486,9 +486,12 @@ body {
 .plain-canvas-drop-inside.active {
   min-height: 30px;
 }
+.plain-canvas-drop-root {
+  min-height: 24px;
+  margin: 10px 0 18px;
+}
 .plain-canvas-drop-root.active {
   min-height: 38px;
-  margin-top: 10px;
 }
 .plain-canvas-drop-root.drag-over {
   min-height: 48px;
@@ -1139,3 +1142,6 @@ body {
     flex-direction: column;
   }
 }
+
+.plain-canvas-group-actions { display: inline-flex; gap: 4px; margin-left: 8px; align-items: center; }
+.plain-canvas-group-actions button, .plain-canvas-group-actions select { font: inherit; font-size: 0.75rem; }

@@ -936,7 +936,45 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       select.setAttribute("aria-pressed", String(group.id === selected));
       select.setAttribute("aria-label", `Select group ${group.name} in Studio`);
       select.textContent = group.label || group.name;
-      legend.append(select);
+
+      const controls = document.createElement("span");
+      controls.className = "plain-canvas-group-actions";
+      const siblings = idx.childrenByParent.get(idx.parentById.get(group.id) ?? "") ?? [];
+      const position = siblings.indexOf(group.id);
+      const moveButton = (label: string, kind: "before" | "after", targetId?: string): HTMLButtonElement => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.plainGroupMove = kind;
+        button.dataset.plainGroupNode = group.id;
+        button.dataset.plainGroupTarget = targetId ?? "";
+        button.disabled = !targetId;
+        button.setAttribute("aria-label", `${label} ${group.name}`);
+        button.textContent = label;
+        return button;
+      };
+      controls.append(
+        moveButton("Move up", "before", position > 0 ? siblings[position - 1] : undefined),
+        moveButton("Move down", "after", position >= 0 && position < siblings.length - 1 ? siblings[position + 1] : undefined),
+      );
+      if (idx.parentById.get(group.id) !== project.schema.id) {
+        const root = document.createElement("button");
+        root.type = "button";
+        root.dataset.plainGroupRoot = group.id;
+        root.setAttribute("aria-label", `Move ${group.name} to form root`);
+        root.textContent = "To root";
+        controls.append(root);
+      }
+      const into = document.createElement("select");
+      into.dataset.plainGroupInto = group.id;
+      into.setAttribute("aria-label", `Move ${group.name} into group`);
+      into.append(new Option("Move into…", ""));
+      for (const target of groups) {
+        const targetPath = idx.pathByNode.get(target.id) ?? "";
+        if (target.id === group.id || targetPath.startsWith(`${groupPath}.`)) continue;
+        into.append(new Option(target.label || target.name, target.id));
+      }
+      controls.append(into);
+      legend.append(select, controls);
 
       const body = document.createElement("div");
       body.className = "plain-canvas-group-body";
@@ -1215,6 +1253,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   }
 
   function bind(): void {
+    const idx = buildIndexes(project);
     host.querySelectorAll<HTMLButtonElement>("[data-canvas-mode]").forEach((button) =>
       button.addEventListener("click", () => {
         const next = button.dataset.canvasMode;
@@ -1239,6 +1278,34 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
           created.id,
           `[data-plain-select="${created.id}"]`,
         );
+      }),
+    );
+
+    host.querySelectorAll<HTMLButtonElement>("[data-plain-group-move]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainGroupNode;
+        const targetId = button.dataset.plainGroupTarget;
+        const kind = button.dataset.plainGroupMove;
+        if (!nodeId || !targetId || (kind !== "before" && kind !== "after")) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind, targetId }), nodeId, `[data-plain-select="${nodeId}"]`);
+      }),
+    );
+    host.querySelectorAll<HTMLButtonElement>("[data-plain-group-root]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainGroupRoot;
+        if (!nodeId) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind: "inside", parentId: project.schema.id, index: idx.childrenByParent.get(project.schema.id)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
+      }),
+    );
+    host.querySelectorAll<HTMLSelectElement>("[data-plain-group-into]").forEach((select) =>
+      select.addEventListener("change", () => {
+        const nodeId = select.dataset.plainGroupInto;
+        const parentId = select.value;
+        if (!nodeId || !parentId) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind: "inside", parentId, index: idx.childrenByParent.get(parentId)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
       }),
     );
 
