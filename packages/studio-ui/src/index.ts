@@ -859,6 +859,15 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     const nodeIdByPath = new Map(Array.from(idx.pathByNode, ([nodeId, path]) => [path, nodeId]));
     const fieldRoots = Array.from(plainHost.children).filter((element): element is HTMLElement => element instanceof HTMLElement);
 
+    const dropPoint = (placement: "before" | "after", nodeId: string): HTMLDivElement => {
+      const zone = document.createElement("div");
+      zone.className = "drop-zone plain-canvas-drop";
+      zone.dataset[placement] = nodeId;
+      zone.setAttribute("aria-hidden", "true");
+      zone.textContent = placement === "before" ? "Drop before" : "Drop after";
+      return zone;
+    };
+
     const insertionPoint = (placement: "before" | "after", nodeId: string): HTMLSelectElement => {
       const select = document.createElement("select");
       select.className = "plain-canvas-insert";
@@ -887,6 +896,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       if (!root || !nodeId) return;
       root.dataset.node = nodeId;
       root.dataset.fieldPath = field.name;
+      root.draggable = true;
+      root.setAttribute("aria-label", `${field.name}, draggable field`);
       root.classList.add("plain-canvas-field");
       root.classList.toggle("selected", nodeId === selected);
       root.classList.toggle("has-diagnostic", diagnosticNodeIds.has(nodeId));
@@ -934,8 +945,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
       actions.append(moveUpButton, moveDownButton, duplicateButton, deleteButton);
       root.prepend(selectButton, actions);
-      root.before(insertionPoint("before", nodeId));
-      if (index === fields.length - 1) root.after(insertionPoint("after", nodeId));
+      root.before(dropPoint("before", nodeId), insertionPoint("before", nodeId));
+      if (index === fields.length - 1) {
+        root.after(insertionPoint("after", nodeId), dropPoint("after", nodeId));
+      }
     });
   }
 
@@ -1163,14 +1176,32 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     );
 
     host.querySelectorAll<HTMLElement>("[draggable=true]").forEach((el) => {
-      el.addEventListener("dragstart", () => {
+      el.addEventListener("dragstart", (event) => {
         drag = el.dataset.template ? { template: el.dataset.template } : { nodeId: el.dataset.node! };
+        if (el.classList.contains("plain-canvas-field")) {
+          el.classList.add("dragging");
+          host.querySelectorAll<HTMLElement>(".plain-canvas-drop").forEach((zone) => zone.classList.add("active"));
+          event.dataTransfer?.setData("text/plain", el.dataset.node ?? "");
+          if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+        }
+      });
+      el.addEventListener("dragend", () => {
+        el.classList.remove("dragging");
+        host.querySelectorAll<HTMLElement>(".plain-canvas-drop").forEach((zone) => zone.classList.remove("active"));
+        drag = null;
       });
     });
 
     host.querySelectorAll<HTMLElement>(".drop-zone").forEach((el) => {
-      el.addEventListener("dragover", (e) => e.preventDefault());
-      el.addEventListener("drop", () => {
+      el.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+      });
+      el.addEventListener("dragenter", () => el.classList.add("drag-over"));
+      el.addEventListener("dragleave", () => el.classList.remove("drag-over"));
+      el.addEventListener("drop", (event) => {
+        event.preventDefault();
+        el.classList.remove("drag-over");
         if (el.dataset.before) drop({ kind: "before", targetId: el.dataset.before });
         else if (el.dataset.after) drop({ kind: "after", targetId: el.dataset.after });
         else drop({ kind: "inside", parentId: el.dataset.inside!, index: Number(el.dataset.index) });
