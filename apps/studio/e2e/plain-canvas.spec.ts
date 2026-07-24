@@ -206,3 +206,43 @@ test("live canvas renders groups and accepts palette fields inside them", async 
   await page.locator('[data-undo]').click();
   await expect(group.locator('.plain-canvas-field')).toHaveCount(1);
 });
+
+
+test("live canvas moves existing fields between a group and the form root", async ({ page }) => {
+  await page.locator('[data-template="group"]').click();
+  await page.locator('[data-name]').fill('shipping');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-name]').fill('city');
+  await page.locator('[data-name]').blur();
+  await page.keyboard.press(' ');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Enter');
+  await page.locator('[data-canvas-mode="form"]').click();
+
+  const group = page.locator('.plain-canvas-group');
+  const fields = page.locator('.plain-canvas-field');
+  await expect(group.locator('.plain-canvas-field')).toHaveCount(1);
+  await expect(fields).toHaveAttribute('data-field-path', 'shipping.city');
+
+  await fields.dragTo(page.locator('.plain-canvas-drop-root'));
+  await expect(group).toHaveCount(1);
+  await expect(group.locator('.plain-canvas-field')).toHaveCount(0);
+  await expect(group.locator('.plain-canvas-drop-inside')).toBeAttached();
+  await expect(fields).toHaveAttribute('data-field-path', 'city');
+  await expect(fields).toHaveClass(/selected/);
+  await expect(fields.locator('[data-plain-select]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+
+  await fields.dragTo(group.locator('.plain-canvas-drop-inside'));
+  await expect(group.locator('.plain-canvas-field')).toHaveCount(1);
+  await expect(fields).toHaveAttribute('data-field-path', 'shipping.city');
+
+  await page.locator('[data-undo]').click();
+  await expect(group.locator('.plain-canvas-field')).toHaveCount(0);
+  await expect(fields).toHaveAttribute('data-field-path', 'city');
+  await page.locator('[data-undo]').click();
+  await expect(group.locator('.plain-canvas-field')).toHaveCount(1);
+});

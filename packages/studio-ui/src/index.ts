@@ -911,8 +911,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     for (const group of groups) {
       const groupPath = idx.pathByNode.get(group.id);
       if (!groupPath) continue;
-      const descendants = fields.flatMap((field, index) => field.name.startsWith(`${groupPath}.`) ? [fieldRoots[index]] : []);
-      if (descendants.length === 0) continue;
+      const descendants = fields.flatMap((field, index) =>
+        field.name.startsWith(`${groupPath}.`) && fieldRoots[index]
+          ? [fieldRoots[index]!]
+          : [],
+      );
 
       const fieldset = document.createElement("fieldset");
       fieldset.className = "plain-canvas-group";
@@ -932,8 +935,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
       const body = document.createElement("div");
       body.className = "plain-canvas-group-body";
-      const first = descendants[0]!;
-      first.before(fieldset);
+
+      const first = descendants[0];
+      if (first) {
+        first.before(fieldset);
+      } else {
+        plainHost.append(fieldset);
+      }
+
       for (const element of descendants) body.append(element);
 
       const inside = document.createElement("div");
@@ -945,6 +954,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       body.append(inside);
       fieldset.append(legend, body);
     }
+
+    const rootDrop = document.createElement("div");
+    rootDrop.className = "drop-zone plain-canvas-drop plain-canvas-drop-root";
+    rootDrop.dataset.inside = project.schema.id;
+    rootDrop.dataset.index = String(idx.childrenByParent.get(project.schema.id)?.length ?? 0);
+    rootDrop.setAttribute("aria-hidden", "true");
+    rootDrop.textContent = "Drop at form root";
+    plainHost.append(rootDrop);
 
     fields.forEach((field, index) => {
       const root = fieldRoots[index];
