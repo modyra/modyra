@@ -459,10 +459,14 @@ test("live canvas renders empty arrays and selects them in the Inspector", async
   await expect(array.locator('.plain-canvas-array-count')).toHaveText('0 initial rows');
   await expect(array.locator('.plain-canvas-array-empty')).toHaveText('No initial rows');
 
-  await array.locator('[data-plain-select]').click();
+  const selectArray = array.getByRole('button', {
+    name: 'Select array items in Studio',
+  });
+
+  await selectArray.click();
   await expect(array).toHaveClass(/selected/);
   await expect(page.locator('[data-name]')).toHaveValue('items');
-  await expect(array.locator('[data-plain-select]')).toBeFocused();
+  await expect(selectArray).toBeFocused();
 });
 
 
@@ -498,4 +502,34 @@ test("live canvas array controls add and remove initial rows through history", a
   await page.locator('[data-undo]').click();
   await expect(array.locator('.plain-canvas-array-count')).toHaveText('0 initial rows');
   await expect(array.locator('.plain-canvas-array-empty')).toHaveText('No initial rows');
+});
+
+
+test("live canvas completes array authoring with row and container controls", async ({ page }) => {
+  await page.locator('[data-template="group"]').click();
+  await page.locator('[data-name]').fill('catalog'); await page.locator('[data-name]').blur();
+  const groupId = await page.locator('[data-node]').first().getAttribute('data-node');
+  await page.locator('[data-template="array"]').click();
+  await page.locator('[data-name]').fill('items'); await page.locator('[data-name]').blur();
+  await page.locator('[data-canvas-mode="form"]').click();
+  const array = page.locator('.plain-canvas-array');
+  await array.getByRole('button', { name: 'Add initial row to items' }).click();
+  await array.getByRole('button', { name: 'Add initial row to items' }).click();
+  const rows = array.locator('.plain-canvas-array-row');
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0).getByRole('button', { name: /Move up initial row 1/ })).toBeDisabled();
+  await rows.nth(1).getByRole('button', { name: /Move up initial row 2/ }).click();
+  await expect(rows.nth(0).getByRole('button', { name: /Move up initial row 1/ })).toBeDisabled();
+  await rows.nth(0).getByRole('button', { name: /Remove initial row 1/ }).click();
+  await expect(rows).toHaveCount(1);
+  await page.locator('[data-undo]').click();
+  await expect(rows).toHaveCount(2);
+  await array.getByRole('button', { name: 'Edit item schema for items' }).click();
+  await expect(page.locator('[data-name]')).toHaveValue(/item/);
+  await array.getByRole('combobox', { name: 'Move array items into group' }).selectOption(groupId!);
+  await expect(array).toHaveAttribute('data-array-path', 'catalog.items');
+  await array.getByRole('button', { name: 'Move array items to form root' }).click();
+  await expect(array).toHaveAttribute('data-array-path', 'items');
+  await page.locator('[data-undo]').click();
+  await expect(array).toHaveAttribute('data-array-path', 'catalog.items');
 });

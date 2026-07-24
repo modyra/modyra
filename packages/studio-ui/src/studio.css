@@ -1210,3 +1210,13 @@ body {
 
 .plain-canvas-group-actions { display: inline-flex; gap: 4px; margin-left: 8px; align-items: center; }
 .plain-canvas-group-actions button, .plain-canvas-group-actions select { font: inherit; font-size: 0.75rem; }
+
+.plain-canvas-array[draggable="true"] { cursor: grab; }
+.plain-canvas-array.dragging { cursor: grabbing; opacity: 0.55; }
+.plain-canvas-array-actions { flex-wrap: wrap; }
+.plain-canvas-array-actions select { max-width: 9rem; font: inherit; font-size: 0.75rem; }
+.plain-canvas-array-item { width: 100%; margin-top: 8px; padding: 8px 10px; border: 1px dashed var(--mdy-border); border-radius: 6px; background: transparent; color: var(--mdy-muted); text-align: left; cursor: pointer; }
+.plain-canvas-array-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.plain-canvas-array-row-actions { display: inline-flex; gap: 4px; }
+.plain-canvas-array-row-actions button { font: inherit; font-size: 0.75rem; }
+.plain-canvas-array-row-actions button:disabled { opacity: 0.35; cursor: not-allowed; }
