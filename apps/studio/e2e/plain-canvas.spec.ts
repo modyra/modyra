@@ -59,3 +59,23 @@ test("live canvas fields expose stable node IDs and select the matching Inspecto
   await expect(page.locator('[data-name]')).toHaveValue('customerName');
   await expect(page.locator('[data-plain-select]')).toBeFocused();
 });
+
+
+test("live canvas duplicate and delete actions use the existing command history", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-name]').fill('customerName');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-canvas-mode="form"]').click();
+
+  await expect(page.locator('.plain-canvas-field')).toHaveCount(1);
+  await page.locator('.plain-canvas-field [data-duplicate]').click();
+  await expect(page.locator('.plain-canvas-field')).toHaveCount(2);
+
+  await page.locator('.plain-canvas-field').first().locator('[data-delete]').click();
+  await expect(page.locator('.plain-canvas-field')).toHaveCount(1);
+
+  await page.locator('[data-undo]').click();
+  await expect(page.locator('.plain-canvas-field')).toHaveCount(2);
+  await page.locator('[data-undo]').click();
+  await expect(page.locator('.plain-canvas-field')).toHaveCount(1);
+});
