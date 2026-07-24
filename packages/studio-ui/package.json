@@ -24,7 +24,8 @@
     "@modyra/studio-contract": "workspace:*",
     "@modyra/studio-codegen": "workspace:*",
     "@modyra/studio-target-json": "workspace:*",
-    "@modyra/studio-target-core": "workspace:*"
+    "@modyra/studio-target-core": "workspace:*",
+    "@modyra/studio-target-angular": "workspace:*"
   },
   "sideEffects": [
     "*.css"
