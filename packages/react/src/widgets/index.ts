@@ -33,3 +33,9 @@ export type {
   MdyReactMultiselectFieldApi,
   UseMdyMultiselectFieldOptions,
 } from "./multiselect-field.js";
+
+export { useMdyDatepickerField } from "./datepicker-field.js";
+export type {
+  MdyReactDatepickerFieldApi,
+  UseMdyDatepickerFieldOptions,
+} from "./datepicker-field.js";

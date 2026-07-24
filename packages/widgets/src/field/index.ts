@@ -76,3 +76,23 @@ export type {
   MdyMultiselectFieldMode,
   MdyMultiselectFieldState,
 } from "./multiselect-field-types.js";
+
+export { createDatepickerFieldController } from "./datepicker-field-controller.js";
+export type { MdyDatepickerFieldController } from "./datepicker-field-controller.js";
+
+export {
+  datepickerFieldPartIds,
+  datepickerFieldRootClasses,
+  projectDatepickerFieldA11y,
+} from "./datepicker-field-a11y.js";
+
+export type {
+  MdyDatepickerFieldA11yOptions,
+} from "./datepicker-field-a11y.js";
+
+export type {
+  MdyDatepickerFieldCell,
+  MdyDatepickerFieldControllerOptions,
+  MdyDatepickerFieldIntent,
+  MdyDatepickerFieldState,
+} from "./datepicker-field-types.js";
