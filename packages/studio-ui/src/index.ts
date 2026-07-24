@@ -46,6 +46,7 @@ import {
 import { compileToContract } from "@modyra/studio-contract";
 import { TargetRegistry, type Artifact } from "@modyra/studio-codegen";
 import { jsonTargetManifest } from "@modyra/studio-target-json";
+import { coreTargetManifest } from "@modyra/studio-target-core";
 import "./studio.css";
 
 type Drag = { nodeId: string } | { template: string };
@@ -53,6 +54,7 @@ type Drag = { nodeId: string } | { template: string };
 /** Lazy target registry (ADR-0004) — registering costs nothing, load() only runs on first Generate. */
 const targetRegistry = new TargetRegistry();
 targetRegistry.register(jsonTargetManifest);
+targetRegistry.register(coreTargetManifest);
 
 const TEMPLATES = [
   "text",

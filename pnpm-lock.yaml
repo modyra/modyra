@@ -317,6 +317,15 @@ importers:
 
   packages/studio-model: {}
 
+  packages/studio-target-core:
+    dependencies:
+      '@modyra/studio-codegen':
+        specifier: workspace:*
+        version: link:../studio-codegen
+      '@modyra/studio-model':
+        specifier: workspace:*
+        version: link:../studio-model
+
   packages/studio-target-json:
     dependencies:
       '@modyra/studio-codegen':
@@ -343,6 +352,9 @@ importers:
       '@modyra/studio-model':
         specifier: workspace:*
         version: link:../studio-model
+      '@modyra/studio-target-core':
+        specifier: workspace:*
+        version: link:../studio-target-core
       '@modyra/studio-target-json':
         specifier: workspace:*
         version: link:../studio-target-json

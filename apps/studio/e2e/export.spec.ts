@@ -3,8 +3,9 @@ import { expect, test } from "@playwright/test";
 /**
  * P7 gate (.modyra/modyra-studio-caveman-plan.md section 14): "dummy target
  * needs no canvas change" / "failure cannot corrupt editor" / "stale
- * ignored". The Export tab drives the real @modyra/studio-target-json
- * target through the lazy TargetRegistry — never a mock.
+ * ignored". The Export tab drives the real @modyra/studio-target-json and
+ * @modyra/studio-target-core targets through the lazy TargetRegistry —
+ * never a mock.
  */
 
 test.beforeEach(async ({ page }) => {
@@ -12,17 +13,29 @@ test.beforeEach(async ({ page }) => {
   await page.waitForSelector(".studio");
 });
 
-test("Export tab lists the JSON target and Generate produces project.json + contract.json", async ({ page }) => {
+test("Export tab lists both registered targets and Generate produces project.json + contract.json for the default (JSON) target", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
   await page.locator('[data-inspector-tab="export"]').click();
 
-  await expect(page.locator("[data-export-target] option")).toHaveText(["Contract + Studio JSON"]);
+  await expect(page.locator("[data-export-target] option")).toHaveText(["Contract + Studio JSON", "Core (createForm)"]);
   await page.locator("[data-export-generate]").click();
 
   await expect(page.locator(".export-file")).toHaveCount(2);
   await expect(page.locator(".export-file-path").nth(0)).toContainText("project.mdy-studio.json");
   await expect(page.locator(".export-file-path").nth(1)).toContainText("contract.json");
   await expect(page.locator(".export-file-path").nth(1)).toContainText("(entry)");
+});
+
+test("P8: switching to the Core target and generating produces form.ts + stubs.ts, a real createForm() definition", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-inspector-tab="export"]').click();
+  await page.locator("[data-export-target]").selectOption("core");
+  await page.locator("[data-export-generate]").click();
+
+  await expect(page.locator(".export-file")).toHaveCount(2);
+  await expect(page.locator(".export-file-path").nth(0)).toContainText("form.ts");
+  await expect(page.locator(".export-file-path").nth(0)).toContainText("(entry)");
+  await expect(page.locator(".export-file-path").nth(1)).toContainText("stubs.ts");
 });
 
 test("downloading a generated file triggers a real browser download with the file's own name", async ({ page }) => {
