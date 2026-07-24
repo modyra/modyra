@@ -42,9 +42,15 @@ test("grid tracks and main surfaces are allowed to shrink instead of overflowing
   has(main, "min-width", "0");
   has(main, "min-height", "0");
   has(main, "overflow", "hidden");
-  assert.match(main, /grid-template-columns\s*:\s*168px minmax\(0, 1fr\) minmax\(280px, 340px\)\s*;/);
+  assert.match(main, /grid-template-columns\s*:\s*minmax\(0, 1fr\) minmax\(280px, 340px\)\s*;/);
 
-  for (const selector of [".palette", ".canvas", ".inspector-body"]) {
+  const column = rule(".canvas-column");
+  has(column, "position", "relative");
+  has(column, "min-width", "0");
+  has(column, "min-height", "0");
+  has(column, "overflow", "hidden");
+
+  for (const selector of [".canvas", ".inspector-body"]) {
     const declarations = rule(selector);
     has(declarations, "min-width", "0");
     has(declarations, "min-height", "0");
@@ -58,31 +64,36 @@ test("tabs, header actions and long diagnostic content remain reachable", () => 
   has(tabs, "min-width", "0");
   has(tabs, "overflow-x", "auto");
 
-  const nav = rule(".studio nav");
-  has(nav, "min-width", "0");
-  has(nav, "overflow-x", "auto");
-
   const diagnostic = rule(".diag-message");
   has(diagnostic, "min-width", "0");
   has(diagnostic, "overflow-wrap", "anywhere");
 });
 
-test("the compact shell keeps a single canvas header row and a two-column palette", () => {
+test("the compact shell keeps a slim chrome and a floating dock over the canvas", () => {
   const studio = rule(".studio");
   assert.match(studio, /grid-template-rows\s*:\s*40px minmax\(0, 1fr\) 24px\s*;/);
 
-  const head = rule(".canvas-head");
-  has(head, "min-width", "0");
-  has(head, "display", "flex");
-  has(head, "flex-wrap", "wrap");
+  // The dock floats over the canvas column, and its own overlay must never swallow
+  // pointer events for the form underneath it.
+  const dock = rule(".dock");
+  has(dock, "position", "absolute");
+  has(dock, "pointer-events", "none");
+  has(rule(".dock > *"), "pointer-events", "auto");
 
-  const paletteGrid = rule(".palette-grid");
-  has(paletteGrid, "min-width", "0");
-  assert.match(paletteGrid, /grid-template-columns\s*:\s*repeat\(2, minmax\(0, 1fr\)\)\s*;/);
+  const templates = rule(".dock-templates");
+  assert.match(templates, /grid-template-columns\s*:\s*repeat\(2, minmax\(0, 1fr\)\)\s*;/);
+});
+
+test("the canvas keeps the form's own label for assistive tech while showing the editable one", () => {
+  const hidden = rule(".plain-canvas-field > label");
+  has(hidden, "position", "absolute");
+  has(hidden, "width", "1px");
+  has(hidden, "height", "1px");
+  assert.doesNotMatch(hidden, /display\s*:\s*none/, "display:none would hide it from screen readers too");
 });
 
 test("narrow layouts keep a zero-minimum canvas track and mobile-safe padding", () => {
-  assert.match(css, /@media \(max-width: 850px\)[\s\S]*?grid-template-columns:\s*150px minmax\(0, 1fr\)/);
+  assert.match(css, /@media \(max-width: 850px\)[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
   assert.match(css, /@media \(max-width: 600px\)[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
   assert.match(css, /@media \(max-width: 600px\)[\s\S]*?\.canvas\s*\{[\s\S]*?padding:\s*12px 14px/);
 });

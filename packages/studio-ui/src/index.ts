@@ -38,6 +38,7 @@ import {
   createSetFieldOptionsCommand,
   createSetServerValidatorCommand,
   createUpdateBehaviorCommand,
+  createRenameProjectCommand,
   createUpdateFormValidatorCommand,
   createUpdateNodeCommand,
   createUpdateValidatorCommand,
@@ -577,9 +578,8 @@ interface StudioShell {
   readonly canvas: HTMLElement;
   readonly canvasSurface: HTMLElement;
   readonly inspectorBody: HTMLElement;
-  readonly nav: Region;
-  readonly palette: Region;
-  readonly canvasHead: Region;
+  readonly head: Region;
+  readonly dock: Region;
   readonly surface: Region;
   readonly tabs: Region;
   readonly inspector: Region;
@@ -610,7 +610,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     message: "",
   };
   let inspectorTab: "node" | "form" | "diagnostics" | "export" | "preview" = "node";
-  let canvasMode: "structure" | "form" = "structure";
+  /** The live form is the editor. Structure is the secondary outline view, reached from the toolbar. */
+  let canvasMode: "structure" | "form" = "form";
+  /** Whether the floating toolbar is expanded. Collapsed by default so the canvas stays clean. */
+  let dockOpen = false;
   /** Export tab state — `generation` guards against a stale async generate() clobbering a newer one
       (plan §14 P7 gate "stale ignored"); errors never touch `project`/`history` (gate "failure cannot corrupt editor"). */
   let exportState: { targetId: string; artifact: Artifact | null; generating: boolean; error: string | null; generation: number } = {
@@ -977,7 +980,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       select.dataset.plainSelect = array.id;
       select.setAttribute("aria-pressed", String(array.id === selected));
       select.setAttribute("aria-label", `Select array ${array.name} in Studio`);
-      select.textContent = array.label || array.name;
+      select.textContent = "array";
       const count = document.createElement("span");
       count.className = "plain-canvas-array-count";
       count.textContent = `${array.initialRows.length} initial row${array.initialRows.length === 1 ? "" : "s"}`;
@@ -1030,7 +1033,13 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         into.append(new Option(group.label || group.name, group.id));
       }
       actions.append(into);
-      header.append(select, count, actions);
+      header.append(
+        inlineEditor("label", array.id, array.label ?? "", "Untitled array", `Label for array ${array.name}`),
+        inlineEditor("name", array.id, array.name, "name", `Code name for array ${array.name}`),
+        select,
+        count,
+        actions,
+      );
 
       const body = document.createElement("div");
       body.className = "plain-canvas-array-body";
@@ -1109,7 +1118,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       select.dataset.plainSelect = group.id;
       select.setAttribute("aria-pressed", String(group.id === selected));
       select.setAttribute("aria-label", `Select group ${group.name} in Studio`);
-      select.textContent = group.label || group.name;
+      select.textContent = "group";
 
       const controls = document.createElement("span");
       controls.className = "plain-canvas-group-actions";
@@ -1148,7 +1157,12 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         into.append(new Option(target.label || target.name, target.id));
       }
       controls.append(into);
-      legend.append(select, controls);
+      legend.append(
+        inlineEditor("label", group.id, group.label ?? "", "Untitled group", `Label for group ${group.name}`),
+        inlineEditor("name", group.id, group.name, "name", `Code name for group ${group.name}`),
+        select,
+        controls,
+      );
 
       const body = document.createElement("div");
       body.className = "plain-canvas-group-body";
@@ -1200,13 +1214,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       root.classList.toggle("selected", nodeId === selected);
       root.classList.toggle("has-diagnostic", diagnosticNodeIds.has(nodeId));
 
+      const node = idx.nodeById.get(nodeId);
       const selectButton = document.createElement("button");
       selectButton.type = "button";
       selectButton.className = "plain-canvas-select";
       selectButton.dataset.plainSelect = nodeId;
       selectButton.setAttribute("aria-label", `Select ${field.name} in Studio`);
       selectButton.setAttribute("aria-pressed", String(nodeId === selected));
-      selectButton.textContent = field.name;
+      selectButton.textContent = node?.node === "field" ? node.fieldKind : "field";
 
       const actions = document.createElement("div");
       actions.className = "plain-canvas-actions";
@@ -1215,7 +1230,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       duplicateButton.type = "button";
       duplicateButton.dataset.duplicate = nodeId;
       duplicateButton.setAttribute("aria-label", `Duplicate ${field.name}`);
-      duplicateButton.textContent = "Duplicate";
+      duplicateButton.textContent = "⧉";
 
       const moveUpButton = document.createElement("button");
       moveUpButton.type = "button";
@@ -1224,7 +1239,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       moveUpButton.dataset.plainMoveTarget = index > 0 ? nodeIdByPath.get(fields[index - 1]!.name) ?? "" : "";
       moveUpButton.disabled = index === 0;
       moveUpButton.setAttribute("aria-label", `Move ${field.name} up`);
-      moveUpButton.textContent = "Up";
+      moveUpButton.textContent = "↑";
 
       const moveDownButton = document.createElement("button");
       moveDownButton.type = "button";
@@ -1233,13 +1248,13 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       moveDownButton.dataset.plainMoveTarget = index < fields.length - 1 ? nodeIdByPath.get(fields[index + 1]!.name) ?? "" : "";
       moveDownButton.disabled = index === fields.length - 1;
       moveDownButton.setAttribute("aria-label", `Move ${field.name} down`);
-      moveDownButton.textContent = "Down";
+      moveDownButton.textContent = "↓";
 
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.dataset.delete = nodeId;
       deleteButton.setAttribute("aria-label", `Delete ${field.name}`);
-      deleteButton.textContent = "Delete";
+      deleteButton.textContent = "×";
 
       const fieldParentId = idx.parentById.get(nodeId);
       if (fieldParentId !== project.schema.id) {
@@ -1247,21 +1262,32 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         moveToRootButton.type = "button";
         moveToRootButton.dataset.plainFieldRoot = nodeId;
         moveToRootButton.setAttribute("aria-label", `Move ${field.name} to form root`);
-        moveToRootButton.textContent = "To root";
+        moveToRootButton.textContent = "⤒";
         actions.append(moveToRootButton);
       }
 
       const moveIntoGroup = document.createElement("select");
       moveIntoGroup.dataset.plainFieldInto = nodeId;
       moveIntoGroup.setAttribute("aria-label", `Move ${field.name} into group`);
-      moveIntoGroup.append(new Option("Move into…", ""));
+      moveIntoGroup.append(new Option("⊞", ""));
       for (const group of groups) {
         if (group.id === fieldParentId) continue;
         moveIntoGroup.append(new Option(group.label || group.name, group.id));
       }
 
       actions.append(moveUpButton, moveDownButton, moveIntoGroup, duplicateButton, deleteButton);
-      root.prepend(selectButton, actions);
+
+      // The label and the code name are edited on the field itself: the visible label the form
+      // renders *is* the thing being edited, so there is no "where did that come from" gap.
+      const head = document.createElement("div");
+      head.className = "plain-canvas-head";
+      head.append(
+        inlineEditor("label", nodeId, node?.label ?? "", "Untitled field", `Label for ${field.name}`),
+        inlineEditor("name", nodeId, node?.name ?? field.name, "name", `Code name for ${field.name}`),
+        selectButton,
+        actions,
+      );
+      root.prepend(head);
       root.before(dropPoint("before", nodeId), insertionPoint("before", nodeId));
       if (index === fields.length - 1) {
         root.after(insertionPoint("after", nodeId), dropPoint("after", nodeId));
@@ -1269,32 +1295,73 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     });
   }
 
-  function navMarkup(): string {
-    return `
-      <button data-undo ${history.canUndo() ? "" : "disabled"}>Undo</button>
-      <button data-redo ${history.canRedo() ? "" : "disabled"}>Redo</button>
-      <button data-new>New blank</button>
-      <label data-import-button class="import-button">
-        Import
-        <input type="file" accept="application/json" data-import hidden>
-      </label>`;
+  /**
+   * One in-place text editor for a node's label or code name. Commits on `change` (blur/Enter),
+   * never on every keystroke, so the region rewrite that follows can never eat the caret.
+   */
+  function inlineEditor(
+    kind: "label" | "name",
+    nodeId: string,
+    value: string,
+    placeholder: string,
+    ariaLabel: string,
+  ): HTMLInputElement {
+    const input = document.createElement("input");
+    input.className = `plain-canvas-inline plain-canvas-inline-${kind}`;
+    input.dataset.inlineEdit = kind;
+    input.dataset.inlineNode = nodeId;
+    input.value = value;
+    input.placeholder = placeholder;
+    input.spellcheck = false;
+    input.setAttribute("aria-label", ariaLabel);
+    return input;
   }
 
-  function paletteMarkup(): string {
-    return `<h2>Elements</h2>
-      <div class="palette-grid">${TEMPLATES.map((t) => `<button draggable="true" data-template="${t}">＋ ${t}</button>`).join("")}</div>`;
+  /** The form's own title bar: the name is edited where it is read, not in a side panel. */
+  function headMarkup(idx: StudioIndexes): string {
+    const fieldCount = [...idx.nodeById.values()].filter((n) => n.node === "field").length;
+    return `
+      <span class="brand" aria-hidden="true">Modyra</span>
+      <input class="form-name" data-form-name value="${escapeHtml(project.name)}" aria-label="Form name" spellcheck="false">
+      <span class="form-meta">${fieldCount} field${fieldCount === 1 ? "" : "s"}</span>`;
   }
 
-  function canvasHeadMarkup(idx: StudioIndexes): string {
+  /**
+   * Everything that is not composing the form itself lives behind one floating button: adding
+   * fields, history, project I/O and the structure outline. Collapsed, the canvas is just the form.
+   */
+  function dockMarkup(): string {
     return `
-      <div class="title">
-        <h1>${escapeHtml(project.name)}</h1>
-        <span>${idx.nodeById.size - 1} nodes</span>
+      <div class="dock-panel" data-dock-panel ${dockOpen ? "" : "hidden"}>
+        <section class="dock-section">
+          <h3>Add field</h3>
+          <div class="dock-templates">
+            ${TEMPLATES.map((t) => `<button type="button" draggable="true" data-template="${t}">${escapeHtml(t)}</button>`).join("")}
+          </div>
+        </section>
+        <section class="dock-section">
+          <h3>Form</h3>
+          <div class="dock-actions">
+            <button type="button" data-undo ${history.canUndo() ? "" : "disabled"}>Undo</button>
+            <button type="button" data-redo ${history.canRedo() ? "" : "disabled"}>Redo</button>
+            <button type="button" data-new>New blank</button>
+            <label data-import-button class="import-button">
+              Import
+              <input type="file" accept="application/json" data-import hidden>
+            </label>
+          </div>
+        </section>
+        <section class="dock-section">
+          <h3>View</h3>
+          <div class="canvas-mode-switch" role="group" aria-label="Canvas view">
+            <button type="button" data-canvas-mode="form" aria-pressed="${canvasMode === "form"}">Live form</button>
+            <button type="button" data-canvas-mode="structure" aria-pressed="${canvasMode === "structure"}">Structure</button>
+          </div>
+        </section>
       </div>
-      <div class="canvas-mode-switch" role="group" aria-label="Canvas view">
-        <button type="button" data-canvas-mode="structure" aria-pressed="${canvasMode === "structure"}">Structure</button>
-        <button type="button" data-canvas-mode="form" aria-pressed="${canvasMode === "form"}">Live form</button>
-      </div>`;
+      <button type="button" class="fab" data-dock-toggle aria-expanded="${dockOpen}" aria-label="${dockOpen ? "Close the Studio toolbar" : "Open the Studio toolbar"}">
+        <span aria-hidden="true">${dockOpen ? "×" : "＋"}</span>
+      </button>`;
   }
 
   /**
@@ -1303,11 +1370,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
    * the `[data-plain-canvas]` mount underneath survives untouched across renders.
    */
   function liveFrameMarkup(hasContract: boolean): string {
-    return `
-      <div class="plain-canvas-frame">
-        <p class="plain-canvas-note">Interactive rendering from the strict Contract via @modyra/plain. Structure editing remains available in Structure.</p>
-        ${hasContract ? `<div class="plain-canvas-form" data-plain-canvas></div>` : `<div class="plain-canvas-unavailable" role="status">The live form is unavailable until the blocking Contract diagnostics are fixed.</div>`}
-      </div>`;
+    return hasContract
+      ? `<div class="plain-canvas-frame"><div class="plain-canvas-form" data-plain-canvas></div></div>`
+      : `<div class="plain-canvas-frame"><div class="plain-canvas-unavailable" role="status">The live form is unavailable until the blocking Contract diagnostics are fixed.</div></div>`;
   }
 
   function structureMarkup(rootChildren: readonly StudioSchemaNode[]): string {
@@ -1407,16 +1472,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     if (shell) return shell;
     host.innerHTML = `
       <div class="studio">
-        <header>
-          <div><strong>Modyra Studio</strong><span>Vanilla local-first editor</span></div>
-          <nav></nav>
-        </header>
+        <header></header>
         <main>
-          <aside class="palette"></aside>
-          <section class="canvas" tabindex="-1">
-            <div class="canvas-head"></div>
-            <div class="canvas-surface"></div>
-          </section>
+          <div class="canvas-column">
+            <section class="canvas" tabindex="-1">
+              <div class="canvas-surface"></div>
+            </section>
+            <div class="dock"></div>
+          </div>
           <aside class="inspector">
             <div class="inspector-tabs" role="tablist"></div>
             <div class="inspector-body"></div>
@@ -1429,15 +1492,13 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     const canvas = find<HTMLElement>(".canvas");
     const canvasSurface = find<HTMLElement>(".canvas-surface");
     const inspectorBody = find<HTMLElement>(".inspector-body");
-    const palette = find<HTMLElement>(".palette");
 
     shell = {
       canvas,
       canvasSurface,
       inspectorBody,
-      nav: new Region(find<HTMLElement>("nav"), bindNav),
-      palette: new Region(palette, bindPalette),
-      canvasHead: new Region(find<HTMLElement>(".canvas-head"), bindCanvasHead),
+      head: new Region(find<HTMLElement>("header"), bindHead),
+      dock: new Region(find<HTMLElement>(".dock"), bindDock),
       // Bound explicitly by render(): in live-form mode the listeners belong to DOM that
       // instrumentPlainCanvas() adds *after* the region write, so the Region cannot own it.
       surface: new Region(canvasSurface),
@@ -1448,7 +1509,6 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
     scroll.track(canvas);
     scroll.track(inspectorBody);
-    scroll.track(palette);
     canvasController.connect(canvas);
 
     // Edge auto-scroll while dragging. Bound once on the persistent canvas, not per render.
@@ -1473,9 +1533,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     diagnosticNodeIds = new Set(diagnostics.filter((d) => d.nodeId).map((d) => d.nodeId!));
     const errorCount = diagnostics.filter((d) => d.severity === "error").length;
 
-    view.nav.update(navMarkup());
-    view.palette.update(paletteMarkup());
-    view.canvasHead.update(canvasHeadMarkup(indexes));
+    view.head.update(headMarkup(indexes));
+    view.dock.update(dockMarkup());
     view.canvasSurface.dataset.canvasSurface = canvasMode;
 
     if (canvasMode === "form") {
@@ -1606,7 +1665,44 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     });
   }
 
-  function bindNav(root: HTMLElement): void {
+  function bindHead(root: HTMLElement): void {
+    root.querySelector<HTMLInputElement>("[data-form-name]")?.addEventListener("change", (e) => {
+      const name = (e.target as HTMLInputElement).value;
+      focusSelector = "[data-form-name]";
+      commit(createRenameProjectCommand(name), selected, "[data-form-name]");
+    });
+  }
+
+  function bindDock(root: HTMLElement): void {
+    root.querySelector<HTMLElement>("[data-dock-toggle]")?.addEventListener("click", () => {
+      dockOpen = !dockOpen;
+      focusSelector = "[data-dock-toggle]";
+      render();
+    });
+    root.querySelectorAll<HTMLButtonElement>("[data-canvas-mode]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const next = button.dataset.canvasMode;
+        if (next !== "structure" && next !== "form") return;
+        canvasMode = next;
+        status = next === "form" ? "Live form canvas" : "Structure outline";
+        focusSelector = `[data-canvas-mode="${next}"]`;
+        render();
+      }),
+    );
+    root.querySelectorAll<HTMLElement>("[data-template]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const created = createNodeFromTemplate(el.dataset.template!);
+        const index = project.schema.node === "group" ? project.schema.children.length : 0;
+        selected = created.id;
+        commit(
+          createInsertCommand(created, { kind: "inside", parentId: project.schema.id, index }),
+          created.id,
+          canvasMode === "form" ? `[data-plain-select="${created.id}"]` : undefined,
+        );
+      }),
+    );
+    bindDraggables(root);
+
     root.querySelector<HTMLElement>("[data-undo]")?.addEventListener("click", () => {
       project = history.undo(project);
       status = "Undo";
@@ -1661,36 +1757,32 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     });
   }
 
-  function bindPalette(root: HTMLElement): void {
-    root.querySelectorAll<HTMLElement>("[data-template]").forEach((el) =>
-      el.addEventListener("click", () => {
-        const created = createNodeFromTemplate(el.dataset.template!);
-        const index = project.schema.node === "group" ? project.schema.children.length : 0;
-        selected = created.id;
-        commit(createInsertCommand(created, { kind: "inside", parentId: project.schema.id, index }));
-      }),
-    );
-    bindDraggables(root);
-  }
-
-  function bindCanvasHead(root: HTMLElement): void {
-    root.querySelectorAll<HTMLButtonElement>("[data-canvas-mode]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const next = button.dataset.canvasMode;
-        if (next !== "structure" && next !== "form") return;
-        canvasMode = next;
-        status = next === "form" ? "Live form canvas" : "Structure canvas";
-        focusSelector = `[data-canvas-mode="${next}"]`;
-        render();
-      }),
-    );
-  }
-
   /**
    * Everything inside the canvas surface: the Structure tree and the instrumented live-form
    * canvas both live here, and both are rebuilt as a unit, so one binder covers both.
    */
   function bindCanvasSurface(root: HTMLElement): void {
+    root.querySelectorAll<HTMLInputElement>("[data-inline-edit]").forEach((input) =>
+      input.addEventListener("change", () => {
+        const nodeId = input.dataset.inlineNode;
+        const kind = input.dataset.inlineEdit;
+        if (!nodeId || (kind !== "label" && kind !== "name")) return;
+        const value = input.value.trim();
+        // A blank code name would be rejected by the command anyway; put the old one back so the
+        // field does not sit there looking renamed when it is not.
+        if (kind === "name" && !value) {
+          input.value = indexes.nodeById.get(nodeId)?.name ?? "";
+          return;
+        }
+        selected = nodeId;
+        commit(
+          createUpdateNodeCommand(nodeId, kind === "name" ? { name: value } : { label: value }),
+          nodeId,
+          `[data-inline-edit="${kind}"][data-inline-node="${nodeId}"]`,
+        );
+      }),
+    );
+
     root.querySelectorAll<HTMLSelectElement>("[data-plain-insert]").forEach((select) =>
       select.addEventListener("change", () => {
         const targetId = select.dataset.plainInsertTarget;

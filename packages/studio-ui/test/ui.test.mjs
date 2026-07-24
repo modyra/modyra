@@ -16,39 +16,122 @@ const { buildIndexes } = await import("../../studio-model/dist/index.js");
 const { mountStudio, serverValidatorMarkup, formValidatorsMarkup } = await import("../dist/index.js");
 const { createCheckoutProject } = await import("../../studio-model/test/fixtures/checkout.fixture.mjs");
 
-test("mounting a blank project renders the on-brand shell without throwing", () => {
+const click = (element) => element.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+const change = (element) => element.dispatchEvent(new window.Event("change", { bubbles: true }));
+
+/** Opens the floating toolbar, where every non-composition action now lives. */
+function openDock(host) {
+  click(host.querySelector("[data-dock-toggle]"));
+  return host;
+}
+
+test("mounting a blank project opens on the live form, not a tree or a palette", () => {
   const host = createHost();
   const dispose = mountStudio(host);
 
   assert.match(host.innerHTML, /class="studio"/);
-  assert.match(host.innerHTML, /Modyra Studio/);
   assert.match(host.innerHTML, /Blank project ready/);
-  for (const template of ["text", "textarea", "email", "number", "checkbox", "select", "multiselect", "date", "group", "array"]) {
-    assert.match(host.innerHTML, new RegExp(`data-template="${template}"`));
-  }
-  // Blank project has no schema children yet -> empty-state prompt, not a tree.
-  assert.match(host.innerHTML, /Start with a blank form/);
+  assert.equal(host.querySelector("[data-canvas-surface]").dataset.canvasSurface, "form");
   assert.doesNotMatch(host.innerHTML, /<ul class="tree">/);
+  assert.equal(host.querySelector(".palette"), null, "the palette column is gone");
+  assert.equal(host.querySelector("[data-dock-panel]").hidden, true, "the toolbar starts collapsed");
 
   dispose();
   assert.equal(host.innerHTML, "");
 });
 
-test("mounting the checkout fixture renders its real tree and node count", () => {
+test("the toolbar exposes the templates, history, project I/O and the view switch", () => {
+  const host = createHost();
+  mountStudio(host);
+  openDock(host);
+
+  const panel = host.querySelector("[data-dock-panel]");
+  assert.equal(panel.hidden, false);
+  for (const template of ["text", "textarea", "email", "number", "checkbox", "select", "multiselect", "date", "group", "array"]) {
+    assert.ok(panel.querySelector(`[data-template="${template}"]`), `missing template ${template}`);
+  }
+  for (const action of ["[data-undo]", "[data-redo]", "[data-new]", "[data-import]"]) {
+    assert.ok(panel.querySelector(action), `missing action ${action}`);
+  }
+  assert.ok(panel.querySelector('[data-canvas-mode="structure"]'));
+  assert.ok(panel.querySelector('[data-canvas-mode="form"][aria-pressed="true"]'));
+});
+
+test("the form name is edited in the header and committed through a real command", () => {
+  const host = createHost();
+  mountStudio(host);
+
+  const nameInput = host.querySelector("[data-form-name]");
+  assert.ok(nameInput, "expected an inline form-name editor in the header");
+  nameInput.value = "Checkout form";
+  change(nameInput);
+
+  assert.equal(host.querySelector("[data-form-name]").value, "Checkout form");
+  // Committed as a command, so Undo can take it back.
+  openDock(host);
+  assert.equal(host.querySelector("[data-undo]").disabled, false);
+});
+
+test("every live field carries its own label and code-name editors", () => {
   const host = createHost();
   mountStudio(host, createCheckoutProject());
 
+  const city = host.querySelector('[data-inline-edit="label"][data-inline-node="nd_city"]');
+  const cityName = host.querySelector('[data-inline-edit="name"][data-inline-node="nd_city"]');
+  assert.ok(city, "expected an inline label editor on the city field");
+  assert.equal(cityName.value, "city");
+
+  city.value = "Town";
+  change(city);
+  assert.equal(host.querySelector('[data-inline-edit="label"][data-inline-node="nd_city"]').value, "Town");
+});
+
+test("a blank code name is refused and the old one restored, instead of committing a rename", () => {
+  const host = createHost();
+  mountStudio(host, createCheckoutProject());
+
+  const cityName = host.querySelector('[data-inline-edit="name"][data-inline-node="nd_city"]');
+  cityName.value = "   ";
+  change(cityName);
+
+  assert.equal(cityName.value, "city");
+});
+
+test("selecting a field does not remount the live form", () => {
+  const host = createHost();
+  mountStudio(host, createCheckoutProject());
+
+  const control = host.querySelector('.plain-canvas-field[data-node="nd_city"] input:not(.plain-canvas-inline)');
+  assert.ok(control, "expected a real rendered control for city");
+
+  click(host.querySelector('[data-plain-select="nd_zip"]'));
+
+  assert.equal(
+    host.querySelector('.plain-canvas-field[data-node="nd_city"] input:not(.plain-canvas-inline)'),
+    control,
+    "the running form must survive a selection change",
+  );
+  assert.equal(host.querySelector('[data-plain-select="nd_zip"]').getAttribute("aria-pressed"), "true");
+});
+
+test("the Structure outline is still reachable from the toolbar", () => {
+  const host = createHost();
+  mountStudio(host, createCheckoutProject());
+  openDock(host);
+  click(host.querySelector('[data-canvas-mode="structure"]'));
+
+  assert.equal(host.querySelector("[data-canvas-surface]").dataset.canvasSurface, "structure");
   assert.match(host.innerHTML, /<ul class="tree">/);
   for (const name of ["country", "shipping", "items", "coupon"]) {
     assert.match(host.innerHTML, new RegExp(name));
   }
-  // 8 non-root nodes in the fixture: country, shipping, city, zip, items, item, sku, qty, coupon = 9.
-  assert.match(host.innerHTML, /9 nodes/);
 });
 
 test("at-a-glance tree indicators reflect checkout's real validators (no need to open the inspector)", () => {
   const host = createHost();
   mountStudio(host, createCheckoutProject());
+  openDock(host);
+  click(host.querySelector('[data-canvas-mode="structure"]'));
 
   function nodeMarkup(nodeId) {
     const match = host.innerHTML.match(new RegExp(`<div class="node"[^>]*data-node="${nodeId}">[\\s\\S]*?<\\/div>`));
@@ -70,6 +153,13 @@ test("at-a-glance tree indicators reflect checkout's real validators (no need to
   const couponNode = nodeMarkup("nd_coupon");
   assert.match(couponNode, /indicator server/);
   assert.doesNotMatch(couponNode, /indicator required/);
+});
+
+test("the header reports the real field count for the checkout fixture", () => {
+  const host = createHost();
+  mountStudio(host, createCheckoutProject());
+  // country, city, zip, sku, qty, coupon -> 6 fields (groups and arrays are not fields).
+  assert.match(host.querySelector(".form-meta").textContent, /6 fields/);
 });
 
 test("P5 gate: checkout's real coupon server validator renders debounce/timeout/skip-empty/implementation", () => {
@@ -107,21 +197,19 @@ test("P6: the Diagnostics tab badge reflects checkout's real 2 warnings (form + 
   const host = createHost();
   mountStudio(host, createCheckoutProject());
 
-  // Tab button badge is always rendered (not gated behind which tab is active).
-  const tabMatch = host.innerHTML.match(/data-inspector-tab="diagnostics"[^>]*>\s*Diagnostics\s*(<span[^>]*>(\d+)<\/span>)?/);
-  assert.ok(tabMatch, "expected the Diagnostics tab button in the markup");
-  assert.equal(tabMatch[2], "2");
-  assert.doesNotMatch(tabMatch[1] ?? "", /badge-error/); // 2 warnings, 0 errors -> not the error-colored badge
+  const badge = host.querySelector('[data-inspector-tab="diagnostics"] .badge');
+  assert.ok(badge, "expected the Diagnostics tab badge in the markup");
+  assert.equal(badge.textContent, "2");
+  assert.doesNotMatch(badge.className, /badge-error/); // 2 warnings, 0 errors -> not the error-colored badge
 
-  // The coupon's server validator is the one diagnostic with a concrete nodeId -> tree shows the "!" marker there.
-  const couponNode = host.innerHTML.match(/<div class="node"[^>]*data-node="nd_coupon">[\s\S]*?<\/div>/)[0];
-  assert.match(couponNode, /indicator issue/);
+  // The coupon's server validator is the one diagnostic with a concrete nodeId -> the live field is marked.
+  assert.ok(host.querySelector('.plain-canvas-field[data-node="nd_coupon"].has-diagnostic'));
 });
 
 test("P6: a blank project is diagnostic-free (Diagnostics tab badge shows nothing)", () => {
   const host = createHost();
   mountStudio(host);
-  assert.doesNotMatch(host.innerHTML, /data-inspector-tab="diagnostics"[^>]*>\s*Diagnostics\s*<span/);
+  assert.equal(host.querySelector('[data-inspector-tab="diagnostics"] .badge'), null);
 });
 
 test("package has no actual React runtime dependency and source has no JSX (studio-target-react is a text-codegen package, not React itself)", () => {
@@ -133,12 +221,3 @@ test("package has no actual React runtime dependency and source has no JSX (stud
   assert.doesNotMatch(source, /from ["']react["']|from ["']react-dom["']|jsx-runtime/);
 });
 
-test("Patch 4: shell exposes Structure and Live form canvas modes without mounting DOM in a fake host", () => {
-  const host = createHost();
-  mountStudio(host, createCheckoutProject());
-
-  assert.match(host.innerHTML, /data-canvas-mode="structure" aria-pressed="true"/);
-  assert.match(host.innerHTML, /data-canvas-mode="form" aria-pressed="false"/);
-  assert.match(host.innerHTML, /data-canvas-surface="structure"/);
-  assert.match(host.innerHTML, /<ul class="tree">/);
-});
