@@ -918,6 +918,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       section.dataset.plainArray = array.id;
       section.dataset.arrayPath = arrayPath;
       section.dataset.node = array.id;
+      section.draggable = true;
       section.classList.toggle("selected", array.id === selected);
       section.setAttribute("aria-label", `${array.name}, array field`);
 
@@ -946,7 +947,42 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       removeRow.disabled = array.initialRows.length === 0;
       removeRow.setAttribute("aria-label", `Remove last initial row from ${array.name}`);
       removeRow.textContent = "Remove row";
-      actions.append(addRow, removeRow);
+      const siblings = idx.childrenByParent.get(idx.parentById.get(array.id) ?? "") ?? [];
+      const position = siblings.indexOf(array.id);
+      const move = (label: string, kind: "before" | "after", targetId?: string): HTMLButtonElement => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.plainArrayMove = kind;
+        button.dataset.plainArrayNode = array.id;
+        button.dataset.plainArrayTarget = targetId ?? "";
+        button.disabled = !targetId;
+        button.setAttribute("aria-label", `${label} array ${array.name}`);
+        button.textContent = label;
+        return button;
+      };
+      actions.append(
+        move("Move up", "before", position > 0 ? siblings[position - 1] : undefined),
+        move("Move down", "after", position >= 0 && position < siblings.length - 1 ? siblings[position + 1] : undefined),
+        addRow,
+        removeRow,
+      );
+      if (idx.parentById.get(array.id) !== project.schema.id) {
+        const root = document.createElement("button");
+        root.type = "button";
+        root.dataset.plainArrayRoot = array.id;
+        root.setAttribute("aria-label", `Move array ${array.name} to form root`);
+        root.textContent = "To root";
+        actions.append(root);
+      }
+      const into = document.createElement("select");
+      into.dataset.plainArrayInto = array.id;
+      into.setAttribute("aria-label", `Move array ${array.name} into group`);
+      into.append(new Option("Move into…", ""));
+      for (const group of Array.from(idx.nodeById.values()).filter((node): node is GroupNode => node.node === "group" && node.id !== project.schema.id)) {
+        if (group.id === idx.parentById.get(array.id)) continue;
+        into.append(new Option(group.label || group.name, group.id));
+      }
+      actions.append(into);
       header.append(select, count, actions);
 
       const body = document.createElement("div");
@@ -960,11 +996,38 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         array.initialRows.forEach((_row, index) => {
           const row = document.createElement("div");
           row.className = "plain-canvas-array-row";
-          row.textContent = `Initial row ${index + 1}`;
+          row.dataset.plainArrayRow = String(index);
+          const label = document.createElement("span");
+          label.textContent = `Initial row ${index + 1}`;
+          const rowActions = document.createElement("span");
+          rowActions.className = "plain-canvas-array-row-actions";
+          const rowButton = (labelText: string, action: "up" | "down" | "remove", disabled = false): HTMLButtonElement => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.dataset.plainArrayRowAction = action;
+            button.dataset.plainArrayNode = array.id;
+            button.dataset.plainArrayRowIndex = String(index);
+            button.disabled = disabled;
+            button.setAttribute("aria-label", `${labelText} initial row ${index + 1} in ${array.name}`);
+            button.textContent = labelText;
+            return button;
+          };
+          rowActions.append(
+            rowButton("Move up", "up", index === 0),
+            rowButton("Move down", "down", index === array.initialRows.length - 1),
+            rowButton("Remove", "remove"),
+          );
+          row.append(label, rowActions);
           body.append(row);
         });
       }
-      section.append(header, body);
+      const itemSchema = document.createElement("button");
+      itemSchema.type = "button";
+      itemSchema.className = "plain-canvas-array-item";
+      itemSchema.dataset.plainSelect = array.item.id;
+      itemSchema.setAttribute("aria-label", `Edit item schema for ${array.name}`);
+      itemSchema.textContent = `Item schema: ${array.item.node === "group" ? "group" : array.item.fieldKind}`;
+      section.append(header, itemSchema, body);
       plainHost.append(section);
     }
 
@@ -1361,6 +1424,52 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
           created.id,
           `[data-plain-select="${created.id}"]`,
         );
+      }),
+    );
+
+    host.querySelectorAll<HTMLButtonElement>("[data-plain-array-row-action]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainArrayNode;
+        const index = Number(button.dataset.plainArrayRowIndex);
+        const action = button.dataset.plainArrayRowAction;
+        const array = nodeId ? idx.nodeById.get(nodeId) : undefined;
+        if (!nodeId || array?.node !== "array" || !Number.isInteger(index) || index < 0 || index >= array.initialRows.length) return;
+        const rows = [...array.initialRows];
+        if (action === "remove") rows.splice(index, 1);
+        else if (action === "up" && index > 0) [rows[index - 1], rows[index]] = [rows[index], rows[index - 1]];
+        else if (action === "down" && index < rows.length - 1) [rows[index], rows[index + 1]] = [rows[index + 1], rows[index]];
+        else return;
+        selected = nodeId;
+        const focusIndex = action === "remove" ? Math.min(index, rows.length - 1) : action === "up" ? index - 1 : index + 1;
+        commit(createUpdateNodeCommand(nodeId, { initialRows: rows }), nodeId,
+          rows.length ? `[data-plain-array="${nodeId}"] [data-plain-array-row="${focusIndex}"] [data-plain-array-row-action="${action}"]` : `[data-plain-array="${nodeId}"] [data-plain-array-add]`);
+      }),
+    );
+    host.querySelectorAll<HTMLButtonElement>("[data-plain-array-move]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainArrayNode;
+        const targetId = button.dataset.plainArrayTarget;
+        const kind = button.dataset.plainArrayMove;
+        if (!nodeId || !targetId || (kind !== "before" && kind !== "after")) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind, targetId }), nodeId, `[data-plain-select="${nodeId}"]`);
+      }),
+    );
+    host.querySelectorAll<HTMLButtonElement>("[data-plain-array-root]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainArrayRoot;
+        if (!nodeId) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind: "inside", parentId: project.schema.id, index: idx.childrenByParent.get(project.schema.id)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
+      }),
+    );
+    host.querySelectorAll<HTMLSelectElement>("[data-plain-array-into]").forEach((select) =>
+      select.addEventListener("change", () => {
+        const nodeId = select.dataset.plainArrayInto;
+        const parentId = select.value;
+        if (!nodeId || !parentId) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind: "inside", parentId, index: idx.childrenByParent.get(parentId)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
       }),
     );
 
