@@ -135,3 +135,27 @@ test("live canvas move controls reorder fields through command history", async (
   await page.locator('[data-redo]').click();
   await expect(fields.nth(0)).toHaveAttribute('data-field-path', 'email');
 });
+
+
+test("live canvas pointer drag reorders fields and remains undoable", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-name]').fill('firstName');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-template="email"]').click();
+  await page.locator('[data-name]').fill('email');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-canvas-mode="form"]').click();
+
+  const fields = page.locator('.plain-canvas-field');
+  await expect(fields.nth(0)).toHaveAttribute('data-field-path', 'firstName');
+  await expect(fields.nth(1)).toHaveAttribute('data-field-path', 'email');
+  await expect(fields.nth(1)).toHaveAttribute('draggable', 'true');
+
+  await fields.nth(1).dragTo(page.locator('.plain-canvas-drop[data-before]').first());
+  await expect(fields.nth(0)).toHaveAttribute('data-field-path', 'email');
+  await expect(fields.nth(1)).toHaveAttribute('data-field-path', 'firstName');
+
+  await page.locator('[data-undo]').click();
+  await expect(fields.nth(0)).toHaveAttribute('data-field-path', 'firstName');
+  await expect(fields.nth(1)).toHaveAttribute('data-field-path', 'email');
+});

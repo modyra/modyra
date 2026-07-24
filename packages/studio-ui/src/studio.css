@@ -449,6 +449,43 @@ body {
   color: var(--mdy-text);
   opacity: 1;
 }
+.plain-canvas-field[draggable="true"] {
+  cursor: grab;
+}
+.plain-canvas-field.dragging {
+  cursor: grabbing;
+  opacity: 0.55;
+}
+.plain-canvas-drop {
+  box-sizing: border-box;
+  height: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  opacity: 0;
+  color: transparent;
+  transition: min-height 120ms ease, opacity 120ms ease;
+}
+.plain-canvas-drop.active {
+  min-height: 14px;
+  margin: 2px 0;
+  border: 1px dashed color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-border));
+  border-radius: 6px;
+  opacity: 0.55;
+}
+.plain-canvas-drop.drag-over {
+  min-height: 24px;
+  border-color: var(--mdy-indigo);
+  background: color-mix(in srgb, var(--mdy-indigo) 16%, transparent);
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .plain-canvas-drop {
+    transition: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .plain-canvas-actions {
     transition: none;
