@@ -400,6 +400,38 @@ body {
   background: var(--mdy-indigo);
   color: white;
 }
+.plain-canvas-actions {
+  position: absolute;
+  inset-block-start: 5px;
+  inset-inline-end: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+.plain-canvas-field:hover .plain-canvas-actions,
+.plain-canvas-field.selected .plain-canvas-actions,
+.plain-canvas-field:focus-within .plain-canvas-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.plain-canvas-actions button {
+  width: auto !important;
+  padding: 3px 7px;
+  border-color: var(--mdy-border);
+  background: var(--mdy-bg);
+  font-size: 10px;
+  line-height: 1.2;
+}
+.plain-canvas-actions [data-delete] {
+  color: var(--mdy-coral);
+}
+@media (prefers-reduced-motion: reduce) {
+  .plain-canvas-actions {
+    transition: none;
+  }
+}
 .plain-canvas-form label {
   color: var(--mdy-text-muted);
   font-size: 12px;

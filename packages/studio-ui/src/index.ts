@@ -876,7 +876,24 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       selectButton.setAttribute("aria-label", `Select ${field.name} in Studio`);
       selectButton.setAttribute("aria-pressed", String(nodeId === selected));
       selectButton.textContent = field.name;
-      root.prepend(selectButton);
+
+      const actions = document.createElement("div");
+      actions.className = "plain-canvas-actions";
+
+      const duplicateButton = document.createElement("button");
+      duplicateButton.type = "button";
+      duplicateButton.dataset.duplicate = nodeId;
+      duplicateButton.setAttribute("aria-label", `Duplicate ${field.name}`);
+      duplicateButton.textContent = "Duplicate";
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.dataset.delete = nodeId;
+      deleteButton.setAttribute("aria-label", `Delete ${field.name}`);
+      deleteButton.textContent = "Delete";
+
+      actions.append(duplicateButton, deleteButton);
+      root.prepend(selectButton, actions);
     });
   }
 
