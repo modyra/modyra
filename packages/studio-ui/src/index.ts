@@ -44,7 +44,8 @@ import {
   type Command,
   type Placement,
 } from "@modyra/studio-editor";
-import { compileToContract } from "@modyra/studio-contract";
+import { mountMdyForm, type MdyPlainForm } from "@modyra/plain";
+import { compileToContract, flattenContractFields } from "@modyra/studio-contract";
 import { TargetRegistry, type Artifact } from "@modyra/studio-codegen";
 import { jsonTargetManifest } from "@modyra/studio-target-json";
 import { coreTargetManifest } from "@modyra/studio-target-core";
@@ -571,6 +572,7 @@ export interface MountStudioOptions {
 
 export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, options: MountStudioOptions = {}): () => void {
   const canvasController = new StudioCanvasController();
+  const plainCanvasSession = new StudioRuntimeSession<MdyPlainForm>();
   const previewSession = new StudioRuntimeSession<{ dispose(): void }>();
   let project = initial ? structuredClone(initial) : createBlankProject();
   let selected = project.schema.id;
@@ -592,6 +594,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     message: "",
   };
   let inspectorTab: "node" | "form" | "diagnostics" | "export" | "preview" = "node";
+  let canvasMode: "structure" | "form" = "structure";
   /** Export tab state — `generation` guards against a stale async generate() clobbering a newer one
       (plan §14 P7 gate "stale ignored"); errors never touch `project`/`history` (gate "failure cannot corrupt editor"). */
   let exportState: { targetId: string; artifact: Artifact | null; generating: boolean; error: string | null; generation: number } = {
@@ -850,11 +853,12 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
   function render(): void {
     canvasController.capture();
+    plainCanvasSession.dispose();
     const idx = buildIndexes(project);
     const current = idx.nodeById.get(selected) ?? project.schema;
     selected = current.id;
     const rootChildren = project.schema.node === "group" ? project.schema.children : [];
-    const { diagnostics } = compileToContract(project);
+    const { contract, diagnostics } = compileToContract(project);
     diagnosticNodeIds = new Set(diagnostics.filter((d) => d.nodeId).map((d) => d.nodeId!));
     const errorCount = diagnostics.filter((d) => d.severity === "error").length;
 
@@ -882,15 +886,26 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
               <h1>${escapeHtml(project.name)}</h1>
               <span>${idx.nodeById.size - 1} nodes</span>
             </div>
-            ${
-              rootChildren.length
-                ? `<ul class="tree">${rootChildren.map(markup).join("")}</ul>`
-                : `<div class="empty">
-                     <h2>Start with a blank form</h2>
-                     <p>Drag an element here or click one in the palette.</p>
-                     <div class="drop-zone inside" data-inside="${project.schema.id}" data-index="0">Drop first element</div>
-                   </div>`
-            }
+            <div class="canvas-mode-switch" role="group" aria-label="Canvas view">
+              <button type="button" data-canvas-mode="structure" aria-pressed="${canvasMode === "structure"}">Structure</button>
+              <button type="button" data-canvas-mode="form" aria-pressed="${canvasMode === "form"}">Live form</button>
+            </div>
+            <div class="canvas-surface" data-canvas-surface="${canvasMode}">
+              ${
+                canvasMode === "form"
+                  ? `<div class="plain-canvas-frame">
+                       <p class="plain-canvas-note">Interactive rendering from the strict Contract via @modyra/plain. Structure editing remains available in Structure.</p>
+                       ${contract ? `<div class="plain-canvas-form" data-plain-canvas></div>` : `<div class="plain-canvas-unavailable" role="status">The live form is unavailable until the blocking Contract diagnostics are fixed.</div>`}
+                     </div>`
+                  : rootChildren.length
+                    ? `<ul class="tree">${rootChildren.map(markup).join("")}</ul>`
+                    : `<div class="empty">
+                         <h2>Start with a blank form</h2>
+                         <p>Drag an element here or click one in the palette.</p>
+                         <div class="drop-zone inside" data-inside="${project.schema.id}" data-index="0">Drop first element</div>
+                       </div>`
+              }
+            </div>
           </section>
           <aside class="inspector">
             <div class="inspector-tabs" role="tablist">
@@ -976,6 +991,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
     const canvas = host.querySelector<HTMLElement>(".canvas");
     canvasController.connect(canvas);
+    if (canvasMode === "form" && contract) {
+      const plainHost = host.querySelector<HTMLElement>("[data-plain-canvas]");
+      if (plainHost) {
+        const fields = flattenContractFields(contract);
+        if (fields.length) {
+          plainCanvasSession.replace(mountMdyForm(plainHost, fields, { submitLabel: null }));
+        } else {
+          plainHost.innerHTML = `<div class="plain-canvas-unavailable" role="status">The Contract has no renderable fields yet.</div>`;
+        }
+      }
+    }
     bind();
     // Fall back to the canvas region (tabindex=-1, programmatic-only) when the requested target
     // no longer exists — e.g. deleting the tree's last node leaves no [data-node] to focus.
@@ -992,6 +1018,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   }
 
   function bind(): void {
+    host.querySelectorAll<HTMLButtonElement>("[data-canvas-mode]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const next = button.dataset.canvasMode;
+        if (next !== "structure" && next !== "form") return;
+        canvasMode = next;
+        status = next === "form" ? "Live form canvas" : "Structure canvas";
+        focusSelector = `[data-canvas-mode="${next}"]`;
+        render();
+      }),
+    );
+
     host.querySelectorAll<HTMLElement>("[draggable=true]").forEach((el) => {
       el.addEventListener("dragstart", () => {
         drag = el.dataset.template ? { template: el.dataset.template } : { nodeId: el.dataset.node! };
@@ -1509,6 +1546,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
   return () => {
     disposed = true;
+    plainCanvasSession.dispose();
     previewSession.dispose();
     previewEffect = null;
     canvasController.dispose();
