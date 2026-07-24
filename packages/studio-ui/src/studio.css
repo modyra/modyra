@@ -449,6 +449,36 @@ body {
   color: var(--mdy-text);
   opacity: 1;
 }
+.plain-canvas-group {
+  min-width: 0;
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid var(--mdy-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mdy-surface) 94%, var(--mdy-indigo));
+}
+.plain-canvas-group.selected {
+  border-color: var(--mdy-indigo);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-indigo) 20%, transparent);
+}
+.plain-canvas-group legend {
+  padding: 0 6px;
+}
+.plain-canvas-group-select {
+  border: 0;
+  background: transparent;
+  color: var(--mdy-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.plain-canvas-group-body {
+  display: grid;
+  gap: 4px;
+}
+.plain-canvas-drop-inside.active {
+  min-height: 30px;
+}
 .plain-canvas-field[draggable="true"] {
   cursor: grab;
 }

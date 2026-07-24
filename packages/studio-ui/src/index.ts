@@ -904,6 +904,48 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       return select;
     };
 
+    const groups = Array.from(idx.nodeById.values())
+      .filter((node): node is GroupNode => node.node === "group" && node.id !== project.schema.id)
+      .sort((a, b) => (idx.pathByNode.get(a.id)?.split(".").length ?? 0) - (idx.pathByNode.get(b.id)?.split(".").length ?? 0));
+
+    for (const group of groups) {
+      const groupPath = idx.pathByNode.get(group.id);
+      if (!groupPath) continue;
+      const descendants = fields.flatMap((field, index) => field.name.startsWith(`${groupPath}.`) ? [fieldRoots[index]] : []);
+      if (descendants.length === 0) continue;
+
+      const fieldset = document.createElement("fieldset");
+      fieldset.className = "plain-canvas-group";
+      fieldset.dataset.plainGroup = group.id;
+      fieldset.dataset.groupPath = groupPath;
+      fieldset.classList.toggle("selected", group.id === selected);
+
+      const legend = document.createElement("legend");
+      const select = document.createElement("button");
+      select.type = "button";
+      select.className = "plain-canvas-group-select";
+      select.dataset.plainSelect = group.id;
+      select.setAttribute("aria-pressed", String(group.id === selected));
+      select.setAttribute("aria-label", `Select group ${group.name} in Studio`);
+      select.textContent = group.label || group.name;
+      legend.append(select);
+
+      const body = document.createElement("div");
+      body.className = "plain-canvas-group-body";
+      const first = descendants[0]!;
+      first.before(fieldset);
+      for (const element of descendants) body.append(element);
+
+      const inside = document.createElement("div");
+      inside.className = "drop-zone plain-canvas-drop plain-canvas-drop-inside";
+      inside.dataset.inside = group.id;
+      inside.dataset.index = String(group.children.length);
+      inside.setAttribute("aria-hidden", "true");
+      inside.textContent = group.children.length ? "Drop into group" : "Drop first field into group";
+      body.append(inside);
+      fieldset.append(legend, body);
+    }
+
     fields.forEach((field, index) => {
       const root = fieldRoots[index];
       const nodeId = nodeIdByPath.get(field.name);
