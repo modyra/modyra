@@ -417,3 +417,29 @@ test("live canvas group controls reorder nest and return groups to root", async 
   await page.locator('[data-undo]').click();
   await expect(page.locator('.plain-canvas-group[data-group-path="billing.shipping"]')).toHaveCount(1);
 });
+
+
+test("live canvas field controls move fields into groups and back to root", async ({ page }) => {
+  await page.locator('[data-template="group"]').click();
+  await page.locator('[data-name]').fill('shipping');
+  await page.locator('[data-name]').blur();
+  const groupId = await page.locator('[data-node]').first().getAttribute('data-node');
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-name]').fill('city');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-canvas-mode="form"]').click();
+
+  const field = page.locator('.plain-canvas-field');
+  const moveInto = field.getByRole('combobox', { name: 'Move city into group' });
+  await expect(moveInto.locator(`option[value="${groupId}"]`)).toHaveCount(1);
+  await moveInto.selectOption(groupId!);
+  await expect(field).toHaveAttribute('data-field-path', 'shipping.city');
+  await expect(field.locator('[data-plain-select]')).toBeFocused();
+
+  await field.getByRole('button', { name: 'Move shipping.city to form root' }).click();
+  await expect(field).toHaveAttribute('data-field-path', 'city');
+  await expect(field.locator('[data-plain-select]')).toBeFocused();
+
+  await page.locator('[data-undo]').click();
+  await expect(field).toHaveAttribute('data-field-path', 'shipping.city');
+});

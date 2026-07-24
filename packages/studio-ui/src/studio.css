@@ -431,6 +431,11 @@ body {
   opacity: 0.35;
   cursor: not-allowed;
 }
+.plain-canvas-actions select {
+  max-width: 9rem;
+  font: inherit;
+  font-size: 0.75rem;
+}
 .plain-canvas-insert {
   display: block;
   width: min(100%, 220px) !important;

@@ -1067,7 +1067,26 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       deleteButton.setAttribute("aria-label", `Delete ${field.name}`);
       deleteButton.textContent = "Delete";
 
-      actions.append(moveUpButton, moveDownButton, duplicateButton, deleteButton);
+      const fieldParentId = idx.parentById.get(nodeId);
+      if (fieldParentId !== project.schema.id) {
+        const moveToRootButton = document.createElement("button");
+        moveToRootButton.type = "button";
+        moveToRootButton.dataset.plainFieldRoot = nodeId;
+        moveToRootButton.setAttribute("aria-label", `Move ${field.name} to form root`);
+        moveToRootButton.textContent = "To root";
+        actions.append(moveToRootButton);
+      }
+
+      const moveIntoGroup = document.createElement("select");
+      moveIntoGroup.dataset.plainFieldInto = nodeId;
+      moveIntoGroup.setAttribute("aria-label", `Move ${field.name} into group`);
+      moveIntoGroup.append(new Option("Move into…", ""));
+      for (const group of groups) {
+        if (group.id === fieldParentId) continue;
+        moveIntoGroup.append(new Option(group.label || group.name, group.id));
+      }
+
+      actions.append(moveUpButton, moveDownButton, moveIntoGroup, duplicateButton, deleteButton);
       root.prepend(selectButton, actions);
       root.before(dropPoint("before", nodeId), insertionPoint("before", nodeId));
       if (index === fields.length - 1) {
@@ -1277,6 +1296,40 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
           createInsertCommand(created, { kind: placementKind, targetId }),
           created.id,
           `[data-plain-select="${created.id}"]`,
+        );
+      }),
+    );
+
+    host.querySelectorAll<HTMLButtonElement>("[data-plain-field-root]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainFieldRoot;
+        if (!nodeId) return;
+        selected = nodeId;
+        commit(
+          createMoveCommand(nodeId, {
+            kind: "inside",
+            parentId: project.schema.id,
+            index: idx.childrenByParent.get(project.schema.id)?.length ?? 0,
+          }),
+          nodeId,
+          `[data-plain-select="${nodeId}"]`,
+        );
+      }),
+    );
+    host.querySelectorAll<HTMLSelectElement>("[data-plain-field-into]").forEach((select) =>
+      select.addEventListener("change", () => {
+        const nodeId = select.dataset.plainFieldInto;
+        const parentId = select.value;
+        if (!nodeId || !parentId) return;
+        selected = nodeId;
+        commit(
+          createMoveCommand(nodeId, {
+            kind: "inside",
+            parentId,
+            index: idx.childrenByParent.get(parentId)?.length ?? 0,
+          }),
+          nodeId,
+          `[data-plain-select="${nodeId}"]`,
         );
       }),
     );
