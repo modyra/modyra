@@ -1,24 +1,245 @@
 ---
-// P12: apps/studio/dist is copied into public/studio-app/ by
-// scripts/copy-studio-app.mjs (run via `npm run sync:studio-app` at the
-// repo root, before this site's own isolated build) — see
-// .modyra/framework/STATUS.md for why this is a static asset reference
-// and not a Vite import of @modyra/studio-ui from source: site/ installs
-// via its own package-lock.json, outside the pnpm workspace, and never
-// resolves workspace packages.
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+// P12: static SEO/marketing content for the "/modyra/studio/" landing
+// route — the full-screen editor itself lives at "/modyra/studio/app/"
+// (site/src/pages/studio/app.astro), a separate route so this page can
+// be indexed/shared without loading the whole editor bundle. Same
+// hand-authored-outside-Starlight pattern as the site root and pitch.astro
+// (see those files' own comments) — never synced/wiped by
+// scripts/sync-docs-site.mjs.
+import '../../styles/custom.css';
+
+const based = (path: string) =>
+  `${import.meta.env.BASE_URL.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+
+const targets = [
+  { name: "Contract JSON", desc: "The portable Dynamic Form Contract v2 + the raw Studio project, for any consumer." },
+  { name: "Core", desc: "A real createForm() definition — field/group/array descriptors, real validators, ready to run." },
+  { name: "Angular", desc: "A real mdyForm() definition using @modyra/angular/adapter — identical semantics to Core." },
+  { name: "React", desc: "A real useMdyForm() hook — same schema, same validators, wrapped the way Hooks require." },
+];
 ---
 
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Modyra Studio</title>
-    <meta name="description" content="Local-first visual form editor." />
-    <link rel="stylesheet" href={`${base}/studio-app/studio.css`} />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modyra Studio — visual form builder</title>
+    <meta
+      name="description"
+      content="A local-first visual form builder for Modyra. Drag-and-drop schema, live validators, a real running preview with a configurable server mock, and one-click export to Core, Angular, React, or portable Contract JSON."
+    />
   </head>
-  <body style="margin:0">
-    <div data-modyra-studio></div>
-    <script type="module" src={`${base}/studio-app/studio.js`}></script>
+  <body>
+    <header class="topbar">
+      <a class="brand" href={based('')}>Modyra</a>
+      <nav class="topnav">
+        <a href={based('start-here/')}>Docs</a>
+        <a href={based('pitch')}>Pitch deck</a>
+        <a href={based('studio')}>Studio</a>
+        <a href="https://github.com/modyra/modyra">GitHub</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">Modyra Studio · visual form builder</p>
+      <h1>
+        Build the schema.<br /><span class="gradient-text">Ship real code.</span>
+      </h1>
+      <p class="lede">
+        Studio is a local-first canvas for Modyra forms — drag fields into
+        groups and arrays, wire up validators and server checks, and try the
+        whole thing in a real, running preview before you export it. Nothing
+        you export is templated text: every target compiles the same schema
+        a real <code class="mono">@modyra/core</code> form would run.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href={based('studio/app/')}>Launch Studio →</a>
+        <a class="btn btn-secondary" href={based('studio/templates/')}>Browse templates →</a>
+        <a class="btn btn-secondary" href={based('start-here/')}>Read the docs →</a>
+      </div>
+    </section>
+
+    <section class="why">
+      <div class="why-grid">
+        <div class="why-cell">
+          <p class="eyebrow">Reads the model, not generated code</p>
+          <h3>The preview is a real form</h3>
+          <p class="desc">
+            The Preview tab builds an actual <code class="mono">@modyra/core</code>
+            form from your schema — real validators, real arrays, real
+            <code class="mono">canSubmit</code>. Server validators run
+            against a configurable mock (succeed, fail, network failure) so
+            you can test the whole flow with no backend.
+          </p>
+        </div>
+        <div class="why-cell">
+          <p class="eyebrow">Every mutation is invertible</p>
+          <h3>Undo/redo, for real</h3>
+          <p class="desc">
+            Every edit — drag, validator, rename — is a Command with a real
+            inverse. Keyboard-only editing is a first-class path, not an
+            afterthought: pick up a node, arrow it around, drop it, no mouse
+            required.
+          </p>
+        </div>
+        <div class="why-cell">
+          <p class="eyebrow">Local-first, no lock-in</p>
+          <h3>Your project, your storage</h3>
+          <p class="desc">
+            Everything auto-saves to IndexedDB in your own browser and
+            restores on reload. Export the raw project as JSON any time —
+            import it back into any Studio instance, or hand it to another
+            target entirely.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="frameworks">
+      <p class="eyebrow">Pick your target</p>
+      <h2>One schema, compiled four ways</h2>
+      <p class="lede">
+        The Export tab drives real code-generation targets through the same
+        lazy target registry — generating a target needs no change to the
+        canvas, and a target failure never corrupts your project.
+      </p>
+      <div class="fw-row">
+        {targets.map((t) => (
+          <span class="fw-chip" title={t.desc}>{t.name}</span>
+        ))}
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="link-row">
+        <a href={based('studio/app/')}>Launch Studio →</a>
+        <a href={based('studio/templates/')}>Templates →</a>
+        <a href={based('studio/changelog/')}>Changelog →</a>
+        <a href={based('start-here/')}>Full documentation →</a>
+        <a href="https://github.com/modyra/modyra">GitHub →</a>
+      </div>
+    </footer>
   </body>
 </html>
+
+<style>
+  :root {
+    --bg: var(--mdy-night);
+    --bg-card: #1c1e30;
+    --fg: var(--mdy-cloud);
+    --fg-muted: var(--mdy-slate);
+    --border: #2c2f47;
+    --accent-strong: #c8c3ff;
+    --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: var(--mdy-cloud);
+      --bg-card: #ffffff;
+      --fg: var(--mdy-night);
+      --fg-muted: #52577a;
+      --border: #e1e4ef;
+      --accent-strong: #4a3fd6;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: var(--mdy-night); --bg-card: #1c1e30; --fg: var(--mdy-cloud);
+    --fg-muted: var(--mdy-slate); --border: #2c2f47; --accent-strong: #c8c3ff;
+  }
+  :root[data-theme='light'] {
+    --bg: var(--mdy-cloud); --bg-card: #ffffff; --fg: var(--mdy-night);
+    --fg-muted: #52577a; --border: #e1e4ef; --accent-strong: #4a3fd6;
+  }
+
+  html, body {
+    margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+    font-family: 'Satoshi', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--mdy-indigo); color: white; }
+  code, .mono { font-family: var(--mono); }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem clamp(1.5rem, 6vw, 4rem);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { font-weight: 900; font-size: 1.1rem; color: var(--fg); text-decoration: none; letter-spacing: -0.01em; }
+  .topnav { display: flex; gap: 1.75rem; }
+  .topnav a { color: var(--fg-muted); text-decoration: none; font-size: 0.92rem; }
+  .topnav a:hover, .topnav a:focus-visible { color: var(--fg); }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--fg-muted); margin: 0 0 1.25rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .eyebrow::before {
+    content: ''; width: 1.5rem; height: 2px;
+    background: var(--mdy-gradient-brand); display: inline-block;
+  }
+
+  .hero {
+    padding: clamp(3rem, 8vw, 7rem) clamp(1.5rem, 8vw, 8rem) clamp(2.5rem, 6vw, 5rem);
+    background:
+      radial-gradient(ellipse 80% 60% at 15% -10%, color-mix(in srgb, var(--mdy-indigo) 22%, transparent), transparent),
+      radial-gradient(ellipse 60% 50% at 90% 10%, color-mix(in srgb, var(--mdy-coral) 14%, transparent), transparent);
+  }
+  .hero h1 {
+    font-weight: 900; font-size: clamp(2.6rem, 7vw, 5rem);
+    line-height: 1.03; letter-spacing: -0.02em; max-width: 16ch;
+  }
+  .gradient-text {
+    background: var(--mdy-gradient-brand);
+    background-clip: text; -webkit-background-clip: text; color: transparent;
+  }
+  .lede {
+    font-size: clamp(1.05rem, 1.6vw, 1.3rem); line-height: 1.55;
+    color: var(--fg-muted); max-width: 60ch; margin: 1.5rem 0 0;
+  }
+
+  .hero-ctas { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
+  .btn {
+    display: inline-flex; align-items: center; padding: 0.75rem 1.4rem;
+    border-radius: 0.6rem; font-weight: 600; font-size: 0.95rem;
+    text-decoration: none; transition: opacity 0.15s ease, border-color 0.15s ease;
+  }
+  .btn-primary { background: var(--mdy-gradient-brand); color: #fff; }
+  .btn-primary:hover, .btn-primary:focus-visible { opacity: 0.9; }
+  .btn-secondary { border: 1px solid var(--border); color: var(--fg); background: var(--bg-card); }
+  .btn-secondary:hover, .btn-secondary:focus-visible { border-color: var(--mdy-indigo); }
+  .btn:focus-visible { outline: 2px solid var(--mdy-indigo); outline-offset: 3px; }
+
+  .why { padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 8vw, 8rem); border-top: 1px solid var(--border); }
+  .why-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 2.5rem;
+  }
+  .why-cell h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.6rem; }
+  .why-cell .desc { font-size: 0.92rem; color: var(--fg-muted); line-height: 1.55; max-width: 34ch; }
+
+  .frameworks {
+    padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 8vw, 8rem);
+    border-top: 1px solid var(--border);
+  }
+  .frameworks h2 {
+    font-weight: 700; font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+    line-height: 1.1; letter-spacing: -0.01em; max-width: 24ch; margin-bottom: 0.75rem;
+  }
+  .fw-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 2rem; }
+  .fw-chip {
+    font-family: var(--mono); font-size: 0.88rem; padding: 0.6rem 1.1rem;
+    border: 1px solid var(--border); border-radius: 999px; color: var(--fg);
+    background: var(--bg-card); cursor: default;
+  }
+
+  .footer { padding: 2.5rem clamp(1.5rem, 8vw, 8rem) 3rem; border-top: 1px solid var(--border); }
+  .link-row { display: flex; gap: 2rem; flex-wrap: wrap; }
+  .link-row a {
+    color: var(--fg-muted); text-decoration: none; font-size: 0.9rem;
+    border-bottom: 1px solid var(--border); padding-bottom: 0.2rem; transition: border-color 0.15s ease;
+  }
+  .link-row a:hover, .link-row a:focus-visible { color: var(--fg); border-color: var(--mdy-indigo); }
+</style>
