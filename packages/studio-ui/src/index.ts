@@ -933,7 +933,21 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       const count = document.createElement("span");
       count.className = "plain-canvas-array-count";
       count.textContent = `${array.initialRows.length} initial row${array.initialRows.length === 1 ? "" : "s"}`;
-      header.append(select, count);
+      const actions = document.createElement("span");
+      actions.className = "plain-canvas-array-actions";
+      const addRow = document.createElement("button");
+      addRow.type = "button";
+      addRow.dataset.plainArrayAdd = array.id;
+      addRow.setAttribute("aria-label", `Add initial row to ${array.name}`);
+      addRow.textContent = "Add row";
+      const removeRow = document.createElement("button");
+      removeRow.type = "button";
+      removeRow.dataset.plainArrayRemove = array.id;
+      removeRow.disabled = array.initialRows.length === 0;
+      removeRow.setAttribute("aria-label", `Remove last initial row from ${array.name}`);
+      removeRow.textContent = "Remove row";
+      actions.append(addRow, removeRow);
+      header.append(select, count, actions);
 
       const body = document.createElement("div");
       body.className = "plain-canvas-array-body";
@@ -1346,6 +1360,37 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
           createInsertCommand(created, { kind: placementKind, targetId }),
           created.id,
           `[data-plain-select="${created.id}"]`,
+        );
+      }),
+    );
+
+    host.querySelectorAll<HTMLButtonElement>("[data-plain-array-add]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainArrayAdd;
+        const array = nodeId ? idx.nodeById.get(nodeId) : undefined;
+        if (!nodeId || array?.node !== "array") return;
+        selected = nodeId;
+        commit(
+          createUpdateNodeCommand(nodeId, {
+            initialRows: [...array.initialRows, defaultRowValue(array.item)],
+          }),
+          nodeId,
+          `[data-plain-array="${nodeId}"] [data-plain-array-add]`,
+        );
+      }),
+    );
+    host.querySelectorAll<HTMLButtonElement>("[data-plain-array-remove]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainArrayRemove;
+        const array = nodeId ? idx.nodeById.get(nodeId) : undefined;
+        if (!nodeId || array?.node !== "array" || array.initialRows.length === 0) return;
+        selected = nodeId;
+        commit(
+          createUpdateNodeCommand(nodeId, {
+            initialRows: array.initialRows.slice(0, -1),
+          }),
+          nodeId,
+          `[data-plain-array="${nodeId}"] [data-plain-array-remove]`,
         );
       }),
     );
