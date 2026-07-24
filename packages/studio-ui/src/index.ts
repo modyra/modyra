@@ -908,6 +908,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       .filter((node): node is GroupNode => node.node === "group" && node.id !== project.schema.id)
       .sort((a, b) => (idx.pathByNode.get(a.id)?.split(".").length ?? 0) - (idx.pathByNode.get(b.id)?.split(".").length ?? 0));
 
+    const groupBodies = new Map<string, HTMLElement>();
+
     for (const group of groups) {
       const groupPath = idx.pathByNode.get(group.id);
       if (!groupPath) continue;
@@ -921,6 +923,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       fieldset.className = "plain-canvas-group";
       fieldset.dataset.plainGroup = group.id;
       fieldset.dataset.groupPath = groupPath;
+      fieldset.dataset.node = group.id;
+      fieldset.draggable = true;
+      fieldset.setAttribute("aria-label", `${group.name}, draggable group`);
       fieldset.classList.toggle("selected", group.id === selected);
 
       const legend = document.createElement("legend");
@@ -937,11 +942,18 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       body.className = "plain-canvas-group-body";
 
       const first = descendants[0];
+      const parentId = idx.parentById.get(group.id);
+      const parentBody = parentId ? groupBodies.get(parentId) : undefined;
       if (first) {
         first.before(fieldset);
+      } else if (parentBody) {
+        parentBody.append(fieldset);
       } else {
         plainHost.append(fieldset);
       }
+
+      fieldset.before(dropPoint("before", group.id));
+      fieldset.after(dropPoint("after", group.id));
 
       for (const element of descendants) body.append(element);
 
@@ -953,6 +965,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       inside.textContent = group.children.length ? "Drop into group" : "Drop first field into group";
       body.append(inside);
       fieldset.append(legend, body);
+      groupBodies.set(group.id, body);
     }
 
     const rootDrop = document.createElement("div");
@@ -1171,11 +1184,19 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         const fields = flattenContractFields(contract);
         if (fields.length) {
           plainCanvasSession.replace(mountMdyForm(plainHost, fields, { submitLabel: null }));
-          instrumentPlainCanvas(plainHost, fields, idx);
-          canvasController.elements.refresh(canvas ?? plainHost);
-        } else {
-          plainHost.innerHTML = `<div class="plain-canvas-unavailable" role="status">The Contract has no renderable fields yet.</div>`;
         }
+
+        instrumentPlainCanvas(plainHost, fields, idx);
+
+        const hasVisualNodes = plainHost.querySelector(
+          ".plain-canvas-field, .plain-canvas-group",
+        );
+
+        if (!hasVisualNodes) {
+          plainHost.innerHTML = `<div class="plain-canvas-unavailable" role="status">The Contract has no renderable fields or groups yet.</div>`;
+        }
+
+        canvasController.elements.refresh(canvas ?? plainHost);
       }
     }
     bind();
@@ -1250,6 +1271,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
     host.querySelectorAll<HTMLElement>("[draggable=true]").forEach((el) => {
       el.addEventListener("dragstart", (event) => {
+        event.stopPropagation();
         drag = el.dataset.template ? { template: el.dataset.template } : { nodeId: el.dataset.node! };
         const isLiveField = el.classList.contains("plain-canvas-field");
         const isPaletteTemplate = Boolean(el.dataset.template);
