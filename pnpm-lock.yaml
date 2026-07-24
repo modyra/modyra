@@ -311,6 +311,24 @@ importers:
 
   packages/studio-model: {}
 
+  packages/studio-target-core:
+    dependencies:
+      '@modyra/studio-model':
+        specifier: workspace:*
+        version: link:../studio-model
+
+  packages/studio-target-json:
+    dependencies:
+      '@modyra/studio-contract':
+        specifier: workspace:*
+        version: link:../studio-contract
+      '@modyra/studio-model':
+        specifier: workspace:*
+        version: link:../studio-model
+      '@modyra/studio-target-core':
+        specifier: workspace:*
+        version: link:../studio-target-core
+
   packages/studio-ui:
     dependencies:
       '@modyra/studio-contract':
@@ -322,6 +340,12 @@ importers:
       '@modyra/studio-model':
         specifier: workspace:*
         version: link:../studio-model
+      '@modyra/studio-target-core':
+        specifier: workspace:*
+        version: link:../studio-target-core
+      '@modyra/studio-target-json':
+        specifier: workspace:*
+        version: link:../studio-target-json
 
   packages/styles: {}
 
