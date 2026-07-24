@@ -47,6 +47,7 @@ import { compileToContract } from "@modyra/studio-contract";
 import { TargetRegistry, type Artifact } from "@modyra/studio-codegen";
 import { jsonTargetManifest } from "@modyra/studio-target-json";
 import { coreTargetManifest } from "@modyra/studio-target-core";
+import { angularTargetManifest } from "@modyra/studio-target-angular";
 import "./studio.css";
 
 type Drag = { nodeId: string } | { template: string };
@@ -55,6 +56,7 @@ type Drag = { nodeId: string } | { template: string };
 const targetRegistry = new TargetRegistry();
 targetRegistry.register(jsonTargetManifest);
 targetRegistry.register(coreTargetManifest);
+targetRegistry.register(angularTargetManifest);
 
 const TEMPLATES = [
   "text",
