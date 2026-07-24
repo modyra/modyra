@@ -363,6 +363,43 @@ body {
   display: grid;
   gap: 6px;
 }
+.plain-canvas-field {
+  position: relative;
+  padding: 34px 12px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+.plain-canvas-field:hover {
+  border-color: color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-border));
+}
+.plain-canvas-field.selected {
+  border-color: var(--mdy-indigo);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-indigo) 22%, transparent);
+}
+.plain-canvas-field.has-diagnostic {
+  border-style: dashed;
+  border-color: var(--mdy-coral);
+}
+.plain-canvas-select {
+  position: absolute;
+  inset-block-start: 6px;
+  inset-inline-start: 8px;
+  width: auto !important;
+  max-width: calc(100% - 16px);
+  padding: 3px 7px;
+  overflow: hidden;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--mdy-bg) 82%, transparent);
+  color: var(--mdy-text-muted);
+  font-size: 10px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plain-canvas-field.selected .plain-canvas-select {
+  background: var(--mdy-indigo);
+  color: white;
+}
 .plain-canvas-form label {
   color: var(--mdy-text-muted);
   font-size: 12px;

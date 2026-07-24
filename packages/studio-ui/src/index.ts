@@ -851,6 +851,35 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       </li>`;
   }
 
+  function instrumentPlainCanvas(
+    plainHost: HTMLElement,
+    fields: ReadonlyArray<{ readonly name: string }>,
+    idx: StudioIndexes,
+  ): void {
+    const nodeIdByPath = new Map(Array.from(idx.pathByNode, ([nodeId, path]) => [path, nodeId]));
+    const fieldRoots = Array.from(plainHost.children).filter((element): element is HTMLElement => element instanceof HTMLElement);
+
+    fields.forEach((field, index) => {
+      const root = fieldRoots[index];
+      const nodeId = nodeIdByPath.get(field.name);
+      if (!root || !nodeId) return;
+      root.dataset.node = nodeId;
+      root.dataset.fieldPath = field.name;
+      root.classList.add("plain-canvas-field");
+      root.classList.toggle("selected", nodeId === selected);
+      root.classList.toggle("has-diagnostic", diagnosticNodeIds.has(nodeId));
+
+      const selectButton = document.createElement("button");
+      selectButton.type = "button";
+      selectButton.className = "plain-canvas-select";
+      selectButton.dataset.plainSelect = nodeId;
+      selectButton.setAttribute("aria-label", `Select ${field.name} in Studio`);
+      selectButton.setAttribute("aria-pressed", String(nodeId === selected));
+      selectButton.textContent = field.name;
+      root.prepend(selectButton);
+    });
+  }
+
   function render(): void {
     canvasController.capture();
     plainCanvasSession.dispose();
@@ -997,6 +1026,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         const fields = flattenContractFields(contract);
         if (fields.length) {
           plainCanvasSession.replace(mountMdyForm(plainHost, fields, { submitLabel: null }));
+          instrumentPlainCanvas(plainHost, fields, idx);
+          canvasController.elements.refresh(canvas ?? plainHost);
         } else {
           plainHost.innerHTML = `<div class="plain-canvas-unavailable" role="status">The Contract has no renderable fields yet.</div>`;
         }
@@ -1025,6 +1056,18 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         canvasMode = next;
         status = next === "form" ? "Live form canvas" : "Structure canvas";
         focusSelector = `[data-canvas-mode="${next}"]`;
+        render();
+      }),
+    );
+
+    host.querySelectorAll<HTMLButtonElement>("[data-plain-select]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainSelect;
+        if (!nodeId) return;
+        selected = nodeId;
+        inspectorTab = "node";
+        status = "Selected field from live canvas";
+        focusSelector = `[data-plain-select="${nodeId}"]`;
         render();
       }),
     );

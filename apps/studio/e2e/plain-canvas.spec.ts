@@ -3,6 +3,10 @@ import { expect, test } from "@playwright/test";
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.waitForSelector(".studio");
+  // Studio restores its last IndexedDB session. Each canvas scenario needs
+  // a deterministic blank project instead of inheriting fields or blocking
+  // diagnostics created by the preceding test in the same browser context.
+  await page.locator("[data-new]").click();
 });
 
 test("Live form mounts @modyra/plain while Structure remains the authoring fallback", async ({ page }) => {
@@ -34,4 +38,24 @@ test("blocking Contract diagnostics produce an editor-safe live-form placeholder
 
   await page.locator('[data-canvas-mode="structure"]').click();
   await expect(page.locator('.tree-node .indicator.issue')).toHaveCount(1);
+});
+
+test("live canvas fields expose stable node IDs and select the matching Inspector node", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  const nodeId = await page.locator('[data-node]').getAttribute('data-node');
+  await page.locator('[data-name]').fill('customerName');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-label]').fill('Customer name');
+  await page.locator('[data-label]').blur();
+
+  await page.locator('[data-canvas-mode="form"]').click();
+  const field = page.locator('.plain-canvas-field');
+  await expect(field).toHaveAttribute('data-node', nodeId!);
+  await expect(field).toHaveAttribute('data-field-path', 'customerName');
+
+  await page.locator('[data-plain-select]').click();
+  await expect(page.locator('.plain-canvas-field.selected')).toHaveAttribute('data-node', nodeId!);
+  await expect(page.locator('[data-inspector-tab="node"]')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('[data-name]')).toHaveValue('customerName');
+  await expect(page.locator('[data-plain-select]')).toBeFocused();
 });
