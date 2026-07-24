@@ -41,7 +41,7 @@ test("form.ts references every checkout field by name and imports asyncDependsOn
   const formFile = artifact.files.find((f) => f.path === "form.ts");
   assert.match(formFile.content, /country: field\("IT"\)/);
   assert.match(formFile.content, /city: field\("", \[required\(\)\]\)/);
-  assert.match(formFile.content, /asyncDependsOn: \["country"\]/);
+  assert.match(formFile.content, /dependsOn: \["country"\]/);
   assert.doesNotMatch(formFile.content, /nd_/);
 });
 
