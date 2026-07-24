@@ -479,6 +479,19 @@ body {
   font-weight: 700;
   cursor: pointer;
 }
+.plain-canvas-array-actions {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.plain-canvas-array-actions button {
+  font: inherit;
+  font-size: 0.75rem;
+}
+.plain-canvas-array-actions button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 .plain-canvas-array-count,
 .plain-canvas-array-empty {
   color: var(--mdy-muted);

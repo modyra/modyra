@@ -464,3 +464,38 @@ test("live canvas renders empty arrays and selects them in the Inspector", async
   await expect(page.locator('[data-name]')).toHaveValue('items');
   await expect(array.locator('[data-plain-select]')).toBeFocused();
 });
+
+
+test("live canvas array controls add and remove initial rows through history", async ({ page }) => {
+  await page.locator('[data-template="array"]').click();
+  await page.locator('[data-name]').fill('items');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-canvas-mode="form"]').click();
+
+  const array = page.locator('.plain-canvas-array');
+  const add = array.getByRole('button', { name: 'Add initial row to items' });
+  const remove = array.getByRole('button', { name: 'Remove last initial row from items' });
+  await expect(remove).toBeDisabled();
+
+  await add.click();
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 initial row');
+  await expect(array.locator('.plain-canvas-array-row')).toHaveCount(1);
+  await expect(add).toBeFocused();
+  await expect(remove).toBeEnabled();
+
+  await add.click();
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('2 initial rows');
+  await expect(array.locator('.plain-canvas-array-row')).toHaveCount(2);
+
+  await remove.click();
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 initial row');
+  await expect(remove).toBeFocused();
+
+  await page.locator('[data-undo]').click();
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('2 initial rows');
+  await page.locator('[data-undo]').click();
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 initial row');
+  await page.locator('[data-undo]').click();
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('0 initial rows');
+  await expect(array.locator('.plain-canvas-array-empty')).toHaveText('No initial rows');
+});

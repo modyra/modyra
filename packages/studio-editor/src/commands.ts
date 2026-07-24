@@ -26,8 +26,16 @@ import type { Command, Placement } from "./types.js";
 
 type Slot = { kind: "child"; parent: GroupNode; index: number } | { kind: "item"; parent: ArrayNode };
 
-/** Only `name`/`label`/`description` are shared across every node kind (see the union-`Omit` note below). */
-type NodePatch = Partial<Omit<StudioSchemaNode, "id" | "node" | "children" | "item">>;
+/**
+ * Distribute Omit over every StudioSchemaNode variant so updateNode can
+ * modify variant-specific data such as ArrayNode.initialRows without
+ * exposing structural identity and containment properties.
+ */
+type NodePatch = StudioSchemaNode extends infer Node
+  ? Node extends StudioSchemaNode
+    ? Partial<Omit<Node, "id" | "node" | "children" | "item">>
+    : never
+  : never;
 
 function findNode(root: StudioSchemaNode, id: string): StudioSchemaNode | null {
   if (root.id === id) return root;
