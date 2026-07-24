@@ -51,6 +51,7 @@ import { coreTargetManifest } from "@modyra/studio-target-core";
 import { angularTargetManifest } from "@modyra/studio-target-angular";
 import { reactTargetManifest } from "@modyra/studio-target-react";
 import { buildLiveForm, createMockSubmitAction, vanillaReactivity, type MdyTypedForm, type MockServerConfig } from "@modyra/studio-preview";
+import { importProjectFromText, loadSession, saveSession } from "./storage.js";
 import "./studio.css";
 
 type Drag = { nodeId: string } | { template: string };
@@ -604,6 +605,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     try {
       project = history.apply(project, command);
       status = command.description;
+      autosave();
     } catch (error) {
       status = error instanceof CommandRejectedError
         ? error.diagnostics.map((d) => d.message).join(". ")
@@ -612,6 +614,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     // Restore focus regardless of success/failure — a rejected command must not strand the keyboard user.
     focusSelector = `[data-node="${focusTarget}"]`;
     render();
+  }
+
+  /** Fire-and-forget IndexedDB auto-save (plan §11 "last session restore") — never blocks the render, never surfaces a write failure as an app error (best-effort, same spirit as localStorage-backed draft persistence). */
+  function autosave(): void {
+    void saveSession(project).catch(() => {});
   }
 
   function drop(placement: Placement): void {
@@ -836,6 +843,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
             <button data-undo ${history.canUndo() ? "" : "disabled"}>Undo</button>
             <button data-redo ${history.canRedo() ? "" : "disabled"}>Redo</button>
             <button data-new>New blank</button>
+            <label data-import-button class="import-button">
+              Import
+              <input type="file" accept="application/json" data-import hidden>
+            </label>
           </nav>
         </header>
         <main>
@@ -990,6 +1001,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     host.querySelector<HTMLElement>("[data-undo]")?.addEventListener("click", () => {
       project = history.undo(project);
       status = "Undo";
+      autosave();
       // Undo may just have run out (button about to go `disabled`, which refuses focus) —
       // Redo is always enabled right after a successful undo, so it's a safe fallback target.
       focusSelector = history.canUndo() ? "[data-undo]" : "[data-redo]";
@@ -998,6 +1010,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     host.querySelector<HTMLElement>("[data-redo]")?.addEventListener("click", () => {
       project = history.redo(project);
       status = "Redo";
+      autosave();
       focusSelector = history.canRedo() ? "[data-redo]" : "[data-undo]";
       render();
     });
@@ -1005,8 +1018,37 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
       project = createBlankProject();
       selected = project.schema.id;
       status = "New blank project";
+      autosave();
       focusSelector = "[data-new]";
       render();
+    });
+    host.querySelector<HTMLInputElement>("[data-import]")?.addEventListener("change", (e) => {
+      const input = e.target as HTMLInputElement;
+      const file = input.files?.[0];
+      if (!file) return;
+      file
+        .text()
+        .then((text) => {
+          const result = importProjectFromText(text);
+          if (!result.project) {
+            status = `Import failed: ${result.error}`;
+          } else {
+            project = result.project;
+            selected = project.schema.id;
+            inspectorTab = "node"; // an inspector tab left over from the previous project (e.g. stale Export output) would be confusing
+            status = result.diagnostics.length
+              ? `Imported with ${result.diagnostics.length} warning${result.diagnostics.length > 1 ? "s" : ""}`
+              : "Imported project";
+            autosave();
+          }
+          input.value = ""; // allow re-importing the same filename
+          focusSelector = "[data-import-button]";
+          render();
+        })
+        .catch(() => {
+          status = "Import failed: could not read the file";
+          render();
+        });
     });
 
     host.querySelector<HTMLInputElement>("[data-name]")?.addEventListener("change", (e) =>
@@ -1417,7 +1459,26 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
   }
 
   render();
+
+  // Auto-restore (plan §11 "last session restore") — only when the caller did not explicitly
+  // pass a project: an explicit `initial` always wins over IndexedDB. Async by nature (IndexedDB
+  // has no sync API), so this can only run *after* the synchronous first render above; `disposed`
+  // guards against restoring into a host that unmounted before the read finished.
+  let disposed = false;
+  if (!initial) {
+    void loadSession()
+      .then((result) => {
+        if (disposed || !result) return;
+        project = result.project;
+        selected = project.schema.id;
+        status = "Restored last session";
+        render();
+      })
+      .catch(() => {}); // no IndexedDB (e.g. non-browser test env) -> stay on the blank project, not a crash
+  }
+
   return () => {
+    disposed = true;
     previewEffect?.destroy();
     host.replaceChildren();
   };
