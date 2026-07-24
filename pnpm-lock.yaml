@@ -317,6 +317,15 @@ importers:
 
   packages/studio-model: {}
 
+  packages/studio-preview:
+    dependencies:
+      '@modyra/core':
+        specifier: workspace:*
+        version: link:../core
+      '@modyra/studio-model':
+        specifier: workspace:*
+        version: link:../studio-model
+
   packages/studio-target-angular:
     dependencies:
       '@modyra/studio-codegen':
