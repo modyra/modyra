@@ -1,0 +1,21 @@
+{
+  "name": "@modyra/plain-preview-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "npm run build && node server.mjs",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "test:e2e": "npm run build && playwright test -c playwright.config.ts"
+  },
+  "dependencies": {
+    "@modyra/plain": "workspace:*",
+    "@modyra/studio-contract": "workspace:*",
+    "@modyra/studio-model": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "esbuild": "^0.28.1"
+  }
+}

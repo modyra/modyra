@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Modyra Plain Preview</title>
+  </head>
+  <body style="margin:0;font:14px system-ui,sans-serif">
+    <div style="max-width:640px;margin:2rem auto;padding:0 1rem">
+      <h1>Modyra Plain Preview</h1>
+      <p>
+        Paste a project exported from Studio's Export tab (JSON target —
+        <code>project.mdy-studio.json</code>), or upload the file, then
+        Render. The form below is real, interactive DOM from
+        <code>@modyra/plain</code> — no framework, no virtual DOM.
+      </p>
+      <textarea data-plain-json rows="10" style="width:100%;box-sizing:border-box"></textarea>
+      <div style="margin:0.5rem 0">
+        <input type="file" accept="application/json" data-plain-file />
+        <button type="button" data-plain-render>Render</button>
+      </div>
+      <p data-plain-status></p>
+      <div data-plain-form></div>
+    </div>
+    <script type="module" src="./dist/plain-preview.js"></script>
+  </body>
+</html>
