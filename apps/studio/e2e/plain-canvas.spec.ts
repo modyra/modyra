@@ -79,3 +79,27 @@ test("live canvas duplicate and delete actions use the existing command history"
   await page.locator('[data-undo]').click();
   await expect(page.locator('.plain-canvas-field')).toHaveCount(1);
 });
+
+
+test("live canvas insertion points add fields before, between, and after existing fields", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-name]').fill('firstName');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-template="email"]').click();
+  await page.locator('[data-name]').fill('email');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-canvas-mode="form"]').click();
+
+  await expect(page.locator('.plain-canvas-field')).toHaveCount(2);
+  await expect(page.locator('[data-plain-insert="before"]')).toHaveCount(2);
+  await expect(page.locator('[data-plain-insert="after"]')).toHaveCount(1);
+
+  await page.locator('[data-plain-insert="before"]').nth(1).click();
+  await expect(page.locator('.plain-canvas-field')).toHaveCount(3);
+  await expect(page.locator('.plain-canvas-field').nth(1)).toHaveAttribute('data-field-path', /^text/);
+  await expect(page.locator('.plain-canvas-field').nth(1).locator('[data-plain-select]')).toBeFocused();
+
+  await page.locator('[data-plain-insert="after"]').click();
+  await expect(page.locator('.plain-canvas-field')).toHaveCount(4);
+  await expect(page.locator('.plain-canvas-field').last()).toHaveAttribute('data-field-path', /^text/);
+});
