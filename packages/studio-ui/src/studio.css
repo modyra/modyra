@@ -73,7 +73,7 @@ body {
   color: var(--mdy-text);
   font: 14px "Satoshi", system-ui, sans-serif;
   display: grid;
-  grid-template-rows: 56px minmax(0, 1fr) 32px;
+  grid-template-rows: 40px minmax(0, 1fr) 24px;
 }
 
 .studio * {
@@ -85,8 +85,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 0 20px;
+  gap: 10px;
+  padding: 0 14px;
   overflow: hidden;
   border-bottom: 1px solid var(--mdy-border);
 }
@@ -164,7 +164,7 @@ body {
   min-height: 0;
   overflow: hidden;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) minmax(300px, 360px);
+  grid-template-columns: 168px minmax(0, 1fr) minmax(280px, 340px);
 }
 
 .palette {
@@ -172,16 +172,24 @@ body {
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  padding: 18px;
+  padding: 10px;
   border-right: 1px solid var(--mdy-border);
 }
 .palette h2 {
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--mdy-text-muted);
-  margin: 0 0 14px;
+  margin: 0 0 8px;
+}
+/* Two columns: the ten templates fit in five rows instead of ten, which is
+   the difference between the palette needing its own scrollbar and not. */
+.palette-grid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
 }
 .inspector {
   display: flex;
@@ -194,7 +202,7 @@ body {
   min-width: 0;
   min-height: 0;
   flex: 1;
-  padding: 18px;
+  padding: 12px 14px;
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -213,8 +221,8 @@ body {
   border-bottom: 2px solid var(--mdy-border);
   border-radius: 0;
   background: transparent;
-  padding: 12px 10px;
-  font-size: 12px;
+  padding: 8px 8px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--mdy-text-muted);
 }
@@ -243,7 +251,7 @@ body {
 }
 .accordion summary {
   cursor: pointer;
-  padding: 10px 2px;
+  padding: 7px 2px;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -258,20 +266,25 @@ body {
   color: var(--mdy-text);
 }
 .accordion-body {
-  padding: 4px 2px 12px;
+  padding: 2px 2px 8px;
 }
 
 .tab-hint {
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.4;
   color: var(--mdy-text-muted);
-  margin: 0 0 14px;
+  margin: 0 0 9px;
 }
 
 .palette button {
   display: block;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: left;
-  margin: 4px 0;
+  padding: 5px 6px;
+  font-size: 12px;
   text-transform: capitalize;
   border-color: transparent;
 }
@@ -284,21 +297,30 @@ body {
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  padding: 24px 28px;
+  padding: 14px 18px;
 }
-.title {
+/* Project name, node count and the canvas-mode switch share one row: three
+   stacked blocks used to push the editable content ~90px down the viewport. */
+.canvas-head {
   min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 12px;
+}
+.title {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 .title > * {
   min-width: 0;
 }
 .title h1 {
-  font-size: 19px;
+  font-size: 15px;
   font-weight: 700;
   background-image: var(--mdy-gradient-brand);
   background-clip: text;
@@ -307,14 +329,14 @@ body {
 }
 .title span {
   color: var(--mdy-text-muted);
-  font-size: 12px;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .canvas-mode-switch {
   display: inline-flex;
   max-width: 100%;
-  margin-bottom: 18px;
-  padding: 3px;
+  padding: 2px;
   border: 1px solid var(--mdy-border);
   border-radius: 8px;
   background: var(--mdy-panel);
@@ -334,7 +356,7 @@ body {
 .plain-canvas-frame {
   width: min(100%, 760px);
   margin-inline: auto;
-  padding: 20px;
+  padding: 14px;
   border: 1px solid var(--mdy-border);
   border-radius: 12px;
   background: var(--mdy-panel);
@@ -1166,7 +1188,7 @@ body {
   min-width: 0;
   display: flex;
   align-items: center;
-  padding: 0 15px;
+  padding: 0 14px;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   white-space: nowrap;
@@ -1177,7 +1199,7 @@ body {
 
 @media (max-width: 850px) {
   .studio main {
-    grid-template-columns: 180px minmax(0, 1fr);
+    grid-template-columns: 150px minmax(0, 1fr);
   }
   .inspector {
     display: none;
@@ -1185,7 +1207,7 @@ body {
 }
 @media (max-width: 600px) {
   .studio {
-    grid-template-rows: 56px minmax(0, 1fr) 32px;
+    grid-template-rows: 44px minmax(0, 1fr) 24px;
   }
   .studio header {
     padding-inline: 12px;
@@ -1200,9 +1222,9 @@ body {
     display: none;
   }
   .canvas {
-    padding: 18px 16px;
+    padding: 12px 14px;
   }
-  .title {
+  .canvas-head {
     align-items: flex-start;
     flex-direction: column;
   }
