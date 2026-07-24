@@ -6,10 +6,9 @@
  * ADR-0005, R7, R11), and, when the project declares a submit action,
  * `submit-example.ts` showing it wired to `form.submit()`.
  */
-import type { Artifact, ArtifactFile, StudioTarget, TargetAnalysis, TargetCapabilities, TargetManifest } from "@modyra/studio-codegen";
+import { buildStubsModule, type Artifact, type ArtifactFile, type StudioTarget, type TargetAnalysis, type TargetCapabilities, type TargetManifest } from "@modyra/studio-codegen";
 import type { MdyStudioProject, StudioDiagnostic } from "@modyra/studio-model";
 import { buildFormModule } from "./field-mapper.js";
-import { buildStubsModule } from "./stubs.js";
 
 export interface CoreTargetOptions {
   readonly pretty?: boolean;

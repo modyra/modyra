@@ -6,7 +6,7 @@
  * generated business logic).
  */
 import type { MdyStudioProject, StudioDiagnostic, StudioImplementationRef } from "@modyra/studio-model";
-import { isValidIdentifier } from "@modyra/studio-codegen";
+import { isValidIdentifier } from "./ts-print.js";
 
 export interface StubsResult {
   code: string;
