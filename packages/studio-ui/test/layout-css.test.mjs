@@ -42,7 +42,7 @@ test("grid tracks and main surfaces are allowed to shrink instead of overflowing
   has(main, "min-width", "0");
   has(main, "min-height", "0");
   has(main, "overflow", "hidden");
-  assert.match(main, /grid-template-columns\s*:\s*220px minmax\(0, 1fr\) minmax\(300px, 360px\)\s*;/);
+  assert.match(main, /grid-template-columns\s*:\s*168px minmax\(0, 1fr\) minmax\(280px, 340px\)\s*;/);
 
   for (const selector of [".palette", ".canvas", ".inspector-body"]) {
     const declarations = rule(selector);
@@ -67,8 +67,22 @@ test("tabs, header actions and long diagnostic content remain reachable", () => 
   has(diagnostic, "overflow-wrap", "anywhere");
 });
 
+test("the compact shell keeps a single canvas header row and a two-column palette", () => {
+  const studio = rule(".studio");
+  assert.match(studio, /grid-template-rows\s*:\s*40px minmax\(0, 1fr\) 24px\s*;/);
+
+  const head = rule(".canvas-head");
+  has(head, "min-width", "0");
+  has(head, "display", "flex");
+  has(head, "flex-wrap", "wrap");
+
+  const paletteGrid = rule(".palette-grid");
+  has(paletteGrid, "min-width", "0");
+  assert.match(paletteGrid, /grid-template-columns\s*:\s*repeat\(2, minmax\(0, 1fr\)\)\s*;/);
+});
+
 test("narrow layouts keep a zero-minimum canvas track and mobile-safe padding", () => {
-  assert.match(css, /@media \(max-width: 850px\)[\s\S]*?grid-template-columns:\s*180px minmax\(0, 1fr\)/);
+  assert.match(css, /@media \(max-width: 850px\)[\s\S]*?grid-template-columns:\s*150px minmax\(0, 1fr\)/);
   assert.match(css, /@media \(max-width: 600px\)[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
-  assert.match(css, /@media \(max-width: 600px\)[\s\S]*?\.canvas\s*\{[\s\S]*?padding:\s*18px 16px/);
+  assert.match(css, /@media \(max-width: 600px\)[\s\S]*?\.canvas\s*\{[\s\S]*?padding:\s*12px 14px/);
 });
