@@ -379,6 +379,9 @@ importers:
       '@modyra/studio-model':
         specifier: workspace:*
         version: link:../studio-model
+      '@modyra/studio-preview':
+        specifier: workspace:*
+        version: link:../studio-preview
       '@modyra/studio-target-angular':
         specifier: workspace:*
         version: link:../studio-target-angular

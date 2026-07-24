@@ -426,6 +426,96 @@ body {
   white-space: pre;
 }
 
+.preview-status {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.preview-status-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.preview-status-badge.valid {
+  background: color-mix(in srgb, var(--mdy-indigo) 30%, transparent);
+  color: color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-cloud));
+}
+.preview-status-badge.invalid {
+  background: color-mix(in srgb, var(--mdy-coral) 25%, transparent);
+  color: color-mix(in srgb, var(--mdy-coral) 55%, var(--mdy-cloud));
+}
+.preview-status-badge.pending {
+  background: color-mix(in srgb, var(--mdy-violet) 25%, transparent);
+  color: color-mix(in srgb, var(--mdy-violet) 55%, var(--mdy-cloud));
+}
+.preview-fields {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.preview-field {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+.preview-field > span:first-child {
+  color: var(--mdy-text-muted);
+}
+.preview-pending {
+  color: var(--mdy-violet);
+  font-weight: 700;
+}
+.preview-errors {
+  color: var(--mdy-coral);
+  font-size: 11px;
+}
+.preview-mock-mode {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--mdy-text-muted);
+}
+.preview-group {
+  border: 1px solid var(--mdy-border);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+}
+.preview-group legend {
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mdy-text-muted);
+}
+.preview-array {
+  border: 1px solid var(--mdy-border);
+  border-radius: 8px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+.preview-array-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mdy-text-muted);
+}
+.preview-array-row {
+  border: 1px solid var(--mdy-border);
+  border-radius: 6px;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
 .drop-zone {
   height: 8px;
   color: transparent;
