@@ -93,6 +93,21 @@ body {
   display: flex;
   gap: 7px;
 }
+.import-button {
+  display: inline-flex;
+  align-items: center;
+  color: var(--mdy-text);
+  border: 1px solid var(--mdy-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.import-button:hover,
+.import-button:focus-within {
+  border-color: var(--mdy-indigo);
+  outline: 2px solid var(--mdy-focus-ring);
+}
 
 .studio button,
 .studio input,
