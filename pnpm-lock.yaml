@@ -402,6 +402,9 @@ importers:
 
   packages/studio-ui:
     dependencies:
+      '@modyra/plain':
+        specifier: workspace:*
+        version: link:../plain
       '@modyra/studio-codegen':
         specifier: workspace:*
         version: link:../studio-codegen

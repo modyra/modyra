@@ -23,6 +23,7 @@
     "test": "npm run build && node --import ./test/support/register.mjs --test test/*.test.mjs"
   },
   "dependencies": {
+    "@modyra/plain": "workspace:*",
     "@modyra/studio-model": "workspace:*",
     "@modyra/studio-editor": "workspace:*",
     "@modyra/studio-contract": "workspace:*",

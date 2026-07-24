@@ -151,3 +151,13 @@ test("package has no actual React runtime dependency and source has no JSX (stud
   const source = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /from ["']react["']|from ["']react-dom["']|jsx-runtime/);
 });
+
+test("Patch 4: shell exposes Structure and Live form canvas modes without mounting DOM in a fake host", () => {
+  const host = createFakeHost();
+  mountStudio(host, createCheckoutProject());
+
+  assert.match(host.innerHTML, /data-canvas-mode="structure" aria-pressed="true"/);
+  assert.match(host.innerHTML, /data-canvas-mode="form" aria-pressed="false"/);
+  assert.match(host.innerHTML, /data-canvas-surface="structure"/);
+  assert.match(host.innerHTML, /<ul class="tree">/);
+});
