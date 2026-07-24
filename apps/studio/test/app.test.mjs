@@ -19,11 +19,16 @@ test("build produces the standalone bundle, stylesheet, and font assets", () => 
   assert.ok(files.some((f) => /^Satoshi-Regular.*\.woff2$/.test(f)), "missing bundled Satoshi font");
 });
 
-test("bundle mounts the framework-free studio-ui shell into [data-modyra-studio]", () => {
+test("bundle mounts the framework-free studio-ui shell into [data-modyra-studio], with no actual React/Angular runtime bundled", () => {
   const bundle = readFileSync(new URL("studio.js", dist), "utf8");
   assert.match(bundle, /data-modyra-studio/);
   assert.match(bundle, /mountStudio/);
-  assert.doesNotMatch(bundle, /\breact\b|jsx-runtime/i);
+  // Studio's own codegen targets (studio-target-react/angular) legitimately emit strings like
+  // "React (useMdyForm)" and "@modyra/react" as generated *source text*, not real imports —
+  // apps/studio depends only on @modyra/studio-ui (see package.json), which has no react/
+  // react-dom/@angular/* dependency, so no real framework runtime can have been bundled here.
+  // Check for actual framework-runtime fingerprints instead of the word "react"/"angular".
+  assert.doesNotMatch(bundle, /Symbol\.for\("react\.element"\)|ReactCurrentDispatcher|from ["']react-dom["']|@angular\/core/);
 });
 
 test("stylesheet ships the brand tokens and Satoshi @font-face, not a generic font", () => {
