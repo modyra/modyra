@@ -7,7 +7,7 @@
  */
 import { serializeProject, type MdyStudioProject } from "@modyra/studio-model";
 import { compileToContract } from "@modyra/studio-contract";
-import type { Artifact, StudioTarget, TargetAnalysis, TargetCapabilities, TargetManifest } from "@modyra/studio-target-core";
+import type { Artifact, StudioTarget, TargetAnalysis, TargetCapabilities, TargetManifest } from "@modyra/studio-codegen";
 
 export interface JsonTargetOptions {
   pretty: boolean;

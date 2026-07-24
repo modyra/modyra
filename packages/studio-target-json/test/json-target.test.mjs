@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createJsonTarget, jsonTargetManifest } from "../dist/index.js";
-import { runConformanceSuite } from "@modyra/studio-target-core";
+import { runConformanceSuite } from "@modyra/studio-codegen";
 import { serializeProject } from "@modyra/studio-model";
 import { compileToContract } from "@modyra/studio-contract";
 import { createCheckoutProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";

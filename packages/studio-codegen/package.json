@@ -1,5 +1,5 @@
 {
-  "name": "@modyra/studio-target-core",
+  "name": "@modyra/studio-codegen",
   "version": "0.0.0",
   "private": true,
   "description": "Modyra Studio: target plugin API (StudioTarget, lazy TargetManifest registry, Artifact) and a reusable conformance test suite every target must pass.",
