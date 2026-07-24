@@ -1,0 +1,51 @@
+{
+  "name": "@modyra/plain",
+  "version": "0.1.0",
+  "description": "Zero-dependency vanilla JS/HTML5 form renderer for the Modyra form engine — given a container element and a Dynamic Form Contract, renders real interactive DOM wired to @modyra/widgets' headless controllers.",
+  "keywords": [
+    "vanilla",
+    "forms",
+    "typescript",
+    "validation",
+    "no-framework"
+  ],
+  "license": "MIT",
+  "author": "Lorenzo Muscherà",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modyra/modyra.git",
+    "directory": "packages/plain"
+  },
+  "bugs": {
+    "url": "https://github.com/modyra/modyra/issues"
+  },
+  "homepage": "https://github.com/modyra/modyra#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@modyra/core": "0.4.0",
+    "@modyra/widgets": "0.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1"
+  }
+}
