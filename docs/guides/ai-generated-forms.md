@@ -162,10 +162,18 @@ onSubmitted(event: { value: Record<string, unknown> }): void {
 
 ## Notes
 
-- **Angular renders the catalog** (`<mdy-dynamic-form>`). On React/Vue/Lit
-  the contract and `parseDynamicFields()` work the same — map each
-  `MdyDynamicField.kind` to your own controls over the headless handles
-  (see [Usage modes](usage-modes.md)).
+- **Angular renders the catalog** (`<mdy-dynamic-form>`) — a real component.
+  **React** has `useMdyDynamicForm(fields)`, headless by design like every
+  other hook in `@modyra/react`: it builds the real form and wires the
+  same validators (including the automatic `oneOf`/`eachOneOf`
+  anti-tampering whitelist for option-based kinds) via the same
+  `buildDynamicFieldValidators()` Angular's component calls — same value/
+  validation/error semantics, but you render the JSX yourself (pair it
+  with `useMdyField`/`useMdySelect` from `@modyra/react`, or your own
+  controls). On Vue/Lit, the contract and `parseDynamicFields()` work the
+  same — map each `MdyDynamicField.kind` to your own controls over the
+  headless handles (see [Usage modes](usage-modes.md)). Neither renderer
+  applies `layout`/`rules` yet — both are flat-fields-only today.
 - CMS/storage use case: same contract, same parser — see
   [UI toolkit — dynamic forms](ui-toolkit.md) for the versioning notes.
 - Keep the schema of *your* domain out of the prompt when possible: a

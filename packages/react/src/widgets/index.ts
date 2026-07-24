@@ -15,3 +15,9 @@ export type {
   MdyReactFieldApi,
   UseMdyFieldOptions,
 } from "./field.js";
+
+export { useMdyBooleanField } from "./boolean-field.js";
+export type {
+  MdyReactBooleanFieldApi,
+  UseMdyBooleanFieldOptions,
+} from "./boolean-field.js";
