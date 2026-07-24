@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openStudio, showLiveForm, showStructure } from "./support/studio.js";
 
 async function dispatchHtmlDrag(
   page: import("@playwright/test").Page,
@@ -64,8 +65,7 @@ async function dispatchHtmlDrag(
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await page.waitForSelector(".studio");
+  await openStudio(page);
   // Studio restores its last IndexedDB session. Each canvas scenario needs
   // a deterministic blank project instead of inheriting fields or blocking
   // diagnostics created by the preceding test in the same browser context.
@@ -278,10 +278,13 @@ test("live canvas moves existing fields between a group and the form root", asyn
   await page.locator('[data-template="text"]').click();
   await page.locator('[data-name]').fill('city');
   await page.locator('[data-name]').blur();
+  // Nesting via keyboard is a Structure-outline gesture; the assertions below are on the live form.
+  await showStructure(page);
+  await page.locator('.tree-node [data-node]').last().focus();
   await page.keyboard.press(' ');
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Enter');
-  await page.locator('[data-canvas-mode="form"]').click();
+  await showLiveForm(page);
 
   const group = page.locator('.plain-canvas-group');
   const fields = page.locator('.plain-canvas-field');

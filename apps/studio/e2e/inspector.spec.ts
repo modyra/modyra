@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openStudio } from "./support/studio.js";
 
 /**
  * P5 gate: "all checkout validators visual" (add/edit/remove field
@@ -10,8 +11,7 @@ import { expect, test } from "@playwright/test";
  */
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await page.waitForSelector(".studio");
+  await openStudio(page);
 });
 
 test("add, configure, and remove a pattern validator on a text field", async ({ page }) => {

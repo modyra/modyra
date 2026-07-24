@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openStudio, showStructure } from "./support/studio.js";
 
 /**
  * P7 gate (.modyra/modyra-studio-caveman-plan.md section 14): "dummy target
@@ -10,8 +11,7 @@ import { expect, test } from "@playwright/test";
  */
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await page.waitForSelector(".studio");
+  await openStudio(page);
 });
 
 test("Export tab lists all four registered targets and Generate produces project.json + contract.json for the default (JSON) target", async ({ page }) => {
@@ -103,6 +103,7 @@ test("generate failure cannot corrupt the editor: canvas and tree stay intact", 
 
   // Switching back to the canvas: the earlier generate() must never have touched project state.
   await page.locator('[data-inspector-tab="node"]').click();
+  await showStructure(page);
   await expect(page.locator(".tree-node")).toHaveCount(1);
   await expect(page.locator("[data-name]")).toHaveValue(/^text/);
 });
