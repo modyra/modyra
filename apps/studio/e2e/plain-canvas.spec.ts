@@ -443,3 +443,24 @@ test("live canvas field controls move fields into groups and back to root", asyn
   await page.locator('[data-undo]').click();
   await expect(field).toHaveAttribute('data-field-path', 'shipping.city');
 });
+
+
+test("live canvas renders empty arrays and selects them in the Inspector", async ({ page }) => {
+  await page.locator('[data-template="array"]').click();
+  await page.locator('[data-name]').fill('items');
+  await page.locator('[data-name]').blur();
+  const arrayId = await page.locator('[data-node]').first().getAttribute('data-node');
+  await page.locator('[data-canvas-mode="form"]').click();
+
+  const array = page.locator('.plain-canvas-array');
+  await expect(array).toHaveCount(1);
+  await expect(array).toHaveAttribute('data-plain-array', arrayId!);
+  await expect(array).toHaveAttribute('data-array-path', 'items');
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('0 initial rows');
+  await expect(array.locator('.plain-canvas-array-empty')).toHaveText('No initial rows');
+
+  await array.locator('[data-plain-select]').click();
+  await expect(array).toHaveClass(/selected/);
+  await expect(page.locator('[data-name]')).toHaveValue('items');
+  await expect(array.locator('[data-plain-select]')).toBeFocused();
+});

@@ -454,6 +454,53 @@ body {
   color: var(--mdy-text);
   opacity: 1;
 }
+.plain-canvas-array {
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid var(--mdy-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mdy-surface) 96%, var(--mdy-coral));
+}
+.plain-canvas-array.selected {
+  border-color: var(--mdy-indigo);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-indigo) 20%, transparent);
+}
+.plain-canvas-array-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.plain-canvas-array-select {
+  border: 0;
+  background: transparent;
+  color: var(--mdy-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.plain-canvas-array-count,
+.plain-canvas-array-empty {
+  color: var(--mdy-muted);
+  font-size: 0.8rem;
+}
+.plain-canvas-array-body {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.plain-canvas-array-empty {
+  margin: 0;
+  padding: 10px;
+  border: 1px dashed var(--mdy-border);
+  border-radius: 6px;
+  text-align: center;
+}
+.plain-canvas-array-row {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--mdy-surface);
+}
 .plain-canvas-group {
   min-width: 0;
   margin: 10px 0;
