@@ -374,6 +374,35 @@ body {
   padding: 5px 8px;
 }
 
+.export-error {
+  border: 1px solid var(--mdy-coral);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--mdy-coral);
+  font-size: 12px;
+}
+.export-files {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 8px;
+}
+.export-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--mdy-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.export-file-path {
+  font-family: monospace;
+  overflow-wrap: anywhere;
+}
+
 .drop-zone {
   height: 8px;
   color: transparent;

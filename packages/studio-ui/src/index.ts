@@ -44,9 +44,15 @@ import {
   type Placement,
 } from "@modyra/studio-editor";
 import { compileToContract } from "@modyra/studio-contract";
+import { TargetRegistry, type Artifact } from "@modyra/studio-target-core";
+import { jsonTargetManifest } from "@modyra/studio-target-json";
 import "./studio.css";
 
 type Drag = { nodeId: string } | { template: string };
+
+/** Lazy target registry (ADR-0004) — registering costs nothing, load() only runs on first Generate. */
+const targetRegistry = new TargetRegistry();
+targetRegistry.register(jsonTargetManifest);
 
 const TEMPLATES = [
   "text",
@@ -416,7 +422,16 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     errorTargetId: "",
     message: "",
   };
-  let inspectorTab: "node" | "form" | "diagnostics" = "node";
+  let inspectorTab: "node" | "form" | "diagnostics" | "export" = "node";
+  /** Export tab state — `generation` guards against a stale async generate() clobbering a newer one
+      (plan §14 P7 gate "stale ignored"); errors never touch `project`/`history` (gate "failure cannot corrupt editor"). */
+  let exportState: { targetId: string; artifact: Artifact | null; generating: boolean; error: string | null; generation: number } = {
+    targetId: targetRegistry.list()[0]?.id ?? "",
+    artifact: null,
+    generating: false,
+    error: null,
+    generation: 0,
+  };
   /** Which accordion sections are open — Validation starts open, everything else starts collapsed
       (the whole point of this structure: show little by default, let the user open what they need). */
   const expandedSections = new Set<string>(["validation"]);
@@ -461,6 +476,24 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     }
     selected = project.schema.id;
     commit(createDeleteCommand(id, true));
+  }
+
+  async function runExport(): Promise<void> {
+    const targetId = exportState.targetId;
+    if (!targetId) return;
+    const myGeneration = ++exportState.generation;
+    exportState = { ...exportState, generating: true, error: null };
+    render();
+    try {
+      const target = await targetRegistry.load(targetId);
+      const artifact = await target.generate(project, target.defaults());
+      if (myGeneration !== exportState.generation) return; // a newer Generate started meanwhile — discard
+      exportState = { ...exportState, artifact, generating: false };
+    } catch (error) {
+      if (myGeneration !== exportState.generation) return;
+      exportState = { ...exportState, error: error instanceof Error ? error.message : String(error), generating: false };
+    }
+    render();
   }
 
   function getSelectedField(): FieldNode | null {
@@ -522,6 +555,38 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     return `
       <p class="tab-hint">Model checks and Contract v2 export checks, together — errors block export, warnings just mean something was omitted.</p>
       <ul class="diagnostic-list">${rows}</ul>`;
+  }
+
+  function exportMarkup(): string {
+    const targets = targetRegistry.list();
+    const targetOptions = targets
+      .map((t) => `<option value="${escapeHtml(t.id)}" ${t.id === exportState.targetId ? "selected" : ""}>${escapeHtml(t.displayName)}</option>`)
+      .join("");
+    const artifact = exportState.artifact;
+    const files = artifact
+      ? `<ul class="export-files">
+           ${artifact.files
+             .map(
+               (f) => `
+             <li class="export-file">
+               <span class="export-file-path">${escapeHtml(f.path)}${f.path === artifact.entryFile ? " <b>(entry)</b>" : ""}</span>
+               <button data-export-download="${escapeHtml(f.path)}">Download</button>
+             </li>`,
+             )
+             .join("")}
+         </ul>
+         ${diagnosticsMarkup([...artifact.diagnostics])}`
+      : "";
+    return `
+      <p class="tab-hint">Generates files from the current project via a target plugin — never edits the canvas (R5/R12).</p>
+      <label>Target
+        <select data-export-target>${targetOptions}</select>
+      </label>
+      <button data-export-generate ${exportState.generating || !exportState.targetId ? "disabled" : ""}>
+        ${exportState.generating ? "Generating…" : "Generate"}
+      </button>
+      ${exportState.error ? `<p class="export-error" role="alert">${escapeHtml(exportState.error)}</p>` : ""}
+      ${files}`;
   }
 
   function markup(n: StudioSchemaNode): string {
@@ -607,12 +672,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
               <button type="button" role="tab" data-inspector-tab="diagnostics" aria-selected="${inspectorTab === "diagnostics"}">
                 Diagnostics${diagnostics.length ? ` <span class="badge ${errorCount ? "badge-error" : ""}">${diagnostics.length}</span>` : ""}
               </button>
+              <button type="button" role="tab" data-inspector-tab="export" aria-selected="${inspectorTab === "export"}">
+                Export
+              </button>
             </div>
             <div class="inspector-body">
               ${
                 inspectorTab === "diagnostics"
                   ? diagnosticsMarkup(diagnostics)
-                  : inspectorTab === "form"
+                  : inspectorTab === "export"
+                    ? exportMarkup()
+                    : inspectorTab === "form"
                     ? formValidatorsMarkup(project, idx, formValidatorDraft)
                     : `
                     <label>Name<input data-name value="${escapeHtml(current.name)}"></label>
@@ -808,7 +878,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
 
     host.querySelectorAll<HTMLElement>("[data-inspector-tab]").forEach((el) =>
       el.addEventListener("click", () => {
-        const tab = el.dataset.inspectorTab as "node" | "form" | "diagnostics";
+        const tab = el.dataset.inspectorTab as "node" | "form" | "diagnostics" | "export";
         inspectorTab = tab;
         focusSelector = `[data-inspector-tab="${tab}"]`;
         render();
@@ -986,6 +1056,28 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     host.querySelector<HTMLElement>("[data-remove-submit-action]")?.addEventListener("click", () => {
       commit(createUpdateBehaviorCommand({ submit: undefined }));
     });
+
+    host.querySelector<HTMLSelectElement>("[data-export-target]")?.addEventListener("change", (e) => {
+      exportState = { ...exportState, targetId: (e.target as HTMLSelectElement).value, artifact: null, error: null };
+      render();
+    });
+    host.querySelector<HTMLElement>("[data-export-generate]")?.addEventListener("click", () => {
+      void runExport();
+    });
+    host.querySelectorAll<HTMLElement>("[data-export-download]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const path = el.dataset.exportDownload!;
+        const file = exportState.artifact?.files.find((f) => f.path === path);
+        if (!file) return;
+        const blob = new Blob([file.content], { type: "application/octet-stream" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = path.split("/").pop() ?? path;
+        a.click();
+        URL.revokeObjectURL(url);
+      }),
+    );
 
     host.querySelectorAll<HTMLElement>("[data-node]").forEach((el) =>
       el.addEventListener("keydown", (e) => keyboard(e, el.dataset.node!)),

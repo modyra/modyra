@@ -21,7 +21,9 @@
   "dependencies": {
     "@modyra/studio-model": "workspace:*",
     "@modyra/studio-editor": "workspace:*",
-    "@modyra/studio-contract": "workspace:*"
+    "@modyra/studio-contract": "workspace:*",
+    "@modyra/studio-target-core": "workspace:*",
+    "@modyra/studio-target-json": "workspace:*"
   },
   "sideEffects": [
     "*.css"
