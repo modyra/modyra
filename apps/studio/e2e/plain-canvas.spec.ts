@@ -106,3 +106,32 @@ test("live canvas insertion points add fields before, between, and after existin
   await expect(page.locator('.plain-canvas-field')).toHaveCount(4);
   await expect(page.locator('.plain-canvas-field').last()).toHaveAttribute('data-field-path', /^email/);
 });
+
+
+test("live canvas move controls reorder fields through command history", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-name]').fill('firstName');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-template="email"]').click();
+  await page.locator('[data-name]').fill('email');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-canvas-mode="form"]').click();
+
+  const fields = page.locator('.plain-canvas-field');
+  await expect(fields).toHaveCount(2);
+  await expect(fields.nth(0)).toHaveAttribute('data-field-path', 'firstName');
+  await expect(fields.nth(1)).toHaveAttribute('data-field-path', 'email');
+  await expect(fields.nth(0).locator('[aria-label="Move firstName up"]')).toBeDisabled();
+  await expect(fields.nth(1).locator('[aria-label="Move email down"]')).toBeDisabled();
+
+  await fields.nth(1).locator('[aria-label="Move email up"]').click();
+  await expect(fields.nth(0)).toHaveAttribute('data-field-path', 'email');
+  await expect(fields.nth(1)).toHaveAttribute('data-field-path', 'firstName');
+  await expect(fields.nth(0).locator('[data-plain-select]')).toBeFocused();
+
+  await page.locator('[data-undo]').click();
+  await expect(fields.nth(0)).toHaveAttribute('data-field-path', 'firstName');
+  await expect(fields.nth(1)).toHaveAttribute('data-field-path', 'email');
+  await page.locator('[data-redo]').click();
+  await expect(fields.nth(0)).toHaveAttribute('data-field-path', 'email');
+});

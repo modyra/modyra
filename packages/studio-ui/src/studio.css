@@ -427,6 +427,10 @@ body {
 .plain-canvas-actions [data-delete] {
   color: var(--mdy-coral);
 }
+.plain-canvas-actions button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 .plain-canvas-insert {
   display: block;
   width: min(100%, 220px) !important;

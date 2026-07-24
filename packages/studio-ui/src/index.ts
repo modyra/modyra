@@ -908,13 +908,31 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       duplicateButton.setAttribute("aria-label", `Duplicate ${field.name}`);
       duplicateButton.textContent = "Duplicate";
 
+      const moveUpButton = document.createElement("button");
+      moveUpButton.type = "button";
+      moveUpButton.dataset.plainMove = "before";
+      moveUpButton.dataset.plainMoveNode = nodeId;
+      moveUpButton.dataset.plainMoveTarget = index > 0 ? nodeIdByPath.get(fields[index - 1]!.name) ?? "" : "";
+      moveUpButton.disabled = index === 0;
+      moveUpButton.setAttribute("aria-label", `Move ${field.name} up`);
+      moveUpButton.textContent = "Up";
+
+      const moveDownButton = document.createElement("button");
+      moveDownButton.type = "button";
+      moveDownButton.dataset.plainMove = "after";
+      moveDownButton.dataset.plainMoveNode = nodeId;
+      moveDownButton.dataset.plainMoveTarget = index < fields.length - 1 ? nodeIdByPath.get(fields[index + 1]!.name) ?? "" : "";
+      moveDownButton.disabled = index === fields.length - 1;
+      moveDownButton.setAttribute("aria-label", `Move ${field.name} down`);
+      moveDownButton.textContent = "Down";
+
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.dataset.delete = nodeId;
       deleteButton.setAttribute("aria-label", `Delete ${field.name}`);
       deleteButton.textContent = "Delete";
 
-      actions.append(duplicateButton, deleteButton);
+      actions.append(moveUpButton, moveDownButton, duplicateButton, deleteButton);
       root.prepend(selectButton, actions);
       root.before(insertionPoint("before", nodeId));
       if (index === fields.length - 1) root.after(insertionPoint("after", nodeId));
@@ -1113,6 +1131,21 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
           createInsertCommand(created, { kind: placementKind, targetId }),
           created.id,
           `[data-plain-select="${created.id}"]`,
+        );
+      }),
+    );
+
+    host.querySelectorAll<HTMLButtonElement>("[data-plain-move]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainMoveNode;
+        const targetId = button.dataset.plainMoveTarget;
+        const kind = button.dataset.plainMove;
+        if (!nodeId || !targetId || (kind !== "before" && kind !== "after")) return;
+        selected = nodeId;
+        commit(
+          createMoveCommand(nodeId, { kind, targetId }),
+          nodeId,
+          `[data-plain-select="${nodeId}"]`,
         );
       }),
     );
