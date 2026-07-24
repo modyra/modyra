@@ -1,5 +1,68 @@
 import { expect, test } from "@playwright/test";
 
+async function dispatchHtmlDrag(
+  page: import("@playwright/test").Page,
+  source: import("@playwright/test").Locator,
+  target: import("@playwright/test").Locator,
+): Promise<void> {
+  const sourceHandle = await source.elementHandle();
+  const targetHandle = await target.elementHandle();
+
+  if (!sourceHandle || !targetHandle) {
+    throw new Error("HTML drag source or target is not attached");
+  }
+
+  await page.evaluate(
+    ({ sourceElement, targetElement }) => {
+      const dataTransfer = new DataTransfer();
+
+      sourceElement.dispatchEvent(
+        new DragEvent("dragstart", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer,
+        }),
+      );
+
+      targetElement.dispatchEvent(
+        new DragEvent("dragenter", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer,
+        }),
+      );
+
+      targetElement.dispatchEvent(
+        new DragEvent("dragover", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer,
+        }),
+      );
+
+      targetElement.dispatchEvent(
+        new DragEvent("drop", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer,
+        }),
+      );
+
+      sourceElement.dispatchEvent(
+        new DragEvent("dragend", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer,
+        }),
+      );
+    },
+    {
+      sourceElement: sourceHandle,
+      targetElement: targetHandle,
+    },
+  );
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.waitForSelector(".studio");
@@ -225,7 +288,12 @@ test("live canvas moves existing fields between a group and the form root", asyn
   await expect(group.locator('.plain-canvas-field')).toHaveCount(1);
   await expect(fields).toHaveAttribute('data-field-path', 'shipping.city');
 
-  await fields.dragTo(page.locator('.plain-canvas-drop-root'));
+  await fields.dragTo(
+    page.locator('.plain-canvas-drop-root'),
+    {
+      sourcePosition: { x: 8, y: 8 },
+    },
+  );
   await expect(group).toHaveCount(1);
   await expect(group.locator('.plain-canvas-field')).toHaveCount(0);
   await expect(group.locator('.plain-canvas-drop-inside')).toBeAttached();
@@ -236,7 +304,13 @@ test("live canvas moves existing fields between a group and the form root", asyn
     'true',
   );
 
-  await fields.dragTo(group.locator('.plain-canvas-drop-inside'));
+  await dispatchHtmlDrag(
+    page,
+    fields,
+    group.locator(
+      ':scope > .plain-canvas-group-body > .plain-canvas-drop-inside',
+    ),
+  );
   await expect(group.locator('.plain-canvas-field')).toHaveCount(1);
   await expect(fields).toHaveAttribute('data-field-path', 'shipping.city');
 
@@ -298,4 +372,48 @@ test("live canvas drags groups to reorder and nest them", async ({ page }) => {
   await expect(shipping).toHaveAttribute('data-group-path', 'shipping');
   await page.locator('[data-undo]').click();
   await expect(groups.nth(0)).toHaveAttribute('data-group-path', 'billing');
+});
+
+
+test("live canvas group controls reorder nest and return groups to root", async ({ page }) => {
+  await page.locator('[data-template="group"]').click(); await page.locator('[data-name]').fill('billing'); await page.locator('[data-name]').blur();
+  await page.locator('[data-template="group"]').click(); await page.locator('[data-name]').fill('shipping'); await page.locator('[data-name]').blur();
+  await page.locator('[data-canvas-mode="form"]').click();
+  const groups = page.locator('.plain-canvas-group');
+  const billingId = await groups.nth(0).getAttribute('data-plain-group');
+
+  expect(billingId).not.toBeNull();
+
+  await groups
+    .nth(1)
+    .getByRole('button', { name: 'Move up shipping' })
+    .click();
+
+  await expect(groups.nth(0)).toHaveAttribute(
+    'data-group-path',
+    'shipping',
+  );
+
+  const shippingAtRoot = page.locator(
+    '.plain-canvas-group[data-group-path="shipping"]',
+  );
+
+  const moveInto = shippingAtRoot.getByRole('combobox', {
+    name: 'Move shipping into group',
+  });
+
+  await expect(
+    moveInto.locator(`option[value="${billingId}"]`),
+  ).toHaveCount(1);
+
+  await moveInto.selectOption(billingId!);
+
+  const shipping = page.locator(
+    '.plain-canvas-group[data-group-path="billing.shipping"]',
+  );
+  await expect(shipping).toHaveCount(1);
+  await shipping.getByRole('button', { name: 'Move shipping to form root' }).click();
+  await expect(page.locator('.plain-canvas-group[data-group-path="shipping"]')).toHaveCount(1);
+  await page.locator('[data-undo]').click();
+  await expect(page.locator('.plain-canvas-group[data-group-path="billing.shipping"]')).toHaveCount(1);
 });
