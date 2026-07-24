@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { useMdySelect, useMdyCommandQueue, useMdyField, useMdyBooleanField, useMdyOptionField, useMdyMultiselectField } from "../dist/index.js";
+import { useMdySelect, useMdyCommandQueue, useMdyField, useMdyBooleanField, useMdyOptionField, useMdyMultiselectField, useMdyDatepickerField } from "../dist/index.js";
 
 test("widget entrypoints expose expected symbols", () => {
   assert.equal(typeof useMdySelect, "function");
@@ -9,4 +9,5 @@ test("widget entrypoints expose expected symbols", () => {
   assert.equal(typeof useMdyBooleanField, "function");
   assert.equal(typeof useMdyOptionField, "function");
   assert.equal(typeof useMdyMultiselectField, "function");
+  assert.equal(typeof useMdyDatepickerField, "function");
 });
