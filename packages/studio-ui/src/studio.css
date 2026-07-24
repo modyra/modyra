@@ -479,6 +479,13 @@ body {
 .plain-canvas-drop-inside.active {
   min-height: 30px;
 }
+.plain-canvas-drop-root.active {
+  min-height: 38px;
+  margin-top: 10px;
+}
+.plain-canvas-drop-root.drag-over {
+  min-height: 48px;
+}
 .plain-canvas-field[draggable="true"] {
   cursor: grab;
 }
