@@ -159,3 +159,23 @@ test("live canvas pointer drag reorders fields and remains undoable", async ({ p
   await expect(fields.nth(0)).toHaveAttribute('data-field-path', 'firstName');
   await expect(fields.nth(1)).toHaveAttribute('data-field-path', 'email');
 });
+
+
+test("palette fields can be dragged directly onto live canvas insertion points", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-name]').fill('firstName');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-canvas-mode="form"]').click();
+
+  const fields = page.locator('.plain-canvas-field');
+  await expect(fields).toHaveCount(1);
+  await page.locator('[data-template="email"]').dragTo(page.locator('.plain-canvas-drop[data-after]'));
+
+  await expect(fields).toHaveCount(2);
+  await expect(fields.nth(0)).toHaveAttribute('data-field-path', 'firstName');
+  await expect(fields.nth(1)).toHaveAttribute('data-field-path', /^email/);
+  await expect(fields.nth(1).locator('[data-plain-select]')).toBeFocused();
+
+  await page.locator('[data-undo]').click();
+  await expect(fields).toHaveCount(1);
+});

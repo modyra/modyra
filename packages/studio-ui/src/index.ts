@@ -642,14 +642,28 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     void saveSession(project).catch(() => {});
   }
 
-  function drop(placement: Placement): void {
+  function drop(placement: Placement, liveCanvas = false): void {
     if (!drag) return;
     if ("template" in drag) {
+      if (liveCanvas && (drag.template === "group" || drag.template === "array")) {
+        status = "Groups and arrays must be added from the Structure canvas";
+        drag = null;
+        render();
+        return;
+      }
       const created = createNodeFromTemplate(drag.template);
       selected = created.id;
-      commit(createInsertCommand(created, placement));
+      commit(
+        createInsertCommand(created, placement),
+        created.id,
+        liveCanvas ? `[data-plain-select="${created.id}"]` : undefined,
+      );
     } else {
-      commit(createMoveCommand(drag.nodeId, placement));
+      commit(
+        createMoveCommand(drag.nodeId, placement),
+        drag.nodeId,
+        liveCanvas ? `[data-plain-select="${drag.nodeId}"]` : undefined,
+      );
     }
     drag = null;
   }
@@ -1178,11 +1192,13 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     host.querySelectorAll<HTMLElement>("[draggable=true]").forEach((el) => {
       el.addEventListener("dragstart", (event) => {
         drag = el.dataset.template ? { template: el.dataset.template } : { nodeId: el.dataset.node! };
-        if (el.classList.contains("plain-canvas-field")) {
-          el.classList.add("dragging");
+        const isLiveField = el.classList.contains("plain-canvas-field");
+        const isPaletteTemplate = Boolean(el.dataset.template);
+        if (isLiveField) el.classList.add("dragging");
+        if (isLiveField || isPaletteTemplate) {
           host.querySelectorAll<HTMLElement>(".plain-canvas-drop").forEach((zone) => zone.classList.add("active"));
-          event.dataTransfer?.setData("text/plain", el.dataset.node ?? "");
-          if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer?.setData("text/plain", el.dataset.node ?? el.dataset.template ?? "");
+          if (event.dataTransfer) event.dataTransfer.effectAllowed = isPaletteTemplate ? "copy" : "move";
         }
       });
       el.addEventListener("dragend", () => {
@@ -1195,15 +1211,16 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     host.querySelectorAll<HTMLElement>(".drop-zone").forEach((el) => {
       el.addEventListener("dragover", (event) => {
         event.preventDefault();
-        if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+        if (event.dataTransfer) event.dataTransfer.dropEffect = drag && "template" in drag ? "copy" : "move";
       });
       el.addEventListener("dragenter", () => el.classList.add("drag-over"));
       el.addEventListener("dragleave", () => el.classList.remove("drag-over"));
       el.addEventListener("drop", (event) => {
         event.preventDefault();
         el.classList.remove("drag-over");
-        if (el.dataset.before) drop({ kind: "before", targetId: el.dataset.before });
-        else if (el.dataset.after) drop({ kind: "after", targetId: el.dataset.after });
+        const liveCanvas = el.classList.contains("plain-canvas-drop");
+        if (el.dataset.before) drop({ kind: "before", targetId: el.dataset.before }, liveCanvas);
+        else if (el.dataset.after) drop({ kind: "after", targetId: el.dataset.after }, liveCanvas);
         else drop({ kind: "inside", parentId: el.dataset.inside!, index: Number(el.dataset.index) });
       });
     });
