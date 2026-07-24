@@ -12,6 +12,7 @@ import {
   getFieldValidatorRegistryEntry,
   isDuplicateKindAllowed,
   type FieldNode,
+  type GroupNode,
   type MdyStudioProject,
   type StudioDiagnostic,
   type StudioExpression,
@@ -49,6 +50,7 @@ import { jsonTargetManifest } from "@modyra/studio-target-json";
 import { coreTargetManifest } from "@modyra/studio-target-core";
 import { angularTargetManifest } from "@modyra/studio-target-angular";
 import { reactTargetManifest } from "@modyra/studio-target-react";
+import { buildLiveForm, createMockSubmitAction, vanillaReactivity, type MdyTypedForm, type MockServerConfig } from "@modyra/studio-preview";
 import "./studio.css";
 
 type Drag = { nodeId: string } | { template: string };
@@ -407,6 +409,148 @@ export function formValidatorsMarkup(project: MdyStudioProject, idx: StudioIndex
     </div>`;
 }
 
+/**
+ * Walks a live form's `.f` tree by dotted path segments — the live counterpart of `idx.pathByNode`.
+ * A group's segment is a plain property (`.f.shipping.city`), but an array row's numeric segment is
+ * not (`.f.items` is an `MdyArrayHandle`, not indexable by a `"0"` property) — it needs `.at(0)`.
+ * Pure/exported so it (and everything below) is unit-testable the same way as
+ * `serverValidatorMarkup`/`formValidatorsMarkup`, without needing a DOM.
+ */
+export function getPreviewHandle(form: MdyTypedForm<never> | null, path: string): Record<string, unknown> | null {
+  if (!form) return null;
+  let current: unknown = form.f;
+  for (const seg of path.split(".")) {
+    if (current === null || current === undefined) return null;
+    const obj = current as Record<string, unknown>;
+    current = /^\d+$/.test(seg) && typeof obj.at === "function" ? (obj.at as (i: number) => unknown)(Number(seg)) : obj[seg];
+  }
+  return (current ?? null) as Record<string, unknown> | null;
+}
+
+/** Initial value for a newly-pushed array row, built from the item schema's own field defaults (nested arrays inside an array item are not supported — a documented P11 limitation, not silently wrong). */
+export function defaultRowValue(item: FieldNode | GroupNode): unknown {
+  if (item.node === "field") return item.initialValue;
+  const row: Record<string, unknown> = {};
+  for (const child of item.children) if (child.node !== "array") row[child.name] = defaultRowValue(child as FieldNode | GroupNode);
+  return row;
+}
+
+/** P11: one live field, bound to the real form handle at `path` — never a static description of one (R5/R12). */
+export function previewFieldMarkup(node: FieldNode, path: string, form: MdyTypedForm<never> | null, mockConfig: Record<string, MockServerConfig>): string {
+  const handle = getPreviewHandle(form, path);
+  if (!handle) return "";
+  const value = (handle.value as () => unknown)();
+  const errors = (handle.errors as () => ReadonlyArray<{ message: string }>)();
+  const pending = (handle.pending as () => boolean)();
+  const label = escapeHtml(node.label || node.name);
+
+  let control: string;
+  if (node.fieldKind === "textarea") {
+    control = `<textarea data-preview-field="${path}">${escapeHtml(String(value ?? ""))}</textarea>`;
+  } else if (node.fieldKind === "number") {
+    control = `<input type="number" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
+  } else if (node.fieldKind === "checkbox") {
+    control = `<input type="checkbox" data-preview-field="${path}" data-preview-checkbox ${value ? "checked" : ""}>`;
+  } else if (node.fieldKind === "select") {
+    const options = (node.options ?? [])
+      .map((o) => `<option value="${escapeHtml(o.value)}" ${o.value === value ? "selected" : ""}>${escapeHtml(o.label)}</option>`)
+      .join("");
+    control = `<select data-preview-field="${path}"><option value="">— choose —</option>${options}</select>`;
+  } else if (node.fieldKind === "multiselect") {
+    const selectedValues = Array.isArray(value) ? (value as unknown[]) : [];
+    const options = (node.options ?? [])
+      .map((o) => `<option value="${escapeHtml(o.value)}" ${selectedValues.includes(o.value) ? "selected" : ""}>${escapeHtml(o.label)}</option>`)
+      .join("");
+    control = `<select multiple data-preview-field="${path}">${options}</select>`;
+  } else if (node.fieldKind === "date") {
+    control = `<input type="date" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
+  } else {
+    control = `<input type="${node.fieldKind === "email" ? "email" : "text"}" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
+  }
+
+  const serverMock = node.serverValidator
+    ? (() => {
+        const cfg = mockConfig[node.serverValidator!.implementationRef];
+        const mode = cfg?.forceNetworkFailure ? "network" : cfg?.forceError ? "error" : "success";
+        return `
+      <label class="preview-mock-mode">Server mock
+        <select data-preview-mock-mode="${node.serverValidator!.implementationRef}">
+          <option value="success" ${mode === "success" ? "selected" : ""}>Succeeds</option>
+          <option value="error" ${mode === "error" ? "selected" : ""}>Fails</option>
+          <option value="network" ${mode === "network" ? "selected" : ""}>Network failure</option>
+        </select>
+      </label>`;
+      })()
+    : "";
+
+  return `
+    <label class="preview-field">
+      <span>${label}${pending ? ' <span class="preview-pending">checking…</span>' : ""}</span>
+      ${control}
+      ${errors.length ? `<span class="preview-errors">${errors.map((e) => escapeHtml(e.message)).join(", ")}</span>` : ""}
+    </label>
+    ${serverMock}`;
+}
+
+/** P11: a field, group, or array node — recurses, always reading the real live handle at each computed path. */
+export function previewNodeMarkup(node: StudioSchemaNode, path: string, form: MdyTypedForm<never> | null, mockConfig: Record<string, MockServerConfig>): string {
+  if (node.node === "field") return previewFieldMarkup(node, path, form, mockConfig);
+  if (node.node === "group") {
+    return `
+      <fieldset class="preview-group">
+        <legend>${escapeHtml(node.label || node.name)}</legend>
+        ${node.children.map((c) => previewNodeMarkup(c, `${path}.${c.name}`, form, mockConfig)).join("")}
+      </fieldset>`;
+  }
+  const handle = getPreviewHandle(form, path) as { length?: () => number } | null;
+  const length = handle?.length?.() ?? 0;
+  const rows = Array.from({ length }, (_, i) => {
+    const rowPath = `${path}.${i}`;
+    const rowFields =
+      node.item.node === "group"
+        ? node.item.children.map((c) => previewNodeMarkup(c, `${rowPath}.${c.name}`, form, mockConfig)).join("")
+        : previewNodeMarkup(node.item, rowPath, form, mockConfig);
+    return `<div class="preview-array-row">${rowFields}<button type="button" data-preview-array-remove="${path}" data-preview-array-index="${i}">Remove</button></div>`;
+  }).join("");
+  return `
+    <div class="preview-array">
+      <div class="preview-array-label">${escapeHtml(node.label || node.name)} (${length})</div>
+      ${rows}
+      <button type="button" data-preview-array-push="${path}">+ Add row</button>
+    </div>`;
+}
+
+/** P11 gate ("Preview reads model/Contract, not generated source"): status badges, every field live-bound, Submit. Diagnostics are appended by the caller (mountStudio already has a diagnosticsMarkup() it reuses everywhere else). */
+export function previewBodyMarkup(project: MdyStudioProject, form: MdyTypedForm<never> | null, mockConfig: Record<string, MockServerConfig>): string {
+  if (!form) {
+    return `<p class="tab-hint">Preview needs a group at the schema root.</p>`;
+  }
+  const rootChildren = project.schema.node === "group" ? project.schema.children : [];
+  const fields = rootChildren.map((c) => previewNodeMarkup(c, c.name, form, mockConfig)).join("");
+  const state = form.state;
+  const submitErrors = state.lastSubmitErrors();
+  const submitRef = project.behaviors.submit?.implementationRef;
+
+  return `
+    <p class="tab-hint">A real, running form built directly from this project — never generated source (R5/R12). Server validators run against a configurable mock, never a real network call.</p>
+    <div class="preview-status">
+      <span class="preview-status-badge ${state.valid() ? "valid" : "invalid"}">${state.valid() ? "Valid" : "Invalid"}</span>
+      ${state.pending() ? '<span class="preview-status-badge pending">Pending</span>' : ""}
+    </div>
+    <div class="preview-fields">${fields}</div>
+    <button type="button" data-preview-submit ${state.canSubmit() && !state.submitting() ? "" : "disabled"}>
+      ${state.submitting() ? "Submitting…" : "Submit"}
+    </button>
+    ${
+      state.submitCount()
+        ? submitErrors.length
+          ? `<p class="export-error" role="alert">Submit failed: ${escapeHtml(submitErrors.map((e: { message: string }) => e.message).join(", "))}</p>`
+          : `<p class="tab-hint">Submitted successfully (mock).</p>`
+        : ""
+    }
+    ${!submitRef ? `<p class="tab-hint">No submit action configured (see Form rules).</p>` : ""}`;
+}
+
 /** Mounts the Studio editor into `host`. Returns a disposer that clears the host. */
 export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () => void {
   let project = initial ? structuredClone(initial) : createBlankProject();
@@ -428,7 +572,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     errorTargetId: "",
     message: "",
   };
-  let inspectorTab: "node" | "form" | "diagnostics" | "export" = "node";
+  let inspectorTab: "node" | "form" | "diagnostics" | "export" | "preview" = "node";
   /** Export tab state — `generation` guards against a stale async generate() clobbering a newer one
       (plan §14 P7 gate "stale ignored"); errors never touch `project`/`history` (gate "failure cannot corrupt editor"). */
   let exportState: { targetId: string; artifact: Artifact | null; generating: boolean; error: string | null; generation: number } = {
@@ -438,6 +582,16 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     error: null,
     generation: 0,
   };
+  /** Preview tab state (plan §11: "Preview reads model/Contract, not generated source"). `previewReactivity`
+      is a single, long-lived graph so the effect below can observe the live form's own signals — a fresh
+      vanillaReactivity() per rebuild could not (see studio-preview's own test for why). Rebuilt only when
+      `project` changes identity (a fresh edit) or the mock config changes, never on every render(). */
+  const previewReactivity = vanillaReactivity();
+  let previewForm: MdyTypedForm<never> | null = null;
+  let previewForProject: MdyStudioProject | null = null;
+  let previewDiagnostics: StudioDiagnostic[] = [];
+  let previewMockConfig: Record<string, MockServerConfig> = {};
+  let previewEffect: { destroy(): void } | null = null;
   /** Which accordion sections are open — Validation starts open, everything else starts collapsed
       (the whole point of this structure: show little by default, let the user open what they need). */
   const expandedSections = new Set<string>(["validation"]);
@@ -500,6 +654,31 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
       exportState = { ...exportState, error: error instanceof Error ? error.message : String(error), generating: false };
     }
     render();
+  }
+
+  /** (Re)builds the live preview form only when `project` or the mock config actually changed — never on every render(). */
+  function ensurePreviewForm(): void {
+    if (previewForm && previewForProject === project) return;
+    previewEffect?.destroy();
+    const result = buildLiveForm(project, { reactivity: previewReactivity, mockConfigByImplId: previewMockConfig });
+    previewForm = result.form as MdyTypedForm<never> | null;
+    previewDiagnostics = result.diagnostics;
+    previewForProject = project;
+    const form = previewForm;
+    if (form) {
+      // Reading these signals subscribes them — any write (a preview field change, an async
+      // validator settling, a submit) re-runs this and triggers a normal render(), the same
+      // full-rebuild pattern every other state change in this file already uses.
+      previewEffect = previewReactivity.effect(() => {
+        form.value();
+        form.state.pending();
+        form.state.valid();
+        form.state.canSubmit();
+        form.state.submitting();
+        form.state.lastSubmitErrors();
+        render();
+      });
+    }
   }
 
   function getSelectedField(): FieldNode | null {
@@ -602,6 +781,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
       ${files}`;
   }
 
+  function previewMarkup(): string {
+    ensurePreviewForm();
+    return previewBodyMarkup(project, previewForm, previewMockConfig) + diagnosticsMarkup(previewDiagnostics);
+  }
+
   function markup(n: StudioSchemaNode): string {
     const isRoot = n.id === project.schema.id;
     const label = escapeHtml(n.label || n.name);
@@ -688,6 +872,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
               <button type="button" role="tab" data-inspector-tab="export" aria-selected="${inspectorTab === "export"}">
                 Export
               </button>
+              <button type="button" role="tab" data-inspector-tab="preview" aria-selected="${inspectorTab === "preview"}">
+                Preview
+              </button>
             </div>
             <div class="inspector-body">
               ${
@@ -695,9 +882,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
                   ? diagnosticsMarkup(diagnostics)
                   : inspectorTab === "export"
                     ? exportMarkup()
-                    : inspectorTab === "form"
-                    ? formValidatorsMarkup(project, idx, formValidatorDraft)
-                    : `
+                    : inspectorTab === "preview"
+                      ? previewMarkup()
+                      : inspectorTab === "form"
+                        ? formValidatorsMarkup(project, idx, formValidatorDraft)
+                        : `
                     <label>Name<input data-name value="${escapeHtml(current.name)}"></label>
                     <label>Label<input data-label value="${escapeHtml(current.label ?? "")}"></label>
                     <label>Description<textarea data-description>${escapeHtml(current.description ?? "")}</textarea></label>
@@ -891,7 +1080,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
 
     host.querySelectorAll<HTMLElement>("[data-inspector-tab]").forEach((el) =>
       el.addEventListener("click", () => {
-        const tab = el.dataset.inspectorTab as "node" | "form" | "diagnostics" | "export";
+        const tab = el.dataset.inspectorTab as "node" | "form" | "diagnostics" | "export" | "preview";
         inspectorTab = tab;
         focusSelector = `[data-inspector-tab="${tab}"]`;
         render();
@@ -1114,6 +1303,55 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
       }),
     );
 
+    host.querySelectorAll<HTMLElement>("[data-preview-field]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const path = el.dataset.previewField!;
+        const handle = getPreviewHandle(previewForm, path);
+        const valueSignal = handle?.value as { set(v: unknown): void } | undefined;
+        if (!valueSignal) return;
+        if (el instanceof HTMLInputElement && el.type === "checkbox") valueSignal.set(el.checked);
+        else if (el instanceof HTMLInputElement && el.type === "number") valueSignal.set(el.value === "" ? null : Number(el.value));
+        else if (el instanceof HTMLSelectElement && el.multiple) valueSignal.set(Array.from(el.selectedOptions).map((o) => o.value));
+        else valueSignal.set((el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement).value);
+      }),
+    );
+    host.querySelectorAll<HTMLElement>("[data-preview-array-push]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const path = el.dataset.previewArrayPush!;
+        const handle = getPreviewHandle(previewForm, path) as { push?(v: unknown): void } | null;
+        const idx = buildIndexes(project);
+        const nodeId = idx.nodeByPath.get(path);
+        const node = nodeId ? idx.nodeById.get(nodeId) : null;
+        if (handle?.push && node?.node === "array") handle.push(defaultRowValue(node.item));
+      }),
+    );
+    host.querySelectorAll<HTMLElement>("[data-preview-array-remove]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const path = el.dataset.previewArrayRemove!;
+        const index = Number(el.dataset.previewArrayIndex);
+        const handle = getPreviewHandle(previewForm, path) as { remove?(i: number): void } | null;
+        handle?.remove?.(index);
+      }),
+    );
+    host.querySelectorAll<HTMLSelectElement>("[data-preview-mock-mode]").forEach((el) =>
+      el.addEventListener("change", () => {
+        const implId = el.dataset.previewMockMode!;
+        const mode = el.value;
+        previewMockConfig = {
+          ...previewMockConfig,
+          [implId]: mode === "error" ? { forceError: "Simulated server error" } : mode === "network" ? { forceNetworkFailure: true } : {},
+        };
+        previewForProject = null; // force ensurePreviewForm() to rebuild with the new mock config
+        render();
+      }),
+    );
+    host.querySelector<HTMLElement>("[data-preview-submit]")?.addEventListener("click", () => {
+      if (!previewForm) return;
+      const submitRef = project.behaviors.submit?.implementationRef;
+      const mockCfg = submitRef ? previewMockConfig[submitRef] : undefined;
+      void previewForm.submit(createMockSubmitAction(mockCfg ?? {}));
+    });
+
     host.querySelectorAll<HTMLElement>("[data-node]").forEach((el) =>
       el.addEventListener("keydown", (e) => keyboard(e, el.dataset.node!)),
     );
@@ -1180,6 +1418,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
 
   render();
   return () => {
+    previewEffect?.destroy();
     host.replaceChildren();
   };
 }
