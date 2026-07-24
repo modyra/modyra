@@ -48,6 +48,7 @@ import { TargetRegistry, type Artifact } from "@modyra/studio-codegen";
 import { jsonTargetManifest } from "@modyra/studio-target-json";
 import { coreTargetManifest } from "@modyra/studio-target-core";
 import { angularTargetManifest } from "@modyra/studio-target-angular";
+import { reactTargetManifest } from "@modyra/studio-target-react";
 import "./studio.css";
 
 type Drag = { nodeId: string } | { template: string };
@@ -57,6 +58,7 @@ const targetRegistry = new TargetRegistry();
 targetRegistry.register(jsonTargetManifest);
 targetRegistry.register(coreTargetManifest);
 targetRegistry.register(angularTargetManifest);
+targetRegistry.register(reactTargetManifest);
 
 const TEMPLATES = [
   "text",
@@ -573,8 +575,15 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
              .map(
                (f) => `
              <li class="export-file">
-               <span class="export-file-path">${escapeHtml(f.path)}${f.path === artifact.entryFile ? " <b>(entry)</b>" : ""}</span>
-               <button data-export-download="${escapeHtml(f.path)}">Download</button>
+               <div class="export-file-header">
+                 <span class="export-file-path">${escapeHtml(f.path)}${f.path === artifact.entryFile ? " <b>(entry)</b>" : ""}</span>
+                 <button data-export-copy="${escapeHtml(f.path)}">Copy</button>
+                 <button data-export-download="${escapeHtml(f.path)}">Download</button>
+               </div>
+               <details class="accordion" data-section="export:${escapeHtml(f.path)}" ${expandedSections.has(`export:${f.path}`) ? "open" : ""}>
+                 <summary>Preview</summary>
+                 <pre class="export-file-code accordion-body"><code>${escapeHtml(f.content)}</code></pre>
+               </details>
              </li>`,
              )
              .join("")}
@@ -1080,6 +1089,28 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
         a.download = path.split("/").pop() ?? path;
         a.click();
         URL.revokeObjectURL(url);
+      }),
+    );
+    host.querySelectorAll<HTMLButtonElement>("[data-export-copy]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const path = el.dataset.exportCopy!;
+        const file = exportState.artifact?.files.find((f) => f.path === path);
+        if (!file) return;
+        const original = el.textContent;
+        navigator.clipboard
+          .writeText(file.content)
+          .then(() => {
+            el.textContent = "Copied!";
+            setTimeout(() => {
+              el.textContent = original;
+            }, 1500);
+          })
+          .catch(() => {
+            el.textContent = "Copy failed";
+            setTimeout(() => {
+              el.textContent = original;
+            }, 1500);
+          });
       }),
     );
 

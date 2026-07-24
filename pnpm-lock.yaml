@@ -347,6 +347,15 @@ importers:
         specifier: workspace:*
         version: link:../studio-model
 
+  packages/studio-target-react:
+    dependencies:
+      '@modyra/studio-codegen':
+        specifier: workspace:*
+        version: link:../studio-codegen
+      '@modyra/studio-model':
+        specifier: workspace:*
+        version: link:../studio-model
+
   packages/studio-ui:
     dependencies:
       '@modyra/studio-codegen':
@@ -370,6 +379,9 @@ importers:
       '@modyra/studio-target-json':
         specifier: workspace:*
         version: link:../studio-target-json
+      '@modyra/studio-target-react':
+        specifier: workspace:*
+        version: link:../studio-target-react
 
   packages/styles: {}
 

@@ -143,11 +143,11 @@ test("P6: a blank project is diagnostic-free (Diagnostics tab badge shows nothin
   assert.doesNotMatch(host.innerHTML, /data-inspector-tab="diagnostics"[^>]*>\s*Diagnostics\s*<span/);
 });
 
-test("package has no React dependency and source has no React/JSX reference", () => {
+test("package has no actual React runtime dependency and source has no JSX (studio-target-react is a text-codegen package, not React itself)", () => {
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-  assert.ok(!Object.keys(deps).some((name) => /react/i.test(name)));
+  assert.ok(!("react" in deps) && !("react-dom" in deps));
 
   const source = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /react|jsx-runtime/i);
+  assert.doesNotMatch(source, /from ["']react["']|from ["']react-dom["']|jsx-runtime/);
 });

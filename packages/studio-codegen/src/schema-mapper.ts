@@ -32,10 +32,25 @@ export interface FormModuleResult {
   diagnostics: StudioDiagnostic[];
 }
 
-/** The only things that differ between Core/Angular/React targets: where the schema factory comes from and what the create-call is named. */
+/**
+ * The only things that differ between Core/Angular/React targets: where the
+ * schema factory comes from, what the create-call is named, whether the
+ * schema arg needs wrapping in a thunk (React's `useMdyForm(() => schema,
+ * options)`), and — because `useMdyForm` is a React Hook, illegal to call
+ * at module scope like `createForm`/`mdyForm` can be — an optional hook
+ * name to export a wrapping `export function use…Form() { return … }`
+ * instead of a bare `export const form = …`, and — because some packages
+ * (React) re-export every `@modyra/core` validator under their own name
+ * while others (Angular's `/adapter`) do not — an optional override for
+ * where validators/`crossField`/`serverValidator` are imported from
+ * (defaults to `@modyra/core`).
+ */
 export interface TargetProfile {
   readonly factoryImportSource: string;
   readonly createCallName: string;
+  readonly wrapSchemaInThunk?: boolean;
+  readonly hookExportName?: string;
+  readonly validatorsImportSource?: string;
 }
 
 function literalCode(value: unknown): string {
@@ -75,14 +90,15 @@ function mapFieldValidator(
   imports: ImportResolver,
   diagnostics: StudioDiagnostic[],
   stubNameFor: Map<string, string>,
+  validatorSource: string,
 ): string | null {
   const msgArg = v.message !== undefined ? [printString(v.message)] : [];
   switch (v.kind) {
     case "required":
-      imports.add("@modyra/core", "required");
+      imports.add(validatorSource, "required");
       return printCall("required", msgArg);
     case "email":
-      imports.add("@modyra/core", "email");
+      imports.add(validatorSource, "email");
       return printCall("email", msgArg);
     case "min":
     case "max":
@@ -92,7 +108,7 @@ function mapFieldValidator(
         diagnostics.push({ code: "MISSING_VALIDATOR_VALUE", severity: "warning", message: `Validator "${v.kind}" on "${node.name}" has no numeric value and was omitted`, nodeId: node.id, validatorId: v.id });
         return null;
       }
-      imports.add("@modyra/core", v.kind);
+      imports.add(validatorSource, v.kind);
       return printCall(v.kind, [literalCode(v.value), ...msgArg]);
     }
     case "pattern": {
@@ -100,7 +116,7 @@ function mapFieldValidator(
         diagnostics.push({ code: "MISSING_VALIDATOR_VALUE", severity: "warning", message: `Pattern validator on "${node.name}" has no pattern and was omitted`, nodeId: node.id, validatorId: v.id });
         return null;
       }
-      imports.add("@modyra/core", "pattern");
+      imports.add(validatorSource, "pattern");
       return printCall("pattern", [printRegExp(v.pattern), ...msgArg]);
     }
     case "oneOf":
@@ -109,7 +125,7 @@ function mapFieldValidator(
         diagnostics.push({ code: "MISSING_VALIDATOR_VALUE", severity: "warning", message: `Validator "${v.kind}" on "${node.name}" has no value list and was omitted`, nodeId: node.id, validatorId: v.id });
         return null;
       }
-      imports.add("@modyra/core", v.kind);
+      imports.add(validatorSource, v.kind);
       return printCall(v.kind, [literalCode(v.value), ...msgArg]);
     }
     case "customRef": {
@@ -126,11 +142,11 @@ function mapFieldValidator(
   }
 }
 
-function mapArrayValidator(v: StudioArrayValidator, node: ArrayNode, imports: ImportResolver, diagnostics: StudioDiagnostic[]): string | null {
+function mapArrayValidator(v: StudioArrayValidator, node: ArrayNode, imports: ImportResolver, diagnostics: StudioDiagnostic[], validatorSource: string): string | null {
   const msgArg = v.message !== undefined ? [printString(v.message)] : [];
   if ((v.kind === "min" || v.kind === "max") && typeof v.value === "number") {
     const fn = v.kind === "min" ? "minLength" : "maxLength";
-    imports.add("@modyra/core", fn);
+    imports.add(validatorSource, fn);
     return printCall(fn, [literalCode(v.value), ...msgArg]);
   }
   diagnostics.push({ code: "UNSUPPORTED_VALIDATOR", severity: "warning", message: `Array validator kind "${v.kind}" is not supported by this target and was omitted`, nodeId: node.id, validatorId: v.id });
@@ -138,7 +154,7 @@ function mapArrayValidator(v: StudioArrayValidator, node: ArrayNode, imports: Im
 }
 
 /** The field()'s 3rd-arg `MdyFieldOptions` expression, built via the idiomatic `serverValidator()` helper (returns a ready-to-spread options fragment — never hand-built asyncValidators/asyncDebounceMs). */
-function mapServerValidatorArg(node: FieldNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>): string | null {
+function mapServerValidatorArg(node: FieldNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, validatorSource: string): string | null {
   const sv = node.serverValidator;
   if (!sv) return null;
   const stubName = stubNameFor.get(sv.implementationRef);
@@ -146,7 +162,7 @@ function mapServerValidatorArg(node: FieldNode, idx: StudioIndexes, imports: Imp
     diagnostics.push({ code: "MISSING_IMPLEMENTATION", severity: "error", message: `Server validator on "${node.name}" has no resolvable implementation`, nodeId: node.id, validatorId: sv.id });
     return null;
   }
-  imports.add("@modyra/core", "serverValidator");
+  imports.add(validatorSource, "serverValidator");
   const optionProps: TsProp[] = [];
   if (sv.debounceMs !== undefined) optionProps.push({ key: "debounceMs", value: literalCode(sv.debounceMs) });
   if (sv.dependencies.length) {
@@ -161,12 +177,12 @@ function mapServerValidatorArg(node: FieldNode, idx: StudioIndexes, imports: Imp
   return printCall("serverValidator", optionProps.length ? [stubName, printObject(optionProps)] : [stubName]);
 }
 
-function mapField(node: FieldNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, profile: TargetProfile): string {
+function mapField(node: FieldNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, profile: TargetProfile, validatorSource: string): string {
   imports.add(profile.factoryImportSource, "field");
   const validatorCodes = node.validators
-    .map((v) => mapFieldValidator(v, node, imports, diagnostics, stubNameFor))
+    .map((v) => mapFieldValidator(v, node, imports, diagnostics, stubNameFor, validatorSource))
     .filter((c): c is string => c !== null);
-  const serverValidatorArg = mapServerValidatorArg(node, idx, imports, diagnostics, stubNameFor);
+  const serverValidatorArg = mapServerValidatorArg(node, idx, imports, diagnostics, stubNameFor, validatorSource);
 
   const args = [literalCode(node.initialValue)];
   if (validatorCodes.length || serverValidatorArg) args.push(printArray(validatorCodes));
@@ -174,17 +190,17 @@ function mapField(node: FieldNode, idx: StudioIndexes, imports: ImportResolver, 
   return printCall("field", args);
 }
 
-function mapGroup(node: GroupNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, profile: TargetProfile): string {
+function mapGroup(node: GroupNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, profile: TargetProfile, validatorSource: string): string {
   imports.add(profile.factoryImportSource, "group");
-  const props: TsProp[] = node.children.map((child) => ({ key: child.name, value: mapNode(child, idx, imports, diagnostics, stubNameFor, profile) }));
+  const props: TsProp[] = node.children.map((child) => ({ key: child.name, value: mapNode(child, idx, imports, diagnostics, stubNameFor, profile, validatorSource) }));
   return printCall("group", [printObject(props)]);
 }
 
-function mapArray(node: ArrayNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, profile: TargetProfile): string {
+function mapArray(node: ArrayNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, profile: TargetProfile, validatorSource: string): string {
   imports.add(profile.factoryImportSource, "array");
-  const itemCode = mapNode(node.item, idx, imports, diagnostics, stubNameFor, profile);
+  const itemCode = mapNode(node.item, idx, imports, diagnostics, stubNameFor, profile, validatorSource);
   const validatorCodes = node.validators
-    .map((v) => mapArrayValidator(v, node, imports, diagnostics))
+    .map((v) => mapArrayValidator(v, node, imports, diagnostics, validatorSource))
     .filter((c): c is string => c !== null);
 
   const optionProps: TsProp[] = [{ key: "initial", value: literalCode(node.initialRows) }];
@@ -192,10 +208,10 @@ function mapArray(node: ArrayNode, idx: StudioIndexes, imports: ImportResolver, 
   return printCall("array", [itemCode, printObject(optionProps)]);
 }
 
-function mapNode(node: StudioSchemaNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, profile: TargetProfile): string {
-  if (node.node === "field") return mapField(node, idx, imports, diagnostics, stubNameFor, profile);
-  if (node.node === "group") return mapGroup(node, idx, imports, diagnostics, stubNameFor, profile);
-  return mapArray(node, idx, imports, diagnostics, stubNameFor, profile);
+function mapNode(node: StudioSchemaNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, profile: TargetProfile, validatorSource: string): string {
+  if (node.node === "field") return mapField(node, idx, imports, diagnostics, stubNameFor, profile, validatorSource);
+  if (node.node === "group") return mapGroup(node, idx, imports, diagnostics, stubNameFor, profile, validatorSource);
+  return mapArray(node, idx, imports, diagnostics, stubNameFor, profile, validatorSource);
 }
 
 function mapFormValidator(fv: StudioFormValidator, idx: StudioIndexes): string {
@@ -216,16 +232,17 @@ export function buildFormModule(project: MdyStudioProject, stubNameFor: Map<stri
     return { code: "", diagnostics };
   }
 
+  const validatorSource = profile.validatorsImportSource ?? "@modyra/core";
   const idx = buildIndexes(project);
   const schemaProps: TsProp[] = project.schema.children.map((child) => ({
     key: child.name,
-    value: mapNode(child, idx, imports, diagnostics, stubNameFor, profile),
+    value: mapNode(child, idx, imports, diagnostics, stubNameFor, profile, validatorSource),
   }));
   const schemaCode = printObject(schemaProps);
 
   const formOptionProps: TsProp[] = [];
   if (project.formValidators.length) {
-    imports.add("@modyra/core", "crossField");
+    imports.add(validatorSource, "crossField");
     formOptionProps.push({ key: "validators", value: printArray(project.formValidators.map((fv) => mapFormValidator(fv, idx))) });
   }
   if (project.behaviors.draft) {
@@ -247,6 +264,11 @@ export function buildFormModule(project: MdyStudioProject, stubNameFor: Map<stri
   const referencedStubs = [...new Set(stubNameFor.values())].filter((name) => referencedNames.has(name));
   if (referencedStubs.length) imports.add("./stubs.js", ...referencedStubs);
 
-  const code = `${imports.print()}\n\nconst schema = ${schemaCode};\n\nexport const form = ${profile.createCallName}(schema, ${printObject(formOptionProps)});\n`;
+  const schemaArg = profile.wrapSchemaInThunk ? "() => schema" : "schema";
+  const call = `${profile.createCallName}(${schemaArg}, ${printObject(formOptionProps)})`;
+  const exportStatement = profile.hookExportName
+    ? `export function ${profile.hookExportName}() {\n  return ${call.split("\n").join("\n  ")};\n}\n`
+    : `export const form = ${call};\n`;
+  const code = `${imports.print()}\n\nconst schema = ${schemaCode};\n\n${exportStatement}`;
   return { code, diagnostics };
 }
