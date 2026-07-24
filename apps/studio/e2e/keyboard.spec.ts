@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openStudio, showStructure } from "./support/studio.js";
 
 /**
  * P4 gate: checkout-shaped structure buildable keyboard-only, a11y pass.
@@ -13,8 +14,8 @@ async function addFromPalette(page: import("@playwright/test").Page, template: s
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await page.waitForSelector(".studio");
+  await openStudio(page);
+  await showStructure(page); // this suite drives the Structure outline, not the live form
 });
 
 test("adding an element via keyboard moves focus onto the new node (not stranded on the palette)", async ({ page }) => {

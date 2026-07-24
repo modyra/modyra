@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openStudio, showStructure } from "./support/studio.js";
 
 /**
  * P11 gate: "reload restores, corrupt snapshot recovers." Real IndexedDB
@@ -7,8 +8,8 @@ import { expect, test } from "@playwright/test";
  */
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await page.waitForSelector(".studio");
+  await openStudio(page);
+  await showStructure(page); // this suite drives the Structure outline, not the live form
 });
 
 test("reload restores the last auto-saved session", async ({ page }) => {
@@ -20,6 +21,7 @@ test("reload restores the last auto-saved session", async ({ page }) => {
 
   await page.reload();
   await page.waitForSelector(".studio");
+  await showStructure(page); // a reload starts on the live form again
   await expect(page.locator(".tree-node")).toHaveCount(1);
   // Restore does not preserve "last selected" (there is nothing to restore it from) — select the field explicitly.
   await page.locator("[data-select]").first().click();
@@ -53,7 +55,7 @@ test("a corrupt IndexedDB snapshot recovers to a blank project instead of crashi
   await page.waitForTimeout(200); // let the async restore attempt run and fail gracefully
 
   expect(errors).toEqual([]);
-  await expect(page.locator(".title h1")).toHaveText("Untitled form"); // createBlankProject()'s default name
+  await expect(page.locator("[data-form-name]")).toHaveValue("Untitled form"); // createBlankProject()'s default name
 });
 
 test("export via the JSON target, then Import that same file back in, round-trips the real project", async ({ page }) => {

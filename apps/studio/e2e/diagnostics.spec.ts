@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openStudio, showStructure } from "./support/studio.js";
 
 /**
  * P6 batch 2 gate: "navigation/fixes work". The Diagnostics tab lists
@@ -10,8 +11,7 @@ import { expect, test } from "@playwright/test";
  */
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await page.waitForSelector(".studio");
+  await openStudio(page);
 });
 
 test("a select field with no options: tree shows the issue marker, tab badge is red, Go to selects the field", async ({ page }) => {
@@ -19,7 +19,10 @@ test("a select field with no options: tree shows the issue marker, tab badge is 
   await page.locator('details[data-section="options"] summary').click();
   await page.locator('[data-remove-option="0"]').click();
 
-  // At-a-glance: tree marker + red-tinted badge, without opening the tab.
+  // An uncompilable Contract blocks the live form outright — the canvas says so instead of
+  // silently rendering a form that does not match the project.
+  await expect(page.locator(".plain-canvas-unavailable")).toBeVisible();
+  await showStructure(page);
   await expect(page.locator(".tree-node .indicator.issue")).toHaveCount(1);
   await expect(page.locator('[data-inspector-tab="diagnostics"] .badge')).toHaveClass(/badge-error/);
 
@@ -45,6 +48,7 @@ test("quick-fix: 'Add a default option' resolves the select-without-options erro
 
   await expect(page.locator(".diagnostic-row")).toHaveCount(0);
   await expect(page.locator(".tab-hint")).toContainText("No issues found");
+  await showStructure(page);
   await expect(page.locator(".tree-node .indicator.issue")).toHaveCount(0);
 });
 

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openStudio, showStructure } from "./support/studio.js";
 
 /**
  * P5 batch 2: server validator UI (dependencies, debounce/timeout,
@@ -14,8 +15,7 @@ import { expect, test } from "@playwright/test";
  */
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await page.waitForSelector(".studio");
+  await openStudio(page);
 });
 
 async function openServerValidationSection(page: import("@playwright/test").Page) {
@@ -131,6 +131,7 @@ test("inline-editing an existing form validator's message commits without recrea
 
 test("P5 gap closed: AND composes two sub-conditions, each with its own field+condition", async ({ page }) => {
   await page.locator('[data-template="group"]').click();
+  await showStructure(page);
   const groupId = await page.locator(".tree-node [data-node]").first().getAttribute("data-node");
   await page.locator('[data-template="text"]').click();
   await openFormRulesTab(page);

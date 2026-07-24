@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openStudio } from "./support/studio.js";
 
 /**
  * P11 gate: "Preview reads model/Contract, not generated source. Must
@@ -9,8 +10,7 @@ import { expect, test } from "@playwright/test";
  */
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await page.waitForSelector(".studio");
+  await openStudio(page);
 });
 
 test("a required field shows a real live error, then clears it once filled", async ({ page }) => {
