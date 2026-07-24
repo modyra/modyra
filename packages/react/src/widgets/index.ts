@@ -39,3 +39,9 @@ export type {
   MdyReactDatepickerFieldApi,
   UseMdyDatepickerFieldOptions,
 } from "./datepicker-field.js";
+
+export { useMdyTimepickerField } from "./timepicker-field.js";
+export type {
+  MdyReactTimepickerFieldApi,
+  UseMdyTimepickerFieldOptions,
+} from "./timepicker-field.js";

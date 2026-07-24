@@ -96,3 +96,22 @@ export type {
   MdyDatepickerFieldIntent,
   MdyDatepickerFieldState,
 } from "./datepicker-field-types.js";
+
+export { createTimepickerFieldController } from "./timepicker-field-controller.js";
+export type { MdyTimepickerFieldController } from "./timepicker-field-controller.js";
+
+export {
+  timepickerFieldPartIds,
+  timepickerFieldRootClasses,
+  projectTimepickerFieldA11y,
+} from "./timepicker-field-a11y.js";
+
+export type {
+  MdyTimepickerFieldA11yOptions,
+} from "./timepicker-field-a11y.js";
+
+export type {
+  MdyTimepickerFieldControllerOptions,
+  MdyTimepickerFieldIntent,
+  MdyTimepickerFieldState,
+} from "./timepicker-field-types.js";
