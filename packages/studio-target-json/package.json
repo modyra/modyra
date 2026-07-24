@@ -21,6 +21,6 @@
   "dependencies": {
     "@modyra/studio-model": "workspace:*",
     "@modyra/studio-contract": "workspace:*",
-    "@modyra/studio-target-core": "workspace:*"
+    "@modyra/studio-codegen": "workspace:*"
   }
 }

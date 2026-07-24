@@ -44,7 +44,7 @@ import {
   type Placement,
 } from "@modyra/studio-editor";
 import { compileToContract } from "@modyra/studio-contract";
-import { TargetRegistry, type Artifact } from "@modyra/studio-target-core";
+import { TargetRegistry, type Artifact } from "@modyra/studio-codegen";
 import { jsonTargetManifest } from "@modyra/studio-target-json";
 import "./studio.css";
 
