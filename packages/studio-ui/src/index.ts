@@ -54,6 +54,7 @@ import { angularTargetManifest } from "@modyra/studio-target-angular";
 import { reactTargetManifest } from "@modyra/studio-target-react";
 import { buildLiveForm, createMockSubmitAction, vanillaReactivity, type MdyTypedForm, type MockServerConfig } from "@modyra/studio-preview";
 import { StudioCanvasController, StudioRuntimeSession } from "./canvas-controller.js";
+import { Region, ScrollMemory } from "./regions.js";
 import { importProjectFromText, loadSession, saveSession } from "./storage.js";
 import "./studio.css";
 
@@ -571,6 +572,20 @@ export interface MountStudioOptions {
   readonly generateOffMainThread?: GenerateOffMainThread;
 }
 
+/** Persistent shell containers, built once by `ensureShell()` and never replaced wholesale afterwards. */
+interface StudioShell {
+  readonly canvas: HTMLElement;
+  readonly canvasSurface: HTMLElement;
+  readonly inspectorBody: HTMLElement;
+  readonly nav: Region;
+  readonly palette: Region;
+  readonly canvasHead: Region;
+  readonly surface: Region;
+  readonly tabs: Region;
+  readonly inspector: Region;
+  readonly footer: Region;
+}
+
 export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, options: MountStudioOptions = {}): () => void {
   const canvasController = new StudioCanvasController();
   const plainCanvasSession = new StudioRuntimeSession<MdyPlainForm>();
@@ -622,6 +637,15 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       read by nodeIndicatorsMarkup() so the tree shows an at-a-glance error marker too. */
   let diagnosticNodeIds = new Set<string>();
   const history = new CommandHistory();
+  /** Built once; from then on `render()` only updates the regions whose markup actually changed. */
+  let shell: StudioShell | null = null;
+  const scroll = new ScrollMemory();
+  /** Indexes for the current `project`, derived once per render — every handler reads this instead of rebuilding. */
+  let indexes: StudioIndexes = buildIndexes(project);
+  /** Schema snapshot the live form canvas was last mounted from; identical snapshot -> no remount. */
+  let plainCanvasSignature: string | null = null;
+  /** True only while `ensurePreviewForm()` is wiring the live preview effect, whose first run is synchronous. */
+  let buildingPreview = false;
 
   function commit(command: Command, focusTarget: string = selected, focusOverride?: string): void {
     try {
@@ -713,8 +737,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     const form = previewForm;
     if (form) {
       // Reading these signals subscribes them — any write (a preview field change, an async
-      // validator settling, a submit) re-runs this and triggers a normal render(), the same
-      // full-rebuild pattern every other state change in this file already uses.
+      // validator settling, a submit) re-runs this. It repaints the *preview panel only*:
+      // nothing outside the inspector body depends on live form state, and a full render()
+      // here would re-enter the render that is building this effect in the first place.
+      buildingPreview = true;
       previewEffect = previewReactivity.effect(() => {
         form.value();
         form.state.pending();
@@ -722,14 +748,30 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         form.state.canSubmit();
         form.state.submitting();
         form.state.lastSubmitErrors();
-        render();
+        // Building the markup *inside* the effect is what subscribes it to every signal the
+        // panel actually shows — array lengths and per-field errors included, which the
+        // form-level signals above do not cover. Skipping this read on the first (synchronous)
+        // run would leave those dependencies untracked forever.
+        const html = previewPanelMarkup();
+        if (!buildingPreview) paintPreviewPanel(html);
       });
+      buildingPreview = false;
       previewSession.replace({ dispose: () => previewEffect?.destroy() });
     }
   }
 
+  /** Repaints just the preview panel, keeping the inspector's scroll and the field the user is typing in. */
+  function paintPreviewPanel(html: string): void {
+    if (!shell || inspectorTab !== "preview") return;
+    const activePath = (document.activeElement as HTMLElement | null)?.dataset?.previewField ?? null;
+    scroll.capture();
+    shell.inspector.update(html);
+    scroll.restore();
+    if (activePath) shell.inspectorBody.querySelector<HTMLElement>(`[data-preview-field="${activePath}"]`)?.focus();
+  }
+
   function getSelectedField(): FieldNode | null {
-    const node = buildIndexes(project).nodeById.get(selected);
+    const node = indexes.nodeById.get(selected);
     return node && node.node === "field" ? node : null;
   }
 
@@ -828,9 +870,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       ${files}`;
   }
 
+  /** The panel body alone — reading it tracks the live form signals it displays. */
+  function previewPanelMarkup(): string {
+    return previewBodyMarkup(project, previewForm, previewMockConfig) + diagnosticsMarkup(previewDiagnostics);
+  }
+
   function previewMarkup(): string {
     ensurePreviewForm();
-    return previewBodyMarkup(project, previewForm, previewMockConfig) + diagnosticsMarkup(previewDiagnostics);
+    return previewPanelMarkup();
   }
 
   function markup(n: StudioSchemaNode): string {
@@ -1222,378 +1269,323 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     });
   }
 
+  function navMarkup(): string {
+    return `
+      <button data-undo ${history.canUndo() ? "" : "disabled"}>Undo</button>
+      <button data-redo ${history.canRedo() ? "" : "disabled"}>Redo</button>
+      <button data-new>New blank</button>
+      <label data-import-button class="import-button">
+        Import
+        <input type="file" accept="application/json" data-import hidden>
+      </label>`;
+  }
+
+  function paletteMarkup(): string {
+    return `<h2>Elements</h2>
+      <div class="palette-grid">${TEMPLATES.map((t) => `<button draggable="true" data-template="${t}">＋ ${t}</button>`).join("")}</div>`;
+  }
+
+  function canvasHeadMarkup(idx: StudioIndexes): string {
+    return `
+      <div class="title">
+        <h1>${escapeHtml(project.name)}</h1>
+        <span>${idx.nodeById.size - 1} nodes</span>
+      </div>
+      <div class="canvas-mode-switch" role="group" aria-label="Canvas view">
+        <button type="button" data-canvas-mode="structure" aria-pressed="${canvasMode === "structure"}">Structure</button>
+        <button type="button" data-canvas-mode="form" aria-pressed="${canvasMode === "form"}">Live form</button>
+      </div>`;
+  }
+
+  /**
+   * The live-form frame is deliberately markup-stable: it only changes when the Contract flips
+   * between available and blocked. As long as it is unchanged the Region skips the rewrite, so
+   * the `[data-plain-canvas]` mount underneath survives untouched across renders.
+   */
+  function liveFrameMarkup(hasContract: boolean): string {
+    return `
+      <div class="plain-canvas-frame">
+        <p class="plain-canvas-note">Interactive rendering from the strict Contract via @modyra/plain. Structure editing remains available in Structure.</p>
+        ${hasContract ? `<div class="plain-canvas-form" data-plain-canvas></div>` : `<div class="plain-canvas-unavailable" role="status">The live form is unavailable until the blocking Contract diagnostics are fixed.</div>`}
+      </div>`;
+  }
+
+  function structureMarkup(rootChildren: readonly StudioSchemaNode[]): string {
+    return rootChildren.length
+      ? `<ul class="tree">${rootChildren.map(markup).join("")}</ul>`
+      : `<div class="empty">
+           <h2>Start with a blank form</h2>
+           <p>Drag an element here or click one in the palette.</p>
+           <div class="drop-zone inside" data-inside="${project.schema.id}" data-index="0">Drop first element</div>
+         </div>`;
+  }
+
+  function tabsMarkup(current: StudioSchemaNode, diagnosticCount: number, errorCount: number): string {
+    return `
+      <button type="button" role="tab" data-inspector-tab="node" aria-selected="${inspectorTab === "node"}">
+        ${current.node === "field" ? "Field" : current.node === "group" ? "Group" : "Array"}
+      </button>
+      <button type="button" role="tab" data-inspector-tab="form" aria-selected="${inspectorTab === "form"}">
+        Form rules${project.formValidators.length ? ` <span class="badge">${project.formValidators.length}</span>` : ""}
+      </button>
+      <button type="button" role="tab" data-inspector-tab="diagnostics" aria-selected="${inspectorTab === "diagnostics"}">
+        Diagnostics${diagnosticCount ? ` <span class="badge ${errorCount ? "badge-error" : ""}">${diagnosticCount}</span>` : ""}
+      </button>
+      <button type="button" role="tab" data-inspector-tab="export" aria-selected="${inspectorTab === "export"}">
+        Export
+      </button>
+      <button type="button" role="tab" data-inspector-tab="preview" aria-selected="${inspectorTab === "preview"}">
+        Preview
+      </button>`;
+  }
+
+  function nodeInspectorMarkup(current: StudioSchemaNode, idx: StudioIndexes): string {
+    return `
+      <label>Name<input data-name value="${escapeHtml(current.name)}"></label>
+      <label>Label<input data-label value="${escapeHtml(current.label ?? "")}"></label>
+      <label>Description<textarea data-description>${escapeHtml(current.description ?? "")}</textarea></label>
+      ${
+        current.node === "field"
+          ? accordionMarkup(
+              "validation",
+              "Validation",
+              String(current.validators.length || ""),
+              expandedSections.has("validation"),
+              validatorsMarkup(current),
+            )
+          : ""
+      }
+      ${
+        current.node === "field" && (current.fieldKind === "select" || current.fieldKind === "multiselect")
+          ? accordionMarkup(
+              "options",
+              "Options",
+              String((current.options ?? []).length || ""),
+              expandedSections.has("options"),
+              optionsMarkup(current),
+            )
+          : ""
+      }
+      ${
+        current.node === "field"
+          ? accordionMarkup(
+              "server",
+              "Server validation",
+              current.serverValidator ? "on" : "",
+              expandedSections.has("server"),
+              serverValidatorMarkup(project, idx, current),
+            )
+          : ""
+      }
+      ${accordionMarkup(
+        "details",
+        "Details",
+        "",
+        expandedSections.has("details"),
+        `<dl><dt>Path</dt><dd>${escapeHtml(idx.pathByNode.get(current.id) || "root")}</dd><dt>Stable ID</dt><dd>${escapeHtml(current.id)}</dd></dl>`,
+      )}`;
+  }
+
+  function inspectorBodyMarkup(current: StudioSchemaNode, idx: StudioIndexes, diagnostics: StudioDiagnostic[]): string {
+    if (inspectorTab === "diagnostics") return diagnosticsMarkup(diagnostics);
+    if (inspectorTab === "export") return exportMarkup();
+    if (inspectorTab === "preview") return previewMarkup();
+    if (inspectorTab === "form") return formValidatorsMarkup(project, idx, formValidatorDraft);
+    return nodeInspectorMarkup(current, idx);
+  }
+
+  function footerMarkup(): string {
+    return `${escapeHtml(status)}${picked ? ". Arrows reorder or enter and leave containers. Enter drops. Escape cancels." : ""}`;
+  }
+
+  /**
+   * Builds the shell exactly once. Everything below it is owned by a {@link Region}, so a state
+   * change only rewrites the regions whose markup differs — the rest keeps its nodes, listeners,
+   * scroll offset and focus.
+   */
+  function ensureShell(): StudioShell {
+    if (shell) return shell;
+    host.innerHTML = `
+      <div class="studio">
+        <header>
+          <div><strong>Modyra Studio</strong><span>Vanilla local-first editor</span></div>
+          <nav></nav>
+        </header>
+        <main>
+          <aside class="palette"></aside>
+          <section class="canvas" tabindex="-1">
+            <div class="canvas-head"></div>
+            <div class="canvas-surface"></div>
+          </section>
+          <aside class="inspector">
+            <div class="inspector-tabs" role="tablist"></div>
+            <div class="inspector-body"></div>
+          </aside>
+        </main>
+        <footer role="status" aria-live="polite"></footer>
+      </div>`;
+
+    const find = <T extends HTMLElement>(selector: string): T => host.querySelector<T>(selector)!;
+    const canvas = find<HTMLElement>(".canvas");
+    const canvasSurface = find<HTMLElement>(".canvas-surface");
+    const inspectorBody = find<HTMLElement>(".inspector-body");
+    const palette = find<HTMLElement>(".palette");
+
+    shell = {
+      canvas,
+      canvasSurface,
+      inspectorBody,
+      nav: new Region(find<HTMLElement>("nav"), bindNav),
+      palette: new Region(palette, bindPalette),
+      canvasHead: new Region(find<HTMLElement>(".canvas-head"), bindCanvasHead),
+      // Bound explicitly by render(): in live-form mode the listeners belong to DOM that
+      // instrumentPlainCanvas() adds *after* the region write, so the Region cannot own it.
+      surface: new Region(canvasSurface),
+      tabs: new Region(find<HTMLElement>(".inspector-tabs"), bindInspectorTabs),
+      inspector: new Region(inspectorBody, bindInspector),
+      footer: new Region(find<HTMLElement>("footer")),
+    };
+
+    scroll.track(canvas);
+    scroll.track(inspectorBody);
+    scroll.track(palette);
+    canvasController.connect(canvas);
+
+    // Edge auto-scroll while dragging. Bound once on the persistent canvas, not per render.
+    canvas.addEventListener("dragover", (event) => {
+      const rect = canvas.getBoundingClientRect();
+      if (event.clientY - rect.top < 50) canvas.scrollTop -= 12;
+      if (rect.bottom - event.clientY < 50) canvas.scrollTop += 12;
+    });
+
+    return shell;
+  }
+
   function render(): void {
-    canvasController.capture();
-    plainCanvasSession.dispose();
-    const idx = buildIndexes(project);
-    const current = idx.nodeById.get(selected) ?? project.schema;
+    const view = ensureShell();
+    scroll.capture();
+
+    indexes = buildIndexes(project);
+    const current = indexes.nodeById.get(selected) ?? project.schema;
     selected = current.id;
     const rootChildren = project.schema.node === "group" ? project.schema.children : [];
     const { contract, diagnostics } = compileToContract(project);
     diagnosticNodeIds = new Set(diagnostics.filter((d) => d.nodeId).map((d) => d.nodeId!));
     const errorCount = diagnostics.filter((d) => d.severity === "error").length;
 
-    host.innerHTML = `
-      <div class="studio">
-        <header>
-          <div><strong>Modyra Studio</strong><span>Vanilla local-first editor</span></div>
-          <nav>
-            <button data-undo ${history.canUndo() ? "" : "disabled"}>Undo</button>
-            <button data-redo ${history.canRedo() ? "" : "disabled"}>Redo</button>
-            <button data-new>New blank</button>
-            <label data-import-button class="import-button">
-              Import
-              <input type="file" accept="application/json" data-import hidden>
-            </label>
-          </nav>
-        </header>
-        <main>
-          <aside class="palette">
-            <h2>Elements</h2>
-            ${TEMPLATES.map((t) => `<button draggable="true" data-template="${t}">＋ ${t}</button>`).join("")}
-          </aside>
-          <section class="canvas" tabindex="-1">
-            <div class="title">
-              <h1>${escapeHtml(project.name)}</h1>
-              <span>${idx.nodeById.size - 1} nodes</span>
-            </div>
-            <div class="canvas-mode-switch" role="group" aria-label="Canvas view">
-              <button type="button" data-canvas-mode="structure" aria-pressed="${canvasMode === "structure"}">Structure</button>
-              <button type="button" data-canvas-mode="form" aria-pressed="${canvasMode === "form"}">Live form</button>
-            </div>
-            <div class="canvas-surface" data-canvas-surface="${canvasMode}">
-              ${
-                canvasMode === "form"
-                  ? `<div class="plain-canvas-frame">
-                       <p class="plain-canvas-note">Interactive rendering from the strict Contract via @modyra/plain. Structure editing remains available in Structure.</p>
-                       ${contract ? `<div class="plain-canvas-form" data-plain-canvas></div>` : `<div class="plain-canvas-unavailable" role="status">The live form is unavailable until the blocking Contract diagnostics are fixed.</div>`}
-                     </div>`
-                  : rootChildren.length
-                    ? `<ul class="tree">${rootChildren.map(markup).join("")}</ul>`
-                    : `<div class="empty">
-                         <h2>Start with a blank form</h2>
-                         <p>Drag an element here or click one in the palette.</p>
-                         <div class="drop-zone inside" data-inside="${project.schema.id}" data-index="0">Drop first element</div>
-                       </div>`
-              }
-            </div>
-          </section>
-          <aside class="inspector">
-            <div class="inspector-tabs" role="tablist">
-              <button type="button" role="tab" data-inspector-tab="node" aria-selected="${inspectorTab === "node"}">
-                ${current.node === "field" ? "Field" : current.node === "group" ? "Group" : "Array"}
-              </button>
-              <button type="button" role="tab" data-inspector-tab="form" aria-selected="${inspectorTab === "form"}">
-                Form rules${project.formValidators.length ? ` <span class="badge">${project.formValidators.length}</span>` : ""}
-              </button>
-              <button type="button" role="tab" data-inspector-tab="diagnostics" aria-selected="${inspectorTab === "diagnostics"}">
-                Diagnostics${diagnostics.length ? ` <span class="badge ${errorCount ? "badge-error" : ""}">${diagnostics.length}</span>` : ""}
-              </button>
-              <button type="button" role="tab" data-inspector-tab="export" aria-selected="${inspectorTab === "export"}">
-                Export
-              </button>
-              <button type="button" role="tab" data-inspector-tab="preview" aria-selected="${inspectorTab === "preview"}">
-                Preview
-              </button>
-            </div>
-            <div class="inspector-body">
-              ${
-                inspectorTab === "diagnostics"
-                  ? diagnosticsMarkup(diagnostics)
-                  : inspectorTab === "export"
-                    ? exportMarkup()
-                    : inspectorTab === "preview"
-                      ? previewMarkup()
-                      : inspectorTab === "form"
-                        ? formValidatorsMarkup(project, idx, formValidatorDraft)
-                        : `
-                    <label>Name<input data-name value="${escapeHtml(current.name)}"></label>
-                    <label>Label<input data-label value="${escapeHtml(current.label ?? "")}"></label>
-                    <label>Description<textarea data-description>${escapeHtml(current.description ?? "")}</textarea></label>
-                    ${
-                      current.node === "field"
-                        ? accordionMarkup(
-                            "validation",
-                            "Validation",
-                            String(current.validators.length || ""),
-                            expandedSections.has("validation"),
-                            validatorsMarkup(current),
-                          )
-                        : ""
-                    }
-                    ${
-                      current.node === "field" && (current.fieldKind === "select" || current.fieldKind === "multiselect")
-                        ? accordionMarkup(
-                            "options",
-                            "Options",
-                            String((current.options ?? []).length || ""),
-                            expandedSections.has("options"),
-                            optionsMarkup(current),
-                          )
-                        : ""
-                    }
-                    ${
-                      current.node === "field"
-                        ? accordionMarkup(
-                            "server",
-                            "Server validation",
-                            current.serverValidator ? "on" : "",
-                            expandedSections.has("server"),
-                            serverValidatorMarkup(project, idx, current),
-                          )
-                        : ""
-                    }
-                    ${accordionMarkup(
-                      "details",
-                      "Details",
-                      "",
-                      expandedSections.has("details"),
-                      `<dl><dt>Path</dt><dd>${escapeHtml(idx.pathByNode.get(current.id) || "root")}</dd><dt>Stable ID</dt><dd>${escapeHtml(current.id)}</dd></dl>`,
-                    )}
-                  `
-              }
-            </div>
-          </aside>
-        </main>
-        <footer role="status" aria-live="polite">
-          ${escapeHtml(status)}${picked ? ". Arrows reorder or enter and leave containers. Enter drops. Escape cancels." : ""}
-        </footer>
-      </div>`;
+    view.nav.update(navMarkup());
+    view.palette.update(paletteMarkup());
+    view.canvasHead.update(canvasHeadMarkup(indexes));
+    view.canvasSurface.dataset.canvasSurface = canvasMode;
 
-    const canvas = host.querySelector<HTMLElement>(".canvas");
-    canvasController.connect(canvas);
-    if (canvasMode === "form" && contract) {
-      const plainHost = host.querySelector<HTMLElement>("[data-plain-canvas]");
-      if (plainHost) {
-        const fields = flattenContractFields(contract);
-        if (fields.length) {
-          plainCanvasSession.replace(mountMdyForm(plainHost, fields, { submitLabel: null }));
-        }
-
-        instrumentPlainCanvas(plainHost, fields, idx);
-
-        const hasVisualNodes = plainHost.querySelector(
-          ".plain-canvas-field, .plain-canvas-group, .plain-canvas-array",
-        );
-
-        if (!hasVisualNodes) {
-          plainHost.innerHTML = `<div class="plain-canvas-unavailable" role="status">The Contract has no renderable fields, groups, or arrays yet.</div>`;
-        }
-
-        canvasController.elements.refresh(canvas ?? plainHost);
-      }
+    if (canvasMode === "form") {
+      if (view.surface.update(liveFrameMarkup(Boolean(contract)))) plainCanvasSignature = null;
+      syncLiveCanvas(contract, view);
+    } else {
+      plainCanvasSession.dispose();
+      plainCanvasSignature = null;
+      if (view.surface.update(structureMarkup(rootChildren))) bindCanvasSurface(view.canvasSurface);
     }
-    bind();
-    // Fall back to the canvas region (tabindex=-1, programmatic-only) when the requested target
-    // no longer exists — e.g. deleting the tree's last node leaves no [data-node] to focus.
-    // Focus must never silently fall through to <body>.
-    const nodeId = focusSelector?.match(/^\[data-node="(.+)"\]$/)?.[1];
-    const primaryTarget = nodeId
-      ? canvasController.elementForNode(nodeId)
-      : focusSelector
-        ? host.querySelector<HTMLElement>(focusSelector)
-        : null;
-    const focusTarget = primaryTarget ?? canvas;
-    focusTarget?.focus();
+
+    view.tabs.update(tabsMarkup(current, diagnostics.length, errorCount));
+    view.inspector.update(inspectorBodyMarkup(current, indexes, diagnostics));
+    view.footer.update(footerMarkup());
+
+    canvasController.elements.refresh(view.canvas);
+    // After every write, never before: assigning scrollTop to a container the renderer has not
+    // refilled yet is clamped to 0 by the browser, which is what used to reset the canvas.
+    scroll.restore();
+    restoreFocus(view);
+  }
+
+  /** Reads back the live canvas values so a structural edit does not wipe what the user typed into it. */
+  function captureLiveValues(): Record<string, unknown> | null {
+    const session = plainCanvasSession.current;
+    if (!session) return null;
+    const handles = session.form.f as unknown as Record<string, { value?: () => unknown }>;
+    const values: Record<string, unknown> = {};
+    for (const [name, handle] of Object.entries(handles)) {
+      if (typeof handle?.value === "function") values[name] = handle.value();
+    }
+    return values;
+  }
+
+  function restoreLiveValues(session: MdyPlainForm, values: Record<string, unknown> | null): void {
+    if (!values) return;
+    const handles = session.form.f as unknown as Record<string, { value?: () => unknown; set?: (v: unknown) => void }>;
+    for (const [name, value] of Object.entries(values)) {
+      const handle = handles[name];
+      if (typeof handle?.set !== "function" || typeof handle.value !== "function") continue;
+      if (!Object.is(handle.value(), value)) handle.set(value);
+    }
+  }
+
+  /** Selection/diagnostic markers are the only per-render change the live canvas needs when the schema is unchanged. */
+  function syncLiveSelection(plainHost: HTMLElement): void {
+    plainHost.querySelectorAll<HTMLElement>("[data-node]").forEach((element) => {
+      const nodeId = element.dataset.node!;
+      element.classList.toggle("selected", nodeId === selected);
+      element.classList.toggle("has-diagnostic", diagnosticNodeIds.has(nodeId));
+    });
+    plainHost.querySelectorAll<HTMLElement>("[data-plain-select]").forEach((element) => {
+      element.setAttribute("aria-pressed", String(element.dataset.plainSelect === selected));
+    });
+  }
+
+  /**
+   * Remounts the live form only when the schema it was built from actually changed. Selecting a
+   * node, switching inspector tab or updating the status bar leaves the running form alone.
+   */
+  function syncLiveCanvas(contract: ReturnType<typeof compileToContract>["contract"], view: StudioShell): void {
+    const plainHost = view.canvasSurface.querySelector<HTMLElement>("[data-plain-canvas]");
+    if (!contract || !plainHost) {
+      plainCanvasSession.dispose();
+      plainCanvasSignature = null;
+      return;
+    }
+
+    const signature = JSON.stringify(project.schema);
+    if (signature === plainCanvasSignature) {
+      syncLiveSelection(plainHost);
+      return;
+    }
+
+    const carried = captureLiveValues();
+    plainCanvasSession.dispose();
+    plainHost.replaceChildren();
+
+    const fields = flattenContractFields(contract);
+    if (fields.length) {
+      const mounted = mountMdyForm(plainHost, fields, { submitLabel: null });
+      plainCanvasSession.replace(mounted);
+      restoreLiveValues(mounted, carried);
+    }
+    instrumentPlainCanvas(plainHost, fields, indexes);
+
+    if (!plainHost.querySelector(".plain-canvas-field, .plain-canvas-group, .plain-canvas-array")) {
+      plainHost.innerHTML = `<div class="plain-canvas-unavailable" role="status">The Contract has no renderable fields, groups, or arrays yet.</div>`;
+    }
+
+    plainCanvasSignature = signature;
+    bindCanvasSurface(view.canvasSurface);
+  }
+
+  /**
+   * Only moves focus when an action asked for it. Renders that carry no focus request (a preview
+   * repaint, a status update) leave the caret where the user put it — the old unconditional
+   * `.canvas` fallback stole it. When a requested target is gone (its node was deleted), the
+   * canvas region still takes focus so it never falls through to `<body>`.
+   */
+  function restoreFocus(view: StudioShell): void {
+    if (!focusSelector) return;
+    const nodeId = focusSelector.match(/^\[data-node="(.+)"\]$/)?.[1];
+    const target = nodeId ? canvasController.elementForNode(nodeId) : host.querySelector<HTMLElement>(focusSelector);
+    (target ?? view.canvas).focus();
     focusSelector = null;
   }
 
-  function bind(): void {
-    const idx = buildIndexes(project);
-    host.querySelectorAll<HTMLButtonElement>("[data-canvas-mode]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const next = button.dataset.canvasMode;
-        if (next !== "structure" && next !== "form") return;
-        canvasMode = next;
-        status = next === "form" ? "Live form canvas" : "Structure canvas";
-        focusSelector = `[data-canvas-mode="${next}"]`;
-        render();
-      }),
-    );
-
-    host.querySelectorAll<HTMLSelectElement>("[data-plain-insert]").forEach((select) =>
-      select.addEventListener("change", () => {
-        const targetId = select.dataset.plainInsertTarget;
-        const placementKind = select.dataset.plainInsert;
-        const template = select.value;
-        if (!targetId || !template || (placementKind !== "before" && placementKind !== "after")) return;
-        const created = createNodeFromTemplate(template);
-        selected = created.id;
-        commit(
-          createInsertCommand(created, { kind: placementKind, targetId }),
-          created.id,
-          `[data-plain-select="${created.id}"]`,
-        );
-      }),
-    );
-
-    host.querySelectorAll<HTMLButtonElement>("[data-plain-array-row-action]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const nodeId = button.dataset.plainArrayNode;
-        const index = Number(button.dataset.plainArrayRowIndex);
-        const action = button.dataset.plainArrayRowAction;
-        const array = nodeId ? idx.nodeById.get(nodeId) : undefined;
-        if (!nodeId || array?.node !== "array" || !Number.isInteger(index) || index < 0 || index >= array.initialRows.length) return;
-        const rows = [...array.initialRows];
-        if (action === "remove") rows.splice(index, 1);
-        else if (action === "up" && index > 0) [rows[index - 1], rows[index]] = [rows[index], rows[index - 1]];
-        else if (action === "down" && index < rows.length - 1) [rows[index], rows[index + 1]] = [rows[index + 1], rows[index]];
-        else return;
-        selected = nodeId;
-        const focusIndex = action === "remove" ? Math.min(index, rows.length - 1) : action === "up" ? index - 1 : index + 1;
-        commit(createUpdateNodeCommand(nodeId, { initialRows: rows }), nodeId,
-          rows.length ? `[data-plain-array="${nodeId}"] [data-plain-array-row="${focusIndex}"] [data-plain-array-row-action="${action}"]` : `[data-plain-array="${nodeId}"] [data-plain-array-add]`);
-      }),
-    );
-    host.querySelectorAll<HTMLButtonElement>("[data-plain-array-move]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const nodeId = button.dataset.plainArrayNode;
-        const targetId = button.dataset.plainArrayTarget;
-        const kind = button.dataset.plainArrayMove;
-        if (!nodeId || !targetId || (kind !== "before" && kind !== "after")) return;
-        selected = nodeId;
-        commit(createMoveCommand(nodeId, { kind, targetId }), nodeId, `[data-plain-select="${nodeId}"]`);
-      }),
-    );
-    host.querySelectorAll<HTMLButtonElement>("[data-plain-array-root]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const nodeId = button.dataset.plainArrayRoot;
-        if (!nodeId) return;
-        selected = nodeId;
-        commit(createMoveCommand(nodeId, { kind: "inside", parentId: project.schema.id, index: idx.childrenByParent.get(project.schema.id)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
-      }),
-    );
-    host.querySelectorAll<HTMLSelectElement>("[data-plain-array-into]").forEach((select) =>
-      select.addEventListener("change", () => {
-        const nodeId = select.dataset.plainArrayInto;
-        const parentId = select.value;
-        if (!nodeId || !parentId) return;
-        selected = nodeId;
-        commit(createMoveCommand(nodeId, { kind: "inside", parentId, index: idx.childrenByParent.get(parentId)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
-      }),
-    );
-
-    host.querySelectorAll<HTMLButtonElement>("[data-plain-array-add]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const nodeId = button.dataset.plainArrayAdd;
-        const array = nodeId ? idx.nodeById.get(nodeId) : undefined;
-        if (!nodeId || array?.node !== "array") return;
-        selected = nodeId;
-        commit(
-          createUpdateNodeCommand(nodeId, {
-            initialRows: [...array.initialRows, defaultRowValue(array.item)],
-          }),
-          nodeId,
-          `[data-plain-array="${nodeId}"] [data-plain-array-add]`,
-        );
-      }),
-    );
-    host.querySelectorAll<HTMLButtonElement>("[data-plain-array-remove]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const nodeId = button.dataset.plainArrayRemove;
-        const array = nodeId ? idx.nodeById.get(nodeId) : undefined;
-        if (!nodeId || array?.node !== "array" || array.initialRows.length === 0) return;
-        selected = nodeId;
-        commit(
-          createUpdateNodeCommand(nodeId, {
-            initialRows: array.initialRows.slice(0, -1),
-          }),
-          nodeId,
-          `[data-plain-array="${nodeId}"] [data-plain-array-remove]`,
-        );
-      }),
-    );
-
-    host.querySelectorAll<HTMLButtonElement>("[data-plain-field-root]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const nodeId = button.dataset.plainFieldRoot;
-        if (!nodeId) return;
-        selected = nodeId;
-        commit(
-          createMoveCommand(nodeId, {
-            kind: "inside",
-            parentId: project.schema.id,
-            index: idx.childrenByParent.get(project.schema.id)?.length ?? 0,
-          }),
-          nodeId,
-          `[data-plain-select="${nodeId}"]`,
-        );
-      }),
-    );
-    host.querySelectorAll<HTMLSelectElement>("[data-plain-field-into]").forEach((select) =>
-      select.addEventListener("change", () => {
-        const nodeId = select.dataset.plainFieldInto;
-        const parentId = select.value;
-        if (!nodeId || !parentId) return;
-        selected = nodeId;
-        commit(
-          createMoveCommand(nodeId, {
-            kind: "inside",
-            parentId,
-            index: idx.childrenByParent.get(parentId)?.length ?? 0,
-          }),
-          nodeId,
-          `[data-plain-select="${nodeId}"]`,
-        );
-      }),
-    );
-
-    host.querySelectorAll<HTMLButtonElement>("[data-plain-group-move]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const nodeId = button.dataset.plainGroupNode;
-        const targetId = button.dataset.plainGroupTarget;
-        const kind = button.dataset.plainGroupMove;
-        if (!nodeId || !targetId || (kind !== "before" && kind !== "after")) return;
-        selected = nodeId;
-        commit(createMoveCommand(nodeId, { kind, targetId }), nodeId, `[data-plain-select="${nodeId}"]`);
-      }),
-    );
-    host.querySelectorAll<HTMLButtonElement>("[data-plain-group-root]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const nodeId = button.dataset.plainGroupRoot;
-        if (!nodeId) return;
-        selected = nodeId;
-        commit(createMoveCommand(nodeId, { kind: "inside", parentId: project.schema.id, index: idx.childrenByParent.get(project.schema.id)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
-      }),
-    );
-    host.querySelectorAll<HTMLSelectElement>("[data-plain-group-into]").forEach((select) =>
-      select.addEventListener("change", () => {
-        const nodeId = select.dataset.plainGroupInto;
-        const parentId = select.value;
-        if (!nodeId || !parentId) return;
-        selected = nodeId;
-        commit(createMoveCommand(nodeId, { kind: "inside", parentId, index: idx.childrenByParent.get(parentId)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
-      }),
-    );
-
-    host.querySelectorAll<HTMLButtonElement>("[data-plain-move]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const nodeId = button.dataset.plainMoveNode;
-        const targetId = button.dataset.plainMoveTarget;
-        const kind = button.dataset.plainMove;
-        if (!nodeId || !targetId || (kind !== "before" && kind !== "after")) return;
-        selected = nodeId;
-        commit(
-          createMoveCommand(nodeId, { kind, targetId }),
-          nodeId,
-          `[data-plain-select="${nodeId}"]`,
-        );
-      }),
-    );
-
-    host.querySelectorAll<HTMLButtonElement>("[data-plain-select]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const nodeId = button.dataset.plainSelect;
-        if (!nodeId) return;
-        selected = nodeId;
-        inspectorTab = "node";
-        status = "Selected field from live canvas";
-        focusSelector = `[data-plain-select="${nodeId}"]`;
-        render();
-      }),
-    );
-
-    host.querySelectorAll<HTMLElement>("[draggable=true]").forEach((el) => {
+  function bindDraggables(root: HTMLElement): void {
+    root.querySelectorAll<HTMLElement>("[draggable=true]").forEach((el) => {
       el.addEventListener("dragstart", (event) => {
         event.stopPropagation();
         drag = el.dataset.template ? { template: el.dataset.template } : { nodeId: el.dataset.node! };
@@ -1612,46 +1604,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         drag = null;
       });
     });
+  }
 
-    host.querySelectorAll<HTMLElement>(".drop-zone").forEach((el) => {
-      el.addEventListener("dragover", (event) => {
-        event.preventDefault();
-        if (event.dataTransfer) event.dataTransfer.dropEffect = drag && "template" in drag ? "copy" : "move";
-      });
-      el.addEventListener("dragenter", () => el.classList.add("drag-over"));
-      el.addEventListener("dragleave", () => el.classList.remove("drag-over"));
-      el.addEventListener("drop", (event) => {
-        event.preventDefault();
-        el.classList.remove("drag-over");
-        const liveCanvas = el.classList.contains("plain-canvas-drop");
-        if (el.dataset.before) drop({ kind: "before", targetId: el.dataset.before }, liveCanvas);
-        else if (el.dataset.after) drop({ kind: "after", targetId: el.dataset.after }, liveCanvas);
-        else drop({ kind: "inside", parentId: el.dataset.inside!, index: Number(el.dataset.index) });
-      });
-    });
-
-    host.querySelectorAll<HTMLElement>("[data-select]").forEach((el) =>
-      el.addEventListener("click", () => {
-        selected = el.dataset.select!;
-        render();
-      }),
-    );
-    host.querySelectorAll<HTMLElement>("[data-delete]").forEach((el) =>
-      el.addEventListener("click", () => remove(el.dataset.delete!)),
-    );
-    host.querySelectorAll<HTMLElement>("[data-duplicate]").forEach((el) =>
-      el.addEventListener("click", () => commit(createDuplicateCommand(el.dataset.duplicate!))),
-    );
-    host.querySelectorAll<HTMLElement>("[data-template]").forEach((el) =>
-      el.addEventListener("click", () => {
-        const created = createNodeFromTemplate(el.dataset.template!);
-        const index = project.schema.node === "group" ? project.schema.children.length : 0;
-        selected = created.id;
-        commit(createInsertCommand(created, { kind: "inside", parentId: project.schema.id, index }));
-      }),
-    );
-
-    host.querySelector<HTMLElement>("[data-undo]")?.addEventListener("click", () => {
+  function bindNav(root: HTMLElement): void {
+    root.querySelector<HTMLElement>("[data-undo]")?.addEventListener("click", () => {
       project = history.undo(project);
       status = "Undo";
       autosave();
@@ -1660,14 +1616,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       focusSelector = history.canUndo() ? "[data-undo]" : "[data-redo]";
       render();
     });
-    host.querySelector<HTMLElement>("[data-redo]")?.addEventListener("click", () => {
+    root.querySelector<HTMLElement>("[data-redo]")?.addEventListener("click", () => {
       project = history.redo(project);
       status = "Redo";
       autosave();
       focusSelector = history.canRedo() ? "[data-redo]" : "[data-undo]";
       render();
     });
-    host.querySelector<HTMLElement>("[data-new]")?.addEventListener("click", () => {
+    root.querySelector<HTMLElement>("[data-new]")?.addEventListener("click", () => {
       project = createBlankProject();
       selected = project.schema.id;
       status = "New blank project";
@@ -1675,7 +1631,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       focusSelector = "[data-new]";
       render();
     });
-    host.querySelector<HTMLInputElement>("[data-import]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLInputElement>("[data-import]")?.addEventListener("change", (e) => {
       const input = e.target as HTMLInputElement;
       const file = input.files?.[0];
       if (!file) return;
@@ -1703,43 +1659,306 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
           render();
         });
     });
+  }
 
-    host.querySelector<HTMLInputElement>("[data-name]")?.addEventListener("change", (e) =>
+  function bindPalette(root: HTMLElement): void {
+    root.querySelectorAll<HTMLElement>("[data-template]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const created = createNodeFromTemplate(el.dataset.template!);
+        const index = project.schema.node === "group" ? project.schema.children.length : 0;
+        selected = created.id;
+        commit(createInsertCommand(created, { kind: "inside", parentId: project.schema.id, index }));
+      }),
+    );
+    bindDraggables(root);
+  }
+
+  function bindCanvasHead(root: HTMLElement): void {
+    root.querySelectorAll<HTMLButtonElement>("[data-canvas-mode]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const next = button.dataset.canvasMode;
+        if (next !== "structure" && next !== "form") return;
+        canvasMode = next;
+        status = next === "form" ? "Live form canvas" : "Structure canvas";
+        focusSelector = `[data-canvas-mode="${next}"]`;
+        render();
+      }),
+    );
+  }
+
+  /**
+   * Everything inside the canvas surface: the Structure tree and the instrumented live-form
+   * canvas both live here, and both are rebuilt as a unit, so one binder covers both.
+   */
+  function bindCanvasSurface(root: HTMLElement): void {
+    root.querySelectorAll<HTMLSelectElement>("[data-plain-insert]").forEach((select) =>
+      select.addEventListener("change", () => {
+        const targetId = select.dataset.plainInsertTarget;
+        const placementKind = select.dataset.plainInsert;
+        const template = select.value;
+        if (!targetId || !template || (placementKind !== "before" && placementKind !== "after")) return;
+        const created = createNodeFromTemplate(template);
+        selected = created.id;
+        commit(
+          createInsertCommand(created, { kind: placementKind, targetId }),
+          created.id,
+          `[data-plain-select="${created.id}"]`,
+        );
+      }),
+    );
+
+    root.querySelectorAll<HTMLButtonElement>("[data-plain-array-row-action]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainArrayNode;
+        const index = Number(button.dataset.plainArrayRowIndex);
+        const action = button.dataset.plainArrayRowAction;
+        const array = nodeId ? indexes.nodeById.get(nodeId) : undefined;
+        if (!nodeId || array?.node !== "array" || !Number.isInteger(index) || index < 0 || index >= array.initialRows.length) return;
+        const rows = [...array.initialRows];
+        if (action === "remove") rows.splice(index, 1);
+        else if (action === "up" && index > 0) [rows[index - 1], rows[index]] = [rows[index], rows[index - 1]];
+        else if (action === "down" && index < rows.length - 1) [rows[index], rows[index + 1]] = [rows[index + 1], rows[index]];
+        else return;
+        selected = nodeId;
+        const focusIndex = action === "remove" ? Math.min(index, rows.length - 1) : action === "up" ? index - 1 : index + 1;
+        commit(createUpdateNodeCommand(nodeId, { initialRows: rows }), nodeId,
+          rows.length ? `[data-plain-array="${nodeId}"] [data-plain-array-row="${focusIndex}"] [data-plain-array-row-action="${action}"]` : `[data-plain-array="${nodeId}"] [data-plain-array-add]`);
+      }),
+    );
+    root.querySelectorAll<HTMLButtonElement>("[data-plain-array-move]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainArrayNode;
+        const targetId = button.dataset.plainArrayTarget;
+        const kind = button.dataset.plainArrayMove;
+        if (!nodeId || !targetId || (kind !== "before" && kind !== "after")) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind, targetId }), nodeId, `[data-plain-select="${nodeId}"]`);
+      }),
+    );
+    root.querySelectorAll<HTMLButtonElement>("[data-plain-array-root]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainArrayRoot;
+        if (!nodeId) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind: "inside", parentId: project.schema.id, index: indexes.childrenByParent.get(project.schema.id)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
+      }),
+    );
+    root.querySelectorAll<HTMLSelectElement>("[data-plain-array-into]").forEach((select) =>
+      select.addEventListener("change", () => {
+        const nodeId = select.dataset.plainArrayInto;
+        const parentId = select.value;
+        if (!nodeId || !parentId) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind: "inside", parentId, index: indexes.childrenByParent.get(parentId)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
+      }),
+    );
+
+    root.querySelectorAll<HTMLButtonElement>("[data-plain-array-add]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainArrayAdd;
+        const array = nodeId ? indexes.nodeById.get(nodeId) : undefined;
+        if (!nodeId || array?.node !== "array") return;
+        selected = nodeId;
+        commit(
+          createUpdateNodeCommand(nodeId, {
+            initialRows: [...array.initialRows, defaultRowValue(array.item)],
+          }),
+          nodeId,
+          `[data-plain-array="${nodeId}"] [data-plain-array-add]`,
+        );
+      }),
+    );
+    root.querySelectorAll<HTMLButtonElement>("[data-plain-array-remove]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainArrayRemove;
+        const array = nodeId ? indexes.nodeById.get(nodeId) : undefined;
+        if (!nodeId || array?.node !== "array" || array.initialRows.length === 0) return;
+        selected = nodeId;
+        commit(
+          createUpdateNodeCommand(nodeId, {
+            initialRows: array.initialRows.slice(0, -1),
+          }),
+          nodeId,
+          `[data-plain-array="${nodeId}"] [data-plain-array-remove]`,
+        );
+      }),
+    );
+
+    root.querySelectorAll<HTMLButtonElement>("[data-plain-field-root]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainFieldRoot;
+        if (!nodeId) return;
+        selected = nodeId;
+        commit(
+          createMoveCommand(nodeId, {
+            kind: "inside",
+            parentId: project.schema.id,
+            index: indexes.childrenByParent.get(project.schema.id)?.length ?? 0,
+          }),
+          nodeId,
+          `[data-plain-select="${nodeId}"]`,
+        );
+      }),
+    );
+    root.querySelectorAll<HTMLSelectElement>("[data-plain-field-into]").forEach((select) =>
+      select.addEventListener("change", () => {
+        const nodeId = select.dataset.plainFieldInto;
+        const parentId = select.value;
+        if (!nodeId || !parentId) return;
+        selected = nodeId;
+        commit(
+          createMoveCommand(nodeId, {
+            kind: "inside",
+            parentId,
+            index: indexes.childrenByParent.get(parentId)?.length ?? 0,
+          }),
+          nodeId,
+          `[data-plain-select="${nodeId}"]`,
+        );
+      }),
+    );
+
+    root.querySelectorAll<HTMLButtonElement>("[data-plain-group-move]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainGroupNode;
+        const targetId = button.dataset.plainGroupTarget;
+        const kind = button.dataset.plainGroupMove;
+        if (!nodeId || !targetId || (kind !== "before" && kind !== "after")) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind, targetId }), nodeId, `[data-plain-select="${nodeId}"]`);
+      }),
+    );
+    root.querySelectorAll<HTMLButtonElement>("[data-plain-group-root]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainGroupRoot;
+        if (!nodeId) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind: "inside", parentId: project.schema.id, index: indexes.childrenByParent.get(project.schema.id)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
+      }),
+    );
+    root.querySelectorAll<HTMLSelectElement>("[data-plain-group-into]").forEach((select) =>
+      select.addEventListener("change", () => {
+        const nodeId = select.dataset.plainGroupInto;
+        const parentId = select.value;
+        if (!nodeId || !parentId) return;
+        selected = nodeId;
+        commit(createMoveCommand(nodeId, { kind: "inside", parentId, index: indexes.childrenByParent.get(parentId)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
+      }),
+    );
+
+    root.querySelectorAll<HTMLButtonElement>("[data-plain-move]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainMoveNode;
+        const targetId = button.dataset.plainMoveTarget;
+        const kind = button.dataset.plainMove;
+        if (!nodeId || !targetId || (kind !== "before" && kind !== "after")) return;
+        selected = nodeId;
+        commit(
+          createMoveCommand(nodeId, { kind, targetId }),
+          nodeId,
+          `[data-plain-select="${nodeId}"]`,
+        );
+      }),
+    );
+
+    root.querySelectorAll<HTMLButtonElement>("[data-plain-select]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.plainSelect;
+        if (!nodeId) return;
+        selected = nodeId;
+        inspectorTab = "node";
+        status = "Selected field from live canvas";
+        focusSelector = `[data-plain-select="${nodeId}"]`;
+        render();
+      }),
+    );
+
+    bindDraggables(root);
+
+    root.querySelectorAll<HTMLElement>(".drop-zone").forEach((el) => {
+      el.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = drag && "template" in drag ? "copy" : "move";
+      });
+      el.addEventListener("dragenter", () => el.classList.add("drag-over"));
+      el.addEventListener("dragleave", () => el.classList.remove("drag-over"));
+      el.addEventListener("drop", (event) => {
+        event.preventDefault();
+        el.classList.remove("drag-over");
+        const liveCanvas = el.classList.contains("plain-canvas-drop");
+        if (el.dataset.before) drop({ kind: "before", targetId: el.dataset.before }, liveCanvas);
+        else if (el.dataset.after) drop({ kind: "after", targetId: el.dataset.after }, liveCanvas);
+        else drop({ kind: "inside", parentId: el.dataset.inside!, index: Number(el.dataset.index) });
+      });
+    });
+
+    root.querySelectorAll<HTMLElement>("[data-select]").forEach((el) =>
+      el.addEventListener("click", () => {
+        selected = el.dataset.select!;
+        render();
+      }),
+    );
+    root.querySelectorAll<HTMLElement>("[data-delete]").forEach((el) =>
+      el.addEventListener("click", () => remove(el.dataset.delete!)),
+    );
+    root.querySelectorAll<HTMLElement>("[data-duplicate]").forEach((el) =>
+      el.addEventListener("click", () => commit(createDuplicateCommand(el.dataset.duplicate!))),
+    );
+
+    root.querySelectorAll<HTMLElement>("[data-node]").forEach((el) =>
+      el.addEventListener("keydown", (e) => keyboard(e, el.dataset.node!)),
+    );
+  }
+
+  function bindInspectorTabs(root: HTMLElement): void {
+    root.querySelectorAll<HTMLElement>("[data-inspector-tab]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const tab = el.dataset.inspectorTab as "node" | "form" | "diagnostics" | "export" | "preview";
+        inspectorTab = tab;
+        focusSelector = `[data-inspector-tab="${tab}"]`;
+        render();
+      }),
+    );
+  }
+
+  /** Everything inside the inspector body — whichever tab is currently rendered there. */
+  function bindInspector(root: HTMLElement): void {
+    root.querySelector<HTMLInputElement>("[data-name]")?.addEventListener("change", (e) =>
       commit(createUpdateNodeCommand(selected, { name: (e.target as HTMLInputElement).value })),
     );
-    host.querySelector<HTMLInputElement>("[data-label]")?.addEventListener("change", (e) =>
+    root.querySelector<HTMLInputElement>("[data-label]")?.addEventListener("change", (e) =>
       commit(createUpdateNodeCommand(selected, { label: (e.target as HTMLInputElement).value })),
     );
-    host.querySelector<HTMLTextAreaElement>("[data-description]")?.addEventListener("change", (e) =>
+    root.querySelector<HTMLTextAreaElement>("[data-description]")?.addEventListener("change", (e) =>
       commit(createUpdateNodeCommand(selected, { description: (e.target as HTMLTextAreaElement).value })),
     );
 
-    host.querySelector<HTMLSelectElement>("[data-add-validator]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLSelectElement>("[data-add-validator]")?.addEventListener("change", (e) => {
       const kind = (e.target as HTMLSelectElement).value as StudioValidatorKind | "";
       if (!kind) return;
       const entry = getFieldValidatorRegistryEntry(kind);
       commit(createAddValidatorCommand(selected, { id: createId("val"), kind, ...entry?.defaultConfig() }));
     });
-    host.querySelectorAll<HTMLElement>("[data-remove-validator]").forEach((el) =>
+    root.querySelectorAll<HTMLElement>("[data-remove-validator]").forEach((el) =>
       el.addEventListener("click", () => commit(createRemoveValidatorCommand(selected, el.dataset.removeValidator!))),
     );
-    host.querySelectorAll<HTMLInputElement>("[data-validator-pattern]").forEach((el) =>
+    root.querySelectorAll<HTMLInputElement>("[data-validator-pattern]").forEach((el) =>
       el.addEventListener("change", () =>
         commit(createUpdateValidatorCommand(selected, el.dataset.validatorPattern!, { pattern: el.value })),
       ),
     );
-    host.querySelectorAll<HTMLInputElement>("[data-validator-message]").forEach((el) =>
+    root.querySelectorAll<HTMLInputElement>("[data-validator-message]").forEach((el) =>
       el.addEventListener("change", () =>
         commit(createUpdateValidatorCommand(selected, el.dataset.validatorMessage!, { message: el.value })),
       ),
     );
-    host.querySelectorAll<HTMLInputElement>("[data-validator-value]").forEach((el) =>
+    root.querySelectorAll<HTMLInputElement>("[data-validator-value]").forEach((el) =>
       el.addEventListener("change", () =>
         commit(createUpdateValidatorCommand(selected, el.dataset.validatorValue!, { value: Number(el.value) })),
       ),
     );
 
-    host.querySelectorAll<HTMLInputElement>("[data-option-value]").forEach((el) =>
+    root.querySelectorAll<HTMLInputElement>("[data-option-value]").forEach((el) =>
       el.addEventListener("change", () => {
         const field = getSelectedField();
         if (!field) return;
@@ -1749,7 +1968,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         commit(createSetFieldOptionsCommand(selected, options));
       }),
     );
-    host.querySelectorAll<HTMLInputElement>("[data-option-label]").forEach((el) =>
+    root.querySelectorAll<HTMLInputElement>("[data-option-label]").forEach((el) =>
       el.addEventListener("change", () => {
         const field = getSelectedField();
         if (!field) return;
@@ -1759,7 +1978,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         commit(createSetFieldOptionsCommand(selected, options));
       }),
     );
-    host.querySelectorAll<HTMLElement>("[data-remove-option]").forEach((el) =>
+    root.querySelectorAll<HTMLElement>("[data-remove-option]").forEach((el) =>
       el.addEventListener("click", () => {
         const field = getSelectedField();
         if (!field) return;
@@ -1767,23 +1986,15 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         commit(createSetFieldOptionsCommand(selected, (field.options ?? []).filter((_, i) => i !== index)));
       }),
     );
-    host.querySelector<HTMLElement>("[data-add-option]")?.addEventListener("click", () => {
+    root.querySelector<HTMLElement>("[data-add-option]")?.addEventListener("click", () => {
       const field = getSelectedField();
       if (!field) return;
       commit(createSetFieldOptionsCommand(selected, [...(field.options ?? []), { value: "", label: "" }]));
     });
 
-    host.querySelectorAll<HTMLElement>("[data-inspector-tab]").forEach((el) =>
-      el.addEventListener("click", () => {
-        const tab = el.dataset.inspectorTab as "node" | "form" | "diagnostics" | "export" | "preview";
-        inspectorTab = tab;
-        focusSelector = `[data-inspector-tab="${tab}"]`;
-        render();
-      }),
-    );
     // Native <details> already toggled itself in the DOM by the time this fires — just keep our
-    // tracked state in sync so it survives the *next* full re-render (innerHTML replace forgets it).
-    host.querySelectorAll<HTMLDetailsElement>("details.accordion").forEach((el) =>
+    // tracked state in sync so it survives the next rewrite of this region.
+    root.querySelectorAll<HTMLDetailsElement>("details.accordion").forEach((el) =>
       el.addEventListener("toggle", () => {
         const id = el.dataset.section!;
         if (el.open) expandedSections.add(id);
@@ -1791,7 +2002,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       }),
     );
 
-    host.querySelectorAll<HTMLElement>("[data-goto-node]").forEach((el) =>
+    root.querySelectorAll<HTMLElement>("[data-goto-node]").forEach((el) =>
       el.addEventListener("click", () => {
         const nodeId = el.dataset.gotoNode!;
         selected = nodeId;
@@ -1800,17 +2011,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         render();
       }),
     );
-    host.querySelectorAll<HTMLElement>("[data-fix-clear-pattern]").forEach((el) =>
+    root.querySelectorAll<HTMLElement>("[data-fix-clear-pattern]").forEach((el) =>
       el.addEventListener("click", () =>
         commit(createUpdateValidatorCommand(el.dataset.fixNode!, el.dataset.fixClearPattern!, { pattern: "" })),
       ),
     );
-    host.querySelectorAll<HTMLElement>("[data-fix-add-option]").forEach((el) =>
+    root.querySelectorAll<HTMLElement>("[data-fix-add-option]").forEach((el) =>
       el.addEventListener("click", () =>
         commit(createSetFieldOptionsCommand(el.dataset.fixAddOption!, [{ value: "option", label: "Option" }])),
       ),
     );
-    host.querySelectorAll<HTMLElement>("[data-fix-exclude-draft]").forEach((el) =>
+    root.querySelectorAll<HTMLElement>("[data-fix-exclude-draft]").forEach((el) =>
       el.addEventListener("click", () => {
         const nodeId = el.dataset.fixExcludeDraft!;
         const currentDraft = project.behaviors.draft;
@@ -1819,7 +2030,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       }),
     );
 
-    host.querySelector<HTMLElement>("[data-enable-server-validator]")?.addEventListener("click", () => {
+    root.querySelector<HTMLElement>("[data-enable-server-validator]")?.addEventListener("click", () => {
       commit(
         createSetServerValidatorCommand(selected, {
           id: createId("val"),
@@ -1831,15 +2042,15 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         }),
       );
     });
-    host.querySelector<HTMLElement>("[data-remove-server-validator]")?.addEventListener("click", () => {
+    root.querySelector<HTMLElement>("[data-remove-server-validator]")?.addEventListener("click", () => {
       commit(createSetServerValidatorCommand(selected, null));
     });
-    host.querySelector<HTMLSelectElement>("[data-server-impl]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLSelectElement>("[data-server-impl]")?.addEventListener("change", (e) => {
       const field = getSelectedField();
       if (!field?.serverValidator) return;
       commit(createSetServerValidatorCommand(selected, { ...field.serverValidator, implementationRef: (e.target as HTMLSelectElement).value }));
     });
-    host.querySelector<HTMLElement>("[data-new-server-impl]")?.addEventListener("click", () => {
+    root.querySelector<HTMLElement>("[data-new-server-impl]")?.addEventListener("click", () => {
       const field = getSelectedField();
       if (!field?.serverValidator) return;
       const ref = {
@@ -1851,17 +2062,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       commit(createAddImplementationCommand(ref));
       commit(createSetServerValidatorCommand(selected, { ...field.serverValidator, implementationRef: ref.id }));
     });
-    host.querySelector<HTMLInputElement>("[data-server-debounce]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLInputElement>("[data-server-debounce]")?.addEventListener("change", (e) => {
       const field = getSelectedField();
       if (!field?.serverValidator) return;
       commit(createSetServerValidatorCommand(selected, { ...field.serverValidator, debounceMs: Number((e.target as HTMLInputElement).value) }));
     });
-    host.querySelector<HTMLInputElement>("[data-server-timeout]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLInputElement>("[data-server-timeout]")?.addEventListener("change", (e) => {
       const field = getSelectedField();
       if (!field?.serverValidator) return;
       commit(createSetServerValidatorCommand(selected, { ...field.serverValidator, timeoutMs: Number((e.target as HTMLInputElement).value) }));
     });
-    host.querySelector<HTMLInputElement>("[data-server-skip-empty]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLInputElement>("[data-server-skip-empty]")?.addEventListener("change", (e) => {
       const field = getSelectedField();
       if (!field?.serverValidator) return;
       const next = { ...field.serverValidator };
@@ -1869,34 +2080,34 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       else delete next.skipWhen;
       commit(createSetServerValidatorCommand(selected, next));
     });
-    host.querySelector<HTMLInputElement>("[data-server-message]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLInputElement>("[data-server-message]")?.addEventListener("change", (e) => {
       const field = getSelectedField();
       if (!field?.serverValidator) return;
       commit(createSetServerValidatorCommand(selected, { ...field.serverValidator, errorMessage: (e.target as HTMLInputElement).value }));
     });
-    host.querySelectorAll<HTMLInputElement>("[data-server-dependency]").forEach((el) =>
+    root.querySelectorAll<HTMLInputElement>("[data-server-dependency]").forEach((el) =>
       el.addEventListener("change", () => {
         const field = getSelectedField();
         if (!field?.serverValidator) return;
-        const checkedIds = Array.from(host.querySelectorAll<HTMLInputElement>("[data-server-dependency]"))
+        const checkedIds = Array.from(root.querySelectorAll<HTMLInputElement>("[data-server-dependency]"))
           .filter((c) => c.checked)
           .map((c) => c.dataset.serverDependency!);
         commit(createSetServerValidatorCommand(selected, { ...field.serverValidator, dependencies: checkedIds.map((nodeId) => ({ nodeId })) }));
       }),
     );
 
-    host.querySelector<HTMLSelectElement>("[data-fv-ref]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLSelectElement>("[data-fv-ref]")?.addEventListener("change", (e) => {
       formValidatorDraft = { ...formValidatorDraft, refNodeId: (e.target as HTMLSelectElement).value };
       render();
     });
-    host.querySelector<HTMLSelectElement>("[data-fv-op]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLSelectElement>("[data-fv-op]")?.addEventListener("change", (e) => {
       formValidatorDraft = { ...formValidatorDraft, op: (e.target as HTMLSelectElement).value as StudioExpressionOp };
       render();
     });
-    host.querySelector<HTMLInputElement>("[data-fv-literal]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLInputElement>("[data-fv-literal]")?.addEventListener("change", (e) => {
       formValidatorDraft = { ...formValidatorDraft, literal: (e.target as HTMLInputElement).value };
     });
-    host.querySelectorAll<HTMLSelectElement>("[data-fv-sub-ref]").forEach((el) =>
+    root.querySelectorAll<HTMLSelectElement>("[data-fv-sub-ref]").forEach((el) =>
       el.addEventListener("change", () => {
         const index = Number(el.dataset.fvSubRef) as 0 | 1;
         const subConditions: [ConditionDraft, ConditionDraft] = [...formValidatorDraft.subConditions];
@@ -1904,7 +2115,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         formValidatorDraft = { ...formValidatorDraft, subConditions };
       }),
     );
-    host.querySelectorAll<HTMLSelectElement>("[data-fv-sub-op]").forEach((el) =>
+    root.querySelectorAll<HTMLSelectElement>("[data-fv-sub-op]").forEach((el) =>
       el.addEventListener("change", () => {
         const index = Number(el.dataset.fvSubOp) as 0 | 1;
         const subConditions: [ConditionDraft, ConditionDraft] = [...formValidatorDraft.subConditions];
@@ -1913,7 +2124,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         render();
       }),
     );
-    host.querySelectorAll<HTMLInputElement>("[data-fv-sub-literal]").forEach((el) =>
+    root.querySelectorAll<HTMLInputElement>("[data-fv-sub-literal]").forEach((el) =>
       el.addEventListener("change", () => {
         const index = Number(el.dataset.fvSubLiteral) as 0 | 1;
         const subConditions: [ConditionDraft, ConditionDraft] = [...formValidatorDraft.subConditions];
@@ -1921,47 +2132,47 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         formValidatorDraft = { ...formValidatorDraft, subConditions };
       }),
     );
-    host.querySelector<HTMLSelectElement>("[data-fv-target]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLSelectElement>("[data-fv-target]")?.addEventListener("change", (e) => {
       formValidatorDraft = { ...formValidatorDraft, errorTargetId: (e.target as HTMLSelectElement).value };
     });
-    host.querySelector<HTMLInputElement>("[data-fv-message]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLInputElement>("[data-fv-message]")?.addEventListener("change", (e) => {
       formValidatorDraft = { ...formValidatorDraft, message: (e.target as HTMLInputElement).value };
     });
-    host.querySelector<HTMLElement>("[data-add-form-validator]")?.addEventListener("click", () => {
+    root.querySelector<HTMLElement>("[data-add-form-validator]")?.addEventListener("click", () => {
       commit(createAddFormValidatorCommand(buildFormValidatorFromDraft(formValidatorDraft)));
       formValidatorDraft = { ...formValidatorDraft, literal: "", message: "" };
     });
-    host.querySelectorAll<HTMLElement>("[data-remove-form-validator]").forEach((el) =>
+    root.querySelectorAll<HTMLElement>("[data-remove-form-validator]").forEach((el) =>
       el.addEventListener("click", () => commit(createRemoveFormValidatorCommand(el.dataset.removeFormValidator!))),
     );
-    host.querySelectorAll<HTMLInputElement>("[data-form-validator-message]").forEach((el) =>
+    root.querySelectorAll<HTMLInputElement>("[data-form-validator-message]").forEach((el) =>
       el.addEventListener("change", () =>
         commit(createUpdateFormValidatorCommand(el.dataset.formValidatorMessage!, { message: el.value })),
       ),
     );
 
-    host.querySelector<HTMLSelectElement>("[data-submit-impl]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLSelectElement>("[data-submit-impl]")?.addEventListener("change", (e) => {
       const value = (e.target as HTMLSelectElement).value;
       commit(createUpdateBehaviorCommand({ submit: value ? { implementationRef: value } : undefined }));
     });
-    host.querySelector<HTMLElement>("[data-new-submit-impl]")?.addEventListener("click", () => {
+    root.querySelector<HTMLElement>("[data-new-submit-impl]")?.addEventListener("click", () => {
       const id = createId("impl");
       const ref = { id, role: "submitAction" as const, displayName: `submitForm${id.slice(-5)}`, mode: "stub" as const };
       commit(createAddImplementationCommand(ref));
       commit(createUpdateBehaviorCommand({ submit: { implementationRef: ref.id } }));
     });
-    host.querySelector<HTMLElement>("[data-remove-submit-action]")?.addEventListener("click", () => {
+    root.querySelector<HTMLElement>("[data-remove-submit-action]")?.addEventListener("click", () => {
       commit(createUpdateBehaviorCommand({ submit: undefined }));
     });
 
-    host.querySelector<HTMLSelectElement>("[data-export-target]")?.addEventListener("change", (e) => {
+    root.querySelector<HTMLSelectElement>("[data-export-target]")?.addEventListener("change", (e) => {
       exportState = { ...exportState, targetId: (e.target as HTMLSelectElement).value, artifact: null, error: null };
       render();
     });
-    host.querySelector<HTMLElement>("[data-export-generate]")?.addEventListener("click", () => {
+    root.querySelector<HTMLElement>("[data-export-generate]")?.addEventListener("click", () => {
       void runExport();
     });
-    host.querySelectorAll<HTMLElement>("[data-export-download]").forEach((el) =>
+    root.querySelectorAll<HTMLElement>("[data-export-download]").forEach((el) =>
       el.addEventListener("click", () => {
         const path = el.dataset.exportDownload!;
         const file = exportState.artifact?.files.find((f) => f.path === path);
@@ -1975,7 +2186,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         URL.revokeObjectURL(url);
       }),
     );
-    host.querySelectorAll<HTMLButtonElement>("[data-export-copy]").forEach((el) =>
+    root.querySelectorAll<HTMLButtonElement>("[data-export-copy]").forEach((el) =>
       el.addEventListener("click", () => {
         const path = el.dataset.exportCopy!;
         const file = exportState.artifact?.files.find((f) => f.path === path);
@@ -1998,7 +2209,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       }),
     );
 
-    host.querySelectorAll<HTMLElement>("[data-preview-field]").forEach((el) =>
+    root.querySelectorAll<HTMLElement>("[data-preview-field]").forEach((el) =>
       el.addEventListener("change", () => {
         const path = el.dataset.previewField!;
         const handle = getPreviewHandle(previewForm, path);
@@ -2010,17 +2221,16 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         else valueSignal.set((el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement).value);
       }),
     );
-    host.querySelectorAll<HTMLElement>("[data-preview-array-push]").forEach((el) =>
+    root.querySelectorAll<HTMLElement>("[data-preview-array-push]").forEach((el) =>
       el.addEventListener("click", () => {
         const path = el.dataset.previewArrayPush!;
         const handle = getPreviewHandle(previewForm, path) as { push?(v: unknown): void } | null;
-        const idx = buildIndexes(project);
-        const nodeId = idx.nodeByPath.get(path);
-        const node = nodeId ? idx.nodeById.get(nodeId) : null;
+        const nodeId = indexes.nodeByPath.get(path);
+        const node = nodeId ? indexes.nodeById.get(nodeId) : null;
         if (handle?.push && node?.node === "array") handle.push(defaultRowValue(node.item));
       }),
     );
-    host.querySelectorAll<HTMLElement>("[data-preview-array-remove]").forEach((el) =>
+    root.querySelectorAll<HTMLElement>("[data-preview-array-remove]").forEach((el) =>
       el.addEventListener("click", () => {
         const path = el.dataset.previewArrayRemove!;
         const index = Number(el.dataset.previewArrayIndex);
@@ -2028,7 +2238,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         handle?.remove?.(index);
       }),
     );
-    host.querySelectorAll<HTMLSelectElement>("[data-preview-mock-mode]").forEach((el) =>
+    root.querySelectorAll<HTMLSelectElement>("[data-preview-mock-mode]").forEach((el) =>
       el.addEventListener("change", () => {
         const implId = el.dataset.previewMockMode!;
         const mode = el.value;
@@ -2040,27 +2250,16 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         render();
       }),
     );
-    host.querySelector<HTMLElement>("[data-preview-submit]")?.addEventListener("click", () => {
+    root.querySelector<HTMLElement>("[data-preview-submit]")?.addEventListener("click", () => {
       if (!previewForm) return;
       const submitRef = project.behaviors.submit?.implementationRef;
       const mockCfg = submitRef ? previewMockConfig[submitRef] : undefined;
       void previewForm.submit(createMockSubmitAction(mockCfg ?? {}));
     });
-
-    host.querySelectorAll<HTMLElement>("[data-node]").forEach((el) =>
-      el.addEventListener("keydown", (e) => keyboard(e, el.dataset.node!)),
-    );
-
-    const canvas = host.querySelector<HTMLElement>(".canvas");
-    canvas?.addEventListener("dragover", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      if (e.clientY - rect.top < 50) canvas.scrollTop -= 12;
-      if (rect.bottom - e.clientY < 50) canvas.scrollTop += 12;
-    });
   }
 
   function keyboard(event: KeyboardEvent, id: string): void {
-    const idx = buildIndexes(project);
+    const idx = indexes;
 
     if (event.key === " " && !picked) {
       event.preventDefault();
@@ -2133,9 +2332,12 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   return () => {
     disposed = true;
     plainCanvasSession.dispose();
+    plainCanvasSignature = null;
     previewSession.dispose();
     previewEffect = null;
     canvasController.dispose();
+    scroll.clear();
+    shell = null;
     host.replaceChildren();
   };
 }
