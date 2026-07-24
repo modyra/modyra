@@ -553,7 +553,22 @@ export function previewBodyMarkup(project: MdyStudioProject, form: MdyTypedForm<
 }
 
 /** Mounts the Studio editor into `host`. Returns a disposer that clears the host. */
-export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () => void {
+/**
+ * Optional off-main-thread generate (plan §11 "generate ... off main
+ * thread"). Given the same request `runExport()` would otherwise pass to
+ * `targetRegistry.load()` + `target.generate()` directly, resolves to the
+ * same {@link Artifact} shape. The host (e.g. apps/studio's main.ts) owns
+ * the actual `Worker` and its message-passing; studio-ui stays worker/DOM-
+ * host agnostic and falls back to the in-thread path when this is absent —
+ * e.g. in tests and the Astro embed, which have no worker bundle to point at.
+ */
+export type GenerateOffMainThread = (request: { targetId: string; project: MdyStudioProject; options: unknown }) => Promise<Artifact>;
+
+export interface MountStudioOptions {
+  readonly generateOffMainThread?: GenerateOffMainThread;
+}
+
+export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, options: MountStudioOptions = {}): () => void {
   let project = initial ? structuredClone(initial) : createBlankProject();
   let selected = project.schema.id;
   let drag: Drag | null = null;
@@ -653,7 +668,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject): () =
     render();
     try {
       const target = await targetRegistry.load(targetId);
-      const artifact = await target.generate(project, target.defaults());
+      const artifact = options.generateOffMainThread
+        ? await options.generateOffMainThread({ targetId, project, options: target.defaults() })
+        : await target.generate(project, target.defaults());
       if (myGeneration !== exportState.generation) return; // a newer Generate started meanwhile — discard
       exportState = { ...exportState, artifact, generating: false };
     } catch (error) {

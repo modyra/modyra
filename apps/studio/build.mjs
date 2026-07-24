@@ -19,3 +19,19 @@ await build({
     ".woff2": "file",
   },
 });
+
+// Own bundle (P11 Workers, plan §11): `typescript` only ever loads here,
+// fetched by the browser as a separate file and instantiated via
+// `new Worker(...)` — never pulled into the main studio.js entry above.
+await build({
+  entryPoints: [`${dir}src/codegen-worker.ts`],
+  outfile: `${dir}dist/codegen-worker.js`,
+  bundle: true,
+  format: "esm",
+  platform: "browser",
+  target: "es2022",
+  sourcemap: true,
+  // typescript is multiple MB unminified — this is the one bundle in the
+  // app where that matters enough to ask esbuild to shrink it.
+  minify: true,
+});

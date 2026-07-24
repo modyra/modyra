@@ -10,7 +10,8 @@
     "test:e2e": "npm run build && playwright test -c playwright.config.ts"
   },
   "dependencies": {
-    "@modyra/studio-ui": "workspace:*"
+    "@modyra/studio-ui": "workspace:*",
+    "typescript": "~5.9.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

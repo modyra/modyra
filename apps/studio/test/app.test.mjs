@@ -19,6 +19,18 @@ test("build produces the standalone bundle, stylesheet, and font assets", () => 
   assert.ok(files.some((f) => /^Satoshi-Regular.*\.woff2$/.test(f)), "missing bundled Satoshi font");
 });
 
+test("P11 Workers: build produces its own codegen-worker bundle, separate from the main studio.js entry", () => {
+  assert.ok(files.includes("codegen-worker.js"), "missing dist/codegen-worker.js");
+  const main = readFileSync(new URL("studio.js", dist), "utf8");
+  const worker = readFileSync(new URL("codegen-worker.js", dist), "utf8");
+  // typescript (the one dependency this batch adds) must only ever load in the worker bundle —
+  // if the main entry pulled it in too, the whole point of the split (small main bundle,
+  // heavy compiler off the main thread) would be defeated.
+  assert.doesNotMatch(main, /createLanguageService|getPreEmitDiagnostics|ts\.transpileModule/);
+  assert.match(worker, /transpileModule/);
+  assert.match(main, /new Worker\(/, "main.ts should construct the codegen Worker");
+});
+
 test("bundle mounts the framework-free studio-ui shell into [data-modyra-studio], with no actual React/Angular runtime bundled", () => {
   const bundle = readFileSync(new URL("studio.js", dist), "utf8");
   assert.match(bundle, /data-modyra-studio/);

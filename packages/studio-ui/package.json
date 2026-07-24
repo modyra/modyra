@@ -10,6 +10,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./worker-toolkit": {
+      "types": "./dist/worker-toolkit.d.ts",
+      "default": "./dist/worker-toolkit.js"
+    },
     "./studio.css": {
       "default": "./dist/studio.css"
     }
