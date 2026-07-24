@@ -83,39 +83,50 @@ body {
 .studio header {
   min-width: 0;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   gap: 10px;
   padding: 0 14px;
   overflow: hidden;
   border-bottom: 1px solid var(--mdy-border);
 }
-.studio header div {
-  min-width: 0;
-  display: grid;
-}
-.studio header strong {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.brand {
+  flex: 0 0 auto;
   font-weight: 700;
+  font-size: 13px;
+  background-image: var(--mdy-gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-.studio header span {
+/* The form name is edited where it is read. It looks like the title until you
+   reach for it, which is the point: no separate "rename" affordance to find. */
+.form-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 26rem;
+  padding: 3px 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--mdy-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+.form-name:hover {
+  border-color: var(--mdy-border);
+}
+.form-name:focus-visible {
+  border-color: var(--mdy-indigo);
+  background: var(--mdy-panel);
+}
+.form-meta {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
   color: var(--mdy-text-muted);
   font-size: 11px;
-}
-.studio nav {
-  min-width: 0;
-  display: flex;
-  flex: 0 1 auto;
-  gap: 7px;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  scrollbar-width: thin;
-}
-.studio nav > * {
-  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .import-button {
   display: inline-flex;
@@ -164,32 +175,16 @@ body {
   min-height: 0;
   overflow: hidden;
   display: grid;
-  grid-template-columns: 168px minmax(0, 1fr) minmax(280px, 340px);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
 }
 
-.palette {
+/* Anchors the floating dock without putting it inside the scrolling canvas. */
+.canvas-column {
+  position: relative;
   min-width: 0;
   min-height: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
-  padding: 10px;
-  border-right: 1px solid var(--mdy-border);
-}
-.palette h2 {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--mdy-text-muted);
-  margin: 0 0 8px;
-}
-/* Two columns: the ten templates fit in five rows instead of ten, which is
-   the difference between the palette needing its own scrollbar and not. */
-.palette-grid {
-  min-width: 0;
+  overflow: hidden;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
 }
 .inspector {
   display: flex;
@@ -276,21 +271,6 @@ body {
   margin: 0 0 9px;
 }
 
-.palette button {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: left;
-  padding: 5px 6px;
-  font-size: 12px;
-  text-transform: capitalize;
-  border-color: transparent;
-}
-.palette button:hover {
-  background: var(--mdy-panel);
-}
 
 .canvas {
   min-width: 0;
@@ -299,38 +279,83 @@ body {
   overscroll-behavior: contain;
   padding: 14px 18px;
 }
-/* Project name, node count and the canvas-mode switch share one row: three
-   stacked blocks used to push the editable content ~90px down the viewport. */
-.canvas-head {
-  min-width: 0;
+/* Floating toolbar: everything that is not composing the form. Collapsed by
+   default, so the canvas is only ever the form itself. */
+.dock {
+  position: absolute;
+  inset-block-end: 16px;
+  inset-inline-end: 16px;
+  z-index: 5;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px 14px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none;
 }
-.title {
-  min-width: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+.dock > * {
+  pointer-events: auto;
 }
-.title > * {
-  min-width: 0;
-}
-.title h1 {
-  font-size: 15px;
-  font-weight: 700;
+.studio .fab {
+  width: 46px !important;
+  height: 46px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
   background-image: var(--mdy-gradient-brand);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
+  color: white;
+  font-size: 20px;
+  line-height: 1;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 45%);
 }
-.title span {
+.studio .fab:hover,
+.studio .fab:focus-visible {
+  filter: brightness(1.12);
+}
+.dock-panel {
+  width: min(78vw, 320px);
+  max-height: min(60vh, 460px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--mdy-border);
+  border-radius: 14px;
+  background: var(--mdy-panel);
+  box-shadow: 0 14px 40px rgb(0 0 0 / 50%);
+}
+.dock-panel[hidden] {
+  display: none;
+}
+.dock-section h3 {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--mdy-text-muted);
-  font-size: 11px;
-  white-space: nowrap;
+}
+.dock-templates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+.dock-templates button {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 8px;
+  font-size: 12px;
+  text-align: left;
+  text-transform: capitalize;
+}
+.dock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.dock-actions > * {
+  flex: 0 0 auto;
 }
 
 .canvas-mode-switch {
@@ -354,23 +379,17 @@ body {
   min-width: 0;
 }
 .plain-canvas-frame {
-  width: min(100%, 760px);
-  margin-inline: auto;
-  padding: 14px;
+  width: min(100%, 680px);
+  margin: 8px auto 96px; /* room for the dock to float over empty space, not over a field */
+  padding: 22px 22px 26px;
   border: 1px solid var(--mdy-border);
-  border-radius: 12px;
+  border-radius: 16px;
   background: var(--mdy-panel);
 }
-.plain-canvas-note,
 .plain-canvas-unavailable {
   color: var(--mdy-text-muted);
   font-size: 12px;
   overflow-wrap: anywhere;
-}
-.plain-canvas-note {
-  margin: 0 0 18px;
-}
-.plain-canvas-unavailable {
   padding: 24px;
   border: 1px dashed var(--mdy-border);
   border-radius: 8px;
@@ -378,18 +397,117 @@ body {
 }
 .plain-canvas-form {
   display: grid;
-  gap: 16px;
+  gap: 2px;
+}
+/* Drop targets and between-field inserters are invisible until they are useful,
+   but they keep a real hit area: a zero-size element cannot be dropped on or
+   clicked. `.plain-canvas-form select`/`input` styling would otherwise give each
+   one ~28px of padding and border, which is where the dead air came from. */
+.plain-canvas-form .plain-canvas-drop {
+  height: auto;
+  min-height: 6px;
+  padding: 0;
+  border-width: 0;
+  overflow: hidden;
+}
+.plain-canvas-form .plain-canvas-drop.active,
+.plain-canvas-form .plain-canvas-drop.drag-over {
+  min-height: 26px;
+  padding: 4px 8px;
+  border-width: 1px;
+  overflow: visible;
+}
+.plain-canvas-form .plain-canvas-insert {
+  height: 16px;
+  min-height: 0;
+  padding: 0 8px;
+  border-width: 0;
+  overflow: hidden;
+}
+.plain-canvas-form:hover .plain-canvas-insert,
+.plain-canvas-form .plain-canvas-insert:focus-visible {
+  border-width: 1px;
+}
+/* The form renders its own <label>; in the canvas the editable one above the
+   control takes its place visually, while this stays for screen readers so the
+   control keeps a real, associated label. */
+.plain-canvas-field > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.plain-canvas-head {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+/* Reads as the label until focused. Editing in place beats a side panel: the
+   text you are changing is the text you were looking at. */
+.plain-canvas-form .plain-canvas-inline {
+  width: auto;
+  min-width: 0;
+  padding: 2px 5px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--mdy-text);
+  font: inherit;
+}
+.plain-canvas-form .plain-canvas-inline:hover {
+  border-color: var(--mdy-border);
+}
+.plain-canvas-form .plain-canvas-inline:focus,
+.plain-canvas-form .plain-canvas-inline:focus-visible {
+  border-color: var(--mdy-indigo);
+  background: var(--mdy-bg);
+  outline: none;
+}
+.plain-canvas-form .plain-canvas-inline-label {
+  flex: 1 1 auto;
+  width: auto;
+  font-size: 13px;
+  font-weight: 600;
+}
+/* Reads as a muted code suffix to the label, not as a second form field. */
+.plain-canvas-form .plain-canvas-inline-name {
+  flex: 0 0 8rem;
+  width: 8rem;
+  text-align: right;
+  color: var(--mdy-text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+.plain-canvas-inline::placeholder {
+  color: var(--mdy-text-muted);
+  opacity: 0.6;
 }
 .plain-canvas-form > div {
   min-width: 0;
   display: grid;
-  gap: 6px;
+  gap: 5px;
+}
+/* The renderer always emits a description <p> and an error <ul>; empty ones
+   were contributing default margins and ~40px of dead air per field. */
+.plain-canvas-form p,
+.plain-canvas-form ul {
+  margin: 0;
+}
+.plain-canvas-form p:empty,
+.plain-canvas-form ul:empty {
+  display: none;
 }
 .plain-canvas-field {
   position: relative;
-  padding: 34px 12px 12px;
+  padding: 13px 12px 11px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 .plain-canvas-field:hover {
   border-color: color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-border));
@@ -402,32 +520,42 @@ body {
   border-style: dashed;
   border-color: var(--mdy-coral);
 }
+/* Kind chip: doubles as the "select this node in Studio" control. */
+.plain-canvas-form .plain-canvas-select,
 .plain-canvas-select {
-  position: absolute;
-  inset-block-start: 6px;
-  inset-inline-start: 8px;
+  flex: 0 0 auto;
   width: auto !important;
-  max-width: calc(100% - 16px);
-  padding: 3px 7px;
-  overflow: hidden;
+  padding: 2px 7px;
   border-color: transparent;
+  border-radius: 999px;
   background: color-mix(in srgb, var(--mdy-bg) 82%, transparent);
   color: var(--mdy-text-muted);
   font-size: 10px;
-  line-height: 1.2;
-  text-overflow: ellipsis;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
+.plain-canvas-form .plain-canvas-field.selected .plain-canvas-select,
 .plain-canvas-field.selected .plain-canvas-select {
   background: var(--mdy-indigo);
   color: white;
 }
+/* Float over the field's top edge on hover, so revealing them never reflows
+   the row underneath (and never squeezes the label you are editing). */
 .plain-canvas-actions {
   position: absolute;
-  inset-block-start: 5px;
+  inset-block-start: -11px;
   inset-inline-end: 8px;
+  z-index: 2;
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 3px;
+  border: 1px solid var(--mdy-border);
+  border-radius: 999px;
+  background: var(--mdy-panel);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 45%);
   opacity: 0;
   pointer-events: none;
   transition: opacity 120ms ease;
@@ -440,11 +568,17 @@ body {
 }
 .plain-canvas-actions button {
   width: auto !important;
-  padding: 3px 7px;
-  border-color: var(--mdy-border);
+  min-width: 20px;
+  padding: 2px 5px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--mdy-text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.plain-canvas-actions button:hover:not(:disabled) {
+  color: var(--mdy-text);
   background: var(--mdy-bg);
-  font-size: 10px;
-  line-height: 1.2;
 }
 .plain-canvas-actions [data-delete] {
   color: var(--mdy-coral);
@@ -453,21 +587,32 @@ body {
   opacity: 0.35;
   cursor: not-allowed;
 }
-.plain-canvas-actions select {
-  max-width: 9rem;
+.plain-canvas-form .plain-canvas-actions select {
+  width: 2.4rem;
+  padding: 2px 0 2px 4px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--mdy-text-muted);
   font: inherit;
-  font-size: 0.75rem;
+  font-size: 11px;
 }
+/* Stays out of the way until the gap between two fields is hovered. */
 .plain-canvas-insert {
   display: block;
-  width: min(100%, 220px) !important;
-  margin: 4px auto;
-  padding: 4px 10px;
+  width: min(100%, 200px) !important;
+  height: 0;
+  margin: 0 auto;
+  padding: 0 10px;
   border: 1px dashed transparent;
   background: transparent;
   color: var(--mdy-text-muted);
   font-size: 10px;
-  opacity: 0.35;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.plain-canvas-form:hover .plain-canvas-insert,
+.plain-canvas-insert:focus-visible {
+  opacity: 0.45;
 }
 .plain-canvas-insert:hover,
 .plain-canvas-insert:focus-visible {
@@ -615,10 +760,10 @@ body {
   background: color-mix(in srgb, var(--mdy-indigo) 16%, transparent);
   opacity: 1;
 }
-.palette [data-template][draggable="true"] {
+.dock [data-template][draggable="true"] {
   cursor: grab;
 }
-.palette [data-template][draggable="true"]:active {
+.dock [data-template][draggable="true"]:active {
   cursor: grabbing;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -655,6 +800,12 @@ body {
 .plain-canvas-form textarea {
   min-height: 96px;
   resize: vertical;
+}
+.plain-canvas-form input[type="checkbox"],
+.plain-canvas-form input[type="radio"] {
+  width: auto;
+  justify-self: start;
+  margin: 2px 0;
 }
 .plain-canvas-form ul {
   margin: 0;
@@ -1199,7 +1350,7 @@ body {
 
 @media (max-width: 850px) {
   .studio main {
-    grid-template-columns: 150px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
   .inspector {
     display: none;
@@ -1218,15 +1369,14 @@ body {
   .studio main {
     grid-template-columns: minmax(0, 1fr);
   }
-  .palette {
-    display: none;
-  }
   .canvas {
     padding: 12px 14px;
   }
-  .canvas-head {
-    align-items: flex-start;
-    flex-direction: column;
+  .plain-canvas-frame {
+    padding: 16px 14px 20px;
+  }
+  .plain-canvas-head {
+    flex-wrap: wrap;
   }
 }
 
