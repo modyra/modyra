@@ -51,6 +51,7 @@ import { coreTargetManifest } from "@modyra/studio-target-core";
 import { angularTargetManifest } from "@modyra/studio-target-angular";
 import { reactTargetManifest } from "@modyra/studio-target-react";
 import { buildLiveForm, createMockSubmitAction, vanillaReactivity, type MdyTypedForm, type MockServerConfig } from "@modyra/studio-preview";
+import { StudioCanvasController, StudioRuntimeSession } from "./canvas-controller.js";
 import { importProjectFromText, loadSession, saveSession } from "./storage.js";
 import "./studio.css";
 
@@ -569,6 +570,8 @@ export interface MountStudioOptions {
 }
 
 export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, options: MountStudioOptions = {}): () => void {
+  const canvasController = new StudioCanvasController();
+  const previewSession = new StudioRuntimeSession<{ dispose(): void }>();
   let project = initial ? structuredClone(initial) : createBlankProject();
   let selected = project.schema.id;
   let drag: Drag | null = null;
@@ -683,7 +686,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   /** (Re)builds the live preview form only when `project` or the mock config actually changed — never on every render(). */
   function ensurePreviewForm(): void {
     if (previewForm && previewForProject === project) return;
-    previewEffect?.destroy();
+    previewSession.dispose();
+    previewEffect = null;
     const result = buildLiveForm(project, { reactivity: previewReactivity, mockConfigByImplId: previewMockConfig });
     previewForm = result.form as MdyTypedForm<never> | null;
     previewDiagnostics = result.diagnostics;
@@ -702,6 +706,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         form.state.lastSubmitErrors();
         render();
       });
+      previewSession.replace({ dispose: () => previewEffect?.destroy() });
     }
   }
 
@@ -844,6 +849,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   }
 
   function render(): void {
+    canvasController.capture();
     const idx = buildIndexes(project);
     const current = idx.nodeById.get(selected) ?? project.schema;
     selected = current.id;
@@ -968,12 +974,19 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         </footer>
       </div>`;
 
+    const canvas = host.querySelector<HTMLElement>(".canvas");
+    canvasController.connect(canvas);
     bind();
     // Fall back to the canvas region (tabindex=-1, programmatic-only) when the requested target
     // no longer exists — e.g. deleting the tree's last node leaves no [data-node] to focus.
     // Focus must never silently fall through to <body>.
-    const primaryTarget = focusSelector ? host.querySelector<HTMLElement>(focusSelector) : null;
-    const focusTarget = primaryTarget ?? host.querySelector<HTMLElement>(".canvas");
+    const nodeId = focusSelector?.match(/^\[data-node="(.+)"\]$/)?.[1];
+    const primaryTarget = nodeId
+      ? canvasController.elementForNode(nodeId)
+      : focusSelector
+        ? host.querySelector<HTMLElement>(focusSelector)
+        : null;
+    const focusTarget = primaryTarget ?? canvas;
     focusTarget?.focus();
     focusSelector = null;
   }
@@ -1496,7 +1509,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
   return () => {
     disposed = true;
-    previewEffect?.destroy();
+    previewSession.dispose();
+    previewEffect = null;
+    canvasController.dispose();
     host.replaceChildren();
   };
 }
