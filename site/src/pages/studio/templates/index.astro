@@ -1,0 +1,124 @@
+---
+// P12 route: /modyra/studio/templates/ — the palette's real building
+// blocks today. Studio has no packaged starter-project templates yet
+// (only the field/group/array elements shown here); this page says so
+// honestly rather than describing a feature that doesn't exist.
+import '../../../styles/custom.css';
+
+const based = (path: string) =>
+  `${import.meta.env.BASE_URL.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+
+const elements = [
+  { name: "Text", desc: "Single-line string field." },
+  { name: "Textarea", desc: "Multi-line string field." },
+  { name: "Email", desc: "String field with the email() validator available." },
+  { name: "Number", desc: "Numeric field — min/max validators apply." },
+  { name: "Checkbox", desc: "Boolean field." },
+  { name: "Select", desc: "Single choice from a fixed option list." },
+  { name: "Multiselect", desc: "Multiple choices from a fixed option list." },
+  { name: "Date", desc: "Date field." },
+  { name: "Group", desc: "Nests fields under a dotted path (address.city)." },
+  { name: "Array", desc: "A repeatable row — a field or a group, with per-row validators." },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modyra Studio — templates</title>
+    <meta name="description" content="The elements available in Modyra Studio's palette today." />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href={based('')}>Modyra</a>
+      <nav class="topnav">
+        <a href={based('start-here/')}>Docs</a>
+        <a href={based('pitch')}>Pitch deck</a>
+        <a href={based('studio')}>Studio</a>
+        <a href="https://github.com/modyra/modyra">GitHub</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">Modyra Studio · templates</p>
+      <h1>Building blocks, not starter kits — yet</h1>
+      <p class="lede">
+        Studio does not have packaged starter-project templates today. What
+        it has is the ten elements below — drag any of them from the
+        palette onto the canvas, nest them into groups and arrays, and wire
+        up validators from the inspector. A gallery of ready-made starting
+        points (checkout form, signup form, survey) is on the roadmap, not
+        shipped.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href={based('studio/app/')}>Launch Studio →</a>
+      </div>
+    </section>
+
+    <section class="why">
+      <div class="why-grid">
+        {elements.map((e) => (
+          <div class="why-cell">
+            <h3>{e.name}</h3>
+            <p class="desc">{e.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="link-row">
+        <a href={based('studio')}>← Back to Studio</a>
+        <a href={based('studio/app/')}>Launch Studio →</a>
+        <a href="https://github.com/modyra/modyra">GitHub →</a>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  :root {
+    --bg: var(--mdy-night); --bg-card: #1c1e30; --fg: var(--mdy-cloud);
+    --fg-muted: var(--mdy-slate); --border: #2c2f47; --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: var(--mdy-cloud); --bg-card: #ffffff; --fg: var(--mdy-night); --fg-muted: #52577a; --border: #e1e4ef; }
+  }
+  :root[data-theme='dark'] { --bg: var(--mdy-night); --bg-card: #1c1e30; --fg: var(--mdy-cloud); --fg-muted: var(--mdy-slate); --border: #2c2f47; }
+  :root[data-theme='light'] { --bg: var(--mdy-cloud); --bg-card: #ffffff; --fg: var(--mdy-night); --fg-muted: #52577a; --border: #e1e4ef; }
+
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: 'Satoshi', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem clamp(1.5rem, 6vw, 4rem); border-bottom: 1px solid var(--border); }
+  .brand { font-weight: 900; font-size: 1.1rem; color: var(--fg); text-decoration: none; letter-spacing: -0.01em; }
+  .topnav { display: flex; gap: 1.75rem; }
+  .topnav a { color: var(--fg-muted); text-decoration: none; font-size: 0.92rem; }
+  .topnav a:hover, .topnav a:focus-visible { color: var(--fg); }
+
+  .eyebrow { font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-muted); margin: 0 0 1.25rem; display: flex; align-items: center; gap: 0.6rem; }
+  .eyebrow::before { content: ''; width: 1.5rem; height: 2px; background: var(--mdy-gradient-brand); display: inline-block; }
+
+  .hero { padding: clamp(3rem, 8vw, 5rem) clamp(1.5rem, 8vw, 8rem) clamp(2rem, 5vw, 3.5rem); }
+  .hero h1 { font-weight: 900; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.08; letter-spacing: -0.02em; max-width: 20ch; }
+  .lede { font-size: clamp(1rem, 1.5vw, 1.2rem); line-height: 1.55; color: var(--fg-muted); max-width: 62ch; margin: 1.5rem 0 0; }
+
+  .hero-ctas { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
+  .btn { display: inline-flex; align-items: center; padding: 0.75rem 1.4rem; border-radius: 0.6rem; font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: opacity 0.15s ease; }
+  .btn-primary { background: var(--mdy-gradient-brand); color: #fff; }
+  .btn-primary:hover, .btn-primary:focus-visible { opacity: 0.9; }
+  .btn:focus-visible { outline: 2px solid var(--mdy-indigo); outline-offset: 3px; }
+
+  .why { padding: clamp(1.5rem, 5vw, 3rem) clamp(1.5rem, 8vw, 8rem) clamp(3rem, 6vw, 5rem); border-top: 1px solid var(--border); }
+  .why-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 2rem; }
+  .why-cell { border: 1px solid var(--border); border-radius: 0.6rem; padding: 1.25rem; background: var(--bg-card); }
+  .why-cell h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .why-cell .desc { font-size: 0.88rem; color: var(--fg-muted); line-height: 1.5; }
+
+  .footer { padding: 2.5rem clamp(1.5rem, 8vw, 8rem) 3rem; border-top: 1px solid var(--border); }
+  .link-row { display: flex; gap: 2rem; flex-wrap: wrap; }
+  .link-row a { color: var(--fg-muted); text-decoration: none; font-size: 0.9rem; border-bottom: 1px solid var(--border); padding-bottom: 0.2rem; transition: border-color 0.15s ease; }
+  .link-row a:hover, .link-row a:focus-visible { color: var(--fg); border-color: var(--mdy-indigo); }
+</style>

@@ -71,6 +71,10 @@ export default defineConfig({
 					label: 'Framework examples',
 					items: [{ autogenerate: { directory: 'examples' } }],
 				},
+				{
+					label: 'Modyra Studio',
+					items: [{ autogenerate: { directory: 'studio' } }],
+				},
 			],
 		}),
 	],
