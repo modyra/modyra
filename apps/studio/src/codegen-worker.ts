@@ -16,6 +16,8 @@ import ts from "typescript";
 import { runGenerateJob, type GenerateJobRequest } from "@modyra/studio-ui/worker-toolkit";
 import type { Artifact, ArtifactFile } from "@modyra/studio-codegen";
 import type { StudioDiagnostic } from "@modyra/studio-model";
+import typecheckAssets from "../.generated/typecheck-assets.json";
+import { checkTypes, supportsSemanticCheck, type VirtualFile } from "./typecheck-host.js";
 
 export interface GenerateRequest {
   readonly id: number;
@@ -50,14 +52,34 @@ function formatSource(file: ArtifactFile): string {
   return printer.printFile(sourceFile);
 }
 
+/** Real cross-file typecheck (an in-memory ts.Program — see typecheck-host.ts) when the vendored .d.ts assets cover every bare import in play, else no-op: better to report nothing than a false "cannot find module". */
+function checkSemantics(files: readonly VirtualFile[]): StudioDiagnostic[] {
+  if (!supportsSemanticCheck(typecheckAssets, files)) return [];
+  return checkTypes(typecheckAssets, files).flatMap((d) => {
+    if (d.category !== ts.DiagnosticCategory.Error) return [];
+    const message = ts.flattenDiagnosticMessageText(d.messageText, "\n");
+    const propertyPath = d.file && d.start !== undefined
+      ? (() => {
+          const { line, character } = d.file.getLineAndCharacterOfPosition(d.start);
+          return `${d.file.fileName.replace(/^\/project\//, "")}:${line + 1}:${character + 1}`;
+        })()
+      : undefined;
+    return [{ code: `TS${d.code}`, severity: "error" as const, message, propertyPath }];
+  });
+}
+
 async function handleGenerate(job: GenerateJobRequest): Promise<Artifact> {
   const artifact = await runGenerateJob(job);
   const extraDiagnostics: StudioDiagnostic[] = [];
+  const tsFiles: VirtualFile[] = [];
   const files = artifact.files.map((file) => {
     if (file.language !== "typescript") return file;
     extraDiagnostics.push(...checkSyntax(file));
-    return { ...file, content: formatSource(file) };
+    const formatted = formatSource(file);
+    tsFiles.push({ path: file.path, content: formatted });
+    return { ...file, content: formatted };
   });
+  extraDiagnostics.push(...checkSemantics(tsFiles));
   return { ...artifact, files, diagnostics: [...artifact.diagnostics, ...extraDiagnostics] };
 }
 

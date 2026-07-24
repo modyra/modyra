@@ -1,10 +1,15 @@
 import { build } from "esbuild";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 // Resolved relative to this file, not the caller's CWD, so `npm run build`
 // works both from the repo root (root's `build:studio`) and from within
 // this package (`npm --prefix apps/studio run build`).
 const dir = fileURLToPath(new URL(".", import.meta.url));
+
+// Regenerates apps/studio/.generated/typecheck-assets.json (gitignored,
+// same as dist/) before the worker bundles it.
+execFileSync(process.execPath, [`${dir}generate-typecheck-assets.mjs`], { stdio: "inherit" });
 
 await build({
   entryPoints: [`${dir}src/main.ts`],
