@@ -246,3 +246,56 @@ test("live canvas moves existing fields between a group and the form root", asyn
   await page.locator('[data-undo]').click();
   await expect(group.locator('.plain-canvas-field')).toHaveCount(1);
 });
+
+
+test("live canvas drags groups to reorder and nest them", async ({ page }) => {
+  await page.locator('[data-template="group"]').click();
+  await page.locator('[data-name]').fill('billing');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-template="group"]').click();
+  await page.locator('[data-name]').fill('shipping');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-canvas-mode="form"]').click();
+
+  const groups = page.locator('.plain-canvas-group');
+  await expect(groups).toHaveCount(2);
+  await expect(groups.nth(0)).toHaveAttribute('data-group-path', 'billing');
+  await expect(groups.nth(1)).toHaveAttribute('data-group-path', 'shipping');
+  await expect(groups.nth(1)).toHaveAttribute('draggable', 'true');
+
+  const billingId = await groups.nth(0).getAttribute('data-plain-group');
+  const shippingId = await groups.nth(1).getAttribute('data-plain-group');
+
+  expect(billingId).not.toBeNull();
+  expect(shippingId).not.toBeNull();
+
+  await groups.nth(1).dragTo(
+    page.locator(`.plain-canvas-drop[data-before="${billingId}"]`),
+  );
+  await expect(groups.nth(0)).toHaveAttribute(
+    'data-plain-group',
+    shippingId!,
+  );
+
+  const billing = page.locator(
+    `.plain-canvas-group[data-plain-group="${billingId}"]`,
+  );
+  const shipping = page.locator(
+    `.plain-canvas-group[data-plain-group="${shippingId}"]`,
+  );
+
+  await expect(billing).toHaveCount(1);
+  await expect(shipping).toHaveCount(1);
+
+  await shipping.dragTo(
+    billing.locator(':scope > .plain-canvas-group-body > .plain-canvas-drop-inside'),
+  );
+  await expect(billing.locator(':scope > .plain-canvas-group-body > .plain-canvas-group')).toHaveCount(1);
+  await expect(shipping).toHaveAttribute('data-group-path', 'billing.shipping');
+  await expect(shipping).toHaveClass(/selected/);
+
+  await page.locator('[data-undo]').click();
+  await expect(shipping).toHaveAttribute('data-group-path', 'shipping');
+  await page.locator('[data-undo]').click();
+  await expect(groups.nth(0)).toHaveAttribute('data-group-path', 'billing');
+});

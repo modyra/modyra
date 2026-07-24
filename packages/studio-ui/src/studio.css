@@ -461,6 +461,13 @@ body {
   border-color: var(--mdy-indigo);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-indigo) 20%, transparent);
 }
+.plain-canvas-group[draggable="true"] {
+  cursor: grab;
+}
+.plain-canvas-group.dragging {
+  cursor: grabbing;
+  opacity: 0.55;
+}
 .plain-canvas-group legend {
   padding: 0 6px;
 }
