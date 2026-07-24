@@ -23,6 +23,7 @@ import {
   serverValidator,
   type MdyDraftStorage,
   type MdyFormSchema,
+  type MdyReactivity,
   type MdyTypedForm,
   type ValidatorFn,
 } from "@modyra/core";
@@ -132,17 +133,18 @@ function mapNode(node: StudioSchemaNode, idx: StudioIndexes, diagnostics: Studio
   return mapArray(node, idx, diagnostics, mockConfigByImplId);
 }
 
-/**
- * Builds a real, running form from `project`. `mockConfigByImplId` configures the
- * server mock (plan §11: delay/valid-values/error/timeout/network-failure) per
- * `StudioImplementationRef` id; a serverValidator with no entry gets defaults
- * (300ms delay, always valid).
- */
-export function buildLiveForm(
-  project: MdyStudioProject,
-  mockConfigByImplId: Record<string, MockServerConfig> = {},
-  draftStorage?: MdyDraftStorage,
-): LiveFormResult {
+export interface BuildLiveFormOptions {
+  /** Server mock config (plan §11: delay/valid-values/error/timeout/network-failure) per StudioImplementationRef id; a serverValidator with no entry gets defaults (300ms delay, always valid). */
+  readonly mockConfigByImplId?: Record<string, MockServerConfig>;
+  /** Overrides draft persistence (default: real localStorage, inert in Node). Inject an in-memory store for tests, or an IndexedDB-backed one for the real app. */
+  readonly draftStorage?: MdyDraftStorage;
+  /** The reactivity graph the form runs on. Pass the same instance a caller already owns (e.g. studio-ui's own effect()/observe() loop) so its signals are observable from outside — a fresh vanillaReactivity() per call cannot be. Defaults to a new vanillaReactivity() (createForm's own fallback). */
+  readonly reactivity?: MdyReactivity;
+}
+
+/** Builds a real, running form from `project`. */
+export function buildLiveForm(project: MdyStudioProject, options: BuildLiveFormOptions = {}): LiveFormResult {
+  const { mockConfigByImplId = {}, draftStorage, reactivity } = options;
   const diagnostics: StudioDiagnostic[] = [];
   if (project.schema.node !== "group") {
     diagnostics.push({ code: "INVALID_ROOT", severity: "error", message: "Project schema root must be a group", nodeId: project.schema.id });
@@ -168,6 +170,6 @@ export function buildLiveForm(
       }
     : undefined;
 
-  const form = createForm(schema as MdyFormSchema, { validators, draft, history: true });
+  const form = createForm(schema as MdyFormSchema, { validators, draft, history: true, reactivity });
   return { form, diagnostics };
 }

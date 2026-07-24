@@ -9,6 +9,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildLiveForm } from "../dist/index.js";
+import { vanillaReactivity } from "@modyra/core";
 import { createCheckoutProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";
 
 function memoryStorage() {
@@ -30,6 +31,20 @@ test("builds a real form whose initial value matches the checkout fixture exactl
     items: [{ sku: "TSHIRT-BLK-M", qty: 2 }],
     coupon: "",
   });
+});
+
+test("an injected reactivity instance can observe the live form's own signals from outside (needed by a host that wants its own re-render loop, e.g. studio-ui)", async () => {
+  const rx = vanillaReactivity();
+  const { form } = buildLiveForm(createCheckoutProject(), { reactivity: rx });
+  let calls = 0;
+  rx.effect(() => {
+    form.f.shipping.city.value();
+    calls++;
+  });
+  assert.equal(calls, 1);
+  form.f.shipping.city.set("Rome");
+  await rx.flush();
+  assert.equal(calls, 2);
 });
 
 test("required/pattern validators produce real errors, driven by real @modyra/core validator functions", () => {
@@ -73,7 +88,7 @@ test("form validator (crossField): emptying the items array produces a real cros
 // so every wait below must clear debounceMs + the mock's delayMs, not just the mock delay.
 
 test("server mock: default config eventually resolves valid, and pending() is true while it runs", async () => {
-  const { form } = buildLiveForm(createCheckoutProject(), { impl_validate_coupon: { delayMs: 20 } });
+  const { form } = buildLiveForm(createCheckoutProject(), { mockConfigByImplId: { impl_validate_coupon: { delayMs: 20 } } });
   form.f.coupon.set("SAVE10");
   await Promise.resolve();
   assert.equal(form.f.coupon.pending(), true);
@@ -83,7 +98,7 @@ test("server mock: default config eventually resolves valid, and pending() is tr
 });
 
 test("server mock: validValues rejects anything not in the whitelist", async () => {
-  const { form } = buildLiveForm(createCheckoutProject(), { impl_validate_coupon: { delayMs: 5, validValues: ["SAVE10"] } });
+  const { form } = buildLiveForm(createCheckoutProject(), { mockConfigByImplId: { impl_validate_coupon: { delayMs: 5, validValues: ["SAVE10"] } } });
   form.f.coupon.set("BOGUS");
   await new Promise((r) => setTimeout(r, 500));
   assert.ok(form.f.coupon.errors().length > 0);
@@ -94,14 +109,14 @@ test("server mock: validValues rejects anything not in the whitelist", async () 
 });
 
 test("server mock: forceError always fails with the configured message", async () => {
-  const { form } = buildLiveForm(createCheckoutProject(), { impl_validate_coupon: { delayMs: 5, forceError: "Coupon service unavailable" } });
+  const { form } = buildLiveForm(createCheckoutProject(), { mockConfigByImplId: { impl_validate_coupon: { delayMs: 5, forceError: "Coupon service unavailable" } } });
   form.f.coupon.set("ANY");
   await new Promise((r) => setTimeout(r, 500));
   assert.deepEqual(form.f.coupon.errors().map((e) => e.message), ["Coupon service unavailable"]);
 });
 
 test("server mock: forceNetworkFailure rejects instead of resolving, and the engine surfaces it as a real error without crashing", async () => {
-  const { form } = buildLiveForm(createCheckoutProject(), { impl_validate_coupon: { delayMs: 5, forceNetworkFailure: true } });
+  const { form } = buildLiveForm(createCheckoutProject(), { mockConfigByImplId: { impl_validate_coupon: { delayMs: 5, forceNetworkFailure: true } } });
   form.f.coupon.set("ANY");
   await new Promise((r) => setTimeout(r, 500));
   assert.equal(form.f.coupon.pending(), false);
@@ -111,7 +126,7 @@ test("server mock: forceNetworkFailure rejects instead of resolving, and the eng
 test("server mock: a mock slower than the field's own asyncTimeoutMs surfaces a real timeout, not a hang", async () => {
   const project = createCheckoutProject();
   project.schema.children.find((c) => c.name === "coupon").serverValidator.timeoutMs = 30;
-  const { form } = buildLiveForm(project, { impl_validate_coupon: { delayMs: 5000 } });
+  const { form } = buildLiveForm(project, { mockConfigByImplId: { impl_validate_coupon: { delayMs: 5000 } } });
   form.f.coupon.set("X");
   await new Promise((r) => setTimeout(r, 900));
   assert.equal(form.f.coupon.pending(), false);
@@ -125,7 +140,7 @@ test("server mock skipWhen: coupon left empty never triggers the async validator
 });
 
 test("canSubmit becomes true only once every required field is valid and no async validation is pending", async () => {
-  const { form } = buildLiveForm(createCheckoutProject(), { impl_validate_coupon: { delayMs: 5 } });
+  const { form } = buildLiveForm(createCheckoutProject(), { mockConfigByImplId: { impl_validate_coupon: { delayMs: 5 } } });
   assert.equal(form.state.canSubmit(), false);
 
   form.f.shipping.city.set("Rome");
@@ -139,7 +154,7 @@ test("canSubmit becomes true only once every required field is valid and no asyn
 
 test("draft: excludes coupon, persists other fields, and restores on a fresh form built against the same storage", async () => {
   const storage = memoryStorage();
-  const { form: first } = buildLiveForm(createCheckoutProject(), {}, storage);
+  const { form: first } = buildLiveForm(createCheckoutProject(), { draftStorage: storage });
   first.f.shipping.city.set("Rome");
   first.f.coupon.set("SECRET");
   await new Promise((r) => setTimeout(r, 500)); // default draft debounce
@@ -148,7 +163,7 @@ test("draft: excludes coupon, persists other fields, and restores on a fresh for
   assert.ok(raw, "draft must have been written");
   assert.doesNotMatch(raw, /SECRET/, "coupon is excluded from draft (behaviors.draft.exclude)");
 
-  const { form: second } = buildLiveForm(createCheckoutProject(), {}, storage);
+  const { form: second } = buildLiveForm(createCheckoutProject(), { draftStorage: storage });
   assert.equal(second.f.shipping.city.value(), "Rome");
   assert.equal(second.f.coupon.value(), "", "excluded field never restores from draft");
 });
