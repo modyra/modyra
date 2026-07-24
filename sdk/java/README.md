@@ -29,15 +29,19 @@ union exactly.
 The project's tests read the same fixtures under
 `spec/fixtures/dynamic-form/v2/` that `sdk/rust/modyra-contract`'s own
 tests already use — real cross-SDK conformance against a single shared
-source of truth, not a hand-copied approximation.
+source of truth, not a hand-copied approximation. This includes
+`checkout-recursive.json` (a nested group/array schema) and
+`invalid-reference.json` (rejected here for the same unknown-field-
+reference reason Rust rejects it).
 
-**Scope note**: this first version parses the flat field-list envelope
-(a bare JSON array, or `{"version": 1|2, "fields": [...]}`) — the same
-shape `parseDynamicFields()` accepts on the TypeScript side. The v2
-recursive `schema`/`layout`/`rules` envelope (nested groups/arrays,
-declarative visibility rules) is not implemented yet; an input using
-that shape reports a diagnostic explaining the gap rather than silently
-misparsing it.
+**Scope**: parses the flat field-list envelope (a bare JSON array, or
+`{"version": 1|2, "fields": [...]}`, same as `parseDynamicFields()` in
+TS) and the v2 recursive `{"version": 2, "schema": {...}}` envelope
+(nested `group`/`array`/`field` nodes, flattened to dotted/indexed
+paths exactly like `flattenDynamicSchema` in TS, including array-row
+data cascading into a field's `initialValue`). `layout` and `rules` are
+validated against the resolved field names and kept as their raw JSON
+form, same as the TS reference implementation.
 
 ## Build and test
 
