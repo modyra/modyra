@@ -93,13 +93,16 @@ test("live canvas insertion points add fields before, between, and after existin
   await expect(page.locator('.plain-canvas-field')).toHaveCount(2);
   await expect(page.locator('[data-plain-insert="before"]')).toHaveCount(2);
   await expect(page.locator('[data-plain-insert="after"]')).toHaveCount(1);
+  await expect(page.locator('[data-plain-insert="after"] option')).toHaveText([
+    '+ Add field', 'text', 'textarea', 'email', 'number', 'checkbox', 'select', 'multiselect', 'date',
+  ]);
 
-  await page.locator('[data-plain-insert="before"]').nth(1).click();
+  await page.locator('[data-plain-insert="before"]').nth(1).selectOption('number');
   await expect(page.locator('.plain-canvas-field')).toHaveCount(3);
-  await expect(page.locator('.plain-canvas-field').nth(1)).toHaveAttribute('data-field-path', /^text/);
+  await expect(page.locator('.plain-canvas-field').nth(1)).toHaveAttribute('data-field-path', /^number/);
   await expect(page.locator('.plain-canvas-field').nth(1).locator('[data-plain-select]')).toBeFocused();
 
-  await page.locator('[data-plain-insert="after"]').click();
+  await page.locator('[data-plain-insert="after"]').selectOption('email');
   await expect(page.locator('.plain-canvas-field')).toHaveCount(4);
-  await expect(page.locator('.plain-canvas-field').last()).toHaveAttribute('data-field-path', /^text/);
+  await expect(page.locator('.plain-canvas-field').last()).toHaveAttribute('data-field-path', /^email/);
 });

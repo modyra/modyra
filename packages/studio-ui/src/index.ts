@@ -859,15 +859,26 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     const nodeIdByPath = new Map(Array.from(idx.pathByNode, ([nodeId, path]) => [path, nodeId]));
     const fieldRoots = Array.from(plainHost.children).filter((element): element is HTMLElement => element instanceof HTMLElement);
 
-    const insertionPoint = (placement: "before" | "after", nodeId: string): HTMLButtonElement => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "plain-canvas-insert";
-      button.dataset.plainInsert = placement;
-      button.dataset.plainInsertTarget = nodeId;
-      button.setAttribute("aria-label", `Insert text field ${placement} this field`);
-      button.textContent = "+ Add field";
-      return button;
+    const insertionPoint = (placement: "before" | "after", nodeId: string): HTMLSelectElement => {
+      const select = document.createElement("select");
+      select.className = "plain-canvas-insert";
+      select.dataset.plainInsert = placement;
+      select.dataset.plainInsertTarget = nodeId;
+      select.setAttribute("aria-label", `Choose a field type to insert ${placement} this field`);
+
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "+ Add field";
+      select.append(placeholder);
+
+      for (const template of TEMPLATES) {
+        if (template === "group" || template === "array") continue;
+        const option = document.createElement("option");
+        option.value = template;
+        option.textContent = template;
+        select.append(option);
+      }
+      return select;
     };
 
     fields.forEach((field, index) => {
@@ -1090,12 +1101,13 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       }),
     );
 
-    host.querySelectorAll<HTMLButtonElement>("[data-plain-insert]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const targetId = button.dataset.plainInsertTarget;
-        const placementKind = button.dataset.plainInsert;
-        if (!targetId || (placementKind !== "before" && placementKind !== "after")) return;
-        const created = createNodeFromTemplate("text");
+    host.querySelectorAll<HTMLSelectElement>("[data-plain-insert]").forEach((select) =>
+      select.addEventListener("change", () => {
+        const targetId = select.dataset.plainInsertTarget;
+        const placementKind = select.dataset.plainInsert;
+        const template = select.value;
+        if (!targetId || !template || (placementKind !== "before" && placementKind !== "after")) return;
+        const created = createNodeFromTemplate(template);
         selected = created.id;
         commit(
           createInsertCommand(created, { kind: placementKind, targetId }),
