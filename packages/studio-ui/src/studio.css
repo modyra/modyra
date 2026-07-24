@@ -481,6 +481,12 @@ body {
   background: color-mix(in srgb, var(--mdy-indigo) 16%, transparent);
   opacity: 1;
 }
+.palette [data-template][draggable="true"] {
+  cursor: grab;
+}
+.palette [data-template][draggable="true"]:active {
+  cursor: grabbing;
+}
 @media (prefers-reduced-motion: reduce) {
   .plain-canvas-drop {
     transition: none;
