@@ -179,3 +179,30 @@ test("palette fields can be dragged directly onto live canvas insertion points",
   await page.locator('[data-undo]').click();
   await expect(fields).toHaveCount(1);
 });
+
+
+test("live canvas renders groups and accepts palette fields inside them", async ({ page }) => {
+  await page.locator('[data-template="group"]').click();
+  await page.locator('[data-name]').fill('shipping');
+  await page.locator('[data-name]').blur();
+  const groupId = await page.locator('[data-node]').first().getAttribute('data-node');
+  await page.locator('[data-template="text"]').click();
+  await page.keyboard.press(' ');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Enter');
+  await page.locator('[data-canvas-mode="form"]').click();
+
+  const group = page.locator('.plain-canvas-group');
+  await expect(group).toHaveCount(1);
+  await expect(group).toHaveAttribute('data-plain-group', groupId!);
+  await expect(group.locator('.plain-canvas-field')).toHaveCount(1);
+  await group.locator('[data-plain-select]').first().click();
+  await expect(group).toHaveClass(/selected/);
+  await expect(page.locator('[data-name]')).toHaveValue('shipping');
+
+  await page.locator('[data-template="email"]').dragTo(group.locator('.plain-canvas-drop-inside'));
+  await expect(group.locator('.plain-canvas-field')).toHaveCount(2);
+  await expect(group.locator('.plain-canvas-field').last()).toHaveAttribute('data-field-path', /^shipping\.email/);
+  await page.locator('[data-undo]').click();
+  await expect(group.locator('.plain-canvas-field')).toHaveCount(1);
+});
