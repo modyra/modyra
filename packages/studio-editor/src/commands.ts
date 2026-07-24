@@ -471,6 +471,24 @@ export function createUpdateBehaviorCommand(patch: Partial<MdyStudioProject["beh
   };
 }
 
+/** Renames the project itself. The form name is user-facing metadata, not a node, so it needs its own invertible command. */
+export function createRenameProjectCommand(name: string): Command {
+  return {
+    kind: "renameProject",
+    description: `Rename form to ${name}`,
+    affectedIds: [],
+    validate(): StudioDiagnostic[] {
+      return name.trim() ? [] : error("EMPTY_NAME", "Form name cannot be empty");
+    },
+    apply(project: MdyStudioProject): MdyStudioProject {
+      return { ...structuredClone(project), name: name.trim() };
+    },
+    inverse(before: MdyStudioProject): Command {
+      return createRenameProjectCommand(before.name);
+    },
+  };
+}
+
 export function createAddFormValidatorCommand(validator: StudioFormValidator): Command {
   return {
     kind: "addFormValidator",

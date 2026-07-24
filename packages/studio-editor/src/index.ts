@@ -11,6 +11,7 @@ export {
   createUpdateValidatorCommand,
   createSetFieldOptionsCommand,
   createUpdateBehaviorCommand,
+  createRenameProjectCommand,
   createAddFormValidatorCommand,
   createRemoveFormValidatorCommand,
   createUpdateFormValidatorCommand,
