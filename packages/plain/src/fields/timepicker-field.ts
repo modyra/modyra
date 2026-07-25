@@ -24,7 +24,7 @@ export function renderTimepickerField(
 ): () => void {
   const controller = createTimepickerFieldController({ widgetId: f.name, handle, format }, reactivity);
 
-  const shell = buildFieldShell(f.label);
+  const shell = buildFieldShell(f.label, "timepicker");
   const trigger = el("button") as HTMLButtonElement;
   trigger.type = "button";
   const dialog = el("div") as HTMLDivElement;

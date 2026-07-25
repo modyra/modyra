@@ -21,7 +21,7 @@ export function renderMultiselectField(
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
   const controller = createMultiselectFieldController({ widgetId: f.name, handle, options, keyFor, mode }, reactivity);
 
-  const shell = buildFieldShell(f.label);
+  const shell = buildFieldShell(f.label, "multiselect");
   const search = el("input") as HTMLInputElement;
   search.type = "search";
   search.placeholder = "Filter…";

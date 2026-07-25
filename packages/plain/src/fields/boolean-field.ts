@@ -16,7 +16,7 @@ export function renderBooleanField(
   const variant = f.kind === "toggle" ? "switch" : "checkbox";
   const controller = createBooleanFieldController({ widgetId: f.name, handle, variant }, reactivity);
 
-  const shell = buildFieldShell(f.label);
+  const shell = buildFieldShell(f.label, f.kind === "toggle" ? "toggle" : "checkbox");
   const input = el("input") as HTMLInputElement;
   input.type = "checkbox";
   insertControl(shell, input);

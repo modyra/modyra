@@ -38,7 +38,7 @@ export function renderSelectField(
     reactivity,
   );
 
-  const shell = buildFieldShell(f.label);
+  const shell = buildFieldShell(f.label, "select");
   const trigger = el("input") as HTMLInputElement;
   trigger.type = "text";
   trigger.autocomplete = "off";

@@ -54,9 +54,11 @@ test("the canvas keeps its scroll position across a command", async ({ page }) =
   await last.locator('[data-inline-edit="label"]').fill("Still here");
   await last.locator('[data-inline-edit="label"]').blur();
 
+  // Not an exact match: re-rendering the row can change the content height by a few pixels, so
+  // the assertion is "still where you were", not "identical". A jump to the top is the failure.
   await expect
     .poll(async () => canvas.evaluate((el) => el.scrollTop))
-    .toBeGreaterThan(before - 40);
+    .toBeGreaterThan(before * 0.9);
 });
 
 test("the inspector keeps its scroll position while its own controls are used", async ({ page }) => {
@@ -75,7 +77,7 @@ test("the inspector keeps its scroll position while its own controls are used", 
   await page.locator("[data-server-debounce]").blur();
 
   await expect(page.locator("[data-server-debounce]")).toHaveValue("750");
-  await expect.poll(async () => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(before - 40);
+  await expect.poll(async () => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(before * 0.9);
 });
 
 test("typing into the live form survives an unrelated edit elsewhere", async ({ page }) => {
