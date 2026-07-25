@@ -6,7 +6,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildLiveForm } from "../../studio-preview/dist/index.js";
+import { buildLiveForm, vanillaReactivity } from "../../studio-preview/dist/index.js";
 import { previewBodyMarkup, previewFieldMarkup, previewNodeMarkup, getPreviewHandle, defaultRowValue } from "../dist/index.js";
 import { createCheckoutProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";
 
@@ -99,4 +99,22 @@ test("defaultRowValue builds a new array row from the item schema's own field de
   const project = createCheckoutProject();
   const itemsNode = project.schema.children.find((c) => c.name === "items");
   assert.deepEqual(defaultRowValue(itemsNode.item), { sku: "", qty: 1 });
+});
+
+test("preview renders a column row with the same grid the canvas uses", async () => {
+  const project = createCheckoutProject();
+  // country and coupon are both root-level fields in the checkout fixture.
+  project.presentation = {
+    layout: [{ kind: "columns", id: "row", columns: [[{ nodeId: "nd_country" }], [{ nodeId: "nd_coupon" }]] }],
+  };
+  const { form } = buildLiveForm(project, { reactivity: vanillaReactivity() });
+
+  const markup = previewBodyMarkup(project, form, {});
+
+  assert.match(markup, /class="mdy-layout-columns"/);
+  assert.match(markup, /--mdy-layout-column-count:2/);
+  assert.equal(markup.match(/class="mdy-layout-column"/g).length, 2);
+  // Both fields appear exactly once — arranged, not duplicated alongside the row.
+  assert.equal(markup.match(/data-preview-field="country"/g).length, 1);
+  assert.equal(markup.match(/data-preview-field="coupon"/g).length, 1);
 });
