@@ -44,12 +44,21 @@ const FIELD_KIND_MAP: Record<FieldNode["fieldKind"], MdyDynamicField["kind"]> = 
   text: "text",
   textarea: "textarea",
   email: "email",
+  password: "password",
   number: "number",
+  slider: "slider",
   checkbox: "checkbox",
+  toggle: "toggle",
   select: "select",
+  radio: "radio",
+  segmented: "segmented",
   multiselect: "multiselect",
   date: "datepicker",
+  time: "timepicker",
 };
+
+/** Contract v2's MdyDynamicOptionsField kinds — all of them require a non-empty option list. */
+const OPTION_FIELD_KINDS: ReadonlySet<FieldNode["fieldKind"]> = new Set(["select", "radio", "segmented", "multiselect"]);
 
 function mapValidators(node: FieldNode, diagnostics: StudioDiagnostic[]): MdyDynamicValidators | undefined {
   const out: Record<string, unknown> = {};
@@ -103,7 +112,7 @@ function mapFieldNode(node: FieldNode, diagnostics: StudioDiagnostic[]): MdyDyna
     });
   }
 
-  if (node.fieldKind === "select" || node.fieldKind === "multiselect") {
+  if (OPTION_FIELD_KINDS.has(node.fieldKind)) {
     if (!node.options?.length) {
       // studio-model's own normalize() already raises SELECT_WITHOUT_OPTIONS for this;
       // here it additionally means the field can't be compiled into a Contract at all.

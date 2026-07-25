@@ -11,8 +11,12 @@ import {
   STUDIO_VERSION,
   type MdyStudioProject,
   type StudioDiagnostic,
+  type StudioFieldKind,
   type StudioSchemaNode,
 } from "./types.js";
+
+/** Kinds whose value is picked from a declared list — an empty list makes them unusable. */
+const OPTION_FIELD_KINDS: ReadonlySet<StudioFieldKind> = new Set(["select", "radio", "segmented", "multiselect"]);
 
 /** Thrown for structurally invalid input — not a project shape at all. */
 export class StudioModelError extends Error {
@@ -150,7 +154,7 @@ function diagnoseProject(project: MdyStudioProject, idx: StudioIndexes): StudioD
       if (node.serverValidator) {
         checkImplementationRef(node.serverValidator.implementationRef, node.serverValidator.id);
       }
-      if ((node.fieldKind === "select" || node.fieldKind === "multiselect") && !node.options?.length) {
+      if (OPTION_FIELD_KINDS.has(node.fieldKind) && !node.options?.length) {
         diagnostics.push({
           code: "SELECT_WITHOUT_OPTIONS",
           severity: "error",
