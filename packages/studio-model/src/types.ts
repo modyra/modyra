@@ -10,15 +10,26 @@
 
 export const STUDIO_VERSION = 1 as const;
 
+/**
+ * Every kind here must have a Contract v2 equivalent in studio-contract's
+ * FIELD_KIND_MAP — the value type drives validator compatibility, the kind only
+ * drives which control renders.
+ */
 export type StudioFieldKind =
   | "text"
   | "textarea"
   | "email"
+  | "password"
   | "number"
+  | "slider"
   | "checkbox"
+  | "toggle"
   | "select"
+  | "radio"
+  | "segmented"
   | "multiselect"
-  | "date";
+  | "date"
+  | "time";
 
 export type StudioValueType = "string" | "number" | "boolean" | "date" | "string[]";
 
