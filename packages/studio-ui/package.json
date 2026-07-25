@@ -19,7 +19,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && cp src/studio.css dist/studio.css && mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
+    "build": "tsc -p tsconfig.json && node build-css.mjs",
     "test": "npm run build && node --import ./test/support/register.mjs --test test/*.test.mjs"
   },
   "dependencies": {
@@ -32,7 +32,8 @@
     "@modyra/studio-target-core": "workspace:*",
     "@modyra/studio-target-angular": "workspace:*",
     "@modyra/studio-target-react": "workspace:*",
-    "@modyra/studio-preview": "workspace:*"
+    "@modyra/studio-preview": "workspace:*",
+    "@modyra/styles": "workspace:*"
   },
   "sideEffects": [
     "*.css"
