@@ -77,7 +77,6 @@ test("Live form mounts @modyra/plain while Structure remains the authoring fallb
   await page.locator('[data-name]').fill("customerName");
   await page.locator('[data-name]').blur();
 
-  await page.locator('[data-canvas-mode="form"]').click();
   await expect(page.locator('[data-canvas-surface="form"]')).toBeVisible();
   const input = page.locator('[data-plain-canvas] input[type="text"]').first();
   await expect(input).toBeVisible();
@@ -85,8 +84,7 @@ test("Live form mounts @modyra/plain while Structure remains the authoring fallb
   await expect(input).toHaveValue("Ada");
   await expect(input).toBeFocused();
 
-  await page.locator('[data-canvas-mode="structure"]').click();
-  await expect(page.locator('.tree-node')).toHaveCount(1);
+  await expect(page.locator('.outline .tree-node')).toHaveCount(1);
   await expect(page.locator('[data-name]')).toHaveValue("customerName");
 });
 
@@ -94,24 +92,21 @@ test("blocking Contract diagnostics produce an editor-safe live-form placeholder
   await page.locator('[data-template="select"]').click();
   await page.locator('details[data-section="options"] summary').click();
   await page.locator('[data-remove-option="0"]').click();
-  await page.locator('[data-canvas-mode="form"]').click();
 
   await expect(page.locator('.plain-canvas-unavailable')).toContainText("blocking Contract diagnostics");
   await expect(page.locator('[data-plain-canvas]')).toHaveCount(0);
 
-  await page.locator('[data-canvas-mode="structure"]').click();
-  await expect(page.locator('.tree-node .indicator.issue')).toHaveCount(1);
+  await expect(page.locator('.outline .tree-node .indicator.issue')).toHaveCount(1);
 });
 
 test("live canvas fields expose stable node IDs and select the matching Inspector node", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
-  const nodeId = await page.locator('[data-node]').getAttribute('data-node');
+  const nodeId = await page.locator('.plain-canvas-field[data-node]').getAttribute('data-node');
   await page.locator('[data-name]').fill('customerName');
   await page.locator('[data-name]').blur();
   await page.locator('[data-label]').fill('Customer name');
   await page.locator('[data-label]').blur();
 
-  await page.locator('[data-canvas-mode="form"]').click();
   const field = page.locator('.plain-canvas-field');
   await expect(field).toHaveAttribute('data-node', nodeId!);
   await expect(field).toHaveAttribute('data-field-path', 'customerName');
@@ -128,7 +123,6 @@ test("live canvas duplicate and delete actions use the existing command history"
   await page.locator('[data-template="text"]').click();
   await page.locator('[data-name]').fill('customerName');
   await page.locator('[data-name]').blur();
-  await page.locator('[data-canvas-mode="form"]').click();
 
   await expect(page.locator('.plain-canvas-field')).toHaveCount(1);
   await page.locator('.plain-canvas-field [data-duplicate]').click();
@@ -151,7 +145,6 @@ test("live canvas insertion points add fields before, between, and after existin
   await page.locator('[data-template="email"]').click();
   await page.locator('[data-name]').fill('email');
   await page.locator('[data-name]').blur();
-  await page.locator('[data-canvas-mode="form"]').click();
 
   await expect(page.locator('.plain-canvas-field')).toHaveCount(2);
   await expect(page.locator('[data-plain-insert="before"]')).toHaveCount(2);
@@ -180,7 +173,6 @@ test("live canvas move controls reorder fields through command history", async (
   await page.locator('[data-template="email"]').click();
   await page.locator('[data-name]').fill('email');
   await page.locator('[data-name]').blur();
-  await page.locator('[data-canvas-mode="form"]').click();
 
   const fields = page.locator('.plain-canvas-field');
   await expect(fields).toHaveCount(2);
@@ -209,7 +201,6 @@ test("live canvas pointer drag reorders fields and remains undoable", async ({ p
   await page.locator('[data-template="email"]').click();
   await page.locator('[data-name]').fill('email');
   await page.locator('[data-name]').blur();
-  await page.locator('[data-canvas-mode="form"]').click();
 
   const fields = page.locator('.plain-canvas-field');
   await expect(fields.nth(0)).toHaveAttribute('data-field-path', 'firstName');
@@ -230,7 +221,6 @@ test("palette fields can be dragged directly onto live canvas insertion points",
   await page.locator('[data-template="text"]').click();
   await page.locator('[data-name]').fill('firstName');
   await page.locator('[data-name]').blur();
-  await page.locator('[data-canvas-mode="form"]').click();
 
   const fields = page.locator('.plain-canvas-field');
   await expect(fields).toHaveCount(1);
@@ -255,7 +245,6 @@ test("live canvas renders groups and accepts palette fields inside them", async 
   await page.keyboard.press(' ');
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Enter');
-  await page.locator('[data-canvas-mode="form"]').click();
 
   const group = page.locator('.plain-canvas-group');
   await expect(group).toHaveCount(1);
@@ -282,7 +271,7 @@ test("live canvas moves existing fields between a group and the form root", asyn
   await page.locator('[data-name]').blur();
   // Nesting via keyboard is a Structure-outline gesture; the assertions below are on the live form.
   await showStructure(page);
-  await page.locator('.tree-node [data-node]').last().focus();
+  await page.locator('.outline .tree-node [data-node]').last().focus();
   await page.keyboard.press(' ');
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Enter');
@@ -334,7 +323,6 @@ test("live canvas drags groups to reorder and nest them", async ({ page }) => {
   await page.locator('[data-template="group"]').click();
   await page.locator('[data-name]').fill('shipping');
   await page.locator('[data-name]').blur();
-  await page.locator('[data-canvas-mode="form"]').click();
 
   const groups = page.locator('.plain-canvas-group');
   await expect(groups).toHaveCount(2);
@@ -383,7 +371,6 @@ test("live canvas drags groups to reorder and nest them", async ({ page }) => {
 test("live canvas group controls reorder nest and return groups to root", async ({ page }) => {
   await page.locator('[data-template="group"]').click(); await page.locator('[data-name]').fill('billing'); await page.locator('[data-name]').blur();
   await page.locator('[data-template="group"]').click(); await page.locator('[data-name]').fill('shipping'); await page.locator('[data-name]').blur();
-  await page.locator('[data-canvas-mode="form"]').click();
   const groups = page.locator('.plain-canvas-group');
   const billingId = await groups.nth(0).getAttribute('data-plain-group');
 
@@ -432,7 +419,6 @@ test("live canvas field controls move fields into groups and back to root", asyn
   await page.locator('[data-template="text"]').click();
   await page.locator('[data-name]').fill('city');
   await page.locator('[data-name]').blur();
-  await page.locator('[data-canvas-mode="form"]').click();
 
   const field = page.locator('.plain-canvas-field');
   const moveInto = field.getByRole('combobox', { name: 'Move city into group' });
@@ -455,7 +441,6 @@ test("live canvas renders empty arrays and selects them in the Inspector", async
   await page.locator('[data-name]').fill('items');
   await page.locator('[data-name]').blur();
   const arrayId = await page.locator('[data-node]').first().getAttribute('data-node');
-  await page.locator('[data-canvas-mode="form"]').click();
 
   const array = page.locator('.plain-canvas-array');
   await expect(array).toHaveCount(1);
@@ -479,7 +464,6 @@ test("live canvas array controls add and remove initial rows through history", a
   await page.locator('[data-template="array"]').click();
   await page.locator('[data-name]').fill('items');
   await page.locator('[data-name]').blur();
-  await page.locator('[data-canvas-mode="form"]').click();
 
   const array = page.locator('.plain-canvas-array');
   const add = array.getByRole('button', { name: 'Add initial row to items' });
@@ -516,7 +500,6 @@ test("live canvas completes array authoring with row and container controls", as
   const groupId = await page.locator('[data-node]').first().getAttribute('data-node');
   await page.locator('[data-template="array"]').click();
   await page.locator('[data-name]').fill('items'); await page.locator('[data-name]').blur();
-  await page.locator('[data-canvas-mode="form"]').click();
   const array = page.locator('.plain-canvas-array');
   await array.getByRole('button', { name: 'Add initial row to items' }).click();
   await array.getByRole('button', { name: 'Add initial row to items' }).click();
