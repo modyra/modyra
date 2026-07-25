@@ -35,7 +35,7 @@ test("a select field with no options: tree shows the issue marker, tab badge is 
   await page.locator('[data-goto-node]').first().click();
   // "Go to" must switch back to the Field tab and select the offending node.
   await expect(page.locator('[data-inspector-tab="node"][aria-selected="true"]')).toHaveCount(1);
-  await expect(page.locator("[data-name]")).not.toHaveValue("New text");
+  await expect(page.locator("[data-name]")).not.toHaveValue("Text");
 });
 
 test("quick-fix: 'Add a default option' resolves the select-without-options error", async ({ page }) => {

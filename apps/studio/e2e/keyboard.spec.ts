@@ -22,7 +22,7 @@ test("adding an element via keyboard moves focus onto the new node (not stranded
   await addFromPalette(page, "text");
   const focused = page.locator("[data-node]:focus");
   await expect(focused).toHaveCount(1);
-  await expect(focused).toContainText("New text");
+  await expect(focused).toContainText("Text");
 });
 
 test("keyboard-only: compose a group with a field moved inside it (no mouse)", async ({ page }) => {
@@ -32,16 +32,16 @@ test("keyboard-only: compose a group with a field moved inside it (no mouse)", a
   // The new text field has focus (previous assertion covers this); pick it up and enter the
   // group that precedes it as a sibling — the app's documented keyboard equivalent for drag.
   await page.keyboard.press(" ");
-  await expect(page.locator("footer")).toContainText("Picked up New text");
+  await expect(page.locator("footer")).toContainText("Picked up Text");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("Enter");
   await expect(page.locator("footer")).toContainText("Drop completed");
 
   const group = page.locator(".tree-node", { hasText: "group" }).first();
-  await expect(group.locator(".tree-node", { hasText: "New text" })).toHaveCount(1);
+  await expect(group.locator(".tree-node", { hasText: "Text" })).toHaveCount(1);
 
   // Focus must still be on the moved node after the whole pick-up/move/drop sequence.
-  await expect(page.locator("[data-node]:focus")).toContainText("New text");
+  await expect(page.locator("[data-node]:focus")).toContainText("Text");
 });
 
 test("keyboard-only: reorder two siblings with Arrow keys, focus follows the moved item", async ({ page }) => {
@@ -53,8 +53,8 @@ test("keyboard-only: reorder two siblings with Arrow keys, focus follows the mov
   await page.keyboard.press("Enter");
 
   const rootLabels = await page.locator(".tree > .tree-node > .node .select").allInnerTexts();
-  expect(rootLabels[0]).toContain("New email");
-  await expect(page.locator("[data-node]:focus")).toContainText("New email");
+  expect(rootLabels[0]).toContain("Email");
+  await expect(page.locator("[data-node]:focus")).toContainText("Email");
 });
 
 test("Escape cancels a pick-up without losing focus", async ({ page }) => {
@@ -62,7 +62,7 @@ test("Escape cancels a pick-up without losing focus", async ({ page }) => {
   await page.keyboard.press(" ");
   await page.keyboard.press("Escape");
   await expect(page.locator("footer")).toContainText("Move cancelled");
-  await expect(page.locator("[data-node]:focus")).toContainText("New text");
+  await expect(page.locator("[data-node]:focus")).toContainText("Text");
 });
 
 test("deleting a node via keyboard moves focus to the root, not off the page", async ({ page }) => {

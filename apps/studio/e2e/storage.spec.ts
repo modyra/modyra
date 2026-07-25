@@ -73,7 +73,7 @@ test("export via the JSON target, then Import that same file back in, round-trip
 
   await page.locator('[data-import-button]').locator("input[type=file]").setInputFiles(path);
   await expect(page.locator(".tree-node")).toHaveCount(1);
-  await expect(page.locator('[data-select]').first().locator(".node-label")).toContainText("New text");
+  await expect(page.locator('[data-select]').first().locator(".node-label")).toContainText("Text");
 
   // Re-selecting the imported field: the required validator survived the round-trip.
   await page.locator("[data-select]").first().click();

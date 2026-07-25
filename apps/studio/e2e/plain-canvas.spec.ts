@@ -156,14 +156,16 @@ test("live canvas insertion points add fields before, between, and after existin
   await expect(page.locator('.plain-canvas-field')).toHaveCount(2);
   await expect(page.locator('[data-plain-insert="before"]')).toHaveCount(2);
   await expect(page.locator('[data-plain-insert="after"]')).toHaveCount(1);
+  // Every non-structure kind the Contract can render, labelled the way the palette labels it.
   await expect(page.locator('[data-plain-insert="after"] option')).toHaveText([
-    '+ Add field', 'text', 'textarea', 'email', 'number', 'checkbox', 'select', 'multiselect', 'date',
+    '+ Add field', 'Text', 'Long text', 'Email', 'Password', 'Number', 'Slider', 'Date', 'Time',
+    'Checkbox', 'Toggle', 'Dropdown', 'Radio group', 'Segmented', 'Multi-select',
   ]);
 
   await page.locator('[data-plain-insert="before"]').nth(1).selectOption('number');
   await expect(page.locator('.plain-canvas-field')).toHaveCount(3);
   await expect(page.locator('.plain-canvas-field').nth(1)).toHaveAttribute('data-field-path', /^number/);
-  await expect(page.locator('.plain-canvas-field').nth(1).locator('[data-plain-select]')).toBeFocused();
+  await expect(page.locator('.plain-canvas-field').nth(1).locator('[data-inline-edit="label"]')).toBeFocused();
 
   await page.locator('[data-plain-insert="after"]').selectOption('email');
   await expect(page.locator('.plain-canvas-field')).toHaveCount(4);
@@ -346,7 +348,7 @@ test("live canvas drags groups to reorder and nest them", async ({ page }) => {
   expect(billingId).not.toBeNull();
   expect(shippingId).not.toBeNull();
 
-  await groups.nth(1).dragTo(
+  await groups.nth(1).locator(':scope > legend > .plain-canvas-grip').dragTo(
     page.locator(`.plain-canvas-drop[data-before="${billingId}"]`),
   );
   await expect(groups.nth(0)).toHaveAttribute(
@@ -364,7 +366,7 @@ test("live canvas drags groups to reorder and nest them", async ({ page }) => {
   await expect(billing).toHaveCount(1);
   await expect(shipping).toHaveCount(1);
 
-  await shipping.dragTo(
+  await shipping.locator(':scope > legend > .plain-canvas-grip').dragTo(
     billing.locator(':scope > .plain-canvas-group-body > .plain-canvas-drop-inside'),
   );
   await expect(billing.locator(':scope > .plain-canvas-group-body > .plain-canvas-group')).toHaveCount(1);
@@ -459,7 +461,7 @@ test("live canvas renders empty arrays and selects them in the Inspector", async
   await expect(array).toHaveCount(1);
   await expect(array).toHaveAttribute('data-plain-array', arrayId!);
   await expect(array).toHaveAttribute('data-array-path', 'items');
-  await expect(array.locator('.plain-canvas-array-count')).toHaveText('0 initial rows');
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('0 rows');
   await expect(array.locator('.plain-canvas-array-empty')).toHaveText('No initial rows');
 
   const selectArray = array.getByRole('button', {
@@ -485,25 +487,25 @@ test("live canvas array controls add and remove initial rows through history", a
   await expect(remove).toBeDisabled();
 
   await add.click();
-  await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 initial row');
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 row');
   await expect(array.locator('.plain-canvas-array-row')).toHaveCount(1);
   await expect(add).toBeFocused();
   await expect(remove).toBeEnabled();
 
   await add.click();
-  await expect(array.locator('.plain-canvas-array-count')).toHaveText('2 initial rows');
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('2 rows');
   await expect(array.locator('.plain-canvas-array-row')).toHaveCount(2);
 
   await remove.click();
-  await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 initial row');
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 row');
   await expect(remove).toBeFocused();
 
   await page.locator('[data-undo]').click();
-  await expect(array.locator('.plain-canvas-array-count')).toHaveText('2 initial rows');
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('2 rows');
   await page.locator('[data-undo]').click();
-  await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 initial row');
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 row');
   await page.locator('[data-undo]').click();
-  await expect(array.locator('.plain-canvas-array-count')).toHaveText('0 initial rows');
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('0 rows');
   await expect(array.locator('.plain-canvas-array-empty')).toHaveText('No initial rows');
 });
 
