@@ -747,30 +747,23 @@ body {
   background: var(--mdy-indigo);
   border-radius: 3px;
 }
+/* A hairline with a label on it, not a control: the gap between two fields should read as a
+   gap, and only offer to become an insertion point once the pointer is in the form. */
 .plain-canvas-form .plain-canvas-insert {
-  height: 24px;
+  height: 18px;
   min-height: 0;
-  padding: 0 10px;
-  border-width: 1px;
-  border-style: dashed;
-  border-color: transparent;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 5px;
   line-height: 1.4;
   overflow: visible;
   text-align: center;
   text-align-last: center;
 }
-.plain-canvas-form:hover .plain-canvas-insert {
-  border-color: var(--mdy-border);
-}
 .plain-canvas-form .plain-canvas-insert:hover,
 .plain-canvas-form .plain-canvas-insert:focus-visible {
-  border-color: var(--mdy-indigo);
-  background: color-mix(in srgb, var(--mdy-indigo) 10%, var(--mdy-panel));
-  color: var(--mdy-text);
-}
-.plain-canvas-form:hover .plain-canvas-insert,
-.plain-canvas-form .plain-canvas-insert:focus-visible {
-  border-width: 1px;
+  background: color-mix(in srgb, var(--mdy-indigo) 10%, transparent);
+  color: var(--mdy-indigo);
 }
 /* The form renders its own <label>; in the canvas the editable one above the
    control takes its place visually, while this stays for screen readers so the
@@ -887,9 +880,9 @@ body {
 }
 .plain-canvas-field {
   position: relative;
-  padding: 13px 12px 11px;
+  padding: 6px 10px 7px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 .plain-canvas-field:hover {
   border-color: color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-border));
@@ -986,7 +979,7 @@ body {
 /* Stays out of the way until the gap between two fields is hovered. */
 .plain-canvas-insert {
   display: block;
-  width: min(100%, 220px) !important;
+  width: min(100%, 150px) !important;
   margin: 0 auto;
   background: transparent;
   color: var(--mdy-text-muted);
@@ -1129,101 +1122,47 @@ body {
   font-size: 12px;
   font-weight: 600;
 }
-.plain-canvas-form input,
-.plain-canvas-form textarea,
-.plain-canvas-form select,
-.plain-canvas-form button {
+/* Studio's own chrome inside the canvas — inline editors, the kind chip, row actions, the
+   between-field inserters. Controls the *form* renders live inside .mdy-input-wrapper and are
+   the theme's to style; this stylesheet is unlayered, so without the exclusion these blanket
+   rules would silently win over it. That collision is also what gave each inserter ~28px of
+   padding and border it never wanted. The exclusion is wrapped in :where() so it contributes
+   no specificity — at its own weight it outranks .plain-canvas-inline and frames the inline
+   label editors, which are exactly the chrome these rules exist for. */
+.plain-canvas-form input:not(:where(.mdy-input-wrapper *)),
+.plain-canvas-form textarea:not(:where(.mdy-input-wrapper *)),
+.plain-canvas-form select:not(:where(.mdy-input-wrapper *)),
+.plain-canvas-form button:not(:where(.mdy-input-wrapper *)) {
   width: 100%;
   min-width: 0;
 }
-.plain-canvas-form input,
-.plain-canvas-form textarea,
-.plain-canvas-form select {
+/* `.plain-canvas-insert` is excluded: it is a bare affordance between two fields, not a
+   control to fill in, and a full control frame on it is what made the gaps read as boxes. */
+.plain-canvas-form input:not(:where(.mdy-input-wrapper *)),
+.plain-canvas-form textarea:not(:where(.mdy-input-wrapper *)),
+.plain-canvas-form select:not(:where(.mdy-input-wrapper *, .plain-canvas-insert)) {
   padding: 9px 10px;
   border: 1px solid var(--mdy-border);
   border-radius: 6px;
   background: var(--mdy-bg);
   color: var(--mdy-text);
 }
-/* The theme lays out .mdy-input-wrapper as a flex row and leaves the control's own frame to
-   the component CSS the mature renderers ship. plain has no CSS of its own, so without this
-   the input is present and 600px wide but completely invisible — no border, no background. */
-.plain-canvas-form .mdy-input-wrapper {
-  width: 100%;
-  border: 1px solid var(--mdy-border);
-  border-radius: 6px;
-  background: var(--mdy-bg);
-}
-.plain-canvas-form .mdy-input-wrapper--error {
-  border-color: var(--mdy-danger-text);
-}
-.plain-canvas-form .mdy-input-wrapper--disabled {
-  opacity: 0.55;
-}
-.plain-canvas-form .mdy-input-wrapper__inliner {
-  width: 100%;
-}
-.plain-canvas-form .mdy-input-wrapper input,
-.plain-canvas-form .mdy-input-wrapper textarea,
-.plain-canvas-form .mdy-input-wrapper select {
-  border: 0;
-  border-radius: inherit;
-  background: transparent;
-}
-.plain-canvas-form .mdy-input-wrapper:focus-within {
-  border-color: var(--mdy-indigo);
-  outline: 2px solid var(--mdy-focus-ring);
-}
-.plain-canvas-form textarea {
-  min-height: 96px;
-  resize: vertical;
-}
-.plain-canvas-form input[type="checkbox"],
+/* The wrapper frame, its error/disabled states and the control reset used to live here,
+   compensating for a theme that shipped structure without colour. @modyra/styles' modern
+   theme owns all of it now (packages/styles/src/modyra-modern.css), for Preview and the
+   Astro embed too rather than only for this canvas. */
+/* Textarea sizing and the checkbox/switch controls come from the theme now. Radio inputs
+   still do not — the option renderers are the next batch — so they keep their reset here. */
 .plain-canvas-form input[type="radio"] {
   width: auto;
   justify-self: start;
   margin: 2px 0;
 }
-/* `toggle` is a switch, and the controller already says so by putting `mdy-switch`
-   on the input (checkbox gets `mdy-checkbox`) — the same class the shipped
-   @modyra/styles themes target. Studio renders it as a switch rather than leaving a
-   toggle looking identical to a checkbox. */
-.plain-canvas-form input.mdy-switch {
-  appearance: none;
-  width: 34px;
-  height: 20px;
-  padding: 0;
-  border: 1px solid var(--mdy-border);
-  border-radius: 999px;
-  background: var(--mdy-bg);
-  cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
-}
-.plain-canvas-form input.mdy-switch::after {
-  content: "";
-  display: block;
-  width: 14px;
-  height: 14px;
-  margin: 2px;
-  border-radius: 50%;
-  background: var(--mdy-text-muted);
-  transition: transform 120ms ease, background 120ms ease;
-}
-.plain-canvas-form input.mdy-switch:checked {
-  border-color: var(--mdy-indigo);
-  background: color-mix(in srgb, var(--mdy-indigo) 60%, transparent);
-}
-.plain-canvas-form input.mdy-switch:checked::after {
-  transform: translateX(14px);
-  background: white;
-}
-@media (prefers-reduced-motion: reduce) {
-  .plain-canvas-form input.mdy-switch,
-  .plain-canvas-form input.mdy-switch::after {
-    transition: none;
-  }
-}
-.plain-canvas-form ul {
+/* The switch and checkbox controls, and the frameless wrapper the boolean renderers use,
+   now come from the modern theme — see the note on .mdy-input-wrapper above. */
+/* The field's error list. Scoped away from the wrapper because a select's dropdown is also a
+   <ul> in there, and this rule was painting its options coral at 11px. */
+.plain-canvas-form ul:not(:where(.mdy-input-wrapper *)) {
   margin: 0;
   padding-left: 18px;
   color: var(--mdy-coral);
