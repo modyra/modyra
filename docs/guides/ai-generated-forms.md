@@ -174,8 +174,9 @@ onSubmitted(event: { value: Record<string, unknown> }): void {
   `useMdyTimepickerField` from `@modyra/react`, or your own controls). On
   Vue/Lit, the contract and `parseDynamicFields()` work the
   same — map each `MdyDynamicField.kind` to your own controls over the
-  headless handles (see [Usage modes](usage-modes.md)). Neither renderer
-  applies `layout`/`rules` yet — both are flat-fields-only today.
+  headless handles (see [Usage modes](usage-modes.md)). `@modyra/plain`
+  applies `layout`; the React and Angular renderers are still
+  flat-fields-only, and no renderer applies `rules` yet.
 - CMS/storage use case: same contract, same parser — see
   [UI toolkit — dynamic forms](ui-toolkit.md) for the versioning notes.
 - Keep the schema of *your* domain out of the prompt when possible: a
@@ -188,6 +189,13 @@ Version 2 preserves the v1 field contract and adds optional `layout` and
 `rules`. Both remain data-only: rules use a fixed operator allowlist and may
 only reference declared field names. There are no expressions, callbacks,
 HTML fragments, or arbitrary URLs.
+
+A layout node is a `section` (with `children`) or a `columns` row (with
+`columns`). A slot holds either a field name or another layout node, so a
+column row can sit inside a section. Two constraints the parser enforces:
+nesting is capped at `MDY_LAYOUT_MAX_DEPTH` (6), and **a field may be placed
+only once** — the same field in two slots would render twice and bind one
+value to both controls.
 
 ```json
 {
@@ -208,7 +216,10 @@ HTML fragments, or arbitrary URLs.
     {
       "kind": "section",
       "id": "identity",
-      "children": ["customerType", "vatNumber"]
+      "children": [
+        "customerType",
+        { "kind": "columns", "id": "vat", "columns": [["vatNumber"], []] }
+      ]
     }
   ],
   "rules": [
