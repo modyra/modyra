@@ -68,18 +68,66 @@ targetRegistry.register(coreTargetManifest);
 targetRegistry.register(angularTargetManifest);
 targetRegistry.register(reactTargetManifest);
 
-const TEMPLATES = [
-  "text",
-  "textarea",
-  "email",
-  "number",
-  "checkbox",
-  "select",
-  "multiselect",
-  "date",
-  "group",
-  "array",
-] as const;
+/**
+ * The insertable catalog, in one place: the floating toolbar renders it, the
+ * insert palette filters it, and `createNodeFromTemplate` builds from it. `terms`
+ * are extra words the palette matches on, so "dropdown" finds `select` and
+ * "phone"/"url" find `text` — the point of typing to insert is that you should
+ * not have to know Modyra's own vocabulary.
+ */
+interface FieldTemplate {
+  readonly id: string;
+  readonly label: string;
+  readonly group: "Fields" | "Choice" | "Structure";
+  readonly terms: readonly string[];
+}
+
+const TEMPLATE_CATALOG: readonly FieldTemplate[] = [
+  { id: "text", label: "Text", group: "Fields", terms: ["input", "string", "name", "phone", "url"] },
+  { id: "textarea", label: "Long text", group: "Fields", terms: ["multiline", "paragraph", "notes", "message"] },
+  { id: "email", label: "Email", group: "Fields", terms: ["mail", "address"] },
+  { id: "password", label: "Password", group: "Fields", terms: ["secret", "secure"] },
+  { id: "number", label: "Number", group: "Fields", terms: ["numeric", "amount", "quantity", "price"] },
+  { id: "slider", label: "Slider", group: "Fields", terms: ["range", "scale"] },
+  { id: "date", label: "Date", group: "Fields", terms: ["calendar", "day", "birthday"] },
+  { id: "time", label: "Time", group: "Fields", terms: ["clock", "hour", "minute"] },
+  { id: "checkbox", label: "Checkbox", group: "Choice", terms: ["boolean", "tick", "agree", "consent"] },
+  { id: "toggle", label: "Toggle", group: "Choice", terms: ["switch", "boolean", "on off"] },
+  { id: "select", label: "Dropdown", group: "Choice", terms: ["select", "combobox", "picker", "list"] },
+  { id: "radio", label: "Radio group", group: "Choice", terms: ["option", "single choice", "one of"] },
+  { id: "segmented", label: "Segmented", group: "Choice", terms: ["tabs", "buttons", "single choice"] },
+  { id: "multiselect", label: "Multi-select", group: "Choice", terms: ["tags", "many", "multiple choice"] },
+  { id: "group", label: "Group", group: "Structure", terms: ["object", "nested", "fieldset"] },
+  { id: "array", label: "Repeater", group: "Structure", terms: ["list", "rows", "items", "repeat"] },
+];
+
+/** Kinds whose value comes from a declared option list — seeded with one option so they compile. */
+const OPTION_TEMPLATES: ReadonlySet<string> = new Set(["select", "radio", "segmented", "multiselect"]);
+
+const VALUE_TYPE_BY_TEMPLATE: Record<string, FieldNode["valueType"]> = {
+  number: "number",
+  slider: "number",
+  checkbox: "boolean",
+  toggle: "boolean",
+  multiselect: "string[]",
+  date: "date",
+};
+
+/** Ranks the catalog against a free-text query. Empty query keeps catalog order. */
+function filterTemplates(query: string): readonly FieldTemplate[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return TEMPLATE_CATALOG;
+  const scored = TEMPLATE_CATALOG.flatMap((template) => {
+    const label = template.label.toLowerCase();
+    // A label prefix is what the user almost always means ("da" -> Date, not "validate").
+    if (label.startsWith(needle)) return [{ template, score: 0 }];
+    if (label.includes(needle)) return [{ template, score: 1 }];
+    if (template.id.includes(needle)) return [{ template, score: 2 }];
+    if (template.terms.some((term) => term.includes(needle))) return [{ template, score: 3 }];
+    return [];
+  });
+  return scored.sort((a, b) => a.score - b.score).map((entry) => entry.template);
+}
 
 function createNodeFromTemplate(template: string): StudioSchemaNode {
   const id = createId("nd");
@@ -100,12 +148,7 @@ function createNodeFromTemplate(template: string): StudioSchemaNode {
     };
   }
 
-  const valueType =
-    template === "number" ? "number"
-    : template === "checkbox" ? "boolean"
-    : template === "multiselect" ? "string[]"
-    : template === "date" ? "date"
-    : "string";
+  const valueType = VALUE_TYPE_BY_TEMPLATE[template] ?? "string";
   const initialValue =
     valueType === "number" ? 0
     : valueType === "boolean" ? false
@@ -116,14 +159,12 @@ function createNodeFromTemplate(template: string): StudioSchemaNode {
     node: "field",
     id,
     name: `${template}${suffix}`,
-    label: `New ${template}`,
+    label: TEMPLATE_CATALOG.find((t) => t.id === template)?.label ?? `New ${template}`,
     fieldKind: template as never,
     valueType,
     initialValue,
     validators: [],
-    ...(template === "select" || template === "multiselect"
-      ? { options: [{ value: "option", label: "Option" }] }
-      : {}),
+    ...(OPTION_TEMPLATES.has(template) ? { options: [{ value: "option", label: "Option" }] } : {}),
   };
 }
 
@@ -573,6 +614,27 @@ export interface MountStudioOptions {
   readonly generateOffMainThread?: GenerateOffMainThread;
 }
 
+/** Cmd on Apple platforms, Ctrl elsewhere — shown in hints so the label matches the key that works. */
+function modifierLabel(): string {
+  const platform = typeof navigator === "undefined" ? "" : navigator.platform || "";
+  return /Mac|iPhone|iPad/i.test(platform) ? "⌘" : "Ctrl+";
+}
+
+/** True when the event's modifier is the platform's primary chord key. */
+function hasPrimaryModifier(event: KeyboardEvent): boolean {
+  return /Mac|iPhone|iPad/i.test(typeof navigator === "undefined" ? "" : navigator.platform || "")
+    ? event.metaKey
+    : event.ctrlKey;
+}
+
+/** Whether a keystroke is being typed into a control, where single-letter shortcuts must not fire. */
+function isEditableTarget(target: EventTarget | null): boolean {
+  const element = target as HTMLElement | null;
+  if (!element || typeof element.tagName !== "string") return false;
+  const tag = element.tagName.toLowerCase();
+  return tag === "input" || tag === "textarea" || tag === "select" || element.isContentEditable === true;
+}
+
 /** Persistent shell containers, built once by `ensureShell()` and never replaced wholesale afterwards. */
 interface StudioShell {
   readonly canvas: HTMLElement;
@@ -580,6 +642,7 @@ interface StudioShell {
   readonly inspectorBody: HTMLElement;
   readonly head: Region;
   readonly dock: Region;
+  readonly palette: Region;
   readonly surface: Region;
   readonly tabs: Region;
   readonly inspector: Region;
@@ -649,6 +712,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   let plainCanvasSignature: string | null = null;
   /** True only while `ensurePreviewForm()` is wiring the live preview effect, whose first run is synchronous. */
   let buildingPreview = false;
+  /** Insert-palette state: the typed query and the highlighted row. */
+  let paletteOpen = false;
+  let paletteQuery = "";
+  let paletteIndex = 0;
+  /** Where focus came from when the palette opened, so Escape can put it back. */
+  let paletteReturn: string | null = null;
+  /** Set by the disposer; read by the document-level key handler and the async session restore. */
+  let disposed = false;
 
   function commit(command: Command, focusTarget: string = selected, focusOverride?: string): void {
     try {
@@ -668,6 +739,82 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   /** Fire-and-forget IndexedDB auto-save (plan §11 "last session restore") — never blocks the render, never surfaces a write failure as an app error (best-effort, same spirit as localStorage-backed draft persistence). */
   function autosave(): void {
     void saveSession(project).catch(() => {});
+  }
+
+  // ─── Actions: one implementation each, driven by both a control and a shortcut ───
+
+  function undo(): void {
+    project = history.undo(project);
+    status = "Undo";
+    autosave();
+    // Undo may just have run out (button about to go `disabled`, which refuses focus) —
+    // Redo is always enabled right after a successful undo, so it's a safe fallback target.
+    focusSelector = history.canUndo() ? "[data-undo]" : "[data-redo]";
+    render();
+  }
+
+  function redo(): void {
+    project = history.redo(project);
+    status = "Redo";
+    autosave();
+    focusSelector = history.canRedo() ? "[data-redo]" : "[data-undo]";
+    render();
+  }
+
+  /** Where a newly inserted node goes: after the selected field, or inside the selected container. */
+  function placementForInsert(): Placement {
+    const current = indexes.nodeById.get(selected);
+    if (current && current.node !== "field" && current.node !== "array") {
+      return { kind: "inside", parentId: current.id, index: current.children.length };
+    }
+    if (current && current.id !== project.schema.id) return { kind: "after", targetId: current.id };
+    const rootChildren = indexes.childrenByParent.get(project.schema.id)?.length ?? 0;
+    return { kind: "inside", parentId: project.schema.id, index: rootChildren };
+  }
+
+  /**
+   * Inserts a template and leaves the caret where the label is edited, ready to be typed over.
+   * In the Structure outline there is no inline label editor, so focus lands on the tree node —
+   * `commit`'s own default. Either way the keyboard user is never stranded.
+   */
+  function insertTemplate(templateId: string): void {
+    const created = createNodeFromTemplate(templateId);
+    selected = created.id;
+    commit(
+      createInsertCommand(created, placementForInsert()),
+      created.id,
+      canvasMode === "form" ? `[data-inline-edit="label"][data-inline-node="${created.id}"]` : undefined,
+    );
+  }
+
+  /** Moves a node one slot among its siblings. Shared by Alt+Arrow and the row's move buttons. */
+  function reorderSibling(nodeId: string, direction: -1 | 1): void {
+    const parent = indexes.parentById.get(nodeId);
+    const siblings = parent ? (indexes.childrenByParent.get(parent) ?? []) : [];
+    const position = siblings.indexOf(nodeId);
+    const target = siblings[position + direction];
+    if (position < 0 || !target) return;
+    selected = nodeId;
+    commit(
+      createMoveCommand(nodeId, { kind: direction === -1 ? "before" : "after", targetId: target }),
+      nodeId,
+      canvasMode === "form" ? `[data-plain-select="${nodeId}"]` : undefined,
+    );
+  }
+
+  /** Flips the `required` validator — the one validator worth a single click. */
+  function toggleRequired(nodeId: string): void {
+    const node = indexes.nodeById.get(nodeId);
+    if (!node || (node.node !== "field" && node.node !== "array")) return;
+    const existing = node.validators.find((v) => v.kind === "required");
+    const focus = `[data-toggle-required="${nodeId}"]`;
+    selected = nodeId;
+    if (existing) {
+      commit(createRemoveValidatorCommand(nodeId, existing.id), nodeId, focus);
+      return;
+    }
+    const entry = getFieldValidatorRegistryEntry("required");
+    commit(createAddValidatorCommand(nodeId, { id: createId("val"), kind: "required", ...entry?.defaultConfig() }), nodeId, focus);
   }
 
   function drop(placement: Placement, liveCanvas = false): void {
@@ -945,11 +1092,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       placeholder.textContent = "+ Add field";
       select.append(placeholder);
 
-      for (const template of TEMPLATES) {
-        if (template === "group" || template === "array") continue;
+      for (const template of TEMPLATE_CATALOG) {
+        if (template.group === "Structure") continue;
         const option = document.createElement("option");
-        option.value = template;
-        option.textContent = template;
+        option.value = template.id;
+        option.textContent = template.label;
         select.append(option);
       }
       return select;
@@ -973,67 +1120,55 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       section.setAttribute("aria-label", `${array.name}, array field`);
 
       const header = document.createElement("header");
-      header.className = "plain-canvas-array-header";
-      const select = document.createElement("button");
-      select.type = "button";
-      select.className = "plain-canvas-array-select";
-      select.dataset.plainSelect = array.id;
-      select.setAttribute("aria-pressed", String(array.id === selected));
-      select.setAttribute("aria-label", `Select array ${array.name} in Studio`);
-      select.textContent = "array";
+      header.className = "plain-canvas-array-header plain-canvas-head";
+      const select = kindChip("array", array.id, `Select array ${array.name} in Studio`);
       const count = document.createElement("span");
       count.className = "plain-canvas-array-count";
-      count.textContent = `${array.initialRows.length} initial row${array.initialRows.length === 1 ? "" : "s"}`;
+      count.textContent = `${array.initialRows.length} row${array.initialRows.length === 1 ? "" : "s"}`;
       const actions = document.createElement("span");
-      actions.className = "plain-canvas-array-actions";
-      const addRow = document.createElement("button");
-      addRow.type = "button";
+      actions.className = "plain-canvas-array-actions plain-canvas-actions";
+      const addRow = iconButton("+", `Add initial row to ${array.name}`);
       addRow.dataset.plainArrayAdd = array.id;
-      addRow.setAttribute("aria-label", `Add initial row to ${array.name}`);
-      addRow.textContent = "Add row";
-      const removeRow = document.createElement("button");
-      removeRow.type = "button";
+      const removeRow = iconButton("\u2212", `Remove last initial row from ${array.name}`);
       removeRow.dataset.plainArrayRemove = array.id;
       removeRow.disabled = array.initialRows.length === 0;
-      removeRow.setAttribute("aria-label", `Remove last initial row from ${array.name}`);
-      removeRow.textContent = "Remove row";
       const siblings = idx.childrenByParent.get(idx.parentById.get(array.id) ?? "") ?? [];
       const position = siblings.indexOf(array.id);
-      const move = (label: string, kind: "before" | "after", targetId?: string): HTMLButtonElement => {
-        const button = document.createElement("button");
-        button.type = "button";
+      const move = (label: string, icon: string, kind: "before" | "after", targetId?: string): HTMLButtonElement => {
+        const button = iconButton(icon, `${label} array ${array.name}`);
         button.dataset.plainArrayMove = kind;
         button.dataset.plainArrayNode = array.id;
         button.dataset.plainArrayTarget = targetId ?? "";
         button.disabled = !targetId;
-        button.setAttribute("aria-label", `${label} array ${array.name}`);
-        button.textContent = label;
         return button;
       };
       actions.append(
-        move("Move up", "before", position > 0 ? siblings[position - 1] : undefined),
-        move("Move down", "after", position >= 0 && position < siblings.length - 1 ? siblings[position + 1] : undefined),
         addRow,
         removeRow,
+        move("Move up", "\u2191", "before", position > 0 ? siblings[position - 1] : undefined),
+        move("Move down", "\u2193", "after", position >= 0 && position < siblings.length - 1 ? siblings[position + 1] : undefined),
       );
       if (idx.parentById.get(array.id) !== project.schema.id) {
-        const root = document.createElement("button");
-        root.type = "button";
+        const root = iconButton("\u2912", `Move array ${array.name} to form root`);
         root.dataset.plainArrayRoot = array.id;
-        root.setAttribute("aria-label", `Move array ${array.name} to form root`);
-        root.textContent = "To root";
         actions.append(root);
       }
       const into = document.createElement("select");
       into.dataset.plainArrayInto = array.id;
       into.setAttribute("aria-label", `Move array ${array.name} into group`);
-      into.append(new Option("Move into…", ""));
+      into.append(new Option("⊞", ""));
       for (const group of Array.from(idx.nodeById.values()).filter((node): node is GroupNode => node.node === "group" && node.id !== project.schema.id)) {
         if (group.id === idx.parentById.get(array.id)) continue;
         into.append(new Option(group.label || group.name, group.id));
       }
       actions.append(into);
+      const arrayDuplicate = iconButton("\u29c9", `Duplicate array ${array.name}`);
+      arrayDuplicate.dataset.duplicate = array.id;
+      const arrayDelete = iconButton("\u00d7", `Delete array ${array.name}`);
+      arrayDelete.dataset.delete = array.id;
+      actions.append(arrayDuplicate, arrayDelete);
       header.append(
+        dragGrip(array.id),
         inlineEditor("label", array.id, array.label ?? "", "Untitled array", `Label for array ${array.name}`),
         inlineEditor("name", array.id, array.name, "name", `Code name for array ${array.name}`),
         select,
@@ -1112,52 +1247,47 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       fieldset.classList.toggle("selected", group.id === selected);
 
       const legend = document.createElement("legend");
-      const select = document.createElement("button");
-      select.type = "button";
-      select.className = "plain-canvas-group-select";
-      select.dataset.plainSelect = group.id;
-      select.setAttribute("aria-pressed", String(group.id === selected));
-      select.setAttribute("aria-label", `Select group ${group.name} in Studio`);
-      select.textContent = "group";
+      legend.className = "plain-canvas-head";
+      const select = kindChip("group", group.id, `Select group ${group.name} in Studio`);
 
       const controls = document.createElement("span");
-      controls.className = "plain-canvas-group-actions";
+      controls.className = "plain-canvas-group-actions plain-canvas-actions";
       const siblings = idx.childrenByParent.get(idx.parentById.get(group.id) ?? "") ?? [];
       const position = siblings.indexOf(group.id);
-      const moveButton = (label: string, kind: "before" | "after", targetId?: string): HTMLButtonElement => {
-        const button = document.createElement("button");
-        button.type = "button";
+      const moveButton = (label: string, icon: string, kind: "before" | "after", targetId?: string): HTMLButtonElement => {
+        const button = iconButton(icon, `${label} ${group.name}`);
         button.dataset.plainGroupMove = kind;
         button.dataset.plainGroupNode = group.id;
         button.dataset.plainGroupTarget = targetId ?? "";
         button.disabled = !targetId;
-        button.setAttribute("aria-label", `${label} ${group.name}`);
-        button.textContent = label;
         return button;
       };
       controls.append(
-        moveButton("Move up", "before", position > 0 ? siblings[position - 1] : undefined),
-        moveButton("Move down", "after", position >= 0 && position < siblings.length - 1 ? siblings[position + 1] : undefined),
+        moveButton("Move up", "\u2191", "before", position > 0 ? siblings[position - 1] : undefined),
+        moveButton("Move down", "\u2193", "after", position >= 0 && position < siblings.length - 1 ? siblings[position + 1] : undefined),
       );
       if (idx.parentById.get(group.id) !== project.schema.id) {
-        const root = document.createElement("button");
-        root.type = "button";
+        const root = iconButton("\u2912", `Move ${group.name} to form root`);
         root.dataset.plainGroupRoot = group.id;
-        root.setAttribute("aria-label", `Move ${group.name} to form root`);
-        root.textContent = "To root";
         controls.append(root);
       }
       const into = document.createElement("select");
       into.dataset.plainGroupInto = group.id;
       into.setAttribute("aria-label", `Move ${group.name} into group`);
-      into.append(new Option("Move into…", ""));
+      into.append(new Option("⊞", ""));
       for (const target of groups) {
         const targetPath = idx.pathByNode.get(target.id) ?? "";
         if (target.id === group.id || targetPath.startsWith(`${groupPath}.`)) continue;
         into.append(new Option(target.label || target.name, target.id));
       }
       controls.append(into);
+      const groupDuplicate = iconButton("\u29c9", `Duplicate ${group.name}`);
+      groupDuplicate.dataset.duplicate = group.id;
+      const groupDelete = iconButton("\u00d7", `Delete ${group.name}`);
+      groupDelete.dataset.delete = group.id;
+      controls.append(groupDuplicate, groupDelete);
       legend.append(
+        dragGrip(group.id),
         inlineEditor("label", group.id, group.label ?? "", "Untitled group", `Label for group ${group.name}`),
         inlineEditor("name", group.id, group.name, "name", `Code name for group ${group.name}`),
         select,
@@ -1215,54 +1345,37 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       root.classList.toggle("has-diagnostic", diagnosticNodeIds.has(nodeId));
 
       const node = idx.nodeById.get(nodeId);
-      const selectButton = document.createElement("button");
-      selectButton.type = "button";
-      selectButton.className = "plain-canvas-select";
-      selectButton.dataset.plainSelect = nodeId;
-      selectButton.setAttribute("aria-label", `Select ${field.name} in Studio`);
-      selectButton.setAttribute("aria-pressed", String(nodeId === selected));
-      selectButton.textContent = node?.node === "field" ? node.fieldKind : "field";
+      const selectButton = kindChip(
+        node?.node === "field" ? node.fieldKind : "field",
+        nodeId,
+        `Select ${field.name} in Studio`,
+      );
 
       const actions = document.createElement("div");
       actions.className = "plain-canvas-actions";
 
-      const duplicateButton = document.createElement("button");
-      duplicateButton.type = "button";
+      const duplicateButton = iconButton("\u29c9", `Duplicate ${field.name}`);
       duplicateButton.dataset.duplicate = nodeId;
-      duplicateButton.setAttribute("aria-label", `Duplicate ${field.name}`);
-      duplicateButton.textContent = "⧉";
 
-      const moveUpButton = document.createElement("button");
-      moveUpButton.type = "button";
+      const moveUpButton = iconButton("\u2191", `Move ${field.name} up`);
       moveUpButton.dataset.plainMove = "before";
       moveUpButton.dataset.plainMoveNode = nodeId;
       moveUpButton.dataset.plainMoveTarget = index > 0 ? nodeIdByPath.get(fields[index - 1]!.name) ?? "" : "";
       moveUpButton.disabled = index === 0;
-      moveUpButton.setAttribute("aria-label", `Move ${field.name} up`);
-      moveUpButton.textContent = "↑";
 
-      const moveDownButton = document.createElement("button");
-      moveDownButton.type = "button";
+      const moveDownButton = iconButton("\u2193", `Move ${field.name} down`);
       moveDownButton.dataset.plainMove = "after";
       moveDownButton.dataset.plainMoveNode = nodeId;
       moveDownButton.dataset.plainMoveTarget = index < fields.length - 1 ? nodeIdByPath.get(fields[index + 1]!.name) ?? "" : "";
       moveDownButton.disabled = index === fields.length - 1;
-      moveDownButton.setAttribute("aria-label", `Move ${field.name} down`);
-      moveDownButton.textContent = "↓";
 
-      const deleteButton = document.createElement("button");
-      deleteButton.type = "button";
+      const deleteButton = iconButton("\u00d7", `Delete ${field.name}`);
       deleteButton.dataset.delete = nodeId;
-      deleteButton.setAttribute("aria-label", `Delete ${field.name}`);
-      deleteButton.textContent = "×";
 
       const fieldParentId = idx.parentById.get(nodeId);
       if (fieldParentId !== project.schema.id) {
-        const moveToRootButton = document.createElement("button");
-        moveToRootButton.type = "button";
+        const moveToRootButton = iconButton("\u2912", `Move ${field.name} to form root`);
         moveToRootButton.dataset.plainFieldRoot = nodeId;
-        moveToRootButton.setAttribute("aria-label", `Move ${field.name} to form root`);
-        moveToRootButton.textContent = "⤒";
         actions.append(moveToRootButton);
       }
 
@@ -1279,10 +1392,23 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
       // The label and the code name are edited on the field itself: the visible label the form
       // renders *is* the thing being edited, so there is no "where did that come from" gap.
+      const required =
+        node?.node === "field" || node?.node === "array" ? node.validators.some((v) => v.kind === "required") : false;
+      const requiredToggle = document.createElement("button");
+      requiredToggle.type = "button";
+      requiredToggle.className = "plain-canvas-required";
+      requiredToggle.dataset.toggleRequired = nodeId;
+      requiredToggle.setAttribute("aria-pressed", String(required));
+      requiredToggle.setAttribute("aria-label", `${required ? "Make optional" : "Make required"}: ${field.name}`);
+      requiredToggle.title = required ? "Required — click to make optional" : "Optional — click to make required";
+      requiredToggle.textContent = "✱";
+
       const head = document.createElement("div");
       head.className = "plain-canvas-head";
       head.append(
+        dragGrip(nodeId),
         inlineEditor("label", nodeId, node?.label ?? "", "Untitled field", `Label for ${field.name}`),
+        requiredToggle,
         inlineEditor("name", nodeId, node?.name ?? field.name, "name", `Code name for ${field.name}`),
         selectButton,
         actions,
@@ -1293,6 +1419,48 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         root.after(insertionPoint("after", nodeId), dropPoint("after", nodeId));
       }
     });
+  }
+
+  /**
+   * One compact icon control. The accessible name lives in `aria-label`, so the glyph carries no
+   * meaning a screen reader has to guess at — fields, groups and arrays all use this, which is
+   * what keeps their rows looking like one system instead of three.
+   */
+  function iconButton(icon: string, ariaLabel: string): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.setAttribute("aria-label", ariaLabel);
+    button.title = ariaLabel;
+    button.textContent = icon;
+    return button;
+  }
+
+  /** The kind pill that doubles as "select this node in Studio". Same shape for every node type. */
+  function kindChip(kind: string, nodeId: string, ariaLabel: string): HTMLButtonElement {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "plain-canvas-select";
+    chip.dataset.plainSelect = nodeId;
+    chip.setAttribute("aria-pressed", String(nodeId === selected));
+    chip.setAttribute("aria-label", ariaLabel);
+    chip.textContent = kind;
+    return chip;
+  }
+
+  /**
+   * Explicit drag handle. Needed wherever the header is mostly text inputs: a mousedown on an
+   * input selects text instead of starting a drag, so the container's own `draggable` is not
+   * reachable there. Mouse-only by design — keyboard users move nodes with the arrow controls.
+   */
+  function dragGrip(nodeId: string): HTMLSpanElement {
+    const grip = document.createElement("span");
+    grip.className = "plain-canvas-grip";
+    grip.draggable = true;
+    grip.dataset.dragNode = nodeId;
+    grip.setAttribute("aria-hidden", "true");
+    grip.title = "Drag to move";
+    grip.textContent = "⠿";
+    return grip;
   }
 
   /**
@@ -1330,14 +1498,74 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
    * Everything that is not composing the form itself lives behind one floating button: adding
    * fields, history, project I/O and the structure outline. Collapsed, the canvas is just the form.
    */
+  /** Rows only — rewritten on every keystroke, so it must not contain the input the user is typing in. */
+  function paletteListMarkup(): string {
+    const matches = filterTemplates(paletteQuery);
+    if (!matches.length) {
+      return `<li class="palette-empty" role="option" aria-disabled="true" aria-selected="false">No field type matches “${escapeHtml(paletteQuery)}”</li>`;
+    }
+    return matches
+      .map(
+        (template, index) => `
+        <li role="option"
+            id="mdy-palette-option-${index}"
+            class="palette-option${index === paletteIndex ? " active" : ""}"
+            aria-selected="${index === paletteIndex}"
+            data-palette-option="${escapeHtml(template.id)}"
+            data-palette-index="${index}">
+          <span class="palette-option-label">${escapeHtml(template.label)}</span>
+          <small class="palette-option-group">${escapeHtml(template.group)}</small>
+        </li>`,
+      )
+      .join("");
+  }
+
+  /**
+   * Type-to-insert, the affordance that makes composing fast. A combobox with
+   * aria-activedescendant: focus stays in the input while the arrows move the
+   * highlight, which is what screen readers expect from this pattern.
+   */
+  function paletteMarkup(): string {
+    if (!paletteOpen) return "";
+    const matches = filterTemplates(paletteQuery);
+    const active = matches.length ? `aria-activedescendant="mdy-palette-option-${paletteIndex}"` : "";
+    return `
+      <div class="palette-backdrop" data-palette-backdrop></div>
+      <div class="palette-dialog" role="dialog" aria-modal="true" aria-label="Add a field">
+        <input class="palette-input"
+               data-palette-input
+               type="text"
+               role="combobox"
+               aria-expanded="true"
+               aria-controls="mdy-palette-list"
+               aria-autocomplete="list"
+               ${active}
+               placeholder="Add a field — type to search"
+               spellcheck="false"
+               autocomplete="off"
+               value="${escapeHtml(paletteQuery)}">
+        <ul class="palette-list" id="mdy-palette-list" role="listbox" aria-label="Field types" data-palette-list>${paletteListMarkup()}</ul>
+        <p class="palette-hint">↑↓ to choose · Enter to add · Esc to close</p>
+      </div>`;
+  }
+
   function dockMarkup(): string {
+    const groups: Array<FieldTemplate["group"]> = ["Fields", "Choice", "Structure"];
     return `
       <div class="dock-panel" data-dock-panel ${dockOpen ? "" : "hidden"}>
         <section class="dock-section">
-          <h3>Add field</h3>
-          <div class="dock-templates">
-            ${TEMPLATES.map((t) => `<button type="button" draggable="true" data-template="${t}">${escapeHtml(t)}</button>`).join("")}
-          </div>
+          <h3>Add field <kbd>${modifierLabel()}K</kbd></h3>
+          ${groups
+            .map(
+              (group) => `
+            <div class="dock-group-label">${escapeHtml(group)}</div>
+            <div class="dock-templates">
+              ${TEMPLATE_CATALOG.filter((t) => t.group === group)
+                .map((t) => `<button type="button" draggable="true" data-template="${t.id}">${escapeHtml(t.label)}</button>`)
+                .join("")}
+            </div>`,
+            )
+            .join("")}
         </section>
         <section class="dock-section">
           <h3>Form</h3>
@@ -1479,6 +1707,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
               <div class="canvas-surface"></div>
             </section>
             <div class="dock"></div>
+            <div class="palette-layer"></div>
           </div>
           <aside class="inspector">
             <div class="inspector-tabs" role="tablist"></div>
@@ -1499,6 +1728,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       inspectorBody,
       head: new Region(find<HTMLElement>("header"), bindHead),
       dock: new Region(find<HTMLElement>(".dock"), bindDock),
+      palette: new Region(find<HTMLElement>(".palette-layer"), bindPalette),
       // Bound explicitly by render(): in live-form mode the listeners belong to DOM that
       // instrumentPlainCanvas() adds *after* the region write, so the Region cannot own it.
       surface: new Region(canvasSurface),
@@ -1510,6 +1740,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     scroll.track(canvas);
     scroll.track(inspectorBody);
     canvasController.connect(canvas);
+
+    // One document-level handler for the whole shortcut set, bound once. Scoped to this mount so
+    // an embed (the Astro page) never has its own keystrokes hijacked by a Studio that is not focused.
+    document.addEventListener("keydown", onGlobalKeydown);
 
     // Edge auto-scroll while dragging. Bound once on the persistent canvas, not per render.
     canvas.addEventListener("dragover", (event) => {
@@ -1535,7 +1769,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
     view.head.update(headMarkup(indexes));
     view.dock.update(dockMarkup());
+    view.palette.update(paletteMarkup());
     view.canvasSurface.dataset.canvasSurface = canvasMode;
+    // The open toolbar must not sit on top of the form: the canvas yields the width instead.
+    view.canvas.parentElement?.setAttribute("data-dock-open", String(dockOpen));
 
     if (canvasMode === "form") {
       if (view.surface.update(liveFrameMarkup(Boolean(contract)))) plainCanvasSignature = null;
@@ -1647,22 +1884,164 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     root.querySelectorAll<HTMLElement>("[draggable=true]").forEach((el) => {
       el.addEventListener("dragstart", (event) => {
         event.stopPropagation();
-        drag = el.dataset.template ? { template: el.dataset.template } : { nodeId: el.dataset.node! };
-        const isLiveField = el.classList.contains("plain-canvas-field");
+        drag = el.dataset.template
+          ? { template: el.dataset.template }
+          : { nodeId: (el.dataset.dragNode ?? el.dataset.node)! };
         const isPaletteTemplate = Boolean(el.dataset.template);
-        if (isLiveField) el.classList.add("dragging");
-        if (isLiveField || isPaletteTemplate) {
+        // A grip drags on behalf of its node, so it lights the drop targets exactly like
+        // dragging the row itself does — otherwise the zones stay invisible mid-drag.
+        const dragged = el.classList.contains("plain-canvas-field") ? el : el.closest<HTMLElement>("[data-node]");
+        if (!isPaletteTemplate) dragged?.classList.add("dragging");
+        if (dragged || isPaletteTemplate) {
           host.querySelectorAll<HTMLElement>(".plain-canvas-drop").forEach((zone) => zone.classList.add("active"));
-          event.dataTransfer?.setData("text/plain", el.dataset.node ?? el.dataset.template ?? "");
+          event.dataTransfer?.setData("text/plain", el.dataset.dragNode ?? el.dataset.node ?? el.dataset.template ?? "");
           if (event.dataTransfer) event.dataTransfer.effectAllowed = isPaletteTemplate ? "copy" : "move";
         }
       });
       el.addEventListener("dragend", () => {
         el.classList.remove("dragging");
+        host.querySelectorAll<HTMLElement>(".dragging").forEach((node) => node.classList.remove("dragging"));
         host.querySelectorAll<HTMLElement>(".plain-canvas-drop").forEach((zone) => zone.classList.remove("active"));
         drag = null;
       });
     });
+  }
+
+  // ─── Insert palette ───────────────────────────────────────────────────────
+
+  function openPalette(): void {
+    if (paletteOpen) return;
+    const active = document.activeElement as HTMLElement | null;
+    paletteReturn = active?.dataset?.node ? `[data-node="${active.dataset.node}"]` : null;
+    paletteOpen = true;
+    paletteQuery = "";
+    paletteIndex = 0;
+    focusSelector = "[data-palette-input]";
+    render();
+  }
+
+  function closePalette(restoreFocus = true): void {
+    if (!paletteOpen) return;
+    paletteOpen = false;
+    paletteQuery = "";
+    paletteIndex = 0;
+    // Escaping out of a modal must land somewhere deliberate, never on <body>.
+    focusSelector = restoreFocus ? (paletteReturn ?? "[data-dock-toggle]") : null;
+    paletteReturn = null;
+    render();
+  }
+
+  /** Repaints only the option rows: the input the user is typing in must survive untouched. */
+  function repaintPaletteList(): void {
+    const layer = shell?.palette.root;
+    const list = layer?.querySelector<HTMLElement>("[data-palette-list]");
+    if (!layer || !list) return;
+    list.innerHTML = paletteListMarkup();
+    const matches = filterTemplates(paletteQuery);
+    const input = layer.querySelector<HTMLElement>("[data-palette-input]");
+    if (matches.length) input?.setAttribute("aria-activedescendant", `mdy-palette-option-${paletteIndex}`);
+    else input?.removeAttribute("aria-activedescendant");
+    bindPaletteOptions(layer);
+    list.querySelector<HTMLElement>(".palette-option.active")?.scrollIntoView?.({ block: "nearest" });
+  }
+
+  function movePaletteHighlight(delta: 1 | -1): void {
+    const count = filterTemplates(paletteQuery).length;
+    if (!count) return;
+    paletteIndex = (paletteIndex + delta + count) % count;
+    repaintPaletteList();
+  }
+
+  function commitPalette(): void {
+    const matches = filterTemplates(paletteQuery);
+    const chosen = matches[paletteIndex];
+    if (!chosen) return;
+    paletteOpen = false;
+    paletteQuery = "";
+    paletteIndex = 0;
+    paletteReturn = null;
+    insertTemplate(chosen.id);
+  }
+
+  function bindPaletteOptions(root: HTMLElement): void {
+    root.querySelectorAll<HTMLElement>("[data-palette-option]").forEach((option) =>
+      option.addEventListener("click", () => {
+        paletteIndex = Number(option.dataset.paletteIndex ?? 0);
+        commitPalette();
+      }),
+    );
+  }
+
+  function bindPalette(root: HTMLElement): void {
+    if (!paletteOpen) return;
+    root.querySelector<HTMLElement>("[data-palette-backdrop]")?.addEventListener("click", () => closePalette());
+    const input = root.querySelector<HTMLInputElement>("[data-palette-input]");
+    input?.addEventListener("input", () => {
+      paletteQuery = input.value;
+      paletteIndex = 0;
+      repaintPaletteList();
+    });
+    input?.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        movePaletteHighlight(1);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        movePaletteHighlight(-1);
+      } else if (event.key === "Enter") {
+        event.preventDefault();
+        commitPalette();
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        closePalette();
+      } else if (event.key === "Tab") {
+        // The dialog holds one focusable control; trapping Tab keeps a modal modal.
+        event.preventDefault();
+      }
+    });
+    bindPaletteOptions(root);
+  }
+
+  /** The whole keyboard shortcut set. Ignores keystrokes aimed at another app on the page. */
+  function onGlobalKeydown(event: KeyboardEvent): void {
+    if (disposed) return;
+    const insideStudio = host.contains(document.activeElement) || document.activeElement === document.body;
+    if (!insideStudio) return;
+
+    if (hasPrimaryModifier(event) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      if (paletteOpen) closePalette();
+      else openPalette();
+      return;
+    }
+    if (paletteOpen) return; // the palette owns every other key while it is open
+
+    if (event.key === "/" && !isEditableTarget(event.target) && !hasPrimaryModifier(event) && !event.altKey) {
+      event.preventDefault();
+      openPalette();
+      return;
+    }
+    if (hasPrimaryModifier(event) && event.key.toLowerCase() === "z") {
+      event.preventDefault();
+      if (event.shiftKey) {
+        if (history.canRedo()) redo();
+      } else if (history.canUndo()) undo();
+      return;
+    }
+    if (hasPrimaryModifier(event) && event.key.toLowerCase() === "d") {
+      event.preventDefault();
+      if (selected !== project.schema.id) commit(createDuplicateCommand(selected));
+      return;
+    }
+    if (hasPrimaryModifier(event) && event.key === "Backspace") {
+      event.preventDefault();
+      if (selected !== project.schema.id) remove(selected);
+      return;
+    }
+    if (event.altKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+      event.preventDefault();
+      if (selected !== project.schema.id) reorderSibling(selected, event.key === "ArrowUp" ? -1 : 1);
+    }
   }
 
   function bindHead(root: HTMLElement): void {
@@ -1690,35 +2069,12 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       }),
     );
     root.querySelectorAll<HTMLElement>("[data-template]").forEach((el) =>
-      el.addEventListener("click", () => {
-        const created = createNodeFromTemplate(el.dataset.template!);
-        const index = project.schema.node === "group" ? project.schema.children.length : 0;
-        selected = created.id;
-        commit(
-          createInsertCommand(created, { kind: "inside", parentId: project.schema.id, index }),
-          created.id,
-          canvasMode === "form" ? `[data-plain-select="${created.id}"]` : undefined,
-        );
-      }),
+      el.addEventListener("click", () => insertTemplate(el.dataset.template!)),
     );
     bindDraggables(root);
 
-    root.querySelector<HTMLElement>("[data-undo]")?.addEventListener("click", () => {
-      project = history.undo(project);
-      status = "Undo";
-      autosave();
-      // Undo may just have run out (button about to go `disabled`, which refuses focus) —
-      // Redo is always enabled right after a successful undo, so it's a safe fallback target.
-      focusSelector = history.canUndo() ? "[data-undo]" : "[data-redo]";
-      render();
-    });
-    root.querySelector<HTMLElement>("[data-redo]")?.addEventListener("click", () => {
-      project = history.redo(project);
-      status = "Redo";
-      autosave();
-      focusSelector = history.canRedo() ? "[data-redo]" : "[data-undo]";
-      render();
-    });
+    root.querySelector<HTMLElement>("[data-undo]")?.addEventListener("click", undo);
+    root.querySelector<HTMLElement>("[data-redo]")?.addEventListener("click", redo);
     root.querySelector<HTMLElement>("[data-new]")?.addEventListener("click", () => {
       project = createBlankProject();
       selected = project.schema.id;
@@ -1762,6 +2118,28 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
    * canvas both live here, and both are rebuilt as a unit, so one binder covers both.
    */
   function bindCanvasSurface(root: HTMLElement): void {
+    root.querySelectorAll<HTMLButtonElement>("[data-toggle-required]").forEach((button) =>
+      button.addEventListener("click", () => toggleRequired(button.dataset.toggleRequired!)),
+    );
+
+    // Enter in a label commits it and starts the next field of the same kind — the composing
+    // rhythm every fast builder has. Handled on keydown so the follow-up insert is ours to order.
+    root.querySelectorAll<HTMLInputElement>('[data-inline-edit="label"]').forEach((input) =>
+      input.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        const nodeId = input.dataset.inlineNode;
+        const node = nodeId ? indexes.nodeById.get(nodeId) : undefined;
+        if (!nodeId || !node) return;
+        const value = input.value.trim();
+        // Commit the label first: that render detaches this input, so its own `change` can no
+        // longer fire and double-commit behind the insert.
+        if (value !== (node.label ?? "")) commit(createUpdateNodeCommand(nodeId, { label: value }), nodeId);
+        selected = nodeId;
+        insertTemplate(node.node === "field" ? node.fieldKind : "text");
+      }),
+    );
+
     root.querySelectorAll<HTMLInputElement>("[data-inline-edit]").forEach((input) =>
       input.addEventListener("change", () => {
         const nodeId = input.dataset.inlineNode;
@@ -1794,7 +2172,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         commit(
           createInsertCommand(created, { kind: placementKind, targetId }),
           created.id,
-          `[data-plain-select="${created.id}"]`,
+          `[data-inline-edit="label"][data-inline-node="${created.id}"]`,
         );
       }),
     );
@@ -2408,7 +2786,6 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   // pass a project: an explicit `initial` always wins over IndexedDB. Async by nature (IndexedDB
   // has no sync API), so this can only run *after* the synchronous first render above; `disposed`
   // guards against restoring into a host that unmounted before the read finished.
-  let disposed = false;
   if (!initial) {
     void loadSession()
       .then((result) => {
@@ -2429,6 +2806,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     previewEffect = null;
     canvasController.dispose();
     scroll.clear();
+    document.removeEventListener("keydown", onGlobalKeydown);
     shell = null;
     host.replaceChildren();
   };

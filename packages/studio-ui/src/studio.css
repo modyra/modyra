@@ -295,6 +295,21 @@ body {
 .dock > * {
   pointer-events: auto;
 }
+/* While the toolbar is open the canvas gives up exactly its width, so the form
+   card slides clear of it instead of being covered by it. */
+.canvas-column[data-dock-open="true"] .canvas {
+  padding-inline-end: 356px;
+}
+@media (max-width: 1100px) {
+  /* No room to sit beside the form — the panel overlays, and the card gets out
+     from under it by leaving space at the bottom. */
+  .canvas-column[data-dock-open="true"] .canvas {
+    padding-inline-end: 18px;
+  }
+  .canvas-column[data-dock-open="true"] .plain-canvas-frame {
+    margin-bottom: min(66vh, 520px);
+  }
+}
 .studio .fab {
   width: 46px !important;
   height: 46px;
@@ -358,6 +373,128 @@ body {
   flex: 0 0 auto;
 }
 
+/* Insert palette: type-to-add. Overlays the canvas column so it never has to
+   compete with the properties panel for room. */
+.palette-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+.palette-layer:empty {
+  display: none;
+}
+.palette-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  background: rgb(0 0 0 / 45%);
+}
+.palette-dialog {
+  position: absolute;
+  inset-block-start: 12vh;
+  inset-inline: 0;
+  width: min(92%, 460px);
+  margin-inline: auto;
+  pointer-events: auto;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--mdy-border-accent);
+  border-radius: 14px;
+  background: var(--mdy-panel);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 60%);
+}
+.studio .palette-input {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--mdy-border);
+  border-radius: 8px;
+  background: var(--mdy-bg);
+  color: var(--mdy-text);
+  font-size: 14px;
+}
+.studio .palette-input:focus-visible {
+  border-color: var(--mdy-indigo);
+  outline: 2px solid var(--mdy-focus-ring);
+}
+.palette-list {
+  max-height: min(46vh, 340px);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+.palette-option {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.palette-option.active {
+  background: color-mix(in srgb, var(--mdy-indigo) 26%, transparent);
+}
+.palette-option-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.palette-option-group,
+.palette-empty {
+  color: var(--mdy-text-muted);
+  font-size: 11px;
+}
+.palette-empty {
+  padding: 10px 9px;
+  list-style: none;
+}
+.palette-hint {
+  margin: 0;
+  color: var(--mdy-text-muted);
+  font-size: 10px;
+}
+.dock-section h3 kbd {
+  margin-inline-start: 4px;
+  padding: 1px 4px;
+  border: 1px solid var(--mdy-border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 9px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.dock-group-label {
+  margin: 6px 0 4px;
+  color: var(--mdy-text-muted);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Required marker: the one validator that deserves a single click, on the row. */
+.plain-canvas-form .plain-canvas-required {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  padding: 0 3px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--mdy-text-muted);
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.4;
+}
+.plain-canvas-form .plain-canvas-required[aria-pressed="true"] {
+  color: var(--mdy-coral);
+  opacity: 1;
+}
+.plain-canvas-form .plain-canvas-required:hover {
+  opacity: 1;
+}
+
 .canvas-mode-switch {
   display: inline-flex;
   max-width: 100%;
@@ -410,12 +547,16 @@ body {
   border-width: 0;
   overflow: hidden;
 }
-.plain-canvas-form .plain-canvas-drop.active,
+/* Highlight only — never resize. A zone that grows on dragstart reflows the page
+   mid-drag, so the gap you aimed at is no longer the gap under the cursor. A thin
+   constant-height bar is both stable and the clearer insertion indicator. */
+.plain-canvas-form .plain-canvas-drop.active {
+  background: color-mix(in srgb, var(--mdy-indigo) 22%, transparent);
+  border-radius: 3px;
+}
 .plain-canvas-form .plain-canvas-drop.drag-over {
-  min-height: 26px;
-  padding: 4px 8px;
-  border-width: 1px;
-  overflow: visible;
+  background: var(--mdy-indigo);
+  border-radius: 3px;
 }
 .plain-canvas-form .plain-canvas-insert {
   height: 16px;
@@ -441,12 +582,49 @@ body {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+/* Always present, not hover-revealed: it is the only reliable way to drag a row
+   now that the row is mostly text inputs, so it has to be findable without
+   discovering it by accident. Low contrast until the row is hovered. */
+.plain-canvas-grip {
+  flex: 0 0 auto;
+  width: 14px;
+  padding: 3px 0;
+  color: var(--mdy-text-muted);
+  font-size: 12px;
+  line-height: 1;
+  text-align: center;
+  cursor: grab;
+  opacity: 0.35;
+  transition: opacity 120ms ease;
+}
+.plain-canvas-field:hover .plain-canvas-grip,
+.plain-canvas-field.selected .plain-canvas-grip,
+.plain-canvas-field:focus-within .plain-canvas-grip,
+.plain-canvas-group:hover > legend > .plain-canvas-grip,
+.plain-canvas-array:hover .plain-canvas-grip {
+  opacity: 0.9;
+}
+.plain-canvas-grip:active {
+  cursor: grabbing;
+}
+
 .plain-canvas-head {
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 4px;
   margin-bottom: 2px;
+}
+/* A group's head is a <legend>, which is not a flex container by default. */
+.plain-canvas-group > legend.plain-canvas-head {
+  width: 100%;
+  padding: 0 4px;
+}
+.plain-canvas-form .plain-canvas-array-count {
+  flex: 0 0 auto;
+  color: var(--mdy-text-muted);
+  font-size: 10px;
+  white-space: nowrap;
 }
 /* Reads as the label until focused. Editing in place beats a side panel: the
    text you are changing is the text you were looking at. */
@@ -472,13 +650,14 @@ body {
 .plain-canvas-form .plain-canvas-inline-label {
   flex: 1 1 auto;
   width: auto;
+  min-width: 4rem;
   font-size: 13px;
   font-weight: 600;
 }
 /* Reads as a muted code suffix to the label, not as a second form field. */
 .plain-canvas-form .plain-canvas-inline-name {
-  flex: 0 0 8rem;
-  width: 8rem;
+  flex: 0 1 7rem;
+  width: 7rem;
   text-align: right;
   color: var(--mdy-text-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -541,31 +720,29 @@ body {
   background: var(--mdy-indigo);
   color: white;
 }
-/* Float over the field's top edge on hover, so revealing them never reflows
-   the row underneath (and never squeezes the label you are editing). */
+/* In flow inside the field's own box, hidden with `visibility` rather than
+   removed: the space is reserved so revealing them never reflows the row, and
+   the pointer never has to leave the field's hover region to reach them — a bar
+   floating outside the box vanishes the moment you move toward it. */
 .plain-canvas-actions {
-  position: absolute;
-  inset-block-start: -11px;
-  inset-inline-end: 8px;
-  z-index: 2;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 1px 3px;
-  border: 1px solid var(--mdy-border);
-  border-radius: 999px;
-  background: var(--mdy-panel);
-  box-shadow: 0 2px 10px rgb(0 0 0 / 45%);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 120ms ease;
+  gap: 2px;
+  visibility: hidden;
 }
 .plain-canvas-field:hover .plain-canvas-actions,
 .plain-canvas-field.selected .plain-canvas-actions,
-.plain-canvas-field:focus-within .plain-canvas-actions {
-  opacity: 1;
-  pointer-events: auto;
+.plain-canvas-field:focus-within .plain-canvas-actions,
+.plain-canvas-array:hover > .plain-canvas-head > .plain-canvas-actions,
+.plain-canvas-array.selected > .plain-canvas-head > .plain-canvas-actions,
+.plain-canvas-array:focus-within > .plain-canvas-head > .plain-canvas-actions,
+.plain-canvas-group:hover > .plain-canvas-head > .plain-canvas-actions,
+.plain-canvas-group.selected > .plain-canvas-head > .plain-canvas-actions,
+.plain-canvas-group:focus-within > .plain-canvas-head > .plain-canvas-actions {
+  visibility: visible;
 }
+
 .plain-canvas-actions button {
   width: auto !important;
   min-width: 20px;
@@ -632,33 +809,6 @@ body {
   border-color: var(--mdy-indigo);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-indigo) 20%, transparent);
 }
-.plain-canvas-array-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.plain-canvas-array-select {
-  border: 0;
-  background: transparent;
-  color: var(--mdy-text);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-.plain-canvas-array-actions {
-  display: inline-flex;
-  gap: 4px;
-  margin-left: auto;
-}
-.plain-canvas-array-actions button {
-  font: inherit;
-  font-size: 0.75rem;
-}
-.plain-canvas-array-actions button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
 .plain-canvas-array-count,
 .plain-canvas-array-empty {
   color: var(--mdy-muted);
@@ -702,14 +852,6 @@ body {
 }
 .plain-canvas-group legend {
   padding: 0 6px;
-}
-.plain-canvas-group-select {
-  border: 0;
-  background: transparent;
-  color: var(--mdy-text);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
 }
 .plain-canvas-group-body {
   display: grid;
@@ -771,11 +913,6 @@ body {
     transition: none;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .plain-canvas-actions {
-    transition: none;
-  }
-}
 .plain-canvas-form label {
   color: var(--mdy-text-muted);
   font-size: 12px;
@@ -806,6 +943,45 @@ body {
   width: auto;
   justify-self: start;
   margin: 2px 0;
+}
+/* `toggle` is a switch, and the controller already says so by putting `mdy-switch`
+   on the input (checkbox gets `mdy-checkbox`) — the same class the shipped
+   @modyra/styles themes target. Studio renders it as a switch rather than leaving a
+   toggle looking identical to a checkbox. */
+.plain-canvas-form input.mdy-switch {
+  appearance: none;
+  width: 34px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--mdy-border);
+  border-radius: 999px;
+  background: var(--mdy-bg);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.plain-canvas-form input.mdy-switch::after {
+  content: "";
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: 2px;
+  border-radius: 50%;
+  background: var(--mdy-text-muted);
+  transition: transform 120ms ease, background 120ms ease;
+}
+.plain-canvas-form input.mdy-switch:checked {
+  border-color: var(--mdy-indigo);
+  background: color-mix(in srgb, var(--mdy-indigo) 60%, transparent);
+}
+.plain-canvas-form input.mdy-switch:checked::after {
+  transform: translateX(14px);
+  background: white;
+}
+@media (prefers-reduced-motion: reduce) {
+  .plain-canvas-form input.mdy-switch,
+  .plain-canvas-form input.mdy-switch::after {
+    transition: none;
+  }
 }
 .plain-canvas-form ul {
   margin: 0;
@@ -1380,13 +1556,9 @@ body {
   }
 }
 
-.plain-canvas-group-actions { display: inline-flex; gap: 4px; margin-left: 8px; align-items: center; }
-.plain-canvas-group-actions button, .plain-canvas-group-actions select { font: inherit; font-size: 0.75rem; }
 
 .plain-canvas-array[draggable="true"] { cursor: grab; }
 .plain-canvas-array.dragging { cursor: grabbing; opacity: 0.55; }
-.plain-canvas-array-actions { flex-wrap: wrap; }
-.plain-canvas-array-actions select { max-width: 9rem; font: inherit; font-size: 0.75rem; }
 .plain-canvas-array-item { width: 100%; margin-top: 8px; padding: 8px 10px; border: 1px dashed var(--mdy-border); border-radius: 6px; background: transparent; color: var(--mdy-muted); text-align: left; cursor: pointer; }
 .plain-canvas-array-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .plain-canvas-array-row-actions { display: inline-flex; gap: 4px; }
