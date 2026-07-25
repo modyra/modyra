@@ -107,3 +107,36 @@ test("package depends only on the workspace's own studio-model and core (no exte
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
   assert.deepEqual(Object.keys(pkg.dependencies).sort(), ["@modyra/core", "@modyra/studio-model"]);
 });
+
+test("a layout that cannot compile is dropped, never the form", async () => {
+  // A layout slot pointing at a deleted node used to make the whole contract null, which is
+  // what put "The live form is unavailable" on screen for a purely cosmetic problem.
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [
+      { kind: "columns", id: "row", columns: [[{ nodeId: "nd_city" }], [{ nodeId: "nd_gone" }]] },
+    ],
+  };
+
+  const { contract, diagnostics } = compileToContract(project);
+
+  assert.ok(contract, "the form must still compile");
+  assert.equal(contract.layout, undefined, "the unusable row is omitted");
+  assert.ok(diagnostics.some((d) => d.code === "LAYOUT_UNKNOWN_NODE" && d.severity === "warning"));
+  assert.ok(!diagnostics.some((d) => d.severity === "error"));
+});
+
+test("a valid layout compiles node IDs into Contract field names", async () => {
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [{ kind: "columns", id: "row", columns: [[{ nodeId: "nd_city" }], [{ nodeId: "nd_zip" }]] }],
+  };
+
+  const { contract, diagnostics } = compileToContract(project);
+
+  assert.ok(contract);
+  assert.deepEqual(contract.layout, [
+    { kind: "columns", id: "row", columns: [["shipping.city"], ["shipping.zip"]] },
+  ]);
+  assert.ok(!diagnostics.some((d) => d.severity === "error"));
+});

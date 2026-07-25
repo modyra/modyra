@@ -204,7 +204,7 @@ function diagnoseLayout(project: MdyStudioProject, idx: StudioIndexes): StudioDi
 
   const visitChild = (child: StudioLayoutChild, path: string, depth: number): void => {
     if (depth > STUDIO_LAYOUT_MAX_DEPTH) {
-      diagnostics.push({ code: "LAYOUT_TOO_DEEP", severity: "error", message: `Layout nesting exceeds ${STUDIO_LAYOUT_MAX_DEPTH} levels at ${path}`, propertyPath: path });
+      diagnostics.push({ code: "LAYOUT_TOO_DEEP", severity: "warning", message: `Layout nesting exceeds ${STUDIO_LAYOUT_MAX_DEPTH} levels at ${path}`, propertyPath: path });
       return;
     }
     if ("nodeId" in child) {
@@ -213,7 +213,7 @@ function diagnoseLayout(project: MdyStudioProject, idx: StudioIndexes): StudioDi
         return;
       }
       if (placed.has(child.nodeId)) {
-        diagnostics.push({ code: "LAYOUT_DUPLICATE_NODE", severity: "error", message: `Node is placed more than once in the layout (${path})`, nodeId: child.nodeId, propertyPath: path });
+        diagnostics.push({ code: "LAYOUT_DUPLICATE_NODE", severity: "warning", message: `Node is placed more than once in the layout (${path})`, nodeId: child.nodeId, propertyPath: path });
         return;
       }
       placed.add(child.nodeId);
