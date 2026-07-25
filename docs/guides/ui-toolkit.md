@@ -197,7 +197,42 @@ global brand color change.
 
 Style entry points: `modyra.css` (all-in), or
 `modyra-material.css`, `modyra-ios.css`,
-`modyra-ionic.css`, `modyra-base.css` (bare layout).
+`modyra-ionic.css`, `modyra-modern.css`, `modyra-base.css` (bare layout).
+
+`modyra-base.css` is **required** by every theme except the all-in entry
+points that import it themselves: the component CSS resolves every value
+through a `--mdy-sys-*` / `--mdy-comp-*` token declared only there. A theme
+loaded without it still applies its layout while every colour falls back to
+its initial value — controls that are present, positioned, and invisible.
+
+`modyra-modern.css` is the Modyra-branded theme: Satoshi typography and a
+compact, fully-bordered control (2.25rem) in place of M3's 3.5rem filled one.
+It also supplies the two controls the other themes have no rule for as
+rendered by `@modyra/plain` — `.mdy-switch` and a bare `input.mdy-checkbox`
+— because the catalog's `.mdy-checkbox` styles a *label* wrapping a hidden
+input, while the widget controllers put the class on the input itself.
+
+### Writing a theme
+
+Themes override tokens; they do not restate component CSS. Import the token
+file and the default theme, then override inside `@layer mdy.themes`:
+
+```css
+@import './modyra-base.css';
+@import './modyra.css';
+
+@layer mdy.themes {
+  :root {
+    --mdy-comp-filled-text-field-container-height: 2.25rem;
+    --mdy-comp-filled-text-field-container-shape: var(--mdy-sys-shape-corner-small);
+  }
+}
+```
+
+Never use `!important` in a theme. Layer order is **inverted** for important
+declarations, so an `!important` inside `@layer mdy.components` beats
+unlayered application CSS — a theme that uses it takes that property away
+from every consumer permanently, with no way to win it back.
 
 ## Accessibility
 
