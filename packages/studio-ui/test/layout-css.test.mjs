@@ -42,7 +42,7 @@ test("grid tracks and main surfaces are allowed to shrink instead of overflowing
   has(main, "min-width", "0");
   has(main, "min-height", "0");
   has(main, "overflow", "hidden");
-  assert.match(main, /grid-template-columns\s*:\s*minmax\(0, 1fr\) minmax\(280px, 340px\)\s*;/);
+  assert.match(main, /grid-template-columns\s*:\s*210px minmax\(0, 1fr\) minmax\(280px, 320px\)\s*;/);
 
   const column = rule(".canvas-column");
   has(column, "position", "relative");
@@ -50,7 +50,7 @@ test("grid tracks and main surfaces are allowed to shrink instead of overflowing
   has(column, "min-height", "0");
   has(column, "overflow", "hidden");
 
-  for (const selector of [".canvas", ".inspector-body"]) {
+  for (const selector of [".outline", ".canvas", ".inspector-body"]) {
     const declarations = rule(selector);
     has(declarations, "min-width", "0");
     has(declarations, "min-height", "0");
@@ -93,7 +93,7 @@ test("the canvas keeps the form's own label for assistive tech while showing the
 });
 
 test("narrow layouts keep a zero-minimum canvas track and mobile-safe padding", () => {
-  assert.match(css, /@media \(max-width: 850px\)[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(css, /@media \(max-width: 1000px\)[\s\S]*?grid-template-columns:\s*180px minmax\(0, 1fr\)/);
   assert.match(css, /@media \(max-width: 600px\)[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
   assert.match(css, /@media \(max-width: 600px\)[\s\S]*?\.canvas\s*\{[\s\S]*?padding:\s*12px 14px/);
 });
