@@ -186,3 +186,86 @@ test("dispose() removes all rendered DOM and deactivates the form", () => {
   assert.equal(container.children.length, 0);
   assert.equal(form.state.pending(), false);
 });
+
+test("layout renders sections and column rows, and nests one inside the other", async () => {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const fields = [
+    { name: "street", kind: "text", label: "Street" },
+    { name: "city", kind: "text", label: "City" },
+    { name: "zip", kind: "text", label: "ZIP" },
+    { name: "notes", kind: "textarea", label: "Notes" },
+  ];
+  const handle = mountMdyForm(container, fields, {
+    submitLabel: null,
+    layout: [
+      {
+        kind: "section",
+        id: "address",
+        label: "Address",
+        children: ["street", { kind: "columns", id: "cityZip", columns: [["city"], ["zip"]] }],
+      },
+    ],
+  });
+
+  const section = container.querySelector("fieldset.mdy-layout-section");
+  assert.ok(section, "expected a section fieldset");
+  assert.equal(section.dataset.layoutId, "address");
+  assert.equal(section.querySelector("legend.mdy-layout-legend").textContent, "Address");
+
+  const row = section.querySelector(".mdy-layout-columns");
+  assert.ok(row, "expected the nested columns row inside the section");
+  assert.equal(row.style.getPropertyValue("--mdy-layout-column-count"), "2");
+  const columns = row.querySelectorAll(".mdy-layout-column");
+  assert.equal(columns.length, 2);
+  assert.ok(columns[0].querySelector("input"), "first column renders a real control");
+  assert.ok(columns[1].querySelector("input"), "second column renders a real control");
+
+  // A field the layout never mentions still renders, after the arranged part — never dropped.
+  assert.ok(container.querySelector("textarea"), "unplaced field must still render");
+  assert.equal(container.querySelectorAll("input, textarea").length, 4);
+
+  handle.dispose();
+  assert.equal(container.children.length, 0);
+});
+
+test("a field named twice by the layout renders once, not twice", async () => {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const handle = mountMdyForm(container, [{ name: "city", kind: "text", label: "City" }], {
+    submitLabel: null,
+    layout: [
+      { kind: "section", id: "a", children: ["city"] },
+      { kind: "section", id: "b", children: ["city"] },
+    ],
+  });
+
+  // parseDynamicForm rejects this upstream, but mounting must not double-bind either.
+  assert.equal(container.querySelectorAll("input").length, 1);
+  handle.dispose();
+});
+
+test("a column row stays where its fields are, not hoisted to the top of the form", async () => {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const fields = [
+    { name: "first", kind: "text", label: "First" },
+    { name: "city", kind: "text", label: "City" },
+    { name: "zip", kind: "text", label: "ZIP" },
+    { name: "last", kind: "text", label: "Last" },
+  ];
+  const handle = mountMdyForm(container, fields, {
+    submitLabel: null,
+    layout: [{ kind: "columns", id: "cityZip", columns: [["city"], ["zip"]] }],
+  });
+
+  // first, [city | zip], last — the arranged pair must not jump ahead of "first".
+  const order = Array.from(container.children).map((child) =>
+    child.classList.contains("mdy-layout-columns") ? "row" : child.querySelector("input")?.id || "field",
+  );
+  assert.equal(order.length, 3);
+  assert.equal(order[1], "row");
+  assert.equal(container.querySelectorAll("input").length, 4);
+
+  handle.dispose();
+});

@@ -7,7 +7,7 @@
  * no framework: pure `document.createElement`/`addEventListener`, wired to
  * @modyra/widgets' headless controllers.
  */
-import { vanillaReactivity, type MdyDynamicField, type MdyFieldHandle, type MdyFormSchema, type MdyFormValue, type MdyReactivity, type MdyTypedForm } from "@modyra/core";
+import { vanillaReactivity, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyFieldHandle, type MdyFormSchema, type MdyFormValue, type MdyReactivity, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
 import { renderField } from "./fields/index.js";
 import { el, setText } from "./dom.js";
@@ -19,6 +19,13 @@ export interface MountMdyFormOptions {
   ) => Promise<import("@modyra/core").MdyFormError[] | void> | import("@modyra/core").MdyFormError[] | void;
   /** Text for the generated submit button. Pass `null` to render no submit button (host drives `handle.form.submit()` itself). */
   readonly submitLabel?: string | null;
+  /**
+   * Contract v2 `layout`: sections and column rows, nestable. Fields named by the layout
+   * render inside it, in layout order; anything the layout does not mention still renders,
+   * appended after — a partial layout degrades to "these bits are arranged, the rest follows"
+   * rather than silently dropping fields.
+   */
+  readonly layout?: ReadonlyArray<MdyDynamicLayoutNode>;
 }
 
 export interface MdyPlainForm {
@@ -43,10 +50,75 @@ export function mountMdyForm(
   const fieldHandles = form.f as unknown as Record<string, MdyFieldHandle<never>>;
 
   const disposers: Array<() => void> = [];
+  const byName = new Map(fields.map((f) => [f.name, f]));
+  const rendered = new Set<string>();
+
+  const renderOne = (target: HTMLElement, name: string): void => {
+    const field = byName.get(name);
+    const handle = fieldHandles[name];
+    if (!field || !handle || rendered.has(name)) return;
+    rendered.add(name);
+    disposers.push(renderField(target, field, handle, reactivity));
+    // Name the root so a host can find a field's DOM without depending on child order —
+    // which stops holding once a layout row nests fields inside it.
+    const root = target.lastElementChild;
+    if (root instanceof HTMLElement) root.dataset.mdyField = name;
+  };
+
+  const renderLayoutChild = (target: HTMLElement, child: MdyDynamicLayoutChild): void => {
+    if (typeof child === "string") renderOne(target, child);
+    else renderLayoutNode(target, child);
+  };
+
+  function renderLayoutNode(target: HTMLElement, node: MdyDynamicLayoutNode): void {
+    if (node.kind === "section") {
+      const section = el("fieldset", "mdy-layout-section") as HTMLFieldSetElement;
+      section.dataset.layoutId = node.id;
+      if (node.label) {
+        const legend = el("legend", "mdy-layout-legend");
+        setText(legend, node.label);
+        section.appendChild(legend);
+      }
+      for (const child of node.children) renderLayoutChild(section, child);
+      target.appendChild(section);
+      return;
+    }
+    const row = el("div", "mdy-layout-columns");
+    row.dataset.layoutId = node.id;
+    // The column count drives the grid, so a 3-column row needs no extra markup or class.
+    row.style.setProperty("--mdy-layout-column-count", String(node.columns.length));
+    for (const column of node.columns) {
+      const cell = el("div", "mdy-layout-column");
+      for (const child of column) renderLayoutChild(cell, child);
+      row.appendChild(cell);
+    }
+    target.appendChild(row);
+  }
+
+  // Layout nodes are spliced in at the position of their first member rather than hoisted to the
+  // top: a two-column row built from fields 3 and 4 has to stay between fields 2 and 5, and a
+  // layout that only arranges part of the form must leave the rest where the author put it.
+  const layoutNodes = options.layout ?? [];
+  const firstMemberOf = new Map<string, MdyDynamicLayoutNode>();
+  const claimed = new Set<string>();
+  const collectNames = (child: MdyDynamicLayoutChild, into: string[]): void => {
+    if (typeof child === "string") into.push(child);
+    else if (child.kind === "section") child.children.forEach((c) => collectNames(c, into));
+    else child.columns.forEach((column) => column.forEach((c) => collectNames(c, into)));
+  };
+  for (const node of layoutNodes) {
+    const names: string[] = [];
+    collectNames(node, names);
+    const anchor = names.find((name) => byName.has(name) && !claimed.has(name));
+    if (anchor === undefined) continue;
+    firstMemberOf.set(anchor, node);
+    for (const name of names) claimed.add(name);
+  }
+
   for (const f of fields) {
-    const handle = fieldHandles[f.name];
-    if (!handle) continue;
-    disposers.push(renderField(container, f, handle, reactivity));
+    const node = firstMemberOf.get(f.name);
+    if (node) renderLayoutNode(container, node);
+    else if (!claimed.has(f.name)) renderOne(container, f.name);
   }
 
   let submitButton: HTMLButtonElement | null = null;
