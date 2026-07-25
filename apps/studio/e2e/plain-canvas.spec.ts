@@ -93,7 +93,10 @@ test("blocking Contract diagnostics produce an editor-safe live-form placeholder
   await page.locator('details[data-section="options"] summary').click();
   await page.locator('[data-remove-option="0"]').click();
 
-  await expect(page.locator('.plain-canvas-unavailable')).toContainText("blocking Contract diagnostics");
+  // The placeholder now names what is blocking, with a jump to each one, instead of just
+  // saying "unavailable" and leaving you to hunt for it.
+  await expect(page.locator('.plain-canvas-unavailable')).toContainText("The live form can't be built yet");
+  await expect(page.locator('.plain-canvas-unavailable .diagnostic-row')).not.toHaveCount(0);
   await expect(page.locator('[data-plain-canvas]')).toHaveCount(0);
 
   await expect(page.locator('.outline .tree-node .indicator.issue')).toHaveCount(1);

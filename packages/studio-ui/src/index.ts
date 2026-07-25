@@ -943,6 +943,19 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     return `[data-layout-columns="${nodeId}"]`;
   }
 
+  /** Drops every layout slot pointing at a node that no longer exists, and any row left too thin. */
+  function pruneLayout(layout: StudioLayoutNode[]): StudioLayoutNode[] {
+    const keep = (child: StudioLayoutChild): boolean =>
+      "nodeId" in child ? indexes.nodeById.has(child.nodeId) : true;
+    return layout
+      .map((node) =>
+        node.kind === "section"
+          ? { ...node, children: node.children.filter(keep) }
+          : { ...node, columns: node.columns.map((column) => column.filter(keep)).filter((c) => c.length > 0) },
+      )
+      .filter((node) => (node.kind === "section" ? node.children.length > 0 : node.columns.length >= 2));
+  }
+
   /** Takes a field out of its row, dropping the row when fewer than two columns remain. */
   function removeFromColumnRow(nodeId: string): void {
     const layout = structuredClone(project.presentation.layout ?? []);
@@ -1009,6 +1022,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     }
     selected = project.schema.id;
     commit(createDeleteCommand(id, true));
+    const stale = pruneLayout(project.presentation.layout ?? []);
+    if (JSON.stringify(stale) !== JSON.stringify(project.presentation.layout ?? [])) {
+      commit(createUpdateLayoutCommand(stale, "Clean up layout"));
+    }
   }
 
   async function runExport(): Promise<void> {
@@ -1112,6 +1129,12 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     }
     if (d.code === "SENSITIVE_FIELD_IN_DRAFT" && d.nodeId) {
       return `<button data-fix-exclude-draft="${d.nodeId}">Exclude from draft</button>`;
+    }
+    if (d.code === "LAYOUT_UNKNOWN_NODE" || d.code === "LAYOUT_DUPLICATE_NODE") {
+      return `<button data-fix-prune-layout>Clean up layout</button>`;
+    }
+    if (d.code === "BROKEN_REFERENCE" && d.nodeId) {
+      return `<button data-fix-drop-reference="${d.nodeId}">Remove reference</button>`;
     }
     return "";
   }
@@ -1769,10 +1792,28 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
    * between available and blocked. As long as it is unchanged the Region skips the rewrite, so
    * the `[data-plain-canvas]` mount underneath survives untouched across renders.
    */
-  function liveFrameMarkup(hasContract: boolean): string {
-    return hasContract
-      ? `<div class="plain-canvas-frame"><div class="plain-canvas-form" data-plain-canvas></div></div>`
-      : `<div class="plain-canvas-frame"><div class="plain-canvas-unavailable" role="status">The live form is unavailable until the blocking Contract diagnostics are fixed.</div></div>`;
+  function liveFrameMarkup(hasContract: boolean, diagnostics: StudioDiagnostic[] = []): string {
+    if (hasContract) {
+      return `<div class="plain-canvas-frame"><div class="plain-canvas-form" data-plain-canvas></div></div>`;
+    }
+    // Naming the blockers here, with a jump to each one, beats sending the user to hunt through
+    // a tab for what a bare "unavailable" refused to tell them.
+    const blocking = diagnostics.filter((d) => d.severity === "error");
+    const rows = blocking
+      .map(
+        (d) => `<li class="diagnostic-row severity-error">
+            <span class="diag-message">${escapeHtml(d.message)}</span>
+            <span class="diag-actions">${d.nodeId ? `<button data-goto-node="${escapeHtml(d.nodeId)}">Go to</button>` : ""}${quickFixMarkup(d)}</span>
+          </li>`,
+      )
+      .join("");
+    return `
+      <div class="plain-canvas-frame">
+        <div class="plain-canvas-unavailable" role="status">
+          <p><strong>The live form can't be built yet.</strong> ${blocking.length} problem${blocking.length === 1 ? "" : "s"} block${blocking.length === 1 ? "s" : ""} the Contract:</p>
+          <ul class="diagnostic-list">${rows}</ul>
+        </div>
+      </div>`;
   }
 
   /**
@@ -1845,6 +1886,13 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
               expandedSections.has("server"),
               serverValidatorMarkup(project, idx, current),
             )
+          : ""
+      }
+      ${
+        current.node === "field"
+          ? `<label class="dep-row"><input type="checkbox" data-exclude-draft ${
+              (project.behaviors.draft?.exclude ?? []).some((ref) => ref.nodeId === current.id) ? "checked" : ""
+            }> Exclude from saved draft</label>`
           : ""
       }
       ${accordionMarkup(
@@ -1955,7 +2003,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     // The open toolbar must not sit on top of the form: the canvas yields the width instead.
     view.canvas.parentElement?.setAttribute("data-dock-open", String(dockOpen));
 
-    if (view.surface.update(liveFrameMarkup(Boolean(contract)))) plainCanvasSignature = null;
+    if (view.surface.update(liveFrameMarkup(Boolean(contract), diagnostics))) {
+      plainCanvasSignature = null;
+      if (!contract) bindCanvasSurface(view.canvasSurface); // the blockers list has its own controls
+    }
     syncLiveCanvas(contract, view);
 
     view.tabs.update(tabsMarkup(current, diagnostics.length, errorCount));
@@ -2341,7 +2392,76 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   /**
    * Everything inside the canvas surface: the instrumented live-form canvas.
    */
+  /** "Go to" and the quick fixes — used by the Diagnostics tab and by the blockers list. */
+  function bindDiagnosticActions(root: HTMLElement): void {
+    root.querySelectorAll<HTMLElement>("[data-goto-node]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const nodeId = el.dataset.gotoNode!;
+        selected = nodeId;
+        inspectorTab = "node";
+        focusSelector = `[data-node="${nodeId}"]`;
+        render();
+      }),
+    );
+    root.querySelectorAll<HTMLElement>("[data-fix-clear-pattern]").forEach((el) =>
+      el.addEventListener("click", () =>
+        commit(createUpdateValidatorCommand(el.dataset.fixNode!, el.dataset.fixClearPattern!, { pattern: "" })),
+      ),
+    );
+    root.querySelectorAll<HTMLElement>("[data-fix-add-option]").forEach((el) =>
+      el.addEventListener("click", () =>
+        commit(createSetFieldOptionsCommand(el.dataset.fixAddOption!, [{ value: "option", label: "Option" }])),
+      ),
+    );
+    root.querySelector<HTMLInputElement>("[data-exclude-draft]")?.addEventListener("change", (e) => {
+      // Draft exclusion is a property of the field, not only a remedy the diagnostics offer.
+      const draft = project.behaviors.draft;
+      const exclude = (draft?.exclude ?? []).filter((ref) => ref.nodeId !== selected);
+      if ((e.target as HTMLInputElement).checked) exclude.push({ nodeId: selected });
+      commit(
+        createUpdateBehaviorCommand({ draft: { key: draft?.key ?? "draft", exclude } }),
+        selected,
+        "[data-exclude-draft]",
+      );
+    });
+    root.querySelector<HTMLElement>("[data-fix-prune-layout]")?.addEventListener("click", () => {
+      commit(createUpdateLayoutCommand(pruneLayout(project.presentation.layout ?? []), "Clean up layout"));
+    });
+    root.querySelectorAll<HTMLElement>("[data-fix-drop-reference]").forEach((el) =>
+      el.addEventListener("click", () => {
+        // A reference to a deleted node lives in a form validator's dependencies or error
+        // target, or in the draft-exclusion list. Strip it wherever it is.
+        const gone = el.dataset.fixDropReference!;
+        for (const validator of project.formValidators) {
+          if (validator.errorTarget?.nodeId === gone) {
+            commit(createUpdateFormValidatorCommand(validator.id, { errorTarget: null }));
+          }
+        }
+        const draft = project.behaviors.draft;
+        if (draft?.exclude?.some((ref) => ref.nodeId === gone)) {
+          commit(
+            createUpdateBehaviorCommand({
+              draft: { key: draft.key, exclude: draft.exclude.filter((ref) => ref.nodeId !== gone) },
+            }),
+          );
+        }
+        const orphaned = project.formValidators.filter((v) => v.dependencies.some((dep) => dep.nodeId === gone));
+        for (const validator of orphaned) commit(createRemoveFormValidatorCommand(validator.id));
+      }),
+    );
+    root.querySelectorAll<HTMLElement>("[data-fix-exclude-draft]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const nodeId = el.dataset.fixExcludeDraft!;
+        const currentDraft = project.behaviors.draft;
+        const exclude = [...(currentDraft?.exclude ?? []), { nodeId }];
+        commit(createUpdateBehaviorCommand({ draft: { key: currentDraft?.key ?? "draft", exclude } }));
+      }),
+    );
+
+  }
+
   function bindCanvasSurface(root: HTMLElement): void {
+    bindDiagnosticActions(root);
     root.querySelectorAll<HTMLButtonElement>("[data-toggle-required]").forEach((button) =>
       button.addEventListener("click", () => toggleRequired(button.dataset.toggleRequired!)),
     );
@@ -2673,34 +2793,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       }),
     );
 
-    root.querySelectorAll<HTMLElement>("[data-goto-node]").forEach((el) =>
-      el.addEventListener("click", () => {
-        const nodeId = el.dataset.gotoNode!;
-        selected = nodeId;
-        inspectorTab = "node";
-        focusSelector = `[data-node="${nodeId}"]`;
-        render();
-      }),
-    );
-    root.querySelectorAll<HTMLElement>("[data-fix-clear-pattern]").forEach((el) =>
-      el.addEventListener("click", () =>
-        commit(createUpdateValidatorCommand(el.dataset.fixNode!, el.dataset.fixClearPattern!, { pattern: "" })),
-      ),
-    );
-    root.querySelectorAll<HTMLElement>("[data-fix-add-option]").forEach((el) =>
-      el.addEventListener("click", () =>
-        commit(createSetFieldOptionsCommand(el.dataset.fixAddOption!, [{ value: "option", label: "Option" }])),
-      ),
-    );
-    root.querySelectorAll<HTMLElement>("[data-fix-exclude-draft]").forEach((el) =>
-      el.addEventListener("click", () => {
-        const nodeId = el.dataset.fixExcludeDraft!;
-        const currentDraft = project.behaviors.draft;
-        const exclude = [...(currentDraft?.exclude ?? []), { nodeId }];
-        commit(createUpdateBehaviorCommand({ draft: { key: currentDraft?.key ?? "draft", exclude } }));
-      }),
-    );
-
+    bindDiagnosticActions(root);
     root.querySelector<HTMLElement>("[data-enable-server-validator]")?.addEventListener("click", () => {
       commit(
         createSetServerValidatorCommand(selected, {
