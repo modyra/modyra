@@ -38,6 +38,9 @@
   --mdy-slate: #94a3b8;
   --mdy-gradient-brand: linear-gradient(90deg, #7067ff 0%, #a855f7 50%, #ff6577 100%);
 
+  /* Dark is the default because Studio's own docs site defaults to it; the light set below
+     takes over from the system preference. Every surface reads these semantic tokens rather
+     than a raw colour, so the two schemes stay in step by construction. */
   --mdy-bg: var(--mdy-night);
   --mdy-panel: color-mix(in srgb, var(--mdy-night) 92%, white);
   --mdy-border: color-mix(in srgb, var(--mdy-night) 80%, white);
@@ -47,6 +50,28 @@
      at the sizes the canvas uses it — caught by the axe suite, not by eye. */
   --mdy-text-muted: #aab6c8;
   --mdy-focus-ring: color-mix(in srgb, var(--mdy-indigo) 35%, transparent);
+  --mdy-danger-text: color-mix(in srgb, var(--mdy-coral) 82%, white);
+  --mdy-shadow-strong: rgb(0 0 0 / 45%);
+  --mdy-shadow-soft: rgb(0 0 0 / 22%);
+  --mdy-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --mdy-bg: #ffffff;
+    --mdy-panel: var(--mdy-cloud);
+    --mdy-border: #d5dbe4;
+    --mdy-border-accent: color-mix(in srgb, var(--mdy-indigo) 45%, white);
+    --mdy-text: #16181f;
+    /* Darkened for the same AA reason the dark value was lightened: --mdy-slate on a light
+       panel is ~2.9:1 at the sizes the canvas uses. */
+    --mdy-text-muted: #55607a;
+    --mdy-focus-ring: color-mix(in srgb, var(--mdy-indigo) 30%, transparent);
+    --mdy-danger-text: #b3261e;
+    --mdy-shadow-strong: rgb(15 23 42 / 22%);
+    --mdy-shadow-soft: rgb(15 23 42 / 12%);
+    --mdy-scheme: light;
+  }
 }
 
 /* This stylesheet is always loaded on a page dedicated entirely to Studio
@@ -65,7 +90,7 @@ body {
 }
 
 .studio {
-  color-scheme: dark;
+  color-scheme: light dark;
   width: 100%;
   height: 100dvh;
   min-width: 0;
@@ -265,6 +290,18 @@ body {
   color: var(--mdy-text-muted);
   font-size: 11px;
 }
+/* The empty-state drop target is a placeholder, not body copy: it must still read. */
+.outline .empty .drop-zone,
+.canvas .empty .drop-zone {
+  height: auto;
+  padding: 8px;
+  overflow: visible;
+  border: 1px dashed var(--mdy-border);
+  border-radius: 6px;
+  color: var(--mdy-text);
+  font-size: 11px;
+  text-align: center;
+}
 .outline .empty p {
   margin: 0 0 6px;
 }
@@ -412,7 +449,7 @@ body {
   color: white;
   font-size: 20px;
   line-height: 1;
-  box-shadow: 0 6px 20px rgb(0 0 0 / 45%);
+  box-shadow: 0 6px 20px var(--mdy-shadow-strong);
 }
 .studio .fab:hover,
 .studio .fab:focus-visible {
@@ -429,7 +466,7 @@ body {
   border: 1px solid var(--mdy-border);
   border-radius: 14px;
   background: var(--mdy-panel);
-  box-shadow: 0 14px 40px rgb(0 0 0 / 50%);
+  box-shadow: 0 14px 40px var(--mdy-shadow-strong);
 }
 .dock-panel[hidden] {
   display: none;
@@ -537,7 +574,7 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: auto;
-  background: rgb(0 0 0 / 45%);
+  background: color-mix(in srgb, var(--mdy-night) 55%, transparent);
 }
 .palette-dialog {
   position: absolute;
@@ -552,7 +589,7 @@ body {
   border: 1px solid var(--mdy-border-accent);
   border-radius: 14px;
   background: var(--mdy-panel);
-  box-shadow: 0 20px 60px rgb(0 0 0 / 60%);
+  box-shadow: 0 20px 60px var(--mdy-shadow-strong);
 }
 .studio .palette-input {
   width: 100%;
@@ -585,7 +622,7 @@ body {
   cursor: pointer;
 }
 .palette-option.active {
-  background: color-mix(in srgb, var(--mdy-indigo) 26%, transparent);
+  background: color-mix(in srgb, var(--mdy-indigo) 26%, var(--mdy-panel));
 }
 .palette-option-label {
   font-size: 13px;
@@ -595,6 +632,9 @@ body {
 .palette-empty {
   color: var(--mdy-text-muted);
   font-size: 11px;
+}
+.palette-option.active .palette-option-group {
+  color: var(--mdy-text);
 }
 .palette-empty {
   padding: 10px 9px;
@@ -912,7 +952,7 @@ body {
   background: var(--mdy-bg);
 }
 .plain-canvas-actions [data-delete] {
-  color: var(--mdy-coral);
+  color: var(--mdy-danger-text);
 }
 .plain-canvas-actions button:disabled {
   opacity: 0.35;
@@ -923,7 +963,9 @@ body {
   padding: 2px 0 2px 4px;
   border-color: transparent;
   background: transparent;
-  color: var(--mdy-text-muted);
+  /* Same reasoning as the row's icon buttons: these only appear on hover/focus, so they can
+     carry full text contrast rather than being recessed twice over. */
+  color: var(--mdy-text);
   font: inherit;
   font-size: 11px;
 }
@@ -937,13 +979,14 @@ body {
   border: 1px dashed transparent;
   background: transparent;
   color: var(--mdy-text-muted);
+  color: var(--mdy-text-muted);
   font-size: 10px;
   opacity: 0;
   transition: opacity 120ms ease;
 }
 .plain-canvas-form:hover .plain-canvas-insert,
 .plain-canvas-insert:focus-visible {
-  opacity: 0.45;
+  opacity: 1;
 }
 .plain-canvas-insert:hover,
 .plain-canvas-insert:focus-visible {
@@ -1240,7 +1283,7 @@ body {
 
 .badge-error {
   background: color-mix(in srgb, var(--mdy-coral) 30%, transparent);
-  color: color-mix(in srgb, var(--mdy-coral) 60%, var(--mdy-cloud));
+  color: var(--mdy-danger-text);
 }
 
 .diagnostic-list {
@@ -1273,7 +1316,7 @@ body {
   color: var(--mdy-text-muted);
 }
 .severity-error .diag-severity {
-  color: var(--mdy-coral);
+  color: var(--mdy-danger-text);
 }
 .diag-message {
   min-width: 0;
@@ -1359,7 +1402,7 @@ body {
 }
 .preview-status-badge.invalid {
   background: color-mix(in srgb, var(--mdy-coral) 25%, transparent);
-  color: color-mix(in srgb, var(--mdy-coral) 55%, var(--mdy-cloud));
+  color: var(--mdy-danger-text);
 }
 .preview-status-badge.pending {
   background: color-mix(in srgb, var(--mdy-violet) 25%, transparent);

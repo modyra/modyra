@@ -86,3 +86,21 @@ test("a column row keeps every control reachable and labelled", async ({ page })
   const found = await violations(page);
   expect(found, describe(found)).toEqual([]);
 });
+
+test.describe("light scheme", () => {
+  test.use({ colorScheme: "light" });
+
+  test("the light scheme follows the system and is free of WCAG A/AA violations", async ({ page }) => {
+    for (const template of ["text", "select", "toggle"]) {
+      await page.locator(`[data-template="${template}"]`).click();
+    }
+    await page.locator("[data-dock-toggle]").click();
+
+    // Following the system means the shell really repaints, not just declares a preference.
+    const background = await page.locator(".studio").evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(background).toBe("rgb(255, 255, 255)");
+
+    const found = await violations(page);
+    expect(found, describe(found)).toEqual([]);
+  });
+});
