@@ -571,12 +571,67 @@ export function previewNodeMarkup(node: StudioSchemaNode, path: string, form: Md
 }
 
 /** P11 gate ("Preview reads model/Contract, not generated source"): status badges, every field live-bound, Submit. Diagnostics are appended by the caller (mountStudio already has a diagnosticsMarkup() it reuses everywhere else). */
-export function previewBodyMarkup(project: MdyStudioProject, form: MdyTypedForm<never> | null, mockConfig: Record<string, MockServerConfig>): string {
+/**
+ * Preview renders the same arrangement the canvas does: a column row here is the same
+ * `.mdy-layout-columns` grid @modyra/plain emits, so what you preview matches what ships
+ * rather than being a second, drifting picture of the form.
+ *
+ * The row is emitted at its first member's position, the same splice rule plain uses.
+ */
+function previewRootMarkup(
+  rootChildren: readonly StudioSchemaNode[],
+  layout: ReadonlyArray<StudioLayoutNode>,
+  form: MdyTypedForm<never> | null,
+  mockConfig: Record<string, MockServerConfig>,
+): string {
+  const columnRows = layout.filter((node): node is StudioLayoutNode & { kind: "columns" } => node.kind === "columns");
+  if (!columnRows.length) {
+    return rootChildren.map((c) => previewNodeMarkup(c, c.name, form, mockConfig)).join("");
+  }
+
+  const byId = new Map(rootChildren.map((child) => [child.id, child]));
+  const rowFor = new Map<string, StudioLayoutNode & { kind: "columns" }>();
+  const claimed = new Set<string>();
+  for (const row of columnRows) {
+    const members = row.columns.flat().flatMap((child) => ("nodeId" in child ? [child.nodeId] : []));
+    const anchorId = members.find((id) => byId.has(id) && !claimed.has(id));
+    if (anchorId === undefined) continue;
+    rowFor.set(anchorId, row);
+    for (const id of members) claimed.add(id);
+  }
+
+  return rootChildren
+    .map((child) => {
+      const row = rowFor.get(child.id);
+      if (row) {
+        const cells = row.columns
+          .map((column) => {
+            const inner = column
+              .flatMap((slot) => ("nodeId" in slot ? [byId.get(slot.nodeId)] : []))
+              .filter((node): node is StudioSchemaNode => Boolean(node))
+              .map((node) => previewNodeMarkup(node, node.name, form, mockConfig))
+              .join("");
+            return `<div class="mdy-layout-column">${inner}</div>`;
+          })
+          .join("");
+        return `<div class="mdy-layout-columns" style="--mdy-layout-column-count:${row.columns.length}">${cells}</div>`;
+      }
+      return claimed.has(child.id) ? "" : previewNodeMarkup(child, child.name, form, mockConfig);
+    })
+    .join("");
+}
+
+export function previewBodyMarkup(
+  project: MdyStudioProject,
+  form: MdyTypedForm<never> | null,
+  mockConfig: Record<string, MockServerConfig>,
+  layout: ReadonlyArray<StudioLayoutNode> = project.presentation.layout ?? [],
+): string {
   if (!form) {
     return `<p class="tab-hint">Preview needs a group at the schema root.</p>`;
   }
   const rootChildren = project.schema.node === "group" ? project.schema.children : [];
-  const fields = rootChildren.map((c) => previewNodeMarkup(c, c.name, form, mockConfig)).join("");
+  const fields = previewRootMarkup(rootChildren, layout, form, mockConfig);
   const state = form.state;
   const submitErrors = state.lastSubmitErrors();
   const submitRef = project.behaviors.submit?.implementationRef;

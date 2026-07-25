@@ -467,6 +467,9 @@ body {
 
 /* Contract v2 layout, rendered by @modyra/plain: a column row is a grid whose
    track count comes from the node itself, so 2, 3 or 4 columns need no new class. */
+/* Preview uses the same grid as the canvas, so the arrangement you preview is the
+   arrangement that ships rather than a second, drifting picture of the form. */
+.preview-fields .mdy-layout-columns,
 .plain-canvas-form .mdy-layout-columns {
   min-width: 0;
   display: grid;
@@ -474,6 +477,7 @@ body {
   gap: 4px 12px;
   align-items: start;
 }
+.preview-fields .mdy-layout-column,
 .plain-canvas-form .mdy-layout-column {
   min-width: 0;
   display: grid;
