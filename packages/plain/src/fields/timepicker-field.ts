@@ -27,7 +27,9 @@ export function renderTimepickerField(
   const shell = buildFieldShell(f.label, "timepicker");
   const trigger = el("button") as HTMLButtonElement;
   trigger.type = "button";
-  const dialog = el("div") as HTMLDivElement;
+  // `mdy-timepicker__popup` is the class the themes position and frame; the controller only
+  // names the dialog, the hour and the minute.
+  const dialog = el("div", "mdy-timepicker__popup") as HTMLDivElement;
   const hourInput = el("input") as HTMLInputElement;
   hourInput.type = "number";
   const minuteInput = el("input") as HTMLInputElement;
@@ -42,7 +44,7 @@ export function renderTimepickerField(
   setText(cancelButton, "Cancel");
   dialog.append(hourInput, minuteInput, periodButton, confirmButton, cancelButton);
 
-  const wrapper = el("div", "mdy-plain-timepicker");
+  const wrapper = el("div", "mdy-timepicker mdy-plain-timepicker");
   wrapper.append(trigger, dialog);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
@@ -84,7 +86,8 @@ export function renderTimepickerField(
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
 
-    setText(trigger, state.value ?? f.placeholder ?? "Select a time");
+    // `||`, not `??` — same reason as the datepicker: an unset value is "", not null.
+    setText(trigger, state.value || f.placeholder || "Select a time");
     dialog.hidden = !state.open;
     const hourString = String(state.draft.hour);
     if (hourInput.value !== hourString) hourInput.value = hourString;

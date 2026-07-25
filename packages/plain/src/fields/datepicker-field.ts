@@ -28,14 +28,17 @@ export function renderDatepickerField(
   const shell = buildFieldShell(f.label, "datepicker");
   const trigger = el("button") as HTMLButtonElement;
   trigger.type = "button";
-  const popup = el("div") as HTMLDivElement;
-  const header = el("div") as HTMLDivElement;
-  const prevButton = el("button") as HTMLButtonElement;
+  // The popup, its header and the day cells carry the class names the shipped themes already
+  // style (`mdy-datepicker__popup` positions and frames the panel, `__header` lays out the
+  // month nav) — the controller only names the trigger and the grid.
+  const popup = el("div", "mdy-datepicker__popup") as HTMLDivElement;
+  const header = el("div", "mdy-datepicker__header") as HTMLDivElement;
+  const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   prevButton.type = "button";
   setText(prevButton, "‹");
   prevButton.setAttribute("aria-label", "Previous month");
-  const monthLabel = el("span");
-  const nextButton = el("button") as HTMLButtonElement;
+  const monthLabel = el("span", "mdy-datepicker__header-label");
+  const nextButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   nextButton.type = "button";
   setText(nextButton, "›");
   nextButton.setAttribute("aria-label", "Next month");
@@ -43,7 +46,7 @@ export function renderDatepickerField(
   const grid = el("div") as HTMLDivElement;
   popup.append(header, grid);
 
-  const wrapper = el("div", "mdy-plain-datepicker");
+  const wrapper = el("div", "mdy-datepicker mdy-plain-datepicker");
   wrapper.append(trigger, popup);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
@@ -83,7 +86,9 @@ export function renderDatepickerField(
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
 
-    setText(trigger, state.selectedDate ?? f.placeholder ?? "Select a date");
+    // `||`, not `??`: an unset date field holds "" rather than null, and `??` let the empty
+    // string through — the trigger rendered as a button with no text at all.
+    setText(trigger, state.selectedDate || f.placeholder || "Select a date");
     popup.hidden = !state.open;
     setText(monthLabel, `${MONTH_NAMES[state.viewMonth - 1]} ${state.viewYear}`);
 
@@ -91,7 +96,7 @@ export function renderDatepickerField(
       grid.replaceChildren();
       cellEls.clear();
       for (const cell of state.cells) {
-        const button = el("button") as HTMLButtonElement;
+        const button = el("button", "mdy-datepicker__cell") as HTMLButtonElement;
         button.type = "button";
         setText(button, String(cell.day));
         button.addEventListener("click", () => dispatch({ type: "select-date", iso: cell.iso }));
