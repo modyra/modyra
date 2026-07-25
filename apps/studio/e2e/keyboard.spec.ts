@@ -13,61 +13,68 @@ async function addFromPalette(page: import("@playwright/test").Page, template: s
   await page.keyboard.press("Enter");
 }
 
+/** Moves keyboard focus to a node in the outline — the surface that owns reordering. */
+async function focusOutlineNode(page: import("@playwright/test").Page, label: string) {
+  await page.locator(".outline .tree-node", { hasText: label }).last().locator("[data-node]").last().focus();
+}
+
 test.beforeEach(async ({ page }) => {
   await openStudio(page);
   await showStructure(page); // this suite drives the Structure outline, not the live form
 });
 
-test("adding an element via keyboard moves focus onto the new node (not stranded on the palette)", async ({ page }) => {
+test("adding an element via keyboard lands the caret in its label, not on the palette", async ({ page }) => {
   await addFromPalette(page, "text");
-  const focused = page.locator("[data-node]:focus");
-  await expect(focused).toHaveCount(1);
-  await expect(focused).toContainText("Text");
+  // Inserting leaves you where you would type next, which is the composing rhythm.
+  await expect(page.locator('.plain-canvas-field [data-inline-edit="label"]:focus')).toHaveCount(1);
 });
 
 test("keyboard-only: compose a group with a field moved inside it (no mouse)", async ({ page }) => {
   await addFromPalette(page, "group");
   await addFromPalette(page, "text");
 
-  // The new text field has focus (previous assertion covers this); pick it up and enter the
-  // group that precedes it as a sibling — the app's documented keyboard equivalent for drag.
+  // Reordering is an outline gesture: focus the node there, then use the app's documented
+  // keyboard equivalent for drag.
+  await focusOutlineNode(page, "Text");
   await page.keyboard.press(" ");
   await expect(page.locator("footer")).toContainText("Picked up Text");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("Enter");
   await expect(page.locator("footer")).toContainText("Drop completed");
 
-  const group = page.locator(".tree-node", { hasText: "group" }).first();
+  const group = page.locator(".outline .tree-node", { hasText: "group" }).first();
   await expect(group.locator(".tree-node", { hasText: "Text" })).toHaveCount(1);
 
   // Focus must still be on the moved node after the whole pick-up/move/drop sequence.
-  await expect(page.locator("[data-node]:focus")).toContainText("Text");
+  await expect(page.locator(".outline [data-node]:focus")).toContainText("Text");
 });
 
 test("keyboard-only: reorder two siblings with Arrow keys, focus follows the moved item", async ({ page }) => {
   await addFromPalette(page, "text");
   await addFromPalette(page, "email");
   // Root children are now [text, email]; pick up "email" and move it before "text".
+  await focusOutlineNode(page, "Email");
   await page.keyboard.press(" ");
   await page.keyboard.press("ArrowUp");
   await page.keyboard.press("Enter");
 
-  const rootLabels = await page.locator(".tree > .tree-node > .node .select").allInnerTexts();
+  const rootLabels = await page.locator(".outline .tree > .tree-node > .node .select").allInnerTexts();
   expect(rootLabels[0]).toContain("Email");
-  await expect(page.locator("[data-node]:focus")).toContainText("Email");
+  await expect(page.locator(".outline [data-node]:focus")).toContainText("Email");
 });
 
 test("Escape cancels a pick-up without losing focus", async ({ page }) => {
   await addFromPalette(page, "text");
+  await focusOutlineNode(page, "Text");
   await page.keyboard.press(" ");
   await page.keyboard.press("Escape");
   await expect(page.locator("footer")).toContainText("Move cancelled");
-  await expect(page.locator("[data-node]:focus")).toContainText("Text");
+  await expect(page.locator(".outline [data-node]:focus")).toContainText("Text");
 });
 
 test("deleting a node via keyboard moves focus to the root, not off the page", async ({ page }) => {
   await addFromPalette(page, "text");
-  await page.locator('[data-delete]').focus();
+  await page.locator('.outline [data-delete]').focus();
   await page.keyboard.press("Enter");
   await expect(page.locator("footer")).toContainText("Delete");
   // Deleting the only node empties the tree - there's no [data-node] left, so focus falls back

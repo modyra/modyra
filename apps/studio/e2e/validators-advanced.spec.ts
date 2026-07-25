@@ -132,7 +132,7 @@ test("inline-editing an existing form validator's message commits without recrea
 test("P5 gap closed: AND composes two sub-conditions, each with its own field+condition", async ({ page }) => {
   await page.locator('[data-template="group"]').click();
   await showStructure(page);
-  const groupId = await page.locator(".tree-node [data-node]").first().getAttribute("data-node");
+  const groupId = await page.locator(".outline .tree-node [data-node]").first().getAttribute("data-node");
   await page.locator('[data-template="text"]').click();
   await openFormRulesTab(page);
 

@@ -104,7 +104,7 @@ test("generate failure cannot corrupt the editor: canvas and tree stay intact", 
   // Switching back to the canvas: the earlier generate() must never have touched project state.
   await page.locator('[data-inspector-tab="node"]').click();
   await showStructure(page);
-  await expect(page.locator(".tree-node")).toHaveCount(1);
+  await expect(page.locator(".outline .tree-node")).toHaveCount(1);
   await expect(page.locator("[data-name]")).toHaveValue(/^text/);
 });
 

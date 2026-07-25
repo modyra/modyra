@@ -23,7 +23,7 @@ test("a select field with no options: tree shows the issue marker, tab badge is 
   // silently rendering a form that does not match the project.
   await expect(page.locator(".plain-canvas-unavailable")).toBeVisible();
   await showStructure(page);
-  await expect(page.locator(".tree-node .indicator.issue")).toHaveCount(1);
+  await expect(page.locator(".outline .tree-node .indicator.issue")).toHaveCount(1);
   await expect(page.locator('[data-inspector-tab="diagnostics"] .badge')).toHaveClass(/badge-error/);
 
   await page.locator('[data-template="text"]').click(); // select a different node first
@@ -49,7 +49,7 @@ test("quick-fix: 'Add a default option' resolves the select-without-options erro
   await expect(page.locator(".diagnostic-row")).toHaveCount(0);
   await expect(page.locator(".tab-hint")).toContainText("No issues found");
   await showStructure(page);
-  await expect(page.locator(".tree-node .indicator.issue")).toHaveCount(0);
+  await expect(page.locator(".outline .tree-node .indicator.issue")).toHaveCount(0);
 });
 
 test("quick-fix: 'Clear pattern' resolves an invalid regex", async ({ page }) => {

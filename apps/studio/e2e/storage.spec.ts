@@ -22,9 +22,9 @@ test("reload restores the last auto-saved session", async ({ page }) => {
   await page.reload();
   await page.waitForSelector(".studio");
   await showStructure(page); // a reload starts on the live form again
-  await expect(page.locator(".tree-node")).toHaveCount(1);
+  await expect(page.locator(".outline .tree-node")).toHaveCount(1);
   // Restore does not preserve "last selected" (there is nothing to restore it from) — select the field explicitly.
-  await page.locator("[data-select]").first().click();
+  await page.locator(".outline [data-select]").first().click();
   await expect(page.locator("[data-name]")).toHaveValue("myFieldName");
 });
 
@@ -72,11 +72,11 @@ test("export via the JSON target, then Import that same file back in, round-trip
   const path = await download.path();
 
   await page.locator('[data-import-button]').locator("input[type=file]").setInputFiles(path);
-  await expect(page.locator(".tree-node")).toHaveCount(1);
-  await expect(page.locator('[data-select]').first().locator(".node-label")).toContainText("Text");
+  await expect(page.locator(".outline .tree-node")).toHaveCount(1);
+  await expect(page.locator('.outline [data-select]').first().locator(".node-label")).toContainText("Text");
 
   // Re-selecting the imported field: the required validator survived the round-trip.
-  await page.locator("[data-select]").first().click();
+  await page.locator(".outline [data-select]").first().click();
   await expect(page.locator(".validator-row")).toHaveCount(1);
 });
 
@@ -86,5 +86,5 @@ test("a malformed import file reports an error and never touches the current pro
   await page.locator('[data-import-button]').locator("input[type=file]").setInputFiles(badFile);
 
   await expect(page.locator("footer")).toContainText("Import failed");
-  await expect(page.locator(".tree-node")).toHaveCount(1); // the original field is still there, untouched
+  await expect(page.locator(".outline .tree-node")).toHaveCount(1); // the original field is still there, untouched
 });

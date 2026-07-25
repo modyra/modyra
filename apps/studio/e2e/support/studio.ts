@@ -19,16 +19,15 @@ export async function openDock(page: Page): Promise<void> {
   await panel.waitFor({ state: "visible" });
 }
 
-/** Switches the canvas to the Structure outline (the tree view). */
+/**
+ * The outline rail is always present now — there is no Structure mode to switch to. Kept as a
+ * no-op so the suites that used to switch read as "this part drives the outline".
+ */
 export async function showStructure(page: Page): Promise<void> {
-  await openDock(page);
-  await page.locator('[data-canvas-mode="structure"]').click();
-  await page.waitForSelector('[data-canvas-surface="structure"]');
+  await page.waitForSelector(".outline .tree, .outline .empty");
 }
 
-/** Switches the canvas back to the live form. */
+/** The canvas is always the live form; kept for the same reason as showStructure. */
 export async function showLiveForm(page: Page): Promise<void> {
-  await openDock(page);
-  await page.locator('[data-canvas-mode="form"]').click();
   await page.waitForSelector('[data-canvas-surface="form"]');
 }
