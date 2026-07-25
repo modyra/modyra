@@ -373,6 +373,59 @@ body {
   flex: 0 0 auto;
 }
 
+/* Contract v2 layout, rendered by @modyra/plain: a column row is a grid whose
+   track count comes from the node itself, so 2, 3 or 4 columns need no new class. */
+.plain-canvas-form .mdy-layout-columns {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--mdy-layout-column-count, 2), minmax(0, 1fr));
+  gap: 4px 12px;
+  align-items: start;
+}
+.plain-canvas-form .mdy-layout-column {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  align-content: start;
+}
+.plain-canvas-form .mdy-layout-section {
+  min-width: 0;
+  margin: 0;
+  padding: 8px 10px 10px;
+  border: 1px solid var(--mdy-border);
+  border-radius: 10px;
+}
+.plain-canvas-form .mdy-layout-legend {
+  padding: 0 4px;
+  color: var(--mdy-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+/* A field in a column has less room, so its head gives up the code name first and then
+   wraps its control strip onto a second line — spilling would paint over the next column. */
+.plain-canvas-form .mdy-layout-column .plain-canvas-inline-name {
+  display: none;
+}
+.plain-canvas-form .mdy-layout-column .plain-canvas-field {
+  min-width: 0;
+  overflow: hidden;
+}
+.plain-canvas-form .mdy-layout-column .plain-canvas-head {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+.plain-canvas-form .mdy-layout-column .plain-canvas-actions {
+  margin-inline-start: auto;
+}
+@media (max-width: 720px) {
+  /* One column per row below the point where side-by-side fields stop being readable. */
+  .plain-canvas-form .mdy-layout-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Insert palette: type-to-add. Overlays the canvas column so it never has to
    compete with the properties panel for room. */
 .palette-layer {
