@@ -730,7 +730,8 @@
         pointer-events: none;
     }
 
-    .mdy-input-wrapper input,
+    /* Excluded for the same reason as the reset further down: a boolean control owns its frame. */
+    .mdy-input-wrapper input:not(.mdy-checkbox, .mdy-switch),
     .mdy-input-wrapper textarea {
         flex: 1;
         border: none !important;
@@ -1101,7 +1102,10 @@
     /* The wrapper itself provides the M3 bg and border indicator.
    Elements inside must be transparent and have no box-shadow. */
 
-    .mdy-input-wrapper input,
+    /* Checkbox and switch are excluded: they are fixed-size controls that draw their own
+       frame, and `!important` inside a layer cannot be overridden by unlayered host CSS —
+       so without the exclusion no theme or application could ever give them one back. */
+    .mdy-input-wrapper input:not(.mdy-checkbox, .mdy-switch),
     .mdy-input-wrapper textarea,
     .mdy-input-wrapper select {
         background-color: transparent !important;
