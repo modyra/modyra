@@ -52,7 +52,43 @@ in `@modyra/widgets`:
 | `timepicker` | `createTimepickerFieldController` | trigger + hour/minute inputs, draft/commit |
 
 `slider` needs no distinct controller — it is structurally just a numeric
-field rendered as `<input type=range>`.
+field rendered as `<input type=range>`. `daterange`, `colors` and `file` are
+not implemented here yet; `@modyra/lit`'s catalog covers them.
+
+## Layout
+
+Pass a Contract v2 `layout` to arrange the form. Sections render as
+`<fieldset>`, column rows as a grid whose track count comes from the node, and
+either can nest inside the other:
+
+```ts
+mountMdyForm(host, fields, {
+  layout: [
+    {
+      kind: "section",
+      id: "address",
+      label: "Address",
+      children: ["street", { kind: "columns", id: "cityZip", columns: [["city"], ["zip"]] }],
+    },
+  ],
+});
+```
+
+A layout node is spliced in at the position of its first member rather than
+hoisted, so a row built from fields 3 and 4 stays between 2 and 5. Fields the
+layout does not mention still render, in their declared order — a partial
+layout arranges part of the form instead of dropping the rest.
+
+## Theme classes
+
+Every field renders the same structure `@modyra/angular` and `@modyra/lit` do —
+`mdy-renderer`, `mdy-label` (with `mdy-label__required`), `mdy-input-wrapper`
+(with `__inliner`), `mdy-supporting-text`, `mdy-control__errors` — plus the
+state classes `mdy-renderer--touched`, `mdy-input-wrapper--error/--disabled`
+and `mdy-label--filled`. Load a theme from `@modyra/styles` to style them.
+
+This package ships **no CSS of its own**: without a theme the controls are
+structurally correct but unstyled.
 
 ## Used by Modyra Studio
 

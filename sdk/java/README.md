@@ -39,7 +39,7 @@ reference reason Rust rejects it).
 TS) and the v2 recursive `{"version": 2, "schema": {...}}` envelope
 (nested `group`/`array`/`field` nodes, flattened to dotted/indexed
 paths exactly like `flattenDynamicSchema` in TS, including array-row
-data cascading into a field's `initialValue`). `layout` and `rules` are
+data cascading into a field's `initialValue`). `layout` (including nested section/columns nodes) and `rules` are
 validated against the resolved field names and kept as their raw JSON
 form, same as the TS reference implementation.
 
