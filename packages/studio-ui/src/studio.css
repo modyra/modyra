@@ -43,7 +43,9 @@
   --mdy-border: color-mix(in srgb, var(--mdy-night) 80%, white);
   --mdy-border-accent: color-mix(in srgb, var(--mdy-indigo) 40%, var(--mdy-night));
   --mdy-text: var(--mdy-cloud);
-  --mdy-text-muted: var(--mdy-slate);
+  /* Lightened from --mdy-slate (#94a3b8), which fell under WCAG AA 4.5:1 against the panel
+     at the sizes the canvas uses it — caught by the axe suite, not by eye. */
+  --mdy-text-muted: #aab6c8;
   --mdy-focus-ring: color-mix(in srgb, var(--mdy-indigo) 35%, transparent);
 }
 
@@ -175,7 +177,96 @@ body {
   min-height: 0;
   overflow: hidden;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  grid-template-columns: 210px minmax(0, 1fr) minmax(280px, 320px);
+}
+
+/* The outline: navigation and keyboard reordering, in the gutter that used to be
+   empty space beside the form card. */
+.outline {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 10px 8px;
+  border-right: 1px solid var(--mdy-border);
+}
+.outline-title {
+  margin: 0 0 6px 4px;
+  color: var(--mdy-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+/* Compact by design: the rail is for finding and reordering, so a row is one line of text
+   with its indicators, and the per-node actions only appear when you are on that row. */
+.outline .tree {
+  font-size: 12px;
+}
+.outline .node {
+  gap: 2px;
+  padding: 2px 4px;
+  border-radius: 5px;
+}
+.outline .node .select {
+  min-width: 0;
+  padding: 1px 2px;
+  border-color: transparent;
+  background: transparent;
+}
+.outline .node-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.outline .node small {
+  display: none;
+}
+.outline .node > button:not(.select) {
+  padding: 0 4px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--mdy-text-muted);
+  font-size: 11px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.outline .node:hover > button:not(.select),
+.outline .node:focus-within > button:not(.select),
+.outline .node > button:not(.select):focus-visible {
+  opacity: 1;
+}
+.outline .drop-zone {
+  height: 6px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  color: transparent;
+}
+.outline .drop-zone.active {
+  background: color-mix(in srgb, var(--mdy-indigo) 22%, transparent);
+  border-radius: 3px;
+}
+.outline .drop-zone.drag-over {
+  background: var(--mdy-indigo);
+  border-radius: 3px;
+}
+.outline .array-item {
+  margin-inline-start: 8px;
+}
+.outline .array-item b {
+  color: var(--mdy-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+.outline .empty {
+  padding: 8px 4px;
+  color: var(--mdy-text-muted);
+  font-size: 11px;
+}
+.outline .empty p {
+  margin: 0 0 6px;
 }
 
 /* Anchors the floating dock without putting it inside the scrolling canvas. */
@@ -300,9 +391,10 @@ body {
 .canvas-column[data-dock-open="true"] .canvas {
   padding-inline-end: 356px;
 }
-@media (max-width: 1100px) {
-  /* No room to sit beside the form — the panel overlays, and the card gets out
-     from under it by leaving space at the bottom. */
+@media (max-width: 1400px) {
+  /* Below this the rail, the form and the properties panel already use the width —
+     the toolbar overlays instead of squeezing the form into a column too narrow to
+     fit a field row's own controls. */
   .canvas-column[data-dock-open="true"] .canvas {
     padding-inline-end: 18px;
   }
@@ -761,16 +853,20 @@ body {
   border-color: transparent;
   border-radius: 999px;
   background: color-mix(in srgb, var(--mdy-bg) 82%, transparent);
-  color: var(--mdy-text-muted);
+  color: var(--mdy-text);
   font-size: 10px;
   line-height: 1.4;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
+/* White on the raw indigo is ~3.5:1, under AA for 10px uppercase text — darkened so the
+   selected chip stays legible rather than just brand-coloured. */
 .plain-canvas-form .plain-canvas-field.selected .plain-canvas-select,
-.plain-canvas-field.selected .plain-canvas-select {
-  background: var(--mdy-indigo);
+.plain-canvas-field.selected .plain-canvas-select,
+.plain-canvas-form .plain-canvas-group.selected > .plain-canvas-head > .plain-canvas-select,
+.plain-canvas-form .plain-canvas-array.selected > .plain-canvas-head > .plain-canvas-select {
+  background: color-mix(in srgb, var(--mdy-indigo) 68%, black);
   color: white;
 }
 /* In flow inside the field's own box, hidden with `visibility` rather than
@@ -782,7 +878,8 @@ body {
   display: flex;
   align-items: center;
   gap: 2px;
-  visibility: hidden;
+  opacity: 0;
+  transition: opacity 120ms ease;
 }
 .plain-canvas-field:hover .plain-canvas-actions,
 .plain-canvas-field.selected .plain-canvas-actions,
@@ -793,7 +890,7 @@ body {
 .plain-canvas-group:hover > .plain-canvas-head > .plain-canvas-actions,
 .plain-canvas-group.selected > .plain-canvas-head > .plain-canvas-actions,
 .plain-canvas-group:focus-within > .plain-canvas-head > .plain-canvas-actions {
-  visibility: visible;
+  opacity: 1;
 }
 
 .plain-canvas-actions button {
@@ -962,6 +1059,10 @@ body {
   cursor: grabbing;
 }
 @media (prefers-reduced-motion: reduce) {
+  .plain-canvas-actions,
+  .outline .node > button:not(.select) {
+    transition: none;
+  }
   .plain-canvas-drop {
     transition: none;
   }
@@ -1577,11 +1678,17 @@ body {
   font-size: 11px;
 }
 
-@media (max-width: 850px) {
+@media (max-width: 1000px) {
+  /* The properties panel earns its width least at this size — the outline is navigation. */
   .studio main {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 180px minmax(0, 1fr);
   }
   .inspector {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .outline {
     display: none;
   }
 }
@@ -1600,6 +1707,9 @@ body {
   }
   .canvas {
     padding: 12px 14px;
+  }
+  .canvas-column[data-dock-open="true"] .canvas {
+    padding-inline-end: 14px;
   }
   .plain-canvas-frame {
     padding: 16px 14px 20px;

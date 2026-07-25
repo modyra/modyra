@@ -644,6 +644,7 @@ interface StudioShell {
   readonly canvasSurface: HTMLElement;
   readonly inspectorBody: HTMLElement;
   readonly head: Region;
+  readonly outline: Region;
   readonly dock: Region;
   readonly palette: Region;
   readonly surface: Region;
@@ -676,8 +677,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     message: "",
   };
   let inspectorTab: "node" | "form" | "diagnostics" | "export" | "preview" = "node";
-  /** The live form is the editor. Structure is the secondary outline view, reached from the toolbar. */
-  let canvasMode: "structure" | "form" = "form";
+  /** The live form is the editor; the outline rail is how you navigate and reorder it. */
+  const canvasMode = "form" as const;
   /** Whether the floating toolbar is expanded. Collapsed by default so the canvas stays clean. */
   let dockOpen = false;
   /** Export tab state — `generation` guards against a stale async generate() clobbering a newer one
@@ -1701,13 +1702,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
             </label>
           </div>
         </section>
-        <section class="dock-section">
-          <h3>View</h3>
-          <div class="canvas-mode-switch" role="group" aria-label="Canvas view">
-            <button type="button" data-canvas-mode="form" aria-pressed="${canvasMode === "form"}">Live form</button>
-            <button type="button" data-canvas-mode="structure" aria-pressed="${canvasMode === "structure"}">Structure</button>
-          </div>
-        </section>
+
       </div>
       <button type="button" class="fab" data-dock-toggle aria-expanded="${dockOpen}" aria-label="${dockOpen ? "Close the Studio toolbar" : "Open the Studio toolbar"}">
         <span aria-hidden="true">${dockOpen ? "×" : "＋"}</span>
@@ -1725,14 +1720,19 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       : `<div class="plain-canvas-frame"><div class="plain-canvas-unavailable" role="status">The live form is unavailable until the blocking Contract diagnostics are fixed.</div></div>`;
   }
 
-  function structureMarkup(rootChildren: readonly StudioSchemaNode[]): string {
-    return rootChildren.length
-      ? `<ul class="tree">${rootChildren.map(markup).join("")}</ul>`
+  /**
+   * The outline rail: the same tree renderer, in a persistent column instead of a canvas mode.
+   * It is the surface the P4 keyboard-parity gate covers (Space to pick up, arrows to move), and
+   * it fills the gutter that was previously dead space beside the form card.
+   */
+  function outlineMarkup(rootChildren: readonly StudioSchemaNode[]): string {
+    const body = rootChildren.length
+      ? `<ul class="tree" aria-label="Form structure">${rootChildren.map(markup).join("")}</ul>`
       : `<div class="empty">
-           <h2>Start with a blank form</h2>
-           <p>Drag an element here or click one in the palette.</p>
+           <p>No fields yet.</p>
            <div class="drop-zone inside" data-inside="${project.schema.id}" data-index="0">Drop first element</div>
          </div>`;
+    return `<h2 class="outline-title">Outline</h2>${body}`;
   }
 
   function tabsMarkup(current: StudioSchemaNode, diagnosticCount: number, errorCount: number): string {
@@ -1824,6 +1824,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       <div class="studio">
         <header></header>
         <main>
+          <aside class="outline" aria-label="Form outline"></aside>
           <div class="canvas-column">
             <section class="canvas" tabindex="-1">
               <div class="canvas-surface"></div>
@@ -1849,6 +1850,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       canvasSurface,
       inspectorBody,
       head: new Region(find<HTMLElement>("header"), bindHead),
+      outline: new Region(find<HTMLElement>(".outline"), bindOutline),
       dock: new Region(find<HTMLElement>(".dock"), bindDock),
       palette: new Region(find<HTMLElement>(".palette-layer"), bindPalette),
       // Bound explicitly by render(): in live-form mode the listeners belong to DOM that
@@ -1861,6 +1863,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
     scroll.track(canvas);
     scroll.track(inspectorBody);
+    scroll.track(find<HTMLElement>(".outline"));
     canvasController.connect(canvas);
 
     // One document-level handler for the whole shortcut set, bound once. Scoped to this mount so
@@ -1890,26 +1893,22 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     const errorCount = diagnostics.filter((d) => d.severity === "error").length;
 
     view.head.update(headMarkup(indexes));
+    view.outline.update(outlineMarkup(rootChildren));
     view.dock.update(dockMarkup());
     view.palette.update(paletteMarkup());
     view.canvasSurface.dataset.canvasSurface = canvasMode;
     // The open toolbar must not sit on top of the form: the canvas yields the width instead.
     view.canvas.parentElement?.setAttribute("data-dock-open", String(dockOpen));
 
-    if (canvasMode === "form") {
-      if (view.surface.update(liveFrameMarkup(Boolean(contract)))) plainCanvasSignature = null;
-      syncLiveCanvas(contract, view);
-    } else {
-      plainCanvasSession.dispose();
-      plainCanvasSignature = null;
-      if (view.surface.update(structureMarkup(rootChildren))) bindCanvasSurface(view.canvasSurface);
-    }
+    if (view.surface.update(liveFrameMarkup(Boolean(contract)))) plainCanvasSignature = null;
+    syncLiveCanvas(contract, view);
 
     view.tabs.update(tabsMarkup(current, diagnostics.length, errorCount));
     view.inspector.update(inspectorBodyMarkup(current, indexes, diagnostics));
     view.footer.update(footerMarkup());
 
-    canvasController.elements.refresh(view.canvas);
+    // The registry has to see both surfaces: tree nodes are in the rail, field rows in the canvas.
+    canvasController.elements.refresh(host);
     // After every write, never before: assigning scrollTop to a container the renderer has not
     // refilled yet is clamped to 0 by the browser, which is what used to reset the canvas.
     scroll.restore();
@@ -2181,16 +2180,6 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       focusSelector = "[data-dock-toggle]";
       render();
     });
-    root.querySelectorAll<HTMLButtonElement>("[data-canvas-mode]").forEach((button) =>
-      button.addEventListener("click", () => {
-        const next = button.dataset.canvasMode;
-        if (next !== "structure" && next !== "form") return;
-        canvasMode = next;
-        status = next === "form" ? "Live form canvas" : "Structure outline";
-        focusSelector = `[data-canvas-mode="${next}"]`;
-        render();
-      }),
-    );
     root.querySelectorAll<HTMLElement>("[data-template]").forEach((el) =>
       el.addEventListener("click", () => insertTemplate(el.dataset.template!)),
     );
@@ -2237,8 +2226,65 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   }
 
   /**
-   * Everything inside the canvas surface: the Structure tree and the instrumented live-form
-   * canvas both live here, and both are rebuilt as a unit, so one binder covers both.
+   * The outline rail. Its tree nodes are one tab stop, not one per node: arrows move within the
+   * tree (the app's own Space/arrow reorder scheme still works from any focused node), so a form
+   * with thirty fields no longer costs thirty tabs to get past.
+   */
+  function bindOutline(root: HTMLElement): void {
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>("[data-node]"));
+    nodes.forEach((node, index) => {
+      node.tabIndex = index === 0 || node.dataset.node === selected ? 0 : -1;
+      node.addEventListener("keydown", (event) => keyboard(event, node.dataset.node!));
+      // Roving focus, but only when nothing is picked up — while moving a node the app's own
+      // arrow handling owns the arrows.
+      node.addEventListener("keydown", (event) => {
+        if (picked || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
+        const next = nodes[index + (event.key === "ArrowDown" ? 1 : -1)];
+        if (!next) return;
+        event.preventDefault();
+        for (const other of nodes) other.tabIndex = -1;
+        next.tabIndex = 0;
+        next.focus();
+      });
+    });
+    bindTreeControls(root);
+  }
+
+  /** Selection, delete, duplicate, drag and drop zones — shared by the rail and the live canvas. */
+  function bindTreeControls(root: HTMLElement): void {
+    bindDraggables(root);
+    root.querySelectorAll<HTMLElement>(".drop-zone").forEach((el) => {
+      el.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = drag && "template" in drag ? "copy" : "move";
+      });
+      el.addEventListener("dragenter", () => el.classList.add("drag-over"));
+      el.addEventListener("dragleave", () => el.classList.remove("drag-over"));
+      el.addEventListener("drop", (event) => {
+        event.preventDefault();
+        el.classList.remove("drag-over");
+        const liveCanvas = el.classList.contains("plain-canvas-drop");
+        if (el.dataset.before) drop({ kind: "before", targetId: el.dataset.before }, liveCanvas);
+        else if (el.dataset.after) drop({ kind: "after", targetId: el.dataset.after }, liveCanvas);
+        else drop({ kind: "inside", parentId: el.dataset.inside!, index: Number(el.dataset.index) });
+      });
+    });
+    root.querySelectorAll<HTMLElement>("[data-select]").forEach((el) =>
+      el.addEventListener("click", () => {
+        selected = el.dataset.select!;
+        render();
+      }),
+    );
+    root.querySelectorAll<HTMLElement>("[data-delete]").forEach((el) =>
+      el.addEventListener("click", () => remove(el.dataset.delete!)),
+    );
+    root.querySelectorAll<HTMLElement>("[data-duplicate]").forEach((el) =>
+      el.addEventListener("click", () => commit(createDuplicateCommand(el.dataset.duplicate!))),
+    );
+  }
+
+  /**
+   * Everything inside the canvas surface: the instrumented live-form canvas.
    */
   function bindCanvasSurface(root: HTMLElement): void {
     root.querySelectorAll<HTMLButtonElement>("[data-toggle-required]").forEach((button) =>
@@ -2473,37 +2519,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       }),
     );
 
-    bindDraggables(root);
-
-    root.querySelectorAll<HTMLElement>(".drop-zone").forEach((el) => {
-      el.addEventListener("dragover", (event) => {
-        event.preventDefault();
-        if (event.dataTransfer) event.dataTransfer.dropEffect = drag && "template" in drag ? "copy" : "move";
-      });
-      el.addEventListener("dragenter", () => el.classList.add("drag-over"));
-      el.addEventListener("dragleave", () => el.classList.remove("drag-over"));
-      el.addEventListener("drop", (event) => {
-        event.preventDefault();
-        el.classList.remove("drag-over");
-        const liveCanvas = el.classList.contains("plain-canvas-drop");
-        if (el.dataset.before) drop({ kind: "before", targetId: el.dataset.before }, liveCanvas);
-        else if (el.dataset.after) drop({ kind: "after", targetId: el.dataset.after }, liveCanvas);
-        else drop({ kind: "inside", parentId: el.dataset.inside!, index: Number(el.dataset.index) });
-      });
-    });
-
-    root.querySelectorAll<HTMLElement>("[data-select]").forEach((el) =>
-      el.addEventListener("click", () => {
-        selected = el.dataset.select!;
-        render();
-      }),
-    );
-    root.querySelectorAll<HTMLElement>("[data-delete]").forEach((el) =>
-      el.addEventListener("click", () => remove(el.dataset.delete!)),
-    );
-    root.querySelectorAll<HTMLElement>("[data-duplicate]").forEach((el) =>
-      el.addEventListener("click", () => commit(createDuplicateCommand(el.dataset.duplicate!))),
-    );
+    bindTreeControls(root);
 
     root.querySelectorAll<HTMLElement>("[data-node]").forEach((el) =>
       el.addEventListener("keydown", (e) => keyboard(e, el.dataset.node!)),

@@ -36,11 +36,16 @@ export class StudioRuntimeSession<T extends DisposableRuntimeSession> {
 export class StudioElementRegistry {
   #byNodeId = new Map<string, HTMLElement>();
 
+  /**
+   * First element wins. A node appears twice — once in the outline rail, once as a row in the
+   * live canvas — and the outline comes first in document order. That is the one that must take
+   * focus after a command, because it is the surface carrying the pick-up/arrow-move handlers.
+   */
   refresh(root: ParentNode): void {
     this.#byNodeId.clear();
     root.querySelectorAll<HTMLElement>("[data-node]").forEach((element) => {
       const nodeId = element.dataset.node;
-      if (nodeId) this.#byNodeId.set(nodeId, element);
+      if (nodeId && !this.#byNodeId.has(nodeId)) this.#byNodeId.set(nodeId, element);
     });
   }
 

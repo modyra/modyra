@@ -25,6 +25,13 @@ function openDock(host) {
   return host;
 }
 
+/** The outline rail renders the same tree markup the canvas mode used to. */
+function outlineNode(host, nodeId) {
+  const node = host.querySelector(`.outline [data-node="${nodeId}"]`);
+  assert.ok(node, `expected an outline node for ${nodeId}`);
+  return node.outerHTML;
+}
+
 test("mounting a blank project opens on the live form, not a tree or a palette", () => {
   const host = createHost();
   const dispose = mountStudio(host);
@@ -40,7 +47,7 @@ test("mounting a blank project opens on the live form, not a tree or a palette",
   assert.equal(host.innerHTML, "");
 });
 
-test("the toolbar exposes the templates, history, project I/O and the view switch", () => {
+test("the toolbar exposes the templates, history and project I/O", () => {
   const host = createHost();
   mountStudio(host);
   openDock(host);
@@ -53,8 +60,6 @@ test("the toolbar exposes the templates, history, project I/O and the view switc
   for (const action of ["[data-undo]", "[data-redo]", "[data-new]", "[data-import]"]) {
     assert.ok(panel.querySelector(action), `missing action ${action}`);
   }
-  assert.ok(panel.querySelector('[data-canvas-mode="structure"]'));
-  assert.ok(panel.querySelector('[data-canvas-mode="form"][aria-pressed="true"]'));
 });
 
 test("the form name is edited in the header and committed through a real command", () => {
@@ -114,30 +119,36 @@ test("selecting a field does not remount the live form", () => {
   assert.equal(host.querySelector('[data-plain-select="nd_zip"]').getAttribute("aria-pressed"), "true");
 });
 
-test("the Structure outline is still reachable from the toolbar", () => {
+test("the outline rail is always present, beside the live form", () => {
   const host = createHost();
   mountStudio(host, createCheckoutProject());
-  openDock(host);
-  click(host.querySelector('[data-canvas-mode="structure"]'));
 
-  assert.equal(host.querySelector("[data-canvas-surface]").dataset.canvasSurface, "structure");
-  assert.match(host.innerHTML, /<ul class="tree">/);
+  const outline = host.querySelector(".outline");
+  assert.ok(outline, "expected a persistent outline rail");
+  assert.ok(outline.querySelector("ul.tree"));
   for (const name of ["country", "shipping", "items", "coupon"]) {
-    assert.match(host.innerHTML, new RegExp(name));
+    assert.match(outline.innerHTML, new RegExp(name));
   }
+  // Both surfaces at once: no mode switch to find, no tree/canvas either-or.
+  assert.equal(host.querySelector("[data-canvas-surface]").dataset.canvasSurface, "form");
+  assert.ok(host.querySelector(".plain-canvas-field"));
+});
+
+test("the outline is one tab stop, not one per node", () => {
+  const host = createHost();
+  mountStudio(host, createCheckoutProject());
+
+  const nodes = Array.from(host.querySelectorAll(".outline [data-node]"));
+  assert.ok(nodes.length > 3, "checkout has several nodes");
+  const focusable = nodes.filter((node) => node.tabIndex === 0);
+  assert.equal(focusable.length, 1, "roving tabindex: exactly one node is tabbable");
 });
 
 test("at-a-glance tree indicators reflect checkout's real validators (no need to open the inspector)", () => {
   const host = createHost();
   mountStudio(host, createCheckoutProject());
-  openDock(host);
-  click(host.querySelector('[data-canvas-mode="structure"]'));
 
-  function nodeMarkup(nodeId) {
-    const match = host.innerHTML.match(new RegExp(`<div class="node"[^>]*data-node="${nodeId}">[\\s\\S]*?<\\/div>`));
-    assert.ok(match, `expected a .node element for ${nodeId}`);
-    return match[0];
-  }
+  const nodeMarkup = (nodeId) => outlineNode(host, nodeId);
 
   // city: exactly one "required" validator -> required marker only, no count badge.
   const cityNode = nodeMarkup("nd_city");
