@@ -25,7 +25,7 @@ export function renderDatepickerField(
 ): () => void {
   const controller = createDatepickerFieldController({ widgetId: f.name, handle, ...options }, reactivity);
 
-  const shell = buildFieldShell(f.label);
+  const shell = buildFieldShell(f.label, "datepicker");
   const trigger = el("button") as HTMLButtonElement;
   trigger.type = "button";
   const popup = el("div") as HTMLDivElement;

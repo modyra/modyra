@@ -33,7 +33,7 @@ export function renderTextField(
     reactivity,
   );
 
-  const shell = buildFieldShell(f.label);
+  const shell = buildFieldShell(f.label, f.kind);
   const input = (isTextarea ? el("textarea") : el("input")) as HTMLInputElement | HTMLTextAreaElement;
   if (f.placeholder) input.placeholder = f.placeholder;
   if (!isTextarea && isNumeric) {
@@ -61,6 +61,14 @@ export function renderTextField(
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
+    // The themes style these state classes, the same ones the Lit base element toggles.
+    shell.syncState({
+      touched: handle.touched(),
+      disabled: handle.disabled(),
+      hasError: handle.errors().length > 0,
+      filled: Boolean(handle.value()),
+      required: handle.required(),
+    });
     const stringValue = state.value === undefined || state.value === null ? "" : String(state.value);
     if (input.value !== stringValue) input.value = stringValue;
   });

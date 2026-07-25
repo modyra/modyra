@@ -38,7 +38,11 @@ const fields = [
 ];
 
 function byLabel(container, text) {
-  return [...container.querySelectorAll("label")].find((l) => l.textContent === text);
+  // The label carries a `mdy-label__required` marker inside it, same as the Lit renderers,
+  // so compare the label's own text rather than the whole subtree.
+  const ownText = (l) =>
+    [...l.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim();
+  return [...container.querySelectorAll("label")].find((l) => ownText(l) === text);
 }
 
 test("mounts real DOM for every field kind, one control per field", () => {
