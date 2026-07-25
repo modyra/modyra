@@ -748,11 +748,25 @@ body {
   border-radius: 3px;
 }
 .plain-canvas-form .plain-canvas-insert {
-  height: 16px;
+  height: 24px;
   min-height: 0;
-  padding: 0 8px;
-  border-width: 0;
-  overflow: hidden;
+  padding: 0 10px;
+  border-width: 1px;
+  border-style: dashed;
+  border-color: transparent;
+  line-height: 1.4;
+  overflow: visible;
+  text-align: center;
+  text-align-last: center;
+}
+.plain-canvas-form:hover .plain-canvas-insert {
+  border-color: var(--mdy-border);
+}
+.plain-canvas-form .plain-canvas-insert:hover,
+.plain-canvas-form .plain-canvas-insert:focus-visible {
+  border-color: var(--mdy-indigo);
+  background: color-mix(in srgb, var(--mdy-indigo) 10%, var(--mdy-panel));
+  color: var(--mdy-text);
 }
 .plain-canvas-form:hover .plain-canvas-insert,
 .plain-canvas-form .plain-canvas-insert:focus-visible {
@@ -972,15 +986,11 @@ body {
 /* Stays out of the way until the gap between two fields is hovered. */
 .plain-canvas-insert {
   display: block;
-  width: min(100%, 200px) !important;
-  height: 0;
+  width: min(100%, 220px) !important;
   margin: 0 auto;
-  padding: 0 10px;
-  border: 1px dashed transparent;
   background: transparent;
   color: var(--mdy-text-muted);
-  color: var(--mdy-text-muted);
-  font-size: 10px;
+  font-size: 11px;
   opacity: 0;
   transition: opacity 120ms ease;
 }
@@ -1134,6 +1144,35 @@ body {
   border-radius: 6px;
   background: var(--mdy-bg);
   color: var(--mdy-text);
+}
+/* The theme lays out .mdy-input-wrapper as a flex row and leaves the control's own frame to
+   the component CSS the mature renderers ship. plain has no CSS of its own, so without this
+   the input is present and 600px wide but completely invisible — no border, no background. */
+.plain-canvas-form .mdy-input-wrapper {
+  width: 100%;
+  border: 1px solid var(--mdy-border);
+  border-radius: 6px;
+  background: var(--mdy-bg);
+}
+.plain-canvas-form .mdy-input-wrapper--error {
+  border-color: var(--mdy-danger-text);
+}
+.plain-canvas-form .mdy-input-wrapper--disabled {
+  opacity: 0.55;
+}
+.plain-canvas-form .mdy-input-wrapper__inliner {
+  width: 100%;
+}
+.plain-canvas-form .mdy-input-wrapper input,
+.plain-canvas-form .mdy-input-wrapper textarea,
+.plain-canvas-form .mdy-input-wrapper select {
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+.plain-canvas-form .mdy-input-wrapper:focus-within {
+  border-color: var(--mdy-indigo);
+  outline: 2px solid var(--mdy-focus-ring);
 }
 .plain-canvas-form textarea {
   min-height: 96px;
