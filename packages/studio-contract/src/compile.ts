@@ -212,9 +212,16 @@ function mapLayout(project: MdyStudioProject, diagnostics: StudioDiagnostic[]): 
     return children.flatMap(leafNames);
   };
 
+  // A field may be placed once. Deduping here means a stale layout can never produce a
+  // Contract the strict parser rejects — which would otherwise take the whole form down.
+  const emitted = new Set<string>();
   const mapChild = (child: StudioLayoutChild): MdyDynamicLayoutChild[] => {
     if ("nodeId" in child) {
-      const names = leafNames(child.nodeId);
+      const names = leafNames(child.nodeId).filter((name) => {
+        if (emitted.has(name)) return false;
+        emitted.add(name);
+        return true;
+      });
       if (!names.length) {
         diagnostics.push({
           code: "LAYOUT_UNKNOWN_NODE",
@@ -292,6 +299,23 @@ export function compileToContract(project: MdyStudioProject): CompileResult {
     ...(layout.length ? { layout } : {}),
   };
   const parsed = parseDynamicForm(candidate, { mode: "strict" });
+
+  // Layout is arrangement over the schema. If only the layout is unacceptable, ship the form
+  // without it and say so — a decoration problem must never cost the user their whole form.
+  if (!parsed.ok && layout.length && parsed.diagnostics.every((d) => d.path.startsWith("/layout"))) {
+    const withoutLayout: MdyDynamicFormConfigV2 = { version: 2, id: normalized.id, schema };
+    const retry = parseDynamicForm(withoutLayout, { mode: "strict" });
+    if (retry.ok) {
+      diagnostics.push({
+        code: "LAYOUT_DROPPED",
+        severity: "warning",
+        message: "The form layout could not be compiled and was omitted; the fields are unaffected",
+        propertyPath: "/layout",
+      });
+      return { contract: withoutLayout, diagnostics };
+    }
+  }
+
   for (const d of parsed.diagnostics) {
     diagnostics.push({ code: d.code, severity: d.severity, message: d.message, propertyPath: d.path });
   }
