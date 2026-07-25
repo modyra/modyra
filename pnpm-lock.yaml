@@ -432,6 +432,9 @@ importers:
       '@modyra/studio-target-react':
         specifier: workspace:*
         version: link:../studio-target-react
+      '@modyra/styles':
+        specifier: workspace:*
+        version: link:../styles
 
   packages/styles: {}
 
