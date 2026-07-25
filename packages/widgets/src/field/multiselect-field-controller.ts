@@ -119,7 +119,7 @@ export function createMultiselectFieldController<TValue>(
         ...(disabled ? ["mdy-multiselect__chip--disabled"] : []),
       ],
       attributes: {
-        ...(mode === "single" ? { "aria-pressed": selected } : { "data-count": count }),
+        ...(mode === "single" ? { "aria-pressed": String(selected) } : { "data-count": count }),
         "aria-disabled": disabled,
         disabled: option.disabled || currentState.disabled,
       },

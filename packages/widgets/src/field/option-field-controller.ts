@@ -111,7 +111,7 @@ export function createOptionFieldController<TValue>(
       ],
       attributes: {
         role: "radio",
-        "aria-checked": selected,
+        "aria-checked": String(selected),
         "aria-disabled": option.disabled || currentState.disabled || currentState.readonly,
         disabled: option.disabled || currentState.disabled,
       },

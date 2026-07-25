@@ -31,6 +31,10 @@ export function applyPart(node: HTMLElement, part: MdyPartContract): void {
   if (part.role) node.setAttribute("role", part.role);
 
   for (const [key, value] of Object.entries(part.attributes)) {
+    // `false` removes the attribute, which is what HTML boolean attributes want (`disabled`)
+    // but never what ARIA state attributes want: `aria-checked="false"` is a state, and
+    // dropping it leaves a role="switch" with a required attribute missing. Controllers
+    // therefore emit ARIA states as the strings "true"/"false".
     if (value === null || value === undefined || value === false) {
       node.removeAttribute(key);
     } else if (value === true) {

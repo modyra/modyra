@@ -99,8 +99,8 @@ test("move changes active key within enabled options", () => {
   controller.dispatch({ type: "move", target: "next" });
   assert.strictEqual(controller.state().selectedKey, null); // selection not changed
   const view = controller.view();
-  assert.strictEqual(view.parts.small.attributes["aria-checked"], false);
-  assert.strictEqual(view.parts.medium.attributes["aria-checked"], false);
+  assert.strictEqual(view.parts.small.attributes["aria-checked"], "false");
+  assert.strictEqual(view.parts.medium.attributes["aria-checked"], "false");
 });
 
 test("disabled controller ignores select", () => {
@@ -117,8 +117,8 @@ test("radio view exposes ARIA contract", () => {
   assert.strictEqual(view.parts.group.attributes.role, "radiogroup");
   assert.strictEqual(view.parts.group.classes.includes("mdy-radio-group"), true);
   assert.strictEqual(view.parts.medium.attributes.role, "radio");
-  assert.strictEqual(view.parts.medium.attributes["aria-checked"], true);
-  assert.strictEqual(view.parts.small.attributes["aria-checked"], false);
+  assert.strictEqual(view.parts.medium.attributes["aria-checked"], "true");
+  assert.strictEqual(view.parts.small.attributes["aria-checked"], "false");
   assert.strictEqual(view.parts.large.attributes["aria-disabled"], true);
 });
 
@@ -127,8 +127,8 @@ test("segmented view exposes ARIA contract", () => {
   const view = controller.view();
   assert.strictEqual(view.parts.group.classes.includes("mdy-segmented"), true);
   assert.strictEqual(view.parts.small.attributes.role, "radio");
-  assert.strictEqual(view.parts.small.attributes["aria-checked"], true);
-  assert.strictEqual(view.parts.medium.attributes["aria-checked"], false);
+  assert.strictEqual(view.parts.small.attributes["aria-checked"], "true");
+  assert.strictEqual(view.parts.medium.attributes["aria-checked"], "false");
 });
 
 test("setValue updates selectedKey", () => {

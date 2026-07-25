@@ -168,7 +168,7 @@ test("view exposes grid ARIA contract with roving tabindex on the focused cell o
   assert.strictEqual(view.parts.trigger.attributes.role, "combobox");
   const focusedCell = view.parts["2026-03-15"];
   assert.strictEqual(focusedCell.attributes.role, "gridcell");
-  assert.strictEqual(focusedCell.attributes["aria-selected"], true);
+  assert.strictEqual(focusedCell.attributes["aria-selected"], "true");
   assert.strictEqual(focusedCell.attributes.tabindex, 0);
   const otherCell = view.parts["2026-03-16"];
   assert.strictEqual(otherCell.attributes.tabindex, -1);

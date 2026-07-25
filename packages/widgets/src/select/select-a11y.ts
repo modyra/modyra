@@ -36,7 +36,7 @@ export function projectSelectA11y(
     classes: buildTriggerClasses(open, disabled, readonly, invalid, loading),
     attributes: {
       "aria-haspopup": "listbox",
-      "aria-expanded": open,
+      "aria-expanded": String(open),
       "aria-controls": idFactory.part(widgetId, "listbox"),
       "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
       "aria-disabled": disabled || readonly,
@@ -59,7 +59,7 @@ export function projectSelectA11y(
     role: "option",
     classes: buildOptionClasses(key === selectedKey, key === activeKey, visibleKeys.includes(key)),
     attributes: {
-      "aria-selected": key === selectedKey,
+      "aria-selected": String(key === selectedKey),
     },
   });
 

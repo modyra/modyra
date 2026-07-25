@@ -134,7 +134,7 @@ export function createDatepickerFieldController(
       ],
       attributes: {
         role: "gridcell",
-        "aria-selected": cell.selected,
+        "aria-selected": String(cell.selected),
         "aria-disabled": cell.disabled,
         tabindex: cell.focused ? 0 : -1,
       },
