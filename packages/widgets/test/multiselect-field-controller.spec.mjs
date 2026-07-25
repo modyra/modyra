@@ -137,8 +137,8 @@ test("view exposes chip-group ARIA contract (role=group, not listbox)", () => {
   const view = controller.view();
   assert.strictEqual(view.parts.group.attributes.role, "group");
   assert.strictEqual(view.parts.group.classes.includes("mdy-multiselect"), true);
-  assert.strictEqual(view.parts.medium.attributes["aria-pressed"], true);
-  assert.strictEqual(view.parts.small.attributes["aria-pressed"], false);
+  assert.strictEqual(view.parts.medium.attributes["aria-pressed"], "true");
+  assert.strictEqual(view.parts.small.attributes["aria-pressed"], "false");
   assert.strictEqual(view.parts.large.attributes["aria-disabled"], true);
 });
 

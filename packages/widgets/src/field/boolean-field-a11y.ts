@@ -80,7 +80,7 @@ export function projectBooleanFieldA11y(
         type: isSwitch ? null : "checkbox",
         role: isSwitch ? "switch" : "checkbox",
         checked: state.checked,
-        "aria-checked": state.checked,
+        "aria-checked": String(state.checked),
         "aria-invalid": hasErrors,
         "aria-required": state.required,
         "aria-disabled": state.disabled || state.readonly,

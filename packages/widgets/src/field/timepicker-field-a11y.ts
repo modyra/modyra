@@ -76,7 +76,7 @@ export function projectTimepickerFieldA11y(
       attributes: {
         role: "combobox",
         "aria-haspopup": "dialog",
-        "aria-expanded": state.open,
+        "aria-expanded": String(state.open),
         "aria-labelledby": labelId,
         "aria-invalid": hasErrors,
         "aria-required": state.required,

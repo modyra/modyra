@@ -73,7 +73,7 @@ export function projectDatepickerFieldA11y(
       attributes: {
         role: "combobox",
         "aria-haspopup": "grid",
-        "aria-expanded": state.open,
+        "aria-expanded": String(state.open),
         "aria-labelledby": labelId,
         "aria-invalid": hasErrors,
         "aria-required": state.required,
