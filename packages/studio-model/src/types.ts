@@ -160,7 +160,36 @@ export interface StudioFormBehaviors {
   serverErrorMapping?: string;
 }
 
-export type StudioPresentationModel = Record<string, unknown>;
+/**
+ * A slot in the form layout: a node (by ID — never a path, ADR-0002) or a nested layout node,
+ * so a column row can sit inside a section.
+ */
+export type StudioLayoutChild = NodeRef | StudioLayoutNode;
+
+export interface StudioLayoutSection {
+  kind: "section";
+  id: string;
+  label?: string;
+  children: StudioLayoutChild[];
+}
+
+export interface StudioLayoutColumns {
+  kind: "columns";
+  id: string;
+  columns: StudioLayoutChild[][];
+}
+
+export type StudioLayoutNode = StudioLayoutSection | StudioLayoutColumns;
+
+/** Presentation is where arrangement lives — it never changes the schema or a field's value. */
+export interface StudioPresentationModel {
+  /** Arranged part of the form. Anything not mentioned renders after it, in schema order. */
+  layout?: StudioLayoutNode[];
+  [key: string]: unknown;
+}
+
+/** Depth cap for nested layout, matching Contract v2's own guard. */
+export const STUDIO_LAYOUT_MAX_DEPTH = 6;
 
 export type StudioProjectMetadata = Record<string, unknown>;
 
