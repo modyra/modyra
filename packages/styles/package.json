@@ -27,6 +27,9 @@
         "./default.css": {
             "default": "./dist/modyra.css"
         },
+        "./modern.css": {
+            "default": "./dist/modyra-modern.css"
+        },
         "./material.css": {
             "default": "./dist/modyra-material.css"
         },
