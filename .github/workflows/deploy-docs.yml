@@ -7,8 +7,11 @@ on:
       - "docs/**"
       - "site/**"
       - "apps/studio/**"
-      - "packages/studio-*/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
       - "scripts/sync-docs-site.mjs"
+      - "scripts/copy-studio-app.mjs"
       - ".github/workflows/deploy-docs.yml"
   workflow_dispatch:
 
