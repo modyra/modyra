@@ -262,20 +262,30 @@ export interface MdyDynamicRule {
   };
 }
 
+/**
+ * A slot in a layout node: either a field name, or a nested layout node — so a
+ * two-column row can live inside a section, which is what a real form needs and
+ * what every mainstream form builder expresses.
+ */
+export type MdyDynamicLayoutChild = string | MdyDynamicLayoutNode;
+
 export interface MdyDynamicSection {
   readonly kind: "section";
   readonly id: string;
   readonly label?: string;
-  readonly children: ReadonlyArray<string>;
+  readonly children: ReadonlyArray<MdyDynamicLayoutChild>;
 }
 
 export interface MdyDynamicColumns {
   readonly kind: "columns";
   readonly id: string;
-  readonly columns: ReadonlyArray<ReadonlyArray<string>>;
+  readonly columns: ReadonlyArray<ReadonlyArray<MdyDynamicLayoutChild>>;
 }
 
 export type MdyDynamicLayoutNode = MdyDynamicSection | MdyDynamicColumns;
+
+/** Depth cap for nested layout, mirroring the schema's own guard against hostile input. */
+export const MDY_LAYOUT_MAX_DEPTH = 6;
 
 /** Contract v2 adds declarative layout and conditions, never executable code. */
 export interface MdyDynamicFormConfigV2 {
@@ -445,6 +455,40 @@ function validFieldReference(name: unknown, names: ReadonlySet<string>): name is
   return typeof name === "string" && names.has(name);
 }
 
+/**
+ * Validates one layout node and everything nested under it. Every leaf must name a real
+ * field, and a field may only be placed once — the same field in two slots would render
+ * twice and bind the same value to both, which is never what the author meant.
+ * Returns false and leaves `seen` untouched-in-spirit when the subtree is unusable.
+ */
+function validLayoutNode(raw: unknown, names: ReadonlySet<string>, seen: Set<string>, depth: number): boolean {
+  if (depth > MDY_LAYOUT_MAX_DEPTH || !isRecordValue(raw)) return false;
+  const node = raw as Partial<MdyDynamicLayoutNode>;
+  if (typeof node.id !== "string") return false;
+
+  const slots: ReadonlyArray<ReadonlyArray<unknown>> =
+    node.kind === "section"
+      ? Array.isArray(node.children) ? [node.children] : []
+      : node.kind === "columns"
+        ? Array.isArray(node.columns) && node.columns.every(Array.isArray) ? (node.columns as unknown[][]) : []
+        : [];
+  if (!slots.length && node.kind !== "section" && node.kind !== "columns") return false;
+  if (node.kind === "section" && !Array.isArray(node.children)) return false;
+  if (node.kind === "columns" && (!Array.isArray(node.columns) || !node.columns.every(Array.isArray))) return false;
+
+  for (const slot of slots) {
+    for (const child of slot) {
+      if (typeof child === "string") {
+        if (!validFieldReference(child, names) || seen.has(child)) return false;
+        seen.add(child);
+      } else if (!validLayoutNode(child, names, seen, depth + 1)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
   const out: MdyDynamicDiagnostic[] = [];
   let count = 0;
@@ -506,6 +550,8 @@ export function parseDynamicForm(
   const names = new Set(fields.map((field) => field.name));
   const layout: MdyDynamicLayoutNode[] = [];
   const rules: MdyDynamicRule[] = [];
+  /** Fields already placed by an accepted layout node — a field belongs in exactly one slot. */
+  const placed = new Set<string>();
 
   if (version === 2 && envelope) {
     if (envelope.layout !== undefined && !Array.isArray(envelope.layout)) {
@@ -515,10 +561,8 @@ export function parseDynamicForm(
         diagnostics.push({ code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path: `/layout/${index}`, message: "layout node must be an object." });
         continue;
       }
-      const node = raw as Partial<MdyDynamicLayoutNode>;
-      const refs = node.kind === "section" ? node.children : node.kind === "columns" ? node.columns?.flat() : undefined;
-      if (typeof node.id !== "string" || !refs || refs.some((ref) => !validFieldReference(ref, names))) {
-        diagnostics.push({ code: "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", severity: "error", path: `/layout/${index}`, message: "layout references an unknown field or has an invalid shape." });
+      if (!validLayoutNode(raw, names, placed, 1)) {
+        diagnostics.push({ code: "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", severity: "error", path: `/layout/${index}`, message: "layout references an unknown or already-placed field, or has an invalid shape." });
         continue;
       }
       layout.push(raw as MdyDynamicLayoutNode);

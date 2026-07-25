@@ -384,6 +384,63 @@ test("parseDynamicForm validates v2 layout and rules in strict/lenient modes", a
   assert.equal(bad.diagnostics[0].code, "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE");
 });
 
+test("Contract v2 layout nests: a columns row inside a section", async () => {
+  const { parseDynamicForm } = await import("../dist/dynamic-config.js");
+  const fields = [
+    { name: "street", kind: "text" },
+    { name: "city", kind: "text" },
+    { name: "zip", kind: "text" },
+  ];
+  const nested = parseDynamicForm({
+    version: 2,
+    fields,
+    layout: [{
+      kind: "section",
+      id: "address",
+      label: "Address",
+      children: ["street", { kind: "columns", id: "cityZip", columns: [["city"], ["zip"]] }],
+    }],
+  }, { mode: "strict" });
+
+  assert.equal(nested.ok, true);
+  assert.equal(nested.layout.length, 1);
+  const [section] = nested.layout;
+  assert.equal(section.children[0], "street");
+  assert.equal(section.children[1].kind, "columns");
+  assert.deepEqual(section.children[1].columns, [["city"], ["zip"]]);
+});
+
+test("Contract v2 layout rejects a field placed in two slots", async () => {
+  const { parseDynamicForm } = await import("../dist/dynamic-config.js");
+  // The same field twice would render twice and bind one value to both controls.
+  const duplicated = parseDynamicForm({
+    version: 2,
+    fields: [{ name: "city", kind: "text" }, { name: "zip", kind: "text" }],
+    layout: [
+      { kind: "columns", id: "row", columns: [["city"], ["zip"]] },
+      { kind: "section", id: "again", children: ["city"] },
+    ],
+  }, { mode: "strict" });
+
+  assert.equal(duplicated.ok, false);
+  assert.equal(duplicated.diagnostics[0].code, "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE");
+});
+
+test("Contract v2 layout rejects nesting past the depth cap", async () => {
+  const { parseDynamicForm, MDY_LAYOUT_MAX_DEPTH } = await import("../dist/dynamic-config.js");
+  let node = { kind: "section", id: "leaf", children: ["city"] };
+  for (let depth = 0; depth < MDY_LAYOUT_MAX_DEPTH + 1; depth += 1) {
+    node = { kind: "section", id: `wrap${depth}`, children: [node] };
+  }
+  const tooDeep = parseDynamicForm(
+    { version: 2, fields: [{ name: "city", kind: "text" }], layout: [node] },
+    { mode: "strict" },
+  );
+
+  assert.equal(tooDeep.ok, false);
+  assert.equal(tooDeep.diagnostics[0].code, "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE");
+});
+
 test("Contract v2 recursively flattens group and array nodes", async () => {
   const { parseDynamicForm } = await import("../dist/dynamic-config.js");
   const result = parseDynamicForm({
