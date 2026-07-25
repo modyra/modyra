@@ -66,6 +66,15 @@ pub struct Field {
     pub options: Option<Vec<OptionItem>>,
 }
 
+/// A layout slot: a field name, or a nested layout node so a column row can sit
+/// inside a section. Untagged, because the JSON is either a string or an object.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum LayoutChild {
+    Field(String),
+    Node(Box<LayoutNode>),
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum LayoutNode {
@@ -73,12 +82,45 @@ pub enum LayoutNode {
         id: String,
         #[serde(default)]
         label: Option<String>,
-        children: Vec<String>,
+        children: Vec<LayoutChild>,
     },
     Columns {
         id: String,
-        columns: Vec<Vec<String>>,
+        columns: Vec<Vec<LayoutChild>>,
     },
+}
+
+/// Depth cap for nested layout, matching MDY_LAYOUT_MAX_DEPTH in the TS parser.
+pub const LAYOUT_MAX_DEPTH: usize = 6;
+
+/// Collects every field name a layout node places, or returns `None` when the
+/// subtree is unusable — too deep, or a field placed in more than one slot.
+fn layout_refs(node: &LayoutNode, depth: usize, seen: &mut Vec<String>) -> bool {
+    if depth > LAYOUT_MAX_DEPTH {
+        return false;
+    }
+    let slots: Vec<&Vec<LayoutChild>> = match node {
+        LayoutNode::Section { children, .. } => vec![children],
+        LayoutNode::Columns { columns, .. } => columns.iter().collect(),
+    };
+    for slot in slots {
+        for child in slot {
+            match child {
+                LayoutChild::Field(name) => {
+                    if seen.iter().any(|existing| existing == name) {
+                        return false;
+                    }
+                    seen.push(name.clone());
+                }
+                LayoutChild::Node(nested) => {
+                    if !layout_refs(nested, depth + 1, seen) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    true
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -262,20 +304,19 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
             ));
         }
     }
+    let mut placed: Vec<String> = Vec::new();
     for (i, node) in form.layout.iter().enumerate() {
-        let refs: Vec<&str> = match node {
-            LayoutNode::Section { children, .. } => children.iter().map(String::as_str).collect(),
-            LayoutNode::Columns { columns, .. } => {
-                columns.iter().flatten().map(String::as_str).collect()
-            }
-        };
-        if refs.iter().any(|v| !names.contains(*v)) {
+        let mut refs: Vec<String> = placed.clone();
+        let before = refs.len();
+        if !layout_refs(node, 1, &mut refs) || refs[before..].iter().any(|v| !names.contains(v.as_str())) {
             d.push(diag(
                 "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE",
                 &format!("/layout/{i}"),
-                "layout references an unknown field",
+                "layout references an unknown or already-placed field, or has an invalid shape",
             ));
+            continue;
         }
+        placed = refs;
     }
     for (i, rule) in form.rules.iter().enumerate() {
         if !EFFECTS.contains(&rule.effect.as_str())

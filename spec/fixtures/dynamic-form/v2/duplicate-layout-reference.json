@@ -1,0 +1,1 @@
+{"version":2,"id":"duplicate-layout-reference","fields":[{"name":"city","kind":"text"},{"name":"zip","kind":"text"}],"layout":[{"kind":"columns","id":"row","columns":[["city"],["zip"]]},{"kind":"section","id":"again","children":["city"]}]}

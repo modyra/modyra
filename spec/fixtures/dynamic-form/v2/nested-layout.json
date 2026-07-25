@@ -1,0 +1,1 @@
+{"version":2,"id":"nested-layout","fields":[{"name":"street","kind":"text"},{"name":"city","kind":"text"},{"name":"zip","kind":"text"},{"name":"notes","kind":"textarea"}],"layout":[{"kind":"section","id":"address","label":"Address","children":["street",{"kind":"columns","id":"cityZip","columns":[["city"],["zip"]]}]},{"kind":"columns","id":"tail","columns":[["notes"],[]]}]}
