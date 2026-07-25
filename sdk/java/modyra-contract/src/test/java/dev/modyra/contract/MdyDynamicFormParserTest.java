@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -200,6 +201,30 @@ class MdyDynamicFormParserTest {
     assertEquals(List.of("shipping.city", "items.0.sku", "items.0.qty"), names);
     MdyDynamicField qty = result.fields().stream().filter(f -> f.name().equals("items.0.qty")).findFirst().orElseThrow();
     assertEquals(2, qty.initialValue());
+  }
+
+  @Test
+  void acceptsSharedNestedLayoutFixture() throws IOException {
+    // Same fixture the TS and Rust parsers accept: a column row nested inside a section.
+    String json = readFixture("nested-layout.json");
+    MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+
+    assertTrue(result.ok(), () -> "expected ok=true, diagnostics: " + result.diagnostics());
+    assertEquals(2, result.layout().size());
+    JsonNode section = result.layout().get(0);
+    assertEquals("section", section.path("kind").asText());
+    assertEquals("street", section.path("children").get(0).asText());
+    assertEquals("columns", section.path("children").get(1).path("kind").asText());
+  }
+
+  @Test
+  void rejectsSharedDuplicateLayoutReferenceFixture() throws IOException {
+    // A field placed in two slots would render twice and bind one value to both controls.
+    String json = readFixture("duplicate-layout-reference.json");
+    MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+
+    assertFalse(result.ok());
+    assertTrue(result.diagnostics().stream().anyMatch(d -> d.code().equals("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE")));
   }
 
   @Test

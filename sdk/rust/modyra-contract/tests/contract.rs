@@ -59,3 +59,32 @@ fn serializes_recursive_schema_without_null_optionals() {
     assert!(field.get("placeholder").is_none());
     assert!(field.get("validators").is_none());
 }
+
+#[test]
+fn accepts_shared_nested_layout_fixture() {
+    // Same fixture the TS and Java parsers accept: a column row nested inside a section.
+    let json = include_str!("../../../../spec/fixtures/dynamic-form/v2/nested-layout.json");
+    let result = parse_v2(json, ValidationMode::Strict).unwrap();
+    assert!(result.valid, "{:?}", result.diagnostics);
+    let form = result.form.expect("form");
+    assert_eq!(form.layout.len(), 2);
+
+    use modyra_contract::{LayoutChild, LayoutNode};
+    match &form.layout[0] {
+        LayoutNode::Section { id, children, .. } => {
+            assert_eq!(id, "address");
+            assert!(matches!(&children[0], LayoutChild::Field(name) if name == "street"));
+            assert!(matches!(&children[1], LayoutChild::Node(nested) if matches!(**nested, LayoutNode::Columns { .. })));
+        }
+        other => panic!("expected a section, got {other:?}"),
+    }
+}
+
+#[test]
+fn rejects_shared_duplicate_layout_reference_fixture() {
+    // A field placed in two slots would render twice and bind one value to both.
+    let json = include_str!("../../../../spec/fixtures/dynamic-form/v2/duplicate-layout-reference.json");
+    let result = parse_v2(json, ValidationMode::Strict).unwrap();
+    assert!(!result.valid);
+    assert!(result.diagnostics.iter().any(|d| d.code == "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE"));
+}

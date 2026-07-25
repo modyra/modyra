@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -313,6 +314,9 @@ public final class MdyDynamicFormParser {
     return !value.isEmpty() && !value.contains(".") && !FORBIDDEN_NAMES.contains(value);
   }
 
+  /** Depth cap for nested layout, matching the TS and Rust parsers. */
+  private static final int LAYOUT_MAX_DEPTH = 6;
+
   // ─── v2 layout / rules: validate against resolved field names, keep raw nodes ───
 
   private void parseLayout(JsonNode layoutNode, Set<String> names, List<JsonNode> out, List<MdyDynamicDiagnostic> diagnostics) {
@@ -321,6 +325,7 @@ public final class MdyDynamicFormParser {
       diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_LAYOUT", MdyDynamicDiagnostic.ERROR, "/layout", "layout must be an array."));
       return;
     }
+    Set<String> placed = new LinkedHashSet<>();
     for (int i = 0; i < layoutNode.size(); i++) {
       JsonNode raw = layoutNode.get(i);
       String path = "/layout/" + i;
@@ -328,17 +333,53 @@ public final class MdyDynamicFormParser {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_LAYOUT", MdyDynamicDiagnostic.ERROR, path, "layout node must be an object."));
         continue;
       }
-      String kind = raw.path("kind").asText(null);
-      boolean hasId = raw.path("id").isTextual();
-      JsonNode refs = "section".equals(kind) ? raw.path("children")
-          : "columns".equals(kind) ? flattenColumns(raw.path("columns"))
-          : null;
-      if (!hasId || refs == null || !refs.isArray() || !allRefsValid(refs, names)) {
-        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", MdyDynamicDiagnostic.ERROR, path, "layout references an unknown field or has an invalid shape."));
+      Set<String> candidate = new LinkedHashSet<>(placed);
+      if (!validLayoutNode(raw, names, candidate, 1)) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", MdyDynamicDiagnostic.ERROR, path, "layout references an unknown or already-placed field, or has an invalid shape."));
         continue;
       }
+      placed = candidate;
       out.add(raw);
     }
+  }
+
+  /**
+   * Validates one layout node and everything nested under it. A slot holds either a field
+   * name or another layout node, so a column row can sit inside a section. Every leaf must
+   * name a known field, and a field may only be placed once — the same field in two slots
+   * would render twice and bind one value to both controls.
+   */
+  private boolean validLayoutNode(JsonNode raw, Set<String> names, Set<String> placed, int depth) {
+    if (depth > LAYOUT_MAX_DEPTH || !raw.isObject() || !raw.path("id").isTextual()) return false;
+    String kind = raw.path("kind").asText(null);
+
+    List<JsonNode> slots = new ArrayList<>();
+    if ("section".equals(kind)) {
+      JsonNode children = raw.path("children");
+      if (!children.isArray()) return false;
+      slots.add(children);
+    } else if ("columns".equals(kind)) {
+      JsonNode columns = raw.path("columns");
+      if (!columns.isArray()) return false;
+      for (JsonNode column : columns) {
+        if (!column.isArray()) return false;
+        slots.add(column);
+      }
+    } else {
+      return false;
+    }
+
+    for (JsonNode slot : slots) {
+      for (JsonNode child : slot) {
+        if (child.isTextual()) {
+          String name = child.asText();
+          if (!names.contains(name) || !placed.add(name)) return false;
+        } else if (!validLayoutNode(child, names, placed, depth + 1)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   private void parseRules(JsonNode rulesNode, Set<String> names, List<JsonNode> out, List<MdyDynamicDiagnostic> diagnostics) {
@@ -372,20 +413,5 @@ public final class MdyDynamicFormParser {
     }
   }
 
-  private static JsonNode flattenColumns(JsonNode columnsNode) {
-    if (!columnsNode.isArray()) return null;
-    ArrayNode flat = JsonNodeFactory.instance.arrayNode();
-    for (JsonNode column : columnsNode) {
-      if (!column.isArray()) return null;
-      flat.addAll((ArrayNode) column);
-    }
-    return flat;
-  }
 
-  private static boolean allRefsValid(JsonNode refs, Set<String> names) {
-    for (JsonNode ref : refs) {
-      if (!ref.isTextual() || !names.contains(ref.asText())) return false;
-    }
-    return true;
-  }
 }
