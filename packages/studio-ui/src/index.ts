@@ -20,6 +20,8 @@ import {
   type StudioExpressionOp,
   type StudioFormValidator,
   type StudioIndexes,
+  type StudioLayoutChild,
+  type StudioLayoutNode,
   type StudioSchemaNode,
   type StudioValidatorKind,
 } from "@modyra/studio-model";
@@ -39,6 +41,7 @@ import {
   createSetServerValidatorCommand,
   createUpdateBehaviorCommand,
   createRenameProjectCommand,
+  createUpdateLayoutCommand,
   createUpdateFormValidatorCommand,
   createUpdateNodeCommand,
   createUpdateValidatorCommand,
@@ -802,6 +805,103 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     );
   }
 
+  // ─── Layout authoring ─────────────────────────────────────────────────────
+
+  /** Node IDs a layout child places, flattened. */
+  function layoutChildNodeIds(child: StudioLayoutChild): string[] {
+    if ("nodeId" in child) return [child.nodeId];
+    return child.kind === "section"
+      ? child.children.flatMap(layoutChildNodeIds)
+      : child.columns.flatMap((column) => column.flatMap(layoutChildNodeIds));
+  }
+
+  /** The top-level layout node that currently places `nodeId`, if any. */
+  function layoutNodeFor(nodeId: string): StudioLayoutNode | undefined {
+    return (project.presentation.layout ?? []).find((node) => layoutChildNodeIds(node).includes(nodeId));
+  }
+
+  /**
+   * Puts a field side by side with its neighbour. If that neighbour is already in a column row,
+   * this field joins that row — which is how a third and fourth column get added, without a
+   * separate "widen" control. A button rather than only a drag: keyboard-reachable, deterministic
+   * about which fields pair up, and the fast path while composing.
+   */
+  function addToColumnRow(nodeId: string): void {
+    const layout = structuredClone(project.presentation.layout ?? []);
+    const siblings = indexes.childrenByParent.get(indexes.parentById.get(nodeId) ?? "") ?? [];
+    const position = siblings.indexOf(nodeId);
+    if (position < 0) return;
+
+    // Pair with a free neighbour first — clicking `city` should pair it with `zip`, not append it
+    // to whatever row `lastName` happens to sit in. Only when both neighbours are already
+    // arranged does this join an existing row, which is how the third column gets added.
+    const placed = new Set(layout.flatMap(layoutChildNodeIds));
+    const neighbour =
+      nearestFieldSibling(siblings, position, 1, placed, false) ??
+      nearestFieldSibling(siblings, position, -1, placed, false) ??
+      nearestFieldSibling(siblings, position, -1, placed, true) ??
+      nearestFieldSibling(siblings, position, 1, placed, true);
+    if (!neighbour) {
+      status = "A column row needs a neighbouring field";
+      render();
+      return;
+    }
+
+    const neighbourRow = layout.find(
+      (node): node is StudioLayoutNode & { kind: "columns" } =>
+        node.kind === "columns" && layoutChildNodeIds(node).includes(neighbour),
+    );
+    if (neighbourRow) {
+      const before = siblings.indexOf(nodeId) < siblings.indexOf(neighbour);
+      neighbourRow.columns.splice(before ? 0 : neighbourRow.columns.length, 0, [{ nodeId }]);
+      commit(
+        createUpdateLayoutCommand(layout, `Add a column (${neighbourRow.columns.length} across)`),
+        nodeId,
+        columnFocus(nodeId),
+      );
+      return;
+    }
+
+    const ordered = siblings.indexOf(nodeId) < siblings.indexOf(neighbour) ? [nodeId, neighbour] : [neighbour, nodeId];
+    layout.push({ kind: "columns", id: createId("lay"), columns: ordered.map((id) => [{ nodeId: id }]) });
+    commit(createUpdateLayoutCommand(layout, "Put fields side by side"), nodeId, columnFocus(nodeId));
+  }
+
+  /** Nearest field sibling in `direction`, either already arranged by the layout or not. */
+  function nearestFieldSibling(
+    siblings: readonly string[],
+    from: number,
+    direction: 1 | -1,
+    placed: ReadonlySet<string>,
+    wantPlaced: boolean,
+  ): string | undefined {
+    for (let i = from + direction; i >= 0 && i < siblings.length; i += direction) {
+      const candidate = siblings[i]!;
+      if (indexes.nodeById.get(candidate)?.node !== "field") continue;
+      if (placed.has(candidate) === wantPlaced) return candidate;
+    }
+    return undefined;
+  }
+
+  function columnFocus(nodeId: string): string {
+    return `[data-layout-columns="${nodeId}"]`;
+  }
+
+  /** Takes a field out of its row, dropping the row when fewer than two columns remain. */
+  function removeFromColumnRow(nodeId: string): void {
+    const layout = structuredClone(project.presentation.layout ?? []);
+    const next = layout
+      .map((node) => {
+        if (node.kind !== "columns") return node;
+        const columns = node.columns
+          .map((column) => column.filter((child) => !("nodeId" in child) || child.nodeId !== nodeId))
+          .filter((column) => column.length > 0);
+        return { ...node, columns };
+      })
+      .filter((node) => node.kind !== "columns" || node.columns.length >= 2);
+    commit(createUpdateLayoutCommand(next, "Take field out of the row"), nodeId, columnFocus(nodeId));
+  }
+
   /** Flips the `required` validator — the one validator worth a single click. */
   function toggleRequired(nodeId: string): void {
     const node = indexes.nodeById.get(nodeId);
@@ -1069,7 +1169,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     idx: StudioIndexes,
   ): void {
     const nodeIdByPath = new Map(Array.from(idx.pathByNode, ([nodeId, path]) => [path, nodeId]));
-    const fieldRoots = Array.from(plainHost.children).filter((element): element is HTMLElement => element instanceof HTMLElement);
+    // Resolved by name, not by child index: a layout row nests field roots inside itself, so
+    // "nth child of the host" stops being "nth field" as soon as any layout exists.
+    const rootByName = new Map<string, HTMLElement>();
+    plainHost.querySelectorAll<HTMLElement>("[data-mdy-field]").forEach((element) => {
+      const name = element.dataset.mdyField;
+      if (name) rootByName.set(name, element);
+    });
+    const fieldRoots = fields.map((field) => rootByName.get(field.name));
 
     const dropPoint = (placement: "before" | "after", nodeId: string): HTMLDivElement => {
       const zone = document.createElement("div");
@@ -1369,6 +1476,21 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       moveDownButton.dataset.plainMoveTarget = index < fields.length - 1 ? nodeIdByPath.get(fields[index + 1]!.name) ?? "" : "";
       moveDownButton.disabled = index === fields.length - 1;
 
+      const inRow = layoutNodeFor(nodeId)?.kind === "columns";
+      // Groups own their children's DOM position (studio-ui re-nests them into a fieldset) and
+      // layout owns the position of what it places. Offering both for one field would put two
+      // owners on the same node, so column rows are for root-level fields in this batch.
+      const canColumn = idx.parentById.get(nodeId) === project.schema.id;
+      const columnsButton = iconButton(
+        "\u25a5",
+        inRow ? `Take ${field.name} out of its column row` : `Put ${field.name} side by side with its neighbour`,
+      );
+      columnsButton.dataset.layoutColumns = nodeId;
+      columnsButton.dataset.layoutInRow = String(inRow);
+      columnsButton.setAttribute("aria-pressed", String(inRow));
+      columnsButton.disabled = !canColumn && !inRow;
+      if (!canColumn && !inRow) columnsButton.title = "Column rows apply to fields at the form root";
+
       const deleteButton = iconButton("\u00d7", `Delete ${field.name}`);
       deleteButton.dataset.delete = nodeId;
 
@@ -1388,7 +1510,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         moveIntoGroup.append(new Option(group.label || group.name, group.id));
       }
 
-      actions.append(moveUpButton, moveDownButton, moveIntoGroup, duplicateButton, deleteButton);
+      actions.append(moveUpButton, moveDownButton, columnsButton, moveIntoGroup, duplicateButton, deleteButton);
 
       // The label and the code name are edited on the field itself: the visible label the form
       // renders *is* the thing being edited, so there is no "where did that come from" gap.
@@ -1840,7 +1962,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       return;
     }
 
-    const signature = JSON.stringify(project.schema);
+    // Layout is part of what the live form renders, so it belongs in the remount signature.
+    const signature = JSON.stringify({ schema: project.schema, layout: project.presentation.layout ?? [] });
     if (signature === plainCanvasSignature) {
       syncLiveSelection(plainHost);
       return;
@@ -1852,7 +1975,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
     const fields = flattenContractFields(contract);
     if (fields.length) {
-      const mounted = mountMdyForm(plainHost, fields, { submitLabel: null });
+      const mounted = mountMdyForm(plainHost, fields, { submitLabel: null, layout: contract.layout ?? [] });
       plainCanvasSession.replace(mounted);
       restoreLiveValues(mounted, carried);
     }
@@ -2120,6 +2243,13 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   function bindCanvasSurface(root: HTMLElement): void {
     root.querySelectorAll<HTMLButtonElement>("[data-toggle-required]").forEach((button) =>
       button.addEventListener("click", () => toggleRequired(button.dataset.toggleRequired!)),
+    );
+    root.querySelectorAll<HTMLButtonElement>("[data-layout-columns]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const nodeId = button.dataset.layoutColumns!;
+        if (button.dataset.layoutInRow === "true") removeFromColumnRow(nodeId);
+        else addToColumnRow(nodeId);
+      }),
     );
 
     // Enter in a label commits it and starts the next field of the same kind — the composing
