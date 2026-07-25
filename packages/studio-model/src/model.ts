@@ -8,10 +8,13 @@ import { buildIndexes, type StudioIndexes } from "./indexes.js";
 import { createId } from "./ids.js";
 import {
   RESERVED_NAMES,
+  STUDIO_LAYOUT_MAX_DEPTH,
   STUDIO_VERSION,
   type MdyStudioProject,
   type StudioDiagnostic,
   type StudioFieldKind,
+  type StudioLayoutChild,
+  type StudioLayoutNode,
   type StudioSchemaNode,
 } from "./types.js";
 
@@ -183,7 +186,53 @@ function diagnoseProject(project: MdyStudioProject, idx: StudioIndexes): StudioD
   if (project.behaviors.submit) {
     checkImplementationRef(project.behaviors.submit.implementationRef, "behaviors.submit");
   }
+  diagnostics.push(...diagnoseLayout(project, idx));
 
+  return diagnostics;
+}
+
+/**
+ * Layout is arrangement over the schema, so it can go stale: a node it references may have been
+ * deleted, and a node must not be placed twice. Reported rather than thrown — a stale layout
+ * should degrade to "unarranged", never block opening the project.
+ */
+function diagnoseLayout(project: MdyStudioProject, idx: StudioIndexes): StudioDiagnostic[] {
+  const layout = project.presentation.layout;
+  if (!layout?.length) return [];
+  const diagnostics: StudioDiagnostic[] = [];
+  const placed = new Set<string>();
+
+  const visitChild = (child: StudioLayoutChild, path: string, depth: number): void => {
+    if (depth > STUDIO_LAYOUT_MAX_DEPTH) {
+      diagnostics.push({ code: "LAYOUT_TOO_DEEP", severity: "error", message: `Layout nesting exceeds ${STUDIO_LAYOUT_MAX_DEPTH} levels at ${path}`, propertyPath: path });
+      return;
+    }
+    if ("nodeId" in child) {
+      if (!idx.nodeById.has(child.nodeId)) {
+        diagnostics.push({ code: "LAYOUT_UNKNOWN_NODE", severity: "warning", message: `Layout at ${path} references a node that no longer exists`, nodeId: child.nodeId, propertyPath: path });
+        return;
+      }
+      if (placed.has(child.nodeId)) {
+        diagnostics.push({ code: "LAYOUT_DUPLICATE_NODE", severity: "error", message: `Node is placed more than once in the layout (${path})`, nodeId: child.nodeId, propertyPath: path });
+        return;
+      }
+      placed.add(child.nodeId);
+      return;
+    }
+    visitNode(child, path, depth);
+  };
+
+  const visitNode = (node: StudioLayoutNode, path: string, depth: number): void => {
+    if (node.kind === "section") {
+      node.children.forEach((child, index) => visitChild(child, `${path}/children/${index}`, depth + 1));
+      return;
+    }
+    node.columns.forEach((column, columnIndex) =>
+      column.forEach((child, index) => visitChild(child, `${path}/columns/${columnIndex}/${index}`, depth + 1)),
+    );
+  };
+
+  layout.forEach((node, index) => visitNode(node, `presentation.layout/${index}`, 1));
   return diagnostics;
 }
 

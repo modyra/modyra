@@ -17,12 +17,15 @@
  * blocking error).
  */
 import {
+  buildIndexes,
   normalize,
   type ArrayNode,
   type FieldNode,
   type GroupNode,
   type MdyStudioProject,
   type StudioDiagnostic,
+  type StudioLayoutChild,
+  type StudioLayoutNode,
   type StudioSchemaNode,
 } from "@modyra/studio-model";
 import {
@@ -31,6 +34,8 @@ import {
   type MdyDynamicFieldNode,
   type MdyDynamicFormConfigV2,
   type MdyDynamicGroupNode,
+  type MdyDynamicLayoutChild,
+  type MdyDynamicLayoutNode,
   type MdyDynamicNode,
   type MdyDynamicValidators,
 } from "@modyra/core/dynamic-config";
@@ -182,6 +187,65 @@ function mapNode(node: StudioSchemaNode, diagnostics: StudioDiagnostic[]): MdyDy
   return mapArrayNode(node, diagnostics);
 }
 
+/**
+ * Translates the project's node-ID layout into the Contract's field-name layout.
+ *
+ * The project stores IDs (ADR-0002: a reference is never a path), while the Contract addresses
+ * fields by their derived dotted name — so this is the one place the two spellings meet. A slot
+ * pointing at a group or array is expanded to the field names underneath it: the Contract's
+ * layout only ever addresses leaves.
+ */
+function mapLayout(project: MdyStudioProject, diagnostics: StudioDiagnostic[]): MdyDynamicLayoutNode[] {
+  const source = project.presentation.layout ?? [];
+  if (!source.length) return [];
+  const idx = buildIndexes(project);
+
+  const leafNames = (nodeId: string): string[] => {
+    const node = idx.nodeById.get(nodeId);
+    if (!node) return [];
+    if (node.node === "field") {
+      const path = idx.pathByNode.get(nodeId);
+      return path ? [path] : [];
+    }
+    // Groups and arrays are containers; the Contract layout arranges the leaves inside them.
+    const children = idx.childrenByParent.get(nodeId) ?? [];
+    return children.flatMap(leafNames);
+  };
+
+  const mapChild = (child: StudioLayoutChild): MdyDynamicLayoutChild[] => {
+    if ("nodeId" in child) {
+      const names = leafNames(child.nodeId);
+      if (!names.length) {
+        diagnostics.push({
+          code: "LAYOUT_UNKNOWN_NODE",
+          severity: "warning",
+          message: "A layout slot references a node with no compilable field and was omitted",
+          nodeId: child.nodeId,
+        });
+      }
+      return names;
+    }
+    const mapped = mapNode(child);
+    return mapped ? [mapped] : [];
+  };
+
+  const mapNode = (node: StudioLayoutNode): MdyDynamicLayoutNode | null => {
+    if (node.kind === "section") {
+      const children = node.children.flatMap(mapChild);
+      if (!children.length) return null;
+      return { kind: "section", id: node.id, ...(node.label ? { label: node.label } : {}), children };
+    }
+    const columns = node.columns.map((column) => column.flatMap(mapChild)).filter((column) => column.length > 0);
+    if (columns.length < 2) return null; // a one-column row is not a layout, it is just the field
+    return { kind: "columns", id: node.id, columns };
+  };
+
+  return source.flatMap((node) => {
+    const mapped = mapNode(node);
+    return mapped ? [mapped] : [];
+  });
+}
+
 export function compileToContract(project: MdyStudioProject): CompileResult {
   const diagnostics: StudioDiagnostic[] = [];
 
@@ -220,7 +284,13 @@ export function compileToContract(project: MdyStudioProject): CompileResult {
     return { contract: null, diagnostics };
   }
 
-  const candidate: MdyDynamicFormConfigV2 = { version: 2, id: normalized.id, schema };
+  const layout = mapLayout(normalized, diagnostics);
+  const candidate: MdyDynamicFormConfigV2 = {
+    version: 2,
+    id: normalized.id,
+    schema,
+    ...(layout.length ? { layout } : {}),
+  };
   const parsed = parseDynamicForm(candidate, { mode: "strict" });
   for (const d of parsed.diagnostics) {
     diagnostics.push({ code: d.code, severity: d.severity, message: d.message, propertyPath: d.path });

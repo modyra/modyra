@@ -17,6 +17,7 @@ import type {
   StudioFieldValidator,
   StudioFormValidator,
   StudioImplementationRef,
+  StudioLayoutNode,
   StudioOption,
   StudioSchemaNode,
   StudioServerValidator,
@@ -485,6 +486,31 @@ export function createRenameProjectCommand(name: string): Command {
     },
     inverse(before: MdyStudioProject): Command {
       return createRenameProjectCommand(before.name);
+    },
+  };
+}
+
+/**
+ * Replaces the whole form layout. Arrangement is a tree, and every authoring gesture
+ * (wrap in a section, split into columns, pull a field out) is a transform of that tree —
+ * so one invertible command over the whole tree beats four commands that each have to
+ * re-derive the same structure. `description` is what the UI shows and undo announces.
+ */
+export function createUpdateLayoutCommand(layout: StudioLayoutNode[], description = "Update layout"): Command {
+  return {
+    kind: "updateLayout",
+    description,
+    affectedIds: [],
+    validate(): StudioDiagnostic[] {
+      return [];
+    },
+    apply(project: MdyStudioProject): MdyStudioProject {
+      const copy = structuredClone(project);
+      copy.presentation = { ...copy.presentation, layout: structuredClone(layout) };
+      return copy;
+    },
+    inverse(before: MdyStudioProject): Command {
+      return createUpdateLayoutCommand(structuredClone(before.presentation.layout ?? []), description);
     },
   };
 }
