@@ -1,0 +1,128 @@
+---
+import SiteLayout from '../../components/SiteLayout.astro';
+
+const based = (path: string) =>
+  `${import.meta.env.BASE_URL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+
+const colors = [
+  { name: 'Indigo', value: '#7067FF', role: 'Structure and core concepts' },
+  { name: 'Violet', value: '#A855F7', role: 'Reactivity and connection' },
+  { name: 'Coral', value: '#FF6577', role: 'Action and emphasis' },
+  { name: 'Night', value: '#0E0F16', role: 'Primary dark background' },
+  { name: 'Cloud', value: '#F8FAFC', role: 'Light background and text on dark' },
+  { name: 'Slate', value: '#94A3B8', role: 'Secondary text and quiet borders' },
+];
+const icons = ['core', 'adapter', 'flow', 'validation', 'model', 'sync'];
+---
+
+<SiteLayout
+  title="Modyra — brand identity"
+  description="Modyra logo, color, typography, iconography and usage rules."
+  eyebrow="Brand identity"
+>
+  <section class="intro">
+    <div>
+      <h1>Three modules around one shared model.</h1>
+      <p>
+        The mark reflects Modyra's architecture: integration boundaries remain
+        distinct while the framework-independent model stays at the center.
+      </p>
+    </div>
+    <img src={based('brand/01-logo/svg/modyra-icon.svg')} alt="Modyra mark" width="272" height="307" />
+  </section>
+
+  <section aria-labelledby="logo-heading">
+    <h2 id="logo-heading">Logo system</h2>
+    <p class="section-copy">Use the horizontal lockup by default. Use the icon alone only where Modyra is already identified by context.</p>
+    <div class="logo-grid">
+      <figure class="dark"><img src={based('brand/01-logo/svg/modyra-logo-horizontal.svg')} alt="Modyra horizontal logo for dark backgrounds" /><figcaption>Dark background</figcaption></figure>
+      <figure class="light"><img src={based('brand/01-logo/svg/modyra-logo-horizontal-light.svg')} alt="Modyra horizontal logo for light backgrounds" /><figcaption>Light background</figcaption></figure>
+    </div>
+    <ul class="rules">
+      <li>Keep one module height of clear space around the mark.</li>
+      <li>Do not rotate, distort, outline, recolor or rearrange it.</li>
+      <li>Keep the icon at least 16 px and horizontal lockups at least 120 px wide.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="color-heading">
+    <h2 id="color-heading">Color</h2>
+    <div class="color-grid">
+      {colors.map((color) => (
+        <article>
+          <span class="swatch" style={`--swatch:${color.value}`}></span>
+          <strong>{color.name}</strong>
+          <code>{color.value}</code>
+          <p>{color.role}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section aria-labelledby="type-heading" class="type-section">
+    <h2 id="type-heading">Typography</h2>
+    <p class="type-sample">Satoshi keeps editorial text and interface copy direct and legible.</p>
+    <p class="section-copy">Use Bold for display titles, Medium for section headings and Regular for body text. Keep source code in a system monospace.</p>
+  </section>
+
+  <section aria-labelledby="icons-heading">
+    <h2 id="icons-heading">System icons</h2>
+    <p class="section-copy">Icons use a 24 px grid, a consistent 1.8 px stroke and <code>currentColor</code>.</p>
+    <div class="icon-grid">
+      {icons.map((icon) => (
+        <figure><img src={based(`brand/04-icons/mdy-${icon}.svg`)} alt="" width="32" height="32" /><figcaption>{icon}</figcaption></figure>
+      ))}
+    </div>
+  </section>
+
+  <section aria-labelledby="voice-heading">
+    <h2 id="voice-heading">Tone</h2>
+    <div class="voice-grid">
+      <article><strong>Clear</strong><p>Prefer direct language and short paths to useful information.</p></article>
+      <article><strong>Technical</strong><p>Name APIs, boundaries and verification scope precisely.</p></article>
+      <article><strong>Considerate</strong><p>Respect time, preserve context and explain actionable errors.</p></article>
+      <article><strong>Ambitious</strong><p>Describe the direction while distinguishing it from current support.</p></article>
+    </div>
+  </section>
+
+  <section class="downloads" aria-labelledby="downloads-heading">
+    <h2 id="downloads-heading">Assets</h2>
+    <p class="section-copy">Canonical source files live in the repository-level <code>brand/</code> directory.</p>
+    <div class="links">
+      <a href="https://github.com/modyra/modyra/tree/main/brand">Browse the brand kit</a>
+      <a href={based('brand/05-social/og-image.png')}>Open Graph image</a>
+      <a href={based('brand/02-color/palette.png')}>Palette reference</a>
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .intro, section { padding: 0 clamp(1.25rem, 7vw, 6rem) clamp(3.5rem, 7vw, 6rem); }
+  .intro { display: grid; grid-template-columns: 1fr minmax(10rem, 18rem); gap: 3rem; align-items: center; }
+  .intro h1 { max-width: 15ch; font-size: clamp(2.5rem, 6vw, 4.8rem); line-height: 1.04; }
+  .intro p, .section-copy { max-width: 62ch; color: var(--page-muted); font-size: 1.08rem; line-height: 1.6; }
+  .intro img { width: 100%; height: auto; max-height: 18rem; }
+  section:not(.intro) { padding-top: clamp(2.5rem, 6vw, 4.5rem); border-top: 1px solid var(--page-border); }
+  h2 { font-size: clamp(1.7rem, 3.5vw, 2.5rem); }
+  .logo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
+  .logo-grid figure { margin: 0; padding: 2rem; border: 1px solid var(--page-border); border-radius: .8rem; }
+  .logo-grid .dark { background: #0e0f16; color: #f8fafc; }
+  .logo-grid .light { background: #f8fafc; color: #0e0f16; }
+  .logo-grid img { display: block; width: 100%; height: 6rem; object-fit: contain; }
+  figcaption { margin-top: 1rem; color: var(--page-muted); font-size: .85rem; text-transform: capitalize; }
+  .rules { display: grid; gap: .65rem; margin: 1.5rem 0 0; color: var(--page-muted); }
+  .color-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
+  article { padding: 1.2rem; border: 1px solid var(--page-border); border-radius: .7rem; background: var(--page-card); }
+  .color-grid article { display: grid; grid-template-columns: 3rem 1fr; gap: .25rem 1rem; align-items: center; }
+  .swatch { grid-row: 1 / 4; width: 3rem; height: 3rem; border: 1px solid color-mix(in srgb, var(--swatch) 65%, #888); border-radius: 50%; background: var(--swatch); }
+  article p { margin-bottom: 0; color: var(--page-muted); line-height: 1.5; }
+  .type-sample { max-width: 20ch; font-size: clamp(2rem, 5vw, 4rem); font-weight: 700; line-height: 1.08; }
+  .icon-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; margin-top: 2rem; }
+  .icon-grid figure { margin: 0; padding: 1rem; border: 1px solid var(--page-border); border-radius: .7rem; text-align: center; background: var(--page-card); }
+  .icon-grid img { filter: brightness(0) invert(1); }
+  @media (prefers-color-scheme: light) { .icon-grid img { filter: none; } }
+  .voice-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 2rem; }
+  .links { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.5rem; }
+  .links a { padding: .72rem 1rem; border: 1px solid var(--page-border); border-radius: .55rem; text-decoration: none; }
+  @media (max-width: 48rem) { .intro, .logo-grid, .color-grid, .voice-grid { grid-template-columns: 1fr; } .intro img { max-width: 12rem; } .icon-grid { grid-template-columns: repeat(3, 1fr); } }
+</style>

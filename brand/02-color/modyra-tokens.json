@@ -1,0 +1,70 @@
+{
+  "color": {
+    "brand": {
+      "indigo": {
+        "value": "#7067FF",
+        "description": "Primary \u2014 logic, core"
+      },
+      "violet": {
+        "value": "#A855F7",
+        "description": "Secondary \u2014 reactivity"
+      },
+      "coral": {
+        "value": "#FF6577",
+        "description": "Accent \u2014 action, warmth"
+      }
+    },
+    "neutral": {
+      "night": {
+        "value": "#0E0F16",
+        "description": "Primary dark background"
+      },
+      "cloud": {
+        "value": "#F8FAFC",
+        "description": "Light background / text on dark"
+      },
+      "slate": {
+        "value": "#94A3B8",
+        "description": "Secondary text, borders"
+      }
+    },
+    "gradient": {
+      "logo-top": {
+        "value": "linear-gradient(115deg, #6B61F2 0%, #A855F7 45%, #DC66A8 100%)"
+      },
+      "logo-left": {
+        "value": "linear-gradient(180deg, #7067FF 0%, #A855F7 100%)"
+      },
+      "logo-right": {
+        "value": "linear-gradient(180deg, #FF7A85 0%, #FF556F 100%)"
+      },
+      "brand": {
+        "value": "linear-gradient(90deg, #7067FF 0%, #A855F7 50%, #FF6577 100%)"
+      }
+    }
+  },
+  "font": {
+    "family": {
+      "sans": {
+        "value": "Satoshi, system-ui, sans-serif"
+      }
+    },
+    "weight": {
+      "light": {
+        "value": 300
+      },
+      "regular": {
+        "value": 400
+      },
+      "medium": {
+        "value": 500
+      },
+      "bold": {
+        "value": 700
+      },
+      "black": {
+        "value": 900
+      }
+    }
+  }
+}

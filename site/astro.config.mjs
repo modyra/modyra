@@ -28,20 +28,20 @@ export default defineConfig({
 					href: 'https://github.com/modyra/modyra',
 				},
 			],
-			favicon: based('favicon.svg'),
+			favicon: based('brand/06-favicon/favicon.svg'),
 			head: [
 				{
 					tag: 'link',
 					attrs: {
 						rel: 'apple-touch-icon',
-						href: based('apple-touch-icon.png'),
+						href: based('brand/06-favicon/apple-touch-icon.png'),
 					},
 				},
 				{
 					tag: 'meta',
 					attrs: {
 						property: 'og:image',
-						content: absolute('og-image.png'),
+						content: absolute('brand/05-social/og-image.png'),
 					},
 				},
 				{
@@ -55,7 +55,7 @@ export default defineConfig({
 					tag: 'meta',
 					attrs: {
 						name: 'twitter:image',
-						content: absolute('og-image.png'),
+						content: absolute('brand/05-social/og-image.png'),
 					},
 				},
 			],

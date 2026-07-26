@@ -23,3 +23,6 @@ pnpm-debug.log*
 
 # macOS-specific files
 .DS_Store
+
+# Copied from the canonical repository-level brand directory.
+public/brand/

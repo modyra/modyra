@@ -18,15 +18,23 @@ const based = (path: string) =>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <link rel="icon" href={based('favicon.svg')} />
+    <link rel="icon" href={based('brand/06-favicon/favicon.svg')} type="image/svg+xml" />
+    <link rel="icon" href={based('brand/06-favicon/favicon.ico')} sizes="any" />
+    <link rel="apple-touch-icon" href={based('brand/06-favicon/apple-touch-icon.png')} />
+    <meta property="og:image" content={new URL(based('brand/05-social/og-image.png'), Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
     <title>{title}</title>
   </head>
   <body>
     <header class="site-header">
-      <a class="site-brand" href={based('')}>Modyra</a>
+      <a class="site-brand" href={based('')} aria-label="Modyra home">
+        <img class="brand-dark" src={based('brand/01-logo/svg/modyra-logo-horizontal.svg')} alt="Modyra" />
+        <img class="brand-light" src={based('brand/01-logo/svg/modyra-logo-horizontal-light.svg')} alt="Modyra" />
+      </a>
       <nav class="site-nav" aria-label="Primary navigation">
         <a href={based('start-here/')}>Documentation</a>
         <a href={based('approach/')}>Approach</a>
+        <a href={based('brand/')}>Brand</a>
         <a href={based('studio/')}>Studio</a>
         <a href="https://github.com/modyra/modyra">GitHub</a>
       </nav>
@@ -40,6 +48,7 @@ const based = (path: string) =>
       <nav aria-label="Footer navigation">
         <a href={based('start-here/')}>Documentation</a>
         <a href={based('studio/')}>Studio</a>
+        <a href={based('brand/')}>Brand</a>
         <a href="https://github.com/modyra/modyra">Source</a>
       </nav>
     </footer>
@@ -88,7 +97,13 @@ const based = (path: string) =>
     padding: 1.2rem clamp(1.25rem, 5vw, 4rem);
     border-bottom: 1px solid var(--page-border);
   }
-  .site-brand { font-size: 1.1rem; font-weight: 900; text-decoration: none; }
+  .site-brand { display: block; width: 8.75rem; text-decoration: none; }
+  .site-brand img { display: block; width: 100%; height: 2.2rem; object-fit: contain; object-position: left center; }
+  .site-brand .brand-light { display: none; }
+  @media (prefers-color-scheme: light) {
+    .site-brand .brand-dark { display: none; }
+    .site-brand .brand-light { display: block; }
+  }
   .site-nav { display: flex; flex-wrap: wrap; gap: 1.5rem; }
   .site-nav a { color: var(--page-muted); font-size: .92rem; text-decoration: none; }
   .site-nav a:hover, .site-nav a:focus-visible { color: var(--page-fg); }
