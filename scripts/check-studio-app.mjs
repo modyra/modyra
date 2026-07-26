@@ -1,21 +1,54 @@
 /**
- * Runs automatically before site's `dev`/`build` (npm's `pre<script>`
- * convention — see site/package.json) so a missing sync step fails loud
- * with a clear fix, not a silent 404 on /studio's JS/CSS discovered later
- * in a browser. Same "reach into root scripts/ with a plain Node script,
- * no workspace install needed" pattern as sync-docs-site.mjs.
+ * Ensures the Astro site has the standalone Studio assets it references.
+ *
+ * site/public/studio-app is generated and intentionally not committed. A fresh
+ * checkout therefore needs to build and copy Studio before Astro starts. The
+ * docs deployment performs that step explicitly; local `site` commands use
+ * this script so they cannot start with a page that points at missing files.
  */
+import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const marker = join(root, "site/public/studio-app/studio.js");
+const destination = join(root, "site/public/studio-app");
+const required = [
+  "studio.js",
+  "studio.css",
+  "codegen-worker.js",
+];
 
-if (!existsSync(marker)) {
-  console.warn(
-    "\n[studio] site/public/studio-app/ is missing — /studio will 404 on its JS/CSS.\n" +
-      "Run `npm run sync:studio-app` from the repo root first (builds the full\n" +
-      "Studio stack via the pnpm workspace, then copies the bundle in here).\n",
-  );
+function missingAssets() {
+  return required.filter((name) => !existsSync(join(destination, name)));
 }
+
+let missing = missingAssets();
+if (missing.length === 0) {
+  console.log(`[studio-assets] ready: ${destination}`);
+  process.exit(0);
+}
+
+console.log(`[studio-assets] missing ${missing.join(", ")}; building Studio...`);
+try {
+  execFileSync(
+    process.execPath,
+    [join(root, "scripts/prepare-studio-app.mjs")],
+    { cwd: root, stdio: "inherit" },
+  );
+} catch (error) {
+  console.error(
+    "\n[studio-assets] Could not prepare Studio for the documentation site.\n" +
+      "Run `corepack pnpm install --frozen-lockfile` from the repository root,\n" +
+      "then retry the site command.\n",
+  );
+  process.exit(typeof error === "object" && error && "status" in error && typeof error.status === "number" ? error.status : 1);
+}
+
+missing = missingAssets();
+if (missing.length > 0) {
+  console.error(`[studio-assets] build completed but these files are still missing: ${missing.join(", ")}`);
+  process.exit(1);
+}
+
+console.log(`[studio-assets] ready: ${destination}`);
