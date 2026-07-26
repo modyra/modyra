@@ -1,0 +1,62 @@
+---
+import SiteLayout from '../../../components/SiteLayout.astro';
+
+const based = (path: string) =>
+  `${import.meta.env.BASE_URL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+
+const capabilities = [
+  { title: 'Project model', desc: 'Stable node IDs, derived paths, serialization, migration and validation on load.' },
+  { title: 'Command history', desc: 'Authoring operations use undoable commands for structural and property changes.' },
+  { title: 'Diagnostics', desc: 'Model and contract diagnostics share one surface with navigation and focused fixes.' },
+  { title: 'Live canvas', desc: 'Supported contract fields render through @modyra/plain without evaluating generated source.' },
+  { title: 'Persistence', desc: 'The latest local project is restored from browser storage; JSON import and export are available.' },
+  { title: 'Generation', desc: 'Built-in targets run outside the main UI flow and return files plus diagnostics.' },
+];
+---
+
+<SiteLayout
+  title="Modyra Studio — current capabilities"
+  description="A concise summary of the capabilities and limits currently present in Modyra Studio."
+  eyebrow="Studio status"
+>
+  <section class="intro">
+    <h1>Current capabilities, without the development diary.</h1>
+    <p>
+      This page summarizes the behavior available now. Release-level changes
+      belong in the repository changelog; future priorities belong in the roadmap.
+    </p>
+  </section>
+  <section class="grid" aria-label="Current Studio capabilities">
+    {capabilities.map((item) => (
+      <article><h2>{item.title}</h2><p>{item.desc}</p></article>
+    ))}
+  </section>
+  <section class="note">
+    <h2>Before 1.0</h2>
+    <p>
+      The project format and generated targets may still evolve. Review
+      diagnostics, keep exported project files, and inspect generated source
+      before integrating it into an application.
+    </p>
+    <div class="links">
+      <a href={based('studio/getting-started/')}>Studio documentation</a>
+      <a href="https://github.com/modyra/modyra/blob/main/CHANGELOG.md">Repository changelog</a>
+      <a href="https://github.com/modyra/modyra/blob/main/ROADMAP.md">Roadmap</a>
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .intro, .grid, .note { padding: 0 clamp(1.25rem, 7vw, 6rem) clamp(3.5rem, 7vw, 6rem); }
+  .intro h1 { max-width: 19ch; font-size: clamp(2.4rem, 6vw, 4.3rem); line-height: 1.05; }
+  .intro p, .note p, article p { color: var(--page-muted); line-height: 1.6; }
+  .intro p, .note p { max-width: 62ch; font-size: 1.1rem; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding-top: 1rem; }
+  article { padding: 1.3rem; border: 1px solid var(--page-border); border-radius: .7rem; background: var(--page-card); }
+  article h2 { font-size: 1.08rem; }
+  .note { padding-top: 2.5rem; border-top: 1px solid var(--page-border); }
+  .note h2 { font-size: 1.6rem; }
+  .links { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.2rem; }
+  .links a { padding: .7rem 1rem; border: 1px solid var(--page-border); border-radius: .55rem; text-decoration: none; }
+  @media (max-width: 50rem) { .grid { grid-template-columns: 1fr; } }
+</style>

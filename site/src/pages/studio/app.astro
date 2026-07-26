@@ -1,11 +1,7 @@
 ---
-// P12: apps/studio/dist is copied into public/studio-app/ by
-// scripts/copy-studio-app.mjs (run via `npm run sync:studio-app` at the
-// repo root, before this site's own isolated build) — see
-// .modyra/framework/STATUS.md for why this is a static asset reference
-// and not a Vite import of @modyra/studio-ui from source: site/ installs
-// via its own package-lock.json, outside the pnpm workspace, and never
-// resolves workspace packages.
+// The Studio bundle is copied into public/studio-app before the site build.
+// It remains a static asset because the documentation site has an isolated
+// dependency installation and does not resolve workspace packages.
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 

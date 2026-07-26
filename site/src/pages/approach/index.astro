@@ -1,0 +1,80 @@
+---
+import SiteLayout from '../../components/SiteLayout.astro';
+
+const based = (path: string) =>
+  `${import.meta.env.BASE_URL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+---
+
+<SiteLayout
+  title="Modyra — approach"
+  description="The architectural boundaries, support model and current priorities behind Modyra."
+  eyebrow="Project approach"
+>
+  <section class="intro">
+    <h1>Keep form behavior portable. Keep integration details local.</h1>
+    <p>
+      Modyra separates the form model from rendering and framework lifecycle.
+      The goal is not to make every integration identical. The goal is to keep
+      shared behavior in one place and make each boundary explicit.
+    </p>
+  </section>
+
+  <section class="layers" aria-labelledby="layers-heading">
+    <h2 id="layers-heading">The layers</h2>
+    <div class="grid">
+      <article>
+        <h3>Engine</h3>
+        <p>Owns typed state, validation, arrays, drafts, history, submission and lifecycle.</p>
+      </article>
+      <article>
+        <h3>Contract</h3>
+        <p>Represents data-driven forms as bounded, validated data rather than executable configuration.</p>
+      </article>
+      <article>
+        <h3>Rendering</h3>
+        <p><code>@modyra/plain</code> turns supported contract fields into interactive DOM without a framework runtime.</p>
+      </article>
+      <article>
+        <h3>Adapters</h3>
+        <p>Connect engine signals and disposal rules to a host framework without reimplementing form behavior.</p>
+      </article>
+      <article>
+        <h3>Studio</h3>
+        <p>Edits the project model, validates it, previews through the framework-free renderer and exports artifacts.</p>
+      </article>
+      <article>
+        <h3>Generated targets</h3>
+        <p>Translate one project model into deterministic files while keeping target-specific syntax isolated.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="status" aria-labelledby="status-heading">
+    <h2 id="status-heading">Support is not uniform</h2>
+    <p>
+      Modyra is pre-1.0. The core and individual integrations differ in test
+      depth, UI coverage, SSR behavior and ecosystem support. The capability
+      matrix records technical differences; it is not a maturity ranking.
+    </p>
+    <div class="actions">
+      <a href={based('reactivity-capability-matrix/')}>Capability matrix</a>
+      <a href={based('guides/multi-framework/')}>Integration architecture</a>
+      <a href={based('start-here/')}>Documentation index</a>
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .intro, .layers, .status { padding: 0 clamp(1.25rem, 7vw, 6rem) clamp(3.5rem, 7vw, 6rem); }
+  .intro h1 { max-width: 17ch; font-size: clamp(2.5rem, 6vw, 4.7rem); line-height: 1.04; }
+  .intro p, .status p { max-width: 62ch; color: var(--page-muted); font-size: 1.12rem; line-height: 1.6; }
+  .layers, .status { padding-top: clamp(2.5rem, 6vw, 4.5rem); border-top: 1px solid var(--page-border); }
+  h2 { font-size: clamp(1.7rem, 3.5vw, 2.5rem); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
+  article { padding: 1.25rem; border: 1px solid var(--page-border); border-radius: .7rem; background: var(--page-card); }
+  article h3 { font-size: 1.05rem; }
+  article p { color: var(--page-muted); line-height: 1.55; }
+  .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.5rem; }
+  .actions a { padding: .7rem 1rem; border: 1px solid var(--page-border); border-radius: .55rem; text-decoration: none; }
+  @media (max-width: 48rem) { .grid { grid-template-columns: 1fr; } }
+</style>

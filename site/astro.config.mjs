@@ -14,7 +14,7 @@ export default defineConfig({
 		starlight({
 			title: 'Modyra',
 			description:
-				'Framework-agnostic, type-safe form engine — typed field trees, arrays, drafts, undo/redo over a minimal reactive contract.',
+				'A typed form engine for TypeScript applications, with explicit rendering and integration boundaries.',
 			logo: {
 				light: './src/assets/brand/logo-light.svg',
 				dark: './src/assets/brand/logo-dark.svg',
@@ -66,10 +66,6 @@ export default defineConfig({
 				{
 					label: 'Guides',
 					items: [{ autogenerate: { directory: 'guides' } }],
-				},
-				{
-					label: 'Framework examples',
-					items: [{ autogenerate: { directory: 'examples' } }],
 				},
 				{
 					label: 'Modyra Studio',
