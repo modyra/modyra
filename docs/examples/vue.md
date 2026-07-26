@@ -1,4 +1,4 @@
-# Vue — complete checkout example
+# Vue — checkout example
 
 The same scenario as the [README](../../README.md#1-checkout-nested-groups-repeatable-line-items-a-coupon-checked-server-side)
 implemented end-to-end in Vue: nested groups, a typed array of line items,

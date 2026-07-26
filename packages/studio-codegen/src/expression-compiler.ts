@@ -1,11 +1,11 @@
 /**
- * Compiles a portable {@link StudioExpression} (ADR-0005) into a real JS
+ * Compiles a portable {@link StudioExpression} (ADR-0005) into a JS
  * boolean expression string, evaluated against a form's whole value object
- * at runtime — never `eval`/`new Function` (R11): this is compile-to-source,
+ * at runtime — never `eval`/`new Function` (): this is compile-to-source,
  * the same "IR -> print" step every other target output goes through.
  *
  * Shared by every codegen target that has to turn a Studio form validator's
- * condition into real code (Core now; Angular/React targets reuse this
+ * condition into code (Core now; Angular/React targets reuse this
  * unchanged rather than each re-deriving the same semantics).
  */
 import type { NodeRef, StudioExpression, StudioOperand } from "@modyra/studio-model";

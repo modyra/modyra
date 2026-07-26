@@ -1,8 +1,4 @@
-/**
- * P1 gate (.modyra/modyra-studio-caveman-plan.md section 14 P1):
- * checkout lossless; move/rename preserve refs; bad/polluted input
- * rejected; no framework dependency.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -40,7 +36,7 @@ test("rename preserves every ID-based reference", () => {
   const before = buildIndexes(project);
   assert.equal(before.pathByNode.get("nd_country"), "country");
 
-  // Manual rename (no command engine yet — P2). Mutate the clone directly.
+  // Manual rename (no command engine yet — ). Mutate the clone directly.
   const countryNode = project.schema.children.find((n) => n.id === "nd_country");
   countryNode.name = "shippingCountry";
 
@@ -124,7 +120,7 @@ test("polluted/semantically invalid project surfaces diagnostics instead of sile
   assert.ok(codes.includes("MISSING_IMPLEMENTATION"));
 });
 
-test("P6: bad regex pattern, select without options, and an un-excluded sensitive field are all diagnosed", () => {
+test("bad regex pattern, select without options, and an un-excluded sensitive field are all diagnosed", () => {
   const project = createCheckoutProject();
   const shipping = project.schema.children.find((n) => n.id === "nd_shipping");
   shipping.children.find((n) => n.id === "nd_zip").validators.find((v) => v.kind === "pattern").pattern = "([unclosed";
@@ -148,7 +144,7 @@ test("P6: bad regex pattern, select without options, and an un-excluded sensitiv
   assert.equal(codes.filter((c) => c === "SENSITIVE_FIELD_IN_DRAFT").length, 1); // coupon is excluded from draft already
 });
 
-test("P6: excluding a sensitive field from the draft silences the warning", () => {
+test("excluding a sensitive field from the draft silences the warning", () => {
   const project = createCheckoutProject();
   project.schema.children.push({
     node: "field",

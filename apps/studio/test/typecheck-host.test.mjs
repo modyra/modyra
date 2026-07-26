@@ -1,11 +1,4 @@
-/**
- * typecheck-host.ts is plain, DOM/Worker-free TypeScript (see its own doc
- * comment) — real unit tests against real generated Core/React artifacts,
- * not a source-text guess. Transpiled on the fly via esbuild (already a
- * devDependency here) rather than adding a Node flag/build step just for
- * this one file; codegen-worker.ts's own real bundling (which this feeds)
- * is already covered by app.test.mjs + the e2e suite.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { test } from "node:test";
@@ -64,7 +57,7 @@ test("angular target: not vendored, supportsSemanticCheck reports false (falls b
   assert.equal(supportsSemanticCheck(assets, files), false);
 });
 
-test("a real type error in a project file is actually caught, not silently accepted", () => {
+test("reports a type error in a generated project file", () => {
   const files = [
     {
       path: "form.ts",

@@ -2,7 +2,7 @@
  * Symbolic StudioImplementationRefs (ADR-0005) become real, typed,
  * throwing stub functions — one per ref, named after its displayName — so
  * form.ts and submit-example.ts have something concrete to import. Never
- * inline "logic": the user fills these in (R7, R11 — no eval, no
+ * inline "logic": the user fills these in (,  — no eval, no
  * generated business logic).
  */
 import type { MdyStudioProject, StudioDiagnostic, StudioImplementationRef } from "@modyra/studio-model";

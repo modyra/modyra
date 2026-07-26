@@ -1,11 +1,4 @@
-/**
- * P8 gate: "checkout matches expected semantics / compiles / deterministic
- * / no unused imports". Determinism and no-mutation are already exercised
- * generically by studio-codegen's conformance suite (P7); "compiles" is
- * verified for real here by running the actual generated files through the
- * real `tsc`, type-checked against the real @modyra/core package — never a
- * hand-rolled "looks like valid code" heuristic.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -63,7 +56,7 @@ test("coreTargetManifest loads lazily to a target with id 'core'", async () => {
   assert.equal(target.id, "core");
 });
 
-test("generated form.ts + stubs.ts + submit-example.ts really compile against the real @modyra/core types", { skip: !existsSync(coreTypesPath) && "packages/core is not built (run npm run build:core first)" }, async () => {
+test("generated Core files compile against package declarations", { skip: !existsSync(coreTypesPath) && "packages/core is not built (run npm run build:core first)" }, async () => {
   const artifact = await createCoreTarget().generate(createCheckoutProject(), {});
   const dir = await mkdtemp(join(tmpdir(), "mdy-studio-target-core-typecheck-"));
   try {

@@ -5,7 +5,7 @@ import type { GenerateRequest, GenerateResponse } from "./codegen-worker.js";
 const host = document.querySelector<HTMLElement>("[data-modyra-studio]");
 if (!host) throw new Error("Missing [data-modyra-studio] mount point");
 
-/** P11 Workers: generate/syntax-check/format run in codegen-worker.js, never on this thread. One request in flight at a time is all runExport() ever issues — a plain incrementing id plus a pending-map is enough, no queue needed. */
+/** generate/syntax-check/format run in codegen-worker.js, never on this thread. One request in flight at a time is all runExport() ever issues — a plain incrementing id plus a pending-map is enough, no queue needed. */
 const worker = new Worker(new URL("./codegen-worker.js", import.meta.url), { type: "module" });
 let nextRequestId = 0;
 const GENERATE_TIMEOUT_MS = 30_000;

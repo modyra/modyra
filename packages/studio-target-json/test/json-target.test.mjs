@@ -1,5 +1,5 @@
 /**
- * P7 gate: a real (non-dummy) target must be fully conformant, and its
+ * a (non-dummy) target must be fully conformant, and its
  * output must be the actual project serialization / actual compiled
  * Contract v2 — never a reimplementation of either.
  */

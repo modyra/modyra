@@ -1,5 +1,5 @@
 /**
- * Real behavioral tests (executes the shipped module against a real jsdom
+ * Real behavioral tests (executes the shipped module against a jsdom
  * DOM, not a source-text grep) — needs the CSS stub loader registered via
  * `--import ./test/support/register.mjs` (see package.json "test" script)
  * since Node has no native CSS loader and `dist/index.js` imports
@@ -173,7 +173,7 @@ test("the header reports the real field count for the checkout fixture", () => {
   assert.match(host.querySelector(".form-meta").textContent, /6 fields/);
 });
 
-test("P5 gate: checkout's real coupon server validator renders debounce/timeout/skip-empty/implementation", () => {
+test("checkout's real coupon server validator renders debounce/timeout/skip-empty/implementation", () => {
   const project = createCheckoutProject();
   const idx = buildIndexes(project);
   const coupon = idx.nodeById.get("nd_coupon");
@@ -187,7 +187,7 @@ test("P5 gate: checkout's real coupon server validator renders debounce/timeout/
   assert.match(markup, /validateCoupon/); // the implementation's displayName, in the <option> list
 });
 
-test("P5 gate: checkout's real items-length form validator renders in the Form validators section", () => {
+test("checkout's real items-length form validator renders in the Form validators section", () => {
   const project = createCheckoutProject();
   const idx = buildIndexes(project);
   const draft = { kind: "form", refNodeId: project.schema.id, op: "isNotEmpty", literal: "", errorTargetId: "", message: "" };
@@ -198,13 +198,13 @@ test("P5 gate: checkout's real items-length form validator renders in the Form v
   assert.match(markup, /depends on: items/);
   assert.match(markup, /error target: items/);
 
-  // P5 gap closed: checkout's real submit action (impl_create_order) renders, selected.
+  // checkout's submit action (impl_create_order) renders, selected.
   assert.match(markup, /Submit action/);
   assert.match(markup, new RegExp(`value="impl_create_order"\\s+selected`));
   assert.match(markup, /createOrder/);
 });
 
-test("P6: the Diagnostics tab badge reflects checkout's real 2 warnings (form + server validator, both unmappable), 0 errors", () => {
+test("the Diagnostics tab badge reflects checkout's real 2 warnings (form + server validator, both unmappable), 0 errors", () => {
   const host = createHost();
   mountStudio(host, createCheckoutProject());
 
@@ -217,7 +217,7 @@ test("P6: the Diagnostics tab badge reflects checkout's real 2 warnings (form + 
   assert.ok(host.querySelector('.plain-canvas-field[data-node="nd_coupon"].has-diagnostic'));
 });
 
-test("P6: a blank project is diagnostic-free (Diagnostics tab badge shows nothing)", () => {
+test("a blank project is diagnostic-free (Diagnostics tab badge shows nothing)", () => {
   const host = createHost();
   mountStudio(host);
   assert.equal(host.querySelector('[data-inspector-tab="diagnostics"] .badge'), null);

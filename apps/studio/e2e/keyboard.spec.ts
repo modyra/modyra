@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { openStudio, showStructure } from "./support/studio.js";
 
 /**
- * P4 gate: checkout-shaped structure buildable keyboard-only, a11y pass.
+ * checkout-shaped structure buildable keyboard-only, a11y pass.
  * No mouse anywhere in this file — palette/toolbar buttons are activated
  * via focus()+keyboard.press(), tree reordering via the app's own
  * Space/Arrows/Enter/Escape scheme (plan section 7).

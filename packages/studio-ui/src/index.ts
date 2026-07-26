@@ -2,7 +2,7 @@
  * Vanilla (no framework) Studio canvas shell — palette, tree, inspector,
  * pointer drag + keyboard-equivalent reordering, undo/redo. Consumes
  * @modyra/studio-model (project/indexes) and @modyra/studio-editor
- * (commands/history) only; owns no model logic itself (R4).
+ * (commands/history) only; owns no model logic itself ().
  */
 import {
   buildIndexes,
@@ -191,7 +191,7 @@ function accordionMarkup(id: string, title: string, badge: string, expanded: boo
     </details>`;
 }
 
-/** P5: "Validation" section body — add/edit/remove, only ever offering registry-compatible kinds. */
+/** "Validation" section body — add/edit/remove, only ever offering registry-compatible kinds. */
 function validatorsMarkup(node: FieldNode): string {
   const used = new Set(node.validators.map((v) => v.kind));
   const available = compatibleValidatorKinds(node.valueType).filter((kind) => !used.has(kind) || isDuplicateKindAllowed(kind));
@@ -224,7 +224,7 @@ function validatorsMarkup(node: FieldNode): string {
     ${available.length ? `<select data-add-validator aria-label="Add validator"><option value="">+ Add validator</option>${options}</select>` : ""}`;
 }
 
-/** P5: "Options" section body, select/multiselect only (plan section 8 "properties options"). */
+/** "Options" section body, select/multiselect only ("properties options"). */
 function optionsMarkup(node: FieldNode): string {
   const rows = (node.options ?? [])
     .map(
@@ -241,7 +241,7 @@ function optionsMarkup(node: FieldNode): string {
     <button data-add-option>+ Add option</button>`;
 }
 
-/** All nodes by derived path, for a <select> — the only way any ref is ever picked (no path typing, R3/P5 gate). */
+/** All nodes by derived path, for a <select> — the only way any ref is ever picked (no path typing, /). */
 function nodeRefOptionsMarkup(idx: StudioIndexes, currentId: string): string {
   return [...idx.nodeById.keys()]
     .map((id) => ({ id, path: idx.pathByNode.get(id) || "root" }))
@@ -250,7 +250,7 @@ function nodeRefOptionsMarkup(idx: StudioIndexes, currentId: string): string {
     .join("");
 }
 
-/** P5b2: "Server validation" inspector section — dependencies, debounce/timeout, skip-when-empty, stub creation. */
+/** "Server validation" inspector section — dependencies, debounce/timeout, skip-when-empty, stub creation. */
 export function serverValidatorMarkup(project: MdyStudioProject, idx: StudioIndexes, node: FieldNode): string {
   const sv = node.serverValidator;
   if (!sv) {
@@ -293,7 +293,7 @@ export function serverValidatorMarkup(project: MdyStudioProject, idx: StudioInde
 }
 
 /** Draft state for the "add a form validator" mini-form — templates, not a general recursive expression tree
-    (see .modyra/framework/STATUS.md P5 batch 2 note: and/or/not composition is a deferred gap). */
+    Compound conditions support one level of `and`, `or` and `not`; arbitrary recursive editing is not exposed here. */
 /** One leaf condition: a field, a comparison op, and (if the op needs one) a literal. */
 interface ConditionDraft {
   refNodeId: string;
@@ -313,7 +313,7 @@ interface FormValidatorDraft {
 }
 
 /** `composite`: 0 = leaf (single field+op+literal), 1 = unary ("not" wraps one sub-condition),
-    2 = binary ("and"/"or" combine two). This is the P5 gap this batch closes — and/or/not
+    2 = binary ("and"/"or" combine two). These operators
     composition, one level deep (a sub-condition is always a leaf, never itself composite;
     a fully general recursive tree editor is a further-out gap, see STATUS.md). */
 interface ConditionTemplate {
@@ -388,7 +388,7 @@ function subConditionMarkup(idx: StudioIndexes, sub: ConditionDraft, index: numb
     </div>`;
 }
 
-/** P5 gap closed: submit-action stub UI, mirroring the server-validator implementation picker. */
+/** submit-action stub UI, mirroring the server-validator implementation picker. */
 function submitActionMarkup(project: MdyStudioProject): string {
   const submitRef = project.behaviors.submit?.implementationRef;
   const implOptions = Object.values(project.implementations)
@@ -409,12 +409,12 @@ function submitActionMarkup(project: MdyStudioProject): string {
     </div>`;
 }
 
-/** P5b2: project-level "Form validators" section — always visible (not tied to node selection). */
+/** project-level "Form validators" section — always visible (not tied to node selection). */
 export function formValidatorsMarkup(project: MdyStudioProject, idx: StudioIndexes, draft: FormValidatorDraft): string {
   const rows = project.formValidators
     .map((v) => {
-      // Root's derived path is "" by design (P1) — `|| "(none)"` on the joined string would wrongly
-      // read a real root-only dependency as "no dependencies" (empty-string path -> falsy join result).
+      // Root's derived path is "" by design () — `|| "(none)"` on the joined string would wrongly
+      // read a root-only dependency as "no dependencies" (empty-string path -> falsy join result).
       // Show "root" explicitly instead, and gate the empty-state on array length, not string truthiness.
       const pathOrRoot = (nodeId: string) => idx.pathByNode.get(nodeId) || "root";
       const depsPaths = v.dependencies.length ? v.dependencies.map((d) => pathOrRoot(d.nodeId)).join(", ") : "(none)";
@@ -477,7 +477,7 @@ export function getPreviewHandle(form: MdyTypedForm<never> | null, path: string)
   return (current ?? null) as Record<string, unknown> | null;
 }
 
-/** Initial value for a newly-pushed array row, built from the item schema's own field defaults (nested arrays inside an array item are not supported — a documented P11 limitation, not silently wrong). */
+/** Initial value for a newly-pushed array row, built from the item schema's own field defaults (nested arrays inside an array item are not supported — a documented limitation). */
 export function defaultRowValue(item: FieldNode | GroupNode): unknown {
   if (item.node === "field") return item.initialValue;
   const row: Record<string, unknown> = {};
@@ -485,7 +485,7 @@ export function defaultRowValue(item: FieldNode | GroupNode): unknown {
   return row;
 }
 
-/** P11: one live field, bound to the real form handle at `path` — never a static description of one (R5/R12). */
+/** one live field, bound to the real form handle at `path` — rather than a static description (). */
 export function previewFieldMarkup(node: FieldNode, path: string, form: MdyTypedForm<never> | null, mockConfig: Record<string, MockServerConfig>): string {
   const handle = getPreviewHandle(form, path);
   if (!handle) return "";
@@ -542,7 +542,7 @@ export function previewFieldMarkup(node: FieldNode, path: string, form: MdyTyped
     ${serverMock}`;
 }
 
-/** P11: a field, group, or array node — recurses, always reading the real live handle at each computed path. */
+/** a field, group, or array node — recurses, always reading the real live handle at each computed path. */
 export function previewNodeMarkup(node: StudioSchemaNode, path: string, form: MdyTypedForm<never> | null, mockConfig: Record<string, MockServerConfig>): string {
   if (node.node === "field") return previewFieldMarkup(node, path, form, mockConfig);
   if (node.node === "group") {
@@ -570,7 +570,7 @@ export function previewNodeMarkup(node: StudioSchemaNode, path: string, form: Md
     </div>`;
 }
 
-/** P11 gate ("Preview reads model/Contract, not generated source"): status badges, every field live-bound, Submit. Diagnostics are appended by the caller (mountStudio already has a diagnosticsMarkup() it reuses everywhere else). */
+/** ("Preview reads model/Contract, not generated source"): status badges, every field live-bound, Submit. Diagnostics are appended by the caller (mountStudio already has a diagnosticsMarkup() it reuses everywhere else). */
 /**
  * Preview renders the same arrangement the canvas does: a column row here is the same
  * `.mdy-layout-columns` grid @modyra/plain emits, so what you preview matches what ships
@@ -658,8 +658,7 @@ export function previewBodyMarkup(
 
 /** Mounts the Studio editor into `host`. Returns a disposer that clears the host. */
 /**
- * Optional off-main-thread generate (plan §11 "generate ... off main
- * thread"). Given the same request `runExport()` would otherwise pass to
+ * Optional off-main-thread generate. Given the same request `runExport()` would otherwise pass to
  * `targetRegistry.load()` + `target.generate()` directly, resolves to the
  * same {@link Artifact} shape. The host (e.g. apps/studio's main.ts) owns
  * the actual `Worker` and its message-passing; studio-ui stays worker/DOM-
@@ -717,7 +716,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   let drag: Drag | null = null;
   let picked: string | null = null;
   let status = "Blank project ready";
-  /** CSS selector re-focused after the next render — every action must set this, win or lose (R9/plan §7 "Restore focus after command"). */
+  /** CSS selector re-focused after the next render — every action must set this, win or lose. */
   let focusSelector: string | null = null;
   let formValidatorDraft: FormValidatorDraft = {
     kind: "form",
@@ -737,7 +736,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   /** Whether the floating toolbar is expanded. Collapsed by default so the canvas stays clean. */
   let dockOpen = false;
   /** Export tab state — `generation` guards against a stale async generate() clobbering a newer one
-      (plan §14 P7 gate "stale ignored"); errors never touch `project`/`history` (gate "failure cannot corrupt editor"). */
+      Stale results are ignored; errors do not mutate `project` or `history`. */
   let exportState: { targetId: string; artifact: Artifact | null; generating: boolean; error: string | null; generation: number } = {
     targetId: targetRegistry.list()[0]?.id ?? "",
     artifact: null,
@@ -745,7 +744,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     error: null,
     generation: 0,
   };
-  /** Preview tab state (plan §11: "Preview reads model/Contract, not generated source"). `previewReactivity`
+  /** Preview tab state. `previewReactivity`
       is a single, long-lived graph so the effect below can observe the live form's own signals — a fresh
       vanillaReactivity() per rebuild could not (see studio-preview's own test for why). Rebuilt only when
       `project` changes identity (a fresh edit) or the mock config changes, never on every render(). */
@@ -795,7 +794,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     render();
   }
 
-  /** Fire-and-forget IndexedDB auto-save (plan §11 "last session restore") — never blocks the render, never surfaces a write failure as an app error (best-effort, same spirit as localStorage-backed draft persistence). */
+  /** Fire-and-forget IndexedDB auto-save — never blocks the render, never surfaces a write failure as an app error (best-effort, same spirit as localStorage-backed draft persistence). */
   function autosave(): void {
     void saveSession(project).catch(() => {});
   }
@@ -1119,7 +1118,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     return badges.length ? `<span class="node-indicators">${badges.join("")}</span>` : "";
   }
 
-  /** One-click fix for a diagnostic — dispatches an existing command, never a bespoke mutation (plan §9 "Fixes use normal commands"). */
+  /** One-click fix for a diagnostic — dispatches an existing command, never a bespoke mutation. */
   function quickFixMarkup(d: StudioDiagnostic): string {
     if (d.code === "BAD_PATTERN" && d.nodeId && d.validatorId) {
       return `<button data-fix-clear-pattern="${d.validatorId}" data-fix-node="${d.nodeId}">Clear pattern</button>`;
@@ -1818,7 +1817,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
   /**
    * The outline rail: the same tree renderer, in a persistent column instead of a canvas mode.
-   * It is the surface the P4 keyboard-parity gate covers (Space to pick up, arrows to move), and
+   * It is the surface the keyboard-parity gate covers (Space to pick up, arrows to move), and
    * it fills the gutter that was previously dead space beside the form card.
    */
   function outlineMarkup(rootChildren: readonly StudioSchemaNode[]): string {
@@ -3076,7 +3075,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
   render();
 
-  // Auto-restore (plan §11 "last session restore") — only when the caller did not explicitly
+  // Auto-restore — only when the caller did not explicitly
   // pass a project: an explicit `initial` always wins over IndexedDB. Async by nature (IndexedDB
   // has no sync API), so this can only run *after* the synchronous first render above; `disposed`
   // guards against restoring into a host that unmounted before the read finished.

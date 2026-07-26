@@ -2,12 +2,11 @@ import { expect, test } from "@playwright/test";
 import { openStudio, showStructure } from "./support/studio.js";
 
 /**
- * P6 batch 2 gate: "navigation/fixes work". The Diagnostics tab lists
+ * "navigation/fixes work". The Diagnostics tab lists
  * compileToContract()'s merged diagnostics (studio-model's own standing
  * checks + Contract v2 export checks), each with a "Go to" (select the
  * node, switch to the Field tab, move focus there) and, where a single
- * existing command resolves it, a one-click fix (plan §9 "Fixes use
- * normal commands" — never a bespoke mutation).
+ * existing command resolves it, a one-click fix through an existing command rather than a separate mutation path).
  */
 
 test.beforeEach(async ({ page }) => {

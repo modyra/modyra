@@ -422,7 +422,7 @@ export function createUpdateValidatorCommand(nodeId: string, validatorId: string
   };
 }
 
-/** Replaces a select/multiselect field's option list wholesale (plan section 8 "properties options"). */
+/** Replaces a select/multiselect field's option list wholesale ("properties options"). */
 export function createSetFieldOptionsCommand(nodeId: string, options: StudioOption[]): Command {
   return {
     kind: "setFieldOptions",
@@ -611,7 +611,7 @@ export function createSetServerValidatorCommand(nodeId: string, serverValidator:
   };
 }
 
-/** Registers a symbolic implementation stub (R7: symbolic reference + generated stub, never inline code). */
+/** Registers a symbolic implementation stub (: symbolic reference + generated stub, never inline code). */
 export function createAddImplementationCommand(ref: StudioImplementationRef): Command {
   return {
     kind: "addImplementation",

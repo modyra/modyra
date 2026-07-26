@@ -2,12 +2,12 @@ import { expect, test } from "@playwright/test";
 import { openStudio, showStructure } from "./support/studio.js";
 
 /**
- * P7 gate (.modyra/modyra-studio-caveman-plan.md section 14): "dummy target
- * needs no canvas change" / "failure cannot corrupt editor" / "stale
- * ignored". The Export tab drives the real @modyra/studio-target-json,
+ * (.modyra/modyra-studio-caveman-plan.md section 14): "dummy target
+ * needs no canvas change" / "failures do not mutate editor state" / "stale
+ * ignored". The Export tab drives the @modyra/studio-target-json,
  * @modyra/studio-target-core, @modyra/studio-target-angular and
  * @modyra/studio-target-react targets through the lazy TargetRegistry —
- * never a mock.
+ * uses the public implementation.
  */
 
 test.beforeEach(async ({ page }) => {
@@ -27,7 +27,7 @@ test("Export tab lists all four registered targets and Generate produces project
   await expect(page.locator(".export-file-path").nth(1)).toContainText("(entry)");
 });
 
-test("P8: switching to the Core target and generating produces form.ts + stubs.ts, a real createForm() definition", async ({ page }) => {
+test("switching to the Core target and generating produces form.ts + stubs.ts, a real createForm() definition", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
   await page.locator('[data-inspector-tab="export"]').click();
   await page.locator("[data-export-target]").selectOption("core");
@@ -39,7 +39,7 @@ test("P8: switching to the Core target and generating produces form.ts + stubs.t
   await expect(page.locator(".export-file-path").nth(1)).toContainText("stubs.ts");
 });
 
-test("P9: switching to the Angular target and generating produces form.ts + stubs.ts, a real mdyForm() definition", async ({ page }) => {
+test("switching to the Angular target and generating produces form.ts + stubs.ts, a real mdyForm() definition", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
   await page.locator('[data-inspector-tab="export"]').click();
   await page.locator("[data-export-target]").selectOption("angular");
@@ -51,7 +51,7 @@ test("P9: switching to the Angular target and generating produces form.ts + stub
   await expect(page.locator(".export-file-path").nth(1)).toContainText("stubs.ts");
 });
 
-test("P10: switching to the React target and generating produces form.ts + stubs.ts, a real useMdyForm() definition", async ({ page }) => {
+test("switching to the React target and generating produces form.ts + stubs.ts, a real useMdyForm() definition", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
   await page.locator('[data-inspector-tab="export"]').click();
   await page.locator("[data-export-target]").selectOption("react");

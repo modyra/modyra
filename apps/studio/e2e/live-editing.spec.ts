@@ -25,7 +25,7 @@ test("a field's label and code name are edited in place, on the field itself", a
   await field.locator('[data-inline-edit="name"]').fill("fullName");
   await field.locator('[data-inline-edit="name"]').blur();
 
-  // The edit reaches the real model: the inspector, the derived path and the Contract all follow.
+  // The edit reaches the model: the inspector, the derived path and the Contract all follow.
   await expect(page.locator(`[data-inline-edit="name"][data-inline-node="${nodeId}"]`)).toHaveValue("fullName");
   await expect(page.locator("[data-label]")).toHaveValue("Full name");
   await expect(page.locator(".plain-canvas-field").first()).toHaveAttribute("data-field-path", "fullName");

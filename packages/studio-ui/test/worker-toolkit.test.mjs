@@ -1,14 +1,14 @@
 /**
- * P11 Workers: worker-toolkit.ts is the pure, DOM-free half of the generate
+ * worker-toolkit.ts is the pure, DOM-free half of the generate
  * pipeline meant to run inside a Worker (apps/studio's codegen-worker.ts) —
- * real behavioral test against the shipped module, no fake host needed.
+ * behavioral test against the shipped module, no fake host needed.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { runGenerateJob } from "../dist/worker-toolkit.js";
 import { createCheckoutProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";
 
-test("runGenerateJob resolves the requested target and generates, same as calling target.generate() directly", async () => {
+test("runGenerateJob delegates to the selected target", async () => {
   const project = createCheckoutProject();
   const artifact = await runGenerateJob({ targetId: "core", project });
 

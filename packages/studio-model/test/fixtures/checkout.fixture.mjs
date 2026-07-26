@@ -1,9 +1,4 @@
-/**
- * Same instance documented in .modyra/studio/checkout-example.md — kept in
- * sync manually until P1's own fixture loader supersedes this (plan section
- * 13/17). A function (not a shared object literal) so each test gets its
- * own fresh, independently mutable copy.
- */
+/** Behavioral coverage for this module. */
 export function createCheckoutProject() {
   return {
     studioVersion: 1,

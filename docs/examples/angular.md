@@ -1,4 +1,4 @@
-# Angular — complete checkout example
+# Angular — checkout example
 
 The same scenario as the [README](../../README.md#1-checkout-nested-groups-repeatable-line-items-a-coupon-checked-server-side)
 implemented end-to-end in Angular: nested groups, a typed array of line

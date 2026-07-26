@@ -1,6 +1,6 @@
 /**
  * Reusable conformance suite (plan section 10) — every target must pass
- * this against at least one real project (the checkout fixture, in this
+ * this against at least one project (the checkout fixture, in this
  * repo's tests) before it ships. Checks what's testable against a single
  * generate() call: determinism, no project mutation, safe file paths,
  * stable diagnostic shape, and a consistent entryFile. Stale/cancel

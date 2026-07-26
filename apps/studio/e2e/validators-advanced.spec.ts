@@ -2,11 +2,11 @@ import { expect, test } from "@playwright/test";
 import { openStudio, showStructure } from "./support/studio.js";
 
 /**
- * P5 batch 2: server validator UI (dependencies, debounce/timeout,
+ * server validator UI (dependencies, debounce/timeout,
  * skip-when-empty, stub creation) and the project-level form validator
  * section (add/edit/remove, condition templates — not a general recursive
  * expression builder, see STATUS.md gap note). All refs are picked from
- * <select>s populated from the tree, never typed (P5 gate: "no path typing").
+ * <select>s populated from the tree, never typed ("no path typing").
  *
  * Both live behind interaction the inspector redesign introduced: "Server
  * validation" is a collapsed-by-default accordion (open it via its summary),
@@ -129,7 +129,7 @@ test("inline-editing an existing form validator's message commits without recrea
   await expect(messageInput).toHaveValue("Edited message");
 });
 
-test("P5 gap closed: AND composes two sub-conditions, each with its own field+condition", async ({ page }) => {
+test("AND composes two sub-conditions, each with its own field+condition", async ({ page }) => {
   await page.locator('[data-template="group"]').click();
   await showStructure(page);
   const groupId = await page.locator(".outline .tree-node [data-node]").first().getAttribute("data-node");
@@ -155,7 +155,7 @@ test("P5 gap closed: AND composes two sub-conditions, each with its own field+co
   const row = page.locator(".form-validator-row");
   await expect(row).toHaveCount(1);
   await expect(row.locator("[data-form-validator-message]")).toHaveValue("Both conditions must hold");
-  // Dependencies list both referenced fields (deduped) — visible proof the compound expression was built, not a leaf.
+  // Dependencies list both referenced fields (deduped) — the compound expression was built, not a leaf.
   await expect(row.locator(".fv-meta")).not.toContainText("depends on: (none)");
 });
 
@@ -171,7 +171,7 @@ test("form validator dependency display shows 'root' (not '(none)') when root is
   await expect(page.locator(".form-validator-row .fv-meta")).toContainText("depends on: root · error target: (none)");
 });
 
-test("P5 gap closed: NOT wraps a single sub-condition", async ({ page }) => {
+test("NOT wraps a single sub-condition", async ({ page }) => {
   await page.locator('[data-template="checkbox"]').click();
   await openFormRulesTab(page);
 
@@ -198,7 +198,7 @@ test("switching from AND back to a leaf condition restores the flat field+value 
   await expect(page.locator("[data-fv-literal]")).toBeVisible();
 });
 
-test("P5 gap closed: submit-action stub creation, selection, and removal", async ({ page }) => {
+test("submit-action stub creation, selection, and removal", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
   await openFormRulesTab(page);
 

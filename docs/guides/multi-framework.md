@@ -64,7 +64,7 @@ An adapter provides two things:
 
 1. **A reactivity binding** (or uses `vanillaReactivity()`): the
    `MdyReactivity` contract, nothing framework-shaped about its shape —
-   real implementations exist for Angular, Vue and Solid signals today.
+   implementations exist for Angular, Vue and Solid signals today.
 2. **Bindings/hooks** that connect DOM inputs to field handles
    (`value()`, `set()`, `markAsTouched()`, `errors()`), reusing
    `@modyra/widgets`' headless controllers for composite widgets
@@ -131,7 +131,7 @@ export function vueReactivity(): MdyReactivity & /* Batching/Flush/Observe */ {
 Components use `createVueForm(schema)` (or `useVueForm` inside an active
 effect scope, for automatic disposal) and bind with `v-model`-style
 wrappers over the handles. Headless field/select controllers come from
-`@modyra/widgets`. One real behavior change worth knowing: adding a
+`@modyra/widgets`. One behavior change worth knowing: adding a
 scheduler means `effect()` (and anything built on it, like the widget
 layer's internal state-sync) is now microtask-batched instead of always
 synchronous — bringing Vue in line with vanilla/React/Preact/Svelte/Lit's

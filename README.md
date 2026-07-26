@@ -1,434 +1,164 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/readme-banner-dark.png">
-  <img src="docs/assets/brand/readme-banner-light.png" alt="Modyra — Model once. Render anywhere.">
-</picture>
-
 # Modyra
 
-**Model once. Render anywhere.** `@modyra/core` is a type-safe form engine
-that knows nothing about any UI framework — it runs the same in Node, a
-CLI, a worker, or a unit test. Seven thin adapters (Angular, React, Vue,
-Lit, Solid, Preact, Svelte) bind that one engine to each framework's own
-reactivity, natively — no adapter reimplements form logic, they just wire
-signals to a render.
+**A typed form engine for TypeScript applications.**
 
-- No framework runtime, no RxJS — form state is plain signals and `computed`s
-- Compile-time checked field bindings: `form.f.email` — typos don't compile
-- Sync, async (debounced, cancellable, cross-field) and form-level validation
-- Typed field arrays (`array()`) for repeatable rows — push/insert/remove/move
-- Drafts (autosave/restore), undo/redo, minimal-patch change tracking, devtools
-- Headless core or accessible ready-made controls — your design system or ours
-- Incremental adoption paths — e.g. Reactive Forms interop (`mdyCva`) on Angular
+Modyra keeps form state, validation and operations in a framework-independent core. Adapters connect the same form model to Angular, React, Vue, Lit, Solid, Preact and Svelte.
+
+> **Project status:** Modyra is under active development and has not reached 1.0. The core engine and Angular integration currently receive the broadest coverage. Other adapters share the same conformance suite, but differ in UI coverage, SSR behavior and framework-specific integration depth. Pin versions in production and review release notes before upgrading.
 
 [![CI](https://github.com/modyra/modyra/actions/workflows/ci.yml/badge.svg)](https://github.com/modyra/modyra/actions/workflows/ci.yml)
-[![Release](https://github.com/modyra/modyra/actions/workflows/release.yml/badge.svg)](https://github.com/modyra/modyra/actions/workflows/release.yml)
 [![npm](https://img.shields.io/npm/v/@modyra/core)](https://www.npmjs.com/package/@modyra/core)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?style=flat&logo=github-sponsors)](https://github.com/sponsors/lorenzomusche)
 
-## Packages
+## Why Modyra
 
-| Package                                               | What it is                                                                                               | UI layer                                                 | Peer deps              |
-| :---------------------------------------------------- | :------------------------------------------------------------------------------------------------------- | :------------------------------------------------------- | :--------------------- |
-| [`@modyra/core`](packages/core)                       | Framework-agnostic form engine: typed field trees, arrays, validation, drafts, undo/redo, i18n utilities | headless                                                 | —                      |
-| [`@modyra/widgets`](packages/widgets)                 | Headless widget controllers + universal interaction/accessibility contract                               | headless                                                 | —                      |
-| [`@modyra/angular`](packages/angular)                 | Angular binding on native signals                                                                        | full renderer catalog, themes, devtools, wizard, interop | `@angular/*` ≥21       |
-| [`@modyra/react`](packages/react)                     | React binding via `useSyncExternalStore`                                                                 | headless — bring your own UI                             | `react` ≥18            |
-| [`@modyra/vue`](packages/vue)                         | Vue binding on `@vue/reactivity`                                                                         | headless — bring your own UI                             | `@vue/reactivity` ≥3.4 |
-| [`@modyra/lit`](packages/lit)                         | Lit binding — ReactiveController                                                                         | themable form elements                                   | `lit` ≥3               |
-| [`@modyra/solid`](packages/solid)                     | Solid binding on native signals + headless widgets              | headless — bring your own UI                             | `solid-js` ≥1.8        |
-| [`@modyra/preact`](packages/preact)                   | Preact binding — thin variant of the React adapter               | headless — bring your own UI                             | `preact` ≥10.19        |
-| [`@modyra/svelte`](packages/svelte)                   | Svelte binding — `vanillaReactivity()` + a `toStore()` bridge to real Svelte stores + headless widgets | headless — bring your own UI | `svelte` ≥4 |
-| [`@modyra/zod`](packages/zod)                         | Framework-agnostic Zod adapter — schema-first typed forms                                                | —                                                        | `zod` ≥3.25            |
-| [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter — one adapter for Zod, Valibot, ArkType and every v1 vendor                      | —                                                        | —                      |
-| [`@modyra/styles`](packages/styles)                   | CSS themes (`default`, `material`, `ios`, `ionic`, `base`) for every adapter                             | themes                                                   | —                      |
+Form behavior often becomes tied to a rendering framework. Validation, asynchronous work, drafts and change tracking then have to be rewritten when the UI changes or when the same rules are needed on a server, in a worker or in a test.
 
-Every binding is a first-class citizen over the same engine: pick the one
-for your framework, keep everything else identical.
+Modyra separates those concerns:
 
-## The engine in 60 seconds (framework-agnostic)
+- `@modyra/core` owns typed state, validation and form operations
+- framework adapters connect that state to each framework's reactivity model
+- UI packages and headless widgets are optional
+- schema adapters support Zod and Standard Schema
+- the Dynamic Form Contract represents forms as validated data
 
-Everything below runs in plain TypeScript — Node, a CLI, a worker, a unit
-test, or any of the seven framework adapters. No framework in sight —
-this is the whole point: the engine doesn't need one.
+## Quick start
+
+```bash
+npm install @modyra/core
+```
 
 ```ts
-import { createForm, field, group, required, email, min } from "@modyra/core";
+import { createForm, email, field, group, min, required } from "@modyra/core";
 
 const form = createForm({
   email: field("", [required(), email()]),
   age: field<number | null>(null, [min(18)]),
-  address: group({ city: field("Rome"), zip: field("") }),
-});
-
-form.f.email.set("not-an-email");
-form.f.email.errors(); // ["Enter a valid email address"]
-form.getValue().address.city; // "Rome" — fully typed, typos don't compile
-```
-
-> **Validators are factories, not values:** write `required()`, not
-> `required` (value-style-validator muscle memory trips here — the
-> resulting TS error is easy to misread). Validation errors come back as
-> **arrays of message strings** (`["Name taken"]`), not `{ required: true }`
-> keyed objects. `compose(...)` runs every validator in a list and
-> collects all failing messages; `composeFirst(...)` — same signature,
-> used in its place — stops at the first failure instead, useful when
-> showing more than one error per field would be noise (e.g. "required"
-> and "min length" on the same empty field).
-
-**In a hurry?** Skip straight to the [full documentation index](docs/README.md),
-pick your [framework example](#the-same-app-seven-frameworks), or read the
-[typed forms guide](docs/guides/typed-forms.md) — the three scenarios
-below are worth reading once, but nothing past this point is required to
-get started.
-
-## Real-world scenarios, handled by the engine
-
-These are the cases that make form code rot in production — nested data,
-repeatable rows, server round-trips, refreshes, "apply my changes only".
-Each one below is complete and runnable in plain TypeScript.
-
-### 1. Checkout: nested groups, repeatable line items, a coupon checked server-side
-
-An order form with an address group, a **typed array** of line items, a
-coupon validated against the server (re-checked automatically when the
-country changes), and server errors routed back to fields on submit.
-
-```ts
-import {
-  createForm,
-  field,
-  group,
-  array,
-  required,
-  min,
-  pattern,
-  crossField,
-  serverValidator,
-} from "@modyra/core";
-
-const form = createForm(
-  {
-    country: field("IT"),
-    shipping: group({
-      city: field("", [required()]),
-      zip: field("", [required(), pattern(/^\d{5}$/, "5 digits")]),
-    }),
-    // Typed repeatable rows: form.f.items.rows(), push/insert/remove/move
-    items: array(
-      group({
-        sku: field("", [required()]),
-        qty: field<number>(1, [min(1)]),
-      }),
-      { initial: [{ sku: "TSHIRT-BLK-M", qty: 2 }] },
-    ),
-    coupon: field(
-      "",
-      [],
-      serverValidator(
-        async (code, ctx) => {
-          if (!code) return null; // optional field — skip the call
-          // ctx.form reads the rest of the form; ctx.signal cancels stale calls
-          const res = await api.coupons.check(
-            code,
-            ctx.form.fieldValue("country"),
-            {
-              signal: ctx.signal,
-            },
-          );
-          return res.valid ? null : "Coupon not valid for your country";
-        },
-        {
-          dependsOn: ["country"], // country flips → coupon re-validates itself
-          debounceMs: 400,
-          timeoutMs: 5000, // never a "pending" that lasts forever
-        },
-      ),
-    ),
-  },
-  {
-    validators: [
-      // Form-level rule over the whole typed value
-      crossField(["items"], (v) =>
-        v.items.length === 0 ? "Add at least one item to the order" : null,
-      ),
-    ],
-  },
-);
-
-form.f.items.push({ sku: "MUG-WHT", qty: 1 });
-form.f.items.rows()[1].sku.errors(); // per-row, per-field errors
-form.f.items.remove(0);
-form.f.items.length(); // 1
-form.getValue().items[0].qty; // number — a typo here is a compile error
-
-const result = await form.submit(async (order) => {
-  const res = await api.orders.create(order);
-  if (!res.ok) {
-    // Server errors land on the matching field (or the form, with path: null)
-    return res.errors.map((e) => ({
-      path: e.field,
-      kind: "server",
-      message: e.message,
-    }));
-  }
-});
-```
-
-What the engine did for you: `items.0.sku`-style paths stay compile-checked;
-`state.valid()` includes per-row validators _and_ the form-level rule; the
-coupon re-checks itself when `country` flips and aborts the previous HTTP
-call when you keep typing; `state.pending()` covers every async run, so a
-submit button bound to `state.canSubmit()` can't fire mid-validation.
-
-### 2. A long insurance claim: survive refresh, undo mistakes, patch only what changed
-
-A 40-field claim form. The user refreshes mid-way (drafts), deletes the
-wrong paragraph (undo/redo), and your backend only wants the diff
-(`getChanges`).
-
-```ts
-import { createForm, field, group, required, minLength } from "@modyra/core";
-
-const form = createForm(
-  {
-    policyNumber: field("", [required()]),
-    incident: group({
-      date: field("", [required()]), // ISO yyyy-MM-dd
-      description: field("", [required(), minLength(30)]),
-    }),
-    iban: field("", [required()]),
-  },
-  {
-    // Autosave to localStorage every 500 ms of idle; restored on reload.
-    // Sensitive fields are masked in devtools and excluded from the draft.
-    draft: { key: "claim-form", exclude: ["iban"] },
-    history: true, // undo()/redo()
-  },
-);
-
-form.f.incident.description.set("The kitchen pipe burst and…");
-form.undo(); // oops — bring the paragraph back
-form.redo();
-
-form.getChanges(); // { incident: { description: "The kitchen pipe…" } }
-// → the minimal PATCH body, typed
-```
-
-Drafts are versioned envelopes with a 7-day TTL: File/BigInt values are
-refused, quota errors never crash the form, and `__proto__`-style paths in
-a tampered `localStorage` entry are discarded at restore.
-
-### 3. Schema-first: the backend already speaks Zod
-
-The validation contract lives in one Zod schema shared with your API — the
-form derives fields, initial values, validators and cross-field rules from
-it, arrays included:
-
-```ts
-import { z } from "zod";
-import { createZodForm } from "@modyra/zod";
-
-const passengerSchema = z.object({
-  fullName: z.string().min(1, "Required"),
-  infant: z.boolean(),
-});
-
-const bookingSchema = z.object({
-  flight: z.string().min(1, "Pick a flight"),
-  passengers: z.array(passengerSchema).min(1, "At least one passenger"),
-  contact: z.object({
-    email: z.string().email(),
-    phone: z.string().optional(),
+  address: group({
+    city: field("Rome"),
+    zip: field(""),
   }),
 });
 
-const form = createZodForm(bookingSchema);
-form.f.passengers.push({ fullName: "Ada Lovelace", infant: false });
-// z.array() → typed field array; .min(1) → array-level validator gating submit
+form.f.email.set("person@example.com");
+form.f.email.valid(); // true
+form.getValue().address.city; // string
 ```
 
-`zod` is an _optional_ peer (`>=3.25`, Zod 4 supported): apps that don't
-use schemas never download it.
+Validators are factories: use `required()` rather than `required`. Errors are returned as arrays of structured entries. See the [typed forms guide](docs/guides/typed-forms.md) for arrays, asynchronous validation, drafts, history and change tracking.
 
-## The same app, seven frameworks
+## Core capabilities
 
-The engine is identical everywhere — only the reactive binding and the
-rendering idiom change. A complete checkout form (nested groups, typed
-array rows, cancellable server validation, submit with server errors) is
-implemented end-to-end, side by side, in:
+- compile-time checked field handles
+- nested groups and typed field arrays
+- synchronous, asynchronous, cross-field and form-level validation
+- cancellation, dependency tracking, debounce and timeout for asynchronous validators
+- draft persistence with field exclusion and expiry
+- undo and redo, grouped mutations and minimal change sets
+- server error mapping and schema validation
+- optional devtools and headless widget controllers
 
-- [Angular](docs/examples/angular.md) — `mdyForm` + the UI catalog, `@for` over `rows()`
-- [React](docs/examples/react.md) — `useMdyForm` / `useMdyField`, array rows with `.map()`
-- [Vue](docs/examples/vue.md) — `createVueForm` on `@vue/reactivity`
-- [Lit](docs/examples/lit.md) — `createLitForm` + `<mdy-*-field>` custom elements
-- [Solid](docs/examples/solid.md) — `createSolidForm`, fields read as accessors
-- [Preact](docs/examples/preact.md) — same hooks as React, thinner runtime
-- [Svelte](docs/examples/svelte.md) — `createSvelteForm` + `toStore()` for native `$store` bindings
+## Packages
 
-Adapter recipes, the reactive contract every binding implements, and the
-Astro note: [Multi-framework architecture](docs/guides/multi-framework.md).
+| Package | Purpose | Support notes |
+| --- | --- | --- |
+| [`@modyra/core`](packages/core) | Framework-independent form engine | Primary package, no framework runtime |
+| [`@modyra/widgets`](packages/widgets) | Headless interaction and accessibility controllers | Framework-independent |
+| [`@modyra/angular`](packages/angular) | Angular signals adapter and UI catalog | Broadest UI integration |
+| [`@modyra/react`](packages/react) | React adapter using `useSyncExternalStore` | Headless |
+| [`@modyra/vue`](packages/vue) | Vue reactivity adapter | Headless |
+| [`@modyra/lit`](packages/lit) | Lit adapter and custom elements | UI catalog available |
+| [`@modyra/solid`](packages/solid) | Solid signals adapter | Headless |
+| [`@modyra/preact`](packages/preact) | Preact adapter | Headless; see SSR note in its README |
+| [`@modyra/svelte`](packages/svelte) | Svelte store bridge | Headless |
+| [`@modyra/zod`](packages/zod) | Zod schema adapter | Optional `zod` peer |
+| [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter | Vendor-neutral |
+| [`@modyra/styles`](packages/styles) | Shared CSS themes | Optional |
 
-## Coming from Angular Reactive Forms?
+Adapter capabilities and known differences are listed in the generated [reactivity capability matrix](docs/reactivity-capability-matrix.md).
 
-This library trades ecosystem maturity for compile-checked field paths,
-signal-based state (zoneless-friendly, no RxJS — no runtime dependency, no
-Observables in the public API, none used internally) and built-in
-async/cross-field validation, typed arrays, drafts, undo/redo and devtools.
-The `/interop` entry point (`mdyCva`, optional `@angular/forms` peer) covers
-incremental adoption. Full, honest comparison:
-[Compared with Reactive Forms](docs/guides/comparison-reactive-forms.md).
+## Example: cancellable server validation
 
-## Layers
+```ts
+import { createForm, field, serverValidator } from "@modyra/core";
 
-```text
-   Typed API (mdyForm)    Declarative API    Dynamic JSON config
-            \                   |                   /
-                Shared Form Engine  (@modyra/core)
-                                |
-             Headless widget layer  (@modyra/widgets)
-                                |
-  Angular ─ React ─ Vue ─ Lit ─ Solid ─ Preact ─ Svelte  (one binding each)
-                                |
-        Headless integrations  or  UI catalogs + @modyra/styles themes
+const form = createForm({
+  country: field("IT"),
+  coupon: field(
+    "",
+    [],
+    serverValidator(
+      async (code, ctx) => {
+        if (!code) return null;
+        const result = await api.checkCoupon(code, ctx.form.fieldValue("country"), {
+          signal: ctx.signal,
+        });
+        return result.valid ? null : "Coupon not valid for this country";
+      },
+      { dependsOn: ["country"], debounceMs: 400, timeoutMs: 5_000 },
+    ),
+  ),
+});
 ```
 
-The form engine — typed field trees, arrays, validation, drafts, undo/redo —
-lives in [`@modyra/core`](packages/core), a zero-dependency package that
-runs in plain Node and has never heard of any of the frameworks below it.
-[`@modyra/widgets`](packages/widgets) adds headless widget controllers and
-the interaction/accessibility contract shared by every renderer. Each
-adapter implements the same `MdyReactivity` contract on its framework's
-own native reactivity where one exists (Angular signals, `@vue/reactivity`,
-Solid's signals) or on the engine's built-in `vanillaReactivity()` bridged
-through the framework's external-store hook where it doesn't (React's
-`useSyncExternalStore`, Preact, Svelte's stores, Lit's ReactiveController)
-— see [Multi-framework architecture](docs/guides/multi-framework.md) for
-the full contract and per-adapter notes.
+A stale request is aborted when the value or one of its dependencies changes. `form.state.pending()` and `form.state.canSubmit()` include asynchronous validation state.
 
-## Angular entry points
+## Framework examples
 
-| Import                    | Contents                                  | Extra peer deps                  |
-| :------------------------ | :---------------------------------------- | :------------------------------- |
-| `@modyra/angular`         | Full bundle: adapter + UI + tools         | —                                |
-| `@modyra/angular/adapter` | Headless Angular adapter layer only       | —                                |
-| `@modyra/angular/ui`      | UI primitives and built-in renderers only | —                                |
-| `@modyra/angular/zod`     | `mdyFormFromSchema()`                     | `@modyra/zod` + `zod` (optional) |
-| `@modyra/angular/interop` | `mdyCva` for Reactive Forms               | `@angular/forms` (optional)      |
+The `examples/` directory contains equivalent applications for the supported adapters. Start with the adapter you use:
+
+- [Angular](docs/examples/angular.md)
+- [React](docs/examples/react.md)
+- [Vue](docs/examples/vue.md)
+- [Lit](docs/examples/lit.md)
+- [Solid](docs/examples/solid.md)
+- [Preact](docs/examples/preact.md)
+- [Svelte](docs/examples/svelte.md)
+
+These examples demonstrate API compatibility. They do not imply identical UI, SSR or ecosystem coverage across adapters.
 
 ## Documentation
 
-The full index lives in [docs/README.md](docs/README.md), also published
-as a searchable site (`npm run docs:build` — [`site/`](site/), an
-Astro/Starlight project generated from `docs/`; that directory stays the
-single source of truth). The shortlist:
+- [Documentation index](docs/README.md)
+- [Mental model](docs/guides/mental-model.md)
+- [Typed forms](docs/guides/typed-forms.md)
+- [Schema adapters](docs/guides/schemas.md)
+- [Server validation](docs/guides/server-validation.md)
+- [Security](docs/guides/security.md)
+- [Studio](docs/studio/overview.md)
+- [Troubleshooting](docs/guides/troubleshooting.md)
 
-- [Mental model](docs/guides/mental-model.md) — the state graph, field lifecycle, operation semantics
-- [Typed forms](docs/guides/typed-forms.md) — schema, handles, `patch`/`getChanges`, async validation, field arrays, undo/redo, `mutate()`, construction/activation (SSR, Strict Mode), **drafts (read the security note)**, wizard, Zod
-- [Schema adapters](docs/guides/schemas.md) — Zod vs Standard Schema (Valibot, ArkType, …): which model, which trade-offs
-- [Server validation](docs/guides/server-validation.md) — one schema, two sides: `serverValidate()` with Next.js/Express/Hono
-- [Usage modes](docs/guides/usage-modes.md) — declarative, explicit adapter, headless, validation semantics
-- [UI toolkit](docs/guides/ui-toolkit.md) — renderer catalog, enterprise select, dynamic forms, CSS tokens
-- [AI-generated forms](docs/guides/ai-generated-forms.md) — LLM output → `parseDynamicFields()` → render: the safe pipeline + system prompt template, including the Contract v2 layout/rules extension
-- [Writing a reactivity adapter](docs/guides/reactivity-adapter-guide.md) · [capability matrix](docs/reactivity-capability-matrix.md) — the `MdyReactivity` contract for building the next framework binding
-- [DevTools](docs/guides/devtools.md) — hotkey overlay, masking, production notes
-- [I18n](docs/guides/i18n.md) — UI strings (en/it/de/fr/es), date/time value models, localized parsing
-- [Reactive Forms interop](docs/guides/interop.md) · [Comparison](docs/guides/comparison-reactive-forms.md) · [Troubleshooting](docs/guides/troubleshooting.md)
-- Coming from React? [react-hook-form](docs/guides/comparison-react-hook-form.md) · [Formik](docs/guides/comparison-formik.md) — tested side-by-side snippets, migration guidance
+## Compatibility
 
-**Rust SDK**: [`sdk/rust/`](sdk/rust/) — `modyra-contract`, a network-independent
-crate for reading/writing/validating Dynamic Form Contract v2, plus runnable
-`reqwest` and Axum examples (the Angular dynamic-form demo round-trips
-against the Axum one). Shares its conformance fixtures with the TypeScript
-implementation (`spec/`). Not published to crates.io yet.
+- Node 22 or newer for repository development
+- TypeScript strict mode
+- Angular 21 or newer
+- React 18 or newer
+- Vue reactivity 3.4 or newer
+- Lit 3 or newer
+- Solid 1.8 or newer
+- Preact 10.19 or newer
+- Svelte 4 or newer
+- Zod 3.25 or newer when using `@modyra/zod`
 
-Project policies: [security](SECURITY.md) · [contributing](CONTRIBUTING.md) · [changelog](CHANGELOG.md)
+Only install the adapter for the framework in your application. Framework packages are optional peers of their respective adapters.
 
-## Compatibility and status
+## Security notes
 
-- **Angular 21+** — the engine relies on stable signal APIs (`linkedSignal`,
-  `effect` semantics, signal-based inputs/queries) shipped in recent majors;
-  older majors are not tested and not supported.
-- React ≥18, `@vue/reactivity` ≥3.4, Lit ≥3, `zod` ≥3.25 — each only for its
-  own adapter package.
-- TypeScript strict mode; the library compiles with `strict` and
-  `strictTemplates`.
-- Status: young library, actively developed, single maintainer. `npm test`
-  runs the whole matrix — core engine, every adapter, the widget layer and
-  the Angular package (`test:core`, `test:adapters`, `test:widgets`,
-  `test:angular` individually) — plus a tree-shaking bundle check
-  (`npm run test:bundle`), axe-core accessibility tests over the main
-  Angular renderers (jest + jsdom, inside `test:angular`) and a Playwright
-  browser smoke test over the packaged Angular demo (`npm run test:e2e`,
-  currently non-blocking in CI while it stabilizes); visual regression
-  tests are still planned. Pin your version and read release notes.
+Draft persistence uses `localStorage` by default. It is origin-wide, stored as plain text and may survive logout. Exclude passwords, tokens, payment data and other sensitive fields, or provide a custom storage implementation. See the [security guide](docs/guides/security.md).
 
-## Examples
+Client-side validation is defense in depth. Validate submitted data again on the server.
 
-Fastest way to try the library — no cloning, no workspace, each runs
-against the **published** npm packages:
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz)
-Angular ([`examples/stackblitz`](examples/stackblitz))
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-react)
-React ([`examples/stackblitz-react`](examples/stackblitz-react))
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-vue)
-Vue ([`examples/stackblitz-vue`](examples/stackblitz-vue))
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-lit)
-Lit ([`examples/stackblitz-lit`](examples/stackblitz-lit))
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-solid)
-Solid ([`examples/stackblitz-solid`](examples/stackblitz-solid))
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/modyra/modyra/tree/main/examples/stackblitz-preact)
-Preact ([`examples/stackblitz-preact`](examples/stackblitz-preact))
-
-Each is a real, verified, buildable Vite project (`npm install && npm run
-dev`) with the same signup demo (schema validators, cross-field password
-check, draft persistence, undo/redo, cancellable server-side check) — not
-just a code snippet.
-
-`examples/angular` is the full Angular demo app (typed, declarative, dynamic
-and Zod sections over the whole renderer catalog) — one demo app per
-framework, same engine.
-
-`examples/{react,vue,lit,preact,solid}` implement the **same signup form**
-(name + email, shared validators, agnostic devtools panel) so the adapters
-can be compared side by side, with a runtime switcher across the shipped
-themes (default, Material, iOS, Ionic) — React/Vue/Lit only; Preact/Solid
-use a single theme for now. They import the **built** `@modyra/*` packages
-from `node_modules` — the same artifacts users install, never the library
-sources.
+## Development
 
 ```bash
-npm run demo:angular   # Angular demo over the packaged build
-npm run demo:react     # http://localhost:4301
-npm run demo:vue       # http://localhost:4302
-npm run demo:lit       # http://localhost:4303
-npm run demo:preact    # http://localhost:4304
+pnpm install
+npm run build:packages
+npm test
 ```
 
-## Local development
-
-```bash
-pnpm install             # workspace deps use the workspace: protocol — use pnpm
-npm run build:packages   # core + widgets + schema adapters + react/vue/lit + styles
-npm run build:angular    # the Angular package (kept as build:lib alias)
-npm test                 # the whole matrix: core, adapters, widgets, Angular
-npm run demo:angular     # one demo per framework: demo:react / demo:vue / demo:lit
-```
-
-## Brand
-
-Logo, palette and typography live in
-[`docs/assets/brand`](docs/assets/brand) — three soft modules (the
-adapters) around a shared negative space (the core).
-
-<img src="docs/assets/brand/palette.png" alt="Modyra palette — Indigo #7067FF, Violet #A855F7, Coral #FF6577, Night #0E0F16, Cloud #F8FAFC, Slate #94A3B8" width="420">
+See [CONTRIBUTING.md](CONTRIBUTING.md) for repository conventions and release checks.
 
 ## License
 

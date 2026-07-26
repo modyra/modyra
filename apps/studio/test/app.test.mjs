@@ -1,11 +1,4 @@
-/**
- * `main.ts` queries `document` at the top level and is meant to run inside
- * a real browser after esbuild bundling — it can't be imported directly
- * under plain Node (no DOM) and isn't unit-testable there. This instead
- * verifies the actual build output (produced by the package's own "build"
- * script, which runs before "test" — see package.json), which is real,
- * executable verification of what ships, not a source-text guess.
- */
+/** Build-output smoke tests for the browser application. */
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
@@ -19,7 +12,7 @@ test("build produces the standalone bundle, stylesheet, and font assets", () => 
   assert.ok(files.some((f) => /^Satoshi-Regular.*\.woff2$/.test(f)), "missing bundled Satoshi font");
 });
 
-test("P11 Workers: build produces its own codegen-worker bundle, separate from the main studio.js entry", () => {
+test("build emits a separate code-generation worker bundle", () => {
   assert.ok(files.includes("codegen-worker.js"), "missing dist/codegen-worker.js");
   const main = readFileSync(new URL("studio.js", dist), "utf8");
   const worker = readFileSync(new URL("codegen-worker.js", dist), "utf8");
@@ -36,9 +29,9 @@ test("bundle mounts the framework-free studio-ui shell into [data-modyra-studio]
   assert.match(bundle, /data-modyra-studio/);
   assert.match(bundle, /mountStudio/);
   // Studio's own codegen targets (studio-target-react/angular) legitimately emit strings like
-  // "React (useMdyForm)" and "@modyra/react" as generated *source text*, not real imports —
+  // "React (useMdyForm)" and "@modyra/react" as generated *source text*, not imports —
   // apps/studio depends only on @modyra/studio-ui (see package.json), which has no react/
-  // react-dom/@angular/* dependency, so no real framework runtime can have been bundled here.
+  // react-dom/@angular/* dependency, so no framework runtime can have been bundled here.
   // Check for actual framework-runtime fingerprints instead of the word "react"/"angular".
   assert.doesNotMatch(bundle, /Symbol\.for\("react\.element"\)|ReactCurrentDispatcher|from ["']react-dom["']|@angular\/core/);
 });

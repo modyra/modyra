@@ -1,11 +1,4 @@
-/**
- * P6 gate (.modyra/modyra-studio-caveman-plan.md section 14 P6): "checkout
- * strict-valid". These tests call the *real* @modyra/core `parseDynamicForm`
- * (imported directly, not mocked) to independently double-check what
- * compileToContract already verifies internally — this is the actual
- * "strict-parse with existing parser" requirement from plan section 10,
- * not just trusting this package's own diagnostics summary.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -31,7 +24,7 @@ test("checkout compiles to a strict-valid Contract v2, with its unmappable piece
     [],
   );
 
-  // Independent re-verification against the real parser (not just trusting compileToContract's word for it).
+  // Independent re-verification against the parser (not just trusting compileToContract's word for it).
   const reparsed = parseDynamicForm(contract, { mode: "strict" });
   assert.equal(reparsed.ok, true);
   assert.deepEqual(reparsed.diagnostics, []);

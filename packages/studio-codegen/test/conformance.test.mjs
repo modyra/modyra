@@ -1,6 +1,6 @@
 /**
- * P7 gate: "checkout strict-valid"-equivalent for targets — the dummy
- * target must pass the full conformance suite against the real checkout
+ * "checkout strict-valid"-equivalent for targets — the dummy
+ * target must pass the full conformance suite against the checkout
  * fixture. Equally important: the suite must actually *catch* a target
  * that violates each rule — a conformance suite that always passes isn't
  * proving anything, so each failure mode gets its own intentionally-

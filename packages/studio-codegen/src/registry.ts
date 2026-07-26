@@ -3,7 +3,7 @@
  * only; a target's actual code is imported/instantiated on the first
  * load(id) call and cached after that — adding a new target is exactly
  * "register one more manifest", never a studio-model/studio-editor/
- * studio-ui change (P7 gate: "dummy target needs no canvas change").
+ * studio-ui change ("dummy target needs no canvas change").
  */
 import type { StudioTarget, TargetManifest } from "./types.js";
 

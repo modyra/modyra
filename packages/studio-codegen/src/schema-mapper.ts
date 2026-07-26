@@ -1,11 +1,11 @@
 /**
  * Shared "form.ts" builder for every real-code target — plan section 10's
  * "Shared TS IR factory: createForm | mdyForm | useMdyForm". Every Studio
- * validator kind maps to a real @modyra/core validator function (not a
+ * validator kind maps to a @modyra/core validator function (not a
  * reimplementation), server validation uses the idiomatic `serverValidator()`
- * helper (matches real usage, e.g. examples/angular's typed-form section),
+ * helper (matches usage, e.g. examples/angular's typed-form section),
  * and form-level validators compile through `compileExpressionToJs`
- * (ADR-0005: portable expression -> real source). Only the schema-factory
+ * (ADR-0005: portable expression -> source). Only the schema-factory
  * import source and call name vary per target — that is `TargetProfile`.
  */
 import {

@@ -1,10 +1,4 @@
-/**
- * A trivial target used only to prove the platform: full StudioTarget
- * implementation (schema traversal, options, capabilities) with zero
- * framework code. Not shipped — proves "dummy target needs no canvas
- * change" (P7 gate) by existing entirely outside studio-model/studio-editor/
- * studio-ui, registered the same way any real target eventually would be.
- */
+/** Behavioral coverage for this module. */
 function collectFieldNames(node, out = []) {
   if (node.node === "field") out.push(node.name);
   else if (node.node === "group") node.children.forEach((child) => collectFieldNames(child, out));

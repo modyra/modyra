@@ -1,10 +1,4 @@
-/**
- * Plan section 10 "Target scopes: Contract: Contract JSON, Studio JSON" —
- * the smallest legitimate real target: no framework code generation at
- * all, just the project's own canonical serialization plus the compiled
- * Contract v2 (reusing studio-contract's compiler, never reimplementing
- * it). A genuine first target for the platform (P7), not a throwaway.
- */
+/** Behavioral coverage for this module. */
 import { serializeProject, type MdyStudioProject } from "@modyra/studio-model";
 import { compileToContract } from "@modyra/studio-contract";
 import type { Artifact, StudioTarget, TargetAnalysis, TargetCapabilities, TargetManifest } from "@modyra/studio-codegen";

@@ -1,7 +1,4 @@
-/**
- * Plan section 10 gate: "collects, deduplicates, sorts" — and the P8 gate
- * "no unused imports" depends on this never emitting a name nobody added.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ImportResolver } from "../dist/index.js";

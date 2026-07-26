@@ -1,12 +1,4 @@
-/**
- * Plan section 10 "Angular MVP: mdyForm definition" — reuses studio-codegen's
- * shared schema mapper (P8a) with the Angular profile: `field`/`group`/
- * `array`/`mdyForm` from `@modyra/angular/adapter` instead of `createForm`
- * from `@modyra/core` (validators/crossField/serverValidator still come
- * from `@modyra/core` either way — see examples/angular's own typed-form
- * section for the same import split). Narrower scope than the Core target
- * (P8): definition + stubs only, no submit example, per the plan.
- */
+/** Behavioral coverage for this module. */
 import {
   buildFormModule,
   buildStubsModule,

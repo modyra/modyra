@@ -27,6 +27,14 @@ tree-shaking probe app lives in `packages/angular/bundle-test`, and the
 Angular demo app is self-contained in `examples/angular` (own
 `angular.json`, own scripts).
 
+### AI-assisted development
+
+AI tools are used during development for exploration, implementation, review and repetitive maintenance work. They do not replace project ownership or verification.
+
+Every accepted change is held to the same requirements regardless of how it was produced: the design must be understandable, the diff must stay focused, relevant behavior must be tested, limitations must be documented and a maintainer must review the result. Generated output is not accepted solely because it builds or passes a test.
+
+For the project motivation and development approach, see [Project background](docs/project-background.md).
+
 ## Ground rules
 
 - **Every change ships complete**: code + tests + docs (`docs/guides/`) +

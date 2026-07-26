@@ -1,7 +1,7 @@
 /**
  * Plan section 11 "server mock: delay/valid-values/error/timeout/network-
  * failure" — Studio's server validators/submit actions are always symbolic
- * stubs (ADR-0005, R7, R11: no real implementation exists at design time),
+ * stubs (ADR-0005, , : no implementation exists at design time),
  * so the live preview needs something to actually call. This is a preview-
  * session concern, not part of the Studio project model.
  */

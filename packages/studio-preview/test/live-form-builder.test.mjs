@@ -1,11 +1,4 @@
-/**
- * P11 gate ("Must show"): values, validation, arrays, errors, pending,
- * canSubmit, draft — all exercised against a REAL @modyra/core form built
- * from the checkout fixture, never a mock of the engine itself. Only the
- * server call is mocked (plan §11's own "server mock" concept — a
- * necessity since serverValidator implementations are always symbolic
- * stubs, ADR-0005).
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildLiveForm } from "../dist/index.js";
@@ -84,7 +77,7 @@ test("form validator (crossField): emptying the items array produces a real cros
 });
 
 // The checkout fixture's own serverValidator config (debounceMs: 400) still applies —
-// buildLiveForm only overrides the mock call's own delay, never the field's real debounce —
+// buildLiveForm only overrides the mock call's own delay, never the field's debounce —
 // so every wait below must clear debounceMs + the mock's delayMs, not just the mock delay.
 
 test("server mock: default config eventually resolves valid, and pending() is true while it runs", async () => {

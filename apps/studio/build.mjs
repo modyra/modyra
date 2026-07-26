@@ -25,7 +25,7 @@ await build({
   },
 });
 
-// Own bundle (P11 Workers, plan §11): `typescript` only ever loads here,
+// Worker bundle: `typescript` only ever loads here,
 // fetched by the browser as a separate file and instantiated via
 // `new Worker(...)` — never pulled into the main studio.js entry above.
 await build({

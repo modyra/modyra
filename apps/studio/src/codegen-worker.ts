@@ -1,17 +1,4 @@
-/**
- * P11 Workers (plan §11 "generate/format/syntax ... off main thread"). This
- * runs in its own esbuild bundle (build.mjs's second entry point), never in
- * the main studio.js bundle — `typescript` (the one dependency this batch
- * was approved to add) only ever loads here, so the main UI bundle stays
- * untouched by its size.
- *
- * Protocol: the host posts one {@link GenerateRequest} per Generate click;
- * this worker always replies with exactly one {@link GenerateResponse}
- * carrying the same `id`. Out-of-order replies are the host's problem to
- * discard (mountStudio's existing `exportState.generation` guard already
- * does this — see packages/studio-ui/src/index.ts's `runExport()` — a
- * worker reply is just another async result arriving late).
- */
+/** Runs generation, formatting and TypeScript checks outside the UI thread. */
 import ts from "typescript";
 import { runGenerateJob, type GenerateJobRequest } from "@modyra/studio-ui/worker-toolkit";
 import type { Artifact, ArtifactFile } from "@modyra/studio-codegen";

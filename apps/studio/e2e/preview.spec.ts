@@ -2,10 +2,10 @@ import { expect, test } from "@playwright/test";
 import { openStudio } from "./support/studio.js";
 
 /**
- * P11 gate: "Preview reads model/Contract, not generated source. Must
+ * "Preview reads model/Contract, not generated source. Must
  * show: values validation arrays errors pending canSubmit draft, server
  * mock: delay/valid-values/error/timeout/network-failure." Drives the
- * real @modyra/studio-preview live form through the actual DOM — never a
+ * @modyra/studio-preview live form through the actual DOM — never a
  * mock of the Preview tab itself.
  */
 
@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
   await openStudio(page);
 });
 
-test("a required field shows a real live error, then clears it once filled", async ({ page }) => {
+test("a required field shows a validation error, then clears it once filled", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
   await page.locator("[data-add-validator]").selectOption("required");
   await page.locator('[data-inspector-tab="preview"]').click();
@@ -42,7 +42,7 @@ test("array: Add row/Remove update the live array through the real form, reflect
   await expect(page.locator(".preview-array-label")).toContainText("(1)");
 });
 
-test("server mock: switching a field's mock mode to Fails surfaces a real async error in preview, Succeeds clears it", async ({ page }) => {
+test("server mock: switching a field's mock mode to Fails surfaces a asynchronous validation error in preview, Succeeds clears it", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
   await page.locator('details[data-section="server"] summary').click();
   await page.locator("[data-enable-server-validator]").click();
@@ -64,7 +64,7 @@ test("server mock: switching a field's mock mode to Fails surfaces a real async 
   await expect(page.locator(".preview-errors")).toHaveCount(0, { timeout: 3000 });
 });
 
-test("submit: a configured mock submit action reports success, driven entirely by the real form's canSubmit/state", async ({ page }) => {
+test("submit: a configured mock submit action reports success, driven entirely by the form state", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
   await page.locator("[data-name]").fill("email");
   await page.locator("[data-name]").blur();
