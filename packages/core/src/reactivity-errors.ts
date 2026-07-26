@@ -2,7 +2,7 @@
  * Typed errors for the {@link import("./reactivity.js").MdyReactivity}
  * contract. Adapters and the form engine throw these instead of ad-hoc
  * `Error`s or silent no-ops, so a caller can `instanceof`-check the failure
- * mode (see `.modyra/piano-modyra-reactivity-adapter-api.md` §8.7).
+ * mode.
  */
 
 /** A capability was used but the adapter's `capabilities` reports it false. */

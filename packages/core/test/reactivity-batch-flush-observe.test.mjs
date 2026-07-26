@@ -1,6 +1,6 @@
 /**
  * Milestone 3 (piano-modyra-reactivity-adapter-api.md §6.1-§6.3): vanilla's
- * batch()/flush()/observe() are real, not fictitious — dedicated coverage
+ * batch()/flush()/observe() are implemented — dedicated coverage
  * beyond the generic capability-gated checks in the shared conformance
  * suite (core/testing), including the transitive-chain and nesting cases
  * that suite doesn't exercise.

@@ -118,7 +118,7 @@ natively in the host's change detection.
 
 ## Documentation
 
-- [Real-world agnostic scenarios](https://github.com/modyra/modyra#real-world-scenarios-handled-by-the-engine)
+- [Typed forms guide](https://github.com/modyra/modyra/blob/main/docs/guides/typed-forms.md)
 - [Typed forms guide](https://github.com/modyra/modyra/blob/main/docs/guides/typed-forms.md)
 - [Mental model](https://github.com/modyra/modyra/blob/main/docs/guides/mental-model.md)
 

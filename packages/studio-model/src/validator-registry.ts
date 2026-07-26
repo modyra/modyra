@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 import type { StudioFieldValidator, StudioValidatorKind, StudioValueType } from "./types.js";
 
 export interface FieldValidatorRegistryEntry {

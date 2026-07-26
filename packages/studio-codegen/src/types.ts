@@ -1,6 +1,6 @@
 /**
  * Target plugin API (plan section 10; ADR
- * .modyra/studio/adr/0004-target-plugin-api.md). A target only ever reads
+ *. A target only ever reads
  * MdyStudioProject and produces an Artifact — it never depends on
  * studio-model/studio-editor/studio-ui internals beyond this contract, and
  * the editor only ever holds a lazy TargetManifest until generate() is

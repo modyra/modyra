@@ -1,13 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { createCheckoutProject } from "../../../packages/studio-model/test/fixtures/checkout.fixture.mjs";
 
-/**
- * Closes the loop back to Studio for real: a project shaped exactly like
- * what Studio's own Export tab (JSON target) produces, run through the
- * loadProject -> compileToContract -> flattenContractFields pipeline,
- * rendered with @modyra/plain's mountMdyForm — genuine interactive DOM in
- * a browser, not a screenshot or a mocked pipeline.
- */
+/** Browser coverage for importing and rendering an exported Studio project. */
 
 test("renders an exported Studio project without console errors", async ({ page }) => {
   const errors: string[] = [];

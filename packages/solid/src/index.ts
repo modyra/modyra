@@ -209,7 +209,7 @@ export function solidReactivity(): MdyReactivity &
 // has no "create this nested under the current scope" primitive. So
 // cascade-on-destroy is managed explicitly here (same bookkeeping as
 // vanillaReactivity()'s own VanillaScope), while runWithOwner() still
-// makes `run()` use Solid's real owner tree for whatever it creates.
+// makes `run()` use Solid's owner tree for whatever it creates.
 
 class SolidScope implements MdyReactiveScope {
   readonly id: symbol;

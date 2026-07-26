@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 import {
   buildFormModule,
   buildStubsModule,

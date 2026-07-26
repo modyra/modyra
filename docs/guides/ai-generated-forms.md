@@ -1,46 +1,27 @@
-# AI-generated forms
+# Data-driven forms from generated configuration
 
-LLMs are good at producing structured JSON; Modyra dynamic forms render a
-JSON-safe field contract. Put the two together and you get AI-generated
-forms **without executing or injecting a single string the model wrote** —
-the model only ever produces data, and `parseDynamicFields()` decides what
-is allowed to exist.
+Modyra can build forms from JSON produced by an LLM, CMS or other external system. Treat that configuration as untrusted input.
 
-This guide packages the pipeline: the JSON contract, a system prompt that
-constrains the model to it, and the render path. The rendering half is
-covered in [UI toolkit — dynamic forms](ui-toolkit.md).
+The supported path is:
 
-## The safe pipeline
-
-```
-LLM output (untrusted text)
-  → JSON.parse                      (plain data — never eval, never HTML)
-  → parseDynamicFields()            (runtime validation, drops bad entries)
-  → <mdy-dynamic-form [fields]>     (Angular text interpolation, auto-escaped)
-  → form.submit()                   (typed value, your handler)
+```text
+external text
+  -> JSON.parse
+  -> parseDynamicForm() or parseDynamicFields()
+  -> framework renderer or headless bindings
+  -> server-side validation on submission
 ```
 
-Treat model output with the same trust level as a `?q=` URL parameter:
+The parser accepts a bounded set of field kinds, validator options, layout nodes and rule operators. It rejects or reports unsupported structures before they reach a renderer. This reduces the attack surface but does not replace application-level authorization, server validation or safe DOM rendering.
 
-- **Never** render it as HTML. Modyra never does — labels, options and
-  error messages go through Angular text interpolation, never `innerHTML`
-  (see [SECURITY.md](../../SECURITY.md)). Do not bypass this with
-  `[innerHTML]` bindings of your own.
-- **Never** skip `parseDynamicFields()`. TypeScript types do not check
-  runtime JSON; the parser does. Unknown `kind`s, reserved names
-  (`__proto__`, `constructor`, …), names containing `.` (path separator),
-  duplicates, missing `options`, inverted `min`/`max` ranges and
-  over-long regex sources are **dropped** with a dev-mode warning — a
-  partially-hallucinated config still renders its valid fields.
-- Validator `pattern` sources are capped (256 chars) and compiled inside
-  `try/catch`: an invalid regex is skipped, not thrown.
-- **Option values are whitelisted automatically.** `select`/`radio`/
-  `segmented`/`multiselect` fields declare their options in the config —
-  the engine constrains the field value to them (`oneOf`/`eachOneOf` via
-  `buildDynamicFieldValidators`). A hallucinated `initialValue` outside
-  the option list, or a scripted `set()` with one, is simply invalid.
-- The model cannot reach code: there is no `kind` that runs functions,
-  loads URLs or fetches options by itself.
+## Trust boundaries
+
+- Parse runtime input before constructing a form. TypeScript types do not validate JSON.
+- Do not pass labels, messages or option text to HTML sinks. Render them as text.
+- Validate submitted values again on the server.
+- Apply application-specific limits for payload size, nesting and storage.
+- Use strict mode before publishing or registering a stored contract. Lenient mode is useful for editor previews where partial diagnostics are expected.
+- Treat prompts as generation guidance, not as an enforcement mechanism. The parser and server schema remain authoritative.
 
 ## The JSON contract
 
@@ -103,7 +84,7 @@ USER REQUEST: <the user's form description goes here>
 ```
 
 Even with a perfect prompt, the parser stays the enforcement layer —
-prompts reduce waste, `parseDynamicFields()` guarantees safety.
+prompts reduce waste, `parseDynamicFields()` enforces the supported contract.
 
 ## End-to-end example
 
@@ -162,9 +143,9 @@ onSubmitted(event: { value: Record<string, unknown> }): void {
 
 ## Notes
 
-- **Angular renders the catalog** (`<mdy-dynamic-form>`) — a real component.
+- **Angular renders the catalog** (`<mdy-dynamic-form>`) — a component.
   **React** has `useMdyDynamicForm(fields)`, headless by design like every
-  other hook in `@modyra/react`: it builds the real form and wires the
+  other hook in `@modyra/react`: it builds the form and wires the
   same validators (including the automatic `oneOf`/`eachOneOf`
   anti-tampering whitelist for option-based kinds) via the same
   `buildDynamicFieldValidators()` Angular's component calls — same value/
@@ -320,9 +301,9 @@ array rows before anything reaches the renderer.
 }
 ```
 
-For the current Angular renderer, recursive nodes compile to safe dotted and
+For the current Angular renderer, recursive nodes compile to validated dotted and
 indexed field paths such as `shipping.city`, `items.0.sku`, and
-`items.0.qty`. This preserves nested submission semantics and real initial
+`items.0.qty`. This preserves nested submission semantics and initial
 array rows. Interactive row insertion/removal remains owned by the typed
 `array()` renderer path; Contract v2 currently renders the rows declared in
 `initialValue`.

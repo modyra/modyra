@@ -180,7 +180,7 @@ every function above works with zero edits, since they only ever touch the
 framework-agnostic field handle (`handle.value()`, `.set()`, `.errors()`…),
 never a React-specific API. `packages/preact/test/headless-recipes.test.mjs`
 is this section's code copied byte-for-byte (only the file header comment
-differs) as proof, not just a claim. Swap the imports for
+differs) as coverage, not just a claim. Swap the imports for
 `useMdyForm`/`useMdyField` from `@modyra/preact` and the rest of this
 section applies as written — including the shadcn component snippets,
 since Preact's JSX output is React-compatible.
@@ -191,7 +191,7 @@ since Preact's JSX output is React-compatible.
 compiler macros a library's own build step can't resolve — see the
 package README), so its field handles are the same framework-agnostic
 shape as React/Preact's. The recipe functions above work unchanged as
-plain logic — proof: `packages/svelte/test/headless-recipes.test.mjs` is
+plain logic — coverage: `packages/svelte/test/headless-recipes.test.mjs` is
 that same code, byte-for-byte (only the header comment differs), and it
 passes with zero edits. The one real difference: a `.svelte` template
 auto-subscribes to a `$store` value, not a raw function call the way
@@ -299,7 +299,7 @@ form.setDisabled("email", () => locked.value);
 Solid's fine-grained reactivity means a field handle is read directly as
 an accessor inside JSX — no subscription hook needed at all. The same
 props-mapper functions from the React section work completely unchanged
-here too (proof: `packages/solid/test/headless-recipes.test.mjs` is that
+here too (coverage: `packages/solid/test/headless-recipes.test.mjs` is that
 same code, byte-for-byte), because they only call the field handle's own
 methods. The one thing that differs is *when* you call them: not once per
 render (Solid components run once), but inline in the JSX expression that

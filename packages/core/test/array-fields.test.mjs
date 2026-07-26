@@ -1,7 +1,7 @@
 /**
  * Typed field arrays: structure follows value, rebuild-on-structure-change,
  * array-level validation, reset, history/draft integration (see A.3/A.6 in
- * .modyra/piano-consolidamento-killer-features.md and the "Field arrays"
+ * the "Field arrays"
  * section of docs/guides/typed-forms.md for the documented v1 semantics).
  */
 import assert from "node:assert/strict";

@@ -27,7 +27,7 @@ test("mutate() coalesces multiple sets into one history entry (vanilla)", async 
   assert.equal(form.canUndo(), true);
 
   form.undo();
-  // One undo restores BOTH fields to their pre-mutate values — proof the
+  // One undo restores BOTH fields to their pre-mutate values — coverage the
   // two writes became a single history entry, not two.
   assert.equal(form.f.first.value(), "");
   assert.equal(form.f.last.value(), "");

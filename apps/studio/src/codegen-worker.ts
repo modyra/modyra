@@ -15,7 +15,7 @@ export type GenerateResponse =
   | { readonly id: number; readonly ok: true; readonly artifact: Artifact }
   | { readonly id: number; readonly ok: false; readonly error: string };
 
-/** Real syntax validation via the TS parser — catches malformed generated source instead of shipping it silently. Not a full cross-file typecheck (that needs a whole in-memory Program + lib.d.ts, a separate batch). */
+/** Returns parser diagnostics for a generated TypeScript file. */
 function checkSyntax(file: ArtifactFile): StudioDiagnostic[] {
   const result = ts.transpileModule(file.content, {
     fileName: file.path,
@@ -32,14 +32,14 @@ function checkSyntax(file: ArtifactFile): StudioDiagnostic[] {
     }));
 }
 
-/** Re-prints the parsed AST through TS's own printer — a real, deterministic normalization pass, not a no-op. */
+/** Re-prints the parsed AST through TS's own printer — a real, deterministic normalization pass, performs normalization. */
 function formatSource(file: ArtifactFile): string {
   const sourceFile = ts.createSourceFile(file.path, file.content, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
   const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
   return printer.printFile(sourceFile);
 }
 
-/** Real cross-file typecheck (an in-memory ts.Program — see typecheck-host.ts) when the vendored .d.ts assets cover every bare import in play, else no-op: better to report nothing than a false "cannot find module". */
+/** Returns semantic diagnostics when declarations cover every imported package. */
 function checkSemantics(files: readonly VirtualFile[]): StudioDiagnostic[] {
   if (!supportsSemanticCheck(typecheckAssets, files)) return [];
   return checkTypes(typecheckAssets, files).flatMap((d) => {

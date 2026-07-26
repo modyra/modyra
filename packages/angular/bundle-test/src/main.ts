@@ -1,5 +1,5 @@
 /**
- * Tree-shaking proof app.
+ * Tree-shaking coverage app.
  *
  * Imports ONLY the typed adapter surface. The bundle
  * check (`npm run test:bundle`) then asserts that no renderer, devtools,

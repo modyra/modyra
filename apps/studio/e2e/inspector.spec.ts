@@ -1,14 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { openStudio } from "./support/studio.js";
 
-/**
- * "all checkout validators visual" (add/edit/remove field
- * validators + options through the inspector, not the raw model) and
- * "bad compatibility diagnosed" (the add-validator dropdown only ever
- * offers kinds the registry says are compatible with the field's value
- * type — enforced both here in the UI and, authoritatively, by
- * studio-editor's createAddValidatorCommand).
- */
+/** Field validation and option editing through the inspector. */
 
 test.beforeEach(async ({ page }) => {
   await openStudio(page);

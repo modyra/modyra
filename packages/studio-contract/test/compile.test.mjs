@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -18,7 +17,7 @@ test("checkout compiles to a strict-valid Contract v2, with its unmappable piece
   assert.ok(diagnostics.some((d) => d.code === "UNSUPPORTED_FEATURE" && d.validatorId === "val_items_min_one"));
   assert.ok(diagnostics.some((d) => d.code === "UNSUPPORTED_FEATURE" && d.validatorId === "val_coupon_server"));
 
-  // No error-severity diagnostics — checkout is a genuinely valid, compilable project.
+  // No error-severity diagnostics — checkout is a valid, compilable project.
   assert.deepEqual(
     diagnostics.filter((d) => d.severity === "error"),
     [],

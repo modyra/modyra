@@ -97,7 +97,7 @@ structurally correct but unstyled.
 Studio's own Export tab (JSON target), and it is run through the real
 `loadProject → compileToContract → flattenContractFields` pipeline
 (`@modyra/studio-model`, `@modyra/studio-contract`) and rendered here —
-a genuinely interactive form built from whatever you designed in the
+a interactive form built from whatever you designed in the
 Studio editor, with zero framework runtime.
 
 ## License

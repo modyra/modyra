@@ -1,11 +1,11 @@
 /**
- * P13 gate: "same Contract, same value/validation/error semantics in
+ * "applies Contract value and validation semantics in
  * Angular+React." buildDynamicFormSchema/applyDynamicValidators are the
  * exact logic useMdyDynamicForm runs inside useMemo/useEffect — tested
  * directly against a real form built with the real createForm(), since
  * this package has no React-rendering test harness (matches how every
  * other hook here is only smoke-tested for its export, but these two
- * plain functions can be exercised for real behavior the same way
+ * plain functions can be exercised for behavior the same way
  * studio-preview's buildLiveForm already is).
  */
 import assert from "node:assert/strict";
@@ -51,7 +51,7 @@ test("useMdyDynamicForm is exported as a function", () => {
   assert.equal(typeof useMdyDynamicForm, "function");
 });
 
-test("builds real default values per kind when initialValue is omitted", () => {
+test("uses default values per kind when initialValue is omitted", () => {
   const form = buildRealForm();
   assert.deepEqual(form.getValue(), {
     name: "",
@@ -63,7 +63,7 @@ test("builds real default values per kind when initialValue is omitted", () => {
   });
 });
 
-test("real required/email/min errors from the Contract's validators, not a reimplementation", () => {
+test("required, email and minimum errors from the Contract's validators, not a reimplementation", () => {
   const form = buildRealForm();
   assert.equal(form.f.name.errors().length, 1);
   assert.equal(form.f.email.errors().length, 1);

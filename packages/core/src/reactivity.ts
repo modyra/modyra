@@ -8,7 +8,6 @@
  * is a dependency-tracked implementation for Node, CLIs and plain unit
  * tests.
  *
- * See `.modyra/piano-modyra-reactivity-adapter-api.md` for the full protocol
  * spec this contract is being migrated towards. `capabilities`, `createScope`,
  * `id` and `kind` are optional on the type for now so existing adapters
  * (Vue/Solid/Angular) keep compiling unmodified — they become load-bearing
@@ -131,7 +130,7 @@ export interface MdyReactivity {
   readonly id?: symbol;
   /** e.g. "vanilla", "vue", "solid", "angular". Optional during migration. */
   readonly kind?: string;
-  /** Optional until every adapter reports real capabilities (piano Milestone 1). */
+  /** Optional until every adapter reports declared capabilities (piano Milestone 1). */
   readonly capabilities?: MdyReactivityCapabilities;
 
   signal<T>(initial: T, options?: MdySignalOptions<T>): MdyWritableSignal<T>;

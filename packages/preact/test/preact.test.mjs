@@ -109,7 +109,7 @@ function customReactivity() {
   };
 }
 
-test("createFieldStore observes through the handle's real owner, not a fresh vanilla instance", () => {
+test("createFieldStore observes through the handle's owner, not a fresh vanilla instance", () => {
   const rx = customReactivity();
   const form = createForm({ email: field("", [required()]) }, { reactivity: rx });
   const store = createFieldStore(form.f.email);

@@ -1,9 +1,6 @@
 /**
  * Canonical Studio project model. See:
- * - .modyra/modyra-studio-caveman-plan.md section 5-6
- * - .modyra/studio/adr/0001-project-and-contract-model.md
- * - .modyra/studio/adr/0002-ids-and-paths.md
- * - .modyra/studio/adr/0005-expressions-and-references.md
+ * - 5-6
  *
  * No DOM/React/Angular/target import here — this package is framework-neutral (, ).
  */

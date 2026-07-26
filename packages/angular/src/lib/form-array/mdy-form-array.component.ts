@@ -75,7 +75,7 @@ export class MdyFormArrayComponent<T extends Record<string, unknown>> {
   /**
    * Collects and returns the current value of every row form, in DOM order.
    * Rows are typed `Partial<T>`: a row whose controls have not all been
-   * filled genuinely lacks those keys. Validate with `isValid()` before
+   * filled does not contain those keys. Validate with `isValid()` before
    * treating entries as complete `T` (B43).
    */
   getValue(): Array<Partial<T>> {

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { get } from "svelte/store";
 import { createSvelteForm, field, required, toStore } from "../dist/index.js";
 
-test("toStore() produces a real Svelte store: get() reads the current value", () => {
+test("toStore() produces a Svelte store: get() reads the current value", () => {
   const form = createSvelteForm({ email: field("", [required()]) });
   const emailStore = toStore(form.f.email.value);
 

@@ -4,7 +4,7 @@
  * strict-parses the result with the *real* @modyra/core parser — the
  * authoritative check that generated output is actually valid, not just
  * "looks right" per this package's own assumptions (ADR
- * .modyra/studio/adr/0001-project-and-contract-model.md).
+ *.
  *
  * Deliberately unmappable, reported as diagnostics rather than silently
  * dropped or force-fit: form/cross-field validators (Contract v2's `rules`

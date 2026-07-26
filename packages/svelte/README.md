@@ -1,7 +1,7 @@
 # @modyra/svelte
 
 Svelte binding for the [Modyra](https://github.com/modyra/modyra) form
-engine — typed forms as real Svelte stores.
+engine — typed forms as Svelte stores.
 
 ```bash
 npm install @modyra/svelte
@@ -31,15 +31,15 @@ package (this one) cannot use them: calling `$state()` in ordinary
 JavaScript throws a `ReferenceError`.
 
 `svelte/store` (`writable`/`derived`/`get`, the `Readable` contract), by
-contrast, is real, uncompiled JavaScript that has worked outside `.svelte`
+contrast, is ordinary JavaScript that has worked outside `.svelte`
 files since Svelte 3 — and Svelte 5 still fully supports it. So this
 package runs the engine on `vanillaReactivity()` (the same core graph
 `@modyra/react` and `@modyra/preact` use — Svelte has no more of an
 exported fine-grained signal than React does) and `toStore()` adapts any
-Modyra signal into a real `Readable`, so a `.svelte` template's native
+Modyra signal into a Svelte `Readable`, so a `.svelte` template's native
 `$store` syntax subscribes to it directly.
 
-**One honest caveat**: `toStore()` wraps an *effect*, so — like every
+**Update timing**: `toStore()` wraps an *effect*, so — like every
 other effect-driven feature in the engine (async validators, drafts,
 undo/redo history) — later notifications are microtask-batched, not
 perfectly synchronous the way Svelte's own `writable()` is. A component
@@ -56,7 +56,7 @@ every other adapter in this repo.
 
 `useMdyField`/`useMdySelect` wrap `@modyra/widgets`' framework-agnostic
 controllers the same way `createSvelteForm` wraps the engine — state and
-view come back as real `Readable` stores (via the same `toStore()`
+view come back as Svelte `Readable` stores (via the same `toStore()`
 bridge), so a `.svelte` template's native `$state`/`$view` syntax
 subscribes directly:
 

@@ -14,7 +14,7 @@ const fields = [
   { name: "country", kind: "select", options: [{ value: "IT", label: "Italy" }, { value: "FR", label: "France" }] },
 ];
 
-test("buildFormSchema gives every field kind its real default value", () => {
+test("buildFormSchema gives every field kind its default value", () => {
   const schema = buildFormSchema(fields);
   assert.equal(schema.email.initial, "");
   assert.equal(schema.age.initial, 0);

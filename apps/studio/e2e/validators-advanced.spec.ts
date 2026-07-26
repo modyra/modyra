@@ -1,18 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { openStudio, showStructure } from "./support/studio.js";
 
-/**
- * server validator UI (dependencies, debounce/timeout,
- * skip-when-empty, stub creation) and the project-level form validator
- * section (add/edit/remove, condition templates — not a general recursive
- * expression builder, see STATUS.md gap note). All refs are picked from
- * <select>s populated from the tree, never typed ("no path typing").
- *
- * Both live behind interaction the inspector redesign introduced: "Server
- * validation" is a collapsed-by-default accordion (open it via its summary),
- * and form validators live on a separate "Form rules" tab, not the default
- * "Field" tab — both deliberate, see the UX redesign note in STATUS.md.
- */
+/** Server validator and form-level rule editing through the inspector. */
 
 test.beforeEach(async ({ page }) => {
   await openStudio(page);

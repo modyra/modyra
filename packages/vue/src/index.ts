@@ -189,7 +189,7 @@ export function vueReactivity(): MdyReactivity &
       effects: true,
       effectOwnership: true,
       // shallowRef's own setter already skips a same-value write; wrapped
-      // below so a *custom* `options.equal` is genuinely honored too, not
+      // below so a *custom* `options.equal` is honored too, not
       // silently ignored (piano §4.2's rule on accepted-but-unhonored options).
       signalEquality: true,
       // @vue/reactivity's computed() has no public custom-comparator hook —

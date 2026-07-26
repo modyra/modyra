@@ -1,4 +1,4 @@
-/** Behavioral coverage for this module. */
+/** Imports a Studio project, compiles its contract and mounts it with `@modyra/plain`. */
 import { loadProject, StudioModelError } from "@modyra/studio-model";
 import { compileToContract, flattenContractFields } from "@modyra/studio-contract";
 import { mountMdyForm, type MdyPlainForm } from "@modyra/plain";

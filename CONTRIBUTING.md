@@ -7,7 +7,7 @@ npm run setup          # install deps + build core/widgets/zod + the Angular pac
 npm test               # the whole matrix: core + adapters (zod, standard-schema,
                        # react, vue, lit, solid, preact, svelte) + widgets +
                        # Angular unit/type tests + tested guide examples
-npm run test:bundle    # tree-shaking proof
+npm run test:bundle    # tree-shaking coverage
 npm run demo:angular   # one demo per framework: demo:react / demo:vue / demo:lit /
                        # demo:solid / demo:preact / demo:svelte
 ```

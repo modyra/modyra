@@ -1,5 +1,5 @@
 /**
- * P13 "React dynamic renderer": runtime form construction from a
+ * "React dynamic renderer": runtime form construction from a
  * serializable Dynamic Form Contract v2 config — CMS, form builders,
  * low-code scenarios. Headless by design, matching every other hook this
  * package ships (@modyra/react has never shipped a rendered component;
@@ -44,14 +44,14 @@ function defaultValueFor(f: MdyDynamicField): unknown {
   }
 }
 
-/** Builds the (validator-free) schema for a flat field list — every field gets its real default value, no validators yet (those come from `applyDynamicValidators`, matching Angular's own two-step "base schema, then upsertValidators" approach). */
+/** Builds the (validator-free) schema for a flat field list — every field gets its default value, no validators yet (those come from `applyDynamicValidators`, matching Angular's own two-step "base schema, then upsertValidators" approach). */
 export function buildDynamicFormSchema(fields: ReadonlyArray<MdyDynamicField>): MdyFormSchema {
   const schema: Record<string, unknown> = {};
   for (const f of fields) schema[f.name] = field(defaultValueFor(f) as never, []);
   return schema as MdyFormSchema;
 }
 
-/** Applies each field's real Contract validators (via the same `buildDynamicFieldValidators` Angular's own dynamic form calls) onto an already-built form, keyed so re-applying replaces rather than accumulates. */
+/** Applies each field's Contract validators (via the same `buildDynamicFieldValidators` Angular's own dynamic form calls) onto an already-built form, keyed so re-applying replaces rather than accumulates. */
 export function applyDynamicValidators(form: MdyTypedForm<MdyFormSchema>, fields: ReadonlyArray<MdyDynamicField>): void {
   for (const f of fields) {
     const { validators, marksRequired } = buildDynamicFieldValidators(f);

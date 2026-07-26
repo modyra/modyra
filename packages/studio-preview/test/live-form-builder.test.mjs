@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildLiveForm } from "../dist/index.js";
@@ -15,7 +14,7 @@ function memoryStorage() {
   };
 }
 
-test("builds a real form whose initial value matches the checkout fixture exactly", () => {
+test("builds a form whose initial value matches the checkout fixture exactly", () => {
   const { form, diagnostics } = buildLiveForm(createCheckoutProject());
   assert.deepEqual(diagnostics, []);
   assert.deepEqual(form.getValue(), {
@@ -40,7 +39,7 @@ test("an injected reactivity instance can observe the live form's own signals fr
   assert.equal(calls, 2);
 });
 
-test("required/pattern validators produce real errors, driven by real @modyra/core validator functions", () => {
+test("required/pattern validators produce errors produced by @modyra/core validator functions", () => {
   const { form } = buildLiveForm(createCheckoutProject());
   assert.equal(form.f.shipping.city.errors().length, 1);
   form.f.shipping.city.set("Rome");

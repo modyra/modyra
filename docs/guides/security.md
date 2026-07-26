@@ -134,7 +134,7 @@ CMS/LLM-generated form is tamper-resistant client-side with zero extra
 code (see the [AI-generated forms guide](ai-generated-forms.md)).
 
 **Server-side (the real boundary).** Client-side checks are
-defense-in-depth, never proof: anything in the browser can be bypassed
+defense-in-depth, never coverage: anything in the browser can be bypassed
 with curl/Postman/DevTools. The honest anti-tampering story is the
 *isomorphic* one — Modyra's engine runs in plain Node, so **one schema
 can drive the form and gate the API**:

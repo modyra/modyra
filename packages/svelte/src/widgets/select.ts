@@ -31,7 +31,7 @@ export interface MdySvelteSelectApi<TValue> {
 /**
  * Svelte primitive that creates a reactive headless select controller.
  *
- * State and view are exposed as real Svelte stores — use the native
+ * State and view are exposed as Svelte stores — use the native
  * `$state`/`$view` syntax in a `.svelte` template to subscribe.
  */
 export function useMdySelect<TValue>(

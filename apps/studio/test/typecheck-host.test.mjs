@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { test } from "node:test";
@@ -37,14 +36,14 @@ function tsFilesOf(artifact) {
   return artifact.files.filter((f) => f.language === "typescript").map((f) => ({ path: f.path, content: f.content }));
 }
 
-test("core target: checkout's real form.ts+stubs.ts pass real semantic typecheck with zero diagnostics", async () => {
+test("core target: generated checkout files pass semantic type checking with zero diagnostics", async () => {
   const artifact = await createCoreTarget().generate(project, {});
   const files = tsFilesOf(artifact);
   assert.equal(supportsSemanticCheck(assets, files), true);
   assert.deepEqual(checkTypes(assets, files), []);
 });
 
-test("react target: checkout's real form.ts+stubs.ts pass real semantic typecheck with zero diagnostics", async () => {
+test("react target: generated checkout files pass semantic type checking with zero diagnostics", async () => {
   const artifact = await createReactTarget().generate(project, {});
   const files = tsFilesOf(artifact);
   assert.equal(supportsSemanticCheck(assets, files), true);

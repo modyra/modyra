@@ -7,7 +7,7 @@ import { angularReactivity } from "./reactivity-angular";
  * Milestone 4 (piano-modyra-reactivity-adapter-api.md §9): no dedicated
  * coverage existed for this adapter before this batch (CodeGraph flagged it
  * "no covering tests found"). Covers the hardening this milestone adds:
- * honest capabilities, a typed error instead of a silent no-op effect, and
+ * declared capabilities, a typed error instead of a silent no-op effect, and
  * real equality propagation — plus the pre-existing signal/computed/effect
  * behavior the shared `runReactivityContract` suite checks for other
  * adapters (not reusable here as-is: it's written against Node's
@@ -15,7 +15,7 @@ import { angularReactivity } from "./reactivity-angular";
  */
 describe("angularReactivity", () => {
   describe("with an Injector", () => {
-    it("reports honest capabilities and canEffect", () => {
+    it("reports declared capabilities and canEffect", () => {
       const rx = angularReactivity(TestBed.inject(Injector));
       expect(rx.canEffect).toBe(true);
       expect(rx.capabilities).toEqual({

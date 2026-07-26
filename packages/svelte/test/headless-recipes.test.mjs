@@ -4,7 +4,7 @@
  * recipe functions only touch the framework-agnostic field handle, never
  * a framework-specific API. Modyra's own Svelte components would bind the
  * same handle through `toStore()` instead, but the recipes below (aimed at
- * React-family component libraries) are still valid Svelte-side proof that
+ * React-family component libraries) are still valid Svelte-side coverage that
  * nothing about them is React-specific. See `docs/guides/headless-recipes.md`.
  *
  * The three contracts:

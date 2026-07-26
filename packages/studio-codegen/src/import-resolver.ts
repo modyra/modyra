@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 export class ImportResolver {
   #bySource = new Map<string, Set<string>>();
 

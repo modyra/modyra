@@ -26,7 +26,7 @@ export class TargetRegistry {
     return this.#manifests.has(id);
   }
 
-  /** Lazily loads (and caches) the target's real implementation. Throws for an unregistered id. */
+  /** Lazily loads (and caches) the target's implementation. Throws for an unregistered id. */
   async load(id: string): Promise<StudioTarget> {
     const cached = this.#loaded.get(id);
     if (cached) return cached;

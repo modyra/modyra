@@ -86,6 +86,6 @@ checking the actual API rather than assuming a bare rename would work.
 
 Server validators, custom validators, and submit actions are always
 symbolic (`StudioImplementationRef`) — a target emits a typed, throwing
-stub function for each one, never a guess at what the real implementation
+stub function for each one, never a guess at what the implementation
 should do. This is a hard rule (ADR-0005, R7, R11): Studio never `eval`s
 anything and never invents business logic on a user's behalf.

@@ -53,7 +53,7 @@ test("destroying the form's scope tears down draft/history/async effects it owns
     "effects are alive before the scope is destroyed",
   );
 
-  // Bypass engine.destroy() entirely — this proves ownership is real, not
+  // Bypass engine.destroy() entirely — this proves ownership is independent of
   // just a byproduct of the managers' own explicit destroy() calls.
   scope.destroy();
 
