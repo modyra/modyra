@@ -8,8 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
-- Svelte example (`examples/svelte`), compiled through `esbuild-svelte` — closes framework breadth to 7/7, all with a working example.
-- Tested react-hook-form and Formik migration guides (`docs/guides/comparison-react-hook-form.md`, `comparison-formik.md`) — each side-by-side snippet is proven by a real jsdom + react-dom test, not just described.
+- Svelte example (`examples/svelte`), compiled through `esbuild-svelte` — adds a runnable example for every supported adapter.
+- Tested react-hook-form and Formik migration guides (`docs/guides/comparison-react-hook-form.md`, `comparison-formik.md`) — with executable jsdom and React DOM examples.
 - StackBlitz starters for Solid and Preact (React, Vue and Lit shipped in 0.3.0/0.4.0's Unreleased cycle already).
 - React Native / Hermes compatibility re-verified with the real compiler (`hermes-compiler`, the exact one React Native 0.86.0 depends on): compiles clean, zero errors — see `docs/guides/react-native.md`.
 - Conference/meetup pitch deck, published as a page on the docs site (`site/src/pages/pitch.astro`).
@@ -35,7 +35,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Fixed
 
 - Documentation-site relative links and edit-page URLs.
-- React and Preact examples now react correctly to form-level `canSubmit`, undo, and redo state.
+- React and Preact examples now update to form-level `canSubmit`, undo, and redo state.
 - `createStore()` in `@modyra/react`/`@modyra/preact` no longer builds an unrelated `vanillaReactivity()` instance to observe a field handle — it resolves the handle's real owning reactivity, fixing a latent cross-runtime observation bug.
 - `undo()`/`redo()` no longer push spurious history entries when restoring a value on a synchronous-effect adapter.
 - `@modyra/angular`'s reactivity adapter no longer silently returns a no-op effect without an `Injector` (throws a typed error by default) and no longer silently ignores the `onError` effect option.

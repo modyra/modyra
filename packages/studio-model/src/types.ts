@@ -5,7 +5,7 @@
  * - .modyra/studio/adr/0002-ids-and-paths.md
  * - .modyra/studio/adr/0005-expressions-and-references.md
  *
- * No DOM/React/Angular/target import here — this package is framework-neutral (R4, R12).
+ * No DOM/React/Angular/target import here — this package is framework-neutral (, ).
  */
 
 export const STUDIO_VERSION = 1 as const;
@@ -145,7 +145,7 @@ export interface ArrayNode extends NodeBase {
 
 export type StudioSchemaNode = FieldNode | GroupNode | ArrayNode;
 
-/** Symbolic reference + generated stub, never inline code (R7, R11). */
+/** Symbolic reference + generated stub, never inline code (, ). */
 export interface StudioImplementationRef {
   id: string;
   role: "serverValidator" | "customValidator" | "submitAction";

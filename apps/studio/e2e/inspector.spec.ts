@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { openStudio } from "./support/studio.js";
 
 /**
- * P5 gate: "all checkout validators visual" (add/edit/remove field
+ * "all checkout validators visual" (add/edit/remove field
  * validators + options through the inspector, not the raw model) and
  * "bad compatibility diagnosed" (the add-validator dropdown only ever
  * offers kinds the registry says are compatible with the field's value

@@ -1,5 +1,5 @@
 /**
- * P7 gate: "dummy target needs no canvas change" — registering this target
+ * "dummy target needs no canvas change" — registering this target
  * touches nothing in studio-model/studio-editor/studio-ui, only this
  * registry. "Failure cannot corrupt editor": load() throwing for an
  * unregistered id must not leave the registry in a broken state.

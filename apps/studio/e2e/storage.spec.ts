@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 import { openStudio, showStructure } from "./support/studio.js";
 
 /**
- * P11 gate: "reload restores, corrupt snapshot recovers." Real IndexedDB
- * in a real browser — this is exactly the part storage.test.mjs (Node,
+ * "reload restores, corrupt snapshot recovers." Real IndexedDB
+ * in a browser — this is exactly the part storage.test.mjs (Node,
  * no IndexedDB) cannot cover.
  */
 

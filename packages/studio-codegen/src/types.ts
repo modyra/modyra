@@ -4,11 +4,11 @@
  * MdyStudioProject and produces an Artifact — it never depends on
  * studio-model/studio-editor/studio-ui internals beyond this contract, and
  * the editor only ever holds a lazy TargetManifest until generate() is
- * actually invoked (R5: target = lazy plugin).
+ * actually invoked (: target = lazy plugin).
  */
 import type { MdyStudioProject, StudioDiagnostic } from "@modyra/studio-model";
 
-/** What a target can/can't handle — used to diagnose incompatibility before generating (plan §9). */
+/** What a target can/can't handle — used to diagnose incompatibility before generating. */
 export interface TargetCapabilities {
   fieldKinds: readonly string[];
   validatorKinds: readonly string[];

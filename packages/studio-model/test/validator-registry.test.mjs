@@ -1,8 +1,4 @@
-/**
- * P5 gate: "bad compatibility diagnosed" relies on this registry being the
- * single source of truth both the model (studio-editor's command validation)
- * and the UI (only ever offering compatible options) agree on.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {

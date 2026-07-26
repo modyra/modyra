@@ -1,14 +1,4 @@
-/**
- * P9 gate: "compiles / Core semantic parity". Semantic parity is checked
- * directly against the real studio-target-core output for the same
- * project (not just eyeballed): once the target-specific factory import
- * and call name are normalized away, the schema/options body must be
- * byte-identical, and stubs.ts always is (buildStubsModule is fully
- * shared, framework-agnostic). "Compiles" is checked, when
- * packages/angular has already been built, against the real
- * @modyra/angular/adapter + @modyra/core types via the real tsc — same
- * technique as studio-target-core's own typecheck test.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -49,7 +39,7 @@ test("form.ts imports field/group/array/mdyForm from @modyra/angular/adapter, va
   assert.match(formFile.content, /export const form = mdyForm\(schema, \{/);
 });
 
-test("P9 gate: Core semantic parity — schema/options body matches studio-target-core exactly once the factory call is normalized", async () => {
+test("Angular and Core targets emit equivalent schema definitions", async () => {
   const project = createCheckoutProject();
   const angular = await createAngularTarget().generate(project, {});
   const core = await createCoreTarget().generate(project, {});
@@ -68,7 +58,7 @@ test("angularTargetManifest loads lazily to a target with id 'angular'", async (
 });
 
 test(
-  "generated form.ts + stubs.ts really compile against the real @modyra/angular/adapter + @modyra/core types",
+  "generated Angular files compile against package declarations",
   { skip: (!existsSync(coreTypesPath) || !existsSync(angularAdapterTypesPath)) && "packages/core and packages/angular must both be built first (npm run build:core && npm run build:angular)" },
   async () => {
     const artifact = await createAngularTarget().generate(createCheckoutProject(), {});

@@ -1,9 +1,4 @@
-/**
- * Plan section 10 "Import resolver collects, deduplicates, sorts." Shared by
- * every target's writer so a target module only ever declares what it uses
- * — the P8 gate "no unused imports" depends on callers only ever `add()`ing
- * a name right where they emit code that references it.
- */
+/** Behavioral coverage for this module. */
 export class ImportResolver {
   #bySource = new Map<string, Set<string>>();
 

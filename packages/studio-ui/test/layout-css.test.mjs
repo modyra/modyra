@@ -1,9 +1,4 @@
-/**
- * Patch 2 regression gate: Studio owns the viewport, while its three main
- * surfaces own their scroll. These rules are intentionally tested from the
- * shipped stylesheet because a missing min-size/overflow constraint can make
- * controls unreachable even when all DOM behavior tests remain green.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";

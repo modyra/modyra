@@ -1,17 +1,4 @@
-/**
- * P11 Workers — real cross-file typecheck (not just syntax), the piece
- * deliberately deferred out of the first Workers batch. Builds an
- * in-memory `ts.Program` entirely from a supplied asset map (vendored
- * .d.ts trees + the TS lib chain — see generate-typecheck-assets.mjs)
- * plus the generated project files themselves; there is no real
- * filesystem in a Worker, so every `ts.CompilerHost` method below is
- * backed by a plain `Map`, never `node:fs`.
- *
- * Pure and DOM/Worker-free on purpose — importable and testable directly
- * under plain Node (see test/typecheck-host.test.mjs), the same reasoning
- * app.test.mjs already gives for treating main.ts as build-output-only:
- * this file has no such restriction, so it gets real unit tests instead.
- */
+/** Provides an in-memory TypeScript compiler host for generated files. */
 import ts from "typescript";
 
 export interface VirtualFile {

@@ -1,9 +1,4 @@
-/**
- * Structured TS writer (plan section 10 "AST/structured writer -> print"):
- * every target composes output from these primitives instead of hand-rolled
- * string templates for whole files (R10). Deterministic — same input always
- * prints the same text, required for the P8/P7 "deterministic" gate.
- */
+/** Behavioral coverage for this module. */
 
 const IDENTIFIER_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 

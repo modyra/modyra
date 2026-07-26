@@ -134,7 +134,7 @@ function mapNode(node: StudioSchemaNode, idx: StudioIndexes, diagnostics: Studio
 }
 
 export interface BuildLiveFormOptions {
-  /** Server mock config (plan §11: delay/valid-values/error/timeout/network-failure) per StudioImplementationRef id; a serverValidator with no entry gets defaults (300ms delay, always valid). */
+  /** Server mock config per StudioImplementationRef id; a serverValidator with no entry gets defaults (300ms delay, always valid). */
   readonly mockConfigByImplId?: Record<string, MockServerConfig>;
   /** Overrides draft persistence (default: real localStorage, inert in Node). Inject an in-memory store for tests, or an IndexedDB-backed one for the real app. */
   readonly draftStorage?: MdyDraftStorage;

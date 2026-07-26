@@ -1,5 +1,5 @@
 /**
- * Compile-to-source, not eval (R11) — each compiled expression is executed
+ * Compile-to-source, not eval () — each compiled expression is executed
  * here via `new Function("value", "return " + js)` purely as the test's own
  * verification oracle (never how a generated target actually runs it).
  */

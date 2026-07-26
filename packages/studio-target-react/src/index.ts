@@ -1,6 +1,6 @@
 /**
  * Plan section 10 "React MVP: useMdyForm definition" — reuses
- * studio-codegen's shared schema mapper (P8a) with the React profile:
+ * studio-codegen's shared schema mapper () with the React profile:
  * `field`/`group`/`array`/`useMdyForm`/validators all come from
  * `@modyra/react` (a single import source — unlike Angular's split
  * `@modyra/angular/adapter` + `@modyra/core` — see examples/react's own

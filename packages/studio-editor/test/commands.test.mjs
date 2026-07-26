@@ -1,8 +1,4 @@
-/**
- * P2 gate (.modyra/modyra-studio-caveman-plan.md section 14 P2, scoped to
- * this batch's command set): apply+inverse property tests; 500-node
- * operations acceptable; no DOM.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -280,7 +276,7 @@ test("updateBehavior round-trips exactly when patching a previously-unset behavi
   assert.equal(applied.behaviors.serverErrorMapping, "flat");
 });
 
-test("P5: addValidator rejects a validator incompatible with the field's value type", () => {
+test("addValidator rejects a validator incompatible with the field's value type", () => {
   const project = createCheckoutProject();
   // nd_qty is valueType "number" — "email" only supports "string".
   const command = createAddValidatorCommand("nd_qty", { id: "val_bad", kind: "email" });
@@ -288,7 +284,7 @@ test("P5: addValidator rejects a validator incompatible with the field's value t
   assert.ok(diagnostics.some((d) => d.code === "INCOMPATIBLE_VALIDATOR_TYPE"));
 });
 
-test("P5: addValidator rejects a second validator of a kind that doesn't allow duplicates", () => {
+test("addValidator rejects a second validator of a kind that doesn't allow duplicates", () => {
   const project = createCheckoutProject();
   // nd_city already has a "required" validator (val_city_required).
   const command = createAddValidatorCommand("nd_city", { id: "val_city_required_2", kind: "required" });
@@ -296,20 +292,20 @@ test("P5: addValidator rejects a second validator of a kind that doesn't allow d
   assert.ok(diagnostics.some((d) => d.code === "DUPLICATE_VALIDATOR_KIND"));
 });
 
-test("P5: addValidator allows a second validator of a kind that does allow duplicates (pattern)", () => {
+test("addValidator allows a second validator of a kind that does allow duplicates (pattern)", () => {
   const project = createCheckoutProject();
   const command = createAddValidatorCommand("nd_zip", { id: "val_zip_pattern_2", kind: "pattern", pattern: "^[0-9]+$" });
   assert.deepEqual(command.validate(project), []);
 });
 
-test("P5: addValidator + removeValidator round-trip", () => {
+test("addValidator + removeValidator round-trip", () => {
   const project = createCheckoutProject();
   const command = createAddValidatorCommand("nd_qty", { id: "val_qty_max", kind: "max", value: 99 });
   assert.deepEqual(command.validate(project), []);
   roundTrip(project, command);
 });
 
-test("P5: updateValidator edits config in place (id/kind unchanged) and round-trips", () => {
+test("updateValidator edits config in place (id/kind unchanged) and round-trips", () => {
   const project = createCheckoutProject();
   const command = createUpdateValidatorCommand("nd_zip", "val_zip_pattern", { pattern: "^\\d{4}$", message: "4 digits" });
   const applied = roundTrip(project, command);
@@ -320,7 +316,7 @@ test("P5: updateValidator edits config in place (id/kind unchanged) and round-tr
   assert.equal(validator.kind, "pattern");
 });
 
-test("P5: setFieldOptions replaces options wholesale and round-trips; rejects duplicate values", () => {
+test("setFieldOptions replaces options wholesale and round-trips; rejects duplicate values", () => {
   const project = createCheckoutProject();
   const command = createSetFieldOptionsCommand("nd_country", [
     { value: "IT", label: "Italy" },
@@ -341,7 +337,7 @@ test("P5: setFieldOptions replaces options wholesale and round-trips; rejects du
   assert.ok(dup.validate(project).some((d) => d.code === "DUPLICATE_OPTION_VALUE"));
 });
 
-test("P5b2: setServerValidator removes the checkout coupon's server validator and round-trips", () => {
+test("setServerValidator removes the checkout coupon's server validator and round-trips", () => {
   const project = createCheckoutProject();
   const command = createSetServerValidatorCommand("nd_coupon", null);
   assert.deepEqual(command.validate(project), []);
@@ -350,7 +346,7 @@ test("P5b2: setServerValidator removes the checkout coupon's server validator an
   assert.equal("serverValidator" in coupon, false);
 });
 
-test("P5b2: setServerValidator adds a fresh server validator to a field that had none, round-trips", () => {
+test("setServerValidator adds a fresh server validator to a field that had none, round-trips", () => {
   const project = createCheckoutProject();
   const serverValidator = {
     id: "val_city_server",
@@ -366,13 +362,13 @@ test("P5b2: setServerValidator adds a fresh server validator to a field that had
   assert.deepEqual(city.serverValidator, serverValidator);
 });
 
-test("P5b2: setServerValidator rejects a non-field target", () => {
+test("setServerValidator rejects a non-field target", () => {
   const project = createCheckoutProject();
   const command = createSetServerValidatorCommand("nd_shipping", null);
   assert.ok(command.validate(project).some((d) => d.code === "INVALID_VALIDATOR_TARGET"));
 });
 
-test("P5b2: updateFormValidator edits message/dependencies in place, id/kind unchanged, round-trips", () => {
+test("updateFormValidator edits message/dependencies in place, id/kind unchanged, round-trips", () => {
   const project = createCheckoutProject();
   const command = createUpdateFormValidatorCommand("val_items_min_one", { message: "Add at least one product" });
   const applied = roundTrip(project, command);
@@ -381,7 +377,7 @@ test("P5b2: updateFormValidator edits message/dependencies in place, id/kind unc
   assert.equal(validator.kind, "form");
 });
 
-test("P5b2: addFormValidator + removeFormValidator round-trip", () => {
+test("addFormValidator + removeFormValidator round-trip", () => {
   const project = createCheckoutProject();
   const validator = {
     id: "val_zip_matches_country",
@@ -401,7 +397,7 @@ test("P5b2: addFormValidator + removeFormValidator round-trip", () => {
   roundTrip(project, remove);
 });
 
-test("P5b2: addImplementation registers a stub and round-trips; rejects duplicate id", () => {
+test("addImplementation registers a stub and round-trips; rejects duplicate id", () => {
   const project = createCheckoutProject();
   const ref = { id: "impl_validate_zip_country", role: "serverValidator", displayName: "validateZipForCountry", mode: "stub" };
   const command = createAddImplementationCommand(ref);

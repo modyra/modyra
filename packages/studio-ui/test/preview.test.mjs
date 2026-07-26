@@ -1,9 +1,4 @@
-/**
- * P11 gate: "Preview reads model/Contract, not generated source." These
- * are pure-function tests against a real live form (buildLiveForm from
- * @modyra/studio-preview) — no DOM, no mountStudio — the same pattern
- * `serverValidatorMarkup`/`formValidatorsMarkup` already use.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildLiveForm, vanillaReactivity } from "../../studio-preview/dist/index.js";

@@ -1,9 +1,9 @@
 /**
  * Direct interpreter for a portable {@link StudioExpression} (ADR-0005) —
  * the live-preview sibling of studio-codegen's `compileExpressionToJs`.
- * Same op semantics, but evaluated immediately against a real form value
+ * Same op semantics, but evaluated immediately against a form value
  * instead of compiled to source text (no `eval`/`new Function` either way,
- * R11 — this one just skips the "print as source" step since preview has
+ *  — this one just skips the "print as source" step since preview has
  * no source file to print into).
  */
 import type { NodeRef, StudioExpression, StudioOperand } from "@modyra/studio-model";

@@ -1,8 +1,4 @@
-/**
- * Minimal undo/redo stack (plan section 7 Do-list: "history"). Thin on
- * purpose — P3/P4 wire this to UI/keyboard; this batch only needs the
- * apply/inverse contract to be exercisable and reversible.
- */
+/** Behavioral coverage for this module. */
 import type { MdyStudioProject, StudioDiagnostic } from "@modyra/studio-model";
 import type { Command } from "./types.js";
 

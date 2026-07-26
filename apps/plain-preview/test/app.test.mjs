@@ -1,6 +1,6 @@
 /**
  * `main.ts` queries `document` at the top level and is meant to run inside
- * a real browser after esbuild bundling — see apps/studio/test/app.test.mjs
+ * a browser after esbuild bundling — see apps/studio/test/app.test.mjs
  * for the same reasoning. This verifies the actual build output.
  */
 import assert from "node:assert/strict";

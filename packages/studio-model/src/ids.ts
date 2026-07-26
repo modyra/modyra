@@ -1,7 +1,7 @@
 /**
  * ID generation. Uses Web Crypto (`globalThis.crypto`), available in both
  * Node 19+ and browsers — the editor UI will eventually run client-side,
- * so this package must not depend on `node:crypto` (R4/R12: no framework
+ * so this package must not depend on `node:crypto` (: no framework
  * or runtime lock-in in the model layer).
  */
 

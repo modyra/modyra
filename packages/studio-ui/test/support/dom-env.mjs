@@ -4,7 +4,7 @@
  * The previous `createFakeHost()` only modelled `innerHTML` string assignment,
  * which stopped being enough once the shell became persistent: whether a region
  * is *rewritten* or *left alone* (and therefore whether scroll, listeners and
- * the live form survive) is only observable against a real DOM.
+ * the live form survive) is only observable against a DOM.
  */
 import { JSDOM } from "jsdom";
 

@@ -1,11 +1,4 @@
-/**
- * Validator registry (plan section 6 "Registry says: supported value types,
- * scope, duplicate allowed, default config, diagnostics"). Pure data + pure
- * helpers — no framework, no UI. Used by studio-editor's commands to reject
- * incompatible/duplicate validators (P5 gate: "bad compatibility diagnosed")
- * and by studio-ui to only ever offer compatible options (never lets a user
- * pick something the model will reject).
- */
+/** Behavioral coverage for this module. */
 import type { StudioFieldValidator, StudioValidatorKind, StudioValueType } from "./types.js";
 
 export interface FieldValidatorRegistryEntry {

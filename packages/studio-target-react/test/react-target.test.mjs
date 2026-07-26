@@ -1,10 +1,4 @@
-/**
- * P10 gate: "compiles / Core semantic parity" (plan §14 P10 mirrors P9's
- * gate). Semantic parity checked directly against studio-target-core's
- * output for the same project, same technique as P9. "Compiles" checked
- * for real against the real @modyra/react types, when packages/react has
- * already been built.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -52,7 +46,7 @@ test("useMdyForm is not called at module scope: form.ts exports a wrapping useFo
   assert.match(formFile.content, /return useMdyForm\(\(\) => schema, \{/);
 });
 
-test("P10 gate: Core semantic parity — the schema block is byte-identical to studio-target-core's, proving field/validator/serverValidator mapping is truly shared, not reimplemented", async () => {
+test("React and Core targets emit equivalent schema definitions", async () => {
   const project = createCheckoutProject();
   const react = await createReactTarget().generate(project, {});
   const core = await createCoreTarget().generate(project, {});
@@ -86,7 +80,7 @@ test("reactTargetManifest loads lazily to a target with id 'react'", async () =>
 });
 
 test(
-  "generated form.ts + stubs.ts really compile against the real @modyra/react types",
+  "generated React files compile against package declarations",
   { skip: (!existsSync(reactTypesPath) || !existsSync(coreTypesPath)) && "packages/react and packages/core must both be built first (npm run build:packages)" },
   async () => {
     const artifact = await createReactTarget().generate(createCheckoutProject(), {});

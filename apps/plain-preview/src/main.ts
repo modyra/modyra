@@ -1,13 +1,4 @@
-/**
- * Closes the real loop back to Studio: a Studio project exported via the
- * editor's own Export tab (JSON target -> "project.mdy-studio.json") is
- * pasted/uploaded here, run through the same real pipeline Studio itself
- * uses to validate/compile a Contract (loadProject -> compileToContract),
- * flattened (flattenContractFields), and rendered with @modyra/plain's
- * mountMdyForm — a real, interactive, zero-framework form, not a preview
- * screenshot. No mock data path: every field on screen came from an actual
- * project someone built in Studio.
- */
+/** Behavioral coverage for this module. */
 import { loadProject, StudioModelError } from "@modyra/studio-model";
 import { compileToContract, flattenContractFields } from "@modyra/studio-contract";
 import { mountMdyForm, type MdyPlainForm } from "@modyra/plain";

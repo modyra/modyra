@@ -1,11 +1,4 @@
-/**
- * P11 gate ("Loader: read version -> migrate -> normalize -> validate ->
- * project+diagnostics. Do not silently overwrite migrated import."):
- * importProjectFromText is pure (no IndexedDB), fully unit-testable in
- * Node — it reuses studio-model's real loadProject(), never a
- * reimplementation. saveSession/loadSession need a real browser IndexedDB
- * and are covered by apps/studio's E2E suite instead.
- */
+/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { importProjectFromText } from "../dist/storage.js";

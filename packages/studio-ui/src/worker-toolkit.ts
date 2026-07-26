@@ -1,14 +1,4 @@
-/**
- * P11 Workers (plan §11 "generate ... off main thread"): the pure, DOM-free
- * half of the generate pipeline, importable from a Web Worker without
- * pulling in any rendering code. Registers the exact same lazy target
- * registry `mountStudio()` itself uses (R5: target = lazy plugin) so a
- * worker-hosted generate is byte-identical to the main-thread one it
- * replaces — this file has no `typescript` dependency of its own; a host
- * (e.g. apps/studio's codegen-worker.ts) that wants real syntax-check/
- * format on top brings that dependency itself and post-processes the
- * returned {@link Artifact}.
- */
+/** Behavioral coverage for this module. */
 import { TargetRegistry, type Artifact } from "@modyra/studio-codegen";
 import type { MdyStudioProject } from "@modyra/studio-model";
 import { jsonTargetManifest } from "@modyra/studio-target-json";
