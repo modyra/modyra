@@ -113,7 +113,9 @@ test("select: clicking the trigger opens the listbox, clicking an option commits
   trigger.dispatchEvent(new Event("click"));
   await reactivity.flush();
 
-  const listbox = selectWrapper.querySelector("ul");
+  const listbox = document.getElementById(trigger.getAttribute("aria-controls"));
+  assert.ok(listbox);
+  assert.equal(selectWrapper.contains(listbox), false);
   assert.equal(listbox.hidden, false);
 
   const franceOption = [...listbox.querySelectorAll("li")].find((li) => li.textContent === "France");
@@ -272,4 +274,40 @@ test("a column row stays where its fields are, not hoisted to the top of the for
   assert.equal(container.querySelectorAll("input").length, 4);
 
   handle.dispose();
+});
+
+
+test("mount marks the host as a themed dynamic form and dispose restores it", () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const mounted = mountMdyForm(host, [{ name: "name", kind: "text", label: "Name" }], { submitLabel: null });
+  assert.equal(host.classList.contains("mdy-dynamic-form"), true);
+  assert.equal(host.classList.contains("mdy-plain-form"), true);
+  mounted.dispose();
+  assert.equal(host.classList.contains("mdy-dynamic-form"), false);
+  host.remove();
+});
+
+test("select listbox is portalled to document.body and removed on dispose", () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const mounted = mountMdyForm(host, [{ name: "country", kind: "select", label: "Country", options: [{ value: "IT", label: "Italy" }] }], { submitLabel: null });
+  const portals = document.body.querySelectorAll(".mdy-plain-select__portal");
+  const listbox = portals[portals.length - 1];
+  assert.ok(listbox);
+  assert.equal(host.contains(listbox), false);
+  mounted.dispose();
+  assert.equal(listbox.isConnected, false);
+  host.remove();
+});
+
+test("toggle preserves the widget input and adds a visual track and thumb", () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const mounted = mountMdyForm(host, [{ name: "enabled", kind: "toggle", label: "Enabled" }], { submitLabel: null });
+  assert.ok(host.querySelector(".mdy-switch-control > input.mdy-switch"));
+  assert.ok(host.querySelector(".mdy-switch-control__track"));
+  assert.ok(host.querySelector(".mdy-switch-control__thumb"));
+  mounted.dispose();
+  host.remove();
 });

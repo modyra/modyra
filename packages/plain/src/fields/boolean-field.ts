@@ -19,7 +19,15 @@ export function renderBooleanField(
   const shell = buildFieldShell(f.label, f.kind === "toggle" ? "toggle" : "checkbox");
   const input = el("input") as HTMLInputElement;
   input.type = "checkbox";
-  insertControl(shell, input);
+  const control = f.kind === "toggle" ? el("span", "mdy-switch-control") : input;
+  if (f.kind === "toggle") {
+    const track = el("span", "mdy-switch-control__track");
+    const thumb = el("span", "mdy-switch-control__thumb");
+    track.setAttribute("aria-hidden", "true");
+    thumb.setAttribute("aria-hidden", "true");
+    control.append(input, track, thumb);
+  }
+  insertControl(shell, control);
   container.appendChild(shell.root);
 
   input.addEventListener("change", () => controller.dispatch({ type: input.checked ? "check" : "uncheck" }));

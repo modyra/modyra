@@ -65,9 +65,35 @@ export function renderSelectField(
   // because the trigger is an <input>, which cannot contain elements.
   const arrow = el("span", "mdy-select__arrow");
   arrow.setAttribute("aria-hidden", "true");
-  wrapper.append(trigger, arrow, listbox);
+  wrapper.append(trigger, arrow);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
+
+  // The listbox is a document-level overlay so scroll containers and renderer frames cannot
+  // clip it. Widgets remains responsible for ARIA, keyboard navigation and selection state.
+  listbox.classList.add("mdy-overlay", "mdy-plain-select__portal");
+  document.body.appendChild(listbox);
+
+  const positionListbox = (): void => {
+    if (listbox.hidden || !trigger.isConnected) return;
+    const rect = trigger.getBoundingClientRect();
+    const viewportGap = 8;
+    const popupGap = 6;
+    const below = window.innerHeight - rect.bottom - viewportGap;
+    const above = rect.top - viewportGap;
+    const openAbove = below < 180 && above > below;
+    listbox.dataset.placement = openAbove ? "top" : "bottom";
+    listbox.style.position = "fixed";
+    listbox.style.zIndex = "2147483000";
+    listbox.style.left = `${Math.max(viewportGap, rect.left)}px`;
+    listbox.style.width = `${Math.max(rect.width, 160)}px`;
+    listbox.style.maxHeight = `${Math.max(96, Math.min(320, (openAbove ? above : below) - popupGap))}px`;
+    listbox.style.top = openAbove ? "auto" : `${rect.bottom + popupGap}px`;
+    listbox.style.bottom = openAbove ? `${window.innerHeight - rect.top + popupGap}px` : "auto";
+  };
+  const reposition = (): void => positionListbox();
+  window.addEventListener("resize", reposition);
+  window.addEventListener("scroll", reposition, true);
 
   // select-controller's view has no "label"/"description"/"error" parts (only
   // trigger/listbox/options), unlike every other controller here — wire the
@@ -147,6 +173,7 @@ export function renderSelectField(
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
 
     listbox.hidden = !state.open;
+    if (state.open) queueMicrotask(positionListbox);
     if (!state.open) {
       const selected = options.find((o) => keyFor(o) === state.selectedKey);
       if (document.activeElement !== trigger) trigger.value = selected?.label ?? "";
@@ -161,6 +188,9 @@ export function renderSelectField(
   return () => {
     effectRef.destroy();
     controller.destroy();
+    window.removeEventListener("resize", reposition);
+    window.removeEventListener("scroll", reposition, true);
+    listbox.remove();
     shell.root.remove();
   };
 }

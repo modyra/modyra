@@ -40,9 +40,10 @@ test("the select field opens its listbox and commits a selection", async ({ page
 
   const trigger = page.locator(".mdy-plain-select input");
   await trigger.click();
-  const listbox = page.locator(".mdy-plain-select ul");
+  const listbox = page.locator("body > .mdy-plain-select__portal");
   await expect(listbox).toBeVisible();
-  await page.click(".mdy-plain-select li >> nth=0");
+  await expect(listbox).toHaveAttribute("role", "listbox");
+  await listbox.locator("li").first().click();
   await expect(listbox).toBeHidden();
 });
 
