@@ -26,5 +26,11 @@ createServer((req, res) => {
   }
 
   res.writeHead(200, { "content-type": types[extname(path)] ?? "application/octet-stream" });
-  createReadStream(path).pipe(res);
+  const stream = createReadStream(path);
+  stream.on("error", () => {
+    if (!res.headersSent) res.writeHead(500);
+    res.end();
+  });
+  res.on("close", () => stream.destroy());
+  stream.pipe(res);
 }).listen(4324, "127.0.0.1", () => console.log("Modyra Plain Preview http://127.0.0.1:4324"));

@@ -50,14 +50,27 @@ function posixJoin(dir: string, relative: string): string {
  * of a false "cannot find module" diagnostic.
  */
 export function supportsSemanticCheck(assets: Readonly<Record<string, string>>, files: readonly VirtualFile[]): boolean {
-  const importRe = /\bfrom\s+["']([^"']+)["']/g;
+  const specifiers = new Set<string>();
   for (const file of files) {
-    for (const match of file.content.matchAll(importRe)) {
-      const specifier = match[1];
-      if (specifier.startsWith(".")) continue;
-      const root = KNOWN_MODULE_ROOTS[specifier];
-      if (!root || !(root in assets)) return false;
-    }
+    const source = ts.createSourceFile(file.path, file.content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    const visit = (node: ts.Node): void => {
+      if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+        specifiers.add(node.moduleSpecifier.text);
+      } else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument) && ts.isStringLiteral(node.argument.literal)) {
+        specifiers.add(node.argument.literal.text);
+      } else if (ts.isCallExpression(node) && node.arguments.length === 1 && ts.isStringLiteral(node.arguments[0])) {
+        if (node.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(node.expression) && node.expression.text === "require")) {
+          specifiers.add(node.arguments[0].text);
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
+  }
+  for (const specifier of specifiers) {
+    if (specifier.startsWith(".")) continue;
+    const root = KNOWN_MODULE_ROOTS[specifier];
+    if (!root || !(root in assets)) return false;
   }
   return true;
 }
@@ -84,7 +97,8 @@ export function checkTypes(assets: Readonly<Record<string, string>>, files: read
       `${base}.ts`,
       `${base}.d.ts`,
       `${base}/index.ts`,
-      `${base}/index.d.ts`,
+      `${base}/index.tsx`,
+    `${base}/index.d.ts`,
     ];
     return candidates.find((candidate) => fileMap.has(candidate));
   }

@@ -87,3 +87,14 @@ test("an unresolvable bare import is reported as unsupported rather than crashin
   const files = [{ path: "form.ts", content: 'import { x } from "not-a-real-package";\n' }];
   assert.equal(supportsSemanticCheck(assets, files), false);
 });
+
+
+test("semantic support detects every static module-specifier form", () => {
+  for (const content of [
+    'import "not-a-real-package";',
+    'export { x } from "not-a-real-package";',
+    'type X = import("not-a-real-package").X;',
+    'const x = import("not-a-real-package");',
+    'const x = require("not-a-real-package");',
+  ]) assert.equal(supportsSemanticCheck(assets, [{ path: "form.ts", content }]), false, content);
+});
