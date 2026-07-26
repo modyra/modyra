@@ -2059,3 +2059,23 @@ body {
   .palette-dialog { forced-color-adjust: auto; }
   .brand-mark { forced-color-adjust: none; }
 }
+
+
+/* Plain uses the Modern component rules bundled by build-css.mjs. Studio only supplies its
+   semantic palette so the live canvas and Preview inspector match the editor chrome. */
+.plain-canvas-form,
+.preview-fields {
+  --mdy-primary: var(--studio-accent);
+  --mdy-error-color: var(--studio-danger);
+  --mdy-on-surface: var(--studio-text-primary);
+  --mdy-on-surface-variant: var(--studio-text-secondary);
+  --mdy-outline: var(--studio-border-strong);
+  --mdy-outline-variant: var(--studio-border-subtle);
+  --mdy-outline-subtle: color-mix(in srgb, var(--studio-border-subtle) 70%, transparent);
+  --mdy-surface-container-lowest: var(--studio-control);
+  --mdy-surface-container-highest: var(--studio-panel-hover);
+}
+.plain-canvas-field,
+.plain-canvas-form .mdy-renderer,
+.plain-canvas-form .mdy-input-wrapper,
+.plain-canvas-form .mdy-input-wrapper__inliner { overflow: visible; }

@@ -44,6 +44,7 @@ export function mountMdyForm(
   options: MountMdyFormOptions = {},
 ): MdyPlainForm {
   container.replaceChildren();
+  container.classList.add("mdy-dynamic-form", "mdy-plain-form");
 
   const reactivity = vanillaReactivity();
   const form = buildForm(fields, reactivity);
@@ -142,6 +143,7 @@ export function mountMdyForm(
     submitButton?.remove();
     form.deactivate();
     container.replaceChildren();
+    container.classList.remove("mdy-dynamic-form", "mdy-plain-form");
   }
 
   return { form, reactivity, dispose };
