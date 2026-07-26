@@ -1689,7 +1689,21 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   function headMarkup(idx: StudioIndexes): string {
     const fieldCount = [...idx.nodeById.values()].filter((n) => n.node === "field").length;
     return `
-      <span class="brand" aria-hidden="true">Modyra</span>
+      <span class="brand" aria-hidden="true">
+        <svg class="brand-mark" viewBox="0 0 384 384" role="img">
+          <defs>
+            <linearGradient id="studio-brand-top" x1="0" y1="222" x2="338" y2="118" gradientUnits="userSpaceOnUse"><stop stop-color="#6B61F2"/><stop offset=".45" stop-color="#A855F7"/><stop offset="1" stop-color="#DC66A8"/></linearGradient>
+            <linearGradient id="studio-brand-left" x1="0" y1="150" x2="60" y2="380" gradientUnits="userSpaceOnUse"><stop stop-color="#7067FF"/><stop offset="1" stop-color="#A855F7"/></linearGradient>
+            <linearGradient id="studio-brand-right" x1="338" y1="170" x2="250" y2="380" gradientUnits="userSpaceOnUse"><stop stop-color="#FF7A85"/><stop offset="1" stop-color="#FF556F"/></linearGradient>
+          </defs>
+          <g transform="translate(22)">
+            <path d="M0 148Q0 118 24.87 101.22L147.45 18.54Q169 4 190.55 18.54L313.13 101.22Q338 118 338 148V198Q338 222 317.67 209.25L194.41 131.94Q169 116 143.59 131.94L20.33 209.25Q0 222 0 198Z" fill="url(#studio-brand-top)"/>
+            <path d="M0 214Q0 160 45.61 188.91L104.84 226.45Q142 250 142 294V314Q142 368 96.39 339.09L37.16 301.55Q0 278 0 234Z" fill="url(#studio-brand-left)"/>
+            <path d="M338 214Q338 160 292.39 188.91L233.16 226.45Q196 250 196 294V314Q196 368 241.61 339.09L300.84 301.55Q338 278 338 234Z" fill="url(#studio-brand-right)"/>
+          </g>
+        </svg>
+        <span>Modyra</span>
+      </span>
       <input class="form-name" data-form-name value="${escapeHtml(project.name)}" aria-label="Form name" spellcheck="false">
       <span class="form-meta">${fieldCount} field${fieldCount === 1 ? "" : "s"}</span>`;
   }
