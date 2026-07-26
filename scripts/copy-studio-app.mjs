@@ -25,4 +25,12 @@ if (!existsSync(source)) {
 rmSync(destination, { recursive: true, force: true });
 mkdirSync(destination, { recursive: true });
 cpSync(source, destination, { recursive: true });
+
+const required = ["studio.js", "studio.css", "codegen-worker.js"];
+const missing = required.filter((name) => !existsSync(join(destination, name)));
+if (missing.length > 0) {
+  console.error(`[copy-studio-app] copied output is incomplete: ${missing.join(", ")}`);
+  process.exit(1);
+}
+
 console.log(`[copy-studio-app] copied ${source} -> ${destination}`);
