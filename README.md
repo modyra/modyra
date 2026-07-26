@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="brand/05-social/readme-banner-dark.png">
+  <img src="brand/05-social/readme-banner-light.png" alt="Modyra" width="1280">
+</picture>
+
 # Modyra
 
 **A typed form engine for TypeScript applications.**

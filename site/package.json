@@ -5,10 +5,10 @@
   "version": "0.0.1",
   "scripts": {
     "sync": "node ../scripts/sync-docs-site.mjs",
-    "predev": "node ../scripts/check-studio-app.mjs",
+    "predev": "node ../scripts/check-studio-app.mjs && node ../scripts/sync-brand-assets.mjs",
     "dev": "npm run sync && astro dev",
     "start": "astro dev",
-    "prebuild": "node ../scripts/check-studio-app.mjs",
+    "prebuild": "node ../scripts/check-studio-app.mjs && node ../scripts/sync-brand-assets.mjs",
     "build": "npm run sync && astro build",
     "preview": "astro preview",
     "astro": "astro"
