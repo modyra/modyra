@@ -39,7 +39,7 @@
   Svelte `Readable` (`get()`/`$store` syntax both work, verified against
   `svelte/store` directly). Deliberately stores-based, not runes-based:
   Svelte 5's runes are compiler macros unusable in a plain `tsc`-built
-  package, while `svelte/store` is real, uncompiled JavaScript — this keeps
+  package, while `svelte/store` is ordinary JavaScript — this keeps
   `@modyra/svelte` buildable and testable the same way as every other
   adapter (`tsc` + `node --test`, no new toolchain). A runes-based
   ergonomic layer is a separate, larger follow-up decision (see the

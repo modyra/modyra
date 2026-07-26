@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { importProjectFromText } from "../dist/storage.js";

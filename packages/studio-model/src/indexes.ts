@@ -1,6 +1,6 @@
 /**
  * Derived index tables (plan section 7). Always rebuilt from the project,
- * never hand-maintained — see .modyra/studio/adr/0003-command-engine.md.
+ * never hand-maintained —
  */
 import type {
   ArrayNode,

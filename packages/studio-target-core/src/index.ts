@@ -1,7 +1,7 @@
 /**
  * Plan section 10 "Core: definition, stubs, submit example" — the first
  * target that emits a real, runnable @modyra/core form: `form.ts` (a
- * genuine `createForm()` schema, not a description of one), `stubs.ts`
+ * `createForm()` schema, not a description of one), `stubs.ts`
  * (typed, throwing placeholders for every symbolic ImplementationRef —
  * ADR-0005, , ), and, when the project declares a submit action,
  * `submit-example.ts` showing it wired to `form.submit()`.

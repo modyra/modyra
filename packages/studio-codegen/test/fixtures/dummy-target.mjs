@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 function collectFieldNames(node, out = []) {
   if (node.node === "field") out.push(node.name);
   else if (node.node === "group") node.children.forEach((child) => collectFieldNames(child, out));

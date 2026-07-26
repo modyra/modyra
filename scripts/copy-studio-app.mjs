@@ -1,5 +1,5 @@
 /**
- * P12: copies apps/studio's built bundle into site/public/studio-app/ so
+ * Copies apps/studio's built bundle into site/public/studio-app/ so
  * the Astro docs site (which installs/builds in isolation via its own
  * site/package-lock.json, never touching the pnpm workspace) can serve
  * Studio as a plain static asset instead of needing Vite to resolve

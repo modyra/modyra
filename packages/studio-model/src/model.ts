@@ -1,7 +1,7 @@
 /**
  * Model services (plan section 5 "Required services"): normalize, validate/
  * diagnose, serialize/load, migrate. See:
- * .modyra/studio/adr/0001-project-and-contract-model.md (round-trip only
+ * (round-trip only
  * StudioProject JSON, never mutate input, no eval).
  */
 import { buildIndexes, type StudioIndexes } from "./indexes.js";
@@ -271,7 +271,7 @@ export function serializeProject(project: MdyStudioProject): string {
   return JSON.stringify(sortKeysDeep(project), null, 2);
 }
 
-/** Creates the editor's real initial state. Examples are loaded explicitly as templates. */
+/** Creates the editor's initial state. Examples are loaded explicitly as templates. */
 export function createBlankProject(name = "Untitled form"): MdyStudioProject {
   return {
     studioVersion: STUDIO_VERSION,

@@ -2,12 +2,7 @@ import { createRequire } from "node:module";
 import { expect, test, type Page } from "@playwright/test";
 import { openStudio } from "./support/studio.js";
 
-/**
- * Studio had no automated accessibility coverage at all, despite keyboard parity being a
- * shipped gate. axe-core is already a workspace devDependency and already used this way in
- * packages/angular/src/lib/renderers/a11y.spec.ts — injected into the page rather than
- * pulling in a second Playwright integration.
- */
+/** Accessibility checks for the primary Studio surfaces. */
 const require = createRequire(import.meta.url);
 const AXE_PATH = require.resolve("axe-core/axe.min.js");
 

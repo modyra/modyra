@@ -2,7 +2,7 @@
  * Structured diagnostics for reactivity adapters — replaces ad-hoc
  * `console.warn()` calls so a consumer can route adapter-degradation
  * events (missing Injector, unsupported option, disabled async feature)
- * to their own logging/telemetry (`.modyra/piano-modyra-reactivity-adapter-api.md` §13).
+ * to their own logging/telemetry (`` §13).
  */
 
 export type MdyDiagnosticSeverity = "info" | "warning" | "error";

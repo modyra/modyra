@@ -1,10 +1,8 @@
 # Form library comparison — measured bundle sizes & feature coverage
 
-**Date of writing: 2026-07-21.** Every figure below was measured locally on
-this date against the real published packages — not scraped from marketing
-pages. The document is intentionally cold: it lists what each library does
-and does not cover, including where Modyra loses. Verify before quoting
-months from now.
+**Measurement date: 2026-07-21, with the Modyra 0.4.0 rows updated on 2026-07-23.**
+
+This is a dated comparison of selected bundle surfaces and built-in features. It does not measure API quality, ecosystem maturity, support, documentation or production adoption. Re-run the repository scripts before quoting the results.
 
 ## 1. Methodology (fully reproducible)
 
@@ -19,11 +17,11 @@ months from now.
   `zone.js`) — you pay for your framework anyway.
 - Two surfaces per library:
   - **whole entry** — the entire package entry, worst case;
-  - **realistic form surface** — only the exports a typical typed form
+  - **selected form surface** — only the exports a typical typed form
     with array fields and validation actually imports.
 - Cross-check: our whole-entry figures land within ~5–10% of
   [Bundlephobia](https://bundlephobia.com) for every package (e.g.
-  `@angular/forms`: 18.1 KB everywhere), which validates the harness.
+  `@angular/forms`: 18.1 KB everywhere), which provides a coarse cross-check for the harness.
 - `@modyra/core` figures were originally cross-checked against the real
   published registry tarball (`npm install @modyra/core@0.3.0`), agreeing
   exactly with the workspace build at the time (10.7 KB / 9.4 KB gzip).
@@ -41,7 +39,7 @@ final-form **5.0.1** + react-final-form **7.0.1** + final-form-arrays
 
 ## 2. Measured bundle sizes (min + gzip, both bundlers)
 
-### Realistic form surface (what a real typed form with arrays pays)
+### Selected form surface (what a real typed form with arrays pays)
 
 | Package | esbuild | rollup | Surface imported |
 |---|---|---|---|
@@ -78,7 +76,7 @@ what your pipeline tree-shakes.
 > main entry now ships only the form engine. Previous figure: 17.2 KB.*
 >
 > *Re-measured again 2026-07-22 after the reactivity-adapter-api plan
-> (`.modyra/piano-modyra-reactivity-adapter-api.md`, 8 milestones):
+>:
 > **whole-entry regressed from 10.7/10.4 KB to 14.1/13.8 KB gzip, losing
 > the #2 spot** to react-hook-form. Real, not a leak — `MdyReactiveScope`,
 > `activate()`/`deactivate()`/`mutate()`, typed error classes and the
@@ -123,7 +121,7 @@ locale issue).
   (13.3 / 12.7 KB) and vee-validate's esbuild number (13.6 KB, see the ⚠
   caveat above) — but still lighter than formik, TanStack Form and
   `@angular/forms`. This is a real regression from an earlier 10.7/10.4 KB
-  (see the dated note above): Phase J relocated satellite utilities
+  (see the dated note above): the earlier bundle split relocated satellite utilities
   (i18n, icons, datetime, devtools) to curated subpath entries, then the
   reactivity-adapter-api work added always-linked scope/lifecycle/error
   machinery back on top. Not silently absorbed — stated here and in

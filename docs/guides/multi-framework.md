@@ -108,7 +108,7 @@ signature differs from React's here, the one real API gap between them).
 ### Vue (`@modyra/vue` — shipped, full capabilities)
 
 Vue's reactivity maps 1:1 onto the contract — the binding wraps
-`shallowRef`/`computed`, and (since Phase P2, 2026-07-23) a real
+`shallowRef`/`computed`, and (since the current implementation) a real
 scheduler and Vue's own `effectScope()`:
 
 ```ts
@@ -154,7 +154,7 @@ handler, and now `scripts/reactivity-capability-matrix.mjs` itself) needs
 `--conditions=browser` or every signal silently goes inert. Headless
 field/select controllers come from `@modyra/widgets`.
 
-Since Phase P3 (2026-07-23), this adapter declares full capabilities —
+Since the current implementation (2026-07-23), this adapter declares full capabilities —
 uniquely among all seven, `computedEquality: true` (verified directly:
 `createMemo`'s own `equals` comparator stops staleness from propagating
 to downstream consumers, a stronger guarantee than vanilla's or Vue's).
@@ -223,9 +223,9 @@ above).
 - **A11y announcer, devtools UI, Angular's renderer catalog**:
   framework-native forever, by design (Layer 3).
 - ~~**Reactivity contract migration**~~ — **done, all 7 adapters, 2026-07-23**
-  (`ROADMAP.md`'s Phase P): React/Preact/Svelte/Lit via a named export
+  : React/Preact/Svelte/Lit via a named export
   forwarding vanilla's own, already-active capabilities; Vue and Solid
-  with genuine native ones (real schedulers/native batching, `createScope()`
+  with native implementations (real schedulers/native batching, `createScope()`
   via `effectScope()`/an explicit disposal-root tree respectively). Only
   Angular's `createScope()` and per-adapter migration to child scopes for
   array rows remain, tracked in "Later / watchlist". Full detail: the

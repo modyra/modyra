@@ -86,8 +86,8 @@ rows.push({
 });
 
 // React/Preact/Svelte/Lit have no native signal primitive of their own, so
-// they already run on vanillaReactivity()'s real capabilities by default
-// (createForm()'s own fallback) — these named exports (Phase P1) just make
+// they already run on vanillaReactivity()'s declared capabilities by default
+// (createForm()'s own fallback) — these named exports (the current implementation) just make
 // that visible to this script instead of showing "—" for a gap that isn't
 // actually there at runtime.
 rows.push({ name: "react", capabilities: reactReactivity().capabilities, note: "= vanilla (no signal primitive of its own)" });
@@ -95,26 +95,26 @@ rows.push({ name: "preact", capabilities: preactReactivity().capabilities, note:
 rows.push({ name: "svelte", capabilities: svelteReactivity().capabilities, note: "= vanilla (no signal primitive of its own); toStore() bridges to a Readable" });
 rows.push({ name: "lit", capabilities: litReactivity().capabilities, note: "= vanilla (no signal primitive of its own)" });
 
-// Vue's own effect() now runs on a real scheduler (Phase P2, mirrors
+// Vue's own effect() now runs on a real scheduler (the current implementation, mirrors
 // vanilla's Milestone 3 design) and createScope() wraps Vue's native
-// effectScope() -- real capabilities on real native reactivity, not a
+// effectScope() -- declared capabilities on real native reactivity, not a
 // re-export like the four above.
 rows.push({
   name: "vue",
   capabilities: vueReactivity().capabilities,
-  note: "native @vue/reactivity; effect() scheduler + createScope() via effectScope() (Phase P2, 2026-07-23)",
+  note: "native @vue/reactivity; effect() scheduler + createScope() via effectScope() (the current implementation)",
 });
 
 // Solid's effect() (initial run included) is natively microtask-deferred,
-// and its own batch() genuinely settles synchronously by the time it
+// and its own batch() settles synchronously by the time it
 // returns (verified directly, including chained-effect cascades) --
 // createScope() is an explicit parent/child tree over Solid's own
 // disposal roots (createRoot has no "nest under the current scope"
-// primitive the way Vue's effectScope() does). Phase P3, 2026-07-23.
+// primitive the way Vue's effectScope() does). the current implementation.
 rows.push({
   name: "solid",
   capabilities: solidReactivity().capabilities,
-  note: "native createSignal/createMemo/createEffect; equals comparator honored on both signal and memo (Phase P3, 2026-07-23)",
+  note: "native createSignal/createMemo/createEffect; equals comparator honored on both signal and memo (the current implementation)",
 });
 
 function cell(value) {

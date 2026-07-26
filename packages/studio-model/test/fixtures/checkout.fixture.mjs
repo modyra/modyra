@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 export function createCheckoutProject() {
   return {
     studioVersion: 1,

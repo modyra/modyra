@@ -1,11 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { openStudio, showStructure } from "./support/studio.js";
 
-/**
- * "reload restores, corrupt snapshot recovers." Real IndexedDB
- * in a browser — this is exactly the part storage.test.mjs (Node,
- * no IndexedDB) cannot cover.
- */
+/** IndexedDB restore, recovery and import-export behavior. */
 
 test.beforeEach(async ({ page }) => {
   await openStudio(page);

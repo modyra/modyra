@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 import { TargetRegistry, type Artifact } from "@modyra/studio-codegen";
 import type { MdyStudioProject } from "@modyra/studio-model";
 import { jsonTargetManifest } from "@modyra/studio-target-json";

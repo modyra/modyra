@@ -1,7 +1,6 @@
 # Solid — checkout example
 
-The same scenario as the [README](../../README.md#1-checkout-nested-groups-repeatable-line-items-a-coupon-checked-server-side)
-implemented end-to-end in Solid: nested groups, a typed array of line
+This adapter implements the [shared checkout scenario](checkout-scenario.md): nested groups, a typed array of line
 items, a coupon validated server-side (re-checked when the country
 changes, cancelled while typing), submit with server errors, and a draft
 that survives page refreshes.
@@ -158,7 +157,7 @@ export function Checkout() {
 `solid-js` — used here instead of `.map()` so row removal/insertion stays
 fine-grained instead of re-rendering the whole list.)
 
-## What to notice
+## Integration notes
 
 - **No subscription layer to write** — every `handle.value()` call is a
   Solid signal read; the compiler tracks it and updates only that DOM

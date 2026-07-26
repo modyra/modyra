@@ -1,7 +1,6 @@
 # Svelte — checkout example
 
-The same scenario as the [README](../../README.md#1-checkout-nested-groups-repeatable-line-items-a-coupon-checked-server-side)
-implemented end-to-end in Svelte: nested groups, a typed array of line
+This adapter implements the [shared checkout scenario](checkout-scenario.md): nested groups, a typed array of line
 items, a coupon validated server-side (re-checked when the country
 changes, cancelled while typing), submit with server errors, and a draft
 that survives page refreshes.
@@ -134,14 +133,14 @@ to `handle.set`/`handle.markAsTouched`. See that example's
 [`TextField.svelte`](../../examples/svelte/TextField.svelte) for the exact
 pattern.
 
-## What to notice
+## Integration notes
 
 - **`toStore()` is the whole bridge** — every reactive read in the
   template goes through it once (`const x = toStore(handle.y)`), then
   `$x` in markup is native Svelte auto-subscription. No hook, no manual
   `onDestroy` — `toStore()`'s returned `Readable` unsubscribes itself when
   Svelte's own reactivity stops observing it.
-- **One honest caveat**: `toStore()`-backed updates are microtask-batched
+- **Update timing**: `toStore()`-backed updates are microtask-batched
   (like every other effect-driven feature in the engine — async
   validators, drafts, history), not perfectly synchronous the way
   Svelte's own `writable()` is. The template still re-renders correctly,

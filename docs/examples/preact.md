@@ -1,7 +1,6 @@
 # Preact — checkout example
 
-The same scenario as the [README](../../README.md#1-checkout-nested-groups-repeatable-line-items-a-coupon-checked-server-side)
-implemented end-to-end in Preact: nested groups, a typed array of line
+This adapter implements the [shared checkout scenario](checkout-scenario.md): nested groups, a typed array of line
 items, a coupon validated server-side (re-checked when the country
 changes, cancelled while typing), submit with server errors, and a draft
 that survives page refreshes.
@@ -14,7 +13,7 @@ npm install @modyra/preact
 API, same code shape — because Preact has no signal primitive either, so
 the form runs on the core's vanilla reactive graph and components
 subscribe through `useSyncExternalStore` (Preact ships this via
-`preact/compat`, its React-compatibility layer). One real gap: Preact's
+`preact/compat`, its React-compatibility layer). SSR limitation: Preact's
 `useSyncExternalStore` takes two arguments, not three — there is no
 `getServerSnapshot` — so this hook (and the exported `useMdyForm`/
 `useMdyField` below) isn't SSR-hydration-safe the way the React version
@@ -172,7 +171,7 @@ function NumberField({ handle, label }: { handle: any; label: string }) {
 }
 ```
 
-## What to notice
+## Integration notes
 
 - **Identical shape to `@modyra/react`** — if you already know the React
   binding, you already know this one. That is by design: Preact adapters

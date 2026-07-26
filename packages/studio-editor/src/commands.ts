@@ -1,6 +1,6 @@
 /**
  * Invertible commands over MdyStudioProject (plan section 7; ADR
- * .modyra/studio/adr/0003-command-engine.md): insert, move, delete,
+ *: insert, move, delete,
  * duplicate, updateNode, add/remove field validator, updateBehavior,
  * add/remove form validator.
  *

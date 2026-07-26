@@ -29,7 +29,7 @@ emitted when the project declares a submit action.
 `@modyra/angular/adapter` instead — `form.ts` + `stubs.ts` only, no
 submit example (narrower MVP scope than Core). Verified byte-identical
 to the Core target's own output once the factory call name is
-normalized — the mapping is genuinely shared, not a second
+normalized — the mapping is shared, not a second
 implementation.
 
 **React** (`@modyra/studio-target-react`)

@@ -36,7 +36,7 @@ test("greaterThan/lessThan compare a NodeRef against a literal number", () => {
   assert.equal(evaluateExpression({ op: "lessThan", operands: [{ nodeId: "qty" }, 0] }, { items: { qty: 2 } }, pathOf), false);
 });
 
-test("matches builds a real RegExp from the portable pattern string", () => {
+test("matches builds a RegExp from the portable pattern string", () => {
   const expr = { op: "matches", operands: [{ nodeId: "city" }, "^\\d{5}$"] };
   assert.equal(evaluateExpression(expr, { shipping: { city: "00100" } }, pathOf), true);
   assert.equal(evaluateExpression(expr, { shipping: { city: "Rome" } }, pathOf), false);

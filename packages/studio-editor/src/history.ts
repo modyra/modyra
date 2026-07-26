@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 import type { MdyStudioProject, StudioDiagnostic } from "@modyra/studio-model";
 import type { Command } from "./types.js";
 

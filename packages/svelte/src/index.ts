@@ -7,12 +7,12 @@
  * plain, `tsc`-built npm package (this one) cannot use them; calling
  * `$state()` in ordinary JavaScript is a `ReferenceError`. `svelte/store`
  * (`writable`/`derived`/`get`/the `Readable` contract), by contrast, is
- * real, uncompiled JavaScript — it has worked outside `.svelte` files
+ * ordinary JavaScript — it has worked outside `.svelte` files
  * since Svelte 3 and Svelte 5 still fully supports it. So the engine
  * runs on the core's `vanillaReactivity()` (same as `@modyra/react` and
  * `@modyra/preact` — Svelte has no exported fine-grained signal any more
  * than React does), and {@link toStore} adapts any Modyra signal into a
- * real `Readable`, so a `.svelte` template can write `{$emailStore}` and
+ * Svelte `Readable`, so a `.svelte` template can write `{$emailStore}` and
  * subscribe to it the native way. A runes-based ergonomic layer is
  * possible as a follow-up (a small `@modyra/svelte/runes` subpath built
  * through the Svelte compiler) but is a separate, larger toolchain
@@ -69,7 +69,7 @@ export function createSvelteForm<S extends MdyFormSchema>(
  * instead of manually polling. Each `subscribe()` call runs its own
  * tracking effect on the vanilla graph and honors the store contract
  * (the subscriber is called once, synchronously, with the current value,
- * then again on every change) — with one honest caveat: since it wraps
+ * then again on every change) — with one timing difference: since it wraps
  * an *effect*, later notifications are microtask-batched like every
  * other effect-driven feature in the engine (async validators, drafts,
  * history), not perfectly synchronous the way Svelte's own `writable()`

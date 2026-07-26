@@ -1,7 +1,6 @@
 # Lit — checkout example
 
-The same scenario as the [README](../../README.md#1-checkout-nested-groups-repeatable-line-items-a-coupon-checked-server-side)
-implemented end-to-end in Lit: nested groups, a typed array of line items
+This adapter implements the [shared checkout scenario](checkout-scenario.md): nested groups, a typed array of line items
 rendered from `rows()`, a coupon validated server-side (re-checked when the
 country changes, cancelled while typing), submit with server errors, and a
 draft that survives page refreshes.
@@ -142,7 +141,7 @@ export class CheckoutElement extends LitElement {
 }
 ```
 
-## What to notice
+## Integration notes
 
 - **Ready-made controls with the same engine** — `<mdy-text-field>` and
   `<mdy-number-field>` render label, required marker, `aria-*` wiring and

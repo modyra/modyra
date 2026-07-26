@@ -6,7 +6,7 @@ import {
   MdyWritableSignal,
 } from "./reactivity.js";
 
-/** Narrows to a reactivity that honestly reports (and implements) real runtime batching. */
+/** Narrows to a reactivity that reports (and implements) real runtime batching. */
 function hasBatchingCapability(
   rx: MdyReactivity,
 ): rx is MdyReactivity & MdyBatchingCapability {

@@ -1,4 +1,3 @@
-/** Behavioral coverage for this module. */
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";

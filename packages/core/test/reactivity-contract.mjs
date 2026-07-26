@@ -1,7 +1,7 @@
 /**
  * Backward-compatible shim over the canonical conformance suite.
  *
- * The real implementation moved to `@modyra/core/testing`
+ * The implementation moved to `@modyra/core/testing`
  * (`src/testing/reactivity-contract.ts`, piano-modyra-reactivity-adapter-api.md
  * Milestone 7) so it has a documented, harness-based public API adapters
  * outside this monorepo can depend on. This file adapts the old

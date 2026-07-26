@@ -1,13 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { openStudio } from "./support/studio.js";
 
-/**
- * "Preview reads model/Contract, not generated source. Must
- * show: values validation arrays errors pending canSubmit draft, server
- * mock: delay/valid-values/error/timeout/network-failure." Drives the
- * @modyra/studio-preview live form through the actual DOM — never a
- * mock of the Preview tab itself.
- */
+/** Preview behavior for validation, arrays and simulated server outcomes. */
 
 test.beforeEach(async ({ page }) => {
   await openStudio(page);
@@ -42,7 +36,7 @@ test("array: Add row/Remove update the live array through the real form, reflect
   await expect(page.locator(".preview-array-label")).toContainText("(1)");
 });
 
-test("server mock: switching a field's mock mode to Fails surfaces a asynchronous validation error in preview, Succeeds clears it", async ({ page }) => {
+test("server mock: switching a field's mock mode to Fails surfaces an asynchronous validation error in preview, Succeeds clears it", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
   await page.locator('details[data-section="server"] summary').click();
   await page.locator("[data-enable-server-validator]").click();

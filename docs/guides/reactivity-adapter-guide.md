@@ -7,7 +7,7 @@ Every framework package (`@modyra/angular`, `@modyra/vue`, `@modyra/solid`,
 that interface to its host framework's native signals. This guide is for
 adding the next one.
 
-The full protocol spec lives in `.modyra/piano-modyra-reactivity-adapter-api.md`
+The public protocol is defined by the exported interfaces and the conformance suite
 (not committed — a local planning doc); this guide is the practical,
 grounded-in-real-code version of it.
 
@@ -39,7 +39,7 @@ Reference implementation: `vanillaReactivity()` in `packages/core/src/reactivity
 and the React/Preact/Svelte bindings (none of which have a native signal
 primitive of their own).
 
-## 2. Declare real capabilities — never a fictitious one
+## 2. Declare declared capabilities — never a fictitious one
 
 ```ts
 export interface MdyReactivityCapabilities {
@@ -68,7 +68,7 @@ codebase, for contrast:
   "fictitious capability" rule below forbids. See the comment above
   `computedEquality: false` in `reactivity.ts` for the full reasoning.
 - Angular reports `effects`/`effectOwnership` as `injector !== undefined`
-  — not always `true` — because effects genuinely don't run without one.
+  — not always `true` — because effects do not run without one.
   See `packages/angular/src/lib/core/reactivity-angular.ts`.
 
 Run `npm run docs:reactivity-matrix` to regenerate
@@ -127,7 +127,7 @@ This was a real, if latent, bug found while auditing `@modyra/react` and
 `vanillaReactivity()` to observe a field handle, which happened to work
 only because vanilla's dependency tracking is a module-global singleton —
 it silently breaks the moment the handle belongs to a different runtime
-(Vue, Solid, Angular). Fixed by tagging every handle with its real owner
+(Vue, Solid, Angular). Fixed by tagging every handle with its owner
 at construction time (`packages/core/src/reactive-owner.ts`,
 `getFieldHandleOwner()`) and resolving through that instead of assuming
 one. If you bridge a handle to your framework's own subscription
@@ -162,7 +162,7 @@ not an oversight; match whichever your framework's own test tooling needs).
 ## Checklist before calling an adapter done
 
 - [ ] `capabilities` reflects real, tested guarantees — run `npm run docs:reactivity-matrix` and read your row.
-- [ ] No effect ever returns a silent no-op for a genuinely requested feature.
+- [ ] No effect ever returns a silent no-op for a requested feature.
 - [ ] `createScope()` implemented (or explicitly deferred, documented, with `createScope` left `undefined`).
 - [ ] No binding constructs an unrelated reactivity instance to observe a handle it doesn't own.
 - [ ] `runReactivityContractTests` passes (or your framework-native equivalent, if your test runner can't call it directly).

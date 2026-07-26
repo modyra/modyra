@@ -1,5 +1,5 @@
 /**
- * Command engine contract (plan section 7; ADR .modyra/studio/adr/0003-command-engine.md).
+ * Command engine contract (plan section 7; ADR.
  * Every project mutation is a Command: validate before apply, apply is pure,
  * inverse is computed from the pre-apply project so undo is exact.
  */

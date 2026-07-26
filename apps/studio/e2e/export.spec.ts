@@ -1,14 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { openStudio, showStructure } from "./support/studio.js";
 
-/**
- * (.modyra/modyra-studio-caveman-plan.md section 14): "dummy target
- * needs no canvas change" / "failures do not mutate editor state" / "stale
- * ignored". The Export tab drives the @modyra/studio-target-json,
- * @modyra/studio-target-core, @modyra/studio-target-angular and
- * @modyra/studio-target-react targets through the lazy TargetRegistry —
- * uses the public implementation.
- */
+/** Export behavior for the built-in generation targets. */
 
 test.beforeEach(async ({ page }) => {
   await openStudio(page);

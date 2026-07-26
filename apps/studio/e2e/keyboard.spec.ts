@@ -1,12 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { openStudio, showStructure } from "./support/studio.js";
 
-/**
- * checkout-shaped structure buildable keyboard-only, a11y pass.
- * No mouse anywhere in this file — palette/toolbar buttons are activated
- * via focus()+keyboard.press(), tree reordering via the app's own
- * Space/Arrows/Enter/Escape scheme (plan section 7).
- */
+/** Keyboard interaction and focus management in the authoring surface. */
 
 async function addFromPalette(page: import("@playwright/test").Page, template: string) {
   await page.locator(`[data-template="${template}"]`).focus();
