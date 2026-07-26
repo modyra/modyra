@@ -29,10 +29,6 @@ function setStatus(message: string, isError: boolean): void {
 }
 
 function render(): void {
-  mounted?.dispose();
-  mounted = null;
-  formHost!.replaceChildren();
-
   let raw: unknown;
   try {
     raw = JSON.parse(textarea!.value);
@@ -61,9 +57,12 @@ function render(): void {
     return;
   }
 
+  mounted?.dispose();
+  formHost!.replaceChildren();
   mounted = mountMdyForm(formHost!, fields, {
     onSubmit: (value) => {
-      setStatus(`Submitted: ${JSON.stringify(value)}`, false);
+      const keys = value && typeof value === "object" ? Object.keys(value as object) : [];
+      setStatus(`Submitted successfully${keys.length > 0 ? ` (${keys.length} top-level fields)` : ""}.`, false);
     },
   });
   setStatus(`Rendered ${fields.length} field(s) via @modyra/plain.`, false);

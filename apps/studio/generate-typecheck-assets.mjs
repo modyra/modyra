@@ -68,7 +68,18 @@ function readDtsTree(sourceDir) {
 
 const libDir = join(repoRoot, "node_modules/typescript/lib");
 const assets = {};
-for (const name of LIB_FILES) assets[`/lib/${name}`] = readFileSync(join(libDir, name), "utf8");
+const pendingLibs = [...LIB_FILES];
+const seenLibs = new Set();
+while (pendingLibs.length > 0) {
+  const name = pendingLibs.pop();
+  if (!name || seenLibs.has(name)) continue;
+  seenLibs.add(name);
+  const content = readFileSync(join(libDir, name), "utf8");
+  assets[`/lib/${name}`] = content;
+  for (const match of content.matchAll(/<reference\s+lib=["']([^"']+)["']/g)) {
+    pendingLibs.push(`lib.${match[1].toLowerCase()}.d.ts`);
+  }
+}
 
 // Each vendored package degrades gracefully, not the whole build: if
 // packages/react hasn't been built yet (build:studio alone doesn't build
@@ -78,7 +89,9 @@ for (const name of LIB_FILES) assets[`/lib/${name}`] = readFileSync(join(libDir,
 // of failing the app build.
 function vendorDts(name, sourceDir) {
   if (!existsSync(sourceDir)) {
-    console.warn(`[generate-typecheck-assets] ${sourceDir} not built yet — skipping ${name} (its targets fall back to syntax-only checking until "npm run build:packages" runs)`);
+    const message = `[generate-typecheck-assets] ${sourceDir} not built yet — cannot vendor ${name}`;
+    if (process.env.CI) throw new Error(message);
+    console.warn(`${message}; its targets use syntax-only checking in this local build`);
     return;
   }
   for (const [relPath, content] of Object.entries(readDtsTree(sourceDir))) {

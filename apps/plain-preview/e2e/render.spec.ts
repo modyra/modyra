@@ -63,3 +63,16 @@ test("malformed JSON reports an error instead of throwing", async ({ page }) => 
   await expect(page.locator("[data-plain-status]")).toHaveText("Not valid JSON.");
   expect(errors).toEqual([]);
 });
+
+
+test("invalid JSON preserves the last successfully rendered form", async ({ page }) => {
+  await page.goto("/");
+  await page.fill("[data-plain-json]", JSON.stringify(createCheckoutProject()));
+  await page.click("[data-plain-render]");
+  const count = await page.locator("[data-plain-form] input").count();
+  expect(count).toBeGreaterThan(0);
+  await page.fill("[data-plain-json]", "{ invalid");
+  await page.click("[data-plain-render]");
+  await expect(page.locator("[data-plain-status]")).toHaveText("Not valid JSON.");
+  await expect(page.locator("[data-plain-form] input")).toHaveCount(count);
+});
