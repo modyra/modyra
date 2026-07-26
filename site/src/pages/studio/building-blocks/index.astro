@@ -1,0 +1,53 @@
+---
+import SiteLayout from '../../../components/SiteLayout.astro';
+
+const based = (path: string) =>
+  `${import.meta.env.BASE_URL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+
+const groups = [
+  { name: 'Fields', desc: 'Textual, numeric, boolean, date, time and option-based values.' },
+  { name: 'Containers', desc: 'Groups and arrays for nested and repeated structures.' },
+  { name: 'Validation', desc: 'Field, form and asynchronous rules with explicit dependencies.' },
+  { name: 'Layout', desc: 'Sections and columns represented in the portable contract.' },
+];
+---
+
+<SiteLayout
+  title="Modyra Studio — building blocks"
+  description="The categories of form elements currently authorable in Modyra Studio."
+  eyebrow="Studio building blocks"
+>
+  <section class="intro">
+    <h1>Compose forms from a small, explicit vocabulary.</h1>
+    <p>
+      Studio exposes the structures supported by its project model and contract.
+      It does not currently provide packaged, domain-specific starter projects.
+    </p>
+  </section>
+  <section class="grid" aria-label="Building block categories">
+    {groups.map((group) => (
+      <article><h2>{group.name}</h2><p>{group.desc}</p></article>
+    ))}
+  </section>
+  <section class="note">
+    <p>
+      The live canvas renders supported contract fields through
+      <code>@modyra/plain</code>. Target-specific UI remains outside Studio's
+      project model.
+    </p>
+    <a href={based('studio/app/')}>Launch Studio</a>
+  </section>
+</SiteLayout>
+
+<style>
+  .intro, .grid, .note { padding: 0 clamp(1.25rem, 7vw, 6rem) clamp(3.5rem, 7vw, 6rem); }
+  .intro h1 { max-width: 18ch; font-size: clamp(2.4rem, 6vw, 4.3rem); line-height: 1.05; }
+  .intro p, .note p, article p { color: var(--page-muted); line-height: 1.6; }
+  .intro p, .note p { max-width: 62ch; font-size: 1.1rem; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; padding-top: 1rem; }
+  article { padding: 1.3rem; border: 1px solid var(--page-border); border-radius: .7rem; background: var(--page-card); }
+  article h2 { font-size: 1.15rem; }
+  .note { padding-top: 2.5rem; border-top: 1px solid var(--page-border); }
+  .note a { display: inline-block; margin-top: 1rem; padding: .7rem 1rem; border: 1px solid var(--page-border); border-radius: .55rem; text-decoration: none; }
+  @media (max-width: 44rem) { .grid { grid-template-columns: 1fr; } }
+</style>

@@ -1,0 +1,120 @@
+---
+import '../styles/custom.css';
+
+interface Props {
+  title: string;
+  description: string;
+  eyebrow?: string;
+}
+
+const { title, description, eyebrow } = Astro.props;
+const based = (path: string) =>
+  `${import.meta.env.BASE_URL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" href={based('favicon.svg')} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="site-brand" href={based('')}>Modyra</a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href={based('start-here/')}>Documentation</a>
+        <a href={based('approach/')}>Approach</a>
+        <a href={based('studio/')}>Studio</a>
+        <a href="https://github.com/modyra/modyra">GitHub</a>
+      </nav>
+    </header>
+    <main>
+      {eyebrow && <p class="site-eyebrow">{eyebrow}</p>}
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <p>Modyra is under active development and has not reached 1.0.</p>
+      <nav aria-label="Footer navigation">
+        <a href={based('start-here/')}>Documentation</a>
+        <a href={based('studio/')}>Studio</a>
+        <a href="https://github.com/modyra/modyra">Source</a>
+      </nav>
+    </footer>
+  </body>
+</html>
+
+<style>
+  :global(:root) {
+    --page-bg: var(--mdy-night);
+    --page-card: #1c1e30;
+    --page-fg: var(--mdy-cloud);
+    --page-muted: var(--mdy-slate);
+    --page-border: #2c2f47;
+    --page-accent: #c8c3ff;
+    --page-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :global(:root) {
+      --page-bg: var(--mdy-cloud);
+      --page-card: #fff;
+      --page-fg: var(--mdy-night);
+      --page-muted: #52577a;
+      --page-border: #e1e4ef;
+      --page-accent: #4a3fd6;
+    }
+  }
+  :global(html), :global(body) {
+    margin: 0;
+    min-height: 100%;
+    background: var(--page-bg);
+    color: var(--page-fg);
+    font-family: 'Satoshi', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  :global(*) { box-sizing: border-box; }
+  :global(::selection) { background: var(--mdy-indigo); color: #fff; }
+  :global(a) { color: inherit; }
+  :global(code), :global(.mono) { font-family: var(--page-mono); }
+  :global(h1), :global(h2), :global(h3) { margin: 0; text-wrap: balance; }
+  :global(main) { width: min(76rem, 100%); margin: 0 auto; }
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 1.2rem clamp(1.25rem, 5vw, 4rem);
+    border-bottom: 1px solid var(--page-border);
+  }
+  .site-brand { font-size: 1.1rem; font-weight: 900; text-decoration: none; }
+  .site-nav { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+  .site-nav a { color: var(--page-muted); font-size: .92rem; text-decoration: none; }
+  .site-nav a:hover, .site-nav a:focus-visible { color: var(--page-fg); }
+  .site-eyebrow {
+    margin: clamp(3rem, 7vw, 6rem) clamp(1.25rem, 7vw, 6rem) 1rem;
+    color: var(--page-muted);
+    font-family: var(--page-mono);
+    font-size: .78rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .site-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 2rem clamp(1.25rem, 5vw, 4rem);
+    border-top: 1px solid var(--page-border);
+    color: var(--page-muted);
+    font-size: .88rem;
+  }
+  .site-footer p { margin: 0; }
+  .site-footer nav { display: flex; flex-wrap: wrap; gap: 1.25rem; }
+  .site-footer a { text-decoration: none; }
+  .site-footer a:hover, .site-footer a:focus-visible { color: var(--page-fg); }
+  @media (max-width: 44rem) {
+    .site-header, .site-footer { align-items: flex-start; flex-direction: column; }
+    .site-nav { gap: .9rem 1.2rem; }
+  }
+</style>
