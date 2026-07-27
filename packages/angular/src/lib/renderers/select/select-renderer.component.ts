@@ -11,11 +11,9 @@ import {
   inject,
   input,
   output,
-  Signal,
   signal,
   untracked,
   viewChild,
-  WritableSignal,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
 import { MDY_WIDGET_CONTRACTS, reconcileSelectValue, selectKeyboardAction } from "@modyra/widgets";
@@ -267,27 +265,16 @@ export class MdySelectComponent<TValue = string>
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
   readonly disabled = input<boolean>(false);
-  /**
-   * Tagging: in a searchable select, shows a "Create «query»" row when the
-   * query matches no option label. Selecting it emits `optionCreated` —
-   * the consumer adds the option to its list and sets the value.
-   */
   readonly allowCreate = input(false, { transform: booleanAttribute });
-  /** Fires with the trimmed query when the user picks the create row. */
   readonly optionCreated = output<string>();
   public override readonly isDisabled = computed(() => this.disabled() || this.fieldState().disabled());
   private readonly runtime = inject(MdyWidgetRuntime);
   private selectAdapter!: MdyAngularSelectAdapter<TValue>;
-  private readonly _parkedValue: WritableSignal<TValue | null> = signal<TValue | null>(null);
-  public readonly parkedValue: Signal<TValue | null> = this._parkedValue.asReadonly();
-
+  private readonly parkedValue = signal<TValue | null>(null);
 
   constructor() {
     super();
 
-    // Inert initial state: inputs ([field]/name) are not set yet at
-    // construction time, so reading value()/fieldState() here throws.
-    // The sync effects below push the real values on their first run.
     this.selectAdapter = new MdyAngularSelectAdapter<TValue>(
       {
         widgetId: this.fieldId,
@@ -310,31 +297,26 @@ export class MdySelectComponent<TValue = string>
     );
 
     this.selectAdapter.connectHandlers({
-      setOpen: () => {
-        // Open/close is driven by the component; controller commands are ignored here.
-      },
-      onChange: () => {
-        // value change is already handled by the adapter's onChange callback.
-      },
+      setOpen: () => undefined,
+      onChange: () => undefined,
       onTouched: () => this.dispatchValueBlur("select"),
       onDirty: () => undefined,
     });
 
-    // Sync adapter with changing component inputs.
-    effect(() => this.selectAdapter.setOptions(this.effectiveOptions()), { injector: this.injector });
-    effect(() => this.selectAdapter.setValue(this.value()), { injector: this.injector });
-    effect(() => this.selectAdapter.setDisabled(this.isDisabled()), { injector: this.injector });
-    effect(() => this.selectAdapter.setReadonly(this.fieldState().readonly()), { injector: this.injector });
-    effect(() => this.selectAdapter.setInvalid(this.hasErrors()), { injector: this.injector });
-    effect(() => this.selectAdapter.setLoading(this.effectiveLoading()), { injector: this.injector });
-
-    // Widgets owns normalization, parking and restoration. Angular only applies
-    // the resulting non-user synchronization to the form adapter.
     effect(() => {
-      const current = { value: this.value(), parkedValue: this._parkedValue() };
+      this.selectAdapter.setOptions(this.effectiveOptions());
+      this.selectAdapter.setValue(this.value());
+      this.selectAdapter.setDisabled(this.isDisabled());
+      this.selectAdapter.setReadonly(this.fieldState().readonly());
+      this.selectAdapter.setInvalid(this.hasErrors());
+      this.selectAdapter.setLoading(this.effectiveLoading());
+    }, { injector: this.injector });
+
+    effect(() => {
+      const current = { value: this.value(), parkedValue: this.parkedValue() };
       const next = reconcileSelectValue(current, this.effectiveOptions());
       untracked(() => {
-        if (next.parkedValue !== current.parkedValue) this._parkedValue.set(next.parkedValue);
+        if (next.parkedValue !== current.parkedValue) this.parkedValue.set(next.parkedValue);
         if (next.value !== current.value) this.synchronizeValue(next.value);
       });
     }, { injector: this.injector });
@@ -342,15 +324,12 @@ export class MdySelectComponent<TValue = string>
 
   protected readonly fieldId = `mdy-control-select-${MdyBaseControl.nextId()}`;
 
-  /** Whether the dropdown opens above the trigger. */
   protected readonly dropUp = computed(() => this.position() === "above");
 
-  /** Whether the dropdown renders as a centered overlay (no space above or below). */
   protected readonly overlayMode = computed(
     () => this.position() === "overlay",
   );
 
-  /** Index of the keyboard-active option (for arrow navigation). */
   protected readonly activeIndex = computed(() => {
     const key = this.selectAdapter.state().activeKey;
     if (key === null) return -1;
@@ -361,7 +340,6 @@ export class MdySelectComponent<TValue = string>
     return String(option.value);
   }
 
-  /** The currently selected option object (for rendering in trigger). */
   protected readonly selectedOption = computed<MdySelectOption<TValue> | null>(
     () => {
       const v = this.value();
@@ -374,12 +352,10 @@ export class MdySelectComponent<TValue = string>
     },
   );
 
-  /** Options filtered by the current search query. */
   protected readonly filteredOptions = computed(() =>
     filterOptionsByQuery(this.effectiveOptions(), this.selectAdapter.state().query),
   );
 
-  /** Show the "create" row: tagging enabled, query set, no exact label match. */
   protected readonly showCreateOption = computed(() => {
     if (!this.allowCreate() || !this.searchable()) return false;
     const query = this.searchQuery().trim().toLowerCase();
@@ -399,8 +375,6 @@ export class MdySelectComponent<TValue = string>
   private readonly searchInputRef =
     viewChild<ElementRef<HTMLInputElement>>("searchInput");
 
-  // ── Custom dropdown interactions ────────────────────────────────────────────
-
   protected override openOverlay(event?: Event): void {
     super.openOverlay(event);
     this.selectAdapter.setOpen(true);
@@ -414,7 +388,6 @@ export class MdySelectComponent<TValue = string>
   protected override onBeforeOpen(): void {
     super.onBeforeOpen();
 
-    // Focus search input after DOM renders
     if (this.searchable()) {
       afterNextRender(() => this.searchInputRef()?.nativeElement.focus(), { injector: this.injector });
     }
@@ -425,8 +398,6 @@ export class MdySelectComponent<TValue = string>
   }
 
   protected onBlur(event: FocusEvent): void {
-    // Use relatedTarget to check where focus is going. When null
-    // (click on non-focusable element), onDocumentClick handles closing.
     const next = event.relatedTarget as Node | null;
     if (next && !this.wrapperRef()?.nativeElement.contains(next)) {
       this.selectAdapter.dispatch({ type: "blur" });
@@ -461,8 +432,6 @@ export class MdySelectComponent<TValue = string>
     this.searchChanged.emit(value);
     this.selectAdapter.dispatch({ type: "search", query: value });
   }
-
-  // ── Native select fallback ──────────────────────────────────────────────────
 
   public resetSelection(): void {
     this.selectAdapter.setValue(null);

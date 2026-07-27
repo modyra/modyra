@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "baselineCommit": "847f436b8800eef5f2cb3e5bf688db3477eb6d90",
-  "totalLines": 4779,
+  "baselineCommit": "5130090e27dd334d0b9f54d6116fb5e971a88d9c",
+  "totalLines": 4748,
   "hotspots": {
-    "select/select-renderer.component.ts": 480,
+    "select/select-renderer.component.ts": 449,
     "multiselect/multiselect-renderer.component.ts": 392,
     "datepicker/daterange-renderer.component.ts": 378,
     "datepicker/datepicker.component.ts": 314,
