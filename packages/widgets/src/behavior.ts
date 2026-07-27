@@ -306,3 +306,54 @@ export function dateRangeValueTransition(
   if (start !== null && end !== null && end < start) end = start;
   return { start, end };
 }
+
+export interface MdyDateRangeDraftState {
+  readonly committed: MdyDateRangeValue;
+  readonly draft: MdyDateRangeValue;
+  readonly open: boolean;
+}
+
+export type MdyDateRangeDraftIntent =
+  | { readonly type: "open"; readonly committed: MdyDateRangeValue }
+  | { readonly type: "select"; readonly value: MdyDateRangeValue }
+  | { readonly type: "confirm" }
+  | { readonly type: "cancel" };
+
+export interface MdyDateRangeDraftTransition {
+  readonly state: MdyDateRangeDraftState;
+  readonly commit: MdyDateRangeValue | undefined;
+  readonly restoreFocus: boolean;
+}
+
+/** Modal date-range draft policy. Incomplete drafts close without committing. */
+export function dateRangeDraftTransition(
+  state: MdyDateRangeDraftState,
+  intent: MdyDateRangeDraftIntent,
+  options: {
+    readonly minIso?: string | null;
+    readonly maxIso?: string | null;
+    readonly accepts?: ((iso: string) => boolean) | null;
+  } = {},
+): MdyDateRangeDraftTransition {
+  if (intent.type === "open") {
+    const committed = dateRangeValueTransition(intent.committed, options);
+    return { state: { committed, draft: committed, open: true }, commit: undefined, restoreFocus: false };
+  }
+  if (intent.type === "select") {
+    return { state: { ...state, draft: dateRangeValueTransition(intent.value, options) }, commit: undefined, restoreFocus: false };
+  }
+  if (intent.type === "confirm") {
+    const complete = state.draft.start !== null && state.draft.end !== null;
+    const next = complete ? state.draft : state.committed;
+    return {
+      state: { committed: next, draft: next, open: false },
+      commit: complete ? next : undefined,
+      restoreFocus: true,
+    };
+  }
+  return {
+    state: { committed: state.committed, draft: state.committed, open: false },
+    commit: undefined,
+    restoreFocus: true,
+  };
+}
