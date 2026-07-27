@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, widgetKeyIntent } from "../dist/index.js";
+import { dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, widgetKeyIntent } from "../dist/index.js";
 
 test("overlay placement resolves collision without a DOM dependency", () => {
   assert.equal(decideOverlayPlacement({ viewportWidth: 1000, viewportHeight: 800, anchorTop: 700, anchorBottom: 740, anchorLeft: 800, anchorRight: 900, anchorWidth: 100, minSpace: 128, minWidth: 250, preferred: "below" }).placement, "above");
@@ -44,4 +44,12 @@ test("multiselect overlay policy owns keyboard and close decisions", () => {
   assert.equal(shouldCloseMultiselectOverlay("single", 0), true);
   assert.equal(shouldCloseMultiselectOverlay("single", 1), false);
   assert.equal(shouldCloseMultiselectOverlay("multi", 0), false);
+});
+
+test("date value policy canonicalizes selections and rejects bounds violations", () => {
+  assert.equal(dateWithinBounds("2026-07-27", "2026-01-01", "2026-12-31"), true);
+  assert.equal(dateWithinBounds("2025-12-31", "2026-01-01", null), false);
+  assert.equal(dateValueTransition({ type: "select", iso: "2026-07-27T12:00:00Z" }, "2026-01-01", "2026-12-31"), "2026-07-27");
+  assert.equal(dateValueTransition({ type: "select", iso: "2027-01-01" }, null, "2026-12-31"), null);
+  assert.equal(dateValueTransition({ type: "clear" }), null);
 });
