@@ -129,3 +129,28 @@ export function selectKeyboardAction(input: {
   }
   return null;
 }
+
+export type MdyMultiselectValueIntent<T> =
+  | { readonly type: "toggle"; readonly value: T }
+  | { readonly type: "increment"; readonly value: T }
+  | { readonly type: "decrement"; readonly value: T }
+  | { readonly type: "clear" };
+
+/** Pure multiselect value transition using the same loose key semantics as select. */
+export function multiselectValueTransition<T>(
+  values: readonly T[],
+  intent: MdyMultiselectValueIntent<T>,
+  keyFor: (value: T) => string = String,
+): readonly T[] {
+  if (intent.type === "clear") return [];
+  const key = keyFor(intent.value);
+  if (intent.type === "increment") return [...values, intent.value];
+  const index = values.findIndex((value) => keyFor(value) === key);
+  if (intent.type === "decrement") {
+    if (index < 0) return values;
+    return [...values.slice(0, index), ...values.slice(index + 1)];
+  }
+  return index < 0
+    ? [...values, intent.value]
+    : values.filter((value) => keyFor(value) !== key);
+}
