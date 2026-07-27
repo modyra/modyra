@@ -33,10 +33,6 @@ import { MdyOverlayControl } from "../../core/overlay-control.directive";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MdyCalendarComponent } from "./calendar.component";
 
-/**
- * Date picker renderer — M3-style docked calendar picker.
- * Integrated with MdyControlLabelComponent.
- */
 @Component({
   selector: "mdy-control-datepicker",
   standalone: true,
@@ -162,11 +158,6 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   readonly minDate = input<string | null>(null);
   readonly maxDate = input<string | null>(null);
   readonly variant = input<"docked" | "modal">("docked");
-  /**
-   * How the selected date is rendered in the input:
-   * `"localized"` uses `Intl` with the active MDY_DATE_LOCALE,
-   * `"iso"` shows the raw `YYYY-MM-DD` value. Typing accepts ISO in both modes.
-   */
   readonly displayFormat = input<"iso" | "localized">("localized");
 
   protected override readonly minSpace = 450;
@@ -177,8 +168,6 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   private readonly calendarRef = viewChild<MdyCalendarComponent>("calendar");
   private readonly locale = inject(MDY_DATE_LOCALE);
   private readonly injector = inject(Injector);
-
-  // ── Derived state ───────────────────────────────────────────────────────────
 
   private readonly modalDraft = signal<MdyDateDraftState>({ committed: null, draft: null, open: false });
   protected readonly tempSelectedDate = computed(() => parseIsoDate(this.modalDraft().draft));
@@ -288,8 +277,6 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
       this.dispatchValueIntent<string | null>("datepicker", { type: "select", value: null });
       return;
     }
-    // Localized display also accepts the locale's numeric format
-    // (31/12/2026, 12/31/2026, 31.12.2026); ISO works in both modes.
     const parsed =
       this.displayFormat() === "localized"
         ? parseLocalizedDate(raw, this.locale.locale)
@@ -307,7 +294,6 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   }
 
   protected onInputBlur(event: FocusEvent): void {
-    // Revert any unparsed/rejected text to the canonical display value.
     (event.target as HTMLInputElement).value = this.displayValue();
     this.dispatchValueBlur("datepicker");
   }

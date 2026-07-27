@@ -10,19 +10,6 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
 
-/**
- * Calendar header — displays the current month/year label and
- * navigation arrows (prev/next month).
- *
- * ```html
- * <mdy-calendar-header
- *   [year]="2026"
- *   [month]="3"
- *   (previousMonth)="goPrev()"
- *   (nextMonth)="goNext()"
- * />
- * ```
- */
 @Component({
   selector: "mdy-calendar-header",
   standalone: true,
@@ -67,7 +54,6 @@ import { MdyIconComponent } from "../../control/mdy-icon.component";
 })
 export class MdyCalendarHeaderComponent {
   readonly year = input.required<number>();
-  /** 1-based month (1 = January). */
   readonly month = input.required<number>();
 
   readonly previousMonth = output<void>();
@@ -77,7 +63,6 @@ export class MdyCalendarHeaderComponent {
   private readonly locale = inject(MDY_DATE_LOCALE);
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
 
-  /** Localized month name (e.g. "March", "Marzo"). */
   protected readonly monthLabel = computed(
     (): string => this.locale.monthNamesLong[this.month() - 1] ?? "",
   );

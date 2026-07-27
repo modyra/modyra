@@ -21,29 +21,6 @@ import {
 } from "@modyra/core/date-utils";
 import { MDY_DATE_LOCALE } from "../../core/date-locale";
 
-/**
- * Range-aware month grid — renders a 7-column × 6-row calendar body
- * with visual highlighting for the selected date range.
- *
- * Each cell can be: range-start, range-end, in-range, or none.
- * A hover date is used to show a preview range while the user
- * picks the second endpoint.
- *
- * ```html
- * <mdy-range-calendar-grid
- *   [year]="2026"
- *   [month]="3"
- *   [rangeStart]="start"
- *   [rangeEnd]="end"
- *   [hoverDate]="hover"
- *   [focusedDate]="focused"
- *   [minDate]="min"
- *   [maxDate]="max"
- *   (datePicked)="onPick($event)"
- *   (dateHovered)="onHover($event)"
- * />
- * ```
- */
 @Component({
   selector: "mdy-range-calendar-grid",
   standalone: true,
@@ -97,21 +74,17 @@ export class MdyRangeCalendarGridComponent {
   readonly month = input.required<number>();
   readonly rangeStart = input<CalendarDate | null>(null);
   readonly rangeEnd = input<CalendarDate | null>(null);
-  /** Hover date used to preview the range before second click. */
   readonly hoverDate = input<CalendarDate | null>(null);
   readonly focusedDate = input<CalendarDate | null>(null);
   readonly minDate = input<CalendarDate | null>(null);
   readonly maxDate = input<CalendarDate | null>(null);
   readonly dateFilter = input<((date: string) => boolean) | null>(null);
 
-  /** Emits the date the user picked (clicked or pressed Enter/Space). */
   readonly datePicked = output<CalendarDate>();
-  /** Emits when the user hovers over a cell. */
   readonly dateHovered = output<CalendarDate>();
 
   private readonly cellBtns = viewChildren("cellBtn", { read: ElementRef });
 
-  /** Focuses the grid cell corresponding to the given date. */
   focusDate(date: CalendarDate): void {
     const allCells = this.cells();
     const index = allCells.findIndex((c) => isSameDay(c.date, date));
@@ -124,12 +97,10 @@ export class MdyRangeCalendarGridComponent {
   private readonly locale = inject(MDY_DATE_LOCALE);
   private readonly todayDate = today();
 
-  /** 42 cells for the month grid. */
   private readonly cells = computed((): readonly CalendarCell[] =>
     buildMonthGrid(this.year(), this.month(), this.locale.firstDayOfWeek),
   );
 
-  /** Cells split into 6 rows of 7. */
   protected readonly rows = computed(
     (): readonly (readonly CalendarCell[])[] => {
       const all = this.cells();
@@ -141,24 +112,18 @@ export class MdyRangeCalendarGridComponent {
     },
   );
 
-  /** Day-of-week header names ordered by firstDayOfWeek. */
   protected readonly orderedDayNames = computed((): readonly string[] => {
     const names = this.locale.dayNamesNarrow;
     const start = this.locale.firstDayOfWeek;
     return [...names.slice(start), ...names.slice(0, start)];
   });
 
-  /** Short day names for aria-label on weekday headers. */
   protected readonly orderedDayNamesShort = computed((): readonly string[] => {
     const names = this.locale.dayNamesShort;
     const start = this.locale.firstDayOfWeek;
     return [...names.slice(start), ...names.slice(0, start)];
   });
 
-  /**
-   * Effective range, computed from rangeStart + (rangeEnd or hoverDate).
-   * Always normalised so `[0] <= [1]`.
-   */
   private readonly effectiveRange = computed(
     (): readonly [CalendarDate | null, CalendarDate | null] => {
       const start = this.rangeStart();
@@ -166,8 +131,6 @@ export class MdyRangeCalendarGridComponent {
       return orderDates(start, end);
     },
   );
-
-  // ── Cell state predicates ──────────────────────────────────────────────────
 
   protected isCellToday(cell: CalendarCell): boolean {
     return isSameDay(cell.date, this.todayDate);
@@ -184,7 +147,6 @@ export class MdyRangeCalendarGridComponent {
     return filter !== null ? !filter(formatIsoDate(cell.date)) : false;
   }
 
-  /** True for either range endpoint. */
   protected isCellRangeEndpoint(cell: CalendarCell): boolean {
     const [s, e] = this.effectiveRange();
     return (
@@ -193,25 +155,20 @@ export class MdyRangeCalendarGridComponent {
     );
   }
 
-  /** True for the range start date specifically. */
   protected isCellRangeStart(cell: CalendarCell): boolean {
     const [s] = this.effectiveRange();
     return s !== null && isSameDay(cell.date, s);
   }
 
-  /** True for the range end date specifically. */
   protected isCellRangeEnd(cell: CalendarCell): boolean {
     const [, e] = this.effectiveRange();
     return e !== null && isSameDay(cell.date, e);
   }
 
-  /** True for dates strictly between start and end. */
   protected isCellInRange(cell: CalendarCell): boolean {
     const [s, e] = this.effectiveRange();
     return isDateBetween(cell.date, s, e);
   }
-
-  // ── Interaction ────────────────────────────────────────────────────────────
 
   protected onCellClick(cell: CalendarCell): void {
     if (!this.isCellDisabled(cell)) {

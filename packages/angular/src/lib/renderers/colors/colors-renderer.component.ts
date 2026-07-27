@@ -15,13 +15,6 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyOverlayControl } from "../../core/overlay-control.directive";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 
-/**
- * Color picker renderer component.
- *
- * ```html
- * <mdy-control-colors name="primaryColor" label="Brand Color" />
- * ```
- */
 @Component({
   selector: "mdy-control-colors",
   standalone: true,
@@ -176,16 +169,12 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   ]);
 
   protected readonly fieldId = `mdy-control-colors-${MdyBaseControl.nextId()}`;
-  /** Separate id for the HEX text input — the accessible label target. */
   protected readonly hexInputId = `${this.fieldId}-hex`;
 
   protected override onBeforeOpen(): void {
-    // Sync logic if needed
   }
 
   protected onBlur(event: FocusEvent): void {
-    // Use relatedTarget to check where focus is going. When null
-    // (click on non-focusable element), onDocumentClick handles closing.
     const next = event.relatedTarget as Node | null;
     if (next && !this.wrapperRef()?.nativeElement.contains(next)) {
       this.closeOverlay();
@@ -193,13 +182,11 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
     }
   }
 
-
   protected onInput(event: Event): void {
     this.applyColorIntent("native", (event.target as HTMLInputElement).value);
   }
 
   protected onHexBlur(event: FocusEvent): void {
-    // Revert leftover invalid text to the committed value (R14).
     (event.target as HTMLInputElement).value = this.value() ?? "";
     this.dispatchValueBlur("colors");
   }
@@ -213,7 +200,6 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
     this.applyColorIntent("preset", color);
   }
 
-  /** Case-insensitive hex comparison: #FFF and #fff are the same color (B26). */
   protected isActiveColor(color: string): boolean {
     return colorValueEquals(this.value(), color);
   }

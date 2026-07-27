@@ -27,15 +27,10 @@ import { MdyMonthPickerComponent } from "./month-picker.component";
 import { MdyRangeCalendarGridComponent } from "./range-calendar-grid.component";
 import { MdyYearPickerComponent } from "./year-picker.component";
 
-/** Selection phase for range picking. */
 type RangePhase = "pick-start" | "pick-end";
 
 type CalendarView = "calendar" | "month" | "year";
 
-/**
- * Range calendar container — orchestrates header navigation, grid rendering,
- * keyboard navigation, and two-step date range selection.
- */
 @Component({
   selector: "mdy-range-calendar",
   standalone: true,
@@ -48,8 +43,8 @@ type CalendarView = "calendar" | "month" | "year";
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "mdy-datepicker__calendar",
-    // No static aria-modal: modal semantics come from the overlay panel
-    // only when a backdrop exists (R17).
+    // No static aria-modal: modal semantics are supplied by the overlay panel
+    // only when a backdrop is present.
     role: "dialog",
     "[attr.aria-label]": "effectiveAriaLabel()",
     "(keydown)": "onKeydown($event)",
@@ -104,7 +99,6 @@ export class MdyRangeCalendarComponent {
   readonly minDate = input<CalendarDate | null>(null);
   readonly maxDate = input<CalendarDate | null>(null);
   readonly dateFilter = input<((date: string) => boolean) | null>(null);
-  /** Accessible label for the dialog. Falls back to the i18n default. */
   readonly ariaLabel = input<string>("");
   private readonly i18n = inject(MDY_I18N_MESSAGES);
   protected readonly effectiveAriaLabel = computed(
@@ -131,8 +125,6 @@ export class MdyRangeCalendarComponent {
     const focused = this.focusedDate();
     this.grid()?.focusDate(focused);
   }
-
-  // ── View state ───────────────────────────────────────────────────────────────
 
   protected readonly view = signal<CalendarView>("calendar");
   protected readonly viewYear = signal(today().year);
@@ -173,7 +165,6 @@ export class MdyRangeCalendarComponent {
   protected onMonthSelected(month: number): void {
     this.viewMonth.set(month);
     this.view.set("calendar");
-    // Clamp the day to the target month's length (Jan 31 → Feb 28/29).
     const focused = this.focusedDate();
     const day = Math.min(focused.day, daysInMonth(focused.year, month));
     this.focusedDate.set({ ...focused, month, day });
@@ -235,7 +226,6 @@ export class MdyRangeCalendarComponent {
   }
 
   protected onKeydown(event: KeyboardEvent): void {
-    // Date navigation only applies to the day grid (R7).
     if (this.view() !== "calendar") {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -244,8 +234,6 @@ export class MdyRangeCalendarComponent {
       return;
     }
     const focused = this.focusedDate();
-    // Grid navigation (arrows, PageUp/Down, Home/End) is a pure decision
-    // shared with every adapter — @modyra/core/keyboard.
     const next: CalendarDate | null = calendarKeyboardTarget(
       event.key,
       focused,

@@ -18,25 +18,6 @@ import {
 import { MDY_DATE_LOCALE } from "../../core/date-locale";
 import { MdyCalendarCellComponent } from "./calendar-cell.component";
 
-/**
- * Month grid component — renders the 7-column × 6-row calendar body.
- *
- * Receives the currently displayed year/month, selected date, focused date,
- * and min/max bounds. Emits when a date is picked or focus changes via
- * keyboard navigation.
- *
- * ```html
- * <mdy-calendar-grid
- *   [year]="2026"
- *   [month]="3"
- *   [selectedDate]="selected"
- *   [focusedDate]="focused"
- *   [minDate]="min"
- *   [maxDate]="max"
- *   (datePicked)="onPick($event)"
- * />
- * ```
- */
 @Component({
   selector: "mdy-calendar-grid",
   standalone: true,
@@ -79,12 +60,10 @@ export class MdyCalendarGridComponent {
   readonly minDate = input<CalendarDate | null>(null);
   readonly maxDate = input<CalendarDate | null>(null);
 
-  /** Emits the date the user picked (clicked or pressed Enter/Space). */
   readonly datePicked = output<CalendarDate>();
 
   private readonly cellsRef = viewChildren(MdyCalendarCellComponent);
 
-  /** Focuses the cell corresponding to the given date. */
   focusDate(date: CalendarDate): void {
     const cell = this.cellsRef().find((c) => isSameDay(c.cell().date, date));
     cell?.focus();
@@ -94,12 +73,10 @@ export class MdyCalendarGridComponent {
 
   private readonly todayDate = today();
 
-  /** 42 cells for the month grid. */
   private readonly cells = computed((): readonly CalendarCell[] =>
     buildMonthGrid(this.year(), this.month(), this.locale.firstDayOfWeek),
   );
 
-  /** Cells split into 6 rows of 7. */
   protected readonly rows = computed(
     (): readonly (readonly CalendarCell[])[] => {
       const all = this.cells();
@@ -111,21 +88,17 @@ export class MdyCalendarGridComponent {
     },
   );
 
-  /** Day-of-week header names ordered by firstDayOfWeek. */
   protected readonly orderedDayNames = computed((): readonly string[] => {
     const names = this.locale.dayNamesNarrow;
     const start = this.locale.firstDayOfWeek;
     return [...names.slice(start), ...names.slice(0, start)];
   });
 
-  /** Short day names for aria-label on weekday headers. */
   protected readonly orderedDayNamesShort = computed((): readonly string[] => {
     const names = this.locale.dayNamesShort;
     const start = this.locale.firstDayOfWeek;
     return [...names.slice(start), ...names.slice(0, start)];
   });
-
-  // ── Cell state predicates (called from template per-cell) ──────────────────
 
   protected isCellSelected(cell: CalendarCell): boolean {
     const sel = this.selectedDate();

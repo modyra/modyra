@@ -14,13 +14,6 @@ import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 
-/**
- * Text input renderer component.
- *
- * ```html
- * <mdy-control-text name="firstName" label="First Name" placeholder="Enter name" />
- * ```
- */
 @Component({
   selector: "mdy-control-text",
   standalone: true,
@@ -69,7 +62,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         </div>
       }
     </div>
-    
+
     @if (!inlineErrors && touched() && hasErrors()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {

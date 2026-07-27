@@ -4,19 +4,12 @@ import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 
-/**
- * Checkbox renderer component.
- *
- * ```html
- * <mdy-control-checkbox name="acceptTerms" label="I accept the terms" />
- * ```
- */
 @Component({
   selector: "mdy-control-checkbox",
   standalone: true,
   imports: [NgTemplateOutlet, MdyErrorListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { 
+  host: {
     class: "mdy-renderer mdy-renderer--checkbox",
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-renderer--touched]": "touched()",

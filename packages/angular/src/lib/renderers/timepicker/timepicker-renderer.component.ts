@@ -32,9 +32,6 @@ import { MdyOverlayControl } from "../../core/overlay-control.directive";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
 
-/**
- * Timepicker renderer — M3-style input with clock overlay.
- */
 @Component({
   selector: "mdy-control-timepicker",
   standalone: true,
@@ -149,11 +146,6 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly placeholder = input<string>("");
-  /**
-   * Value and display format: `"12h"` uses `"hh:mm AM/PM"` strings,
-   * `"24h"` uses `"HH:mm"` (00-23). The clock overlay adapts (no AM/PM
-   * toggle, 0-23 hour input) — the field value follows this format.
-   */
   readonly format = input<MdyTimeFormat>("12h");
   protected override readonly minSpace = 450;
 
@@ -167,9 +159,6 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   private readonly injector = inject(Injector);
 
   protected override onBeforeOpen(): void {
-    // The clock's internal model is canonical 12h; convert the (possibly
-    // 24h) field value at the boundary. Empty defaults to the current time
-    // so the OK button picks it immediately.
     const parsed = parseAnyTime(this.value(), this.format());
     const committed = parsed ? formatTime(parsed) : null;
     this.timeDraft.set(timeDraftTransition(
@@ -198,12 +187,6 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
     this.closeOverlay();
   }
 
-  /**
-   * Commit-style parsing on `change` (blur/Enter), not on every keystroke:
-   * updating the value mid-typing made the `[value]` binding rewrite the
-   * input and wipe the user's text (R4). Unparsable text leaves the value
-   * untouched — the blur handler reverts the display.
-   */
   protected onInputChange(event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
     const next = timeInputTransition(raw, (value) => {
@@ -227,7 +210,6 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   }
 
   protected onInputBlur(event: FocusEvent): void {
-    // Revert any unparsed/rejected text to the canonical value (R4).
     (event.target as HTMLInputElement).value = this.value() || "";
     this.dispatchValueBlur("timepicker");
   }

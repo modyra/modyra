@@ -24,11 +24,6 @@ import { timeClockTransition } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
 
-/**
- * Dumb UI component for the Material 3 Timepicker Clock/Input.
- * Emits `timePicked` on every change, but does NOT commit until the parent
- * calls `confirmClicked`.
- */
 @Component({
   selector: "mdy-timepicker-clock",
   standalone: true,
@@ -42,11 +37,6 @@ export class MdyTimepickerClockComponent {
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly value = input<string | null>(null);
   readonly disabled = input<boolean>(false);
-  /**
-   * Header display format. The clock's internal model and the emitted
-   * `timePicked` strings stay canonical 12h — the renderer converts at
-   * the value boundary.
-   */
   readonly format = input<MdyTimeFormat>("12h");
   readonly timePicked = output<string>();
   readonly cancelClicked = output<void>();
@@ -57,11 +47,8 @@ export class MdyTimepickerClockComponent {
   protected readonly isDragging = signal(false);
   protected readonly dragAngle = signal<number | null>(null);
 
-  /** Tracks the field that was active when drag *started*, so
-   *  onDragMove always uses the same field until the drag ends. */
   private dragField: "hour" | "minute" = "hour";
 
-  /** Pending auto-switch timer — cancelled on destroy (B37-style cleanup). */
   private switchTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly dialFaceRef = viewChild<ElementRef<HTMLElement>>("dialFace");
@@ -73,8 +60,6 @@ export class MdyTimepickerClockComponent {
     });
   }
 
-  // Document listeners are registered only while a drag is in progress —
-  // an always-on document:mousemove per clock instance is wasteful (R9).
   private readonly handleDocMove = (event: MouseEvent | TouchEvent): void =>
     this.onDragMove(event);
   private readonly handleDocEnd = (): void => this.onDragEnd();
@@ -94,7 +79,6 @@ export class MdyTimepickerClockComponent {
     document.removeEventListener("touchend", this.handleDocEnd);
   }
 
-  /** Schedules the hour→minute auto-switch, replacing any pending one. */
   private scheduleMinuteSwitch(delayMs: number): void {
     if (this.switchTimer !== null) clearTimeout(this.switchTimer);
     this.switchTimer = setTimeout(() => {
@@ -102,8 +86,6 @@ export class MdyTimepickerClockComponent {
       this.focusedField.set("minute");
     }, delayMs);
   }
-
-  // ── Parsing helpers ────────────────────────────────────────────────────────
 
   protected readonly parsed = computed(() => parseTime(this.value()));
 
@@ -140,8 +122,6 @@ export class MdyTimepickerClockComponent {
     return p ? formatTime(p) : "00:00 AM";
   });
 
-  // ── Hand rotation ──────────────────────────────────────────────────────────
-
   protected readonly handRotation = computed(() => {
     if (this.isDragging() && this.dragAngle() !== null) {
       return this.dragAngle()!;
@@ -152,8 +132,6 @@ export class MdyTimepickerClockComponent {
       ? minuteToAngle(p.minute)
       : hourToAngle(p.hour);
   });
-
-  // ── Input variant handlers ─────────────────────────────────────────────────
 
   protected onHourInput(event: Event): void {
     const target = event.target as HTMLInputElement;
@@ -185,8 +163,6 @@ export class MdyTimepickerClockComponent {
     this.viewMode.set(mode);
   }
 
-  // ── Dial click (tap without drag) ──────────────────────────────────────────
-
   protected onDialNumberClick(value: number): void {
     if (this.disabled()) return;
     const field = this.focusedField();
@@ -199,12 +175,9 @@ export class MdyTimepickerClockComponent {
     if (field === "hour") this.scheduleMinuteSwitch(200);
   }
 
-  // ── Drag interaction ───────────────────────────────────────────────────────
-
   protected onDragStart(event: MouseEvent | TouchEvent): void {
     if (this.disabled() || this.viewMode() !== "dial") return;
     if (event.cancelable) event.preventDefault();
-    // Snapshot the current field so the whole drag uses a consistent mode
     this.dragField = this.focusedField();
     this.isDragging.set(true);
     this.setupDragListeners();
@@ -227,7 +200,6 @@ export class MdyTimepickerClockComponent {
     if (!this.isDragging()) return;
     this.teardownDragListeners();
 
-    // Snap to nearest value and emit final position
     const angle = this.dragAngle();
     if (angle !== null) {
       const next = timeClockTransition(this.value(), { type: "dial", field: this.dragField, angle });
@@ -238,8 +210,6 @@ export class MdyTimepickerClockComponent {
     this.isDragging.set(false);
     this.dragAngle.set(null);
   }
-
-  // ── Private helpers ────────────────────────────────────────────────────────
 
   private updateAngle(event: MouseEvent | TouchEvent): void {
     const el = this.dialFaceRef()?.nativeElement;

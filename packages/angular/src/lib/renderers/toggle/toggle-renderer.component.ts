@@ -5,15 +5,12 @@ import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.component";
 
-/**
- * Toggle (switch) renderer component.
- */
 @Component({
   selector: "mdy-control-toggle",
   standalone: true,
   imports: [NgTemplateOutlet, MdyInlineErrorIconComponent, MdyErrorListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { 
+  host: {
     class: "mdy-renderer mdy-renderer--toggle",
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-renderer--touched]": "touched()",

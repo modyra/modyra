@@ -8,23 +8,6 @@ import {
 } from "@angular/core";
 import { CalendarCell, CalendarDate } from "@modyra/core/date-utils";
 
-/**
- * A single day cell in the calendar grid.
- *
- * Handles rendering, selection highlight, today indicator,
- * disabled state, and click/keyboard interaction.
- *
- * ```html
- * <mdy-calendar-cell
- *   [cell]="cell"
- *   [isSelected]="true"
- *   [isToday]="false"
- *   [isFocused]="false"
- *   [isDisabled]="false"
- *   (picked)="onPick($event)"
- * />
- * ```
- */
 @Component({
   selector: "mdy-calendar-cell",
   standalone: true,
@@ -41,8 +24,6 @@ import { CalendarCell, CalendarDate } from "@modyra/core/date-utils";
     "[attr.aria-disabled]": "isDisabled()",
     "[attr.aria-current]": "isToday() ? 'date' : null",
     "[attr.tabindex]": "isFocused() ? 0 : -1",
-    // Enter/Space are handled once by the calendar container on the focused
-    // date — a cell-level handler would double-fire datePicked (R5).
     "(click)": "onSelect()",
   },
   template: `{{ cell().date.day }}`,
@@ -54,12 +35,10 @@ export class MdyCalendarCellComponent {
   readonly isFocused = input<boolean>(false);
   readonly isDisabled = input<boolean>(false);
 
-  /** Emits the picked date when the cell is activated. */
   readonly picked = output<CalendarDate>();
 
   private readonly elementRef = inject(ElementRef);
 
-  /** Focuses the host element of this cell. */
   focus(): void {
     this.elementRef.nativeElement.focus();
   }

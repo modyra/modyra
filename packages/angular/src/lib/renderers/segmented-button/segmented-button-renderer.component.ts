@@ -7,9 +7,6 @@ import { MdyControlLabelComponent } from "../../control/mdy-control-label.compon
 import { MdyIconComponent } from "../../control/mdy-icon.component";
 import { MdySelectOption } from "../../core/types";
 
-/**
- * Segmented Button renderer component.
- */
 @Component({
   selector: "mdy-control-segmented",
   standalone: true,
@@ -124,7 +121,6 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
     const segmentWidth = rect.width / count;
     let index = Math.floor(relativeX / segmentWidth);
 
-    // Clamp index
     index = Math.max(0, Math.min(index, count - 1));
 
     const option = this.options()[index];
@@ -137,9 +133,6 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
     this.dispatchValueIntent<TValue | null>("segmented", { type: "select", value });
   }
 
-  // ── ARIA radiogroup keyboard support (B34) ──────────────────────────────────
-
-  /** Roving tabindex: only the selected (or first) segment is tabbable. */
   protected tabIndexFor(index: number): number {
     const selected = this.selectedIndex();
     if (selected >= 0) return index === selected ? 0 : -1;

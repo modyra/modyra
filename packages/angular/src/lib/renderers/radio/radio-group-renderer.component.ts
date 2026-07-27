@@ -6,15 +6,12 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdySelectOption } from "../../core/types";
 
-/**
- * Radio Group renderer component.
- */
 @Component({
   selector: "mdy-control-radio",
   standalone: true,
   imports: [NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { 
+  host: {
     class: "mdy-renderer mdy-renderer--radio-group",
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-renderer--touched]": "touched()",

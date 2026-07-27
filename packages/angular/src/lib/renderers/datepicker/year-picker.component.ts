@@ -41,7 +41,6 @@ export class MdyYearPickerComponent {
   private readonly yearButtons = viewChildren<ElementRef<HTMLButtonElement>>("yearBtn");
 
   constructor() {
-    // Scroll to the current year after the view renders
     afterNextRender(() => {
       const btns = this.yearButtons();
       const years = this.years();
@@ -52,13 +51,11 @@ export class MdyYearPickerComponent {
     });
   }
 
-
   protected readonly years = computed(() => {
 
     const min = this.minDate()?.year ?? 1920;
     const max = this.maxDate()?.year ?? 2120;
 
-    // Ensure we at least show a decent range around the current year
     const cur = this.currentYear();
     const startYear = Math.min(min, cur - 100, 1920);
     const endYear = Math.max(max, cur + 100, 2120);
@@ -70,7 +67,6 @@ export class MdyYearPickerComponent {
     return result;
   });
 
-
   protected isYearDisabled(year: number): boolean {
     const min = this.minDate();
     const max = this.maxDate();
@@ -79,4 +75,3 @@ export class MdyYearPickerComponent {
     return false;
   }
 }
-
