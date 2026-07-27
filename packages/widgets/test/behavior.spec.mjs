@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "../dist/index.js";
+import { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, fileSelectionTransition, clearFileSelection, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "../dist/index.js";
 
 test("overlay placement resolves collision without a DOM dependency", () => {
   assert.equal(decideOverlayPlacement({ viewportWidth: 1000, viewportHeight: 800, anchorTop: 700, anchorBottom: 740, anchorLeft: 800, anchorRight: 900, anchorWidth: 100, minSpace: 128, minWidth: 250, preferred: "below" }).placement, "above");
@@ -113,4 +113,19 @@ test("color value policy normalizes HEX input, preserves invalid drafts and clos
   assert.equal(colorValueTransition({ type: "text", value: "#12" }).value, undefined);
   assert.deepEqual(colorValueTransition({ type: "preset", value: "#4361ee" }), { value: "#4361ee", close: true, touched: true });
   assert.equal(colorValueEquals("#FFF", "#fff"), true);
+});
+
+test("file selection policy shares accept, size, count, single and clear behavior", () => {
+  const png = { name: "a.png", type: "image/png", size: 10 };
+  const jpg = { name: "b.jpg", type: "image/jpeg", size: 20 };
+  const pdf = { name: "c.pdf", type: "application/pdf", size: 30 };
+  const multi = fileSelectionTransition([png, jpg, pdf], { accept: "image/*,.pdf", multiple: true, maxFileSize: 25, maxFiles: 1 });
+  assert.deepEqual(multi.accepted, [png]);
+  assert.deepEqual(multi.rejected, [pdf, jpg]);
+  assert.deepEqual(multi.value, [png]);
+  const single = fileSelectionTransition([png, jpg], { multiple: false });
+  assert.equal(single.value, png);
+  assert.deepEqual(single.rejected, [jpg]);
+  assert.equal(fileSelectionTransition([pdf], { accept: ".png", multiple: false }).value, undefined);
+  assert.equal(clearFileSelection().value, null);
 });

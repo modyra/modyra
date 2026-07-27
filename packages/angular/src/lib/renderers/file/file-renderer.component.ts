@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, output, signal, viewChild } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, clearFileSelection, fileSelectionTransition } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -47,7 +47,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
         [multiple]="multiple()"
         [disabled]="isDisabled()"
         (change)="onFileChange($event)"
-        (blur)="markAsTouched()"
+        (blur)="dispatchValueBlur('file')"
         [attr.aria-invalid]="hasErrors()"
         [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
         [attr.aria-required]="ariaRequired() || isRequired()"
@@ -151,65 +151,26 @@ export class MdyFileComponent extends MdyBaseControl<File | File[] | null> {
 
   protected clear(): void {
     if (this.isDisabled()) return;
-    this.setValue(null);
-    this.markAsDirty();
-    if (this.fileInput()) {
-      this.fileInput()!.nativeElement.value = "";
-    }
+    clearFileSelection<File>();
+    this.dispatchValueIntent<File | File[] | null>("file", { type: "select", value: null });
+    if (this.fileInput()) this.fileInput()!.nativeElement.value = "";
     this.fileSelected.emit(null);
   }
 
   private processFiles(files: FileList | null): void {
-    if (!files || files.length === 0) return;
-
-    // Dropped files bypass the native input's [accept] filtering, so the
-    // same constraints (accept, maxFileSize, maxFiles) are enforced here (B19).
-    const all = Array.from(files);
-    let accepted = all.filter(
-      f => this.matchesAccept(f) && this.withinSizeLimit(f),
-    );
-    const rejected = all.filter(f => !accepted.includes(f));
-
-    const limit = this.maxFiles();
-    if (this.multiple() && limit > 0 && accepted.length > limit) {
-      rejected.push(...accepted.slice(limit));
-      accepted = accepted.slice(0, limit);
-    }
-
-    if (rejected.length > 0) this.filesRejected.emit(rejected);
-    if (accepted.length === 0) return;
-
-    if (this.multiple()) {
-      this.setValue(accepted);
-    } else {
-      this.setValue(accepted[0]!);
-    }
-    this.markAsDirty();
-    this.markAsTouched();
-    this.fileSelected.emit(this.value());
-  }
-
-  /** Mirrors the native input's accept matching: .ext, type/*, exact MIME. */
-  private matchesAccept(file: File): boolean {
-    const accept = this.accept().trim();
-    if (!accept) return true;
-    return accept
-      .split(",")
-      .map(token => token.trim().toLowerCase())
-      .filter(token => token.length > 0)
-      .some(token => {
-        if (token.startsWith(".")) {
-          return file.name.toLowerCase().endsWith(token);
-        }
-        if (token.endsWith("/*")) {
-          return file.type.toLowerCase().startsWith(token.slice(0, -1));
-        }
-        return file.type.toLowerCase() === token;
-      });
-  }
-
-  private withinSizeLimit(file: File): boolean {
-    const max = this.maxFileSize();
-    return max <= 0 || file.size <= max;
+    const transition = fileSelectionTransition(Array.from(files ?? []), {
+      accept: this.accept(),
+      multiple: this.multiple(),
+      maxFileSize: this.maxFileSize(),
+      maxFiles: this.maxFiles(),
+    });
+    if (transition.rejected.length > 0) this.filesRejected.emit(transition.rejected);
+    if (transition.value === undefined) return;
+    const value: File | File[] = this.multiple()
+      ? [...transition.accepted]
+      : transition.accepted[0]!;
+    this.dispatchValueIntent<File | File[] | null>("file", { type: "select", value });
+    if (transition.touched) this.dispatchValueBlur("file");
+    this.fileSelected.emit(value);
   }
 }
