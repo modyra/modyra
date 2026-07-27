@@ -222,3 +222,57 @@ export function dateValueTransition(
   const iso = intent.iso.slice(0, 10);
   return dateWithinBounds(iso, minIso, maxIso) ? iso : null;
 }
+
+export interface MdyDateDraftState {
+  readonly committed: string | null;
+  readonly draft: string | null;
+  readonly open: boolean;
+}
+
+export type MdyDateDraftIntent =
+  | { readonly type: "open"; readonly committed: string | null }
+  | { readonly type: "select"; readonly iso: string }
+  | { readonly type: "confirm" }
+  | { readonly type: "cancel" };
+
+export interface MdyDateDraftTransition {
+  readonly state: MdyDateDraftState;
+  readonly commit: string | null | undefined;
+  readonly restoreFocus: boolean;
+}
+
+/** Modal date draft policy. Selection stays provisional until confirm; cancel discards it. */
+export function dateDraftTransition(
+  state: MdyDateDraftState,
+  intent: MdyDateDraftIntent,
+  minIso?: string | null,
+  maxIso?: string | null,
+): MdyDateDraftTransition {
+  if (intent.type === "open") {
+    return {
+      state: { committed: intent.committed, draft: intent.committed, open: true },
+      commit: undefined,
+      restoreFocus: false,
+    };
+  }
+  if (intent.type === "select") {
+    const draft = dateValueTransition({ type: "select", iso: intent.iso }, minIso, maxIso);
+    return {
+      state: draft === null ? state : { ...state, draft },
+      commit: undefined,
+      restoreFocus: false,
+    };
+  }
+  if (intent.type === "confirm") {
+    return {
+      state: { committed: state.draft, draft: state.draft, open: false },
+      commit: state.draft,
+      restoreFocus: true,
+    };
+  }
+  return {
+    state: { committed: state.committed, draft: state.committed, open: false },
+    commit: undefined,
+    restoreFocus: true,
+  };
+}

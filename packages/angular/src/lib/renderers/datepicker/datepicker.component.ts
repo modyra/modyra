@@ -17,7 +17,12 @@ import {
   parseLocalizedDate,
   today,
 } from "@modyra/core/date-utils";
-import { MDY_WIDGET_CONTRACTS, dateValueTransition } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  dateDraftTransition,
+  dateValueTransition,
+  type MdyDateDraftState,
+} from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -133,7 +138,7 @@ import { MdyCalendarComponent } from "./calendar.component";
 
         @if (variant() === 'modal') {
            <div class="mdy-datepicker__actions">
-              <button type="button" class="mdy-datepicker__action-btn" (click)="closeOverlay()">{{ i18n.datepickerCancel }}</button>
+              <button type="button" class="mdy-datepicker__action-btn" (click)="cancelSelection()">{{ i18n.datepickerCancel }}</button>
               <button type="button" class="mdy-datepicker__action-btn mdy-datepicker__action-btn--primary" (click)="applySelection()">{{ i18n.datepickerConfirm }}</button>
            </div>
         }
@@ -175,7 +180,8 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
 
   // ── Derived state ───────────────────────────────────────────────────────────
 
-  protected readonly tempSelectedDate = signal<CalendarDate | null>(null);
+  private readonly modalDraft = signal<MdyDateDraftState>({ committed: null, draft: null, open: false });
+  protected readonly tempSelectedDate = computed(() => parseIsoDate(this.modalDraft().draft));
 
   protected readonly displayValue = computed((): string => {
     const v = this.value();
@@ -222,7 +228,12 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   );
 
   protected override onBeforeOpen(): void {
-    this.tempSelectedDate.set(this.parsedSelectedDate());
+    this.modalDraft.set(dateDraftTransition(
+      this.modalDraft(),
+      { type: "open", committed: this.value() },
+      this.minDate(),
+      this.maxDate(),
+    ).state);
     afterNextRender(() => {
       const cal = this.calendarRef();
       if (!cal) return;
@@ -232,17 +243,33 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   }
 
   protected applySelection(): void {
-    const d = this.tempSelectedDate();
-    if (d) {
-      this.onDatePicked(d, true);
-    } else {
-      this.closeOverlay();
+    const transition = dateDraftTransition(
+      this.modalDraft(),
+      { type: "confirm" },
+      this.minDate(),
+      this.maxDate(),
+    );
+    this.modalDraft.set(transition.state);
+    if (transition.commit !== undefined) {
+      this.dispatchValueIntent<string | null>("datepicker", { type: "select", value: transition.commit });
     }
+    this.closeOverlay();
+  }
+
+  protected cancelSelection(): void {
+    const transition = dateDraftTransition(this.modalDraft(), { type: "cancel" });
+    this.modalDraft.set(transition.state);
+    this.closeOverlay();
   }
 
   protected onDatePicked(date: CalendarDate, forceApply = false): void {
     if (this.variant() === "modal" && !forceApply) {
-      this.tempSelectedDate.set(date);
+      this.modalDraft.set(dateDraftTransition(
+        this.modalDraft(),
+        { type: "select", iso: formatIsoDate(date) },
+        this.minDate(),
+        this.maxDate(),
+      ).state);
       return;
     }
     const isoString = dateValueTransition(

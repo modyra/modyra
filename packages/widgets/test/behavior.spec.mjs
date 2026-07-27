@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, widgetKeyIntent } from "../dist/index.js";
+import { dateDraftTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, widgetKeyIntent } from "../dist/index.js";
 
 test("overlay placement resolves collision without a DOM dependency", () => {
   assert.equal(decideOverlayPlacement({ viewportWidth: 1000, viewportHeight: 800, anchorTop: 700, anchorBottom: 740, anchorLeft: 800, anchorRight: 900, anchorWidth: 100, minSpace: 128, minWidth: 250, preferred: "below" }).placement, "above");
@@ -52,4 +52,19 @@ test("date value policy canonicalizes selections and rejects bounds violations",
   assert.equal(dateValueTransition({ type: "select", iso: "2026-07-27T12:00:00Z" }, "2026-01-01", "2026-12-31"), "2026-07-27");
   assert.equal(dateValueTransition({ type: "select", iso: "2027-01-01" }, null, "2026-12-31"), null);
   assert.equal(dateValueTransition({ type: "clear" }), null);
+});
+
+test("modal date draft keeps selection provisional until confirm and cancel discards it", () => {
+  const closed = { committed: "2026-07-01", draft: null, open: false };
+  const opened = dateDraftTransition(closed, { type: "open", committed: "2026-07-01" });
+  assert.deepEqual(opened.state, { committed: "2026-07-01", draft: "2026-07-01", open: true });
+  const selected = dateDraftTransition(opened.state, { type: "select", iso: "2026-07-27" });
+  assert.equal(selected.state.draft, "2026-07-27");
+  assert.equal(selected.commit, undefined);
+  const cancelled = dateDraftTransition(selected.state, { type: "cancel" });
+  assert.deepEqual(cancelled.state, { committed: "2026-07-01", draft: "2026-07-01", open: false });
+  assert.equal(cancelled.restoreFocus, true);
+  const confirmed = dateDraftTransition(selected.state, { type: "confirm" });
+  assert.equal(confirmed.commit, "2026-07-27");
+  assert.equal(confirmed.restoreFocus, true);
 });
