@@ -17,7 +17,12 @@ import {
   parseAnyTime,
   parseTime,
 } from "@modyra/core/time-utils";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  timeDraftTransition,
+  timeInputTransition,
+  type MdyTimeDraftState,
+} from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -123,7 +128,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           [format]="format()"
           [disabled]="isDisabled()"
           (timePicked)="onTimePicked($event)"
-          (cancelClicked)="closeOverlay()"
+          (cancelClicked)="cancelPicker()"
           (confirmClicked)="confirmPicker()"
         />
       </mdy-overlay-panel>
@@ -157,7 +162,8 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   );
 
   protected readonly fieldId = `mdy-control-timepicker-${MdyBaseControl.nextId()}`;
-  protected readonly draftValue = signal<string | null>(null);
+  private readonly timeDraft = signal<MdyTimeDraftState>({ committed: null, draft: getCurrentTime(), open: false });
+  protected readonly draftValue = computed(() => this.timeDraft().draft);
   private readonly injector = inject(Injector);
 
   protected override onBeforeOpen(): void {
@@ -165,20 +171,30 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
     // 24h) field value at the boundary. Empty defaults to the current time
     // so the OK button picks it immediately.
     const parsed = parseAnyTime(this.value(), this.format());
-    this.draftValue.set(parsed ? formatTime(parsed) : getCurrentTime());
+    const committed = parsed ? formatTime(parsed) : null;
+    this.timeDraft.set(timeDraftTransition(
+      this.timeDraft(),
+      { type: "open", committed, fallback: getCurrentTime() },
+    ).state);
   }
 
   protected onTimePicked(time: string): void {
-    this.draftValue.set(time);
+    this.timeDraft.set(timeDraftTransition(this.timeDraft(), { type: "select", value: time }).state);
   }
 
   protected confirmPicker(): void {
-    const draft = parseTime(this.draftValue());
+    const transition = timeDraftTransition(this.timeDraft(), { type: "confirm" });
+    this.timeDraft.set(transition.state);
+    const draft = parseTime(transition.commit);
     const next = draft ? formatTimeAs(draft, this.format()) : null;
     if (next !== null && next !== this.value()) {
-      this.setValue(next);
-      this.markAsDirty();
+      this.dispatchValueIntent<string | null>("timepicker", { type: "select", value: next });
     }
+    this.closeOverlay();
+  }
+
+  protected cancelPicker(): void {
+    this.timeDraft.set(timeDraftTransition(this.timeDraft(), { type: "cancel" }).state);
     this.closeOverlay();
   }
 
@@ -189,20 +205,13 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
    * untouched — the blur handler reverts the display.
    */
   protected onInputChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const raw = input.value.trim().toUpperCase();
-    if (!raw) {
-      this.setValue(null);
-      this.markAsDirty();
-      return;
-    }
-    const parsed = parseAnyTime(raw, this.format());
-    if (parsed) {
-      const formatted = formatTimeAs(parsed, this.format());
-      if (this.value() !== formatted) {
-        this.setValue(formatted);
-        this.markAsDirty();
-      }
+    const raw = (event.target as HTMLInputElement).value;
+    const next = timeInputTransition(raw, (value) => {
+      const parsed = parseAnyTime(value, this.format());
+      return parsed ? formatTimeAs(parsed, this.format()) : null;
+    });
+    if (next !== undefined && next !== this.value()) {
+      this.dispatchValueIntent<string | null>("timepicker", { type: "select", value: next });
     }
   }
 
@@ -220,6 +229,6 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   protected onInputBlur(event: FocusEvent): void {
     // Revert any unparsed/rejected text to the canonical value (R4).
     (event.target as HTMLInputElement).value = this.value() || "";
-    this.markAsTouched();
+    this.dispatchValueBlur("timepicker");
   }
 }
