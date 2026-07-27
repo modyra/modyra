@@ -10,11 +10,11 @@ import {
 import {
   computeCoordsForAnchor,
   ComputedPosition,
-  computeOverlayPosition,
   OverlayAlignment,
   OverlayAnchor,
   OverlayPosition,
 } from "@modyra/core/overlay-position";
+import { decideOverlayPlacement } from "@modyra/widgets";
 import { MdyBaseControl } from "../control/control.directive";
 import { MdyA11yAnnouncer } from "./a11y-announcer";
 import { MDY_I18N_MESSAGES } from "./i18n";
@@ -123,6 +123,24 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   protected readonly preferredPosition: "above" | "below" = "below";
 
 
+  /** Widgets owns placement/collision policy; Angular only supplies measured geometry. */
+  private decidePlacement(clickX?: number) {
+    const rect = this.anchor instanceof HTMLElement ? this.anchor.getBoundingClientRect() : this.anchor;
+    return decideOverlayPlacement({
+      viewportWidth: document.documentElement.clientWidth,
+      viewportHeight: document.documentElement.clientHeight,
+      anchorTop: rect.top,
+      anchorBottom: rect.bottom,
+      anchorLeft: rect.left,
+      anchorRight: rect.right,
+      anchorWidth: rect.width,
+      minSpace: this.minSpace,
+      minWidth: this.minWidth(),
+      preferred: this.preferredPosition,
+      ...(clickX !== undefined ? { pointerX: clickX } : {}),
+    });
+  }
+
   protected openOverlay(event?: Event): void {
     if (this.isDisabled() || this.open()) return;
     if (typeof window === "undefined") return; // SSR guard (B32)
@@ -137,19 +155,14 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
       clickX = event.touches[0]?.clientX;
     }
 
-    const result = computeOverlayPosition(this.anchor, {
-      minSpace: this.minSpace,
-      minWidth: this.minWidth(),
-      preferredPosition: this.preferredPosition,
-      ...(clickX !== undefined && { clickX }),
-    });
 
-    this.position.set(result.position);
-    this.alignment.set(result.alignment);
-    this.coords.set(result.coords);
+    const decision = this.decidePlacement(clickX);
+    this.position.set(decision.placement);
+    this.alignment.set(decision.alignment);
+    this.coords.set(computeCoordsForAnchor(this.anchor, decision.placement, decision.alignment));
     this.open.set(true);
 
-    this.maxHeight.set(this.computeMaxHeight(result.position, result.coords));
+    this.maxHeight.set(decision.maxHeight);
 
     this.announcer.announce(this.overlayI18n.overlayOpened);
 
@@ -160,7 +173,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
 
     // Non-modal overlays follow the container during scroll,
     // keeping the same corner chosen at open time.
-    if (result.position !== "overlay") {
+    if (decision.placement !== "overlay") {
       window.addEventListener("scroll", this.handleScroll, { capture: true, passive: true });
     }
     window.addEventListener("resize", this.handleResize);
@@ -217,20 +230,16 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     if (!this.open()) return;
 
     const prevPosition = this.position();
-    const result = computeOverlayPosition(this.anchor, {
-      minSpace: this.minSpace,
-      minWidth: this.minWidth(),
-      preferredPosition: this.preferredPosition,
-    });
 
-    this.position.set(result.position);
-    this.alignment.set(result.alignment);
-    this.coords.set(result.coords);
-    this.maxHeight.set(this.computeMaxHeight(result.position, result.coords));
+    const decision = this.decidePlacement();
+    this.position.set(decision.placement);
+    this.alignment.set(decision.alignment);
+    this.coords.set(computeCoordsForAnchor(this.anchor, decision.placement, decision.alignment));
+    this.maxHeight.set(decision.maxHeight);
 
     // If position changed between overlay and anchored, manage scroll listener
     const wasOverlay = prevPosition === "overlay";
-    const isOverlay = result.position === "overlay";
+    const isOverlay = decision.placement === "overlay";
     if (!wasOverlay && isOverlay) {
       window.removeEventListener("scroll", this.handleScroll, true);
     } else if (wasOverlay && !isOverlay) {
