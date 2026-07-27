@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component } from "@angular/core";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.component";
@@ -58,6 +59,7 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
   `,
 })
 export class MdyToggleComponent extends MdyBaseControl<boolean> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.toggle;
   protected readonly fieldId = `mdy-control-toggle-${MdyBaseControl.nextId()}`;
 
   protected onChange(event: Event): void {

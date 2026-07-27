@@ -9,6 +9,7 @@ import {
   OnInit,
 } from "@angular/core";
 import { createFieldController, type MdyFieldController } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -78,6 +79,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
   `,
 })
 export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.text;
   readonly placeholder = input<string>("");
   readonly type = input<string>("text");
   readonly autocomplete = input<string | null>(null);

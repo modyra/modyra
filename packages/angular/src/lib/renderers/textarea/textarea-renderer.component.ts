@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, input } from "@angular/core";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -64,6 +65,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
   `,
 })
 export class MdyTextareaComponent extends MdyBaseControl<string | null> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.textarea;
   readonly placeholder = input<string>("");
   readonly rows = input<number>(3);
 

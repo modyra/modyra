@@ -17,6 +17,7 @@ import {
   parseLocalizedDate,
   today,
 } from "@modyra/core/date-utils";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -149,6 +150,7 @@ import { MdyCalendarComponent } from "./calendar.component";
   `,
 })
 export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.datepicker;
   readonly placeholder = input<string>("YYYY-MM-DD");
   readonly minDate = input<string | null>(null);
   readonly maxDate = input<string | null>(null);

@@ -52,7 +52,7 @@
     "build:plain": "tsc -p packages/widgets/tsconfig.json && tsc -p packages/plain/tsconfig.json",
     "test:plain": "npm run build:plain && node --test packages/plain/test/*.test.mjs",
     "plain-preview:dev": "npm run build:plain && node apps/plain-preview/build.mjs && node apps/plain-preview/server.mjs",
-    "test:widget-contract": "node scripts/audit-angular-widget-contract.mjs --check && npm run build:core && tsc -p packages/widgets/tsconfig.json && node --test packages/widgets/test/*.spec.mjs"
+    "test:widget-contract": "node scripts/audit-angular-widget-contract.mjs --check && node scripts/audit-widget-contract-completeness.mjs && npm run build:core && tsc -p packages/widgets/tsconfig.json && node --test packages/widgets/test/*.spec.mjs"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^21.2.19",

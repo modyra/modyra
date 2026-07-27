@@ -17,6 +17,7 @@ import {
   parseAnyTime,
   parseTime,
 } from "@modyra/core/time-utils";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -138,6 +139,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
   `,
 })
 export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.timepicker;
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly placeholder = input<string>("");
   /**

@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, input } from "@angular/core";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -65,6 +66,7 @@ import { MdySelectOption } from "../../core/types";
   `,
 })
 export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TValue | null> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.radio;
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
   readonly layout  = input<"vertical" | "horizontal">("vertical");
 

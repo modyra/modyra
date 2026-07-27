@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, output, signal, viewChild } from "@angular/core";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -100,6 +101,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
   `,
 })
 export class MdyFileComponent extends MdyBaseControl<File | File[] | null> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.file;
   readonly accept = input<string>("");
   readonly multiple = input<boolean>(false);
   /** Maximum size per file in bytes (0 = no limit). Applies to picker and drop. */

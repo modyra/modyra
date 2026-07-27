@@ -18,6 +18,7 @@ import {
   WritableSignal,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyAngularSelectAdapter, MdyWidgetRuntime } from "../../widget-runtime";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -278,6 +279,7 @@ function mapKeyToMoveTarget(
 export class MdySelectComponent<TValue = string>
   extends MdyDropdownBase<TValue | null, TValue>
   implements MdyOptionsControl<TValue> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.select;
   readonly placeholder = input<string>("");
   readonly disabled = input<boolean>(false);
   /**

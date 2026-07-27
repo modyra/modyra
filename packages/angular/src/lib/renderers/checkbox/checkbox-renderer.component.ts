@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component } from "@angular/core";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 
@@ -54,6 +55,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
   `,
 })
 export class MdyCheckboxComponent extends MdyBaseControl<boolean> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.checkbox;
   protected readonly fieldId = `mdy-control-checkbox-${MdyBaseControl.nextId()}`;
 
   protected onChange(event: Event): void {
