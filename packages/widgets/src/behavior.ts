@@ -276,3 +276,33 @@ export function dateDraftTransition(
     restoreFocus: true,
   };
 }
+
+export interface MdyDateRangeValue {
+  readonly start: string | null;
+  readonly end: string | null;
+}
+
+/** Canonical range transition: bounds/filter invalid dates and keep end >= start. */
+export function dateRangeValueTransition(
+  value: MdyDateRangeValue,
+  options: {
+    readonly minIso?: string | null;
+    readonly maxIso?: string | null;
+    readonly accepts?: ((iso: string) => boolean) | null;
+  } = {},
+): MdyDateRangeValue {
+  const normalize = (iso: string | null): string | null => {
+    if (iso === null) return null;
+    const canonical = dateValueTransition(
+      { type: "select", iso },
+      options.minIso,
+      options.maxIso,
+    );
+    if (canonical === null || options.accepts?.(canonical) === false) return null;
+    return canonical;
+  };
+  const start = normalize(value.start);
+  let end = normalize(value.end);
+  if (start !== null && end !== null && end < start) end = start;
+  return { start, end };
+}

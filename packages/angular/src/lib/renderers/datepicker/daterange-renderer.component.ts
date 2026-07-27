@@ -12,11 +12,10 @@ import {
 } from "@angular/core";
 import {
   CalendarDate,
-  compareDates,
   formatIsoDate,
   parseIsoDate,
 } from "@modyra/core/date-utils";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, dateRangeValueTransition } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -290,11 +289,7 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
       this.tempEnd.set(range.end);
       return;
     }
-    this.setValue({
-      start: formatIsoDate(range.start),
-      end: formatIsoDate(range.end),
-    });
-    this.markAsDirty();
+    this.commitRange(formatIsoDate(range.start), formatIsoDate(range.end));
     this.closeOverlay();
   }
 
@@ -316,7 +311,7 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   }
 
   protected onStartBlur(event: FocusEvent): void {
-    this.markAsTouched();
+    this.dispatchValueBlur("daterange");
     const el = event.target as HTMLInputElement;
     el.value = this.displayStart();
   }
@@ -339,7 +334,7 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   }
 
   protected onEndBlur(event: FocusEvent): void {
-    this.markAsTouched();
+    this.dispatchValueBlur("daterange");
     const el = event.target as HTMLInputElement;
     el.value = this.displayEnd();
   }
@@ -352,33 +347,12 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
    * date the calendar would forbid (B17).
    */
   private commitRange(start: string | null, end: string | null): void {
-    const s = parseIsoDate(start);
-    const e = parseIsoDate(end);
-
-    let finalStart = start;
-    let finalEnd = end;
-
-    const filter = this.dateFilter();
-    if (filter !== null && finalStart !== null && !filter(finalStart)) finalStart = null;
-    if (filter !== null && finalEnd !== null && !filter(finalEnd)) finalEnd = null;
-
-    if (finalStart !== null && !this.isWithinBounds(finalStart)) finalStart = null;
-    if (finalEnd !== null && !this.isWithinBounds(finalEnd)) finalEnd = null;
-
-    if (s && e && compareDates(e, s) < 0) {
-      finalEnd = finalStart;
-    }
-
-    this.setValue({ start: finalStart, end: finalEnd });
-    this.markAsDirty();
+    const next = dateRangeValueTransition(
+      { start, end },
+      { minIso: this.minDate(), maxIso: this.maxDate(), accepts: this.dateFilter() },
+    );
+    this.dispatchValueIntent<MdyDateRange | null>("daterange", { type: "select", value: next });
   }
 
-  /** True when the ISO date lies inside [minDate, maxDate]. */
-  private isWithinBounds(iso: string): boolean {
-    const min = this.parsedMinDate();
-    const max = this.parsedMaxDate();
-    if (min && iso < formatIsoDate(min)) return false;
-    if (max && iso > formatIsoDate(max)) return false;
-    return true;
-  }
+
 }
