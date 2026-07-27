@@ -17,7 +17,7 @@ import {
   parseLocalizedDate,
   today,
 } from "@modyra/core/date-utils";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, dateValueTransition } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -245,17 +245,20 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
       this.tempSelectedDate.set(date);
       return;
     }
-    const isoString = formatIsoDate(date);
-    this.setValue(isoString);
-    this.markAsDirty();
+    const isoString = dateValueTransition(
+      { type: "select", iso: formatIsoDate(date) },
+      this.minDate(),
+      this.maxDate(),
+    );
+    if (isoString === null) return;
+    this.dispatchValueIntent<string | null>("datepicker", { type: "select", value: isoString });
     this.closeOverlay();
   }
 
   protected onInputChange(event: Event): void {
     const raw = (event.target as HTMLInputElement).value.trim();
     if (!raw) {
-      this.setValue(null);
-      this.markAsDirty();
+      this.dispatchValueIntent<string | null>("datepicker", { type: "select", value: null });
       return;
     }
     // Localized display also accepts the locale's numeric format
@@ -264,26 +267,21 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
       this.displayFormat() === "localized"
         ? parseLocalizedDate(raw, this.locale.locale)
         : parseIsoDate(raw);
-    if (parsed && this.isWithinRange(parsed)) {
-      const isoString = formatIsoDate(parsed);
-      this.setValue(isoString);
-      this.markAsDirty();
+    if (parsed) {
+      const isoString = dateValueTransition(
+        { type: "select", iso: formatIsoDate(parsed) },
+        this.minDate(),
+        this.maxDate(),
+      );
+      if (isoString !== null) {
+        this.dispatchValueIntent<string | null>("datepicker", { type: "select", value: isoString });
+      }
     }
   }
 
   protected onInputBlur(event: FocusEvent): void {
     // Revert any unparsed/rejected text to the canonical display value.
     (event.target as HTMLInputElement).value = this.displayValue();
-    this.markAsTouched();
-  }
-
-  /** Manual input honours [minDate]/[maxDate] like the calendar does. */
-  private isWithinRange(date: CalendarDate): boolean {
-    const iso = formatIsoDate(date);
-    const min = this.parsedMinDate();
-    const max = this.parsedMaxDate();
-    if (min && iso < formatIsoDate(min)) return false;
-    if (max && iso > formatIsoDate(max)) return false;
-    return true;
+    this.dispatchValueBlur("datepicker");
   }
 }

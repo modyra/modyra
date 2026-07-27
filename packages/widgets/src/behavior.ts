@@ -194,3 +194,31 @@ export function shouldCloseMultiselectOverlay(
 ): boolean {
   return mode === "single" && remainingResultCount === 0;
 }
+
+/** ISO date bound policy shared by typed input, calendar selection and future hosts. */
+export function dateWithinBounds(
+  iso: string,
+  minIso: string | null | undefined,
+  maxIso: string | null | undefined,
+): boolean {
+  const normalized = iso.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return false;
+  if (minIso && normalized < minIso.slice(0, 10)) return false;
+  if (maxIso && normalized > maxIso.slice(0, 10)) return false;
+  return true;
+}
+
+export type MdyDateValueIntent =
+  | { readonly type: "select"; readonly iso: string }
+  | { readonly type: "clear" };
+
+/** Returns the canonical value transition, or null when a selection is rejected by bounds. */
+export function dateValueTransition(
+  intent: MdyDateValueIntent,
+  minIso?: string | null,
+  maxIso?: string | null,
+): string | null {
+  if (intent.type === "clear") return null;
+  const iso = intent.iso.slice(0, 10);
+  return dateWithinBounds(iso, minIso, maxIso) ? iso : null;
+}
