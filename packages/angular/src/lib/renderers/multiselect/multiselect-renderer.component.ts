@@ -10,7 +10,7 @@ import {
   viewChild,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, multiselectValueTransition } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -310,6 +310,17 @@ export class MdyMultiselectComponent<TValue = string>
     }
   }
 
+  private commitMultiselect(intent: Parameters<typeof multiselectValueTransition<TValue>>[1]): void {
+    const current = this.value() ?? [];
+    const next = multiselectValueTransition(current, intent);
+    if (next === current) return;
+    this.dispatchValueIntent<ReadonlyArray<TValue>>("multiselect", { type: "input", value: next });
+    if (intent.type !== "clear") {
+      const matched = this.effectiveOptions().find((option) => String(option.value) === String(intent.value));
+      if (matched) this.selectionChange.emit(matched);
+    }
+  }
+
   // ── Single-mode helpers ─────────────────────────────────────────────────────
 
   protected isSelected(optValue: TValue): boolean {
@@ -317,16 +328,7 @@ export class MdyMultiselectComponent<TValue = string>
   }
 
   protected onToggle(optValue: TValue): void {
-    const current = this.value() ?? [];
-    const key = String(optValue);
-    const next: ReadonlyArray<TValue> = current.some((v) => String(v) === key)
-      ? current.filter((v) => String(v) !== key)
-      : [...current, optValue];
-    this.setValue(next);
-    this.markAsDirty();
-
-    const matched = this.effectiveOptions().find((o) => String(o.value) === key);
-    if (matched) this.selectionChange.emit(matched);
+    this.commitMultiselect({ type: "toggle", value: optValue });
   }
 
   // ── Multi-mode (counter) helpers ────────────────────────────────────────────
@@ -336,54 +338,21 @@ export class MdyMultiselectComponent<TValue = string>
   }
 
   protected increment(optValue: TValue): void {
-    this.setValue([...(this.value() ?? []), optValue]);
-    this.markAsDirty();
-
-    const matched = this.effectiveOptions().find(
-      (o) => String(o.value) === String(optValue),
-    );
-    if (matched) this.selectionChange.emit(matched);
+    this.commitMultiselect({ type: "increment", value: optValue });
   }
 
   protected decrement(optValue: TValue): void {
-    const arr = [...(this.value() ?? [])];
-    const idx = arr.findIndex((v) => String(v) === String(optValue));
-    if (idx >= 0) {
-      arr.splice(idx, 1);
-      this.setValue(arr);
-      this.markAsDirty();
-
-      const matched = this.effectiveOptions().find(
-        (o) => String(o.value) === String(optValue),
-      );
-      if (matched) this.selectionChange.emit(matched);
-    }
+    this.commitMultiselect({ type: "decrement", value: optValue });
   }
 
   // ── Search overlay ──────────────────────────────────────────────────────────
 
   public resetSelection(): void {
-    this.setValue([]);
-    this.markAsDirty();
+    this.commitMultiselect({ type: "clear" });
   }
 
   protected onOverlaySelect(optValue: TValue): void {
-    if (this.mode() === "single") {
-      const current = this.value() ?? [];
-      const key = String(optValue);
-      if (!current.some((v) => String(v) === key)) {
-        this.setValue([...current, optValue]);
-        this.markAsDirty();
-        const matched = this.effectiveOptions().find(
-          (o) => String(o.value) === key,
-        );
-        if (matched) this.selectionChange.emit(matched);
-      }
-      if (this.searchResults().length === 0) {
-        this.closeOverlay();
-      }
-    } else {
-      this.increment(optValue);
-    }
+    this.commitMultiselect({ type: "increment", value: optValue });
+    if (this.mode() === "single" && this.searchResults().length === 0) this.closeOverlay();
   }
 }

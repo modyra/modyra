@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { decideOverlayPlacement, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, widgetKeyIntent } from "../dist/index.js";
+import { decideOverlayPlacement, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, widgetKeyIntent } from "../dist/index.js";
 
 test("overlay placement resolves collision without a DOM dependency", () => {
   assert.equal(decideOverlayPlacement({ viewportWidth: 1000, viewportHeight: 800, anchorTop: 700, anchorBottom: 740, anchorLeft: 800, anchorRight: 900, anchorWidth: 100, minSpace: 128, minWidth: 250, preferred: "below" }).placement, "above");
@@ -27,4 +27,11 @@ test("select keyboard policy resolves host actions without Angular", () => {
   assert.deepEqual(selectKeyboardAction({ key: "Enter", open: true, searchFocused: false, activeKey: "it", createAvailable: false }), { type: "select", optionKey: "it" });
   assert.deepEqual(selectKeyboardAction({ key: "Enter", open: true, searchFocused: true, activeKey: null, createAvailable: true }), { type: "create" });
   assert.deepEqual(selectKeyboardAction({ key: "Escape", open: true, searchFocused: false, activeKey: null, createAvailable: false }), { type: "close", restoreFocus: true });
+});
+
+test("multiselect transitions own loose toggle, counters and clear", () => {
+  assert.deepEqual(multiselectValueTransition([1], { type: "toggle", value: "1" }), []);
+  assert.deepEqual(multiselectValueTransition(["a"], { type: "increment", value: "a" }), ["a", "a"]);
+  assert.deepEqual(multiselectValueTransition(["a", "a"], { type: "decrement", value: "a" }), ["a"]);
+  assert.deepEqual(multiselectValueTransition(["a"], { type: "clear" }), []);
 });
