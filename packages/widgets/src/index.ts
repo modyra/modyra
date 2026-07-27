@@ -66,3 +66,6 @@ export type { MdyCatalogWidgetIntent, MdyCatalogWidgetState } from "./catalog-co
 
 export { decideOverlayPlacement, overlayCloseCommands, widgetKeyIntent } from "./behavior.js";
 export type { MdyOverlayDecision, MdyOverlayGeometry, MdyWidgetKeyIntent } from "./behavior.js";
+
+export { createValueWidgetController } from "./value-controller.js";
+export type { MdyValueWidgetController, MdyValueWidgetControllerOptions, MdyValueWidgetIntent, MdyValueWidgetState } from "./value-controller.js";

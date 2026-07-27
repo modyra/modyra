@@ -51,7 +51,7 @@ import { MdyNumberSpinButtonsDirective } from "./number-spin-buttons.directive";
         [value]="value() ?? ''"
         [disabled]="isDisabled()"
         (input)="onInput($event)"
-        (blur)="markAsTouched()"
+        (blur)="dispatchValueBlur('number')"
         [attr.aria-invalid]="hasErrors()"
         [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
         [attr.aria-required]="ariaRequired() || isRequired()"
@@ -88,7 +88,6 @@ export class MdyNumberComponent extends MdyBaseControl<number | null> {
 
   protected onInput(event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
-    this.setValue(raw === "" ? null : Number(raw));
-    this.markAsDirty();
+    this.dispatchValueIntent<number | null>("number", { type: "input", value: raw === "" ? null : Number(raw) });
   }
 }

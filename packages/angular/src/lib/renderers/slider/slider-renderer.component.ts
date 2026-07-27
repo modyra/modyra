@@ -42,7 +42,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [disabled]="isDisabled()"
         (input)="onInput($event)"
         (change)="onChange($event)"
-        (blur)="markAsTouched()"
+        (blur)="dispatchValueBlur('slider')"
         [attr.aria-invalid]="hasErrors()"
         [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
         [attr.aria-required]="ariaRequired() || isRequired()"
@@ -90,14 +90,10 @@ export class MdySliderComponent extends MdyBaseControl<number> {
   }
 
   protected onInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.setValue(Number(input.value));
-    this.markAsDirty();
+    this.dispatchValueIntent<number>("slider", { type: "input", value: Number((event.target as HTMLInputElement).value) });
   }
 
-  protected onChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.setValue(Number(input.value));
-    this.markAsDirty();
+  protected onChange(_event: Event): void {
+    this.dispatchValueBlur("slider");
   }
 }

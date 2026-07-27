@@ -16,6 +16,12 @@ import {
 import { MDY_DECLARATIVE_REGISTRY, MDY_FLOATING_LABELS, MDY_FORM_ADAPTER, MDY_INLINE_ERRORS } from "../core/tokens";
 import { MdyFieldHandle } from "../core/typed-form";
 import { MdyFieldError, MdyFieldState, MdyFormAdapter } from "../core/types";
+import {
+  createValueWidgetController,
+  type MdyValueWidgetController,
+  type MdyValueWidgetIntent,
+  type MdyWidgetKind,
+} from "@modyra/widgets";
 
 declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
@@ -268,6 +274,40 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     }
     return this.globalFloatingLabels?.mdyFloatingLabels() ?? false;
   });
+
+  // ── Widgets scalar-controller bridge ───────────────────────────────────────
+
+  private readonly _valueControllers = new Map<MdyWidgetKind, MdyValueWidgetController<unknown>>();
+
+  /**
+   * Sends scalar UI transitions through Widgets. Angular remains responsible
+   * only for extracting the native DOM value and applying controller commands
+   * to the form adapter.
+   */
+  protected dispatchValueIntent<T>(kind: MdyWidgetKind, intent: MdyValueWidgetIntent<T>): void {
+    let controller = this._valueControllers.get(kind) as MdyValueWidgetController<T> | undefined;
+    if (!controller) {
+      controller = createValueWidgetController<T>({
+        kind,
+        value: this.value() as unknown as T,
+        onChange: (next) => this.setValue(next as unknown as TValue),
+      });
+      this._valueControllers.set(kind, controller as MdyValueWidgetController<unknown>);
+      this._destroyRef.onDestroy(() => controller?.destroy());
+    }
+    controller.setValue(this.value() as unknown as T);
+    controller.setDisabled(this.isDisabled());
+    controller.setReadonly(this.fieldState().readonly());
+    controller.setInvalid(this.hasErrors());
+    for (const command of controller.dispatch(intent)) {
+      if (command.type === "mark-dirty") this.markAsDirty();
+      if (command.type === "mark-touched") this.markAsTouched();
+    }
+  }
+
+  protected dispatchValueBlur(kind: MdyWidgetKind): void {
+    this.dispatchValueIntent(kind, { type: "blur" });
+  }
 
   // ── Mutation helpers ────────────────────────────────────────────────────────
 

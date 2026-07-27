@@ -29,7 +29,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [checked]="value()"
         [disabled]="isDisabled()"
         (change)="onChange($event)"
-        (blur)="markAsTouched()"
+        (blur)="dispatchValueBlur('checkbox')"
         [attr.aria-invalid]="hasErrors()"
         [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
         [attr.aria-required]="ariaRequired() || isRequired()"
@@ -61,7 +61,7 @@ export class MdyCheckboxComponent extends MdyBaseControl<boolean> {
   protected readonly fieldId = `mdy-control-checkbox-${MdyBaseControl.nextId()}`;
 
   protected onChange(event: Event): void {
-    this.setValue((event.target as HTMLInputElement).checked);
-    this.markAsDirty();
+    const input = event.target as HTMLInputElement;
+    this.dispatchValueIntent<boolean>("checkbox", { type: "input", value: input.checked });
   }
 }

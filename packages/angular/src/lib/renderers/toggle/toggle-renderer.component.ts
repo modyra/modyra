@@ -27,7 +27,7 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
         [checked]="value()"
         [disabled]="isDisabled()"
         (change)="onChange($event)"
-        (blur)="markAsTouched()"
+        (blur)="dispatchValueBlur('toggle')"
         [attr.aria-checked]="value()"
         [attr.aria-invalid]="hasErrors()"
         [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
@@ -65,7 +65,7 @@ export class MdyToggleComponent extends MdyBaseControl<boolean> {
   protected readonly fieldId = `mdy-control-toggle-${MdyBaseControl.nextId()}`;
 
   protected onChange(event: Event): void {
-    this.setValue((event.target as HTMLInputElement).checked);
-    this.markAsDirty();
+    const input = event.target as HTMLInputElement;
+    this.dispatchValueIntent<boolean>("toggle", { type: "input", value: input.checked });
   }
 }
