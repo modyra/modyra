@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dateDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, widgetKeyIntent } from "../dist/index.js";
+import { dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, widgetKeyIntent } from "../dist/index.js";
 
 test("overlay placement resolves collision without a DOM dependency", () => {
   assert.equal(decideOverlayPlacement({ viewportWidth: 1000, viewportHeight: 800, anchorTop: 700, anchorBottom: 740, anchorLeft: 800, anchorRight: 900, anchorWidth: 100, minSpace: 128, minWidth: 250, preferred: "below" }).placement, "above");
@@ -73,4 +73,16 @@ test("date range policy normalizes bounds, filters and reversed endpoints", () =
   assert.deepEqual(dateRangeValueTransition({ start: "2026-07-27T10:00:00Z", end: "2026-07-20" }), { start: "2026-07-27", end: "2026-07-27" });
   assert.deepEqual(dateRangeValueTransition({ start: "2025-01-01", end: "2026-08-01" }, { minIso: "2026-01-01", maxIso: "2026-12-31" }), { start: null, end: "2026-08-01" });
   assert.deepEqual(dateRangeValueTransition({ start: "2026-07-27", end: "2026-07-28" }, { accepts: (iso) => !iso.endsWith("28") }), { start: "2026-07-27", end: null });
+});
+
+test("modal date range draft confirms complete ranges and cancels or rejects incomplete drafts", () => {
+  const empty = { committed: { start: null, end: null }, draft: { start: null, end: null }, open: false };
+  const opened = dateRangeDraftTransition(empty, { type: "open", committed: { start: "2026-07-01", end: "2026-07-02" } });
+  const selected = dateRangeDraftTransition(opened.state, { type: "select", value: { start: "2026-07-27", end: "2026-07-28" } });
+  const confirmed = dateRangeDraftTransition(selected.state, { type: "confirm" });
+  assert.deepEqual(confirmed.commit, { start: "2026-07-27", end: "2026-07-28" });
+  assert.equal(confirmed.restoreFocus, true);
+  const incomplete = dateRangeDraftTransition(opened.state, { type: "select", value: { start: "2026-07-27", end: null } });
+  assert.equal(dateRangeDraftTransition(incomplete.state, { type: "confirm" }).commit, undefined);
+  assert.deepEqual(dateRangeDraftTransition(selected.state, { type: "cancel" }).state.draft, opened.state.committed);
 });

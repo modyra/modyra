@@ -15,7 +15,12 @@ import {
   formatIsoDate,
   parseIsoDate,
 } from "@modyra/core/date-utils";
-import { MDY_WIDGET_CONTRACTS, dateRangeValueTransition } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  dateRangeDraftTransition,
+  dateRangeValueTransition,
+  type MdyDateRangeDraftState,
+} from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -157,7 +162,7 @@ import { MdyRangeCalendarComponent } from "./range-calendar.component";
 
         @if (variant() === 'modal') {
            <div class="mdy-datepicker__actions">
-              <button type="button" class="mdy-datepicker__action-btn" (click)="closeOverlay()">{{ i18n.datepickerCancel }}</button>
+              <button type="button" class="mdy-datepicker__action-btn" (click)="cancelSelection()">{{ i18n.datepickerCancel }}</button>
               <button type="button" class="mdy-datepicker__action-btn mdy-datepicker__action-btn--primary" (click)="applySelection()">{{ i18n.datepickerConfirm }}</button>
            </div>
         }
@@ -200,8 +205,13 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
 
   // ── Derived state ─────────────────────────────────────────────────────────────
 
-  protected readonly tempStart = signal<CalendarDate | null>(null);
-  protected readonly tempEnd = signal<CalendarDate | null>(null);
+  private readonly modalDraft = signal<MdyDateRangeDraftState>({
+    committed: { start: null, end: null },
+    draft: { start: null, end: null },
+    open: false,
+  });
+  protected readonly tempStart = computed(() => parseIsoDate(this.modalDraft().draft.start));
+  protected readonly tempEnd = computed(() => parseIsoDate(this.modalDraft().draft.end));
 
   protected readonly displayStart = computed((): string => {
     const v = this.value()?.start;
@@ -255,8 +265,11 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
 
   /** Sync calendar view to current value after DOM renders. */
   protected override onBeforeOpen(): void {
-    this.tempStart.set(this.parsedStart());
-    this.tempEnd.set(this.parsedEnd());
+    this.modalDraft.set(dateRangeDraftTransition(
+      this.modalDraft(),
+      { type: "open", committed: this.value() ?? { start: null, end: null } },
+      { minIso: this.minDate(), maxIso: this.maxDate(), accepts: this.dateFilter() },
+    ).state);
     afterNextRender(() => {
       const cal = this.calendarRef();
       if (!cal) return;
@@ -268,13 +281,17 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   // ── Range picked from calendar ───────────────────────────────────────────────
 
   protected applySelection(): void {
-    const s = this.tempStart();
-    const e = this.tempEnd();
-    if (s && e) {
-      this.onRangePicked({ start: s, end: e }, true);
-    } else {
-      this.closeOverlay();
+    const transition = dateRangeDraftTransition(this.modalDraft(), { type: "confirm" });
+    this.modalDraft.set(transition.state);
+    if (transition.commit !== undefined) {
+      this.dispatchValueIntent<MdyDateRange | null>("daterange", { type: "select", value: transition.commit });
     }
+    this.closeOverlay();
+  }
+
+  protected cancelSelection(): void {
+    this.modalDraft.set(dateRangeDraftTransition(this.modalDraft(), { type: "cancel" }).state);
+    this.closeOverlay();
   }
 
   protected onRangePicked(
@@ -285,8 +302,11 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
     forceApply = false,
   ): void {
     if (this.variant() === "modal" && !forceApply) {
-      this.tempStart.set(range.start);
-      this.tempEnd.set(range.end);
+      this.modalDraft.set(dateRangeDraftTransition(
+        this.modalDraft(),
+        { type: "select", value: { start: formatIsoDate(range.start), end: formatIsoDate(range.end) } },
+        { minIso: this.minDate(), maxIso: this.maxDate(), accepts: this.dateFilter() },
+      ).state);
       return;
     }
     this.commitRange(formatIsoDate(range.start), formatIsoDate(range.end));
