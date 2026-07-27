@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { decideOverlayPlacement, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, widgetKeyIntent } from "../dist/index.js";
+import { decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, widgetKeyIntent } from "../dist/index.js";
 
 test("overlay placement resolves collision without a DOM dependency", () => {
   assert.equal(decideOverlayPlacement({ viewportWidth: 1000, viewportHeight: 800, anchorTop: 700, anchorBottom: 740, anchorLeft: 800, anchorRight: 900, anchorWidth: 100, minSpace: 128, minWidth: 250, preferred: "below" }).placement, "above");
@@ -34,4 +34,14 @@ test("multiselect transitions own loose toggle, counters and clear", () => {
   assert.deepEqual(multiselectValueTransition(["a"], { type: "increment", value: "a" }), ["a", "a"]);
   assert.deepEqual(multiselectValueTransition(["a", "a"], { type: "decrement", value: "a" }), ["a"]);
   assert.deepEqual(multiselectValueTransition(["a"], { type: "clear" }), []);
+});
+
+test("multiselect overlay policy owns keyboard and close decisions", () => {
+  assert.deepEqual(multiselectOverlayAction({ key: "Enter", open: false, query: "", activeKey: null }), { type: "open" });
+  assert.deepEqual(multiselectOverlayAction({ key: "ArrowDown", open: true, query: "", activeKey: null }), { type: "move", target: "next" });
+  assert.deepEqual(multiselectOverlayAction({ key: "Enter", open: true, query: "a", activeKey: "a" }), { type: "select", optionKey: "a" });
+  assert.deepEqual(multiselectOverlayAction({ key: "Escape", open: true, query: "a", activeKey: null }), { type: "close", restoreFocus: true });
+  assert.equal(shouldCloseMultiselectOverlay("single", 0), true);
+  assert.equal(shouldCloseMultiselectOverlay("single", 1), false);
+  assert.equal(shouldCloseMultiselectOverlay("multi", 0), false);
 });
