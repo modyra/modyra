@@ -90,3 +90,42 @@ export function optionNavigationIndex(
       return null;
   }
 }
+
+export type MdySelectKeyboardAction =
+  | { readonly type: "move"; readonly target: MdyOptionNavigationTarget }
+  | { readonly type: "open" }
+  | { readonly type: "select"; readonly optionKey: string }
+  | { readonly type: "create" }
+  | { readonly type: "close"; readonly restoreFocus: true };
+
+/** Canonical select keyboard policy. The host only prevents the native event and executes the action. */
+export function selectKeyboardAction(input: {
+  readonly key: string;
+  readonly open: boolean;
+  readonly searchFocused: boolean;
+  readonly activeKey: string | null;
+  readonly createAvailable: boolean;
+}): MdySelectKeyboardAction | null {
+  const { key, open, searchFocused, activeKey, createAvailable } = input;
+  const move: Record<string, MdyOptionNavigationTarget | undefined> = {
+    ArrowDown: "next",
+    ArrowUp: "previous",
+    Home: "first",
+    End: "last",
+  };
+  const target = move[key];
+  if (target && (!searchFocused || key === "ArrowDown" || key === "ArrowUp")) {
+    return { type: "move", target };
+  }
+  if (key === "Escape" && open) return { type: "close", restoreFocus: true };
+  if (key === "Enter") {
+    if (createAvailable) return { type: "create" };
+    if (!open) return { type: "open" };
+    return activeKey ? { type: "select", optionKey: activeKey } : null;
+  }
+  if (key === " " && !searchFocused) {
+    if (!open) return { type: "open" };
+    return activeKey ? { type: "select", optionKey: activeKey } : null;
+  }
+  return null;
+}

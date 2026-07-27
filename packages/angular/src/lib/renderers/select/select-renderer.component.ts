@@ -18,8 +18,7 @@ import {
   WritableSignal,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
-import { MdyAngularSelectAdapter, MdyWidgetRuntime } from "../../widget-runtime";
+import { MDY_WIDGET_CONTRACTS, selectKeyboardAction } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -28,24 +27,8 @@ import { MdyGlassDirective } from "../../core/directives/glass.directive";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MDY_OPTIONS_CONTROL } from "../../core/tokens";
 import { MdyOptionsControl, MdySelectOption } from "../../core/types";
+import { MdyAngularSelectAdapter, MdyWidgetRuntime } from "../../widget-runtime";
 import { MdyDropdownBase } from "../dropdown-base";
-
-function mapKeyToMoveTarget(
-  key: string,
-): "next" | "previous" | "first" | "last" | null {
-  switch (key) {
-    case "ArrowDown":
-      return "next";
-    case "ArrowUp":
-      return "previous";
-    case "Home":
-      return "first";
-    case "End":
-      return "last";
-    default:
-      return null;
-  }
-}
 
 /**
  * Select renderer component.
@@ -474,55 +457,25 @@ export class MdySelectComponent<TValue = string>
   }
 
   protected onKeydown(event: KeyboardEvent): void {
-    const isSearchFocused =
-      this.searchInputRef()?.nativeElement === document.activeElement;
-
-    // Navigation keys open the overlay if closed and move the active option.
-    const navigates =
-      !isSearchFocused || event.key === "ArrowDown" || event.key === "ArrowUp";
-    const moveTarget = mapKeyToMoveTarget(event.key);
-
-    if (moveTarget && navigates) {
-      event.preventDefault();
-      if (!this.open()) {
-        this.openOverlay();
-      }
-      this.selectAdapter.dispatch({ type: "move", target: moveTarget });
+    const action = selectKeyboardAction({
+      key: event.key,
+      open: this.open(),
+      searchFocused: this.searchInputRef()?.nativeElement === document.activeElement,
+      activeKey: this.selectAdapter.state().activeKey,
+      createAvailable: this.showCreateOption(),
+    });
+    if (!action) return;
+    event.preventDefault();
+    if (action.type === "create") {
+      this.onCreateOption();
       return;
     }
-
-    switch (event.key) {
-      case "Enter":
-        event.preventDefault();
-        if (this.showCreateOption()) {
-          this.onCreateOption();
-          return;
-        }
-        if (this.open()) {
-          const key = this.selectAdapter.state().activeKey;
-          if (key) this.selectAdapter.dispatch({ type: "select", optionKey: key });
-        } else {
-          this.openOverlay();
-        }
-        break;
-      case " ":
-        if (!isSearchFocused) {
-          event.preventDefault();
-          if (this.open()) {
-            const key = this.selectAdapter.state().activeKey;
-            if (key) this.selectAdapter.dispatch({ type: "select", optionKey: key });
-          } else {
-            this.openOverlay();
-          }
-        }
-        break;
-      case "Escape":
-        if (this.open()) {
-          event.preventDefault();
-          this.selectAdapter.dispatch({ type: "close", restoreFocus: true });
-        }
-        break;
+    if (action.type === "open") {
+      this.openOverlay();
+      return;
     }
+    if (action.type === "move" && !this.open()) this.openOverlay();
+    this.selectAdapter.dispatch(action);
   }
 
   protected override onSearchInput(event: Event): void {
@@ -535,20 +488,16 @@ export class MdySelectComponent<TValue = string>
   // ── Native select fallback ──────────────────────────────────────────────────
 
   public resetSelection(): void {
-    this.setValue(null);
-    this.markAsDirty();
+    this.selectAdapter.setValue(null);
+    this.dispatchValueIntent<TValue | null>("select", { type: "select", value: null });
   }
 
   protected onNativeChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
     const stringValue = target.value;
     const matched = this.effectiveOptions().find((o) => String(o.value) === stringValue);
-    if (matched) {
-      this.setValue(matched.value);
-      this.selectionChange.emit(matched);
-    } else {
-      this.setValue(null);
-    }
-    this.markAsDirty();
+    const value = matched?.value ?? null;
+    this.dispatchValueIntent<TValue | null>("select", { type: "select", value });
+    if (matched) this.selectionChange.emit(matched);
   }
 }
