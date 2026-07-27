@@ -42,7 +42,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [disabled]="isDisabled()"
         [rows]="rows()"
         (input)="onInput($event)"
-        (blur)="markAsTouched()"
+        (blur)="dispatchValueBlur('textarea')"
         [attr.aria-invalid]="hasErrors()"
         [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
         [attr.aria-required]="ariaRequired() || isRequired()"
@@ -74,8 +74,6 @@ export class MdyTextareaComponent extends MdyBaseControl<string | null> {
   protected readonly fieldId = `mdy-control-textarea-${MdyBaseControl.nextId()}`;
 
   protected onInput(event: Event): void {
-    const target = event.target as HTMLTextAreaElement;
-    this.setValue(target.value);
-    this.markAsDirty();
+    this.dispatchValueIntent<string | null>("textarea", { type: "input", value: (event.target as HTMLTextAreaElement).value });
   }
 }

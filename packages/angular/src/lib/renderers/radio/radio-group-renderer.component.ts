@@ -46,7 +46,7 @@ import { MdySelectOption } from "../../core/types";
             [checked]="value() === opt.value"
             [disabled]="isDisabled()"
             (change)="onSelectionChange(opt.value)"
-            (blur)="markAsTouched()"
+            (blur)="dispatchValueBlur('radio')"
             [attr.aria-invalid]="hasErrors()"
             [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
             [attr.aria-required]="ariaRequired() || isRequired()"
@@ -75,8 +75,6 @@ export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TVa
   protected readonly fieldId = `mdy-control-radio-${MdyBaseControl.nextId()}`;
 
   protected onSelectionChange(value: TValue): void {
-    if (this.isDisabled()) return;
-    this.setValue(value);
-    this.markAsDirty();
+    this.dispatchValueIntent<TValue | null>("radio", { type: "select", value });
   }
 }
