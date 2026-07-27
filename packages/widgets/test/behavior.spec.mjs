@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dateDraftTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, widgetKeyIntent } from "../dist/index.js";
+import { dateDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, widgetKeyIntent } from "../dist/index.js";
 
 test("overlay placement resolves collision without a DOM dependency", () => {
   assert.equal(decideOverlayPlacement({ viewportWidth: 1000, viewportHeight: 800, anchorTop: 700, anchorBottom: 740, anchorLeft: 800, anchorRight: 900, anchorWidth: 100, minSpace: 128, minWidth: 250, preferred: "below" }).placement, "above");
@@ -67,4 +67,10 @@ test("modal date draft keeps selection provisional until confirm and cancel disc
   const confirmed = dateDraftTransition(selected.state, { type: "confirm" });
   assert.equal(confirmed.commit, "2026-07-27");
   assert.equal(confirmed.restoreFocus, true);
+});
+
+test("date range policy normalizes bounds, filters and reversed endpoints", () => {
+  assert.deepEqual(dateRangeValueTransition({ start: "2026-07-27T10:00:00Z", end: "2026-07-20" }), { start: "2026-07-27", end: "2026-07-27" });
+  assert.deepEqual(dateRangeValueTransition({ start: "2025-01-01", end: "2026-08-01" }, { minIso: "2026-01-01", maxIso: "2026-12-31" }), { start: null, end: "2026-08-01" });
+  assert.deepEqual(dateRangeValueTransition({ start: "2026-07-27", end: "2026-07-28" }, { accepts: (iso) => !iso.endsWith("28") }), { start: "2026-07-27", end: null });
 });
