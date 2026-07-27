@@ -124,8 +124,7 @@ export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
     if (this.fieldController) {
       this.fieldController.dispatch({ type: "input", value: target.value });
     } else {
-      this.setValue(target.value);
-      this.markAsDirty();
+      this.dispatchValueIntent<string>("text", { type: "input", value: target.value });
     }
   }
 
@@ -133,7 +132,7 @@ export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
     if (this.fieldController) {
       this.fieldController.dispatch({ type: "blur" });
     } else {
-      this.markAsTouched();
+      this.dispatchValueBlur("text");
     }
   }
 }

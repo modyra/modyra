@@ -299,8 +299,7 @@ export class MdySelectComponent<TValue = string>
         loading: false,
         onChange: (value: TValue | null) => {
           if (value !== this.value()) {
-            this.setValue(value);
-            this.markAsDirty();
+            this.dispatchValueIntent<TValue | null>("select", { type: "select", value });
             const opt = this.effectiveOptions().find((o) => String(o.value) === String(value));
             if (opt) this.selectionChange.emit(opt);
           }
@@ -317,8 +316,8 @@ export class MdySelectComponent<TValue = string>
       onChange: () => {
         // value change is already handled by the adapter's onChange callback.
       },
-      onTouched: () => this.markAsTouched(),
-      onDirty: () => this.markAsDirty(),
+      onTouched: () => this.dispatchValueBlur("select"),
+      onDirty: () => undefined,
     });
 
     // Sync adapter with changing component inputs.
