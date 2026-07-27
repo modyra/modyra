@@ -279,7 +279,7 @@ export class MdyMultiselectComponent<TValue = string>
     event.preventDefault();
     if (action.type === "close") {
       this.closeOverlay();
-      this.hostRef.nativeElement.querySelector<HTMLElement>(".mdy-multiselect__search-btn")?.focus();
+      this.hostRef.nativeElement.querySelector(".mdy-multiselect__search-btn")?.focus();
       return;
     }
     if (action.type === "open") {
