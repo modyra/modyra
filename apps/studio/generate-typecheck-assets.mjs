@@ -62,12 +62,9 @@ while (pendingLibs.length > 0) {
   }
 }
 
-// Each vendored package degrades gracefully, not the whole build: if
-// packages/react hasn't been built yet (build:studio alone doesn't build
-// it — only build:packages does), React-target artifacts just fall back
-// to syntax-only checking (typecheck-host.ts's supportsSemanticCheck()
-// looks at what's actually in this map, not a fixed expectation) instead
-// of failing the app build.
+// Studio builds the declaration providers before this script runs. Local ad-hoc execution may
+// still omit one of them, in which case that target falls back to syntax-only checking. CI
+// treats a missing provider as a broken build graph rather than publishing incomplete assets.
 function vendorDts(name, sourceDir) {
   if (!existsSync(sourceDir)) {
     const message = `[generate-typecheck-assets] ${sourceDir} not built yet — cannot vendor ${name}`;
