@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "847f436b8800eef5f2cb3e5bf688db3477eb6d90",
+  "totalLines": 4779,
+  "hotspots": {
+    "select/select-renderer.component.ts": 480,
+    "multiselect/multiselect-renderer.component.ts": 392,
+    "datepicker/daterange-renderer.component.ts": 378,
+    "datepicker/datepicker.component.ts": 314,
+    "datepicker/range-calendar.component.ts": 284,
+    "datepicker/calendar.component.ts": 262,
+    "timepicker/timepicker-clock.component.ts": 251,
+    "timepicker/timepicker-renderer.component.ts": 234,
+    "colors/colors-renderer.component.ts": 229
+  }
+}
