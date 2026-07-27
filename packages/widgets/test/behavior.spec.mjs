@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, fileSelectionTransition, clearFileSelection, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "../dist/index.js";
+import { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, fileSelectionTransition, clearFileSelection, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, overlayLifecycleTransition, selectKeyboardAction, shouldCloseMultiselectOverlay, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "../dist/index.js";
 
 test("overlay placement resolves collision without a DOM dependency", () => {
   assert.equal(decideOverlayPlacement({ viewportWidth: 1000, viewportHeight: 800, anchorTop: 700, anchorBottom: 740, anchorLeft: 800, anchorRight: 900, anchorWidth: 100, minSpace: 128, minWidth: 250, preferred: "below" }).placement, "above");
@@ -128,4 +128,15 @@ test("file selection policy shares accept, size, count, single and clear behavio
   assert.deepEqual(single.rejected, [jpg]);
   assert.equal(fileSelectionTransition([pdf], { accept: ".png", multiple: false }).value, undefined);
   assert.equal(clearFileSelection().value, null);
+});
+
+test("overlay lifecycle owns open, toggle, outside, escape, destroy and restoration decisions", () => {
+  const closed = { open: false };
+  assert.equal(overlayLifecycleTransition(closed, { type: "open", disabled: true, available: true }).effect, "none");
+  const opened = overlayLifecycleTransition(closed, { type: "open", disabled: false, available: true });
+  assert.deepEqual(opened, { state: { open: true }, effect: "setup", restoreFocus: false, announce: "opened" });
+  assert.equal(overlayLifecycleTransition(opened.state, { type: "outside", outside: false }).effect, "none");
+  assert.deepEqual(overlayLifecycleTransition(opened.state, { type: "outside", outside: true }), { state: { open: false }, effect: "teardown", restoreFocus: false, announce: "closed" });
+  assert.equal(overlayLifecycleTransition(opened.state, { type: "escape" }).restoreFocus, true);
+  assert.equal(overlayLifecycleTransition(opened.state, { type: "destroy" }).announce, null);
 });
