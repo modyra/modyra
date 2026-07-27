@@ -60,3 +60,16 @@ for a complete implementation.
 ## License
 
 MIT © [Lorenzo Muscherà](https://github.com/lorenzomusche)
+
+
+## Framework-agnostic UI contract
+
+`@modyra/widgets` is the authoritative UI contract for Modyra presenters. Contract version 1 adds typed structural anatomy alongside controller state, intents, parts, commands and accessibility projection. The anatomy is metadata, not a virtual DOM. Angular is recorded as the protected golden semantic surface while its existing UI is migrated to consume this contract. Lit and Plain must subsequently implement the same contract rather than copying Angular internals.
+
+The committed Angular baseline is verified with:
+
+```bash
+npm run test:widget-contract
+```
+
+A deliberate Angular semantic UI change requires regenerating and reviewing the baseline explicitly.

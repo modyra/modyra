@@ -3,12 +3,13 @@
  *
  * Defines the semantic boundary between a headless controller and a
  * framework-specific presenter. The contract shares state, intent, commands
- * and accessibility projection; it intentionally does not describe DOM trees,
- * tags or children.
+ * accessibility projection and optional structural anatomy. The anatomy is metadata for
+ * conformance and presenter implementation; it is deliberately not a virtual DOM.
  */
 
 import type { MdySignal } from "@modyra/core";
 import type { MdyUiCommand } from "./commands.js";
+import type { MdyWidgetStructure } from "./structure.js";
 
 /** Semantic state of a widget part. */
 export interface MdyPartContract {
@@ -21,9 +22,17 @@ export interface MdyPartContract {
 }
 
 /** Semantic view contract produced by a controller. */
-export interface MdyWidgetViewContract {
+export interface MdyWidgetViewContract<TPart extends string = string> {
   readonly root: MdyPartContract;
-  readonly parts: Readonly<Record<string, MdyPartContract>>;
+  readonly parts: Readonly<Record<TPart, MdyPartContract>>;
+  /** Ordered semantic anatomy implemented by a presenter. Additive for contract v1. */
+  readonly structure?: MdyWidgetStructure<TPart | "root">;
+}
+
+/** Typed specialization for controllers with a closed set of named parts. */
+export interface MdyTypedWidgetViewContract<TPart extends string>
+  extends MdyWidgetViewContract<TPart> {
+  readonly parts: Readonly<Record<TPart, MdyPartContract>>;
 }
 
 /** Base controller contract shared by every Modyra widget. */

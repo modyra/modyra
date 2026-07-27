@@ -7,7 +7,21 @@ export type {
   MdyPartContract,
   MdyWidgetController,
   MdyWidgetViewContract,
+  MdyTypedWidgetViewContract,
 } from "./contract.js";
+
+export {
+  MDY_FIELD_SHELL_CLASSES,
+  MDY_FIELD_SHELL_STRUCTURE,
+  MDY_WIDGET_CONTRACT_VERSION,
+} from "./structure.js";
+export type {
+  MdyFieldShellPart,
+  MdyPartMap,
+  MdyWidgetSemanticElement,
+  MdyWidgetStructure,
+  MdyWidgetStructureNode,
+} from "./structure.js";
 
 export type {
   MdyElementTarget,
