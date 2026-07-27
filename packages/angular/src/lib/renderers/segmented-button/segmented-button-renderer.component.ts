@@ -109,7 +109,7 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
 
   protected onTrackPointerUp(): void {
     this.isDragging = false;
-    this.markAsTouched();
+    this.dispatchValueBlur("segmented");
   }
 
   private updateSelectionFromPointer(event: PointerEvent): void {

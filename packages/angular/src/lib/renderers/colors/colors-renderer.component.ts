@@ -189,7 +189,7 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
     const next = event.relatedTarget as Node | null;
     if (next && !this.wrapperRef()?.nativeElement.contains(next)) {
       this.closeOverlay();
-      this.markAsTouched();
+      this.dispatchValueBlur("colors");
     }
   }
 
