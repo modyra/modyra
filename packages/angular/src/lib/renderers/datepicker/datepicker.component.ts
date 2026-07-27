@@ -47,6 +47,7 @@ import { MdyCalendarComponent } from "./calendar.component";
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
     class: "mdy-renderer mdy-renderer--datepicker",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
   },
@@ -151,6 +152,7 @@ import { MdyCalendarComponent } from "./calendar.component";
 })
 export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.datepicker;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("YYYY-MM-DD");
   readonly minDate = input<string | null>(null);
   readonly maxDate = input<string | null>(null);

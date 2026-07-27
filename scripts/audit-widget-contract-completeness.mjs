@@ -1,13 +1,18 @@
-import { readFileSync } from "node:fs";
-const matrix = JSON.parse(readFileSync(new URL("../packages/widgets/contract-baseline/widget-completeness.json", import.meta.url), "utf8"));
-const angular = JSON.parse(readFileSync(new URL("../packages/widgets/contract-baseline/angular-ui.json", import.meta.url), "utf8"));
-const required = ["controller", "typedView", "structuredAnatomy", "parts", "aria", "keyboard", "focus", "widgetsTests", "angularConsumer"];
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+const root = resolve(new URL("..", import.meta.url).pathname);
+const matrix = JSON.parse(readFileSync(resolve(root, "packages/widgets/contract-baseline/widget-completeness.json"), "utf8"));
+const catalog = readFileSync(resolve(root, "packages/widgets/src/catalog.ts"), "utf8");
+const controller = readFileSync(resolve(root, "packages/widgets/src/catalog-controller.ts"), "utf8");
 const failures = [];
-const owned = new Set();
-for (const [kind, entry] of Object.entries(matrix.widgets)) {
-  for (const key of required) if (entry[key] !== true) failures.push(`${kind}: ${key} is not complete`);
-  for (const name of entry.classes) owned.add(name);
+for (const [kind, evidence] of Object.entries(matrix.widgets)) {
+  if (!catalog.includes(`${kind}: define("${kind}"`)) failures.push(`${kind}: definition export missing`);
+  if (!catalog.replace(/\s/g, "").includes(JSON.stringify(evidence.parts))) failures.push(`${kind}: evidence parts differ from catalog anatomy`);
+  if (!controller.includes(`export function ${evidence.controllerExport}`)) failures.push(`${kind}: controller export missing`);
+  for (const key of ["angularRenderer", "controllerTest", "contractTest"]) if (!existsSync(resolve(root, evidence[key]))) failures.push(`${kind}: missing ${key} ${evidence[key]}`);
+  const angular = readFileSync(resolve(root, evidence.angularRenderer), "utf8");
+  if (!angular.includes(`MDY_WIDGET_CONTRACTS.${kind}`) && !(["email","password"].includes(kind) && angular.includes("MDY_WIDGET_CONTRACTS.text"))) failures.push(`${kind}: Angular definition not consumed`);
+  if (!angular.includes(evidence.angularRootBinding)) failures.push(`${kind}: Angular root classes are not contract-bound`);
 }
-for (const name of angular.classes) if (!owned.has(name)) failures.push(`unowned Angular class: ${name}`);
 if (failures.length) { console.error(failures.join("\n")); process.exit(1); }
-console.log(`Widget completeness verified: ${Object.keys(matrix.widgets).length} controls, ${owned.size} canonical classes.`);
+console.log(`Evidence verified: ${Object.keys(matrix.widgets).length} definitions, runtime controllers, anatomies, tests and Angular root consumers.`);

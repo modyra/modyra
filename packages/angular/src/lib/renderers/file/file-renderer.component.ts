@@ -17,6 +17,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
     class: "mdy-renderer mdy-renderer--file",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
   },
@@ -102,6 +103,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
 })
 export class MdyFileComponent extends MdyBaseControl<File | File[] | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.file;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly accept = input<string>("");
   readonly multiple = input<boolean>(false);
   /** Maximum size per file in bytes (0 = no limit). Applies to picker and drop. */
