@@ -297,7 +297,9 @@ export class MdySelectComponent<TValue = string>
     );
 
     this.selectAdapter.connectHandlers({
-      setOpen: () => undefined,
+      // Widgets decides when the overlay closes; Angular materializes that
+      // decision through the shared overlay lifecycle.
+      setOpen: (open) => open ? this.openOverlay() : this.closeOverlay(),
       onChange: () => undefined,
       onTouched: () => this.dispatchValueBlur("select"),
       onDirty: () => undefined,
@@ -395,6 +397,8 @@ export class MdySelectComponent<TValue = string>
 
   protected selectOption(opt: MdySelectOption<TValue>): void {
     this.selectAdapter.dispatch({ type: "select", optionKey: this.optionKey(opt) });
+    // Materialize the close immediately after Widgets commits the option.
+    this.closeOverlay();
   }
 
   protected onBlur(event: FocusEvent): void {
