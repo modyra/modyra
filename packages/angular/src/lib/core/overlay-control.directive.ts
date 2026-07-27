@@ -14,7 +14,11 @@ import {
   OverlayAnchor,
   OverlayPosition,
 } from "@modyra/core/overlay-position";
-import { decideOverlayPlacement } from "@modyra/widgets";
+import {
+  decideOverlayPlacement,
+  overlayLifecycleTransition,
+  type MdyOverlayLifecycleIntent,
+} from "@modyra/widgets";
 import { MdyBaseControl } from "../control/control.directive";
 import { MdyA11yAnnouncer } from "./a11y-announcer";
 import { MDY_I18N_MESSAGES } from "./i18n";
@@ -72,7 +76,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   constructor() {
     super();
     // Remove global listeners if the component is destroyed while open.
-    inject(DestroyRef).onDestroy(() => this.teardownGlobalListeners());
+    inject(DestroyRef).onDestroy(() => this.applyLifecycle({ type: "destroy" }));
   }
 
   /**
@@ -108,9 +112,8 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    * anchor to the correct corner and resolve the scroll ancestor via event.target.
    */
   protected toggleOverlay(event?: Event): void {
-    if (this.isDisabled()) return;
     if (this.open()) {
-      this.closeOverlay();
+      this.applyLifecycle({ type: "toggle", disabled: this.isDisabled(), available: typeof window !== "undefined" });
     } else {
       this.openOverlay(event);
     }
@@ -142,8 +145,11 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   }
 
   protected openOverlay(event?: Event): void {
-    if (this.isDisabled() || this.open()) return;
-    if (typeof window === "undefined") return; // SSR guard (B32)
+    const transition = overlayLifecycleTransition(
+      { open: this.open() },
+      { type: "open", disabled: this.isDisabled(), available: typeof window !== "undefined" },
+    );
+    if (transition.effect !== "setup") return;
     this.onBeforeOpen();
 
     // Extract horizontal coordinate for corner selection:
@@ -160,16 +166,13 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     this.position.set(decision.placement);
     this.alignment.set(decision.alignment);
     this.coords.set(computeCoordsForAnchor(this.anchor, decision.placement, decision.alignment));
-    this.open.set(true);
+    this.open.set(transition.state.open);
 
     this.maxHeight.set(decision.maxHeight);
 
-    this.announcer.announce(this.overlayI18n.overlayOpened);
+    if (transition.announce === "opened") this.announcer.announce(this.overlayI18n.overlayOpened);
 
-    // Outside-click / Escape detection is registered only while the overlay
-    // is open — an always-on document listener per instance is wasteful (B31/R19).
-    document.addEventListener("click", this.handleDocumentClick);
-    document.addEventListener("keydown", this.handleDocumentKeydown);
+    this.setupGlobalListeners();
 
     // Non-modal overlays follow the container during scroll,
     // keeping the same corner chosen at open time.
@@ -248,11 +251,30 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   }
 
   /** Closes the overlay. */
-  protected closeOverlay(): void {
-    if (!this.open()) return;
-    this.open.set(false);
-    this.teardownGlobalListeners();
-    this.announcer.announce(this.overlayI18n.overlayClosed);
+  protected closeOverlay(restoreFocus = false): void {
+    this.applyLifecycle({ type: "close", restoreFocus });
+  }
+
+  private applyLifecycle(intent: MdyOverlayLifecycleIntent): void {
+    const transition = overlayLifecycleTransition({ open: this.open() }, intent);
+    if (transition.effect === "none") return;
+    this.open.set(transition.state.open);
+    if (transition.effect === "setup") this.setupGlobalListeners();
+    if (transition.effect === "teardown") this.teardownGlobalListeners();
+    if (transition.announce === "opened") this.announcer.announce(this.overlayI18n.overlayOpened);
+    if (transition.announce === "closed") this.announcer.announce(this.overlayI18n.overlayClosed);
+    if (transition.restoreFocus) this.restoreOverlayTriggerFocus();
+  }
+
+  /** Hosts may override when their trigger is not the first interactive element. */
+  protected restoreOverlayTriggerFocus(): void {
+    this.wrapperRef()?.nativeElement.querySelector<HTMLElement>("button, input, [tabindex='0']")?.focus();
+  }
+
+  private setupGlobalListeners(): void {
+    if (typeof window === "undefined") return;
+    document.addEventListener("click", this.handleDocumentClick);
+    document.addEventListener("keydown", this.handleDocumentKeydown);
   }
 
   /** Removes all document/window listeners registered while open. */
@@ -284,9 +306,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
 
   /** Escape closes the open overlay regardless of where focus is (R19). */
   private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {
-    if (event.key === "Escape" && this.open()) {
-      this.closeOverlay();
-    }
+    if (event.key === "Escape") this.applyLifecycle({ type: "escape" });
   };
 
   /**
@@ -294,10 +314,10 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    * Closes the overlay if the click is outside the wrapper element.
    */
   protected onDocumentClick(event: Event): void {
-    if (!this.open()) return;
     const el = this.wrapperRef()?.nativeElement;
-    if (el && !el.contains(event.target as Node)) {
-      this.closeOverlay();
-    }
+    this.applyLifecycle({
+      type: "outside",
+      outside: Boolean(el && !el.contains(event.target as Node)),
+    });
   }
 }
