@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, widgetKeyIntent } from "../dist/index.js";
+import { dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "../dist/index.js";
 
 test("overlay placement resolves collision without a DOM dependency", () => {
   assert.equal(decideOverlayPlacement({ viewportWidth: 1000, viewportHeight: 800, anchorTop: 700, anchorBottom: 740, anchorLeft: 800, anchorRight: 900, anchorWidth: 100, minSpace: 128, minWidth: 250, preferred: "below" }).placement, "above");
@@ -85,4 +85,17 @@ test("modal date range draft confirms complete ranges and cancels or rejects inc
   const incomplete = dateRangeDraftTransition(opened.state, { type: "select", value: { start: "2026-07-27", end: null } });
   assert.equal(dateRangeDraftTransition(incomplete.state, { type: "confirm" }).commit, undefined);
   assert.deepEqual(dateRangeDraftTransition(selected.state, { type: "cancel" }).state.draft, opened.state.committed);
+});
+
+test("time draft keeps clock selection provisional and typed input preserves invalid values", () => {
+  const closed = { committed: "09:15 AM", draft: "09:15 AM", open: false };
+  const opened = timeDraftTransition(closed, { type: "open", committed: null, fallback: "10:30 AM" });
+  assert.equal(opened.state.draft, "10:30 AM");
+  const selected = timeDraftTransition(opened.state, { type: "select", value: "11:45 AM" });
+  assert.equal(selected.commit, undefined);
+  assert.equal(timeDraftTransition(selected.state, { type: "confirm" }).commit, "11:45 AM");
+  assert.equal(timeDraftTransition(selected.state, { type: "cancel" }).restoreFocus, true);
+  assert.equal(timeInputTransition("", () => "ignored"), null);
+  assert.equal(timeInputTransition("bad", () => null), undefined);
+  assert.equal(timeInputTransition(" 09:30 ", (v) => v), "09:30");
 });
