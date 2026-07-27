@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "../dist/index.js";
+import { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "../dist/index.js";
 
 test("overlay placement resolves collision without a DOM dependency", () => {
   assert.equal(decideOverlayPlacement({ viewportWidth: 1000, viewportHeight: 800, anchorTop: 700, anchorBottom: 740, anchorLeft: 800, anchorRight: 900, anchorWidth: 100, minSpace: 128, minWidth: 250, preferred: "below" }).placement, "above");
@@ -106,4 +106,11 @@ test("time clock transition owns hour, minute, period and dial snapping", () => 
   assert.equal(timeClockTransition("09:15 AM", { type: "minute", value: 45 }), "09:45 AM");
   assert.equal(timeClockTransition("09:15 AM", { type: "period", value: "PM" }), "09:15 PM");
   assert.equal(timeClockTransition("09:15 AM", { type: "dial", field: "minute", angle: 180 }), "09:30 AM");
+});
+
+test("color value policy normalizes HEX input, preserves invalid drafts and closes presets", () => {
+  assert.deepEqual(colorValueTransition({ type: "text", value: "A1b" }), { value: "#A1b", close: false, touched: false });
+  assert.equal(colorValueTransition({ type: "text", value: "#12" }).value, undefined);
+  assert.deepEqual(colorValueTransition({ type: "preset", value: "#4361ee" }), { value: "#4361ee", close: true, touched: true });
+  assert.equal(colorValueEquals("#FFF", "#fff"), true);
 });

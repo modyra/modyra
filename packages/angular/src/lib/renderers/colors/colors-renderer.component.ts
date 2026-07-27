@@ -6,7 +6,7 @@ import {
   input,
 } from "@angular/core";
 
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -195,39 +195,35 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
 
 
   protected onInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.updateValue(target.value);
+    this.applyColorIntent("native", (event.target as HTMLInputElement).value);
   }
 
   protected onHexBlur(event: FocusEvent): void {
     // Revert leftover invalid text to the committed value (R14).
     (event.target as HTMLInputElement).value = this.value() ?? "";
-    this.markAsTouched();
+    this.dispatchValueBlur("colors");
   }
 
   protected onTextInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    let val = target.value;
-    if (!val.startsWith('#')) val = '#' + val;
-    if (/^#[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{3}$/.test(val)) {
-      this.updateValue(val);
-    }
+    this.applyColorIntent("text", (event.target as HTMLInputElement).value);
   }
 
   protected selectColor(color: string): void {
     if (this.isDisabled()) return;
-    this.updateValue(color);
-    this.markAsTouched();
-    this.closeOverlay();
+    this.applyColorIntent("preset", color);
   }
 
   /** Case-insensitive hex comparison: #FFF and #fff are the same color (B26). */
   protected isActiveColor(color: string): boolean {
-    return (this.value() ?? "").toLowerCase() === color.toLowerCase();
+    return colorValueEquals(this.value(), color);
   }
 
-  private updateValue(val: string): void {
-    this.setValue(val);
-    this.markAsDirty();
+  private applyColorIntent(type: "native" | "text" | "preset", value: string): void {
+    const transition = colorValueTransition({ type, value });
+    if (transition.value !== undefined && transition.value !== this.value()) {
+      this.dispatchValueIntent<string | null>("colors", { type: "select", value: transition.value });
+    }
+    if (transition.touched) this.dispatchValueBlur("colors");
+    if (transition.close) this.closeOverlay();
   }
 }
