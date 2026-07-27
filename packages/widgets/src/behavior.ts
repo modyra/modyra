@@ -64,3 +64,29 @@ export function overlayCloseCommands(restoreFocus: boolean): readonly MdyUiComma
     ? [{ type: "close-overlay" }, { type: "restore-focus", target: { part: "trigger" } }]
     : [{ type: "close-overlay" }];
 }
+
+export type MdyOptionNavigationTarget = "next" | "previous" | "first" | "last";
+
+/** Resolves roving option navigation without any framework or DOM dependency. */
+export function optionNavigationIndex(
+  key: string,
+  currentIndex: number,
+  optionCount: number,
+): number | null {
+  if (optionCount <= 0) return null;
+  const current = Math.max(0, Math.min(currentIndex, optionCount - 1));
+  switch (key) {
+    case "ArrowRight":
+    case "ArrowDown":
+      return (current + 1) % optionCount;
+    case "ArrowLeft":
+    case "ArrowUp":
+      return (current - 1 + optionCount) % optionCount;
+    case "Home":
+      return 0;
+    case "End":
+      return optionCount - 1;
+    default:
+      return null;
+  }
+}

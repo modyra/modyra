@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { booleanAttribute, ChangeDetectionStrategy, Component, computed, ElementRef, input, InputSignalWithTransform, viewChild } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, optionNavigationIndex } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -134,9 +134,7 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
   }
 
   protected onSelect(value: TValue): void {
-    if (this.isDisabled()) return;
-    this.setValue(value);
-    this.markAsDirty();
+    this.dispatchValueIntent<TValue | null>("segmented", { type: "select", value });
   }
 
   // ── ARIA radiogroup keyboard support (B34) ──────────────────────────────────
@@ -155,28 +153,8 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
   protected onKeydown(event: KeyboardEvent): void {
     if (this.isDisabled()) return;
     const opts = this.options();
-    if (opts.length === 0) return;
-    const current = Math.max(0, this.selectedIndex());
-
-    let next: number;
-    switch (event.key) {
-      case "ArrowRight":
-      case "ArrowDown":
-        next = (current + 1) % opts.length;
-        break;
-      case "ArrowLeft":
-      case "ArrowUp":
-        next = (current - 1 + opts.length) % opts.length;
-        break;
-      case "Home":
-        next = 0;
-        break;
-      case "End":
-        next = opts.length - 1;
-        break;
-      default:
-        return;
-    }
+    const next = optionNavigationIndex(event.key, Math.max(0, this.selectedIndex()), opts.length);
+    if (next === null) return;
     event.preventDefault();
     const opt = opts[next];
     if (!opt) return;
