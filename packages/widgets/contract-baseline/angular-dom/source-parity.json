@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "description": "Normalized source-level structural fixtures. Dynamic ids and values are intentionally excluded.",
+  "controls": {
+    "text": { "renderer": "text/text-renderer.component.ts", "tokens": ["MDY_WIDGET_CONTRACTS.text", "widgetHasRootClass", "mdy-control-label", "mdy-error-list", "aria-describedby"] },
+    "textarea": { "renderer": "textarea/textarea-renderer.component.ts", "tokens": ["MDY_WIDGET_CONTRACTS.textarea", "widgetHasRootClass", "mdy-control-label", "mdy-error-list", "aria-describedby"] },
+    "number": { "renderer": "number/number-renderer.component.ts", "tokens": ["MDY_WIDGET_CONTRACTS.number", "widgetHasRootClass", "mdy-control-label", "mdy-error-list", "aria-describedby"] },
+    "slider": { "renderer": "slider/slider-renderer.component.ts", "tokens": ["MDY_WIDGET_CONTRACTS.slider", "widgetHasRootClass", "mdy-control-label", "mdy-error-list", "aria-describedby"] },
+    "checkbox": { "renderer": "checkbox/checkbox-renderer.component.ts", "tokens": ["MDY_WIDGET_CONTRACTS.checkbox", "widgetHasRootClass", "mdy-error-list", "aria-describedby"] },
+    "toggle": { "renderer": "toggle/toggle-renderer.component.ts", "tokens": ["MDY_WIDGET_CONTRACTS.toggle", "widgetHasRootClass", "role=\"switch\"", "aria-checked", "aria-describedby"] },
+    "radio": { "renderer": "radio/radio-group-renderer.component.ts", "tokens": ["MDY_WIDGET_CONTRACTS.radio", "widgetHasRootClass", "role=\"radiogroup\"", "mdy-error-list", "aria-describedby"] },
+    "segmented": { "renderer": "segmented-button/segmented-button-renderer.component.ts", "tokens": ["MDY_WIDGET_CONTRACTS.segmented", "widgetHasRootClass", "role=\"radiogroup\"", "role=\"radio\"", "aria-checked", "mdy-error-list"] }
+  }
+}
