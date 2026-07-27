@@ -1,0 +1,1208 @@
+{
+  "schemaVersion": 1,
+  "source": "packages/angular/src/lib/{control,renderers}",
+  "note": "Golden semantic surface before Angular is migrated to the complete @modyra/widgets contract.",
+  "selectors": [
+    "[mdyChips]",
+    "[mdyDependsOn]",
+    "[mdyInlineErrors]",
+    "[mdyNumberSpinButtons]",
+    "[mdyOption]",
+    "[mdyPrefix]",
+    "[mdySuffix]",
+    "[mdySupportingText]",
+    "mdy-calendar",
+    "mdy-calendar-cell",
+    "mdy-calendar-grid",
+    "mdy-calendar-header",
+    "mdy-control",
+    "mdy-control-checkbox",
+    "mdy-control-colors",
+    "mdy-control-datepicker",
+    "mdy-control-daterange",
+    "mdy-control-file",
+    "mdy-control-label",
+    "mdy-control-multiselect",
+    "mdy-control-number",
+    "mdy-control-radio",
+    "mdy-control-segmented",
+    "mdy-control-select",
+    "mdy-control-slider",
+    "mdy-control-text",
+    "mdy-control-textarea",
+    "mdy-control-timepicker",
+    "mdy-control-toggle",
+    "mdy-error-list",
+    "mdy-icon",
+    "mdy-inline-error-icon",
+    "mdy-month-picker",
+    "mdy-range-calendar",
+    "mdy-range-calendar-grid",
+    "mdy-timepicker-clock",
+    "mdy-timepicker-header",
+    "mdy-timepicker-period-toggle",
+    "mdy-timepicker-segment",
+    "mdy-year-picker"
+  ],
+  "rendererModifiers": [
+    "mdy-renderer--checkbox",
+    "mdy-renderer--colors",
+    "mdy-renderer--datepicker",
+    "mdy-renderer--daterange",
+    "mdy-renderer--file",
+    "mdy-renderer--multiselect",
+    "mdy-renderer--number",
+    "mdy-renderer--radio-group",
+    "mdy-renderer--segmented",
+    "mdy-renderer--select",
+    "mdy-renderer--slider",
+    "mdy-renderer--text",
+    "mdy-renderer--textarea",
+    "mdy-renderer--timepicker",
+    "mdy-renderer--toggle",
+    "mdy-renderer--touched"
+  ],
+  "classes": [
+    "mdy-button",
+    "mdy-calendar",
+    "mdy-calendar-cell",
+    "mdy-calendar-grid",
+    "mdy-calendar-header",
+    "mdy-checkbox",
+    "mdy-chip",
+    "mdy-chip--centered",
+    "mdy-chip--counter",
+    "mdy-chip--removable",
+    "mdy-chip--selected",
+    "mdy-chip-wrapper",
+    "mdy-chip__btn",
+    "mdy-chip__check",
+    "mdy-chip__count",
+    "mdy-chip__label",
+    "mdy-color-swatch",
+    "mdy-color-swatch--active",
+    "mdy-colors",
+    "mdy-colors--open",
+    "mdy-colors__dropdown",
+    "mdy-colors__dropdown--above",
+    "mdy-colors__dropdown--overlay",
+    "mdy-colors__dropdown-header",
+    "mdy-colors__hex-input",
+    "mdy-colors__native-hidden",
+    "mdy-colors__presets",
+    "mdy-colors__preview-swatch",
+    "mdy-colors__primary-picker",
+    "mdy-colors__toggle-area",
+    "mdy-control",
+    "mdy-control-checkbox",
+    "mdy-control-checkbox-",
+    "mdy-control-colors",
+    "mdy-control-colors-",
+    "mdy-control-datepicker",
+    "mdy-control-datepicker-",
+    "mdy-control-daterange",
+    "mdy-control-file",
+    "mdy-control-file-",
+    "mdy-control-label",
+    "mdy-control-multiselect",
+    "mdy-control-multiselect-",
+    "mdy-control-number",
+    "mdy-control-number-",
+    "mdy-control-radio",
+    "mdy-control-radio-",
+    "mdy-control-segmented",
+    "mdy-control-segmented-",
+    "mdy-control-select",
+    "mdy-control-select-",
+    "mdy-control-slider",
+    "mdy-control-slider-",
+    "mdy-control-text",
+    "mdy-control-text-",
+    "mdy-control-textarea",
+    "mdy-control-textarea-",
+    "mdy-control-timepicker",
+    "mdy-control-timepicker-",
+    "mdy-control-toggle",
+    "mdy-control-toggle-",
+    "mdy-control__error",
+    "mdy-control__errors",
+    "mdy-control__inline-errors",
+    "mdy-control__inline-errors-icon",
+    "mdy-control__inline-errors-tooltip",
+    "mdy-datepicker",
+    "mdy-datepicker__action-btn",
+    "mdy-datepicker__action-btn--primary",
+    "mdy-datepicker__actions",
+    "mdy-datepicker__calendar",
+    "mdy-datepicker__cell",
+    "mdy-datepicker__cell--disabled",
+    "mdy-datepicker__cell--focused",
+    "mdy-datepicker__cell--in-range",
+    "mdy-datepicker__cell--outside",
+    "mdy-datepicker__cell--range-end",
+    "mdy-datepicker__cell--range-start",
+    "mdy-datepicker__cell--selected",
+    "mdy-datepicker__cell--today",
+    "mdy-datepicker__grid",
+    "mdy-datepicker__header",
+    "mdy-datepicker__header-label",
+    "mdy-datepicker__header-nav",
+    "mdy-datepicker__icon",
+    "mdy-datepicker__input",
+    "mdy-datepicker__modal-header",
+    "mdy-datepicker__modal-label",
+    "mdy-datepicker__modal-value",
+    "mdy-datepicker__month-cell",
+    "mdy-datepicker__month-cell--selected",
+    "mdy-datepicker__month-picker",
+    "mdy-datepicker__nav-btn",
+    "mdy-datepicker__popup",
+    "mdy-datepicker__popup--range",
+    "mdy-datepicker__row",
+    "mdy-datepicker__title",
+    "mdy-datepicker__toggle",
+    "mdy-datepicker__view-icon",
+    "mdy-datepicker__view-toggle",
+    "mdy-datepicker__weekday",
+    "mdy-datepicker__weekdays",
+    "mdy-datepicker__year-cell",
+    "mdy-datepicker__year-cell--selected",
+    "mdy-datepicker__year-grid",
+    "mdy-datepicker__year-picker",
+    "mdy-daterange-",
+    "mdy-daterange__group",
+    "mdy-daterange__hint",
+    "mdy-daterange__input",
+    "mdy-daterange__input-sizer",
+    "mdy-daterange__sep",
+    "mdy-error-list",
+    "mdy-file-clear",
+    "mdy-file-container",
+    "mdy-file-container--dragover",
+    "mdy-file-content",
+    "mdy-file-icon",
+    "mdy-file-info",
+    "mdy-file-input",
+    "mdy-file-item",
+    "mdy-file-list",
+    "mdy-file-name",
+    "mdy-file-placeholder",
+    "mdy-fl-input-padding-with-prefix",
+    "mdy-floating-label",
+    "mdy-form",
+    "mdy-icon",
+    "mdy-inline-error-icon",
+    "mdy-inline-errors",
+    "mdy-input-prefix",
+    "mdy-input-suffix",
+    "mdy-input-wrapper",
+    "mdy-input-wrapper--disabled",
+    "mdy-input-wrapper__inliner",
+    "mdy-label",
+    "mdy-label--filled",
+    "mdy-label--has-error",
+    "mdy-label-left-offset",
+    "mdy-label__required",
+    "mdy-label__required--filled",
+    "mdy-month-picker",
+    "mdy-multiselect",
+    "mdy-multiselect--open",
+    "mdy-multiselect-overlay__empty",
+    "mdy-multiselect-overlay__grid",
+    "mdy-multiselect-overlay__input",
+    "mdy-multiselect-overlay__panel",
+    "mdy-multiselect__header",
+    "mdy-multiselect__options",
+    "mdy-multiselect__search-btn",
+    "mdy-overlay-panel",
+    "mdy-radio-circle",
+    "mdy-radio-group",
+    "mdy-radio-group--horizontal",
+    "mdy-radio-item",
+    "mdy-radio-item--disabled",
+    "mdy-radio-label",
+    "mdy-range-calendar",
+    "mdy-range-calendar-grid",
+    "mdy-renderer",
+    "mdy-renderer--checkbox",
+    "mdy-renderer--colors",
+    "mdy-renderer--datepicker",
+    "mdy-renderer--daterange",
+    "mdy-renderer--file",
+    "mdy-renderer--multiselect",
+    "mdy-renderer--number",
+    "mdy-renderer--radio-group",
+    "mdy-renderer--segmented",
+    "mdy-renderer--select",
+    "mdy-renderer--slider",
+    "mdy-renderer--text",
+    "mdy-renderer--textarea",
+    "mdy-renderer--timepicker",
+    "mdy-renderer--toggle",
+    "mdy-renderer--touched",
+    "mdy-segmented",
+    "mdy-segmented__button",
+    "mdy-segmented__button--first",
+    "mdy-segmented__button--last",
+    "mdy-segmented__button--selected",
+    "mdy-segmented__check",
+    "mdy-segmented__text",
+    "mdy-segments-count",
+    "mdy-select",
+    "mdy-select__arrow",
+    "mdy-select__arrow--open",
+    "mdy-select__dropdown",
+    "mdy-select__dropdown--above",
+    "mdy-select__dropdown--overlay",
+    "mdy-select__dropdown--right",
+    "mdy-select__list",
+    "mdy-select__loader",
+    "mdy-select__loading-content",
+    "mdy-select__no-results",
+    "mdy-select__option",
+    "mdy-select__option--active",
+    "mdy-select__option--create",
+    "mdy-select__option--selected",
+    "mdy-select__option-label",
+    "mdy-select__placeholder",
+    "mdy-select__search",
+    "mdy-select__trigger",
+    "mdy-select__value",
+    "mdy-slider",
+    "mdy-slider-container",
+    "mdy-slider-fill-pct",
+    "mdy-slider-value",
+    "mdy-spin-btn",
+    "mdy-spin-btn-down",
+    "mdy-spin-btn-up",
+    "mdy-supporting-text",
+    "mdy-text",
+    "mdy-timepicker",
+    "mdy-timepicker-clock",
+    "mdy-timepicker-fields",
+    "mdy-timepicker-header",
+    "mdy-timepicker-period-btn",
+    "mdy-timepicker-period-btn--selected",
+    "mdy-timepicker-period-toggle",
+    "mdy-timepicker-period-toggle--compact",
+    "mdy-timepicker-segment",
+    "mdy-timepicker-segment--active",
+    "mdy-timepicker-segment-input",
+    "mdy-timepicker-segment-input--readonly",
+    "mdy-timepicker-segment-label",
+    "mdy-timepicker-separator",
+    "mdy-timepicker__icon",
+    "mdy-timepicker__input",
+    "mdy-timepicker__popup",
+    "mdy-timepicker__toggle",
+    "mdy-toggle",
+    "mdy-toggle__label",
+    "mdy-toggle__thumb",
+    "mdy-toggle__track",
+    "mdy-year-picker"
+  ],
+  "aria": [
+    "aria-activedescendant",
+    "aria-checked",
+    "aria-current",
+    "aria-describedby",
+    "aria-disabled",
+    "aria-expanded",
+    "aria-haspopup",
+    "aria-hidden",
+    "aria-invalid",
+    "aria-label",
+    "aria-labelledby",
+    "aria-live",
+    "aria-modal",
+    "aria-pressed",
+    "aria-required",
+    "aria-selected"
+  ],
+  "files": {
+    "packages/angular/src/lib/control/chips.directive.ts": {
+      "classes": [
+        "mdy-chip",
+        "mdy-chip--removable",
+        "mdy-chip--selected"
+      ],
+      "aria": [],
+      "selectors": [
+        "[mdyChips]"
+      ]
+    },
+    "packages/angular/src/lib/control/conditional-options.directive.ts": {
+      "classes": [
+        "mdy-select"
+      ],
+      "aria": [],
+      "selectors": [
+        "[mdyDependsOn]"
+      ]
+    },
+    "packages/angular/src/lib/control/control.component.ts": {
+      "classes": [
+        "mdy-control",
+        "mdy-text"
+      ],
+      "aria": [],
+      "selectors": [
+        "mdy-control"
+      ]
+    },
+    "packages/angular/src/lib/control/control.directive.ts": {
+      "classes": [
+        "mdy-control-text",
+        "mdy-fl-input-padding-with-prefix",
+        "mdy-form",
+        "mdy-input-prefix",
+        "mdy-label-left-offset",
+        "mdy-renderer--touched"
+      ],
+      "aria": [
+        "aria-disabled"
+      ],
+      "selectors": []
+    },
+    "packages/angular/src/lib/control/error-list.component.ts": {
+      "classes": [
+        "mdy-control__error",
+        "mdy-control__errors",
+        "mdy-error-list"
+      ],
+      "aria": [
+        "aria-live"
+      ],
+      "selectors": [
+        "mdy-error-list"
+      ]
+    },
+    "packages/angular/src/lib/control/inline-error-icon.component.ts": {
+      "classes": [
+        "mdy-control__inline-errors",
+        "mdy-control__inline-errors-icon",
+        "mdy-control__inline-errors-tooltip",
+        "mdy-icon",
+        "mdy-inline-error-icon"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-label"
+      ],
+      "selectors": [
+        "mdy-inline-error-icon"
+      ]
+    },
+    "packages/angular/src/lib/control/inline-errors.directive.ts": {
+      "classes": [
+        "mdy-control-text",
+        "mdy-inline-errors"
+      ],
+      "aria": [],
+      "selectors": [
+        "[mdyInlineErrors]"
+      ]
+    },
+    "packages/angular/src/lib/control/mdy-control-label.component.ts": {
+      "classes": [
+        "mdy-control-label",
+        "mdy-inline-error-icon",
+        "mdy-label",
+        "mdy-label--filled",
+        "mdy-label--has-error",
+        "mdy-label__required",
+        "mdy-label__required--filled"
+      ],
+      "aria": [
+        "aria-hidden",
+        "aria-labelledby"
+      ],
+      "selectors": [
+        "mdy-control-label"
+      ]
+    },
+    "packages/angular/src/lib/control/mdy-icon.component.ts": {
+      "classes": [
+        "mdy-icon"
+      ],
+      "aria": [
+        "aria-hidden"
+      ],
+      "selectors": [
+        "mdy-icon"
+      ]
+    },
+    "packages/angular/src/lib/control/option.directive.ts": {
+      "classes": [
+        "mdy-control-select"
+      ],
+      "aria": [],
+      "selectors": [
+        "[mdyOption]"
+      ]
+    },
+    "packages/angular/src/lib/control/prefix.directive.ts": {
+      "classes": [],
+      "aria": [],
+      "selectors": [
+        "[mdyPrefix]"
+      ]
+    },
+    "packages/angular/src/lib/control/suffix.directive.ts": {
+      "classes": [],
+      "aria": [],
+      "selectors": [
+        "[mdySuffix]"
+      ]
+    },
+    "packages/angular/src/lib/control/supporting-text.directive.ts": {
+      "classes": [],
+      "aria": [],
+      "selectors": [
+        "[mdySupportingText]"
+      ]
+    },
+    "packages/angular/src/lib/renderers/checkbox/checkbox-renderer.component.ts": {
+      "classes": [
+        "mdy-checkbox",
+        "mdy-control-checkbox",
+        "mdy-control-checkbox-",
+        "mdy-error-list",
+        "mdy-label",
+        "mdy-label__required",
+        "mdy-renderer",
+        "mdy-renderer--checkbox",
+        "mdy-renderer--touched",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-disabled",
+        "aria-hidden",
+        "aria-invalid",
+        "aria-label",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-checkbox"
+      ]
+    },
+    "packages/angular/src/lib/renderers/colors/colors-renderer.component.ts": {
+      "classes": [
+        "mdy-color-swatch",
+        "mdy-color-swatch--active",
+        "mdy-colors",
+        "mdy-colors--open",
+        "mdy-colors__dropdown",
+        "mdy-colors__dropdown--above",
+        "mdy-colors__dropdown--overlay",
+        "mdy-colors__dropdown-header",
+        "mdy-colors__hex-input",
+        "mdy-colors__native-hidden",
+        "mdy-colors__presets",
+        "mdy-colors__preview-swatch",
+        "mdy-colors__primary-picker",
+        "mdy-colors__toggle-area",
+        "mdy-control-colors",
+        "mdy-control-colors-",
+        "mdy-control-label",
+        "mdy-error-list",
+        "mdy-floating-label",
+        "mdy-icon",
+        "mdy-inline-errors",
+        "mdy-input-suffix",
+        "mdy-input-wrapper",
+        "mdy-input-wrapper--disabled",
+        "mdy-input-wrapper__inliner",
+        "mdy-overlay-panel",
+        "mdy-renderer",
+        "mdy-renderer--colors",
+        "mdy-renderer--touched",
+        "mdy-select__arrow",
+        "mdy-select__arrow--open",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-disabled",
+        "aria-expanded",
+        "aria-haspopup",
+        "aria-hidden",
+        "aria-invalid",
+        "aria-label",
+        "aria-required",
+        "aria-selected"
+      ],
+      "selectors": [
+        "mdy-control-colors"
+      ]
+    },
+    "packages/angular/src/lib/renderers/datepicker/calendar-cell.component.ts": {
+      "classes": [
+        "mdy-calendar-cell",
+        "mdy-datepicker__cell",
+        "mdy-datepicker__cell--disabled",
+        "mdy-datepicker__cell--focused",
+        "mdy-datepicker__cell--outside",
+        "mdy-datepicker__cell--selected",
+        "mdy-datepicker__cell--today"
+      ],
+      "aria": [
+        "aria-current",
+        "aria-disabled",
+        "aria-selected"
+      ],
+      "selectors": [
+        "mdy-calendar-cell"
+      ]
+    },
+    "packages/angular/src/lib/renderers/datepicker/calendar-grid.component.ts": {
+      "classes": [
+        "mdy-calendar-cell",
+        "mdy-calendar-grid",
+        "mdy-datepicker__grid",
+        "mdy-datepicker__row",
+        "mdy-datepicker__weekday",
+        "mdy-datepicker__weekdays"
+      ],
+      "aria": [
+        "aria-label"
+      ],
+      "selectors": [
+        "mdy-calendar-grid"
+      ]
+    },
+    "packages/angular/src/lib/renderers/datepicker/calendar-header.component.ts": {
+      "classes": [
+        "mdy-calendar-header",
+        "mdy-datepicker__header",
+        "mdy-datepicker__header-label",
+        "mdy-datepicker__header-nav",
+        "mdy-datepicker__nav-btn",
+        "mdy-datepicker__title",
+        "mdy-datepicker__view-icon",
+        "mdy-datepicker__view-toggle",
+        "mdy-icon"
+      ],
+      "aria": [
+        "aria-label"
+      ],
+      "selectors": [
+        "mdy-calendar-header"
+      ]
+    },
+    "packages/angular/src/lib/renderers/datepicker/calendar.component.ts": {
+      "classes": [
+        "mdy-calendar",
+        "mdy-calendar-grid",
+        "mdy-calendar-header",
+        "mdy-datepicker__calendar",
+        "mdy-month-picker",
+        "mdy-year-picker"
+      ],
+      "aria": [
+        "aria-label",
+        "aria-modal"
+      ],
+      "selectors": [
+        "mdy-calendar"
+      ]
+    },
+    "packages/angular/src/lib/renderers/datepicker/datepicker.component.ts": {
+      "classes": [
+        "mdy-calendar",
+        "mdy-control-datepicker",
+        "mdy-control-datepicker-",
+        "mdy-control-label",
+        "mdy-datepicker",
+        "mdy-datepicker__action-btn",
+        "mdy-datepicker__action-btn--primary",
+        "mdy-datepicker__actions",
+        "mdy-datepicker__icon",
+        "mdy-datepicker__input",
+        "mdy-datepicker__modal-header",
+        "mdy-datepicker__modal-label",
+        "mdy-datepicker__modal-value",
+        "mdy-datepicker__popup",
+        "mdy-datepicker__toggle",
+        "mdy-error-list",
+        "mdy-floating-label",
+        "mdy-icon",
+        "mdy-inline-errors",
+        "mdy-input-prefix",
+        "mdy-input-suffix",
+        "mdy-input-wrapper",
+        "mdy-input-wrapper--disabled",
+        "mdy-overlay-panel",
+        "mdy-renderer",
+        "mdy-renderer--datepicker",
+        "mdy-renderer--touched",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-disabled",
+        "aria-expanded",
+        "aria-haspopup",
+        "aria-invalid",
+        "aria-label",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-datepicker"
+      ]
+    },
+    "packages/angular/src/lib/renderers/datepicker/daterange-renderer.component.ts": {
+      "classes": [
+        "mdy-control-daterange",
+        "mdy-control-label",
+        "mdy-datepicker",
+        "mdy-datepicker__action-btn",
+        "mdy-datepicker__action-btn--primary",
+        "mdy-datepicker__actions",
+        "mdy-datepicker__icon",
+        "mdy-datepicker__input",
+        "mdy-datepicker__modal-header",
+        "mdy-datepicker__modal-label",
+        "mdy-datepicker__modal-value",
+        "mdy-datepicker__popup",
+        "mdy-datepicker__popup--range",
+        "mdy-datepicker__toggle",
+        "mdy-daterange-",
+        "mdy-daterange__group",
+        "mdy-daterange__input",
+        "mdy-daterange__input-sizer",
+        "mdy-daterange__sep",
+        "mdy-error-list",
+        "mdy-floating-label",
+        "mdy-icon",
+        "mdy-inline-errors",
+        "mdy-input-suffix",
+        "mdy-input-wrapper",
+        "mdy-input-wrapper--disabled",
+        "mdy-overlay-panel",
+        "mdy-range-calendar",
+        "mdy-renderer",
+        "mdy-renderer--datepicker",
+        "mdy-renderer--daterange",
+        "mdy-renderer--touched",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-disabled",
+        "aria-expanded",
+        "aria-haspopup",
+        "aria-hidden",
+        "aria-invalid",
+        "aria-label",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-daterange"
+      ]
+    },
+    "packages/angular/src/lib/renderers/datepicker/month-picker.component.ts": {
+      "classes": [
+        "mdy-datepicker__month-cell",
+        "mdy-datepicker__month-cell--selected",
+        "mdy-datepicker__month-picker",
+        "mdy-month-picker"
+      ],
+      "aria": [],
+      "selectors": [
+        "mdy-month-picker"
+      ]
+    },
+    "packages/angular/src/lib/renderers/datepicker/range-calendar-grid.component.ts": {
+      "classes": [
+        "mdy-datepicker__cell",
+        "mdy-datepicker__cell--disabled",
+        "mdy-datepicker__cell--focused",
+        "mdy-datepicker__cell--in-range",
+        "mdy-datepicker__cell--outside",
+        "mdy-datepicker__cell--range-end",
+        "mdy-datepicker__cell--range-start",
+        "mdy-datepicker__cell--selected",
+        "mdy-datepicker__cell--today",
+        "mdy-datepicker__grid",
+        "mdy-datepicker__row",
+        "mdy-datepicker__weekday",
+        "mdy-datepicker__weekdays",
+        "mdy-range-calendar-grid"
+      ],
+      "aria": [
+        "aria-current",
+        "aria-disabled",
+        "aria-label",
+        "aria-selected"
+      ],
+      "selectors": [
+        "mdy-range-calendar-grid"
+      ]
+    },
+    "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts": {
+      "classes": [
+        "mdy-calendar-header",
+        "mdy-datepicker__calendar",
+        "mdy-daterange__hint",
+        "mdy-month-picker",
+        "mdy-range-calendar",
+        "mdy-range-calendar-grid",
+        "mdy-year-picker"
+      ],
+      "aria": [
+        "aria-label",
+        "aria-live",
+        "aria-modal"
+      ],
+      "selectors": [
+        "mdy-range-calendar"
+      ]
+    },
+    "packages/angular/src/lib/renderers/datepicker/year-picker.component.ts": {
+      "classes": [
+        "mdy-datepicker__year-cell",
+        "mdy-datepicker__year-cell--selected",
+        "mdy-datepicker__year-grid",
+        "mdy-datepicker__year-picker",
+        "mdy-year-picker"
+      ],
+      "aria": [],
+      "selectors": [
+        "mdy-year-picker"
+      ]
+    },
+    "packages/angular/src/lib/renderers/file/file-renderer.component.ts": {
+      "classes": [
+        "mdy-button",
+        "mdy-control-file",
+        "mdy-control-file-",
+        "mdy-control-label",
+        "mdy-error-list",
+        "mdy-file-clear",
+        "mdy-file-container",
+        "mdy-file-container--dragover",
+        "mdy-file-content",
+        "mdy-file-icon",
+        "mdy-file-info",
+        "mdy-file-input",
+        "mdy-file-item",
+        "mdy-file-list",
+        "mdy-file-name",
+        "mdy-file-placeholder",
+        "mdy-floating-label",
+        "mdy-inline-errors",
+        "mdy-renderer",
+        "mdy-renderer--file",
+        "mdy-renderer--touched",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-hidden",
+        "aria-invalid",
+        "aria-label",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-file"
+      ]
+    },
+    "packages/angular/src/lib/renderers/multiselect/multiselect-renderer.component.ts": {
+      "classes": [
+        "mdy-chip",
+        "mdy-chip--centered",
+        "mdy-chip--counter",
+        "mdy-chip--selected",
+        "mdy-chip-wrapper",
+        "mdy-chip__btn",
+        "mdy-chip__check",
+        "mdy-chip__count",
+        "mdy-chip__label",
+        "mdy-control-label",
+        "mdy-control-multiselect",
+        "mdy-control-multiselect-",
+        "mdy-error-list",
+        "mdy-icon",
+        "mdy-inline-errors",
+        "mdy-multiselect",
+        "mdy-multiselect--open",
+        "mdy-multiselect-overlay__empty",
+        "mdy-multiselect-overlay__grid",
+        "mdy-multiselect-overlay__input",
+        "mdy-multiselect-overlay__panel",
+        "mdy-multiselect__header",
+        "mdy-multiselect__options",
+        "mdy-multiselect__search-btn",
+        "mdy-overlay-panel",
+        "mdy-renderer",
+        "mdy-renderer--multiselect",
+        "mdy-renderer--touched",
+        "mdy-select__loader",
+        "mdy-select__loading-content",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-disabled",
+        "aria-invalid",
+        "aria-label",
+        "aria-pressed",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-multiselect"
+      ]
+    },
+    "packages/angular/src/lib/renderers/number/number-renderer.component.ts": {
+      "classes": [
+        "mdy-control-label",
+        "mdy-control-number",
+        "mdy-control-number-",
+        "mdy-error-list",
+        "mdy-floating-label",
+        "mdy-inline-errors",
+        "mdy-input-prefix",
+        "mdy-input-suffix",
+        "mdy-input-wrapper",
+        "mdy-input-wrapper--disabled",
+        "mdy-renderer",
+        "mdy-renderer--number",
+        "mdy-renderer--touched",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-disabled",
+        "aria-invalid",
+        "aria-label",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-number"
+      ]
+    },
+    "packages/angular/src/lib/renderers/number/number-spin-buttons.directive.ts": {
+      "classes": [
+        "mdy-spin-btn",
+        "mdy-spin-btn-down",
+        "mdy-spin-btn-up"
+      ],
+      "aria": [
+        "aria-label"
+      ],
+      "selectors": [
+        "[mdyNumberSpinButtons]"
+      ]
+    },
+    "packages/angular/src/lib/renderers/radio/radio-group-renderer.component.ts": {
+      "classes": [
+        "mdy-control-label",
+        "mdy-control-radio",
+        "mdy-control-radio-",
+        "mdy-error-list",
+        "mdy-radio-circle",
+        "mdy-radio-group",
+        "mdy-radio-group--horizontal",
+        "mdy-radio-item",
+        "mdy-radio-item--disabled",
+        "mdy-radio-label",
+        "mdy-renderer",
+        "mdy-renderer--radio-group",
+        "mdy-renderer--touched",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-invalid",
+        "aria-labelledby",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-radio"
+      ]
+    },
+    "packages/angular/src/lib/renderers/segmented-button/segmented-button-renderer.component.ts": {
+      "classes": [
+        "mdy-control-label",
+        "mdy-control-segmented",
+        "mdy-control-segmented-",
+        "mdy-error-list",
+        "mdy-icon",
+        "mdy-renderer",
+        "mdy-renderer--segmented",
+        "mdy-renderer--touched",
+        "mdy-segmented",
+        "mdy-segmented__button",
+        "mdy-segmented__button--first",
+        "mdy-segmented__button--last",
+        "mdy-segmented__button--selected",
+        "mdy-segmented__check",
+        "mdy-segmented__text",
+        "mdy-segments-count",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-checked",
+        "aria-disabled",
+        "aria-hidden",
+        "aria-labelledby"
+      ],
+      "selectors": [
+        "mdy-control-segmented"
+      ]
+    },
+    "packages/angular/src/lib/renderers/select/select-renderer.component.ts": {
+      "classes": [
+        "mdy-control-label",
+        "mdy-control-select",
+        "mdy-control-select-",
+        "mdy-error-list",
+        "mdy-floating-label",
+        "mdy-icon",
+        "mdy-inline-errors",
+        "mdy-input-prefix",
+        "mdy-input-suffix",
+        "mdy-input-wrapper",
+        "mdy-input-wrapper--disabled",
+        "mdy-overlay-panel",
+        "mdy-renderer",
+        "mdy-renderer--select",
+        "mdy-renderer--touched",
+        "mdy-select",
+        "mdy-select__arrow",
+        "mdy-select__dropdown",
+        "mdy-select__dropdown--above",
+        "mdy-select__dropdown--overlay",
+        "mdy-select__dropdown--right",
+        "mdy-select__list",
+        "mdy-select__loader",
+        "mdy-select__loading-content",
+        "mdy-select__no-results",
+        "mdy-select__option",
+        "mdy-select__option--active",
+        "mdy-select__option--create",
+        "mdy-select__option--selected",
+        "mdy-select__option-label",
+        "mdy-select__placeholder",
+        "mdy-select__search",
+        "mdy-select__trigger",
+        "mdy-select__value",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-activedescendant",
+        "aria-describedby",
+        "aria-disabled",
+        "aria-expanded",
+        "aria-haspopup",
+        "aria-invalid",
+        "aria-label",
+        "aria-labelledby",
+        "aria-required",
+        "aria-selected"
+      ],
+      "selectors": [
+        "mdy-control-select"
+      ]
+    },
+    "packages/angular/src/lib/renderers/slider/slider-renderer.component.ts": {
+      "classes": [
+        "mdy-control-label",
+        "mdy-control-slider",
+        "mdy-control-slider-",
+        "mdy-error-list",
+        "mdy-inline-errors",
+        "mdy-renderer",
+        "mdy-renderer--slider",
+        "mdy-renderer--touched",
+        "mdy-slider",
+        "mdy-slider-container",
+        "mdy-slider-fill-pct",
+        "mdy-slider-value",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-invalid",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-slider"
+      ]
+    },
+    "packages/angular/src/lib/renderers/text/text-renderer.component.ts": {
+      "classes": [
+        "mdy-control-label",
+        "mdy-control-text",
+        "mdy-control-text-",
+        "mdy-error-list",
+        "mdy-floating-label",
+        "mdy-inline-errors",
+        "mdy-input-prefix",
+        "mdy-input-suffix",
+        "mdy-input-wrapper",
+        "mdy-input-wrapper--disabled",
+        "mdy-renderer",
+        "mdy-renderer--text",
+        "mdy-renderer--touched",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-disabled",
+        "aria-invalid",
+        "aria-label",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-text"
+      ]
+    },
+    "packages/angular/src/lib/renderers/textarea/textarea-renderer.component.ts": {
+      "classes": [
+        "mdy-control-label",
+        "mdy-control-textarea",
+        "mdy-control-textarea-",
+        "mdy-error-list",
+        "mdy-floating-label",
+        "mdy-inline-errors",
+        "mdy-input-prefix",
+        "mdy-input-suffix",
+        "mdy-input-wrapper",
+        "mdy-input-wrapper--disabled",
+        "mdy-renderer",
+        "mdy-renderer--textarea",
+        "mdy-renderer--touched",
+        "mdy-supporting-text"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-disabled",
+        "aria-invalid",
+        "aria-label",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-textarea"
+      ]
+    },
+    "packages/angular/src/lib/renderers/timepicker/timepicker-clock.component.ts": {
+      "classes": [
+        "mdy-timepicker-clock"
+      ],
+      "aria": [],
+      "selectors": [
+        "mdy-timepicker-clock"
+      ]
+    },
+    "packages/angular/src/lib/renderers/timepicker/timepicker-header.component.ts": {
+      "classes": [
+        "mdy-timepicker-fields",
+        "mdy-timepicker-header",
+        "mdy-timepicker-period-toggle",
+        "mdy-timepicker-segment",
+        "mdy-timepicker-separator"
+      ],
+      "aria": [],
+      "selectors": [
+        "mdy-timepicker-header"
+      ]
+    },
+    "packages/angular/src/lib/renderers/timepicker/timepicker-period-toggle.component.ts": {
+      "classes": [
+        "mdy-timepicker-period-btn",
+        "mdy-timepicker-period-btn--selected",
+        "mdy-timepicker-period-toggle",
+        "mdy-timepicker-period-toggle--compact"
+      ],
+      "aria": [],
+      "selectors": [
+        "mdy-timepicker-period-toggle"
+      ]
+    },
+    "packages/angular/src/lib/renderers/timepicker/timepicker-renderer.component.ts": {
+      "classes": [
+        "mdy-control-label",
+        "mdy-control-timepicker",
+        "mdy-control-timepicker-",
+        "mdy-error-list",
+        "mdy-floating-label",
+        "mdy-icon",
+        "mdy-inline-errors",
+        "mdy-input-prefix",
+        "mdy-input-suffix",
+        "mdy-input-wrapper",
+        "mdy-input-wrapper--disabled",
+        "mdy-overlay-panel",
+        "mdy-renderer",
+        "mdy-renderer--timepicker",
+        "mdy-renderer--touched",
+        "mdy-supporting-text",
+        "mdy-timepicker",
+        "mdy-timepicker-clock",
+        "mdy-timepicker__icon",
+        "mdy-timepicker__input",
+        "mdy-timepicker__popup",
+        "mdy-timepicker__toggle"
+      ],
+      "aria": [
+        "aria-describedby",
+        "aria-disabled",
+        "aria-expanded",
+        "aria-haspopup",
+        "aria-invalid",
+        "aria-label",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-timepicker"
+      ]
+    },
+    "packages/angular/src/lib/renderers/timepicker/timepicker-segment.component.ts": {
+      "classes": [
+        "mdy-timepicker-segment",
+        "mdy-timepicker-segment--active",
+        "mdy-timepicker-segment-input",
+        "mdy-timepicker-segment-input--readonly",
+        "mdy-timepicker-segment-label"
+      ],
+      "aria": [
+        "aria-label"
+      ],
+      "selectors": [
+        "mdy-timepicker-segment"
+      ]
+    },
+    "packages/angular/src/lib/renderers/toggle/toggle-renderer.component.ts": {
+      "classes": [
+        "mdy-control-toggle",
+        "mdy-control-toggle-",
+        "mdy-error-list",
+        "mdy-inline-error-icon",
+        "mdy-label__required",
+        "mdy-renderer",
+        "mdy-renderer--toggle",
+        "mdy-renderer--touched",
+        "mdy-supporting-text",
+        "mdy-toggle",
+        "mdy-toggle__label",
+        "mdy-toggle__thumb",
+        "mdy-toggle__track"
+      ],
+      "aria": [
+        "aria-checked",
+        "aria-describedby",
+        "aria-disabled",
+        "aria-hidden",
+        "aria-invalid",
+        "aria-label",
+        "aria-required"
+      ],
+      "selectors": [
+        "mdy-control-toggle"
+      ]
+    }
+  }
+}
