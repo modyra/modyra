@@ -1,3 +1,4 @@
+import { angleToHour, angleToMinute, buildTimeString, parseTime, type MdyTimeFormat } from "@modyra/core/time-utils";
 import type { MdyUiCommand } from "./commands.js";
 import type { MdyWidgetKind } from "./catalog.js";
 
@@ -403,4 +404,36 @@ export function timeInputTransition(
   const value = raw.trim().toUpperCase();
   if (value.length === 0) return null;
   return parseAndFormat(value) ?? undefined;
+}
+
+
+export type MdyTimeClockIntent =
+  | { readonly type: "hour"; readonly value: number; readonly format: MdyTimeFormat }
+  | { readonly type: "minute"; readonly value: number }
+  | { readonly type: "period"; readonly value: "AM" | "PM" }
+  | { readonly type: "dial"; readonly field: "hour" | "minute"; readonly angle: number };
+
+/** Canonical clock transition. Hosts only extract native input or pointer geometry. */
+export function timeClockTransition(
+  currentValue: string | null,
+  intent: MdyTimeClockIntent,
+): string | null {
+  const current = parseTime(currentValue) ?? { hour: 12, minute: 0, period: "AM" as const };
+  if (intent.type === "hour") {
+    if (intent.format === "24h") {
+      if (!Number.isInteger(intent.value) || intent.value < 0 || intent.value > 23) return null;
+      const hour = intent.value % 12 === 0 ? 12 : intent.value % 12;
+      return buildTimeString(hour, current.minute, intent.value >= 12 ? "PM" : "AM");
+    }
+    if (!Number.isInteger(intent.value) || intent.value < 1 || intent.value > 12) return null;
+    return buildTimeString(intent.value, current.minute, current.period);
+  }
+  if (intent.type === "minute") {
+    if (!Number.isInteger(intent.value) || intent.value < 0 || intent.value > 59) return null;
+    return buildTimeString(current.hour, intent.value, current.period);
+  }
+  if (intent.type === "period") return buildTimeString(current.hour, current.minute, intent.value);
+  return intent.field === "hour"
+    ? buildTimeString(angleToHour(intent.angle), current.minute, current.period)
+    : buildTimeString(current.hour, angleToMinute(intent.angle), current.period);
 }
