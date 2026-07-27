@@ -68,7 +68,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   protected readonly wrapperRef = viewChild<ElementRef<HTMLElement>>("wrapper");
 
   /** Reference to the host element for position calculation. */
-  protected readonly hostRef = inject(ElementRef);
+  protected readonly hostRef = inject(ElementRef<HTMLElement>);
 
   protected readonly announcer = inject(MdyA11yAnnouncer);
   private readonly overlayI18n = inject(MDY_I18N_MESSAGES);
