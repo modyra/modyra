@@ -11,9 +11,6 @@ import {
   viewChild,
 } from "@angular/core";
 import {
-  angleToHour,
-  angleToMinute,
-  buildTimeString,
   formatTime,
   getPointerCoords,
   hourToAngle,
@@ -23,6 +20,7 @@ import {
   pointerAngle,
   to24Hour,
 } from "@modyra/core/time-utils";
+import { timeClockTransition } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
 
@@ -159,56 +157,28 @@ export class MdyTimepickerClockComponent {
 
   protected onHourInput(event: Event): void {
     const target = event.target as HTMLInputElement;
-    const raw = target.value;
-    const h = parseInt(raw, 10);
-    const p = this.parsed();
-
-    if (this.format() === "24h") {
-      // 0-23: the period is derived from the hour itself.
-      if (isNaN(h) || h < 0 || h > 23) {
-        target.value = this.hourDisplay();
-        return;
-      }
-      this.focusedField.set("hour");
-      const hour12 = h % 12 === 0 ? 12 : h % 12;
-      this.timePicked.emit(
-        buildTimeString(hour12, p?.minute ?? 0, h >= 12 ? "PM" : "AM"),
-      );
-      return;
-    }
-
-    // Valid hours are strictly 1-12 in the 12h model: hour "0" would produce
-    // "00:30 AM", which parseTime and the renderer's input regex reject (B23).
-    if (isNaN(h) || h < 1 || h > 12) {
-      target.value = this.hourDisplay();
-      return;
-    }
-
+    const next = timeClockTransition(this.value(), {
+      type: "hour", value: Number.parseInt(target.value, 10), format: this.format(),
+    });
+    if (next === null) { target.value = this.hourDisplay(); return; }
     this.focusedField.set("hour");
-    this.timePicked.emit(buildTimeString(h, p?.minute ?? 0, p?.period ?? "AM"));
+    this.timePicked.emit(next);
   }
 
   protected onMinuteInput(event: Event): void {
     const target = event.target as HTMLInputElement;
-    const raw = target.value;
-
-    // Treat empty as 0
-    const m = raw === "" ? 0 : parseInt(raw, 10);
-
-    if (isNaN(m) || m < 0 || m > 59) {
-      target.value = this.minuteDisplay();
-      return;
-    }
-
+    const next = timeClockTransition(this.value(), {
+      type: "minute", value: target.value === "" ? 0 : Number.parseInt(target.value, 10),
+    });
+    if (next === null) { target.value = this.minuteDisplay(); return; }
     this.focusedField.set("minute");
-    const p = this.parsed();
-    this.timePicked.emit(buildTimeString(p?.hour ?? 12, m, p?.period ?? "AM"));
+    this.timePicked.emit(next);
   }
 
   protected togglePeriod(period: "AM" | "PM"): void {
     if (this.disabled()) return;
-    const p = this.parsed();
-    this.timePicked.emit(buildTimeString(p?.hour ?? 12, p?.minute ?? 0, period));
+    const next = timeClockTransition(this.value(), { type: "period", value: period });
+    if (next !== null) this.timePicked.emit(next);
   }
 
   protected setViewMode(mode: "input" | "dial"): void {
@@ -219,14 +189,14 @@ export class MdyTimepickerClockComponent {
 
   protected onDialNumberClick(value: number): void {
     if (this.disabled()) return;
-    const p = this.parsed();
-    if (this.focusedField() === "hour") {
-      this.timePicked.emit(buildTimeString(value, p?.minute ?? 0, p?.period ?? "AM"));
-      // Auto-switch to minutes after tapping an hour
-      this.scheduleMinuteSwitch(200);
-    } else {
-      this.timePicked.emit(buildTimeString(p?.hour ?? 12, value, p?.period ?? "AM"));
-    }
+    const field = this.focusedField();
+    const next = timeClockTransition(this.value(),
+      field === "hour"
+        ? { type: "hour", value, format: "12h" }
+        : { type: "minute", value },
+    );
+    if (next !== null) this.timePicked.emit(next);
+    if (field === "hour") this.scheduleMinuteSwitch(200);
   }
 
   // ── Drag interaction ───────────────────────────────────────────────────────
@@ -249,18 +219,8 @@ export class MdyTimepickerClockComponent {
     const angle = this.dragAngle();
     if (angle === null) return;
 
-    const p = this.parsed();
-    let newTime: string;
-
-    if (this.dragField === "minute") {
-      const min = angleToMinute(angle);
-      newTime = buildTimeString(p?.hour ?? 12, min, p?.period ?? "AM");
-    } else {
-      const hour = angleToHour(angle);
-      newTime = buildTimeString(hour, p?.minute ?? 0, p?.period ?? "AM");
-    }
-
-    this.timePicked.emit(newTime);
+    const next = timeClockTransition(this.value(), { type: "dial", field: this.dragField, angle });
+    if (next !== null) this.timePicked.emit(next);
   }
 
   protected onDragEnd(): void {
@@ -270,16 +230,9 @@ export class MdyTimepickerClockComponent {
     // Snap to nearest value and emit final position
     const angle = this.dragAngle();
     if (angle !== null) {
-      const p = this.parsed();
-      let finalTime: string;
-      if (this.dragField === "minute") {
-        finalTime = buildTimeString(p?.hour ?? 12, angleToMinute(angle), p?.period ?? "AM");
-      } else {
-        finalTime = buildTimeString(angleToHour(angle), p?.minute ?? 0, p?.period ?? "AM");
-        // Auto-switch to minutes after selecting an hour via drag
-        this.scheduleMinuteSwitch(300);
-      }
-      this.timePicked.emit(finalTime);
+      const next = timeClockTransition(this.value(), { type: "dial", field: this.dragField, angle });
+      if (this.dragField === "hour") this.scheduleMinuteSwitch(300);
+      if (next !== null) this.timePicked.emit(next);
     }
 
     this.isDragging.set(false);
