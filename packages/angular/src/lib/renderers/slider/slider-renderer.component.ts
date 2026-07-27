@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, effect, ElementRef, viewChild, input } from "@angular/core";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -61,6 +62,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
   `,
 })
 export class MdySliderComponent extends MdyBaseControl<number> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.slider;
   readonly min       = input<number>(0);
   readonly max       = input<number>(100);
   readonly step      = input<number>(1);

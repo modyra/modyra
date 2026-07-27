@@ -10,6 +10,7 @@ import {
   viewChild,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -239,6 +240,7 @@ import { MdyDropdownBase } from "../dropdown-base";
 export class MdyMultiselectComponent<TValue = string>
   extends MdyDropdownBase<ReadonlyArray<TValue>, TValue>
   implements MdyOptionsControl<TValue> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.multiselect;
   readonly mode = input<"single" | "multi">("single");
 
   /**

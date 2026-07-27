@@ -6,6 +6,7 @@ import {
   input,
 } from "@angular/core";
 
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -162,6 +163,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
   `
 })
 export class MdyColorsComponent extends MdyOverlayControl<string> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.colors;
 
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
 

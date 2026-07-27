@@ -16,6 +16,7 @@ import {
   formatIsoDate,
   parseIsoDate,
 } from "@modyra/core/date-utils";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -174,6 +175,7 @@ import { MdyRangeCalendarComponent } from "./range-calendar.component";
   `,
 })
 export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange | null> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.daterange;
   readonly startPlaceholder = input<string>("Start");
   readonly endPlaceholder = input<string>("End");
   readonly minDate = input<string | null>(null);

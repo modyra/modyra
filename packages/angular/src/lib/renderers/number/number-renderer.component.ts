@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, input } from "@angular/core";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -74,6 +75,7 @@ import { MdyNumberSpinButtonsDirective } from "./number-spin-buttons.directive";
   `,
 })
 export class MdyNumberComponent extends MdyBaseControl<number | null> {
+  protected readonly widgetContract = MDY_WIDGET_CONTRACTS.number;
   readonly placeholder = input<string>("");
   readonly minValue = input<number | null>(null);
   readonly maxValue = input<number | null>(null);
