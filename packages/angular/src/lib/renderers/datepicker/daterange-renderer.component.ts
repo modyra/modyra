@@ -198,8 +198,6 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   private readonly injector = inject(Injector);
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
 
-  // ── Derived state ─────────────────────────────────────────────────────────────
-
   private readonly modalDraft = signal<MdyDateRangeDraftState>({
     committed: { start: null, end: null },
     draft: { start: null, end: null },

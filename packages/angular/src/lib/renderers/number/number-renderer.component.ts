@@ -6,9 +6,6 @@ import { MdyControlLabelComponent } from "../../control/mdy-control-label.compon
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyNumberSpinButtonsDirective } from "./number-spin-buttons.directive";
 
-/**
- * Number input renderer component.
- */
 @Component({
   selector: "mdy-control-number",
   standalone: true,

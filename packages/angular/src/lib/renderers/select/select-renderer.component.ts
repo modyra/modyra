@@ -28,13 +28,6 @@ import { MdyOptionsControl, MdySelectOption } from "../../core/types";
 import { MdyAngularSelectAdapter, MdyWidgetRuntime } from "../../widget-runtime";
 import { MdyDropdownBase } from "../dropdown-base";
 
-/**
- * Select renderer component.
- *
- * When a custom `<ng-template mdyOption>` is provided, renders a fully custom
- * dropdown with HTML content in options. Otherwise falls back to a native
- * `<select>` element.
- */
 @Component({
   selector: "mdy-control-select",
   standalone: true,
@@ -124,7 +117,6 @@ import { MdyDropdownBase } from "../dropdown-base";
             </div>
           }
         </div>
-
 
         <mdy-overlay-panel
           [open]="open()"
@@ -297,8 +289,6 @@ export class MdySelectComponent<TValue = string>
     );
 
     this.selectAdapter.connectHandlers({
-      // Widgets decides when the overlay closes; Angular materializes that
-      // decision through the shared overlay lifecycle.
       setOpen: (open) => open ? this.openOverlay() : this.closeOverlay(),
       onChange: () => undefined,
       onTouched: () => this.dispatchValueBlur("select"),
@@ -397,7 +387,6 @@ export class MdySelectComponent<TValue = string>
 
   protected selectOption(opt: MdySelectOption<TValue>): void {
     this.selectAdapter.dispatch({ type: "select", optionKey: this.optionKey(opt) });
-    // Materialize the close immediately after Widgets commits the option.
     this.closeOverlay();
   }
 

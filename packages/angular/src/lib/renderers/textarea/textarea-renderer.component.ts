@@ -5,9 +5,6 @@ import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 
-/**
- * Textarea renderer component.
- */
 @Component({
   selector: "mdy-control-textarea",
   standalone: true,
@@ -55,7 +52,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         </div>
       }
     </div>
-    
+
     @if (!inlineErrors && touched() && hasErrors()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {

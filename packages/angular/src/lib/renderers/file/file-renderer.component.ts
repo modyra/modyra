@@ -6,9 +6,6 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 
-/**
- * File Upload renderer component.
- */
 @Component({
   selector: "mdy-control-file",
   standalone: true,
@@ -106,12 +103,9 @@ export class MdyFileComponent extends MdyBaseControl<File | File[] | null> {
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly accept = input<string>("");
   readonly multiple = input<boolean>(false);
-  /** Maximum size per file in bytes (0 = no limit). Applies to picker and drop. */
   readonly maxFileSize = input<number>(0);
-  /** Maximum number of files when [multiple] (0 = no limit). */
   readonly maxFiles = input<number>(0);
   readonly fileSelected = output<File | File[] | null>();
-  /** Emits the files rejected by accept/maxFileSize/maxFiles filtering. */
   readonly filesRejected = output<ReadonlyArray<File>>();
 
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
@@ -131,8 +125,6 @@ export class MdyFileComponent extends MdyBaseControl<File | File[] | null> {
   protected onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.processFiles(input.files);
-    // Reset the native input so picking the same file again (after a clear,
-    // a rejection, or a programmatic value change) re-fires `change` (R12).
     input.value = "";
   }
 

@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "baselineCommit": "5130090e27dd334d0b9f54d6116fb5e971a88d9c",
-  "totalLines": 4685,
+  "totalLines": 4345,
   "hotspots": {
-    "select/select-renderer.component.ts": 453,
+    "select/select-renderer.component.ts": 442,
     "multiselect/multiselect-renderer.component.ts": 361,
-    "datepicker/daterange-renderer.component.ts": 342,
-    "datepicker/datepicker.component.ts": 314,
-    "datepicker/range-calendar.component.ts": 284,
-    "datepicker/calendar.component.ts": 262,
-    "timepicker/timepicker-clock.component.ts": 251,
-    "timepicker/timepicker-renderer.component.ts": 234,
-    "colors/colors-renderer.component.ts": 229
+    "datepicker/daterange-renderer.component.ts": 340,
+    "datepicker/datepicker.component.ts": 300,
+    "datepicker/range-calendar.component.ts": 272,
+    "datepicker/calendar.component.ts": 214,
+    "timepicker/timepicker-clock.component.ts": 221,
+    "timepicker/timepicker-renderer.component.ts": 216,
+    "colors/colors-renderer.component.ts": 215
   }
 }

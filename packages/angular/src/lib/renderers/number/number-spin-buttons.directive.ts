@@ -2,24 +2,11 @@ import { Directive, ElementRef, inject, input, OnInit, Renderer2 } from "@angula
 import { MDY_ICONS } from "@modyra/core/icons";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 
-/**
- * @description
- * Directive that adds custom design-system spin buttons to a number input.
- * Usage: <input type="number" [mdyNumberSpinButtons]="true" />
- *
- * - No mutation of input args
- * - No any, no !, no as, no ViewChild
- * - All public properties readonly
- * - No side effects in constructor
- * - No effect() or signals (not needed)
- * - ARIA/keyboard accessible
- */
 @Directive({
   selector: "[mdyNumberSpinButtons]",
   standalone: true,
 })
 export class MdyNumberSpinButtonsDirective implements OnInit {
-  /** Enables custom spin buttons if true. */
   readonly mdyNumberSpinButtons = input.required<boolean | string>();
 
   private readonly i18n = inject(MDY_I18N_MESSAGES);
@@ -36,7 +23,6 @@ export class MdyNumberSpinButtonsDirective implements OnInit {
     this.renderer.insertBefore(input.parentNode, wrapper, input);
     this.renderer.appendChild(wrapper, input);
 
-    // Up button
     const upBtn = this.renderer.createElement("button");
     this.renderer.addClass(upBtn, "mdy-spin-btn");
     this.renderer.addClass(upBtn, "mdy-spin-btn-up");
@@ -55,7 +41,6 @@ export class MdyNumberSpinButtonsDirective implements OnInit {
     this.renderer.setStyle(upBtn, "z-index", "2");
     this.renderer.appendChild(wrapper, upBtn);
 
-    // Down button
     const downBtn = this.renderer.createElement("button");
     this.renderer.addClass(downBtn, "mdy-spin-btn");
     this.renderer.addClass(downBtn, "mdy-spin-btn-down");

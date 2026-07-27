@@ -5,9 +5,6 @@ import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 
-/**
- * Slider renderer component.
- */
 @Component({
   selector: "mdy-control-slider",
   standalone: true,
@@ -76,8 +73,6 @@ export class MdySliderComponent extends MdyBaseControl<number> {
 
   constructor() {
     super();
-    // Reactive fill: tracks value/min/max, so programmatic writes
-    // (patchValue/reset) keep the visual bar in sync too (B21).
     effect(() => {
       const el = this.rangeInput()?.nativeElement;
       const value = this.value() ?? this.min();

@@ -54,7 +54,6 @@ export class MdyTimepickerHeaderComponent {
   readonly hour = input.required<string>();
   readonly minute = input.required<string>();
   readonly period = input.required<'AM' | 'PM'>();
-  /** In 24h mode the AM/PM toggle is hidden (the hour input takes 0-23). */
   readonly format = input<'12h' | '24h'>('12h');
   readonly focusedField = input.required<'hour' | 'minute'>();
   readonly viewMode = input.required<'input' | 'dial'>();
