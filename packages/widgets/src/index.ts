@@ -64,8 +64,8 @@ export type { MdyWidgetDefinition, MdyWidgetKind, MdyWidgetPart } from "./catalo
 export { createCatalogWidgetController } from "./catalog-controller.js";
 export type { MdyCatalogWidgetIntent, MdyCatalogWidgetState } from "./catalog-controller.js";
 
-export { decideOverlayPlacement, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, widgetKeyIntent } from "./behavior.js";
-export type { MdyMultiselectValueIntent, MdyOptionNavigationTarget, MdyOverlayDecision, MdyOverlayGeometry, MdySelectKeyboardAction, MdyWidgetKeyIntent } from "./behavior.js";
+export { decideOverlayPlacement, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, selectKeyboardAction, shouldCloseMultiselectOverlay, widgetKeyIntent } from "./behavior.js";
+export type { MdyMultiselectOverlayAction, MdyMultiselectValueIntent, MdyOptionNavigationTarget, MdyOverlayDecision, MdyOverlayGeometry, MdySelectKeyboardAction, MdyWidgetKeyIntent } from "./behavior.js";
 
 export { createValueWidgetController } from "./value-controller.js";
 export type { MdyValueWidgetController, MdyValueWidgetControllerOptions, MdyValueWidgetIntent, MdyValueWidgetState } from "./value-controller.js";

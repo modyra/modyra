@@ -7,10 +7,17 @@ import {
   ElementRef,
   forwardRef,
   input,
+  signal,
   viewChild,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
-import { MDY_WIDGET_CONTRACTS, multiselectValueTransition } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  multiselectOverlayAction,
+  multiselectValueTransition,
+  optionNavigationIndex,
+  shouldCloseMultiselectOverlay,
+} from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -171,7 +178,7 @@ import { MdyDropdownBase } from "../dropdown-base";
         autocomplete="off"
         [value]="searchQuery()"
         (input)="onSearchInput($event)"
-        (keydown.escape)="closeOverlay()"
+        (keydown)="onOverlayKeydown($event)"
       />
       <div class="mdy-multiselect__options mdy-multiselect-overlay__grid">
         @for (opt of searchResults(); track opt.value; let i = $index) {
@@ -272,6 +279,32 @@ export class MdyMultiselectComponent<TValue = string>
 
   private readonly overlayInputRef =
     viewChild<ElementRef<HTMLInputElement>>("overlayInput");
+  private readonly activeOverlayIndex = signal(-1);
+
+  protected onOverlayKeydown(event: KeyboardEvent): void {
+    const results = this.searchResults();
+    const active = results[this.activeOverlayIndex()];
+    const action = multiselectOverlayAction({
+      key: event.key,
+      open: this.open(),
+      query: this.searchQuery(),
+      activeKey: active ? String(active.value) : null,
+    });
+    if (!action) return;
+    event.preventDefault();
+    if (action.type === "close") {
+      this.closeOverlay();
+      (this.hostRef.nativeElement as HTMLElement).querySelector<HTMLElement>(".mdy-multiselect__search-btn")?.focus();
+      return;
+    }
+    if (action.type === "open") { this.openOverlay(); return; }
+    if (action.type === "move") {
+      const next = optionNavigationIndex(event.key, Math.max(0, this.activeOverlayIndex()), results.length);
+      if (next !== null) this.activeOverlayIndex.set(next);
+      return;
+    }
+    if (action.type === "select" && active) this.onOverlaySelect(active.value);
+  }
 
   /**
    * Pre-computed count map for multi-mode.
@@ -296,6 +329,7 @@ export class MdyMultiselectComponent<TValue = string>
 
   protected override onBeforeOpen(): void {
     super.onBeforeOpen();
+    this.activeOverlayIndex.set(-1);
     afterNextRender(() => this.overlayInputRef()?.nativeElement.focus(), { injector: this.injector });
   }
 
@@ -353,6 +387,6 @@ export class MdyMultiselectComponent<TValue = string>
 
   protected onOverlaySelect(optValue: TValue): void {
     this.commitMultiselect({ type: "increment", value: optValue });
-    if (this.mode() === "single" && this.searchResults().length === 0) this.closeOverlay();
+    if (shouldCloseMultiselectOverlay(this.mode(), this.searchResults().length)) this.closeOverlay();
   }
 }

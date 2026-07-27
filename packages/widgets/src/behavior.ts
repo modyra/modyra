@@ -154,3 +154,43 @@ export function multiselectValueTransition<T>(
     ? [...values, intent.value]
     : values.filter((value) => keyFor(value) !== key);
 }
+
+export type MdyMultiselectOverlayAction =
+  | { readonly type: "open" }
+  | { readonly type: "close"; readonly restoreFocus: boolean }
+  | { readonly type: "search"; readonly query: string }
+  | { readonly type: "select"; readonly optionKey: string }
+  | { readonly type: "move"; readonly target: MdyOptionNavigationTarget };
+
+/** Canonical multiselect overlay policy. The host only supplies event facts and executes the action. */
+export function multiselectOverlayAction(input: {
+  readonly key: string;
+  readonly open: boolean;
+  readonly query: string;
+  readonly activeKey: string | null;
+}): MdyMultiselectOverlayAction | null {
+  const { key, open, query, activeKey } = input;
+  if (key === "Escape" && open) return { type: "close", restoreFocus: true };
+  if (key === "Enter") {
+    if (!open) return { type: "open" };
+    return activeKey ? { type: "select", optionKey: activeKey } : null;
+  }
+  const moves: Record<string, MdyOptionNavigationTarget | undefined> = {
+    ArrowDown: "next",
+    ArrowUp: "previous",
+    Home: "first",
+    End: "last",
+  };
+  const target = moves[key];
+  if (target) return { type: "move", target };
+  if (key === "Backspace" && query.length === 0) return { type: "search", query: "" };
+  return null;
+}
+
+/** Single-mode closes only when no unselected result remains after the commit. */
+export function shouldCloseMultiselectOverlay(
+  mode: "single" | "multi",
+  remainingResultCount: number,
+): boolean {
+  return mode === "single" && remainingResultCount === 0;
+}
