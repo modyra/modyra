@@ -63,3 +63,6 @@ export type { MdyWidgetDefinition, MdyWidgetKind, MdyWidgetPart } from "./catalo
 
 export { createCatalogWidgetController } from "./catalog-controller.js";
 export type { MdyCatalogWidgetIntent, MdyCatalogWidgetState } from "./catalog-controller.js";
+
+export { decideOverlayPlacement, overlayCloseCommands, widgetKeyIntent } from "./behavior.js";
+export type { MdyOverlayDecision, MdyOverlayGeometry, MdyWidgetKeyIntent } from "./behavior.js";
