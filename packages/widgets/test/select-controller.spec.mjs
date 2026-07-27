@@ -117,3 +117,15 @@ test("disabled controller ignores interactions", () => {
   controller.dispatch({ type: "select", optionKey: "rome" });
   assert.strictEqual(controller.state().selectedValue, "paris");
 });
+
+test("option reconciliation normalizes, parks and restores without user semantics", async () => {
+  const { reconcileSelectValue } = await import("../dist/select/index.js");
+  const normalized = reconcileSelectValue({ value: "1", parkedValue: null }, [{ value: 1, label: "One" }]);
+  assert.deepStrictEqual(normalized, { value: 1, parkedValue: null });
+  const parked = reconcileSelectValue({ value: "missing", parkedValue: null }, [{ value: "one", label: "One" }]);
+  assert.deepStrictEqual(parked, { value: null, parkedValue: "missing" });
+  const restored = reconcileSelectValue({ value: null, parkedValue: "missing" }, [{ value: "missing", label: "Loaded" }]);
+  assert.deepStrictEqual(restored, { value: "missing", parkedValue: null });
+  const loading = reconcileSelectValue({ value: "pending", parkedValue: null }, []);
+  assert.deepStrictEqual(loading, { value: "pending", parkedValue: null });
+});

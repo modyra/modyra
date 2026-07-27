@@ -309,6 +309,11 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     this.dispatchValueIntent(kind, { type: "blur" });
   }
 
+  /** Applies non-user synchronization without dirty/touched side effects. */
+  protected synchronizeValue(value: TValue): void {
+    this.setValue(value);
+  }
+
   // ── Mutation helpers ────────────────────────────────────────────────────────
 
   public setValue(newValue: TValue): void {

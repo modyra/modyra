@@ -18,7 +18,7 @@ import {
   WritableSignal,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
-import { MDY_WIDGET_CONTRACTS, selectKeyboardAction } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, reconcileSelectValue, selectKeyboardAction } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -328,36 +328,14 @@ export class MdySelectComponent<TValue = string>
     effect(() => this.selectAdapter.setInvalid(this.hasErrors()), { injector: this.injector });
     effect(() => this.selectAdapter.setLoading(this.effectiveLoading()), { injector: this.injector });
 
-    // Synchronization effect: when options change, re-verify the current value.
-    // - Value found (loose match): normalize to the exact option value.
-    // - Value not among the options: park it and clear the field; if a later
-    //   options change makes it available again, restore it (e.g. async
-    //   option loading or [mdyDependsOn] filtering).
+    // Widgets owns normalization, parking and restoration. Angular only applies
+    // the resulting non-user synchronization to the form adapter.
     effect(() => {
-      const options = this.effectiveOptions();
-      const val = this.value();
+      const current = { value: this.value(), parkedValue: this._parkedValue() };
+      const next = reconcileSelectValue(current, this.effectiveOptions());
       untracked(() => {
-        if (val !== null && val !== undefined) {
-          const matched = options.find((o) => String(o.value) === String(val));
-          if (matched) {
-            this._parkedValue.set(null);
-            if (matched.value !== val) {
-              this.setValue(matched.value);
-            }
-          } else if (options.length > 0) {
-            this._parkedValue.set(val);
-            this.setValue(null);
-          }
-        } else {
-          const parked = this._parkedValue();
-          if (parked !== null) {
-            const matched = options.find((o) => String(o.value) === String(parked));
-            if (matched) {
-              this._parkedValue.set(null);
-              this.setValue(matched.value);
-            }
-          }
-        }
+        if (next.parkedValue !== current.parkedValue) this._parkedValue.set(next.parkedValue);
+        if (next.value !== current.value) this.synchronizeValue(next.value);
       });
     }, { injector: this.injector });
   }
