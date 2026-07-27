@@ -17,6 +17,7 @@ import { MdySelectOption } from "../../core/types";
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "mdy-renderer mdy-renderer--segmented",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-renderer--touched]": "touched()",
     "[style.width]": "fullWidth() ? '100%' : 'fit-content'",
     "[style.--mdy-segments-count]": "segmentsCount()"
@@ -82,6 +83,7 @@ import { MdySelectOption } from "../../core/types";
 })
 export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseControl<TValue | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.segmented;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
 
   public readonly fullWidth: InputSignalWithTransform<boolean, unknown> = input<boolean, unknown>(false, { transform: booleanAttribute });

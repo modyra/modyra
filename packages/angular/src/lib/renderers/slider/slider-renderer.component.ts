@@ -15,6 +15,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "mdy-renderer mdy-renderer--slider",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
   },
@@ -63,6 +64,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
 })
 export class MdySliderComponent extends MdyBaseControl<number> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.slider;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly min       = input<number>(0);
   readonly max       = input<number>(100);
   readonly step      = input<number>(1);

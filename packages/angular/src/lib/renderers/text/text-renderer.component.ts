@@ -29,6 +29,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
     class: "mdy-renderer mdy-renderer--text",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
   },
@@ -80,6 +81,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
 })
 export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.text;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
   readonly type = input<string>("text");
   readonly autocomplete = input<string | null>(null);

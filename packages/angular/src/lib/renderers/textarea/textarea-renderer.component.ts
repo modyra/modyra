@@ -16,6 +16,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
     class: "mdy-renderer mdy-renderer--textarea",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
   },
@@ -66,6 +67,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
 })
 export class MdyTextareaComponent extends MdyBaseControl<string | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.textarea;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
   readonly rows = input<number>(3);
 

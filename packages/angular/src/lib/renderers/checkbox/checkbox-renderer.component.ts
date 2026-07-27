@@ -18,6 +18,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { 
     class: "mdy-renderer mdy-renderer--checkbox",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
@@ -56,6 +57,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
 })
 export class MdyCheckboxComponent extends MdyBaseControl<boolean> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.checkbox;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly fieldId = `mdy-control-checkbox-${MdyBaseControl.nextId()}`;
 
   protected onChange(event: Event): void {

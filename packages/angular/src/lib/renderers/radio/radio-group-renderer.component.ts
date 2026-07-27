@@ -16,6 +16,7 @@ import { MdySelectOption } from "../../core/types";
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { 
     class: "mdy-renderer mdy-renderer--radio-group",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
@@ -67,6 +68,7 @@ import { MdySelectOption } from "../../core/types";
 })
 export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TValue | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.radio;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
   readonly layout  = input<"vertical" | "horizontal">("vertical");
 

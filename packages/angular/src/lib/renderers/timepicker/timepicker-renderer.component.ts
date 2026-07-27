@@ -46,6 +46,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
     class: "mdy-renderer mdy-renderer--timepicker",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
   },
@@ -140,6 +141,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
 })
 export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.timepicker;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly placeholder = input<string>("");
   /**

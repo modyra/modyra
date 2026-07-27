@@ -47,6 +47,7 @@ import { MdyRangeCalendarComponent } from "./range-calendar.component";
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
     class: "mdy-renderer mdy-renderer--datepicker mdy-renderer--daterange",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
   },
@@ -176,6 +177,7 @@ import { MdyRangeCalendarComponent } from "./range-calendar.component";
 })
 export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.daterange;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly startPlaceholder = input<string>("Start");
   readonly endPlaceholder = input<string>("End");
   readonly minDate = input<string | null>(null);

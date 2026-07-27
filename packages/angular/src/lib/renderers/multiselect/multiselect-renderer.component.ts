@@ -43,6 +43,7 @@ import { MdyDropdownBase } from "../dropdown-base";
   ],
   host: {
     class: "mdy-renderer mdy-renderer--multiselect",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
     // Escape is handled by MdyOverlayControl's dynamic document listener,
@@ -241,6 +242,7 @@ export class MdyMultiselectComponent<TValue = string>
   extends MdyDropdownBase<ReadonlyArray<TValue>, TValue>
   implements MdyOptionsControl<TValue> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.multiselect;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly mode = input<"single" | "multi">("single");
 
   /**

@@ -75,6 +75,7 @@ function mapKeyToMoveTarget(
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
     class: "mdy-renderer mdy-renderer--select",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
     "(keydown)": "onKeydown($event)",
@@ -280,6 +281,7 @@ export class MdySelectComponent<TValue = string>
   extends MdyDropdownBase<TValue | null, TValue>
   implements MdyOptionsControl<TValue> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.select;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
   readonly disabled = input<boolean>(false);
   /**

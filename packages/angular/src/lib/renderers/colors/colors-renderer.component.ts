@@ -36,6 +36,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
     class: "mdy-renderer mdy-renderer--colors",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
   },
@@ -164,6 +165,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 })
 export class MdyColorsComponent extends MdyOverlayControl<string> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.colors;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
 
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
 

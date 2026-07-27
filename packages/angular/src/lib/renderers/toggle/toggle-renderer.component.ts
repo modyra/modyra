@@ -15,6 +15,7 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { 
     class: "mdy-renderer mdy-renderer--toggle",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
@@ -60,6 +61,7 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
 })
 export class MdyToggleComponent extends MdyBaseControl<boolean> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.toggle;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly fieldId = `mdy-control-toggle-${MdyBaseControl.nextId()}`;
 
   protected onChange(event: Event): void {

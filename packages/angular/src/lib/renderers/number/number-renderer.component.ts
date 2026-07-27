@@ -22,6 +22,7 @@ import { MdyNumberSpinButtonsDirective } from "./number-spin-buttons.directive";
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
     class: "mdy-renderer mdy-renderer--number",
+    "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
   },
@@ -76,6 +77,7 @@ import { MdyNumberSpinButtonsDirective } from "./number-spin-buttons.directive";
 })
 export class MdyNumberComponent extends MdyBaseControl<number | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.number;
+  protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
   readonly minValue = input<number | null>(null);
   readonly maxValue = input<number | null>(null);
