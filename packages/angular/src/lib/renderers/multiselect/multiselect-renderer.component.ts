@@ -27,10 +27,6 @@ import { MDY_OPTIONS_CONTROL } from "../../core/tokens";
 import { MdyOptionsControl } from "../../core/types";
 import { MdyDropdownBase } from "../dropdown-base";
 
-/**
- * Multiselect renderer component.
- * Renders selectable filter chips and delivers ReadonlyArray<TValue>.
- */
 @Component({
   selector: "mdy-control-multiselect",
   standalone: true,
@@ -53,10 +49,6 @@ import { MdyDropdownBase } from "../dropdown-base";
     "[class.mdy-renderer]": "widgetHasRootClass",
     "[class.mdy-inline-errors]": "inlineErrors",
     "[class.mdy-renderer--touched]": "touched()",
-    // Escape is handled by MdyOverlayControl's dynamic document listener,
-    // registered only while the overlay is open (R19). onDocumentClick is
-    // overridden below to use the host element rather than the narrower
-    // #wrapper reference from MdyOverlayControl.
   },
   template: `
     <div class="mdy-multiselect" #wrapper [class.mdy-multiselect--open]="open()">
@@ -252,22 +244,15 @@ export class MdyMultiselectComponent<TValue = string>
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly mode = input<"single" | "multi">("single");
 
-  /**
-   * Optional filter predicate applied to options before display.
-   * Receives the option *value* and returns `true` to show the option.
-   * When absent, all options are shown.
-   */
   readonly filterFn = input<((value: TValue) => boolean) | undefined>(undefined);
 
   protected readonly fieldId = `mdy-control-multiselect-${MdyBaseControl.nextId()}`;
 
-  /** Options after applying the optional `filterFn` predicate. */
   protected readonly filteredOptions = computed(() => {
     const fn = this.filterFn();
     return fn ? this.effectiveOptions().filter((o) => fn(o.value)) : this.effectiveOptions();
   });
 
-  /** Options available in the search overlay (filtered by predicate + query + mode). */
   protected readonly searchResults = computed(() => {
     let opts = this.filteredOptions();
     if (this.mode() === "single") {
@@ -294,10 +279,13 @@ export class MdyMultiselectComponent<TValue = string>
     event.preventDefault();
     if (action.type === "close") {
       this.closeOverlay();
-      (this.hostRef.nativeElement as HTMLElement).querySelector<HTMLElement>(".mdy-multiselect__search-btn")?.focus();
+      this.hostRef.nativeElement.querySelector<HTMLElement>(".mdy-multiselect__search-btn")?.focus();
       return;
     }
-    if (action.type === "open") { this.openOverlay(); return; }
+    if (action.type === "open") {
+      this.openOverlay();
+      return;
+    }
     if (action.type === "move") {
       const next = optionNavigationIndex(event.key, Math.max(0, this.activeOverlayIndex()), results.length);
       if (next !== null) this.activeOverlayIndex.set(next);
@@ -306,11 +294,6 @@ export class MdyMultiselectComponent<TValue = string>
     if (action.type === "select" && active) this.onOverlaySelect(active.value);
   }
 
-  /**
-   * Pre-computed count map for multi-mode.
-   * Keyed by String(value): matching is loose, consistent with the select
-   * renderer (B20), so numeric values survive string round-trips.
-   */
   protected readonly counts = computed(() => {
     const map = new Map<string, number>();
     for (const v of this.value() ?? []) {
@@ -320,12 +303,9 @@ export class MdyMultiselectComponent<TValue = string>
     return map;
   });
 
-  /** Pre-computed selection set for single-mode (loose String matching, B20). */
   protected readonly selectedSet = computed(
     () => new Set((this.value() ?? []).map((v) => String(v))),
   );
-
-  // ── Overlay hooks ───────────────────────────────────────────────────────────
 
   protected override onBeforeOpen(): void {
     super.onBeforeOpen();
@@ -333,11 +313,6 @@ export class MdyMultiselectComponent<TValue = string>
     afterNextRender(() => this.overlayInputRef()?.nativeElement.focus(), { injector: this.injector });
   }
 
-  /**
-   * Override to check against the full host element rather than the narrow
-   * #wrapper (header div). The overlay panel is a DOM child of the host even
-   * when position:fixed, so host.contains() correctly excludes panel clicks.
-   */
   protected override onDocumentClick(event: Event): void {
     if (!this.hostRef.nativeElement.contains(event.target as Node)) {
       this.closeOverlay();
@@ -355,8 +330,6 @@ export class MdyMultiselectComponent<TValue = string>
     }
   }
 
-  // ── Single-mode helpers ─────────────────────────────────────────────────────
-
   protected isSelected(optValue: TValue): boolean {
     return this.selectedSet().has(String(optValue));
   }
@@ -364,8 +337,6 @@ export class MdyMultiselectComponent<TValue = string>
   protected onToggle(optValue: TValue): void {
     this.commitMultiselect({ type: "toggle", value: optValue });
   }
-
-  // ── Multi-mode (counter) helpers ────────────────────────────────────────────
 
   protected countOf(optValue: TValue): number {
     return this.counts().get(String(optValue)) ?? 0;
@@ -378,8 +349,6 @@ export class MdyMultiselectComponent<TValue = string>
   protected decrement(optValue: TValue): void {
     this.commitMultiselect({ type: "decrement", value: optValue });
   }
-
-  // ── Search overlay ──────────────────────────────────────────────────────────
 
   public resetSelection(): void {
     this.commitMultiselect({ type: "clear" });
