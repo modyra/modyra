@@ -64,11 +64,26 @@ if (existsSync(fixturePath)) {
     else fixtureFailures.push({ kind, missing });
   }
 }
+const projectionPath = resolve(root, "packages/widgets/contract-baseline/angular-dom/contract-projection.json");
+const projectionFailures = [];
+let contractPartProjections = 0;
+let ariaProjections = 0;
+if (existsSync(projectionPath)) {
+  const projection = JSON.parse(readFileSync(projectionPath, "utf8"));
+  for (const [kind, evidence] of Object.entries(projection.controls)) {
+    const source = readFileSync(resolve(rendererRoot, evidence.renderer), "utf8");
+    const missingParts = evidence.contractProjection.parts.filter((token) => !source.includes(token));
+    const missingAria = evidence.contractProjection.aria.filter((token) => !source.includes(token));
+    if (missingParts.length === 0) contractPartProjections++;
+    if (missingAria.length === 0) ariaProjections++;
+    if (missingParts.length || missingAria.length) projectionFailures.push({ kind, missingParts, missingAria });
+  }
+}
 const blockers = [];
 if (behaviorContractConsumers !== Object.keys(renderers).length) blockers.push("Angular behavior evidence is incomplete");
 if (!sharedOverlayPlacement || !sharedOverlayLifecycle) blockers.push("overlay policy remains framework-local");
 if (parityFixtures !== Object.keys(renderers).length) blockers.push(`normalized per-control DOM parity fixtures cover ${parityFixtures}/${Object.keys(renderers).length} renderers`);
-blockers.push("contract parts and ARIA are not yet projected by every renderer");
+if (contractPartProjections !== Object.keys(renderers).length || ariaProjections !== Object.keys(renderers).length) blockers.push("contract parts and ARIA are not yet projected by every renderer");
 const result = {
   status: blockers.length === 0 ? "PATCH 3 READY" : "PATCH 3 BLOCKED",
   renderers: Object.keys(renderers).length,
@@ -77,6 +92,9 @@ const result = {
   sharedOverlayPlacement,
   sharedOverlayLifecycle,
   parityFixtures,
+  contractPartProjections,
+  ariaProjections,
+  projectionFailures,
   missingBehavior,
   fixtureFailures,
   blockers,

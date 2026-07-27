@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "description": "Normalized source-level structural, contract-part and ARIA projection fixtures. Dynamic ids and values are intentionally excluded.",
+  "controls": {
+    "text": {
+      "renderer": "text/text-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.text",
+        "widgetHasRootClass",
+        "mdy-control-label",
+        "mdy-error-list",
+        "aria-describedby"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "aria-describedby"
+        ]
+      }
+    },
+    "textarea": {
+      "renderer": "textarea/textarea-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.textarea",
+        "widgetHasRootClass",
+        "mdy-control-label",
+        "mdy-error-list",
+        "aria-describedby"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "aria-describedby"
+        ]
+      }
+    },
+    "number": {
+      "renderer": "number/number-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.number",
+        "widgetHasRootClass",
+        "mdy-control-label",
+        "mdy-error-list",
+        "aria-describedby"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "aria-describedby"
+        ]
+      }
+    },
+    "slider": {
+      "renderer": "slider/slider-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.slider",
+        "widgetHasRootClass",
+        "mdy-control-label",
+        "mdy-error-list",
+        "aria-describedby"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "aria-describedby"
+        ]
+      }
+    },
+    "checkbox": {
+      "renderer": "checkbox/checkbox-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.checkbox",
+        "widgetHasRootClass",
+        "mdy-error-list",
+        "aria-describedby"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "aria-describedby"
+        ]
+      }
+    },
+    "toggle": {
+      "renderer": "toggle/toggle-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.toggle",
+        "widgetHasRootClass",
+        "role=\"switch\"",
+        "aria-checked",
+        "aria-describedby"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "role=\"switch\"",
+          "aria-checked",
+          "aria-describedby"
+        ]
+      }
+    },
+    "radio": {
+      "renderer": "radio/radio-group-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.radio",
+        "widgetHasRootClass",
+        "role=\"radiogroup\"",
+        "mdy-error-list",
+        "aria-describedby"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "role=\"radiogroup\"",
+          "aria-describedby"
+        ]
+      }
+    },
+    "segmented": {
+      "renderer": "segmented-button/segmented-button-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.segmented",
+        "widgetHasRootClass",
+        "role=\"radiogroup\"",
+        "role=\"radio\"",
+        "aria-checked",
+        "mdy-error-list"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "role=\"radiogroup\"",
+          "role=\"radio\"",
+          "aria-checked"
+        ]
+      }
+    },
+    "colors": {
+      "renderer": "colors/colors-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.colors",
+        "widgetHasRootClass",
+        "aria-haspopup=\"listbox\"",
+        "role=\"listbox\"",
+        "role=\"option\"",
+        "aria-selected",
+        "mdy-overlay-panel",
+        "mdy-error-list"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "aria-haspopup=\"listbox\"",
+          "role=\"listbox\"",
+          "role=\"option\"",
+          "aria-selected"
+        ]
+      }
+    },
+    "datepicker": {
+      "renderer": "datepicker/datepicker.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.datepicker",
+        "widgetHasRootClass",
+        "aria-haspopup]=\"'dialog'\"",
+        "aria-expanded",
+        "mdy-overlay-panel",
+        "mdy-calendar",
+        "mdy-error-list"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "aria-haspopup]=\"'dialog'\"",
+          "aria-expanded"
+        ]
+      }
+    },
+    "daterange": {
+      "renderer": "datepicker/daterange-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.daterange",
+        "widgetHasRootClass",
+        "daterangeStartLabel",
+        "daterangeEndLabel",
+        "aria-haspopup]=\"'dialog'\"",
+        "mdy-overlay-panel",
+        "mdy-error-list"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "aria-haspopup]=\"'dialog'\""
+        ]
+      }
+    },
+    "file": {
+      "renderer": "file/file-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.file",
+        "widgetHasRootClass",
+        "type=\"file\"",
+        "aria-invalid",
+        "aria-describedby",
+        "fileClearSelection",
+        "mdy-error-list"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "aria-invalid",
+          "aria-describedby"
+        ]
+      }
+    },
+    "multiselect": {
+      "renderer": "multiselect/multiselect-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.multiselect",
+        "widgetHasRootClass",
+        "role=\"group\"",
+        "aria-pressed",
+        "mdy-overlay-panel",
+        "mdy-error-list"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "role=\"group\"",
+          "aria-pressed"
+        ]
+      }
+    },
+    "select": {
+      "renderer": "select/select-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.select",
+        "widgetHasRootClass",
+        "aria-haspopup]=\"'listbox'\"",
+        "aria-activedescendant",
+        "role=\"listbox\"",
+        "role=\"option\"",
+        "aria-selected",
+        "mdy-overlay-panel",
+        "mdy-error-list"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "aria-haspopup]=\"'listbox'\"",
+          "aria-activedescendant",
+          "role=\"listbox\"",
+          "role=\"option\"",
+          "aria-selected"
+        ]
+      }
+    },
+    "timepicker": {
+      "renderer": "timepicker/timepicker-renderer.component.ts",
+      "tokens": [
+        "MDY_WIDGET_CONTRACTS.timepicker",
+        "widgetHasRootClass",
+        "aria-haspopup]=\"'dialog'\"",
+        "aria-expanded",
+        "mdy-overlay-panel",
+        "mdy-timepicker-clock",
+        "mdy-error-list"
+      ],
+      "contractProjection": {
+        "parts": [
+          "widgetContract",
+          "MDY_WIDGET_CONTRACTS."
+        ],
+        "aria": [
+          "aria-haspopup]=\"'dialog'\"",
+          "aria-expanded"
+        ]
+      }
+    }
+  }
+}
