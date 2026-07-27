@@ -32,10 +32,6 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MdyDateRange } from "../../core/types";
 import { MdyRangeCalendarComponent } from "./range-calendar.component";
 
-/**
- * Date range picker renderer — compact two-input calendar picker
- * for selecting a start and end date. Integrated with MdyControlLabelComponent.
- */
 @Component({
   selector: "mdy-control-daterange",
   standalone: true,
@@ -78,8 +74,8 @@ import { MdyRangeCalendarComponent } from "./range-calendar.component";
             [value]="displayStart()"
             [disabled]="isDisabled()"
             [placeholder]="startPlaceholder()"
-            (input)="onStartInput($event)"
-            (blur)="onStartBlur($event)"
+            (input)="onEndpointInput($event, 'start')"
+            (blur)="onEndpointBlur($event, 'start')"
             (focus)="lastFocused.set('start')"
             (keydown.arrowdown)="openOverlay($event); $event.preventDefault()"
             [attr.aria-invalid]="hasErrors()"
@@ -101,8 +97,8 @@ import { MdyRangeCalendarComponent } from "./range-calendar.component";
             [value]="displayEnd()"
             [disabled]="isDisabled()"
             [placeholder]="endPlaceholder()"
-            (input)="onEndInput($event)"
-            (blur)="onEndBlur($event)"
+            (input)="onEndpointInput($event, 'end')"
+            (blur)="onEndpointBlur($event, 'end')"
             (focus)="lastFocused.set('end')"
             (keydown.arrowdown)="openOverlay($event); $event.preventDefault()"
             [attr.aria-invalid]="hasErrors()"
@@ -193,7 +189,6 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
 
   protected readonly fieldId = `mdy-daterange-${MdyBaseControl.nextId()}`;
 
-  /** Which input was last focused — drives calendar sync. */
   protected readonly lastFocused = signal<"start" | "end">("start");
 
   private readonly calendarRef =
@@ -263,7 +258,6 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
     parseIsoDate(this.maxDate()),
   );
 
-  /** Sync calendar view to current value after DOM renders. */
   protected override onBeforeOpen(): void {
     this.modalDraft.set(dateRangeDraftTransition(
       this.modalDraft(),
@@ -277,8 +271,6 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
       cal.focusFocusedDate();
     }, { injector: this.injector });
   }
-
-  // ── Range picked from calendar ───────────────────────────────────────────────
 
   protected applySelection(): void {
     const transition = dateRangeDraftTransition(this.modalDraft(), { type: "confirm" });
@@ -313,59 +305,33 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
     this.closeOverlay();
   }
 
-  // ── Start input handling ─────────────────────────────────────────────────────
-
-  protected onStartInput(event: Event): void {
+  protected onEndpointInput(event: Event, endpoint: "start" | "end"): void {
     const raw = (event.target as HTMLInputElement).value.trim();
     const current = this.value() ?? { start: null, end: null };
     if (!raw) {
-      this.commitRange(null, current.end);
+      this.commitRange(
+        endpoint === "start" ? null : current.start,
+        endpoint === "end" ? null : current.end,
+      );
       return;
     }
     const parsed = parseIsoDate(raw);
-    if (parsed) {
-      const filter = this.dateFilter();
-      if (filter !== null && !filter(formatIsoDate(parsed))) return;
-      this.commitRange(formatIsoDate(parsed), current.end);
-    }
+    if (!parsed) return;
+    const iso = formatIsoDate(parsed);
+    const filter = this.dateFilter();
+    if (filter !== null && !filter(iso)) return;
+    this.commitRange(
+      endpoint === "start" ? iso : current.start,
+      endpoint === "end" ? iso : current.end,
+    );
   }
 
-  protected onStartBlur(event: FocusEvent): void {
+  protected onEndpointBlur(event: FocusEvent, endpoint: "start" | "end"): void {
     this.dispatchValueBlur("daterange");
-    const el = event.target as HTMLInputElement;
-    el.value = this.displayStart();
+    (event.target as HTMLInputElement).value =
+      endpoint === "start" ? this.displayStart() : this.displayEnd();
   }
 
-  // ── End input handling ───────────────────────────────────────────────────────
-
-  protected onEndInput(event: Event): void {
-    const raw = (event.target as HTMLInputElement).value.trim();
-    const current = this.value() ?? { start: null, end: null };
-    if (!raw) {
-      this.commitRange(current.start, null);
-      return;
-    }
-    const parsed = parseIsoDate(raw);
-    if (parsed) {
-      const filter = this.dateFilter();
-      if (filter !== null && !filter(formatIsoDate(parsed))) return;
-      this.commitRange(current.start, formatIsoDate(parsed));
-    }
-  }
-
-  protected onEndBlur(event: FocusEvent): void {
-    this.dispatchValueBlur("daterange");
-    const el = event.target as HTMLInputElement;
-    el.value = this.displayEnd();
-  }
-
-  // ── Commit with end ≥ start enforcement ──────────────────────────────────────
-
-  /**
-   * Commit the range, enforcing end >= start, the optional [dateFilter],
-   * and the [minDate]/[maxDate] bounds — manual typing must not accept a
-   * date the calendar would forbid (B17).
-   */
   private commitRange(start: string | null, end: string | null): void {
     const next = dateRangeValueTransition(
       { start, end },
@@ -373,6 +339,4 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
     );
     this.dispatchValueIntent<MdyDateRange | null>("daterange", { type: "select", value: next });
   }
-
-
 }
