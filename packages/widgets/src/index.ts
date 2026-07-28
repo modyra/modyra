@@ -58,13 +58,13 @@ export type {
 export * from "./select/index.js";
 export * from "./field/index.js";
 
-export { MDY_CANONICAL_UI_CLASSES, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } from "./catalog.js";
+export { MDY_CANONICAL_UI_CLASSES, MDY_POPUP_CLASS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } from "./catalog.js";
 export type { MdyWidgetDefinition, MdyWidgetKind, MdyWidgetPart } from "./catalog.js";
 
 export { createCatalogWidgetController } from "./catalog-controller.js";
 export type { MdyCatalogWidgetIntent, MdyCatalogWidgetState } from "./catalog-controller.js";
 
-export { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, fileSelectionTransition, clearFileSelection, listboxNavigationIndex, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, overlayLifecycleTransition, selectKeyboardAction, shouldCloseMultiselectOverlay, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "./behavior.js";
+export { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, fileSelectionTransition, clearFileSelection, listboxNavigationIndex, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, overlayLifecycleTransition, selectKeyboardAction, shouldCloseMultiselectOverlay, stabilizeOverlayPlacement, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "./behavior.js";
 export type { MdyColorValueIntent, MdyColorValueTransition, MdyDateDraftIntent, MdyDateDraftState, MdyDateDraftTransition, MdyDateRangeDraftIntent, MdyDateRangeDraftState, MdyDateRangeDraftTransition, MdyDateRangeValue, MdyDateValueIntent, MdyFileCandidate, MdyFileSelectionOptions, MdyFileSelectionTransition, MdyMultiselectOverlayAction, MdyMultiselectValueIntent, MdyOptionNavigationTarget, MdyOverlayDecision, MdyOverlayGeometry, MdyOverlayLifecycleIntent, MdyOverlayLifecycleState, MdyOverlayLifecycleTransition, MdySelectKeyboardAction, MdyTimeClockIntent, MdyTimeDraftIntent, MdyTimeDraftState, MdyTimeDraftTransition, MdyWidgetKeyIntent } from "./behavior.js";
 
 export { createValueWidgetController } from "./value-controller.js";

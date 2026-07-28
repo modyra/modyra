@@ -62,6 +62,23 @@
         --mdy-state-disabled-content-opacity: var(--mdy-sys-state-disabled-content-opacity);
         --mdy-state-disabled-container-opacity: var(--mdy-sys-state-disabled-container-opacity);
 
+        /* ── Stacking scale ─────────────────────────────────────────────────────────
+         * One documented ladder for everything that paints out of flow. The rungs matter more
+         * than the numbers: an open overlay always sits above the field feedback around it, so a
+         * neighbouring error or supporting text can never cover the options a user is reading.
+         * Anything that needs to stack takes a rung from here instead of inventing a number.
+         */
+        --mdy-z-raised: 2;
+        /* affordances inside a control: arrow, clear button, slider fill */
+        --mdy-z-feedback: 10;
+        /* errors, supporting text, inline validation */
+        --mdy-z-sticky: 100;
+        --mdy-z-overlay: 1000;
+        /* popups anchored to a control */
+        --mdy-z-modal: 2000;
+        --mdy-z-portal: 2147483000;
+        /* document-level overlays, above any host application chrome */
+
         /* ── Elevation ──────────────────────────────────────────────────────────── */
         --mdy-shadow-depth-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
         --mdy-shadow-depth-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
@@ -570,7 +587,7 @@
         top: 100%;
         left: 0;
         right: 0;
-        z-index: 1000;
+        z-index: var(--mdy-z-overlay);
         background: var(--mdy-surface-container);
         border: none;
         border-radius: var(--mdy-color-dropdown-radius);
@@ -610,7 +627,7 @@
         width: calc(100% - 2rem);
         max-width: 320px;
         margin: 0;
-        z-index: 9999;
+        z-index: var(--mdy-z-modal);
     }
 
 
@@ -664,6 +681,25 @@
 
 
 
+    /* ─── Popup primitive ────────────────────────────────────────────────────────
+     * `mdy-popup` is on every popup part in the widget catalog. It guarantees the one thing no
+     * overlay may ever do: take part in layout. A popup left in flow resizes its field and shifts
+     * everything below it the moment it opens, so being out of flow is structure, not decoration,
+     * and a theme that re-declared it would be deciding whether the page jumps.
+     */
+    .mdy-popup {
+        position: absolute;
+        z-index: var(--mdy-z-overlay);
+        box-sizing: border-box;
+    }
+
+    /* Feedback never covers an open popup: the ladder in the token block puts it below. */
+    .mdy-control__errors,
+    .mdy-supporting-text {
+        position: relative;
+        z-index: var(--mdy-z-feedback);
+    }
+
     /* ─── Overlay primitive ──────────────────────────────────────────────────────
      * Any popup a renderer portals out of its own subtree carries `mdy-overlay` and writes the
      * `--mdy-overlay-*` properties; the placement decision itself is `decideOverlayPlacement` in
@@ -684,7 +720,7 @@
         overflow: auto;
         /* A scroll gesture that reaches the end of the popup must not scroll the page behind it. */
         overscroll-behavior: contain;
-        z-index: var(--mdy-overlay-z-index, 2147483000);
+        z-index: var(--mdy-overlay-z-index, var(--mdy-z-portal));
         isolation: isolate;
         /* Surface, not palette: every value here resolves through the semantic tokens the active
            theme sets, so a popup is never a hardcoded light panel floating over a dark theme. A
@@ -1323,6 +1359,10 @@
     .mdy-toggle__track {
         position: relative;
         display: inline-block;
+        /* Border-box, so the outline the unchecked state draws is inside the track's own size:
+           with content-box the off state was two border-widths taller and wider than the on state,
+           and its radius — half the height — grew with it. */
+        box-sizing: border-box;
         width: var(--mdy-toggle-width);
         height: var(--mdy-toggle-height);
         background: var(--mdy-toggle-bg);
@@ -1671,10 +1711,9 @@
         overflow: hidden;
         gap: 0;
 
-        /* Global Redistribution Variables */
+        /* Width the check glyph reserves inside every segment. */
         --mdy-tick-w: 1.125rem;
         /* 1rem icon + approx 0.125rem visible distance */
-        --mdy-tick-share: calc(var(--mdy-tick-w) / (2 * var(--mdy-segments-count, 1)));
     }
 
     .mdy-segmented__button {
@@ -1682,9 +1721,14 @@
         align-items: center;
         justify-content: center;
         gap: 0;
-        padding-left: calc(1.25rem + var(--mdy-tick-share));
-        padding-right: calc(1.25rem + var(--mdy-tick-share));
-        flex: 1 0 auto;
+        /* The check is drawn over the segment's inline start, so its gutter is reserved on every
+           segment, selected or not: padding that only the selected one carried made that segment
+           wider than its neighbours and moved its label as the selection changed. */
+        padding-inline: calc(1.25rem + var(--mdy-tick-w)) 1.25rem;
+        /* Equal shares, not content width: a renderer whose labels happen to be longer must not
+           produce a differently proportioned bar from one whose labels are short. */
+        flex: 1 1 0;
+        min-width: 0;
         background: transparent;
         border: none;
         border-left: 1px solid var(--mdy-segmented-border-color);
@@ -1701,14 +1745,8 @@
         white-space: nowrap;
         position: relative;
         user-select: none;
-        min-width: 3rem;
     }
 
-    /* When a segment is selected, redistribute the tick-share from all buttons */
-    .mdy-segmented:has(.mdy-segmented__button--selected) .mdy-segmented__button {
-        padding-left: 1.25rem;
-        padding-right: 1.25rem;
-    }
 
     .mdy-segmented__button:first-child {
         border-left: none;
@@ -1720,8 +1758,6 @@
         color: var(--mdy-segmented-selected-color);
         /* M3: on-secondary-container */
         font-weight: 600;
-        padding-left: calc(1.25rem + var(--mdy-tick-w)) !important;
-        padding-right: 1.25rem !important;
     }
 
     .mdy-segmented__button:hover:not(.mdy-segmented__button--selected):not(:disabled) {
@@ -1739,6 +1775,21 @@
     }
 
     /* Reserve bold-width space so selecting a segment doesn't shift layout */
+    /* A renderer may back each segment with a native radio instead of a button; the input carries
+       the state, the segment carries the appearance, so it is hidden the same way every other
+       native control in this stylesheet is. */
+    .mdy-segmented__button input[type="radio"] {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
     .mdy-segmented__text {
         display: inline-flex;
         flex-direction: column;
@@ -1757,7 +1808,7 @@
 
     .mdy-segmented__check {
         position: absolute;
-        left: 1.125rem;
+        inset-inline-start: 1.125rem;
         width: 1rem;
         height: 1rem;
         flex-shrink: 0;
@@ -1999,13 +2050,13 @@
     .mdy-multiselect-overlay {
         position: fixed;
         inset: 0;
-        z-index: 999;
+        z-index: calc(var(--mdy-z-overlay) - 1);
         background: transparent;
     }
 
     .mdy-multiselect-overlay__panel {
         position: absolute;
-        z-index: 1000;
+        z-index: var(--mdy-z-overlay);
         top: 100%;
         left: 0;
         right: 0;
@@ -2041,7 +2092,7 @@
 
     .mdy-multiselect-overlay__panel--overlay {
         position: fixed;
-        z-index: 1000;
+        z-index: var(--mdy-z-overlay);
         top: 50%;
         left: 50%;
         right: auto;
@@ -2187,7 +2238,7 @@
 
     .mdy-select__dropdown {
         position: absolute;
-        z-index: 1000;
+        z-index: var(--mdy-z-overlay);
         top: 100%;
         left: 0;
         right: 0;
@@ -2216,14 +2267,14 @@
     .mdy-select__overlay-backdrop {
         position: fixed;
         inset: 0;
-        z-index: 999;
+        z-index: calc(var(--mdy-z-overlay) - 1);
         background: var(--mdy-overlay-backdrop-bg);
         transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .mdy-select__dropdown--overlay {
         position: fixed;
-        z-index: 1000;
+        z-index: var(--mdy-z-overlay);
         top: 50%;
         left: 50%;
         right: auto;
@@ -2323,7 +2374,7 @@
         font-weight: 500;
         line-height: 1.2;
         white-space: nowrap;
-        z-index: 1000;
+        z-index: var(--mdy-z-overlay);
         pointer-events: none;
         transition: opacity 0.1s ease-out, transform 0.1s ease-out, visibility 0.1s;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -2504,7 +2555,7 @@
 
     .mdy-datepicker__popup {
         position: absolute;
-        z-index: 1000;
+        z-index: var(--mdy-z-overlay);
         top: 100%;
         left: 0;
         margin-top: 0.25rem;
@@ -2540,7 +2591,7 @@
     .mdy-timepicker__backdrop {
         position: fixed;
         inset: 0;
-        z-index: 999;
+        z-index: calc(var(--mdy-z-overlay) - 1);
         background: var(--mdy-overlay-backdrop-bg, rgba(0, 0, 0, 0.4));
         transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -2550,7 +2601,7 @@
     .mdy-timepicker__popup--overlay,
     .mdy-timepicker__popup--modal {
         position: fixed;
-        z-index: 1000;
+        z-index: var(--mdy-z-overlay);
         top: 50%;
         left: 50%;
         right: auto;

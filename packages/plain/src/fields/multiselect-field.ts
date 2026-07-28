@@ -13,7 +13,7 @@ import { createMultiselectFieldController, MDY_WIDGET_CONTRACTS, type MdyElement
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer, positionOverlay, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
 
 export function renderMultiselectField(
   container: HTMLElement,
@@ -167,8 +167,13 @@ export function renderMultiselectField(
 
     syncSelectedChips(state.counts);
     // `hidden` on the popup part is the contract's; positioning only runs while it is showing.
-    if (state.open) positionOverlay(popup, trigger, { matchAnchorWidth: true });
-    else if (search.value) search.value = "";
+    if (state.open) {
+      positionOverlay(popup, trigger, { matchAnchorWidth: true });
+    } else {
+      // The next opening decides its own side and height rather than inheriting this one's.
+      releaseOverlayPlacement(popup);
+      if (search.value) search.value = "";
+    }
 
     for (const option of options) {
       const key = keyFor(option);

@@ -527,10 +527,9 @@
         gap: 1px;
         width: fit-content;
 
-        /* Global Redistribution Variables */
+        /* Width the check glyph reserves inside every segment. */
         --mdy-tick-w: 1.5rem;
         /* 1rem icon + 0.5rem gap */
-        --mdy-tick-share: calc(var(--mdy-tick-w) / (2 * var(--mdy-segments-count, 1)));
     }
 
     .mdy-segmented__button {
