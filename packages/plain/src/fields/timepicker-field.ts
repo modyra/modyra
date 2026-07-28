@@ -23,6 +23,8 @@ export function renderTimepickerField(
   reactivity: MdyReactivity = vanillaReactivity(),
   format: MdyTimeFormat = "12h",
 ): () => void {
+  // How this popup attaches is the contract's, not this renderer's.
+  const anchoring = MDY_WIDGET_CONTRACTS.timepicker.capabilities.anchoring;
   const controller = createTimepickerFieldController({ widgetId: f.name, handle, format }, reactivity);
 
   const shell = buildFieldShell(f.label, "timepicker");
@@ -128,7 +130,7 @@ export function renderTimepickerField(
     () => dispatch({ type: "close", restoreFocus: false }),
   );
 
-  const untrack = trackOverlay(dialog, shell.wrapper, () => controller.state().open, { minSpace: 240 });
+  const untrack = trackOverlay(dialog, shell.wrapper, () => controller.state().open, anchoring);
 
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
@@ -149,7 +151,7 @@ export function renderTimepickerField(
     dialog.hidden = !state.open;
     // Anchored by the contract, like every other overlay: the placement, the size and the
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
-    if (state.open) positionOverlay(dialog, shell.wrapper, { minSpace: 240 });
+    if (state.open) positionOverlay(dialog, shell.wrapper, anchoring);
     else releaseOverlayPlacement(dialog);
     const hourString = String(state.draft.hour);
     if (hourInput.value !== hourString) hourInput.value = hourString;

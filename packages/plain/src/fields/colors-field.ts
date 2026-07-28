@@ -20,6 +20,8 @@ export function renderColorsField(
   handle: MdyFieldHandle<unknown>,
   reactivity: MdyReactivity = vanillaReactivity(),
 ): () => void {
+  // How this popup attaches is the contract's, not this renderer's.
+  const anchoring = MDY_WIDGET_CONTRACTS.colors.capabilities.anchoring;
   const definition = MDY_WIDGET_CONTRACTS.colors;
   const presets = f.presets && f.presets.length > 0 ? f.presets : DEFAULT_PRESETS;
   const open = reactivity.signal(false);
@@ -126,7 +128,7 @@ export function renderColorsField(
     popup.hidden = !isOpen;
     wrapper.classList.toggle("mdy-colors--open", isOpen);
     // The themes place the panel from `--mdy-overlay-*`; the widget policy decides them.
-    if (isOpen) queueMicrotask(() => positionOverlay(popup, shell.wrapper, { minSpace: 120, minWidth: 280 }));
+    if (isOpen) queueMicrotask(() => positionOverlay(popup, shell.wrapper, anchoring));
     toggleArrow.classList.toggle("mdy-select__arrow--open", isOpen);
     setErrors(shell.errorList, handle.errors().map((error) => error.message));
     shell.syncState({
@@ -135,7 +137,7 @@ export function renderColorsField(
     });
   });
 
-  const untrack = trackOverlay(popup, shell.wrapper, () => open(), { minSpace: 120, minWidth: 280 });
+  const untrack = trackOverlay(popup, shell.wrapper, () => open(), anchoring);
   const undismiss = dismissOnOutsidePointer([wrapper, popup], () => open(), () => open.set(false));
 
   return () => {

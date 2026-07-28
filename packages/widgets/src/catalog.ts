@@ -17,8 +17,26 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
     /** A pointer outside the overlay dismisses it. True wherever there is an overlay: a popup a
      * click elsewhere cannot dismiss is the exception, and would have to be declared as one. */
     readonly dismissOnOutsidePointer: boolean;
+    /**
+     * How this widget's popup attaches, for `anchorOverlay`. A list belongs under its control and
+     * as wide as it; a calendar is sized by its own content. Naming it here is what stops three
+     * renderers from each choosing a width for the same widget.
+     */
+    readonly anchoring?: {
+      readonly matchAnchorWidth: boolean;
+      readonly minSpace: number;
+      readonly minWidth?: number;
+    };
   };
 }
+
+/**
+ * Carried by a popup that a renderer lifts out of its field and positions against the viewport,
+ * alongside {@link MDY_POPUP_CLASS}. The container is the same either way; this only says the
+ * coordinates are viewport coordinates, which is what a portalled popup needs and a projected one
+ * (Angular's CDK panel) must not have.
+ */
+export const MDY_OVERLAY_PORTAL_CLASS = "mdy-overlay";
 
 function part(classes: readonly string[] = [], attributes: MdyPartContract["attributes"] = {}): MdyPartContract { return Object.freeze({ classes: Object.freeze([...classes]), attributes: Object.freeze({ ...attributes }) }); }
 
@@ -64,6 +82,16 @@ interface MdyWidgetShape {
   readonly classes?: Readonly<Record<string, readonly string[]>>;
 }
 
+/** Anchoring per kind; widgets with no overlay have none. */
+const ANCHORING: Readonly<Record<string, { matchAnchorWidth: boolean; minSpace: number; minWidth?: number }>> = Object.freeze({
+  select: { matchAnchorWidth: true, minSpace: 180, minWidth: 160 },
+  multiselect: { matchAnchorWidth: true, minSpace: 180, minWidth: 160 },
+  datepicker: { matchAnchorWidth: false, minSpace: 240 },
+  daterange: { matchAnchorWidth: false, minSpace: 240 },
+  timepicker: { matchAnchorWidth: false, minSpace: 240 },
+  colors: { matchAnchorWidth: false, minSpace: 120, minWidth: 280 },
+});
+
 function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: readonly string[], partNames: readonly TPart[], overlay: boolean, shape: MdyWidgetShape = {}): MdyWidgetDefinition<TPart> {
   const partMap = Object.fromEntries(partNames.map((name) => [name, part(name === "root" ? rootClasses : shape.classes?.[name] ?? [], {})])) as Record<TPart, MdyPartContract>;
   const declared = new Set<string>(partNames);
@@ -77,7 +105,7 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
     siblingCount.set(parent, order + 1);
     return Object.freeze({ part: name, element: semanticElement(name), parent: parent as TPart, order, optional: !REQUIRED_PARTS.has(name) });
   });
-  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), capabilities: Object.freeze({ keyboard: true, focus: true, overlay, dismissOnOutsidePointer: overlay }) });
+  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), capabilities: Object.freeze({ keyboard: true, focus: true, overlay, dismissOnOutsidePointer: overlay, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
 function semanticElement(partName: string) {
   const input = new Set(["control","startControl","endControl","search","hour","minute","hexInput","nativePicker"]);
