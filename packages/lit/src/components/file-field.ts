@@ -11,7 +11,7 @@ export class MdyFileFieldElement extends MdyFieldElement<File | File[] | null> {
   declare multiple: boolean;
   declare accept: string;
   declare placeholder: string;
-  protected override readonly rendererClass = "mdy-renderer--file";
+  protected override readonly widgetKind = "file" as const;
 
   constructor() {
     super();

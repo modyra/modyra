@@ -55,7 +55,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   declare _pendingStartIso: string | null;
   declare _pendingEndIso: string | null;
   declare _hoverIso: string | null;
-  protected override readonly rendererClass = "mdy-renderer--daterange";
+  protected override readonly widgetKind = "daterange" as const;
   private readonly overlay = new MdyLitOverlayController(this, () => this, {
     widthMode: "auto-content",
   });

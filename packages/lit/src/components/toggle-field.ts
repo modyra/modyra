@@ -3,7 +3,7 @@ import { createBooleanFieldController, type MdyBooleanFieldController } from "@m
 import { MdyFieldElement } from "../base.js";
 
 export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
-  protected override readonly rendererClass = "mdy-renderer--toggle";
+  protected override readonly widgetKind = "toggle" as const;
   private fieldController?: MdyBooleanFieldController;
 
   override connectedCallback(): void {
@@ -34,9 +34,10 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
     this.syncStateClasses(handle);
     const inputAttrs = this.fieldController?.view().parts.input.attributes;
     return html`
-      <label class="mdy-toggle">
+      <label class="${this.partClass("inputWrapper")}">
         <input
           id=${this.fieldId}
+          class="${this.partClass("control")}"
           type="checkbox"
           role="switch"
           .checked=${handle.value() === true}
@@ -56,11 +57,11 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
               ? this.fieldController.dispatch({ type: "blur" })
               : handle.markAsTouched()}
         />
-        <span class="mdy-toggle__track" aria-hidden="true">
-          <span class="mdy-toggle__thumb"></span>
+        <span class="${this.partClass("track")}" aria-hidden="true">
+          <span class="${this.partClass("thumb")}"></span>
         </span>
         ${this.label
-          ? html`<span class="mdy-toggle__label">
+          ? html`<span class="${this.partClass("label")}">
               ${this.label}
               ${handle.required()
                 ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
@@ -69,6 +70,7 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
           : nothing}
       </label>
       ${this.renderErrors(handle)}
+      ${this.renderSupportingText()}
     `;
   }
 }

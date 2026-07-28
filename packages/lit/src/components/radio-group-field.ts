@@ -10,7 +10,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
   /** `"vertical"` (default) or `"horizontal"`. */
   declare layout: "vertical" | "horizontal";
 
-  protected override readonly rendererClass = "mdy-renderer--radio-group";
+  protected override readonly widgetKind = "radio" as const;
   private fieldController?: MdyOptionFieldController<unknown>;
 
   constructor() {
@@ -50,7 +50,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
     return html`
       ${this.renderGroupLabel(handle)}
       <div
-        class="mdy-radio-group ${this.layout === "horizontal" ? "mdy-radio-group--horizontal" : ""}"
+        class="${this.partClass("group")} ${this.layout === "horizontal" ? "mdy-radio-group--horizontal" : ""}"
         role="radiogroup"
         aria-labelledby=${this.label ? this.labelId : nothing}
         aria-invalid=${groupAttrs?.["aria-invalid"] ?? (handle.errors().length > 0 ? "true" : "false")}
@@ -62,7 +62,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
             const optionView = view?.parts[key];
             const optionAttrs = optionView?.attributes;
             return html`<label
-              class="mdy-radio-item ${option.disabled || handle.disabled() ? "mdy-radio-item--disabled" : ""}"
+              class="${this.partClass("option")} ${option.disabled || handle.disabled() ? "mdy-radio-item--disabled" : ""}"
             >
               <input
                 type="radio"
@@ -84,8 +84,8 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
                     ? this.fieldController.dispatch({ type: "blur" })
                     : handle.markAsTouched()}
               />
-              <span class="mdy-radio-circle"></span>
-              <span class="mdy-radio-label">${option.label}</span>
+              <span class="${this.partClass("optionControl")}"></span>
+              <span class="${this.partClass("optionLabel")}">${option.label}</span>
             </label>`;
           },
         )}

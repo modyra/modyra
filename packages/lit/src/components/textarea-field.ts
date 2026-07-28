@@ -10,7 +10,7 @@ export class MdyTextareaFieldElement extends MdyFieldElement<string | null> {
   };
   declare rows: number;
   declare placeholder: string;
-  protected override readonly rendererClass = "mdy-renderer--textarea";
+  protected override readonly widgetKind = "textarea" as const;
   private fieldController?: MdyFieldController<string | null>;
 
   constructor() {

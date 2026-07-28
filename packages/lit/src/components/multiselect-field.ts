@@ -24,7 +24,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   declare optionTemplate?: unknown;
   declare _query: string;
 
-  protected override readonly rendererClass = "mdy-renderer--multiselect";
+  protected override readonly widgetKind = "multiselect" as const;
   private readonly overlay = new MdyLitOverlayController(this);
 
   constructor() {

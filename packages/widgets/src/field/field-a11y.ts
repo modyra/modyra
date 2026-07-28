@@ -3,6 +3,7 @@
  */
 
 import type { MdyFieldError } from "@modyra/core";
+import { defaultWidgetIdFactory as idFactory } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyFieldState } from "./field-types.js";
@@ -23,9 +24,9 @@ export function fieldPartIds(widgetId: string): {
 } {
   return {
     inputId: widgetId,
-    labelId: `${widgetId}-label`,
-    descriptionId: `${widgetId}-description`,
-    errorId: `${widgetId}-errors`,
+    labelId: idFactory.part(widgetId, "label"),
+    descriptionId: idFactory.part(widgetId, "description"),
+    errorId: idFactory.part(widgetId, "errors"),
   };
 }
 

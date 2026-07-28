@@ -5,7 +5,7 @@ import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
 
 export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | null> {
-  protected override readonly rendererClass = "mdy-renderer--segmented";
+  protected override readonly widgetKind = "segmented" as const;
   private fieldController?: MdyOptionFieldController<unknown>;
 
   override connectedCallback(): void {
@@ -40,7 +40,7 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
     return html`
       ${this.renderGroupLabel(handle)}
       <div
-        class="mdy-segmented"
+        class="${this.partClass("group")}"
         role="radiogroup"
         aria-labelledby=${this.label ? this.labelId : nothing}
       >
@@ -72,13 +72,13 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
             }}
           >
             <span
-              class="mdy-segmented__check"
+              class="${this.partClass("optionCheck")}"
               style="visibility:${selected ? "visible" : "hidden"}"
               aria-hidden=${selected ? nothing : "true"}
             >
               ${mdyIcon("CHECKMARK", "")}
             </span>
-            <span class="mdy-segmented__text" data-text=${option.label}>${option.label}</span>
+            <span class="${this.partClass("optionText")}" data-text=${option.label}>${option.label}</span>
           </button>`;
         })}
       </div>

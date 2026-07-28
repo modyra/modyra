@@ -5,7 +5,7 @@ import { MdyFieldElement } from "../base.js";
 // ─── Boolean ─────────────────────────────────────────────────────────────────
 
 export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
-  protected override readonly rendererClass = "mdy-renderer--checkbox";
+  protected override readonly widgetKind = "checkbox" as const;
   private fieldController?: MdyBooleanFieldController;
 
   override connectedCallback(): void {
@@ -37,9 +37,10 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
     const input = this.fieldController?.view().parts.input;
     const inputAttrs = input?.attributes;
     return html`
-      <label class="mdy-checkbox">
+      <label class="${this.partClass("inputWrapper")}">
         <input
           id=${this.fieldId}
+          class="${this.partClass("control")}"
           type="checkbox"
           .checked=${handle.value() === true}
           ?disabled=${handle.disabled()}
@@ -67,6 +68,7 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
         </span>
       </label>
       ${this.renderErrors(handle)}
+      ${this.renderSupportingText()}
     `;
   }
 }

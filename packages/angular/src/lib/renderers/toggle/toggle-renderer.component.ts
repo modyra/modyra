@@ -20,6 +20,7 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
       <input
         type="checkbox"
         role="switch"
+        [class]="widgetContract.parts.control.classes.join(' ')"
         [id]="fieldId"
         [checked]="value()"
         [disabled]="isDisabled()"

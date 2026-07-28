@@ -23,7 +23,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
   /** Preset swatches shown in the dropdown. */
   declare presets: readonly string[];
   declare _open: boolean;
-  protected override readonly rendererClass = "mdy-renderer--colors";
+  protected override readonly widgetKind = "colors" as const;
   private readonly overlay = new MdyLitOverlayController(this);
 
   constructor() {

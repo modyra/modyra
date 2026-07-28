@@ -47,7 +47,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   declare _focusedIso: string;
   /** Temporary value used while the modal variant is open. */
   declare _draftValue: string | null;
-  protected override readonly rendererClass = "mdy-renderer--datepicker";
+  protected override readonly widgetKind = "datepicker" as const;
   private readonly overlay = new MdyLitOverlayController(this, () => this, {
     widthMode: "auto-content",
   });

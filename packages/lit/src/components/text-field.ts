@@ -14,7 +14,7 @@ export class MdyTextFieldElement extends MdyFieldElement<string | null> {
   declare type: string;
   declare placeholder: string;
   declare autocomplete: string;
-  protected override readonly rendererClass = "mdy-renderer--text";
+  protected override readonly widgetKind = "text" as const;
   private fieldController?: MdyFieldController<string | null>;
 
   constructor() {

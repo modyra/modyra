@@ -17,7 +17,7 @@
   import { mountMdyDevtools } from "@modyra/core/devtools";
   import TextField from "./TextField.svelte";
 
-  const THEMES = { default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
+  const THEMES = { modern: "modyra-modern.css", default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
   let theme = "material";
   function switchTheme(e) {
     theme = e.target.value;
