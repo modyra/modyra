@@ -1,4 +1,5 @@
-@import './modyra.css';
+/* Ionic is a sibling of Material, not a correction of it. */
+@import './modyra-foundation.css';
 
 /*
  * modyra — Ionic Theme

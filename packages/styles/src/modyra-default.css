@@ -1,0 +1,13 @@
+/*
+ * modyra-default.css — what `@modyra/styles/default.css` has always rendered.
+ *
+ * The structural foundation plus Material's filled text field. It exists so the default entry point
+ * keeps its look now that Material is a theme rather than the base: consumers who never chose a
+ * theme keep the one they were getting, and nothing about that choice is implicit any more.
+ *
+ * New projects should pick a theme — `modern.css`, `material.css`, `ios.css`, `ionic.css` — or
+ * build on `foundation.css` directly.
+ */
+
+@import './modyra-foundation.css';
+@import './material-filled-field.css';

@@ -40,11 +40,6 @@ const DEBT = [
     reason: "Material and iOS still place the colours popup themselves, from before the anchoring contract existed. They move onto `--mdy-overlay-*` when those two themes migrate.",
     matches: (name, css) => ["modyra-material.css", "modyra-ios.css"].includes(name) && /mdy-colors__dropdown|mdy-select__dropdown/.test(css) && /position\s*:/.test(css),
   },
-  {
-    id: "themes-import-default",
-    reason: "Every theme still imports modyra.css, which carries Material's field. Splitting the foundation from the Material theme is the next milestone of the styles migration.",
-    matches: (name, css) => THEMES.includes(name) && /@import\s+['"]\.\/modyra\.css['"]/.test(css),
-  },
 ];
 
 const read = (name) => readFileSync(join(SRC, name), "utf8");
@@ -78,6 +73,14 @@ for (const name of THEMES) {
   }
 
   if (/\[hidden\]/.test(css)) defects.push(`${name}: re-declares [hidden]; whether a closed popup is closed is structure`);
+
+  // A theme builds on the foundation. Importing another theme is how Material became everyone's
+  // base: three themes spent their rules undoing a field they never asked for.
+  for (const match of css.matchAll(/@import\s+['"]\.\/(modyra-(?:material|modern|ios|ionic)|modyra)\.css['"]/g)) {
+    const imported = `${match[1]}.css`;
+    if (imported === `${name}`) continue;
+    defects.push(`${name}: imports ${imported}; a theme builds on modyra-foundation.css, not on another theme`);
+  }
 
   for (const debt of DEBT) if (debt.matches(name, css)) debtSeen.add(debt.id);
 }
