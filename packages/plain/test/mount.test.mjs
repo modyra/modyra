@@ -508,3 +508,34 @@ test("multiselect toggles membership rather than accumulating duplicates", async
   dispose();
   host.remove();
 });
+
+test("filtering hides the options that do not match, in the select and the multiselect", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const { reactivity, dispose } = mountMdyForm(host, [
+    { name: "country", kind: "select", label: "Country", options: [{ value: "it", label: "Italy" }, { value: "fr", label: "France" }, { value: "de", label: "Germany" }] },
+    { name: "palette", kind: "multiselect", label: "Palette", options: [{ value: "indigo", label: "Indigo" }, { value: "cloud", label: "Cloud" }] },
+  ], { submitLabel: null });
+
+  const trigger = host.querySelector(".mdy-select__trigger");
+  trigger.dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  const popup = document.getElementById(trigger.getAttribute("aria-controls")).closest(".mdy-select__dropdown");
+  const search = popup.querySelector(".mdy-select__search");
+  search.value = "ran";
+  search.dispatchEvent(new Event("input"));
+  await reactivity.flush();
+
+  const shown = [...popup.querySelectorAll(".mdy-select__option")].filter((li) => !li.hidden);
+  assert.deepEqual(shown.map((li) => li.textContent), ["France"]);
+
+  const filter = host.querySelector(".mdy-multiselect-overlay__input");
+  filter.value = "clo";
+  filter.dispatchEvent(new Event("input"));
+  await reactivity.flush();
+  const chips = [...host.querySelectorAll(".mdy-chip")].filter((chip) => !chip.hidden);
+  assert.deepEqual(chips.map((chip) => chip.textContent), ["Cloud"]);
+
+  dispose();
+  host.remove();
+});

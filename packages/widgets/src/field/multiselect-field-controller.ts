@@ -111,16 +111,21 @@ export function createMultiselectFieldController<TValue>(
     const selected = currentState.selectedKeys.has(key);
     const count = currentState.counts.get(key) ?? 0;
     const disabled = option.disabled || currentState.disabled || currentState.readonly;
+    // Filtering is the contract's: an option the query does not match is hidden here, so every
+    // renderer filters identically by applying the part rather than reimplementing the match.
+    const visible = filteredOptions().some((candidate) => keyFor(candidate) === key);
     return {
       id: `${widgetId}__opt__${key}`,
       classes: [
         "mdy-multiselect__chip",
         ...(selected ? ["mdy-multiselect__chip--selected"] : []),
         ...(disabled ? ["mdy-multiselect__chip--disabled"] : []),
+        ...(visible ? [] : ["mdy-multiselect__chip--hidden"]),
       ],
       attributes: {
         ...(mode === "single" ? { "aria-pressed": String(selected) } : { "data-count": count }),
         "aria-disabled": String(disabled),
+        hidden: !visible,
         disabled: option.disabled || currentState.disabled,
       },
     };

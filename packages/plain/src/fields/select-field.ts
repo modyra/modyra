@@ -197,9 +197,9 @@ export function renderSelectField(
     setText(valueText, selected?.label ?? placeholder);
     valueText.classList.toggle("mdy-select__placeholder", !selected);
     for (const [key, li] of optionEls) {
+      // The part carries `hidden` when the query filters the option out — no second filter here.
       const part = view.parts[key];
       if (part) applyPart(li, part);
-      li.hidden = part?.classes.includes("mdy-select__option--hidden") ?? false;
     }
   });
 
