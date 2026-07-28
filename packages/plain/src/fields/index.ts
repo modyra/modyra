@@ -5,8 +5,9 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicField } from "@modyra/core";
-import { renderCatalogField } from "./catalog-field.js";
 import { renderDaterangeField } from "./daterange-field.js";
+import { renderColorsField } from "./colors-field.js";
+import { renderFileField } from "./file-field.js";
 import { renderBooleanField } from "./boolean-field.js";
 import { renderDatepickerField } from "./datepicker-field.js";
 import { renderMultiselectField } from "./multiselect-field.js";
@@ -44,8 +45,9 @@ export function renderField(
     case "daterange":
       return renderDaterangeField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity);
     case "file":
+      return renderFileField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity);
     case "colors":
-      return renderCatalogField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity);
+      return renderColorsField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity);
     case "timepicker":
       return renderTimepickerField(container, f, handle as unknown as MdyFieldHandle<string | null>, reactivity);
   }

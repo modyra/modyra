@@ -51,6 +51,7 @@ export function renderDaterangeField(
   startInput.type = "text";
   startInput.autocomplete = "off";
   startInput.setAttribute("aria-label", `${f.label ?? "Range"} — start`);
+  startInput.placeholder = f.placeholder ?? "Start";
   const separator = el("span", "mdy-daterange__sep");
   separator.setAttribute("aria-hidden", "true");
   setText(separator, "–");
@@ -58,6 +59,7 @@ export function renderDaterangeField(
   endInput.type = "text";
   endInput.autocomplete = "off";
   endInput.setAttribute("aria-label", `${f.label ?? "Range"} — end`);
+  endInput.placeholder = "End";
   const toggle = el("button", "mdy-datepicker__toggle") as HTMLButtonElement;
   toggle.type = "button";
   toggle.setAttribute("aria-label", "Open the calendar");

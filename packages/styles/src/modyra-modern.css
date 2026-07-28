@@ -136,9 +136,10 @@
         pointer-events: none;
     }
 
-    /* The default theme's arrow is a box for an <svg> the Lit renderer supplies; plain has no
-       icon set, so the caret is drawn from a rotated corner. */
-    .mdy-select > .mdy-select__arrow::after {
+    /* The default theme's arrow is a box for an <svg> the Angular and Lit renderers supply. A
+       renderer without an icon set leaves the element empty, and `:empty` is exactly that case —
+       the caret is then drawn from a rotated corner, for any adapter, without naming one. */
+    .mdy-select__arrow:empty::after {
         content: "";
         width: 0.5rem;
         height: 0.5rem;
@@ -147,7 +148,7 @@
         transform: translateY(-25%) rotate(45deg);
     }
 
-    .mdy-renderer--select .mdy-input-wrapper:focus-within .mdy-select__arrow::after {
+    .mdy-renderer--select .mdy-input-wrapper:focus-within .mdy-select__arrow:empty::after {
         transform: translateY(25%) rotate(225deg);
     }
 
@@ -169,6 +170,17 @@
 
     .mdy-select__option--hidden {
         display: none;
+    }
+
+    /* The colours toggle holds the same caret; it is a flex item in the suffix, so it needs its
+       own height rather than inheriting one from an icon it does not have. */
+    .mdy-colors__toggle-area {
+        min-height: var(--mdy-input-height);
+    }
+
+    .mdy-colors__toggle-area .mdy-select__arrow {
+        position: static;
+        inset: auto;
     }
 
     /* ─── Pickers ─────────────────────────────────────────────────────────────── */

@@ -28,7 +28,9 @@ const CONTROLLERS = {
   "fields/multiselect-field.ts": "createMultiselectFieldController",
   "fields/datepicker-field.ts": "createDatepickerFieldController",
   "fields/timepicker-field.ts": "createTimepickerFieldController",
-  "fields/catalog-field.ts": "createValueWidgetController",
+  "fields/daterange-field.ts": "dateRangeDraftTransition",
+  "fields/file-field.ts": "fileSelectionTransition",
+  "fields/colors-field.ts": "colorValueTransition",
 };
 for (const [file, controller] of Object.entries(CONTROLLERS)) {
   if (!read(file).includes(controller)) failures.push(`${file} does not consume ${controller}`);
