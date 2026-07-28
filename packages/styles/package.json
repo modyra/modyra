@@ -3,7 +3,7 @@
     "version": "0.4.0",
     "description": "Framework-agnostic style themes for modyra components.",
     "license": "MIT",
-    "author": "Lorenzo Muscherà",
+    "author": "Lorenzo Muscher\u00e0",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/modyra/modyra.git",
@@ -25,7 +25,7 @@
     },
     "exports": {
         "./default.css": {
-            "default": "./dist/modyra.css"
+            "default": "./dist/modyra-default.css"
         },
         "./modern.css": {
             "default": "./dist/modyra-modern.css"
@@ -41,6 +41,9 @@
         },
         "./base.css": {
             "default": "./dist/modyra-base.css"
+        },
+        "./foundation.css": {
+            "default": "./dist/modyra-foundation.css"
         }
     },
     "files": [

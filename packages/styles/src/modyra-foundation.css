@@ -1,0 +1,17 @@
+/*
+ * modyra-foundation.css — the structural layer, with no design language of its own.
+ *
+ * This is what every theme builds on: the anatomy of each widget, the overlay and popup
+ * primitives, the declarative layout grid, `[hidden]` handling, focus and reduced-motion support,
+ * and sizes derived from tokens. It picks no palette, no face, no field style — a form styled with
+ * this alone is usable and unremarkable, which is the point.
+ *
+ * Material, Modern, iOS and Ionic are siblings on top of it. None of them is the base of another:
+ * a theme that had to import a second theme in order to undo it was not a theme.
+ *
+ * Usage:
+ *   @import '@modyra/styles/foundation.css';   // structure only
+ *   @import '@modyra/styles/modern.css';       // foundation + Modyra's own look
+ */
+
+@import './modyra.css';

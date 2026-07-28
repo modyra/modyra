@@ -1,5 +1,6 @@
 @import './modyra-base.css';
-@import './modyra.css';
+/* Modern is a sibling of Material, not a correction of it. */
+@import './modyra-foundation.css';
 
 /*
  * modyra-modern.css — Modern Modyra Theme

@@ -1,4 +1,5 @@
-@import './modyra.css';
+/* iOS is a sibling of Material, not a correction of it. */
+@import './modyra-foundation.css';
 
 /*
  * modyra — iOS / Apple HIG Theme (iOS 26, Liquid Glass)

@@ -12,14 +12,10 @@ import sveltePlugin from "esbuild-svelte";
 // switcher in each page swaps the stylesheet.
 // Copied with their original filenames: the variants @import "./modyra.css"
 // internally, so renaming them would break relative resolution.
-const THEME_FILES = [
-  "modyra.css",
-  "modyra-material.css",
-  "modyra-modern.css",
-  "modyra-ios.css",
-  "modyra-ionic.css",
-  "modyra-base.css",
-];
+// Every CSS file the package ships: the themes, the structural foundation they import, and the
+// Material field the default entry keeps. A hand-kept subset silently 404s the moment the package
+// grows a file, and a theme whose foundation failed to load still renders — just unstyled.
+const THEME_FILES = (await import("node:fs")).readdirSync("packages/styles/dist").filter((file) => file.endsWith(".css"));
 const targets = [
   { name: "react", entry: "examples/react/main.jsx" },
   { name: "vue", entry: "examples/vue/main.js" },

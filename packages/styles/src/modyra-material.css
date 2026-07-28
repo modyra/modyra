@@ -1,4 +1,6 @@
-@import './modyra.css';
+@import './modyra-foundation.css';
+/* Material's own filled text field — the one every other theme used to inherit. */
+@import './material-filled-field.css';
 
 /*
  * modyra — Modern Neutral Theme
