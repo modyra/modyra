@@ -2650,7 +2650,8 @@
         --tp-surface-variant: var(--mdy-tp-surface-variant, var(--mdy-surface-container));
         --tp-outline: var(--mdy-tp-outline, var(--mdy-outline-variant));
         --tp-border-radius: var(--mdy-tp-border-radius, var(--mdy-datepicker-popup-border-radius, var(--mdy-input-border-radius)));
-        --tp-font-family: var(--mdy-font-family, "Roboto", sans-serif);
+        /* Inherits whatever face the theme set; the fallback is generic, not a brand. */
+        --tp-font-family: var(--mdy-font-family, inherit);
         --tp-font-weight: var(--mdy-tp-font-weight, 400);
         --tp-period-font-weight: var(--mdy-tp-period-font-weight, 500);
         --tp-dial-size: var(--mdy-comp-time-picker-clock-dial-size, 256px);
@@ -3410,6 +3411,19 @@
         .mdy-layout-columns {
             grid-template-columns: minmax(0, 1fr);
         }
+    }
+
+    /* ─── Hidden is hidden ───────────────────────────────────────────────────────
+     * Filtering an option, emptying a placeholder and closing a popup are all expressed as
+     * `hidden` on a contract part. A theme that gives such a part a `display` would beat the UA's
+     * `[hidden] { display: none }` — its layer is later — and the part would stay on screen. This
+     * is the one place the foundation insists, because whether a hidden thing is hidden is not a
+     * matter of taste, and every theme that has hit this has had to restate the rule itself.
+     */
+    .mdy-renderer [hidden],
+    .mdy-popup[hidden],
+    .mdy-popup [hidden] {
+        display: none !important;
     }
 
     /* ─── Popup primitive ────────────────────────────────────────────────────────

@@ -258,12 +258,6 @@
         box-shadow: var(--mdy-comp-date-picker-popup-shadow);
     }
 
-    /* `display` from the rule above would otherwise beat the UA's `[hidden] { display: none }`
-       and leave the closed popup on screen — the renderer closes it via the hidden attribute. */
-    .mdy-timepicker__popup[hidden] {
-        display: none;
-    }
-
     .mdy-timepicker__popup input,
     .mdy-timepicker__popup button {
         width: auto;
@@ -415,14 +409,6 @@
     list-style: none;
 }
 
-/* Filtering is expressed as `hidden` on the option, so any `display` a row picks up here would
-   beat the UA's `[hidden] { display: none }` — the same trap the timepicker popup hit. */
-.mdy-popup .mdy-select__option[hidden],
-.mdy-popup .mdy-multiselect__option[hidden],
-.mdy-multiselect .mdy-chip[hidden] {
-    display: none;
-}
-
 .mdy-popup .mdy-select__option,
 .mdy-popup .mdy-multiselect__option {
     min-height: 2.25rem;
@@ -485,6 +471,3 @@
     color: var(--mdy-on-surface-variant);
 }
 
-.mdy-multiselect__placeholder[hidden] {
-    display: none;
-}
