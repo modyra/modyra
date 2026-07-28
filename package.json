@@ -25,7 +25,7 @@
     "test:adapters": "npm run build:packages && node --test packages/zod/test/*.test.mjs packages/standard-schema/test/*.test.mjs packages/vue/test/*.test.mjs packages/react/test/*.test.mjs packages/lit/test/*.test.mjs packages/preact/test/*.test.mjs packages/svelte/test/*.test.mjs && node --conditions=browser --test packages/solid/test/*.test.mjs",
     "test:widgets": "npm run build:packages && node --test packages/widgets/test/*.spec.mjs",
     "test:guides": "npm run build:packages && node --test docs/examples/*/*.test.mjs",
-    "test:themes": "node scripts/audit-theme-classes.mjs --check",
+    "test:themes": "node scripts/audit-theme-classes.mjs --check && npm run test:styles-architecture",
     "test:e2e": "npm run build:demo && playwright test",
     "build:examples": "npm run build:packages && npm run build:plain && node scripts/build-examples.mjs",
     "demo:angular": "npm run build:angular && npm --prefix examples/angular run start",
@@ -57,7 +57,8 @@
     "test:widget-contract": "node scripts/audit-angular-widget-contract.mjs --check && node scripts/audit-widget-contract-completeness.mjs && npm run build:core && tsc -p packages/widgets/tsconfig.json && node --test packages/widgets/test/*.spec.mjs",
     "test:plain-contract": "npm run build:plain && node scripts/audit-plain-full-catalog.mjs && node scripts/audit-plain-widget-contract.mjs",
     "test:contracts": "npm run test:widget-contract && npm run test:plain-contract && npm run test:plain && npm run test:layout-contract && node scripts/audit-patch3-readiness.mjs --require-ready",
-    "test:layout-contract": "node scripts/audit-layout-contract.mjs --check"
+    "test:layout-contract": "node scripts/audit-layout-contract.mjs --check",
+    "test:styles-architecture": "node scripts/audit-styles-architecture.mjs --check"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^21.2.19",
