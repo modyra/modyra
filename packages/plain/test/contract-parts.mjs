@@ -43,11 +43,13 @@ export function partsOf(root, kind) {
     case "multiselect":
       return { ...shell, trigger: q(".mdy-plain-multiselect"), chips: q(".mdy-multiselect"), chip: q(".mdy-multiselect__chip") };
     case "datepicker":
-      return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), gridcell: q(".mdy-datepicker__cell") };
+      return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), weekdays: q(".mdy-datepicker__weekdays"), weekday: q(".mdy-datepicker__weekday"), row: q(".mdy-datepicker__row"), gridcell: q(".mdy-datepicker__cell") };
     case "timepicker":
       return { ...shell, control: q(".mdy-timepicker__input"), toggle: q(".mdy-timepicker__toggle"), popup: q(".mdy-timepicker__popup"), hour: q(".mdy-timepicker__hour"), minute: q(".mdy-timepicker__minute") };
-    case "daterange":
-      return { ...shell, startControl: root.querySelectorAll('input[type="date"]')[0], endControl: root.querySelectorAll('input[type="date"]')[1] };
+    case "daterange": {
+      const [start, end] = root.querySelectorAll(".mdy-daterange__input");
+      return { ...shell, startControl: start, separator: q(".mdy-daterange__sep"), endControl: end, toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), weekdays: q(".mdy-datepicker__weekdays"), weekday: q(".mdy-datepicker__weekday"), row: q(".mdy-datepicker__row"), gridcell: q(".mdy-datepicker__cell"), actions: q(".mdy-datepicker__actions") };
+    }
     case "file":
       return { ...shell, dropzone: q(".mdy-input-wrapper"), control: q('input[type="file"]') };
     case "slider":
@@ -72,7 +74,7 @@ export const ABSENT = {
   multiselect: ["popup", "search", "searchButton", "listbox", "option", "loading", "empty"],
   datepicker: ["dialogHeader", "calendar", "actions"],
   timepicker: ["header", "period", "clock", "actions"],
-  daterange: ["separator", "toggle", "popup", "calendar", "grid", "gridcell", "actions"],
+  daterange: ["calendar"],
   colors: ["toggle", "popup", "preview", "nativePicker", "hexInput", "presets", "swatch"],
   file: ["content", "fileList", "fileItem", "clear"],
 };

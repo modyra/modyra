@@ -126,7 +126,10 @@ function dumpState() {
   statePre.textContent = JSON.stringify(value, null, 2);
 }
 
-formHost.addEventListener("input", () => { dumpState(); report(); });
-formHost.addEventListener("change", () => { dumpState(); report(); });
-dumpState();
-report();
+// Driven by the form's own reactivity, not by DOM events: a value committed from a calendar cell
+// or a chip never fires `input` on the host, and a panel that missed those would lie.
+mounted.reactivity.effect(() => {
+  dumpState();
+  report();
+});
+formHost.addEventListener("click", () => queueMicrotask(report), true);

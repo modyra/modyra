@@ -148,7 +148,11 @@ export function createDatepickerFieldController(
     handle.markAsDirty();
     handle.markAsTouched();
     moveFocus(parsed);
-    return [{ type: "mark-dirty" }, { type: "mark-touched" }];
+    const commands: MdyUiCommand[] = [{ type: "mark-dirty" }, { type: "mark-touched" }];
+    // Picking the value answers the question the overlay was opened to ask, so the overlay closes
+    // and focus returns to the trigger — the same policy the select follows.
+    if (open()) commands.push(...closePicker(true));
+    return commands;
   }
 
   function openPicker(): readonly MdyUiCommand[] {
