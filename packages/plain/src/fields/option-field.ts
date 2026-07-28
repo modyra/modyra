@@ -21,7 +21,7 @@ export function renderOptionField(
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
   const controller = createOptionFieldController({ widgetId: f.name, handle, options, variant, keyFor }, reactivity);
 
-  const shell = buildFieldShell(f.label, f.kind === "segmented" ? "segmented" : "radio");
+  const shell = buildFieldShell(f.label, f.kind);
   const group = el("div") as HTMLDivElement;
   const rows = options.map((option) => {
     const key = keyFor(option);
