@@ -44,7 +44,7 @@ export interface MdyDomContractOptions {
 
 const ARIA_BOOLEAN_STATES = new Set([
   "aria-checked", "aria-disabled", "aria-expanded", "aria-invalid", "aria-pressed",
-  "aria-required", "aria-selected", "aria-hidden", "aria-busy", "aria-multiselectable",
+  "aria-required", "aria-selected", "aria-hidden", "aria-busy", "aria-multiselectable", "aria-modal",
 ]);
 const ARIA_REFERENCES = ["aria-describedby", "aria-labelledby", "aria-controls", "aria-activedescendant", "aria-owns"];
 

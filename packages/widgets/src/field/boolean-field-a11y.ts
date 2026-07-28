@@ -4,6 +4,7 @@
 
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
+import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type {
   MdyBooleanFieldState,
   MdyBooleanFieldVariant,
@@ -68,7 +69,7 @@ export function projectBooleanFieldA11y(
     },
     label: {
       id: labelId,
-      classes: ["mdy-label"],
+      classes: [MDY_FIELD_SHELL_CLASSES.label],
       attributes: {
         for: inputId,
       },
@@ -92,12 +93,12 @@ export function projectBooleanFieldA11y(
     },
     description: {
       id: descriptionId,
-      classes: ["mdy-description"],
+      classes: [MDY_FIELD_SHELL_CLASSES.supportingText],
       attributes: {},
     },
     error: {
       id: errorId,
-      classes: ["mdy-error"],
+      classes: [MDY_FIELD_SHELL_CLASSES.errors],
       attributes: {
         role: "alert",
         "aria-live": "polite",

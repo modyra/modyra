@@ -4,6 +4,7 @@
 
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
+import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type {
   MdyOptionFieldState,
   MdyOptionFieldVariant,
@@ -68,7 +69,7 @@ export function projectOptionFieldA11y<TValue>(
     },
     label: {
       id: labelId,
-      classes: ["mdy-label"],
+      classes: [MDY_FIELD_SHELL_CLASSES.label],
       attributes: {
         for: groupId,
       },
@@ -88,12 +89,12 @@ export function projectOptionFieldA11y<TValue>(
     },
     description: {
       id: descriptionId,
-      classes: ["mdy-description"],
+      classes: [MDY_FIELD_SHELL_CLASSES.supportingText],
       attributes: {},
     },
     error: {
       id: errorId,
-      classes: ["mdy-error"],
+      classes: [MDY_FIELD_SHELL_CLASSES.errors],
       attributes: {
         role: "alert",
         "aria-live": "polite",

@@ -403,11 +403,11 @@
 
     /* Radio and segmented groups are lists of choices, not a single value in a box — the
        frame around them says "text field" and is exactly what the boolean wrapper drops. */
-    .mdy-renderer--radio .mdy-input-wrapper,
+    .mdy-renderer--radio-group .mdy-input-wrapper,
     .mdy-renderer--segmented .mdy-input-wrapper,
-    .mdy-renderer--radio .mdy-input-wrapper:hover:not(:focus-within),
+    .mdy-renderer--radio-group .mdy-input-wrapper:hover:not(:focus-within),
     .mdy-renderer--segmented .mdy-input-wrapper:hover:not(:focus-within),
-    .mdy-renderer--radio .mdy-input-wrapper:focus-within,
+    .mdy-renderer--radio-group .mdy-input-wrapper:focus-within,
     .mdy-renderer--segmented .mdy-input-wrapper:focus-within {
         min-height: 0;
         border-color: transparent;
@@ -461,7 +461,6 @@
     /* The renderers always emit the description and the error list, empty or not;
        left displayed they add a line of dead air to every field. */
     .mdy-supporting-text:empty,
-    .mdy-description:empty,
     .mdy-control__errors:empty {
         display: none;
     }
