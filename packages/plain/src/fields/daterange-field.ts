@@ -17,6 +17,7 @@ import {
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
+import { dismissOnOutsidePointer } from "../overlay.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 
 const EMPTY: MdyDateRangeValue = { start: null, end: null };
@@ -144,6 +145,8 @@ export function renderDaterangeField(
     if (event.key === "Escape") dispatch({ type: "cancel" });
   });
 
+  const undismiss = dismissOnOutsidePointer([wrapper], () => draft().open, () => dispatch({ type: "cancel" }));
+
   let cellEls: ReadonlyMap<string, HTMLButtonElement> = new Map();
   let renderedMonth = "";
 
@@ -189,6 +192,7 @@ export function renderDaterangeField(
   });
 
   return () => {
+    undismiss();
     effectRef.destroy();
     shell.root.remove();
   };

@@ -12,6 +12,7 @@ import { createSelectController, MDY_WIDGET_CONTRACTS, type MdyElementLookup } f
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
+import { dismissOnOutsidePointer } from "../overlay.js";
 
 export function renderSelectField(
   container: HTMLElement,
@@ -126,8 +127,8 @@ export function renderSelectField(
   // Blur means "focus left the widget", not "focus left this element": opening moves focus into
   // the search field, and treating that as a blur closed the popup as soon as it opened.
   const onFocusOut = (event: FocusEvent): void => {
-    const next = event.relatedTarget;
-    if (next instanceof Node && (wrapper.contains(next) || popup.contains(next))) return;
+    const next = event.relatedTarget as Node | null;
+    if (next !== null && typeof next.nodeType === "number" && (wrapper.contains(next) || popup.contains(next))) return;
     dispatch({ type: "blur" });
   };
   trigger.addEventListener("focusout", onFocusOut);
@@ -171,6 +172,12 @@ export function renderSelectField(
     li.addEventListener("click", () => dispatch({ type: "select", optionKey: key }));
   }
 
+  const undismiss = dismissOnOutsidePointer(
+    [wrapper, popup],
+    () => controller.state().open,
+    () => dispatch({ type: "close", restoreFocus: false }),
+  );
+
   const effectRef = reactivity.effect(() => {
     controller.setValue(handle.value());
     controller.setDisabled(handle.disabled());
@@ -204,6 +211,7 @@ export function renderSelectField(
   });
 
   return () => {
+    undismiss();
     effectRef.destroy();
     controller.destroy();
     window.removeEventListener("resize", reposition);

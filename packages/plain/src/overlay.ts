@@ -6,7 +6,7 @@
  * result out as the `--mdy-overlay-*` custom properties the shipped themes already read, which is
  * the same contract the Angular renderer fulfils.
  */
-import { decideOverlayPlacement } from "@modyra/widgets";
+import { decideOverlayPlacement, overlayLifecycleTransition } from "@modyra/widgets";
 
 export interface OverlayPlacementOptions {
   /** Smallest usable space before the popup flips or overlays. */
@@ -73,4 +73,35 @@ export function trackOverlay(
     window.removeEventListener("resize", reposition);
     window.removeEventListener("scroll", reposition, true);
   };
+}
+
+/**
+ * Dismisses an overlay when a pointer goes down outside it — the default the contract declares
+ * through `capabilities.dismissOnOutsidePointer`. The decision itself is
+ * `overlayLifecycleTransition`, so "outside" never means something different per renderer; this
+ * only reports where the pointer landed and runs the teardown the policy asks for.
+ */
+function asNode(value: unknown): Node | null {
+  return value !== null && typeof value === "object" && typeof (value as { nodeType?: unknown }).nodeType === "number"
+    ? (value as Node)
+    : null;
+}
+
+export function dismissOnOutsidePointer(
+  parts: ReadonlyArray<Element | null | undefined>,
+  isOpen: () => boolean,
+  close: () => void,
+): () => void {
+  const onPointerDown = (event: Event): void => {
+    if (!isOpen()) return;
+    // Duck-typed rather than `instanceof Node`: the constructor is not a global in every host
+    // this renderer runs in (a jsdom harness without it, an SSR shim), and a missed check would
+    // silently stop dismissing.
+    const target = asNode(event.target);
+    const inside = target !== null && parts.some((part) => part?.contains(target));
+    const transition = overlayLifecycleTransition({ open: true }, { type: "outside", outside: !inside });
+    if (transition.effect === "teardown") close();
+  };
+  document.addEventListener("pointerdown", onPointerDown, true);
+  return () => document.removeEventListener("pointerdown", onPointerDown, true);
 }
