@@ -150,7 +150,7 @@ test("multiselect: options are picked from an overlay, not from an inline list",
   assert.equal(popup.hidden, false);
   assert.equal(trigger.getAttribute("aria-expanded"), "true");
 
-  const musicChip = [...popup.querySelectorAll(".mdy-multiselect__option")].find((b) => b.textContent.startsWith("Music"));
+  const musicChip = [...popup.querySelectorAll(".mdy-chip--centered")].find((b) => b.textContent.startsWith("Music"));
   musicChip.dispatchEvent(new Event("click"));
   await reactivity.flush();
   assert.deepEqual(form.f.interests.value(), ["music"]);
@@ -519,7 +519,7 @@ test("multiselect toggles membership rather than accumulating duplicates", async
   const trigger = host.querySelector(".mdy-multiselect");
   trigger.dispatchEvent(new Event("click"));
   await reactivity.flush();
-  const chip = document.getElementById(trigger.getAttribute("aria-controls")).querySelector(".mdy-multiselect__option");
+  const chip = document.getElementById(trigger.getAttribute("aria-controls")).querySelector(".mdy-chip--centered");
   for (let click = 0; click < 3; click += 1) chip.dispatchEvent(new Event("click"));
   await reactivity.flush();
   assert.deepEqual(form.f.palette.value(), ["indigo"]);
@@ -560,7 +560,7 @@ test("filtering hides the options that do not match, in the select and the multi
   filter.value = "clo";
   filter.dispatchEvent(new Event("input"));
   await reactivity.flush();
-  const chips = [...msPopup.querySelectorAll(".mdy-multiselect__option")].filter((chip) => !chip.hidden);
+  const chips = [...msPopup.querySelectorAll(".mdy-chip--centered")].filter((chip) => !chip.hidden);
   assert.deepEqual(chips.map((chip) => chip.textContent), ["Cloud"]);
 
   dispose();

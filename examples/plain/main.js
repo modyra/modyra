@@ -35,6 +35,8 @@ const FIELDS = [
   { name: "billing", kind: "segmented", label: "Billing", options: [{ value: "monthly", label: "Monthly" }, { value: "yearly", label: "Yearly" }] },
   { name: "country", kind: "select", label: "Country", options: [{ value: "it", label: "Italy" }, { value: "fr", label: "France" }, { value: "de", label: "Germany" }] },
   { name: "palette", kind: "multiselect", label: "Palette", options: colors },
+  // Counter mode: the same option can be taken several times, and the chip keeps the count.
+  { name: "servings", kind: "multiselect", mode: "multi", label: "Servings", options: [{ value: "espresso", label: "Espresso" }, { value: "cornetto", label: "Cornetto" }] },
   { name: "birthday", kind: "datepicker", label: "Birthday" },
   { name: "stay", kind: "daterange", label: "Stay" },
   { name: "meeting", kind: "timepicker", label: "Meeting" },

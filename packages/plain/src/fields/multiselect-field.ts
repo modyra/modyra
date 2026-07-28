@@ -45,40 +45,44 @@ export function renderMultiselectField(
   const group = el("div", parts.listbox.classes.join(" ")) as HTMLDivElement;
   popup.append(search, group);
 
-  const optionEls = new Map<string, { chip: HTMLButtonElement; count?: HTMLSpanElement }>();
+  // Both modes draw the contract's chip: a check plus a label when each option is either in or out,
+  // and the same chip with two step buttons and a count when an option can be taken several times.
+  const optionEls = new Map<string, { chip: HTMLElement; count?: HTMLSpanElement }>();
   for (const option of options) {
     const key = keyFor(option);
-    const chip = el("button", parts.option.classes.join(" ")) as HTMLButtonElement;
-    chip.type = "button";
-    const label = el("span");
+    const label = el("span", parts.optionLabel.classes.join(" "));
     setText(label, option.label);
-    chip.appendChild(label);
 
     if (mode === "multi") {
-      const dec = el("button") as HTMLButtonElement;
-      dec.type = "button";
-      setText(dec, "−");
-      dec.setAttribute("aria-label", `Decrease ${option.label}`);
-      dec.addEventListener("click", (event) => {
-        event.stopPropagation();
-        dispatch({ type: "decrement", optionKey: key });
-      });
-      const count = el("span");
-      const inc = el("button") as HTMLButtonElement;
-      inc.type = "button";
-      setText(inc, "+");
-      inc.setAttribute("aria-label", `Increase ${option.label}`);
-      inc.addEventListener("click", (event) => {
-        event.stopPropagation();
-        dispatch({ type: "increment", optionKey: key });
-      });
-      chip.append(dec, count, inc);
+      const chip = el("div", parts.option.classes.join(" "));
+      chip.title = option.label;
+      const step = (sign: "−" | "+", intent: "decrement" | "increment", describe: string): HTMLButtonElement => {
+        const button = el("button", parts.optionStep.classes.join(" ")) as HTMLButtonElement;
+        button.type = "button";
+        setText(button, sign);
+        button.setAttribute("aria-label", `${describe} ${option.label}`);
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          dispatch({ type: intent, optionKey: key });
+        });
+        return button;
+      };
+      const count = el("span", parts.optionCount.classes.join(" ")) as HTMLSpanElement;
+      chip.append(step("−", "decrement", "Decrease"), label, count, step("+", "increment", "Increase"));
+      group.appendChild(chip);
       optionEls.set(key, { chip, count });
     } else {
+      const chip = el("button", parts.option.classes.join(" ")) as HTMLButtonElement;
+      chip.type = "button";
+      chip.title = option.label;
+      // Empty: the theme draws the tick for renderers that ship no icon set.
+      const check = el("span", parts.optionCheck.classes.join(" "));
+      check.setAttribute("aria-hidden", "true");
+      chip.append(check, label);
       chip.addEventListener("click", () => dispatch({ type: "toggle", optionKey: key }));
+      group.appendChild(chip);
       optionEls.set(key, { chip });
     }
-    group.appendChild(chip);
   }
 
   insertControl(shell, trigger);
@@ -182,7 +186,7 @@ export function renderMultiselectField(
       // The part carries `hidden` when the query filters the option out — no second filter here.
       const part = view.parts[key];
       if (part) applyPart(entry.chip, part);
-      if (entry.count) setText(entry.count, String(state.counts.get(key) ?? 0));
+      if (entry.count) setText(entry.count, `×${state.counts.get(key) ?? 0}`);
     }
   });
 
