@@ -40,7 +40,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   declare _draftValue: string | null;
   declare _isDragging: boolean;
   declare _dragAngle: number | null;
-  protected override readonly rendererClass = "mdy-renderer--timepicker";
+  protected override readonly widgetKind = "timepicker" as const;
 
   private dragField: TimeField = "hour";
   private switchTimer: ReturnType<typeof setTimeout> | null = null;

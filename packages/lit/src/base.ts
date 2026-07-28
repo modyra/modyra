@@ -2,6 +2,7 @@ import { MdyFieldHandle } from "@modyra/core";
 import { MDY_ICONS } from "@modyra/core/ui";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
+import { defaultWidgetIdFactory as ID, MDY_FIELD_SHELL_CLASSES as SHELL, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "@modyra/widgets";
 import { MdyFormController } from "./adapter.js";
 
 /** Renders an icon from the shared library (same SVGs as every adapter). */
@@ -47,8 +48,19 @@ export abstract class MdyFieldElement<T> extends LitElement {
   protected readonly fieldId = `mdy-field-${nextId++}`;
   private _tracker: MdyFormController | null = null;
 
-  /** Renderer modifier class, e.g. `mdy-renderer--text`. */
-  protected abstract readonly rendererClass: string;
+  /** The widget kind this element renders. Its classes come from the catalog, never from here. */
+  protected abstract readonly widgetKind: MdyWidgetKind;
+
+  /** Root classes for this kind, straight from the catalog. */
+  protected get rootClasses(): readonly string[] {
+    return MDY_WIDGET_CONTRACTS[this.widgetKind].rootClasses;
+  }
+
+  /** Class list for one of this widget's contract parts. Adapters must not invent equivalents. */
+  protected partClass(part: string): string {
+    const parts = MDY_WIDGET_CONTRACTS[this.widgetKind].parts as Readonly<Record<string, { classes: readonly string[] }>>;
+    return (parts[part]?.classes ?? []).join(" ");
+  }
 
   constructor() {
     super();
@@ -64,7 +76,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.classList.add("mdy-renderer", this.rendererClass);
+    this.classList.add(...this.rootClasses);
     const handle = this.field;
     if (handle && !this._tracker) {
       this._tracker = new MdyFormController(this, [
@@ -93,7 +105,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   }
 
   protected get errorsId(): string {
-    return `${this.fieldId}-errors`;
+    return ID.part(this.fieldId, "errors");
   }
 
   protected showErrors(handle: MdyFieldHandle<T>): boolean {
@@ -143,14 +155,14 @@ export abstract class MdyFieldElement<T> extends LitElement {
     const filled = this.isFilled(handle);
     const hasError = this.showErrors(handle);
     return html`<label
-      class="mdy-label ${filled ? "mdy-label--filled" : ""} ${hasError ? "mdy-label--has-error" : ""}"
+      class="${SHELL.label} ${filled ? `${SHELL.label}--filled` : ""} ${hasError ? `${SHELL.label}--has-error` : ""}"
       id=${labelId || nothing}
       for=${labelId ? nothing : forId}
     >
       ${this.label}
       ${handle.required()
         ? html`<span
-          class="mdy-label__required ${filled ? "mdy-label__required--filled" : ""}"
+          class="${SHELL.requiredMarker} ${filled ? `${SHELL.requiredMarker}--filled` : ""}"
           aria-hidden="true"
         >*</span>`
         : nothing}
@@ -158,22 +170,28 @@ export abstract class MdyFieldElement<T> extends LitElement {
     </label>`;
   }
 
-  /** Helper text slot rendered when no block errors are shown. */
+  /** Id the controllers point `aria-describedby` at when the field has no errors. */
+  protected get descriptionId(): string {
+    return ID.part(this.fieldId, "description");
+  }
+
+  /** Helper text slot rendered when no block errors are shown. It carries the id the widget
+   * contract describes the control by — an unrendered id would leave that reference dangling. */
   protected renderSupportingText(): unknown {
-    return html`<div class="mdy-supporting-text"><slot name="supporting-text"></slot></div>`;
+    return html`<div class="${SHELL.supportingText}" id=${this.descriptionId}><slot name="supporting-text"></slot></div>`;
   }
 
   /** Error list block (rendered only once the field was touched). */
   protected renderErrors(handle: MdyFieldHandle<T>): unknown {
     if (!this.showErrors(handle)) return nothing;
     return html`<ul
-      class="mdy-control__errors"
+      class="${SHELL.errors}"
       id=${this.errorsId}
       role="alert"
       aria-live="polite"
     >
       ${handle.errors().map(
-        (er) => html`<li class="mdy-control__error">${er.message}</li>`,
+        (er) => html`<li class="${SHELL.errorItem}">${er.message}</li>`,
       )}
     </ul>`;
   }
@@ -199,16 +217,15 @@ export abstract class MdyFieldElement<T> extends LitElement {
       ${this.renderLabel(handle)}
       ${this.useWrapper
         ? html`<div
-          class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}"
+          class="${SHELL.inputWrapper} ${handle.disabled() ? `${SHELL.inputWrapper}--disabled` : ""}"
         >
-          <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
+          <div class="${SHELL.prefix}"><slot name="prefix"></slot></div>
           ${control}
-          <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
+          <div class="${SHELL.suffix}"><slot name="suffix"></slot></div>
         </div>`
         : control}
-      ${showBlockErrors
-        ? this.renderErrors(handle)
-        : this.renderSupportingText()}
+      ${showBlockErrors ? this.renderErrors(handle) : nothing}
+      ${this.renderSupportingText()}
     `;
   }
 }

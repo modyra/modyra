@@ -12,7 +12,7 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
   declare min?: number;
   declare max?: number;
   declare step?: number;
-  protected override readonly rendererClass = "mdy-renderer--number";
+  protected override readonly widgetKind = "number" as const;
   private fieldController?: MdyFieldController<number | null>;
 
   override connectedCallback(): void {

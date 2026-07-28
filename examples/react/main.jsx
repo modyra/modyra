@@ -23,7 +23,7 @@ const isUsernameTaken = (value, signal) =>
     });
   });
 
-const THEMES = { default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
+const THEMES = { modern: "modyra-modern.css", default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
 
 // Swaps the theme stylesheet at runtime — every packaged theme works with
 // the same markup, so switching is just a different href.

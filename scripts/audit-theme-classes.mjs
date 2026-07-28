@@ -12,6 +12,7 @@
  */
 
 import { readFileSync, readdirSync } from "node:fs";
+import { MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS } from "../packages/widgets/dist/index.js";
 import { dirname, extname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -127,11 +128,20 @@ function findHostBindings(ts) {
   return classes;
 }
 
-function extractAngularClasses(ts, filePath) {
+function extractAngularClasses(ts, filePath, kind) {
   const template = findTemplate(ts, filePath);
   const host = findHostBindings(ts);
   const fromTemplate = extractTemplateClasses(template);
-  return new Set([...fromTemplate, ...host]);
+  // A renderer that binds `widgetContract.parts.x.classes` emits whatever the catalog says that
+  // part carries — resolve it from the contract rather than looking for a literal.
+  const fromContract = [];
+  const contractRe = /widgetContract\.parts\.([A-Za-z0-9_]+)\.classes/g;
+  const definition = MDY_WIDGET_CONTRACTS[kind === "radio-group" ? "radio" : kind];
+  let m;
+  while ((m = contractRe.exec(ts)) !== null) {
+    fromContract.push(...(definition?.parts[m[1]]?.classes ?? []));
+  }
+  return new Set([...fromTemplate, ...host, ...fromContract]);
 }
 
 function extractTemplateClasses(template) {
@@ -213,7 +223,7 @@ function buildAngularVocabulary() {
     const classes = new Set();
     for (const path of collectAngularFilesForKind(kind)) {
       const ts = readText(path);
-      for (const c of extractAngularClasses(ts, path)) classes.add(c);
+      for (const c of extractAngularClasses(ts, path, kind)) classes.add(c);
     }
     vocab.set(kind, classes);
   }
@@ -258,6 +268,41 @@ function extractLitAllTokens(ts) {
   return classes;
 }
 
+/**
+ * Classes a file contributes by *consuming the contract* rather than by writing a literal:
+ * `MDY_FIELD_SHELL_CLASSES.x`, `this.partClass("x")` and `rootClasses` all resolve through
+ * `@modyra/widgets`, so the vocabulary is read from the catalog instead of from the source text.
+ */
+function extractContractClasses(ts, kind) {
+  const classes = [];
+  const shellRe = /(?:MDY_FIELD_SHELL_CLASSES|SHELL)\.([A-Za-z0-9_]+)/g;
+  let shellMatch;
+  while ((shellMatch = shellRe.exec(ts)) !== null) {
+    const value = MDY_FIELD_SHELL_CLASSES[shellMatch[1]];
+    if (value) classes.push(value);
+  }
+  const widgetKind = kind === "radio-group" ? "radio" : kind;
+  const definition = MDY_WIDGET_CONTRACTS[widgetKind];
+  if (!definition) return classes;
+  if (/rootClasses|MDY_WIDGET_CONTRACTS/.test(ts)) classes.push(...definition.rootClasses);
+  const partRe = /partClass\(\s*["'`]([A-Za-z0-9_]+)["'`]\s*\)/g;
+  let m;
+  while ((m = partRe.exec(ts)) !== null) {
+    classes.push(...(definition.parts[m[1]]?.classes ?? []));
+  }
+  // Modifier forms built by interpolation — `${SHELL.label}--filled`, `${this.partClass("x")}--open`
+  const shellModifierRe = /\$\{SHELL\.([A-Za-z0-9_]+)\}--([A-Za-z0-9-]+)/g;
+  while ((m = shellModifierRe.exec(ts)) !== null) {
+    const base = MDY_FIELD_SHELL_CLASSES[m[1]];
+    if (base) classes.push(`${base}--${m[2]}`);
+  }
+  const partModifierRe = /partClass\(\s*["'`]([A-Za-z0-9_]+)["'`]\s*\)\}--([A-Za-z0-9-]+)/g;
+  while ((m = partModifierRe.exec(ts)) !== null) {
+    for (const base of definition.parts[m[1]]?.classes ?? []) classes.push(`${base}--${m[2]}`);
+  }
+  return classes;
+}
+
 function extractLitDynamicClasses(ts) {
   const classes = [];
   const toggleRe = /classList\.toggle\(["'`]([A-Za-z0-9_-]+)["'`]/g;
@@ -296,6 +341,7 @@ function buildLitVocabulary() {
   const vocab = new Map();
   for (const kind of KINDS) {
     const classes = new Set(baseClasses);
+    for (const c of extractContractClasses(baseTs, kind)) classes.add(c);
     const path = litFileForKind(kind);
     if (!readText(path)) {
       vocab.set(kind, classes);
@@ -304,6 +350,7 @@ function buildLitVocabulary() {
     const ts = readText(path);
     for (const c of extractLitAllTokens(ts)) classes.add(c);
     for (const c of extractLitDynamicClasses(ts)) classes.add(c);
+    for (const c of extractContractClasses(ts, kind)) classes.add(c);
 
     // Pull in shared style/helper files explicitly imported by this component
     // (e.g. popup-styles.ts with renderOverlayPanel) without blindly following

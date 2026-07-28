@@ -13,7 +13,7 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
   declare min: number;
   declare max: number;
   declare step: number;
-  protected override readonly rendererClass = "mdy-renderer--slider";
+  protected override readonly widgetKind = "slider" as const;
 
   constructor() {
     super();
@@ -25,11 +25,11 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
   protected override renderControl(handle: MdyFieldHandle<number>): unknown {
     const value = handle.value() ?? this.min;
     const pct = ((value - this.min) / (this.max - this.min || 1)) * 100;
-    return html`<div class="mdy-slider-container">
+    return html`<div class="${this.partClass("track")}">
       <input
         id=${this.fieldId}
         type="range"
-        class="mdy-slider"
+        class="${this.partClass("control")}"
         style="--mdy-slider-fill-pct: ${pct}%"
         min=${this.min}
         max=${this.max}
@@ -43,7 +43,7 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
         }}
         @change=${() => handle.markAsTouched()}
       />
-      <span class="mdy-slider-value">${handle.value()}</span>
+      <span class="${this.partClass("value")}">${handle.value()}</span>
     </div>`;
   }
 }

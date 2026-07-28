@@ -18,6 +18,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
     <label class="mdy-checkbox">
       <input
         type="checkbox"
+        [class]="widgetContract.parts.control.classes.join(' ')"
         [id]="fieldId"
         [checked]="value()"
         [disabled]="isDisabled()"

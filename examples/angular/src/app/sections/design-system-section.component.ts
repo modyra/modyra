@@ -8,8 +8,10 @@ import {
   MdyToggleComponent,
 } from "@modyra/angular/ui";
 
+type ThemeOption = "default" | "modern" | "material" | "ios" | "ionic";
+
 export interface DesignSystemConfig {
-  readonly theme: "default" | "material" | "ios" | "ionic";
+  readonly theme: ThemeOption;
   readonly primaryColor: string;
   readonly density: number;
   readonly floating: boolean;
@@ -107,11 +109,7 @@ export class DesignSystemSectionComponent {
   private readonly designSystemConfig = computed(() => {
     const form = this.designSystemFormRef();
     return {
-      theme: (form?.getField("theme")?.()?.value() ?? "default") as
-        | "default"
-        | "material"
-        | "ios"
-        | "ionic",
+      theme: (form?.getField("theme")?.()?.value() ?? "modern") as ThemeOption,
       primaryColor: (form?.getField("primaryColor")?.()?.value() ??
         "#18181b") as string,
       density: (form?.getField("density")?.()?.value() ?? 0) as number,
@@ -124,7 +122,7 @@ export class DesignSystemSectionComponent {
   }
 
   readonly initialDesignSystemValues = {
-    theme: "default",
+    theme: "modern",
     primaryColor: "#6750a4",
     density: -3,
     floating: false,
@@ -132,6 +130,7 @@ export class DesignSystemSectionComponent {
 
   readonly themeOptions: readonly MdySelectOption[] = [
     { value: "default", label: "📄 Base Theme" },
+    { value: "modern", label: "📄 Modern" },
     { value: "material", label: "🎨 Material 3" },
     { value: "ios", label: "🍎 iOS Design" },
     { value: "ionic", label: "⚡ Ionic Solid" },

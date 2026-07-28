@@ -34,7 +34,7 @@ const isUsernameTaken = (value, signal) =>
 // daterange, timepicker, colors, file.
 defineMdyElements();
 
-const THEMES = { default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
+const THEMES = { modern: "modyra-modern.css", default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
 
 class SignupApp extends LitElement {
   static properties = { theme: { state: true } };
@@ -103,7 +103,7 @@ class SignupApp extends LitElement {
 
   constructor() {
     super();
-    this.theme = "default";
+    this.theme = "modern";
   }
 
   createRenderRoot() { return this; } // light DOM: the theme applies

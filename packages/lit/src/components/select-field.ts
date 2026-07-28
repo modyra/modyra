@@ -20,7 +20,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
   /** When true, searchable selects show a "Create …" row for unknown queries. */
   declare allowCreate: boolean;
 
-  protected override readonly rendererClass = "mdy-renderer--select";
+  protected override readonly widgetKind = "select" as const;
   private selectAdapter?: MdyLitSelectAdapter<unknown>;
   private readonly overlay = new MdyLitOverlayController(this);
 
