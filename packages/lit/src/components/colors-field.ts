@@ -1,5 +1,6 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
+import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
   MdyLitOverlayController,
@@ -23,6 +24,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
   /** Preset swatches shown in the dropdown. */
   declare presets: readonly string[];
   declare _open: boolean;
+  private unbindOutside?: () => void;
   protected override readonly widgetKind = "colors" as const;
   private readonly overlay = new MdyLitOverlayController(this);
 
@@ -44,12 +46,21 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
 
   private close(handle: MdyFieldHandle<string | null>): void {
     if (!this._open) return;
-    this._open = false;
+    applyOverlayIntent(this, { type: "close" });
     this.overlay.close();
     handle.markAsTouched();
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.unbindOutside = bindOutsidePointer(this, () => {
+      const handle = this.field;
+      if (handle) this.close(handle);
+    });
+  }
+
   override disconnectedCallback(): void {
+    this.unbindOutside?.();
     this.overlay.close();
     super.disconnectedCallback();
   }
@@ -118,7 +129,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
                   this.close(handle);
                 } else {
                   this.overlay.open(e);
-                  this._open = true;
+                  applyOverlayIntent(this, { type: "open", disabled: this.field?.disabled() ?? false, available: true });
                 }
               }}
             >
@@ -170,7 +181,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
                   this.close(handle);
                 } else {
                   this.overlay.open(e);
-                  this._open = true;
+                  applyOverlayIntent(this, { type: "open", disabled: this.field?.disabled() ?? false, available: true });
                 }
               }}
             >

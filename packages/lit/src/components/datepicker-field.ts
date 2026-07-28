@@ -2,6 +2,7 @@ import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { addMonths, buildMonthGrid, type CalendarCell, type CalendarDate, daysInMonth, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { calendarKeyboardTarget } from "@modyra/core/ui";
+import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
   MdyLitOverlayController,
@@ -51,6 +52,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   private readonly overlay = new MdyLitOverlayController(this, () => this, {
     widthMode: "auto-content",
   });
+  private unbindOutside?: () => void;
 
   constructor() {
     super();
@@ -107,13 +109,13 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     this._focusedIso = formatIsoDate(base);
     this._view = "calendar";
     this._draftValue = handle.value() ?? null;
-    this._open = true;
+    applyOverlayIntent(this, { type: "open", disabled: handle.disabled(), available: true });
     this.overlay.open(event);
   }
 
   private closePopup(handle: MdyFieldHandle<string | null>, refocus = true): void {
     if (!this._open) return;
-    this._open = false;
+    applyOverlayIntent(this, { type: "close", restoreFocus: refocus });
     this.overlay.close();
     this._view = "calendar";
     handle.markAsTouched();
@@ -265,7 +267,17 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     }
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.unbindOutside = bindOutsidePointer(this, () => {
+      const handle = this.field;
+      this.overlay.close();
+      if (handle) handle.markAsTouched();
+    });
+  }
+
   override disconnectedCallback(): void {
+    this.unbindOutside?.();
     this.overlay.close();
     super.disconnectedCallback();
   }
