@@ -79,7 +79,7 @@ export function renderMultiselectField(
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
     const view = controller.view();
-    const visibleKeys = new Set(controller.filteredOptions().map(keyFor));
+
     applyPart(shell.label, view.parts.label);
     applyPart(group, view.parts.group);
     applyPart(shell.description, view.parts.description);
@@ -92,7 +92,6 @@ export function renderMultiselectField(
       if (!entry) continue;
       const part = view.parts[key];
       if (part) applyPart(entry.chip, part);
-      entry.chip.hidden = !visibleKeys.has(key);
       if (entry.count) setText(entry.count, String(state.counts.get(key) ?? 0));
     }
   });

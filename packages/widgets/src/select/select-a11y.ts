@@ -74,6 +74,9 @@ export function projectSelectA11y(
     classes: buildOptionClasses(key === selectedKey, key === activeKey, visibleKeys.includes(key)),
     attributes: {
       "aria-selected": String(key === selectedKey),
+      // Filtering is the contract's, not the adapter's: an option the query does not match is
+      // hidden here, so every renderer filters identically by applying the part.
+      hidden: !visibleKeys.includes(key),
     },
   });
 

@@ -410,6 +410,13 @@
     isolation: isolate;
 }
 .mdy-plain-select__portal[hidden] { display: none; }
+/* `display` here would otherwise beat the UA's `[hidden] { display: none }`, and filtering is
+   expressed as `hidden` on the option — the same trap the timepicker popup hit. */
+.mdy-plain-select__portal .mdy-select__option[hidden],
+.mdy-multiselect .mdy-chip[hidden] {
+    display: none;
+}
+
 .mdy-plain-select__portal .mdy-select__option {
     min-height: 2.25rem;
     display: flex;
