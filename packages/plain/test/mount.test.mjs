@@ -337,14 +337,15 @@ test("daterange, file and colors mount and round-trip their own value shape", ()
   end.dispatchEvent(new Event("change"));
   assert.deepEqual(mounted.form.f.stay.value(), { start: "2026-07-01", end: "2026-07-08" });
 
-  const file = host.querySelector('.mdy-renderer--file input[type="file"]');
+  const file = host.querySelector(".mdy-renderer--file .mdy-file-input");
   assert.equal(file.accept, ".pdf");
   assert.equal(file.multiple, true);
   assert.deepEqual(mounted.form.f.cv.value(), []);
+  assert.ok(host.querySelector(".mdy-file-container > .mdy-file-content .mdy-file-list"));
 
-  const color = host.querySelector('.mdy-renderer--colors input[type="color"]');
+  const color = host.querySelector(".mdy-renderer--colors .mdy-colors__native-hidden");
   color.value = "#7067ff";
-  color.dispatchEvent(new Event("change"));
+  color.dispatchEvent(new Event("input"));
   assert.equal(mounted.form.f.brand.value(), "#7067ff");
 
   mounted.dispose();
@@ -381,6 +382,74 @@ test("daterange: the calendar picks a range and only a complete one commits", as
   assert.match(value.start, /^\d{4}-\d{2}-\d{2}$/);
   assert.ok(value.end > value.start);
   assert.equal(popup.hidden, true);
+
+  dispose();
+  host.remove();
+});
+
+test("file: the widget policy accepts what matches and rejects what does not", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const { form, reactivity, dispose } = mountMdyForm(host, [
+    { name: "cv", kind: "file", label: "CV", accept: ".pdf", multiple: true },
+  ], { submitLabel: null });
+
+  const input = host.querySelector(".mdy-file-input");
+  const pdf = new File(["x"], "cv.pdf", { type: "application/pdf" });
+  const png = new File(["x"], "photo.png", { type: "image/png" });
+  // jsdom's FileList is read-only, so the picked set is handed over the same way a browser does.
+  Object.defineProperty(input, "files", { value: [pdf, png], configurable: true });
+  input.dispatchEvent(new Event("change"));
+  await reactivity.flush();
+
+  assert.deepEqual(form.f.cv.value().map((f) => f.name), ["cv.pdf"], "the accept tokens filter the drop");
+  const items = host.querySelectorAll(".mdy-file-item");
+  assert.equal(items.length, 1);
+  assert.match(items[0].textContent, /cv\.pdf/);
+
+  host.querySelector(".mdy-file-clear").dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  assert.deepEqual(form.f.cv.value(), []);
+  assert.equal(host.querySelectorAll(".mdy-file-item").length, 0);
+
+  dispose();
+  host.remove();
+});
+
+test("colors: a preset commits and closes the popup, a hex value commits and does not", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const { form, reactivity, dispose } = mountMdyForm(host, [
+    { name: "brand", kind: "colors", label: "Brand", presets: ["#7067ff", "#22c55e"] },
+  ], { submitLabel: null });
+
+  const popup = host.querySelector(".mdy-colors__dropdown");
+  const toggle = host.querySelector(".mdy-colors__toggle-area");
+  assert.equal(popup.hidden, true);
+  toggle.dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  assert.equal(popup.hidden, false);
+
+  const [, green] = host.querySelectorAll(".mdy-color-swatch");
+  green.dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  assert.equal(form.f.brand.value(), "#22c55e");
+  assert.equal(popup.hidden, true, "picking a preset closes the popup");
+  assert.equal(green.getAttribute("aria-selected"), "true");
+
+  // A hex value the policy rejects leaves the committed colour alone.
+  const hex = host.querySelector(".mdy-colors__hex-input");
+  hex.value = "nope";
+  hex.dispatchEvent(new Event("change"));
+  await reactivity.flush();
+  assert.equal(form.f.brand.value(), "#22c55e");
+
+  toggle.dispatchEvent(new Event("click"));
+  hex.value = "#0e0f16";
+  hex.dispatchEvent(new Event("change"));
+  await reactivity.flush();
+  assert.equal(form.f.brand.value(), "#0e0f16");
+  assert.equal(popup.hidden, false, "typing a hex value is not an answer to the palette");
 
   dispose();
   host.remove();

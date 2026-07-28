@@ -50,8 +50,10 @@ export function partsOf(root, kind) {
       const [start, end] = root.querySelectorAll(".mdy-daterange__input");
       return { ...shell, startControl: start, separator: q(".mdy-daterange__sep"), endControl: end, toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), weekdays: q(".mdy-datepicker__weekdays"), weekday: q(".mdy-datepicker__weekday"), row: q(".mdy-datepicker__row"), gridcell: q(".mdy-datepicker__cell"), actions: q(".mdy-datepicker__actions") };
     }
+    case "colors":
+      return { ...shell, nativePicker: q(".mdy-colors__primary-picker"), preview: q(".mdy-colors__preview-swatch"), control: q(".mdy-colors__native-hidden"), hexInput: q(".mdy-colors__hex-input"), toggle: q(".mdy-colors__toggle-area"), popup: q(".mdy-colors__dropdown"), presets: q(".mdy-colors__presets"), swatch: q(".mdy-color-swatch") };
     case "file":
-      return { ...shell, dropzone: q(".mdy-input-wrapper"), control: q('input[type="file"]') };
+      return { ...shell, inputWrapper: null, dropzone: q(".mdy-file-container"), control: q(".mdy-file-input"), content: q(".mdy-file-content"), fileList: q(".mdy-file-list"), fileItem: q(".mdy-file-item"), clear: q(".mdy-file-clear") };
     case "slider":
       // Angular holds the range input in `.mdy-slider-container`; Plain's shell wrapper plays the
       // same part. The displayed value (`value`) is an optional part Plain does not render yet.
@@ -75,8 +77,8 @@ export const ABSENT = {
   datepicker: ["dialogHeader", "calendar", "actions"],
   timepicker: ["header", "period", "clock", "actions"],
   daterange: ["calendar"],
-  colors: ["toggle", "popup", "preview", "nativePicker", "hexInput", "presets", "swatch"],
-  file: ["content", "fileList", "fileItem", "clear"],
+  colors: [],
+  file: ["fileItem"],
 };
 
 /**

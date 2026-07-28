@@ -25,7 +25,7 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
   requiredMarker: ["label"], inlineError: ["label"],
   prefix: ["inputWrapper"], suffix: ["inputWrapper"],
   control: ["dropzone", "inputWrapper", "track"], startControl: ["inputWrapper"], endControl: ["inputWrapper"], separator: ["inputWrapper"],
-  decrement: ["inputWrapper"], increment: ["inputWrapper"], trigger: ["inputWrapper"],
+  decrement: ["inputWrapper"], increment: ["inputWrapper"], trigger: ["inputWrapper"], toggle: ["inputWrapper"],
   // The arrow may be drawn inside a button trigger (Angular, Lit) or beside an input one (Plain);
   // what the contract requires is that it lives in the wrapper, and containment is transitive.
   arrow: ["inputWrapper", "trigger"], value: ["trigger", "inputWrapper"],
@@ -35,7 +35,7 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
   dialogHeader: ["popup"], header: ["popup"], calendar: ["popup"], clock: ["popup"], actions: ["popup"],
   grid: ["calendar", "popup"], weekdays: ["grid"], weekday: ["weekdays"], row: ["grid"], gridcell: ["row", "grid"],
   hour: ["header", "popup"], minute: ["header", "popup"], period: ["header", "popup"],
-  preview: ["inputWrapper"], nativePicker: ["popup", "inputWrapper"], hexInput: ["popup", "inputWrapper"], presets: ["popup"], swatch: ["presets"],
+  preview: ["nativePicker", "inputWrapper"], nativePicker: ["inputWrapper"], hexInput: ["inputWrapper", "popup"], presets: ["popup"], swatch: ["presets"],
   content: ["dropzone"], fileList: ["dropzone"], fileItem: ["fileList"], clear: ["fileItem", "dropzone"],
   errorItem: ["errors"],
 });
@@ -92,8 +92,10 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
     { classes: { startControl: ["mdy-datepicker__input", "mdy-daterange__input"], endControl: ["mdy-datepicker__input", "mdy-daterange__input"], separator: ["mdy-daterange__sep"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] } }),
   timepicker: define("timepicker", ["mdy-renderer", "mdy-renderer--timepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "header", "hour", "minute", "period", "clock", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { control: ["mdy-timepicker__input"], toggle: ["mdy-timepicker__toggle"], popup: ["mdy-timepicker__popup"], hour: ["mdy-timepicker__hour"], minute: ["mdy-timepicker__minute"], actions: ["mdy-timepicker__actions"] } }),
-  file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "supportingText", "errors", "errorItem"] as const, false),
-  colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "preview", "nativePicker", "hexInput", "presets", "swatch", "inlineError", "supportingText", "errors", "errorItem"] as const, true),
+  file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "supportingText", "errors", "errorItem"] as const, false,
+    { classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"] } }),
+  colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
+    { parents: { control: "nativePicker" }, classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], popup: ["mdy-colors__dropdown"], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } }),
 });
 
 export type MdyWidgetPart<K extends MdyWidgetKind> = keyof (typeof MDY_WIDGET_CONTRACTS)[K]["parts"] & string;
