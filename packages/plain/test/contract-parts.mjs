@@ -62,7 +62,11 @@ export function partsOf(root, kind) {
     case "datepicker":
       return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), weekdays: q(".mdy-datepicker__weekdays"), weekday: q(".mdy-datepicker__weekday"), row: q(".mdy-datepicker__row"), gridcell: q(".mdy-datepicker__cell") };
     case "timepicker":
-      return { ...shell, control: q(".mdy-timepicker__input"), toggle: q(".mdy-timepicker__toggle"), popup: q(".mdy-timepicker__popup"), hour: q(".mdy-timepicker__hour"), minute: q(".mdy-timepicker__minute") };
+      return {
+        ...shell, control: q(".mdy-timepicker__input"), toggle: q(".mdy-timepicker__toggle"), popup: q(".mdy-timepicker__popup"),
+        header: q(".mdy-timepicker-header"), period: q(".mdy-timepicker-period-toggle"), actions: q(".mdy-timepicker-actions"),
+        ...(() => { const [hour, minute] = root.querySelectorAll(".mdy-timepicker-segment"); return { hour, minute }; })(),
+      };
     case "daterange": {
       const [start, end] = root.querySelectorAll(".mdy-daterange__input");
       return { ...shell, startControl: start, separator: q(".mdy-daterange__sep"), endControl: end, toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), weekdays: q(".mdy-datepicker__weekdays"), weekday: q(".mdy-datepicker__weekday"), row: q(".mdy-datepicker__row"), gridcell: q(".mdy-datepicker__cell"), actions: q(".mdy-datepicker__actions") };
@@ -94,7 +98,8 @@ export const ABSENT = {
   // the search button is select's affordance — this one's filter field is always in the popup.
   multiselect: ["chip", "searchButton", "optionCount", "optionStep", "loading", "empty"],
   datepicker: ["dialogHeader", "calendar", "actions"],
-  timepicker: ["header", "period", "clock", "actions"],
+  // No dial: this renderer types the time rather than drawing a clock face.
+  timepicker: ["clock"],
   daterange: ["calendar"],
   colors: [],
   file: ["fileItem"],

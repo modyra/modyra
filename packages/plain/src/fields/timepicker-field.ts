@@ -36,20 +36,41 @@ export function renderTimepickerField(
   toggle.setAttribute("aria-label", "Open the clock");
   // `mdy-timepicker__popup` is the class the themes position and frame; the controller only
   // names the dialog, the hour and the minute.
-  const dialog = el("div", MDY_WIDGET_CONTRACTS.timepicker.parts.popup.classes.join(" ")) as HTMLDivElement;
-  const hourInput = el("input") as HTMLInputElement;
+  const parts = MDY_WIDGET_CONTRACTS.timepicker.parts;
+  const dialog = el("div", parts.popup.classes.join(" ")) as HTMLDivElement;
+  // The popup's anatomy is the contract's, and its classes are the ones the shipped themes already
+  // style for the Angular renderer — which is what makes the three look alike rather than merely
+  // behave alike.
+  const header = el("div", parts.header.classes.join(" "));
+  const fields = el("div", "mdy-timepicker-fields");
+  const hourSegment = el("div", parts.hour.classes.join(" "));
+  const hourInput = el("input", "mdy-timepicker-segment-input") as HTMLInputElement;
   hourInput.type = "number";
-  const minuteInput = el("input") as HTMLInputElement;
+  hourInput.setAttribute("aria-label", "Hour");
+  hourSegment.appendChild(hourInput);
+  const separator = el("span", "mdy-timepicker-separator");
+  setText(separator, ":");
+  const minuteSegment = el("div", parts.minute.classes.join(" "));
+  const minuteInput = el("input", "mdy-timepicker-segment-input") as HTMLInputElement;
   minuteInput.type = "number";
-  const periodButton = el("button") as HTMLButtonElement;
+  minuteInput.setAttribute("aria-label", "Minute");
+  minuteSegment.appendChild(minuteInput);
+  fields.append(hourSegment, separator, minuteSegment);
+  const period = el("div", parts.period.classes.join(" "));
+  const periodButton = el("button", "mdy-timepicker-period-btn") as HTMLButtonElement;
   periodButton.type = "button";
-  const confirmButton = el("button") as HTMLButtonElement;
+  period.appendChild(periodButton);
+  header.append(fields, period);
+
+  const actions = el("div", parts.actions.classes.join(" "));
+  const confirmButton = el("button", "mdy-timepicker-action-btn mdy-timepicker-action-btn--confirm") as HTMLButtonElement;
   confirmButton.type = "button";
   setText(confirmButton, "Confirm");
-  const cancelButton = el("button") as HTMLButtonElement;
+  const cancelButton = el("button", "mdy-timepicker-action-btn") as HTMLButtonElement;
   cancelButton.type = "button";
   setText(cancelButton, "Cancel");
-  dialog.append(hourInput, minuteInput, periodButton, confirmButton, cancelButton);
+  actions.append(cancelButton, confirmButton);
+  dialog.append(header, actions);
 
   const wrapper = el("div", "mdy-timepicker mdy-plain-timepicker");
   wrapper.append(control, toggle, dialog);
