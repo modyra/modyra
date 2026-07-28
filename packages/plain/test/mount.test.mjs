@@ -151,14 +151,17 @@ test("datepicker: opening shows a 42-cell grid, clicking a day commits an ISO va
   trigger.dispatchEvent(new Event("click"));
   await reactivity.flush();
 
-  const popup = wrapper.querySelector("div");
-  const grid = popup.querySelectorAll("div")[1]; // popup -> [header, grid]
-  const dayButtons = grid.querySelectorAll("button");
+  const popup = wrapper.querySelector(".mdy-datepicker__popup");
+  const dayButtons = popup.querySelectorAll(".mdy-datepicker__cell");
   assert.equal(dayButtons.length, 42);
+  // Six week rows plus the weekday header, as the contract's calendar anatomy requires.
+  assert.equal(popup.querySelectorAll(".mdy-datepicker__row").length, 6);
+  assert.equal(popup.querySelectorAll(".mdy-datepicker__weekday").length, 7);
 
   dayButtons[15].dispatchEvent(new Event("click"));
   await reactivity.flush();
   assert.match(form.f.birthdate.value(), /^\d{4}-\d{2}-\d{2}$/);
+  assert.equal(popup.hidden, true, "picking a day closes the calendar");
   dispose();
 });
 
@@ -323,11 +326,16 @@ test("daterange, file and colors mount and round-trip their own value shape", ()
     { name: "brand", kind: "colors", label: "Brand" },
   ], { submitLabel: null });
 
-  const [start, end] = [...host.querySelectorAll('.mdy-renderer--daterange input[type="date"]')];
+  const [start, end] = [...host.querySelectorAll(".mdy-renderer--daterange .mdy-daterange__input")];
   assert.ok(start && end, "a daterange owns two endpoints");
+  assert.ok(host.querySelector(".mdy-renderer--daterange .mdy-daterange__sep"), "and a separator between them");
+  // An incomplete range does not commit — the widget's own draft policy, not the renderer's.
   start.value = "2026-07-01";
   start.dispatchEvent(new Event("change"));
-  assert.deepEqual(mounted.form.f.stay.value(), { start: "2026-07-01", end: null });
+  assert.deepEqual(mounted.form.f.stay.value(), { start: null, end: null });
+  end.value = "2026-07-08";
+  end.dispatchEvent(new Event("change"));
+  assert.deepEqual(mounted.form.f.stay.value(), { start: "2026-07-01", end: "2026-07-08" });
 
   const file = host.querySelector('.mdy-renderer--file input[type="file"]');
   assert.equal(file.accept, ".pdf");
@@ -340,5 +348,40 @@ test("daterange, file and colors mount and round-trip their own value shape", ()
   assert.equal(mounted.form.f.brand.value(), "#7067ff");
 
   mounted.dispose();
+  host.remove();
+});
+
+test("daterange: the calendar picks a range and only a complete one commits", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const { form, reactivity, dispose } = mountMdyForm(host, [{ name: "stay", kind: "daterange", label: "Stay" }], { submitLabel: null });
+
+  const wrapper = host.querySelector(".mdy-plain-daterange");
+  wrapper.querySelector(".mdy-datepicker__toggle").dispatchEvent(new Event("click"));
+  await reactivity.flush();
+
+  const popup = wrapper.querySelector(".mdy-datepicker__popup");
+  assert.equal(popup.hidden, false);
+  const days = [...popup.querySelectorAll(".mdy-datepicker__cell")];
+  assert.equal(days.length, 42);
+
+  days[10].dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  assert.deepEqual(form.f.stay.value(), { start: null, end: null }, "half a range commits nothing");
+
+  days[14].dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  // The days between the endpoints carry the in-range state the themes draw.
+  assert.ok(days[12].classList.contains("mdy-datepicker__cell--in-range"));
+  assert.ok(days[10].classList.contains("mdy-datepicker__cell--range-start"));
+  assert.ok(days[14].classList.contains("mdy-datepicker__cell--range-end"));
+
+  // Completing the range answers what the calendar was opened to ask: it commits and closes.
+  const value = form.f.stay.value();
+  assert.match(value.start, /^\d{4}-\d{2}-\d{2}$/);
+  assert.ok(value.end > value.start);
+  assert.equal(popup.hidden, true);
+
+  dispose();
   host.remove();
 });

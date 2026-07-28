@@ -1,22 +1,16 @@
 /**
- * TEMPORARY. Gives `daterange`, `file` and `colors` catalog coverage — a value that round-trips
- * through the widget controller and a shell that carries the canonical classes — but not the
- * anatomy those kinds actually own (calendar popup, file list, preset swatches). Each kind leaves
- * this file as its real renderer lands; the file goes with the last one.
+ * TEMPORARY. Gives `file` and `colors` catalog coverage — a value that round-trips through the
+ * widget controller and a shell that carries the canonical classes — but not the anatomy those
+ * kinds actually own (file list, preset swatches). Each kind leaves this file as its real renderer
+ * lands; the file goes with the last one.
  */
-import { vanillaReactivity, type MdyDateRange, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
-import type { MdyDynamicColorsField, MdyDynamicDaterangeField, MdyDynamicFileField } from "@modyra/core";
+import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import type { MdyDynamicColorsField, MdyDynamicFileField } from "@modyra/core";
 import { createValueWidgetController } from "@modyra/widgets";
 import { applyPart, el, setErrors } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 
-type CatalogField = MdyDynamicDaterangeField | MdyDynamicFileField | MdyDynamicColorsField;
-
-function input(type: string, className?: string): HTMLInputElement {
-  const control = el("input", className) as HTMLInputElement;
-  control.type = type;
-  return control;
-}
+type CatalogField = MdyDynamicFileField | MdyDynamicColorsField;
 
 export function renderCatalogField(
   container: HTMLElement,
@@ -31,39 +25,24 @@ export function renderCatalogField(
   );
   const shell = buildFieldShell(field.label, kind);
 
-  // A daterange owns two endpoints, so even the placeholder renderer emits both: dispatching a
-  // single string here would put a value of the wrong shape into the form.
-  const start = input(kind === "daterange" ? "date" : kind === "colors" ? "color" : "file");
-  const end = kind === "daterange" ? input("date") : null;
+  const control = el("input") as HTMLInputElement;
+  control.type = kind === "colors" ? "color" : "file";
   if (kind === "file") {
-    start.multiple = Boolean(field.multiple);
-    if (field.accept) start.accept = field.accept;
+    control.multiple = Boolean(field.multiple);
+    if (field.accept) control.accept = field.accept;
   }
-  insertControl(shell, start);
-  if (end) insertControl(shell, end);
+  insertControl(shell, control);
   container.appendChild(shell.root);
 
-  const currentValue = (): unknown => {
-    if (kind === "file") return Array.from(start.files ?? []);
-    if (kind === "daterange") return { start: start.value || null, end: end?.value || null } satisfies MdyDateRange;
-    return start.value;
-  };
-  const onInput = () => controller.dispatch({ type: "input", value: currentValue() });
-  const onBlur = () => controller.dispatch({ type: "blur" });
-  for (const control of [start, end]) {
-    if (!control) continue;
-    control.addEventListener("change", onInput);
-    control.addEventListener("blur", onBlur);
-  }
+  const currentValue = (): unknown => (kind === "file" ? Array.from(control.files ?? []) : control.value);
+  control.addEventListener("change", () => controller.dispatch({ type: "input", value: currentValue() }));
+  control.addEventListener("blur", () => controller.dispatch({ type: "blur" }));
 
-  const controlPart = kind === "daterange" ? "startControl" : "control";
   const effect = reactivity.effect(() => {
     const view = controller.view();
     applyPart(shell.root, view.root);
-    const part = view.parts[controlPart];
-    if (part) applyPart(start, part);
-    const endPart = view.parts.endControl;
-    if (end && endPart) applyPart(end, endPart);
+    const part = view.parts.control;
+    if (part) applyPart(control, part);
     setErrors(shell.errorList, handle.errors().map((error) => error.message));
   });
 

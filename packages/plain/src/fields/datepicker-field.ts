@@ -5,26 +5,24 @@
  * controller already wires up).
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
-import { formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
+import { buildDateLocale, formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
 import type { MdyDynamicDateField } from "@modyra/core";
 import { createDatepickerFieldController, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
+import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 import { runCommands } from "../command-runtime.js";
-
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 
 export function renderDatepickerField(
   container: HTMLElement,
   f: MdyDynamicDateField,
   handle: MdyFieldHandle<string | null>,
   reactivity: MdyReactivity = vanillaReactivity(),
-  options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly firstDayOfWeek?: number } = {},
+  options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
 ): () => void {
   const controller = createDatepickerFieldController({ widgetId: f.name, handle, ...options }, reactivity);
+  // Month and weekday names, and the first day of the week, come from Intl via `buildDateLocale`.
+  const dateLocale = buildDateLocale(options.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language), options.firstDayOfWeek);
 
   const shell = buildFieldShell(f.label, "datepicker");
   // Same anatomy as the Angular renderer: a typeable input plus a toggle button that opens the
@@ -50,7 +48,7 @@ export function renderDatepickerField(
   setText(nextButton, "›");
   nextButton.setAttribute("aria-label", "Next month");
   header.append(prevButton, monthLabel, nextButton);
-  const grid = el("div") as HTMLDivElement;
+  const grid = buildCalendarGrid("datepicker");
   popup.append(header, grid);
 
   const wrapper = el("div", "mdy-datepicker mdy-plain-datepicker");
@@ -58,7 +56,7 @@ export function renderDatepickerField(
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
 
-  const cellEls = new Map<string, HTMLButtonElement>();
+  let cellEls: ReadonlyMap<string, HTMLButtonElement> = new Map();
   let renderedYear: number | null = null;
   let renderedMonth: number | null = null;
 
@@ -79,7 +77,7 @@ export function renderDatepickerField(
   // A typed date commits through the same select-date intent the calendar uses, so parsing is the
   // only thing this renderer adds; an unparseable entry falls back to the current value.
   control.addEventListener("change", () => {
-    const parsed = parseLocalizedDate(control.value, navigator?.language ?? "en-US");
+    const parsed = parseLocalizedDate(control.value, dateLocale.locale);
     if (parsed) dispatch({ type: "select-date", iso: formatIsoDate(parsed) });
     else if (!control.value) dispatch({ type: "clear" });
   });
@@ -107,19 +105,12 @@ export function renderDatepickerField(
     const display = state.selectedDate || "";
     if (document.activeElement !== control && control.value !== display) control.value = display;
     popup.hidden = !state.open;
-    setText(monthLabel, `${MONTH_NAMES[state.viewMonth - 1]} ${state.viewYear}`);
+    setText(monthLabel, `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`);
 
     if (renderedYear !== state.viewYear || renderedMonth !== state.viewMonth) {
-      grid.replaceChildren();
-      cellEls.clear();
-      for (const cell of state.cells) {
-        const button = el("button", "mdy-datepicker__cell") as HTMLButtonElement;
-        button.type = "button";
-        setText(button, String(cell.day));
-        button.addEventListener("click", () => dispatch({ type: "select-date", iso: cell.iso }));
-        grid.appendChild(button);
-        cellEls.set(cell.iso, button);
-      }
+      // The controller owns which days exist and their state; the shared body owns the anatomy
+      // (weekday header, one row per week) the themes lay out.
+      cellEls = fillCalendar(grid, "datepicker", state.viewYear, state.viewMonth, dateLocale, (cell) => dispatch({ type: "select-date", iso: cell.iso }));
       renderedYear = state.viewYear;
       renderedMonth = state.viewMonth;
     }
