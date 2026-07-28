@@ -48,6 +48,35 @@ export function decideOverlayPlacement(input: MdyOverlayGeometry): MdyOverlayDec
   return { placement, alignment, maxHeight, width: Math.max(input.anchorWidth, input.minWidth) };
 }
 
+/**
+ * Keeps an open overlay's shape steady while its anchor moves.
+ *
+ * Re-deciding from scratch on every scroll frame is what makes a popup flip sides and change
+ * height as the page moves under it. The coordinates must follow the anchor — that is what keeps
+ * the popup attached — but the *shape* is a decision taken when it opened: placement, size and
+ * alignment only change when the side it was opened on has genuinely stopped fitting.
+ *
+ * Hosts call this with the decision they are holding and the one they just measured.
+ */
+export function stabilizeOverlayPlacement(
+  previous: MdyOverlayDecision | null,
+  next: MdyOverlayDecision,
+  input: MdyOverlayGeometry,
+): MdyOverlayDecision {
+  if (previous === null) return next;
+  const room = previous.placement === "above"
+    ? Math.max(0, input.anchorTop - 12)
+    : Math.max(0, input.viewportHeight - input.anchorBottom - 12);
+  // The side it opened on no longer holds the popup: re-deciding is the lesser evil.
+  if (previous.placement !== "overlay" && room < input.minSpace) return next;
+  return {
+    placement: previous.placement,
+    alignment: previous.alignment,
+    maxHeight: previous.maxHeight,
+    width: next.width,
+  };
+}
+
 /** Canonical keyboard mapping. Framework adapters must not reinterpret these keys. */
 export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean): MdyWidgetKeyIntent | null {
   if (key === "Escape" && open) return { type: "cancel", restoreFocus: true };

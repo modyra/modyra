@@ -37,14 +37,22 @@ export function renderOptionField(
     input.type = "radio";
     input.name = f.name;
     input.value = key;
-    input.className = parts.control.classes.join(" ");
     row.appendChild(input);
+    // The drawn control is its own element — the radio's circle, the segment's checkmark — exactly
+    // as the Angular and Lit renderers emit it. Putting that class on the native input instead made
+    // the input answer to `.mdy-segmented__button`, so every segment appeared twice in the DOM.
+    const control = el("span") as HTMLSpanElement;
+    control.className = parts.control.classes.join(" ");
+    control.setAttribute("aria-hidden", "true");
+    row.appendChild(control);
     const text = el("span") as HTMLSpanElement;
     text.className = parts.text.classes.join(" ");
+    // The theme reserves the selected weight's width up front so selecting does not reflow the bar.
+    text.dataset.text = option.label;
     setText(text, option.label);
     row.appendChild(text);
     group.appendChild(row);
-    return { key, input };
+    return { key, input, row };
   });
   insertControl(shell, group);
   container.appendChild(shell.root);
@@ -62,9 +70,15 @@ export function renderOptionField(
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
-    for (const { key, input } of rows) {
+    for (const { key, input, row } of rows) {
       const part = view.parts[key];
-      if (part) applyPart(input, part);
+      // Classes go to the option element the contract names; the ARIA the part carries belongs to
+      // the native input, which already conveys `checked`/`disabled` to assistive tech. Copying
+      // `role="radio"` onto the label as well would announce two radios for one choice.
+      if (part) {
+        applyPart(row, { classes: part.classes, attributes: {} });
+        input.disabled = part.attributes.disabled === true;
+      }
       const checked = state.selectedKey === key;
       if (input.checked !== checked) input.checked = checked;
     }

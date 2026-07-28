@@ -66,7 +66,7 @@ export function renderDaterangeField(
   toggle.setAttribute("aria-label", "Open the calendar");
   toggle.setAttribute("aria-haspopup", "dialog");
 
-  const popup = el("div", "mdy-datepicker__popup") as HTMLDivElement;
+  const popup = el("div", MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ")) as HTMLDivElement;
   const header = el("div", "mdy-datepicker__header") as HTMLDivElement;
   const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   prevButton.type = "button";

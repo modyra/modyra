@@ -133,7 +133,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
           ${mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}
         </button>
         ${this._open
-          ? html`<div class="mdy-select__dropdown">
+          ? html`<div class="${this.partClass("popup")}">
               <ul
                 class="mdy-select__list"
                 role="listbox"

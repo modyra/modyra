@@ -171,7 +171,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     const position = this.overlay.state.position;
     const alignment = this.overlay.state.alignment;
 
+    // The contract's `popup` part, not bare content: an overlay rendered straight into a
+    // `display: contents` panel takes part in layout and shifts the page open.
     const overlay = html`
+      <div class="${this.partClass("popup")}">
       <input
         type="text"
         class="mdy-multiselect-overlay__input"
@@ -196,6 +199,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               this.renderOptionChip(handle, option),
             )}
           </div>`}
+      </div>
     `;
 
     return html`
@@ -240,7 +244,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         modal: position === "overlay",
         alignment,
         position,
-        panelDisplayContents: true,
       })}
       ${showBlockErrors ? this.renderErrors(handle) : nothing}
       ${this.renderSupportingText()}

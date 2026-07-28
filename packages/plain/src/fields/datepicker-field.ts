@@ -7,7 +7,7 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import { buildDateLocale, formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
 import type { MdyDynamicDateField } from "@modyra/core";
-import { createDatepickerFieldController, type MdyElementLookup } from "@modyra/widgets";
+import { createDatepickerFieldController, MDY_WIDGET_CONTRACTS, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
@@ -37,7 +37,7 @@ export function renderDatepickerField(
   // The popup, its header and the day cells carry the class names the shipped themes already
   // style (`mdy-datepicker__popup` positions and frames the panel, `__header` lays out the
   // month nav) — the controller only names the trigger and the grid.
-  const popup = el("div", "mdy-datepicker__popup") as HTMLDivElement;
+  const popup = el("div", MDY_WIDGET_CONTRACTS.datepicker.parts.popup.classes.join(" ")) as HTMLDivElement;
   const header = el("div", "mdy-datepicker__header") as HTMLDivElement;
   const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   prevButton.type = "button";

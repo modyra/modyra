@@ -69,7 +69,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     const position = this.overlay.state.position;
     return html`
       <div
-        class="mdy-colors__dropdown ${position === "above"
+        class="${this.partClass("popup")} ${position === "above"
           ? "mdy-colors__dropdown--above"
           : ""} ${position === "overlay" ? "mdy-colors__dropdown--overlay" : ""}"
         role="listbox"

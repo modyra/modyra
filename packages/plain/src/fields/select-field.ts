@@ -12,7 +12,7 @@ import { createSelectController, MDY_WIDGET_CONTRACTS, type MdyElementLookup } f
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer, positionOverlay, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
 
 export function renderSelectField(
   container: HTMLElement,
@@ -46,7 +46,10 @@ export function renderSelectField(
   const trigger = el("button") as HTMLButtonElement;
   trigger.type = "button";
   const valueText = el("span", parts.value.classes.join(" ")) as HTMLSpanElement;
-  const placeholder = f.placeholder ?? "";
+  // The placeholder is its own contract part, not a modifier class on the value: they are two
+  // pieces of text with different meanings, and a theme styles them separately.
+  const placeholderText = el("span", parts.placeholder.classes.join(" ")) as HTMLSpanElement;
+  setText(placeholderText, f.placeholder ?? "Select…");
   // The panel is the `__dropdown` (positioning, frame, shadow); the scroller inside it is the
   // `__list`, and the filter field is its first row — same three parts the contract names.
   const popup = el("div", parts.popup.classes.join(" ")) as HTMLDivElement;
@@ -69,7 +72,7 @@ export function renderSelectField(
   const wrapper = el("div", "mdy-select");
   const arrow = el("span", parts.arrow.classes.join(" "));
   arrow.setAttribute("aria-hidden", "true");
-  trigger.append(valueText, arrow);
+  trigger.append(valueText, placeholderText, arrow);
   wrapper.append(trigger);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
@@ -178,13 +181,16 @@ export function renderSelectField(
     if (state.open) {
       positionOverlay(popup, trigger, { matchAnchorWidth: true });
       queueMicrotask(() => search.focus());
-    } else if (search.value) {
-      search.value = "";
+    } else {
+      // The next opening decides its own side and height rather than inheriting this one's.
+      releaseOverlayPlacement(popup);
+      if (search.value) search.value = "";
     }
     // The trigger always shows the committed value: nothing the user types can hide it.
     const selected = options.find((o) => keyFor(o) === state.selectedKey);
-    setText(valueText, selected?.label ?? placeholder);
-    valueText.classList.toggle(parts.placeholder.classes[0], !selected);
+    setText(valueText, selected?.label ?? "");
+    valueText.hidden = !selected;
+    placeholderText.hidden = Boolean(selected);
     for (const [key, li] of optionEls) {
       // The part carries `hidden` when the query filters the option out — no second filter here.
       const part = view.parts[key];

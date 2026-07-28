@@ -9,7 +9,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDateField } from "@modyra/core";
-import { createTimepickerFieldController, type MdyElementLookup } from "@modyra/widgets";
+import { createTimepickerFieldController, MDY_WIDGET_CONTRACTS, type MdyElementLookup } from "@modyra/widgets";
 import { parseAnyTime, type MdyTimeFormat } from "@modyra/core/time-utils";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -36,7 +36,7 @@ export function renderTimepickerField(
   toggle.setAttribute("aria-label", "Open the clock");
   // `mdy-timepicker__popup` is the class the themes position and frame; the controller only
   // names the dialog, the hour and the minute.
-  const dialog = el("div", "mdy-timepicker__popup") as HTMLDivElement;
+  const dialog = el("div", MDY_WIDGET_CONTRACTS.timepicker.parts.popup.classes.join(" ")) as HTMLDivElement;
   const hourInput = el("input") as HTMLInputElement;
   hourInput.type = "number";
   const minuteInput = el("input") as HTMLInputElement;

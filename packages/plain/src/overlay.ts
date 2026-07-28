@@ -6,7 +6,12 @@
  * result out as the `--mdy-overlay-*` custom properties the shipped themes already read, which is
  * the same contract the Angular renderer fulfils.
  */
-import { decideOverlayPlacement, overlayLifecycleTransition } from "@modyra/widgets";
+import {
+  decideOverlayPlacement,
+  overlayLifecycleTransition,
+  stabilizeOverlayPlacement,
+  type MdyOverlayDecision,
+} from "@modyra/widgets";
 
 export interface OverlayPlacementOptions {
   /** Smallest usable space before the popup flips or overlays. */
@@ -17,14 +22,25 @@ export interface OverlayPlacementOptions {
   readonly matchAnchorWidth?: boolean;
 }
 
+/**
+ * The shape an open popup was given, kept so repositioning follows the anchor without re-deciding
+ * the popup's side and height on every scroll frame. Cleared when it closes.
+ */
+const heldDecisions = new WeakMap<HTMLElement, MdyOverlayDecision>();
+
+/** Forgets a popup's held shape, so the next opening decides afresh. */
+export function releaseOverlayPlacement(popup: HTMLElement): void {
+  heldDecisions.delete(popup);
+}
+
 /** Positions `popup` against `anchor` and returns the decision the widget policy made. */
 export function positionOverlay(
   popup: HTMLElement,
   anchor: HTMLElement,
   options: OverlayPlacementOptions = {},
-): ReturnType<typeof decideOverlayPlacement> {
+): MdyOverlayDecision {
   const rect = anchor.getBoundingClientRect();
-  const decision = decideOverlayPlacement({
+  const geometry = {
     viewportWidth: window.innerWidth,
     viewportHeight: window.innerHeight,
     anchorTop: rect.top,
@@ -34,8 +50,15 @@ export function positionOverlay(
     anchorWidth: rect.width,
     minSpace: options.minSpace ?? 180,
     minWidth: options.minWidth ?? 160,
-    preferred: options.preferred ?? "below",
-  });
+    preferred: options.preferred ?? ("below" as const),
+  };
+  // Coordinates follow the anchor; the side and the height are the decision taken when it opened.
+  const decision = stabilizeOverlayPlacement(
+    heldDecisions.get(popup) ?? null,
+    decideOverlayPlacement(geometry),
+    geometry,
+  );
+  heldDecisions.set(popup, decision);
 
   const gap = 6;
   const style = popup.style;
