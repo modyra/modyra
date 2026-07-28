@@ -311,3 +311,32 @@ test("toggle preserves the widget input and adds a visual track and thumb", () =
   mounted.dispose();
   host.remove();
 });
+
+test("daterange, file and colors mount and round-trip their own value shape", () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const mounted = mountMdyForm(host, [
+    { name: "stay", kind: "daterange", label: "Stay" },
+    { name: "cv", kind: "file", label: "CV", accept: ".pdf", multiple: true },
+    { name: "brand", kind: "colors", label: "Brand" },
+  ], { submitLabel: null });
+
+  const [start, end] = [...host.querySelectorAll('.mdy-renderer--daterange input[type="date"]')];
+  assert.ok(start && end, "a daterange owns two endpoints");
+  start.value = "2026-07-01";
+  start.dispatchEvent(new Event("change"));
+  assert.deepEqual(mounted.form.f.stay.value(), { start: "2026-07-01", end: null });
+
+  const file = host.querySelector('.mdy-renderer--file input[type="file"]');
+  assert.equal(file.accept, ".pdf");
+  assert.equal(file.multiple, true);
+  assert.deepEqual(mounted.form.f.cv.value(), []);
+
+  const color = host.querySelector('.mdy-renderer--colors input[type="color"]');
+  color.value = "#7067ff";
+  color.dispatchEvent(new Event("change"));
+  assert.equal(mounted.form.f.brand.value(), "#7067ff");
+
+  mounted.dispose();
+  host.remove();
+});
