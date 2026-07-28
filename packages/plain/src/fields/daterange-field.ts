@@ -122,6 +122,9 @@ export function renderDaterangeField(
     dispatch({ type: "confirm" });
   }
 
+  // Committing from the calendar restores focus to the start input, so the endpoints are synced
+  // unless the user is mid-edit.
+  let typing = false;
   const openPopup = () => {
     dispatch({ type: "open", committed: asRange(handle.value()) });
     const anchor = parseIsoDate(draft().draft.start) ?? today();
@@ -129,8 +132,9 @@ export function renderDaterangeField(
   };
   toggle.addEventListener("click", () => (draft().open ? dispatch({ type: "cancel" }) : openPopup()));
   for (const input of [startInput, endInput]) {
-    input.addEventListener("change", commitTyped);
-    input.addEventListener("blur", () => handle.markAsTouched());
+    input.addEventListener("input", () => { typing = true; });
+    input.addEventListener("change", () => { typing = false; commitTyped(); });
+    input.addEventListener("blur", () => { typing = false; handle.markAsTouched(); });
   }
   prevButton.addEventListener("click", () => view.set(addMonths(view(), -1)));
   nextButton.addEventListener("click", () => view.set(addMonths(view(), 1)));
@@ -152,7 +156,7 @@ export function renderDaterangeField(
     applyPart(startInput, definition.parts.startControl);
     applyPart(endInput, definition.parts.endControl);
     for (const [input, iso] of [[startInput, value.start], [endInput, value.end]] as const) {
-      if (document.activeElement !== input) input.value = iso ?? "";
+      if (!typing) input.value = iso ?? "";
       input.disabled = handle.disabled();
     }
     toggle.disabled = handle.disabled();

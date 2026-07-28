@@ -65,12 +65,17 @@ export function renderTimepickerField(
     });
   }
 
+  // Same reasoning as the datepicker: confirming restores focus to the input, so the sync is
+  // guarded by whether the user is typing, not by where focus happens to be.
+  let typing = false;
   const toggleOverlay = () => dispatch(controller.state().open ? { type: "close", restoreFocus: false } : { type: "open" });
   toggle.addEventListener("click", toggleOverlay);
   control.addEventListener("click", toggleOverlay);
-  control.addEventListener("blur", () => dispatch({ type: "blur" }));
+  control.addEventListener("input", () => { typing = true; });
+  control.addEventListener("blur", () => { typing = false; dispatch({ type: "blur" }); });
   // A typed time goes through the draft the dialog edits, then commits — one path, one policy.
   control.addEventListener("change", () => {
+    typing = false;
     const parsed = parseAnyTime(control.value, format);
     if (!parsed) {
       if (!control.value) dispatch({ type: "clear" });
@@ -110,7 +115,7 @@ export function renderTimepickerField(
 
     // The input mirrors the committed value; while it has focus the user's own text wins.
     const display = state.value || "";
-    if (document.activeElement !== control && control.value !== display) control.value = display;
+    if (!typing && control.value !== display) control.value = display;
     dialog.hidden = !state.open;
     const hourString = String(state.draft.hour);
     if (hourInput.value !== hourString) hourInput.value = hourString;

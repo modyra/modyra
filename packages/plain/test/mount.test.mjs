@@ -454,3 +454,53 @@ test("colors: a preset commits and closes the popup, a hex value commits and doe
   dispose();
   host.remove();
 });
+
+test("a committed value is shown by the control that opened the overlay", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const { form, reactivity, dispose } = mountMdyForm(host, [
+    { name: "birthdate", kind: "datepicker", label: "Birthdate" },
+    { name: "country", kind: "select", label: "Country", options: [{ value: "IT", label: "Italy" }, { value: "FR", label: "France" }] },
+  ], { submitLabel: null });
+
+  // Committing restores focus to the trigger, so a focus-guarded sync used to skip these two.
+  const dateInput = host.querySelector(".mdy-datepicker__input");
+  host.querySelector(".mdy-datepicker__toggle").dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  const day = [...host.querySelectorAll(".mdy-datepicker__cell")].find((c) => !c.classList.contains("mdy-datepicker__cell--outside"));
+  day.dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  assert.equal(dateInput.value, form.f.birthdate.value());
+  assert.notEqual(dateInput.value, "");
+
+  const trigger = host.querySelector(".mdy-select__trigger");
+  trigger.dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  const listbox = document.getElementById(trigger.getAttribute("aria-controls"));
+  [...listbox.querySelectorAll("li")].find((li) => li.textContent === "France").dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  assert.equal(trigger.value, "France");
+
+  dispose();
+  host.remove();
+});
+
+test("multiselect toggles membership rather than accumulating duplicates", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const { form, reactivity, dispose } = mountMdyForm(host, [
+    { name: "palette", kind: "multiselect", label: "Palette", options: [{ value: "indigo", label: "Indigo" }, { value: "cloud", label: "Cloud" }] },
+  ], { submitLabel: null });
+
+  const chip = host.querySelector(".mdy-multiselect__chip");
+  for (let click = 0; click < 3; click += 1) chip.dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  assert.deepEqual(form.f.palette.value(), ["indigo"]);
+
+  chip.dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  assert.deepEqual(form.f.palette.value(), []);
+
+  dispose();
+  host.remove();
+});
