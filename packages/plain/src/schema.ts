@@ -27,7 +27,10 @@ function defaultValueFor(f: MdyDynamicField): unknown {
     case "toggle":
       return false;
     case "multiselect":
+    case "file":
       return [];
+    case "daterange":
+      return { start: null, end: null };
     default:
       return f.kind === "select" || f.kind === "radio" || f.kind === "segmented" || f.kind === "datepicker" || f.kind === "timepicker" ? null : "";
   }
