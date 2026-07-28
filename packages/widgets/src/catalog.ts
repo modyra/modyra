@@ -13,9 +13,42 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
 }
 
 function part(classes: readonly string[] = [], attributes: MdyPartContract["attributes"] = {}): MdyPartContract { return Object.freeze({ classes: Object.freeze([...classes]), attributes: Object.freeze({ ...attributes }) }); }
+
+/**
+ * Where each part hangs. Candidates are tried in order and the first one the widget actually
+ * declares wins, so the same table serves a control with an input wrapper and one without.
+ * The anatomy is nested rather than flat because containment is part of what an adapter must
+ * reproduce: a control outside its wrapper is a different control.
+ */
+const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  requiredMarker: ["label"], inlineError: ["label"],
+  prefix: ["inputWrapper"], suffix: ["inputWrapper"],
+  control: ["dropzone", "inputWrapper", "track"], startControl: ["inputWrapper"], endControl: ["inputWrapper"], separator: ["inputWrapper"],
+  decrement: ["inputWrapper"], increment: ["inputWrapper"], trigger: ["inputWrapper"], arrow: ["trigger", "inputWrapper"], value: ["trigger", "inputWrapper"],
+  thumb: ["track"], chips: ["trigger"], chip: ["chips"], searchButton: ["trigger"],
+  group: [], option: ["listbox", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"],
+  search: ["popup"], listbox: ["popup"], loading: ["popup"], empty: ["popup"],
+  dialogHeader: ["popup"], header: ["popup"], calendar: ["popup"], clock: ["popup"], actions: ["popup"],
+  grid: ["calendar", "popup"], gridcell: ["grid"],
+  hour: ["header", "popup"], minute: ["header", "popup"], period: ["header", "popup"],
+  preview: ["inputWrapper"], nativePicker: ["popup", "inputWrapper"], hexInput: ["popup", "inputWrapper"], presets: ["popup"], swatch: ["presets"],
+  content: ["dropzone"], fileList: ["dropzone"], fileItem: ["fileList"], clear: ["fileItem", "dropzone"],
+  errorItem: ["errors"],
+});
+/** Parts an adapter must always render — the control, and whatever physically holds it. */
+const REQUIRED_PARTS: ReadonlySet<string> = new Set(["control", "startControl", "endControl", "trigger", "group", "inputWrapper", "dropzone", "track"]);
+
 function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: readonly string[], partNames: readonly TPart[], overlay: boolean): MdyWidgetDefinition<TPart> {
   const partMap = Object.fromEntries(partNames.map((name) => [name, part(name === "root" ? rootClasses : [], {})])) as Record<TPart, MdyPartContract>;
-  const nodes = partNames.map((name, order) => Object.freeze({ part: name, element: semanticElement(name), ...(name === "root" ? {} : { parent: "root" as TPart }), order, optional: name !== "root" }));
+  const declared = new Set<string>(partNames);
+  const siblingCount = new Map<string, number>();
+  const nodes = partNames.map((name) => {
+    if (name === "root") return Object.freeze({ part: name, element: semanticElement(name), order: 0, optional: false });
+    const parent = (PARENT_CANDIDATES[name] ?? []).find((candidate) => declared.has(candidate)) ?? "root";
+    const order = siblingCount.get(parent) ?? 0;
+    siblingCount.set(parent, order + 1);
+    return Object.freeze({ part: name, element: semanticElement(name), parent: parent as TPart, order, optional: !REQUIRED_PARTS.has(name) });
+  });
   return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), capabilities: Object.freeze({ keyboard: true, focus: true, overlay }) });
 }
 function semanticElement(partName: string) {
