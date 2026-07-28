@@ -279,7 +279,7 @@ export class MdySelectComponent<TValue = string>
         onChange: (value: TValue | null) => {
           if (value !== this.value()) {
             this.dispatchValueIntent<TValue | null>("select", { type: "select", value });
-            const opt = this.effectiveOptions().find((o) => String(o.value) === String(value));
+            const opt = this.optionFor(value);
             if (opt) this.selectionChange.emit(opt);
           }
         },
@@ -325,22 +325,14 @@ export class MdySelectComponent<TValue = string>
   protected readonly activeIndex = computed(() => {
     const key = this.selectAdapter.state().activeKey;
     if (key === null) return -1;
-    return this.filteredOptions().findIndex((o) => this.optionKey(o) === key);
+    return this.filteredOptions().findIndex((o) => this.optionKey(o.value) === key);
   });
-
-  private optionKey(option: MdySelectOption<TValue>): string {
-    return String(option.value);
-  }
 
   protected readonly selectedOption = computed<MdySelectOption<TValue> | null>(
     () => {
       const v = this.value();
       if (v === null || v === undefined) return null;
-      return (
-        this.effectiveOptions().find(
-          (o: MdySelectOption<TValue>) => String(o.value) === String(v),
-        ) ?? null
-      );
+      return this.optionFor(v) ?? null;
     },
   );
 
@@ -386,7 +378,7 @@ export class MdySelectComponent<TValue = string>
   }
 
   protected selectOption(opt: MdySelectOption<TValue>): void {
-    this.selectAdapter.dispatch({ type: "select", optionKey: this.optionKey(opt) });
+    this.selectAdapter.dispatch({ type: "select", optionKey: this.optionKey(opt.value) });
     this.closeOverlay();
   }
 
@@ -434,7 +426,7 @@ export class MdySelectComponent<TValue = string>
   protected onNativeChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
     const stringValue = target.value;
-    const matched = this.effectiveOptions().find((o) => String(o.value) === stringValue);
+    const matched = this.optionFor(stringValue);
     const value = matched?.value ?? null;
     this.dispatchValueIntent<TValue | null>("select", { type: "select", value });
     if (matched) this.selectionChange.emit(matched);

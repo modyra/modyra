@@ -4,6 +4,7 @@ import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
+import { inputText } from "../renderer-projection";
 
 @Component({
   selector: "mdy-control-textarea",
@@ -71,6 +72,6 @@ export class MdyTextareaComponent extends MdyBaseControl<string | null> {
   protected readonly fieldId = `mdy-control-textarea-${MdyBaseControl.nextId()}`;
 
   protected onInput(event: Event): void {
-    this.dispatchValueIntent<string | null>("textarea", { type: "input", value: (event.target as HTMLTextAreaElement).value });
+    this.dispatchValueIntent<string | null>("textarea", { type: "input", value: inputText(event) });
   }
 }

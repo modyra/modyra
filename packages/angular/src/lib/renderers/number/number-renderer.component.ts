@@ -5,6 +5,7 @@ import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyNumberSpinButtonsDirective } from "./number-spin-buttons.directive";
+import { inputNumber } from "../renderer-projection";
 
 @Component({
   selector: "mdy-control-number",
@@ -84,7 +85,6 @@ export class MdyNumberComponent extends MdyBaseControl<number | null> {
   protected readonly fieldId = `mdy-control-number-${MdyBaseControl.nextId()}`;
 
   protected onInput(event: Event): void {
-    const raw = (event.target as HTMLInputElement).value;
-    this.dispatchValueIntent<number | null>("number", { type: "input", value: raw === "" ? null : Number(raw) });
+    this.dispatchValueIntent<number | null>("number", { type: "input", value: inputNumber(event) });
   }
 }

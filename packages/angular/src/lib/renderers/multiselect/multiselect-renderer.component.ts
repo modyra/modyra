@@ -273,7 +273,7 @@ export class MdyMultiselectComponent<TValue = string>
       key: event.key,
       open: this.open(),
       query: this.searchQuery(),
-      activeKey: active ? String(active.value) : null,
+      activeKey: active ? this.optionKey(active.value) : null,
     });
     if (!action) return;
     event.preventDefault();
@@ -297,14 +297,14 @@ export class MdyMultiselectComponent<TValue = string>
   protected readonly counts = computed(() => {
     const map = new Map<string, number>();
     for (const v of this.value() ?? []) {
-      const key = String(v);
+      const key = this.optionKey(v);
       map.set(key, (map.get(key) ?? 0) + 1);
     }
     return map;
   });
 
   protected readonly selectedSet = computed(
-    () => new Set((this.value() ?? []).map((v) => String(v))),
+    () => new Set((this.value() ?? []).map((v) => this.optionKey(v))),
   );
 
   protected override onBeforeOpen(): void {
@@ -325,13 +325,13 @@ export class MdyMultiselectComponent<TValue = string>
     if (next === current) return;
     this.dispatchValueIntent<ReadonlyArray<TValue>>("multiselect", { type: "input", value: next });
     if (intent.type !== "clear") {
-      const matched = this.effectiveOptions().find((option) => String(option.value) === String(intent.value));
+      const matched = this.effectiveOptions().find((option) => this.optionKey(option.value) === this.optionKey(intent.value));
       if (matched) this.selectionChange.emit(matched);
     }
   }
 
   protected isSelected(optValue: TValue): boolean {
-    return this.selectedSet().has(String(optValue));
+    return this.selectedSet().has(this.optionKey(optValue));
   }
 
   protected onToggle(optValue: TValue): void {
@@ -339,7 +339,7 @@ export class MdyMultiselectComponent<TValue = string>
   }
 
   protected countOf(optValue: TValue): number {
-    return this.counts().get(String(optValue)) ?? 0;
+    return this.counts().get(this.optionKey(optValue)) ?? 0;
   }
 
   protected increment(optValue: TValue): void {
