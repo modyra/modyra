@@ -63,9 +63,27 @@ export interface MdyDynamicOptionsField extends MdyDynamicFieldBase {
   readonly options: ReadonlyArray<MdySelectOption<unknown>>;
 }
 
-/** Date/time kinds. */
+/** Single-instant date/time kinds. */
 export interface MdyDynamicDateField extends MdyDynamicFieldBase {
   readonly kind: "datepicker" | "timepicker";
+}
+
+/** A start/end pair. Its own interface so a `kind` switch narrows to one value shape. */
+export interface MdyDynamicDaterangeField extends MdyDynamicFieldBase {
+  readonly kind: "daterange";
+}
+
+/** File selection. `accept` and `multiple` mirror the native input attributes. */
+export interface MdyDynamicFileField extends MdyDynamicFieldBase {
+  readonly kind: "file";
+  readonly accept?: string;
+  readonly multiple?: boolean;
+}
+
+/** Colour selection, optionally offering a preset palette. */
+export interface MdyDynamicColorsField extends MdyDynamicFieldBase {
+  readonly kind: "colors";
+  readonly presets?: ReadonlyArray<string>;
 }
 
 /** One field of a dynamic form — a serializable discriminated union. */
@@ -74,7 +92,10 @@ export type MdyDynamicField =
   | MdyDynamicNumberField
   | MdyDynamicBooleanField
   | MdyDynamicOptionsField
-  | MdyDynamicDateField;
+  | MdyDynamicDateField
+  | MdyDynamicDaterangeField
+  | MdyDynamicFileField
+  | MdyDynamicColorsField;
 
 /** Exhaustiveness helper for kind switches. */
 export function assertNeverField(field: never): never {
@@ -91,7 +112,8 @@ export const MDY_DYNAMIC_FIELD_KINDS = [
   "number", "slider",
   "checkbox", "toggle",
   "select", "radio", "multiselect", "segmented",
-  "datepicker", "timepicker",
+  "datepicker", "daterange", "timepicker",
+  "file", "colors",
 ] as const;
 
 const MDY_MAX_DYNAMIC_PATTERN_LENGTH = 256;
