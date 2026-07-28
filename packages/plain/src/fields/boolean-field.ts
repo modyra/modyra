@@ -19,7 +19,7 @@ export function renderBooleanField(
 ): () => void {
   const isToggle = f.kind === "toggle";
   const controller = createBooleanFieldController({ widgetId: f.name, handle, variant: isToggle ? "switch" : "checkbox" }, reactivity);
-  const definition = MDY_WIDGET_CONTRACTS[f.kind];
+  const definition = f.kind === "toggle" ? MDY_WIDGET_CONTRACTS.toggle : MDY_WIDGET_CONTRACTS.checkbox;
 
   const root = el("div") as HTMLDivElement;
   root.classList.add(...definition.rootClasses);
@@ -27,6 +27,9 @@ export function renderBooleanField(
   applyPart(wrapper, definition.parts.inputWrapper);
   const input = el("input") as HTMLInputElement;
   input.type = "checkbox";
+  // Set as the element's own class rather than through applyPart: the controller applies its input
+  // part to this same element later, and applyPart replaces everything but the base class.
+  input.className = definition.parts.control.classes.join(" ");
   const labelText = el("span") as HTMLSpanElement;
   if (f.label) setText(labelText, f.label);
   const requiredMark = el("span", definition.parts.requiredMarker.classes.join(" "));

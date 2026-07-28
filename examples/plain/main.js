@@ -71,31 +71,32 @@ const mounted = mountMdyForm(formHost, FIELDS, {
  * which is the point: if a renderer invented its own name, the part simply is not found and the
  * banner says so.
  */
-const PART_SELECTORS = {
+const SHELL_SELECTORS = {
   label: ".mdy-label, .mdy-toggle__label",
   requiredMarker: ".mdy-label__required",
   inputWrapper: ".mdy-input-wrapper, .mdy-checkbox, .mdy-toggle",
   control: "input, textarea, select",
-  track: ".mdy-toggle__track, .mdy-input-wrapper",
-  thumb: ".mdy-toggle__thumb",
-  group: ".mdy-radio-group, .mdy-segmented",
-  option: ".mdy-plain-option-row",
-  trigger: ".mdy-select__trigger, .mdy-plain-multiselect",
-  arrow: ".mdy-select__arrow",
-  chips: ".mdy-multiselect",
-  chip: ".mdy-multiselect__chip",
-  toggle: ".mdy-datepicker__toggle, .mdy-timepicker__toggle",
-  popup: ".mdy-datepicker__popup, .mdy-timepicker__popup",
-  grid: ".mdy-datepicker__grid",
-  gridcell: ".mdy-datepicker__cell",
-  hour: ".mdy-timepicker__hour",
-  minute: ".mdy-timepicker__minute",
-  startControl: 'input[type="date"]',
-  dropzone: ".mdy-input-wrapper",
   supportingText: ".mdy-supporting-text",
   errors: ".mdy-control__errors",
   errorItem: ".mdy-control__error",
 };
+
+/**
+ * Resolves a part to an element by the class the *contract* gives it, falling back to the shared
+ * shell selectors for the parts the catalog leaves unnamed. Looking parts up this way is the
+ * point: a renderer that invented its own name simply is not found, and the banner says so.
+ */
+function findPart(root, kind, part) {
+  const contract = MDY_WIDGET_CONTRACTS[kind].parts[part];
+  const classes = contract?.classes ?? [];
+  if (classes.length > 0) {
+    const scope = part === "popup" || root.querySelector(`.${classes[0]}`) ? root : document;
+    const found = scope.querySelector(`.${classes.join(".")}`);
+    if (found) return found;
+  }
+  const fallback = SHELL_SELECTORS[part];
+  return fallback ? root.querySelector(fallback) : null;
+}
 
 function report() {
   const rows = [];
@@ -104,11 +105,9 @@ function report() {
     if (!root) continue;
     const parts = {};
     for (const node of MDY_WIDGET_CONTRACTS[field.kind].structure.nodes) {
-      const selector = PART_SELECTORS[node.part];
-      if (selector) parts[node.part] = root.querySelector(selector);
+      if (node.part !== "root") parts[node.part] = findPart(root, field.kind, node.part);
     }
-    if (field.kind === "daterange") parts.endControl = root.querySelectorAll('input[type="date"]')[1];
-    if (field.kind === "datepicker" || field.kind === "timepicker") parts.control = root.querySelector(`.mdy-${field.kind}__input`);
+    if (field.kind === "daterange") parts.endControl = root.querySelectorAll(".mdy-daterange__input")[1];
     const missing = MDY_WIDGET_CONTRACTS[field.kind].structure.nodes
       .filter((node) => node.part !== "root" && !parts[node.part])
       .map((node) => node.part);

@@ -139,6 +139,7 @@ export function createSelectController<TValue>(
       root: a11y.trigger,
       parts: {
         trigger: a11y.trigger,
+        search: a11y.search,
         listbox: a11y.listbox,
         ...parts,
       },
