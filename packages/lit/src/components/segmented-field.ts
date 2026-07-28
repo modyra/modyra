@@ -1,3 +1,4 @@
+import { styleMap } from "lit/directives/style-map.js";
 import { html, nothing } from "lit";
 import { type MdySelectOption } from "@modyra/core";
 import { createOptionFieldController, type MdyOptionFieldController } from "@modyra/widgets";
@@ -43,6 +44,7 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
         class="${this.partClass("group")}"
         role="radiogroup"
         aria-labelledby=${this.label ? this.labelId : nothing}
+        style=${styleMap(view?.parts.group?.style ?? {})}
       >
         ${this.options.map((option, index) => {
           const key = String(option.value);

@@ -214,24 +214,25 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           ${this.mode === "multi"
             ? this.renderCounterChips(handle)
             : this.renderToggleChips(handle)}
-          ${this.searchable || this.label
-            ? html`<div class="mdy-multiselect__header">
-                ${this.searchable
-                  ? html`<button
-                      type="button"
-                      class="mdy-multiselect__search-btn"
-                      ?disabled=${handle.disabled()}
-                      @click=${(e: Event) => {
-                        if (!this._open) this.overlay.open(e);
-                        this.toggleOpen(handle);
-                      }}
-                      aria-label="Search options"
-                    >
-                      ${mdyIcon("SEARCH", "mdy-select__search")}
-                    </button>`
-                  : nothing}
-              </div>`
+          ${(handle.value() ?? []).length === 0
+            ? html`<span class="${this.partClass("placeholder")}">${this.label ? `Select ${this.label.toLowerCase()}…` : "Select…"}</span>`
             : nothing}
+          <div class="mdy-multiselect__header">
+            <button
+              type="button"
+              class="mdy-multiselect__search-btn"
+              ?disabled=${handle.disabled()}
+              @click=${(e: Event) => {
+                if (!this._open) this.overlay.open(e);
+                this.toggleOpen(handle);
+              }}
+              aria-label="Show options"
+              aria-haspopup="listbox"
+              aria-expanded=${this._open ? "true" : "false"}
+            >
+              ${mdyIcon("SEARCH", "")}
+            </button>
+          </div>
         </div>
         <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
       </div>
@@ -241,7 +242,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         position,
         panelDisplayContents: true,
       })}
-      ${showBlockErrors ? this.renderErrors(handle) : this.renderSupportingText()}
+      ${showBlockErrors ? this.renderErrors(handle) : nothing}
+      ${this.renderSupportingText()}
     `;
   }
 

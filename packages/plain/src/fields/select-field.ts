@@ -202,7 +202,7 @@ export function renderSelectField(
     // The trigger always shows the committed value: nothing the user types can hide it.
     const selected = options.find((o) => keyFor(o) === state.selectedKey);
     setText(valueText, selected?.label ?? placeholder);
-    valueText.classList.toggle("mdy-select__placeholder", !selected);
+    valueText.classList.toggle(parts.placeholder.classes[0], !selected);
     for (const [key, li] of optionEls) {
       // The part carries `hidden` when the query filters the option out — no second filter here.
       const part = view.parts[key];

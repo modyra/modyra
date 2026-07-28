@@ -1,7 +1,6 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import { listboxNextIndex } from "@modyra/core/ui";
-import { overlayLifecycleTransition } from "@modyra/widgets";
+import { listboxNavigationIndex, overlayLifecycleTransition } from "@modyra/widgets";
 import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
 
@@ -78,8 +77,8 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
       }
       return;
     }
-    // Navigation is a pure decision shared with every adapter.
-    const next = listboxNextIndex(e.key, this._activeIndex, this.options.length);
+    // Navigation is a pure decision the contract owns — a listbox clamps, it does not wrap.
+    const next = listboxNavigationIndex(e.key, this._activeIndex, this.options.length);
     if (next !== null) {
       e.preventDefault();
       this._activeIndex = next;
