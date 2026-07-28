@@ -109,7 +109,7 @@ test("select: clicking the trigger opens the listbox, clicking an option commits
   const container = document.createElement("div");
   const { form, reactivity, dispose } = mountMdyForm(container, fields);
 
-  const selectWrapper = container.querySelector(".mdy-plain-select");
+  const selectWrapper = container.querySelector(".mdy-select");
   const trigger = selectWrapper.querySelector(".mdy-select__trigger");
   trigger.dispatchEvent(new Event("click"));
   await reactivity.flush();
@@ -132,18 +132,36 @@ test("select: clicking the trigger opens the listbox, clicking an option commits
   dispose();
 });
 
-test("multiselect: clicking a chip toggles membership in the real array value", () => {
+test("multiselect: options are picked from an overlay, not from an inline list", async () => {
   const container = document.createElement("div");
-  const { form, dispose } = mountMdyForm(container, fields);
+  document.body.append(container);
+  const { form, reactivity, dispose } = mountMdyForm(container, fields);
 
-  const wrapper = container.querySelector(".mdy-plain-multiselect");
-  const musicChip = [...wrapper.querySelectorAll("button")].find((b) => b.textContent === "Music");
+  const trigger = container.querySelector(".mdy-multiselect");
+  const popup = document.getElementById(trigger.getAttribute("aria-controls"));
+  // Closed by default and portalled out of the field, so opening it cannot reflow the form.
+  assert.equal(popup.hidden, true);
+  assert.equal(container.contains(popup), false);
+
+  trigger.dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  assert.equal(popup.hidden, false);
+  assert.equal(trigger.getAttribute("aria-expanded"), "true");
+
+  const musicChip = [...popup.querySelectorAll(".mdy-multiselect__option")].find((b) => b.textContent.startsWith("Music"));
   musicChip.dispatchEvent(new Event("click"));
+  await reactivity.flush();
   assert.deepEqual(form.f.interests.value(), ["music"]);
+  // Picking keeps the popup open: a multiselect exists to take more than one choice.
+  assert.equal(popup.hidden, false);
+  assert.equal(trigger.querySelector(".mdy-chip").textContent, "Music");
 
   musicChip.dispatchEvent(new Event("click"));
+  await reactivity.flush();
   assert.deepEqual(form.f.interests.value(), []);
+  assert.equal(trigger.querySelector(".mdy-chip"), null);
   dispose();
+  container.remove();
 });
 
 test("datepicker: opening shows a 42-cell grid, clicking a day commits an ISO value", async () => {
@@ -300,7 +318,7 @@ test("select listbox is portalled to document.body and removed on dispose", () =
   const host = document.createElement("div");
   document.body.append(host);
   const mounted = mountMdyForm(host, [{ name: "country", kind: "select", label: "Country", options: [{ value: "IT", label: "Italy" }] }], { submitLabel: null });
-  const portals = document.body.querySelectorAll(".mdy-plain-select__portal");
+  const portals = document.body.querySelectorAll(".mdy-select__dropdown.mdy-overlay");
   const listbox = portals[portals.length - 1];
   assert.ok(listbox);
   assert.equal(host.contains(listbox), false);
@@ -496,7 +514,10 @@ test("multiselect toggles membership rather than accumulating duplicates", async
     { name: "palette", kind: "multiselect", label: "Palette", options: [{ value: "indigo", label: "Indigo" }, { value: "cloud", label: "Cloud" }] },
   ], { submitLabel: null });
 
-  const chip = host.querySelector(".mdy-multiselect__chip");
+  const trigger = host.querySelector(".mdy-multiselect");
+  trigger.dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  const chip = document.getElementById(trigger.getAttribute("aria-controls")).querySelector(".mdy-multiselect__option");
   for (let click = 0; click < 3; click += 1) chip.dispatchEvent(new Event("click"));
   await reactivity.flush();
   assert.deepEqual(form.f.palette.value(), ["indigo"]);
@@ -529,11 +550,15 @@ test("filtering hides the options that do not match, in the select and the multi
   const shown = [...popup.querySelectorAll(".mdy-select__option")].filter((li) => !li.hidden);
   assert.deepEqual(shown.map((li) => li.textContent), ["France"]);
 
-  const filter = host.querySelector(".mdy-multiselect-overlay__input");
+  const msTrigger = host.querySelector(".mdy-multiselect");
+  msTrigger.dispatchEvent(new Event("click"));
+  await reactivity.flush();
+  const msPopup = document.getElementById(msTrigger.getAttribute("aria-controls"));
+  const filter = msPopup.querySelector(".mdy-multiselect-overlay__input");
   filter.value = "clo";
   filter.dispatchEvent(new Event("input"));
   await reactivity.flush();
-  const chips = [...host.querySelectorAll(".mdy-chip")].filter((chip) => !chip.hidden);
+  const chips = [...msPopup.querySelectorAll(".mdy-multiselect__option")].filter((chip) => !chip.hidden);
   assert.deepEqual(chips.map((chip) => chip.textContent), ["Cloud"]);
 
   dispose();
