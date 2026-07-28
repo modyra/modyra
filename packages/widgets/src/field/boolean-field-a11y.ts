@@ -69,16 +69,20 @@ export function projectBooleanFieldA11y(
     },
     label: {
       id: labelId,
-      classes: [MDY_FIELD_SHELL_CLASSES.label],
-      attributes: {
-        for: inputId,
-      },
+      // A switch labels its text `mdy-toggle__label`; `mdy-checkbox`/`mdy-toggle` belong on the
+      // wrapping element, which is why the input itself carries no class of its own.
+      classes: [isSwitch ? "mdy-toggle__label" : MDY_FIELD_SHELL_CLASSES.label],
+      // The clickable element is the wrapper, and the text sits inside it as a span — a `for`
+      // here would be an invalid attribute on a non-label element.
+      attributes: {},
     },
     input: {
       id: inputId,
-      classes: isSwitch ? ["mdy-switch"] : ["mdy-checkbox"],
+      classes: [],
       attributes: {
-        type: isSwitch ? null : "checkbox",
+        // A switch is a checkbox input with `role="switch"`, exactly as the Angular renderer
+        // writes it — dropping the type would leave a text input behind.
+        type: "checkbox",
         role: isSwitch ? "switch" : "checkbox",
         checked: state.checked,
         "aria-checked": String(state.checked),

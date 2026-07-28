@@ -54,8 +54,10 @@ export function partsOf(root, kind) {
       // Angular holds the range input in `.mdy-slider-container`; Plain's shell wrapper plays the
       // same part. The displayed value (`value`) is an optional part Plain does not render yet.
       return { ...shell, track: q(".mdy-input-wrapper"), control: q('input[type="range"]') };
+    case "checkbox":
+      return { ...shell, inputWrapper: q(".mdy-checkbox"), control: q("input") };
     case "toggle":
-      return { ...shell, track: q(".mdy-switch-control"), thumb: q(".mdy-switch-control__thumb"), control: q("input") };
+      return { ...shell, inputWrapper: q(".mdy-toggle"), track: q(".mdy-toggle__track"), thumb: q(".mdy-toggle__thumb"), control: q("input"), label: q(".mdy-toggle__label") };
     default:
       return { ...shell, control: q("input, textarea, select") };
   }
@@ -89,8 +91,6 @@ export const ABSENT = {
  *   trigger button, so the contract's `control` is missing.
  */
 export const KNOWN_DIVERGENCES = {
-  checkbox: ["PART_ORDER:label"],
-  toggle: ["PART_ORDER:label"],
   select: ["PART_NOT_CONTAINED:arrow"],
   datepicker: ["PART_MISSING:control"],
   timepicker: ["PART_MISSING:control"],

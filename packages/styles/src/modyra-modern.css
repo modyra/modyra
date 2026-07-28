@@ -23,10 +23,10 @@
  *   2. Shape — M3's filled control is 3.5rem tall with only a bottom indicator.
  *      A stacked form of those reads as a column of boxes, so this theme uses a
  *      2.5rem control with a full border on all four sides.
- *   3. Boolean controls — the default theme has no `.mdy-switch` rule at all,
- *      and `.mdy-checkbox` there styles a label wrapping an input. The widget
- *      controllers put both classes on the input itself, so those two controls
- *      are defined here.
+ *   3. Component gaps — rules the default theme is missing for parts only the
+ *      framework-free renderer draws (the searchable select trigger, the plain
+ *      pickers). Boolean controls are not among them: every adapter now emits the
+ *      default theme's own `.mdy-checkbox` / `.mdy-toggle` anatomy.
  */
 
 @layer mdy.themes {
@@ -107,117 +107,6 @@
 
     .mdy-input-wrapper--error {
         border-color: var(--mdy-error-color);
-    }
-
-    /* ─── Boolean controls ────────────────────────────────────────────────────── */
-
-    /* A checkbox and a switch are small fixed-size controls. Framing them in a
-       full-width control box leaves them floating in empty space, so the boolean
-       renderers drop the frame and the wrapper shrinks to fit the control. */
-    .mdy-renderer--checkbox .mdy-input-wrapper,
-    .mdy-renderer--toggle .mdy-input-wrapper,
-    .mdy-renderer--checkbox .mdy-input-wrapper:hover:not(:focus-within),
-    .mdy-renderer--toggle .mdy-input-wrapper:hover:not(:focus-within),
-    .mdy-renderer--checkbox .mdy-input-wrapper:focus-within,
-    .mdy-renderer--toggle .mdy-input-wrapper:focus-within {
-        min-height: 0;
-        border-color: transparent;
-        box-shadow: none;
-        background-color: transparent;
-    }
-
-    .mdy-renderer--checkbox .mdy-input-wrapper__inliner,
-    .mdy-renderer--toggle .mdy-input-wrapper__inliner {
-        width: auto;
-    }
-
-    /* The controllers put these classes on the input element itself. */
-    .mdy-input-wrapper input.mdy-checkbox,
-    .mdy-input-wrapper input.mdy-switch {
-        flex: 0 0 auto;
-        width: auto;
-        margin: 0.25rem 0;
-        padding: 0;
-        cursor: pointer;
-    }
-
-    /* Drawn rather than native. The catalog's `.mdy-checkbox` is a *label* wrapping a hidden
-       input, styled with ::before/::after; the controllers put the class on the input itself,
-       and Chrome paints no pseudo-elements on an <input>. So the box is the element's own
-       border/background and the tick is a background image, the same technique as the switch.
-       Everything but the tick glyph reads a --mdy-comp-checkbox-* token. */
-    .mdy-input-wrapper input.mdy-checkbox {
-        appearance: none;
-        width: var(--mdy-comp-checkbox-container-size);
-        height: var(--mdy-comp-checkbox-container-size);
-        border: var(--mdy-comp-checkbox-unselected-outline-width) solid var(--mdy-comp-checkbox-unselected-outline-color);
-        border-radius: var(--mdy-comp-checkbox-container-shape);
-        background-color: transparent;
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: 0.75rem;
-        transition: background-color 0.15s, border-color 0.15s;
-    }
-
-    .mdy-input-wrapper input.mdy-checkbox:hover:not(:disabled) {
-        border-color: var(--mdy-comp-checkbox-selected-container-color);
-    }
-
-    /* The glyph is baked white because a data URI cannot read a custom property. This theme
-       sets the token below to match, so the two cannot drift apart silently. */
-    .mdy-input-wrapper input.mdy-checkbox:checked {
-        --mdy-comp-checkbox-selected-icon-color: #ffffff;
-        border-color: var(--mdy-comp-checkbox-selected-container-color);
-        background-color: var(--mdy-comp-checkbox-selected-container-color);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.5 6.5 12 13 4.5'/%3E%3C/svg%3E");
-    }
-
-    .mdy-input-wrapper input.mdy-checkbox:indeterminate {
-        border-color: var(--mdy-comp-checkbox-selected-container-color);
-        background-color: var(--mdy-comp-checkbox-selected-container-color);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M4 8h8'/%3E%3C/svg%3E");
-    }
-
-    .mdy-input-wrapper input.mdy-checkbox:focus-visible,
-    .mdy-input-wrapper input.mdy-switch:focus-visible {
-        outline: 2px solid var(--mdy-primary);
-        outline-offset: 2px;
-    }
-
-    /* The knob is a background image, not a ::after. An <input> is a replaced element and
-       Chrome paints no pseudo-elements on it even at appearance:none — the track rendered
-       and the knob silently did not. A background layer also animates its own position, so
-       the thumb still slides. */
-    .mdy-input-wrapper input.mdy-switch {
-        appearance: none;
-        width: 2.25rem;
-        height: 1.25rem;
-        border: 1px solid var(--mdy-outline);
-        border-radius: var(--mdy-sys-shape-corner-full);
-        background-color: var(--mdy-surface-container-highest);
-        background-image: radial-gradient(circle 0.4375rem at center, var(--mdy-on-surface-variant) 98%, transparent 100%);
-        background-repeat: no-repeat;
-        background-position: left 0.0625rem center;
-        transition: background-color 0.15s, border-color 0.15s, background-position 0.18s cubic-bezier(0.2, 0, 0, 1);
-    }
-
-    .mdy-input-wrapper input.mdy-switch:hover:not(:disabled) {
-        border-color: var(--mdy-primary);
-    }
-
-    .mdy-input-wrapper input.mdy-switch:checked {
-        border-color: var(--mdy-primary);
-        background-color: var(--mdy-primary);
-        /* The knob grows slightly on the way in — the one cue that the control is "on" beyond
-           colour, which is what keeps it readable when colour alone is not available. */
-        background-image: radial-gradient(circle 0.46875rem at center, var(--mdy-on-primary) 98%, transparent 100%);
-        background-position: right 0.0625rem center;
-    }
-
-    .mdy-input-wrapper input.mdy-checkbox:disabled,
-    .mdy-input-wrapper input.mdy-switch:disabled {
-        opacity: 0.38;
-        cursor: not-allowed;
     }
 
     /* ─── Select ──────────────────────────────────────────────────────────────── */
@@ -465,12 +354,6 @@
         display: none;
     }
 
-    @media (prefers-reduced-motion: reduce) {
-
-        .mdy-input-wrapper input.mdy-switch {
-            transition: none;
-        }
-    }
 }
 
 
@@ -514,63 +397,4 @@
 .mdy-plain-select__portal .mdy-select__option--selected {
     color: var(--mdy-primary);
     font-weight: 700;
-}
-
-.mdy-switch-control {
-    position: relative;
-    display: inline-grid;
-    width: 2.75rem;
-    height: 1.5rem;
-    flex: 0 0 auto;
-    cursor: pointer;
-    isolation: isolate;
-}
-.mdy-switch-control > input.mdy-switch {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    opacity: 0;
-    cursor: inherit;
-}
-.mdy-switch-control__track {
-    position: absolute;
-    inset: 0;
-    border: 1px solid var(--mdy-outline);
-    border-radius: 999px;
-    background: var(--mdy-surface-container-highest);
-    transition: background-color .18s, border-color .18s;
-}
-.mdy-switch-control__thumb {
-    position: absolute;
-    z-index: 1;
-    inset-block-start: 0.1875rem;
-    inset-inline-start: 0.1875rem;
-    width: 1.125rem;
-    height: 1.125rem;
-    border-radius: 50%;
-    background: var(--mdy-on-surface-variant);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
-    transition: transform .2s cubic-bezier(.2, 0, 0, 1), background-color .18s;
-}
-.mdy-switch-control:has(input:checked) .mdy-switch-control__track {
-    border-color: var(--mdy-primary);
-    background: var(--mdy-primary);
-}
-.mdy-switch-control:has(input:checked) .mdy-switch-control__thumb {
-    transform: translateX(1.25rem);
-    background: var(--mdy-on-primary);
-}
-.mdy-switch-control:has(input:focus-visible) {
-    outline: 3px solid color-mix(in srgb, var(--mdy-primary) 32%, transparent);
-    outline-offset: 2px;
-    border-radius: 999px;
-}
-.mdy-switch-control:has(input:disabled) { opacity: .38; cursor: not-allowed; }
-
-@media (prefers-reduced-motion: reduce) {
-    .mdy-switch-control__track,
-    .mdy-switch-control__thumb { transition: none; }
 }

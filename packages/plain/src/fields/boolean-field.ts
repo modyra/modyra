@@ -1,11 +1,15 @@
 /**
  * Renders checkbox/toggle kinds via createBooleanFieldController.
+ *
+ * A boolean control does not use the shared field shell: its anatomy is one clickable wrapper
+ * holding the input, the drawn track/thumb for a switch, and the text — the contract puts the
+ * label *inside* the wrapper, after the control, and the themes style `.mdy-checkbox` /
+ * `.mdy-toggle` as that wrapper.
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicBooleanField } from "@modyra/core";
-import { createBooleanFieldController } from "@modyra/widgets";
-import { applyPart, el, setErrors } from "../dom.js";
-import { buildFieldShell, insertControl } from "../field-shell.js";
+import { createBooleanFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { applyPart, el, setErrors, setText } from "../dom.js";
 
 export function renderBooleanField(
   container: HTMLElement,
@@ -13,22 +17,37 @@ export function renderBooleanField(
   handle: MdyFieldHandle<boolean>,
   reactivity: MdyReactivity = vanillaReactivity(),
 ): () => void {
-  const variant = f.kind === "toggle" ? "switch" : "checkbox";
-  const controller = createBooleanFieldController({ widgetId: f.name, handle, variant }, reactivity);
+  const isToggle = f.kind === "toggle";
+  const controller = createBooleanFieldController({ widgetId: f.name, handle, variant: isToggle ? "switch" : "checkbox" }, reactivity);
+  const definition = MDY_WIDGET_CONTRACTS[f.kind];
 
-  const shell = buildFieldShell(f.label, f.kind);
+  const root = el("div") as HTMLDivElement;
+  root.classList.add(...definition.rootClasses);
+  const wrapper = el("label") as HTMLLabelElement;
+  applyPart(wrapper, definition.parts.inputWrapper);
   const input = el("input") as HTMLInputElement;
   input.type = "checkbox";
-  const control = f.kind === "toggle" ? el("span", "mdy-switch-control") : input;
-  if (f.kind === "toggle") {
-    const track = el("span", "mdy-switch-control__track");
-    const thumb = el("span", "mdy-switch-control__thumb");
+  const labelText = el("span") as HTMLSpanElement;
+  if (f.label) setText(labelText, f.label);
+  const requiredMark = el("span", definition.parts.requiredMarker.classes.join(" "));
+  setText(requiredMark, "*");
+  requiredMark.hidden = true;
+  labelText.appendChild(requiredMark);
+
+  wrapper.append(input);
+  if (isToggle) {
+    const track = el("span", MDY_WIDGET_CONTRACTS.toggle.parts.track.classes.join(" "));
+    const thumb = el("span", MDY_WIDGET_CONTRACTS.toggle.parts.thumb.classes.join(" "));
     track.setAttribute("aria-hidden", "true");
-    thumb.setAttribute("aria-hidden", "true");
-    control.append(input, track, thumb);
+    track.appendChild(thumb);
+    wrapper.append(track);
   }
-  insertControl(shell, control);
-  container.appendChild(shell.root);
+  wrapper.append(labelText);
+
+  const description = el("p") as HTMLParagraphElement;
+  const errorList = el("ul") as HTMLUListElement;
+  root.append(wrapper, description, errorList);
+  container.appendChild(root);
 
   input.addEventListener("change", () => controller.dispatch({ type: input.checked ? "check" : "uncheck" }));
   input.addEventListener("blur", () => controller.dispatch({ type: "blur" }));
@@ -36,11 +55,15 @@ export function renderBooleanField(
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
     const view = controller.view();
-    applyPart(shell.label, view.parts.label);
+    // `view.root` still carries the controller's own `mdy-field--*` state vocabulary, which no
+    // adapter emits; the canonical state class on a renderer root is `mdy-renderer--touched`.
+    root.classList.toggle("mdy-renderer--touched", state.touched);
+    applyPart(labelText, view.parts.label);
     applyPart(input, view.parts.input);
-    applyPart(shell.description, view.parts.description);
-    applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, handle.errors().map((e) => e.message));
+    applyPart(description, view.parts.description);
+    applyPart(errorList, view.parts.error);
+    setErrors(errorList, handle.errors().map((e) => e.message));
+    requiredMark.hidden = !state.required;
     // The "checked" content attribute (set by applyPart above) only sets the initial
     // state; the live IDL property is what the browser actually renders/toggles after
     // the first user interaction, so it needs setting explicitly, same reasoning as
@@ -51,6 +74,6 @@ export function renderBooleanField(
   return () => {
     effectRef.destroy();
     controller.destroy();
-    shell.root.remove();
+    root.remove();
   };
 }

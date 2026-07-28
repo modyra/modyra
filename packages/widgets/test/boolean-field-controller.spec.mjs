@@ -106,7 +106,8 @@ test("checkbox view exposes ARIA contract", () => {
 test("switch view exposes ARIA contract", () => {
   const { controller } = setup(false, "switch");
   const view = controller.view();
-  assert.strictEqual(view.parts.input.attributes.type, null);
+  // A switch is a checkbox input carrying role="switch", the same element Angular and Lit render.
+  assert.strictEqual(view.parts.input.attributes.type, "checkbox");
   assert.strictEqual(view.parts.input.attributes.role, "switch");
   assert.strictEqual(view.parts.input.attributes.checked, false);
   assert.strictEqual(view.parts.input.attributes["aria-checked"], "false");

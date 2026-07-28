@@ -39,10 +39,11 @@ const fields = [
 
 function byLabel(container, text) {
   // The label carries a `mdy-label__required` marker inside it, same as the Lit renderers,
-  // so compare the label's own text rather than the whole subtree.
+  // so compare the label's own text rather than the whole subtree. A boolean control puts its
+  // text in a span inside the clickable wrapper, so both shapes are searched.
   const ownText = (l) =>
     [...l.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim();
-  return [...container.querySelectorAll("label")].find((l) => ownText(l) === text);
+  return [...container.querySelectorAll("label, .mdy-label, .mdy-toggle__label")].find((l) => ownText(l) === text);
 }
 
 test("mounts real DOM for every field kind, one control per field", () => {
@@ -305,9 +306,10 @@ test("toggle preserves the widget input and adds a visual track and thumb", () =
   const host = document.createElement("div");
   document.body.append(host);
   const mounted = mountMdyForm(host, [{ name: "enabled", kind: "toggle", label: "Enabled" }], { submitLabel: null });
-  assert.ok(host.querySelector(".mdy-switch-control > input.mdy-switch"));
-  assert.ok(host.querySelector(".mdy-switch-control__track"));
-  assert.ok(host.querySelector(".mdy-switch-control__thumb"));
+  // Same anatomy the Angular renderer emits, so the shipped themes style both identically.
+  assert.ok(host.querySelector("label.mdy-toggle > input[type=checkbox]"));
+  assert.ok(host.querySelector("label.mdy-toggle > .mdy-toggle__track > .mdy-toggle__thumb"));
+  assert.ok(host.querySelector("label.mdy-toggle > .mdy-toggle__label"));
   mounted.dispose();
   host.remove();
 });
