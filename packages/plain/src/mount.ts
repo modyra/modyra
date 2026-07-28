@@ -9,6 +9,7 @@
  */
 import { vanillaReactivity, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyFieldHandle, type MdyFormSchema, type MdyFormValue, type MdyReactivity, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
+import { layoutNodeAttributes, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
 import { el, setText } from "./dom.js";
 
@@ -72,11 +73,14 @@ export function mountMdyForm(
   };
 
   function renderLayoutNode(target: HTMLElement, node: MdyDynamicLayoutNode): void {
+    // Classes and the column count come from `@modyra/widgets`, so a two-column row is the same row
+    // whichever adapter drew it and whichever theme is loaded.
+    const attributes = layoutNodeAttributes(node);
     if (node.kind === "section") {
-      const section = el("fieldset", "mdy-layout-section") as HTMLFieldSetElement;
+      const section = el("fieldset", attributes.className) as HTMLFieldSetElement;
       section.dataset.layoutId = node.id;
       if (node.label) {
-        const legend = el("legend", "mdy-layout-legend");
+        const legend = el("legend", MDY_LAYOUT_CLASSES.sectionLabel);
         setText(legend, node.label);
         section.appendChild(legend);
       }
@@ -84,12 +88,11 @@ export function mountMdyForm(
       target.appendChild(section);
       return;
     }
-    const row = el("div", "mdy-layout-columns");
+    const row = el("div", attributes.className);
     row.dataset.layoutId = node.id;
-    // The column count drives the grid, so a 3-column row needs no extra markup or class.
-    row.style.setProperty("--mdy-layout-column-count", String(node.columns.length));
+    for (const [property, value] of Object.entries(attributes.style)) row.style.setProperty(property, value);
     for (const column of node.columns) {
-      const cell = el("div", "mdy-layout-column");
+      const cell = el("div", MDY_LAYOUT_CLASSES.column);
       for (const child of column) renderLayoutChild(cell, child);
       row.appendChild(cell);
     }

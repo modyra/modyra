@@ -291,7 +291,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     return html`
       <div class="mdy-timepicker-header">
         <div class="mdy-timepicker-fields">
-          <div class="mdy-timepicker-segment ${hourActive ? "mdy-timepicker-segment--active" : ""}">
+          <div class="${this.partClass("hour")} ${hourActive ? "mdy-timepicker-segment--active" : ""}">
             <input
               type="number"
               class="mdy-timepicker-segment-input ${this._viewMode === "dial" ? "mdy-timepicker-segment-input--readonly" : ""}"
@@ -314,7 +314,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             <span class="mdy-timepicker-segment-label">Hour</span>
           </div>
           <span class="mdy-timepicker-separator">:</span>
-          <div class="mdy-timepicker-segment ${minuteActive ? "mdy-timepicker-segment--active" : ""}">
+          <div class="${this.partClass("minute")} ${minuteActive ? "mdy-timepicker-segment--active" : ""}">
             <input
               type="number"
               class="mdy-timepicker-segment-input ${this._viewMode === "dial" ? "mdy-timepicker-segment-input--readonly" : ""}"

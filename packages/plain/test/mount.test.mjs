@@ -605,3 +605,44 @@ test("a pointer outside an open overlay dismisses it, in every widget that owns 
   dispose();
   host.remove();
 });
+
+test("contract v2 layout renders the canonical grid vocabulary", async () => {
+  const { MDY_LAYOUT_CLASSES, MDY_LAYOUT_COLUMN_COUNT_PROPERTY } = await import("../../widgets/dist/index.js");
+  const host = document.createElement("div");
+  document.body.append(host);
+  const mounted = mountMdyForm(host, [
+    { name: "first", kind: "text", label: "First" },
+    { name: "last", kind: "text", label: "Last" },
+    { name: "notes", kind: "textarea", label: "Notes" },
+  ], {
+    submitLabel: null,
+    layout: [
+      {
+        kind: "section",
+        id: "identity",
+        label: "Identity",
+        children: [{ kind: "columns", id: "name-row", columns: [["first"], ["last"]] }, "notes"],
+      },
+    ],
+  });
+
+  const section = host.querySelector(`.${MDY_LAYOUT_CLASSES.section}`);
+  assert.ok(section, "the section is rendered with the contract's class");
+  assert.equal(section.dataset.layoutId, "identity");
+  assert.equal(section.querySelector(`.${MDY_LAYOUT_CLASSES.sectionLabel}`).textContent, "Identity");
+
+  const row = section.querySelector(`.${MDY_LAYOUT_CLASSES.columns}`);
+  assert.ok(row, "the column row is rendered with the contract's class");
+  // The count is what the foundation divides the row by; a wrong one silently misdraws the grid.
+  assert.equal(row.style.getPropertyValue(MDY_LAYOUT_COLUMN_COUNT_PROPERTY), "2");
+  assert.equal(row.querySelectorAll(`.${MDY_LAYOUT_CLASSES.column}`).length, 2);
+
+  // Fields land where the layout put them, and one the layout does not mention still renders.
+  const [firstColumn, lastColumn] = row.querySelectorAll(`.${MDY_LAYOUT_CLASSES.column}`);
+  assert.ok(firstColumn.querySelector('[data-mdy-field="first"]'));
+  assert.ok(lastColumn.querySelector('[data-mdy-field="last"]'));
+  assert.ok(section.querySelector('[data-mdy-field="notes"]'));
+
+  mounted.dispose();
+  host.remove();
+});

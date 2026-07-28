@@ -4,7 +4,12 @@ import { ChangeDetectionStrategy, Component, input, output } from "@angular/core
   selector: "mdy-timepicker-segment",
   standalone: true,
   template: `
-    <div class="mdy-timepicker-segment" [class.mdy-timepicker-segment--active]="active()">
+    <div
+      class="mdy-timepicker-segment"
+      [class.mdy-timepicker-segment--hour]="unit() === 'hour'"
+      [class.mdy-timepicker-segment--minute]="unit() === 'minute'"
+      [class.mdy-timepicker-segment--active]="active()"
+    >
       <input
         type="number"
         class="mdy-timepicker-segment-input"
@@ -29,6 +34,9 @@ import { ChangeDetectionStrategy, Component, input, output } from "@angular/core
 })
 export class MdyTimepickerSegmentComponent {
   readonly value    = input.required<string>();
+  /** Which segment this is. The contract names the two separately so a theme, a test or a
+   *  screen reader can tell the hour from the minute without counting siblings. */
+  readonly unit     = input<"hour" | "minute">("hour");
   readonly label    = input<string>("");
   readonly active   = input<boolean>(false);
   readonly disabled = input<boolean>(false);
