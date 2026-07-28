@@ -1,6 +1,7 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { listboxNextIndex } from "@modyra/core/ui";
+import { overlayLifecycleTransition } from "@modyra/widgets";
 import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
 
@@ -31,23 +32,49 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
     return false;
   }
 
+  /** Opening and closing is one policy for every adapter: `overlayLifecycleTransition`. */
+  private applyLifecycle(
+    handle: MdyFieldHandle<T>,
+    intent: Parameters<typeof overlayLifecycleTransition>[1],
+  ): void {
+    const transition = overlayLifecycleTransition({ open: this._open }, intent);
+    if (transition.state.open === this._open) return;
+    this._open = transition.state.open;
+    if (transition.effect === "teardown") handle.markAsTouched();
+  }
+
   protected toggleOpen(handle: MdyFieldHandle<T>): void {
-    if (handle.disabled()) return;
-    this._open = !this._open;
-    if (!this._open) handle.markAsTouched();
+    this.applyLifecycle(handle, { type: "toggle", disabled: handle.disabled(), available: true });
   }
 
   protected close(handle: MdyFieldHandle<T>): void {
-    if (!this._open) return;
-    this._open = false;
-    handle.markAsTouched();
+    this.applyLifecycle(handle, { type: "close" });
+  }
+
+  /** A pointer outside the element dismisses it — `capabilities.dismissOnOutsidePointer`. */
+  private readonly onDocumentPointerDown = (event: Event): void => {
+    const handle = this.field;
+    if (!handle || !this._open) return;
+    const target = event.target as Node | null;
+    const inside = target !== null && typeof target.nodeType === "number" && this.contains(target);
+    this.applyLifecycle(handle, { type: "outside", outside: !inside });
+  };
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    document.addEventListener("pointerdown", this.onDocumentPointerDown, true);
+  }
+
+  override disconnectedCallback(): void {
+    document.removeEventListener("pointerdown", this.onDocumentPointerDown, true);
+    super.disconnectedCallback();
   }
 
   protected onKeydown(e: KeyboardEvent, handle: MdyFieldHandle<T>): void {
     if (!this._open) {
       if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        this._open = true;
+        this.applyLifecycle(handle, { type: "open", disabled: handle.disabled(), available: true });
       }
       return;
     }
@@ -65,7 +92,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
       if (!this.multiselectable) this.close(handle);
     } else if (e.key === "Escape") {
       e.preventDefault();
-      this.close(handle);
+      this.applyLifecycle(handle, { type: "escape" });
     }
   }
 
