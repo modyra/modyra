@@ -10,7 +10,7 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDateField } from "@modyra/core";
 import { createTimepickerFieldController, type MdyElementLookup } from "@modyra/widgets";
-import type { MdyTimeFormat } from "@modyra/core/time-utils";
+import { parseAnyTime, type MdyTimeFormat } from "@modyra/core/time-utils";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -25,8 +25,14 @@ export function renderTimepickerField(
   const controller = createTimepickerFieldController({ widgetId: f.name, handle, format }, reactivity);
 
   const shell = buildFieldShell(f.label, "timepicker");
-  const trigger = el("button") as HTMLButtonElement;
-  trigger.type = "button";
+  // Same anatomy as the Angular renderer: a typeable input plus a toggle button opening the
+  // dialog, rather than one button doing both jobs.
+  const control = el("input", "mdy-timepicker__input") as HTMLInputElement;
+  control.type = "text";
+  if (f.placeholder) control.placeholder = f.placeholder;
+  const toggle = el("button", "mdy-timepicker__toggle") as HTMLButtonElement;
+  toggle.type = "button";
+  toggle.setAttribute("aria-label", "Open the clock");
   // `mdy-timepicker__popup` is the class the themes position and frame; the controller only
   // names the dialog, the hour and the minute.
   const dialog = el("div", "mdy-timepicker__popup") as HTMLDivElement;
@@ -45,11 +51,11 @@ export function renderTimepickerField(
   dialog.append(hourInput, minuteInput, periodButton, confirmButton, cancelButton);
 
   const wrapper = el("div", "mdy-timepicker mdy-plain-timepicker");
-  wrapper.append(trigger, dialog);
+  wrapper.append(control, toggle, dialog);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
 
-  const lookup: MdyElementLookup = (part) => (part === "trigger" ? trigger : undefined);
+  const lookup: MdyElementLookup = (part) => (part === "trigger" ? control : undefined);
   function dispatch(intent: Parameters<typeof controller.dispatch>[0]): void {
     const commands = controller.dispatch(intent);
     runCommands(commands, lookup, {
@@ -59,7 +65,22 @@ export function renderTimepickerField(
     });
   }
 
-  trigger.addEventListener("click", () => dispatch(controller.state().open ? { type: "close", restoreFocus: false } : { type: "open" }));
+  const toggleOverlay = () => dispatch(controller.state().open ? { type: "close", restoreFocus: false } : { type: "open" });
+  toggle.addEventListener("click", toggleOverlay);
+  control.addEventListener("click", toggleOverlay);
+  control.addEventListener("blur", () => dispatch({ type: "blur" }));
+  // A typed time goes through the draft the dialog edits, then commits — one path, one policy.
+  control.addEventListener("change", () => {
+    const parsed = parseAnyTime(control.value, format);
+    if (!parsed) {
+      if (!control.value) dispatch({ type: "clear" });
+      return;
+    }
+    dispatch({ type: "set-hour", hour: parsed.hour });
+    dispatch({ type: "set-minute", minute: parsed.minute });
+    if (parsed.period) dispatch({ type: "set-period", period: parsed.period });
+    dispatch({ type: "confirm" });
+  });
   hourInput.addEventListener("input", () => {
     const hour = Number(hourInput.value);
     if (Number.isFinite(hour)) dispatch({ type: "set-hour", hour });
@@ -78,7 +99,8 @@ export function renderTimepickerField(
     const state = controller.state();
     const view = controller.view();
     applyPart(shell.label, view.parts.label);
-    applyPart(trigger, view.parts.trigger);
+    applyPart(control, view.parts.trigger);
+    toggle.disabled = state.disabled;
     applyPart(dialog, view.parts.dialog);
     applyPart(hourInput, view.parts.hour);
     applyPart(minuteInput, view.parts.minute);
@@ -86,8 +108,9 @@ export function renderTimepickerField(
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
 
-    // `||`, not `??` — same reason as the datepicker: an unset value is "", not null.
-    setText(trigger, state.value || f.placeholder || "Select a time");
+    // The input mirrors the committed value; while it has focus the user's own text wins.
+    const display = state.value || "";
+    if (document.activeElement !== control && control.value !== display) control.value = display;
     dialog.hidden = !state.open;
     const hourString = String(state.draft.hour);
     if (hourInput.value !== hourString) hourInput.value = hourString;

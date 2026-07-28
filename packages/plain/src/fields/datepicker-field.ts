@@ -5,6 +5,7 @@
  * controller already wires up).
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
 import type { MdyDynamicDateField } from "@modyra/core";
 import { createDatepickerFieldController, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
@@ -26,8 +27,14 @@ export function renderDatepickerField(
   const controller = createDatepickerFieldController({ widgetId: f.name, handle, ...options }, reactivity);
 
   const shell = buildFieldShell(f.label, "datepicker");
-  const trigger = el("button") as HTMLButtonElement;
-  trigger.type = "button";
+  // Same anatomy as the Angular renderer: a typeable input plus a toggle button that opens the
+  // calendar, rather than one button doing both jobs.
+  const control = el("input", "mdy-datepicker__input") as HTMLInputElement;
+  control.type = "text";
+  if (f.placeholder) control.placeholder = f.placeholder;
+  const toggle = el("button", "mdy-datepicker__toggle") as HTMLButtonElement;
+  toggle.type = "button";
+  toggle.setAttribute("aria-label", "Open the calendar");
   // The popup, its header and the day cells carry the class names the shipped themes already
   // style (`mdy-datepicker__popup` positions and frames the panel, `__header` lays out the
   // month nav) — the controller only names the trigger and the grid.
@@ -47,7 +54,7 @@ export function renderDatepickerField(
   popup.append(header, grid);
 
   const wrapper = el("div", "mdy-datepicker mdy-plain-datepicker");
-  wrapper.append(trigger, popup);
+  wrapper.append(control, toggle, popup);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
 
@@ -55,7 +62,7 @@ export function renderDatepickerField(
   let renderedYear: number | null = null;
   let renderedMonth: number | null = null;
 
-  const lookup: MdyElementLookup = (part) => (part === "trigger" ? trigger : undefined);
+  const lookup: MdyElementLookup = (part) => (part === "trigger" ? control : undefined);
   function dispatch(intent: Parameters<typeof controller.dispatch>[0]): void {
     const commands = controller.dispatch(intent);
     runCommands(commands, lookup, {
@@ -65,8 +72,17 @@ export function renderDatepickerField(
     });
   }
 
-  trigger.addEventListener("click", () => dispatch(controller.state().open ? { type: "close", restoreFocus: false } : { type: "open" }));
-  trigger.addEventListener("blur", () => dispatch({ type: "blur" }));
+  const toggleOverlay = () => dispatch(controller.state().open ? { type: "close", restoreFocus: false } : { type: "open" });
+  toggle.addEventListener("click", toggleOverlay);
+  control.addEventListener("click", toggleOverlay);
+  control.addEventListener("blur", () => dispatch({ type: "blur" }));
+  // A typed date commits through the same select-date intent the calendar uses, so parsing is the
+  // only thing this renderer adds; an unparseable entry falls back to the current value.
+  control.addEventListener("change", () => {
+    const parsed = parseLocalizedDate(control.value, navigator?.language ?? "en-US");
+    if (parsed) dispatch({ type: "select-date", iso: formatIsoDate(parsed) });
+    else if (!control.value) dispatch({ type: "clear" });
+  });
   prevButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: -1 }));
   nextButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: 1 }));
   grid.addEventListener("keydown", (event) => {
@@ -80,15 +96,16 @@ export function renderDatepickerField(
     const state = controller.state();
     const view = controller.view();
     applyPart(shell.label, view.parts.label);
-    applyPart(trigger, view.parts.trigger);
+    applyPart(control, view.parts.trigger);
+    toggle.disabled = state.disabled;
     applyPart(grid, view.parts.grid);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
 
-    // `||`, not `??`: an unset date field holds "" rather than null, and `??` let the empty
-    // string through — the trigger rendered as a button with no text at all.
-    setText(trigger, state.selectedDate || f.placeholder || "Select a date");
+    // The input mirrors the committed value; while it has focus the user's own text wins.
+    const display = state.selectedDate || "";
+    if (document.activeElement !== control && control.value !== display) control.value = display;
     popup.hidden = !state.open;
     setText(monthLabel, `${MONTH_NAMES[state.viewMonth - 1]} ${state.viewYear}`);
 

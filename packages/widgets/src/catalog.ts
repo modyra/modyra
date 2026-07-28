@@ -25,7 +25,10 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
   requiredMarker: ["label"], inlineError: ["label"],
   prefix: ["inputWrapper"], suffix: ["inputWrapper"],
   control: ["dropzone", "inputWrapper", "track"], startControl: ["inputWrapper"], endControl: ["inputWrapper"], separator: ["inputWrapper"],
-  decrement: ["inputWrapper"], increment: ["inputWrapper"], trigger: ["inputWrapper"], arrow: ["trigger", "inputWrapper"], value: ["trigger", "inputWrapper"],
+  decrement: ["inputWrapper"], increment: ["inputWrapper"], trigger: ["inputWrapper"],
+  // The arrow may be drawn inside a button trigger (Angular, Lit) or beside an input one (Plain);
+  // what the contract requires is that it lives in the wrapper, and containment is transitive.
+  arrow: ["inputWrapper", "trigger"], value: ["trigger", "inputWrapper"],
   track: ["inputWrapper"], thumb: ["track"], chips: ["trigger"], chip: ["chips"], searchButton: ["trigger"],
   group: [], option: ["listbox", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"],
   search: ["popup"], listbox: ["popup"], loading: ["popup"], empty: ["popup"],
