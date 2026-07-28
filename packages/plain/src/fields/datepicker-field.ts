@@ -70,13 +70,18 @@ export function renderDatepickerField(
     });
   }
 
+  // Focus is not a safe "the user is editing" signal here: committing a date restores focus to the
+  // input, so a focus-guarded sync would skip the very update that matters. Typing is the signal.
+  let typing = false;
   const toggleOverlay = () => dispatch(controller.state().open ? { type: "close", restoreFocus: false } : { type: "open" });
   toggle.addEventListener("click", toggleOverlay);
   control.addEventListener("click", toggleOverlay);
-  control.addEventListener("blur", () => dispatch({ type: "blur" }));
+  control.addEventListener("input", () => { typing = true; });
+  control.addEventListener("blur", () => { typing = false; dispatch({ type: "blur" }); });
   // A typed date commits through the same select-date intent the calendar uses, so parsing is the
   // only thing this renderer adds; an unparseable entry falls back to the current value.
   control.addEventListener("change", () => {
+    typing = false;
     const parsed = parseLocalizedDate(control.value, dateLocale.locale);
     if (parsed) dispatch({ type: "select-date", iso: formatIsoDate(parsed) });
     else if (!control.value) dispatch({ type: "clear" });
@@ -103,7 +108,7 @@ export function renderDatepickerField(
 
     // The input mirrors the committed value; while it has focus the user's own text wins.
     const display = state.selectedDate || "";
-    if (document.activeElement !== control && control.value !== display) control.value = display;
+    if (!typing && control.value !== display) control.value = display;
     popup.hidden = !state.open;
     setText(monthLabel, `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`);
 

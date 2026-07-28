@@ -117,9 +117,13 @@ export function renderSelectField(
     });
   }
 
+  // While the combobox is being searched the user's text owns the trigger; once a value is
+  // committed the trigger shows the selected label again — selecting restores focus to it, so a
+  // focus-guarded sync would leave the old query on screen.
+  let searching = false;
   trigger.addEventListener("click", () => dispatch({ type: "open", source: "pointer" }));
-  trigger.addEventListener("input", () => dispatch({ type: "search", query: trigger.value }));
-  trigger.addEventListener("blur", () => dispatch({ type: "blur" }));
+  trigger.addEventListener("input", () => { searching = true; dispatch({ type: "search", query: trigger.value }); });
+  trigger.addEventListener("blur", () => { searching = false; dispatch({ type: "blur" }); });
   trigger.addEventListener("keydown", (event) => {
     switch (event.key) {
       case "ArrowDown":
@@ -171,9 +175,11 @@ export function renderSelectField(
 
     listbox.hidden = !state.open;
     if (state.open) queueMicrotask(positionListbox);
-    if (!state.open) {
+    if (!state.open) searching = false;
+    if (!searching) {
       const selected = options.find((o) => keyFor(o) === state.selectedKey);
-      if (document.activeElement !== trigger) trigger.value = selected?.label ?? "";
+      const label = selected?.label ?? "";
+      if (trigger.value !== label) trigger.value = label;
     }
     for (const [key, li] of optionEls) {
       const part = view.parts[key];
