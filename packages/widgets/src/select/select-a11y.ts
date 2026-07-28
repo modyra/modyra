@@ -39,7 +39,7 @@ export function projectSelectA11y(
       "aria-expanded": String(open),
       "aria-controls": idFactory.part(widgetId, "listbox"),
       "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
-      "aria-disabled": disabled || readonly,
+      "aria-disabled": String(disabled || readonly),
       "data-loading": loading || undefined,
     },
   };
@@ -50,7 +50,7 @@ export function projectSelectA11y(
     classes: buildListboxClasses(open),
     attributes: {
       "aria-labelledby": idFactory.part(widgetId, "trigger"),
-      "aria-hidden": !open,
+      "aria-hidden": String(!open),
     },
   };
 
