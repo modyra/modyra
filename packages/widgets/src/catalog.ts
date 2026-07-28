@@ -1,4 +1,5 @@
 import type { MdyPartContract } from "./contract.js";
+import { MDY_FIELD_SHELL_CLASSES } from "./structure.js";
 import type { MdyWidgetStructure } from "./structure.js";
 
 export const MDY_WIDGET_KINDS = ["text", "email", "password", "textarea", "number", "slider", "checkbox", "toggle", "radio", "segmented", "select", "multiselect", "datepicker", "daterange", "timepicker", "file", "colors"] as const;
@@ -25,7 +26,7 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
   prefix: ["inputWrapper"], suffix: ["inputWrapper"],
   control: ["dropzone", "inputWrapper", "track"], startControl: ["inputWrapper"], endControl: ["inputWrapper"], separator: ["inputWrapper"],
   decrement: ["inputWrapper"], increment: ["inputWrapper"], trigger: ["inputWrapper"], arrow: ["trigger", "inputWrapper"], value: ["trigger", "inputWrapper"],
-  thumb: ["track"], chips: ["trigger"], chip: ["chips"], searchButton: ["trigger"],
+  track: ["inputWrapper"], thumb: ["track"], chips: ["trigger"], chip: ["chips"], searchButton: ["trigger"],
   group: [], option: ["listbox", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"],
   search: ["popup"], listbox: ["popup"], loading: ["popup"], empty: ["popup"],
   dialogHeader: ["popup"], header: ["popup"], calendar: ["popup"], clock: ["popup"], actions: ["popup"],
@@ -38,13 +39,21 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
 /** Parts an adapter must always render — the control, and whatever physically holds it. */
 const REQUIRED_PARTS: ReadonlySet<string> = new Set(["control", "startControl", "endControl", "trigger", "group", "inputWrapper", "dropzone", "track"]);
 
-function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: readonly string[], partNames: readonly TPart[], overlay: boolean): MdyWidgetDefinition<TPart> {
-  const partMap = Object.fromEntries(partNames.map((name) => [name, part(name === "root" ? rootClasses : [], {})])) as Record<TPart, MdyPartContract>;
+/** Per-widget deviations from the shared tables: where a part hangs, and the class it carries. */
+interface MdyWidgetShape {
+  readonly parents?: Readonly<Record<string, string>>;
+  readonly classes?: Readonly<Record<string, readonly string[]>>;
+}
+
+function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: readonly string[], partNames: readonly TPart[], overlay: boolean, shape: MdyWidgetShape = {}): MdyWidgetDefinition<TPart> {
+  const partMap = Object.fromEntries(partNames.map((name) => [name, part(name === "root" ? rootClasses : shape.classes?.[name] ?? [], {})])) as Record<TPart, MdyPartContract>;
   const declared = new Set<string>(partNames);
   const siblingCount = new Map<string, number>();
   const nodes = partNames.map((name) => {
     if (name === "root") return Object.freeze({ part: name, element: semanticElement(name), order: 0, optional: false });
-    const parent = (PARENT_CANDIDATES[name] ?? []).find((candidate) => declared.has(candidate)) ?? "root";
+    const override = shape.parents?.[name];
+    const parent = (override && declared.has(override) ? override : undefined)
+      ?? (PARENT_CANDIDATES[name] ?? []).find((candidate) => declared.has(candidate)) ?? "root";
     const order = siblingCount.get(parent) ?? 0;
     siblingCount.set(parent, order + 1);
     return Object.freeze({ part: name, element: semanticElement(name), parent: parent as TPart, order, optional: !REQUIRED_PARTS.has(name) });
@@ -64,8 +73,12 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   textarea: define("textarea", ["mdy-renderer", "mdy-renderer--textarea"], ["root", "label", "requiredMarker", "inputWrapper", "control", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
   number: define("number", ["mdy-renderer", "mdy-renderer--number"], ["root", "label", "requiredMarker", "inputWrapper", "control", "decrement", "increment", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
   slider: define("slider", ["mdy-renderer", "mdy-renderer--slider"], ["root", "label", "requiredMarker", "track", "control", "value", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
-  checkbox: define("checkbox", ["mdy-renderer", "mdy-renderer--checkbox"], ["root", "control", "label", "requiredMarker", "supportingText", "errors", "errorItem"] as const, false),
-  toggle: define("toggle", ["mdy-renderer", "mdy-renderer--toggle"], ["root", "control", "track", "thumb", "label", "requiredMarker", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
+  // Boolean controls wrap their input and their text in one clickable element, so the label sits
+  // inside the wrapper next to the control rather than above it.
+  checkbox: define("checkbox", ["mdy-renderer", "mdy-renderer--checkbox"], ["root", "inputWrapper", "control", "label", "requiredMarker", "supportingText", "errors", "errorItem"] as const, false,
+    { parents: { label: "inputWrapper" }, classes: { inputWrapper: ["mdy-checkbox"], label: [MDY_FIELD_SHELL_CLASSES.label], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } }),
+  toggle: define("toggle", ["mdy-renderer", "mdy-renderer--toggle"], ["root", "inputWrapper", "control", "track", "thumb", "label", "requiredMarker", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
+    { parents: { label: "inputWrapper" }, classes: { inputWrapper: ["mdy-toggle"], track: ["mdy-toggle__track"], thumb: ["mdy-toggle__thumb"], label: ["mdy-toggle__label"], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } }),
   radio: define("radio", ["mdy-renderer", "mdy-renderer--radio-group"], ["root", "label", "requiredMarker", "group", "option", "optionControl", "optionLabel", "supportingText", "errors", "errorItem"] as const, false),
   segmented: define("segmented", ["mdy-renderer", "mdy-renderer--segmented"], ["root", "label", "requiredMarker", "group", "option", "optionCheck", "optionText", "supportingText", "errors", "errorItem"] as const, false),
   select: define("select", ["mdy-renderer", "mdy-renderer--select"], ["root", "label", "requiredMarker", "inputWrapper", "trigger", "value", "arrow", "popup", "search", "listbox", "option", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true),
