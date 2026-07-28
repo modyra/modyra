@@ -12,6 +12,7 @@ import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 import { runCommands } from "../command-runtime.js";
+import { dismissOnOutsidePointer } from "../overlay.js";
 
 export function renderDatepickerField(
   container: HTMLElement,
@@ -95,6 +96,12 @@ export function renderDatepickerField(
     }
   });
 
+  const undismiss = dismissOnOutsidePointer(
+    [wrapper],
+    () => controller.state().open,
+    () => dispatch({ type: "close", restoreFocus: false }),
+  );
+
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
     const view = controller.view();
@@ -130,6 +137,7 @@ export function renderDatepickerField(
   });
 
   return () => {
+    undismiss();
     effectRef.destroy();
     controller.destroy();
     shell.root.remove();

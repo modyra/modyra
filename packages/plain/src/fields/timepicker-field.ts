@@ -14,6 +14,7 @@ import { parseAnyTime, type MdyTimeFormat } from "@modyra/core/time-utils";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
+import { dismissOnOutsidePointer } from "../overlay.js";
 
 export function renderTimepickerField(
   container: HTMLElement,
@@ -100,6 +101,12 @@ export function renderTimepickerField(
   confirmButton.addEventListener("click", () => dispatch({ type: "confirm" }));
   cancelButton.addEventListener("click", () => dispatch({ type: "cancel" }));
 
+  const undismiss = dismissOnOutsidePointer(
+    [wrapper],
+    () => controller.state().open,
+    () => dispatch({ type: "close", restoreFocus: false }),
+  );
+
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
     const view = controller.view();
@@ -126,6 +133,7 @@ export function renderTimepickerField(
   });
 
   return () => {
+    undismiss();
     effectRef.destroy();
     controller.destroy();
     shell.root.remove();

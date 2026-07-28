@@ -10,7 +10,14 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
   readonly rootClasses: readonly string[];
   readonly parts: Readonly<Record<TPart, MdyPartContract>>;
   readonly structure: MdyWidgetStructure<TPart | "root">;
-  readonly capabilities: { readonly keyboard: boolean; readonly focus: boolean; readonly overlay: boolean; };
+  readonly capabilities: {
+    readonly keyboard: boolean;
+    readonly focus: boolean;
+    readonly overlay: boolean;
+    /** A pointer outside the overlay dismisses it. True wherever there is an overlay: a popup a
+     * click elsewhere cannot dismiss is the exception, and would have to be declared as one. */
+    readonly dismissOnOutsidePointer: boolean;
+  };
 }
 
 function part(classes: readonly string[] = [], attributes: MdyPartContract["attributes"] = {}): MdyPartContract { return Object.freeze({ classes: Object.freeze([...classes]), attributes: Object.freeze({ ...attributes }) }); }
@@ -61,7 +68,7 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
     siblingCount.set(parent, order + 1);
     return Object.freeze({ part: name, element: semanticElement(name), parent: parent as TPart, order, optional: !REQUIRED_PARTS.has(name) });
   });
-  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), capabilities: Object.freeze({ keyboard: true, focus: true, overlay }) });
+  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), capabilities: Object.freeze({ keyboard: true, focus: true, overlay, dismissOnOutsidePointer: overlay }) });
 }
 function semanticElement(partName: string) {
   const input = new Set(["control","startControl","endControl","search","hour","minute","hexInput","nativePicker"]);

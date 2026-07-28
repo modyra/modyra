@@ -539,3 +539,40 @@ test("filtering hides the options that do not match, in the select and the multi
   dispose();
   host.remove();
 });
+
+test("a pointer outside an open overlay dismisses it, in every widget that owns one", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const { reactivity, dispose } = mountMdyForm(host, [
+    { name: "country", kind: "select", label: "Country", options: [{ value: "it", label: "Italy" }] },
+    { name: "birthdate", kind: "datepicker", label: "Birthdate" },
+    { name: "stay", kind: "daterange", label: "Stay" },
+    { name: "meeting", kind: "timepicker", label: "Meeting" },
+    { name: "brand", kind: "colors", label: "Brand" },
+  ], { submitLabel: null });
+
+  const outside = document.createElement("button");
+  document.body.append(outside);
+  const away = () => outside.dispatchEvent(new window.Event("pointerdown", { bubbles: true }));
+
+  const openers = [
+    // Resolved through aria-controls: several suites portal a select popup into this same body.
+    [".mdy-select__trigger", () => document.getElementById(host.querySelector(".mdy-select__trigger").getAttribute("aria-controls")).closest(".mdy-select__dropdown")],
+    [".mdy-datepicker__toggle", () => host.querySelector(".mdy-plain-datepicker .mdy-datepicker__popup")],
+    [".mdy-plain-daterange .mdy-datepicker__toggle", () => host.querySelector(".mdy-plain-daterange .mdy-datepicker__popup")],
+    [".mdy-timepicker__toggle", () => host.querySelector(".mdy-timepicker__popup")],
+    [".mdy-colors__toggle-area", () => host.querySelector(".mdy-colors__dropdown")],
+  ];
+  for (const [opener, popupOf] of openers) {
+    host.querySelector(opener).dispatchEvent(new Event("click"));
+    await reactivity.flush();
+    assert.equal(popupOf().hidden, false, `${opener} did not open`);
+    away();
+    await reactivity.flush();
+    assert.equal(popupOf().hidden, true, `${opener} stayed open after a click outside`);
+  }
+
+  outside.remove();
+  dispose();
+  host.remove();
+});

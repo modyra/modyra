@@ -10,7 +10,7 @@ import type { MdyDynamicColorsField } from "@modyra/core";
 import { colorValueEquals, colorValueTransition, MDY_WIDGET_CONTRACTS, type MdyColorValueIntent } from "@modyra/widgets";
 import { applyPart, el, setErrors } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
-import { positionOverlay, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, trackOverlay } from "../overlay.js";
 
 const DEFAULT_PRESETS = ["#7067ff", "#0e0f16", "#f8fafc", "#94a3b8", "#22c55e", "#ef4444", "#f59e0b", "#3b82f6"];
 
@@ -134,8 +134,10 @@ export function renderColorsField(
   });
 
   const untrack = trackOverlay(popup, shell.wrapper, () => open(), { minSpace: 120, minWidth: 280 });
+  const undismiss = dismissOnOutsidePointer([wrapper, popup], () => open(), () => open.set(false));
 
   return () => {
+    undismiss();
     untrack();
     effectRef.destroy();
     shell.root.remove();
