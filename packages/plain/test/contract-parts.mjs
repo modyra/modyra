@@ -47,8 +47,17 @@ export function partsOf(root, kind) {
         popup, search: popup?.querySelector(".mdy-select__search"), listbox: popup?.querySelector(".mdy-select__list"), option: popup?.querySelector(".mdy-select__option"),
       };
     }
-    case "multiselect":
-      return { ...shell, trigger: q(".mdy-plain-multiselect"), chips: q(".mdy-multiselect__chips"), chip: q(".mdy-chip"), search: q(".mdy-multiselect-overlay__input") };
+    case "multiselect": {
+      // Same shape as select: the popup is portalled to <body>, reachable from the trigger's
+      // `aria-controls` rather than from inside the renderer's own subtree.
+      const popup = document.getElementById(q(".mdy-multiselect")?.getAttribute("aria-controls") ?? "");
+      return {
+        ...shell, trigger: q(".mdy-multiselect"), chips: q(".mdy-multiselect__chips"), chip: q(".mdy-chip"),
+        placeholder: q(".mdy-multiselect__placeholder"),
+        popup, search: popup?.querySelector(".mdy-multiselect-overlay__input"),
+        listbox: popup?.querySelector(".mdy-multiselect__options"), option: popup?.querySelector(".mdy-multiselect__option"),
+      };
+    }
     case "datepicker":
       return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), weekdays: q(".mdy-datepicker__weekdays"), weekday: q(".mdy-datepicker__weekday"), row: q(".mdy-datepicker__row"), gridcell: q(".mdy-datepicker__cell") };
     case "timepicker":
@@ -78,7 +87,9 @@ export function partsOf(root, kind) {
  */
 export const ABSENT = {
   select: ["loading", "empty"],
-  multiselect: ["popup", "searchButton", "listbox", "option", "loading", "empty"],
+  // No chip until something is selected, and the search button is select's affordance, not this
+  // one's: the filter field is always present at the top of the popup.
+  multiselect: ["chip", "searchButton", "loading", "empty"],
   datepicker: ["dialogHeader", "calendar", "actions"],
   timepicker: ["header", "period", "clock", "actions"],
   daterange: ["calendar"],

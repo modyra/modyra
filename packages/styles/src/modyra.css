@@ -660,6 +660,36 @@
 
 
 
+    /* ─── Overlay primitive ──────────────────────────────────────────────────────
+     * Any popup a renderer portals out of its own subtree carries `mdy-overlay` and writes the
+     * `--mdy-overlay-*` properties; the placement decision itself is `decideOverlayPlacement` in
+     * @modyra/widgets. Positioning, clipping and `[hidden]` are structure, not visual identity, so
+     * they belong here rather than in a theme — a theme that had to re-declare them would be
+     * deciding whether a renderer's popup works at all.
+     */
+    .mdy-overlay {
+        position: fixed;
+        box-sizing: border-box;
+        margin: 0;
+        top: var(--mdy-overlay-top, auto);
+        bottom: var(--mdy-overlay-bottom, auto);
+        left: var(--mdy-overlay-left, auto);
+        right: var(--mdy-overlay-right, auto);
+        width: var(--mdy-overlay-width, auto);
+        max-height: var(--mdy-overlay-max-height, 50vh);
+        overflow: auto;
+        /* A scroll gesture that reaches the end of the popup must not scroll the page behind it. */
+        overscroll-behavior: contain;
+        z-index: var(--mdy-overlay-z-index, 2147483000);
+        isolation: isolate;
+    }
+
+    /* Overlays are shown by removing `hidden`; without this a theme's `display` would beat the
+       UA's `[hidden] { display: none }` and the popup would never close. */
+    .mdy-overlay[hidden] {
+        display: none;
+    }
+
     /* Dark mode: --mdy-sys-* tokens are updated in modyra-m3-base.css.
    The :root bridge above cascades automatically. Only add overrides not covered by base. */
 

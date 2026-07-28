@@ -236,15 +236,17 @@
         cursor: pointer;
     }
 
-    /* Plain ships no icon set, so the toggle draws its own glyph. */
-    .mdy-plain-datepicker .mdy-datepicker__toggle::after,
-    .mdy-plain-timepicker .mdy-timepicker__toggle::after {
+    /* A renderer that ships no icon set leaves the toggle empty; the theme draws the glyph rather
+       than leaving a blank button. Keyed on `:empty`, not on which renderer produced the DOM, so a
+       renderer that does project an icon keeps it. */
+    .mdy-datepicker__toggle:empty::after,
+    .mdy-timepicker__toggle:empty::after {
         content: "\1F4C5";
         font-size: 0.875rem;
         line-height: 1;
     }
 
-    .mdy-plain-timepicker .mdy-timepicker__toggle::after {
+    .mdy-timepicker__toggle:empty::after {
         content: "\1F550";
     }
 
@@ -414,51 +416,97 @@
 }
 
 
-/* Framework-free renderer host and document-level overlays. */
-.mdy-dynamic-form,
-.mdy-plain-form {
+/* Renderer host and document-level overlays. `mdy-dynamic-form` is the canonical host class every
+   renderer emits; the surface below dresses the `mdy-overlay` primitive the foundation positions,
+   so no rule here needs to know which renderer portalled the popup. */
+.mdy-dynamic-form {
     display: grid;
     min-width: 0;
     color: var(--mdy-on-surface);
-    font-family: "Satoshi", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: var(--mdy-modern-font-family);
 }
 
-.mdy-plain-select__portal {
-    box-sizing: border-box;
-    margin: 0;
+.mdy-overlay {
     padding: 0.375rem;
-    overflow: auto;
-    overscroll-behavior: contain;
     border: 1px solid var(--mdy-outline-variant);
     border-radius: 0.625rem;
     background: var(--mdy-surface-container-lowest);
     color: var(--mdy-on-surface);
     box-shadow: 0 18px 48px rgb(0 0 0 / 24%);
-    font-family: "Satoshi", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: var(--mdy-modern-font-family);
     list-style: none;
-    isolation: isolate;
 }
-.mdy-plain-select__portal[hidden] { display: none; }
-/* `display` here would otherwise beat the UA's `[hidden] { display: none }`, and filtering is
-   expressed as `hidden` on the option — the same trap the timepicker popup hit. */
-.mdy-plain-select__portal .mdy-select__option[hidden],
+
+/* Filtering is expressed as `hidden` on the option, so any `display` a row picks up here would
+   beat the UA's `[hidden] { display: none }` — the same trap the timepicker popup hit. */
+.mdy-overlay .mdy-select__option[hidden],
+.mdy-overlay .mdy-multiselect__option[hidden],
 .mdy-multiselect .mdy-chip[hidden] {
     display: none;
 }
 
-.mdy-plain-select__portal .mdy-select__option {
+.mdy-overlay .mdy-select__option,
+.mdy-overlay .mdy-multiselect__option {
     min-height: 2.25rem;
     display: flex;
     align-items: center;
+    gap: 0.375rem;
     padding: 0.4rem 0.625rem;
+    border: 0;
     border-radius: 0.4375rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
     cursor: pointer;
 }
-.mdy-plain-select__portal .mdy-select__option:hover,
-.mdy-plain-select__portal .mdy-select__option--active {
+.mdy-overlay .mdy-select__option:hover,
+.mdy-overlay .mdy-select__option--active,
+.mdy-overlay .mdy-multiselect__option:hover {
     background: color-mix(in srgb, var(--mdy-primary) 12%, transparent);
 }
-.mdy-plain-select__portal .mdy-select__option--selected {
+.mdy-overlay .mdy-select__option--selected,
+.mdy-overlay .mdy-multiselect__chip--selected {
     color: var(--mdy-primary);
     font-weight: 700;
+}
+
+/* The filter field sits above the options as the popup's first row. */
+.mdy-overlay .mdy-select__search,
+.mdy-overlay .mdy-multiselect-overlay__input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 0.375rem;
+    padding: 0.4rem 0.625rem;
+    border: 1px solid var(--mdy-outline-variant);
+    border-radius: 0.4375rem;
+    background: var(--mdy-surface);
+    color: inherit;
+    font: inherit;
+}
+
+.mdy-overlay .mdy-multiselect__options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+/* Closed, the trigger reads like any other control: chips inline, placeholder when empty. */
+.mdy-multiselect__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.mdy-multiselect__chips:empty {
+    display: none;
+}
+
+.mdy-multiselect__placeholder {
+    color: var(--mdy-on-surface-variant);
+}
+
+.mdy-multiselect__placeholder[hidden] {
+    display: none;
 }

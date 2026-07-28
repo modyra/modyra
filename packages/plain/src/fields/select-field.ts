@@ -12,7 +12,7 @@ import { createSelectController, MDY_WIDGET_CONTRACTS, type MdyElementLookup } f
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, trackOverlay } from "../overlay.js";
 
 export function renderSelectField(
   container: HTMLElement,
@@ -65,9 +65,8 @@ export function renderSelectField(
     optionEls.set(key, li);
   }
 
-  // `mdy-select` is what the themes anchor the dropdown against (position: relative); the
-  // `mdy-plain-*` class stays as the renderer's own hook.
-  const wrapper = el("div", "mdy-select mdy-plain-select");
+  // `mdy-select` is what the themes anchor the dropdown against (position: relative).
+  const wrapper = el("div", "mdy-select");
   const arrow = el("span", parts.arrow.classes.join(" "));
   arrow.setAttribute("aria-hidden", "true");
   trigger.append(valueText, arrow);
@@ -76,30 +75,13 @@ export function renderSelectField(
   container.appendChild(shell.root);
 
   // The popup is a document-level overlay so scroll containers and renderer frames cannot clip
-  // it. Widgets remains responsible for ARIA, keyboard navigation and selection state.
-  popup.classList.add("mdy-overlay", "mdy-plain-select__portal");
+  // it. `mdy-overlay` is the shared primitive: the foundation positions it from the
+  // `--mdy-overlay-*` properties `positionOverlay` writes, so placement is one decision, not one
+  // per renderer. Widgets remains responsible for ARIA, keyboard navigation and selection state.
+  popup.classList.add("mdy-overlay");
   document.body.appendChild(popup);
 
-  const positionListbox = (): void => {
-    if (popup.hidden || !trigger.isConnected) return;
-    const rect = trigger.getBoundingClientRect();
-    const viewportGap = 8;
-    const popupGap = 6;
-    const below = window.innerHeight - rect.bottom - viewportGap;
-    const above = rect.top - viewportGap;
-    const openAbove = below < 180 && above > below;
-    popup.dataset.placement = openAbove ? "top" : "bottom";
-    popup.style.position = "fixed";
-    popup.style.zIndex = "2147483000";
-    popup.style.left = `${Math.max(viewportGap, rect.left)}px`;
-    popup.style.width = `${Math.max(rect.width, 160)}px`;
-    popup.style.maxHeight = `${Math.max(96, Math.min(320, (openAbove ? above : below) - popupGap))}px`;
-    popup.style.top = openAbove ? "auto" : `${rect.bottom + popupGap}px`;
-    popup.style.bottom = openAbove ? `${window.innerHeight - rect.top + popupGap}px` : "auto";
-  };
-  const reposition = (): void => positionListbox();
-  window.addEventListener("resize", reposition);
-  window.addEventListener("scroll", reposition, true);
+  const untrack = trackOverlay(popup, trigger, () => controller.state().open, { matchAnchorWidth: true });
 
   // select-controller's view has no "label"/"description"/"error" parts (only
   // trigger/listbox/options), unlike every other controller here — wire the
@@ -194,7 +176,7 @@ export function renderSelectField(
 
     popup.hidden = !state.open;
     if (state.open) {
-      queueMicrotask(positionListbox);
+      positionOverlay(popup, trigger, { matchAnchorWidth: true });
       queueMicrotask(() => search.focus());
     } else if (search.value) {
       search.value = "";
@@ -212,10 +194,9 @@ export function renderSelectField(
 
   return () => {
     undismiss();
+    untrack();
     effectRef.destroy();
     controller.destroy();
-    window.removeEventListener("resize", reposition);
-    window.removeEventListener("scroll", reposition, true);
     popup.remove();
     shell.root.remove();
   };
