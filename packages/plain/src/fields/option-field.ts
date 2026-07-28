@@ -6,7 +6,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { createOptionFieldController } from "@modyra/widgets";
+import { createOptionFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 
@@ -21,17 +21,26 @@ export function renderOptionField(
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
   const controller = createOptionFieldController({ widgetId: f.name, handle, options, variant, keyFor }, reactivity);
 
+  // Both variants are one radio group semantically, but each names its parts its own way in the
+  // contract; picking the definition per variant keeps every class in the catalog.
+  const parts = f.kind === "segmented"
+    ? { group: MDY_WIDGET_CONTRACTS.segmented.parts.group, option: MDY_WIDGET_CONTRACTS.segmented.parts.option, control: MDY_WIDGET_CONTRACTS.segmented.parts.optionCheck, text: MDY_WIDGET_CONTRACTS.segmented.parts.optionText }
+    : { group: MDY_WIDGET_CONTRACTS.radio.parts.group, option: MDY_WIDGET_CONTRACTS.radio.parts.option, control: MDY_WIDGET_CONTRACTS.radio.parts.optionControl, text: MDY_WIDGET_CONTRACTS.radio.parts.optionLabel };
   const shell = buildFieldShell(f.label, f.kind);
   const group = el("div") as HTMLDivElement;
+  group.className = parts.group.classes.join(" ");
   const rows = options.map((option) => {
     const key = keyFor(option);
-    const row = el("label", "mdy-plain-option-row");
+    const row = el("label") as HTMLLabelElement;
+    row.className = parts.option.classes.join(" ");
     const input = el("input") as HTMLInputElement;
     input.type = "radio";
     input.name = f.name;
     input.value = key;
+    input.className = parts.control.classes.join(" ");
     row.appendChild(input);
-    const text = el("span");
+    const text = el("span") as HTMLSpanElement;
+    text.className = parts.text.classes.join(" ");
     setText(text, option.label);
     row.appendChild(text);
     group.appendChild(row);

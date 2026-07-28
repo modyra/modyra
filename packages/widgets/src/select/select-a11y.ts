@@ -21,6 +21,8 @@ export interface MdySelectA11yOptions {
 
 export interface MdySelectA11yProjection {
   readonly trigger: MdyPartContract;
+  /** The filter field. It lives inside the popup, not over the trigger's own text. */
+  readonly search: MdyPartContract;
   readonly listbox: MdyPartContract;
   readonly option: (key: string) => MdyPartContract;
 }
@@ -44,6 +46,18 @@ export function projectSelectA11y(
     },
   };
 
+  const search: MdyPartContract = {
+    id: idFactory.part(widgetId, "search"),
+    classes: ["mdy-select__search"],
+    attributes: {
+      role: "combobox",
+      "aria-expanded": String(open),
+      "aria-controls": idFactory.part(widgetId, "listbox"),
+      "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
+      "aria-autocomplete": "list",
+    },
+  };
+
   const listbox: MdyPartContract = {
     id: idFactory.part(widgetId, "listbox"),
     role: "listbox",
@@ -63,7 +77,7 @@ export function projectSelectA11y(
     },
   });
 
-  return { trigger, listbox, option };
+  return { trigger, search, listbox, option };
 }
 
 function buildTriggerClasses(

@@ -7,8 +7,8 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicNumberField, MdyDynamicTextField } from "@modyra/core";
-import { createFieldController } from "@modyra/widgets";
-import { applyPart, el, setErrors } from "../dom.js";
+import { createFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 
 const NATIVE_INPUT_TYPE: Record<string, string> = {
@@ -43,7 +43,21 @@ export function renderTextField(
     if (numberField.max !== undefined) numberInput.max = String(numberField.max);
     if (numberField.step !== undefined) numberInput.step = String(numberField.step);
   }
-  insertControl(shell, input);
+  // A slider is not a bare input: the contract gives it a container and a displayed value, and
+  // the themes lay both out. Every class here comes from the catalog, none from this file.
+  const slider = f.kind === "slider" ? MDY_WIDGET_CONTRACTS.slider : null;
+  let sliderValue: HTMLSpanElement | null = null;
+  if (slider) {
+    const track = el("div") as HTMLDivElement;
+    applyPart(track, slider.parts.track);
+    sliderValue = el("span") as HTMLSpanElement;
+    applyPart(sliderValue, slider.parts.value);
+    input.className = slider.parts.control.classes.join(" ");
+    track.append(input, sliderValue);
+    insertControl(shell, track);
+  } else {
+    insertControl(shell, input);
+  }
   container.appendChild(shell.root);
 
   input.addEventListener("input", () => {
@@ -58,6 +72,7 @@ export function renderTextField(
     const view = controller.view();
     applyPart(shell.label, view.parts.label);
     applyPart(input, view.parts.input);
+    if (sliderValue) setText(sliderValue, String(state.value ?? ""));
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));

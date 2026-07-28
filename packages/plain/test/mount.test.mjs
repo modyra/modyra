@@ -110,21 +110,25 @@ test("select: clicking the trigger opens the listbox, clicking an option commits
   const { form, reactivity, dispose } = mountMdyForm(container, fields);
 
   const selectWrapper = container.querySelector(".mdy-plain-select");
-  const trigger = selectWrapper.querySelector("input");
+  const trigger = selectWrapper.querySelector(".mdy-select__trigger");
   trigger.dispatchEvent(new Event("click"));
   await reactivity.flush();
 
   const listbox = document.getElementById(trigger.getAttribute("aria-controls"));
+  const popup = listbox.closest(".mdy-select__dropdown");
   assert.ok(listbox);
-  assert.equal(selectWrapper.contains(listbox), false);
-  assert.equal(listbox.hidden, false);
+  assert.equal(selectWrapper.contains(popup), false, "the popup is portalled out of the field");
+  assert.equal(popup.hidden, false);
+  // Filtering happens in the popup's own field, not over the trigger's text.
+  assert.ok(popup.querySelector(".mdy-select__search"));
 
   const franceOption = [...listbox.querySelectorAll("li")].find((li) => li.textContent === "France");
   franceOption.dispatchEvent(new Event("click"));
   await reactivity.flush();
 
   assert.equal(form.f.country.value(), "FR");
-  assert.equal(listbox.hidden, true); // selecting closes the listbox
+  assert.equal(popup.hidden, true); // selecting closes the popup
+  assert.equal(trigger.textContent.trim(), "France");
   dispose();
 });
 
@@ -479,7 +483,7 @@ test("a committed value is shown by the control that opened the overlay", async 
   const listbox = document.getElementById(trigger.getAttribute("aria-controls"));
   [...listbox.querySelectorAll("li")].find((li) => li.textContent === "France").dispatchEvent(new Event("click"));
   await reactivity.flush();
-  assert.equal(trigger.value, "France");
+  assert.equal(host.querySelector(".mdy-select__value").textContent, "France");
 
   dispose();
   host.remove();

@@ -93,6 +93,22 @@ export function inspectWidgetDom(
     }
   }
 
+  // A widget that owns an overlay may materialize it in a portal — the contract describes the
+  // anatomy, not where the browser keeps the node — so the popup subtree is exempt from the
+  // containment and ordering checks when it is rendered outside the root.
+  const portalled = new Set<string>();
+  if (definition.capabilities.overlay) {
+    const parentOf = new Map(definition.structure.nodes.map((node) => [node.part as string, node.parent as string | undefined]));
+    for (const node of definition.structure.nodes) {
+      let cursor: string | undefined = node.part;
+      while (cursor) {
+        if (cursor === "popup") { portalled.add(node.part); break; }
+        cursor = parentOf.get(cursor);
+      }
+    }
+  }
+  const isPortalled = (part: string, element: Element): boolean => portalled.has(part) && !root.contains(element);
+
   const parts = options.parts ?? {};
   const absent = new Set(options.absentParts ?? []);
   const resolved = new Map<string, readonly Element[]>();
@@ -121,6 +137,7 @@ export function inspectWidgetDom(
     const parent = parentElements[0];
     if (parent) {
       for (const element of elements) {
+        if (isPortalled(node.part, element)) continue;
         if (element !== parent && !parent.contains(element)) {
           issues.push({ code: "PART_NOT_CONTAINED", part: node.part, message: `${node.part} must render inside ${node.parent ?? "root"}` });
         }
@@ -133,7 +150,7 @@ export function inspectWidgetDom(
   for (const node of definition.structure.nodes) {
     const elements = resolved.get(node.part) ?? [];
     const element = elements[0];
-    if (!element || node.part === "root") continue;
+    if (!element || node.part === "root" || isPortalled(node.part, element)) continue;
     const key = node.parent ?? "root";
     const siblings = byParent.get(key) ?? [];
     siblings.push({ part: node.part, order: node.order, element });
@@ -152,7 +169,16 @@ export function inspectWidgetDom(
     }
   }
 
-  const scope: readonly Element[] = [root, ...Array.from(root.querySelectorAll("*"))];
+  // ARIA is checked across the portal too: a reference that dangles outside the root is still a
+  // broken reference.
+  const portalRoots = new Set<Element>();
+  for (const [part, elements] of resolved) {
+    for (const element of elements) if (isPortalled(part, element)) portalRoots.add(element);
+  }
+  const scope: readonly Element[] = [
+    root, ...Array.from(root.querySelectorAll("*")),
+    ...[...portalRoots].flatMap((portal) => [portal, ...Array.from(portal.querySelectorAll("*"))]),
+  ];
   for (const element of scope) {
     for (const attribute of ARIA_REFERENCES) {
       const value = element.getAttribute(attribute);

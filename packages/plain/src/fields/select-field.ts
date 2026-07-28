@@ -8,7 +8,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { createSelectController, type MdyElementLookup } from "@modyra/widgets";
+import { createSelectController, MDY_WIDGET_CONTRACTS, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -38,20 +38,27 @@ export function renderSelectField(
     reactivity,
   );
 
+  const parts = MDY_WIDGET_CONTRACTS.select.parts;
   const shell = buildFieldShell(f.label, "select");
-  const trigger = el("input") as HTMLInputElement;
-  trigger.type = "text";
-  trigger.autocomplete = "off";
-  if (f.placeholder) trigger.placeholder = f.placeholder;
-  // The themes style the panel as `__dropdown` (positioning, frame, shadow) and its scroller
-  // as `__list`. plain renders one <ul> doing both jobs, so it carries both classes; `__list`
-  // is declared after `__dropdown`, so its `overflow-y: auto` is the one that survives.
-  // `mdy-select__listbox` comes from the controller on top of these.
-  const listbox = el("ul", "mdy-select__dropdown mdy-select__list") as HTMLUListElement;
+  // The trigger displays the committed value; filtering happens in the field at the top of the
+  // popup, which is the canonical select anatomy — typing over the display would hide it.
+  const trigger = el("button") as HTMLButtonElement;
+  trigger.type = "button";
+  const valueText = el("span", parts.value.classes.join(" ")) as HTMLSpanElement;
+  const placeholder = f.placeholder ?? "";
+  // The panel is the `__dropdown` (positioning, frame, shadow); the scroller inside it is the
+  // `__list`, and the filter field is its first row — same three parts the contract names.
+  const popup = el("div", parts.popup.classes.join(" ")) as HTMLDivElement;
+  const search = el("input", parts.search.classes.join(" ")) as HTMLInputElement;
+  search.type = "text";
+  search.autocomplete = "off";
+  search.placeholder = "Search…";
+  const listbox = el("ul", parts.listbox.classes.join(" ")) as HTMLUListElement;
+  popup.append(search, listbox);
   const optionEls = new Map<string, HTMLLIElement>();
   for (const option of options) {
     const key = keyFor(option);
-    const li = el("li") as HTMLLIElement;
+    const li = el("li", parts.option.classes.join(" ")) as HTMLLIElement;
     setText(li, option.label);
     listbox.appendChild(li);
     optionEls.set(key, li);
@@ -60,36 +67,34 @@ export function renderSelectField(
   // `mdy-select` is what the themes anchor the dropdown against (position: relative); the
   // `mdy-plain-*` class stays as the renderer's own hook.
   const wrapper = el("div", "mdy-select mdy-plain-select");
-  // Without an arrow the combobox is indistinguishable from a text input. The themes style
-  // `.mdy-select__arrow`, and it has to be a sibling of the trigger rather than a child
-  // because the trigger is an <input>, which cannot contain elements.
-  const arrow = el("span", "mdy-select__arrow");
+  const arrow = el("span", parts.arrow.classes.join(" "));
   arrow.setAttribute("aria-hidden", "true");
-  wrapper.append(trigger, arrow);
+  trigger.append(valueText, arrow);
+  wrapper.append(trigger);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
 
-  // The listbox is a document-level overlay so scroll containers and renderer frames cannot
-  // clip it. Widgets remains responsible for ARIA, keyboard navigation and selection state.
-  listbox.classList.add("mdy-overlay", "mdy-plain-select__portal");
-  document.body.appendChild(listbox);
+  // The popup is a document-level overlay so scroll containers and renderer frames cannot clip
+  // it. Widgets remains responsible for ARIA, keyboard navigation and selection state.
+  popup.classList.add("mdy-overlay", "mdy-plain-select__portal");
+  document.body.appendChild(popup);
 
   const positionListbox = (): void => {
-    if (listbox.hidden || !trigger.isConnected) return;
+    if (popup.hidden || !trigger.isConnected) return;
     const rect = trigger.getBoundingClientRect();
     const viewportGap = 8;
     const popupGap = 6;
     const below = window.innerHeight - rect.bottom - viewportGap;
     const above = rect.top - viewportGap;
     const openAbove = below < 180 && above > below;
-    listbox.dataset.placement = openAbove ? "top" : "bottom";
-    listbox.style.position = "fixed";
-    listbox.style.zIndex = "2147483000";
-    listbox.style.left = `${Math.max(viewportGap, rect.left)}px`;
-    listbox.style.width = `${Math.max(rect.width, 160)}px`;
-    listbox.style.maxHeight = `${Math.max(96, Math.min(320, (openAbove ? above : below) - popupGap))}px`;
-    listbox.style.top = openAbove ? "auto" : `${rect.bottom + popupGap}px`;
-    listbox.style.bottom = openAbove ? `${window.innerHeight - rect.top + popupGap}px` : "auto";
+    popup.dataset.placement = openAbove ? "top" : "bottom";
+    popup.style.position = "fixed";
+    popup.style.zIndex = "2147483000";
+    popup.style.left = `${Math.max(viewportGap, rect.left)}px`;
+    popup.style.width = `${Math.max(rect.width, 160)}px`;
+    popup.style.maxHeight = `${Math.max(96, Math.min(320, (openAbove ? above : below) - popupGap))}px`;
+    popup.style.top = openAbove ? "auto" : `${rect.bottom + popupGap}px`;
+    popup.style.bottom = openAbove ? `${window.innerHeight - rect.top + popupGap}px` : "auto";
   };
   const reposition = (): void => positionListbox();
   window.addEventListener("resize", reposition);
@@ -117,14 +122,18 @@ export function renderSelectField(
     });
   }
 
-  // While the combobox is being searched the user's text owns the trigger; once a value is
-  // committed the trigger shows the selected label again — selecting restores focus to it, so a
-  // focus-guarded sync would leave the old query on screen.
-  let searching = false;
-  trigger.addEventListener("click", () => dispatch({ type: "open", source: "pointer" }));
-  trigger.addEventListener("input", () => { searching = true; dispatch({ type: "search", query: trigger.value }); });
-  trigger.addEventListener("blur", () => { searching = false; dispatch({ type: "blur" }); });
-  trigger.addEventListener("keydown", (event) => {
+  trigger.addEventListener("click", () => dispatch(controller.state().open ? { type: "close", restoreFocus: true } : { type: "open", source: "pointer" }));
+  // Blur means "focus left the widget", not "focus left this element": opening moves focus into
+  // the search field, and treating that as a blur closed the popup as soon as it opened.
+  const onFocusOut = (event: FocusEvent): void => {
+    const next = event.relatedTarget;
+    if (next instanceof Node && (wrapper.contains(next) || popup.contains(next))) return;
+    dispatch({ type: "blur" });
+  };
+  trigger.addEventListener("focusout", onFocusOut);
+  popup.addEventListener("focusout", onFocusOut);
+  search.addEventListener("input", () => dispatch({ type: "search", query: search.value }));
+  const onKeydown = (event: KeyboardEvent): void => {
     switch (event.key) {
       case "ArrowDown":
         event.preventDefault();
@@ -154,7 +163,9 @@ export function renderSelectField(
         dispatch({ type: "close", restoreFocus: true });
         break;
     }
-  });
+  };
+  trigger.addEventListener("keydown", onKeydown);
+  search.addEventListener("keydown", onKeydown);
   for (const [key, li] of optionEls) {
     li.addEventListener("mousedown", (event) => event.preventDefault()); // keep focus on trigger
     li.addEventListener("click", () => dispatch({ type: "select", optionKey: key }));
@@ -168,19 +179,23 @@ export function renderSelectField(
     const state = controller.state();
     const view = controller.view();
     applyPart(trigger, view.parts.trigger);
+    applyPart(search, view.parts.search);
     applyPart(listbox, view.parts.listbox);
     // select-controller's contract has no description/error parts (unlike every
     // other controller here) — errors still render, just via a plain static class.
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
 
-    listbox.hidden = !state.open;
-    if (state.open) queueMicrotask(positionListbox);
-    if (!state.open) searching = false;
-    if (!searching) {
-      const selected = options.find((o) => keyFor(o) === state.selectedKey);
-      const label = selected?.label ?? "";
-      if (trigger.value !== label) trigger.value = label;
+    popup.hidden = !state.open;
+    if (state.open) {
+      queueMicrotask(positionListbox);
+      queueMicrotask(() => search.focus());
+    } else if (search.value) {
+      search.value = "";
     }
+    // The trigger always shows the committed value: nothing the user types can hide it.
+    const selected = options.find((o) => keyFor(o) === state.selectedKey);
+    setText(valueText, selected?.label ?? placeholder);
+    valueText.classList.toggle("mdy-select__placeholder", !selected);
     for (const [key, li] of optionEls) {
       const part = view.parts[key];
       if (part) applyPart(li, part);
@@ -193,7 +208,7 @@ export function renderSelectField(
     controller.destroy();
     window.removeEventListener("resize", reposition);
     window.removeEventListener("scroll", reposition, true);
-    listbox.remove();
+    popup.remove();
     shell.root.remove();
   };
 }

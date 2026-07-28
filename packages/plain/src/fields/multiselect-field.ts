@@ -6,7 +6,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { createMultiselectFieldController } from "@modyra/widgets";
+import { createMultiselectFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 
@@ -21,17 +21,18 @@ export function renderMultiselectField(
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
   const controller = createMultiselectFieldController({ widgetId: f.name, handle, options, keyFor, mode }, reactivity);
 
+  const parts = MDY_WIDGET_CONTRACTS.multiselect.parts;
   const shell = buildFieldShell(f.label, "multiselect");
-  const search = el("input") as HTMLInputElement;
+  const search = el("input", parts.search.classes.join(" ")) as HTMLInputElement;
   search.type = "search";
   search.placeholder = "Filter…";
-  const group = el("div") as HTMLDivElement;
+  const group = el("div", parts.chips.classes.join(" ")) as HTMLDivElement;
 
   const chips = new Map<string, { chip: HTMLButtonElement; count?: HTMLSpanElement; dec?: HTMLButtonElement; inc?: HTMLButtonElement }>();
   function buildChip(option: MdySelectOption<unknown>): void {
     const key = keyFor(option);
     if (chips.has(key)) return;
-    const chip = el("button") as HTMLButtonElement;
+    const chip = el("button", parts.chip.classes.join(" ")) as HTMLButtonElement;
     chip.type = "button";
     const label = el("span");
     setText(label, option.label);
@@ -65,7 +66,9 @@ export function renderMultiselectField(
   }
   for (const option of options) buildChip(option);
 
-  const wrapper = el("div", "mdy-plain-multiselect");
+  // `mdy-multiselect` is the contract's trigger class — the element the themes lay the chips out
+  // in; the `mdy-plain-*` hook stays only as this renderer's own diagnostic.
+  const wrapper = el("div", `${parts.trigger.classes.join(" ")} mdy-plain-multiselect`);
   wrapper.append(search, group);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);

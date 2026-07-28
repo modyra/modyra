@@ -37,11 +37,18 @@ export function partsOf(root, kind) {
   switch (kind) {
     case "radio":
     case "segmented":
-      return { ...shell, group: q(".mdy-radio-group, .mdy-segmented"), option: q(".mdy-plain-option-row"), optionControl: q('input[type="radio"]') };
-    case "select":
-      return { ...shell, trigger: q(".mdy-select__trigger"), arrow: q(".mdy-select__arrow") };
+      return kind === "segmented"
+        ? { ...shell, group: q(".mdy-segmented"), option: q(".mdy-segmented__button"), optionCheck: q(".mdy-segmented__check"), optionText: q(".mdy-segmented__label") }
+        : { ...shell, group: q(".mdy-radio-group"), option: q(".mdy-radio"), optionControl: q(".mdy-radio__control"), optionLabel: q(".mdy-radio__label") };
+    case "select": {
+      const popup = document.querySelector(`#${root.querySelector(".mdy-select__trigger")?.getAttribute("aria-controls")}`)?.closest(".mdy-select__dropdown");
+      return {
+        ...shell, trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), arrow: q(".mdy-select__arrow"),
+        popup, search: popup?.querySelector(".mdy-select__search"), listbox: popup?.querySelector(".mdy-select__list"), option: popup?.querySelector(".mdy-select__option"),
+      };
+    }
     case "multiselect":
-      return { ...shell, trigger: q(".mdy-plain-multiselect"), chips: q(".mdy-multiselect"), chip: q(".mdy-multiselect__chip") };
+      return { ...shell, trigger: q(".mdy-plain-multiselect"), chips: q(".mdy-multiselect__chips"), chip: q(".mdy-chip"), search: q(".mdy-multiselect-overlay__input") };
     case "datepicker":
       return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), weekdays: q(".mdy-datepicker__weekdays"), weekday: q(".mdy-datepicker__weekday"), row: q(".mdy-datepicker__row"), gridcell: q(".mdy-datepicker__cell") };
     case "timepicker":
@@ -55,13 +62,11 @@ export function partsOf(root, kind) {
     case "file":
       return { ...shell, inputWrapper: null, dropzone: q(".mdy-file-container"), control: q(".mdy-file-input"), content: q(".mdy-file-content"), fileList: q(".mdy-file-list"), fileItem: q(".mdy-file-item"), clear: q(".mdy-file-clear") };
     case "slider":
-      // Angular holds the range input in `.mdy-slider-container`; Plain's shell wrapper plays the
-      // same part. The displayed value (`value`) is an optional part Plain does not render yet.
-      return { ...shell, track: q(".mdy-input-wrapper"), control: q('input[type="range"]') };
+      return { ...shell, track: q(".mdy-slider-container"), control: q(".mdy-slider"), value: q(".mdy-slider-value") };
     case "checkbox":
-      return { ...shell, inputWrapper: q(".mdy-checkbox"), control: q("input") };
+      return { ...shell, inputWrapper: q(".mdy-checkbox"), control: q(".mdy-checkbox__control") };
     case "toggle":
-      return { ...shell, inputWrapper: q(".mdy-toggle"), track: q(".mdy-toggle__track"), thumb: q(".mdy-toggle__thumb"), control: q("input"), label: q(".mdy-toggle__label") };
+      return { ...shell, inputWrapper: q(".mdy-toggle"), track: q(".mdy-toggle__track"), thumb: q(".mdy-toggle__thumb"), control: q(".mdy-toggle__control"), label: q(".mdy-toggle__label") };
     default:
       return { ...shell, control: q("input, textarea, select") };
   }
@@ -72,8 +77,8 @@ export function partsOf(root, kind) {
  * overlay's contents are absent by construction; listing them here is deliberate, not a waiver.
  */
 export const ABSENT = {
-  select: ["popup", "search", "listbox", "option", "loading", "empty"],
-  multiselect: ["popup", "search", "searchButton", "listbox", "option", "loading", "empty"],
+  select: ["loading", "empty"],
+  multiselect: ["popup", "searchButton", "listbox", "option", "loading", "empty"],
   datepicker: ["dialogHeader", "calendar", "actions"],
   timepicker: ["header", "period", "clock", "actions"],
   daterange: ["calendar"],
