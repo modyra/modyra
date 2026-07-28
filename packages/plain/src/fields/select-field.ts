@@ -99,11 +99,8 @@ export function renderSelectField(
   // trigger/listbox/options), unlike every other controller here — wire the
   // static bits by hand; the trigger id is stable regardless of state.
   shell.label.htmlFor = controller.view().parts.trigger.id ?? "";
-  // Added, not assigned: the shell's own `mdy-supporting-text` / `mdy-control__errors` are the
-  // classes the themes style, and overwriting them left select as the one kind whose
-  // description and error list were unstyled.
-  shell.description.classList.add("mdy-description");
-  shell.errorList.classList.add("mdy-error");
+  // The select controller's view has no description/error parts, so the shell's own canonical
+  // classes are all these two carry; only the live region needs adding.
   shell.errorList.setAttribute("role", "alert");
 
   const lookup: MdyElementLookup = (part, key) => {

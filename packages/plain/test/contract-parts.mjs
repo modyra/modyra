@@ -43,9 +43,9 @@ export function partsOf(root, kind) {
     case "multiselect":
       return { ...shell, trigger: q(".mdy-plain-multiselect"), chips: q(".mdy-multiselect"), chip: q(".mdy-multiselect__chip") };
     case "datepicker":
-      return { ...shell, trigger: q(".mdy-datepicker__trigger"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), gridcell: q(".mdy-datepicker__cell") };
+      return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), gridcell: q(".mdy-datepicker__cell") };
     case "timepicker":
-      return { ...shell, trigger: q(".mdy-timepicker__trigger"), popup: q(".mdy-timepicker__popup"), hour: q(".mdy-timepicker__hour"), minute: q(".mdy-timepicker__minute") };
+      return { ...shell, control: q(".mdy-timepicker__input"), toggle: q(".mdy-timepicker__toggle"), popup: q(".mdy-timepicker__popup"), hour: q(".mdy-timepicker__hour"), minute: q(".mdy-timepicker__minute") };
     case "daterange":
       return { ...shell, startControl: root.querySelectorAll('input[type="date"]')[0], endControl: root.querySelectorAll('input[type="date"]')[1] };
     case "file":
@@ -70,28 +70,16 @@ export function partsOf(root, kind) {
 export const ABSENT = {
   select: ["popup", "search", "listbox", "option", "loading", "empty"],
   multiselect: ["popup", "search", "searchButton", "listbox", "option", "loading", "empty"],
-  datepicker: ["dialogHeader", "calendar", "actions", "toggle"],
-  timepicker: ["header", "period", "clock", "actions", "toggle"],
+  datepicker: ["dialogHeader", "calendar", "actions"],
+  timepicker: ["header", "period", "clock", "actions"],
   daterange: ["separator", "toggle", "popup", "calendar", "grid", "gridcell", "actions"],
   colors: ["toggle", "popup", "preview", "nativePicker", "hexInput", "presets", "swatch"],
   file: ["content", "fileList", "fileItem", "clear"],
 };
 
 /**
- * Structural parity gaps Plain still has against the contract (and therefore against Angular),
- * recorded rather than waived: each entry names a renderer batch that has to remove it, and the
- * conformance test asserts this list matches reality exactly, so it can neither grow silently nor
- * outlive its fix.
- *
- * - checkbox/toggle: Angular renders `<label><input><span class="mdy-label">`, so the control
- *   precedes the label; Plain still stacks the shell label above the wrapper.
- * - select: Angular's trigger is a `<button>` that contains the value and the arrow; Plain uses a
- *   text input with the arrow as its sibling.
- * - datepicker/timepicker: Angular renders an input plus a toggle button; Plain renders only the
- *   trigger button, so the contract's `control` is missing.
+ * Structural parity gaps Plain still has against the contract, recorded rather than waived: the
+ * conformance test asserts this map matches reality exactly, so a gap can neither appear silently
+ * nor outlive its fix. Empty means every kind renders the contract's anatomy.
  */
-export const KNOWN_DIVERGENCES = {
-  select: ["PART_NOT_CONTAINED:arrow"],
-  datepicker: ["PART_MISSING:control"],
-  timepicker: ["PART_MISSING:control"],
-};
+export const KNOWN_DIVERGENCES = {};

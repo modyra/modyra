@@ -182,27 +182,43 @@
         min-width: 0;
     }
 
-    /* Both pickers open from a <button> trigger rather than an input, so it has to be
-       flattened into the wrapper the way the control resets flatten a text input. */
-    .mdy-input-wrapper .mdy-datepicker__trigger,
-    .mdy-input-wrapper .mdy-timepicker__trigger {
+    /* Both pickers are an input plus a toggle button, as in Angular: the input takes the row and
+       the button sits at its end. */
+    .mdy-input-wrapper .mdy-datepicker__input,
+    .mdy-input-wrapper .mdy-timepicker__input {
         flex: 1 1 auto;
         min-width: 0;
-        padding: var(--mdy-input-padding);
+    }
+
+    .mdy-input-wrapper .mdy-datepicker__toggle,
+    .mdy-input-wrapper .mdy-timepicker__toggle {
+        flex: 0 0 auto;
+        width: 1.75rem;
+        height: 1.75rem;
+        padding: 0;
         border: 0;
-        border-radius: inherit;
+        border-radius: var(--mdy-sys-shape-corner-full);
         background: transparent;
-        color: var(--mdy-input-color);
-        font: inherit;
-        font-size: var(--mdy-input-font-size);
-        text-align: start;
+        color: var(--mdy-on-surface-variant);
         cursor: pointer;
     }
 
-    /* An unset picker shows its placeholder text, which should read as a placeholder. */
-    .mdy-input-wrapper .mdy-datepicker__trigger:not(.mdy-datepicker__trigger--filled),
-    .mdy-input-wrapper .mdy-timepicker__trigger:not(.mdy-timepicker__trigger--filled) {
-        color: var(--mdy-on-surface-variant);
+    /* Plain ships no icon set, so the toggle draws its own glyph. */
+    .mdy-plain-datepicker .mdy-datepicker__toggle::after,
+    .mdy-plain-timepicker .mdy-timepicker__toggle::after {
+        content: "\1F4C5";
+        font-size: 0.875rem;
+        line-height: 1;
+    }
+
+    .mdy-plain-timepicker .mdy-timepicker__toggle::after {
+        content: "\1F550";
+    }
+
+    .mdy-input-wrapper .mdy-datepicker__toggle:hover:not(:disabled),
+    .mdy-input-wrapper .mdy-timepicker__toggle:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--mdy-primary) 12%, transparent);
+        color: var(--mdy-on-surface);
     }
 
     /* The calendar grid, its cells, the month nav and the popup frame are already component
