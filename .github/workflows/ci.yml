@@ -35,6 +35,15 @@ jobs:
       - name: Widget tests
         run: pnpm run test:widgets
 
+      # One gate for the UI contract: the golden Angular surface, the completeness evidence,
+      # the widgets suite, the framework-free renderer's catalog and DOM conformance, and the
+      # per-renderer readiness audit.
+      - name: UI contract gates
+        run: pnpm run test:contracts
+
+      - name: Studio and framework-free renderer tests
+        run: pnpm run test:studio
+
       - name: Build Angular library
         run: pnpm run build:angular
 

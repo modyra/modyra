@@ -54,7 +54,9 @@
     "build:plain": "tsc -p packages/widgets/tsconfig.json && tsc -p packages/plain/tsconfig.json",
     "test:plain": "npm run build:plain && node --test packages/plain/test/*.test.mjs",
     "plain-preview:dev": "npm run build:plain && node apps/plain-preview/build.mjs && node apps/plain-preview/server.mjs",
-    "test:widget-contract": "node scripts/audit-angular-widget-contract.mjs --check && node scripts/audit-widget-contract-completeness.mjs && npm run build:core && tsc -p packages/widgets/tsconfig.json && node --test packages/widgets/test/*.spec.mjs"
+    "test:widget-contract": "node scripts/audit-angular-widget-contract.mjs --check && node scripts/audit-widget-contract-completeness.mjs && npm run build:core && tsc -p packages/widgets/tsconfig.json && node --test packages/widgets/test/*.spec.mjs",
+    "test:plain-contract": "npm run build:plain && node scripts/audit-plain-full-catalog.mjs && node scripts/audit-plain-widget-contract.mjs",
+    "test:contracts": "npm run test:widget-contract && npm run test:plain-contract && npm run test:plain && node scripts/audit-patch3-readiness.mjs --require-ready"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^21.2.19",
