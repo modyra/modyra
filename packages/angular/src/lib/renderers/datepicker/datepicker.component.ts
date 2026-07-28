@@ -18,9 +18,9 @@ import {
   today,
 } from "@modyra/core/date-utils";
 import {
-  MDY_WIDGET_CONTRACTS,
   dateDraftTransition,
   dateValueTransition,
+  MDY_WIDGET_CONTRACTS,
   type MdyDateDraftState,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
@@ -31,6 +31,7 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyOverlayControl } from "../../core/overlay-control.directive";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
+import { inputText } from "../renderer-projection";
 import { MdyCalendarComponent } from "./calendar.component";
 
 @Component({
@@ -272,7 +273,7 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   }
 
   protected onInputChange(event: Event): void {
-    const raw = (event.target as HTMLInputElement).value.trim();
+    const raw = inputText(event).trim();
     if (!raw) {
       this.dispatchValueIntent<string | null>("datepicker", { type: "select", value: null });
       return;

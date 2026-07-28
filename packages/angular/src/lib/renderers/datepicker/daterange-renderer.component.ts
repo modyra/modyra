@@ -31,6 +31,7 @@ import { MdyOverlayControl } from "../../core/overlay-control.directive";
 import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 import { MdyDateRange } from "../../core/types";
 import { MdyRangeCalendarComponent } from "./range-calendar.component";
+import { inputText, isoDateText } from "../renderer-projection";
 
 @Component({
   selector: "mdy-control-daterange",
@@ -206,15 +207,8 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   protected readonly tempStart = computed(() => parseIsoDate(this.modalDraft().draft.start));
   protected readonly tempEnd = computed(() => parseIsoDate(this.modalDraft().draft.end));
 
-  protected readonly displayStart = computed((): string => {
-    const v = this.value()?.start;
-    return v ? v.substring(0, 10) : "";
-  });
-
-  protected readonly displayEnd = computed((): string => {
-    const v = this.value()?.end;
-    return v ? v.substring(0, 10) : "";
-  });
+  protected readonly displayStart = computed(() => isoDateText(this.value()?.start));
+  protected readonly displayEnd = computed(() => isoDateText(this.value()?.end));
 
   protected readonly modalDisplayValue = computed((): string => {
     const s = this.tempStart() ?? this.parsedStart();
@@ -304,7 +298,7 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   }
 
   protected onEndpointInput(event: Event, endpoint: "start" | "end"): void {
-    const raw = (event.target as HTMLInputElement).value.trim();
+    const raw = inputText(event).trim();
     const current = this.value() ?? { start: null, end: null };
     if (!raw) {
       this.commitRange(

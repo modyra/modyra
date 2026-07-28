@@ -12,7 +12,6 @@ import {
   viewChild,
 } from "@angular/core";
 import {
-  addMonths,
   CalendarDate,
   compareDates,
   daysInMonth,
@@ -30,6 +29,7 @@ import { MdyYearPickerComponent } from "./year-picker.component";
 type RangePhase = "pick-start" | "pick-end";
 
 type CalendarView = "calendar" | "month" | "year";
+import { moveCalendarMonth } from "../renderer-projection";
 
 @Component({
   selector: "mdy-range-calendar",
@@ -187,14 +187,10 @@ export class MdyRangeCalendarComponent {
   }
 
   private navigateMonth(delta: number): void {
-    const moved = addMonths(
-      { year: this.viewYear(), month: this.viewMonth(), day: 1 },
-      delta,
-    );
+    const moved = moveCalendarMonth(this.viewYear(), this.viewMonth(), this.focusedDate(), delta);
     this.viewYear.set(moved.year);
     this.viewMonth.set(moved.month);
-    const newFocused = addMonths(this.focusedDate(), delta);
-    this.focusedDate.set(newFocused);
+    this.focusedDate.set(moved.focused);
   }
 
   protected onDatePicked(date: CalendarDate): void {

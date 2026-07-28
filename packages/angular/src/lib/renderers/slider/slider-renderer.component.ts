@@ -4,6 +4,7 @@ import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
+import { inputText } from "../renderer-projection";
 
 @Component({
   selector: "mdy-control-slider",
@@ -85,7 +86,7 @@ export class MdySliderComponent extends MdyBaseControl<number> {
   }
 
   protected onInput(event: Event): void {
-    this.dispatchValueIntent<number>("slider", { type: "input", value: Number((event.target as HTMLInputElement).value) });
+    this.dispatchValueIntent<number>("slider", { type: "input", value: Number(inputText(event)) });
   }
 
   protected onChange(_event: Event): void {

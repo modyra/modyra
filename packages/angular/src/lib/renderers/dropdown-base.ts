@@ -10,6 +10,7 @@ import { MdyOptionDirective } from "../control/option.directive";
 import { MDY_I18N_MESSAGES } from "../core/i18n";
 import { MdyOptionsOverlayControl } from "../core/options-overlay-control.directive";
 import { MdyOptionsControl, MdySelectOption } from "../core/types";
+import { findProjectedOption, projectionKey } from "./renderer-projection";
 
 @Directive()
 export abstract class MdyDropdownBase<TValue, TOptionValue = unknown>
@@ -31,6 +32,14 @@ export abstract class MdyDropdownBase<TValue, TOptionValue = unknown>
   protected abstract readonly fieldId: string;
 
   public abstract resetSelection(): void;
+
+  protected optionKey(value: TOptionValue): string {
+    return projectionKey(value);
+  }
+
+  protected optionFor(value: unknown): MdySelectOption<TOptionValue> | undefined {
+    return findProjectedOption(this.effectiveOptions(), value);
+  }
 
   protected override onBeforeOpen(): void {
     this.searchQuery.set("");
