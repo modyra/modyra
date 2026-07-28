@@ -13,6 +13,8 @@ import type {
 export interface MdyOptionFieldA11yOptions {
   readonly widgetId: string;
   readonly variant: MdyOptionFieldVariant;
+  /** How many options the group renders. The segmented theme sizes its tick gutter from it. */
+  readonly optionCount: number;
 }
 
 /** Builds the static IDs used by an option field widget view. */
@@ -86,6 +88,11 @@ export function projectOptionFieldA11y<TValue>(
         "aria-describedby": describedBy,
         "aria-readonly": String(state.readonly),
       },
+      // The segmented theme sizes its tick gutter from the number of segments; the count is the
+      // widget's own knowledge, so it travels with the part rather than being restated per adapter.
+      ...(options.variant === "segmented"
+        ? { style: { "--mdy-segments-count": String(options.optionCount) } }
+        : {}),
     },
     description: {
       id: descriptionId,

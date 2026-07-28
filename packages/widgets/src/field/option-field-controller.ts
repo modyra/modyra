@@ -72,6 +72,7 @@ export function createOptionFieldController<TValue>(
     const a11y = projectOptionFieldA11y(currentState, handle.errors(), {
       widgetId,
       variant,
+      optionCount: allOptions.length,
     });
 
     const parts: Record<string, ReturnType<typeof a11yOption>> = {};

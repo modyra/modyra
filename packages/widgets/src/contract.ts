@@ -19,6 +19,11 @@ export interface MdyPartContract {
   readonly attributes: Readonly<
     Record<string, string | number | boolean | null | undefined>
   >;
+  /**
+   * Custom properties the themes read to lay the part out — a count, a fill percentage. They are
+   * part of the contract because a theme cannot derive them and an adapter must not invent them.
+   */
+  readonly style?: Readonly<Record<string, string>>;
 }
 
 /** Semantic view contract produced by a controller. */

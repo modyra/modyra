@@ -298,10 +298,10 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             class="mdy-select__trigger ${trigger.classes.slice(1).join(" ")}"
             id=${trigger.id}
             aria-haspopup=${trigger.attributes["aria-haspopup"]}
-            aria-expanded=${trigger.attributes["aria-expanded"] ? "true" : "false"}
+            aria-expanded=${trigger.attributes["aria-expanded"] === "true" ? "true" : "false"}
             aria-controls=${trigger.attributes["aria-controls"]}
             aria-activedescendant=${trigger.attributes["aria-activedescendant"] ?? nothing}
-            aria-disabled=${trigger.attributes["aria-disabled"] ? "true" : nothing}
+            aria-disabled=${trigger.attributes["aria-disabled"] === "true" ? "true" : nothing}
             aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
             aria-required=${handle.required() ? "true" : "false"}
             aria-label=${this.label || nothing}

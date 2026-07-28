@@ -170,6 +170,16 @@ export abstract class MdyFieldElement<T> extends LitElement {
     </label>`;
   }
 
+  /**
+   * Prefix and suffix are optional contract parts: rendered only when the host actually projects
+   * something into them. An always-present empty box is padding with no content in it.
+   */
+  protected renderAffix(slot: "prefix" | "suffix"): unknown {
+    if (!this.querySelector(`[slot="${slot}"]`)) return nothing;
+    const className = slot === "prefix" ? SHELL.prefix : SHELL.suffix;
+    return html`<div class="${className}"><slot name="${slot}"></slot></div>`;
+  }
+
   /** Id the controllers point `aria-describedby` at when the field has no errors. */
   protected get descriptionId(): string {
     return ID.part(this.fieldId, "description");
@@ -219,9 +229,9 @@ export abstract class MdyFieldElement<T> extends LitElement {
         ? html`<div
           class="${SHELL.inputWrapper} ${handle.disabled() ? `${SHELL.inputWrapper}--disabled` : ""}"
         >
-          <div class="${SHELL.prefix}"><slot name="prefix"></slot></div>
+          ${this.renderAffix("prefix")}
           ${control}
-          <div class="${SHELL.suffix}"><slot name="suffix"></slot></div>
+          ${this.renderAffix("suffix")}
         </div>`
         : control}
       ${showBlockErrors ? this.renderErrors(handle) : nothing}

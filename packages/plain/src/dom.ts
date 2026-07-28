@@ -31,6 +31,10 @@ export function applyPart(node: HTMLElement, part: MdyPartContract): void {
   if (classes.length > 0) node.className = classes.join(" ");
   else node.removeAttribute("class");
 
+  for (const [property, value] of Object.entries(part.style ?? {})) {
+    node.style.setProperty(property, value);
+  }
+
   if (part.id) node.id = part.id;
   if (part.role) node.setAttribute("role", part.role);
 

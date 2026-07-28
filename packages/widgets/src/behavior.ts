@@ -69,6 +69,13 @@ export function overlayCloseCommands(restoreFocus: boolean): readonly MdyUiComma
 export type MdyOptionNavigationTarget = "next" | "previous" | "first" | "last";
 
 /** Resolves roving option navigation without any framework or DOM dependency. */
+/**
+ * Listbox navigation: clamps at the ends, and ArrowUp from "nothing active" lands on the last
+ * option. Distinct from `optionNavigationIndex`, which wraps because a segmented control is a
+ * closed ring. Adapters take both from here so a listbox never quietly behaves like a ring.
+ */
+export { listboxNextIndex as listboxNavigationIndex } from "@modyra/core/keyboard";
+
 export function optionNavigationIndex(
   key: string,
   currentIndex: number,

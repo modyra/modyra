@@ -172,6 +172,19 @@
         display: none;
     }
 
+    /* An open panel is positioned by the overlay contract (`--mdy-overlay-*`), not by the anchored
+       `top` above. This lives in the theme layer because a later layer wins: without it the panel
+       keeps both a `top` and a `bottom` and collapses to nothing. */
+    .mdy-renderer--open .mdy-select__dropdown:not(.mdy-select__dropdown--overlay),
+    .mdy-renderer--open .mdy-multiselect__dropdown:not(.mdy-multiselect__dropdown--overlay) {
+        top: var(--mdy-overlay-top, auto);
+        bottom: var(--mdy-overlay-bottom, auto);
+        left: var(--mdy-overlay-left, auto);
+        right: var(--mdy-overlay-right, auto);
+        width: var(--mdy-overlay-width, auto);
+        max-height: var(--mdy-overlay-max-height, none);
+    }
+
     /* The colours toggle holds the same caret; it is a flex item in the suffix, so it needs its
        own height rather than inheriting one from an icon it does not have. */
     .mdy-colors__toggle-area {
@@ -181,6 +194,14 @@
     .mdy-colors__toggle-area .mdy-select__arrow {
         position: static;
         inset: auto;
+    }
+
+    /* A multiselect with nothing chosen reads as a placeholder, exactly like the select's. */
+    .mdy-multiselect__placeholder {
+        flex: 1;
+        align-self: center;
+        color: var(--mdy-input-placeholder-color, var(--mdy-on-surface-variant));
+        font-size: var(--mdy-input-font-size);
     }
 
     /* ─── Pickers ─────────────────────────────────────────────────────────────── */
@@ -334,20 +355,24 @@
 
     /* The group's own direction and gap are component CSS (column by default, row under
        `--horizontal`) — only the box it sits in is retuned. */
-    .mdy-radio-group,
-    .mdy-segmented {
+    /* Only the radio group: a column of choices that starts at the top. A segmented control is a
+       single bar whose buttons must stretch to its height, which is what the component layer
+       already does — lumping the two together left every segment 18px tall inside a 44px bar. */
+    .mdy-radio-group {
         align-items: start;
         width: 100%;
         min-width: 0;
         padding-block: 0.25rem;
     }
 
-    /* `.mdy-radio-item` and `.mdy-segmented__button` are already component CSS; the row that
-       wraps an input and its text is the one part the catalog has no name for, because the
-       Angular and Lit renderers build the label differently. Descendant, not child: the
-       renderers nest the row differently under the group. */
-    .mdy-radio-group label,
-    .mdy-segmented label {
+    .mdy-segmented {
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* The option row is a named contract part now (`mdy-radio-item`), so the theme keys on the
+       class every adapter projects rather than on whichever element it happens to be. */
+    .mdy-radio-item {
         display: inline-flex;
         align-items: center;
         justify-content: flex-start;
@@ -378,7 +403,11 @@
     /* The renderers always emit the description and the error list, empty or not;
        left displayed they add a line of dead air to every field. */
     .mdy-supporting-text:empty,
-    .mdy-control__errors:empty {
+    .mdy-control__errors:empty,
+    /* An affix with nothing projected into it is padding around nothing. Renderers skip it, and
+       this covers a host that emits the box anyway. */
+    .mdy-input-prefix:empty,
+    .mdy-input-suffix:empty {
         display: none;
     }
 
