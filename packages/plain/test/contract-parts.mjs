@@ -38,8 +38,8 @@ export function partsOf(root, kind) {
     case "radio":
     case "segmented":
       return kind === "segmented"
-        ? { ...shell, group: q(".mdy-segmented"), option: q(".mdy-segmented__button"), optionCheck: q(".mdy-segmented__check"), optionText: q(".mdy-segmented__label") }
-        : { ...shell, group: q(".mdy-radio-group"), option: q(".mdy-radio"), optionControl: q(".mdy-radio__control"), optionLabel: q(".mdy-radio__label") };
+        ? { ...shell, group: q(".mdy-segmented"), option: q(".mdy-segmented__button"), optionCheck: q(".mdy-segmented__check"), optionText: q(".mdy-segmented__text") }
+        : { ...shell, group: q(".mdy-radio-group"), option: q(".mdy-radio-item"), optionControl: q(".mdy-radio-circle"), optionLabel: q(".mdy-radio-label") };
     case "select": {
       const popup = document.querySelector(`#${root.querySelector(".mdy-select__trigger")?.getAttribute("aria-controls")}`)?.closest(".mdy-select__dropdown");
       return {
