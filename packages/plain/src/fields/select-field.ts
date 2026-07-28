@@ -84,7 +84,7 @@ export function renderSelectField(
   popup.classList.add("mdy-overlay");
   document.body.appendChild(popup);
 
-  const untrack = trackOverlay(popup, trigger, () => controller.state().open, { matchAnchorWidth: true });
+  const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, { matchAnchorWidth: true });
 
   // select-controller's view has no "label"/"description"/"error" parts (only
   // trigger/listbox/options), unlike every other controller here — wire the
@@ -179,7 +179,7 @@ export function renderSelectField(
 
     popup.hidden = !state.open;
     if (state.open) {
-      positionOverlay(popup, trigger, { matchAnchorWidth: true });
+      positionOverlay(popup, shell.wrapper, { matchAnchorWidth: true });
       queueMicrotask(() => search.focus());
     } else {
       // The next opening decides its own side and height rather than inheriting this one's.

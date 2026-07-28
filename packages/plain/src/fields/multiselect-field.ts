@@ -144,7 +144,7 @@ export function renderMultiselectField(
     () => controller.state().open,
     () => dispatch({ type: "close", restoreFocus: false }),
   );
-  const untrack = trackOverlay(popup, trigger, () => controller.state().open, { matchAnchorWidth: true });
+  const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, { matchAnchorWidth: true });
 
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
@@ -172,7 +172,7 @@ export function renderMultiselectField(
     syncSelectedChips(state.counts);
     // `hidden` on the popup part is the contract's; positioning only runs while it is showing.
     if (state.open) {
-      positionOverlay(popup, trigger, { matchAnchorWidth: true });
+      positionOverlay(popup, shell.wrapper, { matchAnchorWidth: true });
     } else {
       // The next opening decides its own side and height rather than inheriting this one's.
       releaseOverlayPlacement(popup);

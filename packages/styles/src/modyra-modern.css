@@ -155,7 +155,6 @@
     /* The panel is anchored on .mdy-select, which is inside the wrapper; the wrapper's own
        rounded corners would otherwise clip the first option. */
     .mdy-select__dropdown {
-        top: calc(100% + 0.375rem);
         border-radius: var(--mdy-input-border-radius);
         /* --mdy-select-dropdown-border is `none`, which relies on the M3 elevation shadow to
            separate the panel from the page. On a light surface that reads as no edge at all. */
@@ -170,19 +169,6 @@
 
     .mdy-select__option--hidden {
         display: none;
-    }
-
-    /* An open panel is positioned by the overlay contract (`--mdy-overlay-*`), not by the anchored
-       `top` above. This lives in the theme layer because a later layer wins: without it the panel
-       keeps both a `top` and a `bottom` and collapses to nothing. */
-    .mdy-renderer--open .mdy-select__dropdown:not(.mdy-select__dropdown--overlay),
-    .mdy-renderer--open .mdy-multiselect__dropdown:not(.mdy-multiselect__dropdown--overlay) {
-        top: var(--mdy-overlay-top, auto);
-        bottom: var(--mdy-overlay-bottom, auto);
-        left: var(--mdy-overlay-left, auto);
-        right: var(--mdy-overlay-right, auto);
-        width: var(--mdy-overlay-width, auto);
-        max-height: var(--mdy-overlay-max-height, none);
     }
 
     /* The colours toggle holds the same caret; it is a flex item in the suffix, so it needs its
@@ -259,17 +245,9 @@
     /* The calendar grid, its cells, the month nav and the popup frame are already component
        CSS driven by --mdy-comp-date-picker-* tokens. Only the density is retuned here — the
        56px-tall control's 2.5rem cell is out of scale with a 2.25rem one. */
-    .mdy-datepicker__popup,
-    .mdy-timepicker__popup {
-        top: calc(100% + 0.375rem);
-    }
-
     /* plain's time popup holds two number inputs and three buttons rather than the themed
        dial, so it needs the surface the dial's own container would otherwise provide. */
     .mdy-timepicker__popup {
-        position: absolute;
-        z-index: 1000;
-        inset-inline-start: 0;
         display: flex;
         align-items: center;
         gap: 0.375rem;

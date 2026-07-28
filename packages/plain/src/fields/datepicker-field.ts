@@ -12,7 +12,7 @@ import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
 
 export function renderDatepickerField(
   container: HTMLElement,
@@ -37,7 +37,7 @@ export function renderDatepickerField(
   // The popup, its header and the day cells carry the class names the shipped themes already
   // style (`mdy-datepicker__popup` positions and frames the panel, `__header` lays out the
   // month nav) — the controller only names the trigger and the grid.
-  const popup = el("div", MDY_WIDGET_CONTRACTS.datepicker.parts.popup.classes.join(" ")) as HTMLDivElement;
+  const popup = el("div", `${MDY_WIDGET_CONTRACTS.datepicker.parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   const header = el("div", "mdy-datepicker__header") as HTMLDivElement;
   const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   prevButton.type = "button";
@@ -102,6 +102,8 @@ export function renderDatepickerField(
     () => dispatch({ type: "close", restoreFocus: false }),
   );
 
+  const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, { minSpace: 240 });
+
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
     const view = controller.view();
@@ -117,6 +119,10 @@ export function renderDatepickerField(
     const display = state.selectedDate || "";
     if (!typing && control.value !== display) control.value = display;
     popup.hidden = !state.open;
+    // Anchored by the contract, like every other overlay: the placement, the size and the
+    // coordinates are `anchorOverlay`'s, and this only measures and applies them.
+    if (state.open) positionOverlay(popup, shell.wrapper, { minSpace: 240 });
+    else releaseOverlayPlacement(popup);
     setText(monthLabel, `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`);
 
     if (renderedYear !== state.viewYear || renderedMonth !== state.viewMonth) {
@@ -137,6 +143,7 @@ export function renderDatepickerField(
   });
 
   return () => {
+    untrack();
     undismiss();
     effectRef.destroy();
     controller.destroy();

@@ -130,7 +130,7 @@ import { MdyDropdownBase } from "../dropdown-base";
         >
           <div
             mdyGlass
-            class="mdy-select__dropdown"
+            class="mdy-select__dropdown mdy-popup"
             [class.mdy-select__dropdown--above]="dropUp()"
             [class.mdy-select__dropdown--overlay]="overlayMode()"
             [class.mdy-select__dropdown--right]="alignment() === 'right'"
