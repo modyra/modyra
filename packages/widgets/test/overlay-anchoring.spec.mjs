@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { anchorOverlay } from "../dist/index.js";
+import { anchorOverlay, MDY_WIDGET_CONTRACTS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
 
 const VIEWPORT = { width: 1000, height: 800 };
 /** A control in the middle of the page, with room on both sides. */
@@ -89,4 +89,29 @@ test("the pointer decides the alignment when one is given", () => {
 test("a content-sized popup is not given a width", () => {
   const { properties } = anchorOverlay(anchor(), VIEWPORT, {});
   assert.equal("--mdy-overlay-width" in properties, false);
+});
+
+test("every widget with an overlay says how its popup attaches", () => {
+  for (const definition of Object.values(MDY_WIDGET_CONTRACTS)) {
+    if (!definition.capabilities.overlay) {
+      assert.equal(definition.capabilities.anchoring, undefined, `${definition.kind} has no overlay to anchor`);
+      continue;
+    }
+    const anchoring = definition.capabilities.anchoring;
+    assert.ok(anchoring, `${definition.kind} must declare its anchoring`);
+    assert.equal(typeof anchoring.matchAnchorWidth, "boolean");
+    assert.ok(anchoring.minSpace > 0);
+    // And its popup must carry the shared container class, so it is the same container as the rest.
+    assert.ok(
+      definition.parts.popup.classes.includes(MDY_POPUP_CLASS),
+      `${definition.kind}'s popup must carry ${MDY_POPUP_CLASS}`,
+    );
+  }
+});
+
+test("a list matches its control's width; a calendar is sized by its content", () => {
+  assert.equal(MDY_WIDGET_CONTRACTS.select.capabilities.anchoring.matchAnchorWidth, true);
+  assert.equal(MDY_WIDGET_CONTRACTS.multiselect.capabilities.anchoring.matchAnchorWidth, true);
+  assert.equal(MDY_WIDGET_CONTRACTS.datepicker.capabilities.anchoring.matchAnchorWidth, false);
+  assert.equal(MDY_OVERLAY_PORTAL_CLASS, "mdy-overlay");
 });

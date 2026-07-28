@@ -21,6 +21,8 @@ export function renderDatepickerField(
   reactivity: MdyReactivity = vanillaReactivity(),
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
 ): () => void {
+  // How this popup attaches is the contract's, not this renderer's.
+  const anchoring = MDY_WIDGET_CONTRACTS.datepicker.capabilities.anchoring;
   const controller = createDatepickerFieldController({ widgetId: f.name, handle, ...options }, reactivity);
   // Month and weekday names, and the first day of the week, come from Intl via `buildDateLocale`.
   const dateLocale = buildDateLocale(options.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language), options.firstDayOfWeek);
@@ -102,7 +104,7 @@ export function renderDatepickerField(
     () => dispatch({ type: "close", restoreFocus: false }),
   );
 
-  const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, { minSpace: 240 });
+  const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, anchoring);
 
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
@@ -121,7 +123,7 @@ export function renderDatepickerField(
     popup.hidden = !state.open;
     // Anchored by the contract, like every other overlay: the placement, the size and the
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
-    if (state.open) positionOverlay(popup, shell.wrapper, { minSpace: 240 });
+    if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
     else releaseOverlayPlacement(popup);
     setText(monthLabel, `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`);
 

@@ -20,6 +20,8 @@ export function renderSelectField(
   handle: MdyFieldHandle<unknown>,
   reactivity: MdyReactivity = vanillaReactivity(),
 ): () => void {
+  // How this popup attaches is the contract's, not this renderer's.
+  const anchoring = MDY_WIDGET_CONTRACTS.select.capabilities.anchoring;
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
 
@@ -84,7 +86,7 @@ export function renderSelectField(
   popup.classList.add("mdy-overlay");
   document.body.appendChild(popup);
 
-  const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, { matchAnchorWidth: true });
+  const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, anchoring);
 
   // select-controller's view has no "label"/"description"/"error" parts (only
   // trigger/listbox/options), unlike every other controller here — wire the
@@ -179,7 +181,7 @@ export function renderSelectField(
 
     popup.hidden = !state.open;
     if (state.open) {
-      positionOverlay(popup, shell.wrapper, { matchAnchorWidth: true });
+      positionOverlay(popup, shell.wrapper, anchoring);
       queueMicrotask(() => search.focus());
     } else {
       // The next opening decides its own side and height rather than inheriting this one's.

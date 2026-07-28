@@ -22,6 +22,8 @@ export function renderMultiselectField(
   reactivity: MdyReactivity = vanillaReactivity(),
   mode: "single" | "multi" = "single",
 ): () => void {
+  // How this popup attaches is the contract's, not this renderer's.
+  const anchoring = MDY_WIDGET_CONTRACTS.multiselect.capabilities.anchoring;
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
   const controller = createMultiselectFieldController({ widgetId: f.name, handle, options, keyFor, mode }, reactivity);
@@ -144,7 +146,7 @@ export function renderMultiselectField(
     () => controller.state().open,
     () => dispatch({ type: "close", restoreFocus: false }),
   );
-  const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, { matchAnchorWidth: true });
+  const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, anchoring);
 
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
@@ -172,7 +174,7 @@ export function renderMultiselectField(
     syncSelectedChips(state.counts);
     // `hidden` on the popup part is the contract's; positioning only runs while it is showing.
     if (state.open) {
-      positionOverlay(popup, shell.wrapper, { matchAnchorWidth: true });
+      positionOverlay(popup, shell.wrapper, anchoring);
     } else {
       // The next opening decides its own side and height rather than inheriting this one's.
       releaseOverlayPlacement(popup);

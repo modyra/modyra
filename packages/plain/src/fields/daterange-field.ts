@@ -35,6 +35,8 @@ export function renderDaterangeField(
   reactivity: MdyReactivity = vanillaReactivity(),
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
 ): () => void {
+  // How this popup attaches is the contract's, not this renderer's.
+  const anchoring = MDY_WIDGET_CONTRACTS.daterange.capabilities.anchoring;
   const definition = MDY_WIDGET_CONTRACTS.daterange;
   const bounds = { minIso: options.minDate ?? null, maxIso: options.maxDate ?? null };
   // Month and weekday names, and which day starts the week, all come from Intl through
@@ -150,7 +152,7 @@ export function renderDaterangeField(
   let cellEls: ReadonlyMap<string, HTMLButtonElement> = new Map();
   let renderedMonth = "";
 
-  const untrack = trackOverlay(popup, shell.wrapper, () => draft().open, { minSpace: 240 });
+  const untrack = trackOverlay(popup, shell.wrapper, () => draft().open, anchoring);
 
   const effectRef = reactivity.effect(() => {
     const state = draft();
@@ -169,7 +171,7 @@ export function renderDaterangeField(
     popup.hidden = !state.open;
     // Anchored by the contract, like every other overlay: the placement, the size and the
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
-    if (state.open) positionOverlay(popup, shell.wrapper, { minSpace: 240 });
+    if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
     else releaseOverlayPlacement(popup);
     setErrors(shell.errorList, handle.errors().map((error) => error.message));
     shell.syncState({
