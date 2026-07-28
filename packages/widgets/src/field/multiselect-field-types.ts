@@ -32,6 +32,9 @@ export interface MdyMultiselectFieldState<TValue> {
   /** Occurrence count per option key — always populated, mainly meaningful in `"multi"` mode. */
   readonly counts: ReadonlyMap<string, number>;
   readonly query: string;
+  /** Whether the option popup is showing. Multiselect picks from an overlay like every other
+   *  popup widget: laying the options out inline would reflow the page on every open. */
+  readonly open: boolean;
   readonly invalid: boolean;
   readonly disabled: boolean;
   readonly readonly: boolean;
@@ -47,6 +50,9 @@ export type MdyMultiselectFieldIntent =
   | { readonly type: "increment"; readonly optionKey: string }
   | { readonly type: "decrement"; readonly optionKey: string }
   | { readonly type: "search"; readonly query: string }
+  | { readonly type: "open" }
+  | { readonly type: "close"; readonly restoreFocus?: boolean }
+  | { readonly type: "toggleOpen" }
   | { readonly type: "clear" }
   | { readonly type: "focus" }
   | { readonly type: "blur" };

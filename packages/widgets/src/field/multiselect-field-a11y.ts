@@ -17,12 +17,18 @@ export interface MdyMultiselectFieldA11yOptions {
 export function multiselectFieldPartIds(widgetId: string): {
   readonly labelId: string;
   readonly groupId: string;
+  readonly triggerId: string;
+  readonly popupId: string;
+  readonly searchId: string;
   readonly descriptionId: string;
   readonly errorId: string;
 } {
   return {
     labelId: `${widgetId}__label`,
     groupId: `${widgetId}__group`,
+    triggerId: `${widgetId}__trigger`,
+    popupId: `${widgetId}__popup`,
+    searchId: `${widgetId}__search`,
     descriptionId: `${widgetId}__description`,
     errorId: `${widgetId}__error`,
   };
@@ -44,7 +50,14 @@ export function multiselectFieldRootClasses<TValue>(
   ];
 }
 
-/** Projects ARIA attributes and classes for the multiselect field parts (root/label/group/description/error — per-option chip parts are built by the controller, same split option-field-controller.ts uses). */
+/**
+ * Projects ARIA attributes and classes for the multiselect field parts (per-option chip parts are
+ * built by the controller, same split option-field-controller.ts uses).
+ *
+ * The options live in an overlay, like every other popup widget in the catalog: `trigger` is what
+ * the user sees and operates, `popup` is the panel it controls, and `group` is the chip group
+ * inside it. Laying the group out inline instead would reflow the page on every open.
+ */
 export function projectMultiselectFieldA11y<TValue>(
   state: MdyMultiselectFieldState<TValue>,
   errors: ReadonlyArray<MdyFieldError>,
@@ -52,35 +65,85 @@ export function projectMultiselectFieldA11y<TValue>(
 ): {
   readonly root: MdyPartContract;
   readonly label: MdyPartContract;
+  readonly trigger: MdyPartContract;
+  readonly placeholder: MdyPartContract;
+  readonly chips: MdyPartContract;
+  readonly popup: MdyPartContract;
+  readonly search: MdyPartContract;
   readonly group: MdyPartContract;
   readonly description: MdyPartContract;
   readonly error: MdyPartContract;
 } {
-  const { labelId, groupId, descriptionId, errorId } = multiselectFieldPartIds(options.widgetId);
+  const { labelId, groupId, triggerId, popupId, searchId, descriptionId, errorId } =
+    multiselectFieldPartIds(options.widgetId);
   const hasErrors = errors.length > 0;
   const describedBy = hasErrors ? errorId : descriptionId;
+  const interactionDisabled = state.disabled || state.readonly;
 
   return {
     root: {
-      classes: multiselectFieldRootClasses(state),
+      classes: [
+        ...multiselectFieldRootClasses(state),
+        ...(state.open ? ["mdy-renderer--open"] : []),
+      ],
       attributes: {},
     },
     label: {
       id: labelId,
       classes: [MDY_FIELD_SHELL_CLASSES.label],
       attributes: {
-        for: groupId,
+        for: triggerId,
+      },
+    },
+    trigger: {
+      id: triggerId,
+      classes: ["mdy-multiselect"],
+      attributes: {
+        "aria-haspopup": "listbox",
+        // A string, not a boolean: `aria-expanded="false"` is a state, and dropping the attribute
+        // leaves the trigger with a required one missing.
+        "aria-expanded": String(state.open),
+        "aria-controls": popupId,
+        "aria-labelledby": labelId,
+        "aria-invalid": String(hasErrors),
+        "aria-required": String(state.required),
+        "aria-disabled": String(interactionDisabled),
+        "aria-describedby": describedBy,
+        disabled: state.disabled,
+      },
+    },
+    placeholder: {
+      classes: ["mdy-multiselect__placeholder"],
+      // Shown only while nothing is selected — the chips speak for themselves once there are any.
+      attributes: { hidden: state.selectedKeys.size > 0 },
+    },
+    chips: {
+      classes: ["mdy-multiselect__chips"],
+      attributes: {},
+    },
+    popup: {
+      id: popupId,
+      classes: ["mdy-multiselect__dropdown"],
+      attributes: { hidden: !state.open },
+    },
+    search: {
+      id: searchId,
+      classes: ["mdy-multiselect-overlay__input"],
+      attributes: {
+        "aria-controls": groupId,
+        "aria-label": "Filter options",
+        disabled: interactionDisabled,
       },
     },
     group: {
       id: groupId,
-      classes: ["mdy-multiselect"],
+      classes: ["mdy-multiselect__options"],
       attributes: {
         role: "group",
         "aria-labelledby": labelId,
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),
-        "aria-disabled": String(state.disabled || state.readonly),
+        "aria-disabled": String(interactionDisabled),
         "aria-describedby": describedBy,
       },
     },

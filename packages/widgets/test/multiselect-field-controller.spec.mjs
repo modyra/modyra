@@ -136,7 +136,9 @@ test("view exposes chip-group ARIA contract (role=group, not listbox)", () => {
   const { controller } = setup("single", ["medium"]);
   const view = controller.view();
   assert.strictEqual(view.parts.group.attributes.role, "group");
-  assert.strictEqual(view.parts.group.classes.includes("mdy-multiselect"), true);
+  // The chip group is the popup's content; `mdy-multiselect` belongs to the trigger that opens it.
+  assert.strictEqual(view.parts.group.classes.includes("mdy-multiselect__options"), true);
+  assert.strictEqual(view.parts.trigger.classes.includes("mdy-multiselect"), true);
   assert.strictEqual(view.parts.medium.attributes["aria-pressed"], "true");
   assert.strictEqual(view.parts.small.attributes["aria-pressed"], "false");
   assert.strictEqual(view.parts.large.attributes["aria-disabled"], "true");
@@ -149,6 +151,44 @@ test("multi mode view exposes data-count instead of aria-pressed", () => {
   const view = controller.view();
   assert.strictEqual(view.parts.small.attributes["data-count"], 2);
   assert.strictEqual("aria-pressed" in view.parts.small.attributes, false);
+});
+
+test("the options live in an overlay the trigger controls", () => {
+  const { controller } = setup();
+  assert.strictEqual(controller.state().open, false);
+  assert.strictEqual(controller.view().parts.popup.attributes.hidden, true);
+
+  const opened = controller.dispatch({ type: "toggleOpen" });
+  assert.strictEqual(controller.state().open, true);
+  assert.strictEqual(controller.view().parts.trigger.attributes["aria-expanded"], "true");
+  assert.strictEqual(controller.view().parts.popup.attributes.hidden, false);
+  // Opening moves focus into the filter field, exactly like select's overlay does.
+  assert.deepStrictEqual(opened.map((c) => c.type), ["open-overlay", "focus"]);
+
+  // Picking does not close: a multiselect exists to take more than one choice.
+  controller.dispatch({ type: "toggle", optionKey: "small" });
+  assert.strictEqual(controller.state().open, true);
+
+  const closed = controller.dispatch({ type: "close", restoreFocus: true });
+  assert.strictEqual(controller.state().open, false);
+  assert.deepStrictEqual(closed.map((c) => c.type), ["close-overlay", "restore-focus"]);
+});
+
+test("closing clears the filter so reopening shows every option", () => {
+  const { controller } = setup();
+  controller.dispatch({ type: "open" });
+  controller.dispatch({ type: "search", query: "sma" });
+  assert.strictEqual(controller.filteredOptions().length, 1);
+  controller.dispatch({ type: "close" });
+  assert.strictEqual(controller.state().query, "");
+  assert.strictEqual(controller.filteredOptions().length, 3);
+});
+
+test("a disabled multiselect does not open", () => {
+  const { controller, handle } = setup();
+  handle.disabled.set(true);
+  assert.deepStrictEqual(controller.dispatch({ type: "open" }), []);
+  assert.strictEqual(controller.state().open, false);
 });
 
 test("setValue updates state programmatically", () => {

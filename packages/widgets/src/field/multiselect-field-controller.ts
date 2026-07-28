@@ -12,6 +12,7 @@ import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { vanillaReactivity } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
 
+import { overlayLifecycleTransition } from "../behavior.js";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectMultiselectFieldA11y } from "./multiselect-field-a11y.js";
@@ -60,6 +61,7 @@ export function createMultiselectFieldController<TValue>(
 
   const readonly = reactivity.signal(initialReadonly);
   const query = reactivity.signal("");
+  const open = reactivity.signal(false);
 
   const state: MdySignal<MdyMultiselectFieldState<TValue>> = reactivity.computed(() => {
     const selectedValues = handle.value();
@@ -71,6 +73,7 @@ export function createMultiselectFieldController<TValue>(
       selectedKeys: new Set(keys),
       counts,
       query: query(),
+      open: open(),
       invalid: !handle.valid(),
       disabled: handle.disabled(),
       readonly: readonly(),
@@ -99,6 +102,11 @@ export function createMultiselectFieldController<TValue>(
       root: a11y.root,
       parts: {
         label: a11y.label,
+        trigger: a11y.trigger,
+        placeholder: a11y.placeholder,
+        chips: a11y.chips,
+        popup: a11y.popup,
+        search: a11y.search,
         group: a11y.group,
         description: a11y.description,
         error: a11y.error,
@@ -178,6 +186,27 @@ export function createMultiselectFieldController<TValue>(
     return [{ type: "mark-dirty" }, { type: "mark-touched" }];
   }
 
+  /**
+   * Runs an overlay intent through the one lifecycle policy every popup widget shares, so
+   * "does this open", "does focus return" never means something different here.
+   */
+  function overlay(intent: Parameters<typeof overlayLifecycleTransition>[1]): readonly MdyUiCommand[] {
+    const transition = overlayLifecycleTransition({ open: open() }, intent);
+    if (transition.effect === "none") return [];
+    open.set(transition.state.open);
+    if (transition.effect === "teardown") {
+      // A closed popup keeps no query: reopening must show the whole list, not the last filter.
+      query.set("");
+      const commands: MdyUiCommand[] = [{ type: "close-overlay" }];
+      if (transition.restoreFocus) commands.push({ type: "restore-focus", target: { part: "trigger" } });
+      return commands;
+    }
+    return [
+      { type: "open-overlay", anchor: { part: "trigger" } },
+      { type: "focus", target: { part: "search" } },
+    ];
+  }
+
   function dispatch(intent: MdyMultiselectFieldIntent): readonly MdyUiCommand[] {
     if (intent.type === "blur") {
       handle.markAsTouched();
@@ -190,6 +219,10 @@ export function createMultiselectFieldController<TValue>(
     if (intent.type === "focus") {
       return [];
     }
+    const disabled = state().disabled || state().readonly;
+    if (intent.type === "open") return overlay({ type: "open", disabled, available: true });
+    if (intent.type === "toggleOpen") return overlay({ type: "toggle", disabled, available: true });
+    if (intent.type === "close") return overlay({ type: "close", restoreFocus: intent.restoreFocus });
 
     if (state().disabled || state().readonly) {
       return [];
