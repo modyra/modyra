@@ -763,6 +763,21 @@
         margin-bottom: var(--mdy-renderer-margin-bottom);
         /* Density-aware height: density 0 = 56px, density -4 = 40px (same scale as floating label) */
         --mdy-input-height: calc(3.5rem + (var(--mdy-floating-density, 0) * 0.25rem));
+        /* One line of validation feedback is reserved up front, and the error list is painted into
+           that band rather than laid out in it. A message appearing on blur must not grow the
+           field and push the rest of the form down — validating must never move the control the
+           user is reaching for. Supporting text stays in flow: it is there from the start, so it
+           shifts nothing. */
+        position: relative;
+        padding-block-end: var(--mdy-feedback-reserved-height, 1.25rem);
+    }
+
+    .mdy-renderer>.mdy-control__errors {
+        position: absolute;
+        inset-inline: 0;
+        inset-block-end: 0;
+        margin: 0;
+        min-height: var(--mdy-feedback-reserved-height, 1.25rem);
     }
 
 
@@ -1804,6 +1819,24 @@
         overflow: hidden;
         pointer-events: none;
         user-select: none;
+    }
+
+    /* The tick belongs to the selected segment and only to it — the gutter above is reserved on
+       every segment, so showing and hiding it costs no layout. Keyed on the contract's selected
+       class, so it works whether the renderer ships an icon or leaves the element empty. */
+    .mdy-segmented__check {
+        visibility: hidden;
+    }
+
+    .mdy-segmented__button--selected .mdy-segmented__check {
+        visibility: visible;
+    }
+
+    /* A renderer with no icon set leaves the element empty; the theme draws the tick itself. */
+    .mdy-segmented__check:empty::after {
+        content: "\2713";
+        font-size: 0.875rem;
+        line-height: 1;
     }
 
     .mdy-segmented__check {
