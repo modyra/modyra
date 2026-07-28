@@ -2,6 +2,7 @@ import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle } from "@modyra/core";
 import { addMonths, buildMonthGrid, type CalendarCell, type CalendarDate, compareDates, daysInMonth, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
 import { calendarKeyboardTarget } from "@modyra/core/ui";
+import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
   MdyLitOverlayController,
@@ -55,6 +56,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   declare _pendingStartIso: string | null;
   declare _pendingEndIso: string | null;
   declare _hoverIso: string | null;
+  private unbindOutside?: () => void;
   protected override readonly widgetKind = "daterange" as const;
   private readonly overlay = new MdyLitOverlayController(this, () => this, {
     widthMode: "auto-content",
@@ -80,6 +82,10 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.unbindOutside = bindOutsidePointer(this, () => {
+      const handle = this.field;
+      if (handle) this.closePopup(handle);
+    });
     this.classList.add("mdy-renderer--datepicker");
   }
 
@@ -155,13 +161,13 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     this._phase = start && !end ? "pick-end" : "pick-start";
     this._hoverIso = null;
     this._view = "calendar";
-    this._open = true;
+    applyOverlayIntent(this, { type: "open", disabled: this.field?.disabled() ?? false, available: true });
     this.overlay.open(event);
   }
 
   private closePopup(handle: MdyFieldHandle<MdyDateRange | null>, refocus = true): void {
     if (!this._open) return;
-    this._open = false;
+    applyOverlayIntent(this, { type: "close" });
     this.overlay.close();
     this._view = "calendar";
     handle.markAsTouched();
@@ -369,6 +375,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 
   override disconnectedCallback(): void {
+    this.unbindOutside?.();
     this.overlay.close();
     super.disconnectedCallback();
   }

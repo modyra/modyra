@@ -92,3 +92,22 @@ test("every element takes its root classes from the catalog", async () => {
     element.remove();
   }
 });
+
+test("a pointer outside an open Lit overlay dismisses it", async () => {
+  const form = createLitForm({ value: field(null) });
+  const element = await mount("mdy-datepicker-field", (el) => { el.field = form.f.value; el.label = "Date"; });
+  const outside = document.createElement("button");
+  document.body.append(outside);
+
+  element.querySelector(".mdy-datepicker__toggle").click();
+  await element.updateComplete;
+  assert.equal(element._open, true);
+
+  // The dismissal policy is the contract's; the element only reports where the pointer landed.
+  outside.dispatchEvent(new window.Event("pointerdown", { bubbles: true }));
+  await element.updateComplete;
+  assert.equal(element._open, false);
+
+  outside.remove();
+  element.remove();
+});

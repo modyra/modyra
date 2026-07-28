@@ -1,6 +1,7 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { angleToHour, angleToMinute, buildTimeString, formatTime, formatTimeAs, getCurrentTime, getPointerCoords, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
+import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
   MdyLitOverlayController,
@@ -40,6 +41,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   declare _draftValue: string | null;
   declare _isDragging: boolean;
   declare _dragAngle: number | null;
+  private unbindOutside?: () => void;
   protected override readonly widgetKind = "timepicker" as const;
 
   private dragField: TimeField = "hour";
@@ -61,7 +63,16 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this._dragAngle = null;
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.unbindOutside = bindOutsidePointer(this, () => {
+      const handle = this.field;
+      if (handle) this.closePopup(handle);
+    });
+  }
+
   override disconnectedCallback(): void {
+    this.unbindOutside?.();
     this.overlay.close();
     super.disconnectedCallback();
     if (this.switchTimer !== null) clearTimeout(this.switchTimer);
@@ -77,13 +88,13 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this._draftValue = parsed ? formatTime(parsed) : getCurrentTime();
     this._viewMode = "input";
     this._focusedField = "hour";
-    this._open = true;
+    applyOverlayIntent(this, { type: "open", disabled: this.field?.disabled() ?? false, available: true });
     this.overlay.open(event);
   }
 
   private closePopup(handle: MdyFieldHandle<string | null>): void {
     if (!this._open) return;
-    this._open = false;
+    applyOverlayIntent(this, { type: "close" });
     this.overlay.close();
     handle.markAsTouched();
     this.querySelector<HTMLInputElement>(".mdy-timepicker__input")?.focus();
