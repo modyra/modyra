@@ -73,7 +73,7 @@ export function partsOf(root, kind) {
     case "slider":
       return { ...shell, track: q(".mdy-slider-container"), control: q(".mdy-slider"), value: q(".mdy-slider-value") };
     case "checkbox":
-      return { ...shell, inputWrapper: q(".mdy-checkbox"), control: q(".mdy-checkbox__control") };
+      return { ...shell, inputWrapper: q(".mdy-checkbox"), control: q(".mdy-checkbox__control"), indicator: q(".mdy-checkbox__indicator") };
     case "toggle":
       return { ...shell, inputWrapper: q(".mdy-toggle"), track: q(".mdy-toggle__track"), thumb: q(".mdy-toggle__thumb"), control: q(".mdy-toggle__control"), label: q(".mdy-toggle__label") };
     default:

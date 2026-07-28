@@ -60,6 +60,7 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
               ? this.fieldController.dispatch({ type: "blur" })
               : handle.markAsTouched()}
         />
+        <span class="${this.partClass("indicator")}" aria-hidden="true"></span>
         <span class="mdy-label">
           ${this.label}
           ${this.label && handle.required()
