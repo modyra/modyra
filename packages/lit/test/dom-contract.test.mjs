@@ -93,21 +93,47 @@ test("every element takes its root classes from the catalog", async () => {
   }
 });
 
-test("a pointer outside an open Lit overlay dismisses it", async () => {
-  const form = createLitForm({ value: field(null) });
-  const element = await mount("mdy-datepicker-field", (el) => { el.field = form.f.value; el.label = "Date"; });
-  const outside = document.createElement("button");
-  document.body.append(outside);
+/**
+ * Every widget whose contract declares `dismissOnOutsidePointer` must close on a pointer outside
+ * it — the catalog says so for all of them, so the test enumerates the catalog rather than one
+ * hand-picked element.
+ */
+const OVERLAY_ELEMENTS = [
+  ["mdy-datepicker-field", "datepicker", null, ".mdy-datepicker__toggle"],
+  ["mdy-timepicker-field", "timepicker", null, ".mdy-timepicker__toggle"],
+  ["mdy-colors-field", "colors", null, ".mdy-colors__toggle-area"],
+  ["mdy-select-field", "select", null, ".mdy-select__trigger"],
+  ["mdy-multiselect-field", "multiselect", [], ".mdy-multiselect__search-btn, .mdy-multiselect"],
+];
 
-  element.querySelector(".mdy-datepicker__toggle").click();
-  await element.updateComplete;
-  assert.equal(element._open, true);
+for (const [tag, kind, initial, opener] of OVERLAY_ELEMENTS) {
+  test(`<${tag}> dismisses its overlay on a pointer outside it`, async () => {
+    const { MDY_WIDGET_CONTRACTS } = await import("../../widgets/dist/index.js");
+    assert.equal(
+      MDY_WIDGET_CONTRACTS[kind].capabilities.dismissOnOutsidePointer,
+      true,
+      `${kind} must declare the dismissal capability`,
+    );
 
-  // The dismissal policy is the contract's; the element only reports where the pointer landed.
-  outside.dispatchEvent(new window.Event("pointerdown", { bubbles: true }));
-  await element.updateComplete;
-  assert.equal(element._open, false);
+    const form = createLitForm({ value: field(initial) });
+    const element = await mount(tag, (el) => {
+      el.field = form.f.value;
+      el.label = "Field";
+      if (kind === "select" || kind === "multiselect") el.options = [option];
+    });
+    const outside = document.createElement("button");
+    document.body.append(outside);
 
-  outside.remove();
-  element.remove();
-});
+    element.querySelector(opener).click();
+    await element.updateComplete;
+    assert.equal(element._open, true, `${tag} did not open`);
+
+    // The dismissal policy is the contract's; the element only reports where the pointer landed.
+    outside.dispatchEvent(new window.Event("pointerdown", { bubbles: true }));
+    await element.updateComplete;
+    assert.equal(element._open, false, `${tag} stayed open after a pointer outside it`);
+
+    outside.remove();
+    element.remove();
+  });
+}

@@ -56,7 +56,11 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
     if (!handle || !this._open) return;
     const target = event.target as Node | null;
     const inside = target !== null && typeof target.nodeType === "number" && this.contains(target);
-    this.applyLifecycle(handle, { type: "outside", outside: !inside });
+    // The policy decides whether this pointer dismisses; the closing itself goes through `close()`,
+    // which a subclass overrides to close its controller too. Flipping `_open` here directly left
+    // the select's controller open, and the next update read the flag back from it.
+    const transition = overlayLifecycleTransition({ open: this._open }, { type: "outside", outside: !inside });
+    if (transition.effect === "teardown") this.close(handle);
   };
 
   override connectedCallback(): void {

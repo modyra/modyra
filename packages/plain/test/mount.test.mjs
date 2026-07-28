@@ -576,6 +576,7 @@ test("a pointer outside an open overlay dismisses it, in every widget that owns 
     { name: "stay", kind: "daterange", label: "Stay" },
     { name: "meeting", kind: "timepicker", label: "Meeting" },
     { name: "brand", kind: "colors", label: "Brand" },
+    { name: "palette", kind: "multiselect", label: "Palette", options: [{ value: "indigo", label: "Indigo" }] },
   ], { submitLabel: null });
 
   const outside = document.createElement("button");
@@ -589,6 +590,7 @@ test("a pointer outside an open overlay dismisses it, in every widget that owns 
     [".mdy-plain-daterange .mdy-datepicker__toggle", () => host.querySelector(".mdy-plain-daterange .mdy-datepicker__popup")],
     [".mdy-timepicker__toggle", () => host.querySelector(".mdy-timepicker__popup")],
     [".mdy-colors__toggle-area", () => host.querySelector(".mdy-colors__dropdown")],
+    [".mdy-multiselect", () => document.getElementById(host.querySelector(".mdy-multiselect").getAttribute("aria-controls"))],
   ];
   for (const [opener, popupOf] of openers) {
     host.querySelector(opener).dispatchEvent(new Event("click"));
