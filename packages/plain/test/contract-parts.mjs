@@ -55,7 +55,8 @@ export function partsOf(root, kind) {
         ...shell, trigger: q(".mdy-multiselect"), chips: q(".mdy-multiselect__chips"), chip: q(".mdy-chip"),
         placeholder: q(".mdy-multiselect__placeholder"),
         popup, search: popup?.querySelector(".mdy-multiselect-overlay__input"),
-        listbox: popup?.querySelector(".mdy-multiselect__options"), option: popup?.querySelector(".mdy-multiselect__option"),
+        listbox: popup?.querySelector(".mdy-multiselect__options"), option: popup?.querySelector(".mdy-chip--centered"),
+        optionCheck: popup?.querySelector(".mdy-chip__check"), optionLabel: popup?.querySelector(".mdy-chip__label"),
       };
     }
     case "datepicker":
@@ -89,7 +90,9 @@ export const ABSENT = {
   select: ["loading", "empty"],
   // No chip until something is selected, and the search button is select's affordance, not this
   // one's: the filter field is always present at the top of the popup.
-  multiselect: ["chip", "searchButton", "loading", "empty"],
+  // No chip until something is selected; the count and the step buttons are counter mode's, and
+  // the search button is select's affordance — this one's filter field is always in the popup.
+  multiselect: ["chip", "searchButton", "optionCount", "optionStep", "loading", "empty"],
   datepicker: ["dialogHeader", "calendar", "actions"],
   timepicker: ["header", "period", "clock", "actions"],
   daterange: ["calendar"],

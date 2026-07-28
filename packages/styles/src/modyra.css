@@ -1987,6 +1987,24 @@
         transform: scale(1);
     }
 
+    /* The chips a closed trigger shows are a readout of the current selection, not controls: they
+       read as filled, and they never invite a click. */
+    .mdy-chip--value {
+        background: var(--mdy-chip-selected-bg);
+        color: var(--mdy-chip-selected-color);
+        border: var(--mdy-chip-selected-border);
+        cursor: inherit;
+        height: calc(var(--mdy-chip-height) - 0.5rem);
+    }
+
+    /* A renderer with no icon set leaves the check empty; the theme draws the tick, so a chip looks
+       the same whichever renderer produced it. */
+    .mdy-chip__check:empty::after {
+        content: "\2713";
+        font-size: 0.8125rem;
+        line-height: 1;
+    }
+
     .mdy-chip__label {
         overflow: hidden;
         text-overflow: ellipsis;

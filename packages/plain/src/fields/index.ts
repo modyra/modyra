@@ -39,7 +39,7 @@ export function renderField(
     case "select":
       return renderSelectField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity);
     case "multiselect":
-      return renderMultiselectField(container, f, handle as unknown as MdyFieldHandle<ReadonlyArray<unknown>>, reactivity, "single");
+      return renderMultiselectField(container, f, handle as unknown as MdyFieldHandle<ReadonlyArray<unknown>>, reactivity, f.mode ?? "single");
     case "datepicker":
       return renderDatepickerField(container, f, handle as unknown as MdyFieldHandle<string | null>, reactivity);
     case "daterange":

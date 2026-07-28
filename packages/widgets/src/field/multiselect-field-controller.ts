@@ -124,11 +124,14 @@ export function createMultiselectFieldController<TValue>(
     const visible = filteredOptions().some((candidate) => keyFor(candidate) === key);
     return {
       id: `${widgetId}__opt__${key}`,
+      // The chip vocabulary the Angular renderer established, projected once here so every
+      // renderer draws the same chip: `--centered` reserves the check's width in toggle mode,
+      // `--counter` is the bag mode with its step buttons.
       classes: [
-        "mdy-multiselect__chip",
-        ...(selected ? ["mdy-multiselect__chip--selected"] : []),
-        ...(disabled ? ["mdy-multiselect__chip--disabled"] : []),
-        ...(visible ? [] : ["mdy-multiselect__chip--hidden"]),
+        "mdy-chip",
+        mode === "multi" ? "mdy-chip--counter" : "mdy-chip--centered",
+        ...(selected ? ["mdy-chip--selected"] : []),
+        ...(disabled ? ["mdy-chip--disabled"] : []),
       ],
       attributes: {
         ...(mode === "single" ? { "aria-pressed": String(selected) } : { "data-count": count }),

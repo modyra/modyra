@@ -61,6 +61,11 @@ export interface MdyDynamicBooleanField extends MdyDynamicFieldBase {
 export interface MdyDynamicOptionsField extends MdyDynamicFieldBase {
   readonly kind: "select" | "radio" | "multiselect" | "segmented";
   readonly options: ReadonlyArray<MdySelectOption<unknown>>;
+  /**
+   * Multiselect only. `"single"` (the default) is a toggle set: an option is either chosen or not.
+   * `"multi"` is a bag: the same option can be taken several times and the chip counts them.
+   */
+  readonly mode?: "single" | "multi";
 }
 
 /** Single-instant date/time kinds. */
