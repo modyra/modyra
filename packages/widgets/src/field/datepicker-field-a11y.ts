@@ -6,6 +6,7 @@
  */
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
+import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyDatepickerFieldState } from "./datepicker-field-types.js";
 
 export interface MdyDatepickerFieldA11yOptions {
@@ -64,7 +65,7 @@ export function projectDatepickerFieldA11y(
     },
     label: {
       id: labelId,
-      classes: ["mdy-label"],
+      classes: [MDY_FIELD_SHELL_CLASSES.label],
       attributes: { for: triggerId },
     },
     trigger: {
@@ -91,12 +92,12 @@ export function projectDatepickerFieldA11y(
     },
     description: {
       id: descriptionId,
-      classes: ["mdy-description"],
+      classes: [MDY_FIELD_SHELL_CLASSES.supportingText],
       attributes: {},
     },
     error: {
       id: errorId,
-      classes: ["mdy-error"],
+      classes: [MDY_FIELD_SHELL_CLASSES.errors],
       attributes: {
         role: "alert",
         "aria-live": "polite",

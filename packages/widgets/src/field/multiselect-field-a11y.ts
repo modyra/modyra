@@ -6,6 +6,7 @@
  */
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
+import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyMultiselectFieldState } from "./multiselect-field-types.js";
 
 export interface MdyMultiselectFieldA11yOptions {
@@ -66,7 +67,7 @@ export function projectMultiselectFieldA11y<TValue>(
     },
     label: {
       id: labelId,
-      classes: ["mdy-label"],
+      classes: [MDY_FIELD_SHELL_CLASSES.label],
       attributes: {
         for: groupId,
       },
@@ -85,12 +86,12 @@ export function projectMultiselectFieldA11y<TValue>(
     },
     description: {
       id: descriptionId,
-      classes: ["mdy-description"],
+      classes: [MDY_FIELD_SHELL_CLASSES.supportingText],
       attributes: {},
     },
     error: {
       id: errorId,
-      classes: ["mdy-error"],
+      classes: [MDY_FIELD_SHELL_CLASSES.errors],
       attributes: {
         role: "alert",
         "aria-live": "polite",
