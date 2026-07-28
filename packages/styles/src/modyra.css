@@ -691,6 +691,29 @@
         position: absolute;
         z-index: var(--mdy-z-overlay);
         box-sizing: border-box;
+        margin: 0;
+        max-height: var(--mdy-overlay-max-height, 50vh);
+        overflow: auto;
+        /* A scroll gesture that reaches the end of a popup must not scroll the page behind it. */
+        overscroll-behavior: contain;
+        isolation: isolate;
+        /* The container is one thing across the whole catalog — a select's list, a calendar and a
+           palette differ in what they hold, not in what holds it. Surface, not palette: every
+           value resolves through the active theme's semantic tokens, so a popup is never a
+           hardcoded light panel floating over a dark theme. */
+        background: var(--mdy-overlay-surface-color, var(--mdy-surface-container-lowest));
+        color: var(--mdy-overlay-content-color, var(--mdy-on-surface));
+        border: var(--mdy-overlay-outline-width, 1px) solid
+            var(--mdy-overlay-outline-color, var(--mdy-outline-variant));
+        border-radius: var(--mdy-overlay-shape, var(--mdy-sys-shape-corner-medium));
+        box-shadow: var(--mdy-overlay-shadow, var(--mdy-shadow-depth-3));
+        padding: var(--mdy-overlay-padding, 0.375rem);
+    }
+
+    /* Shown by removing `hidden`; without this a theme's `display` would beat the UA's
+       `[hidden] { display: none }` and the popup would never close. */
+    .mdy-popup[hidden] {
+        display: none;
     }
 
     /* Feedback never covers an open popup: the ladder in the token block puts it below. */
@@ -707,30 +730,16 @@
      * they belong here rather than in a theme — a theme that had to re-declare them would be
      * deciding whether a renderer's popup works at all.
      */
+    /* The portalled variant: same container, positioned against the viewport from the coordinates
+       the renderer measured, because a popup lifted out of its field has no anchor to dock to. */
     .mdy-overlay {
         position: fixed;
-        box-sizing: border-box;
-        margin: 0;
         top: var(--mdy-overlay-top, auto);
         bottom: var(--mdy-overlay-bottom, auto);
         left: var(--mdy-overlay-left, auto);
         right: var(--mdy-overlay-right, auto);
         width: var(--mdy-overlay-width, auto);
-        max-height: var(--mdy-overlay-max-height, 50vh);
-        overflow: auto;
-        /* A scroll gesture that reaches the end of the popup must not scroll the page behind it. */
-        overscroll-behavior: contain;
         z-index: var(--mdy-overlay-z-index, var(--mdy-z-portal));
-        isolation: isolate;
-        /* Surface, not palette: every value here resolves through the semantic tokens the active
-           theme sets, so a popup is never a hardcoded light panel floating over a dark theme. A
-           theme retunes these by moving its tokens, not by re-declaring the rule. */
-        background: var(--mdy-overlay-surface-color, var(--mdy-surface-container-lowest));
-        color: var(--mdy-overlay-content-color, var(--mdy-on-surface));
-        border: var(--mdy-overlay-outline-width, 1px) solid
-            var(--mdy-overlay-outline-color, var(--mdy-outline-variant));
-        border-radius: var(--mdy-overlay-shape, var(--mdy-sys-shape-corner-medium));
-        box-shadow: var(--mdy-overlay-shadow, var(--mdy-shadow-depth-3));
     }
 
     /* Overlays are shown by removing `hidden`; without this a theme's `display` would beat the

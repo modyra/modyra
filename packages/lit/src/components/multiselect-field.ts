@@ -210,10 +210,12 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           class="mdy-multiselect ${this._open ? "mdy-multiselect--open" : ""}"
           id=${triggerId}
           @click=${(e: Event) => {
-            // The whole trigger opens the popup, not only the search affordance: every other
-            // widget in the catalog opens from its trigger, and a chip's own click handler
-            // stops here before this runs.
-            if (e.target !== e.currentTarget) return;
+            // The whole trigger opens the popup, not only the search affordance: every other widget
+            // in the catalog opens from its trigger. Clicks that landed on a control inside it —
+            // a chip, a step button, the search button — are that control's, not the trigger's.
+            const path = e.composedPath();
+            const own = path.slice(0, path.indexOf(e.currentTarget as EventTarget));
+            if (own.some((node) => (node as Element).localName === "button")) return;
             if (!this._open) this.overlay.open(e);
             this.toggleOpen(handle);
           }}
