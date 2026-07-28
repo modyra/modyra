@@ -28,17 +28,23 @@ const read = (path) => {
 
 /** Where each adapter would render a form's layout, and whether it does yet. */
 const ADAPTERS = [
-  { name: "plain", source: "packages/plain/src/mount.ts", implements: true },
-  { name: "lit", source: "packages/lit/src/adapter.ts", implements: false },
-  { name: "angular", source: "packages/angular/src/lib/dynamic/mdy-dynamic-form.component.ts", implements: false },
+  { name: "plain", source: "packages/plain/src/mount.ts" },
+  { name: "angular", source: "packages/angular/src/lib/dynamic/mdy-dynamic-form.component.ts" },
 ];
 
 /**
- * Adapters that do not render declarative layout yet. Recorded rather than waived: the audit
- * asserts this list matches reality, so an adapter can neither start rendering layout without the
- * contract nor stay missing quietly.
+ * Adapters with no config-driven form to arrange. Lit's is code-first — you write the elements —
+ * so a declarative layout has nothing to render there. Listed so "missing" is never confused with
+ * "not applicable".
  */
-const NOT_IMPLEMENTED = ["lit", "angular"];
+const NO_DYNAMIC_FORM = ["lit"];
+
+/**
+ * Adapters that have a config-driven form but do not arrange it yet. Recorded rather than waived:
+ * the audit asserts the list matches reality, so an adapter can neither start rendering layout
+ * without the contract nor stay missing quietly.
+ */
+const NOT_IMPLEMENTED = [];
 
 const FOUNDATION = "packages/styles/src/modyra.css";
 
@@ -83,6 +89,7 @@ for (const name of missing) notes.push(`${name} does not render declarative layo
 process.stdout.write("# Declarative layout contract audit\n\n");
 process.stdout.write(`Classes: ${Object.values(MDY_LAYOUT_CLASSES).join(", ")}\n`);
 process.stdout.write(`Adapters rendering layout: ${ADAPTERS.length - missing.length}/${ADAPTERS.length}\n`);
+for (const name of NO_DYNAMIC_FORM) process.stdout.write(`  n/a: ${name} has no config-driven form to arrange\n`);
 for (const note of notes) process.stdout.write(`  pending: ${note}\n`);
 for (const failure of failures) process.stdout.write(`  DEFECT: ${failure}\n`);
 process.stdout.write(failures.length === 0 ? "\nLAYOUT CONTRACT CONSISTENT\n" : `\n${failures.length} defect(s)\n`);
