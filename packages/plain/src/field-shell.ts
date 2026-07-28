@@ -8,6 +8,7 @@
  *
  * Renderers build the control themselves and insert it into the wrapper.
  */
+import { MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "@modyra/widgets";
 import { el, setText } from "./dom.js";
 
 export interface FieldShell {
@@ -21,24 +22,24 @@ export interface FieldShell {
   syncState(state: { touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean; required?: boolean }): void;
 }
 
-export function buildFieldShell(labelText: string | undefined, rendererModifier?: string): FieldShell {
-  const root = el("div", "mdy-renderer") as HTMLDivElement;
-  if (rendererModifier) root.classList.add(`mdy-renderer--${rendererModifier}`);
+export function buildFieldShell(labelText: string | undefined, kind: MdyWidgetKind): FieldShell {
+  const root = el("div") as HTMLDivElement;
+  root.classList.add(...MDY_WIDGET_CONTRACTS[kind].rootClasses);
 
-  const label = el("label", "mdy-label") as HTMLLabelElement;
+  const label = el("label", MDY_FIELD_SHELL_CLASSES.label) as HTMLLabelElement;
   if (labelText) setText(label, labelText);
-  const requiredMark = el("span", "mdy-label__required");
+  const requiredMark = el("span", MDY_FIELD_SHELL_CLASSES.requiredMarker);
   setText(requiredMark, "*");
   requiredMark.hidden = true;
   label.appendChild(requiredMark);
 
-  const wrapper = el("div", "mdy-input-wrapper") as HTMLDivElement;
+  const wrapper = el("div", MDY_FIELD_SHELL_CLASSES.inputWrapper) as HTMLDivElement;
   // The themes lay the wrapper out as a flex row and expect the control inside an inliner —
   // without it the control is a flex item with no basis and collapses to nothing.
-  const inliner = el("div", "mdy-input-wrapper__inliner");
+  const inliner = el("div", MDY_FIELD_SHELL_CLASSES.control);
   wrapper.appendChild(inliner);
-  const description = el("p", "mdy-supporting-text") as HTMLParagraphElement;
-  const errorList = el("ul", "mdy-control__errors") as HTMLUListElement;
+  const description = el("p", MDY_FIELD_SHELL_CLASSES.supportingText) as HTMLParagraphElement;
+  const errorList = el("ul", MDY_FIELD_SHELL_CLASSES.errors) as HTMLUListElement;
 
   root.append(label, wrapper, description, errorList);
 
@@ -61,5 +62,5 @@ export function buildFieldShell(labelText: string | undefined, rendererModifier?
 
 /** Puts the control inside the input wrapper, where every renderer and every theme expects it. */
 export function insertControl(shell: FieldShell, control: HTMLElement): void {
-  (shell.wrapper.querySelector(".mdy-input-wrapper__inliner") ?? shell.wrapper).appendChild(control);
+  (shell.wrapper.querySelector(`.${MDY_FIELD_SHELL_CLASSES.control}`) ?? shell.wrapper).appendChild(control);
 }

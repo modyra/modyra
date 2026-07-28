@@ -25,7 +25,11 @@ export function applyPart(node: HTMLElement, part: MdyPartContract): void {
     nodeWithMarker[BASE_CLASS_MARKER] = node.className;
   }
   const base = nodeWithMarker[BASE_CLASS_MARKER];
-  node.className = [base, ...part.classes].filter(Boolean).join(" ");
+  // The shell already emits the canonical class the controller names, so dedupe rather than
+  // stack `mdy-label mdy-label`.
+  const classes = [...new Set([...(base ?? "").split(/\s+/), ...part.classes].filter(Boolean))];
+  if (classes.length > 0) node.className = classes.join(" ");
+  else node.removeAttribute("class");
 
   if (part.id) node.id = part.id;
   if (part.role) node.setAttribute("role", part.role);
