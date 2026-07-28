@@ -40,7 +40,7 @@ function partsOf(root, kind) {
   };
   switch (kind) {
     case "checkbox":
-      return { ...shell, control: q('input[type="checkbox"]') };
+      return { ...shell, control: q('input[type="checkbox"]'), indicator: q(".mdy-checkbox__indicator") };
     case "toggle":
       return { ...shell, control: q('input[type="checkbox"]'), track: q(".mdy-toggle__track"), thumb: q(".mdy-toggle__thumb") };
     case "slider":

@@ -86,8 +86,11 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
     { classes: { track: ["mdy-slider-container"], control: ["mdy-slider"], value: ["mdy-slider-value"] } }),
   // Boolean controls wrap their input and their text in one clickable element, so the label sits
   // inside the wrapper next to the control rather than above it.
-  checkbox: define("checkbox", ["mdy-renderer", "mdy-renderer--checkbox"], ["root", "inputWrapper", "control", "label", "requiredMarker", "supportingText", "errors", "errorItem"] as const, false,
-    { parents: { label: "inputWrapper" }, classes: { inputWrapper: ["mdy-checkbox"], control: ["mdy-checkbox__control"], label: [MDY_FIELD_SHELL_CLASSES.label], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } }),
+  // `indicator` is the drawn box, the checkbox's answer to the toggle's track: a real element every
+  // renderer emits, so a theme centres the tick inside it instead of guessing where the box sits
+  // behind a label's pseudo-element.
+  checkbox: define("checkbox", ["mdy-renderer", "mdy-renderer--checkbox"], ["root", "inputWrapper", "control", "indicator", "label", "requiredMarker", "supportingText", "errors", "errorItem"] as const, false,
+    { parents: { label: "inputWrapper", indicator: "inputWrapper" }, classes: { inputWrapper: ["mdy-checkbox"], control: ["mdy-checkbox__control"], indicator: ["mdy-checkbox__indicator"], label: [MDY_FIELD_SHELL_CLASSES.label], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } }),
   toggle: define("toggle", ["mdy-renderer", "mdy-renderer--toggle"], ["root", "inputWrapper", "control", "track", "thumb", "label", "requiredMarker", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { parents: { label: "inputWrapper" }, classes: { inputWrapper: ["mdy-toggle"], control: ["mdy-toggle__control"], track: ["mdy-toggle__track"], thumb: ["mdy-toggle__thumb"], label: ["mdy-toggle__label"], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } }),
   radio: define("radio", ["mdy-renderer", "mdy-renderer--radio-group"], ["root", "label", "requiredMarker", "group", "option", "optionControl", "optionLabel", "supportingText", "errors", "errorItem"] as const, false,

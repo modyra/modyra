@@ -30,6 +30,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [attr.aria-disabled]="effectiveAriaDisabled()"
         [attr.aria-label]="label() || null"
       />
+      <span [class]="widgetContract.parts.indicator.classes.join(' ')" aria-hidden="true"></span>
       <span
         class="mdy-label"
         [title]="(inlineErrors && touched() && hasErrors()) ? inlineErrorText() : null"

@@ -58,7 +58,7 @@ function partsOf(root: Element, kind: MdyWidgetKind): Record<string, Element | n
   };
   switch (kind) {
     case "checkbox":
-      return { ...shell, control: q(".mdy-checkbox__control") };
+      return { ...shell, control: q(".mdy-checkbox__control"), indicator: q(".mdy-checkbox__indicator") };
     case "toggle":
       return { ...shell, control: q(".mdy-toggle__control"), track: q(".mdy-toggle__track"), thumb: q(".mdy-toggle__thumb") };
     case "slider":

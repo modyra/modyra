@@ -44,6 +44,11 @@ export function renderBooleanField(
     track.setAttribute("aria-hidden", "true");
     track.appendChild(thumb);
     wrapper.append(track);
+  } else {
+    // The drawn box: a real element so the theme centres the tick inside it.
+    const indicator = el("span", MDY_WIDGET_CONTRACTS.checkbox.parts.indicator.classes.join(" "));
+    indicator.setAttribute("aria-hidden", "true");
+    wrapper.append(indicator);
   }
   wrapper.append(labelText);
 

@@ -54,6 +54,8 @@ export function projectBooleanFieldA11y(
   readonly root: MdyPartContract;
   readonly label: MdyPartContract;
   readonly input: MdyPartContract;
+  /** The drawn control: a checkbox's box, decorative because the native input carries the state. */
+  readonly indicator: MdyPartContract;
   readonly description: MdyPartContract;
   readonly error: MdyPartContract;
 } {
@@ -75,6 +77,11 @@ export function projectBooleanFieldA11y(
       // The clickable element is the wrapper, and the text sits inside it as a span — a `for`
       // here would be an invalid attribute on a non-label element.
       attributes: {},
+    },
+    indicator: {
+      // A switch draws track and thumb instead; the checkbox's box is one element.
+      classes: isSwitch ? ["mdy-toggle__track"] : ["mdy-checkbox__indicator"],
+      attributes: { "aria-hidden": "true" },
     },
     input: {
       id: inputId,
