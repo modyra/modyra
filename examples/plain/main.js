@@ -65,6 +65,16 @@ for (const [name, file] of Object.entries(THEMES)) {
 
 const mounted = mountMdyForm(formHost, FIELDS, {
   submitLabel: "Submit",
+  // Contract v2 layout: a titled section holding a two-column row. The grid comes from the
+  // foundation, so the same declaration arranges the same way under any theme.
+  layout: [
+    {
+      kind: "section",
+      id: "identity",
+      label: "Identity",
+      children: [{ kind: "columns", id: "identity-row", columns: [["name"], ["email"]] }, "password"],
+    },
+  ],
   onSubmit: (value) => { statePre.textContent = `submitted\n\n${JSON.stringify(value, null, 2)}`; },
 });
 

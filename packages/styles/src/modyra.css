@@ -3368,6 +3368,50 @@
 
     /* Positioned last in the components layer: layer order beats specificity, so a per-widget
        popup rule declared earlier can no longer take an overlay's placement back. */
+    /* ─── Declarative layout ─────────────────────────────────────────────────────
+     * The grid behind contract v2's `layout`: sections group fields, column rows divide the width
+     * into as many tracks as the row declares. Structure only — a theme changes the spacing through
+     * the tokens below, not by restating the grid, and no renderer has to invent one.
+     */
+    .mdy-layout-section {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        margin: 0 0 var(--mdy-layout-section-gap, 1rem);
+        padding: var(--mdy-layout-section-padding, 0);
+        border: 0;
+    }
+
+    .mdy-layout-legend {
+        padding: 0;
+        margin-block-end: var(--mdy-layout-legend-gap, 0.5rem);
+        font-weight: 600;
+    }
+
+    .mdy-layout-columns {
+        display: grid;
+        /* Tracks share the row evenly and may shrink: `1fr` alone refuses to go below its content
+           and pushes a long field out of the row. */
+        grid-template-columns: repeat(var(--mdy-layout-column-count, 1), minmax(0, 1fr));
+        gap: var(--mdy-layout-column-gap, 1rem);
+        align-items: start;
+        min-width: 0;
+    }
+
+    .mdy-layout-column {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    /* Below the breakpoint a row becomes a stack: columns narrow enough to clip their controls are
+       worse than fields that follow one another. */
+    @media (max-width: 40rem) {
+        .mdy-layout-columns {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
     /* ─── Popup primitive ────────────────────────────────────────────────────────
      * `mdy-popup` is on every popup part in the widget catalog. It guarantees the one thing no
      * overlay may ever do: take part in layout. A popup left in flow resizes its field and shifts
