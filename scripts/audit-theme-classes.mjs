@@ -161,6 +161,13 @@ function extractTemplateClasses(template) {
     classes.push(m[1]);
   }
 
+  // [panelClass]="'foo bar'" — the classes Angular hands to its overlay panel. Without this the
+  // audit cannot see any popup class Angular emits, and reports the other adapters' as unmatched.
+  const panelClassRe = /\[panelClass\]="'([^']*)'"/g;
+  while ((m = panelClassRe.exec(template)) !== null) {
+    classes.push(...tokenizeClassList(m[1]));
+  }
+
   // [ngClass]="{ 'foo': ... }"
   const ngClassRe = /\[ngClass\]="([\s\S]*?)"\s*[\]>]?/g;
   while ((m = ngClassRe.exec(template)) !== null) {

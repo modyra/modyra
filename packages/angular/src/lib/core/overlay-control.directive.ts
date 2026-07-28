@@ -8,15 +8,15 @@ import {
   viewChild,
 } from "@angular/core";
 import {
-  computeCoordsForAnchor,
   ComputedPosition,
   OverlayAlignment,
   OverlayAnchor,
   OverlayPosition,
 } from "@modyra/core/overlay-position";
 import {
-  decideOverlayPlacement,
+  anchorOverlay,
   overlayLifecycleTransition,
+  type MdyOverlayDecision,
   type MdyOverlayLifecycleIntent,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../control/control.directive";
@@ -56,6 +56,8 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
 
   /** Viewport coordinates for fixed positioning. */
   protected readonly coords = signal<ComputedPosition["coords"]>({ width: 0 });
+  /** The anchoring decision an open overlay is holding; cleared when it closes. */
+  private heldDecision: MdyOverlayDecision | null = null;
 
   /**
    * Max-height of the overlay panel in px, frozen at open time.
@@ -126,22 +128,34 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   protected readonly preferredPosition: "above" | "below" = "below";
 
 
-  /** Widgets owns placement/collision policy; Angular only supplies measured geometry. */
-  private decidePlacement(clickX?: number) {
+  /**
+   * Widgets owns anchoring; Angular only supplies measured geometry and applies what comes back.
+   * `current` carries the decision an open overlay is already holding, so following the anchor
+   * during scroll does not re-decide its side or height.
+   */
+  private anchorNow(clickX?: number, current?: MdyOverlayDecision | null) {
     const rect = this.anchor instanceof HTMLElement ? this.anchor.getBoundingClientRect() : this.anchor;
-    return decideOverlayPlacement({
-      viewportWidth: document.documentElement.clientWidth,
-      viewportHeight: document.documentElement.clientHeight,
-      anchorTop: rect.top,
-      anchorBottom: rect.bottom,
-      anchorLeft: rect.left,
-      anchorRight: rect.right,
-      anchorWidth: rect.width,
-      minSpace: this.minSpace,
-      minWidth: this.minWidth(),
-      preferred: this.preferredPosition,
-      ...(clickX !== undefined ? { pointerX: clickX } : {}),
-    });
+    const anchoring = anchorOverlay(
+      rect,
+      { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight },
+      {
+        minSpace: this.minSpace,
+        minWidth: this.minWidth(),
+        preferred: this.preferredPosition,
+        matchAnchorWidth: true,
+        ...(clickX !== undefined ? { pointerX: clickX } : {}),
+        ...(current ? { current } : {}),
+      },
+    );
+    const px = (name: string): number | undefined => {
+      const raw = anchoring.properties[name];
+      return raw === undefined || raw === "auto" ? undefined : Number.parseFloat(raw);
+    };
+    return {
+      decision: anchoring.decision,
+      coords: { top: px("--mdy-overlay-top"), bottom: px("--mdy-overlay-bottom"), left: px("--mdy-overlay-left"), right: px("--mdy-overlay-right"), width: rect.width },
+      maxHeight: px("--mdy-overlay-max-height") ?? anchoring.decision.maxHeight,
+    };
   }
 
   protected openOverlay(event?: Event): void {
@@ -162,13 +176,15 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     }
 
 
-    const decision = this.decidePlacement(clickX);
+    const anchored = this.anchorNow(clickX);
+    const decision = anchored.decision;
     this.position.set(decision.placement);
     this.alignment.set(decision.alignment);
-    this.coords.set(computeCoordsForAnchor(this.anchor, decision.placement, decision.alignment));
+    this.coords.set(anchored.coords);
     this.open.set(transition.state.open);
 
-    this.maxHeight.set(decision.maxHeight);
+    this.maxHeight.set(anchored.maxHeight);
+    this.heldDecision = decision;
 
     if (transition.announce === "opened") this.announcer.announce(this.overlayI18n.overlayOpened);
 
@@ -190,13 +206,11 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     if (this.scrollFrameId !== null) cancelAnimationFrame(this.scrollFrameId);
     this.scrollFrameId = requestAnimationFrame(() => {
       this.scrollFrameId = null;
-      const pos = this.position();
-      const align = this.alignment();
-      // Update coords to follow the anchor, and recalculate maxHeight so the panel
-      // doesn't overflow the viewport if the trigger scrolls near the edges.
-      const newCoords = computeCoordsForAnchor(this.anchor, pos, align);
-      this.coords.set(newCoords);
-      this.maxHeight.set(this.computeMaxHeight(pos, newCoords));
+      // Follow the anchor while keeping the shape the overlay opened with: re-deciding on every
+      // scroll frame is what makes a popup flip sides and resize under the pointer.
+      const anchored = this.anchorNow(undefined, this.heldDecision);
+      this.coords.set(anchored.coords);
+      this.maxHeight.set(anchored.maxHeight);
     });
   };
 
@@ -212,21 +226,6 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     });
   };
 
-  /** Computes max-height for the overlay given a resolved position and coords. */
-  private computeMaxHeight(position: OverlayPosition, coords: ComputedPosition["coords"]): number {
-    const vh = document.documentElement.clientHeight;
-    let mh: number;
-    if (position === "below" && coords.top !== undefined) {
-      const vSpace = vh - coords.top - 12;
-      mh = Math.max(vSpace, this.minSpace);
-    } else if (position === "above" && coords.bottom !== undefined) {
-      const vSpace = vh - coords.bottom - 12;
-      mh = Math.max(vSpace, this.minSpace);
-    } else {
-      mh = Math.round(vh * 0.7); // centered modal: 70vh
-    }
-    return Math.max(0, mh);
-  }
 
   /** Recalculates the position of the currently open overlay. */
   protected updatePosition(): void {
@@ -234,15 +233,16 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
 
     const prevPosition = this.position();
 
-    const decision = this.decidePlacement();
-    this.position.set(decision.placement);
-    this.alignment.set(decision.alignment);
-    this.coords.set(computeCoordsForAnchor(this.anchor, decision.placement, decision.alignment));
-    this.maxHeight.set(decision.maxHeight);
+    const anchored = this.anchorNow(undefined, this.heldDecision);
+    this.position.set(anchored.decision.placement);
+    this.alignment.set(anchored.decision.alignment);
+    this.coords.set(anchored.coords);
+    this.maxHeight.set(anchored.maxHeight);
+    this.heldDecision = anchored.decision;
 
     // If position changed between overlay and anchored, manage scroll listener
     const wasOverlay = prevPosition === "overlay";
-    const isOverlay = decision.placement === "overlay";
+    const isOverlay = anchored.decision.placement === "overlay";
     if (!wasOverlay && isOverlay) {
       window.removeEventListener("scroll", this.handleScroll, true);
     } else if (wasOverlay && !isOverlay) {

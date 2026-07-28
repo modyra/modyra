@@ -58,7 +58,9 @@ export function renderColorsField(
   toggleArrow.setAttribute("aria-hidden", "true");
   toggle.append(toggleArrow);
 
-  const popup = el("div") as HTMLDivElement;
+  // `mdy-overlay` is the portal variant of the shared container: positioned from the
+  // `--mdy-overlay-*` properties `positionOverlay` writes, exactly as the select's popup is.
+  const popup = el("div", "mdy-overlay") as HTMLDivElement;
   applyPart(popup, definition.parts.popup);
   const presetList = el("div") as HTMLDivElement;
   applyPart(presetList, definition.parts.presets);

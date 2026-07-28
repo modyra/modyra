@@ -681,73 +681,6 @@
 
 
 
-    /* ─── Popup primitive ────────────────────────────────────────────────────────
-     * `mdy-popup` is on every popup part in the widget catalog. It guarantees the one thing no
-     * overlay may ever do: take part in layout. A popup left in flow resizes its field and shifts
-     * everything below it the moment it opens, so being out of flow is structure, not decoration,
-     * and a theme that re-declared it would be deciding whether the page jumps.
-     */
-    .mdy-popup {
-        position: absolute;
-        z-index: var(--mdy-z-overlay);
-        box-sizing: border-box;
-        margin: 0;
-        max-height: var(--mdy-overlay-max-height, 50vh);
-        overflow: auto;
-        /* A scroll gesture that reaches the end of a popup must not scroll the page behind it. */
-        overscroll-behavior: contain;
-        isolation: isolate;
-        /* The container is one thing across the whole catalog — a select's list, a calendar and a
-           palette differ in what they hold, not in what holds it. Surface, not palette: every
-           value resolves through the active theme's semantic tokens, so a popup is never a
-           hardcoded light panel floating over a dark theme. */
-        background: var(--mdy-overlay-surface-color, var(--mdy-surface-container-lowest));
-        color: var(--mdy-overlay-content-color, var(--mdy-on-surface));
-        border: var(--mdy-overlay-outline-width, 1px) solid
-            var(--mdy-overlay-outline-color, var(--mdy-outline-variant));
-        border-radius: var(--mdy-overlay-shape, var(--mdy-sys-shape-corner-medium));
-        box-shadow: var(--mdy-overlay-shadow, var(--mdy-shadow-depth-3));
-        padding: var(--mdy-overlay-padding, 0.375rem);
-    }
-
-    /* Shown by removing `hidden`; without this a theme's `display` would beat the UA's
-       `[hidden] { display: none }` and the popup would never close. */
-    .mdy-popup[hidden] {
-        display: none;
-    }
-
-    /* Feedback never covers an open popup: the ladder in the token block puts it below. */
-    .mdy-control__errors,
-    .mdy-supporting-text {
-        position: relative;
-        z-index: var(--mdy-z-feedback);
-    }
-
-    /* ─── Overlay primitive ──────────────────────────────────────────────────────
-     * Any popup a renderer portals out of its own subtree carries `mdy-overlay` and writes the
-     * `--mdy-overlay-*` properties; the placement decision itself is `decideOverlayPlacement` in
-     * @modyra/widgets. Positioning, clipping and `[hidden]` are structure, not visual identity, so
-     * they belong here rather than in a theme — a theme that had to re-declare them would be
-     * deciding whether a renderer's popup works at all.
-     */
-    /* The portalled variant: same container, positioned against the viewport from the coordinates
-       the renderer measured, because a popup lifted out of its field has no anchor to dock to. */
-    .mdy-overlay {
-        position: fixed;
-        top: var(--mdy-overlay-top, auto);
-        bottom: var(--mdy-overlay-bottom, auto);
-        left: var(--mdy-overlay-left, auto);
-        right: var(--mdy-overlay-right, auto);
-        width: var(--mdy-overlay-width, auto);
-        z-index: var(--mdy-overlay-z-index, var(--mdy-z-portal));
-    }
-
-    /* Overlays are shown by removing `hidden`; without this a theme's `display` would beat the
-       UA's `[hidden] { display: none }` and the popup would never close. */
-    .mdy-overlay[hidden] {
-        display: none;
-    }
-
     /* Dark mode: --mdy-sys-* tokens are updated in modyra-m3-base.css.
    The :root bridge above cascades automatically. Only add overrides not covered by base. */
 
@@ -3430,6 +3363,96 @@
         opacity: var(--mdy-datepicker-disabled-opacity, 0.25);
         cursor: not-allowed;
         background: transparent !important;
+    }
+
+
+    /* Positioned last in the components layer: layer order beats specificity, so a per-widget
+       popup rule declared earlier can no longer take an overlay's placement back. */
+    /* ─── Popup primitive ────────────────────────────────────────────────────────
+     * `mdy-popup` is on every popup part in the widget catalog. It guarantees the one thing no
+     * overlay may ever do: take part in layout. A popup left in flow resizes its field and shifts
+     * everything below it the moment it opens, so being out of flow is structure, not decoration,
+     * and a theme that re-declared it would be deciding whether the page jumps.
+     */
+    .mdy-popup {
+        position: absolute;
+        z-index: var(--mdy-z-overlay);
+        box-sizing: border-box;
+        /* Coordinates come from `anchorOverlay` in @modyra/widgets, which every adapter applies as
+           `--mdy-overlay-*`. Docked popups fall back to sitting under their anchor. A theme must
+           never set these: positioning an overlay is structure, and a theme that did it would be
+           deciding whether a popup lands on its control. */
+        inset-block-start: var(--mdy-overlay-top, calc(100% + 0.375rem));
+        inset-block-end: var(--mdy-overlay-bottom, auto);
+        inset-inline-start: var(--mdy-overlay-left, 0);
+        inset-inline-end: var(--mdy-overlay-right, auto);
+        width: var(--mdy-overlay-width, auto);
+        margin: 0;
+        max-height: var(--mdy-overlay-max-height, 50vh);
+        overflow: auto;
+        /* A scroll gesture that reaches the end of a popup must not scroll the page behind it. */
+        overscroll-behavior: contain;
+        isolation: isolate;
+        /* The container is one thing across the whole catalog — a select's list, a calendar and a
+           palette differ in what they hold, not in what holds it. Surface, not palette: every
+           value resolves through the active theme's semantic tokens, so a popup is never a
+           hardcoded light panel floating over a dark theme. */
+        background: var(--mdy-overlay-surface-color, var(--mdy-surface-container-lowest));
+        color: var(--mdy-overlay-content-color, var(--mdy-on-surface));
+        border: var(--mdy-overlay-outline-width, 1px) solid
+            var(--mdy-overlay-outline-color, var(--mdy-outline-variant));
+        border-radius: var(--mdy-overlay-shape, var(--mdy-sys-shape-corner-medium));
+        box-shadow: var(--mdy-overlay-shadow, var(--mdy-shadow-depth-3));
+        padding: var(--mdy-overlay-padding, 0.375rem);
+    }
+
+    /* Shown by removing `hidden`; without this a theme's `display` would beat the UA's
+       `[hidden] { display: none }` and the popup would never close. */
+    .mdy-popup[hidden] {
+        display: none;
+    }
+
+    /* Feedback never covers an open popup: the ladder in the token block puts it below. */
+    .mdy-control__errors,
+    .mdy-supporting-text {
+        position: relative;
+        z-index: var(--mdy-z-feedback);
+    }
+
+    /* ─── Overlay primitive ──────────────────────────────────────────────────────
+     * Any popup a renderer portals out of its own subtree carries `mdy-overlay` and writes the
+     * `--mdy-overlay-*` properties; the placement decision itself is `decideOverlayPlacement` in
+     * @modyra/widgets. Positioning, clipping and `[hidden]` are structure, not visual identity, so
+     * they belong here rather than in a theme — a theme that had to re-declare them would be
+     * deciding whether a renderer's popup works at all.
+     */
+    /* The portalled variant: same container, positioned against the viewport from the coordinates
+       the renderer measured, because a popup lifted out of its field has no anchor to dock to.
+       Written as a compound selector so it outranks `.mdy-popup` whatever order they end up in —
+       an overlay that quietly fell back to `absolute` lands wherever its offset parent happens to
+       be, which is exactly the bug this pairing exists to prevent. */
+    .mdy-popup.mdy-overlay,
+    .mdy-overlay {
+        position: fixed;
+        top: var(--mdy-overlay-top, auto);
+        bottom: var(--mdy-overlay-bottom, auto);
+        left: var(--mdy-overlay-left, auto);
+        right: var(--mdy-overlay-right, auto);
+        width: var(--mdy-overlay-width, auto);
+        /* `anchorOverlay` centres a modal placement with a translation; docked placements set it
+           to `none`, so one rule serves both. */
+        transform: var(--mdy-overlay-transform, none);
+        z-index: var(--mdy-overlay-z-index, var(--mdy-z-portal));
+        inset-block-start: var(--mdy-overlay-top, auto);
+        inset-block-end: var(--mdy-overlay-bottom, auto);
+        inset-inline-start: var(--mdy-overlay-left, auto);
+        inset-inline-end: var(--mdy-overlay-right, auto);
+    }
+
+    /* Overlays are shown by removing `hidden`; without this a theme's `display` would beat the
+       UA's `[hidden] { display: none }` and the popup would never close. */
+    .mdy-overlay[hidden] {
+        display: none;
     }
 
 }

@@ -2,12 +2,11 @@
 
 import { html, nothing } from "lit";
 import {
-  computeCoordsForAnchor,
-  computeOverlayPosition,
   type OverlayAlignment,
   type OverlayPosition,
   type OverlayPositionConfig,
 } from "@modyra/core/overlay-position";
+import { anchorOverlay } from "@modyra/widgets";
 
 /** Visually hidden native input used as the platform picker behind a styled control. */
 export const POPUP_ANCHOR_STYLE = "position:relative";
@@ -16,7 +15,6 @@ export const POPUP_STYLE = "position:fixed;z-index:1000";
 export const NATIVE_HIDDEN_STYLE =
   "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0";
 
-const VIEWPORT_GAP = 8;
 
 export interface OverlayPanelState {
   readonly position: OverlayPosition;
@@ -38,18 +36,6 @@ interface OverlayStateConfig extends OverlayPositionConfig {
   readonly widthMode?: "match-anchor" | "auto-content";
 }
 
-function cssValue(value: number | undefined): string {
-  return value !== undefined ? `${value}px` : "auto";
-}
-
-function computeMaxHeight(anchorEl: HTMLElement, position: OverlayPosition): string {
-  const vh = document.documentElement.clientHeight;
-  if (position === "overlay") return "80vh";
-  const rect = anchorEl.getBoundingClientRect();
-  if (position === "above") return `${Math.max(120, rect.top - VIEWPORT_GAP)}px`;
-  return `${Math.max(120, vh - rect.bottom - VIEWPORT_GAP)}px`;
-}
-
 export function extractClickX(event?: Event): number | undefined {
   if (!event) return undefined;
   if (event instanceof MouseEvent) return event.clientX;
@@ -66,55 +52,46 @@ export function computeOverlayPanelState(
       position: "below",
       alignment: "left",
       panelStyle: POPUP_STYLE,
-      cssVars: {
-        top: "auto",
-        bottom: "auto",
-        left: "auto",
-        right: "auto",
-        width: "auto",
-        maxHeight: "50vh",
-      },
+      cssVars: { top: "auto", bottom: "auto", left: "auto", right: "auto", width: "auto", maxHeight: "50vh" },
     };
   }
 
-  const widthMode = config?.widthMode ?? "match-anchor";
+  // The anchoring is `anchorOverlay` in @modyra/widgets — the same call the framework-free renderer
+  // makes — so a Lit popup attaches exactly where an Angular or Plain one would. This function
+  // measures, and translates the properties it gets back into the panel's inline style.
+  const rect = anchorEl.getBoundingClientRect();
+  const anchoring = anchorOverlay(
+    rect,
+    { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight },
+    {
+      minSpace: config?.minSpace,
+      minWidth: config?.minWidth,
+      preferred: config?.preferredPosition,
+      matchAnchorWidth: (config?.widthMode ?? "match-anchor") === "match-anchor",
+      pointerX: config?.clickX,
+      // A locked overlay keeps the side and edge it opened on; its height is measured afresh so a
+      // popup near the viewport edge still fits.
+      lock: config?.lockPosition && config?.lockAlignment
+        ? { placement: config.lockPosition, alignment: config.lockAlignment }
+        : null,
+    },
+  );
 
-  const computed =
-    config?.lockPosition && config?.lockAlignment
-      ? {
-          position: config.lockPosition,
-          alignment: config.lockAlignment,
-          coords: computeCoordsForAnchor(anchorEl, config.lockPosition, config.lockAlignment),
-        }
-      : computeOverlayPosition(anchorEl, {
-          minSpace: config?.minSpace,
-          minWidth: config?.minWidth,
-          preferredPosition: config?.preferredPosition,
-          clickX: config?.clickX,
-        });
-
-  const width = widthMode === "match-anchor" && computed.coords.width !== undefined
-    ? `${computed.coords.width}px`
-    : "auto";
+  const read = (name: string, fallback: string): string => anchoring.properties[name] ?? fallback;
   const cssVars = {
-    top: cssValue(computed.coords.top),
-    bottom: cssValue(computed.coords.bottom),
-    left: cssValue(computed.coords.left),
-    right: cssValue(computed.coords.right),
-    width,
-    maxHeight: computeMaxHeight(anchorEl, computed.position),
+    top: read("--mdy-overlay-top", "auto"),
+    bottom: read("--mdy-overlay-bottom", "auto"),
+    left: read("--mdy-overlay-left", "auto"),
+    right: read("--mdy-overlay-right", "auto"),
+    width: read("--mdy-overlay-width", "auto"),
+    maxHeight: read("--mdy-overlay-max-height", "50vh"),
   };
+  const transform = read("--mdy-overlay-transform", "none");
+  const panelStyle =
+    `${POPUP_STYLE};top:${cssVars.top};bottom:${cssVars.bottom};left:${cssVars.left};` +
+    `right:${cssVars.right};width:${cssVars.width};max-height:${cssVars.maxHeight};transform:${transform};`;
 
-  const panelStyle = computed.position === "overlay"
-    ? `${POPUP_STYLE};top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);max-height:${cssVars.maxHeight};`
-    : `${POPUP_STYLE};top:${cssVars.top};bottom:${cssVars.bottom};left:${cssVars.left};right:${cssVars.right};width:${cssVars.width};max-height:${cssVars.maxHeight};`;
-
-  return {
-    position: computed.position,
-    alignment: computed.alignment,
-    panelStyle,
-    cssVars,
-  };
+  return { position: anchoring.decision.placement, alignment: anchoring.decision.alignment, panelStyle, cssVars };
 }
 
 type OverlayHost = HTMLElement & { requestUpdate: () => void };
@@ -139,7 +116,10 @@ export class MdyLitOverlayController {
 
   constructor(
     private readonly host: OverlayHost,
-    private readonly getAnchor: () => HTMLElement | undefined = () => host,
+    // The popup attaches to the control, not to the field: anchoring on the host would measure the
+    // label and supporting text too, and open the popup a row too low and a little too wide.
+    private readonly getAnchor: () => HTMLElement | undefined = () =>
+      host.querySelector<HTMLElement>(".mdy-input-wrapper") ?? host,
     private readonly config?: Pick<OverlayStateConfig, "minSpace" | "minWidth" | "preferredPosition" | "widthMode">,
   ) {}
 
@@ -226,14 +206,14 @@ export function renderOverlayPanel(
         : "";
   const modalClass = options?.modal ? " mdy-overlay-panel--modal" : "";
   const rightClass = options?.alignment === "right" ? " mdy-overlay-panel--right" : "";
-  const panelStyle = options?.panelDisplayContents
-    ? "display: contents"
-    : options?.panelStyle ?? POPUP_STYLE;
+  // The panel is a marker, not a box: it lays nothing out (`display: contents`), so the popup part
+  // inside it is the single container — the same one Plain portals and Angular projects. Two nested
+  // positioned boxes is what put a Lit popup 35px below where its anchor said it belonged.
   return html`
     <div class="mdy-overlay-backdrop"></div>
     <div
       class="mdy-overlay-panel mdy-overlay-panel--visible${positionClass}${modalClass}${rightClass}"
-      style=${panelStyle}
+      style="display: contents"
     >
       ${content}
     </div>

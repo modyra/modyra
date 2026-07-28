@@ -17,7 +17,7 @@ import {
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
-import { dismissOnOutsidePointer } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 
 const EMPTY: MdyDateRangeValue = { start: null, end: null };
@@ -66,7 +66,7 @@ export function renderDaterangeField(
   toggle.setAttribute("aria-label", "Open the calendar");
   toggle.setAttribute("aria-haspopup", "dialog");
 
-  const popup = el("div", MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ")) as HTMLDivElement;
+  const popup = el("div", `${MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   const header = el("div", "mdy-datepicker__header") as HTMLDivElement;
   const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   prevButton.type = "button";
@@ -150,6 +150,8 @@ export function renderDaterangeField(
   let cellEls: ReadonlyMap<string, HTMLButtonElement> = new Map();
   let renderedMonth = "";
 
+  const untrack = trackOverlay(popup, shell.wrapper, () => draft().open, { minSpace: 240 });
+
   const effectRef = reactivity.effect(() => {
     const state = draft();
     const anchor = view();
@@ -165,6 +167,10 @@ export function renderDaterangeField(
     toggle.disabled = handle.disabled();
     toggle.setAttribute("aria-expanded", String(state.open));
     popup.hidden = !state.open;
+    // Anchored by the contract, like every other overlay: the placement, the size and the
+    // coordinates are `anchorOverlay`'s, and this only measures and applies them.
+    if (state.open) positionOverlay(popup, shell.wrapper, { minSpace: 240 });
+    else releaseOverlayPlacement(popup);
     setErrors(shell.errorList, handle.errors().map((error) => error.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
@@ -192,6 +198,7 @@ export function renderDaterangeField(
   });
 
   return () => {
+    untrack();
     undismiss();
     effectRef.destroy();
     shell.root.remove();

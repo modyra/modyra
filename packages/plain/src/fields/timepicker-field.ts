@@ -14,7 +14,7 @@ import { parseAnyTime, type MdyTimeFormat } from "@modyra/core/time-utils";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
 
 export function renderTimepickerField(
   container: HTMLElement,
@@ -37,7 +37,7 @@ export function renderTimepickerField(
   // `mdy-timepicker__popup` is the class the themes position and frame; the controller only
   // names the dialog, the hour and the minute.
   const parts = MDY_WIDGET_CONTRACTS.timepicker.parts;
-  const dialog = el("div", parts.popup.classes.join(" ")) as HTMLDivElement;
+  const dialog = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   // The popup's anatomy is the contract's, and its classes are the ones the shipped themes already
   // style for the Angular renderer — which is what makes the three look alike rather than merely
   // behave alike.
@@ -128,6 +128,8 @@ export function renderTimepickerField(
     () => dispatch({ type: "close", restoreFocus: false }),
   );
 
+  const untrack = trackOverlay(dialog, shell.wrapper, () => controller.state().open, { minSpace: 240 });
+
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
     const view = controller.view();
@@ -145,6 +147,10 @@ export function renderTimepickerField(
     const display = state.value || "";
     if (!typing && control.value !== display) control.value = display;
     dialog.hidden = !state.open;
+    // Anchored by the contract, like every other overlay: the placement, the size and the
+    // coordinates are `anchorOverlay`'s, and this only measures and applies them.
+    if (state.open) positionOverlay(dialog, shell.wrapper, { minSpace: 240 });
+    else releaseOverlayPlacement(dialog);
     const hourString = String(state.draft.hour);
     if (hourInput.value !== hourString) hourInput.value = hourString;
     const minuteString = String(state.draft.minute).padStart(2, "0");
@@ -154,6 +160,7 @@ export function renderTimepickerField(
   });
 
   return () => {
+    untrack();
     undismiss();
     effectRef.destroy();
     controller.destroy();

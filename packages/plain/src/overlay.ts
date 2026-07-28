@@ -1,17 +1,11 @@
 /**
  * Positioning for the popups this renderer draws.
  *
- * The decision — above or below, left- or right-aligned, how tall, how wide — is
- * `decideOverlayPlacement` in `@modyra/widgets`; this file only measures the anchor and writes the
- * result out as the `--mdy-overlay-*` custom properties the shipped themes already read, which is
- * the same contract the Angular renderer fulfils.
+ * Every decision — above or below, left- or right-aligned, how tall, how wide, and the exact
+ * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
+ * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import {
-  decideOverlayPlacement,
-  overlayLifecycleTransition,
-  stabilizeOverlayPlacement,
-  type MdyOverlayDecision,
-} from "@modyra/widgets";
+import { anchorOverlay, overlayLifecycleTransition, type MdyOverlayDecision } from "@modyra/widgets";
 
 export interface OverlayPlacementOptions {
   /** Smallest usable space before the popup flips or overlays. */
@@ -33,48 +27,27 @@ export function releaseOverlayPlacement(popup: HTMLElement): void {
   heldDecisions.delete(popup);
 }
 
-/** Positions `popup` against `anchor` and returns the decision the widget policy made. */
+/** Positions `popup` against `anchor` by applying the contract's anchoring, and returns its decision. */
 export function positionOverlay(
   popup: HTMLElement,
   anchor: HTMLElement,
   options: OverlayPlacementOptions = {},
 ): MdyOverlayDecision {
   const rect = anchor.getBoundingClientRect();
-  const geometry = {
-    viewportWidth: window.innerWidth,
-    viewportHeight: window.innerHeight,
-    anchorTop: rect.top,
-    anchorBottom: rect.bottom,
-    anchorLeft: rect.left,
-    anchorRight: rect.right,
-    anchorWidth: rect.width,
-    minSpace: options.minSpace ?? 180,
-    minWidth: options.minWidth ?? 160,
-    preferred: options.preferred ?? ("below" as const),
-  };
-  // Coordinates follow the anchor; the side and the height are the decision taken when it opened.
-  const decision = stabilizeOverlayPlacement(
-    heldDecisions.get(popup) ?? null,
-    decideOverlayPlacement(geometry),
-    geometry,
+  // Every coordinate, the placement and the height come from `anchorOverlay`; this renderer only
+  // measures and writes. Passing the decision it is already holding keeps an open popup's shape
+  // steady while the anchor moves.
+  const anchoring = anchorOverlay(
+    rect,
+    { width: window.innerWidth, height: window.innerHeight },
+    { ...options, current: heldDecisions.get(popup) ?? null },
   );
-  heldDecisions.set(popup, decision);
-
-  const gap = 6;
-  const style = popup.style;
-  style.setProperty("--mdy-overlay-left", decision.alignment === "left" ? `${Math.round(rect.left)}px` : "auto");
-  style.setProperty("--mdy-overlay-right", decision.alignment === "right" ? `${Math.round(window.innerWidth - rect.right)}px` : "auto");
-  style.setProperty("--mdy-overlay-max-height", `${Math.round(decision.maxHeight - gap)}px`);
-  if (decision.placement === "above") {
-    style.setProperty("--mdy-overlay-top", "auto");
-    style.setProperty("--mdy-overlay-bottom", `${Math.round(window.innerHeight - rect.top + gap)}px`);
-  } else {
-    style.setProperty("--mdy-overlay-top", `${Math.round(rect.bottom + gap)}px`);
-    style.setProperty("--mdy-overlay-bottom", "auto");
+  heldDecisions.set(popup, anchoring.decision);
+  for (const [property, value] of Object.entries(anchoring.properties)) {
+    popup.style.setProperty(property, value);
   }
-  if (options.matchAnchorWidth) style.setProperty("--mdy-overlay-width", `${Math.round(decision.width)}px`);
-  popup.dataset.placement = decision.placement;
-  return decision;
+  popup.dataset.placement = anchoring.placement;
+  return anchoring.decision;
 }
 
 /**

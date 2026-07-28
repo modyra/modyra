@@ -49,7 +49,12 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   /** Temporary value used while the modal variant is open. */
   declare _draftValue: string | null;
   protected override readonly widgetKind = "datepicker" as const;
-  private readonly overlay = new MdyLitOverlayController(this, () => this, {
+  private readonly overlay = new MdyLitOverlayController(
+    this,
+    // The control, not the whole field: anchoring on the host measures the label and the
+    // supporting text too, which opened the popup a row low and a couple of hundred pixels off.
+    () => this.querySelector<HTMLElement>(".mdy-input-wrapper") ?? this,
+    {
     widthMode: "auto-content",
   });
   private unbindOutside?: () => void;
@@ -508,7 +513,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           // Wrapped in the contract's `popup` part: every overlay in the catalog is the same
           // container, and only its content differs. Without it these two pickers were the
           // only popups drawn straight into the panel, with a container of their own.
-          html`<div class="${this.partClass("popup")}">${this.renderPopup(handle)}</div>`,
+          html`<div class="${this.partClass("popup")} mdy-overlay">${this.renderPopup(handle)}</div>`,
           this._open,
           {
             position: this.overlay.state.position,

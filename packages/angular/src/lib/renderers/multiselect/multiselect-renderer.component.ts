@@ -159,7 +159,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       [maxHeight]="maxHeight()"
       [hasBackdrop]="position() === 'overlay'"
       [widthMode]="'match-anchor'"
-      [panelClass]="'mdy-multiselect-overlay__panel'"
+      [panelClass]="'mdy-multiselect-overlay__panel mdy-multiselect__dropdown mdy-popup'"
       (close)="closeOverlay()"
     >
       <input
