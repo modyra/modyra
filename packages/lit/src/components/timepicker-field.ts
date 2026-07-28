@@ -512,8 +512,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             </button>
           </div>
         </div>
-        ${renderOverlayPanel(this.renderPopup(handle), this._open, {
-          position: this.overlay.state.position,
+        ${renderOverlayPanel(
+          // Wrapped in the contract's `popup` part: every overlay in the catalog is the same
+          // container, and only its content differs. Without it these two pickers were the
+          // only popups drawn straight into the panel, with a container of their own.
+          html`<div class="${this.partClass("popup")}">${this.renderPopup(handle)}</div>`,
+          this._open,
+          {
+            position: this.overlay.state.position,
           alignment: this.overlay.state.alignment,
           modal: this.overlay.state.position === "overlay",
           panelStyle: this.overlay.state.panelStyle,
