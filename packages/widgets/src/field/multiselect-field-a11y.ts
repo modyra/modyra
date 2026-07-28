@@ -78,9 +78,9 @@ export function projectMultiselectFieldA11y<TValue>(
       attributes: {
         role: "group",
         "aria-labelledby": labelId,
-        "aria-invalid": hasErrors,
-        "aria-required": state.required,
-        "aria-disabled": state.disabled || state.readonly,
+        "aria-invalid": String(hasErrors),
+        "aria-required": String(state.required),
+        "aria-disabled": String(state.disabled || state.readonly),
         "aria-describedby": describedBy,
       },
     },

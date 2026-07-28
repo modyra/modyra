@@ -15,6 +15,7 @@ import sveltePlugin from "esbuild-svelte";
 const THEME_FILES = [
   "modyra.css",
   "modyra-material.css",
+  "modyra-modern.css",
   "modyra-ios.css",
   "modyra-ionic.css",
   "modyra-base.css",
@@ -23,6 +24,9 @@ const targets = [
   { name: "react", entry: "examples/react/main.jsx" },
   { name: "vue", entry: "examples/vue/main.js" },
   { name: "lit", entry: "examples/lit/main.js" },
+  // The framework-free renderer needs no transform at all — it is the plain-DOM baseline every
+  // other adapter is measured against.
+  { name: "plain", entry: "examples/plain/main.js" },
   // Preact's automatic JSX runtime is esbuild's react transform pointed at
   // a different import source — no Babel plugin needed.
   { name: "preact", entry: "examples/preact/main.jsx", jsxImportSource: "preact" },
@@ -47,8 +51,13 @@ for (const { name, entry, jsxImportSource, plugins } of targets) {
     outfile: `dist/examples/${name}/main.js`,
     minify: true,
     define: { "process.env.NODE_ENV": '"production"' },
-    // vue: runtime template compiler build
-    alias: { vue: "vue/dist/vue.esm-bundler.js" },
+    alias: {
+      // vue: runtime template compiler build
+      vue: "vue/dist/vue.esm-bundler.js",
+      // `@modyra/plain` is a private workspace package, so it is resolved from its build output
+      // rather than through node_modules — no dependency is added for a demo.
+      "@modyra/plain": "./packages/plain/dist/index.js",
+    },
     logLevel: "error",
   });
   const { copyFileSync, mkdirSync } = await import("node:fs");

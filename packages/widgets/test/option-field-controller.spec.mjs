@@ -119,7 +119,7 @@ test("radio view exposes ARIA contract", () => {
   assert.strictEqual(view.parts.medium.attributes.role, "radio");
   assert.strictEqual(view.parts.medium.attributes["aria-checked"], "true");
   assert.strictEqual(view.parts.small.attributes["aria-checked"], "false");
-  assert.strictEqual(view.parts.large.attributes["aria-disabled"], true);
+  assert.strictEqual(view.parts.large.attributes["aria-disabled"], "true");
 });
 
 test("segmented view exposes ARIA contract", () => {

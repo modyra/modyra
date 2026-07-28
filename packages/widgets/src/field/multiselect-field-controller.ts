@@ -120,7 +120,7 @@ export function createMultiselectFieldController<TValue>(
       ],
       attributes: {
         ...(mode === "single" ? { "aria-pressed": String(selected) } : { "data-count": count }),
-        "aria-disabled": disabled,
+        "aria-disabled": String(disabled),
         disabled: option.disabled || currentState.disabled,
       },
     };

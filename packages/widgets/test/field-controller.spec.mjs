@@ -116,8 +116,8 @@ test("view exposes ARIA contract", () => {
   const { controller } = setupText();
   const view = controller.view();
   assert.strictEqual(view.parts.input.attributes.type, "email");
-  assert.strictEqual(view.parts.input.attributes["aria-invalid"], true);
-  assert.strictEqual(view.parts.input.attributes["aria-required"], true);
+  assert.strictEqual(view.parts.input.attributes["aria-invalid"], "true");
+  assert.strictEqual(view.parts.input.attributes["aria-required"], "true");
   assert.strictEqual(view.parts.input.attributes["aria-describedby"].includes("email-errors"), true);
   assert.strictEqual(view.parts.label.attributes.for, "email");
   assert.strictEqual(view.root.classes.includes("mdy-field--invalid"), true);
@@ -128,7 +128,7 @@ test("view updates when value becomes valid", () => {
   const { controller, handle } = setupText();
   controller.dispatch({ type: "input", value: "a@b.co" });
   const view = controller.view();
-  assert.strictEqual(view.parts.input.attributes["aria-invalid"], false);
+  assert.strictEqual(view.parts.input.attributes["aria-invalid"], "false");
   assert.strictEqual(view.root.classes.includes("mdy-field--invalid"), false);
   assert.strictEqual(view.parts.input.attributes["aria-describedby"].includes("email-description"), true);
 });

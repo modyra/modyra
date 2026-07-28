@@ -139,7 +139,7 @@ test("view exposes chip-group ARIA contract (role=group, not listbox)", () => {
   assert.strictEqual(view.parts.group.classes.includes("mdy-multiselect"), true);
   assert.strictEqual(view.parts.medium.attributes["aria-pressed"], "true");
   assert.strictEqual(view.parts.small.attributes["aria-pressed"], "false");
-  assert.strictEqual(view.parts.large.attributes["aria-disabled"], true);
+  assert.strictEqual(view.parts.large.attributes["aria-disabled"], "true");
 });
 
 test("multi mode view exposes data-count instead of aria-pressed", () => {

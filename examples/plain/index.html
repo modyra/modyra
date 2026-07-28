@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,"><link id="theme" rel="stylesheet" href="./themes/modyra-modern.css"><title>Modyra × plain</title>
+<style>
+  body { margin: 0; padding: 2rem; font: 15px/1.5 system-ui, sans-serif; background: var(--mdy-surface, #fff); color: var(--mdy-on-surface, #111); }
+  header { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-bottom: 1.5rem; }
+  header h1 { margin: 0 1rem 0 0; font-size: 1.125rem; }
+  header button { padding: .3rem .7rem; border: 1px solid currentcolor; border-radius: .4rem; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+  header button[aria-pressed="true"] { background: currentcolor; }
+  header button[aria-pressed="true"] span { filter: invert(1); }
+  main { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
+  pre { margin: 0; padding: 1rem; overflow: auto; max-height: 80vh; border-radius: .5rem; background: rgb(0 0 0 / 6%); font-size: 12px; }
+  #conformance:not(:empty) { padding: .75rem 1rem; border-radius: .5rem; margin-bottom: 1rem; }
+  #conformance.pass { background: rgb(0 128 0 / 12%); }
+  #conformance.fail { background: rgb(200 0 0 / 12%); white-space: pre-wrap; }
+  @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+  <header>
+    <h1>@modyra/plain — full catalog</h1>
+    <div data-themes></div>
+  </header>
+  <main>
+    <div>
+      <div id="conformance"></div>
+      <div data-form></div>
+    </div>
+    <pre data-state></pre>
+  </main>
+  <script type="module" src="./main.js"></script>
+</body></html>
