@@ -175,8 +175,8 @@
         border-bottom: 1px solid var(--mdy-on-surface-variant);
         border-radius: var(--mdy-input-border-radius);
         padding-bottom: calc(0.625rem + 2px);
-        transition: border-color 0.2s cubic-bezier(0.2, 0, 0, 1),
-            background 0.2s, color 0.2s;
+        transition: border-color var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1)),
+            background var(--mdy-sys-motion-duration-slow, 0.2s), color var(--mdy-sys-motion-duration-slow, 0.2s);
     }
 
     /* Ensure inputs inside wrappers are transparent to show the wrapper's background */
@@ -333,7 +333,7 @@
 
     .mdy-select__option {
         border-radius: 0;
-        transition: background 0.15s cubic-bezier(0.2, 0, 0, 1);
+        transition: background var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
     }
 
     /* ─── Toggle / Switch ─────────────────────────────────────────────────────── */
@@ -381,7 +381,7 @@
         height: 1.25rem;
         border: 2px solid var(--mdy-outline);
         background: transparent;
-        transition: border-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        transition: border-color var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
     }
 
     .mdy-radio-circle::after {
@@ -408,7 +408,7 @@
         border-radius: 50%;
         transform: translate(-50%, -50%) scale(0);
         opacity: 0;
-        transition: transform 0.2s, opacity 0.2s;
+        transition: transform var(--mdy-sys-motion-duration-slow, 0.2s), opacity var(--mdy-sys-motion-duration-slow, 0.2s);
         pointer-events: none;
     }
 
@@ -494,7 +494,7 @@
     .mdy-file-clear {
         color: var(--mdy-error);
         opacity: 0.7;
-        transition: opacity 0.2s;
+        transition: opacity var(--mdy-sys-motion-duration-slow, 0.2s);
     }
 
     .mdy-file-clear:hover {
@@ -552,7 +552,7 @@
         font-weight: var(--mdy-font-weight-medium);
         border-radius: 0;
         cursor: pointer;
-        transition: background 0.2s, color 0.2s;
+        transition: background var(--mdy-sys-motion-duration-slow, 0.2s), color var(--mdy-sys-motion-duration-slow, 0.2s);
         white-space: nowrap;
     }
 
@@ -577,7 +577,7 @@
         /* flex item — visibility:hidden preserves its 1rem width so layout never shifts on selection */
         width: 1rem;
         height: 1rem;
-        animation: mdy-segmented-check-pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        animation: mdy-segmented-check-pop 0.25s var(--mdy-sys-motion-easing-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275));
     }
 
     /* ─── Multiselect ─────────────────────────────────────────────────────────── */
@@ -783,7 +783,7 @@
         display: flex;
         flex-direction: column;
         margin-top: 0 !important;
-        animation: mdy-modal-in 0.3s cubic-bezier(0.05, 0.7, 0.1, 1);
+        animation: mdy-modal-in 0.3s var(--mdy-sys-motion-easing-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
     }
 
     @keyframes mdy-modal-in {
@@ -840,7 +840,7 @@
         font-size: 0.875rem;
         font-weight: var(--mdy-font-weight-medium);
         cursor: pointer;
-        transition: background 0.2s;
+        transition: background var(--mdy-sys-motion-duration-slow, 0.2s);
     }
 
     .mdy-datepicker__action-btn:hover {
@@ -923,7 +923,7 @@
         background-color: var(--mdy-surface-container-highest);
         border-radius: var(--mdy-input-border-radius);
         border-bottom: 1px solid var(--mdy-on-surface-variant);
-        transition: background 0.2s, border-color 0.2s;
+        transition: background var(--mdy-sys-motion-duration-slow, 0.2s), border-color var(--mdy-sys-motion-duration-slow, 0.2s);
         padding: 0 !important;
     }
 
@@ -945,7 +945,7 @@
         height: 100%;
         padding: 0 1rem;
         box-sizing: border-box;
-        transition: padding-top 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: padding-top var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
     }
 
     .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-input-wrapper__inliner {
@@ -969,7 +969,7 @@
         width: 3rem;
         cursor: pointer;
         border-radius: var(--mdy-corner-extra-small);
-        transition: background 0.2s;
+        transition: background var(--mdy-sys-motion-duration-slow, 0.2s);
     }
 
     .mdy-colors__primary-picker:hover:not(:disabled) {

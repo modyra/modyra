@@ -161,6 +161,26 @@
     --mdy-sys-shape-corner-medium: 12px;
     --mdy-sys-shape-corner-large: 16px;
     --mdy-sys-shape-corner-extra-large: 28px;
+
+    /* ─── Motion ──────────────────────────────────────────────────────────────
+       Six durations and seven easings were spread across the foundation and the
+       four themes — including `cubic-bezier(0.4, 0, 0.2, 1)` written two ways, the
+       same curve spelled differently in two places. A control that opens in 0.15s
+       under one theme and 0.2s under another is not the same control, and nothing
+       could tell you they had drifted. Named here, in the tier every other value
+       comes from. */
+    --mdy-sys-motion-duration-fast: 0.1s;
+    --mdy-sys-motion-duration-base: 0.15s;
+    --mdy-sys-motion-duration-slow: 0.2s;
+    /* The standard curve: most things start and stop on it. */
+    --mdy-sys-motion-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    /* Entering the screen — quick to arrive, slow to settle. */
+    --mdy-sys-motion-easing-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+    /* Overshoots, for a control that should feel physical: a switch, a chip. */
+    --mdy-sys-motion-easing-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* Material's emphasized curve — a longer, flatter settle than `standard`, and genuinely a
+       different curve rather than a fourth spelling of one. */
+    --mdy-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
     --mdy-sys-shape-corner-full: 9999px;
 
     /* Elevation */

@@ -137,7 +137,7 @@
         --mdy-checkbox-checkmark-color: var(--mdy-comp-checkbox-selected-icon-color, var(--mdy-sys-color-on-primary, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 95%)));
         --mdy-checkbox-border: var(--mdy-comp-checkbox-unselected-outline-width, 2px) solid var(--mdy-comp-checkbox-unselected-outline-color, var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%)));
         --mdy-checkbox-gap: 0.75rem;
-        --mdy-checkbox-transition: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        --mdy-checkbox-transition: var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
         /* Tick geometry — override per theme if needed */
         --mdy-checkbox-tick-w: 0.3;
         /* fraction of --mdy-checkbox-size */
@@ -182,7 +182,7 @@
         --mdy-toggle-thumb-color-checked: var(--mdy-comp-switch-selected-handle-color, var(--mdy-sys-color-on-primary, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 95%)));
         --mdy-toggle-thumb-offset: 4px;
         --mdy-toggle-gap: 0.75rem;
-        --mdy-toggle-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        --mdy-toggle-transition: var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
         /* The halo the thumb wears on hover and focus. Sized from the handle rather than fixed, so
            a theme that resizes the knob keeps a halo that fits its track; the colour follows the
            thumb, so it reads as the same control lighting up rather than a second thing arriving. */
@@ -232,7 +232,7 @@
         --mdy-chip-hover-color: var(--mdy-on-surface);
         --mdy-chip-hover-border: 1px solid var(--mdy-comp-filter-chip-outline-color, var(--mdy-sys-color-outline, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-slate, #94A3B8) 60%)));
         --mdy-chip-max-width: 11rem;
-        --mdy-chip-transition: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        --mdy-chip-transition: var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
 
         /* ── Slider ─────────────────────────────────────────────────────────────── */
         --mdy-slider-track-height: var(--mdy-comp-slider-active-track-height, 4px);
@@ -348,7 +348,7 @@
         color: var(--mdy-input-icon-color);
         background: transparent;
         border: none;
-        transition: background 0.15s, color 0.15s;
+        transition: background var(--mdy-sys-motion-duration-base, 0.15s), color var(--mdy-sys-motion-duration-base, 0.15s);
         font-size: 1em;
         line-height: 1;
         box-shadow: none;
@@ -474,7 +474,7 @@
         width: 3rem;
         cursor: pointer;
         border-radius: var(--mdy-corner-extra-small);
-        transition: background 0.15s;
+        transition: background var(--mdy-sys-motion-duration-base, 0.15s);
     }
 
     .mdy-colors__primary-picker:hover:not(:disabled) {
@@ -500,7 +500,7 @@
         border-radius: var(--mdy-color-swatch-radius);
         border: 1px solid var(--mdy-outline-variant);
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s;
+        transition: transform var(--mdy-sys-motion-duration-slow, 0.2s);
         pointer-events: none;
     }
 
@@ -523,7 +523,7 @@
         padding: 0 0.75rem 0 0.5rem;
         margin: 0 -0.25rem 0 0;
         border-radius: 0 var(--mdy-input-border-radius) var(--mdy-input-border-radius) 0;
-        transition: background 0.15s, color 0.15s;
+        transition: background var(--mdy-sys-motion-duration-base, 0.15s), color var(--mdy-sys-motion-duration-base, 0.15s);
     }
 
     .mdy-colors__toggle-area:hover:not(:disabled) {
@@ -588,7 +588,7 @@
         border: none;
         cursor: pointer;
         color: var(--mdy-on-surface-variant);
-        transition: color 0.2s, transform 0.2s;
+        transition: color var(--mdy-sys-motion-duration-slow, 0.2s), transform var(--mdy-sys-motion-duration-slow, 0.2s);
     }
 
     .mdy-colors__swatch-toggle:hover {
@@ -674,7 +674,7 @@
         border: 2px solid transparent;
         cursor: pointer;
         padding: 0;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
         background-color: var(--color, transparent);
         outline: 2px solid transparent;
         outline-offset: 2px;
@@ -757,7 +757,7 @@
         border-radius: var(--mdy-input-border-radius) var(--mdy-input-border-radius) 0 0;
         /* Bottom indicator via box-shadow — never causes layout shift */
         box-shadow: inset 0 -1px 0 0 var(--mdy-outline-variant);
-        transition: background-color 0.2s, box-shadow 0.2s;
+        transition: background-color var(--mdy-sys-motion-duration-slow, 0.2s), box-shadow var(--mdy-sys-motion-duration-slow, 0.2s);
     }
 
     /* For textareas, align decorators to the top */
@@ -817,7 +817,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: color 0.2s;
+        transition: color var(--mdy-sys-motion-duration-slow, 0.2s);
     }
 
     .mdy-input-wrapper:focus-within .mdy-input-prefix,
@@ -907,7 +907,7 @@
         box-shadow: inset 0 -1px 0 0 var(--mdy-outline-variant);
         font-size: var(--mdy-input-font-size);
         color: var(--mdy-input-color);
-        transition: background-color 0.2s, box-shadow 0.2s;
+        transition: background-color var(--mdy-sys-motion-duration-slow, 0.2s), box-shadow var(--mdy-sys-motion-duration-slow, 0.2s);
         outline: none;
         width: 100%;
     }
@@ -996,7 +996,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
     }
 
     .mdy-renderer--touched .mdy-input-wrapper:has(input[aria-invalid="true"]),
@@ -1083,13 +1083,6 @@
         cursor: not-allowed;
     }
 
-    @media (prefers-reduced-motion: reduce) {
-
-        .mdy-checkbox__indicator,
-        .mdy-checkbox__indicator::after {
-            transition: none;
-        }
-    }
 
     .mdy-checkbox input[type="checkbox"] {
         position: absolute;
@@ -1198,11 +1191,6 @@
         --mdy-toggle-travel-direction: -1;
     }
 
-    @media (prefers-reduced-motion: reduce) {
-        .mdy-toggle__thumb {
-            transition: none;
-        }
-    }
 
     .mdy-toggle input:focus-visible+.mdy-toggle__track {
         outline: 2px solid var(--mdy-input-focus-color);
@@ -1263,7 +1251,7 @@
         border: 2px solid var(--mdy-radio-unselected-color);
         border-radius: 50%;
         background: transparent;
-        transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+        transition: border-color var(--mdy-sys-motion-duration-base, 0.15s), background var(--mdy-sys-motion-duration-base, 0.15s), box-shadow var(--mdy-sys-motion-duration-base, 0.15s);
         position: relative;
         flex-shrink: 0;
     }
@@ -1279,7 +1267,7 @@
         background: var(--mdy-on-primary);
         border-radius: 50%;
         transform: translate(-50%, -50%) scale(0);
-        transition: transform 0.15s;
+        transition: transform var(--mdy-sys-motion-duration-base, 0.15s);
     }
 
     .mdy-radio-item:hover .mdy-radio-circle {
@@ -1343,7 +1331,7 @@
         background: var(--mdy-slider-thumb-color);
         border-radius: 50%;
         cursor: pointer;
-        transition: transform 0.1s ease;
+        transition: transform var(--mdy-sys-motion-duration-fast, 0.1s) ease;
     }
 
     .mdy-slider::-moz-range-thumb {
@@ -1359,7 +1347,7 @@
         color: inherit;
         /* Follows label color */
         margin-left: 0.125rem;
-        transition: color 0.2s ease;
+        transition: color var(--mdy-sys-motion-duration-slow, 0.2s) ease;
     }
 
     .mdy-label--has-error .mdy-label__required {
@@ -1385,7 +1373,7 @@
         border: var(--mdy-file-container-border);
         border-radius: var(--mdy-file-container-radius);
         padding: 1.5rem;
-        transition: border-color 0.2s, background 0.2s;
+        transition: border-color var(--mdy-sys-motion-duration-slow, 0.2s), background var(--mdy-sys-motion-duration-slow, 0.2s);
         background: var(--mdy-file-container-bg);
     }
 
@@ -1427,7 +1415,7 @@
         font-size: 0.875rem;
         font-weight: 500;
         height: 2.5rem;
-        transition: opacity 0.2s;
+        transition: opacity var(--mdy-sys-motion-duration-slow, 0.2s);
     }
 
     .mdy-button:hover:not(:disabled) {
@@ -1533,8 +1521,8 @@
         /* M3: 14px */
         color: var(--mdy-segmented-unselected-color);
         /* No padding in transition — internal shift on selection is instant, not animated */
-        transition: background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-            color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: background var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+            color var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
         white-space: nowrap;
         position: relative;
         user-select: none;
@@ -1623,7 +1611,7 @@
         width: 1rem;
         height: 1rem;
         flex-shrink: 0;
-        animation: mdy-segmented-check-pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        animation: mdy-segmented-check-pop 0.25s var(--mdy-sys-motion-easing-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275));
     }
 
     @keyframes mdy-segmented-check-pop {
@@ -1664,7 +1652,7 @@
         padding: 0;
         color: inherit;
         border-radius: 50%;
-        transition: background 0.15s;
+        transition: background var(--mdy-sys-motion-duration-base, 0.15s);
     }
 
     .mdy-multiselect__search-btn:hover:not(:disabled) {
@@ -1713,7 +1701,7 @@
         cursor: pointer;
         user-select: none;
         white-space: nowrap;
-        transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+        transition: background var(--mdy-sys-motion-duration-base, 0.15s), color var(--mdy-sys-motion-duration-base, 0.15s), border-color var(--mdy-sys-motion-duration-base, 0.15s), box-shadow var(--mdy-sys-motion-duration-base, 0.15s);
     }
 
     .mdy-chip--centered {
@@ -1835,7 +1823,7 @@
         cursor: pointer;
         font-family: inherit;
         padding: 0;
-        transition: background 0.15s;
+        transition: background var(--mdy-sys-motion-duration-base, 0.15s);
     }
 
     .mdy-chip__btn:hover:not(:disabled) {
@@ -2052,7 +2040,7 @@
         width: 1rem;
         height: 1rem;
         color: var(--mdy-select-arrow-color);
-        transition: transform 0.2s;
+        transition: transform var(--mdy-sys-motion-duration-slow, 0.2s);
         flex-shrink: 0;
         display: flex;
         align-items: center;
@@ -2098,7 +2086,7 @@
         inset: 0;
         z-index: calc(var(--mdy-z-overlay) - 1);
         background: var(--mdy-overlay-backdrop-bg);
-        transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: opacity var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
     }
 
     .mdy-select__dropdown--overlay {
@@ -2156,7 +2144,7 @@
         font-size: var(--mdy-input-font-size);
         line-height: var(--mdy-input-line-height);
         cursor: pointer;
-        transition: background 0.1s;
+        transition: background var(--mdy-sys-motion-duration-fast, 0.1s);
     }
 
     .mdy-select__option--active {
@@ -2205,7 +2193,7 @@
         white-space: nowrap;
         z-index: var(--mdy-z-overlay);
         pointer-events: none;
-        transition: opacity 0.1s ease-out, transform 0.1s ease-out, visibility 0.1s;
+        transition: opacity var(--mdy-sys-motion-duration-fast, 0.1s) ease-out, transform var(--mdy-sys-motion-duration-fast, 0.1s) ease-out, visibility var(--mdy-sys-motion-duration-fast, 0.1s);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
@@ -2305,7 +2293,7 @@
         color: var(--mdy-comp-date-picker-input-color, var(--mdy-sys-color-on-surface, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-night, #0E0F16) 80%)));
         outline: none;
         background: transparent;
-        transition: border-color 0.15s, box-shadow 0.15s;
+        transition: border-color var(--mdy-sys-motion-duration-base, 0.15s), box-shadow var(--mdy-sys-motion-duration-base, 0.15s);
     }
 
 
@@ -2335,7 +2323,7 @@
         justify-content: center;
         color: var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%));
         border-radius: 50%;
-        transition: background-color 0.2s, color 0.2s;
+        transition: background-color var(--mdy-sys-motion-duration-slow, 0.2s), color var(--mdy-sys-motion-duration-slow, 0.2s);
         padding: 0;
         width: 32px;
         height: 32px;
@@ -2378,7 +2366,7 @@
         background: none;
         color: inherit;
         cursor: pointer;
-        transition: background-color 0.2s, color 0.2s;
+        transition: background-color var(--mdy-sys-motion-duration-slow, 0.2s), color var(--mdy-sys-motion-duration-slow, 0.2s);
     }
 
     .mdy-timepicker__toggle:focus-visible {
@@ -2476,7 +2464,7 @@
         inset: 0;
         z-index: calc(var(--mdy-z-overlay) - 1);
         background: var(--mdy-overlay-backdrop-bg, rgba(0, 0, 0, 0.4));
-        transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: opacity var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
     }
 
     .mdy-datepicker__popup--overlay,
@@ -2566,7 +2554,7 @@
         color: var(--tp-on-primary-container) !important;
         outline: none !important;
         box-shadow: none !important;
-        transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+        transition: background-color var(--mdy-sys-motion-duration-base, 0.15s), border-color var(--mdy-sys-motion-duration-base, 0.15s), color var(--mdy-sys-motion-duration-base, 0.15s);
         font-family: inherit;
         display: flex;
         align-items: center;
@@ -2639,7 +2627,7 @@
         font-family: inherit;
         cursor: pointer;
         color: var(--mdy-on-surface-variant, #3f3f46);
-        transition: background-color 0.15s, color 0.15s;
+        transition: background-color var(--mdy-sys-motion-duration-base, 0.15s), color var(--mdy-sys-motion-duration-base, 0.15s);
     }
 
     .mdy-timepicker-period-btn:first-child {
@@ -2697,7 +2685,7 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(calc(var(--index) * 30deg)) translateY(calc(var(--tp-hand-length) * -1)) rotate(calc(var(--index) * -30deg));
-        transition: color 0.12s;
+        transition: color var(--mdy-sys-motion-duration-fast, 0.1s);
     }
 
     .mdy-timepicker-dial__number--selected {
@@ -2759,7 +2747,7 @@
         cursor: pointer;
         padding: 6px;
         border-radius: 50%;
-        transition: background-color 0.15s;
+        transition: background-color var(--mdy-sys-motion-duration-base, 0.15s);
         width: 32px;
         height: 32px;
     }
@@ -2783,7 +2771,7 @@
         border-radius: var(--tp-border-radius);
         cursor: pointer;
         letter-spacing: 0.04em;
-        transition: background-color 0.15s;
+        transition: background-color var(--mdy-sys-motion-duration-base, 0.15s);
     }
 
     .mdy-timepicker-action-btn:hover {
@@ -2832,7 +2820,7 @@
         cursor: pointer;
         color: inherit;
         padding: 0;
-        transition: background 0.15s;
+        transition: background var(--mdy-sys-motion-duration-base, 0.15s);
     }
 
 
@@ -2865,7 +2853,7 @@
         font-size: var(--mdy-comp-date-picker-title-font-size, 0.875rem);
         font-weight: var(--mdy-comp-date-picker-title-font-weight, 600);
         cursor: pointer;
-        transition: background 0.1s;
+        transition: background var(--mdy-sys-motion-duration-fast, 0.1s);
     }
 
 
@@ -2943,7 +2931,7 @@
         color: var(--mdy-comp-date-picker-cell-color, var(--mdy-sys-color-on-surface, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-night, #0E0F16) 80%)));
         cursor: pointer;
         user-select: none;
-        transition: background 0.1s, color 0.1s;
+        transition: background var(--mdy-sys-motion-duration-fast, 0.1s), color var(--mdy-sys-motion-duration-fast, 0.1s);
         outline: none;
         box-shadow: none;
         border: none;
@@ -3067,7 +3055,7 @@
     .mdy-daterange__group {
         display: flex;
         align-items: stretch;
-        transition: border-color 0.15s, box-shadow 0.15s;
+        transition: border-color var(--mdy-sys-motion-duration-base, 0.15s), box-shadow var(--mdy-sys-motion-duration-base, 0.15s);
     }
 
     /* Container-level focus ring instead of per-input */
@@ -3187,7 +3175,7 @@
         font-family: inherit;
         font-size: var(--mdy-datepicker-cell-font-size, 0.875rem);
         cursor: pointer;
-        transition: background 0.1s, color 0.1s;
+        transition: background var(--mdy-sys-motion-duration-fast, 0.1s), color var(--mdy-sys-motion-duration-fast, 0.1s);
         outline: none;
     }
 
@@ -3240,6 +3228,25 @@
         padding: 0;
         margin-block-end: var(--mdy-layout-legend-gap, 0.5rem);
         font-weight: 600;
+    }
+
+    /* Motion is a preference, and it was honoured for two parts out of fifty-three: the checkbox's
+       indicator and the toggle's thumb had their own `prefers-reduced-motion` rules and everything
+       else — every popup, every chip, every focus ring, every calendar cell — animated regardless.
+       One rule covers the whole vocabulary, so a control cannot be added that quietly ignores it.
+
+       `!important` is deliberate and is the one place the foundation uses it: a theme's own
+       transition would otherwise win, and no theme has standing to overrule this. */
+    @media (prefers-reduced-motion: reduce) {
+
+        [class*="mdy-"],
+        [class*="mdy-"]::before,
+        [class*="mdy-"]::after {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+        }
     }
 
     .mdy-layout-columns {

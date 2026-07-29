@@ -81,7 +81,7 @@
     /* No outline, so the handle's travel is the whole track. */
     --mdy-toggle-border-width: 0px;
     --mdy-toggle-border-checked: none;
-    --mdy-toggle-transition: 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    --mdy-toggle-transition: var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1)));
 
     /* Multiselect / Chips — Ionic badge/chip style */
     --mdy-multiselect-padding: 0.375rem 0.5rem;
@@ -138,7 +138,7 @@
     border: none;
     border-bottom: 1px solid var(--ion-color-medium);
     border-radius: var(--mdy-input-border-radius);
-    transition: background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    transition: background var(--mdy-sys-motion-duration-base, 0.15s) ease, box-shadow var(--mdy-sys-motion-duration-base, 0.15s) ease, border-color var(--mdy-sys-motion-duration-base, 0.15s) ease;
 }
 
 /* Hover slightly darkens the background */
@@ -229,3 +229,19 @@
 }
 
 } /* end @layer mdy.themes */
+
+/* Motion is a preference. This theme animated and never read it — the foundation's blanket guard
+   covers the shared vocabulary, and this covers anything Ionic adds of its own. */
+@layer mdy.themes {
+
+    @media (prefers-reduced-motion: reduce) {
+
+        [class*="mdy-"],
+        [class*="mdy-"]::before,
+        [class*="mdy-"]::after {
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+        }
+    }
+}
