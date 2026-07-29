@@ -78,6 +78,8 @@
     --mdy-toggle-bg-checked: var(--ion-color-success);
     /* Ionic toggles often default to success green */
     --mdy-toggle-border: none;
+    /* No outline, so the handle's travel is the whole track. */
+    --mdy-toggle-border-width: 0px;
     --mdy-toggle-border-checked: none;
     --mdy-toggle-transition: 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
 

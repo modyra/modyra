@@ -195,11 +195,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                 </div>`
               : html`No results`}
           </div>`
-        : html`<div class="mdy-multiselect__options mdy-multiselect-overlay__grid">
-            ${this.searchResults(handle).map((option) =>
-              this.renderOptionChip(handle, option),
-            )}
-          </div>`}
+        : this.renderOptionsGrid(handle, this.searchResults(handle), "mdy-multiselect-overlay__grid")}
       </div>
     `;
 
@@ -226,9 +222,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           aria-required=${handle.required() ? "true" : "false"}
           aria-describedby=${showBlockErrors ? this.errorsId : nothing}
         >
-          ${this.mode === "multi"
-            ? this.renderCounterChips(handle)
-            : this.renderToggleChips(handle)}
           ${(handle.value() ?? []).length === 0
             ? html`<span class="${this.partClass("placeholder")}">${this.label ? `Select ${this.label.toLowerCase()}…` : "Select…"}</span>`
             : nothing}
@@ -251,6 +244,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         </div>
         <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
       </div>
+      ${this.renderOptionsGrid(handle, this.filteredOptions(), "")}
       ${renderOverlayPanel(overlay, this._open, {
         modal: position === "overlay",
         alignment,
@@ -261,50 +255,22 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     `;
   }
 
-  private renderToggleChips(handle: MdyFieldHandle<readonly unknown[]>): unknown {
-    const selected = handle.value() ?? [];
-    return selected.map(
-      (value) => html`<button
-        type="button"
-        class=${multiselectChipClasses({ mode: "single", selected: true }).join(" ")}
-        ?disabled=${handle.disabled()}
-        @click=${() => this.pick(handle, value)}
-      >
-        ${mdyIcon("CHECKMARK", "mdy-chip__check")}
-        <span class="mdy-chip__label">${this.labelFor(value)}</span>
-      </button>`,
-    );
-  }
-
-  private renderCounterChips(handle: MdyFieldHandle<readonly unknown[]>): unknown {
-    const counts = this.counts(handle);
-    return this.filteredOptions().map(
-      (option) => {
-        const count = counts.get(String(option.value)) ?? 0;
-        return html`<div
-          class=${multiselectChipClasses({ mode: "multi", selected: count > 0 }).join(" ")}
-        >
-          <button
-            type="button"
-            class="mdy-chip__btn"
-            ?disabled=${handle.disabled() || count === 0}
-            @click=${() => this.decrement(handle, option.value)}
-          >
-            ${mdyIcon("MINUS", "")}
-          </button>
-          <span class="mdy-chip__label">${option.label}</span>
-          <span class="mdy-chip__count">×${count}</span>
-          <button
-            type="button"
-            class="mdy-chip__btn"
-            ?disabled=${handle.disabled()}
-            @click=${() => this.increment(handle, option.value)}
-          >
-            ${mdyIcon("PLUS", "")}
-          </button>
-        </div>`;
-      },
-    );
+  /**
+   * A grid of option chips: the one in the field, and the one in the popup.
+   *
+   * Both carry `mdy-multiselect__options`, so one rule lays out both; the popup's adds the overlay
+   * class on top. Each chip sits in the contract's wrapper, which is what the grid arranges.
+   */
+  private renderOptionsGrid(
+    handle: MdyFieldHandle<readonly unknown[]>,
+    options: ReadonlyArray<MdySelectOption<unknown>>,
+    extraClass: string,
+  ): unknown {
+    return html`<div class="${this.partClass("options")} ${extraClass}" role="group">
+      ${options.map(
+        (option) => html`<div class=${MDY_CHIP_CLASSES.wrapper}>${this.renderOptionChip(handle, option)}</div>`,
+      )}
+    </div>`;
   }
 
   private renderOptionChip(
@@ -318,17 +284,17 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       >
         <button
           type="button"
-          class="mdy-chip__btn"
+          class=${MDY_CHIP_CLASSES.step}
           ?disabled=${count === 0}
           @click=${() => this.decrement(handle, option.value)}
         >
           ${mdyIcon("MINUS", "")}
         </button>
-        <span class="mdy-chip__label">${option.label}</span>
-        <span class="mdy-chip__count">×${count}</span>
+        <span class=${MDY_CHIP_CLASSES.label}>${option.label}</span>
+        <span class=${MDY_CHIP_CLASSES.count}>×${count}</span>
         <button
           type="button"
-          class="mdy-chip__btn"
+          class=${MDY_CHIP_CLASSES.step}
           @click=${() => this.increment(handle, option.value)}
         >
           ${mdyIcon("PLUS", "")}
@@ -339,9 +305,13 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return html`<button
       type="button"
       class=${multiselectChipClasses({ mode: "single", selected }).join(" ")}
+      ?disabled=${handle.disabled()}
+      aria-pressed=${selected ? "true" : "false"}
+      title=${option.label}
       @click=${() => this.pick(handle, option.value)}
     >
-      <span class="mdy-chip__label">${option.label}</span>
+      ${mdyIcon("CHECKMARK", MDY_CHIP_CLASSES.check)}
+      <span class=${MDY_CHIP_CLASSES.label}>${option.label}</span>
     </button>`;
   }
 }

@@ -152,6 +152,8 @@
         --mdy-toggle-bg: rgba(60, 60, 67, 0.3);
         --mdy-toggle-bg-checked: var(--mdy-ios-green);
         --mdy-toggle-border: none;
+        /* No outline, so the handle's travel is the whole track. */
+        --mdy-toggle-border-width: 0px;
         --mdy-toggle-border-checked: none;
         --mdy-toggle-gap: 0.625rem;
         --mdy-toggle-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -529,21 +531,11 @@
         border-color: transparent;
     }
 
+    /* The capsule is expressed through `--mdy-toggle-thumb-width/height`, which the foundation
+       reads: its travel, its shape and its state layer are the contract's, and only the platform's
+       drop shadow is stated here. */
     .mdy-toggle__thumb {
-        background: var(--mdy-toggle-thumb-color);
-        width: var(--mdy-toggle-thumb-width);
-        height: var(--mdy-toggle-thumb-height);
-        border-radius: 9999px;
-        top: 50%;
-        transform: translateY(-50%);
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        position: absolute;
-        left: var(--mdy-toggle-thumb-offset);
-        transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .mdy-toggle input:checked+.mdy-toggle__track .mdy-toggle__thumb {
-        left: calc(var(--mdy-toggle-width) - var(--mdy-toggle-thumb-width) - var(--mdy-toggle-thumb-offset));
     }
 
     .mdy-toggle input:focus-visible+.mdy-toggle__track {
