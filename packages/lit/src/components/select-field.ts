@@ -224,9 +224,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
 
     const dropdown = html`
       <div
-        class="${this.partClass("popup")} mdy-overlay mdy-glass-effect ${position === "above"
-          ? "mdy-select__dropdown--above"
-          : ""} ${position === "overlay" ? "mdy-select__dropdown--overlay" : ""} ${alignment === "right"
+        class="${this.popupClass(position)} mdy-overlay mdy-glass-effect ${alignment === "right"
           ? "mdy-select__dropdown--right"
           : ""}"
       >
