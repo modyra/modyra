@@ -1455,13 +1455,23 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       itemSchema.dataset.plainSelect = array.item.id;
       itemSchema.setAttribute("aria-label", `Edit item schema for ${array.name}`);
       itemSchema.textContent = `Item schema: ${array.item.node === "group" ? "group" : array.item.fieldKind}`;
+      const rowShape = document.createElement("select");
+      rowShape.className = "plain-canvas-array-shape";
+      rowShape.dataset.plainArrayShape = array.id;
+      rowShape.setAttribute("aria-label", `Row shape for ${array.name}`);
+      const currentShape = array.item.node === "group" ? "group" : array.item.fieldKind;
+      rowShape.append(new Option("Group of fields", "group", false, currentShape === "group"));
+      for (const template of TEMPLATE_CATALOG) {
+        if (template.group === "Structure") continue;
+        rowShape.append(new Option(`Single ${template.label.toLowerCase()}`, template.id, false, currentShape === template.id));
+      }
       // Where the item schema's own group renders. An array whose row is a group had that group
       // land at the form root, because only groups were registered as containers — so the one part
       // of the schema that says what a row *is* appeared to be a sibling of the array rather than
       // its shape. Registering the array here puts it where the hierarchy actually is.
       const itemBody = document.createElement("div");
       itemBody.className = "plain-canvas-array-item-body";
-      section.append(header, itemSchema, itemBody, body);
+      section.append(header, itemSchema, rowShape, itemBody, body);
       containerBodies.set(array.id, itemBody);
       containerElements.set(array.id, section);
     }
@@ -1504,30 +1514,37 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         button.disabled = !targetId;
         return button;
       };
-      controls.append(
-        moveButton("Move up", "\u2191", "before", position > 0 ? siblings[position - 1] : undefined),
-        moveButton("Move down", "\u2193", "after", position >= 0 && position < siblings.length - 1 ? siblings[position + 1] : undefined),
-      );
-      if (idx.parentById.get(group.id) !== project.schema.id) {
-        const root = iconButton("\u2912", `Move ${group.name} to form root`);
-        root.dataset.plainGroupRoot = group.id;
-        controls.append(root);
+      // A row shape is not a sibling of anything: it *is* the array's item. The model refuses to
+      // move, duplicate or delete it — "Node is not movable", "Replace the array item or delete its
+      // array" — so offering those four controls only ever produced an error in the footer. What is
+      // valid instead is replacing the shape, which is the one thing nothing offered.
+      const isRowShape = idx.nodeById.get(idx.parentById.get(group.id) ?? "")?.node === "array";
+      if (!isRowShape) {
+        controls.append(
+          moveButton("Move up", "\u2191", "before", position > 0 ? siblings[position - 1] : undefined),
+          moveButton("Move down", "\u2193", "after", position >= 0 && position < siblings.length - 1 ? siblings[position + 1] : undefined),
+        );
+        if (idx.parentById.get(group.id) !== project.schema.id) {
+          const root = iconButton("\u2912", `Move ${group.name} to form root`);
+          root.dataset.plainGroupRoot = group.id;
+          controls.append(root);
+        }
+        const into = document.createElement("select");
+        into.dataset.plainGroupInto = group.id;
+        into.setAttribute("aria-label", `Move ${group.name} into group`);
+        into.append(new Option("⊞", ""));
+        for (const target of groups) {
+          const targetPath = idx.pathByNode.get(target.id) ?? "";
+          if (target.id === group.id || targetPath.startsWith(`${groupPath}.`)) continue;
+          into.append(new Option(target.label || target.name, target.id));
+        }
+        controls.append(into);
+        const groupDuplicate = iconButton("\u29c9", `Duplicate ${group.name}`);
+        groupDuplicate.dataset.duplicate = group.id;
+        const groupDelete = iconButton("\u00d7", `Delete ${group.name}`);
+        groupDelete.dataset.delete = group.id;
+        controls.append(groupDuplicate, groupDelete);
       }
-      const into = document.createElement("select");
-      into.dataset.plainGroupInto = group.id;
-      into.setAttribute("aria-label", `Move ${group.name} into group`);
-      into.append(new Option("⊞", ""));
-      for (const target of groups) {
-        const targetPath = idx.pathByNode.get(target.id) ?? "";
-        if (target.id === group.id || targetPath.startsWith(`${groupPath}.`)) continue;
-        into.append(new Option(target.label || target.name, target.id));
-      }
-      controls.append(into);
-      const groupDuplicate = iconButton("\u29c9", `Duplicate ${group.name}`);
-      groupDuplicate.dataset.duplicate = group.id;
-      const groupDelete = iconButton("\u00d7", `Delete ${group.name}`);
-      groupDelete.dataset.delete = group.id;
-      controls.append(groupDuplicate, groupDelete);
       legend.append(
         dragGrip(group.id),
         inlineEditor("label", group.id, group.label ?? "", "Untitled group", `Label for group ${group.name}`),
@@ -2748,6 +2765,20 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         commit(createMoveCommand(nodeId, { kind: "inside", parentId: project.schema.id, index: indexes.childrenByParent.get(project.schema.id)?.length ?? 0 }), nodeId, `[data-plain-select="${nodeId}"]`);
       }),
     );
+    root.querySelectorAll<HTMLSelectElement>("[data-plain-array-shape]").forEach((select) =>
+      select.addEventListener("change", () => {
+        const arrayId = select.dataset.plainArrayShape;
+        const template = select.value;
+        if (!arrayId || !template) return;
+        // `arrayItem` replaces what a row is. The editor has always supported the placement; nothing
+        // reached it, so a repeater's rows were whatever shape they were created with for ever.
+        const created = createNodeFromTemplate(template);
+        selected = created.id;
+        commit(createInsertCommand(created, { kind: "arrayItem", arrayId }), created.id,
+          `[data-plain-array-shape="${arrayId}"]`);
+      }),
+    );
+
     root.querySelectorAll<HTMLSelectElement>("[data-plain-group-into]").forEach((select) =>
       select.addEventListener("change", () => {
         const nodeId = select.dataset.plainGroupInto;
@@ -3147,14 +3178,24 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       event.preventDefault();
       const previousSibling = siblings[position - 1];
       const container = previousSibling ? idx.nodeById.get(previousSibling) : null;
-      if (container?.node === "group") {
-        commit(createMoveCommand(picked, { kind: "inside", parentId: container.id, index: container.children.length }), picked);
+      // A repeater is a container too: moving into one means moving into the shape of its rows.
+      const target = container?.node === "array" ? idx.nodeById.get(container.item.id) : container;
+      if (target?.node === "group") {
+        commit(createMoveCommand(picked, { kind: "inside", parentId: target.id, index: target.children.length }), picked);
       }
     } else if (event.key === "ArrowLeft" && parent) {
+      // Out of a repeater's row shape, the thing to land after is the *array* — the row shape is the
+      // array's item and has no sibling slot of its own, so aiming at it threw "has no group parent"
+      // and a node moved into a row could never be moved back out.
+      const parentNode = idx.nodeById.get(parent);
       const grandparent = idx.parentById.get(parent);
-      if (grandparent) {
+      const grandparentNode = grandparent ? idx.nodeById.get(grandparent) : null;
+      const escapeTarget = grandparentNode?.node === "array" && grandparentNode.item.id === parentNode?.id
+        ? grandparent
+        : parent;
+      if (grandparent && escapeTarget) {
         event.preventDefault();
-        commit(createMoveCommand(picked, { kind: "after", targetId: parent }), picked);
+        commit(createMoveCommand(picked, { kind: "after", targetId: escapeTarget }), picked);
       }
     } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
