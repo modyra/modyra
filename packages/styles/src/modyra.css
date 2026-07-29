@@ -3240,11 +3240,37 @@
         border-radius: var(--mdy-overlay-shape, var(--mdy-sys-shape-corner-medium, 12px));
         box-shadow: var(--mdy-overlay-shadow, var(--mdy-shadow-depth-3));
         padding: var(--mdy-overlay-padding, 0.375rem);
+        /* One open and close for every popup in the catalog, whatever opened it.
+           The three renderers show a popup three different ways — Plain clears `hidden`, Angular
+           calls `showPopover()`, Lit renders the subtree — and each was appearing instantly except
+           Angular, which forced itself visible from a component-scoped rule no theme could reach.
+           `allow-discrete` is what makes one declaration cover all three: `display` and `overlay`
+           flip at the far end of the fade instead of cutting it short, so a popup removed from the
+           top layer still animates out.
+
+           Opacity only. `transform` carries the centring translate a modal placement writes through
+           `--mdy-overlay-transform`, and animating it would drag the popup across the viewport on
+           the way in. The blanket `prefers-reduced-motion` rule below already covers this. */
+        opacity: 1;
+        transition:
+            opacity var(--mdy-sys-motion-duration-fast, 0.1s) var(--mdy-sys-motion-easing-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)),
+            display var(--mdy-sys-motion-duration-fast, 0.1s) allow-discrete,
+            overlay var(--mdy-sys-motion-duration-fast, 0.1s) allow-discrete;
+    }
+
+    /* The state a popup animates *from* when it first appears, and *to* when it goes away. Without
+       the starting style there is no start value to interpolate from and the popup would still
+       appear instantly, however long the transition says it lasts. */
+    @starting-style {
+        .mdy-popup {
+            opacity: 0;
+        }
     }
 
     /* Shown by removing `hidden`; without this a theme's `display` would beat the UA's
        `[hidden] { display: none }` and the popup would never close. */
     .mdy-popup[hidden] {
+        opacity: 0;
         display: none;
     }
 
