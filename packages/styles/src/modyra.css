@@ -845,16 +845,42 @@
         margin-bottom: 0;
     }
 
+    /* ─── One field height ───────────────────────────────────────────────────────
+     * Every control that reads as a field is the same height, and that height is
+     * `--mdy-input-height`. A theme sets it; nothing else decides it.
+     *
+     * This is stated by what a control *is*, not by listing input types: the enumeration this
+     * replaced covered text, number, date and email, so a password box, a select's trigger and a
+     * picker's input were each a dozen pixels shorter than the field beside them. A control the
+     * enumeration forgot is the failure this rule cannot have.
+     *
+     * Excluded are the controls that are not fields: a checkbox and a radio are their own drawn
+     * shapes, a range is a track, and a file input is the invisible one behind a dropzone.
+     */
+    .mdy-renderer .mdy-input-wrapper,
+    .mdy-renderer input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+    .mdy-renderer textarea,
+    .mdy-renderer select,
+    .mdy-renderer .mdy-select__trigger,
+    .mdy-renderer .mdy-multiselect,
+    .mdy-renderer .mdy-segmented {
+        min-height: var(--mdy-input-height);
+        /* The height is the field's, padding included. Without this the token means two different
+           things: a text input laid out as `content-box` added its padding on top and came out a
+           dozen pixels taller than the select beside it, from the same declaration. */
+        box-sizing: border-box;
+    }
+
     /* ─── Standalone Inputs (M3 Filled — no wrapper) ─────────────────────────── */
 
     .mdy-renderer input[type="text"],
     .mdy-renderer input[type="number"],
     .mdy-renderer input[type="date"],
     .mdy-renderer input[type="email"],
+    .mdy-renderer input[type="password"],
     .mdy-renderer textarea,
     .mdy-renderer select {
         padding: var(--mdy-input-padding);
-        min-height: var(--mdy-input-height);
         background-color: var(--mdy-input-bg);
         border: none;
         /* M3 Filled: top corners rounded, bottom flat */
@@ -2161,8 +2187,25 @@
 
     /* ─── Date Picker ─────────────────────────────────────────────────────────── */
 
-    .mdy-datepicker {
+    /* The picker's own box: it holds the control and hosts the popup.
+     *
+     * A row, because what it holds sits side by side — a date range is a start, a separator, an end
+     * and a toggle. Left as a block, those stack, and a range field ends up three times the height
+     * of the text field above it. The popup inside is out of flow, so it takes no part in this. */
+    .mdy-datepicker,
+    .mdy-timepicker {
         position: relative;
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        flex: 1;
+    }
+
+    /* An input in that row shares the width rather than claiming its intrinsic size. */
+    .mdy-datepicker>.mdy-datepicker__input,
+    .mdy-timepicker>.mdy-timepicker__input {
+        flex: 1;
+        min-width: 0;
     }
 
 

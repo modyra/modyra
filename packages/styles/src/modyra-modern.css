@@ -193,15 +193,6 @@
 
     /* ─── Pickers ─────────────────────────────────────────────────────────────── */
 
-    .mdy-datepicker,
-    .mdy-timepicker {
-        position: relative;
-        display: flex;
-        align-items: center;
-        width: 100%;
-        min-width: 0;
-    }
-
     /* Both pickers are an input plus a toggle button, as in Angular: the input takes the row and
        the button sits at its end. */
     .mdy-input-wrapper .mdy-datepicker__input,

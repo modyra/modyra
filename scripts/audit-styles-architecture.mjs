@@ -74,6 +74,17 @@ for (const name of THEMES) {
 
   if (/\[hidden\]/.test(css)) defects.push(`${name}: re-declares [hidden]; whether a closed popup is closed is structure`);
 
+  // How a control arranges what it holds is structure too. Material declared `.mdy-datepicker` a
+  // block, and a date range's two inputs and its toggle stacked: one field stood three times as
+  // tall as the one above it, from a theme rule that looked like a formality.
+  for (const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const [, selector, body] = rule;
+    if (!/(^|[\s,])\.mdy-(datepicker|timepicker|input-wrapper|renderer)(?![\w-])/.test(selector)) continue;
+    if (/(^|;|\s)display\s*:/.test(body)) {
+      defects.push(`${name}: sets display on a control's own box (${selector.trim().split("\n")[0]}); how it arranges what it holds is structure`);
+    }
+  }
+
   // A theme builds on the foundation. Importing another theme is how Material became everyone's
   // base: three themes spent their rules undoing a field they never asked for.
   for (const match of css.matchAll(/@import\s+['"]\.\/(modyra-(?:material|modern|ios|ionic)|modyra)\.css['"]/g)) {
@@ -83,6 +94,26 @@ for (const name of THEMES) {
   }
 
   for (const debt of DEBT) if (debt.matches(name, css)) debtSeen.add(debt.id);
+}
+
+/**
+ * A field's height is stated once, for what a control *is*.
+ *
+ * The foundation used to give `min-height: var(--mdy-input-height)` to a list of input types —
+ * text, number, date, email — so a password box, a select's trigger and a picker's input each stood
+ * a dozen pixels shorter than the field beside them. An enumeration cannot be right: it is only ever
+ * as complete as the day it was written.
+ */
+function checkFieldHeight(css) {
+  const found = [];
+  for (const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const [, selector, body] = rule;
+    if (!/min-height\s*:\s*var\(--mdy-input-height/.test(body)) continue;
+    if (/input\[type=/.test(selector)) {
+      found.push(`the field height is stated per input type (${selector.trim().split("\n")[0].slice(0, 60)}…); state it for what a control is`);
+    }
+  }
+  return found;
 }
 
 const BRAND_FONTS = /"(Satoshi|Outfit|Inter|Roboto|SF Pro[^"]*|Helvetica Neue)"/g;
@@ -97,6 +128,7 @@ for (const name of FOUNDATION) {
     const context = css.slice(Math.max(0, index - 80), index);
     if (!context.includes("var(")) defects.push(`${name}: carries the literal colour ${match[0].trim()}`);
   }
+  for (const defect of checkFieldHeight(css)) defects.push(`${name}: ${defect}`);
   for (const debt of DEBT) if (debt.matches(name, css)) debtSeen.add(debt.id);
 }
 
