@@ -1,5 +1,6 @@
 import { html, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
+import { MDY_CSS_PROPERTIES } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
 
 // ─── Slider ──────────────────────────────────────────────────────────────────
@@ -30,7 +31,7 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
         id=${this.fieldId}
         type="range"
         class="${this.partClass("control")}"
-        style="--mdy-slider-fill-pct: ${pct}%"
+        style="${MDY_CSS_PROPERTIES.control.sliderFill}: ${pct}%"
         min=${this.min}
         max=${this.max}
         step=${this.step}

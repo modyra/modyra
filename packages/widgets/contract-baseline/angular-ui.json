@@ -187,7 +187,6 @@
     "mdy-file-list",
     "mdy-file-name",
     "mdy-file-placeholder",
-    "mdy-fl-input-padding-with-prefix",
     "mdy-floating-label",
     "mdy-form",
     "mdy-icon",
@@ -201,7 +200,6 @@
     "mdy-label",
     "mdy-label--filled",
     "mdy-label--has-error",
-    "mdy-label-left-offset",
     "mdy-label__required",
     "mdy-label__required--filled",
     "mdy-month-picker",
@@ -249,7 +247,6 @@
     "mdy-segmented__button--selected",
     "mdy-segmented__check",
     "mdy-segmented__text",
-    "mdy-segments-count",
     "mdy-select",
     "mdy-select__arrow",
     "mdy-select__arrow--open",
@@ -272,7 +269,6 @@
     "mdy-select__value",
     "mdy-slider",
     "mdy-slider-container",
-    "mdy-slider-fill-pct",
     "mdy-slider-value",
     "mdy-spin-btn",
     "mdy-spin-btn-down",
@@ -357,10 +353,8 @@
     "packages/angular/src/lib/control/control.directive.ts": {
       "classes": [
         "mdy-control-text",
-        "mdy-fl-input-padding-with-prefix",
         "mdy-form",
         "mdy-input-prefix",
-        "mdy-label-left-offset",
         "mdy-renderer--touched"
       ],
       "aria": [
@@ -948,7 +942,6 @@
         "mdy-segmented__button--selected",
         "mdy-segmented__check",
         "mdy-segmented__text",
-        "mdy-segments-count",
         "mdy-supporting-text"
       ],
       "aria": [
@@ -1028,7 +1021,6 @@
         "mdy-renderer--touched",
         "mdy-slider",
         "mdy-slider-container",
-        "mdy-slider-fill-pct",
         "mdy-slider-value",
         "mdy-supporting-text"
       ],

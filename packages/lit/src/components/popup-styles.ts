@@ -6,7 +6,7 @@ import {
   type OverlayPosition,
   type OverlayPositionConfig,
 } from "@modyra/core/overlay-position";
-import { anchorOverlay, overlayAnchoringFor, MDY_POPUP_CLASS, type MdyWidgetKind } from "@modyra/widgets";
+import { anchorOverlay, overlayAnchoringFor, MDY_CSS_PROPERTIES, MDY_POPUP_CLASS, type MdyWidgetKind } from "@modyra/widgets";
 
 /** Visually hidden native input used as the platform picker behind a styled control. */
 export const POPUP_ANCHOR_STYLE = "position:relative";
@@ -90,17 +90,21 @@ export function computeOverlayPanelState(
     },
   );
 
+  // Names come from the contract, not from this file: the properties are what `anchorOverlay`
+  // returned, and a literal here that drifted from a literal there would read the fallback for ever
+  // while looking perfectly correct.
+  const prop = MDY_CSS_PROPERTIES.overlay;
   const read = (name: string, fallback: string): string => anchoring.properties[name] ?? fallback;
   const cssVars = {
-    top: read("--mdy-overlay-top", "auto"),
-    bottom: read("--mdy-overlay-bottom", "auto"),
-    left: read("--mdy-overlay-left", "auto"),
-    right: read("--mdy-overlay-right", "auto"),
-    width: read("--mdy-overlay-width", "auto"),
-    maxHeight: read("--mdy-overlay-max-height", "50vh"),
-    maxWidth: read("--mdy-overlay-max-width", "none"),
+    top: read(prop.top, "auto"),
+    bottom: read(prop.bottom, "auto"),
+    left: read(prop.left, "auto"),
+    right: read(prop.right, "auto"),
+    width: read(prop.width, "auto"),
+    maxHeight: read(prop.maxHeight, "50vh"),
+    maxWidth: read(prop.maxWidth, "none"),
   };
-  const transform = read("--mdy-overlay-transform", "none");
+  const transform = read(prop.transform, "none");
   const panelStyle =
     `${POPUP_STYLE};top:${cssVars.top};bottom:${cssVars.bottom};left:${cssVars.left};` +
     `right:${cssVars.right};width:${cssVars.width};max-height:${cssVars.maxHeight};` +
@@ -231,12 +235,16 @@ export class MdyLitOverlayController {
       ...(this.content ? { contentHeight: this.content.height, contentWidth: this.content.width } : {}),
     });
 
-    this.host.style.setProperty("--mdy-overlay-top", this._state.cssVars.top);
-    this.host.style.setProperty("--mdy-overlay-bottom", this._state.cssVars.bottom);
-    this.host.style.setProperty("--mdy-overlay-left", this._state.cssVars.left);
-    this.host.style.setProperty("--mdy-overlay-right", this._state.cssVars.right);
-    this.host.style.setProperty("--mdy-overlay-width", this._state.cssVars.width);
-    this.host.style.setProperty("--mdy-overlay-max-height", this._state.cssVars.maxHeight);
+    const prop = MDY_CSS_PROPERTIES.overlay;
+    this.host.style.setProperty(prop.top, this._state.cssVars.top);
+    this.host.style.setProperty(prop.bottom, this._state.cssVars.bottom);
+    this.host.style.setProperty(prop.left, this._state.cssVars.left);
+    this.host.style.setProperty(prop.right, this._state.cssVars.right);
+    this.host.style.setProperty(prop.width, this._state.cssVars.width);
+    this.host.style.setProperty(prop.maxHeight, this._state.cssVars.maxHeight);
+    // The popup is sized from its content, so the width it may take has to reach the element too:
+    // without it a content-sized popup near the edge of the screen shows half off it.
+    this.host.style.setProperty(prop.maxWidth, this._state.cssVars.maxWidth);
     this.host.requestUpdate();
   }
 }

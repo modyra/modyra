@@ -17,6 +17,7 @@ import {
   anchorOverlay,
   overlayAnchoringFor,
   overlayLifecycleTransition,
+  MDY_CSS_PROPERTIES,
   type MdyOverlayDecision,
   type MdyOverlayLifecycleIntent,
   type MdyWidgetKind,
@@ -187,14 +188,18 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
         ...(content ? { contentHeight: content.height, contentWidth: content.width } : {}),
       },
     );
+    // Angular positions its panel through the CDK rather than through the custom properties, so it
+    // reads the numbers back out of what the policy returned. The names come from the contract: a
+    // literal that drifted would read `undefined` here and put the panel at the origin.
+    const prop = MDY_CSS_PROPERTIES.overlay;
     const px = (name: string): number | undefined => {
       const raw = anchoring.properties[name];
       return raw === undefined || raw === "auto" ? undefined : Number.parseFloat(raw);
     };
     return {
       decision: anchoring.decision,
-      coords: { top: px("--mdy-overlay-top"), bottom: px("--mdy-overlay-bottom"), left: px("--mdy-overlay-left"), right: px("--mdy-overlay-right"), width: rect.width, maxWidth: px("--mdy-overlay-max-width") },
-      maxHeight: px("--mdy-overlay-max-height") ?? anchoring.decision.maxHeight,
+      coords: { top: px(prop.top), bottom: px(prop.bottom), left: px(prop.left), right: px(prop.right), width: rect.width, maxWidth: px(prop.maxWidth) },
+      maxHeight: px(prop.maxHeight) ?? anchoring.decision.maxHeight,
     };
   }
 
