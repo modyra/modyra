@@ -252,7 +252,11 @@ test("live canvas renders groups and accepts palette fields inside them", async 
   const group = page.locator('.plain-canvas-group');
   await expect(group).toHaveCount(1);
   await expect(group).toHaveAttribute('data-plain-group', groupId!);
+  // `toBeVisible`, not `toHaveCount`. Counting a container's children only proves they are
+  // *attached* — an un-instrumented control sitting in the group's body counts the same as one the
+  // canvas actually drew, which is how a repeater's row shape stayed broken behind a green board.
   await expect(group.locator('.plain-canvas-field')).toHaveCount(1);
+  await expect(group.locator('.plain-canvas-field').first()).toBeVisible();
   await group.locator('[data-plain-select]').first().click();
   await expect(group).toHaveClass(/selected/);
   await expect(page.locator('[data-name]')).toHaveValue('shipping');
@@ -454,6 +458,11 @@ test("live canvas renders empty arrays and selects them in the Inspector", async
   await expect(array).toHaveCount(1);
   await expect(array).toHaveAttribute('data-plain-array', arrayId!);
   await expect(array).toHaveAttribute('data-array-path', 'items');
+
+  // A new repeater starts with one row, so its shape is visible while you design it. Emptying it is
+  // a supported state with its own rendering, and this reaches it deliberately rather than by
+  // inheriting whatever the palette happened to create.
+  await array.getByRole('button', { name: 'Remove last initial row from items' }).click();
   await expect(array.locator('.plain-canvas-array-count')).toHaveText('0 rows');
   await expect(array.locator('.plain-canvas-array-empty')).toHaveText('No initial rows');
 
@@ -476,29 +485,31 @@ test("live canvas array controls add and remove initial rows through history", a
   const array = page.locator('.plain-canvas-array');
   const add = array.getByRole('button', { name: 'Add initial row to items' });
   const remove = array.getByRole('button', { name: 'Remove last initial row from items' });
-  await expect(remove).toBeDisabled();
-
-  await add.click();
+  // A new repeater already has the one row it needs to show its shape.
   await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 row');
   await expect(array.locator('.plain-canvas-array-row')).toHaveCount(1);
-  await expect(add).toBeFocused();
   await expect(remove).toBeEnabled();
 
   await add.click();
   await expect(array.locator('.plain-canvas-array-count')).toHaveText('2 rows');
   await expect(array.locator('.plain-canvas-array-row')).toHaveCount(2);
+  await expect(add).toBeFocused();
+
+  await add.click();
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('3 rows');
+  await expect(array.locator('.plain-canvas-array-row')).toHaveCount(3);
 
   await remove.click();
-  await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 row');
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('2 rows');
   await expect(remove).toBeFocused();
 
+  // Three commands, three undos, ending back at the row the repeater was created with.
+  await page.locator('[data-undo]').click();
+  await expect(array.locator('.plain-canvas-array-count')).toHaveText('3 rows');
   await page.locator('[data-undo]').click();
   await expect(array.locator('.plain-canvas-array-count')).toHaveText('2 rows');
   await page.locator('[data-undo]').click();
   await expect(array.locator('.plain-canvas-array-count')).toHaveText('1 row');
-  await page.locator('[data-undo]').click();
-  await expect(array.locator('.plain-canvas-array-count')).toHaveText('0 rows');
-  await expect(array.locator('.plain-canvas-array-empty')).toHaveText('No initial rows');
 });
 
 
@@ -511,7 +522,7 @@ test("live canvas completes array authoring with row and container controls", as
   await page.locator('[data-template="array"]').click();
   await page.locator('[data-name]').fill('items'); await page.locator('[data-name]').blur();
   const array = page.locator('.plain-canvas-array');
-  await array.getByRole('button', { name: 'Add initial row to items' }).click();
+  // One more on top of the row a new repeater is created with.
   await array.getByRole('button', { name: 'Add initial row to items' }).click();
   const rows = array.locator('.plain-canvas-array-row');
   await expect(rows).toHaveCount(2);
@@ -548,6 +559,8 @@ test("an array whose row is a group shows that group inside the array", async ({
 test("a repeater draws where it was declared, not at the end of the form", async ({ page }) => {
   await page.locator('[data-template="text"]').click();
   await page.locator('[data-template="array"]').click();
+  // Back to the root first: with a repeater selected, a new control now goes *into* its row shape.
+  await page.locator('.outline-root').click();
   await page.locator('[data-template="text"]').click();
 
   // The canvas is the arrangement, so a repeater declared between two fields draws between them.
@@ -567,4 +580,29 @@ test("a repeater draws where it was declared, not at the end of the form", async
     return out;
   });
   expect(shape).toEqual(["0:field", "0:array", "1:group", "0:field"]);
+});
+
+test("a repeater's row shape holds real canvas controls, not bare inputs", async ({ page }) => {
+  // A repeater's rows all repeat one shape, and the compiled field is named `items.0.text` while
+  // Studio addresses that node as `items.text`. The lookup missed, so every control inside a
+  // repeater rendered with no `data-node`, no class, no chip and no drag handle: the row shape read
+  // as an empty box with a stray input in it, which is what "non vedo i controlli dentro il gruppo"
+  // was describing.
+  await page.locator('[data-template="array"]').click();
+  await page.locator('[data-template="text"]').click();
+
+  // Clicking a control while a repeater is selected puts it *in the row shape* — a repeater used to
+  // be the one container you could not add to, and everything landed after it instead.
+  // A new repeater starts with one row, so the shape being designed is the thing you can see.
+  const shape = page.locator('.plain-canvas-array .plain-canvas-group');
+  const control = shape.locator('.plain-canvas-field').first();
+  await expect(shape.locator('.plain-canvas-field')).toHaveCount(1);
+  await expect(control).toBeVisible();
+  await expect(control).toHaveAttribute('data-node', /.+/);
+  await expect(control).toHaveAttribute('data-field-path', /\.0\./);
+  await expect(control).toHaveAttribute('draggable', 'true');
+
+  // And it is a control you can act on: selecting it drives the Inspector, like any other field.
+  await control.locator('[data-plain-select]').first().click();
+  await expect(page.locator('[data-inspector-tab="node"]')).toHaveAttribute('aria-selected', 'true');
 });

@@ -148,7 +148,12 @@ function createNodeFromTemplate(template: string): StudioSchemaNode {
       name: `items${suffix}`,
       label: "New array",
       item: { node: "group", id: createId("nd"), name: "item", children: [] },
-      initialRows: [],
+      // One row, not none. A repeater's controls only exist on the canvas as the fields of a row —
+      // with no rows there is nothing to draw, so a new repeater was an empty box that stayed empty
+      // however many controls you put in its shape, and the shape could not be laid out or edited.
+      // Starting with a row means the shape you are designing is the thing you can see. It is
+      // ordinary contract data: the row controls on the canvas add and remove more.
+      initialRows: [{}],
       validators: [],
     };
   }
@@ -701,6 +706,16 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   /** Where a newly inserted node goes: after the selected field, or inside the selected container. */
   function placementForInsert(): Placement {
     const current = indexes.nodeById.get(selected);
+    // A repeater is a container too, and inserting into one means inserting into the shape of its
+    // rows — the rule ArrowRight already follows when *moving* a node in. Without this a repeater
+    // was the one container you could not add to: everything landed after it, at the level above,
+    // and the row shape stayed empty however many controls you clicked.
+    if (current?.node === "array") {
+      const shape = indexes.nodeById.get(current.item.id);
+      if (shape?.node === "group") {
+        return { kind: "inside", parentId: shape.id, index: shape.children.length };
+      }
+    }
     if (current && current.node !== "field" && current.node !== "array") {
       return { kind: "inside", parentId: current.id, index: current.children.length };
     }
@@ -1176,6 +1191,35 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     idx: StudioIndexes,
   ): void {
     const nodeIdByPath = new Map(Array.from(idx.pathByNode, ([nodeId, path]) => [path, nodeId]));
+    /** Every path at which the schema has a repeater. */
+    const arrayPaths = new Set(
+      Array.from(idx.nodeById.values(), (node) => (node.node === "array" ? idx.pathByNode.get(node.id) : undefined))
+        .filter((path): path is string => path !== undefined),
+    );
+
+    /**
+     * The project node a compiled field name belongs to.
+     *
+     * A repeater's rows all repeat one shape, so `items.0.city` and `items.3.city` are the same
+     * node — and Studio addresses that node without the row index, because `walkArrayItem` makes an
+     * array's item path-transparent. Looking the compiled name up directly therefore found nothing
+     * for every field inside a repeater, and the whole loop below was skipped for them: the control
+     * rendered, but with no `data-node`, no `plain-canvas-field`, no chip, no move controls and no
+     * drop zones. A repeater's row shape looked like an empty box with a stray input in it.
+     *
+     * The row index is dropped only where the path so far really is a repeater, so a group whose
+     * key happens to be numeric still resolves to itself.
+     */
+    const nodeIdForField = (name: string): string | undefined => {
+      const direct = nodeIdByPath.get(name);
+      if (direct !== undefined) return direct;
+      const shape: string[] = [];
+      for (const segment of name.split(".")) {
+        if (/^\d+$/.test(segment) && arrayPaths.has(shape.join("."))) continue;
+        shape.push(segment);
+      }
+      return nodeIdByPath.get(shape.join("."));
+    };
     // Resolved by name, not by child index: a layout row nests field roots inside itself, so
     // "nth child of the host" stops being "nth field" as soon as any layout exists.
     const rootByName = new Map<string, HTMLElement>();
@@ -1525,7 +1569,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
     fields.forEach((field, index) => {
       const root = fieldRoots[index];
-      const nodeId = nodeIdByPath.get(field.name);
+      const nodeId = nodeIdForField(field.name);
       if (!root || !nodeId) return;
       root.dataset.node = nodeId;
       root.dataset.fieldPath = field.name;
@@ -1551,13 +1595,13 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       const moveUpButton = iconButton("\u2191", `Move ${field.name} up`);
       moveUpButton.dataset.plainMove = "before";
       moveUpButton.dataset.plainMoveNode = nodeId;
-      moveUpButton.dataset.plainMoveTarget = index > 0 ? nodeIdByPath.get(fields[index - 1]!.name) ?? "" : "";
+      moveUpButton.dataset.plainMoveTarget = index > 0 ? nodeIdForField(fields[index - 1]!.name) ?? "" : "";
       moveUpButton.disabled = index === 0;
 
       const moveDownButton = iconButton("\u2193", `Move ${field.name} down`);
       moveDownButton.dataset.plainMove = "after";
       moveDownButton.dataset.plainMoveNode = nodeId;
-      moveDownButton.dataset.plainMoveTarget = index < fields.length - 1 ? nodeIdByPath.get(fields[index + 1]!.name) ?? "" : "";
+      moveDownButton.dataset.plainMoveTarget = index < fields.length - 1 ? nodeIdForField(fields[index + 1]!.name) ?? "" : "";
       moveDownButton.disabled = index === fields.length - 1;
 
       const inRow = layoutNodeFor(nodeId)?.kind === "columns";
