@@ -11,7 +11,12 @@
  * foundation already positions `.mdy-overlay` from `--mdy-overlay-*`, so an adapter's whole job is
  * to copy these onto the element.
  */
-import { decideOverlayPlacement, stabilizeOverlayPlacement, type MdyOverlayDecision } from "./behavior.js";
+import {
+  decideOverlayPlacement,
+  stabilizeOverlayPlacement,
+  MDY_OVERLAY_VIEWPORT_MARGIN,
+  type MdyOverlayDecision,
+} from "./behavior.js";
 
 /** A measured anchor, in viewport coordinates — a `DOMRect` satisfies it. */
 export interface MdyAnchorRect {
@@ -38,6 +43,17 @@ export interface MdyOverlayAnchorOptions {
   readonly matchAnchorWidth?: boolean;
   /** Distance between the anchor and the popup. */
   readonly gap?: number;
+  /**
+   * The popup's own height, measured by the host — `scrollHeight` is exactly this, since it reports
+   * the content's full height whatever `max-height` is currently clamping it to.
+   *
+   * Supplying it is what lets the policy put the popup where it shows whole: a side is chosen
+   * because the content fits there, not merely because the side is big enough to bother with. Left
+   * out, placement falls back to the minimum-space rule and the popup may scroll.
+   */
+  readonly contentHeight?: number;
+  /** The popup's own width, measured the same way, so its edge is chosen where the content fits. */
+  readonly contentWidth?: number;
   /** Where the pointer opened it, so a popup follows the click rather than the element's centre. */
   readonly pointerX?: number;
   /**
@@ -60,7 +76,11 @@ export interface MdyOverlayAnchoring {
   readonly placement: MdyOverlayDecision["placement"];
 }
 
-const DEFAULT_GAP = 6;
+/** The breathing space between a control and its popup, when the caller does not say otherwise. */
+export const MDY_OVERLAY_GAP = 6;
+
+const clamp = (value: number, low: number, high: number): number =>
+  high < low ? low : Math.min(Math.max(value, low), high);
 
 /**
  * Anchors an overlay against a measured control.
@@ -74,7 +94,7 @@ export function anchorOverlay(
   viewport: MdyViewportSize,
   options: MdyOverlayAnchorOptions = {},
 ): MdyOverlayAnchoring {
-  const gap = options.gap ?? DEFAULT_GAP;
+  const gap = options.gap ?? MDY_OVERLAY_GAP;
   const geometry = {
     viewportWidth: viewport.width,
     viewportHeight: viewport.height,
@@ -87,6 +107,10 @@ export function anchorOverlay(
     minWidth: options.minWidth ?? 160,
     preferred: options.preferred ?? ("below" as const),
     ...(options.pointerX !== undefined ? { pointerX: options.pointerX } : {}),
+    // The popup needs its own height *plus* the gap it must leave: the space it is given is the
+    // room minus that gap, so comparing the bare content height would call a squeeze a fit.
+    ...(options.contentHeight !== undefined ? { desiredHeight: options.contentHeight + gap } : {}),
+    ...(options.contentWidth !== undefined ? { desiredWidth: options.contentWidth } : {}),
   };
   const measured = decideOverlayPlacement(geometry);
   let decision: MdyOverlayDecision;
@@ -94,15 +118,21 @@ export function anchorOverlay(
     // The height must be measured for the side being locked, not carried over from the side the
     // policy would otherwise have chosen — that is how a popup ends up taller than its own space.
     const room = options.lock.placement === "above"
-      ? Math.max(0, anchor.top - 12)
-      : Math.max(0, viewport.height - anchor.bottom - 12);
+      ? Math.max(0, anchor.top - MDY_OVERLAY_VIEWPORT_MARGIN)
+      : Math.max(0, viewport.height - anchor.bottom - MDY_OVERLAY_VIEWPORT_MARGIN);
+    const maxHeight = options.lock.placement === "overlay"
+      ? measured.maxHeight
+      : Math.max(geometry.minSpace, room);
     decision = {
       ...measured,
       placement: options.lock.placement,
       alignment: options.lock.alignment,
-      maxHeight: options.lock.placement === "overlay"
-        ? measured.maxHeight
-        : Math.max(geometry.minSpace, room),
+      maxHeight,
+      // Whether the content still shows whole is about the side that is locked, not the side the
+      // policy would have picked.
+      fits: geometry.desiredHeight === undefined
+        ? true
+        : (options.lock.placement === "overlay" ? maxHeight : room) >= geometry.desiredHeight,
     };
   } else {
     decision = stabilizeOverlayPlacement(options.current ?? null, measured, geometry);
@@ -113,6 +143,12 @@ export function anchorOverlay(
     "--mdy-overlay-max-height": px(Math.max(0, decision.maxHeight - gap)),
   };
 
+  const margin = MDY_OVERLAY_VIEWPORT_MARGIN;
+  // The widest a popup may ever be. Emitted on every placement so a popup whose width nobody
+  // measured still cannot run off the screen: the coordinates below keep it inside the viewport,
+  // and this keeps it inside on its own if a theme sizes it from its content.
+  const spannable = Math.max(0, viewport.width - margin * 2);
+
   if (decision.placement === "overlay") {
     // Centred on the viewport: there is no side left to attach to.
     properties["--mdy-overlay-top"] = "50%";
@@ -121,6 +157,7 @@ export function anchorOverlay(
     properties["--mdy-overlay-right"] = "auto";
     properties["--mdy-overlay-transform"] = "translate(-50%, -50%)";
     properties["--mdy-overlay-max-height"] = px(Math.round(viewport.height * 0.7));
+    properties["--mdy-overlay-max-width"] = px(spannable);
     if (options.matchAnchorWidth) properties["--mdy-overlay-width"] = px(decision.width);
     return { decision, properties, placement: decision.placement };
   }
@@ -134,12 +171,38 @@ export function anchorOverlay(
     properties["--mdy-overlay-bottom"] = "auto";
   }
 
-  if (decision.alignment === "right") {
-    properties["--mdy-overlay-left"] = "auto";
-    properties["--mdy-overlay-right"] = px(viewport.width - anchor.right);
+  // Horizontally the popup hangs from one edge of its anchor, and stays inside the viewport.
+  //
+  // Hanging alone is not enough: a content-sized calendar on a narrow control near the right edge
+  // hangs left and runs off the screen, which is the half-visible popup this arithmetic exists to
+  // prevent. So the width the popup will actually take — the anchor's when it matches it, the
+  // measured one otherwise — is checked against the room on the chosen side, and when it does not
+  // fit the popup is moved bodily inside the viewport rather than left hanging over the edge.
+  const width = options.matchAnchorWidth ? decision.width : options.contentWidth;
+  const roomFromEdge = decision.alignment === "right"
+    ? anchor.right - margin // hanging leftwards from the anchor's right edge
+    : viewport.width - anchor.left - margin; // hanging rightwards from its left edge
+  // With no measurement the minimum width is the only thing known about how much room is wanted.
+  const wanted = width ?? Math.min(geometry.minWidth, spannable);
+
+  if (wanted <= roomFromEdge) {
+    if (decision.alignment === "right") {
+      properties["--mdy-overlay-left"] = "auto";
+      properties["--mdy-overlay-right"] = px(viewport.width - anchor.right);
+    } else {
+      properties["--mdy-overlay-left"] = px(anchor.left);
+      properties["--mdy-overlay-right"] = "auto";
+    }
+    properties["--mdy-overlay-max-width"] = px(Math.min(spannable, roomFromEdge));
   } else {
-    properties["--mdy-overlay-left"] = px(anchor.left);
+    // Pushed back inside: both coordinates are stated, because a popup that is no longer aligned to
+    // its anchor's edge has no edge left to inherit.
+    const span = Math.min(wanted, spannable);
+    const hanging = decision.alignment === "right" ? anchor.right - span : anchor.left;
+    const left = clamp(hanging, margin, viewport.width - span - margin);
+    properties["--mdy-overlay-left"] = px(left);
     properties["--mdy-overlay-right"] = "auto";
+    properties["--mdy-overlay-max-width"] = px(spannable);
   }
 
   if (options.matchAnchorWidth) properties["--mdy-overlay-width"] = px(decision.width);

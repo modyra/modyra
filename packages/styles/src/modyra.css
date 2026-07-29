@@ -3214,6 +3214,10 @@
         width: var(--mdy-overlay-width, auto);
         margin: 0;
         max-height: var(--mdy-overlay-max-height, 50vh);
+        /* The room `anchorOverlay` measured on the side the popup hangs from. A popup wider than
+           its own space would show half off the screen, and a content-sized one has no width to
+           clamp it — so the ceiling is stated even when the width is not. */
+        max-width: var(--mdy-overlay-max-width, none);
         overflow: auto;
         /* A scroll gesture that reaches the end of a popup must not scroll the page behind it. */
         overscroll-behavior: contain;
@@ -3264,6 +3268,7 @@
         left: var(--mdy-overlay-left, auto);
         right: var(--mdy-overlay-right, auto);
         width: var(--mdy-overlay-width, auto);
+        max-width: var(--mdy-overlay-max-width, none);
         /* `anchorOverlay` centres a modal placement with a translation; docked placements set it
            to `none`, so one rule serves both. */
         transform: var(--mdy-overlay-transform, none);
