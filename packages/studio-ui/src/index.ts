@@ -869,6 +869,47 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     commit(createUpdateLayoutCommand(next, "Take field out of the row"), nodeId, columnFocus(nodeId));
   }
 
+  /**
+   * Moves a node one place left or right inside the column row it belongs to.
+   *
+   * Until now a row's order came from the order of the fields in the schema, so the only way to
+   * change which column something sat in was to reorder the schema itself — vertical movement
+   * pretending to be horizontal. A row is an arrangement, and this changes the arrangement without
+   * touching the schema.
+   *
+   * A column holding one node swaps with its neighbour, which is the common case and reads as the
+   * element moving. A column holding several moves just this node across, so the others stay where
+   * they are rather than being dragged along by it.
+   */
+  function moveWithinRow(nodeId: string, direction: -1 | 1): void {
+    const layout = structuredClone(project.presentation.layout ?? []);
+    const row = layout.find(
+      (node): node is StudioLayoutNode & { kind: "columns" } =>
+        node.kind === "columns" && layoutChildNodeIds(node).includes(nodeId),
+    );
+    if (!row) return;
+    const from = row.columns.findIndex((column) => column.some((child) => "nodeId" in child && child.nodeId === nodeId));
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= row.columns.length) return;
+
+    const source = row.columns[from]!;
+    if (source.length === 1) {
+      row.columns[from] = row.columns[to]!;
+      row.columns[to] = source;
+    } else {
+      const slot = source.find((child) => "nodeId" in child && child.nodeId === nodeId)!;
+      row.columns[from] = source.filter((child) => child !== slot);
+      // Entering from the left lands at the end of the target column, from the right at its start —
+      // so the node keeps its reading position rather than jumping to the top of the next column.
+      row.columns[to] = direction === 1 ? [slot, ...row.columns[to]!] : [...row.columns[to]!, slot];
+    }
+    commit(
+      createUpdateLayoutCommand(layout, direction === 1 ? "Move right in the row" : "Move left in the row"),
+      nodeId,
+      columnFocus(nodeId),
+    );
+  }
+
   /** Flips the `required` validator — the one validator worth a single click. */
   /**
    * Whether the devtools panel may show this field's value in the clear.
@@ -1619,6 +1660,22 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       columnsButton.disabled = !canColumn && !inRow;
       if (!canColumn && !inRow) columnsButton.title = "Column rows apply to fields at the form root";
 
+      // Horizontal movement, offered only where there is a row to move within. Alt+\u2190/\u2192 does the
+      // same thing from the keyboard; a row's order used to be the schema's order, so moving a
+      // field sideways meant reordering the form itself.
+      const row = inRow ? (layoutNodeFor(nodeId) as StudioLayoutNode & { kind: "columns" }) : null;
+      const columnIndex = row
+        ? row.columns.findIndex((column) => column.some((child) => "nodeId" in child && child.nodeId === nodeId))
+        : -1;
+      const moveLeftButton = iconButton("\u2190", `Move ${field.name} left in the row`);
+      moveLeftButton.dataset.layoutMove = "left";
+      moveLeftButton.dataset.layoutMoveNode = nodeId;
+      moveLeftButton.disabled = columnIndex <= 0;
+      const moveRightButton = iconButton("\u2192", `Move ${field.name} right in the row`);
+      moveRightButton.dataset.layoutMove = "right";
+      moveRightButton.dataset.layoutMoveNode = nodeId;
+      moveRightButton.disabled = columnIndex < 0 || columnIndex >= (row?.columns.length ?? 0) - 1;
+
       const deleteButton = iconButton("\u00d7", `Delete ${field.name}`);
       deleteButton.dataset.delete = nodeId;
 
@@ -1638,7 +1695,15 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         moveIntoGroup.append(new Option(group.label || group.name, group.id));
       }
 
-      actions.append(moveUpButton, moveDownButton, columnsButton, moveIntoGroup, duplicateButton, deleteButton);
+      actions.append(
+        moveUpButton,
+        moveDownButton,
+        ...(inRow ? [moveLeftButton, moveRightButton] : []),
+        columnsButton,
+        moveIntoGroup,
+        duplicateButton,
+        deleteButton,
+      );
 
       // The label and the code name are edited on the field itself: the visible label the form
       // renders *is* the thing being edited, so there is no "where did that come from" gap.
@@ -2386,6 +2451,12 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       event.preventDefault();
       if (selected !== project.schema.id) reorderSibling(selected, event.key === "ArrowUp" ? -1 : 1);
     }
+    // Alt+←/→ is the horizontal counterpart of Alt+↑/↓. Plain ←/→ keep their own meaning — moving a
+    // picked-up node into or out of a container — so this is the modifier that stays free.
+    if (event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      event.preventDefault();
+      if (selected !== project.schema.id) moveWithinRow(selected, event.key === "ArrowLeft" ? -1 : 1);
+    }
   }
 
   function bindHead(root: HTMLElement): void {
@@ -2590,6 +2661,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         const nodeId = button.dataset.layoutColumns!;
         if (button.dataset.layoutInRow === "true") removeFromColumnRow(nodeId);
         else addToColumnRow(nodeId);
+      }),
+    );
+    root.querySelectorAll<HTMLButtonElement>("[data-layout-move]").forEach((button) =>
+      button.addEventListener("click", () => {
+        moveWithinRow(button.dataset.layoutMoveNode!, button.dataset.layoutMove === "left" ? -1 : 1);
       }),
     );
 

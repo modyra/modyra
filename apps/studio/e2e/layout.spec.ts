@@ -101,3 +101,41 @@ test("column rows are offered for root fields, not for fields inside a group", a
   await field.hover();
   await expect(field.locator("[data-layout-columns]")).toBeDisabled();
 });
+
+test("a field moves left and right within its row, by button and by keyboard", async ({ page }) => {
+  // A row's order used to come from the schema's order, so the only way to change which column
+  // something sat in was to reorder the form itself — vertical movement pretending to be horizontal.
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-name]').fill('first');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-template="email"]').click();
+  await page.locator('[data-name]').fill('second');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-layout-columns]').last().click();
+
+  const columns = page.locator('.mdy-layout-columns .mdy-layout-column');
+  await expect(columns).toHaveCount(2);
+  const order = async () =>
+    columns.evaluateAll((cells) =>
+      cells.map((c) => c.querySelector<HTMLElement>('.plain-canvas-field')?.dataset.fieldPath ?? ''),
+    );
+  expect(await order()).toEqual(['first', 'second']);
+
+  // The ends are ends: nothing to move past.
+  await expect(page.locator('[data-layout-move="left"]').first()).toBeDisabled();
+  await expect(page.locator('[data-layout-move="right"]').last()).toBeDisabled();
+
+  await page.locator('[data-layout-move="right"]').first().click();
+  expect(await order()).toEqual(['second', 'first']);
+
+  await page.locator('[data-undo]').click();
+  expect(await order()).toEqual(['first', 'second']);
+
+  // Alt+←/→ is the keyboard counterpart of Alt+↑/↓. Plain ←/→ still move a picked-up node in and
+  // out of a container, so the modifier is what keeps the two apart.
+  await page.locator('.plain-canvas-field[data-field-path="second"] [data-plain-select]').click();
+  await page.keyboard.press('Alt+ArrowLeft');
+  expect(await order()).toEqual(['second', 'first']);
+  await page.keyboard.press('Alt+ArrowRight');
+  expect(await order()).toEqual(['first', 'second']);
+});
