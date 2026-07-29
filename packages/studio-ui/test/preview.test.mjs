@@ -1,83 +1,172 @@
+/**
+ * Preview mounts the real controls.
+ *
+ * These used to assert against hand-written markup — an `<input type="date">` where the contract
+ * asks for a datepicker. What matters now is that the control in the panel is the control
+ * `@modyra/plain` renders from the same descriptor `compileToContract` emits, bound to the live
+ * form, so the assertions are against the mounted DOM rather than a string.
+ */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildLiveForm, vanillaReactivity } from "../../studio-preview/dist/index.js";
-import { previewBodyMarkup, previewFieldMarkup, previewNodeMarkup, getPreviewHandle, defaultRowValue } from "../dist/index.js";
-import { createCheckoutProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";
+import { installDomGlobals } from "./support/dom-env.mjs";
 
-test("previewFieldMarkup renders a real bound input with the live value and a real required error", () => {
+installDomGlobals();
+
+const { buildLiveForm, vanillaReactivity } = await import("../../studio-preview/dist/index.js");
+const { dynamicFieldForNode } = await import("../../studio-contract/dist/index.js");
+const { previewHeadMarkup, previewTailMarkup, getPreviewHandle, defaultRowValue } = await import("../dist/index.js");
+const { mountPreviewFields, previewStructureSignature } = await import("../dist/preview-mount.js");
+const { createCheckoutProject } = await import("../../studio-model/test/fixtures/checkout.fixture.mjs");
+
+/** Mounts a project's preview the way the shell does, into a detached container. */
+function mount(project, form, mockConfig = {}, reactivity = vanillaReactivity()) {
+  const container = document.createElement("div");
+  container.className = "preview-fields";
+  const mounted = mountPreviewFields(container, project, {
+    handleFor: (path) => getPreviewHandle(form, path),
+    fieldFor: dynamicFieldForNode,
+    reactivity,
+    mockConfig,
+  });
+  return { container, mounted };
+}
+
+const nodeNamed = (project, name) => project.schema.children.find((c) => c.name === name);
+const hostFor = (container, path) => container.querySelector(`[data-preview-node="${path}"]`);
+
+test("a previewed field is the renderer's own control, bound to the live handle", async () => {
   const project = createCheckoutProject();
-  const { form } = buildLiveForm(project);
-  const cityNode = project.schema.children.find((c) => c.name === "shipping").children.find((c) => c.name === "city");
+  const reactivity = vanillaReactivity();
+  const { form } = buildLiveForm(project, { reactivity });
+  const { container } = mount(project, form, {}, reactivity);
 
-  const markup = previewFieldMarkup(cityNode, "shipping.city", form, {});
-  assert.match(markup, /data-preview-field="shipping\.city"/);
-  assert.match(markup, /This field is required/);
+  const host = hostFor(container, "shipping.city");
+  assert.ok(host, "the city field is mounted at its live path");
+  // The foundation's shell, drawn by @modyra/plain — not Studio's own idea of what a field looks like.
+  assert.ok(host.querySelector(".mdy-renderer"), "wears the contract's renderer root");
+  const input = host.querySelector("input");
+  assert.ok(input);
 
   form.f.shipping.city.set("Rome");
-  const afterMarkup = previewFieldMarkup(cityNode, "shipping.city", form, {});
-  assert.match(afterMarkup, /value="Rome"/);
-  assert.doesNotMatch(afterMarkup, /This field is required/);
+  await reactivity.flush();
+  assert.equal(input.value, "Rome", "the mounted control follows the live value");
 });
 
-test("previewFieldMarkup renders a select's real options, and a server-validated field gets a mock-mode selector", () => {
+test("a datepicker previews as a datepicker, not as a text box", () => {
   const project = createCheckoutProject();
-  const { form } = buildLiveForm(project);
-  const countryNode = project.schema.children.find((c) => c.name === "country");
-  const couponNode = project.schema.children.find((c) => c.name === "coupon");
+  const dateField = {
+    node: "field",
+    id: "nd_when",
+    name: "when",
+    label: "When",
+    fieldKind: "date",
+    valueType: "string",
+    initialValue: "",
+    validators: [],
+  };
+  project.schema.children.push(dateField);
 
-  const countryMarkup = previewFieldMarkup(countryNode, "country", form, {});
-  assert.match(countryMarkup, /<option value="IT"[^>]*selected[^>]*>Italy<\/option>/);
+  const { form } = buildLiveForm(project, { reactivity: vanillaReactivity() });
+  const { container } = mount(project, form);
 
-  const couponMarkup = previewFieldMarkup(couponNode, "coupon", form, {});
-  assert.match(couponMarkup, /data-preview-mock-mode="impl_validate_coupon"/);
-  assert.match(couponMarkup, /<option value="success" selected>/);
+  const host = hostFor(container, "when");
+  assert.ok(host);
+  assert.ok(host.querySelector(".mdy-renderer--datepicker"), "the datepicker's own root class");
+  assert.equal(host.querySelector("input[type=date]"), null, "a native date input is what this replaced");
 });
 
-test("previewNodeMarkup renders the real checkout.items array with its one initial row", () => {
+test("a select previews with its real options, and the mock-mode selector is Studio chrome beside the field", () => {
   const project = createCheckoutProject();
-  const { form } = buildLiveForm(project);
-  const itemsNode = project.schema.children.find((c) => c.name === "items");
+  const { form } = buildLiveForm(project, { reactivity: vanillaReactivity() });
+  const { container } = mount(project, form);
 
-  const markup = previewNodeMarkup(itemsNode, "items", form, {});
-  assert.match(markup, /Items \(1\)/);
-  assert.match(markup, /data-preview-field="items\.0\.sku"/);
-  assert.match(markup, /value="TSHIRT-BLK-M"/);
-  assert.match(markup, /data-preview-array-remove="items" data-preview-array-index="0"/);
-  assert.match(markup, /data-preview-array-push="items"/);
+  const country = hostFor(container, "country");
+  assert.ok(country.textContent.includes("Italy"), "the select's real options are rendered");
+
+  // coupon carries checkout's server validator.
+  const mock = container.querySelector('[data-preview-mock-mode="impl_validate_coupon"]');
+  assert.ok(mock, "a server-validated field gets a mock-mode selector");
+  assert.equal(mock.value, "success");
 });
 
-test("previewBodyMarkup: Invalid + Submit disabled initially, Valid + Submit enabled once required fields are set", () => {
+test("the checkout array mounts its live rows, with Studio's own add/remove chrome", () => {
   const project = createCheckoutProject();
-  const { form } = buildLiveForm(project);
+  const { form } = buildLiveForm(project, { reactivity: vanillaReactivity() });
+  const { container } = mount(project, form);
 
-  const before = previewBodyMarkup(project, form, {});
-  assert.match(before, /preview-status-badge invalid">Invalid/);
-  assert.match(before, /data-preview-submit disabled/);
+  assert.match(container.querySelector(".preview-array-label").textContent, /Items \(1\)/);
+  assert.ok(hostFor(container, "items.0.sku"), "the initial row's fields are mounted at their live paths");
+  assert.ok(container.querySelector('[data-preview-array-remove="items"][data-preview-array-index="0"]'));
+  assert.ok(container.querySelector('[data-preview-array-push="items"]'));
+});
+
+test("a column row mounts as the same grid the canvas uses, and its members are not mounted twice", () => {
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [{ kind: "columns", id: "row", columns: [[{ nodeId: "nd_country" }], [{ nodeId: "nd_coupon" }]] }],
+  };
+  const { form } = buildLiveForm(project, { reactivity: vanillaReactivity() });
+  const { container } = mount(project, form);
+
+  const grid = container.querySelector(".mdy-layout-columns");
+  assert.ok(grid);
+  assert.equal(grid.style.getPropertyValue("--mdy-layout-column-count"), "2");
+  assert.equal(container.querySelectorAll(".mdy-layout-column").length, 2);
+  assert.equal(container.querySelectorAll('[data-preview-node="country"]').length, 1);
+  assert.equal(container.querySelectorAll('[data-preview-node="coupon"]').length, 1);
+});
+
+test("the structure signature ignores values and notices a pushed row — that is what stops a remount per keystroke", () => {
+  const project = createCheckoutProject();
+  const { form } = buildLiveForm(project, { reactivity: vanillaReactivity() });
+  const signature = () => previewStructureSignature(project, [], (path) => getPreviewHandle(form, path), {});
+
+  const before = signature();
+  form.f.shipping.city.set("Rome");
+  assert.equal(signature(), before, "typing must not rebuild the mounted controls");
+
+  form.f.items.push({ sku: "", qty: 1 });
+  assert.notEqual(signature(), before, "a new repeater row is a structural change");
+});
+
+test("disposing a mount tears the controls down and empties the container", () => {
+  const project = createCheckoutProject();
+  const { form } = buildLiveForm(project, { reactivity: vanillaReactivity() });
+  const { container, mounted } = mount(project, form);
+
+  assert.ok(container.children.length > 0);
+  mounted.dispose();
+  assert.equal(container.children.length, 0);
+});
+
+test("previewHeadMarkup reports validity, and previewTailMarkup enables Submit only when the form can", () => {
+  const project = createCheckoutProject();
+  const { form } = buildLiveForm(project, { reactivity: vanillaReactivity() });
+
+  assert.match(previewHeadMarkup(form), /preview-status-badge invalid">Invalid/);
+  assert.match(previewTailMarkup(project, form), /data-preview-submit disabled/);
 
   form.f.shipping.city.set("Rome");
   form.f.shipping.zip.set("00100");
   form.f.items.at(0).sku.set("TSHIRT-BLK-M");
   form.f.items.at(0).qty.set(2);
 
-  const after = previewBodyMarkup(project, form, {});
-  assert.match(after, /preview-status-badge valid">Valid/);
-  assert.doesNotMatch(after, /data-preview-submit disabled/);
+  assert.match(previewHeadMarkup(form), /preview-status-badge valid">Valid/);
+  assert.doesNotMatch(previewTailMarkup(project, form), /data-preview-submit disabled/);
 });
 
-test("previewBodyMarkup notes when no submit action is configured, and omits the note when checkout's real one is", () => {
+test("previewTailMarkup notes a missing submit action, and stays quiet when checkout's real one is configured", () => {
   const project = createCheckoutProject();
-  const { form } = buildLiveForm(project);
-  // checkout.behaviors.submit already references impl_create_order — the hint must not appear.
-  assert.doesNotMatch(previewBodyMarkup(project, form, {}), /No submit action configured/);
+  const { form } = buildLiveForm(project, { reactivity: vanillaReactivity() });
+  assert.doesNotMatch(previewTailMarkup(project, form), /No submit action configured/);
 
   project.behaviors.submit = undefined;
-  assert.match(previewBodyMarkup(project, form, {}), /No submit action configured/);
+  assert.match(previewTailMarkup(project, form), /No submit action configured/);
 });
 
-test("previewBodyMarkup with no live form (invalid root) reports the reason instead of throwing", () => {
-  const project = createCheckoutProject();
-  project.schema = { node: "array", id: "bad", name: "bad", item: { node: "field", id: "x", name: "x", fieldKind: "text", valueType: "string", initialValue: "", validators: [] }, initialRows: [], validators: [] };
-  assert.match(previewBodyMarkup(project, null, {}), /Preview needs a group at the schema root/);
+test("previewHeadMarkup with no live form (invalid root) reports the reason instead of throwing", () => {
+  assert.match(previewHeadMarkup(null), /Preview needs a group at the schema root/);
+  assert.equal(previewTailMarkup(createCheckoutProject(), null), "");
 });
 
 test("getPreviewHandle walks nested group and array paths, returning null for an unknown path instead of throwing", () => {
@@ -91,24 +180,5 @@ test("getPreviewHandle walks nested group and array paths, returning null for an
 
 test("defaultRowValue builds a new array row from the item schema's own field defaults", () => {
   const project = createCheckoutProject();
-  const itemsNode = project.schema.children.find((c) => c.name === "items");
-  assert.deepEqual(defaultRowValue(itemsNode.item), { sku: "", qty: 1 });
-});
-
-test("preview renders a column row with the same grid the canvas uses", async () => {
-  const project = createCheckoutProject();
-  // country and coupon are both root-level fields in the checkout fixture.
-  project.presentation = {
-    layout: [{ kind: "columns", id: "row", columns: [[{ nodeId: "nd_country" }], [{ nodeId: "nd_coupon" }]] }],
-  };
-  const { form } = buildLiveForm(project, { reactivity: vanillaReactivity() });
-
-  const markup = previewBodyMarkup(project, form, {});
-
-  assert.match(markup, /class="mdy-layout-columns"/);
-  assert.match(markup, /--mdy-layout-column-count:2/);
-  assert.equal(markup.match(/class="mdy-layout-column"/g).length, 2);
-  // Both fields appear exactly once — arranged, not duplicated alongside the row.
-  assert.equal(markup.match(/data-preview-field="country"/g).length, 1);
-  assert.equal(markup.match(/data-preview-field="coupon"/g).length, 1);
+  assert.deepEqual(defaultRowValue(nodeNamed(project, "items").item), { sku: "", qty: 1 });
 });

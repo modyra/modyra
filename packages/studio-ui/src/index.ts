@@ -50,13 +50,7 @@ import {
   type Placement,
 } from "@modyra/studio-editor";
 import { mountMdyForm, type MdyPlainForm } from "@modyra/plain";
-import { compileToContract, flattenContractFields } from "@modyra/studio-contract";
-import {
-  MDY_FIELD_SHELL_CLASSES,
-  MDY_LAYOUT_CLASSES,
-  MDY_WIDGET_CONTRACTS,
-  type MdyWidgetKind,
-} from "@modyra/widgets";
+import { compileToContract, dynamicFieldForNode, flattenContractFields } from "@modyra/studio-contract";
 import { TargetRegistry, type Artifact } from "@modyra/studio-codegen";
 import { jsonTargetManifest } from "@modyra/studio-target-json";
 import { coreTargetManifest } from "@modyra/studio-target-core";
@@ -65,6 +59,7 @@ import { reactTargetManifest } from "@modyra/studio-target-react";
 import { buildLiveForm, createMockSubmitAction, vanillaReactivity, type MdyTypedForm, type MockServerConfig } from "@modyra/studio-preview";
 import { StudioCanvasController, StudioRuntimeSession } from "./canvas-controller.js";
 import { installColumns, type StudioColumns } from "./columns.js";
+import { mountPreviewFields, previewStructureSignature, type PreviewFieldsMount } from "./preview-mount.js";
 import { Region, ScrollMemory } from "./regions.js";
 import { importProjectFromText, loadSession, saveSession } from "./storage.js";
 import "./studio.css";
@@ -493,187 +488,30 @@ export function defaultRowValue(item: FieldNode | GroupNode): unknown {
 }
 
 /**
- * The widget each Studio field kind is, so the preview can wear that widget's root classes.
+ * The chrome above the previewed form: what this panel is, and whether the form is currently valid.
  *
- * Studio's `fieldKind` and the catalog's `MdyWidgetKind` mostly agree; where they do not, this is
- * the one place that says so rather than each call site guessing.
+ * Head and tail are markup; the fields between them are not. Mounted controls cannot live inside a
+ * {@link Region} — see `preview-mount.ts` — so the panel is three siblings rather than one string,
+ * and only the two that are pure chrome repaint on every keystroke.
  */
-const PREVIEW_WIDGET_KIND: Readonly<Record<string, MdyWidgetKind>> = Object.freeze({
-  text: "text", email: "email", password: "password", textarea: "textarea",
-  number: "number", slider: "slider", checkbox: "checkbox", toggle: "toggle",
-  select: "select", radio: "radio", multiselect: "multiselect", segmented: "segmented",
-  date: "datepicker", datepicker: "datepicker", daterange: "daterange", timepicker: "timepicker",
-  file: "file", colors: "colors",
-});
-
-/** one live field, bound to the real form handle at `path` — rather than a static description (). */
-export function previewFieldMarkup(node: FieldNode, path: string, form: MdyTypedForm<never> | null, mockConfig: Record<string, MockServerConfig>): string {
-  const handle = getPreviewHandle(form, path);
-  if (!handle) return "";
-  const value = (handle.value as () => unknown)();
-  const errors = (handle.errors as () => ReadonlyArray<{ message: string }>)();
-  const pending = (handle.pending as () => boolean)();
-  const label = escapeHtml(node.label || node.name);
-
-  let control: string;
-  if (node.fieldKind === "textarea") {
-    control = `<textarea id="preview-${path}" data-preview-field="${path}">${escapeHtml(String(value ?? ""))}</textarea>`;
-  } else if (node.fieldKind === "number") {
-    control = `<input id="preview-${path}" type="number" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
-  } else if (node.fieldKind === "checkbox") {
-    control = `<input id="preview-${path}" type="checkbox" data-preview-field="${path}" data-preview-checkbox ${value ? "checked" : ""}>`;
-  } else if (node.fieldKind === "select") {
-    const options = (node.options ?? [])
-      .map((o) => `<option value="${escapeHtml(o.value)}" ${o.value === value ? "selected" : ""}>${escapeHtml(o.label)}</option>`)
-      .join("");
-    control = `<select id="preview-${path}" data-preview-field="${path}"><option value="">— choose —</option>${options}</select>`;
-  } else if (node.fieldKind === "multiselect") {
-    const selectedValues = Array.isArray(value) ? (value as unknown[]) : [];
-    const options = (node.options ?? [])
-      .map((o) => `<option value="${escapeHtml(o.value)}" ${selectedValues.includes(o.value) ? "selected" : ""}>${escapeHtml(o.label)}</option>`)
-      .join("");
-    control = `<select id="preview-${path}" multiple data-preview-field="${path}">${options}</select>`;
-  } else if (node.fieldKind === "date") {
-    control = `<input id="preview-${path}" type="date" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
-  } else {
-    control = `<input id="preview-${path}" type="${node.fieldKind === "email" ? "email" : "text"}" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
-  }
-
-  const serverMock = node.serverValidator
-    ? (() => {
-        const cfg = mockConfig[node.serverValidator!.implementationRef];
-        const mode = cfg?.forceNetworkFailure ? "network" : cfg?.forceError ? "error" : "success";
-        return `
-      <label class="preview-mock-mode">Server mock
-        <select data-preview-mock-mode="${node.serverValidator!.implementationRef}">
-          <option value="success" ${mode === "success" ? "selected" : ""}>Succeeds</option>
-          <option value="error" ${mode === "error" ? "selected" : ""}>Fails</option>
-          <option value="network" ${mode === "network" ? "selected" : ""}>Network failure</option>
-        </select>
-      </label>`;
-      })()
-    : "";
-
-  // The shell is the contract's, not Studio's. These controls used to wear `preview-field`,
-  // `preview-errors` and `preview-pending` — names only Studio styled — so the panel that exists to
-  // show you the real form showed it in a costume. Wearing `mdy-renderer`, `mdy-label`,
-  // `mdy-input-wrapper` and `mdy-control__errors` means the foundation paints them, and the preview
-  // matches the canvas and the shipped form without Studio restating a single rule.
-  const kind = PREVIEW_WIDGET_KIND[node.fieldKind] ?? "text";
-  const root = MDY_WIDGET_CONTRACTS[kind].rootClasses.join(" ");
-  const shell = MDY_FIELD_SHELL_CLASSES;
-  return `
-    <div class="${root}" data-preview-node="${escapeHtml(path)}">
-      <label class="${shell.label}" for="preview-${escapeHtml(path)}">${label}${pending ? ` <span class="${shell.supportingText}">checking…</span>` : ""}</label>
-      <div class="${shell.inputWrapper}">${control}</div>
-      ${errors.length
-        ? `<div class="${shell.errors}">${errors.map((e) => `<span class="${shell.errorItem}">${escapeHtml(e.message)}</span>`).join("")}</div>`
-        : ""}
-    </div>
-    ${serverMock}`;
-}
-
-/** a field, group, or array node — recurses, always reading the real live handle at each computed path. */
-export function previewNodeMarkup(node: StudioSchemaNode, path: string, form: MdyTypedForm<never> | null, mockConfig: Record<string, MockServerConfig>): string {
-  if (node.node === "field") return previewFieldMarkup(node, path, form, mockConfig);
-  if (node.node === "group") {
-    return `
-      <fieldset class="${MDY_LAYOUT_CLASSES.section}">
-        <legend class="${MDY_LAYOUT_CLASSES.sectionLabel}">${escapeHtml(node.label || node.name)}</legend>
-        ${node.children.map((c) => previewNodeMarkup(c, `${path}.${c.name}`, form, mockConfig)).join("")}
-      </fieldset>`;
-  }
-  const handle = getPreviewHandle(form, path) as { length?: () => number } | null;
-  const length = handle?.length?.() ?? 0;
-  const rows = Array.from({ length }, (_, i) => {
-    const rowPath = `${path}.${i}`;
-    const rowFields =
-      node.item.node === "group"
-        ? node.item.children.map((c) => previewNodeMarkup(c, `${rowPath}.${c.name}`, form, mockConfig)).join("")
-        : previewNodeMarkup(node.item, rowPath, form, mockConfig);
-    return `<div class="preview-array-row">${rowFields}<button type="button" data-preview-array-remove="${path}" data-preview-array-index="${i}">Remove</button></div>`;
-  }).join("");
-  return `
-    <div class="preview-array">
-      <div class="preview-array-label">${escapeHtml(node.label || node.name)} (${length})</div>
-      ${rows}
-      <button type="button" data-preview-array-push="${path}">+ Add row</button>
-    </div>`;
-}
-
-/** ("Preview reads model/Contract, not generated source"): status badges, every field live-bound, Submit. Diagnostics are appended by the caller (mountStudio already has a diagnosticsMarkup() it reuses everywhere else). */
-/**
- * Preview renders the same arrangement the canvas does: a column row here is the same
- * `.mdy-layout-columns` grid @modyra/plain emits, so what you preview matches what ships
- * rather than being a second, drifting picture of the form.
- *
- * The row is emitted at its first member's position, the same splice rule plain uses.
- */
-function previewRootMarkup(
-  rootChildren: readonly StudioSchemaNode[],
-  layout: ReadonlyArray<StudioLayoutNode>,
-  form: MdyTypedForm<never> | null,
-  mockConfig: Record<string, MockServerConfig>,
-): string {
-  const columnRows = layout.filter((node): node is StudioLayoutNode & { kind: "columns" } => node.kind === "columns");
-  if (!columnRows.length) {
-    return rootChildren.map((c) => previewNodeMarkup(c, c.name, form, mockConfig)).join("");
-  }
-
-  const byId = new Map(rootChildren.map((child) => [child.id, child]));
-  const rowFor = new Map<string, StudioLayoutNode & { kind: "columns" }>();
-  const claimed = new Set<string>();
-  for (const row of columnRows) {
-    const members = row.columns.flat().flatMap((child) => ("nodeId" in child ? [child.nodeId] : []));
-    const anchorId = members.find((id) => byId.has(id) && !claimed.has(id));
-    if (anchorId === undefined) continue;
-    rowFor.set(anchorId, row);
-    for (const id of members) claimed.add(id);
-  }
-
-  return rootChildren
-    .map((child) => {
-      const row = rowFor.get(child.id);
-      if (row) {
-        const cells = row.columns
-          .map((column) => {
-            const inner = column
-              .flatMap((slot) => ("nodeId" in slot ? [byId.get(slot.nodeId)] : []))
-              .filter((node): node is StudioSchemaNode => Boolean(node))
-              .map((node) => previewNodeMarkup(node, node.name, form, mockConfig))
-              .join("");
-            return `<div class="mdy-layout-column">${inner}</div>`;
-          })
-          .join("");
-        return `<div class="mdy-layout-columns" style="--mdy-layout-column-count:${row.columns.length}">${cells}</div>`;
-      }
-      return claimed.has(child.id) ? "" : previewNodeMarkup(child, child.name, form, mockConfig);
-    })
-    .join("");
-}
-
-export function previewBodyMarkup(
-  project: MdyStudioProject,
-  form: MdyTypedForm<never> | null,
-  mockConfig: Record<string, MockServerConfig>,
-  layout: ReadonlyArray<StudioLayoutNode> = project.presentation.layout ?? [],
-): string {
-  if (!form) {
-    return `<p class="tab-hint">Preview needs a group at the schema root.</p>`;
-  }
-  const rootChildren = project.schema.node === "group" ? project.schema.children : [];
-  const fields = previewRootMarkup(rootChildren, layout, form, mockConfig);
+export function previewHeadMarkup(form: MdyTypedForm<never> | null): string {
+  if (!form) return `<p class="tab-hint">Preview needs a group at the schema root.</p>`;
   const state = form.state;
-  const submitErrors = state.lastSubmitErrors();
-  const submitRef = project.behaviors.submit?.implementationRef;
-
   return `
     <p class="tab-hint">A real, running form built directly from this project — never generated source (R5/R12). Server validators run against a configurable mock, never a real network call.</p>
     <div class="preview-status">
       <span class="preview-status-badge ${state.valid() ? "valid" : "invalid"}">${state.valid() ? "Valid" : "Invalid"}</span>
       ${state.pending() ? '<span class="preview-status-badge pending">Pending</span>' : ""}
-    </div>
-    <div class="preview-fields">${fields}</div>
+    </div>`;
+}
+
+/** The chrome below the previewed form: Submit, what the last submit did, and why it may do nothing. */
+export function previewTailMarkup(project: MdyStudioProject, form: MdyTypedForm<never> | null): string {
+  if (!form) return "";
+  const state = form.state;
+  const submitErrors = state.lastSubmitErrors();
+  const submitRef = project.behaviors.submit?.implementationRef;
+  return `
     <button type="button" data-preview-submit ${state.canSubmit() && !state.submitting() ? "" : "disabled"}>
       ${state.submitting() ? "Submitting…" : "Submit"}
     </button>
@@ -735,6 +573,11 @@ interface StudioShell {
   readonly surface: Region;
   readonly tabs: Region;
   readonly inspector: Region;
+  /** Shown only on the Preview tab; persistent, so the mounted controls survive every repaint. */
+  readonly previewPanel: HTMLElement;
+  readonly previewFields: HTMLElement;
+  readonly previewHead: Region;
+  readonly previewTail: Region;
   readonly footer: Region;
 }
 
@@ -742,6 +585,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   const canvasController = new StudioCanvasController();
   const plainCanvasSession = new StudioRuntimeSession<MdyPlainForm>();
   const previewSession = new StudioRuntimeSession<{ dispose(): void }>();
+  const previewMountSession = new StudioRuntimeSession<PreviewFieldsMount>();
   let project = initial ? structuredClone(initial) : createBlankProject();
   let selected = project.schema.id;
   let drag: Drag | null = null;
@@ -785,6 +629,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   let previewDiagnostics: StudioDiagnostic[] = [];
   let previewMockConfig: Record<string, MockServerConfig> = {};
   let previewEffect: { destroy(): void } | null = null;
+  /** Structure the mounted preview controls were last built from; identical structure -> no remount. */
+  let previewSignature: string | null = null;
+  /** Bumped whenever `previewForm` is replaced, so a remount is forced even when the schema JSON is unchanged (a behaviour or mock-config edit rebuilds the form, and the old handles are dead). */
+  let previewFormGeneration = 0;
   /** Which accordion sections are open — Validation starts open, everything else starts collapsed
       (the whole point of this structure: show little by default, let the user open what they need). */
   const expandedSections = new Set<string>(["validation"]);
@@ -801,8 +649,6 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   let indexes: StudioIndexes = buildIndexes(project);
   /** Schema snapshot the live form canvas was last mounted from; identical snapshot -> no remount. */
   let plainCanvasSignature: string | null = null;
-  /** True only while `ensurePreviewForm()` is wiring the live preview effect, whose first run is synchronous. */
-  let buildingPreview = false;
   /** Insert-palette state: the typed query and the highlighted row. */
   let paletteOpen = false;
   let paletteQuery = "";
@@ -1113,13 +959,13 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     previewForm = result.form as MdyTypedForm<never> | null;
     previewDiagnostics = result.diagnostics;
     previewForProject = project;
+    previewFormGeneration += 1;
     const form = previewForm;
     if (form) {
       // Reading these signals subscribes them — any write (a preview field change, an async
       // validator settling, a submit) re-runs this. It repaints the *preview panel only*:
       // nothing outside the inspector body depends on live form state, and a full render()
       // here would re-enter the render that is building this effect in the first place.
-      buildingPreview = true;
       previewEffect = previewReactivity.effect(() => {
         form.value();
         form.state.pending();
@@ -1127,26 +973,62 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         form.state.canSubmit();
         form.state.submitting();
         form.state.lastSubmitErrors();
-        // Building the markup *inside* the effect is what subscribes it to every signal the
-        // panel actually shows — array lengths and per-field errors included, which the
-        // form-level signals above do not cover. Skipping this read on the first (synchronous)
-        // run would leave those dependencies untracked forever.
-        const html = previewPanelMarkup();
-        if (!buildingPreview) paintPreviewPanel(html);
+        form.state.submitCount();
+        // Painting *inside* the effect is what subscribes it to the array lengths the panel's
+        // structure depends on, which the form-level signals above do not cover — skipping it on
+        // the first (synchronous) run would leave a repeater's row count untracked forever, and
+        // Add row would change the form without ever redrawing it. The mounted controls read
+        // their own value and errors through their own effects, so a keystroke repaints the
+        // chrome and leaves the control — and the caret in it — alone.
+        paintPreview();
       });
-      buildingPreview = false;
       previewSession.replace({ dispose: () => previewEffect?.destroy() });
     }
   }
 
-  /** Repaints just the preview panel, keeping the inspector's scroll and the field the user is typing in. */
-  function paintPreviewPanel(html: string): void {
-    if (!shell || inspectorTab !== "preview") return;
-    const activePath = (document.activeElement as HTMLElement | null)?.dataset?.previewField ?? null;
+  /**
+   * Repaints the preview panel: chrome through its two Regions, controls only when the structure
+   * they draw actually changed.
+   *
+   * A remount is a real cost — every control is torn down and rebuilt — so it is spent only on a
+   * schema, arrangement, row-count, mock-mode or form-identity change. Typing changes none of them.
+   */
+  function paintPreview(): void {
+    const view = shell;
+    if (!view || inspectorTab !== "preview") return;
     scroll.capture();
-    shell.inspector.update(html);
+    view.previewHead.update(previewHeadMarkup(previewForm));
+
+    const form = previewForm;
+    const signature = form
+      ? `${previewFormGeneration}:${previewStructureSignature(
+          project,
+          project.presentation.layout ?? [],
+          (path) => getPreviewHandle(form, path),
+          previewMockConfig,
+        )}`
+      : null;
+
+    if (signature !== previewSignature) {
+      previewSignature = signature;
+      previewMountSession.dispose();
+      if (form) {
+        previewMountSession.replace(
+          mountPreviewFields(view.previewFields, project, {
+            handleFor: (path) => getPreviewHandle(form, path),
+            fieldFor: dynamicFieldForNode,
+            reactivity: previewReactivity,
+            mockConfig: previewMockConfig,
+          }),
+        );
+        bindPreviewControls(view.previewFields);
+      } else {
+        view.previewFields.replaceChildren();
+      }
+    }
+
+    view.previewTail.update(previewTailMarkup(project, previewForm) + diagnosticsMarkup(previewDiagnostics));
     scroll.restore();
-    if (activePath) shell.inspectorBody.querySelector<HTMLElement>(`[data-preview-field="${activePath}"]`)?.focus();
   }
 
   function getSelectedField(): FieldNode | null {
@@ -1253,16 +1135,6 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       </button>
       ${exportState.error ? `<p class="export-error" role="alert">${escapeHtml(exportState.error)}</p>` : ""}
       ${files}`;
-  }
-
-  /** The panel body alone — reading it tracks the live form signals it displays. */
-  function previewPanelMarkup(): string {
-    return previewBodyMarkup(project, previewForm, previewMockConfig) + diagnosticsMarkup(previewDiagnostics);
-  }
-
-  function previewMarkup(): string {
-    ensurePreviewForm();
-    return previewPanelMarkup();
   }
 
   function markup(n: StudioSchemaNode): string {
@@ -2087,7 +1959,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   function inspectorBodyMarkup(current: StudioSchemaNode, idx: StudioIndexes, diagnostics: StudioDiagnostic[]): string {
     if (inspectorTab === "diagnostics") return diagnosticsMarkup(diagnostics);
     if (inspectorTab === "export") return exportMarkup();
-    if (inspectorTab === "preview") return previewMarkup();
+    // Preview is not a Region's markup — it owns a persistent panel of its own, next to this one.
+    if (inspectorTab === "preview") return "";
     if (inspectorTab === "form") return formValidatorsMarkup(project, idx, formValidatorDraft);
     return nodeInspectorMarkup(current, idx);
   }
@@ -2119,7 +1992,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
           <div class="studio-resizer" data-resize="inspector" aria-label="Resize the properties panel, or show it when the window is narrow"></div>
           <aside class="inspector">
             <div class="inspector-tabs" role="tablist"></div>
-            <div class="inspector-body"></div>
+            <div class="inspector-body">
+              <div class="inspector-tabpanel"></div>
+              <div class="preview-panel" hidden>
+                <div class="preview-head"></div>
+                <div class="preview-fields"></div>
+                <div class="preview-tail"></div>
+              </div>
+            </div>
           </aside>
         </main>
         <footer role="status" aria-live="polite"></footer>
@@ -2142,7 +2022,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       // instrumentPlainCanvas() adds *after* the region write, so the Region cannot own it.
       surface: new Region(canvasSurface),
       tabs: new Region(find<HTMLElement>(".inspector-tabs"), bindInspectorTabs),
-      inspector: new Region(inspectorBody, bindInspector),
+      inspector: new Region(find<HTMLElement>(".inspector-tabpanel"), bindInspector),
+      previewPanel: find<HTMLElement>(".preview-panel"),
+      previewFields: find<HTMLElement>(".preview-fields"),
+      previewHead: new Region(find<HTMLElement>(".preview-head")),
+      previewTail: new Region(find<HTMLElement>(".preview-tail"), bindPreviewTail),
       footer: new Region(find<HTMLElement>("footer")),
     };
 
@@ -2194,6 +2078,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
     view.tabs.update(tabsMarkup(current, diagnostics.length, errorCount));
     view.inspector.update(inspectorBodyMarkup(current, indexes, diagnostics));
+    view.previewPanel.hidden = inspectorTab !== "preview";
+    if (inspectorTab === "preview") {
+      ensurePreviewForm();
+      paintPreview();
+    }
     view.footer.update(footerMarkup());
 
     // The registry has to see both surfaces: tree nodes are in the rail, field rows in the canvas.
@@ -3174,18 +3063,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       }),
     );
 
-    root.querySelectorAll<HTMLElement>("[data-preview-field]").forEach((el) =>
-      el.addEventListener("change", () => {
-        const path = el.dataset.previewField!;
-        const handle = getPreviewHandle(previewForm, path);
-        const valueSignal = handle?.value as { set(v: unknown): void } | undefined;
-        if (!valueSignal) return;
-        if (el instanceof HTMLInputElement && el.type === "checkbox") valueSignal.set(el.checked);
-        else if (el instanceof HTMLInputElement && el.type === "number") valueSignal.set(el.value === "" ? null : Number(el.value));
-        else if (el instanceof HTMLSelectElement && el.multiple) valueSignal.set(Array.from(el.selectedOptions).map((o) => o.value));
-        else valueSignal.set((el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement).value);
-      }),
-    );
+  }
+
+  /**
+   * Studio's own controls inside the mounted preview — the repeater's Add/Remove and the per-field
+   * server-mock selector. The *fields* need nothing here: `@modyra/plain` binds them to the same
+   * live handles when it renders them.
+   *
+   * Bound after each mount rather than by a Region, because the mount is not a Region: its DOM is
+   * built by `mountPreviewFields`, not written as markup.
+   */
+  function bindPreviewControls(root: HTMLElement): void {
     root.querySelectorAll<HTMLElement>("[data-preview-array-push]").forEach((el) =>
       el.addEventListener("click", () => {
         const path = el.dataset.previewArrayPush!;
@@ -3215,6 +3103,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         render();
       }),
     );
+  }
+
+  /** Submit, plus the diagnostics list the tail shares with the Diagnostics tab. */
+  function bindPreviewTail(root: HTMLElement): void {
+    bindDiagnosticActions(root);
     root.querySelector<HTMLElement>("[data-preview-submit]")?.addEventListener("click", () => {
       if (!previewForm) return;
       const submitRef = project.behaviors.submit?.implementationRef;

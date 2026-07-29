@@ -9,8 +9,8 @@ Remove the deprecated surface
 
 **Breaking, and it rides the minor.** The workspace is pre-1.0 and every package moves together, so
 this lands as `0.5.0` rather than claiming a `1.0.0` the framework has not earned — Lit still has no
-config-driven form and Studio's preview still draws its own controls rather than mounting real ones.
-Pin exactly if you depend on any of the removed names.
+config-driven form, and contract-v2's `rules` are parsed but reach no renderer. Pin exactly if you
+depend on any of the removed names.
 
 **`@modyra/core/overlay-position` is gone.** It held the placement policy Modyra had before there was
 a contract — it never knew how big the popup was, so it chose a side with *enough* room rather than
