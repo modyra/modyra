@@ -745,7 +745,9 @@
 
     /* ─── Host display helpers ────────────────────────────────────────────────── */
 
-    .mdy-datepicker,
+    /* `.mdy-datepicker` is not here: how a picker arranges its control is structure, and the
+       foundation makes it a row. Declaring it a block here stacked a range field's two inputs and
+       its toggle, so a date range stood three times as tall as the field above it. */
     .mdy-datepicker__calendar,
     .mdy-range-calendar {
         display: block;
@@ -914,20 +916,15 @@
 
     /* ─── Color Picker — M3 Filled Style ─────────────────────────────────────── */
 
+    /* The colour field wears Material's surface. It does not decide its own height or how it lays
+       its parts out: a field is `--mdy-input-height` tall, like every other, and the foundation
+       arranges the wrapper. A theme that set both made the swatch shorter than the field above it. */
     .mdy-renderer--colors .mdy-input-wrapper {
-        height: 2.75rem !important;
         background-color: var(--mdy-surface-container-highest);
         border-radius: var(--mdy-input-border-radius);
         border-bottom: 1px solid var(--mdy-on-surface-variant);
         transition: background 0.2s, border-color 0.2s;
         padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        box-sizing: border-box;
-    }
-
-    .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-input-wrapper {
-        height: var(--mdy-floating-input-height, var(--mdy-input-height)) !important;
     }
 
     .mdy-renderer--colors:hover .mdy-input-wrapper {
