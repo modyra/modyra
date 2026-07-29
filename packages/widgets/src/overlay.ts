@@ -12,6 +12,7 @@
  * to copy these onto the element.
  */
 import { MDY_WIDGET_CONTRACTS, type MdyPopupWidgetKind, type MdyWidgetKind } from "./catalog.js";
+import { partClasses } from "./part-classes.js";
 import { MDY_CSS_PROPERTIES } from "./css.js";
 import {
   decideOverlayPlacement,
@@ -178,6 +179,26 @@ export function overlayAnchoringFor(kind: MdyWidgetKind): MdyOverlayAnchorOption
     ...(anchoring.minWidth !== undefined ? { minWidth: anchoring.minWidth } : {}),
     ...(anchoring.alignment !== undefined ? { alignment: anchoring.alignment } : {}),
   };
+}
+
+/**
+ * The class a popup wears to say which side it ended up on, or `null` for the ordinary case.
+ *
+ * The catalog declares `above` and `overlay` as states of every popup part; this is the one place
+ * that turns a placement into the class for them. Three renderers each deriving it from
+ * `partClasses` is three chances to derive it differently — which is precisely how
+ * `mdy-overlay-panel--above`, a name no stylesheet has ever matched, came to exist in two adapters
+ * at once while the catalog already had a name for it.
+ *
+ * `below` is the ordinary case and has no class, so a popup sitting under its anchor is spelled
+ * exactly like a popup nobody has placed yet.
+ */
+export function popupPlacementClass(kind: MdyPopupWidgetKind, placement: MdyOverlayPlacement): string | null {
+  if (placement !== "above" && placement !== "overlay") return null;
+  const base = partClasses(kind, "popup")[0];
+  if (base === undefined) return null;
+  const applied = partClasses(kind, "popup", { [placement]: true });
+  return applied.find((name) => name !== base && name.startsWith(`${base}--`)) ?? null;
 }
 
 const clamp = (value: number, low: number, high: number): number =>
