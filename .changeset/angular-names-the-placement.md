@@ -17,5 +17,5 @@ theme changes; a host that had written its own rule against those names should m
 widget's popup class. `--right`, `--modal` and `--visible` are unchanged — they describe the panel
 element rather than the popup part, and the catalog names no state for them.
 
-Wired for datepicker, daterange, timepicker and multiselect. `select` and `colors` do not pass a
-kind yet and reflect nothing, exactly as before.
+Wired for datepicker, daterange, timepicker and multiselect. `select` and `colors` reach the same
+class without the panel — they own the element the state belongs on — and compute it directly.

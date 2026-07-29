@@ -1,4 +1,4 @@
-import { NgTemplateOutlet } from "@angular/common";
+import { NgClass, NgTemplateOutlet } from "@angular/common";
 import {
   afterNextRender,
   booleanAttribute,
@@ -16,7 +16,7 @@ import {
   viewChild,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
-import { MDY_WIDGET_CONTRACTS, reconcileSelectValue, selectKeyboardAction } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, popupPlacementClass, reconcileSelectValue, selectKeyboardAction } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -31,7 +31,7 @@ import { MdyDropdownBase } from "../dropdown-base";
 @Component({
   selector: "mdy-control-select",
   standalone: true,
-  imports: [
+  imports: [NgClass,
     NgTemplateOutlet,
     MdyControlLabelComponent,
     MdyErrorListComponent,
@@ -131,8 +131,7 @@ import { MdyDropdownBase } from "../dropdown-base";
           <div
             mdyGlass
             class="mdy-select__dropdown mdy-popup"
-            [class.mdy-select__dropdown--above]="dropUp()"
-            [class.mdy-select__dropdown--overlay]="overlayMode()"
+            [ngClass]="placementClass()"
             [class.mdy-select__dropdown--right]="alignment() === 'right'"
           >
             @if (searchable()) {
@@ -320,6 +319,15 @@ export class MdySelectComponent<TValue = string>
   protected readonly fieldId = `mdy-control-select-${MdyBaseControl.nextId()}`;
 
   protected readonly dropUp = computed(() => this.position() === "above");
+
+  /**
+   * Which side the list ended up on, named by the catalog rather than spelled here.
+   *
+   * `above` and `overlay` are declared states of the select's `popup` part, so the class comes from
+   * `popupPlacementClass` — the same call Plain and Lit make. `--right` stays a literal: the catalog
+   * declares no alignment state, so there is nothing to derive it from yet.
+   */
+  protected readonly placementClass = computed(() => popupPlacementClass("select", this.position()) ?? "");
 
   protected readonly overlayMode = computed(
     () => this.position() === "overlay",

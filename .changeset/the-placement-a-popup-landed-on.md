@@ -32,7 +32,7 @@ strength of the anchoring guard alone.
 
 The foundation's reversal rule is re-keyed onto the contract's name and applies for the first time.
 
-**Angular and Lit still emit `mdy-overlay-panel--*`.** They are unchanged here and no worse than
-before — the class was unstyled then and is unstyled now. Moving them onto the contract needs the
-panel to learn which widget it is holding, which is renderer plumbing rather than a stylesheet
-change, and it is the next batch.
+**Angular and Lit still emit `mdy-overlay-panel--*` as of this changeset.** They are unchanged here
+and no worse than before — the class was unstyled then and is unstyled now. Moving them onto the
+contract needs the panel to learn which widget it is holding, which is renderer plumbing rather than
+a stylesheet change; the batches that follow do it, and by release no adapter emits those names.

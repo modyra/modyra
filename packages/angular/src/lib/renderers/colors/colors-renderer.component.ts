@@ -1,12 +1,13 @@
-import { NgTemplateOutlet } from "@angular/common";
+import { NgClass, NgTemplateOutlet } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   input,
 } from "@angular/core";
 
-import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, popupPlacementClass } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -19,6 +20,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
   selector: "mdy-control-colors",
   standalone: true,
   imports: [
+    NgClass,
     NgTemplateOutlet,
     MdyControlLabelComponent,
     MdyErrorListComponent,
@@ -121,8 +123,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
       >
         <div
           class="mdy-colors__dropdown"
-          [class.mdy-colors__dropdown--above]="position() === 'above'"
-          [class.mdy-colors__dropdown--overlay]="position() === 'overlay'"
+          [ngClass]="placementClass()"
         >
           <div class="mdy-colors__dropdown-header" aria-hidden="true">{{ i18n.colorPresetsHeader }}</div>
           <div
@@ -173,6 +174,14 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
 
   protected readonly fieldId = `mdy-control-colors-${MdyBaseControl.nextId()}`;
   protected readonly hexInputId = `${this.fieldId}-hex`;
+
+  /**
+   * Which side the palette ended up on, named by the catalog rather than spelled here.
+   *
+   * `above` and `overlay` are declared states of the colors `popup` part, so the class comes from
+   * `popupPlacementClass` — the same call Plain and Lit make.
+   */
+  protected readonly placementClass = computed(() => popupPlacementClass("colors", this.position()) ?? "");
 
   protected override onBeforeOpen(): void {
   }
