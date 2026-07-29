@@ -300,11 +300,35 @@ export interface MdyDynamicRule {
 }
 
 /**
- * A slot in a layout node: either a field name, or a nested layout node — so a
- * two-column row can live inside a section, which is what a real form needs and
+ * Where a slot sits and whether it shows, at one size.
+ *
+ * `column` is 1-based, matching how a grid line is spoken about and how CSS numbers its tracks; a
+ * value past the row's track count is refused rather than clamped, because silently moving a field
+ * to a column the author did not choose is worse than saying the layout is wrong.
+ */
+export interface MdyDynamicSlotPlacement {
+  readonly column?: number;
+  readonly hidden?: boolean;
+}
+
+/**
+ * Contract v3's slot: a child that says more than its name.
+ *
+ * A bare string still means "this field, wherever the row puts it". A slot names the same field and
+ * adds where it sits and whether it shows, per size — the two things `at` on the row cannot express,
+ * because a track count describes the row while these describe one child of it.
+ */
+export interface MdyDynamicLayoutSlot {
+  readonly ref: string;
+  readonly at?: Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>>;
+}
+
+/**
+ * A slot in a layout node: a field name, a v3 slot describing that field's placement, or a nested
+ * layout node — so a two-column row can live inside a section, which is what a real form needs and
  * what every mainstream form builder expresses.
  */
-export type MdyDynamicLayoutChild = string | MdyDynamicLayoutNode;
+export type MdyDynamicLayoutChild = string | MdyDynamicLayoutSlot | MdyDynamicLayoutNode;
 
 export interface MdyDynamicSection {
   readonly kind: "section";
@@ -346,9 +370,26 @@ export interface MdyDynamicFormConfigV2 {
   readonly rules?: ReadonlyArray<MdyDynamicRule>;
 }
 
+/**
+ * Contract v3 adds per-breakpoint placement and visibility for a single slot, and nothing else.
+ *
+ * The row's track count stays where v2 put it — `at` on the columns node — rather than being
+ * respelled as `{ columns: n }`. One property, one spelling: a second way to say the same thing
+ * would leave every reader deciding which one wins, and a v2 row would have to be rewritten to say
+ * what it already says. What v3 adds is the thing v2 genuinely cannot express: a slot that moves or
+ * disappears at a size, which is a property of the child rather than of the row.
+ *
+ * Everything else — `fields`, `schema`, `layout`, `rules` — is v2's, unchanged, so a v2 document is
+ * a v3 document with the version number raised.
+ */
+export interface MdyDynamicFormConfigV3 extends Omit<MdyDynamicFormConfigV2, "version"> {
+  readonly version: 3;
+}
+
 export type MdyDynamicFormDocument =
   | MdyDynamicFormConfig
-  | MdyDynamicFormConfigV2;
+  | MdyDynamicFormConfigV2
+  | MdyDynamicFormConfigV3;
 
 export type MdyDynamicParseMode = "lenient" | "strict";
 
@@ -361,7 +402,7 @@ export interface MdyDynamicDiagnostic {
 
 export interface MdyDynamicFormParseResult {
   readonly ok: boolean;
-  readonly version: 1 | 2 | null;
+  readonly version: 1 | 2 | 3 | null;
   readonly fields: ReadonlyArray<MdyDynamicField>;
   readonly layout: ReadonlyArray<MdyDynamicLayoutNode>;
   readonly rules: ReadonlyArray<MdyDynamicRule>;
@@ -389,9 +430,9 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     "fields" in input
   ) {
     const envelope = input as { version?: unknown; fields?: unknown };
-    if (envelope.version !== 1 && envelope.version !== 2) {
+    if (envelope.version !== 1 && envelope.version !== 2 && envelope.version !== 3) {
       warnDev(
-        `Unsupported dynamic form config version ${String(envelope.version)} — expected 1 or 2.`,
+        `Unsupported dynamic form config version ${String(envelope.version)} — expected 1, 2 or 3.`,
       );
       return [];
     }
@@ -514,7 +555,13 @@ function validFieldReference(name: unknown, names: ReadonlySet<string>): name is
  * twice and bind the same value to both, which is never what the author meant.
  * Returns false and leaves `seen` untouched-in-spirit when the subtree is unusable.
  */
-function validLayoutNode(raw: unknown, names: ReadonlySet<string>, seen: Set<string>, depth: number): boolean {
+function validLayoutNode(
+  raw: unknown,
+  names: ReadonlySet<string>,
+  seen: Set<string>,
+  depth: number,
+  allowSlots: boolean,
+): boolean {
   if (depth > MDY_LAYOUT_MAX_DEPTH || !isRecordValue(raw)) return false;
   const node = raw as Partial<MdyDynamicLayoutNode>;
   if (typeof node.id !== "string") return false;
@@ -538,16 +585,52 @@ function validLayoutNode(raw: unknown, names: ReadonlySet<string>, seen: Set<str
     }
   }
 
+  // How many tracks this row has, so a slot cannot be sent to a column the row does not have. A
+  // nested row is checked against its own count, which is why this is read here rather than passed
+  // down. `at` may widen the row at a size, so the widest declared count is the ceiling.
+  const trackCount = node.kind === "columns"
+    ? Math.max(
+      Array.isArray(node.columns) ? node.columns.length : 1,
+      ...Object.values((node.at ?? {}) as Record<string, number>),
+    )
+    : 1;
+
   for (const slot of slots) {
     for (const child of slot) {
       if (typeof child === "string") {
         if (!validFieldReference(child, names) || seen.has(child)) return false;
         seen.add(child);
-      } else if (!validLayoutNode(child, names, seen, depth + 1)) {
+      } else if (isRecordValue(child) && "ref" in child) {
+        // A v3 slot. Refused outright below v3: accepting it would make this parser disagree with
+        // every other reader of the same document about what the contract says.
+        if (!allowSlots) return false;
+        if (!validSlot(child, names, seen, trackCount)) return false;
+      } else if (!validLayoutNode(child, names, seen, depth + 1, allowSlots)) {
         return false;
       }
     }
   }
+  return true;
+}
+
+/** Validates one v3 slot: a real field, placed once, and placement that a row can honour. */
+function validSlot(raw: Record<string, unknown>, names: ReadonlySet<string>, seen: Set<string>, trackCount: number): boolean {
+  const slot = raw as Partial<MdyDynamicLayoutSlot>;
+  if (!validFieldReference(slot.ref, names) || seen.has(slot.ref)) return false;
+  if (slot.at !== undefined) {
+    if (!isRecordValue(slot.at)) return false;
+    for (const [size, placement] of Object.entries(slot.at)) {
+      if (!["base", "sm", "md", "lg"].includes(size)) return false;
+      if (!isRecordValue(placement)) return false;
+      const { column, hidden } = placement as MdyDynamicSlotPlacement;
+      if (column !== undefined && (!Number.isInteger(column) || column < 1 || column > trackCount)) return false;
+      if (hidden !== undefined && typeof hidden !== "boolean") return false;
+      // A size that says nothing is a mistake worth reporting rather than a no-op to keep: it is
+      // usually a typo for a size that meant something.
+      if (column === undefined && hidden === undefined) return false;
+    }
+  }
+  seen.add(slot.ref);
   return true;
 }
 
@@ -594,7 +677,7 @@ export function parseDynamicForm(
     : undefined;
   let fields: MdyDynamicField[];
   try {
-    fields = rawEnvelope?.version === 2 && rawEnvelope.schema !== undefined
+    fields = (rawEnvelope?.version === 2 || rawEnvelope?.version === 3) && rawEnvelope.schema !== undefined
       ? []
       : parseDynamicFields(input);
   } finally { diagnosticSink = previousSink; }
@@ -602,9 +685,12 @@ export function parseDynamicForm(
   const envelope = typeof input === "object" && input !== null && !Array.isArray(input)
     ? input as { version?: unknown; fields?: unknown; schema?: unknown; layout?: unknown; rules?: unknown }
     : undefined;
-  const version: 1 | 2 | null = Array.isArray(input) || envelope?.version === 1
-    ? 1 : envelope?.version === 2 ? 2 : null;
-  if (version === 2 && envelope?.schema !== undefined) {
+  const version: 1 | 2 | 3 | null = Array.isArray(input) || envelope?.version === 1
+    ? 1 : envelope?.version === 2 ? 2 : envelope?.version === 3 ? 3 : null;
+  // v3 is v2 plus per-slot placement: every envelope member is read the same way, and only the
+  // layout validator is told which vocabulary the document is entitled to use.
+  const structured = version === 2 || version === 3;
+  if (structured && envelope?.schema !== undefined) {
     const schemaDiagnostics = validateDynamicSchema(envelope.schema);
     diagnostics.push(...schemaDiagnostics);
     if (schemaDiagnostics.length === 0) fields = flattenDynamicSchema(envelope.schema as MdyDynamicGroupNode);
@@ -615,7 +701,7 @@ export function parseDynamicForm(
   /** Fields already placed by an accepted layout node — a field belongs in exactly one slot. */
   const placed = new Set<string>();
 
-  if (version === 2 && envelope) {
+  if (structured && envelope) {
     if (envelope.layout !== undefined && !Array.isArray(envelope.layout)) {
       diagnostics.push({ code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path: "/layout", message: "layout must be an array." });
     } else for (const [index, raw] of (envelope.layout ?? []).entries()) {
@@ -623,7 +709,7 @@ export function parseDynamicForm(
         diagnostics.push({ code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path: `/layout/${index}`, message: "layout node must be an object." });
         continue;
       }
-      if (!validLayoutNode(raw, names, placed, 1)) {
+      if (!validLayoutNode(raw, names, placed, 1, version === 3)) {
         diagnostics.push({ code: "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", severity: "error", path: `/layout/${index}`, message: "layout references an unknown or already-placed field, or has an invalid shape." });
         continue;
       }

@@ -94,6 +94,37 @@ describe("MdyDynamicFormComponent, declarative layout", () => {
     expect(host.querySelectorAll("mdy-control-text").length).toBe(2);
   });
 
+  it("renders a v3 slot's field and places its column", () => {
+    // Same assertion as the framework-free renderer's: a slot names a field the way a bare string
+    // does, and the placement lands on the column, which is the grid item that can act on it.
+    const fixture = TestBed.createComponent(LayoutHost);
+    fixture.componentInstance.layout.set([
+      {
+        kind: "columns",
+        id: "row",
+        columns: [
+          [{ ref: "first", at: { base: { hidden: true }, md: { hidden: false } } }],
+          [{ ref: "last", at: { md: { column: 1 } } }],
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+
+    const cells = Array.from(host.querySelectorAll<HTMLElement>(`.${MDY_LAYOUT_CLASSES.column}`));
+    expect(cells.length).toBe(2);
+    expect(cells[0]!.querySelector("mdy-control-text")).toBeTruthy();
+    expect(cells[1]!.querySelector("mdy-control-text")).toBeTruthy();
+
+    expect(cells[0]!.style.getPropertyValue("--mdy-layout-column-display")).toBe("none");
+    expect(cells[0]!.style.getPropertyValue("--mdy-layout-column-display-md")).toBe("flex");
+    expect(cells[1]!.style.getPropertyValue("--mdy-layout-column-start-md")).toBe("1");
+
+    // A slot claims its field, so `notes` is still the only unplaced one.
+    expect(host.querySelector("mdy-control-textarea")).toBeTruthy();
+    expect(host.querySelectorAll("mdy-control-text").length).toBe(2);
+  });
+
   it("renders the fields in order when no layout is declared", () => {
     const fixture = TestBed.createComponent(LayoutHost);
     fixture.componentInstance.layout.set([]);

@@ -7,9 +7,9 @@
  * no framework: pure `document.createElement`/`addEventListener`, wired to
  * @modyra/widgets' headless controllers.
  */
-import { vanillaReactivity, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyFieldHandle, type MdyFormSchema, type MdyFormValue, type MdyReactivity, type MdyTypedForm } from "@modyra/core";
+import { vanillaReactivity, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyFieldHandle, type MdyFormSchema, type MdyFormValue, type MdyReactivity, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
-import { layoutNodeAttributes, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
+import { layoutNodeAttributes, layoutSlotStyle, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
 import { el, setText } from "./dom.js";
 
@@ -67,8 +67,13 @@ export function mountMdyForm(
     if (root instanceof HTMLElement) root.dataset.mdyField = name;
   };
 
+  /** A v3 slot names a field and says where it sits; a bare string is the same slot saying nothing. */
+  const isSlot = (child: MdyDynamicLayoutChild): child is MdyDynamicLayoutSlot =>
+    typeof child === "object" && "ref" in child;
+
   const renderLayoutChild = (target: HTMLElement, child: MdyDynamicLayoutChild): void => {
     if (typeof child === "string") renderOne(target, child);
+    else if (isSlot(child)) renderOne(target, child.ref);
     else renderLayoutNode(target, child);
   };
 
@@ -93,6 +98,12 @@ export function mountMdyForm(
     for (const [property, value] of Object.entries(attributes.style)) row.style.setProperty(property, value);
     for (const column of node.columns) {
       const cell = el("div", MDY_LAYOUT_CLASSES.column);
+      // The column is the grid item, so a slot's placement is applied here rather than to anything
+      // inside it — `layoutSlotStyle` explains why. First slot wins when a column holds several.
+      const placed = column.find(isSlot);
+      if (placed) {
+        for (const [property, value] of Object.entries(layoutSlotStyle(placed.at))) cell.style.setProperty(property, value);
+      }
       for (const child of column) renderLayoutChild(cell, child);
       row.appendChild(cell);
     }
@@ -107,6 +118,7 @@ export function mountMdyForm(
   const claimed = new Set<string>();
   const collectNames = (child: MdyDynamicLayoutChild, into: string[]): void => {
     if (typeof child === "string") into.push(child);
+    else if (isSlot(child)) into.push(child.ref);
     else if (child.kind === "section") child.children.forEach((c) => collectNames(c, into));
     else child.columns.forEach((column) => column.forEach((c) => collectNames(c, into)));
   };

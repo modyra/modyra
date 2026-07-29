@@ -311,6 +311,39 @@ test("a section in a column is one column, holding all its fields", async () => 
   handle.dispose();
 });
 
+test("a v3 slot renders its field and places its column", async () => {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const handle = mountMdyForm(container, [
+    { name: "a", kind: "text", label: "A" },
+    { name: "b", kind: "text", label: "B" },
+  ], {
+    submitLabel: null,
+    layout: [{
+      kind: "columns",
+      id: "row",
+      columns: [
+        [{ ref: "a", at: { base: { hidden: true }, md: { hidden: false } } }],
+        [{ ref: "b", at: { md: { column: 1 } } }],
+      ],
+    }],
+  });
+
+  const cells = container.querySelectorAll(".mdy-layout-column");
+  assert.equal(cells.length, 2);
+  // A slot names a field the same way a bare string does — it just also says where it goes.
+  assert.equal(cells[0].querySelectorAll("input").length, 1);
+  assert.equal(cells[1].querySelectorAll("input").length, 1);
+
+  assert.equal(cells[0].style.getPropertyValue("--mdy-layout-column-display"), "none");
+  assert.equal(cells[0].style.getPropertyValue("--mdy-layout-column-display-md"), "flex");
+  assert.equal(cells[1].style.getPropertyValue("--mdy-layout-column-start-md"), "1");
+  // Nothing was said about `sm`, so nothing is written and the cascade falls back.
+  assert.equal(cells[1].style.getPropertyValue("--mdy-layout-column-start-sm"), "");
+
+  handle.dispose();
+});
+
 test("a field named twice by the layout renders once, not twice", async () => {
   const container = document.createElement("div");
   document.body.append(container);

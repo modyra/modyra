@@ -484,3 +484,83 @@ test("a columns row may be authored per breakpoint, and hostile counts are rejec
   // A row that says nothing is still valid: it stacks, then takes its declared tracks.
   assert.equal(parseDynamicForm(document(null), { mode: "strict" }).ok, true);
 });
+
+test("Contract v3 parses a slot that moves and hides per breakpoint", async () => {
+  const { parseDynamicForm } = await import("../dist/dynamic-config.js");
+  const result = parseDynamicForm({
+    version: 3,
+    fields: [{ name: "a", kind: "text" }, { name: "b", kind: "text" }],
+    layout: [{
+      kind: "columns",
+      id: "row",
+      columns: [
+        [{ ref: "a", at: { md: { column: 2 } } }],
+        [{ ref: "b", at: { base: { hidden: true }, lg: { column: 1, hidden: false } } }],
+      ],
+    }],
+  }, { mode: "strict" });
+
+  assert.equal(result.ok, true, JSON.stringify(result.diagnostics));
+  assert.equal(result.version, 3);
+  assert.deepEqual(result.layout[0].columns[0][0], { ref: "a", at: { md: { column: 2 } } });
+  assert.equal(result.layout[0].columns[1][0].at.base.hidden, true);
+});
+
+test("Contract v3 slots stay mixable with plain names, and v2 keeps parsing", async () => {
+  const { parseDynamicForm } = await import("../dist/dynamic-config.js");
+  const fields = [{ name: "a", kind: "text" }, { name: "b", kind: "text" }];
+
+  // A name and a slot side by side: v3 adds a way to say more, it does not require saying it.
+  const mixed = parseDynamicForm({
+    version: 3,
+    fields,
+    layout: [{ kind: "columns", id: "row", columns: [["a"], [{ ref: "b", at: { sm: { hidden: true } } }]] }],
+  }, { mode: "strict" });
+  assert.equal(mixed.ok, true, JSON.stringify(mixed.diagnostics));
+
+  // The same document as v2 is unchanged by v3 existing.
+  const v2 = parseDynamicForm({
+    version: 2,
+    fields,
+    layout: [{ kind: "columns", id: "row", columns: [["a"], ["b"]], at: { sm: 2 } }],
+  }, { mode: "strict" });
+  assert.equal(v2.ok, true);
+  assert.equal(v2.version, 2);
+});
+
+test("a v3 slot is refused by a v2 document, and hostile placement is refused everywhere", async () => {
+  const { parseDynamicForm } = await import("../dist/dynamic-config.js");
+  const fields = [{ name: "a", kind: "text" }, { name: "b", kind: "text" }];
+  const document = (version, slot) => ({
+    version,
+    fields,
+    layout: [{ kind: "columns", id: "row", columns: [["a"], [slot]] }],
+  });
+
+  // A v2 reader has never heard of `ref`. Accepting it here would make this parser disagree with
+  // every other reader of the same bytes about what the contract says.
+  assert.equal(parseDynamicForm(document(2, { ref: "b", at: { sm: { hidden: true } } }), { mode: "strict" }).ok, false);
+
+  for (const hostile of [
+    { ref: "nope" },                          // a field that does not exist
+    { ref: "a" },                             // already placed by the first column
+    { ref: "b", at: { sm: { column: 0 } } },  // columns are 1-based
+    { ref: "b", at: { sm: { column: 3 } } },  // past the row's two tracks
+    { ref: "b", at: { sm: { column: 1.5 } } },
+    { ref: "b", at: { xl: { column: 1 } } },  // not a size the layout knows
+    { ref: "b", at: { sm: { hidden: "yes" } } },
+    { ref: "b", at: { sm: {} } },             // a size that says nothing is a typo, not a no-op
+    { ref: "b", at: "everywhere" },
+  ]) {
+    const result = parseDynamicForm(document(3, hostile), { mode: "strict" });
+    assert.equal(result.ok, false, `accepted ${JSON.stringify(hostile)}`);
+  }
+
+  // `at` on the row may widen it, and a slot may then name the wider column.
+  const widened = {
+    version: 3,
+    fields,
+    layout: [{ kind: "columns", id: "row", columns: [["a"], [{ ref: "b", at: { lg: { column: 4 } } }]], at: { lg: 4 } }],
+  };
+  assert.equal(parseDynamicForm(widened, { mode: "strict" }).ok, true);
+});

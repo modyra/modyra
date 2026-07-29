@@ -14,8 +14,9 @@ import {
   MdyDynamicField,
   MdyDynamicLayoutChild,
   MdyDynamicLayoutNode,
+  MdyDynamicLayoutSlot,
 } from "@modyra/core/dynamic-config";
-import { layoutNodeAttributes, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
+import { layoutNodeAttributes, layoutSlotStyle, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { MdyFormSubmitEvent } from "../core/types";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyCheckboxComponent } from "../renderers/checkbox/checkbox-renderer.component";
@@ -105,7 +106,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
             [attr.data-layout-id]="node.id"
           >
             @for (column of node.columns; track $index) {
-              <div [class]="layoutClasses.column">
+              <div [class]="layoutClasses.column" [style]="columnStyle(column)">
                 @for (child of column; track $index) {
                   <ng-container *ngTemplateOutlet="layoutChild; context: { $implicit: child }" />
                 }
@@ -116,8 +117,8 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
       </ng-template>
 
       <ng-template #layoutChild let-child>
-        @if (isFieldName(child)) {
-          @if (fieldByName(child); as f) {
+        @if (fieldNameOf(child); as name) {
+          @if (fieldByName(name); as f) {
             <ng-container *ngTemplateOutlet="fieldTemplate; context: { $implicit: f }" />
           }
         } @else {
@@ -268,16 +269,31 @@ export class MdyDynamicFormComponent {
   protected readonly unplacedFields = computed(() => {
     const claimed = new Set<string>();
     const walk = (child: MdyDynamicLayoutChild): void => {
-      if (typeof child === "string") claimed.add(child);
-      else if (child.kind === "section") child.children.forEach(walk);
+      if (typeof child === "string") { claimed.add(child); return; }
+      if ("ref" in child) { claimed.add(child.ref); return; }
+      if (child.kind === "section") child.children.forEach(walk);
       else child.columns.forEach((column) => column.forEach(walk));
     };
     this.layout().forEach(walk);
     return this.fields().filter((field) => !claimed.has(field.name));
   });
 
-  protected isFieldName(child: MdyDynamicLayoutChild): child is string {
-    return typeof child === "string";
+  /**
+   * The field a slot names, or `null` when the child is a nested layout node.
+   *
+   * A bare string and a v3 `{ ref }` slot name a field the same way; the slot merely also says where
+   * it sits. Answering with the name rather than a type guard keeps the template to one branch for
+   * both spellings, which is what stops the two drifting apart.
+   */
+  protected fieldNameOf(child: MdyDynamicLayoutChild): string | null {
+    if (typeof child === "string") return child;
+    return "ref" in child ? child.ref : null;
+  }
+
+  /** A column's own placement, taken from the first v3 slot inside it. */
+  protected columnStyle(column: ReadonlyArray<MdyDynamicLayoutChild>): Record<string, string> {
+    const slot = column.find((child): child is MdyDynamicLayoutSlot => typeof child === "object" && "ref" in child);
+    return { ...layoutSlotStyle(slot?.at) };
   }
 
   protected fieldByName(name: string): MdyDynamicField | undefined {
