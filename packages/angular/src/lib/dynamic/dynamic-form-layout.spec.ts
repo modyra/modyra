@@ -65,6 +65,35 @@ describe("MdyDynamicFormComponent, declarative layout", () => {
     expect(host.querySelector("mdy-control-textarea")).toBeTruthy();
   });
 
+  it("gives a section in a column one column, holding all its fields", () => {
+    // How a group joins a row: Studio compiles a container slot to a section, so the cell holds one
+    // child. Expanding it to its fields would put two things in a cell built for one and the group
+    // would stop existing. Same assertion as the framework-free renderer's.
+    const fixture = TestBed.createComponent(LayoutHost);
+    fixture.componentInstance.layout.set([
+      {
+        kind: "columns",
+        id: "row",
+        columns: [
+          ["notes"],
+          [{ kind: "section", id: "identity", label: "Identity", children: ["first", "last"] }],
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+
+    const columns = Array.from(host.querySelectorAll(`.${MDY_LAYOUT_CLASSES.column}`));
+    expect(columns.length).toBe(2);
+    expect(columns[0]!.querySelector("mdy-control-textarea")).toBeTruthy();
+
+    const nested = columns[1]!.querySelector(`.${MDY_LAYOUT_CLASSES.section}`);
+    expect(nested).toBeTruthy();
+    expect(nested!.getAttribute("data-layout-id")).toBe("identity");
+    expect(nested!.querySelectorAll("mdy-control-text").length).toBe(2);
+    expect(host.querySelectorAll("mdy-control-text").length).toBe(2);
+  });
+
   it("renders the fields in order when no layout is declared", () => {
     const fixture = TestBed.createComponent(LayoutHost);
     fixture.componentInstance.layout.set([]);

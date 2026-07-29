@@ -217,9 +217,14 @@ function mapNode(node: StudioSchemaNode, diagnostics: StudioDiagnostic[]): MdyDy
  * Translates the project's node-ID layout into the Contract's field-name layout.
  *
  * The project stores IDs (ADR-0002: a reference is never a path), while the Contract addresses
- * fields by their derived dotted name — so this is the one place the two spellings meet. A slot
- * pointing at a group or array is expanded to the field names underneath it: the Contract's
- * layout only ever addresses leaves.
+ * fields by their derived dotted name — so this is the one place the two spellings meet. The
+ * Contract's layout only ever addresses leaves, so a slot pointing at a container is expanded to the
+ * field names underneath it — inside a section that keeps the container's identity, rather than
+ * spilling the leaves into whatever slot the container occupied.
+ *
+ * That distinction is the whole reason a group can sit in a column. Spilled leaves land in the cell
+ * one by one and the group stops existing; a section is a single child, so a row holding a group is
+ * a row of two things rather than a row of however many fields the group happens to contain.
  */
 function mapLayout(project: MdyStudioProject, diagnostics: StudioDiagnostic[]): MdyDynamicLayoutNode[] {
   const source = project.presentation.layout ?? [];
@@ -255,6 +260,19 @@ function mapLayout(project: MdyStudioProject, diagnostics: StudioDiagnostic[]): 
           message: "A layout slot references a node with no compilable field and was omitted",
           nodeId: child.nodeId,
         });
+        return [];
+      }
+      const slot = idx.nodeById.get(child.nodeId);
+      if (slot && slot.node !== "field") {
+        // One child, not several — see the note on this function. The container's own id becomes the
+        // section's, so a renderer can tell which group a box on screen is, and a second compile of
+        // the same project produces the same layout.
+        return [{
+          kind: "section",
+          id: slot.id,
+          ...(slot.label ? { label: slot.label } : {}),
+          children: names,
+        }];
       }
       return names;
     }

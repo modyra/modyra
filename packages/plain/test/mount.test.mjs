@@ -273,6 +273,44 @@ test("layout renders sections and column rows, and nests one inside the other", 
   assert.equal(container.children.length, 0);
 });
 
+test("a section in a column is one column, holding all its fields", async () => {
+  // This is how a group joins a row: Studio compiles a container slot to a section, so the cell
+  // holds one child and the group keeps its box, rather than its fields spilling loose into the row.
+  const container = document.createElement("div");
+  document.body.append(container);
+  const fields = [
+    { name: "country", kind: "text", label: "Country" },
+    { name: "shipping.city", kind: "text", label: "City" },
+    { name: "shipping.zip", kind: "text", label: "ZIP" },
+  ];
+  const handle = mountMdyForm(container, fields, {
+    submitLabel: null,
+    layout: [
+      {
+        kind: "columns",
+        id: "row",
+        columns: [
+          ["country"],
+          [{ kind: "section", id: "shipping", label: "Shipping address", children: ["shipping.city", "shipping.zip"] }],
+        ],
+      },
+    ],
+  });
+
+  const columns = container.querySelectorAll(".mdy-layout-columns > .mdy-layout-column");
+  assert.equal(columns.length, 2, "the group takes one column, not one per field");
+  assert.equal(columns[0].querySelectorAll("input").length, 1);
+
+  const nested = columns[1].querySelector("fieldset.mdy-layout-section");
+  assert.ok(nested, "the group renders as a section inside its column");
+  assert.equal(nested.dataset.layoutId, "shipping");
+  assert.equal(nested.querySelector("legend.mdy-layout-legend").textContent, "Shipping address");
+  assert.equal(nested.querySelectorAll("input").length, 2, "both of the group's fields render inside it");
+  assert.equal(container.querySelectorAll("input").length, 3, "and nothing renders twice");
+
+  handle.dispose();
+});
+
 test("a field named twice by the layout renders once, not twice", async () => {
   const container = document.createElement("div");
   document.body.append(container);

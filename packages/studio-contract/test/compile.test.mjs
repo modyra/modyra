@@ -133,6 +133,52 @@ test("a valid layout compiles node IDs into Contract field names", async () => {
   assert.ok(!diagnostics.some((d) => d.severity === "error"));
 });
 
+test("a group in a column occupies one column, as a section", async () => {
+  // The row has to hold the group as a single child. Expanding it to `shipping.city` and
+  // `shipping.zip` would put two things in a cell built for one, and the group would stop existing
+  // in the contract the renderer draws — which is why a group could never be put beside a control.
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [{ kind: "columns", id: "row", columns: [[{ nodeId: "nd_country" }], [{ nodeId: "nd_shipping" }]] }],
+  };
+
+  const { contract, diagnostics } = compileToContract(project);
+
+  assert.ok(contract);
+  assert.deepEqual(contract.layout, [
+    {
+      kind: "columns",
+      id: "row",
+      columns: [
+        ["country"],
+        [{ kind: "section", id: "nd_shipping", label: "Shipping address", children: ["shipping.city", "shipping.zip"] }],
+      ],
+    },
+  ]);
+  assert.ok(!diagnostics.some((d) => d.severity === "error"));
+});
+
+test("a group slot keeps its identity outside a row too", async () => {
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [{ kind: "section", id: "sec", label: "Where", children: [{ nodeId: "nd_shipping" }] }],
+  };
+
+  const { contract } = compileToContract(project);
+
+  assert.ok(contract);
+  assert.deepEqual(contract.layout, [
+    {
+      kind: "section",
+      id: "sec",
+      label: "Where",
+      children: [
+        { kind: "section", id: "nd_shipping", label: "Shipping address", children: ["shipping.city", "shipping.zip"] },
+      ],
+    },
+  ]);
+});
+
 test("every kind Studio offers is a kind the widget catalog knows", async () => {
   // Studio's field kinds are its own vocabulary — `date`, `time` — but what they compile to must be
   // the catalog's. A target the catalog does not have would produce a contract that every renderer
