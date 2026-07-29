@@ -6,19 +6,27 @@ const stageMode = process.argv.includes("--stage");
 const packages = [
   { name: "@modyra/core", dir: "packages/core" },
   { name: "@modyra/widgets", dir: "packages/widgets" },
+  { name: "@modyra/styles", dir: "packages/styles" },
   { name: "@modyra/zod", dir: "packages/zod" },
   { name: "@modyra/standard-schema", dir: "packages/standard-schema" },
-  { name: "@modyra/vue", dir: "packages/vue" },
-  { name: "@modyra/react", dir: "packages/react" },
+  { name: "@modyra/plain", dir: "packages/plain" },
   { name: "@modyra/lit", dir: "packages/lit" },
-  { name: "@modyra/styles", dir: "packages/styles" },
-  // Added 2026-07-23: this list predated these three adapters, so the
-  // v0.4.0 release bumped their package.json (fixed changesets group)
-  // without ever actually publishing them — found via `npm view
-  // @modyra/solid version` returning 404 after the release ran clean.
+  { name: "@modyra/angular", dir: "packages/angular" },
+  { name: "@modyra/react", dir: "packages/react" },
+  { name: "@modyra/vue", dir: "packages/vue" },
   { name: "@modyra/solid", dir: "packages/solid" },
   { name: "@modyra/preact", dir: "packages/preact" },
   { name: "@modyra/svelte", dir: "packages/svelte" },
+  { name: "@modyra/studio-contract", dir: "packages/studio-contract" },
+  { name: "@modyra/studio-model", dir: "packages/studio-model" },
+  { name: "@modyra/studio-codegen", dir: "packages/studio-codegen" },
+  { name: "@modyra/studio-target-core", dir: "packages/studio-target-core" },
+  { name: "@modyra/studio-target-json", dir: "packages/studio-target-json" },
+  { name: "@modyra/studio-target-angular", dir: "packages/studio-target-angular" },
+  { name: "@modyra/studio-target-react", dir: "packages/studio-target-react" },
+  { name: "@modyra/studio-preview", dir: "packages/studio-preview" },
+  { name: "@modyra/studio-editor", dir: "packages/studio-editor" },
+  { name: "@modyra/studio-ui", dir: "packages/studio-ui" },
 ];
 
 for (const pkg of packages) {
