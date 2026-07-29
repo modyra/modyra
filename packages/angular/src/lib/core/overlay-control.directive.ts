@@ -15,9 +15,11 @@ import {
 } from "@modyra/core/overlay-position";
 import {
   anchorOverlay,
+  overlayAnchoringFor,
   overlayLifecycleTransition,
   type MdyOverlayDecision,
   type MdyOverlayLifecycleIntent,
+  type MdyWidgetKind,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../control/control.directive";
 import { MdyA11yAnnouncer } from "./a11y-announcer";
@@ -121,6 +123,15 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     }
   }
 
+  /**
+   * The widget this control draws, when it is one the catalog knows.
+   *
+   * Declaring it is what makes the anchoring come from `@modyra/widgets` — how much room the popup
+   * wants, how wide it is and which edge it hangs from — instead of from numbers held here. A
+   * control that leaves it unset keeps the defaults below.
+   */
+  protected readonly overlayKind: MdyWidgetKind | null = null;
+
   /** Minimum space required below or above to anchor the overlay. Default 128px. */
   protected readonly minSpace: number = 128;
 
@@ -128,11 +139,6 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   protected readonly preferredPosition: "above" | "below" = "below";
 
 
-  /**
-   * Widgets owns anchoring; Angular only supplies measured geometry and applies what comes back.
-   * `current` carries the decision an open overlay is already holding, so following the anchor
-   * during scroll does not re-decide its side or height.
-   */
   /**
    * The popup's own size, measured when it opens and held while it stays open.
    *
@@ -155,6 +161,11 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     };
   }
 
+  /**
+   * Widgets owns anchoring; Angular only supplies measured geometry and applies what comes back.
+   * `current` carries the decision an open overlay is already holding, so following the anchor
+   * during scroll does not re-decide its side or height.
+   */
   private anchorNow(clickX?: number, current?: MdyOverlayDecision | null) {
     const rect = this.anchor instanceof HTMLElement ? this.anchor.getBoundingClientRect() : this.anchor;
     const content = this.panelContent;
@@ -166,6 +177,9 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
         minWidth: this.minWidth(),
         preferred: this.preferredPosition,
         matchAnchorWidth: true,
+        // The widget's own anchoring wins over the defaults above: those are what a control falls
+        // back to when the catalog does not know it, not a decision it gets to keep making.
+        ...(this.overlayKind ? overlayAnchoringFor(this.overlayKind) : {}),
         ...(clickX !== undefined ? { pointerX: clickX } : {}),
         ...(current ? { current } : {}),
         // With the panel measured the popup goes where its content shows whole; before it is in the

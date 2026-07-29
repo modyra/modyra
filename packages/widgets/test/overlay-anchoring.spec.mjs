@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { anchorOverlay, MDY_WIDGET_CONTRACTS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
+import { anchorOverlay, overlayAnchoringFor, MDY_WIDGET_CONTRACTS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
 
 const VIEWPORT = { width: 1000, height: 800 };
 /** A control in the middle of the page, with room on both sides. */
@@ -209,4 +209,58 @@ test("a popup keeps its measured shape while the anchor scrolls under it", () =>
   // 252px of room left for a 206px popup: still whole, and the coordinate follows the anchor.
   assert.equal(scrolled.decision.fits, true);
   assert.equal(scrolled.properties["--mdy-overlay-top"], "542px");
+});
+
+/* ── Which corner it opens from ───────────────────────────────────────────────────────────────
+ * A popup opens from the end of the control where its trigger is, and keeps doing so. What used
+ * to decide this was the pointer against the middle of the *viewport*, which made the same
+ * calendar open from the left corner on one form and the right corner on another.
+ */
+
+test("every widget with a popup says which edge it hangs from", () => {
+  for (const definition of Object.values(MDY_WIDGET_CONTRACTS)) {
+    if (!definition.capabilities.overlay) continue;
+    assert.equal(
+      definition.capabilities.anchoring.alignment,
+      "right",
+      `${definition.kind}'s trigger sits at the end of its control, so its popup hangs from that end`,
+    );
+  }
+});
+
+test("the declared edge decides, wherever the field sits and wherever it was clicked", () => {
+  const declared = { alignment: "right", matchAnchorWidth: false, contentWidth: 320 };
+  // Left of the page, right of the page, clicked at either end of the control: same corner.
+  const left = anchorOverlay(anchor({ left: 40, right: 440 }), VIEWPORT, declared);
+  const right = anchorOverlay(anchor({ left: 500, right: 900 }), VIEWPORT, declared);
+  const clickedLeft = anchorOverlay(anchor(), VIEWPORT, { ...declared, pointerX: 110 });
+  const clickedRight = anchorOverlay(anchor(), VIEWPORT, { ...declared, pointerX: 490 });
+  for (const [name, anchored] of Object.entries({ left, right, clickedLeft, clickedRight })) {
+    assert.equal(anchored.decision.alignment, "right", `${name} must open from the declared edge`);
+    assert.equal(anchored.properties["--mdy-overlay-left"], "auto", `${name} must hang from the right edge`);
+  }
+});
+
+test("without a declared edge, the pointer picks the half of the control it landed in", () => {
+  // Not the half of the viewport: an anchor sitting entirely in the left half still opens from its
+  // own right edge when that is where the pointer went.
+  const control = anchor({ left: 100, right: 500 });
+  assert.equal(anchorOverlay(control, VIEWPORT, { pointerX: 480 }).decision.alignment, "right");
+  assert.equal(anchorOverlay(control, VIEWPORT, { pointerX: 120 }).decision.alignment, "left");
+});
+
+test("the anchoring an adapter reads is the anchoring the catalog declares", () => {
+  assert.deepEqual(overlayAnchoringFor("datepicker"), {
+    matchAnchorWidth: false,
+    minSpace: 240,
+    alignment: "right",
+  });
+  assert.deepEqual(overlayAnchoringFor("select"), {
+    matchAnchorWidth: true,
+    minSpace: 180,
+    minWidth: 160,
+    alignment: "right",
+  });
+  // A widget with no popup has no anchoring, and asking for it is not an error.
+  assert.deepEqual(overlayAnchoringFor("text"), {});
 });

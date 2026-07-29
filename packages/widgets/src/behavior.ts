@@ -42,6 +42,17 @@ export interface MdyOverlayGeometry {
   readonly desiredHeight?: number;
   /** How wide the popup wants to be, when measured. Used to pick the edge its content fits from. */
   readonly desiredWidth?: number;
+  /**
+   * The edge the widget says its popup hangs from, from `capabilities.anchoring`.
+   *
+   * A widget knows where its trigger is — the arrow, the calendar button, the swatch all sit at the
+   * end of the control — and that is the edge a popup should open from, every time. When a widget
+   * states it, it wins: the pointer and the anchor's position on the page decide nothing, because a
+   * popup that opens from a different corner depending on where you clicked inside the same field is
+   * the behaviour this exists to stop. Only the viewport can overrule it, and only when the content
+   * would not fit.
+   */
+  readonly preferredAlignment?: "left" | "right";
 }
 
 export interface MdyOverlayDecision {
@@ -104,13 +115,21 @@ export function decideOverlayPlacement(input: MdyOverlayGeometry): MdyOverlayDec
 /**
  * Which edge of the anchor the popup hangs from.
  *
- * The pointer (or the anchor's centre) decides which half of the viewport the popup opens into, and
- * a measured width then overrules that when the chosen edge has no room for it — hanging left off a
- * control near the right edge is how a content-sized calendar ends up half off-screen.
+ * In order: the edge the widget declares, then — for a widget that declares none — the half of the
+ * control the pointer landed in, and its position on the page when it was opened from the keyboard.
+ * A measured width then overrules all of that when the chosen edge has no room for it: hanging left
+ * off a control near the right edge is how a content-sized calendar ends up half off-screen.
+ *
+ * Note which comparison is *not* here any more: the pointer against the middle of the viewport. It
+ * made the edge a popup opened from depend on where its field happened to sit on the page, so the
+ * same calendar opened from the left corner on one form and the right corner on another.
  */
 export function decideOverlayAlignment(input: MdyOverlayGeometry): MdyOverlayDecision["alignment"] {
-  const pointer = input.pointerX ?? (input.anchorLeft + input.anchorRight) / 2;
-  const preferred = pointer > input.viewportWidth / 2 ? "right" : "left";
+  const anchorMiddle = (input.anchorLeft + input.anchorRight) / 2;
+  const preferred = input.preferredAlignment
+    ?? (input.pointerX !== undefined
+      ? (input.pointerX >= anchorMiddle ? "right" : "left")
+      : (anchorMiddle > input.viewportWidth / 2 ? "right" : "left"));
   const width = input.desiredWidth;
   if (width === undefined) return preferred;
   const fromLeft = input.viewportWidth - input.anchorLeft - MDY_OVERLAY_VIEWPORT_MARGIN;

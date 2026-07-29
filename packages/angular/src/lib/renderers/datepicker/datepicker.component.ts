@@ -153,6 +153,9 @@ import { MdyCalendarComponent } from "./calendar.component";
   `,
 })
 export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
+  /** The widget this draws: its popup's room, width and edge come from the catalog. */
+  protected override readonly overlayKind = "datepicker" as const;
+
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.datepicker;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("YYYY-MM-DD");

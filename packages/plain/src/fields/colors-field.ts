@@ -7,7 +7,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
-import { colorValueEquals, colorValueTransition, MDY_WIDGET_CONTRACTS, type MdyColorValueIntent } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, overlayAnchoringFor, type MdyColorValueIntent } from "@modyra/widgets";
 import { applyPart, el, setErrors } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, trackOverlay } from "../overlay.js";
@@ -21,7 +21,7 @@ export function renderColorsField(
   reactivity: MdyReactivity = vanillaReactivity(),
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
-  const anchoring = MDY_WIDGET_CONTRACTS.colors.capabilities.anchoring;
+  const anchoring = overlayAnchoringFor("colors");
   const definition = MDY_WIDGET_CONTRACTS.colors;
   const presets = f.presets && f.presets.length > 0 ? f.presets : DEFAULT_PRESETS;
   const open = reactivity.signal(false);

@@ -157,6 +157,9 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
   `
 })
 export class MdyColorsComponent extends MdyOverlayControl<string> {
+  /** The widget this draws: its popup's room, width and edge come from the catalog. */
+  protected override readonly overlayKind = "colors" as const;
+
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.colors;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
 

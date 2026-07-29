@@ -9,12 +9,7 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
 import { addMonths, buildDateLocale, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
-import {
-  dateRangeDraftTransition,
-  MDY_WIDGET_CONTRACTS,
-  type MdyDateRangeDraftState,
-  type MdyDateRangeValue,
-} from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, dateRangeDraftTransition, overlayAnchoringFor, type MdyDateRangeDraftState, type MdyDateRangeValue } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
@@ -36,7 +31,7 @@ export function renderDaterangeField(
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
-  const anchoring = MDY_WIDGET_CONTRACTS.daterange.capabilities.anchoring;
+  const anchoring = overlayAnchoringFor("daterange");
   const definition = MDY_WIDGET_CONTRACTS.daterange;
   const bounds = { minIso: options.minDate ?? null, maxIso: options.maxDate ?? null };
   // Month and weekday names, and which day starts the week, all come from Intl through

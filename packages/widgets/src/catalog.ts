@@ -26,6 +26,14 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
       readonly matchAnchorWidth: boolean;
       readonly minSpace: number;
       readonly minWidth?: number;
+      /**
+       * The edge of the control the popup hangs from. Every widget here puts its trigger — the
+       * arrow, the calendar button, the swatch — at the end of the control, so its popup opens from
+       * that end and stays there: which corner a calendar opens from is a property of the widget,
+       * not of where its field happens to sit on the page or where inside it you clicked. The
+       * viewport can still overrule it when the content would not fit that side.
+       */
+      readonly alignment?: "left" | "right";
     };
   };
 }
@@ -83,13 +91,17 @@ interface MdyWidgetShape {
 }
 
 /** Anchoring per kind; widgets with no overlay have none. */
-const ANCHORING: Readonly<Record<string, { matchAnchorWidth: boolean; minSpace: number; minWidth?: number }>> = Object.freeze({
-  select: { matchAnchorWidth: true, minSpace: 180, minWidth: 160 },
-  multiselect: { matchAnchorWidth: true, minSpace: 180, minWidth: 160 },
-  datepicker: { matchAnchorWidth: false, minSpace: 240 },
-  daterange: { matchAnchorWidth: false, minSpace: 240 },
-  timepicker: { matchAnchorWidth: false, minSpace: 240 },
-  colors: { matchAnchorWidth: false, minSpace: 120, minWidth: 280 },
+// Every trigger in this catalog sits at the end of its control, so every popup hangs from that end.
+// A list that matches its control's width covers both edges and looks the same either way; a
+// content-sized popup does not, which is why declaring it is what stops the same calendar opening
+// from the left corner on one form and the right corner on another.
+const ANCHORING: Readonly<Record<string, { matchAnchorWidth: boolean; minSpace: number; minWidth?: number; alignment?: "left" | "right" }>> = Object.freeze({
+  select: { matchAnchorWidth: true, minSpace: 180, minWidth: 160, alignment: "right" },
+  multiselect: { matchAnchorWidth: true, minSpace: 180, minWidth: 160, alignment: "right" },
+  datepicker: { matchAnchorWidth: false, minSpace: 240, alignment: "right" },
+  daterange: { matchAnchorWidth: false, minSpace: 240, alignment: "right" },
+  timepicker: { matchAnchorWidth: false, minSpace: 240, alignment: "right" },
+  colors: { matchAnchorWidth: false, minSpace: 120, minWidth: 280, alignment: "right" },
 });
 
 function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: readonly string[], partNames: readonly TPart[], overlay: boolean, shape: MdyWidgetShape = {}): MdyWidgetDefinition<TPart> {

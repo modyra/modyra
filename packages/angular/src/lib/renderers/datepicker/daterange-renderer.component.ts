@@ -177,6 +177,9 @@ import { inputText, isoDateText } from "../renderer-projection";
   `,
 })
 export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange | null> {
+  /** The widget this draws: its popup's room, width and edge come from the catalog. */
+  protected override readonly overlayKind = "daterange" as const;
+
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.daterange;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly startPlaceholder = input<string>("Start");
