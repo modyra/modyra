@@ -186,3 +186,29 @@ test("dropping beside a field already in a row adds a column at that edge", asyn
   expect(paths[0]).toMatch(/^number/);
   expect(paths.slice(1)).toEqual(['first', 'second']);
 });
+
+test("a group sits in a column beside a control, keeping its fields", async ({ page }) => {
+  // The one arrangement Studio could never make: a container had no column of its own, because the
+  // compiler spilled its leaves into whatever slot it occupied. It now compiles to a section, so the
+  // row holds the group as a single child.
+  await page.locator('[data-template="group"]').click();
+  await page.locator('[data-name]').fill('shipping');
+  await page.locator('[data-name]').blur();
+  const groupId = await page.locator('.plain-canvas-group').first().getAttribute('data-plain-group');
+
+  await addFields(page, ['city', 'country']);
+  await page.locator('[data-plain-field-into]').first().selectOption(groupId!);
+
+  const group = page.locator('.plain-canvas-group').first();
+  await group.hover();
+  await page.locator(`[data-layout-columns="${groupId}"]`).click();
+
+  const columns = page.locator('.mdy-layout-columns > .mdy-layout-column');
+  await expect(columns).toHaveCount(2);
+  // The group is one column, and its field is inside it — not a second column of its own.
+  await expect(columns.locator('.plain-canvas-group')).toHaveCount(1);
+  await expect(
+    columns.locator('.plain-canvas-group .plain-canvas-field[data-field-path="shipping.city"]'),
+  ).toBeVisible();
+  await expect(page.locator('.plain-canvas-field[data-field-path="country"]')).toBeVisible();
+});

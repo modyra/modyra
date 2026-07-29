@@ -792,12 +792,12 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     // arranged does this join an existing row, which is how the third column gets added.
     const placed = new Set(layout.flatMap(layoutChildNodeIds));
     const neighbour =
-      nearestFieldSibling(siblings, position, 1, placed, false) ??
-      nearestFieldSibling(siblings, position, -1, placed, false) ??
-      nearestFieldSibling(siblings, position, -1, placed, true) ??
-      nearestFieldSibling(siblings, position, 1, placed, true);
+      nearestRowSibling(siblings, position, 1, placed, false) ??
+      nearestRowSibling(siblings, position, -1, placed, false) ??
+      nearestRowSibling(siblings, position, -1, placed, true) ??
+      nearestRowSibling(siblings, position, 1, placed, true);
     if (!neighbour) {
-      status = "A column row needs a neighbouring field";
+      status = "A column row needs a neighbour to sit beside";
       render();
       return;
     }
@@ -822,8 +822,15 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     commit(createUpdateLayoutCommand(layout, "Put fields side by side"), nodeId, columnFocus(nodeId));
   }
 
-  /** Nearest field sibling in `direction`, either already arranged by the layout or not. */
-  function nearestFieldSibling(
+  /**
+   * Nearest sibling in `direction` that can hold a column, either already arranged or not.
+   *
+   * A container counts. It used to be skipped, on the reasoning that the Contract's layout addresses
+   * leaves and a group has none of its own — but the compiler wraps a container slot in a section, so
+   * a group occupies one column the same way a field does. Skipping it meant the one thing you could
+   * never put beside a control was a group, which is the arrangement a form most often wants.
+   */
+  function nearestRowSibling(
     siblings: readonly string[],
     from: number,
     direction: 1 | -1,
@@ -832,7 +839,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   ): string | undefined {
     for (let i = from + direction; i >= 0 && i < siblings.length; i += direction) {
       const candidate = siblings[i]!;
-      if (indexes.nodeById.get(candidate)?.node !== "field") continue;
+      if (!indexes.nodeById.has(candidate)) continue;
       if (placed.has(candidate) === wantPlaced) return candidate;
     }
     return undefined;
@@ -1617,6 +1624,22 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         groupDuplicate.dataset.duplicate = group.id;
         const groupDelete = iconButton("\u00d7", `Delete ${group.name}`);
         groupDelete.dataset.delete = group.id;
+        // A group sits in a column like any control: the compiler wraps a container slot in a
+        // section, so the row holds one child rather than the group's fields spilled loose. Offered
+        // at the form root only, for the reason the field's own button gives — a group inside a
+        // group already has an owner for its position.
+        const groupInRow = layoutNodeFor(group.id)?.kind === "columns";
+        const groupCanColumn = idx.parentById.get(group.id) === project.schema.id;
+        const groupColumns = iconButton(
+          "▥",
+          groupInRow ? `Take ${group.name} out of its column row` : `Put ${group.name} side by side with its neighbour`,
+        );
+        groupColumns.dataset.layoutColumns = group.id;
+        groupColumns.dataset.layoutInRow = String(groupInRow);
+        groupColumns.setAttribute("aria-pressed", String(groupInRow));
+        groupColumns.disabled = !groupCanColumn && !groupInRow;
+        if (!groupCanColumn && !groupInRow) groupColumns.title = "Column rows apply to nodes at the form root";
+        controls.append(groupColumns);
         controls.append(groupDuplicate, groupDelete);
       }
       legend.append(
@@ -1657,6 +1680,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       inside.textContent = group.children.length ? "Drop into group" : "Drop first field into group";
       body.append(inside);
       fieldset.append(legend, body);
+      // Dropping beside a group makes a row of the two, the same gesture that works on a control.
+      // Appended last, and deliberately: a `<legend>` styles as the box's header only while it is
+      // the fieldset's first child, and these zones went in ahead of it when appended earlier.
+      fieldset.append(sideZone("left", group.id), sideZone("right", group.id));
       containerBodies.set(group.id, body);
     }
 

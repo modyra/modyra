@@ -1054,6 +1054,9 @@ body {
   background: var(--mdy-surface);
 }
 .plain-canvas-group {
+  /* The side drop zones are absolute; without this they would hang off the canvas rather than off
+     the group they offer to sit beside. */
+  position: relative;
   min-width: 0;
   margin: 10px 0;
   padding: 12px;
