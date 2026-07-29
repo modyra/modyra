@@ -207,10 +207,11 @@ its initial value — controls that are present, positioned, and invisible.
 
 `modyra-modern.css` is the Modyra-branded theme: Satoshi typography and a
 compact, fully-bordered control (2.25rem) in place of M3's 3.5rem filled one.
-It also supplies the two controls the other themes have no rule for as
-rendered by `@modyra/plain` — `.mdy-switch` and a bare `input.mdy-checkbox`
-— because the catalog's `.mdy-checkbox` styles a *label* wrapping a hidden
-input, while the widget controllers put the class on the input itself.
+It also supplies the bare `input.mdy-checkbox` the other themes have no rule
+for, because the catalog's `.mdy-checkbox` styles a *label* wrapping a hidden
+input while the widget controllers put the class on the input itself. A toggle
+needs no such rule: its wrapper is `.mdy-toggle`, named by the catalog, and
+`.mdy-switch` — the spelling from before the contract — is gone.
 
 ### Writing a theme
 
