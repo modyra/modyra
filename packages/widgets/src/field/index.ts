@@ -110,8 +110,11 @@ export type {
   MdyTimepickerFieldA11yOptions,
 } from "./timepicker-field-a11y.js";
 
+export { timepickerDialNumbers, timepickerSelectedDialValue } from "./timepicker-field-types.js";
 export type {
+  MdyTimepickerDialNumber,
   MdyTimepickerFieldControllerOptions,
   MdyTimepickerFieldIntent,
   MdyTimepickerFieldState,
+  MdyTimepickerViewMode,
 } from "./timepicker-field-types.js";

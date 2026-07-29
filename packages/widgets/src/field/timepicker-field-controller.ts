@@ -29,6 +29,7 @@ import type {
   MdyTimepickerFieldControllerOptions,
   MdyTimepickerFieldIntent,
   MdyTimepickerFieldState,
+  MdyTimepickerViewMode,
 } from "./timepicker-field-types.js";
 
 export interface MdyTimepickerFieldController
@@ -53,6 +54,9 @@ export function createTimepickerFieldController(
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
   const focusedField = reactivity.signal<"hour" | "minute">("hour");
+  // The clock is the picker; the number fields are the alternative a user asks for. Starting on the
+  // dial is what makes "pick a time" mean the same gesture in every renderer.
+  const viewMode = reactivity.signal<MdyTimepickerViewMode>("dial");
   const draft = reactivity.signal<ParsedTime>(parseAnyTime(handle.value(), format) ?? currentTimeAsParsed());
 
   const state: MdySignal<MdyTimepickerFieldState> = reactivity.computed(() => ({
@@ -61,6 +65,7 @@ export function createTimepickerFieldController(
     draft: draft(),
     open: open(),
     focusedField: focusedField(),
+    viewMode: viewMode(),
     invalid: !handle.valid(),
     disabled: handle.disabled(),
     readonly: readonly(),
@@ -90,6 +95,9 @@ export function createTimepickerFieldController(
   function openPicker(): readonly MdyUiCommand[] {
     draft.set(parseAnyTime(handle.value(), format) ?? currentTimeAsParsed());
     focusedField.set("hour");
+    // Every opening starts on the hours, on the clock: where the last session left the popup is
+    // not where the next one should resume.
+    viewMode.set("dial");
     open.set(true);
     return [{ type: "open-overlay", anchor: { part: "trigger" } }];
   }
@@ -152,6 +160,9 @@ export function createTimepickerFieldController(
       }
       case "focus-field":
         focusedField.set(intent.field);
+        return [];
+      case "set-view-mode":
+        viewMode.set(intent.mode);
         return [];
       case "clear": {
         handle.set(null);

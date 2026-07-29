@@ -1,16 +1,17 @@
 /**
- * Renders the "timepicker" kind via createTimepickerFieldController — a
- * trigger button opening a draft/commit popup with hour/minute number
- * inputs and an AM/PM toggle (the "input mode" from Angular's own real
- * timepicker; the analog dial's pointer-drag interaction is deliberately
- * not ported here, see the controller's own doc comment for why — the
- * controller still exposes a "set-from-angle" intent for a host that
- * wants to build one).
+ * Renders the "timepicker" kind via createTimepickerFieldController: a typeable input and a toggle
+ * opening the same draft/commit dialog Angular's timepicker shows — the clock face, the two number
+ * fields behind the mode toggle, and the AM/PM pair.
+ *
+ * The clock is the picker. Where the pointer is on the face is all this renderer works out; what
+ * time that is, which numbers the face carries and which one is selected are the contract's
+ * (`set-from-angle`, `timepickerDialNumbers`, `timepickerSelectedDialValue`), so the gesture means
+ * the same thing here as it does in Angular.
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDateField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, createTimepickerFieldController, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
-import { parseAnyTime, type MdyTimeFormat } from "@modyra/core/time-utils";
+import { MDY_WIDGET_CONTRACTS, createTimepickerFieldController, overlayAnchoringFor, timepickerDialNumbers, timepickerSelectedDialValue, type MdyElementLookup } from "@modyra/widgets";
+import { hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/time-utils";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -64,15 +65,35 @@ export function renderTimepickerField(
   period.appendChild(periodButton);
   header.append(fields, period);
 
+  // The clock face. Its numbers are placed by the foundation from the `--index` each one carries,
+  // and which numbers those are is `timepickerDialNumbers` — the hours, or the minutes in fives with
+  // 0 at the top. A renderer working that out for itself is a renderer with its own clock.
+  const clock = el("div", parts.clock.classes.join(" "));
+  const dialFace = el("div", parts.dialFace.classes.join(" "));
+  const dialHand = el("div", parts.dialHand.classes.join(" "));
+  dialFace.appendChild(dialHand);
+  clock.appendChild(dialFace);
+
+  const content = el("div", parts.content.classes.join(" "));
+  content.append(header, clock);
+
   const actions = el("div", parts.actions.classes.join(" "));
-  const confirmButton = el("button", "mdy-timepicker-action-btn mdy-timepicker-action-btn--confirm") as HTMLButtonElement;
+  const modeToggle = el("button", parts.modeToggle.classes.join(" ")) as HTMLButtonElement;
+  modeToggle.type = "button";
+  const spacer = el("div", "mdy-timepicker-spacer");
+  const confirmButton = el("button", `${parts.action.classes.join(" ")} mdy-timepicker-action-btn--confirm`) as HTMLButtonElement;
   confirmButton.type = "button";
   setText(confirmButton, "Confirm");
-  const cancelButton = el("button", "mdy-timepicker-action-btn") as HTMLButtonElement;
+  const cancelButton = el("button", parts.action.classes.join(" ")) as HTMLButtonElement;
   cancelButton.type = "button";
   setText(cancelButton, "Cancel");
-  actions.append(cancelButton, confirmButton);
-  dialog.append(header, actions);
+  actions.append(modeToggle, spacer, cancelButton, confirmButton);
+
+  // The container is what the popup frames: it carries the padding, the width and the surface, so
+  // a popup with no container has no width of its own and stretches to whatever holds it.
+  const dialogContainer = el("div", parts.container.classes.join(" "));
+  dialogContainer.append(content, actions);
+  dialog.appendChild(dialogContainer);
 
   const wrapper = el("div", "mdy-timepicker mdy-plain-timepicker");
   wrapper.append(control, toggle, dialog);
@@ -123,6 +144,37 @@ export function renderTimepickerField(
   periodButton.addEventListener("click", () => dispatch({ type: "set-period", period: controller.state().draft.period === "AM" ? "PM" : "AM" }));
   confirmButton.addEventListener("click", () => dispatch({ type: "confirm" }));
   cancelButton.addEventListener("click", () => dispatch({ type: "cancel" }));
+  modeToggle.addEventListener("click", () =>
+    dispatch({ type: "set-view-mode", mode: controller.state().viewMode === "dial" ? "input" : "dial" }));
+
+  /**
+   * Picking on the face. The angle-to-time arithmetic is the contract's `set-from-angle`, which
+   * calls the same snapping the Angular clock uses — this only reports where the pointer is.
+   */
+  function pickFromPointer(event: PointerEvent): void {
+    const state = controller.state();
+    if (state.viewMode !== "dial") return;
+    const angle = pointerAngle(dialFace.getBoundingClientRect(), event.clientX, event.clientY);
+    dispatch({ type: "set-from-angle", field: state.focusedField, angle });
+  }
+  let dragging = false;
+  dialFace.addEventListener("pointerdown", (event) => {
+    if (controller.state().viewMode !== "dial") return;
+    event.preventDefault();
+    dragging = true;
+    dialFace.setPointerCapture(event.pointerId);
+    pickFromPointer(event);
+  });
+  dialFace.addEventListener("pointermove", (event) => { if (dragging) pickFromPointer(event); });
+  const endDrag = (event: PointerEvent): void => {
+    if (!dragging) return;
+    dragging = false;
+    pickFromPointer(event);
+    // Hours hand over to minutes once picked, so one gesture sets a whole time.
+    if (controller.state().focusedField === "hour") dispatch({ type: "focus-field", field: "minute" });
+  };
+  dialFace.addEventListener("pointerup", endDrag);
+  dialFace.addEventListener("pointercancel", endDrag);
 
   const undismiss = dismissOnOutsidePointer(
     [wrapper],
@@ -159,6 +211,42 @@ export function renderTimepickerField(
     if (minuteInput.value !== minuteString) minuteInput.value = minuteString;
     setText(periodButton, state.draft.period);
     periodButton.hidden = format === "24h";
+
+    // ── The clock face ──────────────────────────────────────────────────────────────────────
+    const onDial = state.viewMode === "dial";
+    dialogContainer.classList.toggle("mdy-timepicker--dial", onDial);
+    clock.hidden = !onDial;
+    modeToggle.setAttribute("aria-label", onDial ? "Enter the time" : "Pick on the clock");
+    setText(modeToggle, onDial ? "⌨" : "🕐");
+
+    const field = state.focusedField;
+    hourSegment.classList.toggle("mdy-timepicker-segment--active", field === "hour");
+    minuteSegment.classList.toggle("mdy-timepicker-segment--active", field === "minute");
+    // The hand points at the draft, through the same angle helpers the numbers are placed by.
+    dialHand.style.transform = `rotate(${field === "minute" ? minuteToAngle(state.draft.minute) : hourToAngle(state.draft.hour)}deg)`;
+
+    const numbers = timepickerDialNumbers(field);
+    const selected = timepickerSelectedDialValue(field, state.draft);
+    // The face is rebuilt only when it changes hands: hours and minutes are different numbers, but
+    // dragging within one field must not replace the elements under the pointer.
+    if (dialFace.dataset.field !== field) {
+      dialFace.dataset.field = field;
+      for (const stale of Array.from(dialFace.querySelectorAll(`.${parts.dialNumber.classes[0]}`))) stale.remove();
+      for (const number of numbers) {
+        // Labels, not controls: the foundation makes them `pointer-events: none`, because the face
+        // owns the gesture — a number under the pointer is where the angle already points. Typing
+        // the time is the keyboard path, and that is what the mode toggle is for.
+        const node = el("span", parts.dialNumber.classes.join(" "));
+        node.dataset.value = String(number.value);
+        node.style.setProperty("--index", String(number.index));
+        node.setAttribute("aria-hidden", "true");
+        setText(node, number.label);
+        dialFace.appendChild(node);
+      }
+    }
+    for (const node of Array.from(dialFace.querySelectorAll<HTMLElement>(`.${parts.dialNumber.classes[0]}`))) {
+      node.classList.toggle("mdy-timepicker-dial__number--selected", Number(node.dataset.value) === selected);
+    }
   });
 
   return () => {
