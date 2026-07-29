@@ -840,9 +840,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
    */
   function insertTemplate(templateId: string): void {
     const created = createNodeFromTemplate(templateId);
+    // Read where it goes *before* moving the selection onto it. `placementForInsert` answers from
+    // whatever is selected, and the new node is not in the index yet — so computing it afterwards
+    // found nothing and fell through to the form root, which is where every insert landed however
+    // carefully you had chosen a container first.
+    const placement = placementForInsert();
     selected = created.id;
     commit(
-      createInsertCommand(created, placementForInsert()),
+      createInsertCommand(created, placement),
       created.id,
       canvasMode === "form" ? `[data-inline-edit="label"][data-inline-node="${created.id}"]` : undefined,
     );
@@ -1904,7 +1909,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
            <p>No fields yet.</p>
            <div class="drop-zone inside" data-inside="${project.schema.id}" data-index="0">Drop first element</div>
          </div>`;
-    return `<h2 class="outline-title">Outline</h2>${body}`;
+    // The form itself is selectable. Inserting puts a node inside the selected container, so
+    // without a way back to the root you could pick a group once and never add a sibling to it
+    // again — every later insert would keep burrowing into whatever was selected last.
+    return `<h2 class="outline-title">Outline</h2>
+      <button type="button" class="outline-root${selected === project.schema.id ? " selected" : ""}"
+              data-select="${project.schema.id}" aria-pressed="${selected === project.schema.id}">
+        Form root
+      </button>${body}`;
   }
 
   function tabsMarkup(current: StudioSchemaNode, diagnosticCount: number, errorCount: number): string {
