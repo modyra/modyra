@@ -109,3 +109,18 @@ test("the foundation reads every placement property the contract can emit", () =
     assert.ok(css.includes(`var(${property}`), `the foundation never reads ${property}`);
   }
 });
+
+test("Studio's canvas widths are the contract's breakpoints", () => {
+  // studio-ui deliberately depends on no renderer contract package, so it restates these widths.
+  // Restated is fine; drifted is not — a canvas that previews `md` at a width the foundation does
+  // not switch at would show an arrangement the shipped form never produces.
+  const source = readFileSync(new URL("../../studio-ui/src/index.ts", import.meta.url), "utf8");
+  const block = source.match(/BREAKPOINT_WIDTHS[^=]*=\s*\{([^}]*)\}/)?.[1];
+  assert.ok(block, "studio-ui no longer declares BREAKPOINT_WIDTHS under that name");
+  for (const [size, width] of Object.entries(MDY_LAYOUT_BREAKPOINTS)) {
+    // `base` is the one deliberate difference: the contract's 0 is "before any breakpoint", which as
+    // a canvas width would show nothing, so Studio previews a phone instead.
+    if (size === "base") continue;
+    assert.ok(new RegExp(`${size}:\\s*"${width}"`).test(block), `Studio previews ${size} at a width the foundation does not switch at`);
+  }
+});

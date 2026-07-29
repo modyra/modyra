@@ -727,12 +727,59 @@ body {
   min-width: 0;
 }
 .plain-canvas-frame {
-  width: min(100%, 680px);
+  /* The frame is the viewport being authored: the breakpoint selector writes `--studio-canvas-width`
+     and the canvas narrows to it, so the foundation's own media queries decide the arrangement. A
+     `container-type` would not do — those queries are width queries against the page. */
+  width: min(100%, var(--studio-canvas-width, 680px));
   margin: 8px auto 96px; /* room for the dock to float over empty space, not over a field */
   padding: 22px 22px 26px;
   border: 1px solid var(--studio-chrome-border);
   border-radius: 16px;
   background: var(--studio-chrome-panel);
+  transition: width var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, ease);
+}
+/* Which size is being authored, said once so it is legible while the canvas is narrow. */
+.plain-canvas-frame[data-breakpoint-frame]:not([data-breakpoint-frame="base"])::before {
+  content: attr(data-breakpoint-frame);
+  display: block;
+  margin: -8px 0 10px;
+  color: var(--studio-chrome-indigo);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dock-breakpoints {
+  display: flex;
+  gap: 4px;
+}
+.dock-breakpoints button {
+  flex: 1;
+  padding: 6px 0;
+  border: 1px solid var(--studio-chrome-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--studio-chrome-text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+/* Solid and darkened. A tint of indigo under indigo text misses AA, and so does the cloud text on
+   indigo neat — that pair is 4.1:1 against the 4.5 this size of text needs. Mixing the brand toward
+   black buys the ratio without inventing a second brand colour; the selected size is the one label
+   in this group that has to stay legible. */
+.dock-breakpoints button[aria-pressed="true"] {
+  border-color: var(--studio-chrome-indigo);
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 72%, #000);
+  color: var(--studio-chrome-cloud);
+}
+.dock-hint {
+  margin: 8px 0 0;
+  color: var(--studio-chrome-text);
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: 0.85;
 }
 .plain-canvas-unavailable {
   color: var(--studio-chrome-text-muted);
@@ -2044,7 +2091,9 @@ body {
   background-size: 48px 48px;
 }
 .plain-canvas-frame {
-  width: min(100%, 720px);
+  /* Same custom property as the rule above, with this section's own default: the canvas is the
+     viewport being authored, and a fixed width here would quietly undo the breakpoint selector. */
+  width: min(100%, var(--studio-canvas-width, 720px));
   margin-top: var(--studio-space-4);
   padding: 28px;
   border-color: var(--studio-border-subtle);
