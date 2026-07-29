@@ -9,7 +9,14 @@ import {
   output,
   viewChild,
 } from "@angular/core";
-import { overlayStyleProperties, type MdyOverlayAlignment, type MdyOverlayCoords, type MdyOverlayPlacement } from "@modyra/widgets";
+import {
+  overlayStyleProperties,
+  partClasses,
+  type MdyOverlayAlignment,
+  type MdyOverlayCoords,
+  type MdyOverlayPlacement,
+  type MdyPopupWidgetKind,
+} from "@modyra/widgets";
 
 /**
  * Unified overlay panel container.
@@ -36,12 +43,10 @@ import { overlayStyleProperties, type MdyOverlayAlignment, type MdyOverlayCoords
       #panel
       popover="manual"
       class="mdy-overlay-panel"
-      [class.mdy-overlay-panel--above]="position() === 'above'"
-      [class.mdy-overlay-panel--overlay]="position() === 'overlay'"
       [class.mdy-overlay-panel--right]="alignment() === 'right'"
       [class.mdy-overlay-panel--modal]="hasBackdrop() && (position() === 'overlay')"
       [class.mdy-overlay-panel--visible]="open()"
-      [ngClass]="panelClass()"
+      [ngClass]="[panelClass(), placementClass()]"
       [ngStyle]="panelStyle()"
       (click)="$event.stopPropagation()"
       (keydown)="onPanelKeydown($event)"
@@ -66,6 +71,26 @@ export class MdyOverlayPanelComponent {
   readonly hasBackdrop = input<boolean>(false);
   readonly widthMode = input<"match-anchor" | "auto-content">("match-anchor");
   readonly panelClass = input<string>("");
+  /**
+   * Which widget this panel is holding, so the placement is reflected under the name the catalog
+   * gives it rather than one this component made up.
+   *
+   * Left unset the panel reflects nothing, which is what it effectively did before: it emitted
+   * `mdy-overlay-panel--above` and `--overlay`, names no stylesheet has ever matched, while the
+   * catalog had declared `above` and `overlay` as states of every popup part all along.
+   */
+  readonly kind = input<MdyPopupWidgetKind | null>(null);
+
+  /** The catalog's placement state for this popup, or nothing when it sits in the ordinary place. */
+  protected readonly placementClass = computed(() => {
+    const kind = this.kind();
+    if (!kind) return "";
+    const state = this.position();
+    if (state !== "above" && state !== "overlay") return "";
+    const base = partClasses(kind, "popup")[0];
+    const applied = partClasses(kind, "popup", { [state]: true });
+    return applied.find((name) => name !== base && name.startsWith(`${base}--`)) ?? "";
+  });
 
   // "close" mirrors the dialog element's vocabulary and is part of the
   // published API; renaming it would be a breaking change.

@@ -136,6 +136,7 @@ import { inputText, isoDateText } from "../renderer-projection";
         [hasBackdrop]="variant() === 'modal' || position() === 'overlay'"
         [widthMode]="'auto-content'"
         [panelClass]="'mdy-datepicker__popup mdy-popup mdy-datepicker__popup--range'"
+        [kind]="'daterange'"
         (close)="closeOverlay()"
       >
         @if (variant() === 'modal') {

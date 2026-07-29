@@ -114,6 +114,7 @@ import { MdyCalendarComponent } from "./calendar.component";
         [hasBackdrop]="variant() === 'modal' || position() === 'overlay'"
         [widthMode]="'auto-content'"
         [panelClass]="'mdy-datepicker__popup mdy-popup'"
+        [kind]="'datepicker'"
         (close)="closeOverlay()"
       >
         @if (variant() === 'modal') {
