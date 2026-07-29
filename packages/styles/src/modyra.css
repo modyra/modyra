@@ -3247,6 +3247,9 @@
         /* Tracks share the row evenly and may shrink: `1fr` alone refuses to go below its content
            and pushes a long field out of the row. */
         grid-template-columns: repeat(var(--mdy-layout-column-count, 1), minmax(0, 1fr));
+        /* Narrowest first. A renderer sets this to 1 unless the layout says otherwise, so a row is a
+           stack on a phone — columns narrow enough to clip their controls are worse than fields that
+           follow one another — and the breakpoints below widen it. */
         gap: var(--mdy-layout-column-gap, 1rem);
         align-items: start;
         min-width: 0;
@@ -3258,11 +3261,36 @@
         min-width: 0;
     }
 
-    /* Below the breakpoint a row becomes a stack: columns narrow enough to clip their controls are
-       worse than fields that follow one another. */
-    @media (max-width: 40rem) {
+    /* Mobile-first, and authorable. A row stacks until its first breakpoint and then takes the
+       tracks it was given, which is what the single `max-width: 40rem` rule here used to do for
+       every row alike — the difference is that each step is now a number the layout supplies, so a
+       form can say "two columns from tablet, four from desktop" and be tested at those widths.
+       Every step falls back to the one below it, so declaring only `sm` still behaves. */
+    @media (min-width: 40rem) {
         .mdy-layout-columns {
-            grid-template-columns: minmax(0, 1fr);
+            grid-template-columns:
+                repeat(var(--mdy-layout-column-count-sm, var(--mdy-layout-column-count, 1)), minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 64rem) {
+        .mdy-layout-columns {
+            grid-template-columns:
+                repeat(
+                    var(--mdy-layout-column-count-md,
+                        var(--mdy-layout-column-count-sm, var(--mdy-layout-column-count, 1))),
+                    minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 80rem) {
+        .mdy-layout-columns {
+            grid-template-columns:
+                repeat(
+                    var(--mdy-layout-column-count-lg,
+                        var(--mdy-layout-column-count-md,
+                            var(--mdy-layout-column-count-sm, var(--mdy-layout-column-count, 1)))),
+                    minmax(0, 1fr));
         }
     }
 

@@ -303,13 +303,25 @@ export interface MdyDynamicSection {
   readonly children: ReadonlyArray<MdyDynamicLayoutChild>;
 }
 
+/** The sizes a row can be authored against, mirroring `MDY_LAYOUT_BREAKPOINTS` in `@modyra/widgets`. */
+export type MdyDynamicBreakpoint = "base" | "sm" | "md" | "lg";
+
 export interface MdyDynamicColumns {
   readonly kind: "columns";
   readonly id: string;
   readonly columns: ReadonlyArray<ReadonlyArray<MdyDynamicLayoutChild>>;
+  /**
+   * How many tracks the row shows at each size. Omitted sizes inherit the next smaller one, and a
+   * row that says nothing stacks on a phone and takes its declared tracks from `sm` up — which is
+   * what every row did before this was authorable.
+   */
+  readonly at?: Partial<Readonly<Record<MdyDynamicBreakpoint, number>>>;
 }
 
 export type MdyDynamicLayoutNode = MdyDynamicSection | MdyDynamicColumns;
+
+/** The most tracks a row may declare. Beyond this a row is not a layout, it is a table. */
+const MDY_MAX_LAYOUT_COLUMNS = 12;
 
 /** Depth cap for nested layout, mirroring the schema's own guard against hostile input. */
 export const MDY_LAYOUT_MAX_DEPTH = 6;
@@ -502,6 +514,15 @@ function validLayoutNode(raw: unknown, names: ReadonlySet<string>, seen: Set<str
   if (!slots.length && node.kind !== "section" && node.kind !== "columns") return false;
   if (node.kind === "section" && !Array.isArray(node.children)) return false;
   if (node.kind === "columns" && (!Array.isArray(node.columns) || !node.columns.every(Array.isArray))) return false;
+  // `at` is untrusted like everything else here: a track count that is not a small positive integer
+  // would reach the renderer as a custom property and produce a grid nobody asked for.
+  if (node.kind === "columns" && node.at !== undefined) {
+    if (!isRecordValue(node.at)) return false;
+    for (const [size, count] of Object.entries(node.at)) {
+      if (!["base", "sm", "md", "lg"].includes(size)) return false;
+      if (typeof count !== "number" || !Number.isInteger(count) || count < 1 || count > MDY_MAX_LAYOUT_COLUMNS) return false;
+    }
+  }
 
   for (const slot of slots) {
     for (const child of slot) {

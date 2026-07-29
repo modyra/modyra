@@ -461,3 +461,26 @@ test("Contract v2 recursively flattens group and array nodes", async () => {
   assert.deepEqual(result.fields.map((field) => field.name), ["shipping.city", "items.0.sku", "items.0.qty"]);
   assert.equal(result.fields.find((field) => field.name === "items.0.qty")?.initialValue, 2);
 });
+
+test("a columns row may be authored per breakpoint, and hostile counts are rejected", async () => {
+  const { parseDynamicForm } = await import("../dist/dynamic-config.js");
+  const document = (at) => ({
+    version: 2,
+    fields: [{ name: "a", kind: "text" }, { name: "b", kind: "text" }],
+    layout: [{ kind: "columns", id: "row", columns: [["a"], ["b"]], ...(at ? { at } : {}) }],
+  });
+
+  const accepted = parseDynamicForm(document({ base: 1, sm: 2, lg: 4 }), { mode: "strict" });
+  assert.equal(accepted.ok, true);
+  assert.deepEqual(accepted.layout[0].at, { base: 1, sm: 2, lg: 4 });
+
+  // A track count reaches the renderer as a custom property, so it is checked like any other
+  // untrusted number rather than trusted because it arrived inside a layout.
+  for (const hostile of [{ sm: 0 }, { sm: -2 }, { sm: 1.5 }, { sm: 99 }, { xl: 2 }, { sm: "2" }, "two"]) {
+    const result = parseDynamicForm(document(hostile), { mode: "strict" });
+    assert.equal(result.ok, false, `accepted ${JSON.stringify(hostile)}`);
+  }
+
+  // A row that says nothing is still valid: it stacks, then takes its declared tracks.
+  assert.equal(parseDynamicForm(document(null), { mode: "strict" }).ok, true);
+});
