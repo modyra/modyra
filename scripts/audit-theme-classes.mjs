@@ -12,7 +12,7 @@
  */
 
 import { readFileSync, readdirSync } from "node:fs";
-import { MDY_CHIP_CLASSES, MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS } from "../packages/widgets/dist/index.js";
+import { MDY_CHIP_CLASSES, MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS, popupPlacementClass } from "../packages/widgets/dist/index.js";
 import { dirname, extname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -140,6 +140,23 @@ function extractAngularClasses(ts, filePath, kind) {
   let m;
   while ((m = contractRe.exec(ts)) !== null) {
     fromContract.push(...(definition?.parts[m[1]]?.classes ?? []));
+  }
+  // Same for a popup's placement: the renderer names it through the catalog, so the class is on the
+  // element at runtime without ever appearing as a literal here. Two spellings reach the same call —
+  // the renderer computing it itself, and the renderer handing its kind to `<mdy-overlay-panel>`,
+  // which computes it on the renderer's behalf.
+  const placementRes = [
+    /popupPlacementClass\(\s*["'`]([a-z-]+)["'`]/g,
+    /\[kind\]\s*=\s*"\s*'([a-z-]+)'\s*"/g,
+  ];
+  for (const re of placementRes) {
+    while ((m = re.exec(ts)) !== null) {
+      if (!MDY_WIDGET_CONTRACTS[m[1]]?.parts.popup) continue;
+      for (const placement of ["above", "overlay"]) {
+        const name = popupPlacementClass(m[1], placement);
+        if (name) fromContract.push(name);
+      }
+    }
   }
   return new Set([...fromTemplate, ...host, ...fromContract]);
 }
@@ -318,6 +335,14 @@ function extractContractClasses(ts, kind) {
   if (ts.includes("multiselectChipClasses")) {
     classes.push(MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.centered, MDY_CHIP_CLASSES.counter, MDY_CHIP_CLASSES.selected);
     if (/role:\s*["'`]value["'`]/.test(ts)) classes.push(MDY_CHIP_CLASSES.value);
+  }
+  // A component that calls `this.popupClass(…)` reflects its own kind's placement states. The base
+  // resolves the kind, so nothing here is spelled — ask the catalog what the call can produce.
+  if (/\bpopupClass\(/.test(ts) && definition?.parts.popup) {
+    for (const placement of ["above", "overlay"]) {
+      const name = popupPlacementClass(kind, placement);
+      if (name) classes.push(name);
+    }
   }
   return classes;
 }

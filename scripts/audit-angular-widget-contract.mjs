@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { MDY_WIDGET_CONTRACTS, popupPlacementClass } from "../packages/widgets/dist/index.js";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const sourceRoot = join(root, "packages/angular/src/lib");
@@ -32,6 +33,17 @@ for (const file of files.sort()) {
     // by asking for role "value" — this one does not.
     ? ["mdy-chip", "mdy-chip--centered", "mdy-chip--counter", "mdy-chip--selected"]
     : [];
+  // Same reason, for a popup's placement. A renderer that names it through the catalog reads to the
+  // grep as one that stopped emitting `--above`/`--overlay` — the classes are still on the element at
+  // runtime, computed rather than spelled. Ask the contract what the call produces for the kind the
+  // renderer passes, so the golden keeps guarding the names it exists to guard.
+  for (const [, kind] of source.matchAll(/popupPlacementClass\(\s*["'`]([a-z-]+)["'`]/g)) {
+    if (!MDY_WIDGET_CONTRACTS[kind]?.parts.popup) continue;
+    for (const placement of ["above", "overlay"]) {
+      const name = popupPlacementClass(kind, placement);
+      if (name) fromContract.push(name);
+    }
+  }
   // `\b` treats the `y` in `--mdy-slider-fill-pct` as a word boundary, so a custom property lands in
   // a manifest of *classes* looking exactly like one. Four did. The lookbehind drops them: a name
   // preceded by a hyphen is the tail of `--mdy-…` or of `data-mdy-…`, and neither is a class.
