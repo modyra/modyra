@@ -37,6 +37,7 @@ import {
   createMoveCommand,
   createRemoveFormValidatorCommand,
   createRemoveValidatorCommand,
+  createSequenceCommand,
   createSetFieldOptionsCommand,
   createSetServerValidatorCommand,
   createUpdateBehaviorCommand,
@@ -910,6 +911,62 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     );
   }
 
+  /**
+   * Drops a node beside another, which is how a row gets made by hand rather than by asking a
+   * button to guess the partner.
+   *
+   * The schema move and the layout change are one command: as two they took two undos to reverse,
+   * and the state in between — the field out of the row but moved — is not one the user was ever in.
+   *
+   * If the target already sits in a row the node joins that row at the target's edge; otherwise the
+   * two become a new row. Both are the shape `addToColumnRow` already produces, so a row built by
+   * dropping is indistinguishable from one built by the button.
+   */
+  function dropBeside(targetId: string, side: "left" | "right"): void {
+    if (!drag) return;
+    const dropped = drag;
+    drag = null;
+
+    const layout = structuredClone(project.presentation.layout ?? []);
+    const node = "template" in dropped ? createNodeFromTemplate(dropped.template) : indexes.nodeById.get(dropped.nodeId);
+    if (!node) return;
+    if ("nodeId" in dropped && dropped.nodeId === targetId) return;
+
+    const placement: Placement = { kind: side === "left" ? "before" : "after", targetId };
+    const step = "template" in dropped
+      ? createInsertCommand(node, placement)
+      : createMoveCommand(dropped.nodeId, placement);
+
+    // The node may already be arranged somewhere else; it belongs in exactly one slot.
+    for (const row of layout) {
+      if (row.kind !== "columns") continue;
+      row.columns = row.columns
+        .map((column) => column.filter((child) => !("nodeId" in child) || child.nodeId !== node.id))
+        .filter((column) => column.length > 0);
+    }
+
+    const targetRow = layout.find(
+      (candidate): candidate is StudioLayoutNode & { kind: "columns" } =>
+        candidate.kind === "columns" && layoutChildNodeIds(candidate).includes(targetId),
+    );
+    if (targetRow) {
+      const at = targetRow.columns.findIndex((column) => column.some((child) => "nodeId" in child && child.nodeId === targetId));
+      targetRow.columns.splice(side === "left" ? at : at + 1, 0, [{ nodeId: node.id }]);
+    } else {
+      const pair = side === "left" ? [node.id, targetId] : [targetId, node.id];
+      layout.push({ kind: "columns", id: createId("lay"), columns: pair.map((id) => [{ nodeId: id }]) });
+    }
+    // Rows left with a single column after the node moved out are not rows any more.
+    const next = layout.filter((row) => row.kind !== "columns" || row.columns.length >= 2);
+
+    selected = node.id;
+    commit(
+      createSequenceCommand([step, createUpdateLayoutCommand(next, "Arrange side by side")], `Drop ${node.name} beside`),
+      node.id,
+      `[data-plain-select="${node.id}"]`,
+    );
+  }
+
   /** Flips the `required` validator — the one validator worth a single click. */
   /**
    * Whether the devtools panel may show this field's value in the clear.
@@ -1276,6 +1333,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       zone.dataset[placement] = nodeId;
       zone.setAttribute("aria-hidden", "true");
       zone.textContent = placement === "before" ? "Drop before" : "Drop after";
+      return zone;
+    };
+
+    /** One edge of a field, as a drop target that makes a row rather than a stack. */
+    const sideZone = (side: "left" | "right", nodeId: string): HTMLDivElement => {
+      const zone = document.createElement("div");
+      zone.className = `drop-zone plain-canvas-drop plain-canvas-drop-side plain-canvas-drop-${side}`;
+      zone.dataset.beside = nodeId;
+      zone.dataset.side = side;
+      zone.setAttribute("aria-hidden", "true");
+      zone.textContent = side === "left" ? "◧" : "◨";
       return zone;
     };
 
@@ -1755,6 +1823,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         actions,
       );
       root.prepend(head);
+      // The two edges of the field itself. Before/after say "above" and "below"; a form is also
+      // wide, and until now nothing could be dropped *beside* anything — a row could only be asked
+      // for by a button that picked the partner for you. Inert until a drag starts, so they never
+      // sit between the pointer and the control.
+      root.append(sideZone("left", nodeId), sideZone("right", nodeId));
       root.before(dropPoint("before", nodeId), insertionPoint("before", nodeId));
       if (index === fields.length - 1) {
         root.after(insertionPoint("after", nodeId), dropPoint("after", nodeId));
@@ -2557,7 +2630,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         event.preventDefault();
         el.classList.remove("drag-over");
         const liveCanvas = el.classList.contains("plain-canvas-drop");
-        if (el.dataset.before) drop({ kind: "before", targetId: el.dataset.before }, liveCanvas);
+        if (el.dataset.beside) dropBeside(el.dataset.beside, el.dataset.side === "left" ? "left" : "right");
+        else if (el.dataset.before) drop({ kind: "before", targetId: el.dataset.before }, liveCanvas);
         else if (el.dataset.after) drop({ kind: "after", targetId: el.dataset.after }, liveCanvas);
         else drop({ kind: "inside", parentId: el.dataset.inside!, index: Number(el.dataset.index) });
       });

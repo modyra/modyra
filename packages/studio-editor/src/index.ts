@@ -18,6 +18,7 @@ export {
   createUpdateFormValidatorCommand,
   createSetServerValidatorCommand,
   createAddImplementationCommand,
+  createSequenceCommand,
   inspectDelete,
   type ValidatorPatch,
   type FormValidatorPatch,

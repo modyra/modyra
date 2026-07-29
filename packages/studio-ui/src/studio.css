@@ -1082,6 +1082,39 @@ body {
 .plain-canvas-drop-inside.active {
   min-height: 30px;
 }
+/* The two long edges of a field. A form is wide as well as tall, so "beside" has to be a drop
+   target of its own — before/after only ever say above and below. Zero-width until a drag is in
+   flight, so they never sit between the pointer and the control they overlay. */
+.plain-canvas-drop-side {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  z-index: 2;
+}
+.plain-canvas-drop-left {
+  left: 0;
+}
+.plain-canvas-drop-right {
+  right: 0;
+}
+.plain-canvas-drop-side.active {
+  width: 22%;
+  max-width: 88px;
+  border: 1px dashed color-mix(in srgb, var(--studio-chrome-indigo) 55%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 8%, transparent);
+  color: color-mix(in srgb, var(--studio-chrome-indigo) 70%, var(--studio-chrome-cloud));
+}
+.plain-canvas-drop-side.drag-over {
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 24%, transparent);
+  border-style: solid;
+}
 .plain-canvas-drop-root {
   min-height: 24px;
   margin: 10px 0 18px;
