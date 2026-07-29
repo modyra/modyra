@@ -62,7 +62,7 @@ export { MDY_CHIP_CLASSES, multiselectChipClasses, type MdyChipAppearance, type 
 export { MDY_STATE_MODIFIERS, stateClass, type MdyPartState, type MdyStateName } from "./state.js";
 export { MDY_CSS_PROPERTIES, MDY_CSS_PROPERTY_NAMES, type MdyOverlayProperty } from "./css.js";
 export { partClasses, partStates, widgetStateClasses } from "./part-classes.js";
-export { MDY_LAYOUT_BREAKPOINTS, MDY_LAYOUT_CLASSES, MDY_LAYOUT_COLUMN_COUNT_PROPERTIES, MDY_LAYOUT_COLUMN_COUNT_PROPERTY, layoutNodeAttributes, type MdyLayoutBreakpoint, type MdyLayoutColumnCounts, type MdyLayoutPart } from "./layout.js";
+export { MDY_LAYOUT_BREAKPOINTS, MDY_LAYOUT_CLASSES, MDY_LAYOUT_COLUMN_COUNT_PROPERTIES, MDY_LAYOUT_COLUMN_COUNT_PROPERTY, MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES, MDY_LAYOUT_COLUMN_START_PROPERTIES, layoutNodeAttributes, layoutSlotStyle, type MdyLayoutBreakpoint, type MdyLayoutColumnCounts, type MdyLayoutPart, type MdyLayoutSlotPlacement } from "./layout.js";
 export { anchorOverlay, overlayAnchoringFor, overlayStyleProperties, popupPlacementClass, MDY_OVERLAY_GAP, type MdyAnchorRect, type MdyOverlayAlignment, type MdyOverlayAnchorOptions, type MdyOverlayAnchoring, type MdyOverlayCoords, type MdyOverlayPlacement, type MdyOverlayPlacementResult, type MdyViewportSize } from "./overlay.js";
 export { MDY_CANONICAL_UI_CLASSES, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } from "./catalog.js";
 export type { MdyPopupWidgetKind, MdyWidgetDefinition, MdyWidgetKind, MdyWidgetPart } from "./catalog.js";

@@ -59,6 +59,61 @@ export const MDY_LAYOUT_COLUMN_COUNT_PROPERTIES: Readonly<Record<MdyLayoutBreakp
   lg: `${MDY_CSS_PROPERTIES.layout.columnCount}-lg`,
 });
 
+/** The custom property carrying a column's starting track at each size. */
+export const MDY_LAYOUT_COLUMN_START_PROPERTIES: Readonly<Record<MdyLayoutBreakpoint, string>> = Object.freeze({
+  base: MDY_CSS_PROPERTIES.layout.columnStart,
+  sm: `${MDY_CSS_PROPERTIES.layout.columnStart}-sm`,
+  md: `${MDY_CSS_PROPERTIES.layout.columnStart}-md`,
+  lg: `${MDY_CSS_PROPERTIES.layout.columnStart}-lg`,
+});
+
+/** The custom property carrying whether a column shows at each size. */
+export const MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES: Readonly<Record<MdyLayoutBreakpoint, string>> = Object.freeze({
+  base: MDY_CSS_PROPERTIES.layout.columnDisplay,
+  sm: `${MDY_CSS_PROPERTIES.layout.columnDisplay}-sm`,
+  md: `${MDY_CSS_PROPERTIES.layout.columnDisplay}-md`,
+  lg: `${MDY_CSS_PROPERTIES.layout.columnDisplay}-lg`,
+});
+
+/** Where a slot sits and whether it shows, at one size — Contract v3's per-slot placement. */
+export interface MdyLayoutSlotPlacement {
+  readonly column?: number;
+  readonly hidden?: boolean;
+}
+
+/**
+ * The inline style a column takes from the slot inside it.
+ *
+ * A slot's placement is the placement of the column it occupies. That is a deliberate reading rather
+ * than a shortcut: `grid-column` and `display` are properties of a grid item, and the column *is* the
+ * grid item — a wrapper inside the cell could not move itself into a different track however it was
+ * styled. A column holding several slots takes the first placement it is given, so a row built one
+ * slot per column — which is every row Studio authors — behaves exactly as written.
+ *
+ * Sizes cascade the way the track count already does: what a size does not say, it inherits from the
+ * next smaller one. Only the sizes actually authored are emitted, so a slot that says nothing adds
+ * no properties and a column with no slot is untouched.
+ */
+export function layoutSlotStyle(
+  at: Partial<Readonly<Record<MdyLayoutBreakpoint, MdyLayoutSlotPlacement>>> | undefined,
+): Readonly<Record<string, string>> {
+  const style: Record<string, string> = {};
+  if (!at) return style;
+  for (const size of Object.keys(MDY_LAYOUT_BREAKPOINTS) as MdyLayoutBreakpoint[]) {
+    const placement = at[size];
+    if (!placement) continue;
+    if (placement.column !== undefined) {
+      style[MDY_LAYOUT_COLUMN_START_PROPERTIES[size]] = String(Math.max(1, Math.trunc(placement.column)));
+    }
+    if (placement.hidden !== undefined) {
+      // `display` rather than a hidden class: a class cannot be undone at a larger size without a
+      // second class saying the opposite, and "shown at lg" is the case that makes this worth having.
+      style[MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES[size]] = placement.hidden ? "none" : "flex";
+    }
+  }
+  return style;
+}
+
 /** The classes and inline style a layout node needs, ready to apply. */
 export function layoutNodeAttributes(
   node: {

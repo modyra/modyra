@@ -36,6 +36,10 @@ export const MDY_CSS_PROPERTIES = Object.freeze({
   /** Written by `layoutNodeAttributes` on a columns row; the foundation divides the row by it. */
   layout: Object.freeze({
     columnCount: "--mdy-layout-column-count",
+    /** Which track a column starts in, when a slot places itself rather than following row order. */
+    columnStart: "--mdy-layout-column-start",
+    /** Whether a column shows. Written as a `display` value so the cascade needs no extra selector. */
+    columnDisplay: "--mdy-layout-column-display",
   }),
   /** Written per control, where a theme needs a number only the renderer knows. */
   control: Object.freeze({
