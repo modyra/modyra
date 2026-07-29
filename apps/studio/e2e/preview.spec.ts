@@ -28,14 +28,15 @@ test("array: Add row/Remove update the live array through the real form, reflect
   await page.locator('[data-template="array"]').click();
   await page.locator('[data-inspector-tab="preview"]').click();
 
-  await expect(page.locator(".preview-array-label")).toContainText("(0)");
-  await page.locator("[data-preview-array-push]").click();
+  // A new repeater is created with one row, so its shape is visible while you design it.
   await expect(page.locator(".preview-array-label")).toContainText("(1)");
   await page.locator("[data-preview-array-push]").click();
   await expect(page.locator(".preview-array-label")).toContainText("(2)");
+  await page.locator("[data-preview-array-push]").click();
+  await expect(page.locator(".preview-array-label")).toContainText("(3)");
 
   await page.locator('[data-preview-array-remove][data-preview-array-index="0"]').click();
-  await expect(page.locator(".preview-array-label")).toContainText("(1)");
+  await expect(page.locator(".preview-array-label")).toContainText("(2)");
 });
 
 test("server mock: switching a field's mock mode to Fails surfaces an asynchronous validation error in preview, Succeeds clears it", async ({ page }) => {
