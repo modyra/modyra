@@ -1,6 +1,7 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { angleToHour, angleToMinute, buildTimeString, formatTime, formatTimeAs, getCurrentTime, getPointerCoords, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
+import { timepickerDialNumbers, timepickerSelectedDialValue } from "@modyra/widgets";
 import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
@@ -61,7 +62,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this.format = "12h";
     this.compact = false;
     this._open = false;
-    this._viewMode = "input";
+    this._viewMode = "dial";
     this._focusedField = "hour";
     this._draftValue = null;
     this._isDragging = false;
@@ -91,7 +92,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   private openPopup(handle: MdyTimepickerFieldElement["field"], event?: Event): void {
     const parsed = parseAnyTime(handle?.value() ?? null, this.format);
     this._draftValue = parsed ? formatTime(parsed) : getCurrentTime();
-    this._viewMode = "input";
+    this._viewMode = "dial";
     this._focusedField = "hour";
     applyOverlayIntent(this, { type: "open", disabled: this.field?.disabled() ?? false, available: true });
     this.overlay.open(event);
@@ -366,13 +367,13 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private renderDial(): unknown {
-    const isHour = this._focusedField === "hour";
-    const numbers = isHour
-      ? [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-      : [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
-    const selectedIndex = isHour
-      ? numbers.indexOf(this.numericHour())
-      : numbers.indexOf((Math.round(this.numericMinute() / 5) * 5) % 60);
+    const field = this._focusedField;
+    // Which numbers the face carries, where each one sits and which is selected are the contract's:
+    // minute 0 belongs at the top of the face and a draft of 07 marks the 05 nearest it, and those
+    // are exactly the details three renderers would each get slightly differently.
+    const numbers = timepickerDialNumbers(field);
+    const parsed = parseTime(this._draftValue) ?? { hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay() };
+    const selected = timepickerSelectedDialValue(field, parsed);
     return html`
       <div class="mdy-timepicker-dial-variant">
         <div class="mdy-timepicker-dial">
@@ -386,14 +387,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
               style="transform: rotate(${this.handRotation()}deg)"
             ></div>
             ${numbers.map(
-              (value, i) => html`
+              (number) => html`
                 <div
-                  class="mdy-timepicker-dial__number ${i === selectedIndex
+                  class="mdy-timepicker-dial__number ${number.value === selected
                     ? "mdy-timepicker-dial__number--selected"
                     : ""}"
-                  style="--index: ${isHour ? value : i === 0 ? 12 : i}"
+                  style="--index: ${number.index}"
                 >
-                  ${String(value).padStart(2, "0")}
+                  ${number.label}
                 </div>
               `,
             )}

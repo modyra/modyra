@@ -20,7 +20,7 @@ import {
   pointerAngle,
   to24Hour,
 } from "@modyra/core/time-utils";
-import { timeClockTransition } from "@modyra/widgets";
+import { timeClockTransition, timepickerDialNumbers, timepickerSelectedDialValue } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
 
@@ -33,7 +33,6 @@ import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MdyTimepickerClockComponent {
-  protected readonly Math = Math;
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly value = input<string | null>(null);
   readonly disabled = input<boolean>(false);
@@ -42,7 +41,9 @@ export class MdyTimepickerClockComponent {
   readonly cancelClicked = output<void>();
   readonly confirmClicked = output<void>();
 
-  protected readonly viewMode = signal<"input" | "dial">("input");
+  // The clock is the picker: `MdyTimepickerFieldState.viewMode` in @modyra/widgets says a timepicker
+  // opens on it, and the mode toggle is how a user asks for the number fields instead.
+  protected readonly viewMode = signal<"input" | "dial">("dial");
   protected readonly focusedField = signal<"hour" | "minute">("hour");
   protected readonly isDragging = signal(false);
   protected readonly dragAngle = signal<number | null>(null);
@@ -121,6 +122,15 @@ export class MdyTimepickerClockComponent {
     const p = this.parsed();
     return p ? formatTime(p) : "00:00 AM";
   });
+
+  /** The numbers on the face, and which one is selected — the contract's, not this component's. */
+  protected readonly dialNumbers = computed(() => timepickerDialNumbers(this.focusedField()));
+
+  protected readonly selectedDialValue = computed(() =>
+    timepickerSelectedDialValue(this.focusedField(), {
+      hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay(),
+    }),
+  );
 
   protected readonly handRotation = computed(() => {
     if (this.isDragging() && this.dragAngle() !== null) {
