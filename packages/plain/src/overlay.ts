@@ -70,7 +70,11 @@ export function positionOverlay(
   // steady while the anchor moves.
   const anchoring = anchorOverlay(
     rect,
-    { width: window.innerWidth, height: window.innerHeight },
+    // `clientWidth`/`clientHeight`, never `innerWidth`/`innerHeight`: the inner sizes include the
+    // scrollbars, while the coordinates written back are laid out against the viewport without
+    // them. A right-hung popup then gets `right: innerWidth - anchor.right`, which is a scrollbar
+    // too much, and every popup on a scrolling page sits ~15px left of its control.
+    { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight },
     {
       ...options,
       current: held?.decision ?? null,

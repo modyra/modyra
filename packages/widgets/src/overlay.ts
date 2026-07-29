@@ -28,6 +28,13 @@ export interface MdyAnchorRect {
   readonly width: number;
 }
 
+/**
+ * The viewport the coordinates are laid out against.
+ *
+ * `document.documentElement.clientWidth`/`clientHeight` — the viewport *without* the scrollbars.
+ * `window.innerWidth`/`innerHeight` include them, and a popup pinned by its right or bottom edge
+ * then sits a scrollbar's width away from its control on any page long enough to scroll.
+ */
 export interface MdyViewportSize {
   readonly width: number;
   readonly height: number;
