@@ -320,6 +320,7 @@ export interface MdyDynamicSlotPlacement {
  */
 export interface MdyDynamicLayoutSlot {
   readonly ref: string;
+  /** Only inside a `columns` row: the column is the element a placement can act on. */
   readonly at?: Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>>;
 }
 
@@ -335,6 +336,14 @@ export interface MdyDynamicSection {
   readonly id: string;
   readonly label?: string;
   readonly children: ReadonlyArray<MdyDynamicLayoutChild>;
+  /**
+   * Only inside a `columns` row, and read exactly as a slot's: the column is the element a placement
+   * acts on, and a section occupying one is a column like any other.
+   *
+   * A group compiles to a section, so without this the one thing that could not be laid out for a
+   * screen size was a group — the thing most worth laying out for one.
+   */
+  readonly at?: Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>>;
 }
 
 /** The sizes a row can be authored against, mirroring `MDY_LAYOUT_BREAKPOINTS` in `@modyra/widgets`. */
@@ -588,12 +597,13 @@ function validLayoutNode(
   // How many tracks this row has, so a slot cannot be sent to a column the row does not have. A
   // nested row is checked against its own count, which is why this is read here rather than passed
   // down. `at` may widen the row at a size, so the widest declared count is the ceiling.
+  // `0` marks a node that has no tracks at all: a section, where placement cannot be honoured.
   const trackCount = node.kind === "columns"
     ? Math.max(
       Array.isArray(node.columns) ? node.columns.length : 1,
       ...Object.values((node.at ?? {}) as Record<string, number>),
     )
-    : 1;
+    : 0;
 
   for (const slot of slots) {
     for (const child of slot) {
@@ -605,32 +615,58 @@ function validLayoutNode(
         // every other reader of the same document about what the contract says.
         if (!allowSlots) return false;
         if (!validSlot(child, names, seen, trackCount)) return false;
-      } else if (!validLayoutNode(child, names, seen, depth + 1, allowSlots)) {
-        return false;
+      } else {
+        if (!validLayoutNode(child, names, seen, depth + 1, allowSlots)) return false;
+        // A section's `at` describes the column *this* node gives it, not its own children, so it is
+        // checked here rather than inside its own validation. A nested row's `at` is a track count
+        // and belongs to that row, which is why only a section is asked. Below v3 the key does not
+        // exist, exactly as for a slot.
+        const nested = child as Partial<MdyDynamicSection>;
+        if (nested.kind === "section" && nested.at !== undefined) {
+          if (!allowSlots || !validPlacement(nested.at, trackCount)) return false;
+        }
       }
     }
   }
   return true;
 }
 
-/** Validates one v3 slot: a real field, placed once, and placement that a row can honour. */
+/**
+ * Validates one v3 slot: a real field, placed once, and placement that a row can honour.
+ *
+ * `trackCount` of 0 means the slot is not in a columns row. Placement is refused there rather than
+ * accepted and ignored: `grid-column` and `display` belong to a grid item, and the column is the only
+ * element the contract owns — a section's child is a field's own root, which the layout does not get
+ * to restyle. A slot with no `at` is still fine anywhere; it is simply a field name written longhand.
+ */
 function validSlot(raw: Record<string, unknown>, names: ReadonlySet<string>, seen: Set<string>, trackCount: number): boolean {
   const slot = raw as Partial<MdyDynamicLayoutSlot>;
   if (!validFieldReference(slot.ref, names) || seen.has(slot.ref)) return false;
-  if (slot.at !== undefined) {
-    if (!isRecordValue(slot.at)) return false;
-    for (const [size, placement] of Object.entries(slot.at)) {
-      if (!["base", "sm", "md", "lg"].includes(size)) return false;
-      if (!isRecordValue(placement)) return false;
-      const { column, hidden } = placement as MdyDynamicSlotPlacement;
-      if (column !== undefined && (!Number.isInteger(column) || column < 1 || column > trackCount)) return false;
-      if (hidden !== undefined && typeof hidden !== "boolean") return false;
-      // A size that says nothing is a mistake worth reporting rather than a no-op to keep: it is
-      // usually a typo for a size that meant something.
-      if (column === undefined && hidden === undefined) return false;
-    }
-  }
+  if (!validPlacement(slot.at, trackCount)) return false;
   seen.add(slot.ref);
+  return true;
+}
+
+/**
+ * A per-size placement, whether it came from a slot or from a section occupying a column.
+ *
+ * One function because it is one rule: what a column may be told to do does not depend on what is
+ * inside it. `trackCount` of 0 means there is no column, and placement is refused outright.
+ */
+function validPlacement(at: unknown, trackCount: number): boolean {
+  if (at === undefined) return true;
+  if (trackCount === 0) return false;
+  if (!isRecordValue(at)) return false;
+  for (const [size, placement] of Object.entries(at)) {
+    if (!["base", "sm", "md", "lg"].includes(size)) return false;
+    if (!isRecordValue(placement)) return false;
+    const { column, hidden } = placement as MdyDynamicSlotPlacement;
+    if (column !== undefined && (!Number.isInteger(column) || column < 1 || column > trackCount)) return false;
+    if (hidden !== undefined && typeof hidden !== "boolean") return false;
+    // A size that says nothing is a mistake worth reporting rather than a no-op to keep: it is
+    // usually a typo for a size that meant something.
+    if (column === undefined && hidden === undefined) return false;
+  }
   return true;
 }
 
@@ -707,6 +743,13 @@ export function parseDynamicForm(
     } else for (const [index, raw] of (envelope.layout ?? []).entries()) {
       if (typeof raw !== "object" || raw === null) {
         diagnostics.push({ code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path: `/layout/${index}`, message: "layout node must be an object." });
+        continue;
+      }
+      // A node at the top of the layout sits in no column, so it has nothing to be placed in — the
+      // same reason a slot's `at` is refused outside a row, checked here because this is the one
+      // place a layout node is visited without a parent.
+      if ((raw as Partial<MdyDynamicSection>).at !== undefined && (raw as Partial<MdyDynamicLayoutNode>).kind === "section") {
+        diagnostics.push({ code: "MDY_DYNAMIC_INVALID_LAYOUT", severity: "error", path: `/layout/${index}`, message: "a section at the top of the layout occupies no column and cannot be placed." });
         continue;
       }
       if (!validLayoutNode(raw, names, placed, 1, version === 3)) {

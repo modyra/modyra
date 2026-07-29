@@ -556,6 +556,18 @@ test("a v3 slot is refused by a v2 document, and hostile placement is refused ev
     assert.equal(result.ok, false, `accepted ${JSON.stringify(hostile)}`);
   }
 
+  // A section has no tracks, so there is no element a placement could act on. Accepting it would
+  // have been a silent no-op in every renderer, which is the failure this refusal exists to prevent.
+  const inSection = (child) => ({
+    version: 3,
+    fields,
+    layout: [{ kind: "section", id: "sec", children: [child] }],
+  });
+  assert.equal(parseDynamicForm(inSection({ ref: "a", at: { sm: { hidden: true } } }), { mode: "strict" }).ok, false);
+  assert.equal(parseDynamicForm(inSection({ ref: "a", at: { sm: { column: 1 } } }), { mode: "strict" }).ok, false);
+  // A slot with nothing to place is just a field name written longhand, and is fine anywhere.
+  assert.equal(parseDynamicForm(inSection({ ref: "a" }), { mode: "strict" }).ok, true);
+
   // `at` on the row may widen it, and a slot may then name the wider column.
   const widened = {
     version: 3,
@@ -563,4 +575,36 @@ test("a v3 slot is refused by a v2 document, and hostile placement is refused ev
     layout: [{ kind: "columns", id: "row", columns: [["a"], [{ ref: "b", at: { lg: { column: 4 } } }]], at: { lg: 4 } }],
   };
   assert.equal(parseDynamicForm(widened, { mode: "strict" }).ok, true);
+});
+
+test("a section occupying a column may be placed; one at the top of the layout may not", async () => {
+  const { parseDynamicForm } = await import("../dist/dynamic-config.js");
+  const fields = [{ name: "a", kind: "text" }, { name: "b", kind: "text" }];
+  const section = (at) => ({ kind: "section", id: "sec", children: ["b"], ...(at ? { at } : {}) });
+
+  // In a row the section is the column, so it is placed exactly as a slot is.
+  const inRow = parseDynamicForm({
+    version: 3,
+    fields,
+    layout: [{ kind: "columns", id: "row", columns: [["a"], [section({ base: { hidden: true }, md: { column: 2 } })]] }],
+  }, { mode: "strict" });
+  assert.equal(inRow.ok, true, JSON.stringify(inRow.diagnostics));
+
+  // At the top of the layout it occupies no column, so there is nothing to place it in.
+  const topLevel = parseDynamicForm({
+    version: 3, fields, layout: [section({ md: { hidden: true } })],
+  }, { mode: "strict" });
+  assert.equal(topLevel.ok, false);
+  assert.equal(topLevel.diagnostics[0].code, "MDY_DYNAMIC_INVALID_LAYOUT");
+
+  // Unplaced, it is the section it has always been — at any version.
+  assert.equal(parseDynamicForm({ version: 3, fields, layout: [section(null)] }, { mode: "strict" }).ok, true);
+  assert.equal(parseDynamicForm({ version: 2, fields, layout: [section(null)] }, { mode: "strict" }).ok, true);
+  // And below v3 the key does not exist, so a v2 document carrying one is refused like any slot.
+  const v2WithPlacement = parseDynamicForm({
+    version: 2,
+    fields,
+    layout: [{ kind: "columns", id: "row", columns: [["a"], [section({ md: { hidden: true } })]] }],
+  }, { mode: "strict" });
+  assert.equal(v2WithPlacement.ok, false);
 });

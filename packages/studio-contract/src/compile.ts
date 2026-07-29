@@ -41,6 +41,7 @@ import {
   type MdyDynamicLayoutNode,
   type MdyDynamicLayoutSlot,
   type MdyDynamicNode,
+  type MdyDynamicSection,
   type MdyDynamicValidators,
 } from "@modyra/core/dynamic-config";
 // Type-only: the catalog constrains what this may map to, and nothing of it survives compilation,
@@ -264,6 +265,39 @@ function childPlacement(child: StudioLayoutSlot): MdyDynamicLayoutSlot["at"] | n
   return Object.keys(out).length ? (out as MdyDynamicLayoutSlot["at"]) : null;
 }
 
+/**
+ * Drops a `column` the row no longer has, and the placement when nothing usable is left.
+ *
+ * Both a slot and a section can carry one, and both are trimmed the same way — a group's column can
+ * go out of range exactly as a field's does, by the row narrowing under it.
+ */
+function trimToRow(child: MdyDynamicLayoutChild, tracks: number): MdyDynamicLayoutChild {
+  if (typeof child === "string") return child;
+  const isSlot = "ref" in child;
+  const source = isSlot ? child.at : child.kind === "section" ? child.at : undefined;
+  if (!source) return child;
+  const at: Record<string, { column?: number; hidden?: boolean }> = {};
+  for (const [size, placement] of Object.entries(source)) {
+    const column = placement.column !== undefined && placement.column <= tracks ? placement.column : undefined;
+    if (column === undefined && placement.hidden === undefined) continue;
+    at[size] = { ...(column !== undefined ? { column } : {}), ...(placement.hidden !== undefined ? { hidden: placement.hidden } : {}) };
+  }
+  const kept = Object.keys(at).length ? (at as MdyDynamicLayoutSlot["at"]) : undefined;
+  if (isSlot) return kept ? { ref: child.ref, at: kept } : child.ref;
+  // A section without a usable placement is the section it always was, minus the key.
+  const { at: _dropped, ...rest } = child as MdyDynamicSection;
+  return kept ? { ...rest, at: kept } : rest;
+}
+
+/** Whether a finished layout node places anything under it — what decides v3 over v2. */
+function placesASlot(node: MdyDynamicLayoutNode): boolean {
+  if (node.kind === "section" && node.at !== undefined) return true;
+  const children = node.kind === "section" ? node.children : node.columns.flat();
+  return children.some((child) =>
+    typeof child !== "string" && ("ref" in child ? child.at !== undefined : placesASlot(child)),
+  );
+}
+
 /** A row's track counts, dropped where they are not a count a row could have. */
 function rowCounts(
   at: StudioLayoutColumns["at"],
@@ -302,9 +336,13 @@ function mapLayout(
   // A field may be placed once. Deduping here means a stale layout can never produce a
   // Contract the strict parser rejects — which would otherwise take the whole form down.
   const emitted = new Set<string>();
-  /** Set when a slot compiles to v3's `{ ref, at }`, which is what raises the document's version. */
-  let usesSlots = false;
-  const mapChild = (child: StudioLayoutChild): MdyDynamicLayoutChild[] => {
+  /**
+   * `inRow` is what makes a placement emittable: the Contract refuses `at` outside a columns row,
+   * because the column is the only element a placement can act on. A stale project — one whose row
+   * was later turned back into a section — would otherwise compile to a contract the strict parser
+   * rejects, and the whole layout would be dropped over an override nobody could see anyway.
+   */
+  const mapChild = (child: StudioLayoutChild, inRow: boolean): MdyDynamicLayoutChild[] => {
     if ("nodeId" in child) {
       const names = leafNames(child.nodeId).filter((name) => {
         if (emitted.has(name)) return false;
@@ -325,19 +363,23 @@ function mapLayout(
         // One child, not several — see the note on this function. The container's own id becomes the
         // section's, so a renderer can tell which group a box on screen is, and a second compile of
         // the same project produces the same layout.
+        //
+        // The placement rides on the section, because in a row the section *is* the column: without
+        // it, hiding a group at a size would be authorable in Studio and silently dropped here.
+        const at = inRow ? childPlacement(child) : null;
         return [{
           kind: "section",
           id: slot.id,
           ...(slot.label ? { label: slot.label } : {}),
           children: names,
+          ...(at ? { at } : {}),
         }];
       }
       // A slot with something to say compiles to v3's `{ ref, at }`; one with nothing to say stays
       // the bare name it has always been, so authoring a breakpoint somewhere in the form does not
       // rewrite every other slot in it.
-      const placement = childPlacement(child);
+      const placement = inRow ? childPlacement(child) : null;
       if (placement && names.length === 1) {
-        usesSlots = true;
         return [{ ref: names[0]!, at: placement }];
       }
       return names;
@@ -348,12 +390,16 @@ function mapLayout(
 
   const mapNode = (node: StudioLayoutNode): MdyDynamicLayoutNode | null => {
     if (node.kind === "section") {
-      const children = node.children.flatMap(mapChild);
+      const children = node.children.flatMap((child) => mapChild(child, false));
       if (!children.length) return null;
       return { kind: "section", id: node.id, ...(node.label ? { label: node.label } : {}), children };
     }
-    const columns = node.columns.map((column) => column.flatMap(mapChild)).filter((column) => column.length > 0);
-    if (columns.length < 2) return null; // a one-column row is not a layout, it is just the field
+    const mapped = node.columns.map((column) => column.flatMap((child) => mapChild(child, true))).filter((column) => column.length > 0);
+    if (mapped.length < 2) return null; // a one-column row is not a layout, it is just the field
+    // A slot may still name a track the row no longer has — deleting a field narrows the row and
+    // leaves every other slot's `column` pointing past its end. The Contract refuses that, and the
+    // whole layout would go down with it, so the placement is trimmed to what this row can honour.
+    const columns = mapped.map((column) => column.map((child) => trimToRow(child, mapped.length)));
     // The row's own track counts are v2's and ride along unchanged; only a slot's placement is v3.
     const at = rowCounts(node.at, columns.length);
     return { kind: "columns", id: node.id, columns, ...(at ? { at } : {}) };
@@ -363,7 +409,10 @@ function mapLayout(
     const mapped = mapNode(node);
     return mapped ? [mapped] : [];
   });
-  return { nodes, usesSlots };
+  // Read off the finished layout rather than tracked while building it: a placement can still be
+  // trimmed away after the slot that carried it was emitted, and a document must not claim v3 for a
+  // slot that no longer says anything v3 could express.
+  return { nodes, usesSlots: nodes.some(placesASlot) };
 }
 
 export function compileToContract(project: MdyStudioProject): CompileResult {

@@ -125,6 +125,31 @@ describe("MdyDynamicFormComponent, declarative layout", () => {
     expect(host.querySelectorAll("mdy-control-text").length).toBe(2);
   });
 
+  it("places a section in a column like any other column", () => {
+    // Same assertion as the framework-free renderer's: a section occupying a column carries that
+    // column's placement, which is how a group in a row is laid out for a screen size.
+    const fixture = TestBed.createComponent(LayoutHost);
+    fixture.componentInstance.layout.set([
+      {
+        kind: "columns",
+        id: "row",
+        columns: [
+          ["notes"],
+          [{ kind: "section", id: "identity", label: "Identity", children: ["first", "last"], at: { base: { hidden: true }, md: { hidden: false } } }],
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+    const host: HTMLElement = fixture.nativeElement;
+
+    const cells = Array.from(host.querySelectorAll<HTMLElement>(`.${MDY_LAYOUT_CLASSES.column}`));
+    expect(cells.length).toBe(2);
+    expect(cells[1]!.style.getPropertyValue("--mdy-layout-column-display")).toBe("none");
+    expect(cells[1]!.style.getPropertyValue("--mdy-layout-column-display-md")).toBe("flex");
+    expect(cells[1]!.querySelector(`.${MDY_LAYOUT_CLASSES.section}`)).toBeTruthy();
+    expect(cells[1]!.querySelectorAll("mdy-control-text").length).toBe(2);
+  });
+
   it("renders the fields in order when no layout is declared", () => {
     const fixture = TestBed.createComponent(LayoutHost);
     fixture.componentInstance.layout.set([]);

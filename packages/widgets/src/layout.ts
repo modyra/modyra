@@ -120,22 +120,30 @@ export function layoutNodeAttributes(
     readonly kind: "section" | "columns";
     readonly id: string;
     readonly columns?: ReadonlyArray<unknown>;
-    /** Tracks per breakpoint, when the row is authored responsively. */
-    readonly at?: MdyLayoutColumnCounts;
+    /**
+     * Tracks per breakpoint on a row. A section's `at` is a placement rather than a count — it says
+     * where the section's own column sits — and is read by `layoutSlotStyle`, not here.
+     */
+    readonly at?: MdyLayoutColumnCounts | Partial<Readonly<Record<MdyLayoutBreakpoint, MdyLayoutSlotPlacement>>>;
   },
 ): { readonly className: string; readonly style: Readonly<Record<string, string>>; readonly dataset: Readonly<Record<string, string>> } {
   if (node.kind === "section") {
     return { className: MDY_LAYOUT_CLASSES.section, style: {}, dataset: { layoutId: node.id } };
   }
   const declared = Math.max(1, node.columns?.length ?? 1);
-  const at = node.at ?? {};
+  // A row's `at` is counts, and only counts are read. `at` is spelled the same on a section, where it
+  // is a placement instead, so anything that is not a number is ignored rather than turned into
+  // `NaN` tracks — the two shapes meet whenever a layout is walked as a union.
+  const raw = (node.at ?? {}) as Readonly<Record<string, unknown>>;
+  const count = (size: MdyLayoutBreakpoint): number | undefined =>
+    typeof raw[size] === "number" ? (raw[size] as number) : undefined;
   // Mobile-first, and the default is the behaviour the foundation already had: one column until the
   // first breakpoint, then the tracks the row declares. Authoring `at` overrides any of the four.
   const counts: Record<string, number> = {
-    base: at.base ?? 1,
-    sm: at.sm ?? declared,
-    ...(at.md !== undefined ? { md: at.md } : {}),
-    ...(at.lg !== undefined ? { lg: at.lg } : {}),
+    base: count("base") ?? 1,
+    sm: count("sm") ?? declared,
+    ...(count("md") !== undefined ? { md: count("md")! } : {}),
+    ...(count("lg") !== undefined ? { lg: count("lg")! } : {}),
   };
   const style: Record<string, string> = {};
   for (const [size, count] of Object.entries(counts)) {

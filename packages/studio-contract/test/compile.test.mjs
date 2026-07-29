@@ -239,6 +239,78 @@ test("placement a row could not honour is dropped, never the form", async () => 
   assert.deepEqual(contract.layout[0].columns, [["shipping.city"], ["shipping.zip"]]);
 });
 
+test("a group in a row can be hidden at a size, and the placement rides its section", async () => {
+  // In a row the section *is* the column, so the placement belongs on it. Without this, Studio could
+  // author "hide this group on a phone" and the compiler would drop it without a word.
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [{
+      kind: "columns",
+      id: "row",
+      columns: [[{ nodeId: "nd_country" }], [{ nodeId: "nd_shipping", at: { base: { hidden: true } } }]],
+    }],
+  };
+
+  const { contract, diagnostics } = compileToContract(project);
+
+  assert.ok(contract, JSON.stringify(diagnostics));
+  assert.equal(contract.version, 3);
+  assert.deepEqual(contract.layout[0].columns[1][0], {
+    kind: "section",
+    id: "nd_shipping",
+    label: "Shipping address",
+    children: ["shipping.city", "shipping.zip"],
+    at: { base: { hidden: true } },
+  });
+});
+
+test("placement outside a row is dropped, not compiled into a contract nothing accepts", async () => {
+  // A project whose row was later turned back into a section keeps the override in its slot. The
+  // Contract refuses `at` outside a row, so emitting it would fail the strict parse and cost the
+  // author their whole layout — over an override that could never have been seen.
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [{ kind: "section", id: "sec", children: [{ nodeId: "nd_city", at: { md: { hidden: true } } }] }],
+  };
+
+  const { contract, diagnostics } = compileToContract(project);
+
+  assert.ok(contract, JSON.stringify(diagnostics));
+  assert.equal(contract.version, 2);
+  assert.deepEqual(contract.layout, [{ kind: "section", id: "sec", children: ["shipping.city"] }]);
+  assert.ok(!diagnostics.some((d) => d.code === "LAYOUT_DROPPED"), "the layout must survive");
+});
+
+test("a column the row no longer has is trimmed, and the version falls back with it", async () => {
+  // A row narrows whenever a field is deleted from it, and every other slot's `column` keeps
+  // pointing past its end. The Contract refuses that, so leaving it in place would take the whole
+  // layout down; and once the last placement is gone, nothing in the document needs v3 any more.
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [{
+      kind: "columns",
+      id: "row",
+      columns: [
+        [{ nodeId: "nd_country" }],
+        [{ nodeId: "nd_coupon", at: { md: { column: 4 }, lg: { column: 2, hidden: true } } }],
+      ],
+    }],
+  };
+
+  const { contract, diagnostics } = compileToContract(project);
+
+  assert.ok(contract, JSON.stringify(diagnostics));
+  assert.equal(contract.version, 3, "lg still says something a row can honour");
+  assert.deepEqual(contract.layout[0].columns[1][0], { ref: "coupon", at: { lg: { column: 2, hidden: true } } });
+
+  // With nothing left that the row can honour, the slot goes back to being a name and so does v2.
+  project.presentation.layout[0].columns[1][0].at = { md: { column: 4 } };
+  const trimmed = compileToContract(project);
+  assert.ok(trimmed.contract);
+  assert.equal(trimmed.contract.version, 2);
+  assert.deepEqual(trimmed.contract.layout[0].columns[1], ["coupon"]);
+});
+
 test("every kind Studio offers is a kind the widget catalog knows", async () => {
   // Studio's field kinds are its own vocabulary — `date`, `time` — but what they compile to must be
   // the catalog's. A target the catalog does not have would produce a contract that every renderer

@@ -290,10 +290,19 @@ export class MdyDynamicFormComponent {
     return "ref" in child ? child.ref : null;
   }
 
-  /** A column's own placement, taken from the first v3 slot inside it. */
+  /**
+   * A column's own placement, from the first child inside it that asks for one.
+   *
+   * A slot and a section answer the same way: a section occupying a column is a column like any
+   * other, which is how a group in a row is laid out for a screen size.
+   */
   protected columnStyle(column: ReadonlyArray<MdyDynamicLayoutChild>): Record<string, string> {
-    const slot = column.find((child): child is MdyDynamicLayoutSlot => typeof child === "object" && "ref" in child);
-    return { ...layoutSlotStyle(slot?.at) };
+    for (const child of column) {
+      if (typeof child === "string") continue;
+      const at = "ref" in child ? (child as MdyDynamicLayoutSlot).at : child.kind === "section" ? child.at : undefined;
+      if (at) return { ...layoutSlotStyle(at) };
+    }
+    return {};
   }
 
   protected fieldByName(name: string): MdyDynamicField | undefined {

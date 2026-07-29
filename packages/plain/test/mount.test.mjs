@@ -344,6 +344,37 @@ test("a v3 slot renders its field and places its column", async () => {
   handle.dispose();
 });
 
+test("a section in a column is placed like any other column", async () => {
+  // How a group in a row is laid out for a screen size: the section occupies the column, so the
+  // column is what carries the placement — the same element, read the same way, as for a slot.
+  const container = document.createElement("div");
+  document.body.append(container);
+  const handle = mountMdyForm(container, [
+    { name: "country", kind: "text", label: "Country" },
+    { name: "shipping.city", kind: "text", label: "City" },
+  ], {
+    submitLabel: null,
+    layout: [{
+      kind: "columns",
+      id: "row",
+      columns: [
+        ["country"],
+        [{ kind: "section", id: "shipping", label: "Shipping", children: ["shipping.city"], at: { base: { hidden: true }, md: { hidden: false } } }],
+      ],
+    }],
+  });
+
+  const cells = container.querySelectorAll(".mdy-layout-column");
+  assert.equal(cells.length, 2);
+  assert.equal(cells[1].style.getPropertyValue("--mdy-layout-column-display"), "none");
+  assert.equal(cells[1].style.getPropertyValue("--mdy-layout-column-display-md"), "flex");
+  // The section still renders, with its fields — hidden is a size's decision, not a deletion.
+  assert.ok(cells[1].querySelector("fieldset.mdy-layout-section"));
+  assert.equal(cells[1].querySelectorAll("input").length, 1);
+
+  handle.dispose();
+});
+
 test("a field named twice by the layout renders once, not twice", async () => {
   const container = document.createElement("div");
   document.body.append(container);

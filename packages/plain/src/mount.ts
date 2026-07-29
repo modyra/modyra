@@ -71,6 +71,13 @@ export function mountMdyForm(
   const isSlot = (child: MdyDynamicLayoutChild): child is MdyDynamicLayoutSlot =>
     typeof child === "object" && "ref" in child;
 
+  /** What a child asks of the column it occupies — a slot and a section answer the same way. */
+  const placementOf = (child: MdyDynamicLayoutChild): MdyDynamicLayoutSlot["at"] => {
+    if (typeof child === "string") return undefined;
+    if (isSlot(child)) return child.at;
+    return child.kind === "section" ? child.at : undefined;
+  };
+
   const renderLayoutChild = (target: HTMLElement, child: MdyDynamicLayoutChild): void => {
     if (typeof child === "string") renderOne(target, child);
     else if (isSlot(child)) renderOne(target, child.ref);
@@ -98,11 +105,12 @@ export function mountMdyForm(
     for (const [property, value] of Object.entries(attributes.style)) row.style.setProperty(property, value);
     for (const column of node.columns) {
       const cell = el("div", MDY_LAYOUT_CLASSES.column);
-      // The column is the grid item, so a slot's placement is applied here rather than to anything
-      // inside it — `layoutSlotStyle` explains why. First slot wins when a column holds several.
-      const placed = column.find(isSlot);
-      if (placed) {
-        for (const [property, value] of Object.entries(layoutSlotStyle(placed.at))) cell.style.setProperty(property, value);
+      // The column is the grid item, so a placement is applied here rather than to anything inside
+      // it — `layoutSlotStyle` explains why. A section carries one too, which is how a group in a
+      // row is placed; either way the first child with something to say wins.
+      const placement = column.map(placementOf).find((at) => at !== undefined);
+      if (placement) {
+        for (const [property, value] of Object.entries(layoutSlotStyle(placement))) cell.style.setProperty(property, value);
       }
       for (const child of column) renderLayoutChild(cell, child);
       row.appendChild(cell);
