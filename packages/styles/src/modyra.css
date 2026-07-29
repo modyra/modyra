@@ -2014,13 +2014,9 @@
     /* --above and --right positioning handled via CSS variables on the host.
    No absolute-position fallbacks needed. */
 
-    .mdy-select__overlay-backdrop {
-        position: fixed;
-        inset: 0;
-        z-index: calc(var(--mdy-z-overlay) - 1);
-        background: var(--mdy-overlay-backdrop-bg);
-        transition: opacity var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
-    }
+    /* `.mdy-select__overlay-backdrop` was styled here and emitted by nobody. Every adapter draws one
+       backdrop, `mdy-overlay-backdrop`, from the overlay panel — a per-widget backdrop has not
+       existed since the panel took the job. */
 
     .mdy-select__dropdown--overlay {
         position: fixed;
@@ -2333,8 +2329,8 @@
         box-sizing: border-box;
     }
 
-    .mdy-renderer--open .mdy-datepicker__popup:not(.mdy-datepicker__popup--overlay):not(.mdy-datepicker__popup--modal),
-    .mdy-renderer--open .mdy-timepicker__popup:not(.mdy-timepicker__popup--overlay):not(.mdy-timepicker__popup--modal) {
+    .mdy-renderer--open .mdy-datepicker__popup:not(.mdy-datepicker__popup--overlay),
+    .mdy-renderer--open .mdy-timepicker__popup:not(.mdy-timepicker__popup--overlay) {
         position: fixed;
         top: var(--mdy-overlay-top, auto);
         bottom: var(--mdy-overlay-bottom, auto);
@@ -2350,19 +2346,10 @@
    --mdy-overlay-{top,bottom,left,right} CSS variables set on the host.
    No absolute-position fallbacks needed here. */
 
-    .mdy-datepicker__backdrop,
-    .mdy-timepicker__backdrop {
-        position: fixed;
-        inset: 0;
-        z-index: calc(var(--mdy-z-overlay) - 1);
-        background: var(--mdy-overlay-backdrop-bg, rgba(0, 0, 0, 0.4));
-        transition: opacity var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
-    }
+    /* The per-picker backdrops went the same way as the select's, and for the same reason. */
 
     .mdy-datepicker__popup--overlay,
-    .mdy-datepicker__popup--modal,
-    .mdy-timepicker__popup--overlay,
-    .mdy-timepicker__popup--modal {
+    .mdy-timepicker__popup--overlay {
         position: fixed;
         z-index: var(--mdy-z-overlay);
         top: 50%;

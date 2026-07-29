@@ -128,14 +128,6 @@
       "modyra-material.css"
     ]
   },
-  "mdy-datepicker__backdrop": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
   "mdy-datepicker__calendar": {
     "kind": "drift",
     "adapters": [
@@ -259,15 +251,6 @@
       "lit",
       "plain"
     ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__popup--modal": {
-    "kind": "dead",
-    "adapters": [],
     "themes": [
       "modyra-ios.css",
       "modyra-material.css",
@@ -773,13 +756,6 @@
     ],
     "themes": []
   },
-  "mdy-select__overlay-backdrop": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra.css"
-    ]
-  },
   "mdy-spin-btn": {
     "kind": "drift",
     "adapters": [
@@ -818,26 +794,12 @@
       "modyra.css"
     ]
   },
-  "mdy-timepicker__backdrop": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra.css"
-    ]
-  },
   "mdy-timepicker__icon": {
     "kind": "drift",
     "adapters": [
       "angular",
       "lit"
     ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-timepicker__popup--modal": {
-    "kind": "dead",
-    "adapters": [],
     "themes": [
       "modyra.css"
     ]

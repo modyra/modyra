@@ -303,7 +303,6 @@
     .mdy-renderer,
     .mdy-timepicker-container,
     .mdy-datepicker__popup,
-    .mdy-datepicker__popup--modal,
     .mdy-multiselect-overlay__panel,
     .mdy-colors__dropdown,
     .mdy-select__dropdown {
@@ -946,7 +945,6 @@
     @media (prefers-reduced-motion: reduce) {
 
         .mdy-renderer *,
-        .mdy-datepicker__popup--modal,
         .mdy-timepicker-container {
             animation-duration: 0.01ms !important;
             transition-duration: 0.01ms !important;
