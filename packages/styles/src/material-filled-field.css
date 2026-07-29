@@ -171,9 +171,9 @@
 
         /* Resting state perfectly centered between boundaries */
         transform: translateY(calc((var(--mdy-floating-input-height) - 1.25rem) / 2)) scale(1);
-        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-            font-size 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-            color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+            font-size var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+            color var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
     }
 
     /* For textareas, the resting position should sit in the allocated top padding. */

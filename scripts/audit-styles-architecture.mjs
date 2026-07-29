@@ -132,6 +132,37 @@ function checkTokenFallbacks(css) {
   return found;
 }
 
+/**
+ * Motion comes from the tier, and every stylesheet that moves respects a request not to.
+ *
+ * Six durations and seven easings were spread across the foundation and the four themes, including
+ * `cubic-bezier(0.4, 0, 0.2, 1)` written two ways — the same curve, spelled differently, in two
+ * files. A control that opens in 0.15s under one theme and 0.2s under another is not the same
+ * control, and nothing could tell you they had drifted.
+ *
+ * The second half matters more: the foundation honoured `prefers-reduced-motion` for two parts out
+ * of fifty-three, and Ionic honoured it nowhere. Motion is a preference a person states, so a
+ * stylesheet that animates and never reads it is not a styling gap.
+ */
+function checkMotion(css, name) {
+  const found = [];
+  for (const match of css.matchAll(/transition(?:-duration|-timing-function)?:\s*([^;]+);/g)) {
+    const body = match[1];
+    if (/cubic-bezier/.test(body) && !/var\(--mdy-sys-motion-easing/.test(body)) {
+      found.push(`spells a literal easing curve in \`${body.trim()}\`; the curves are named in the token tier`);
+    }
+    // `0s` and `0.01ms` are "no motion", not a duration anybody tunes.
+    const literal = body.match(/(?<![\d.])(0?\.\d+|\d+)s(?![\d.])/);
+    if (literal && literal[0] !== "0s" && !/var\(--mdy-sys-motion-duration/.test(body)) {
+      found.push(`spells the literal duration ${literal[0]} in \`${body.trim()}\`; the durations are named in the token tier`);
+    }
+  }
+  if (/transition|animation:/.test(css) && !/prefers-reduced-motion/.test(css)) {
+    found.push("animates without ever reading `prefers-reduced-motion`");
+  }
+  return found.map((defect) => `${name}: ${defect}`);
+}
+
 const BRAND_FONTS = /"(Satoshi|Outfit|Inter|Roboto|SF Pro[^"]*|Helvetica Neue)"/g;
 for (const name of FOUNDATION) {
   const css = strip(read(name));
@@ -146,7 +177,14 @@ for (const name of FOUNDATION) {
   }
   for (const defect of checkFieldHeight(css)) defects.push(`${name}: ${defect}`);
   for (const defect of checkTokenFallbacks(css)) defects.push(`${name}: ${defect}`);
+  for (const defect of checkMotion(css, name)) defects.push(defect);
   for (const debt of DEBT) if (debt.matches(name, css)) debtSeen.add(debt.id);
+}
+
+// Motion is checked in the themes too. Everything else in this audit is about what a *foundation*
+// may assume; a duration is about whether the same control moves the same way wherever it is drawn.
+for (const name of THEMES) {
+  for (const defect of checkMotion(strip(read(name)), name)) defects.push(defect);
 }
 
 const stale = DEBT.filter((debt) => !debtSeen.has(debt.id));
