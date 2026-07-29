@@ -1703,19 +1703,41 @@ body {
   font-size: 11px;
 }
 
+/* Narrow: one canvas, and the two side columns slide over it from their own edges. They are never
+   `display: none` — everything Studio can do stays reachable, through the rails that become tabs. */
 @media (max-width: 1000px) {
-  /* The properties panel earns its width least at this size — the outline is navigation. */
   .studio main {
-    grid-template-columns: 180px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
+  .outline,
   .inspector {
-    display: none;
+    position: absolute;
+    inset-block: 0;
+    z-index: 15;
+    width: min(86vw, 340px);
+    transition: transform var(--studio-duration-normal) ease;
   }
-}
-@media (max-width: 760px) {
-  .outline {
-    display: none;
+  .outline { inset-inline-start: 0; transform: translateX(-101%); box-shadow: 20px 0 50px var(--studio-chrome-shadow-strong); }
+  .inspector { inset-inline-end: 0; transform: translateX(101%); box-shadow: -20px 0 50px var(--studio-chrome-shadow-strong); }
+  .studio[data-outline-open="true"] .outline,
+  .studio[data-inspector-open="true"] .inspector { transform: none; }
+
+  /* The rail stops being a splitter and becomes the tab that opens its panel. */
+  .studio-resizer {
+    position: absolute;
+    inset-block-start: 50%;
+    z-index: 16;
+    width: 18px;
+    height: 76px;
+    margin-block-start: -38px;
+    border: 1px solid var(--studio-border-subtle);
+    background: var(--studio-panel-raised);
+    cursor: pointer;
   }
+  .studio-resizer[data-resize="outline"] { inset-inline-start: 0; border-start-end-radius: 8px; border-end-end-radius: 8px; }
+  .studio-resizer[data-resize="inspector"] { inset-inline-end: 0; border-start-start-radius: 8px; border-end-start-radius: 8px; }
+  .studio[data-outline-open="true"] .studio-resizer[data-resize="outline"] { inset-inline-start: min(86vw, 340px); }
+  .studio[data-inspector-open="true"] .studio-resizer[data-resize="inspector"] { inset-inline-end: min(86vw, 340px); }
 }
 @media (max-width: 600px) {
   .studio {
@@ -1785,6 +1807,9 @@ body {
   --studio-space-3: 12px;
   --studio-space-4: 16px;
   --studio-space-5: 24px;
+  /* How wide the drag rail between two columns is. Thin enough to read as a divider, wide enough
+     to be a comfortable pointer target. */
+  --studio-rail: 7px;
   --studio-duration-fast: 120ms;
   --studio-duration-normal: 180ms;
 
@@ -1885,8 +1910,39 @@ body {
 .studio button:focus-visible,
 .import-button:focus-within { outline: 3px solid var(--studio-focus); outline-offset: 1px; }
 
+/* The rails between the three tracks: a splitter when all three fit, a tab when they do not. */
+.studio-resizer {
+  align-self: stretch;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+.studio-resizer::after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 100%;
+  margin-inline: auto;
+  background: var(--studio-border-subtle);
+  transition: background var(--studio-duration-fast) ease, width var(--studio-duration-fast) ease;
+}
+.studio-resizer:hover::after,
+.studio-resizer:focus-visible::after,
+.studio[data-resizing] .studio-resizer::after { width: 3px; background: var(--studio-accent); }
+.studio-resizer:focus-visible { outline: 2px solid var(--studio-focus); outline-offset: -2px; }
+/* While a rail is being dragged the pointer owns it: text must not select under the cursor. */
+.studio[data-resizing] { user-select: none; }
+.studio[data-resizing] * { cursor: col-resize !important; }
+
 .studio main {
-  grid-template-columns: 224px minmax(0, 1fr) minmax(300px, 336px);
+  position: relative;
+  /* Two numbers from the columns module, and the rails between them. The stylesheet keeps the shape
+     of the grid; dragging only moves the tracks it already describes. */
+  grid-template-columns:
+    var(--studio-col-outline, 224px) var(--studio-rail) minmax(0, 1fr)
+    var(--studio-rail) var(--studio-col-inspector, 336px);
 }
 .outline,
 .inspector {
@@ -2027,18 +2083,6 @@ body {
   color: var(--studio-text-tertiary);
   border-top: 1px solid var(--studio-border-subtle);
   font-size: 11px;
-}
-
-@media (max-width: 980px) {
-  .studio main { grid-template-columns: 190px minmax(0, 1fr); }
-  .inspector {
-    position: absolute;
-    inset-block: 52px 28px;
-    inset-inline-end: 0;
-    z-index: 15;
-    width: min(88vw, 336px);
-    box-shadow: -20px 0 50px rgb(0 0 0 / 30%);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

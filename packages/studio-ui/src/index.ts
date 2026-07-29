@@ -58,6 +58,7 @@ import { angularTargetManifest } from "@modyra/studio-target-angular";
 import { reactTargetManifest } from "@modyra/studio-target-react";
 import { buildLiveForm, createMockSubmitAction, vanillaReactivity, type MdyTypedForm, type MockServerConfig } from "@modyra/studio-preview";
 import { StudioCanvasController, StudioRuntimeSession } from "./canvas-controller.js";
+import { installColumns, type StudioColumns } from "./columns.js";
 import { Region, ScrollMemory } from "./regions.js";
 import { importProjectFromText, loadSession, saveSession } from "./storage.js";
 import "./studio.css";
@@ -763,6 +764,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   const history = new CommandHistory();
   /** Built once; from then on `render()` only updates the regions whose markup actually changed. */
   let shell: StudioShell | null = null;
+  /** Column widths and the narrow-window slide-overs; built with the shell, torn down with it. */
+  let columns: StudioColumns | null = null;
   const scroll = new ScrollMemory();
   /** Indexes for the current `project`, derived once per render — every handler reads this instead of rebuilding. */
   let indexes: StudioIndexes = buildIndexes(project);
@@ -2001,6 +2004,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         <header></header>
         <main>
           <aside class="outline" aria-label="Form outline"></aside>
+          <div class="studio-resizer" data-resize="outline" aria-label="Resize the outline, or show it when the window is narrow"></div>
           <div class="canvas-column">
             <section class="canvas" tabindex="-1">
               <div class="canvas-surface"></div>
@@ -2008,6 +2012,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
             <div class="dock"></div>
             <div class="palette-layer"></div>
           </div>
+          <div class="studio-resizer" data-resize="inspector" aria-label="Resize the properties panel, or show it when the window is narrow"></div>
           <aside class="inspector">
             <div class="inspector-tabs" role="tablist"></div>
             <div class="inspector-body"></div>
@@ -2041,6 +2046,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     scroll.track(inspectorBody);
     scroll.track(find<HTMLElement>(".outline"));
     canvasController.connect(canvas);
+    columns = installColumns(host);
 
     // One document-level handler for the whole shortcut set, bound once. Scoped to this mount so
     // an embed (the Astro page) never has its own keystrokes hijacked by a Studio that is not focused.
@@ -3172,6 +3178,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     previewSession.dispose();
     previewEffect = null;
     canvasController.dispose();
+    columns?.dispose();
+    columns = null;
     scroll.clear();
     document.removeEventListener("keydown", onGlobalKeydown);
     shell = null;
