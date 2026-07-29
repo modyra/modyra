@@ -32,7 +32,10 @@ for (const file of files.sort()) {
     // by asking for role "value" — this one does not.
     ? ["mdy-chip", "mdy-chip--centered", "mdy-chip--counter", "mdy-chip--selected"]
     : [];
-  const fileClasses = [...[...source.matchAll(/\bmdy-[a-z0-9_-]+/g)].map((m) => m[0]), ...fromContract].sort();
+  // `\b` treats the `y` in `--mdy-slider-fill-pct` as a word boundary, so a custom property lands in
+  // a manifest of *classes* looking exactly like one. Four did. The lookbehind drops them: a name
+  // preceded by a hyphen is the tail of `--mdy-…` or of `data-mdy-…`, and neither is a class.
+  const fileClasses = [...[...source.matchAll(/(?<![-\w])mdy-[a-z0-9_-]+/g)].map((m) => m[0]), ...fromContract].sort();
   const fileAria = [...source.matchAll(/\baria-[a-z-]+/g)].map((m) => m[0]).sort();
   const fileSelectors = [...source.matchAll(/selector:\s*["'`]([^"'`]+)["'`]/g)].map((m) => m[1]).sort();
   fileClasses.forEach((value) => classes.add(value));

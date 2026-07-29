@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, effect, ElementRef, viewChild, input } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_CSS_PROPERTIES, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -81,7 +81,7 @@ export class MdySliderComponent extends MdyBaseControl<number> {
       const max = this.max();
       if (!el) return;
       const pct = max !== min ? ((value - min) / (max - min)) * 100 : 0;
-      el.style.setProperty('--mdy-slider-fill-pct', `${pct}%`);
+      el.style.setProperty(MDY_CSS_PROPERTIES.control.sliderFill, `${pct}%`);
     });
   }
 
