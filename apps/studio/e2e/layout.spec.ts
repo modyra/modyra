@@ -13,6 +13,9 @@ test.beforeEach(async ({ page }) => {
 
 async function addFields(page: import("@playwright/test").Page, names: string[]): Promise<void> {
   for (const name of names) {
+    // From the form root each time: inserting goes inside whatever is selected, and these fields
+    // are meant to be root-level siblings.
+    await page.locator(".outline-root").click();
     await page.locator('[data-template="text"]').click();
     await page.locator("[data-name]").fill(name);
     await page.locator("[data-name]").blur();

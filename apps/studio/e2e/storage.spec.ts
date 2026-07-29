@@ -20,7 +20,7 @@ test("reload restores the last auto-saved session", async ({ page }) => {
   await showStructure(page); // a reload starts on the live form again
   await expect(page.locator(".outline .tree-node")).toHaveCount(1);
   // Restore does not preserve "last selected" (there is nothing to restore it from) — select the field explicitly.
-  await page.locator(".outline [data-select]").first().click();
+  await page.locator(".outline .tree [data-select]").first().click();
   await expect(page.locator("[data-name]")).toHaveValue("myFieldName");
 });
 
@@ -69,10 +69,10 @@ test("export via the JSON target, then Import that same file back in, round-trip
 
   await page.locator('[data-import-button]').locator("input[type=file]").setInputFiles(path);
   await expect(page.locator(".outline .tree-node")).toHaveCount(1);
-  await expect(page.locator('.outline [data-select]').first().locator(".node-label")).toContainText("Text");
+  await expect(page.locator('.outline .tree [data-select]').first().locator(".node-label")).toContainText("Text");
 
   // Re-selecting the imported field: the required validator survived the round-trip.
-  await page.locator(".outline [data-select]").first().click();
+  await page.locator(".outline .tree [data-select]").first().click();
   await expect(page.locator(".validator-row")).toHaveCount(1);
 });
 

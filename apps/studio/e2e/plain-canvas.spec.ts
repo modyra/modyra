@@ -323,6 +323,8 @@ test("live canvas drags groups to reorder and nest them", async ({ page }) => {
   await page.locator('[data-template="group"]').click();
   await page.locator('[data-name]').fill('billing');
   await page.locator('[data-name]').blur();
+  // Inserting goes inside the selected container, so a sibling group starts from the form root.
+  await page.locator('.outline-root').click();
   await page.locator('[data-template="group"]').click();
   await page.locator('[data-name]').fill('shipping');
   await page.locator('[data-name]').blur();
@@ -373,6 +375,7 @@ test("live canvas drags groups to reorder and nest them", async ({ page }) => {
 
 test("live canvas group controls reorder nest and return groups to root", async ({ page }) => {
   await page.locator('[data-template="group"]').click(); await page.locator('[data-name]').fill('billing'); await page.locator('[data-name]').blur();
+  await page.locator('.outline-root').click();
   await page.locator('[data-template="group"]').click(); await page.locator('[data-name]').fill('shipping'); await page.locator('[data-name]').blur();
   const groups = page.locator('.plain-canvas-group');
   const billingId = await groups.nth(0).getAttribute('data-plain-group');
@@ -419,6 +422,8 @@ test("live canvas field controls move fields into groups and back to root", asyn
   await page.locator('[data-name]').fill('shipping');
   await page.locator('[data-name]').blur();
   const groupId = await page.locator('[data-node]').first().getAttribute('data-node');
+  // The field starts at the root: this test is about the control that moves it into the group.
+  await page.locator('.outline-root').click();
   await page.locator('[data-template="text"]').click();
   await page.locator('[data-name]').fill('city');
   await page.locator('[data-name]').blur();
@@ -501,6 +506,8 @@ test("live canvas completes array authoring with row and container controls", as
   await page.locator('[data-template="group"]').click();
   await page.locator('[data-name]').fill('catalog'); await page.locator('[data-name]').blur();
   const groupId = await page.locator('[data-node]').first().getAttribute('data-node');
+  // The array starts at the root: this test drives the controls that move it in and out of a group.
+  await page.locator('.outline-root').click();
   await page.locator('[data-template="array"]').click();
   await page.locator('[data-name]').fill('items'); await page.locator('[data-name]').blur();
   const array = page.locator('.plain-canvas-array');
