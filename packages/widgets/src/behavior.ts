@@ -12,6 +12,13 @@ export type MdyWidgetKeyIntent =
   | { readonly type: "increment" }
   | { readonly type: "decrement" };
 
+/**
+ * How close to the viewport edge a popup may sit. Exported because it is part of the placement
+ * arithmetic an adapter or a test has to be able to reproduce: room above an anchor is
+ * `anchorTop - MDY_OVERLAY_VIEWPORT_MARGIN`, not `anchorTop`.
+ */
+export const MDY_OVERLAY_VIEWPORT_MARGIN = 12;
+
 export interface MdyOverlayGeometry {
   readonly viewportWidth: number;
   readonly viewportHeight: number;
@@ -24,6 +31,17 @@ export interface MdyOverlayGeometry {
   readonly minWidth: number;
   readonly preferred: "above" | "below";
   readonly pointerX?: number;
+  /**
+   * How tall the popup wants to be, gap included, when the host has measured it.
+   *
+   * This is what turns "a side with enough room" into "the side where the content is whole": a
+   * calendar with 200px below it and 500px above belongs above, and a policy that only knows
+   * `minSpace` puts it below and lets it scroll. Left out when nothing measured the popup, in which
+   * case the choice falls back to the minimum-space rule.
+   */
+  readonly desiredHeight?: number;
+  /** How wide the popup wants to be, when measured. Used to pick the edge its content fits from. */
+  readonly desiredWidth?: number;
 }
 
 export interface MdyOverlayDecision {
@@ -31,21 +49,78 @@ export interface MdyOverlayDecision {
   readonly alignment: "left" | "right";
   readonly maxHeight: number;
   readonly width: number;
+  /**
+   * Whether the content fits the space decided for it, so the popup shows whole and does not
+   * scroll. `true` when nothing measured the popup: no measurement is not evidence of a squeeze.
+   */
+  readonly fits: boolean;
+}
+
+/** Room between an anchor and the viewport edge on either side, margin already taken off. */
+function roomAround(input: MdyOverlayGeometry): { readonly above: number; readonly below: number } {
+  return {
+    above: Math.max(0, input.anchorTop - MDY_OVERLAY_VIEWPORT_MARGIN),
+    below: Math.max(0, input.viewportHeight - input.anchorBottom - MDY_OVERLAY_VIEWPORT_MARGIN),
+  };
 }
 
 /** Pure framework-independent overlay collision policy. Hosts only measure and apply coordinates. */
 export function decideOverlayPlacement(input: MdyOverlayGeometry): MdyOverlayDecision {
-  const below = Math.max(0, input.viewportHeight - input.anchorBottom - 12);
-  const above = Math.max(0, input.anchorTop - 12);
+  const { above, below } = roomAround(input);
+  const desired = input.desiredHeight;
+  const other = input.preferred === "below" ? "above" : "below";
+  const roomOn = (side: "above" | "below"): number => (side === "above" ? above : below);
+
   let placement: MdyOverlayDecision["placement"];
-  if (input.preferred === "below" && below >= input.minSpace) placement = "below";
+  if (desired !== undefined && roomOn(input.preferred) >= desired) {
+    // The side asked for holds the whole popup: nothing to weigh up.
+    placement = input.preferred;
+  } else if (desired !== undefined && roomOn(other) >= desired) {
+    // The preferred side would have cut the content; the other side shows it whole.
+    placement = other;
+  } else if (input.preferred === "below" && below >= input.minSpace) placement = "below";
   else if (input.preferred === "above" && above >= input.minSpace) placement = "above";
   else if (Math.max(above, below) >= input.minSpace) placement = above > below ? "above" : "below";
   else placement = "overlay";
+
+  // When the content is measured and neither side holds it, the roomier side is the one that cuts
+  // it least. Without a measurement this cannot be known, so the rule above stands.
+  if (desired !== undefined && placement !== "overlay" && roomOn(placement) < desired) {
+    placement = above > below ? "above" : "below";
+    if (roomOn(placement) < input.minSpace) placement = "overlay";
+  }
+
+  const alignment = decideOverlayAlignment(input);
+  const modalHeight = Math.round(input.viewportHeight * 0.7);
+  const maxHeight = placement === "overlay"
+    ? modalHeight
+    : Math.max(input.minSpace, roomOn(placement));
+  const fits = desired === undefined
+    ? true
+    : (placement === "overlay" ? modalHeight : roomOn(placement)) >= desired;
+  return { placement, alignment, maxHeight, width: Math.max(input.anchorWidth, input.minWidth), fits };
+}
+
+/**
+ * Which edge of the anchor the popup hangs from.
+ *
+ * The pointer (or the anchor's centre) decides which half of the viewport the popup opens into, and
+ * a measured width then overrules that when the chosen edge has no room for it — hanging left off a
+ * control near the right edge is how a content-sized calendar ends up half off-screen.
+ */
+export function decideOverlayAlignment(input: MdyOverlayGeometry): MdyOverlayDecision["alignment"] {
   const pointer = input.pointerX ?? (input.anchorLeft + input.anchorRight) / 2;
-  const alignment = pointer > input.viewportWidth / 2 ? "right" : "left";
-  const maxHeight = placement === "overlay" ? Math.round(input.viewportHeight * 0.7) : Math.max(input.minSpace, placement === "above" ? above : below);
-  return { placement, alignment, maxHeight, width: Math.max(input.anchorWidth, input.minWidth) };
+  const preferred = pointer > input.viewportWidth / 2 ? "right" : "left";
+  const width = input.desiredWidth;
+  if (width === undefined) return preferred;
+  const fromLeft = input.viewportWidth - input.anchorLeft - MDY_OVERLAY_VIEWPORT_MARGIN;
+  const fromRight = input.anchorRight - MDY_OVERLAY_VIEWPORT_MARGIN;
+  const room = preferred === "right" ? fromRight : fromLeft;
+  if (room >= width) return preferred;
+  const otherRoom = preferred === "right" ? fromLeft : fromRight;
+  // Only swap when the other edge is genuinely better; otherwise the coordinates get clamped and
+  // swapping would just move the same overflow to the opposite side.
+  return otherRoom > room ? (preferred === "right" ? "left" : "right") : preferred;
 }
 
 /**
@@ -64,9 +139,8 @@ export function stabilizeOverlayPlacement(
   input: MdyOverlayGeometry,
 ): MdyOverlayDecision {
   if (previous === null) return next;
-  const room = previous.placement === "above"
-    ? Math.max(0, input.anchorTop - 12)
-    : Math.max(0, input.viewportHeight - input.anchorBottom - 12);
+  const { above, below } = roomAround(input);
+  const room = previous.placement === "above" ? above : below;
   // The side it opened on no longer holds the popup: re-deciding is the lesser evil.
   if (previous.placement !== "overlay" && room < input.minSpace) return next;
   return {
@@ -74,6 +148,11 @@ export function stabilizeOverlayPlacement(
     alignment: previous.alignment,
     maxHeight: previous.maxHeight,
     width: next.width,
+    // Reported against the room the anchor has now: the shape is held, but whether the content
+    // still shows whole is a fact about this frame, not about the frame it opened in.
+    fits: input.desiredHeight === undefined
+      ? true
+      : (previous.placement === "overlay" ? previous.maxHeight : room) >= input.desiredHeight,
   };
 }
 
