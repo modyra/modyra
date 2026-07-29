@@ -3149,7 +3149,10 @@
     }
 
     .mdy-layout-column {
-        display: flex;
+        /* Both defaults are the behaviour a column had before it could be placed: it shows, and it
+           takes the track its position in the row gives it. A v3 slot overrides either per size. */
+        display: var(--mdy-layout-column-display, flex);
+        grid-column-start: var(--mdy-layout-column-start, auto);
         flex-direction: column;
         min-width: 0;
     }
@@ -3159,10 +3162,20 @@
        every row alike — the difference is that each step is now a number the layout supplies, so a
        form can say "two columns from tablet, four from desktop" and be tested at those widths.
        Every step falls back to the one below it, so declaring only `sm` still behaves. */
+    /* A column's own placement cascades the same way and for the same reason: what a size does not
+       say, it inherits from the next smaller one. This is Contract v3's per-slot `at` — where a field
+       sits and whether it shows, at a size — and it is why `hidden` is a `display` value rather than
+       a class: a class cannot be undone at a larger size without a second class saying the opposite,
+       and "hidden on a phone, shown from tablet" is the case worth having. */
     @media (min-width: 40rem) {
         .mdy-layout-columns {
             grid-template-columns:
                 repeat(var(--mdy-layout-column-count-sm, var(--mdy-layout-column-count, 1)), minmax(0, 1fr));
+        }
+
+        .mdy-layout-column {
+            display: var(--mdy-layout-column-display-sm, var(--mdy-layout-column-display, flex));
+            grid-column-start: var(--mdy-layout-column-start-sm, var(--mdy-layout-column-start, auto));
         }
     }
 
@@ -3174,6 +3187,15 @@
                         var(--mdy-layout-column-count-sm, var(--mdy-layout-column-count, 1))),
                     minmax(0, 1fr));
         }
+
+        .mdy-layout-column {
+            display:
+                var(--mdy-layout-column-display-md,
+                    var(--mdy-layout-column-display-sm, var(--mdy-layout-column-display, flex)));
+            grid-column-start:
+                var(--mdy-layout-column-start-md,
+                    var(--mdy-layout-column-start-sm, var(--mdy-layout-column-start, auto)));
+        }
     }
 
     @media (min-width: 80rem) {
@@ -3184,6 +3206,17 @@
                         var(--mdy-layout-column-count-md,
                             var(--mdy-layout-column-count-sm, var(--mdy-layout-column-count, 1)))),
                     minmax(0, 1fr));
+        }
+
+        .mdy-layout-column {
+            display:
+                var(--mdy-layout-column-display-lg,
+                    var(--mdy-layout-column-display-md,
+                        var(--mdy-layout-column-display-sm, var(--mdy-layout-column-display, flex))));
+            grid-column-start:
+                var(--mdy-layout-column-start-lg,
+                    var(--mdy-layout-column-start-md,
+                        var(--mdy-layout-column-start-sm, var(--mdy-layout-column-start, auto))));
         }
     }
 

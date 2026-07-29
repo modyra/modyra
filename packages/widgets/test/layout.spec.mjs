@@ -11,7 +11,10 @@ import {
   MDY_LAYOUT_COLUMN_COUNT_PROPERTY,
   MDY_LAYOUT_COLUMN_COUNT_PROPERTIES,
   MDY_LAYOUT_BREAKPOINTS,
+  MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES,
+  MDY_LAYOUT_COLUMN_START_PROPERTIES,
   layoutNodeAttributes,
+  layoutSlotStyle,
 } from "../dist/index.js";
 
 test("the layout vocabulary is fixed and namespaced", () => {
@@ -74,5 +77,35 @@ test("the breakpoints are named once, and the foundation switches at those width
   for (const [size, width] of Object.entries(MDY_LAYOUT_BREAKPOINTS)) {
     if (size === "base") continue;
     assert.ok(css.includes(`@media (min-width: ${width})`), `the foundation never switches at ${size} (${width})`);
+  }
+});
+
+test("a slot's placement becomes the column's own properties, per size", () => {
+  const style = layoutSlotStyle({ base: { hidden: true }, md: { column: 2 }, lg: { column: 1, hidden: false } });
+
+  assert.equal(style[MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES.base], "none");
+  assert.equal(style[MDY_LAYOUT_COLUMN_START_PROPERTIES.md], "2");
+  assert.equal(style[MDY_LAYOUT_COLUMN_START_PROPERTIES.lg], "1");
+  // `hidden: false` has to be emitted, not skipped: it is how a size undoes a smaller one's hiding,
+  // and the whole reason visibility is a `display` value rather than a class.
+  assert.equal(style[MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES.lg], "flex");
+
+  // A size that was not authored emits nothing, so the CSS falls back to the one below it.
+  assert.equal(style[MDY_LAYOUT_COLUMN_START_PROPERTIES.sm], undefined);
+  assert.equal(style[MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES.md], undefined);
+});
+
+test("a slot that says nothing styles nothing", () => {
+  assert.deepEqual(layoutSlotStyle(undefined), {});
+  assert.deepEqual(layoutSlotStyle({}), {});
+});
+
+test("the foundation reads every placement property the contract can emit", () => {
+  const css = readFileSync(new URL("../../styles/src/modyra.css", import.meta.url), "utf8");
+  for (const property of [
+    ...Object.values(MDY_LAYOUT_COLUMN_START_PROPERTIES),
+    ...Object.values(MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES),
+  ]) {
+    assert.ok(css.includes(`var(${property}`), `the foundation never reads ${property}`);
   }
 });
