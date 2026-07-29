@@ -179,6 +179,66 @@ test("a group slot keeps its identity outside a row too", async () => {
   ]);
 });
 
+test("a per-breakpoint placement raises the contract to v3; nothing else does", async () => {
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [{
+      kind: "columns",
+      id: "row",
+      columns: [[{ nodeId: "nd_country" }], [{ nodeId: "nd_coupon", at: { base: { hidden: true }, md: { column: 2 } } }]],
+      at: { sm: 2 },
+    }],
+  };
+
+  const { contract, diagnostics } = compileToContract(project);
+
+  assert.ok(contract, JSON.stringify(diagnostics));
+  assert.equal(contract.version, 3, "a slot that places itself needs v3 to say so");
+  assert.deepEqual(contract.layout, [{
+    kind: "columns",
+    id: "row",
+    columns: [["country"], [{ ref: "coupon", at: { base: { hidden: true }, md: { column: 2 } } }]],
+    at: { sm: 2 },
+  }]);
+  assert.ok(!diagnostics.some((d) => d.severity === "error"));
+});
+
+test("a row's track counts ride v2, so an unplaced form stays a v2 document", async () => {
+  // The version is the lowest one that can say what the project says. Authoring a breakpoint count
+  // is v2's own feature, so it must not drag a form onto v3 and every reader of it with it.
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [{ kind: "columns", id: "row", columns: [[{ nodeId: "nd_city" }], [{ nodeId: "nd_zip" }]], at: { sm: 2 } }],
+  };
+
+  const { contract } = compileToContract(project);
+
+  assert.ok(contract);
+  assert.equal(contract.version, 2);
+  assert.deepEqual(contract.layout[0].at, { sm: 2 });
+});
+
+test("placement a row could not honour is dropped, never the form", async () => {
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [{
+      kind: "columns",
+      id: "row",
+      // A count past the row's two tracks, and a size that says nothing: both are what a
+      // half-finished edit in the canvas leaves behind, and neither may take the form down.
+      columns: [[{ nodeId: "nd_city" }], [{ nodeId: "nd_zip", at: { sm: {} } }]],
+      at: { sm: 9 },
+    }],
+  };
+
+  const { contract, diagnostics } = compileToContract(project);
+
+  assert.ok(contract, JSON.stringify(diagnostics));
+  assert.equal(contract.version, 2, "nothing placeable survived, so nothing needed v3");
+  assert.equal(contract.layout[0].at, undefined);
+  assert.deepEqual(contract.layout[0].columns, [["shipping.city"], ["shipping.zip"]]);
+});
+
 test("every kind Studio offers is a kind the widget catalog knows", async () => {
   // Studio's field kinds are its own vocabulary — `date`, `time` — but what they compile to must be
   // the catalog's. A target the catalog does not have would produce a contract that every renderer

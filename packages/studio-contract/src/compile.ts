@@ -25,7 +25,9 @@ import {
   type MdyStudioProject,
   type StudioDiagnostic,
   type StudioLayoutChild,
+  type StudioLayoutColumns,
   type StudioLayoutNode,
+  type StudioLayoutSlot,
   type StudioSchemaNode,
 } from "@modyra/studio-model";
 import {
@@ -33,9 +35,11 @@ import {
   type MdyDynamicField,
   type MdyDynamicFieldNode,
   type MdyDynamicFormConfigV2,
+  type MdyDynamicFormConfigV3,
   type MdyDynamicGroupNode,
   type MdyDynamicLayoutChild,
   type MdyDynamicLayoutNode,
+  type MdyDynamicLayoutSlot,
   type MdyDynamicNode,
   type MdyDynamicValidators,
 } from "@modyra/core/dynamic-config";
@@ -43,8 +47,17 @@ import {
 // so this package still ships with no runtime dependency beyond core and the studio model.
 import type { MdyWidgetKind } from "@modyra/widgets";
 
+/**
+ * What Studio compiles to.
+ *
+ * A union rather than v3 outright: the version a project compiles to is the lowest one that can say
+ * what the project says, so a form that never authored a per-breakpoint placement still produces the
+ * v2 document every existing reader expects.
+ */
+export type StudioContract = MdyDynamicFormConfigV2 | MdyDynamicFormConfigV3;
+
 export interface CompileResult {
-  contract: MdyDynamicFormConfigV2 | null;
+  contract: StudioContract | null;
   diagnostics: StudioDiagnostic[];
 }
 
@@ -226,9 +239,52 @@ function mapNode(node: StudioSchemaNode, diagnostics: StudioDiagnostic[]): MdyDy
  * one by one and the group stops existing; a section is a single child, so a row holding a group is
  * a row of two things rather than a row of however many fields the group happens to contain.
  */
-function mapLayout(project: MdyStudioProject, diagnostics: StudioDiagnostic[]): MdyDynamicLayoutNode[] {
+/** The sizes a layout may be authored against; anything else in a stale project is dropped. */
+const LAYOUT_SIZES = ["base", "sm", "md", "lg"] as const;
+
+/**
+ * A slot's placement, keeping only what a renderer can act on.
+ *
+ * A size that says nothing is dropped rather than emitted: the Contract refuses an empty one, and a
+ * project half-edited in the canvas is the ordinary way to end up with one.
+ */
+function childPlacement(child: StudioLayoutSlot): MdyDynamicLayoutSlot["at"] | null {
+  if (!child.at) return null;
+  const out: Record<string, { column?: number; hidden?: boolean }> = {};
+  for (const size of LAYOUT_SIZES) {
+    const placement = child.at[size];
+    if (!placement) continue;
+    const column = typeof placement.column === "number" && Number.isInteger(placement.column) && placement.column >= 1
+      ? placement.column
+      : undefined;
+    const hidden = typeof placement.hidden === "boolean" ? placement.hidden : undefined;
+    if (column === undefined && hidden === undefined) continue;
+    out[size] = { ...(column !== undefined ? { column } : {}), ...(hidden !== undefined ? { hidden } : {}) };
+  }
+  return Object.keys(out).length ? (out as MdyDynamicLayoutSlot["at"]) : null;
+}
+
+/** A row's track counts, dropped where they are not a count a row could have. */
+function rowCounts(
+  at: StudioLayoutColumns["at"],
+  declared: number,
+): Partial<Record<(typeof LAYOUT_SIZES)[number], number>> | null {
+  if (!at) return null;
+  const out: Partial<Record<(typeof LAYOUT_SIZES)[number], number>> = {};
+  for (const size of LAYOUT_SIZES) {
+    const count = at[size];
+    if (typeof count !== "number" || !Number.isInteger(count) || count < 1 || count > declared) continue;
+    out[size] = count;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+function mapLayout(
+  project: MdyStudioProject,
+  diagnostics: StudioDiagnostic[],
+): { nodes: MdyDynamicLayoutNode[]; usesSlots: boolean } {
   const source = project.presentation.layout ?? [];
-  if (!source.length) return [];
+  if (!source.length) return { nodes: [], usesSlots: false };
   const idx = buildIndexes(project);
 
   const leafNames = (nodeId: string): string[] => {
@@ -246,6 +302,8 @@ function mapLayout(project: MdyStudioProject, diagnostics: StudioDiagnostic[]): 
   // A field may be placed once. Deduping here means a stale layout can never produce a
   // Contract the strict parser rejects — which would otherwise take the whole form down.
   const emitted = new Set<string>();
+  /** Set when a slot compiles to v3's `{ ref, at }`, which is what raises the document's version. */
+  let usesSlots = false;
   const mapChild = (child: StudioLayoutChild): MdyDynamicLayoutChild[] => {
     if ("nodeId" in child) {
       const names = leafNames(child.nodeId).filter((name) => {
@@ -274,6 +332,14 @@ function mapLayout(project: MdyStudioProject, diagnostics: StudioDiagnostic[]): 
           children: names,
         }];
       }
+      // A slot with something to say compiles to v3's `{ ref, at }`; one with nothing to say stays
+      // the bare name it has always been, so authoring a breakpoint somewhere in the form does not
+      // rewrite every other slot in it.
+      const placement = childPlacement(child);
+      if (placement && names.length === 1) {
+        usesSlots = true;
+        return [{ ref: names[0]!, at: placement }];
+      }
       return names;
     }
     const mapped = mapNode(child);
@@ -288,13 +354,16 @@ function mapLayout(project: MdyStudioProject, diagnostics: StudioDiagnostic[]): 
     }
     const columns = node.columns.map((column) => column.flatMap(mapChild)).filter((column) => column.length > 0);
     if (columns.length < 2) return null; // a one-column row is not a layout, it is just the field
-    return { kind: "columns", id: node.id, columns };
+    // The row's own track counts are v2's and ride along unchanged; only a slot's placement is v3.
+    const at = rowCounts(node.at, columns.length);
+    return { kind: "columns", id: node.id, columns, ...(at ? { at } : {}) };
   };
 
-  return source.flatMap((node) => {
+  const nodes = source.flatMap((node) => {
     const mapped = mapNode(node);
     return mapped ? [mapped] : [];
   });
+  return { nodes, usesSlots };
 }
 
 export function compileToContract(project: MdyStudioProject): CompileResult {
@@ -335,9 +404,12 @@ export function compileToContract(project: MdyStudioProject): CompileResult {
     return { contract: null, diagnostics };
   }
 
-  const layout = mapLayout(normalized, diagnostics);
-  const candidate: MdyDynamicFormConfigV2 = {
-    version: 2,
+  const { nodes: layout, usesSlots } = mapLayout(normalized, diagnostics);
+  // The version is raised only by what the project actually uses. A form that never authored a
+  // per-breakpoint placement compiles to the v2 it always did, so nothing downstream — an SDK, a
+  // stored contract, a target that reads the version — has to change because v3 exists.
+  const candidate: StudioContract = {
+    version: usesSlots ? 3 : 2,
     id: normalized.id,
     schema,
     ...(layout.length ? { layout } : {}),

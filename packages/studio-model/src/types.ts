@@ -168,7 +168,27 @@ export interface StudioFormBehaviors {
  * A slot in the form layout: a node (by ID — never a path, ADR-0002) or a nested layout node,
  * so a column row can sit inside a section.
  */
-export type StudioLayoutChild = NodeRef | StudioLayoutNode;
+/** The sizes a layout is authored against, mirroring `MDY_LAYOUT_BREAKPOINTS`. */
+export type StudioLayoutBreakpoint = "base" | "sm" | "md" | "lg";
+
+/** Where a slot sits and whether it shows, at one size. Contract v3's per-slot `at`. */
+export interface StudioSlotPlacement {
+  /** 1-based, like a grid line. */
+  column?: number;
+  hidden?: boolean;
+}
+
+/**
+ * A layout slot: a reference, and optionally what that reference does at each size.
+ *
+ * It extends `NodeRef` rather than replacing it, so every `"nodeId" in child` reading of a layout
+ * keeps working and a slot with nothing to say serializes as the `{ nodeId }` it always was.
+ */
+export interface StudioLayoutSlot extends NodeRef {
+  at?: Partial<Record<StudioLayoutBreakpoint, StudioSlotPlacement>>;
+}
+
+export type StudioLayoutChild = StudioLayoutSlot | StudioLayoutNode;
 
 export interface StudioLayoutSection {
   kind: "section";
@@ -181,6 +201,8 @@ export interface StudioLayoutColumns {
   kind: "columns";
   id: string;
   columns: StudioLayoutChild[][];
+  /** How many tracks the row shows at each size. Omitted sizes inherit the next smaller one. */
+  at?: Partial<Record<StudioLayoutBreakpoint, number>>;
 }
 
 export type StudioLayoutNode = StudioLayoutSection | StudioLayoutColumns;
