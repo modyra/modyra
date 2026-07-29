@@ -28,22 +28,12 @@
             (touchstart)="onDragStart($event)"
           >
             <div class="mdy-timepicker-dial__hand" [style.transform]="'rotate(' + handRotation() + 'deg)'"></div>
-            @if (focusedField() === 'hour') {
-              @for (h of [12,1,2,3,4,5,6,7,8,9,10,11]; track h) {
-                <div class="mdy-timepicker-dial__number"
-                     [class.mdy-timepicker-dial__number--selected]="h === numericHour()"
-                     [style.--index]="h">
-                  {{h}}
-                </div>
-              }
-            } @else {
-              @for (m of [0,5,10,15,20,25,30,35,40,45,50,55]; track m; let i = $index) {
-                <div class="mdy-timepicker-dial__number"
-                     [class.mdy-timepicker-dial__number--selected]="m === (Math.round(numericMinute() / 5) * 5) % 60"
-                     [style.--index]="i === 0 ? 12 : i">
-                  {{m < 10 ? '0' + m : m}}
-                </div>
-              }
+            @for (number of dialNumbers(); track number.value) {
+              <div class="mdy-timepicker-dial__number"
+                   [class.mdy-timepicker-dial__number--selected]="number.value === selectedDialValue()"
+                   [style.--index]="number.index">
+                {{ number.label }}
+              </div>
             }
           </div>
         </div>
