@@ -30,18 +30,61 @@ export const MDY_LAYOUT_COLUMN_COUNT_PROPERTY = MDY_CSS_PROPERTIES.layout.column
 
 export type MdyLayoutPart = keyof typeof MDY_LAYOUT_CLASSES;
 
+/**
+ * The sizes a layout can be authored against.
+ *
+ * Mobile-first and deliberately few: three names cover phone, tablet and desktop, and a form that
+ * needs a fourth is a form arguing with its own content. The widths live here rather than in each
+ * theme because a row that becomes two columns at `sm` has to do it at the same width everywhere —
+ * a breakpoint that moved per theme would make a layout untestable, which is the point of naming it.
+ */
+export const MDY_LAYOUT_BREAKPOINTS = Object.freeze({
+  /** Narrowest first: what a row looks like before any breakpoint applies. */
+  base: "0",
+  sm: "40rem",
+  md: "64rem",
+  lg: "80rem",
+});
+
+export type MdyLayoutBreakpoint = keyof typeof MDY_LAYOUT_BREAKPOINTS;
+
+/** How many tracks a row has, per breakpoint. Omitted sizes inherit the next smaller one. */
+export type MdyLayoutColumnCounts = Partial<Readonly<Record<MdyLayoutBreakpoint, number>>>;
+
+/** The custom property carrying the track count at each size. */
+export const MDY_LAYOUT_COLUMN_COUNT_PROPERTIES: Readonly<Record<MdyLayoutBreakpoint, string>> = Object.freeze({
+  base: MDY_CSS_PROPERTIES.layout.columnCount,
+  sm: `${MDY_CSS_PROPERTIES.layout.columnCount}-sm`,
+  md: `${MDY_CSS_PROPERTIES.layout.columnCount}-md`,
+  lg: `${MDY_CSS_PROPERTIES.layout.columnCount}-lg`,
+});
+
 /** The classes and inline style a layout node needs, ready to apply. */
 export function layoutNodeAttributes(
-  node: { readonly kind: "section" | "columns"; readonly id: string; readonly columns?: ReadonlyArray<unknown> },
+  node: {
+    readonly kind: "section" | "columns";
+    readonly id: string;
+    readonly columns?: ReadonlyArray<unknown>;
+    /** Tracks per breakpoint, when the row is authored responsively. */
+    readonly at?: MdyLayoutColumnCounts;
+  },
 ): { readonly className: string; readonly style: Readonly<Record<string, string>>; readonly dataset: Readonly<Record<string, string>> } {
   if (node.kind === "section") {
     return { className: MDY_LAYOUT_CLASSES.section, style: {}, dataset: { layoutId: node.id } };
   }
-  return {
-    className: MDY_LAYOUT_CLASSES.columns,
-    // The count drives the grid; a row with no declared columns still occupies one track rather
-    // than collapsing to zero-width tracks.
-    style: { [MDY_LAYOUT_COLUMN_COUNT_PROPERTY]: String(Math.max(1, node.columns?.length ?? 1)) },
-    dataset: { layoutId: node.id },
+  const declared = Math.max(1, node.columns?.length ?? 1);
+  const at = node.at ?? {};
+  // Mobile-first, and the default is the behaviour the foundation already had: one column until the
+  // first breakpoint, then the tracks the row declares. Authoring `at` overrides any of the four.
+  const counts: Record<string, number> = {
+    base: at.base ?? 1,
+    sm: at.sm ?? declared,
+    ...(at.md !== undefined ? { md: at.md } : {}),
+    ...(at.lg !== undefined ? { lg: at.lg } : {}),
   };
+  const style: Record<string, string> = {};
+  for (const [size, count] of Object.entries(counts)) {
+    style[MDY_LAYOUT_COLUMN_COUNT_PROPERTIES[size as MdyLayoutBreakpoint]] = String(Math.max(1, count));
+  }
+  return { className: MDY_LAYOUT_CLASSES.columns, style, dataset: { layoutId: node.id } };
 }

@@ -46,7 +46,9 @@ describe("MdyDynamicFormComponent, declarative layout", () => {
     const row = section!.querySelector<HTMLElement>(`.${MDY_LAYOUT_CLASSES.columns}`);
     expect(row).toBeTruthy();
     // The count is what the foundation divides the row by; a wrong one silently misdraws the grid.
-    expect(row!.style.getPropertyValue(MDY_LAYOUT_COLUMN_COUNT_PROPERTY)).toBe("2");
+    // Mobile-first: a row stacks at the narrowest size and takes its declared tracks from `sm` up.
+    expect(row!.style.getPropertyValue(MDY_LAYOUT_COLUMN_COUNT_PROPERTY)).toBe("1");
+    expect(row!.style.getPropertyValue(`${MDY_LAYOUT_COLUMN_COUNT_PROPERTY}-sm`)).toBe("2");
     expect(row!.querySelectorAll(`.${MDY_LAYOUT_CLASSES.column}`).length).toBe(2);
   });
 

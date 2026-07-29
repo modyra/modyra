@@ -257,7 +257,9 @@ test("layout renders sections and column rows, and nests one inside the other", 
 
   const row = section.querySelector(".mdy-layout-columns");
   assert.ok(row, "expected the nested columns row inside the section");
-  assert.equal(row.style.getPropertyValue("--mdy-layout-column-count"), "2");
+  // Mobile-first: the row stacks at the narrowest size and takes its declared tracks from `sm` up.
+  assert.equal(row.style.getPropertyValue("--mdy-layout-column-count"), "1");
+  assert.equal(row.style.getPropertyValue("--mdy-layout-column-count-sm"), "2");
   const columns = row.querySelectorAll(".mdy-layout-column");
   assert.equal(columns.length, 2);
   assert.ok(columns[0].querySelector("input"), "first column renders a real control");
@@ -642,7 +644,8 @@ test("contract v2 layout renders the canonical grid vocabulary", async () => {
   const row = section.querySelector(`.${MDY_LAYOUT_CLASSES.columns}`);
   assert.ok(row, "the column row is rendered with the contract's class");
   // The count is what the foundation divides the row by; a wrong one silently misdraws the grid.
-  assert.equal(row.style.getPropertyValue(MDY_LAYOUT_COLUMN_COUNT_PROPERTY), "2");
+  assert.equal(row.style.getPropertyValue(MDY_LAYOUT_COLUMN_COUNT_PROPERTY), "1");
+  assert.equal(row.style.getPropertyValue(`${MDY_LAYOUT_COLUMN_COUNT_PROPERTY}-sm`), "2");
   assert.equal(row.querySelectorAll(`.${MDY_LAYOUT_CLASSES.column}`).length, 2);
 
   // Fields land where the layout put them, and one the layout does not mention still renders.
