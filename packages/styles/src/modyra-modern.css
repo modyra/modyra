@@ -282,29 +282,6 @@
         padding-block: 0.25rem;
     }
 
-    .mdy-multiselect__chip {
-        width: auto;
-        padding: 0.125rem 0.5rem;
-        border: 1px solid var(--mdy-outline-subtle);
-        border-radius: 999px;
-        background: transparent;
-        color: var(--mdy-on-surface);
-        font: inherit;
-        font-size: var(--mdy-helper-font-size);
-        cursor: pointer;
-    }
-
-    .mdy-multiselect__chip--selected {
-        border-color: transparent;
-        background: var(--mdy-primary);
-        color: var(--mdy-on-primary);
-    }
-
-    .mdy-multiselect__chip--disabled {
-        opacity: 0.38;
-        cursor: not-allowed;
-    }
-
     /* Radio and segmented groups are lists of choices, not a single value in a box — the
        frame around them says "text field" and is exactly what the boolean wrapper drops. */
     .mdy-renderer--radio-group .mdy-input-wrapper,
@@ -401,8 +378,7 @@
     list-style: none;
 }
 
-.mdy-popup .mdy-select__option,
-.mdy-popup .mdy-multiselect__option {
+.mdy-popup .mdy-select__option {
     min-height: 2.25rem;
     display: flex;
     align-items: center;
@@ -417,12 +393,10 @@
     cursor: pointer;
 }
 .mdy-popup .mdy-select__option:hover,
-.mdy-popup .mdy-select__option--active,
-.mdy-popup .mdy-multiselect__option:hover {
+.mdy-popup .mdy-select__option--active {
     background: color-mix(in srgb, var(--mdy-primary) 12%, transparent);
 }
-.mdy-popup .mdy-select__option--selected,
-.mdy-popup .mdy-multiselect__chip--selected {
+.mdy-popup .mdy-select__option--selected {
     color: var(--mdy-primary);
     font-weight: 700;
 }

@@ -70,7 +70,6 @@
     --mdy-toggle-width: 3.25rem;
     --mdy-toggle-height: 1.75rem;
     --mdy-toggle-thumb-size: 1.5rem;
-    --mdy-toggle-thumb-size-checked: 1.5rem;
     --mdy-toggle-thumb-offset: 0.125rem;
     --mdy-toggle-thumb-color: #fff;
     --mdy-toggle-thumb-color-checked: #fff;
@@ -201,22 +200,6 @@
 .mdy-renderer.mdy-floating-label .mdy-label--filled {
     color: var(--ion-color-medium);
     /* Keeps gray unless focused */
-}
-
-/* Ensure the datepicker buttons align correctly with the flat border */
-.mdy-datepicker__input-group>input {
-    border-bottom: 1px solid var(--ion-color-medium) !important;
-}
-
-.mdy-datepicker__input-group>input:focus {
-    box-shadow: var(--mdy-input-focus-shadow);
-    border-bottom-color: var(--ion-color-primary) !important;
-}
-
-.mdy-datepicker__input-group>button {
-    background: var(--mdy-input-bg);
-    border: none;
-    border-bottom: 1px solid var(--ion-color-medium);
 }
 
 /* ─── Checkbox & Toggle Shadows ───────────────────────────────────────────── */

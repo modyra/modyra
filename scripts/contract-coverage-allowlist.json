@@ -39,14 +39,6 @@
       "modyra.css"
     ]
   },
-  "mdy-colors__arrow--open": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
   "mdy-colors__dropdown-header": {
     "kind": "drift",
     "adapters": [
@@ -55,20 +47,6 @@
     ],
     "themes": [
       "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-colors__native-picker": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-colors__swatch-toggle": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
       "modyra.css"
     ]
   },
@@ -209,15 +187,6 @@
       "lit"
     ],
     "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__input-group": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-ionic.css",
-      "modyra-ios.css",
       "modyra.css"
     ]
   },
@@ -628,43 +597,6 @@
     ],
     "themes": []
   },
-  "mdy-multiselect__chip": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-modern.css"
-    ]
-  },
-  "mdy-multiselect__chip--disabled": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-modern.css"
-    ]
-  },
-  "mdy-multiselect__chip--selected": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-modern.css"
-    ]
-  },
-  "mdy-multiselect__label": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-multiselect__option": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-modern.css"
-    ]
-  },
   "mdy-multiselect--open": {
     "kind": "unstyled",
     "adapters": [
@@ -672,42 +604,6 @@
       "lit"
     ],
     "themes": []
-  },
-  "mdy-multiselect-overlay": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-multiselect-overlay__option": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-ios.css"
-    ]
-  },
-  "mdy-multiselect-overlay__option--selected": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-ios.css"
-    ]
-  },
-  "mdy-multiselect-overlay__panel--above": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-multiselect-overlay__panel--overlay": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra.css"
-    ]
   },
   "mdy-overlay--open": {
     "kind": "unstyled",
@@ -819,21 +715,6 @@
     ],
     "themes": []
   },
-  "mdy-radio-group-label": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-range-calendar": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra-material.css"
-    ]
-  },
   "mdy-segmented__button--first": {
     "kind": "unstyled",
     "adapters": [
@@ -849,13 +730,6 @@
       "lit"
     ],
     "themes": []
-  },
-  "mdy-segmented-label": {
-    "kind": "dead",
-    "adapters": [],
-    "themes": [
-      "modyra.css"
-    ]
   },
   "mdy-select": {
     "kind": "drift",
@@ -945,13 +819,6 @@
     "adapters": [
       "angular"
     ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-switch": {
-    "kind": "dead",
-    "adapters": [],
     "themes": [
       "modyra.css"
     ]
