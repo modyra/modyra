@@ -50,7 +50,11 @@ for (const [kind, relative] of Object.entries(renderers)) {
   else missingBehavior.push({ kind, missing });
 }
 const overlaySource = readFileSync(resolve(root, "packages/angular/src/lib/core/overlay-control.directive.ts"), "utf8");
-const sharedOverlayPlacement = overlaySource.includes("decideOverlayPlacement");
+// `anchorOverlay` is how a renderer consumes the shared placement policy now: it takes the measured
+// geometry and returns the decision *and* the coordinates. `decideOverlayPlacement` is the policy it
+// calls, and a renderer reaching for it directly is still consuming the contract — either satisfies
+// this. What must never pass is a renderer computing a placement of its own.
+const sharedOverlayPlacement = overlaySource.includes("anchorOverlay") || overlaySource.includes("decideOverlayPlacement");
 const sharedOverlayLifecycle = overlaySource.includes("overlayLifecycleTransition");
 const fixturePath = resolve(root, "packages/widgets/contract-baseline/angular-dom/source-parity.json");
 const fixtureFailures = [];
