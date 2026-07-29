@@ -8,6 +8,8 @@
  * any of them.
  */
 
+import { MDY_CSS_PROPERTIES } from "./css.js";
+
 /** Canonical class vocabulary for declarative layout. */
 export const MDY_LAYOUT_CLASSES = Object.freeze({
   /** A titled group of fields. */
@@ -24,7 +26,7 @@ export const MDY_LAYOUT_CLASSES = Object.freeze({
  * Set by the renderer on a columns row. The foundation divides the row into this many tracks, so a
  * three-column row needs no extra class and no per-count CSS.
  */
-export const MDY_LAYOUT_COLUMN_COUNT_PROPERTY = "--mdy-layout-column-count";
+export const MDY_LAYOUT_COLUMN_COUNT_PROPERTY = MDY_CSS_PROPERTIES.layout.columnCount;
 
 export type MdyLayoutPart = keyof typeof MDY_LAYOUT_CLASSES;
 

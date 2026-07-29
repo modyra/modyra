@@ -12,6 +12,7 @@
  * to copy these onto the element.
  */
 import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
+import { MDY_CSS_PROPERTIES } from "./css.js";
 import {
   decideOverlayPlacement,
   stabilizeOverlayPlacement,
@@ -174,8 +175,9 @@ export function anchorOverlay(
   }
 
   const px = (value: number): string => `${Math.round(value)}px`;
+  const prop = MDY_CSS_PROPERTIES.overlay;
   const properties: Record<string, string> = {
-    "--mdy-overlay-max-height": px(Math.max(0, decision.maxHeight - gap)),
+    [prop.maxHeight]: px(Math.max(0, decision.maxHeight - gap)),
   };
 
   const margin = MDY_OVERLAY_VIEWPORT_MARGIN;
@@ -186,24 +188,24 @@ export function anchorOverlay(
 
   if (decision.placement === "overlay") {
     // Centred on the viewport: there is no side left to attach to.
-    properties["--mdy-overlay-top"] = "50%";
-    properties["--mdy-overlay-bottom"] = "auto";
-    properties["--mdy-overlay-left"] = "50%";
-    properties["--mdy-overlay-right"] = "auto";
-    properties["--mdy-overlay-transform"] = "translate(-50%, -50%)";
-    properties["--mdy-overlay-max-height"] = px(Math.round(viewport.height * 0.7));
-    properties["--mdy-overlay-max-width"] = px(spannable);
-    if (options.matchAnchorWidth) properties["--mdy-overlay-width"] = px(decision.width);
+    properties[prop.top] = "50%";
+    properties[prop.bottom] = "auto";
+    properties[prop.left] = "50%";
+    properties[prop.right] = "auto";
+    properties[prop.transform] = "translate(-50%, -50%)";
+    properties[prop.maxHeight] = px(Math.round(viewport.height * 0.7));
+    properties[prop.maxWidth] = px(spannable);
+    if (options.matchAnchorWidth) properties[prop.width] = px(decision.width);
     return { decision, properties, placement: decision.placement };
   }
 
-  properties["--mdy-overlay-transform"] = "none";
+  properties[prop.transform] = "none";
   if (decision.placement === "above") {
-    properties["--mdy-overlay-top"] = "auto";
-    properties["--mdy-overlay-bottom"] = px(viewport.height - anchor.top + gap);
+    properties[prop.top] = "auto";
+    properties[prop.bottom] = px(viewport.height - anchor.top + gap);
   } else {
-    properties["--mdy-overlay-top"] = px(anchor.bottom + gap);
-    properties["--mdy-overlay-bottom"] = "auto";
+    properties[prop.top] = px(anchor.bottom + gap);
+    properties[prop.bottom] = "auto";
   }
 
   // Horizontally the popup hangs from one edge of its anchor, and stays inside the viewport.
@@ -222,25 +224,25 @@ export function anchorOverlay(
 
   if (wanted <= roomFromEdge) {
     if (decision.alignment === "right") {
-      properties["--mdy-overlay-left"] = "auto";
-      properties["--mdy-overlay-right"] = px(viewport.width - anchor.right);
+      properties[prop.left] = "auto";
+      properties[prop.right] = px(viewport.width - anchor.right);
     } else {
-      properties["--mdy-overlay-left"] = px(anchor.left);
-      properties["--mdy-overlay-right"] = "auto";
+      properties[prop.left] = px(anchor.left);
+      properties[prop.right] = "auto";
     }
-    properties["--mdy-overlay-max-width"] = px(Math.min(spannable, roomFromEdge));
+    properties[prop.maxWidth] = px(Math.min(spannable, roomFromEdge));
   } else {
     // Pushed back inside: both coordinates are stated, because a popup that is no longer aligned to
     // its anchor's edge has no edge left to inherit.
     const span = Math.min(wanted, spannable);
     const hanging = decision.alignment === "right" ? anchor.right - span : anchor.left;
     const left = clamp(hanging, margin, viewport.width - span - margin);
-    properties["--mdy-overlay-left"] = px(left);
-    properties["--mdy-overlay-right"] = "auto";
-    properties["--mdy-overlay-max-width"] = px(spannable);
+    properties[prop.left] = px(left);
+    properties[prop.right] = "auto";
+    properties[prop.maxWidth] = px(spannable);
   }
 
-  if (options.matchAnchorWidth) properties["--mdy-overlay-width"] = px(decision.width);
+  if (options.matchAnchorWidth) properties[prop.width] = px(decision.width);
 
   return { decision, properties, placement: decision.placement };
 }

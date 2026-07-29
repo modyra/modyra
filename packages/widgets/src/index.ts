@@ -60,6 +60,7 @@ export * from "./field/index.js";
 
 export { MDY_CHIP_CLASSES, multiselectChipClasses, type MdyChipAppearance, type MdyChipMode, type MdyChipPart, type MdyChipRole } from "./chip.js";
 export { MDY_STATE_MODIFIERS, stateClass, type MdyPartState, type MdyStateName } from "./state.js";
+export { MDY_CSS_PROPERTIES, MDY_CSS_PROPERTY_NAMES, type MdyOverlayProperty } from "./css.js";
 export { partClasses, partStates, widgetStateClasses } from "./part-classes.js";
 export { MDY_LAYOUT_CLASSES, MDY_LAYOUT_COLUMN_COUNT_PROPERTY, layoutNodeAttributes, type MdyLayoutPart } from "./layout.js";
 export { anchorOverlay, overlayAnchoringFor, MDY_OVERLAY_GAP, type MdyAnchorRect, type MdyOverlayAnchorOptions, type MdyOverlayAnchoring, type MdyViewportSize } from "./overlay.js";
