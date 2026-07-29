@@ -205,6 +205,9 @@ importers:
       '@modyra/studio-ui':
         specifier: workspace:*
         version: link:../../packages/studio-ui
+      '@modyra/styles':
+        specifier: workspace:*
+        version: link:../../packages/styles
       typescript:
         specifier: ~5.9.3
         version: 5.9.3

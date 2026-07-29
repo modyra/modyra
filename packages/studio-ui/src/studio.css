@@ -506,11 +506,11 @@ body {
    track count comes from the node itself, so 2, 3 or 4 columns need no new class. */
 /* Preview uses the same grid as the canvas, so the arrangement you preview is the
    arrangement that ships rather than a second, drifting picture of the form. */
+/* Spacing only. The tracks are the foundation's, laid out from the column count the renderer
+   publishes: restating `grid-template-columns` here is how Studio's grid drifted from the form's. */
 .preview-fields .mdy-layout-columns,
 .plain-canvas-form .mdy-layout-columns {
   min-width: 0;
-  display: grid;
-  grid-template-columns: repeat(var(--mdy-layout-column-count, 2), minmax(0, 1fr));
   gap: 4px 12px;
   align-items: start;
 }
