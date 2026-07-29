@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openStudio } from "./support/studio.js";
+import { dispatchHtmlDrag, openStudio } from "./support/studio.js";
 
 /**
  * Contract v2 layout authoring: column rows built in the canvas, rendered by
@@ -138,4 +138,51 @@ test("a field moves left and right within its row, by button and by keyboard", a
   expect(await order()).toEqual(['second', 'first']);
   await page.keyboard.press('Alt+ArrowRight');
   expect(await order()).toEqual(['first', 'second']);
+});
+
+test("dropping a control beside another makes a row, and one undo puts it back", async ({ page }) => {
+  // Before this, a row could only be asked for by a button that picked the partner for you.
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-name]').fill('first');
+  await page.locator('[data-name]').blur();
+
+  const field = page.locator('.plain-canvas-field[data-field-path="first"]');
+  await dispatchHtmlDrag(page, page.locator('[data-template="email"]'), field.locator('.plain-canvas-drop-right'));
+
+  const columns = page.locator('.mdy-layout-columns .mdy-layout-column');
+  await expect(columns).toHaveCount(2);
+  const order = async () =>
+    columns.evaluateAll((cells) =>
+      cells.map((c) => c.querySelector<HTMLElement>('.plain-canvas-field')?.dataset.fieldPath ?? ''),
+    );
+  expect((await order())[0]).toBe('first');
+  expect((await order())[1]).toMatch(/^email/);
+
+  // The schema move and the arrangement are one command: two undos would leave the field out of
+  // the row but still moved, which is not a state the user was ever in.
+  await page.locator('[data-undo]').click();
+  await expect(page.locator('.mdy-layout-columns')).toHaveCount(0);
+  await expect(page.locator('.plain-canvas-field')).toHaveCount(1);
+});
+
+test("dropping beside a field already in a row adds a column at that edge", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-name]').fill('first');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-template="email"]').click();
+  await page.locator('[data-name]').fill('second');
+  await page.locator('[data-name]').blur();
+  await page.locator('[data-layout-columns]').last().click();
+  await expect(page.locator('.mdy-layout-columns .mdy-layout-column')).toHaveCount(2);
+
+  const first = page.locator('.plain-canvas-field[data-field-path="first"]');
+  await dispatchHtmlDrag(page, page.locator('[data-template="number"]'), first.locator('.plain-canvas-drop-left'));
+
+  const columns = page.locator('.mdy-layout-columns .mdy-layout-column');
+  await expect(columns).toHaveCount(3);
+  const paths = await columns.evaluateAll((cells) =>
+    cells.map((c) => c.querySelector<HTMLElement>('.plain-canvas-field')?.dataset.fieldPath ?? ''),
+  );
+  expect(paths[0]).toMatch(/^number/);
+  expect(paths.slice(1)).toEqual(['first', 'second']);
 });

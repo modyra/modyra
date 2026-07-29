@@ -650,3 +650,43 @@ function createRemoveImplementationCommand(implementationId: string): Command {
     },
   };
 }
+
+/**
+ * Several commands as one, so a single action that has to touch both the schema and the
+ * presentation is a single entry in the history.
+ *
+ * Dropping a control beside another is exactly that: the node is inserted or moved, *and* the two
+ * are put into a column row. As two commands it took two undos to get back — the field would jump
+ * out of the row and stay where it had been dropped, which is neither of the states the user was
+ * in.
+ *
+ * Each step sees the project the step before it produced: `validate` runs the chain forward so a
+ * later step is checked against the state it will actually meet, and `inverse` replays the chain to
+ * hand each step the project it saw, then reverses the order — undoing a sequence is undoing its
+ * parts backwards.
+ */
+export function createSequenceCommand(steps: readonly Command[], description: string): Command {
+  return {
+    kind: "sequence",
+    description,
+    affectedIds: [...new Set(steps.flatMap((step) => step.affectedIds))],
+    validate(project: MdyStudioProject): StudioDiagnostic[] {
+      let current = project;
+      for (const step of steps) {
+        const diagnostics = step.validate(current);
+        if (diagnostics.length) return diagnostics;
+        current = step.apply(current);
+      }
+      return [];
+    },
+    apply(project: MdyStudioProject): MdyStudioProject {
+      return steps.reduce((current, step) => step.apply(current), project);
+    },
+    inverse(before: MdyStudioProject): Command {
+      const seen: MdyStudioProject[] = [before];
+      for (const step of steps) seen.push(step.apply(seen[seen.length - 1]!));
+      const undone = steps.map((step, index) => step.inverse(seen[index]!)).reverse();
+      return createSequenceCommand(undone, `Undo ${description}`);
+    },
+  };
+}

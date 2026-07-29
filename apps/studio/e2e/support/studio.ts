@@ -31,3 +31,73 @@ export async function showStructure(page: Page): Promise<void> {
 export async function showLiveForm(page: Page): Promise<void> {
   await page.waitForSelector('[data-canvas-surface="form"]');
 }
+
+/**
+ * A real HTML drag, as a sequence of DragEvents sharing one DataTransfer.
+ *
+ * Playwright's `dragTo` moves the mouse, which HTML5 drag-and-drop does not react to in a headless
+ * Chromium: the events have to be dispatched. Shared so the canvas and layout suites drag the same
+ * way rather than each carrying a copy.
+ */
+export async function dispatchHtmlDrag(
+  page: import("@playwright/test").Page,
+  source: import("@playwright/test").Locator,
+  target: import("@playwright/test").Locator,
+): Promise<void> {
+  const sourceHandle = await source.elementHandle();
+  const targetHandle = await target.elementHandle();
+
+  if (!sourceHandle || !targetHandle) {
+    throw new Error("HTML drag source or target is not attached");
+  }
+
+  await page.evaluate(
+    ({ sourceElement, targetElement }) => {
+      const dataTransfer = new DataTransfer();
+
+      sourceElement.dispatchEvent(
+        new DragEvent("dragstart", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer,
+        }),
+      );
+
+      targetElement.dispatchEvent(
+        new DragEvent("dragenter", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer,
+        }),
+      );
+
+      targetElement.dispatchEvent(
+        new DragEvent("dragover", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer,
+        }),
+      );
+
+      targetElement.dispatchEvent(
+        new DragEvent("drop", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer,
+        }),
+      );
+
+      sourceElement.dispatchEvent(
+        new DragEvent("dragend", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer,
+        }),
+      );
+    },
+    {
+      sourceElement: sourceHandle,
+      targetElement: targetHandle,
+    },
+  );
+}
