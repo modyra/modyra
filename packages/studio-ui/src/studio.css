@@ -1809,7 +1809,10 @@ body {
     --studio-border-strong: #b8bfd3;
     --studio-text-primary: #141622;
     --studio-text-secondary: #535d75;
-    --studio-text-tertiary: #747f98;
+    /* Darkened from #747f98, which reached only 4.01:1 on the light panel — the footer sets this at
+       11px, where AA still wants 4.5:1. #68728c clears it at 4.80:1 and stays visibly tertiary
+       against --studio-text-secondary. The dark scheme's #818ca5 already passes at 5.29:1. */
+    --studio-text-tertiary: #68728c;
     --studio-control: #ffffff;
     --studio-control-hover: #f5f6fb;
     --studio-selection: color-mix(in srgb, var(--studio-accent) 12%, transparent);
