@@ -524,3 +524,40 @@ test("live canvas completes array authoring with row and container controls", as
   await page.locator('[data-undo]').click();
   await expect(array).toHaveAttribute('data-array-path', 'catalog.items');
 });
+
+test("an array whose row is a group shows that group inside the array", async ({ page }) => {
+  await page.locator('[data-template="array"]').click();
+
+  const array = page.locator('.plain-canvas-array');
+  await expect(array).toHaveCount(1);
+  await expect(array.locator('.plain-canvas-array-item')).toHaveText(/Item schema: group/);
+
+  // The row's shape is the array's shape: it renders inside it, not as a sibling at the form root,
+  // which is where it landed while only groups counted as containers.
+  await expect(array.locator('.plain-canvas-group')).toHaveCount(1);
+  await expect(page.locator('.plain-canvas-form > .plain-canvas-group')).toHaveCount(0);
+});
+
+test("a repeater draws where it was declared, not at the end of the form", async ({ page }) => {
+  await page.locator('[data-template="text"]').click();
+  await page.locator('[data-template="array"]').click();
+  await page.locator('[data-template="text"]').click();
+
+  // The canvas is the arrangement, so a repeater declared between two fields draws between them.
+  // Both containers used to be appended to the host, which put every array last whatever the model
+  // said, and left an array's row shape sitting beside it instead of inside it.
+  const shape = await page.locator('.plain-canvas-form').evaluate((form) => {
+    const out: string[] = [];
+    const walk = (el: Element, depth: number): void => {
+      for (const child of Array.from(el.children)) {
+        if (child.classList.contains("plain-canvas-field")) out.push(`${depth}:field`);
+        else if (child.classList.contains("plain-canvas-array")) { out.push(`${depth}:array`); walk(child, depth + 1); }
+        else if (child.classList.contains("plain-canvas-group")) { out.push(`${depth}:group`); walk(child, depth + 1); }
+        else walk(child, depth);
+      }
+    };
+    walk(form, 0);
+    return out;
+  });
+  expect(shape).toEqual(["0:field", "0:array", "1:group", "0:field"]);
+});

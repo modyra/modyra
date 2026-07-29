@@ -1287,6 +1287,50 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       return select;
     };
 
+    /** Where a child node renders, by the id of the group *or array* that contains it. */
+    const containerBodies = new Map<string, HTMLElement>();
+    /** The element standing for a container node, once built. */
+    const containerElements = new Map<string, HTMLElement>();
+
+    /**
+     * The element that represents a node on the canvas, whether it is a field, a group or an array.
+     *
+     * A field's element is the renderer root Plain mounted for its path; a container's is the
+     * fieldset or section built here. Having one answer for all three is what lets a container be
+     * placed relative to its siblings without caring what kind of sibling it lands next to.
+     */
+    const elementForNode = (nodeId: string): HTMLElement | undefined => {
+      const container = containerElements.get(nodeId);
+      if (container) return container;
+      const path = idx.pathByNode.get(nodeId);
+      return path ? rootByName.get(path) : undefined;
+    };
+
+    /**
+     * Puts a container where the model says it belongs: inside its parent, among its siblings.
+     *
+     * Both containers used to be appended to the host — an array unconditionally, a group whenever
+     * it had no rendered descendant to sit before. So a repeater declared between two fields drew
+     * itself after both of them, and one nested in a group drew itself outside it. Neither is a
+     * styling problem: the arrangement on screen simply was not the arrangement in the project.
+     */
+    const placeContainer = (nodeId: string, element: HTMLElement): void => {
+      const parentId = idx.parentById.get(nodeId);
+      const container = (parentId ? containerBodies.get(parentId) : undefined) ?? plainHost;
+      const siblings = idx.childrenByParent.get(parentId ?? "") ?? [];
+      const position = siblings.indexOf(nodeId);
+      // The first sibling after this one that is already on the canvas. Anything before it has
+      // either been placed already or will place itself relative to something else.
+      for (const later of siblings.slice(position + 1)) {
+        const anchor = elementForNode(later);
+        if (anchor && anchor.parentElement === container) {
+          container.insertBefore(element, anchor);
+          return;
+        }
+      }
+      container.append(element);
+    };
+
     const arrays = Array.from(idx.nodeById.values())
       .filter((node): node is ArrayNode => node.node === "array")
       .sort((a, b) => (idx.pathByNode.get(a.id)?.split(".").length ?? 0) - (idx.pathByNode.get(b.id)?.split(".").length ?? 0));
@@ -1403,15 +1447,20 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       itemSchema.dataset.plainSelect = array.item.id;
       itemSchema.setAttribute("aria-label", `Edit item schema for ${array.name}`);
       itemSchema.textContent = `Item schema: ${array.item.node === "group" ? "group" : array.item.fieldKind}`;
-      section.append(header, itemSchema, body);
-      plainHost.append(section);
+      // Where the item schema's own group renders. An array whose row is a group had that group
+      // land at the form root, because only groups were registered as containers — so the one part
+      // of the schema that says what a row *is* appeared to be a sibling of the array rather than
+      // its shape. Registering the array here puts it where the hierarchy actually is.
+      const itemBody = document.createElement("div");
+      itemBody.className = "plain-canvas-array-item-body";
+      section.append(header, itemSchema, itemBody, body);
+      containerBodies.set(array.id, itemBody);
+      containerElements.set(array.id, section);
     }
 
     const groups = Array.from(idx.nodeById.values())
       .filter((node): node is GroupNode => node.node === "group" && node.id !== project.schema.id)
       .sort((a, b) => (idx.pathByNode.get(a.id)?.split(".").length ?? 0) - (idx.pathByNode.get(b.id)?.split(".").length ?? 0));
-
-    const groupBodies = new Map<string, HTMLElement>();
 
     for (const group of groups) {
       const groupPath = idx.pathByNode.get(group.id);
@@ -1484,14 +1533,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
       const first = descendants[0];
       const parentId = idx.parentById.get(group.id);
-      const parentBody = parentId ? groupBodies.get(parentId) : undefined;
-      if (first) {
+      const parentIsArray = parentId ? idx.nodeById.get(parentId)?.node === "array" : false;
+      if (first && !parentIsArray) {
+        // A group wraps fields that Plain has already mounted in contract order, so sitting just
+        // before the first of them puts the group exactly where those fields are.
         first.before(fieldset);
-      } else if (parentBody) {
-        parentBody.append(fieldset);
       } else {
-        plainHost.append(fieldset);
+        // Nothing of its own on the canvas yet — an empty group, or a row shape whose fields are
+        // `rows.0.street`, `rows.1.street`… and belong to the rows rather than to the shape.
+        placeContainer(group.id, fieldset);
       }
+      containerElements.set(group.id, fieldset);
 
       fieldset.before(dropPoint("before", group.id));
       fieldset.after(dropPoint("after", group.id));
@@ -1506,7 +1558,15 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       inside.textContent = group.children.length ? "Drop into group" : "Drop first field into group";
       body.append(inside);
       fieldset.append(legend, body);
-      groupBodies.set(group.id, body);
+      containerBodies.set(group.id, body);
+    }
+
+    // Arrays are placed last because a group may be an array's row shape *and* an array may sit
+    // inside a group: only once every container has a body can each one be put where it belongs.
+    // Deepest first, so an array nested in a group finds that group's body already in the document.
+    for (const array of [...arrays].reverse()) {
+      const section = containerElements.get(array.id);
+      if (section) placeContainer(array.id, section);
     }
 
     const rootDrop = document.createElement("div");

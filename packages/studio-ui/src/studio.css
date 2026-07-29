@@ -2082,3 +2082,8 @@ body {
 .plain-canvas-form .mdy-renderer,
 .plain-canvas-form .mdy-input-wrapper,
 .plain-canvas-form .mdy-input-wrapper__inliner { overflow: visible; }
+
+/* The array's item schema. A row whose shape is a group renders here, inside the array, so the
+   nesting on screen is the nesting in the model — it used to land at the form root. */
+.plain-canvas-array-item-body:empty { display: none; }
+.plain-canvas-array-item-body > .plain-canvas-group { margin: 0 0 8px; }
