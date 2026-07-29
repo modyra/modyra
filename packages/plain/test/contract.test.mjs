@@ -55,3 +55,50 @@ test("the shell emits the canonical class vocabulary, not adapter equivalents", 
   mounted.dispose();
   host.remove();
 });
+
+/* ── The placement, reflected ─────────────────────────────────────────────────────────────────
+ * The coordinates put a popup somewhere; only a class tells a stylesheet which side it landed on.
+ * The catalog declares `above`/`overlay` as states of every popup part, and these assert the
+ * renderer reflects them under exactly that name — the drift that produced `mdy-overlay-panel--above`
+ * in two adapters, matched by no stylesheet, is precisely what this catches.
+ */
+const { positionOverlay, releaseOverlayPlacement } = await import("../dist/overlay.js");
+const { overlayAnchoringFor, partClasses } = await import("../../widgets/dist/index.js");
+
+/** A popup anchored by a control at `rect`, in an 800px-tall viewport. */
+function placeAgainst(kind, rect) {
+  const popup = document.createElement("div");
+  popup.className = partClasses(kind, "popup").join(" ");
+  const anchor = document.createElement("div");
+  anchor.getBoundingClientRect = () => ({ ...rect, width: rect.right - rect.left });
+  document.body.append(anchor, popup);
+  positionOverlay(popup, anchor, overlayAnchoringFor(kind));
+  return popup;
+}
+
+test("a popup opening upwards wears the contract's --above state, and loses it when it closes", () => {
+  Object.defineProperty(document.documentElement, "clientHeight", { value: 800, configurable: true });
+  Object.defineProperty(document.documentElement, "clientWidth", { value: 1000, configurable: true });
+
+  const popup = placeAgainst("multiselect", { top: 700, bottom: 740, left: 100, right: 400 });
+  const above = partClasses("multiselect", "popup", { above: true }).find((c) => c.endsWith("--above"));
+
+  assert.equal(popup.dataset.placement, "above");
+  assert.ok(popup.classList.contains(above), `expected ${above} on a popup that opened upwards`);
+
+  releaseOverlayPlacement(popup);
+  assert.equal(popup.classList.contains(above), false, "a closed popup is not sitting above anything");
+});
+
+test("a popup opening downwards carries no placement state — below is the ordinary case", () => {
+  Object.defineProperty(document.documentElement, "clientHeight", { value: 800, configurable: true });
+  Object.defineProperty(document.documentElement, "clientWidth", { value: 1000, configurable: true });
+
+  const popup = placeAgainst("select", { top: 100, bottom: 140, left: 100, right: 400 });
+  assert.equal(popup.dataset.placement, "below");
+  assert.equal(
+    popup.className.includes("--above") || popup.className.includes("--overlay"),
+    false,
+    "below must be spelled exactly like a popup nobody has placed",
+  );
+});
