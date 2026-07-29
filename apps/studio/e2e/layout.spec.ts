@@ -226,19 +226,27 @@ test("a field can be hidden at one size and shown at another", async ({ page }) 
   await page.locator('[data-layout-columns]').last().click();
   await expect(page.locator('.mdy-layout-columns .mdy-layout-column')).toHaveCount(2);
 
-  // Hidden on the narrowest screen…
+  // Hidden on the narrowest screen. The canvas marks it rather than removing it — it is an editor,
+  // and a node taken off the canvas takes the eye that would put it back with it.
   const first = page.locator('.plain-canvas-field[data-field-path="first"]');
   await first.hover();
   await first.locator('[data-toggle-hidden]').click();
   const cell = page.locator('.mdy-layout-columns > .mdy-layout-column').first();
+  await expect(first).toHaveClass(/hidden-here/);
   await expect(cell).toHaveCSS('--mdy-layout-column-display', 'none');
 
-  // …and shown again from md, which the cascade needs said explicitly rather than left unsaid.
+  // …and shown again from md, which the cascade needs said explicitly rather than left unsaid. The
+  // node is still reachable, which is the whole reason the canvas marks instead of hiding.
   await page.locator('[data-breakpoint="md"]').click();
   await first.hover();
   await first.locator('[data-toggle-hidden]').click();
+  await expect(first).not.toHaveClass(/hidden-here/);
   await expect(cell).toHaveCSS('--mdy-layout-column-display-md', 'flex');
   await expect(cell).toHaveCSS('--mdy-layout-column-display', 'none');
+
+  // Back to base, where nothing has undone the hiding.
+  await page.locator('[data-breakpoint="base"]').click();
+  await expect(first).toHaveClass(/hidden-here/);
 });
 
 test("a group in a row can be hidden at a size, all the way to the canvas", async ({ page }) => {
@@ -265,8 +273,10 @@ test("a group in a row can be hidden at a size, all the way to the canvas", asyn
 
   const groupCell = page.locator('.mdy-layout-columns > .mdy-layout-column').filter({ has: page.locator('.plain-canvas-group') });
   await expect(groupCell).toHaveCSS('--mdy-layout-column-display', 'none');
-  // Hidden at a size is not deleted: the group and its field are still on the canvas to edit.
-  await expect(groupCell.locator('.plain-canvas-field[data-field-path="shipping.city"]')).toBeAttached();
+  await expect(page.locator('.plain-canvas-group').first()).toHaveClass(/hidden-here/);
+  // Hidden at a size is not deleted, and on the canvas not even removed: the group and its field
+  // stay editable, which is what makes the hiding undoable.
+  await expect(groupCell.locator('.plain-canvas-field[data-field-path="shipping.city"]')).toBeVisible();
 });
 
 test("a group sits in a column beside a control, keeping its fields", async ({ page }) => {

@@ -514,12 +514,41 @@ body {
   gap: 4px 12px;
   align-items: start;
 }
+/* Spacing only, for the same reason as the row above it. `display` used to be restated here as
+   `grid`, which beat the foundation's own `display: var(--mdy-layout-column-display, flex)` — so a
+   column hidden at a breakpoint published `none` and went on being displayed. A stacking column is a
+   stacking column whether it is flex or grid; the one that decides is the foundation's. */
 .preview-fields .mdy-layout-column,
 .plain-canvas-form .mdy-layout-column {
   min-width: 0;
-  display: grid;
   gap: 2px;
-  align-content: start;
+}
+/* The canvas is an editor, so a column hidden at the size being authored stays on screen, marked.
+   Truly hiding it took the eye that would unhide it with it, and the node became unreachable — the
+   author could make an edit they could not undo. Preview keeps the real behaviour: `.preview-fields`
+   is deliberately not in this rule, and neither is the shipped form. */
+.plain-canvas-form .mdy-layout-column {
+  display: flex !important;
+}
+.plain-canvas-form .hidden-here {
+  opacity: 0.45;
+}
+.plain-canvas-form .hidden-here::after {
+  content: "hidden here";
+  position: absolute;
+  top: 2px;
+  inset-inline-end: 2px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--studio-chrome-border);
+  color: var(--studio-chrome-text);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+.plain-canvas-form .plain-canvas-field.hidden-here {
+  position: relative;
 }
 .plain-canvas-form .mdy-layout-section {
   min-width: 0;

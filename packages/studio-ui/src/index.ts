@@ -1729,6 +1729,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       fieldset.draggable = true;
       fieldset.setAttribute("aria-label", `${group.name}, draggable group`);
       fieldset.classList.toggle("selected", group.id === selected);
+      fieldset.classList.toggle("hidden-here", hiddenAt(group.id, breakpoint));
 
       const legend = document.createElement("legend");
       legend.className = "plain-canvas-head";
@@ -1903,6 +1904,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       root.classList.add("plain-canvas-field");
       root.classList.toggle("selected", nodeId === selected);
       root.classList.toggle("has-diagnostic", diagnosticNodeIds.has(nodeId));
+      root.classList.toggle("hidden-here", hiddenAt(nodeId, breakpoint));
 
       const node = idx.nodeById.get(nodeId);
       const selectButton = kindChip(
