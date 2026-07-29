@@ -40,7 +40,7 @@ test("stylesheet ships the brand tokens and Satoshi @font-face, not a generic fo
   const css = readFileSync(new URL("studio.css", dist), "utf8");
   assert.match(css, /@font-face/);
   assert.match(css, /Satoshi/);
-  assert.match(css, /#7067ff/); // --mdy-indigo
+  assert.match(css, /#7067ff/); // --studio-chrome-indigo
   assert.doesNotMatch(css, /Inter/);
 });
 
