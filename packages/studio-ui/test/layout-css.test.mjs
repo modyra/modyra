@@ -87,7 +87,27 @@ test("the canvas keeps the form's own label for assistive tech while showing the
 });
 
 test("narrow layouts keep a zero-minimum canvas track and mobile-safe padding", () => {
-  assert.match(css, /@media \(max-width: 1000px\)[\s\S]*?grid-template-columns:\s*180px minmax\(0, 1fr\)/);
+  // One canvas track once three columns stop fitting; the sides slide over it.
+  assert.match(css, /@media \(max-width: 1000px\)[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
   assert.match(css, /@media \(max-width: 600px\)[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
   assert.match(css, /@media \(max-width: 600px\)[\s\S]*?\.canvas\s*\{[\s\S]*?padding:\s*12px 14px/);
+});
+
+test("a narrow window slides the side columns over the canvas rather than deleting them", () => {
+  // The rule this replaced hid the inspector below 1000px and styled a slide-over below 980px
+  // without restoring `display`, so from 1000px down the properties panel, form rules, diagnostics,
+  // export and preview were unreachable with nothing to open them.
+  const narrow = css.slice(css.indexOf("@media (max-width: 1000px)"));
+  assert.doesNotMatch(narrow.slice(0, narrow.indexOf("@media (max-width: 760px)") + 1 || 4000),
+    /\.inspector\s*\{[^}]*display:\s*none/, "the inspector must stay reachable at every width");
+  assert.match(css, /\.studio\[data-outline-open="true"\] \.outline/);
+  assert.match(css, /\.studio\[data-inspector-open="true"\] \.inspector/);
+});
+
+test("the side columns are tracks the user can size, and the middle takes what is left", () => {
+  assert.match(css, /grid-template-columns:\s*\n?\s*var\(--studio-col-outline, 224px\) var\(--studio-rail\) minmax\(0, 1fr\)/);
+  assert.match(css, /var\(--studio-rail\) var\(--studio-col-inspector, 336px\)/);
+  // The rail has to be a real pointer target, not a hairline nobody can grab.
+  assert.match(css, /--studio-rail:\s*7px/);
+  assert.match(css, /\.studio-resizer\s*\{[\s\S]*?cursor:\s*col-resize/);
 });
