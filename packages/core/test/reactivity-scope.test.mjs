@@ -69,12 +69,13 @@ test("destroying the form's scope tears down draft/history/async effects it owns
 
 test("MdyReactiveScope is undefined when the adapter has no createScope (graceful degradation)", () => {
   const legacyRx = {
-    canEffect: true,
     signal: vanillaReactivity().signal,
     computed: vanillaReactivity().computed,
     effect: vanillaReactivity().effect,
     untracked: vanillaReactivity().untracked,
-    // no capabilities, no createScope — mirrors Vue/Solid/Angular today
+    // No capabilities and no createScope. Out of contract since `capabilities` became required —
+    // every adapter in this repository declares them — but reachable from JavaScript, so the engine
+    // degrades to "no effects" rather than throwing on a missing property.
   };
   const engine = new MdyFormEngine(legacyRx);
   engine.claimField("email");

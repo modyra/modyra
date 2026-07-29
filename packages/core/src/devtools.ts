@@ -3,7 +3,7 @@
  * a form running on ANY reactivity (it refreshes by polling, so it never
  * couples to the host graph). Sensitive-looking paths are masked.
  */
-import { MdyReactivity, MdySignal } from "./reactivity.js";
+import { MdyReactivity, MdySignal, reactivityRunsEffects } from "./reactivity.js";
 import { MdyFormState } from "./types.js";
 
 interface InspectableForm {
@@ -118,7 +118,7 @@ export function mountMdyDevtools(
       `<tbody>${rows}</tbody></table>`;
   };
   const rx = form.reactivity;
-  if (rx && rx.canEffect) {
+  if (rx && reactivityRunsEffects(rx)) {
     // Reactive path: mdyFormSnapshot reads every field signal inside the
     // effect, so any change re-renders in the same propagation cycle.
     const ref = rx.effect(() => render());

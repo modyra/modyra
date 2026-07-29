@@ -20,6 +20,7 @@ import {
   MdyReactivity,
   MdySignal,
   MdyWritableSignal,
+  reactivityRunsEffects,
 } from "./reactivity.js";
 import { hasRequiredMarker } from "./schema-utils.js";
 import type {
@@ -78,7 +79,7 @@ export class MdyArrayManager {
     deps.engine.getField(deps.path);
     this._rebuild(initial.slice());
 
-    this._reconcile = deps.rx.canEffect
+    this._reconcile = reactivityRunsEffects(deps.rx)
       ? deps.rx.effect(() => {
         const names = deps.engine.fieldNames();
         const present = this._presentIndices(names);

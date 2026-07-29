@@ -25,7 +25,7 @@ export interface AngularReactivityOptions {
   /**
    * `"throw"` (default): `effect()` throws {@link MdyUnsupportedCapabilityError}
    * when called without an Injector — the engine already checks
-   * `capabilities.effects`/`canEffect` before calling `effect()` for its own
+   * `capabilities.effects` before calling `effect()` for its own
    * features, so this only fires for a caller that skipped that check.
    * `"report"`: degrade to a disabled effect instead of throwing (the pre-M4
    * behavior), but always through {@link MdyDiagnostics} — never silently.
@@ -63,8 +63,8 @@ function normalizeOptions(
  * engine's state IS Angular signal state, so templates, `computed`s and
  * zoneless change detection react to it with no bridging layer.
  *
- * Effects need an {@link Injector}; without one `capabilities.effects` (and
- * the deprecated `canEffect` alias) report `false` and the engine skips
+ * Effects need an {@link Injector}; without one `capabilities.effects` reports
+ * `false` and the engine skips
  * effect-dependent features (async validators, drafts, history) with a
  * warning — the capability check happens before `effect()` is ever called
  * for those. Accepts either an `Injector` directly (existing call sites) or
@@ -96,7 +96,6 @@ export function angularReactivity(
       graphInspection: false,
       serverSnapshots: false,
     },
-    canEffect: hasEffects,
     signal: <T>(initial: T, options?: MdySignalOptions<T>) =>
       signal(initial, options?.equal ? { equal: options.equal } : undefined),
     computed: <T>(fn: () => T, options?: MdyComputedOptions<T>) =>

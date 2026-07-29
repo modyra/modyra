@@ -4,6 +4,7 @@ import {
   MdyReactiveScope,
   MdySignal,
   MdyWritableSignal,
+  reactivityRunsEffects,
 } from "./reactivity.js";
 
 /** Narrows to a reactivity that reports (and implements) real runtime batching. */
@@ -912,7 +913,7 @@ export class MdyFormEngine
   /** Lazily creates the effect that runs async validators for a field. */
   private _ensureAsyncRunner(name: string, rec: FieldRecord): void {
     if (this._destroyed || this._deactivated || rec.asyncRunner) return;
-    if (!this._rx.canEffect) {
+    if (!reactivityRunsEffects(this._rx)) {
       if (MDY_DEV) this._warn(
         `Async validators for "${name}" need an effect-capable reactivity ` +
         `(with the Angular adapter: construct it with an Injector).`,

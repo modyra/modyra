@@ -80,7 +80,6 @@ function customReactivity() {
     return read;
   }
   return {
-    canEffect: true,
     signal,
     computed: (fn) => () => fn(),
     effect: (fn) => {

@@ -13,6 +13,7 @@ import type {
   MdySignal,
   MdyWritableSignal,
 } from "./reactivity.js";
+import { reactivityRunsEffects } from "./reactivity.js";
 import { shallowEqualRecords } from "./record-utils.js";
 import { MDY_DEV } from "./dev-flags.js";
 
@@ -100,7 +101,7 @@ export class MdyHistoryManager {
     readonly debounceMs?: number;
   }): void {
     if (this._effect || this._pending) return;
-    if (!this._rx.canEffect) {
+    if (!reactivityRunsEffects(this._rx)) {
       if (MDY_DEV) this._warn(
         "enableHistory() needs an effect-capable reactivity " +
         "(with the Angular adapter: construct it with an Injector).",

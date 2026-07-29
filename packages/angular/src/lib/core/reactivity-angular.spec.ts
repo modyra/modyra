@@ -15,9 +15,8 @@ import { angularReactivity } from "./reactivity-angular";
  */
 describe("angularReactivity", () => {
   describe("with an Injector", () => {
-    it("reports declared capabilities and canEffect", () => {
+    it("reports declared capabilities", () => {
       const rx = angularReactivity(TestBed.inject(Injector));
-      expect(rx.canEffect).toBe(true);
       expect(rx.capabilities).toEqual({
         effects: true,
         effectOwnership: true,
@@ -159,9 +158,8 @@ describe("angularReactivity", () => {
   });
 
   describe("without an Injector", () => {
-    it("reports capabilities.effects and canEffect as false", () => {
+    it("reports capabilities.effects as false", () => {
       const rx = angularReactivity();
-      expect(rx.canEffect).toBe(false);
       expect(rx.capabilities?.effects).toBe(false);
       expect(rx.capabilities?.effectOwnership).toBe(false);
     });

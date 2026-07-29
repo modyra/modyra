@@ -111,6 +111,19 @@ export interface MdyReactivityCapabilities {
   readonly serverSnapshots: boolean;
 }
 
+/**
+ * Whether this reactivity can run effects.
+ *
+ * `capabilities` is required, so in TypeScript this is just the field. It is asked through a
+ * function because the engine is also called from JavaScript, and an adapter object assembled by
+ * hand can still arrive without it — in which case the answer is "no effects", exactly what the
+ * `canEffect` alias reported before it was removed. The engine then skips async validators, drafts
+ * and history with a warning rather than throwing on a missing property.
+ */
+export function reactivityRunsEffects(rx: Pick<MdyReactivity, "capabilities">): boolean {
+  return rx.capabilities?.effects === true;
+}
+
 export interface MdyScopeOptions {
   debugName?: string;
   parent?: MdyReactiveScope;
@@ -130,8 +143,15 @@ export interface MdyReactivity {
   readonly id?: symbol;
   /** e.g. "vanilla", "vue", "solid", "angular". Optional during migration. */
   readonly kind?: string;
-  /** Optional until every adapter reports declared capabilities (piano Milestone 1). */
-  readonly capabilities?: MdyReactivityCapabilities;
+  /**
+   * What this reactivity can actually do. Required: the engine asks it before using a feature, and
+   * an adapter that answered nothing left the engine guessing.
+   *
+   * This is what `canEffect` was for — a guaranteed answer to the one question the engine could not
+   * do without, standing in while `capabilities` was still optional. Every adapter declares them
+   * now, so there is one way to ask and the alias is gone.
+   */
+  readonly capabilities: MdyReactivityCapabilities;
 
   signal<T>(initial: T, options?: MdySignalOptions<T>): MdyWritableSignal<T>;
   computed<T>(fn: () => T, options?: MdyComputedOptions<T>): MdySignal<T>;
@@ -144,14 +164,6 @@ export interface MdyReactivity {
   /** Optional until every adapter implements ownership (piano Milestone 2-4). */
   createScope?(options?: MdyScopeOptions): MdyReactiveScope;
 
-  /**
-   * @deprecated use `capabilities.effects` instead. Kept as a temporary
-   * alias so existing adapters/callers keep compiling during the migration
-   * (piano §4.4). False when this reactivity cannot run effects (e.g. an
-   * Angular adapter constructed without an Injector) — effect-dependent
-   * features (async validators, drafts, history) are skipped with a warning.
-   */
-  readonly canEffect: boolean;
 }
 
 // ─── Vanilla implementation ───────────────────────────────────────────────────
@@ -435,7 +447,6 @@ export function vanillaReactivity(): MdyReactivity &
       graphInspection: false,
       serverSnapshots: false,
     },
-    canEffect: true,
     signal<T>(initial: T, options?: MdySignalOptions<T>): MdyWritableSignal<T> {
       const node = new VanillaSignal(initial, options?.equal);
       const read = (() => node.read()) as MdyWritableSignal<T>;

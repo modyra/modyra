@@ -120,7 +120,6 @@ export function solidReactivity(): MdyReactivity &
       graphInspection: false,
       serverSnapshots: false,
     },
-    canEffect: true,
     signal<T>(initial: T, options?: MdySignalOptions<T>): MdyWritableSignal<T> {
       // `equals: false` is a special Solid sentinel meaning "always treat
       // as changed" -- omitting the option entirely (not passing `false`)
