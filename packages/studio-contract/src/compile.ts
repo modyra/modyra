@@ -163,6 +163,22 @@ function mapGroupNode(node: GroupNode, diagnostics: StudioDiagnostic[]): MdyDyna
   return { node: "group", label: node.label, children };
 }
 
+/**
+ * One project field as the Contract field a renderer consumes, named at `name`.
+ *
+ * The whole-project compiler flattens arrays from their *initial* rows, so it cannot describe a row
+ * the user pushed in Preview. Preview knows the live path; this gives it the descriptor for that
+ * path from the same mapping `compileToContract` uses, so a previewed control is the control the
+ * contract asks for rather than a second opinion about it.
+ *
+ * Returns null for a field that cannot be compiled at all (an option field with no options) — the
+ * caller has nothing to render and `compileToContract` already reports why.
+ */
+export function dynamicFieldForNode(node: FieldNode, name: string): MdyDynamicField | null {
+  const mapped = mapFieldNode(node, []);
+  return mapped ? ({ ...mapped.field, name } as MdyDynamicField) : null;
+}
+
 function mapArrayNode(node: ArrayNode, diagnostics: StudioDiagnostic[]): MdyDynamicNode | null {
   const item = mapNode(node.item, diagnostics);
   if (!item || item.node === "array") return null; // item is FieldNode | GroupNode by type; array-of-array can't happen

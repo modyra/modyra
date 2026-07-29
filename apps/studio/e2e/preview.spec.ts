@@ -19,7 +19,9 @@ test("a required field shows a validation error, then clears it once filled", as
   await page.locator(".preview-fields input[type=text]").first().blur();
 
   await expect(page.locator(".preview-status-badge").first()).toHaveText("Valid");
-  await expect(page.locator(".preview-fields .mdy-control__errors")).toHaveCount(0);
+  // The foundation's shell keeps the error list in the DOM and empties it — an element that
+  // appears and disappears would reflow the form under the pointer on every keystroke.
+  await expect(page.locator(".preview-fields .mdy-control__errors")).toBeEmpty();
 });
 
 test("array: Add row/Remove update the live array through the real form, reflected in the row count", async ({ page }) => {
@@ -55,7 +57,7 @@ test("server mock: switching a field's mock mode to Fails surfaces an asynchrono
   await page.locator("[data-preview-mock-mode]").selectOption("success");
   await page.locator(".preview-fields input[type=text]").first().fill("anything-else");
   await page.locator(".preview-fields input[type=text]").first().blur();
-  await expect(page.locator(".preview-fields .mdy-control__errors")).toHaveCount(0, { timeout: 3000 });
+  await expect(page.locator(".preview-fields .mdy-control__errors")).toBeEmpty({ timeout: 3000 });
 });
 
 test("submit: a configured mock submit action reports success, driven entirely by the form state", async ({ page }) => {

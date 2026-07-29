@@ -1408,10 +1408,24 @@ body {
   background: color-mix(in srgb, var(--studio-chrome-violet) 25%, transparent);
   color: color-mix(in srgb, var(--studio-chrome-violet) 55%, var(--studio-chrome-cloud));
 }
+/* Preview is three siblings, not one block of markup: the head and the tail are Regions that
+   repaint on every keystroke, while the fields between them are mounted controls that must survive
+   those repaints (see preview-mount.ts). The panel only exists to keep them in that order. */
+.preview-panel {
+  min-width: 0;
+}
+.preview-panel[hidden] {
+  display: none;
+}
 .preview-fields {
   display: grid;
   gap: 14px;
   margin-bottom: 14px;
+}
+/* One mounted field. Carries the live path so a test — and a person with devtools open — can tell
+   which control belongs to which field without reading the renderer's own markup. */
+.preview-field-host {
+  min-width: 0;
 }
 .preview-mock-mode {
   display: grid;
