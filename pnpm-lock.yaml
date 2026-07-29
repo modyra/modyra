@@ -343,6 +343,10 @@ importers:
       '@modyra/studio-model':
         specifier: workspace:*
         version: link:../studio-model
+    devDependencies:
+      '@modyra/widgets':
+        specifier: workspace:*
+        version: link:../widgets
 
   packages/studio-editor:
     dependencies:
