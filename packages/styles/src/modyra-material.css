@@ -368,10 +368,6 @@
 
     /* ─── Radio Group — M3 spec (20dp outer, 10dp inner) ──────────────────────── */
 
-    .mdy-radio-group-label {
-        display: none;
-    }
-
     .mdy-radio-item {
         gap: 0.75rem;
     }
@@ -582,11 +578,6 @@
 
     /* ─── Multiselect ─────────────────────────────────────────────────────────── */
 
-    .mdy-multiselect__label {
-        color: var(--mdy-on-surface-variant);
-        letter-spacing: 0.006em;
-    }
-
     .mdy-multiselect__search-btn {
         color: var(--mdy-on-surface-variant);
     }
@@ -612,10 +603,6 @@
 
     .mdy-multiselect-overlay__input {
         border-bottom-color: var(--mdy-surface-container-highest);
-    }
-
-    .mdy-multiselect-overlay__panel--above .mdy-multiselect-overlay__input {
-        border-top-color: var(--mdy-surface-container-highest);
     }
 
     .mdy-multiselect-overlay__input:focus {
@@ -748,8 +735,7 @@
     /* `.mdy-datepicker` is not here: how a picker arranges its control is structure, and the
        foundation makes it a row. Declaring it a block here stacked a range field's two inputs and
        its toggle, so a date range stood three times as tall as the field above it. */
-    .mdy-datepicker__calendar,
-    .mdy-range-calendar {
+    .mdy-datepicker__calendar {
         display: block;
         width: 100%;
     }
@@ -1040,10 +1026,6 @@
         padding-bottom: 0.625rem !important;
         align-items: flex-end !important;
         box-sizing: border-box;
-    }
-
-    .mdy-colors__arrow--open {
-        transform: rotate(180deg);
     }
 
     .mdy-colors__dropdown {

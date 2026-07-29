@@ -554,11 +554,6 @@
     /* ═══════════════════════════════════════════════════════════════════
      * MULTISELECT / CHIPS
      * ═══════════════════════════════════════════════════════════════════ */
-    .mdy-multiselect__label {
-        color: var(--mdy-on-surface);
-        letter-spacing: -0.01em;
-    }
-
     .mdy-multiselect__search-btn:hover:not(:disabled) {
         background: color-mix(in srgb, var(--mdy-ios-blue), transparent 92%);
         color: var(--mdy-ios-blue);
@@ -597,23 +592,6 @@
         background: var(--mdy-ios-fill-strong);
     }
 
-    .mdy-multiselect-overlay__option {
-        border-radius: 8px;
-        margin: 0 0.375rem;
-        padding: 0.5rem 0.625rem;
-        transition: background var(--mdy-sys-motion-duration-fast, var(--mdy-sys-motion-duration-fast, 0.1s)) ease;
-    }
-
-    .mdy-multiselect-overlay__option:hover,
-    .mdy-multiselect-overlay__option:focus {
-        background: rgba(120, 120, 128, 0.16);
-    }
-
-    .mdy-multiselect-overlay__option--selected {
-        background: color-mix(in srgb, var(--mdy-ios-blue), transparent 90%);
-        color: var(--mdy-ios-blue);
-    }
-
     .mdy-multiselect-overlay__empty {
         color: var(--mdy-outline);
     }
@@ -634,19 +612,6 @@
     .mdy-control__error {
         letter-spacing: -0.01em;
         padding-top: 0.25rem;
-    }
-
-    /* ═══════════════════════════════════════════════════════════════════
-     * INPUT-GROUP MERGING (date input + trailing toggle button)
-     * ═══════════════════════════════════════════════════════════════════ */
-    .mdy-datepicker__input-group>input,
-    .mdy-datepicker__input-group>.mdy-datepicker__input {
-        border-radius: var(--mdy-input-border-radius) 0 0 var(--mdy-input-border-radius);
-    }
-
-    .mdy-datepicker__input-group>button:last-child,
-    .mdy-datepicker__input-group>.mdy-datepicker__toggle {
-        border-radius: 0 var(--mdy-input-border-radius) var(--mdy-input-border-radius) 0;
     }
 
     /* ═══════════════════════════════════════════════════════════════════
