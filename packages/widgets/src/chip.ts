@@ -12,6 +12,8 @@
  * from the widget's mode and the option's state, and every renderer applies the answer.
  */
 
+import { stateClass } from "./state.js";
+
 /** Canonical class vocabulary for the chip primitive. */
 export const MDY_CHIP_CLASSES = Object.freeze({
   /** The chip itself. Every chip carries this, whatever it is for. */
@@ -48,6 +50,8 @@ export interface MdyChipAppearance {
   readonly mode?: MdyChipMode;
   readonly role?: MdyChipRole;
   readonly selected?: boolean;
+  /** Carries a dismiss affordance. A value chip you can take back off the control. */
+  readonly removable?: boolean;
 }
 
 /**
@@ -59,10 +63,14 @@ export interface MdyChipAppearance {
  * variant of its own — a theme that styled "selected" twice, once per mode, would drift.
  */
 export function multiselectChipClasses(appearance: MdyChipAppearance = {}): readonly string[] {
-  const { mode = "single", role = "option", selected = false } = appearance;
+  const { mode = "single", role = "option", selected = false, removable = false } = appearance;
   const classes: string[] = [MDY_CHIP_CLASSES.block];
   if (role === "value") classes.push(MDY_CHIP_CLASSES.value);
   else classes.push(mode === "multi" ? MDY_CHIP_CLASSES.counter : MDY_CHIP_CLASSES.centered);
-  if (selected) classes.push(MDY_CHIP_CLASSES.selected);
+  // Both are states of the chip, spelled by the shared state vocabulary rather than by this
+  // function: `--selected` means the same thing on a chip as it does on an option or a calendar
+  // cell, and two places deciding how to spell it is how the two drift apart.
+  if (selected) classes.push(stateClass(MDY_CHIP_CLASSES.block, "selected"));
+  if (removable) classes.push(stateClass(MDY_CHIP_CLASSES.block, "removable"));
   return Object.freeze(classes);
 }

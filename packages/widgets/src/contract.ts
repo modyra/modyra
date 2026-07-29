@@ -9,6 +9,7 @@
 
 import type { MdySignal } from "@modyra/core";
 import type { MdyUiCommand } from "./commands.js";
+import type { MdyStateName } from "./state.js";
 import type { MdyWidgetStructure } from "./structure.js";
 
 /** Semantic state of a widget part. */
@@ -24,6 +25,12 @@ export interface MdyPartContract {
    * part of the contract because a theme cannot derive them and an adapter must not invent them.
    */
   readonly style?: Readonly<Record<string, string>>;
+  /**
+   * The states this part can be in, from which `partClasses` derives its modifiers. Declaring them
+   * is what makes the set of classes a part may ever carry finite and knowable: a theme can be
+   * checked against it, and a renderer cannot reach for one that was never agreed.
+   */
+  readonly states?: readonly MdyStateName[];
 }
 
 /** Semantic view contract produced by a controller. */
