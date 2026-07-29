@@ -51,6 +51,12 @@ import {
 } from "@modyra/studio-editor";
 import { mountMdyForm, type MdyPlainForm } from "@modyra/plain";
 import { compileToContract, flattenContractFields } from "@modyra/studio-contract";
+import {
+  MDY_FIELD_SHELL_CLASSES,
+  MDY_LAYOUT_CLASSES,
+  MDY_WIDGET_CONTRACTS,
+  type MdyWidgetKind,
+} from "@modyra/widgets";
 import { TargetRegistry, type Artifact } from "@modyra/studio-codegen";
 import { jsonTargetManifest } from "@modyra/studio-target-json";
 import { coreTargetManifest } from "@modyra/studio-target-core";
@@ -486,6 +492,20 @@ export function defaultRowValue(item: FieldNode | GroupNode): unknown {
   return row;
 }
 
+/**
+ * The widget each Studio field kind is, so the preview can wear that widget's root classes.
+ *
+ * Studio's `fieldKind` and the catalog's `MdyWidgetKind` mostly agree; where they do not, this is
+ * the one place that says so rather than each call site guessing.
+ */
+const PREVIEW_WIDGET_KIND: Readonly<Record<string, MdyWidgetKind>> = Object.freeze({
+  text: "text", email: "email", password: "password", textarea: "textarea",
+  number: "number", slider: "slider", checkbox: "checkbox", toggle: "toggle",
+  select: "select", radio: "radio", multiselect: "multiselect", segmented: "segmented",
+  date: "datepicker", datepicker: "datepicker", daterange: "daterange", timepicker: "timepicker",
+  file: "file", colors: "colors",
+});
+
 /** one live field, bound to the real form handle at `path` — rather than a static description (). */
 export function previewFieldMarkup(node: FieldNode, path: string, form: MdyTypedForm<never> | null, mockConfig: Record<string, MockServerConfig>): string {
   const handle = getPreviewHandle(form, path);
@@ -497,26 +517,26 @@ export function previewFieldMarkup(node: FieldNode, path: string, form: MdyTyped
 
   let control: string;
   if (node.fieldKind === "textarea") {
-    control = `<textarea data-preview-field="${path}">${escapeHtml(String(value ?? ""))}</textarea>`;
+    control = `<textarea id="preview-${path}" data-preview-field="${path}">${escapeHtml(String(value ?? ""))}</textarea>`;
   } else if (node.fieldKind === "number") {
-    control = `<input type="number" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
+    control = `<input id="preview-${path}" type="number" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
   } else if (node.fieldKind === "checkbox") {
-    control = `<input type="checkbox" data-preview-field="${path}" data-preview-checkbox ${value ? "checked" : ""}>`;
+    control = `<input id="preview-${path}" type="checkbox" data-preview-field="${path}" data-preview-checkbox ${value ? "checked" : ""}>`;
   } else if (node.fieldKind === "select") {
     const options = (node.options ?? [])
       .map((o) => `<option value="${escapeHtml(o.value)}" ${o.value === value ? "selected" : ""}>${escapeHtml(o.label)}</option>`)
       .join("");
-    control = `<select data-preview-field="${path}"><option value="">— choose —</option>${options}</select>`;
+    control = `<select id="preview-${path}" data-preview-field="${path}"><option value="">— choose —</option>${options}</select>`;
   } else if (node.fieldKind === "multiselect") {
     const selectedValues = Array.isArray(value) ? (value as unknown[]) : [];
     const options = (node.options ?? [])
       .map((o) => `<option value="${escapeHtml(o.value)}" ${selectedValues.includes(o.value) ? "selected" : ""}>${escapeHtml(o.label)}</option>`)
       .join("");
-    control = `<select multiple data-preview-field="${path}">${options}</select>`;
+    control = `<select id="preview-${path}" multiple data-preview-field="${path}">${options}</select>`;
   } else if (node.fieldKind === "date") {
-    control = `<input type="date" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
+    control = `<input id="preview-${path}" type="date" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
   } else {
-    control = `<input type="${node.fieldKind === "email" ? "email" : "text"}" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
+    control = `<input id="preview-${path}" type="${node.fieldKind === "email" ? "email" : "text"}" data-preview-field="${path}" value="${escapeHtml(String(value ?? ""))}">`;
   }
 
   const serverMock = node.serverValidator
@@ -534,12 +554,22 @@ export function previewFieldMarkup(node: FieldNode, path: string, form: MdyTyped
       })()
     : "";
 
+  // The shell is the contract's, not Studio's. These controls used to wear `preview-field`,
+  // `preview-errors` and `preview-pending` — names only Studio styled — so the panel that exists to
+  // show you the real form showed it in a costume. Wearing `mdy-renderer`, `mdy-label`,
+  // `mdy-input-wrapper` and `mdy-control__errors` means the foundation paints them, and the preview
+  // matches the canvas and the shipped form without Studio restating a single rule.
+  const kind = PREVIEW_WIDGET_KIND[node.fieldKind] ?? "text";
+  const root = MDY_WIDGET_CONTRACTS[kind].rootClasses.join(" ");
+  const shell = MDY_FIELD_SHELL_CLASSES;
   return `
-    <label class="preview-field">
-      <span>${label}${pending ? ' <span class="preview-pending">checking…</span>' : ""}</span>
-      ${control}
-      ${errors.length ? `<span class="preview-errors">${errors.map((e) => escapeHtml(e.message)).join(", ")}</span>` : ""}
-    </label>
+    <div class="${root}" data-preview-node="${escapeHtml(path)}">
+      <label class="${shell.label}" for="preview-${escapeHtml(path)}">${label}${pending ? ` <span class="${shell.supportingText}">checking…</span>` : ""}</label>
+      <div class="${shell.inputWrapper}">${control}</div>
+      ${errors.length
+        ? `<div class="${shell.errors}">${errors.map((e) => `<span class="${shell.errorItem}">${escapeHtml(e.message)}</span>`).join("")}</div>`
+        : ""}
+    </div>
     ${serverMock}`;
 }
 
@@ -548,8 +578,8 @@ export function previewNodeMarkup(node: StudioSchemaNode, path: string, form: Md
   if (node.node === "field") return previewFieldMarkup(node, path, form, mockConfig);
   if (node.node === "group") {
     return `
-      <fieldset class="preview-group">
-        <legend>${escapeHtml(node.label || node.name)}</legend>
+      <fieldset class="${MDY_LAYOUT_CLASSES.section}">
+        <legend class="${MDY_LAYOUT_CLASSES.sectionLabel}">${escapeHtml(node.label || node.name)}</legend>
         ${node.children.map((c) => previewNodeMarkup(c, `${path}.${c.name}`, form, mockConfig)).join("")}
       </fieldset>`;
   }
