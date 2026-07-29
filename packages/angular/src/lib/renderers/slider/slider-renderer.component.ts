@@ -1,9 +1,9 @@
 import { NgTemplateOutlet } from "@angular/common";
-import { ChangeDetectionStrategy, Component, effect, ElementRef, viewChild, input } from "@angular/core";
+import { ChangeDetectionStrategy, Component, effect, ElementRef, input, viewChild } from "@angular/core";
 import { MDY_CSS_PROPERTIES, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
-import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
+import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { inputText } from "../renderer-projection";
 
 @Component({
@@ -63,9 +63,9 @@ import { inputText } from "../renderer-projection";
 export class MdySliderComponent extends MdyBaseControl<number> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.slider;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
-  readonly min       = input<number>(0);
-  readonly max       = input<number>(100);
-  readonly step      = input<number>(1);
+  readonly min = input<number>(0);
+  readonly max = input<number>(100);
+  readonly step = input<number>(1);
   readonly showValue = input<boolean>(true);
 
   private readonly rangeInput = viewChild<ElementRef<HTMLInputElement>>('rangeInput');
