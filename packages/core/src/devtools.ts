@@ -24,6 +24,23 @@ interface InspectableForm {
 const SENSITIVE = /password|passwd|secret|token|card|cvv|ssn|iban/i;
 
 /**
+ * Whether a field's value is masked in the panel.
+ *
+ * The name heuristic is a guess, and it is wrong in both directions — `notes` can hold a recovery
+ * phrase and `cardStyle` is masked for containing "card". So a declaration wins wherever there is
+ * one, and the guess only fills the silence.
+ */
+export function isSensitivePath(path: string, declared?: boolean): boolean {
+  return declared ?? SENSITIVE.test(path);
+}
+
+/** What a form says about which of its fields may be shown in the clear. */
+export interface MdySnapshotOptions {
+  /** `true` masks, `false` reveals, `undefined` falls back to the name heuristic. */
+  readonly sensitive?: (path: string) => boolean | undefined;
+}
+
+/**
  * Escapes a string for safe interpolation into the panel's innerHTML.
  * Field paths, values and error messages can carry user- or server-supplied
  * text (SECURITY.md: never render external strings as HTML).
@@ -38,7 +55,7 @@ function escapeHtml(text: string): string {
 }
 
 /** One immutable snapshot of a form's state — also handy in tests/logs. */
-export function mdyFormSnapshot(form: InspectableForm): {
+export function mdyFormSnapshot(form: InspectableForm, options: MdySnapshotOptions = {}): {
   readonly valid: boolean;
   readonly pending: boolean;
   readonly submitting: boolean;
@@ -61,7 +78,7 @@ export function mdyFormSnapshot(form: InspectableForm): {
     submitCount: form.state.submitCount(),
     fields: names.map((path) => {
       const state = form.getField(path)?.();
-      const masked = SENSITIVE.test(path);
+      const masked = isSensitivePath(path, options.sensitive?.(path));
       const raw = state?.value() ?? null;
       return {
         path,

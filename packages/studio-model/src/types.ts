@@ -126,6 +126,13 @@ export interface FieldNode extends NodeBase {
   validators: StudioFieldValidator[];
   serverValidator?: StudioServerValidator;
   options?: StudioOption[];
+  /**
+   * Whether the devtools panel may show this field's value in the clear.
+   *
+   * Unset means "let the panel guess from the name", which is what it has always done — right often
+   * enough to be useful, wrong in both directions often enough to matter.
+   */
+  sensitive?: boolean;
 }
 
 export interface GroupNode extends NodeBase {

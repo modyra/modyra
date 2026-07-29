@@ -71,3 +71,16 @@ test("snapshot still masks sensitive fields", () => {
   const snap = mdyFormSnapshot(makeForm("password", "hunter2", "bad"));
   assert.equal(snap.fields[0].value, "•••");
 });
+
+test("a field decides whether the panel shows its value, and the name heuristic only fills the silence", async () => {
+  const { isSensitivePath } = await import("../dist/devtools.js");
+
+  // Undeclared: the guess, which is useful and imperfect.
+  assert.equal(isSensitivePath("password"), true);
+  assert.equal(isSensitivePath("nickname"), false);
+  // `cardStyle` is not a card number, and `notes` may hold a recovery phrase. A guess cannot know
+  // either; a declaration does, and wins in both directions.
+  assert.equal(isSensitivePath("cardStyle"), true);
+  assert.equal(isSensitivePath("cardStyle", false), false);
+  assert.equal(isSensitivePath("notes", true), true);
+});
