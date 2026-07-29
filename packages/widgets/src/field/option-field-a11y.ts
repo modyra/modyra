@@ -4,6 +4,7 @@
 
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
+import { MDY_CSS_PROPERTIES } from "../css.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type {
   MdyOptionFieldState,
@@ -91,7 +92,7 @@ export function projectOptionFieldA11y<TValue>(
       // The segmented theme sizes its tick gutter from the number of segments; the count is the
       // widget's own knowledge, so it travels with the part rather than being restated per adapter.
       ...(options.variant === "segmented"
-        ? { style: { "--mdy-segments-count": String(options.optionCount) } }
+        ? { style: { [MDY_CSS_PROPERTIES.control.segmentCount]: String(options.optionCount) } }
         : {}),
     },
     description: {
