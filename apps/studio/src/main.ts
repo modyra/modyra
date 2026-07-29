@@ -1,4 +1,8 @@
 import { mountStudio } from "@modyra/studio-ui";
+// The canvas draws Modyra controls, so their structure is Modyra's own: the layout grid, the field
+// height, the popup container and the chip primitive come from the foundation rather than from rules
+// Studio restates. Imported before Studio's chrome, so Studio's own rules layer over it.
+import "@modyra/styles/foundation.css";
 import "@modyra/studio-ui/studio.css";
 import type { GenerateRequest, GenerateResponse } from "./codegen-worker.js";
 

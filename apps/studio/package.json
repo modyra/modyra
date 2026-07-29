@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@modyra/studio-ui": "workspace:*",
+    "@modyra/styles": "workspace:*",
     "typescript": "~5.9.3"
   },
   "devDependencies": {
