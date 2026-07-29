@@ -157,6 +157,9 @@ export class MdyOverlayPanelComponent {
       transform,
       width,
       "max-height": maxHeight,
+      // The room measured on the side the popup hangs from. A content-sized panel — a calendar, a
+      // palette — has no width of its own to keep it on the screen, so the ceiling is what does.
+      "max-width": c.maxWidth !== undefined ? `${c.maxWidth}px` : null,
       visibility: this.open() ? "visible" : "hidden",
       opacity: this.open() ? "1" : "0",
       // Keep CSS variables for theme compatibility (themes can reference them for additional styling)
