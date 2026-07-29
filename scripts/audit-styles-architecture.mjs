@@ -116,6 +116,21 @@ function checkFieldHeight(css) {
   return found;
 }
 
+/**
+ * The foundation stands on its own.
+ *
+ * `--mdy-comp-*` are the token tier's (`modyra-base.css`), and a theme need not load it. Used
+ * without a fallback, `width: var(--mdy-comp-switch-track-width)` resolves to nothing and the
+ * control collapses: the switch was 0x0 — invisible — in two of the shipped themes.
+ */
+function checkTokenFallbacks(css) {
+  const found = [];
+  for (const match of css.matchAll(/var\((--mdy-comp-[a-z0-9-]+)\)/g)) {
+    found.push(`uses ${match[1]} with no fallback; the token tier is a theme's to load, not the foundation's to assume`);
+  }
+  return found;
+}
+
 const BRAND_FONTS = /"(Satoshi|Outfit|Inter|Roboto|SF Pro[^"]*|Helvetica Neue)"/g;
 for (const name of FOUNDATION) {
   const css = strip(read(name));
@@ -129,6 +144,7 @@ for (const name of FOUNDATION) {
     if (!context.includes("var(")) defects.push(`${name}: carries the literal colour ${match[0].trim()}`);
   }
   for (const defect of checkFieldHeight(css)) defects.push(`${name}: ${defect}`);
+  for (const defect of checkTokenFallbacks(css)) defects.push(`${name}: ${defect}`);
   for (const debt of DEBT) if (debt.matches(name, css)) debtSeen.add(debt.id);
 }
 
