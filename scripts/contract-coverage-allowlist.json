@@ -1,0 +1,1184 @@
+{
+  "_note": "Classes outside the widget contract. This list may only ever shrink: each batch contractualises some of it. Reseed with --write only when deliberately recording a new baseline.",
+  "_generated": "136 findings",
+  "mdy-angular-announcer": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-button": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-ios.css",
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-color-swatch--selected": {
+    "kind": "unstyled",
+    "adapters": [
+      "plain"
+    ],
+    "themes": []
+  },
+  "mdy-colors": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-colors__arrow--open": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-colors__dropdown-header": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-colors__native-picker": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-colors__swatch-toggle": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-colors--open": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-control__inline-errors": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-control__inline-errors-icon": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-control__inline-errors-tooltip": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-ios.css",
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__action-btn": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-material.css"
+    ]
+  },
+  "mdy-datepicker__action-btn--primary": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-material.css"
+    ]
+  },
+  "mdy-datepicker__backdrop": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__calendar": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__header": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__header-label": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__header-nav": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__icon": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__input-group": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-ionic.css",
+      "modyra-ios.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__modal-header": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-material.css"
+    ]
+  },
+  "mdy-datepicker__modal-label": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-material.css"
+    ]
+  },
+  "mdy-datepicker__modal-value": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-material.css"
+    ]
+  },
+  "mdy-datepicker__month-cell": {
+    "kind": "drift",
+    "adapters": [
+      "angular"
+    ],
+    "themes": [
+      "modyra-ios.css",
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__month-cell--selected": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-ios.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__month-picker": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__nav-btn": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-ios.css",
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__popup--modal": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-ios.css",
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__title": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-ios.css",
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__view-icon": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__view-toggle": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__year-cell": {
+    "kind": "drift",
+    "adapters": [
+      "angular"
+    ],
+    "themes": [
+      "modyra-ios.css",
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__year-cell--selected": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-ios.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-datepicker__year-grid": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-datepicker__year-picker": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-daterange__group": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-ios.css",
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-daterange__hint": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-daterange__input-sizer": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-devtools": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-devtools__bad": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-devtools__bar": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-devtools__body": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-devtools__filters": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-devtools__ok": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-devtools__path": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-devtools-overlay": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-devtools-overlay__bar": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-devtools-overlay__body": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-devtools-overlay__close": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-devtools-overlay__title": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-dynamic": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-dynamic-form": {
+    "kind": "drift",
+    "adapters": [
+      "plain"
+    ],
+    "themes": [
+      "modyra-modern.css"
+    ]
+  },
+  "mdy-file-icon": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-file-info": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-file-meta": {
+    "kind": "unstyled",
+    "adapters": [
+      "plain"
+    ],
+    "themes": []
+  },
+  "mdy-file-name": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-material.css"
+    ]
+  },
+  "mdy-file-placeholder": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-floating-label": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "material-filled-field.css",
+      "modyra-ionic.css",
+      "modyra-ios.css",
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-forms": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-glass-effect": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-glass-effect--high": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-glass-effect--low": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-glass-effect--medium": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-inline-errors": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-ios.css"
+    ]
+  },
+  "mdy-lit-announcer": {
+    "kind": "unstyled",
+    "adapters": [
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-multiselect__chip": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-modern.css"
+    ]
+  },
+  "mdy-multiselect__chip--disabled": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-modern.css"
+    ]
+  },
+  "mdy-multiselect__chip--selected": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-modern.css"
+    ]
+  },
+  "mdy-multiselect__label": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-ios.css",
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-multiselect__option": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-modern.css"
+    ]
+  },
+  "mdy-multiselect--open": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-multiselect-overlay": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-multiselect-overlay__option": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-ios.css"
+    ]
+  },
+  "mdy-multiselect-overlay__option--selected": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-ios.css"
+    ]
+  },
+  "mdy-multiselect-overlay__panel--above": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-multiselect-overlay__panel--overlay": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-overlay--open": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-overlay-backdrop": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-overlay-panel": {
+    "kind": "unstyled",
+    "adapters": [
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-overlay-panel--above": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-overlay-panel--modal": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-overlay-panel--overlay": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-overlay-panel--right": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-overlay-panel--visible": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-plain": {
+    "kind": "unstyled",
+    "adapters": [
+      "plain"
+    ],
+    "themes": []
+  },
+  "mdy-plain-announcer": {
+    "kind": "unstyled",
+    "adapters": [
+      "plain"
+    ],
+    "themes": []
+  },
+  "mdy-plain-colors": {
+    "kind": "unstyled",
+    "adapters": [
+      "plain"
+    ],
+    "themes": []
+  },
+  "mdy-plain-datepicker": {
+    "kind": "unstyled",
+    "adapters": [
+      "plain"
+    ],
+    "themes": []
+  },
+  "mdy-plain-daterange": {
+    "kind": "unstyled",
+    "adapters": [
+      "plain"
+    ],
+    "themes": []
+  },
+  "mdy-plain-form": {
+    "kind": "unstyled",
+    "adapters": [
+      "plain"
+    ],
+    "themes": []
+  },
+  "mdy-plain-timepicker": {
+    "kind": "unstyled",
+    "adapters": [
+      "plain"
+    ],
+    "themes": []
+  },
+  "mdy-radio-group-label": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-range-calendar": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra-material.css"
+    ]
+  },
+  "mdy-segmented__button--first": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-segmented__button--last": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-segmented-label": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-select": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-modern.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-select__dropdown--right": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-select__loading-content": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-material.css"
+    ]
+  },
+  "mdy-select__no-results": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra-ios.css",
+      "modyra-material.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-select__option--create": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-select__option-label": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-select__overlay-backdrop": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-spin-btn": {
+    "kind": "drift",
+    "adapters": [
+      "angular"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-spin-btn-down": {
+    "kind": "drift",
+    "adapters": [
+      "angular"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-spin-btn-up": {
+    "kind": "drift",
+    "adapters": [
+      "angular"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-switch": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker__backdrop": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker__icon": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker__popup--modal": {
+    "kind": "dead",
+    "adapters": [],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker--dial": {
+    "kind": "unstyled",
+    "adapters": [
+      "lit",
+      "plain"
+    ],
+    "themes": []
+  },
+  "mdy-timepicker-dial-variant": {
+    "kind": "unstyled",
+    "adapters": [
+      "lit"
+    ],
+    "themes": []
+  },
+  "mdy-timepicker-fields": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker-period-btn": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker-period-btn--selected": {
+    "kind": "drift",
+    "adapters": [
+      "angular"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker-segment-input": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra-ios.css",
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker-segment-input--readonly": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker-segment-label": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker-separator": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-timepicker-spacer": {
+    "kind": "drift",
+    "adapters": [
+      "lit",
+      "plain"
+    ],
+    "themes": [
+      "modyra.css"
+    ]
+  },
+  "mdy-wizard": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__body": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__header": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__nav": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__next": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__prev": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__status": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__step": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__step-index": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__step-label": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__step-tab": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__step-tab--active": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  },
+  "mdy-wizard__step-tab--done": {
+    "kind": "unstyled",
+    "adapters": [
+      "angular"
+    ],
+    "themes": []
+  }
+}

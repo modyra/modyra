@@ -58,7 +58,8 @@
     "test:plain-contract": "npm run build:plain && node scripts/audit-plain-full-catalog.mjs && node scripts/audit-plain-widget-contract.mjs",
     "test:contracts": "npm run test:widget-contract && npm run test:plain-contract && npm run test:plain && npm run test:layout-contract && node scripts/audit-patch3-readiness.mjs --require-ready",
     "test:layout-contract": "node scripts/audit-layout-contract.mjs --check",
-    "test:styles-architecture": "node scripts/audit-styles-architecture.mjs --check"
+    "test:styles-architecture": "node scripts/audit-styles-architecture.mjs --check",
+    "test:contract-coverage": "node scripts/audit-contract-style-coverage.mjs --check"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^21.2.19",
