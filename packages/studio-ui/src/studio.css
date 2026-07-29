@@ -30,47 +30,47 @@
 }
 
 :root {
-  --mdy-indigo: #7067ff;
-  --mdy-violet: #a855f7;
-  --mdy-coral: #ff6577;
-  --mdy-night: #0e0f16;
-  --mdy-cloud: #f8fafc;
-  --mdy-slate: #94a3b8;
-  --mdy-gradient-brand: linear-gradient(90deg, #7067ff 0%, #a855f7 50%, #ff6577 100%);
+  --studio-chrome-indigo: #7067ff;
+  --studio-chrome-violet: #a855f7;
+  --studio-chrome-coral: #ff6577;
+  --studio-chrome-night: #0e0f16;
+  --studio-chrome-cloud: #f8fafc;
+  --studio-chrome-slate: #94a3b8;
+  --studio-chrome-gradient-brand: linear-gradient(90deg, #7067ff 0%, #a855f7 50%, #ff6577 100%);
 
   /* Dark is the default because Studio's own docs site defaults to it; the light set below
      takes over from the system preference. Every surface reads these semantic tokens rather
      than a raw colour, so the two schemes stay in step by construction. */
-  --mdy-bg: var(--mdy-night);
-  --mdy-panel: color-mix(in srgb, var(--mdy-night) 92%, white);
-  --mdy-border: color-mix(in srgb, var(--mdy-night) 80%, white);
-  --mdy-border-accent: color-mix(in srgb, var(--mdy-indigo) 40%, var(--mdy-night));
-  --mdy-text: var(--mdy-cloud);
-  /* Lightened from --mdy-slate (#94a3b8), which fell under WCAG AA 4.5:1 against the panel
+  --studio-chrome-bg: var(--studio-chrome-night);
+  --studio-chrome-panel: color-mix(in srgb, var(--studio-chrome-night) 92%, white);
+  --studio-chrome-border: color-mix(in srgb, var(--studio-chrome-night) 80%, white);
+  --studio-chrome-border-accent: color-mix(in srgb, var(--studio-chrome-indigo) 40%, var(--studio-chrome-night));
+  --studio-chrome-text: var(--studio-chrome-cloud);
+  /* Lightened from --studio-chrome-slate (#94a3b8), which fell under WCAG AA 4.5:1 against the panel
      at the sizes the canvas uses it — caught by the axe suite, not by eye. */
-  --mdy-text-muted: #aab6c8;
-  --mdy-focus-ring: color-mix(in srgb, var(--mdy-indigo) 35%, transparent);
-  --mdy-danger-text: color-mix(in srgb, var(--mdy-coral) 82%, white);
-  --mdy-shadow-strong: rgb(0 0 0 / 45%);
-  --mdy-shadow-soft: rgb(0 0 0 / 22%);
-  --mdy-scheme: dark;
+  --studio-chrome-text-muted: #aab6c8;
+  --studio-chrome-focus-ring: color-mix(in srgb, var(--studio-chrome-indigo) 35%, transparent);
+  --studio-chrome-danger-text: color-mix(in srgb, var(--studio-chrome-coral) 82%, white);
+  --studio-chrome-shadow-strong: rgb(0 0 0 / 45%);
+  --studio-chrome-shadow-soft: rgb(0 0 0 / 22%);
+  --studio-chrome-scheme: dark;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --mdy-bg: #ffffff;
-    --mdy-panel: var(--mdy-cloud);
-    --mdy-border: #d5dbe4;
-    --mdy-border-accent: color-mix(in srgb, var(--mdy-indigo) 45%, white);
-    --mdy-text: #16181f;
-    /* Darkened for the same AA reason the dark value was lightened: --mdy-slate on a light
+    --studio-chrome-bg: #ffffff;
+    --studio-chrome-panel: var(--studio-chrome-cloud);
+    --studio-chrome-border: #d5dbe4;
+    --studio-chrome-border-accent: color-mix(in srgb, var(--studio-chrome-indigo) 45%, white);
+    --studio-chrome-text: #16181f;
+    /* Darkened for the same AA reason the dark value was lightened: --studio-chrome-slate on a light
        panel is ~2.9:1 at the sizes the canvas uses. */
-    --mdy-text-muted: #55607a;
-    --mdy-focus-ring: color-mix(in srgb, var(--mdy-indigo) 30%, transparent);
-    --mdy-danger-text: #b3261e;
-    --mdy-shadow-strong: rgb(15 23 42 / 22%);
-    --mdy-shadow-soft: rgb(15 23 42 / 12%);
-    --mdy-scheme: light;
+    --studio-chrome-text-muted: #55607a;
+    --studio-chrome-focus-ring: color-mix(in srgb, var(--studio-chrome-indigo) 30%, transparent);
+    --studio-chrome-danger-text: #b3261e;
+    --studio-chrome-shadow-strong: rgb(15 23 42 / 22%);
+    --studio-chrome-shadow-soft: rgb(15 23 42 / 12%);
+    --studio-chrome-scheme: light;
   }
 }
 
@@ -86,7 +86,7 @@ body {
   min-height: 0;
   margin: 0;
   overflow: hidden;
-  background: var(--mdy-bg);
+  background: var(--studio-chrome-bg);
 }
 
 .studio {
@@ -96,8 +96,8 @@ body {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: var(--mdy-bg);
-  color: var(--mdy-text);
+  background: var(--studio-chrome-bg);
+  color: var(--studio-chrome-text);
   font: 14px "Satoshi", system-ui, sans-serif;
   display: grid;
   grid-template-rows: 40px minmax(0, 1fr) 24px;
@@ -115,13 +115,13 @@ body {
   gap: 10px;
   padding: 0 14px;
   overflow: hidden;
-  border-bottom: 1px solid var(--mdy-border);
+  border-bottom: 1px solid var(--studio-chrome-border);
 }
 .brand {
   flex: 0 0 auto;
   font-weight: 700;
   font-size: 13px;
-  background-image: var(--mdy-gradient-brand);
+  background-image: var(--studio-chrome-gradient-brand);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -136,30 +136,30 @@ body {
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
-  color: var(--mdy-text);
+  color: var(--studio-chrome-text);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
 }
 .form-name:hover {
-  border-color: var(--mdy-border);
+  border-color: var(--studio-chrome-border);
 }
 .form-name:focus-visible {
-  border-color: var(--mdy-indigo);
-  background: var(--mdy-panel);
+  border-color: var(--studio-chrome-indigo);
+  background: var(--studio-chrome-panel);
 }
 .form-meta {
   flex: 0 0 auto;
   margin-inline-start: auto;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 11px;
   white-space: nowrap;
 }
 .import-button {
   display: inline-flex;
   align-items: center;
-  color: var(--mdy-text);
-  border: 1px solid var(--mdy-border);
+  color: var(--studio-chrome-text);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
   padding: 6px 10px;
   cursor: pointer;
@@ -167,8 +167,8 @@ body {
 }
 .import-button:hover,
 .import-button:focus-within {
-  border-color: var(--mdy-indigo);
-  outline: 2px solid var(--mdy-focus-ring);
+  border-color: var(--studio-chrome-indigo);
+  outline: 2px solid var(--studio-chrome-focus-ring);
 }
 
 .studio button,
@@ -180,16 +180,16 @@ body {
 }
 .studio button {
   background: transparent;
-  color: var(--mdy-text);
-  border: 1px solid var(--mdy-border);
+  color: var(--studio-chrome-text);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
   padding: 6px 10px;
   cursor: pointer;
 }
 .studio button:hover,
 .studio button:focus-visible {
-  border-color: var(--mdy-indigo);
-  outline: 2px solid var(--mdy-focus-ring);
+  border-color: var(--studio-chrome-indigo);
+  outline: 2px solid var(--studio-chrome-focus-ring);
 }
 .studio button:disabled {
   opacity: 0.4;
@@ -213,11 +213,11 @@ body {
   overflow: auto;
   overscroll-behavior: contain;
   padding: 10px 8px;
-  border-right: 1px solid var(--mdy-border);
+  border-right: 1px solid var(--studio-chrome-border);
 }
 .outline-title {
   margin: 0 0 6px 4px;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
@@ -252,7 +252,7 @@ body {
   padding: 0 4px;
   border-color: transparent;
   background: transparent;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 11px;
   opacity: 0;
   transition: opacity 120ms ease;
@@ -270,24 +270,24 @@ body {
   color: transparent;
 }
 .outline .drop-zone.active {
-  background: color-mix(in srgb, var(--mdy-indigo) 22%, transparent);
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 22%, transparent);
   border-radius: 3px;
 }
 .outline .drop-zone.drag-over {
-  background: var(--mdy-indigo);
+  background: var(--studio-chrome-indigo);
   border-radius: 3px;
 }
 .outline .array-item {
   margin-inline-start: 8px;
 }
 .outline .array-item b {
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 10px;
   font-weight: 600;
 }
 .outline .empty {
   padding: 8px 4px;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 11px;
 }
 /* The empty-state drop target is a placeholder, not body copy: it must still read. */
@@ -296,9 +296,9 @@ body {
   height: auto;
   padding: 8px;
   overflow: visible;
-  border: 1px dashed var(--mdy-border);
+  border: 1px dashed var(--studio-chrome-border);
   border-radius: 6px;
-  color: var(--mdy-text);
+  color: var(--studio-chrome-text);
   font-size: 11px;
   text-align: center;
 }
@@ -319,7 +319,7 @@ body {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  border-left: 1px solid var(--mdy-border);
+  border-left: 1px solid var(--studio-chrome-border);
 }
 .inspector-body {
   min-width: 0;
@@ -341,26 +341,26 @@ body {
 .inspector-tabs button {
   flex: 1 0 auto;
   border: none;
-  border-bottom: 2px solid var(--mdy-border);
+  border-bottom: 2px solid var(--studio-chrome-border);
   border-radius: 0;
   background: transparent;
   padding: 8px 8px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 .inspector-tabs button[aria-selected="true"] {
-  color: var(--mdy-text);
-  border-bottom-color: var(--mdy-indigo);
+  color: var(--studio-chrome-text);
+  border-bottom-color: var(--studio-chrome-indigo);
 }
 .inspector-tabs button:hover {
-  color: var(--mdy-text);
+  color: var(--studio-chrome-text);
 }
 
 .badge {
   display: inline-block;
-  background: color-mix(in srgb, var(--mdy-indigo) 30%, transparent);
-  color: color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-cloud));
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 30%, transparent);
+  color: color-mix(in srgb, var(--studio-chrome-indigo) 55%, var(--studio-chrome-cloud));
   border-radius: 999px;
   padding: 1px 7px;
   font-size: 10px;
@@ -368,7 +368,7 @@ body {
 }
 
 .accordion {
-  border-top: 1px solid var(--mdy-border);
+  border-top: 1px solid var(--studio-chrome-border);
   margin-top: 4px;
   padding-top: 4px;
 }
@@ -379,14 +379,14 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   list-style: revert;
 }
 .accordion summary::marker {
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 .accordion[open] summary {
-  color: var(--mdy-text);
+  color: var(--studio-chrome-text);
 }
 .accordion-body {
   padding: 2px 2px 8px;
@@ -395,7 +395,7 @@ body {
 .tab-hint {
   font-size: 11px;
   line-height: 1.4;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   margin: 0 0 9px;
 }
 
@@ -445,11 +445,11 @@ body {
   padding: 0;
   border: none;
   border-radius: 50%;
-  background-image: var(--mdy-gradient-brand);
+  background-image: var(--studio-chrome-gradient-brand);
   color: white;
   font-size: 20px;
   line-height: 1;
-  box-shadow: 0 6px 20px var(--mdy-shadow-strong);
+  box-shadow: 0 6px 20px var(--studio-chrome-shadow-strong);
 }
 .studio .fab:hover,
 .studio .fab:focus-visible {
@@ -463,10 +463,10 @@ body {
   display: grid;
   gap: 14px;
   padding: 14px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 14px;
-  background: var(--mdy-panel);
-  box-shadow: 0 14px 40px var(--mdy-shadow-strong);
+  background: var(--studio-chrome-panel);
+  box-shadow: 0 14px 40px var(--studio-chrome-shadow-strong);
 }
 .dock-panel[hidden] {
   display: none;
@@ -477,7 +477,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 .dock-templates {
   display: grid;
@@ -525,12 +525,12 @@ body {
   min-width: 0;
   margin: 0;
   padding: 8px 10px 10px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 10px;
 }
 .plain-canvas-form .mdy-layout-legend {
   padding: 0 4px;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -574,7 +574,7 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: auto;
-  background: color-mix(in srgb, var(--mdy-night) 55%, transparent);
+  background: color-mix(in srgb, var(--studio-chrome-night) 55%, transparent);
 }
 .palette-dialog {
   position: absolute;
@@ -586,23 +586,23 @@ body {
   display: grid;
   gap: 8px;
   padding: 12px;
-  border: 1px solid var(--mdy-border-accent);
+  border: 1px solid var(--studio-chrome-border-accent);
   border-radius: 14px;
-  background: var(--mdy-panel);
-  box-shadow: 0 20px 60px var(--mdy-shadow-strong);
+  background: var(--studio-chrome-panel);
+  box-shadow: 0 20px 60px var(--studio-chrome-shadow-strong);
 }
 .studio .palette-input {
   width: 100%;
   padding: 9px 11px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 8px;
-  background: var(--mdy-bg);
-  color: var(--mdy-text);
+  background: var(--studio-chrome-bg);
+  color: var(--studio-chrome-text);
   font-size: 14px;
 }
 .studio .palette-input:focus-visible {
-  border-color: var(--mdy-indigo);
-  outline: 2px solid var(--mdy-focus-ring);
+  border-color: var(--studio-chrome-indigo);
+  outline: 2px solid var(--studio-chrome-focus-ring);
 }
 .palette-list {
   max-height: min(46vh, 340px);
@@ -622,7 +622,7 @@ body {
   cursor: pointer;
 }
 .palette-option.active {
-  background: color-mix(in srgb, var(--mdy-indigo) 26%, var(--mdy-panel));
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 26%, var(--studio-chrome-panel));
 }
 .palette-option-label {
   font-size: 13px;
@@ -630,11 +630,11 @@ body {
 }
 .palette-option-group,
 .palette-empty {
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 11px;
 }
 .palette-option.active .palette-option-group {
-  color: var(--mdy-text);
+  color: var(--studio-chrome-text);
 }
 .palette-empty {
   padding: 10px 9px;
@@ -642,13 +642,13 @@ body {
 }
 .palette-hint {
   margin: 0;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 10px;
 }
 .dock-section h3 kbd {
   margin-inline-start: 4px;
   padding: 1px 4px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 4px;
   font-family: inherit;
   font-size: 9px;
@@ -657,7 +657,7 @@ body {
 }
 .dock-group-label {
   margin: 6px 0 4px;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -671,13 +671,13 @@ body {
   padding: 0 3px;
   border-color: transparent;
   background: transparent;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 11px;
   line-height: 1;
   opacity: 0.4;
 }
 .plain-canvas-form .plain-canvas-required[aria-pressed="true"] {
-  color: var(--mdy-coral);
+  color: var(--studio-chrome-coral);
   opacity: 1;
 }
 .plain-canvas-form .plain-canvas-required:hover {
@@ -688,16 +688,16 @@ body {
   display: inline-flex;
   max-width: 100%;
   padding: 2px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 8px;
-  background: var(--mdy-panel);
+  background: var(--studio-chrome-panel);
 }
 .canvas-mode-switch button {
   border-color: transparent;
 }
 .canvas-mode-switch button[aria-pressed="true"] {
-  border-color: var(--mdy-border-accent);
-  background: color-mix(in srgb, var(--mdy-indigo) 18%, transparent);
+  border-color: var(--studio-chrome-border-accent);
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 18%, transparent);
 }
 .canvas-surface,
 .plain-canvas-frame,
@@ -708,16 +708,16 @@ body {
   width: min(100%, 680px);
   margin: 8px auto 96px; /* room for the dock to float over empty space, not over a field */
   padding: 22px 22px 26px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 16px;
-  background: var(--mdy-panel);
+  background: var(--studio-chrome-panel);
 }
 .plain-canvas-unavailable {
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 12px;
   overflow-wrap: anywhere;
   padding: 24px;
-  border: 1px dashed var(--mdy-border);
+  border: 1px dashed var(--studio-chrome-border);
   border-radius: 8px;
   text-align: center;
 }
@@ -740,11 +740,11 @@ body {
    mid-drag, so the gap you aimed at is no longer the gap under the cursor. A thin
    constant-height bar is both stable and the clearer insertion indicator. */
 .plain-canvas-form .plain-canvas-drop.active {
-  background: color-mix(in srgb, var(--mdy-indigo) 22%, transparent);
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 22%, transparent);
   border-radius: 3px;
 }
 .plain-canvas-form .plain-canvas-drop.drag-over {
-  background: var(--mdy-indigo);
+  background: var(--studio-chrome-indigo);
   border-radius: 3px;
 }
 /* A hairline with a label on it, not a control: the gap between two fields should read as a
@@ -762,8 +762,8 @@ body {
 }
 .plain-canvas-form .plain-canvas-insert:hover,
 .plain-canvas-form .plain-canvas-insert:focus-visible {
-  background: color-mix(in srgb, var(--mdy-indigo) 10%, transparent);
-  color: var(--mdy-indigo);
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 10%, transparent);
+  color: var(--studio-chrome-indigo);
 }
 /* The form renders its own <label>; in the canvas the editable one above the
    control takes its place visually, while this stays for screen readers so the
@@ -785,7 +785,7 @@ body {
   flex: 0 0 auto;
   width: 14px;
   padding: 3px 0;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 12px;
   line-height: 1;
   text-align: center;
@@ -818,7 +818,7 @@ body {
 }
 .plain-canvas-form .plain-canvas-array-count {
   flex: 0 0 auto;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 10px;
   white-space: nowrap;
 }
@@ -831,16 +831,16 @@ body {
   border: 1px solid transparent;
   border-radius: 5px;
   background: transparent;
-  color: var(--mdy-text);
+  color: var(--studio-chrome-text);
   font: inherit;
 }
 .plain-canvas-form .plain-canvas-inline:hover {
-  border-color: var(--mdy-border);
+  border-color: var(--studio-chrome-border);
 }
 .plain-canvas-form .plain-canvas-inline:focus,
 .plain-canvas-form .plain-canvas-inline:focus-visible {
-  border-color: var(--mdy-indigo);
-  background: var(--mdy-bg);
+  border-color: var(--studio-chrome-indigo);
+  background: var(--studio-chrome-bg);
   outline: none;
 }
 .plain-canvas-form .plain-canvas-inline-label {
@@ -855,12 +855,12 @@ body {
   flex: 0 1 7rem;
   width: 7rem;
   text-align: right;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
 }
 .plain-canvas-inline::placeholder {
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   opacity: 0.6;
 }
 .plain-canvas-form > div {
@@ -885,15 +885,15 @@ body {
   border-radius: 8px;
 }
 .plain-canvas-field:hover {
-  border-color: color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-border));
+  border-color: color-mix(in srgb, var(--studio-chrome-indigo) 55%, var(--studio-chrome-border));
 }
 .plain-canvas-field.selected {
-  border-color: var(--mdy-indigo);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-indigo) 22%, transparent);
+  border-color: var(--studio-chrome-indigo);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--studio-chrome-indigo) 22%, transparent);
 }
 .plain-canvas-field.has-diagnostic {
   border-style: dashed;
-  border-color: var(--mdy-coral);
+  border-color: var(--studio-chrome-coral);
 }
 /* Kind chip: doubles as the "select this node in Studio" control. */
 .plain-canvas-form .plain-canvas-select,
@@ -903,8 +903,8 @@ body {
   padding: 2px 7px;
   border-color: transparent;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--mdy-bg) 82%, transparent);
-  color: var(--mdy-text);
+  background: color-mix(in srgb, var(--studio-chrome-bg) 82%, transparent);
+  color: var(--studio-chrome-text);
   font-size: 10px;
   line-height: 1.4;
   text-transform: uppercase;
@@ -917,7 +917,7 @@ body {
 .plain-canvas-field.selected .plain-canvas-select,
 .plain-canvas-form .plain-canvas-group.selected > .plain-canvas-head > .plain-canvas-select,
 .plain-canvas-form .plain-canvas-array.selected > .plain-canvas-head > .plain-canvas-select {
-  background: color-mix(in srgb, var(--mdy-indigo) 68%, black);
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 68%, black);
   color: white;
 }
 /* In flow inside the field's own box, hidden with `visibility` rather than
@@ -950,16 +950,16 @@ body {
   padding: 2px 5px;
   border-color: transparent;
   background: transparent;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 11px;
   line-height: 1.4;
 }
 .plain-canvas-actions button:hover:not(:disabled) {
-  color: var(--mdy-text);
-  background: var(--mdy-bg);
+  color: var(--studio-chrome-text);
+  background: var(--studio-chrome-bg);
 }
 .plain-canvas-actions [data-delete] {
-  color: var(--mdy-danger-text);
+  color: var(--studio-chrome-danger-text);
 }
 .plain-canvas-actions button:disabled {
   opacity: 0.35;
@@ -972,7 +972,7 @@ body {
   background: transparent;
   /* Same reasoning as the row's icon buttons: these only appear on hover/focus, so they can
      carry full text contrast rather than being recessed twice over. */
-  color: var(--mdy-text);
+  color: var(--studio-chrome-text);
   font: inherit;
   font-size: 11px;
 }
@@ -982,7 +982,7 @@ body {
   width: min(100%, 150px) !important;
   margin: 0 auto;
   background: transparent;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 11px;
   opacity: 0;
   transition: opacity 120ms ease;
@@ -993,25 +993,25 @@ body {
 }
 .plain-canvas-insert:hover,
 .plain-canvas-insert:focus-visible {
-  border-color: var(--mdy-indigo);
-  background: color-mix(in srgb, var(--mdy-indigo) 10%, transparent);
-  color: var(--mdy-text);
+  border-color: var(--studio-chrome-indigo);
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 10%, transparent);
+  color: var(--studio-chrome-text);
   opacity: 1;
 }
 .plain-canvas-array {
   margin: 10px 0;
   padding: 12px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 10px;
-  background: color-mix(in srgb, var(--mdy-surface) 96%, var(--mdy-coral));
+  background: color-mix(in srgb, var(--mdy-surface) 96%, var(--studio-chrome-coral));
 }
 .plain-canvas-array.selected {
-  border-color: var(--mdy-indigo);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-indigo) 20%, transparent);
+  border-color: var(--studio-chrome-indigo);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--studio-chrome-indigo) 20%, transparent);
 }
 .plain-canvas-array-count,
 .plain-canvas-array-empty {
-  color: var(--mdy-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 0.8rem;
 }
 .plain-canvas-array-body {
@@ -1022,7 +1022,7 @@ body {
 .plain-canvas-array-empty {
   margin: 0;
   padding: 10px;
-  border: 1px dashed var(--mdy-border);
+  border: 1px dashed var(--studio-chrome-border);
   border-radius: 6px;
   text-align: center;
 }
@@ -1035,13 +1035,13 @@ body {
   min-width: 0;
   margin: 10px 0;
   padding: 12px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 10px;
-  background: color-mix(in srgb, var(--mdy-surface) 94%, var(--mdy-indigo));
+  background: color-mix(in srgb, var(--mdy-surface) 94%, var(--studio-chrome-indigo));
 }
 .plain-canvas-group.selected {
-  border-color: var(--mdy-indigo);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-indigo) 20%, transparent);
+  border-color: var(--studio-chrome-indigo);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--studio-chrome-indigo) 20%, transparent);
 }
 .plain-canvas-group[draggable="true"] {
   cursor: grab;
@@ -1092,14 +1092,14 @@ body {
 .plain-canvas-drop.active {
   min-height: 14px;
   margin: 2px 0;
-  border: 1px dashed color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-border));
+  border: 1px dashed color-mix(in srgb, var(--studio-chrome-indigo) 55%, var(--studio-chrome-border));
   border-radius: 6px;
   opacity: 0.55;
 }
 .plain-canvas-drop.drag-over {
   min-height: 24px;
-  border-color: var(--mdy-indigo);
-  background: color-mix(in srgb, var(--mdy-indigo) 16%, transparent);
+  border-color: var(--studio-chrome-indigo);
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 16%, transparent);
   opacity: 1;
 }
 .dock [data-template][draggable="true"] {
@@ -1118,7 +1118,7 @@ body {
   }
 }
 .plain-canvas-form label {
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 12px;
   font-weight: 600;
 }
@@ -1142,10 +1142,10 @@ body {
 .plain-canvas-form textarea:not(:where(.mdy-input-wrapper *)),
 .plain-canvas-form select:not(:where(.mdy-input-wrapper *, .plain-canvas-insert)) {
   padding: 9px 10px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
-  background: var(--mdy-bg);
-  color: var(--mdy-text);
+  background: var(--studio-chrome-bg);
+  color: var(--studio-chrome-text);
 }
 /* The wrapper frame, its error/disabled states and the control reset used to live here,
    compensating for a theme that shipped structure without colour. @modyra/styles' modern
@@ -1165,7 +1165,7 @@ body {
 .plain-canvas-form ul:not(:where(.mdy-input-wrapper *)) {
   margin: 0;
   padding-left: 18px;
-  color: var(--mdy-coral);
+  color: var(--studio-chrome-coral);
   font-size: 11px;
 }
 
@@ -1179,7 +1179,7 @@ body {
   margin: 0;
 }
 .tree ul {
-  border-left: 1px solid var(--mdy-border);
+  border-left: 1px solid var(--studio-chrome-border);
   margin-left: 18px;
   padding-left: 14px;
 }
@@ -1189,12 +1189,12 @@ body {
   display: flex;
   gap: 6px;
   align-items: center;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 7px;
   padding: 6px;
 }
 .selected > .node {
-  border-color: var(--mdy-indigo);
+  border-color: var(--studio-chrome-indigo);
 }
 .node .select {
   min-width: 0;
@@ -1216,7 +1216,7 @@ body {
   overflow-wrap: anywhere;
 }
 .node small {
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 .node > button:not(.select),
 .node-indicators {
@@ -1236,13 +1236,13 @@ body {
   line-height: 1;
 }
 .indicator.required {
-  color: var(--mdy-coral);
+  color: var(--studio-chrome-coral);
   font-size: 14px;
   font-weight: 700;
 }
 .indicator.count {
-  background: color-mix(in srgb, var(--mdy-indigo) 30%, transparent);
-  color: color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-cloud));
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 30%, transparent);
+  color: color-mix(in srgb, var(--studio-chrome-indigo) 55%, var(--studio-chrome-cloud));
   border-radius: 999px;
   min-width: 15px;
   height: 15px;
@@ -1250,18 +1250,18 @@ body {
   font-weight: 700;
 }
 .indicator.server {
-  color: var(--mdy-violet);
+  color: var(--studio-chrome-violet);
   font-size: 12px;
 }
 .indicator.issue {
-  color: var(--mdy-coral);
+  color: var(--studio-chrome-coral);
   font-weight: 700;
   font-size: 13px;
 }
 
 .badge-error {
-  background: color-mix(in srgb, var(--mdy-coral) 30%, transparent);
-  color: var(--mdy-danger-text);
+  background: color-mix(in srgb, var(--studio-chrome-coral) 30%, transparent);
+  color: var(--studio-chrome-danger-text);
 }
 
 .diagnostic-list {
@@ -1276,25 +1276,25 @@ body {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--mdy-border);
-  border-left: 3px solid var(--mdy-text-muted);
+  border: 1px solid var(--studio-chrome-border);
+  border-left: 3px solid var(--studio-chrome-text-muted);
   border-radius: 6px;
   padding: 8px 10px;
 }
 .diagnostic-row.severity-error {
-  border-left-color: var(--mdy-coral);
+  border-left-color: var(--studio-chrome-coral);
 }
 .diagnostic-row.severity-warning {
-  border-left-color: color-mix(in srgb, var(--mdy-violet) 70%, var(--mdy-coral));
+  border-left-color: color-mix(in srgb, var(--studio-chrome-violet) 70%, var(--studio-chrome-coral));
 }
 .diag-severity {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 .severity-error .diag-severity {
-  color: var(--mdy-danger-text);
+  color: var(--studio-chrome-danger-text);
 }
 .diag-message {
   min-width: 0;
@@ -1312,10 +1312,10 @@ body {
 }
 
 .export-error {
-  border: 1px solid var(--mdy-coral);
+  border: 1px solid var(--studio-chrome-coral);
   border-radius: 6px;
   padding: 8px 10px;
-  color: var(--mdy-coral);
+  color: var(--studio-chrome-coral);
   font-size: 12px;
 }
 .export-files {
@@ -1327,7 +1327,7 @@ body {
 }
 .export-file {
   min-width: 0;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
   padding: 8px 10px;
   font-size: 12px;
@@ -1352,8 +1352,8 @@ body {
   max-height: 260px;
   overflow: auto;
   box-sizing: border-box;
-  background: var(--mdy-bg);
-  border: 1px solid var(--mdy-border);
+  background: var(--studio-chrome-bg);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
   padding: 10px;
   font-family: monospace;
@@ -1375,16 +1375,16 @@ body {
   font-weight: 700;
 }
 .preview-status-badge.valid {
-  background: color-mix(in srgb, var(--mdy-indigo) 30%, transparent);
-  color: color-mix(in srgb, var(--mdy-indigo) 55%, var(--mdy-cloud));
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 30%, transparent);
+  color: color-mix(in srgb, var(--studio-chrome-indigo) 55%, var(--studio-chrome-cloud));
 }
 .preview-status-badge.invalid {
-  background: color-mix(in srgb, var(--mdy-coral) 25%, transparent);
-  color: var(--mdy-danger-text);
+  background: color-mix(in srgb, var(--studio-chrome-coral) 25%, transparent);
+  color: var(--studio-chrome-danger-text);
 }
 .preview-status-badge.pending {
-  background: color-mix(in srgb, var(--mdy-violet) 25%, transparent);
-  color: color-mix(in srgb, var(--mdy-violet) 55%, var(--mdy-cloud));
+  background: color-mix(in srgb, var(--studio-chrome-violet) 25%, transparent);
+  color: color-mix(in srgb, var(--studio-chrome-violet) 55%, var(--studio-chrome-cloud));
 }
 .preview-fields {
   display: grid;
@@ -1397,14 +1397,14 @@ body {
   font-size: 12px;
 }
 .preview-field > span:first-child {
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 .preview-pending {
-  color: var(--mdy-violet);
+  color: var(--studio-chrome-violet);
   font-weight: 700;
 }
 .preview-errors {
-  color: var(--mdy-coral);
+  color: var(--studio-chrome-coral);
   font-size: 11px;
 }
 .preview-mock-mode {
@@ -1412,10 +1412,10 @@ body {
   gap: 4px;
   margin-top: 4px;
   font-size: 11px;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 .preview-group {
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 8px;
   padding: 12px;
   margin: 0;
@@ -1428,10 +1428,10 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 .preview-array {
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 8px;
   padding: 12px;
   display: grid;
@@ -1442,10 +1442,10 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 .preview-array-row {
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
   padding: 10px;
   display: grid;
@@ -1465,18 +1465,18 @@ body {
 .drop-zone.inside {
   height: 25px;
   padding: 4px;
-  color: color-mix(in srgb, var(--mdy-indigo) 60%, var(--mdy-cloud));
-  border-color: var(--mdy-border-accent);
+  color: color-mix(in srgb, var(--studio-chrome-indigo) 60%, var(--studio-chrome-cloud));
+  border-color: var(--studio-chrome-border-accent);
 }
 
 .array-item {
   margin: 5px 0 5px 18px;
   padding: 8px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 7px;
 }
 .array-item b {
-  color: var(--mdy-violet);
+  color: var(--studio-chrome-violet);
   font-size: 12px;
 }
 
@@ -1484,15 +1484,15 @@ body {
   margin: 40px auto;
   max-width: 480px;
   text-align: center;
-  border: 1px dashed var(--mdy-border);
+  border: 1px dashed var(--studio-chrome-border);
   padding: 32px;
   border-radius: 10px;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 
 .inspector label {
   display: block;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 12px;
   margin: 15px 0;
 }
@@ -1502,8 +1502,8 @@ body {
   width: 100%;
   margin-top: 6px;
   background: transparent;
-  color: var(--mdy-text);
-  border: 1px solid var(--mdy-border);
+  color: var(--studio-chrome-text);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
   padding: 8px;
 }
@@ -1512,7 +1512,7 @@ body {
 }
 .inspector dd {
   margin: 3px 0;
-  color: color-mix(in srgb, var(--mdy-violet) 55%, var(--mdy-cloud));
+  color: color-mix(in srgb, var(--studio-chrome-violet) 55%, var(--studio-chrome-cloud));
   overflow-wrap: anywhere;
 }
 
@@ -1522,15 +1522,15 @@ body {
   width: 100%;
   margin-top: 4px;
   background: transparent;
-  color: var(--mdy-text);
-  border: 1px solid var(--mdy-border);
+  color: var(--studio-chrome-text);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
   padding: 7px;
   font-size: 12px;
 }
 .accordion-body label {
   display: block;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 12px;
   margin: 10px 0;
 }
@@ -1552,7 +1552,7 @@ body {
 .validator-row span {
   flex: 1;
   font-size: 12px;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 .validator-row input,
 .option-row input {
@@ -1577,7 +1577,7 @@ body {
   margin: 4px 0 !important;
 }
 .server-deps {
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
   padding: 8px 10px;
   margin: 10px 0;
@@ -1586,26 +1586,26 @@ body {
 }
 .server-deps legend {
   font-size: 11px;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   padding: 0 4px;
 }
 
 .submit-action {
   margin-bottom: 18px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--mdy-border);
+  border-bottom: 1px solid var(--studio-chrome-border);
 }
 .submit-action h3 {
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   margin: 0 0 10px;
 }
 .submit-action label {
   display: block;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 12px;
   margin: 10px 0;
 }
@@ -1614,8 +1614,8 @@ body {
   width: 100%;
   margin-top: 4px;
   background: transparent;
-  color: var(--mdy-text);
-  border: 1px solid var(--mdy-border);
+  color: var(--studio-chrome-text);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
   padding: 7px;
   font-size: 12px;
@@ -1636,7 +1636,7 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 8px;
   padding: 8px 10px;
 }
@@ -1649,13 +1649,13 @@ body {
 .fv-summary strong {
   font-size: 11px;
   text-transform: uppercase;
-  color: var(--mdy-violet);
+  color: var(--studio-chrome-violet);
 }
 .fv-meta {
   min-width: 0;
   overflow-wrap: anywhere;
   font-size: 11px;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
 }
 .fv-draft {
   display: grid;
@@ -1665,7 +1665,7 @@ body {
 }
 .fv-draft label {
   display: block;
-  color: var(--mdy-text-muted);
+  color: var(--studio-chrome-text-muted);
   font-size: 12px;
 }
 .fv-draft select,
@@ -1674,8 +1674,8 @@ body {
   width: 100%;
   margin-top: 4px;
   background: transparent;
-  color: var(--mdy-text);
-  border: 1px solid var(--mdy-border);
+  color: var(--studio-chrome-text);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
   padding: 7px;
   font-size: 12px;
@@ -1686,7 +1686,7 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
   padding: 8px;
-  border: 1px solid var(--mdy-border);
+  border: 1px solid var(--studio-chrome-border);
   border-radius: 6px;
 }
 
@@ -1698,8 +1698,8 @@ body {
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   white-space: nowrap;
-  border-top: 1px solid var(--mdy-border);
-  color: var(--mdy-text-muted);
+  border-top: 1px solid var(--studio-chrome-border);
+  color: var(--studio-chrome-text-muted);
   font-size: 11px;
 }
 
@@ -1747,7 +1747,7 @@ body {
 
 .plain-canvas-array[draggable="true"] { cursor: grab; }
 .plain-canvas-array.dragging { cursor: grabbing; opacity: 0.55; }
-.plain-canvas-array-item { width: 100%; margin-top: 8px; padding: 8px 10px; border: 1px dashed var(--mdy-border); border-radius: 6px; background: transparent; color: var(--mdy-muted); text-align: left; cursor: pointer; }
+.plain-canvas-array-item { width: 100%; margin-top: 8px; padding: 8px 10px; border: 1px dashed var(--studio-chrome-border); border-radius: 6px; background: transparent; color: var(--studio-chrome-text-muted); text-align: left; cursor: pointer; }
 .plain-canvas-array-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .plain-canvas-array-row-actions { display: inline-flex; gap: 4px; }
 .plain-canvas-array-row-actions button { font: inherit; font-size: 0.75rem; }
@@ -1758,21 +1758,21 @@ body {
    -------------------------------------------------------------------------- */
 
 :root {
-  --studio-canvas: var(--mdy-night);
+  --studio-canvas: var(--studio-chrome-night);
   --studio-panel: #151722;
   --studio-panel-raised: #1b1e2c;
   --studio-panel-hover: #202438;
   --studio-border-subtle: #292d42;
   --studio-border-strong: #3a405d;
-  --studio-text-primary: var(--mdy-cloud);
+  --studio-text-primary: var(--studio-chrome-cloud);
   --studio-text-secondary: #b5bfd1;
   --studio-text-tertiary: #818ca5;
-  --studio-accent: var(--mdy-indigo);
-  --studio-accent-secondary: var(--mdy-violet);
-  --studio-action: var(--mdy-coral);
+  --studio-accent: var(--studio-chrome-indigo);
+  --studio-accent-secondary: var(--studio-chrome-violet);
+  --studio-action: var(--studio-chrome-coral);
   --studio-success: #69d6a4;
   --studio-warning: #f6c76a;
-  --studio-danger: var(--mdy-coral);
+  --studio-danger: var(--studio-chrome-coral);
   --studio-control: #10121b;
   --studio-control-hover: #181b29;
   --studio-selection: color-mix(in srgb, var(--studio-accent) 18%, transparent);
@@ -1789,14 +1789,14 @@ body {
   --studio-duration-normal: 180ms;
 
   /* Existing implementation tokens now derive from the Studio semantic layer. */
-  --mdy-bg: var(--studio-canvas);
-  --mdy-panel: var(--studio-panel);
-  --mdy-border: var(--studio-border-subtle);
-  --mdy-border-accent: var(--studio-border-strong);
-  --mdy-text: var(--studio-text-primary);
-  --mdy-text-muted: var(--studio-text-secondary);
-  --mdy-focus-ring: var(--studio-focus);
-  --mdy-danger-text: var(--studio-danger);
+  --studio-chrome-bg: var(--studio-canvas);
+  --studio-chrome-panel: var(--studio-panel);
+  --studio-chrome-border: var(--studio-border-subtle);
+  --studio-chrome-border-accent: var(--studio-border-strong);
+  --studio-chrome-text: var(--studio-text-primary);
+  --studio-chrome-text-muted: var(--studio-text-secondary);
+  --studio-chrome-focus-ring: var(--studio-focus);
+  --studio-chrome-danger-text: var(--studio-danger);
 }
 
 @media (prefers-color-scheme: light) {
@@ -1819,8 +1819,8 @@ body {
 .studio {
   grid-template-rows: 52px minmax(0, 1fr) 28px;
   background:
-    radial-gradient(circle at 16% -10%, color-mix(in srgb, var(--mdy-violet) 10%, transparent), transparent 30rem),
-    radial-gradient(circle at 92% 110%, color-mix(in srgb, var(--mdy-coral) 8%, transparent), transparent 34rem),
+    radial-gradient(circle at 16% -10%, color-mix(in srgb, var(--studio-chrome-violet) 10%, transparent), transparent 30rem),
+    radial-gradient(circle at 92% 110%, color-mix(in srgb, var(--studio-chrome-coral) 8%, transparent), transparent 34rem),
     var(--studio-canvas);
   font-size: 14px;
   line-height: 1.45;
