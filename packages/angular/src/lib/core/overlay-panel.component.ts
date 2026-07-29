@@ -11,7 +11,7 @@ import {
 } from "@angular/core";
 import {
   overlayStyleProperties,
-  partClasses,
+  popupPlacementClass,
   type MdyOverlayAlignment,
   type MdyOverlayCoords,
   type MdyOverlayPlacement,
@@ -85,11 +85,7 @@ export class MdyOverlayPanelComponent {
   protected readonly placementClass = computed(() => {
     const kind = this.kind();
     if (!kind) return "";
-    const state = this.position();
-    if (state !== "above" && state !== "overlay") return "";
-    const base = partClasses(kind, "popup")[0];
-    const applied = partClasses(kind, "popup", { [state]: true });
-    return applied.find((name) => name !== base && name.startsWith(`${base}--`)) ?? "";
+    return popupPlacementClass(kind, this.position()) ?? "";
   });
 
   // "close" mirrors the dialog element's vocabulary and is part of the

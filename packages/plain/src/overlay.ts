@@ -5,7 +5,7 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import { anchorOverlay, overlayLifecycleTransition, partClasses, type MdyOverlayDecision, type MdyPopupWidgetKind } from "@modyra/widgets";
+import { anchorOverlay, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind } from "@modyra/widgets";
 
 export interface OverlayPlacementOptions {
   /** Smallest usable space before the popup flips or overlays. */
@@ -33,11 +33,8 @@ export interface OverlayPlacementOptions {
  * "below" is the ordinary case and carries no class, exactly as the catalog documents.
  */
 function reflectPlacement(popup: HTMLElement, kind: MdyPopupWidgetKind, placement: MdyOverlayDecision["placement"]): void {
-  const base = partClasses(kind, "popup")[0];
-  if (base === undefined) return;
   for (const state of ["above", "overlay"] as const) {
-    const applied = partClasses(kind, "popup", { [state]: true });
-    const modifier = applied.find((name) => name !== base && name.startsWith(`${base}--`));
+    const modifier = popupPlacementClass(kind, state);
     if (modifier) popup.classList.toggle(modifier, placement === state);
   }
 }
