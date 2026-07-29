@@ -204,7 +204,6 @@ export function vueReactivity(): MdyReactivity &
       graphInspection: false,
       serverSnapshots: false,
     },
-    canEffect: true,
     signal<T>(initial: T, options?: MdySignalOptions<T>): MdyWritableSignal<T> {
       // shallowRef: the engine owns immutability (it always replaces
       // records/maps), deep proxying would change semantics.

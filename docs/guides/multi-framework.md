@@ -22,8 +22,7 @@ concrete recipe each adapter follows.
   suite every adapter below is checked against.
 - Headless widget logic: calendar math and localized date parsing
   (`date-utils`), time parsing/formatting and clock geometry
-  (`time-utils`), overlay positioning geometry (`overlay-position`),
-  option filtering (`options-utils`), value serialization (`serialize`),
+  (`time-utils`), option filtering (`options-utils`), value serialization (`serialize`),
   dynamic-form config domain + runtime validation (`dynamic-config`,
   Contract v1 and v2 — see [AI-generated forms](ai-generated-forms.md)),
   i18n message catalogs en/it/de/fr/es (`i18n`).

@@ -12,6 +12,7 @@ import type {
   MdyReactiveScope,
   MdyWritableSignal,
 } from "./reactivity.js";
+import { reactivityRunsEffects } from "./reactivity.js";
 import { isSafeFieldPath } from "./path-utils.js";
 import { MDY_DEV } from "./dev-flags.js";
 import { isRecord } from "./record-utils.js";
@@ -213,7 +214,7 @@ export class MdyDraftManager {
    */
   enableDraft(options: MdyDraftOptions): void {
     if (this._effect || this._pendingOptions) return;
-    if (!this._rx.canEffect) {
+    if (!reactivityRunsEffects(this._rx)) {
       if (MDY_DEV) this._warn(
         "enableDraft() needs an effect-capable reactivity " +
         "(with the Angular adapter: construct it with an Injector).",

@@ -40,10 +40,6 @@
       "types": "./dist/time-utils.d.ts",
       "default": "./dist/time-utils.js"
     },
-    "./overlay-position": {
-      "types": "./dist/overlay-position.d.ts",
-      "default": "./dist/overlay-position.js"
-    },
     "./options-utils": {
       "types": "./dist/options-utils.d.ts",
       "default": "./dist/options-utils.js"

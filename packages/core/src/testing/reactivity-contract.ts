@@ -18,6 +18,7 @@ import type {
   MdyObserveCapability,
   MdyReactivity,
 } from "../reactivity.js";
+import { reactivityRunsEffects } from "../reactivity.js";
 
 function asBatching(rx: MdyReactivity): MdyBatchingCapability | undefined {
   return rx.capabilities?.batching === true &&
@@ -148,13 +149,13 @@ export function runReactivityContractTests(
   test(`${name}: effect runs, reruns, cleans up and can be destroyed`, async () => {
     const { reactivity: rx, flushIfSupported, destroy } = createHarness();
 
-    if (!rx.canEffect) {
+    if (!reactivityRunsEffects(rx)) {
       let ran = false;
       const ref = rx.effect(() => {
         ran = true;
       });
       await flushIfSupported();
-      assert.equal(ran, false, "effect should not run when canEffect is false");
+      assert.equal(ran, false, "effect should not run when capabilities.effects is false");
       assert.equal(typeof ref.destroy, "function");
       ref.destroy();
       destroy();
@@ -201,11 +202,6 @@ export function runReactivityContractTests(
       for (const [key, value] of Object.entries(rx.capabilities)) {
         assert.equal(typeof value, "boolean", `capabilities.${key} must be a boolean`);
       }
-      assert.equal(
-        rx.capabilities.effects,
-        rx.canEffect,
-        "capabilities.effects must agree with the deprecated canEffect alias",
-      );
     }
     destroy();
   });

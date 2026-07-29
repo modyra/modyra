@@ -23,8 +23,6 @@ export interface MdyReactivity {
   effect(fn: (onCleanup: MdyOnCleanup) => void, options?: MdyEffectOptions): MdyEffectRef;
   untracked<T>(fn: () => T): T;
   createScope?(options?: MdyScopeOptions): MdyReactiveScope;
-  /** @deprecated alias — keep equal to capabilities.effects */
-  readonly canEffect: boolean;
 }
 ```
 
@@ -93,7 +91,7 @@ implements both, selectable via an `unsupported: "throw" | "report"` option):
    `MdyCrossRuntimeObservationError`, `MdyDestroyedScopeError`,
    `MdyAdapterContractError`, `MdyActivationError` (all in
    `packages/core/src/reactivity-errors.ts`). The form engine checks
-   `capabilities.effects`/`canEffect` before calling `effect()` for its
+   `capabilities.effects` before calling `effect()` for its
    own features (async validators, drafts, history), so this path mostly
    protects against a caller that skipped that check.
 2. **Report through `MdyDiagnostics`** (`packages/core/src/reactivity-diagnostics.ts`)

@@ -9,6 +9,7 @@
  * plain unit tests.
  */
 export {
+  reactivityRunsEffects,
   vanillaReactivity
 } from "./reactivity.js";
 export type {

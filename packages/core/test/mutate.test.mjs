@@ -91,7 +91,12 @@ function syncReactivity() {
     return read;
   }
   return {
-    canEffect: true,
+    // A synchronous-effect adapter, declared: effects run, nothing is batched or deferred.
+    capabilities: {
+      effects: true, effectOwnership: false, signalEquality: false, computedEquality: false,
+      batching: false, deterministicFlush: false, directObservation: false,
+      writableComputed: false, graphInspection: false, serverSnapshots: false,
+    },
     signal,
     computed: (fn) => () => fn(),
     effect: (fn) => {
