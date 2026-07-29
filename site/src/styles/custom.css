@@ -80,13 +80,30 @@
 	--sl-color-black: #ffffff;
 }
 
-/* Brand gradient accent on the sidebar's active link marker */
+/* The brand gradient, in the two jobs it actually has.
+
+   The bright one is a decorative fill. It cannot carry text: white on its stops measures 4.14, 3.96
+   and 2.85 against 4.5:1, and the coral end is the worst of them — which is why the primary action
+   read as badly coloured. As *text* on a light page it is no better: 3.96, 3.78, 2.72.
+
+   So there is a second gradient that takes the same journey — indigo through violet to coral — deep
+   enough to hold white text (6.6, 6.3, 6.2) and to be read as text on a light page. The bright one
+   keeps the jobs it is good at: fills and text on a dark surface. */
 :root {
 	--mdy-gradient-brand: linear-gradient(90deg, #7067ff 0%, #a855f7 50%, #ff6577 100%);
+	--mdy-gradient-brand-ink: linear-gradient(90deg, #4f46d6 0%, #8a3fa8 50%, #b32d44 100%);
+	/* Which of the two the active-link marker uses; the dark page can afford the bright one. */
+	--mdy-gradient-brand-marker: var(--mdy-gradient-brand);
+}
+
+@media (prefers-color-scheme: light) {
+	:root {
+		--mdy-gradient-brand-marker: var(--mdy-gradient-brand-ink);
+	}
 }
 
 a[aria-current='page'] {
-	background-image: var(--mdy-gradient-brand);
+	background-image: var(--mdy-gradient-brand-marker);
 	background-clip: text;
 	-webkit-background-clip: text;
 	color: transparent;

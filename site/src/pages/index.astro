@@ -88,7 +88,9 @@ const based = (path: string) =>
   .lede { max-width: 58ch; margin: 1.5rem 0 0; color: var(--page-muted); font-size: clamp(1.08rem, 1.8vw, 1.35rem); line-height: 1.55; }
   .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
   .actions a { padding: .72rem 1rem; border: 1px solid var(--page-border); border-radius: .55rem; text-decoration: none; }
-  .actions .primary { border-color: transparent; background: var(--mdy-gradient-brand); color: #fff; font-weight: 700; }
+  /* The ink gradient, not the bright one: white text on the bright stops measures as low as
+     2.85:1, and the coral end made the primary action look mis-coloured. */
+  .actions .primary { border-color: transparent; background: var(--mdy-gradient-brand-ink); color: #fff; font-weight: 700; }
   .principles, .try, .paths { border-top: 1px solid var(--page-border); padding-top: clamp(2.5rem, 6vw, 4.5rem); }
   .section-label { margin: 0 0 .8rem; color: var(--page-muted); font-family: var(--page-mono); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; }
   h2 { max-width: 22ch; font-size: clamp(1.7rem, 3.5vw, 2.6rem); }
