@@ -11,6 +11,7 @@
  * foundation already positions `.mdy-overlay` from `--mdy-overlay-*`, so an adapter's whole job is
  * to copy these onto the element.
  */
+import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
 import {
   decideOverlayPlacement,
   stabilizeOverlayPlacement,
@@ -54,6 +55,11 @@ export interface MdyOverlayAnchorOptions {
   readonly contentHeight?: number;
   /** The popup's own width, measured the same way, so its edge is chosen where the content fits. */
   readonly contentWidth?: number;
+  /**
+   * The edge the popup hangs from, as the widget's `capabilities.anchoring` declares it. Stated, it
+   * decides; only a content width that will not fit that side can overrule it.
+   */
+  readonly alignment?: "left" | "right";
   /** Where the pointer opened it, so a popup follows the click rather than the element's centre. */
   readonly pointerX?: number;
   /**
@@ -78,6 +84,27 @@ export interface MdyOverlayAnchoring {
 
 /** The breathing space between a control and its popup, when the caller does not say otherwise. */
 export const MDY_OVERLAY_GAP = 6;
+
+/**
+ * The anchoring a widget declares, as options for {@link anchorOverlay}.
+ *
+ * The one call an adapter needs: how wide the popup is, how much room it wants and which edge it
+ * hangs from all come from the catalog, so a renderer never holds a number of its own. Three
+ * renderers each carrying their own `minSpace` is three widgets that behave differently while
+ * appearing to share a contract.
+ *
+ * Returns an empty object for a widget with no popup, so a caller can pass it unconditionally.
+ */
+export function overlayAnchoringFor(kind: MdyWidgetKind): MdyOverlayAnchorOptions {
+  const anchoring = MDY_WIDGET_CONTRACTS[kind].capabilities.anchoring;
+  if (!anchoring) return {};
+  return {
+    matchAnchorWidth: anchoring.matchAnchorWidth,
+    minSpace: anchoring.minSpace,
+    ...(anchoring.minWidth !== undefined ? { minWidth: anchoring.minWidth } : {}),
+    ...(anchoring.alignment !== undefined ? { alignment: anchoring.alignment } : {}),
+  };
+}
 
 const clamp = (value: number, low: number, high: number): number =>
   high < low ? low : Math.min(Math.max(value, low), high);
@@ -111,6 +138,7 @@ export function anchorOverlay(
     // room minus that gap, so comparing the bare content height would call a squeeze a fit.
     ...(options.contentHeight !== undefined ? { desiredHeight: options.contentHeight + gap } : {}),
     ...(options.contentWidth !== undefined ? { desiredWidth: options.contentWidth } : {}),
+    ...(options.alignment !== undefined ? { preferredAlignment: options.alignment } : {}),
   };
   const measured = decideOverlayPlacement(geometry);
   let decision: MdyOverlayDecision;

@@ -14,6 +14,8 @@ export interface OverlayPlacementOptions {
   readonly preferred?: "above" | "below";
   /** Write the decided width out; a content-sized popup leaves it alone. */
   readonly matchAnchorWidth?: boolean;
+  /** The edge the widget's popup hangs from, as its contract declares it. */
+  readonly alignment?: "left" | "right";
 }
 
 /**

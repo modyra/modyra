@@ -253,6 +253,9 @@ import { MdyDropdownBase } from "../dropdown-base";
 export class MdySelectComponent<TValue = string>
   extends MdyDropdownBase<TValue | null, TValue>
   implements MdyOptionsControl<TValue> {
+  /** The widget this draws: its popup's room, width and edge come from the catalog. */
+  protected override readonly overlayKind = "select" as const;
+
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.select;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");

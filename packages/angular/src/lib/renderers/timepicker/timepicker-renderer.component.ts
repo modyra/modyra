@@ -142,6 +142,9 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
   `,
 })
 export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
+  /** The widget this draws: its popup's room, width and edge come from the catalog. */
+  protected override readonly overlayKind = "timepicker" as const;
+
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.timepicker;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly i18n = inject(MDY_I18N_MESSAGES);

@@ -7,7 +7,7 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import { buildDateLocale, formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
 import type { MdyDynamicDateField } from "@modyra/core";
-import { createDatepickerFieldController, MDY_WIDGET_CONTRACTS, type MdyElementLookup } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createDatepickerFieldController, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
@@ -22,7 +22,7 @@ export function renderDatepickerField(
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
-  const anchoring = MDY_WIDGET_CONTRACTS.datepicker.capabilities.anchoring;
+  const anchoring = overlayAnchoringFor("datepicker");
   const controller = createDatepickerFieldController({ widgetId: f.name, handle, ...options }, reactivity);
   // Month and weekday names, and the first day of the week, come from Intl via `buildDateLocale`.
   const dateLocale = buildDateLocale(options.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language), options.firstDayOfWeek);

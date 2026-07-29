@@ -9,7 +9,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDateField } from "@modyra/core";
-import { createTimepickerFieldController, MDY_WIDGET_CONTRACTS, type MdyElementLookup } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createTimepickerFieldController, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
 import { parseAnyTime, type MdyTimeFormat } from "@modyra/core/time-utils";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -24,7 +24,7 @@ export function renderTimepickerField(
   format: MdyTimeFormat = "12h",
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
-  const anchoring = MDY_WIDGET_CONTRACTS.timepicker.capabilities.anchoring;
+  const anchoring = overlayAnchoringFor("timepicker");
   const controller = createTimepickerFieldController({ widgetId: f.name, handle, format }, reactivity);
 
   const shell = buildFieldShell(f.label, "timepicker");

@@ -9,7 +9,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { createMultiselectFieldController, MDY_WIDGET_CONTRACTS, type MdyElementLookup } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createMultiselectFieldController, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -23,7 +23,7 @@ export function renderMultiselectField(
   mode: "single" | "multi" = "single",
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
-  const anchoring = MDY_WIDGET_CONTRACTS.multiselect.capabilities.anchoring;
+  const anchoring = overlayAnchoringFor("multiselect");
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
   const controller = createMultiselectFieldController({ widgetId: f.name, handle, options, keyFor, mode }, reactivity);
