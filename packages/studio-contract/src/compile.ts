@@ -39,13 +39,23 @@ import {
   type MdyDynamicNode,
   type MdyDynamicValidators,
 } from "@modyra/core/dynamic-config";
+// Type-only: the catalog constrains what this may map to, and nothing of it survives compilation,
+// so this package still ships with no runtime dependency beyond core and the studio model.
+import type { MdyWidgetKind } from "@modyra/widgets";
 
 export interface CompileResult {
   contract: MdyDynamicFormConfigV2 | null;
   diagnostics: StudioDiagnostic[];
 }
 
-const FIELD_KIND_MAP: Record<FieldNode["fieldKind"], MdyDynamicField["kind"]> = {
+/**
+ * Studio's own field kinds, mapped onto the widget catalog's.
+ *
+ * The target type is `MdyWidgetKind` — the catalog's, from `@modyra/widgets` — rather than a string
+ * that happens to look like one. A kind renamed or dropped in the catalog then fails to compile
+ * here, instead of producing a contract whose fields no renderer knows how to draw.
+ */
+const FIELD_KIND_MAP: Record<FieldNode["fieldKind"], MdyDynamicField["kind"] & MdyWidgetKind> = {
   text: "text",
   textarea: "textarea",
   email: "email",

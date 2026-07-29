@@ -132,3 +132,34 @@ test("a valid layout compiles node IDs into Contract field names", async () => {
   ]);
   assert.ok(!diagnostics.some((d) => d.severity === "error"));
 });
+
+test("every kind Studio offers is a kind the widget catalog knows", async () => {
+  // Studio's field kinds are its own vocabulary — `date`, `time` — but what they compile to must be
+  // the catalog's. A target the catalog does not have would produce a contract that every renderer
+  // refuses to draw, and the failure would surface as a blank field in the preview.
+  const { MDY_WIDGET_KINDS } = await import("@modyra/widgets");
+  const project = createCheckoutProject();
+  const { contract } = compileToContract(project);
+  assert.ok(contract, "the sample project must compile");
+  const kinds = [];
+  const walk = (node, name) => {
+    if (node.node === "field") { kinds.push([name, node.field.kind]); return; }
+    for (const [childName, child] of Object.entries(node.children ?? {})) walk(child, childName);
+    if (node.item) walk(node.item, name);
+  };
+  walk(contract.schema, "root");
+  assert.ok(kinds.length > 0, "the sample project must carry some fields");
+  for (const [name, kind] of kinds) {
+    assert.ok(MDY_WIDGET_KINDS.includes(kind), `${name} compiles to "${kind}", which is not a widget kind`);
+  }
+});
+
+test("the catalog kinds Studio does not offer are listed, not merely absent", async () => {
+  // A record rather than a rule: Studio's editor has no way to author these yet, and saying so is
+  // what keeps "not offered" from being confused with "forgotten". Adding one to Studio means
+  // deleting it from here.
+  const { MDY_WIDGET_KINDS } = await import("@modyra/widgets");
+  const OFFERED = ["text", "textarea", "email", "password", "number", "slider", "checkbox", "toggle", "select", "radio", "segmented", "multiselect", "datepicker", "timepicker"];
+  const notOffered = MDY_WIDGET_KINDS.filter((kind) => !OFFERED.includes(kind));
+  assert.deepEqual([...notOffered].sort(), ["colors", "daterange", "file"]);
+});
