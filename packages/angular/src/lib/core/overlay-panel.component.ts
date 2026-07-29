@@ -51,12 +51,11 @@ import { overlayStyleProperties, type MdyOverlayAlignment, type MdyOverlayCoords
       <ng-content />
     </div>
   `,
-  styles: `
-    .mdy-overlay-panel.mdy-overlay-panel--visible {
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-  `,
+  // No component styles. This carried `visibility: visible !important; opacity: 1 !important` on the
+  // visible panel, which no shipped rule ever needed — nothing in the foundation or any theme makes
+  // the panel invisible. Being component-scoped, it was unreachable by a theme, and its `!important`
+  // would have pinned the opacity the foundation's shared popup transition animates. How a popup
+  // appears is the foundation's, and it is now the same in all three renderers.
 })
 export class MdyOverlayPanelComponent {
   readonly open = input.required<boolean>();
