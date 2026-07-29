@@ -174,7 +174,10 @@ function emittedClasses() {
 function styledClasses() {
   const byClass = new Map();
   for (const file of readdirSync(STYLES_DIR).filter((f) => f.endsWith(".css"))) {
-    const source = readFileSync(join(STYLES_DIR, file), "utf8");
+    // Comments go first, as they already do on the TypeScript side. A class *named in prose* — most
+    // often the note saying why a rule was deleted — is not a class the stylesheet styles, and
+    // counting it kept the removed rule alive in the audit long after the rule was gone.
+    const source = stripComments(readFileSync(join(STYLES_DIR, file), "utf8"));
     for (const m of source.matchAll(/\.(mdy-[a-zA-Z0-9_-]+)/g)) {
       if (!byClass.has(m[1])) byClass.set(m[1], new Set());
       byClass.get(m[1]).add(file);

@@ -393,10 +393,5 @@
     }
 }
 
-.mdy-timepicker__backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 999;
-    background: var(--mdy-overlay-backdrop-bg, rgba(0, 0, 0, 0.4));
-    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* `.mdy-timepicker__backdrop` was styled here and emitted by nothing — the overlay panel draws the
+   only backdrop there has been since it took the job, under `mdy-overlay-backdrop`. */

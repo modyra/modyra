@@ -124,7 +124,6 @@
     .mdy-renderer,
     .mdy-timepicker-container,
     .mdy-datepicker__popup,
-    .mdy-datepicker__popup--modal,
     .mdy-multiselect-overlay__panel,
     .mdy-colors__dropdown,
     .mdy-select__dropdown {
@@ -147,7 +146,7 @@
         z-index: 1000;
     }
 
-    .mdy-renderer--open .mdy-datepicker__popup:not(.mdy-datepicker__popup--modal):not(.mdy-datepicker__popup--overlay),
+    .mdy-renderer--open .mdy-datepicker__popup:not(.mdy-datepicker__popup--overlay),
     .mdy-renderer--open .mdy-timepicker__popup:not(.mdy-timepicker__popup--overlay) {
         position: fixed !important;
         top: var(--mdy-overlay-top, auto);
@@ -740,49 +739,14 @@
         width: 100%;
     }
 
-    /* ─── Backdrop (M3 Scrim) ─────────────────────────────────────────────────── */
-
-    .mdy-datepicker__backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.32);
-        z-index: 999;
-    }
+    /* The M3 scrim was keyed on `.mdy-datepicker__backdrop`, which no adapter emits: every backdrop
+       on screen is the overlay panel's `mdy-overlay-backdrop`. */
 
     /* ─── DatePicker Modal — M3 Dialog spec ──────────────────────────────────── */
 
-    .mdy-datepicker__popup--modal {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 328px;
-        max-width: calc(100vw - 32px);
-        background: var(--mdy-datepicker-modal-bg);
-        border-radius: var(--mdy-datepicker-modal-radius);
-        box-shadow: var(--mdy-shadow-depth-3);
-        z-index: 1000;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        margin-top: 0 !important;
-        animation: mdy-modal-in 0.3s var(--mdy-sys-motion-easing-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
-    }
-
-    @keyframes mdy-modal-in {
-        from {
-            opacity: 0;
-            transform: translate(-50%, -45%) scale(0.95);
-        }
-
-        to {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
-    }
+    /* The dialog box itself was styled on `.mdy-datepicker__popup--modal`, a class no adapter emits;
+       the panel wears `mdy-overlay-panel--modal` and the popup inside it keeps its own name. The
+       header parts below are emitted and stay. */
 
     .mdy-datepicker__modal-header {
         background: var(--mdy-surface-container-low);
@@ -1135,7 +1099,6 @@
     @media (prefers-reduced-motion: reduce) {
 
         .mdy-renderer *,
-        .mdy-datepicker__popup--modal,
         .mdy-timepicker-container {
             animation-duration: 0.01ms !important;
             transition-duration: 0.01ms !important;
