@@ -155,13 +155,25 @@
         /* 32px */
         --mdy-toggle-bg: var(--mdy-comp-switch-track-color, transparent);
         /* transparent */
-        --mdy-toggle-border: var(--mdy-comp-switch-track-outline-width, 2px) solid var(--mdy-comp-switch-track-outline-color, var(--mdy-sys-color-outline, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-slate, #94A3B8) 60%)));
+        /* One width, used by both states and by the travel: the thumb is inset from the padding
+           box, so the distance it moves is the track *less its borders*. */
+        --mdy-toggle-border-width: var(--mdy-comp-switch-track-outline-width, 2px);
+        --mdy-toggle-border: var(--mdy-toggle-border-width) solid var(--mdy-comp-switch-track-outline-color, var(--mdy-sys-color-outline, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-slate, #94A3B8) 60%)));
         --mdy-toggle-bg-checked: var(--mdy-comp-switch-selected-track-color, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
-        --mdy-toggle-border-checked: 0px solid transparent;
+        /* Transparent, but the *same width* as the off state's outline: the thumb is inset from the
+           padding box, so dropping the border moved the handle two pixels closer to the edge when
+           the switch turned on — the shape held, the position did not. */
+        --mdy-toggle-border-checked: var(--mdy-toggle-border-width) solid transparent;
         /* One handle size for both states: the thumb travels, it does not grow. Defaults to the
            selected-handle token because that is the size the control is drawn around; a theme that
            wants a smaller knob moves this one token. */
         --mdy-toggle-thumb-size: var(--mdy-comp-switch-selected-handle-size, 24px);
+        /* A handle is round by default and a capsule when a theme asks for one — iOS's is 38x24,
+           measured from the platform. Stated as two tokens so a theme expresses that by setting
+           them, rather than by re-implementing the thumb and losing the travel and the state layer
+           that come with it. */
+        --mdy-toggle-thumb-width: var(--mdy-toggle-thumb-size);
+        --mdy-toggle-thumb-height: var(--mdy-toggle-thumb-size);
         /* 24px */
         /* Deprecated: a state-dependent handle size is no longer honoured. Kept so themes that
            still set it keep resolving; remove with the next major. */
@@ -1135,11 +1147,12 @@
         position: absolute;
         top: 50%;
         inset-inline-start: var(--mdy-toggle-thumb-offset);
-        width: var(--mdy-toggle-thumb-size);
-        height: var(--mdy-toggle-thumb-size);
+        width: var(--mdy-toggle-thumb-width);
+        height: var(--mdy-toggle-thumb-height);
         transform: translateY(-50%) translateX(0);
         background: var(--mdy-toggle-thumb-color);
-        border-radius: 50%;
+        /* Fully rounded: a circle when the handle is square, a capsule when it is not. */
+        border-radius: 9999px;
         transition: transform var(--mdy-toggle-transition), background var(--mdy-toggle-transition);
         box-shadow: var(--mdy-shadow-depth-1);
     }
@@ -1152,8 +1165,8 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        width: var(--mdy-toggle-state-layer-size, calc(var(--mdy-toggle-thumb-size) * 1.7));
-        height: var(--mdy-toggle-state-layer-size, calc(var(--mdy-toggle-thumb-size) * 1.7));
+        width: var(--mdy-toggle-state-layer-size, calc(var(--mdy-toggle-thumb-height) * 1.7));
+        height: var(--mdy-toggle-state-layer-size, calc(var(--mdy-toggle-thumb-height) * 1.7));
         transform: translate(-50%, -50%) scale(0);
         border-radius: 50%;
         background: var(--mdy-toggle-state-layer-color, currentColor);
@@ -1177,7 +1190,7 @@
         background: var(--mdy-toggle-thumb-color-checked);
         /* One travel distance, derived from the track: width minus the thumb and both insets. */
         transform: translateY(-50%)
-            translateX(calc((var(--mdy-toggle-width) - var(--mdy-toggle-thumb-size) - (2 * var(--mdy-toggle-thumb-offset))) * var(--mdy-toggle-travel-direction, 1)));
+            translateX(calc((var(--mdy-toggle-width) - (2 * var(--mdy-toggle-border-width)) - var(--mdy-toggle-thumb-width) - (2 * var(--mdy-toggle-thumb-offset))) * var(--mdy-toggle-travel-direction, 1)));
     }
 
     /* Physical translation needs the sign flipped when the inline axis runs right-to-left. */
