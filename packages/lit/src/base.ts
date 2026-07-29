@@ -2,7 +2,11 @@ import { MdyFieldHandle } from "@modyra/core";
 import { MDY_ICONS } from "@modyra/core/ui";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
-import { defaultWidgetIdFactory as ID, MDY_FIELD_SHELL_CLASSES as SHELL, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "@modyra/widgets";
+import { defaultWidgetIdFactory as ID, MDY_FIELD_SHELL_CLASSES as SHELL, MDY_WIDGET_CONTRACTS, type MdyWidgetKind,
+  popupPlacementClass,
+  type MdyOverlayPlacement,
+  type MdyPopupWidgetKind,
+} from "@modyra/widgets";
 import { MdyFormController } from "./adapter.js";
 
 /** Renders an icon from the shared library (same SVGs as every adapter). */
@@ -60,6 +64,19 @@ export abstract class MdyFieldElement<T> extends LitElement {
   protected partClass(part: string): string {
     const parts = MDY_WIDGET_CONTRACTS[this.widgetKind].parts as Readonly<Record<string, { classes: readonly string[] }>>;
     return (parts[part]?.classes ?? []).join(" ");
+  }
+
+  /**
+   * The popup part's classes, with the state that says which side it ended up on.
+   *
+   * The placement cannot live on the overlay wrapper: that is a marker with `display: contents` and
+   * no geometry, so `mdy-overlay-panel--above` styled nothing however it was spelled. It belongs
+   * here, on the popup itself, under the name the catalog gives it — the same class Plain writes and
+   * Angular's panel projects.
+   */
+  protected popupClass(placement: MdyOverlayPlacement): string {
+    const state = popupPlacementClass(this.widgetKind as MdyPopupWidgetKind, placement);
+    return state ? `${this.partClass("popup")} ${state}` : this.partClass("popup");
   }
 
   constructor() {

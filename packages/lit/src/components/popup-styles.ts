@@ -3,6 +3,7 @@
 import { html, nothing } from "lit";
 import {
   anchorOverlay,
+  popupPlacementClass,
   overlayAnchoringFor,
   MDY_CSS_PROPERTIES,
   MDY_POPUP_CLASS,
@@ -283,10 +284,12 @@ export interface RenderOverlayPanelOptions {
 
 /**
  * Minimal Lit equivalent of the Angular `<mdy-overlay-panel>` markup.
- * Emits the same class contract (`mdy-overlay-backdrop`, `mdy-overlay-panel`,
- * `mdy-overlay-panel--visible`) so the theme audit stays aligned. A simple
- * viewport-space heuristic also adds `--above` or `--overlay` when there is
- * not enough room below the anchor.
+ *
+ * It does **not** reflect the placement. This wrapper is a marker, not a box — it lays nothing out
+ * (`display: contents`) — so a placement class here would style nothing however correctly it was
+ * spelled, which is what `mdy-overlay-panel--above` and `--overlay` were: names matched by no
+ * stylesheet, on an element with no geometry. The placement belongs on the popup part inside, where
+ * `popupPlacementClass` puts it and where the foundation's rules are keyed.
  */
 export function renderOverlayPanel(
   content: unknown,
@@ -294,13 +297,6 @@ export function renderOverlayPanel(
   options?: RenderOverlayPanelOptions,
 ): unknown {
   if (!open) return nothing;
-  const position = options?.position ?? "below";
-  const positionClass =
-    position === "above"
-      ? " mdy-overlay-panel--above"
-      : position === "overlay"
-        ? " mdy-overlay-panel--overlay"
-        : "";
   const modalClass = options?.modal ? " mdy-overlay-panel--modal" : "";
   const rightClass = options?.alignment === "right" ? " mdy-overlay-panel--right" : "";
   // The panel is a marker, not a box: it lays nothing out (`display: contents`), so the popup part
@@ -309,10 +305,13 @@ export function renderOverlayPanel(
   return html`
     <div class="mdy-overlay-backdrop"></div>
     <div
-      class="mdy-overlay-panel mdy-overlay-panel--visible${positionClass}${modalClass}${rightClass}"
+      class="mdy-overlay-panel mdy-overlay-panel--visible${modalClass}${rightClass}"
       style="display: contents"
     >
       ${content}
     </div>
   `;
 }
+
+/** The catalog's placement class for a popup, re-exported so a field component has one import. */
+export { popupPlacementClass };
