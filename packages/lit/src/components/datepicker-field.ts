@@ -513,7 +513,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           // Wrapped in the contract's `popup` part: every overlay in the catalog is the same
           // container, and only its content differs. Without it these two pickers were the
           // only popups drawn straight into the panel, with a container of their own.
-          html`<div class="${this.partClass("popup")} mdy-overlay">${this.renderPopup(handle)}</div>`,
+          html`<div class="${this.popupClass(this.overlay.state.position)} mdy-overlay">${this.renderPopup(handle)}</div>`,
           this._open,
           {
             position: this.overlay.state.position,

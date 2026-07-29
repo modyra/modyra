@@ -175,7 +175,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     // The contract's `popup` part, not bare content: an overlay rendered straight into a
     // `display: contents` panel takes part in layout and shifts the page open.
     const overlay = html`
-      <div class="${this.partClass("popup")} mdy-overlay">
+      <div class="${this.popupClass(position)} mdy-overlay">
       <input
         type="text"
         class="mdy-multiselect-overlay__input"
