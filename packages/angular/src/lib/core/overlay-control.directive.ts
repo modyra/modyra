@@ -8,16 +8,13 @@ import {
   viewChild,
 } from "@angular/core";
 import {
-  ComputedPosition,
-  OverlayAlignment,
-  OverlayAnchor,
-  OverlayPosition,
-} from "@modyra/core/overlay-position";
-import {
   anchorOverlay,
   overlayAnchoringFor,
   overlayLifecycleTransition,
   MDY_CSS_PROPERTIES,
+  type MdyOverlayAlignment,
+  type MdyOverlayCoords,
+  type MdyOverlayPlacement,
   type MdyOverlayDecision,
   type MdyOverlayLifecycleIntent,
   type MdyWidgetKind,
@@ -32,7 +29,7 @@ import { MDY_I18N_MESSAGES } from "./i18n";
  *
  * Handles:
  * - Open/close state management via `open` signal.
- * - Dynamic positioning (above/below/overlay) via `computeOverlayPosition`.
+ * - Dynamic positioning (above/below/overlay) via ``anchorOverlay``.
  * - Outside click detection to close the popup.
  * - `wrapper` viewChild for position calculations.
  */
@@ -46,10 +43,10 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   protected readonly open = signal(false);
 
   /** Computed position of the overlay (below, above, or fixed overlay for mobile). */
-  protected readonly position = signal<OverlayPosition>("below");
+  protected readonly position = signal<MdyOverlayPlacement>("below");
 
   /** Computed alignment of the overlay (left, right). */
-  protected readonly alignment = signal<OverlayAlignment>("left");
+  protected readonly alignment = signal<MdyOverlayAlignment>("left");
 
   /** Whether the overlay should match the anchor width or expand based on content. */
   readonly widthMode = input<"match-anchor" | "auto-content">("match-anchor");
@@ -58,7 +55,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   readonly minWidth = input<number>(250);
 
   /** Viewport coordinates for fixed positioning. */
-  protected readonly coords = signal<ComputedPosition["coords"]>({ width: 0 });
+  protected readonly coords = signal<MdyOverlayCoords>({ width: 0 });
   /** The anchoring decision an open overlay is holding; cleared when it closes. */
   private heldDecision: MdyOverlayDecision | null = null;
 
@@ -93,21 +90,21 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    *
    * @example
    * // Anchor to a specific inner element instead of the whole host:
-   * protected override overlayAnchor(): OverlayAnchor | null {
+   * protected override overlayAnchor(): HTMLElement | DOMRect | null {
    *   return this.inputRef()?.nativeElement ?? null;
    * }
    *
    * @example
    * // Anchor to a custom area:
-   * protected override overlayAnchor(): OverlayAnchor | null {
+   * protected override overlayAnchor(): HTMLElement | DOMRect | null {
    *   return new DOMRect(x, y, width, height);
    * }
    */
-  protected overlayAnchor(): OverlayAnchor | null {
+  protected overlayAnchor(): HTMLElement | DOMRect | null {
     return null;
   }
 
-  private get anchor(): OverlayAnchor {
+  private get anchor(): HTMLElement | DOMRect {
     return this.overlayAnchor() ?? this.wrapperRef()?.nativeElement ?? this.hostRef.nativeElement;
   }
 

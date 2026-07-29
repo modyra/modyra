@@ -9,7 +9,7 @@ import {
   output,
   viewChild,
 } from "@angular/core";
-import { ComputedPosition, getOverlayStyles, OverlayAlignment, OverlayPosition } from "@modyra/core/overlay-position";
+import { overlayStyleProperties, type MdyOverlayAlignment, type MdyOverlayCoords, type MdyOverlayPlacement } from "@modyra/widgets";
 
 /**
  * Unified overlay panel container.
@@ -60,9 +60,9 @@ import { ComputedPosition, getOverlayStyles, OverlayAlignment, OverlayPosition }
 })
 export class MdyOverlayPanelComponent {
   readonly open = input.required<boolean>();
-  readonly position = input<OverlayPosition>("below");
-  readonly alignment = input<OverlayAlignment>("left");
-  readonly coords = input.required<ComputedPosition["coords"]>();
+  readonly position = input<MdyOverlayPlacement>("below");
+  readonly alignment = input<MdyOverlayAlignment>("left");
+  readonly coords = input.required<MdyOverlayCoords>();
   readonly maxHeight = input<number>(0);
   readonly hasBackdrop = input<boolean>(false);
   readonly widthMode = input<"match-anchor" | "auto-content">("match-anchor");
@@ -164,7 +164,7 @@ export class MdyOverlayPanelComponent {
       opacity: this.open() ? "1" : "0",
       // Keep CSS variables for theme compatibility (themes can reference them for additional styling)
       "--mdy-overlay-width": width ?? "auto",
-      ...getOverlayStyles(c),
+      ...overlayStyleProperties(c),
       border: "none", // Override any theme border for the panel container itself (e.g. popover's default border) so it doesn't interfere with custom panel styles.
     };
   });

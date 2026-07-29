@@ -2,11 +2,14 @@
 
 import { html, nothing } from "lit";
 import {
-  type OverlayAlignment,
-  type OverlayPosition,
-  type OverlayPositionConfig,
-} from "@modyra/core/overlay-position";
-import { anchorOverlay, overlayAnchoringFor, MDY_CSS_PROPERTIES, MDY_POPUP_CLASS, type MdyWidgetKind } from "@modyra/widgets";
+  anchorOverlay,
+  overlayAnchoringFor,
+  MDY_CSS_PROPERTIES,
+  MDY_POPUP_CLASS,
+  type MdyOverlayAlignment,
+  type MdyOverlayPlacement,
+  type MdyWidgetKind,
+} from "@modyra/widgets";
 
 /** Visually hidden native input used as the platform picker behind a styled control. */
 export const POPUP_ANCHOR_STYLE = "position:relative";
@@ -17,8 +20,8 @@ export const NATIVE_HIDDEN_STYLE =
 
 
 export interface OverlayPanelState {
-  readonly position: OverlayPosition;
-  readonly alignment: OverlayAlignment;
+  readonly position: MdyOverlayPlacement;
+  readonly alignment: MdyOverlayAlignment;
   readonly panelStyle: string;
   readonly cssVars: {
     readonly top: string;
@@ -31,9 +34,25 @@ export interface OverlayPanelState {
   };
 }
 
-interface OverlayStateConfig extends OverlayPositionConfig {
-  readonly lockPosition?: OverlayPosition;
-  readonly lockAlignment?: OverlayAlignment;
+/**
+ * What this controller is told, in its own words.
+ *
+ * It no longer extends the anchoring options: the contract calls the same two things `preferred` and
+ * `pointerX`, and this file has always called them `preferredPosition` and `clickX`. Naming them
+ * here and translating at the one call site is honest about the difference; inheriting and renaming
+ * would leave two half-matching vocabularies in the same type.
+ */
+interface OverlayStateConfig {
+  /** Smallest usable space before the popup flips to the other side or goes modal. */
+  readonly minSpace?: number;
+  /** Narrowest the popup may be, whatever the anchor measures. */
+  readonly minWidth?: number;
+  /** Which side to try first. */
+  readonly preferredPosition?: "above" | "below";
+  /** Where the pointer opened it, so a popup follows the click rather than the element's centre. */
+  readonly clickX?: number;
+  readonly lockPosition?: MdyOverlayPlacement;
+  readonly lockAlignment?: MdyOverlayAlignment;
   readonly widthMode?: "match-anchor" | "auto-content";
   /** The popup's own size, when the host has measured it, so it is placed where it shows whole. */
   readonly contentHeight?: number;
@@ -255,7 +274,7 @@ export interface RenderOverlayPanelOptions {
   /** Horizontal alignment of the panel, emits `--right` when `'right'`. */
   alignment?: "left" | "right";
   /** Explicit position class when already computed by the caller/controller. */
-  position?: OverlayPosition;
+  position?: MdyOverlayPlacement;
   /** Inline style for fixed-panel mode. */
   panelStyle?: string;
   /** Use display:contents wrapper so positioning is delegated to inner content. */

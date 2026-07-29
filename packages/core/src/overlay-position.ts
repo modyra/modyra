@@ -1,4 +1,30 @@
 /**
+ * Retired. Overlay placement lives in `@modyra/widgets`.
+ *
+ * This module is the placement policy Modyra had before there was a contract: it chose a corner from
+ * the space around the anchor, knowing nothing about how big the popup was, so it could pick a side
+ * with *enough* room rather than the side where the content actually fits, and it could not report
+ * whether the popup would end up scrolling. `anchorOverlay` supersedes it, takes the measured
+ * content, and is the one policy all three renderers apply.
+ *
+ * Nothing in this repository calls the functions below. The whole module is kept exported so that a
+ * published consumer's build does not break on upgrade, and every export carries `@deprecated` with
+ * what to use instead:
+ *
+ * | retired here                          | use from `@modyra/widgets`      |
+ * | ------------------------------------- | ------------------------------- |
+ * | `computeOverlayPosition`              | `anchorOverlay`                 |
+ * | `computeCoordsForAnchor`              | `anchorOverlay` with `lock`     |
+ * | `getOverlayStyles`                    | `overlayStyleProperties`        |
+ * | `ComputedPosition`                    | `MdyOverlayPlacementResult`     |
+ * | `OverlayPosition` / `OverlayAlignment`| `MdyOverlayPlacement` / `MdyOverlayAlignment` |
+ *
+ * The types are duplicated rather than re-exported on purpose: `@modyra/widgets` depends on
+ * `@modyra/core`, so core importing from widgets would make the two packages depend on each other.
+ * They are structurally identical, so a consumer can move across one import at a time.
+ *
+ * ---
+ *
  * Lightweight overlay positioning — inspired by CDK Overlay but stripped
  * to the essentials needed by modyra dropdowns.
  *
@@ -23,9 +49,11 @@
  * selection algorithm.
  */
 
-/** Resolved position strategy for the popup. */
+/** Resolved position strategy for the popup.
+ * @deprecated Use `MdyOverlayPlacement` from `@modyra/widgets`. */
 export type OverlayPosition = "below" | "above" | "overlay";
-/** Horizontal alignment relative to the trigger. */
+/** Horizontal alignment relative to the trigger.
+ * @deprecated Use `MdyOverlayAlignment` from `@modyra/widgets`. */
 export type OverlayAlignment = "left" | "right";
 
 /**
@@ -35,10 +63,14 @@ export type OverlayAlignment = "left" | "right";
  *
  * When a DOMRect is used, scroll-aware space is not available (no DOM ancestor
  * to traverse); the algorithm uses viewport-only space in both passes.
+ *
+ * @deprecated `anchorOverlay` in `@modyra/widgets` takes `MdyAnchorRect`, which a `DOMRect`
+ * satisfies, and measures the viewport separately.
  */
 export type OverlayAnchor = HTMLElement | DOMRect;
 
-/** Result of an overlay position calculation. */
+/** Result of an overlay position calculation.
+ * @deprecated Use `MdyOverlayPlacementResult` from `@modyra/widgets`. */
 export interface ComputedPosition {
   readonly position: OverlayPosition;
   readonly alignment: OverlayAlignment;
@@ -60,6 +92,9 @@ export interface ComputedPosition {
 /**
  * Helper to convert ComputedPosition coordinates into CSS variables.
  * Explicitly unset unused properties to prevent inheritance and avoid the -9999px fallback.
+ *
+ * @deprecated Use `overlayStyleProperties` from `@modyra/widgets`, which spells the property names
+ * from `MDY_CSS_PROPERTIES` — the same names `anchorOverlay` writes them under.
  */
 export function getOverlayStyles(c: ComputedPosition["coords"]) {
   return {
@@ -71,7 +106,8 @@ export function getOverlayStyles(c: ComputedPosition["coords"]) {
   };
 }
 
-/** Configuration for overlay positioning. */
+/** Configuration for overlay positioning.
+ * @deprecated Use `MdyOverlayAnchorOptions` from `@modyra/widgets`. */
 export interface OverlayPositionConfig {
   /** Minimum viewport space (px) required to place the popup below or above. */
   readonly minSpace?: number;
