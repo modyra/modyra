@@ -20,6 +20,58 @@ import {
   type MdyOverlayDecision,
 } from "./behavior.js";
 
+/**
+ * Which side of its anchor the popup sits on. `"overlay"` is the case where neither side had room
+ * and the popup centred itself on the viewport instead.
+ */
+export type MdyOverlayPlacement = MdyOverlayDecision["placement"];
+
+/** Which edge of its anchor the popup hangs from. */
+export type MdyOverlayAlignment = MdyOverlayDecision["alignment"];
+
+/**
+ * Where a popup ends up, in viewport coordinates.
+ *
+ * For a host that positions its panel itself — Angular hands these to the CDK — rather than by
+ * copying the custom properties onto the element. Same decision, read a different way.
+ */
+export interface MdyOverlayCoords {
+  readonly top?: number | undefined;
+  readonly bottom?: number | undefined;
+  readonly left?: number | undefined;
+  readonly right?: number | undefined;
+  readonly width?: number | undefined;
+  /** The widest the popup may be where it now sits — the room measured on the side it hangs from.
+   * Without it a content-sized popup near a viewport edge shows half off the screen. */
+  readonly maxWidth?: number | undefined;
+}
+
+/** A placed popup: the side, the edge, and the coordinates that follow from them. */
+export interface MdyOverlayPlacementResult {
+  readonly position: MdyOverlayPlacement;
+  readonly alignment: MdyOverlayAlignment;
+  readonly coords: MdyOverlayCoords;
+}
+
+/**
+ * Coordinates as the custom properties the foundation positions from.
+ *
+ * Every unused coordinate is written as `unset` rather than left out: a popup that moves from
+ * hanging left to hanging right must stop having a `left`, and a property left in place from the
+ * previous placement is inherited and quietly wins.
+ */
+export function overlayStyleProperties(coords: MdyOverlayCoords): Readonly<Record<string, string>> {
+  const prop = MDY_CSS_PROPERTIES.overlay;
+  const px = (value: number | undefined): string => (value !== undefined ? `${value}px` : "unset");
+  return Object.freeze({
+    [prop.top]: px(coords.top),
+    [prop.bottom]: px(coords.bottom),
+    [prop.left]: px(coords.left),
+    [prop.right]: px(coords.right),
+    [prop.maxWidth]: px(coords.maxWidth),
+  });
+}
+
 /** A measured anchor, in viewport coordinates — a `DOMRect` satisfies it. */
 export interface MdyAnchorRect {
   readonly top: number;

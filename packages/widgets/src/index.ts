@@ -63,7 +63,7 @@ export { MDY_STATE_MODIFIERS, stateClass, type MdyPartState, type MdyStateName }
 export { MDY_CSS_PROPERTIES, MDY_CSS_PROPERTY_NAMES, type MdyOverlayProperty } from "./css.js";
 export { partClasses, partStates, widgetStateClasses } from "./part-classes.js";
 export { MDY_LAYOUT_CLASSES, MDY_LAYOUT_COLUMN_COUNT_PROPERTY, layoutNodeAttributes, type MdyLayoutPart } from "./layout.js";
-export { anchorOverlay, overlayAnchoringFor, MDY_OVERLAY_GAP, type MdyAnchorRect, type MdyOverlayAnchorOptions, type MdyOverlayAnchoring, type MdyViewportSize } from "./overlay.js";
+export { anchorOverlay, overlayAnchoringFor, overlayStyleProperties, MDY_OVERLAY_GAP, type MdyAnchorRect, type MdyOverlayAlignment, type MdyOverlayAnchorOptions, type MdyOverlayAnchoring, type MdyOverlayCoords, type MdyOverlayPlacement, type MdyOverlayPlacementResult, type MdyViewportSize } from "./overlay.js";
 export { MDY_CANONICAL_UI_CLASSES, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } from "./catalog.js";
 export type { MdyWidgetDefinition, MdyWidgetKind, MdyWidgetPart } from "./catalog.js";
 
