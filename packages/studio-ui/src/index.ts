@@ -20,8 +20,10 @@ import {
   type StudioExpressionOp,
   type StudioFormValidator,
   type StudioIndexes,
+  type StudioLayoutBreakpoint,
   type StudioLayoutChild,
   type StudioLayoutNode,
+  type StudioLayoutSlot,
   type StudioSchemaNode,
   type StudioValidatorKind,
 } from "@modyra/studio-model";
@@ -762,6 +764,135 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
   // ─── Layout authoring ─────────────────────────────────────────────────────
 
+  /**
+   * How wide the canvas is at each size, so choosing a breakpoint *shows* it rather than announcing
+   * it. These mirror `MDY_LAYOUT_BREAKPOINTS` in `@modyra/widgets`, restated here because studio-ui
+   * deliberately depends on no renderer contract package; `layout.spec.mjs` fails if the two drift.
+   * `base` is a phone rather than 0: a canvas of zero width would show nothing at all.
+   */
+  const BREAKPOINT_WIDTHS: Readonly<Record<StudioLayoutBreakpoint, string>> = {
+    base: "24rem",
+    sm: "40rem",
+    md: "64rem",
+    lg: "80rem",
+  };
+  const BREAKPOINT_ORDER: readonly StudioLayoutBreakpoint[] = ["base", "sm", "md", "lg"];
+
+  /**
+   * The size being authored and previewed. View state, not project state: it is deliberately outside
+   * the command history, because which width you are looking at is not an edit to the form and
+   * undoing an edit must not also move you to another screen size.
+   */
+  let breakpoint: StudioLayoutBreakpoint = "base";
+
+  function setBreakpoint(next: StudioLayoutBreakpoint): void {
+    if (next === breakpoint) return;
+    breakpoint = next;
+    status = next === "base" ? "Editing the base layout" : `Editing the ${next} layout`;
+    focusSelector = `[data-breakpoint="${next}"]`;
+    render();
+  }
+
+  /** The slot for `nodeId` inside `layout`, so an edit can write to it in place. */
+  function slotIn(layout: StudioLayoutNode[], nodeId: string): StudioLayoutSlot | undefined {
+    const walk = (child: StudioLayoutChild): StudioLayoutSlot | undefined => {
+      if ("nodeId" in child) return child.nodeId === nodeId ? child : undefined;
+      const children = child.kind === "section" ? child.children : child.columns.flat();
+      for (const nested of children) {
+        const found = walk(nested);
+        if (found) return found;
+      }
+      return undefined;
+    };
+    for (const node of layout) {
+      const found = walk(node);
+      if (found) return found;
+    }
+    return undefined;
+  }
+
+  /** Writes one size's placement onto a slot, dropping the entry when it has nothing left to say. */
+  function writePlacement(slot: StudioLayoutSlot, change: { column?: number | null; hidden?: boolean | null }): void {
+    const at = { ...(slot.at ?? {}) };
+    const current = { ...(at[breakpoint] ?? {}) };
+    if (change.column !== undefined) {
+      if (change.column === null) delete current.column;
+      else current.column = change.column;
+    }
+    if (change.hidden !== undefined) {
+      if (change.hidden === null) delete current.hidden;
+      else current.hidden = change.hidden;
+    }
+    if (current.column === undefined && current.hidden === undefined) delete at[breakpoint];
+    else at[breakpoint] = current;
+    if (Object.keys(at).length) slot.at = at;
+    else delete slot.at;
+  }
+
+  /** Whether a slot is hidden at the size being authored, following the same cascade the CSS does. */
+  function hiddenAt(nodeId: string, size: StudioLayoutBreakpoint): boolean {
+    const slot = slotIn(project.presentation.layout ?? [], nodeId);
+    if (!slot?.at) return false;
+    for (let i = BREAKPOINT_ORDER.indexOf(size); i >= 0; i -= 1) {
+      const placement = slot.at[BREAKPOINT_ORDER[i]!];
+      if (placement?.hidden !== undefined) return placement.hidden;
+    }
+    return false;
+  }
+
+  /**
+   * Shows or hides a node at the size being authored.
+   *
+   * Written as an explicit `false` rather than by deleting the entry when a larger size turns it back
+   * on: the cascade means a size that says nothing inherits the smaller one, so "hidden on a phone,
+   * shown from tablet" needs the tablet to say so.
+   */
+  function toggleHiddenAt(nodeId: string): void {
+    const layout = structuredClone(project.presentation.layout ?? []) as StudioLayoutNode[];
+    const slot = slotIn(layout, nodeId);
+    if (!slot) {
+      status = "Only a node the layout arranges can be hidden at a size";
+      render();
+      return;
+    }
+    const next = !hiddenAt(nodeId, breakpoint);
+    // At `base` there is nothing smaller to inherit from, so showing again is simply saying nothing.
+    writePlacement(slot, { hidden: next ? true : breakpoint === "base" ? null : false });
+    selected = nodeId;
+    commit(
+      createUpdateLayoutCommand(layout, `${next ? "Hide" : "Show"} at ${breakpoint}`),
+      nodeId,
+      `[data-toggle-hidden="${nodeId}"]`,
+    );
+  }
+
+  /** How many tracks the row holding `nodeId` shows at the size being authored. */
+  function rowColumnsAt(row: StudioLayoutNode & { kind: "columns" }, size: StudioLayoutBreakpoint): number {
+    for (let i = BREAKPOINT_ORDER.indexOf(size); i >= 0; i -= 1) {
+      const count = row.at?.[BREAKPOINT_ORDER[i]!];
+      if (typeof count === "number") return count;
+    }
+    // What the foundation does with no `at`: stacked at base, the declared tracks from `sm` up.
+    return size === "base" ? 1 : row.columns.length;
+  }
+
+  /** Sets the track count of the row holding `nodeId`, at the size being authored. */
+  function setRowColumnsAt(nodeId: string, count: number): void {
+    const layout = structuredClone(project.presentation.layout ?? []) as StudioLayoutNode[];
+    const row = layout.find(
+      (node): node is StudioLayoutNode & { kind: "columns" } =>
+        node.kind === "columns" && layoutChildNodeIds(node).includes(nodeId),
+    );
+    if (!row) return;
+    const next = Math.min(Math.max(1, count), row.columns.length);
+    row.at = { ...(row.at ?? {}), [breakpoint]: next };
+    commit(
+      createUpdateLayoutCommand(layout, `${next} across at ${breakpoint}`),
+      nodeId,
+      `[data-row-columns="${nodeId}"]`,
+    );
+  }
+
   /** Node IDs a layout child places, flattened. */
   function layoutChildNodeIds(child: StudioLayoutChild): string[] {
     if ("nodeId" in child) return [child.nodeId];
@@ -899,6 +1030,26 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     const from = row.columns.findIndex((column) => column.some((child) => "nodeId" in child && child.nodeId === nodeId));
     const to = from + direction;
     if (from < 0 || to < 0 || to >= row.columns.length) return;
+
+    // At a size other than `base` the arrangement itself is not touched: the slot is told which
+    // track it sits in there, and every other size keeps the arrangement it already had. That is the
+    // whole point of authoring per breakpoint — otherwise moving a field on a wide screen would move
+    // it on a phone too, and there would be nothing per-breakpoint about it.
+    if (breakpoint !== "base") {
+      const slot = slotIn(layout, nodeId);
+      if (!slot) return;
+      const current = slot.at?.[breakpoint]?.column ?? from + 1;
+      const column = current + direction;
+      if (column < 1 || column > rowColumnsAt(row, breakpoint)) return;
+      writePlacement(slot, { column });
+      selected = nodeId;
+      commit(
+        createUpdateLayoutCommand(layout, `${direction === 1 ? "Right" : "Left"} at ${breakpoint}`),
+        nodeId,
+        columnFocus(nodeId),
+      );
+      return;
+    }
 
     const source = row.columns[from]!;
     if (source.length === 1) {
@@ -1771,6 +1922,33 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       moveRightButton.dataset.layoutMoveNode = nodeId;
       moveRightButton.disabled = columnIndex < 0 || columnIndex >= (row?.columns.length ?? 0) - 1;
 
+      // Whether this field shows at the size being authored. Offered only for something the layout
+      // arranges, because a slot is where the answer is written.
+      const isHidden = hiddenAt(nodeId, breakpoint);
+      const hiddenButton = iconButton(
+        isHidden ? "\u{1f648}" : "\u{1f441}",
+        `${isHidden ? "Show" : "Hide"} ${field.name} at ${breakpoint}`,
+      );
+      hiddenButton.dataset.toggleHidden = nodeId;
+      hiddenButton.setAttribute("aria-pressed", String(isHidden));
+      hiddenButton.disabled = !inRow;
+      if (!inRow) hiddenButton.title = "Arrange the field in a row to hide it at a size";
+
+      // How many tracks this row shows at the size being authored. A select rather than a stepper:
+      // the choices are few, bounded by the columns the row actually has, and the current value has
+      // to be readable at a glance while switching sizes.
+      const rowColumns = document.createElement("select");
+      rowColumns.dataset.rowColumns = nodeId;
+      rowColumns.setAttribute("aria-label", `Columns across at ${breakpoint}`);
+      if (row) {
+        const showing = rowColumnsAt(row, breakpoint);
+        for (let count = 1; count <= row.columns.length; count += 1) {
+          const option = new Option(`${count}\u00d7`, String(count));
+          option.selected = count === showing;
+          rowColumns.append(option);
+        }
+      }
+
       const deleteButton = iconButton("\u00d7", `Delete ${field.name}`);
       deleteButton.dataset.delete = nodeId;
 
@@ -1793,7 +1971,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       actions.append(
         moveUpButton,
         moveDownButton,
-        ...(inRow ? [moveLeftButton, moveRightButton] : []),
+        ...(inRow ? [moveLeftButton, moveRightButton, rowColumns, hiddenButton] : []),
         columnsButton,
         moveIntoGroup,
         duplicateButton,
@@ -2023,6 +2201,21 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
             .join("")}
         </section>
         <section class="dock-section">
+          <h3>Layout size</h3>
+          <div class="dock-breakpoints" role="group" aria-label="Screen size to lay out for">
+            ${BREAKPOINT_ORDER.map((size) => `
+              <button
+                type="button"
+                data-breakpoint="${size}"
+                aria-pressed="${size === breakpoint}"
+                title="Lay out for ${size === "base" ? "the narrowest screen" : `${BREAKPOINT_WIDTHS[size]} and wider`}"
+              >${size}</button>`).join("")}
+          </div>
+          <p class="dock-hint">${breakpoint === "base"
+            ? "Editing the arrangement itself. Wider sizes inherit it."
+            : `Editing what changes from ${BREAKPOINT_WIDTHS[breakpoint]} up. Everything else stays as base.`}</p>
+        </section>
+        <section class="dock-section">
           <h3>Form</h3>
           <div class="dock-actions">
             <button type="button" data-undo ${history.canUndo() ? "" : "disabled"}>Undo</button>
@@ -2048,7 +2241,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
    */
   function liveFrameMarkup(hasContract: boolean, diagnostics: StudioDiagnostic[] = []): string {
     if (hasContract) {
-      return `<div class="plain-canvas-frame"><div class="plain-canvas-form" data-plain-canvas></div></div>`;
+      // The width is the preview: choosing `md` narrows the canvas to the md breakpoint, so the
+      // arrangement being authored is the arrangement on screen and the media queries in the
+      // foundation do the deciding rather than Studio second-guessing them.
+      return `<div class="plain-canvas-frame" data-breakpoint-frame="${breakpoint}" style="--studio-canvas-width: ${BREAKPOINT_WIDTHS[breakpoint]}"><div class="plain-canvas-form" data-plain-canvas></div></div>`;
     }
     // Naming the blockers here, with a jump to each one, beats sending the user to hunt through
     // a tab for what a bare "unavailable" refused to tell them.
@@ -2568,6 +2764,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   }
 
   function bindDock(root: HTMLElement): void {
+    root.querySelectorAll<HTMLButtonElement>("[data-breakpoint]").forEach((button) =>
+      button.addEventListener("click", () => setBreakpoint(button.dataset.breakpoint as StudioLayoutBreakpoint)),
+    );
     root.querySelector<HTMLElement>("[data-dock-toggle]")?.addEventListener("click", () => {
       dockOpen = !dockOpen;
       focusSelector = "[data-dock-toggle]";
@@ -2756,6 +2955,12 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
     root.querySelectorAll<HTMLButtonElement>("[data-toggle-sensitive]").forEach((button) =>
       button.addEventListener("click", () => toggleSensitive(button.dataset.toggleSensitive!)),
+    );
+    root.querySelectorAll<HTMLButtonElement>("[data-toggle-hidden]").forEach((button) =>
+      button.addEventListener("click", () => toggleHiddenAt(button.dataset.toggleHidden!)),
+    );
+    root.querySelectorAll<HTMLSelectElement>("[data-row-columns]").forEach((select) =>
+      select.addEventListener("change", () => setRowColumnsAt(select.dataset.rowColumns!, Number(select.value))),
     );
     root.querySelectorAll<HTMLButtonElement>("[data-layout-columns]").forEach((button) =>
       button.addEventListener("click", () => {

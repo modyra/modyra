@@ -187,6 +187,55 @@ test("dropping beside a field already in a row adds a column at that edge", asyn
   expect(paths.slice(1)).toEqual(['first', 'second']);
 });
 
+test("the breakpoint selector previews the size and authors only that size", async ({ page }) => {
+  await addFields(page, ["first", "second"]);
+  await page.locator('[data-layout-columns]').last().click();
+  await expect(page.locator('.mdy-layout-columns .mdy-layout-column')).toHaveCount(2);
+
+  const frame = page.locator('.plain-canvas-frame');
+  await expect(frame).toHaveAttribute('data-breakpoint-frame', 'base');
+  const baseWidth = await frame.evaluate((el) => el.getBoundingClientRect().width);
+
+  // Choosing a size narrows the canvas to it, so the arrangement on screen is the arrangement being
+  // authored — the foundation's own media queries decide, rather than Studio predicting them.
+  await page.locator('[data-breakpoint="md"]').click();
+  await expect(frame).toHaveAttribute('data-breakpoint-frame', 'md');
+  await expect(page.locator('[data-breakpoint="md"]')).toHaveAttribute('aria-pressed', 'true');
+  expect(await frame.evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(baseWidth);
+
+  // Narrowing the row at md writes an override, and leaves the arrangement itself alone.
+  const first = page.locator('.plain-canvas-field[data-field-path="first"]');
+  await first.hover();
+  await first.locator('[data-row-columns]').selectOption('1');
+
+  // One track across at md, two from sm: the override lands on md alone, and the arrangement the
+  // other sizes inherit is untouched.
+  const row = page.locator('.mdy-layout-columns');
+  await expect(row).toHaveCSS('--mdy-layout-column-count-md', '1');
+  await expect(row).toHaveCSS('--mdy-layout-column-count-sm', '2');
+  await expect(page.locator('.mdy-layout-columns > .mdy-layout-column')).toHaveCount(2);
+});
+
+test("a field can be hidden at one size and shown at another", async ({ page }) => {
+  await addFields(page, ["first", "second"]);
+  await page.locator('[data-layout-columns]').last().click();
+  await expect(page.locator('.mdy-layout-columns .mdy-layout-column')).toHaveCount(2);
+
+  // Hidden on the narrowest screen…
+  const first = page.locator('.plain-canvas-field[data-field-path="first"]');
+  await first.hover();
+  await first.locator('[data-toggle-hidden]').click();
+  const cell = page.locator('.mdy-layout-columns > .mdy-layout-column').first();
+  await expect(cell).toHaveCSS('--mdy-layout-column-display', 'none');
+
+  // …and shown again from md, which the cascade needs said explicitly rather than left unsaid.
+  await page.locator('[data-breakpoint="md"]').click();
+  await first.hover();
+  await first.locator('[data-toggle-hidden]').click();
+  await expect(cell).toHaveCSS('--mdy-layout-column-display-md', 'flex');
+  await expect(cell).toHaveCSS('--mdy-layout-column-display', 'none');
+});
+
 test("a group sits in a column beside a control, keeping its fields", async ({ page }) => {
   // The one arrangement Studio could never make: a container had no column of its own, because the
   // compiler spilled its leaves into whatever slot it occupied. It now compiles to a section, so the
