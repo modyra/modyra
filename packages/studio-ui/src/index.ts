@@ -1009,6 +1009,25 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   }
 
   /** Flips the `required` validator — the one validator worth a single click. */
+  /**
+   * Whether the devtools panel may show this field's value in the clear.
+   *
+   * Three states, not two: unset lets the panel guess from the field's name — which is what it has
+   * always done and is wrong in both directions often enough to matter — while an open or shut eye
+   * decides it. Clicking cycles guess → shown → hidden → guess, so the heuristic stays reachable.
+   */
+  function toggleSensitive(nodeId: string): void {
+    const node = indexes.nodeById.get(nodeId);
+    if (!node || node.node !== "field") return;
+    const next = node.sensitive === undefined ? false : node.sensitive === false ? true : undefined;
+    selected = nodeId;
+    commit(
+      createUpdateNodeCommand(nodeId, { sensitive: next } as never),
+      nodeId,
+      `[data-toggle-sensitive="${nodeId}"]`,
+    );
+  }
+
   function toggleRequired(nodeId: string): void {
     const node = indexes.nodeById.get(nodeId);
     if (!node || (node.node !== "field" && node.node !== "array")) return;
@@ -1718,12 +1737,38 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       requiredToggle.title = required ? "Required — click to make optional" : "Optional — click to make required";
       requiredToggle.textContent = "✱";
 
+      // The eye says whether this value appears in the clear in the devtools panel. Open: shown.
+      // Shut: masked. Neither: the panel's own guess from the field's name.
+      const sensitive = node?.node === "field" ? node.sensitive : undefined;
+      const sensitiveToggle = document.createElement("button");
+      sensitiveToggle.type = "button";
+      sensitiveToggle.className = "plain-canvas-sensitive";
+      sensitiveToggle.dataset.toggleSensitive = nodeId;
+      sensitiveToggle.dataset.sensitive = sensitive === undefined ? "auto" : String(sensitive);
+      sensitiveToggle.setAttribute("aria-pressed", String(sensitive === true));
+      sensitiveToggle.setAttribute(
+        "aria-label",
+        sensitive === undefined
+          ? `Devtools visibility for ${field.name}: guessed from the name`
+          : sensitive
+            ? `Devtools visibility for ${field.name}: hidden`
+            : `Devtools visibility for ${field.name}: shown in the clear`,
+      );
+      sensitiveToggle.title = sensitive === undefined
+        ? "Devtools: guessed from the field name — click to show in the clear"
+        : sensitive
+          ? "Devtools: hidden — click to go back to guessing"
+          : "Devtools: shown in the clear — click to hide";
+      // An open eye shows the value, a shut one masks it; the dotted eye is the guess.
+      sensitiveToggle.textContent = sensitive === undefined ? "◌" : sensitive ? "🙈" : "👁";
+
       const head = document.createElement("div");
       head.className = "plain-canvas-head";
       head.append(
         dragGrip(nodeId),
         inlineEditor("label", nodeId, node?.label ?? "", "Untitled field", `Label for ${field.name}`),
         requiredToggle,
+        sensitiveToggle,
         inlineEditor("name", nodeId, node?.name ?? field.name, "name", `Code name for ${field.name}`),
         selectButton,
         actions,
@@ -2602,6 +2647,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     bindDiagnosticActions(root);
     root.querySelectorAll<HTMLButtonElement>("[data-toggle-required]").forEach((button) =>
       button.addEventListener("click", () => toggleRequired(button.dataset.toggleRequired!)),
+    );
+
+    root.querySelectorAll<HTMLButtonElement>("[data-toggle-sensitive]").forEach((button) =>
+      button.addEventListener("click", () => toggleSensitive(button.dataset.toggleSensitive!)),
     );
     root.querySelectorAll<HTMLButtonElement>("[data-layout-columns]").forEach((button) =>
       button.addEventListener("click", () => {

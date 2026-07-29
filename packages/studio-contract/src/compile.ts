@@ -141,7 +141,7 @@ function mapFieldNode(node: FieldNode, diagnostics: StudioDiagnostic[]): MdyDyna
     }
     return {
       node: "field",
-      field: { label: node.label, initialValue: node.initialValue, validators, kind, options: node.options } as Omit<
+      field: { label: node.label, initialValue: node.initialValue, validators, kind, options: node.options, ...(node.sensitive !== undefined ? { sensitive: node.sensitive } : {}) } as Omit<
         MdyDynamicField,
         "name"
       >,
@@ -150,7 +150,7 @@ function mapFieldNode(node: FieldNode, diagnostics: StudioDiagnostic[]): MdyDyna
 
   return {
     node: "field",
-    field: { label: node.label, initialValue: node.initialValue, validators, kind } as Omit<MdyDynamicField, "name">,
+    field: { label: node.label, initialValue: node.initialValue, validators, kind, ...(node.sensitive !== undefined ? { sensitive: node.sensitive } : {}) } as Omit<MdyDynamicField, "name">,
   };
 }
 

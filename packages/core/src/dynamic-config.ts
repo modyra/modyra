@@ -32,6 +32,16 @@ interface MdyDynamicFieldBase {
   readonly placeholder?: string;
   readonly initialValue?: unknown;
   readonly validators?: MdyDynamicValidators;
+  /**
+   * Whether this field's value may be shown in the clear by the devtools panel.
+   *
+   * Left unset, the panel guesses from the field's name — `password`, `token`, `iban` and a handful
+   * of others are masked. A guess is right often enough to be useful and wrong often enough to
+   * matter in both directions: `notes` can hold a recovery phrase, and `cardStyle` is masked for
+   * containing "card". Setting this decides it, and a field that says `true` is masked whatever it
+   * is called.
+   */
+  readonly sensitive?: boolean;
 }
 
 /** Free-text kinds. */
@@ -419,6 +429,10 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     }
     if (f.label !== undefined && typeof f.label !== "string") {
       warnDev(`Dropped dynamic field "${f.name}": label must be a string.`);
+      return false;
+    }
+    if (f.sensitive !== undefined && typeof f.sensitive !== "boolean") {
+      warnDev(`Dropped dynamic field "${f.name}": sensitive must be a boolean.`);
       return false;
     }
     if (f.placeholder !== undefined && typeof f.placeholder !== "string") {
