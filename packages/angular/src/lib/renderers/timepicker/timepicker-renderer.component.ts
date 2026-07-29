@@ -118,6 +118,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
         [hasBackdrop]="position() === 'overlay'"
         [widthMode]="'auto-content'"
         [panelClass]="'mdy-timepicker__popup mdy-popup'"
+        [kind]="'timepicker'"
         (close)="closeOverlay()"
       >
         <mdy-timepicker-clock
