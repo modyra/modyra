@@ -14,6 +14,7 @@ import { filterOptionsByQuery } from "@modyra/core/options-utils";
 import {
   MDY_WIDGET_CONTRACTS,
   multiselectOverlayAction,
+  multiselectChipClasses,
   multiselectValueTransition,
   optionNavigationIndex,
   shouldCloseMultiselectOverlay,
@@ -106,11 +107,7 @@ import { MdyDropdownBase } from "../dropdown-base";
           </button>
         } @else {
           @if (mode() === "multi") {
-            <div
-              class="mdy-chip mdy-chip--counter"
-              [class.mdy-chip--selected]="countOf(opt.value) > 0"
-              [title]="opt.label"
-            >
+            <div [class]="chipClasses(countOf(opt.value) > 0)" [title]="opt.label">
               <button
                 type="button"
                 class="mdy-chip__btn"
@@ -135,8 +132,7 @@ import { MdyDropdownBase } from "../dropdown-base";
           } @else {
             <button
               type="button"
-              class="mdy-chip mdy-chip--centered"
-              [class.mdy-chip--selected]="isSelected(opt.value)"
+              [class]="chipClasses(isSelected(opt.value))"
               [disabled]="isDisabled()"
               [title]="opt.label"
               [attr.aria-pressed]="isSelected(opt.value)"
@@ -175,10 +171,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       <div class="mdy-multiselect__options mdy-multiselect-overlay__grid">
         @for (opt of searchResults(); track opt.value; let i = $index) {
           @if (mode() === "multi") {
-            <div
-              class="mdy-chip mdy-chip--counter"
-              [class.mdy-chip--selected]="countOf(opt.value) > 0"
-            >
+            <div [class]="chipClasses(countOf(opt.value) > 0)">
               <button
                 type="button"
                 class="mdy-chip__btn"
@@ -204,12 +197,7 @@ import { MdyDropdownBase } from "../dropdown-base";
               </button>
             </div>
           } @else {
-            <button
-              type="button"
-              class="mdy-chip"
-              [class.mdy-chip--selected]="isSelected(opt.value)"
-              (click)="onOverlaySelect(opt.value)"
-            >
+            <button type="button" [class]="chipClasses(isSelected(opt.value))" (click)="onOverlaySelect(opt.value)">
               <span class="mdy-chip__label">{{ opt.label }}</span>
             </button>
           }
@@ -331,6 +319,17 @@ export class MdyMultiselectComponent<TValue = string>
       const matched = this.effectiveOptions().find((option) => this.optionKey(option.value) === this.optionKey(intent.value));
       if (matched) this.selectionChange.emit(matched);
     }
+  }
+
+  /**
+   * The classes a chip carries: the primitive, the variant its mode implies, and its state.
+   *
+   * `multiselectChipClasses` in @modyra/widgets answers this for every renderer, so a chip drawn
+   * here and a chip drawn by another adapter are the same chip — and the foundation's variants stay
+   * the only place that decides what one looks like.
+   */
+  protected chipClasses(selected: boolean): string {
+    return multiselectChipClasses({ mode: this.mode(), selected }).join(" ");
   }
 
   protected isSelected(optValue: TValue): boolean {

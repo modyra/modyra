@@ -1,3 +1,4 @@
+import { MDY_CHIP_CLASSES } from "./chip.js";
 import type { MdyPartContract } from "./contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "./structure.js";
 import type { MdyWidgetStructure } from "./structure.js";
@@ -72,8 +73,8 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
   // what the contract requires is that it lives in the wrapper, and containment is transitive.
   arrow: ["inputWrapper", "trigger"], value: ["trigger", "inputWrapper"], placeholder: ["trigger", "inputWrapper"],
   track: ["inputWrapper"], thumb: ["track"], chips: ["trigger"], chip: ["chips"], searchButton: ["trigger"],
-  group: [], option: ["optionWrapper", "listbox", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"], optionCount: ["option"], optionStep: ["option"],
-  search: ["popupHeader", "popup"], popupHeader: ["popup"], listbox: ["popup"], optionWrapper: ["listbox"], loading: ["popup"], empty: ["popup"],
+  group: [], option: ["optionWrapper", "listbox", "options", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"], optionCount: ["option"], optionStep: ["option"],
+  search: ["popup"], listbox: ["popup"], optionWrapper: ["options", "listbox"], options: ["root"], loading: ["popup"], empty: ["popup"],
   dialogHeader: ["popup"], header: ["popup"], calendar: ["popup"], clock: ["popup"], actions: ["popup"],
   grid: ["calendar", "popup"], weekdays: ["grid"], weekday: ["weekdays"], row: ["grid"], gridcell: ["row", "grid"],
   hour: ["header", "popup"], minute: ["header", "popup"], period: ["header", "popup"],
@@ -151,12 +152,14 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // The option chips use the chip vocabulary the Angular renderer established — `mdy-chip` with a
   // check, a label and, in counter mode, the two step buttons and a count. That vocabulary is the
   // contract, which is what makes an option look the same whichever renderer drew it.
-  // The options are chips in a grid, each in its own wrapper, under a header that holds the search:
-  // Angular's anatomy, named here so the other renderers draw the same popup rather than a list that
-  // happens to hold the same words. The chips carry their state as modifiers — `mdy-chip--selected`,
-  // and `--counter` or `--centered` for the mode — which is how a theme styles a taken option.
-  multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "trigger", "chips", "chip", "placeholder", "searchButton", "popup", "popupHeader", "search", "listbox", "optionWrapper", "option", "optionCheck", "optionLabel", "optionCount", "optionStep", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
-    { classes: { trigger: ["mdy-multiselect"], placeholder: ["mdy-multiselect__placeholder"], chips: ["mdy-multiselect__chips"], chip: ["mdy-chip", "mdy-chip--value"], searchButton: ["mdy-multiselect__search-btn"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, "mdy-multiselect-overlay__panel"], popupHeader: ["mdy-multiselect__header"], search: ["mdy-multiselect-overlay__input"], listbox: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], optionWrapper: ["mdy-chip-wrapper"], option: ["mdy-chip"], optionCheck: ["mdy-chip__check"], optionLabel: ["mdy-chip__label"], optionCount: ["mdy-chip__count"], optionStep: ["mdy-chip__btn"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } }),
+  // Angular's anatomy, which is the reference: the options are chips in a grid *in the field*, and
+  // the header's search button opens a popup holding the same grid over a filter box. A trigger
+  // showing value chips (`chips`/`chip`/`placeholder`) is the compact alternative, so those parts
+  // stay declared and optional. Which classes a chip carries is `multiselectChipClasses`, never a
+  // string in a renderer.
+  multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "header", "searchButton", "options", "optionWrapper", "option", "optionCheck", "optionStep", "optionLabel", "optionCount", "chips", "chip", "placeholder", "popup", "search", "listbox", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
+    { parents: { header: "inputWrapper", searchButton: "header", options: "root", optionWrapper: "options", option: "optionWrapper", chips: "inputWrapper", chip: "chips", placeholder: "inputWrapper", listbox: "popup", search: "popup" },
+      classes: { inputWrapper: ["mdy-multiselect"], header: ["mdy-multiselect__header"], searchButton: ["mdy-multiselect__search-btn"], options: ["mdy-multiselect__options"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], listbox: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { control: ["mdy-datepicker__input"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] } }),
   daterange: define("daterange", ["mdy-renderer", "mdy-renderer--datepicker", "mdy-renderer--daterange"], ["root", "label", "requiredMarker", "inputWrapper", "startControl", "separator", "endControl", "toggle", "popup", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,

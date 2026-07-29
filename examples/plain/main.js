@@ -98,11 +98,18 @@ const SHELL_SELECTORS = {
  * shell selectors for the parts the catalog leaves unnamed. Looking parts up this way is the
  * point: a renderer that invented its own name simply is not found, and the banner says so.
  */
-function findPart(root, kind, part) {
-  const contract = MDY_WIDGET_CONTRACTS[kind].parts[part];
+function findPart(root, kind, part, resolved = {}) {
+  const definition = MDY_WIDGET_CONTRACTS[kind];
+  const contract = definition.parts[part];
   const classes = contract?.classes ?? [];
   if (classes.length > 0) {
-    const scope = part === "popup" || root.querySelector(`.${classes[0]}`) ? root : document;
+    // Search inside the part's declared parent when one has already been found. A multiselect draws
+    // the same chip anatomy in the field and in the popup, so "the first `.mdy-chip__check` in the
+    // renderer" is not necessarily the one belonging to the chip this check is about — looking it up
+    // flat reports parts as uncontained that are perfectly contained.
+    const parent = definition.structure.nodes.find((node) => node.part === part)?.parent;
+    const within = parent && resolved[parent] instanceof Element ? resolved[parent] : null;
+    const scope = within ?? (part === "popup" || root.querySelector(`.${classes[0]}`) ? root : document);
     const found = scope.querySelector(`.${classes.join(".")}`);
     if (found) return found;
   }
@@ -115,10 +122,13 @@ function report() {
   for (const field of FIELDS) {
     const root = formHost.querySelector(`[data-mdy-field="${field.name}"]`);
     if (!root) continue;
-    const parts = {};
+    // Resolved in declaration order, which is parent-before-child, so a nested part can be looked
+    // up inside the parent that was already found.
+    const parts = { root };
     for (const node of MDY_WIDGET_CONTRACTS[field.kind].structure.nodes) {
-      if (node.part !== "root") parts[node.part] = findPart(root, field.kind, node.part);
+      if (node.part !== "root") parts[node.part] = findPart(root, field.kind, node.part, parts);
     }
+    delete parts.root;
     if (field.kind === "daterange") parts.endControl = root.querySelectorAll(".mdy-daterange__input")[1];
     const missing = MDY_WIDGET_CONTRACTS[field.kind].structure.nodes
       .filter((node) => node.part !== "root" && !parts[node.part])

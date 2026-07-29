@@ -1,5 +1,6 @@
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
+import { MDY_CHIP_CLASSES, multiselectChipClasses } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { mdyIcon } from "../base.js";
 import {
@@ -183,7 +184,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         placeholder="Search..."
       />
       ${this.optionTemplate
-        ? html`<button type="button" class="mdy-chip-wrapper">Custom option</button>`
+        ? html`<button type="button" class=${MDY_CHIP_CLASSES.wrapper}>Custom option</button>`
         : nothing}
       ${this.searchResults(handle).length === 0
         ? html`<div class="mdy-multiselect-overlay__empty">
@@ -265,7 +266,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return selected.map(
       (value) => html`<button
         type="button"
-        class="mdy-chip mdy-chip--centered mdy-chip--selected"
+        class=${multiselectChipClasses({ mode: "single", selected: true }).join(" ")}
         ?disabled=${handle.disabled()}
         @click=${() => this.pick(handle, value)}
       >
@@ -281,7 +282,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       (option) => {
         const count = counts.get(String(option.value)) ?? 0;
         return html`<div
-          class="mdy-chip mdy-chip--counter ${count > 0 ? "mdy-chip--selected" : ""}"
+          class=${multiselectChipClasses({ mode: "multi", selected: count > 0 }).join(" ")}
         >
           <button
             type="button"
@@ -313,7 +314,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     if (this.mode === "multi") {
       const count = this.counts(handle).get(String(option.value)) ?? 0;
       return html`<div
-        class="mdy-chip mdy-chip--counter ${count > 0 ? "mdy-chip--selected" : ""}"
+        class=${multiselectChipClasses({ mode: "multi", selected: count > 0 }).join(" ")}
       >
         <button
           type="button"
@@ -337,7 +338,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     const selected = this.isSelected(handle, option.value);
     return html`<button
       type="button"
-      class="mdy-chip ${selected ? "mdy-chip--selected" : ""}"
+      class=${multiselectChipClasses({ mode: "single", selected }).join(" ")}
       @click=${() => this.pick(handle, option.value)}
     >
       <span class="mdy-chip__label">${option.label}</span>

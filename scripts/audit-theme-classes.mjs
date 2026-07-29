@@ -12,7 +12,7 @@
  */
 
 import { readFileSync, readdirSync } from "node:fs";
-import { MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS } from "../packages/widgets/dist/index.js";
+import { MDY_CHIP_CLASSES, MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS } from "../packages/widgets/dist/index.js";
 import { dirname, extname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -306,6 +306,18 @@ function extractContractClasses(ts, kind) {
   const partModifierRe = /partClass\(\s*["'`]([A-Za-z0-9_]+)["'`]\s*\)\}--([A-Za-z0-9-]+)/g;
   while ((m = partModifierRe.exec(ts)) !== null) {
     for (const base of definition.parts[m[1]]?.classes ?? []) classes.push(`${base}--${m[2]}`);
+  }
+  // The chip vocabulary, when a renderer takes it from the contract instead of spelling it out.
+  // Without this a renderer that moved onto `multiselectChipClasses` reads as one that stopped
+  // emitting chips at all, and the audit reports a parity gap that does not exist.
+  const chipRe = /MDY_CHIP_CLASSES\.([A-Za-z0-9_]+)/g;
+  while ((m = chipRe.exec(ts)) !== null) {
+    const value = MDY_CHIP_CLASSES[m[1]];
+    if (value) classes.push(value);
+  }
+  if (ts.includes("multiselectChipClasses")) {
+    classes.push(MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.centered, MDY_CHIP_CLASSES.counter, MDY_CHIP_CLASSES.selected);
+    if (/role:\s*["'`]value["'`]/.test(ts)) classes.push(MDY_CHIP_CLASSES.value);
   }
   return classes;
 }

@@ -134,12 +134,12 @@ test("select: clicking the trigger opens the listbox, clicking an option commits
   dispose();
 });
 
-test("multiselect: options are picked from an overlay, not from an inline list", async () => {
+test("multiselect: the field shows the options as chips, and the search button opens the same grid", async () => {
   const container = document.createElement("div");
   document.body.append(container);
   const { form, reactivity, dispose } = mountMdyForm(container, fields);
 
-  const trigger = container.querySelector(".mdy-multiselect");
+  const trigger = container.querySelector(".mdy-multiselect__search-btn");
   const popup = document.getElementById(trigger.getAttribute("aria-controls"));
   // Closed by default and portalled out of the field, so opening it cannot reflow the form.
   assert.equal(popup.hidden, true);
@@ -150,18 +150,26 @@ test("multiselect: options are picked from an overlay, not from an inline list",
   assert.equal(popup.hidden, false);
   assert.equal(trigger.getAttribute("aria-expanded"), "true");
 
+  // The field carries its own grid of the same chips, so the options are visible without opening
+  // anything — the popup is the filter, not the only way in.
+  const fieldGrid = container.querySelector(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid)");
+  assert.equal(fieldGrid.querySelectorAll(".mdy-chip").length, popup.querySelectorAll(".mdy-chip").length);
+
   const musicChip = [...popup.querySelectorAll(".mdy-chip--centered")].find((b) => b.textContent.startsWith("Music"));
   musicChip.dispatchEvent(new Event("click"));
   await reactivity.flush();
   assert.deepEqual(form.f.interests.value(), ["music"]);
   // Picking keeps the popup open: a multiselect exists to take more than one choice.
   assert.equal(popup.hidden, false);
-  assert.equal(trigger.querySelector(".mdy-chip").textContent, "Music");
+  // Both grids mark it taken: one option, one state, wherever its chip is drawn.
+  const takenIn = (root) => [...root.querySelectorAll(".mdy-chip--selected")].map((chip) => chip.textContent);
+  assert.deepEqual(takenIn(fieldGrid), ["Music"]);
+  assert.deepEqual(takenIn(popup), ["Music"]);
 
   musicChip.dispatchEvent(new Event("click"));
   await reactivity.flush();
   assert.deepEqual(form.f.interests.value(), []);
-  assert.equal(trigger.querySelector(".mdy-chip"), null);
+  assert.deepEqual(takenIn(fieldGrid), []);
   dispose();
   container.remove();
 });
@@ -516,7 +524,7 @@ test("multiselect toggles membership rather than accumulating duplicates", async
     { name: "palette", kind: "multiselect", label: "Palette", options: [{ value: "indigo", label: "Indigo" }, { value: "cloud", label: "Cloud" }] },
   ], { submitLabel: null });
 
-  const trigger = host.querySelector(".mdy-multiselect");
+  const trigger = host.querySelector(".mdy-multiselect__search-btn");
   trigger.dispatchEvent(new Event("click"));
   await reactivity.flush();
   const chip = document.getElementById(trigger.getAttribute("aria-controls")).querySelector(".mdy-chip--centered");
@@ -552,7 +560,7 @@ test("filtering hides the options that do not match, in the select and the multi
   const shown = [...popup.querySelectorAll(".mdy-select__option")].filter((li) => !li.hidden);
   assert.deepEqual(shown.map((li) => li.textContent), ["France"]);
 
-  const msTrigger = host.querySelector(".mdy-multiselect");
+  const msTrigger = host.querySelector(".mdy-multiselect__search-btn");
   msTrigger.dispatchEvent(new Event("click"));
   await reactivity.flush();
   const msPopup = document.getElementById(msTrigger.getAttribute("aria-controls"));
@@ -590,7 +598,7 @@ test("a pointer outside an open overlay dismisses it, in every widget that owns 
     [".mdy-plain-daterange .mdy-datepicker__toggle", () => host.querySelector(".mdy-plain-daterange .mdy-datepicker__popup")],
     [".mdy-timepicker__toggle", () => host.querySelector(".mdy-timepicker__popup")],
     [".mdy-colors__toggle-area", () => host.querySelector(".mdy-colors__dropdown")],
-    [".mdy-multiselect", () => document.getElementById(host.querySelector(".mdy-multiselect").getAttribute("aria-controls"))],
+    [".mdy-multiselect__search-btn", () => document.getElementById(host.querySelector(".mdy-multiselect__search-btn").getAttribute("aria-controls"))],
   ];
   for (const [opener, popupOf] of openers) {
     host.querySelector(opener).dispatchEvent(new Event("click"));

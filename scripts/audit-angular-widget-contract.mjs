@@ -23,7 +23,16 @@ const rendererModifiers = new Set();
 const perFile = {};
 for (const file of files.sort()) {
   const source = readFileSync(file, "utf8");
-  const fileClasses = [...source.matchAll(/\bmdy-[a-z0-9_-]+/g)].map((m) => m[0]).sort();
+  // Classes a renderer takes from the contract instead of spelling out. The grep below only sees
+  // literals, so a renderer that moved onto `multiselectChipClasses` would look like one that
+  // stopped emitting the chip variants — and the golden would quietly lose the very classes it
+  // exists to protect. What the contract guarantees is asserted in `packages/widgets/test`.
+  const fromContract = source.includes("multiselectChipClasses")
+    // The option variants only: `mdy-chip--value` is the taken-value chip, which a renderer emits
+    // by asking for role "value" — this one does not.
+    ? ["mdy-chip", "mdy-chip--centered", "mdy-chip--counter", "mdy-chip--selected"]
+    : [];
+  const fileClasses = [...[...source.matchAll(/\bmdy-[a-z0-9_-]+/g)].map((m) => m[0]), ...fromContract].sort();
   const fileAria = [...source.matchAll(/\baria-[a-z-]+/g)].map((m) => m[0]).sort();
   const fileSelectors = [...source.matchAll(/selector:\s*["'`]([^"'`]+)["'`]/g)].map((m) => m[1]).sort();
   fileClasses.forEach((value) => classes.add(value));

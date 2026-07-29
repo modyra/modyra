@@ -1,15 +1,16 @@
 /**
- * Renders the "multiselect" kind via createMultiselectFieldController — a trigger showing the
- * current selection as chips, and a document-level popup holding the filter field and the option
- * chips (single mode: click toggles membership; multi mode: counter chips with +/-, matching the
- * controller's two selection semantics exactly).
+ * Renders the "multiselect" kind via createMultiselectFieldController, in the anatomy the Angular
+ * renderer established and the catalog now names: the options are chips in a grid in the field, and
+ * the header's search button opens a popup holding the same grid over a filter box.
  *
- * The options live in an overlay rather than inline for the same reason select's do: an inline list
- * resizes the field every time it opens and pushes the rest of the form down the page.
+ * The two grids are the same builder, and which classes a chip carries is `multiselectChipClasses`.
+ * Nothing here decides what a chip looks like — that is the point of having a chip primitive: the
+ * foundation styles `.mdy-chip` and its variants, and a renderer that spelled a variant itself would
+ * be the reason a theme's rule silently stopped applying.
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, createMultiselectFieldController, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createMultiselectFieldController, multiselectChipClasses, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -31,36 +32,37 @@ export function renderMultiselectField(
   const parts = MDY_WIDGET_CONTRACTS.multiselect.parts;
   const shell = buildFieldShell(f.label, "multiselect");
 
-  // ── trigger: what the field shows when the popup is closed ────────────────────────────────
-  const trigger = el("button") as HTMLButtonElement;
-  trigger.type = "button";
-  const chipList = el("span", parts.chips.classes.join(" "));
-  const placeholder = el("span", parts.placeholder.classes.join(" "));
-  setText(placeholder, f.placeholder ?? "Select…");
-  trigger.append(chipList, placeholder);
+  // ── the field: a header with the search button, and the options as chips ──────────────────
+  const control = el("div", parts.inputWrapper.classes.join(" "));
+  const header = el("div", parts.header.classes.join(" "));
+  const searchButton = el("button", parts.searchButton.classes.join(" ")) as HTMLButtonElement;
+  searchButton.type = "button";
+  searchButton.setAttribute("aria-label", "Search the options");
+  setText(searchButton, "⌕");
+  header.appendChild(searchButton);
+  control.appendChild(header);
 
-  // ── popup: the filter field and the option chips ──────────────────────────────────────────
+  // ── popup: the filter box over the same grid ──────────────────────────────────────────────
   const popup = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   const search = el("input", parts.search.classes.join(" ")) as HTMLInputElement;
   search.type = "search";
   search.placeholder = "Filter…";
-  // The search sits in the popup's header and the chips in a grid below it, as in Angular: the
-  // popup's anatomy is the contract's, so a theme styles one popup rather than one per renderer.
-  const popupHeader = el("div", parts.popupHeader.classes.join(" "));
-  popupHeader.appendChild(search);
-  const group = el("div", parts.listbox.classes.join(" ")) as HTMLDivElement;
-  popup.append(popupHeader, group);
 
-  // Both modes draw the contract's chip: a check plus a label when each option is either in or out,
-  // and the same chip with two step buttons and a count when an option can be taken several times.
-  const optionEls = new Map<string, { chip: HTMLElement; count?: HTMLSpanElement }>();
-  for (const option of options) {
-    const key = keyFor(option);
+  /**
+   * One option chip, in whichever grid asked for it.
+   *
+   * Single mode gives a chip that is either taken or not, with room reserved for its tick; multi
+   * mode gives the same chip with a count between two steppers. Both are `multiselectChipClasses`:
+   * the mode picks the variant, selection is a state on top of it.
+   */
+  interface ChipHandle { readonly chip: HTMLElement; readonly count?: HTMLSpanElement }
+  function buildChip(option: MdySelectOption<unknown>, key: string): ChipHandle {
     const label = el("span", parts.optionLabel.classes.join(" "));
     setText(label, option.label);
+    const classes = multiselectChipClasses({ mode }).join(" ");
 
     if (mode === "multi") {
-      const chip = el("div", `${parts.option.classes.join(" ")} mdy-chip--counter`);
+      const chip = el("div", classes);
       chip.title = option.label;
       const step = (sign: "−" | "+", intent: "decrement" | "increment", describe: string): HTMLButtonElement => {
         const button = el("button", parts.optionStep.classes.join(" ")) as HTMLButtonElement;
@@ -75,62 +77,63 @@ export function renderMultiselectField(
       };
       const count = el("span", parts.optionCount.classes.join(" ")) as HTMLSpanElement;
       chip.append(step("−", "decrement", "Decrease"), label, count, step("+", "increment", "Increase"));
-      // Each option chip sits in the contract's wrapper, which is what the grid lays out.
-      const wrapper = el("div", parts.optionWrapper.classes.join(" "));
-      wrapper.appendChild(chip);
-      group.appendChild(wrapper);
-      optionEls.set(key, { chip, count });
-    } else {
-      const chip = el("button", `${parts.option.classes.join(" ")} mdy-chip--centered`) as HTMLButtonElement;
-      chip.type = "button";
-      chip.title = option.label;
-      // Empty: the theme draws the tick for renderers that ship no icon set.
-      const check = el("span", parts.optionCheck.classes.join(" "));
-      check.setAttribute("aria-hidden", "true");
-      chip.append(check, label);
-      chip.addEventListener("click", () => dispatch({ type: "toggle", optionKey: key }));
-      // Each option chip sits in the contract's wrapper, which is what the grid lays out.
-      const wrapper = el("div", parts.optionWrapper.classes.join(" "));
-      wrapper.appendChild(chip);
-      group.appendChild(wrapper);
-      optionEls.set(key, { chip });
+      return { chip, count };
     }
+
+    const chip = el("button", classes) as HTMLButtonElement;
+    chip.type = "button";
+    chip.title = option.label;
+    // Empty: the theme draws the tick for renderers that ship no icon set.
+    const check = el("span", parts.optionCheck.classes.join(" "));
+    check.setAttribute("aria-hidden", "true");
+    chip.append(check, label);
+    chip.addEventListener("click", () => dispatch({ type: "toggle", optionKey: key }));
+    return { chip };
   }
 
-  insertControl(shell, trigger);
+  /** A grid of option chips: the one in the field, and the one in the popup. */
+  function buildGrid(extraClasses: readonly string[]): { grid: HTMLElement; chips: Map<string, ChipHandle> } {
+    const grid = el("div", [...parts.options.classes, ...extraClasses].join(" "));
+    grid.setAttribute("role", "group");
+    const chips = new Map<string, ChipHandle>();
+    for (const option of options) {
+      const key = keyFor(option);
+      const handle = buildChip(option, key);
+      const wrapper = el("div", parts.optionWrapper.classes.join(" "));
+      wrapper.appendChild(handle.chip);
+      grid.appendChild(wrapper);
+      chips.set(key, handle);
+    }
+    return { grid, chips };
+  }
+
+  const field = buildGrid([]);
+  // The popup's grid carries the overlay class on top of the shared one, as the contract declares.
+  const overlay = buildGrid(parts.listbox.classes.filter((cls) => !parts.options.classes.includes(cls)));
+  popup.append(search, overlay.grid);
+
+  /** Every chip standing for an option, in both grids: one option, two elements to keep in step. */
+  const optionEls = new Map<string, readonly ChipHandle[]>(
+    options.map((option) => {
+      const key = keyFor(option);
+      return [key, [field.chips.get(key)!, overlay.chips.get(key)!]];
+    }),
+  );
+
+  insertControl(shell, control);
+  // The grid sits directly after the control and before the supporting text, which is the order the
+  // contract declares — appending it to the root would put the options below the error line.
+  shell.wrapper.after(field.grid);
   container.appendChild(shell.root);
   // Document-level so no scroll container or renderer frame can clip the popup, exactly as the
   // select renderer portals its own listbox.
   document.body.appendChild(popup);
 
-  // Selection chips are display-only: the interactive option chips live in the popup.
-  const selectedChips = new Map<string, HTMLSpanElement>();
-  function syncSelectedChips(counts: ReadonlyMap<string, number>): void {
-    const shown = new Set<string>();
-    for (const option of options) {
-      const key = keyFor(option);
-      const count = counts.get(key) ?? 0;
-      if (count === 0) continue;
-      shown.add(key);
-      let chip = selectedChips.get(key);
-      if (!chip) {
-        chip = el("span", parts.chip.classes.join(" "));
-        selectedChips.set(key, chip);
-        chipList.appendChild(chip);
-      }
-      setText(chip, mode === "multi" && count > 1 ? `${option.label} ×${count}` : option.label);
-    }
-    for (const [key, chip] of selectedChips) {
-      if (shown.has(key)) continue;
-      chip.remove();
-      selectedChips.delete(key);
-    }
-  }
-
   const lookup: MdyElementLookup = (part, key) => {
-    if (part === "trigger") return trigger;
+    // The search button is what opened the popup, so it is what focus goes back to.
+    if (part === "trigger") return searchButton;
     if (part === "search") return search;
-    if (part === "option" && key) return optionEls.get(key)?.chip;
+    if (part === "option" && key) return optionEls.get(key)?.[0]?.chip;
     return undefined;
   };
   function dispatch(intent: Parameters<typeof controller.dispatch>[0]): void {
@@ -141,18 +144,18 @@ export function renderMultiselectField(
     });
   }
 
-  trigger.addEventListener("click", () => dispatch({ type: "toggleOpen" }));
+  searchButton.addEventListener("click", () => dispatch({ type: "toggleOpen" }));
   search.addEventListener("input", () => dispatch({ type: "search", query: search.value }));
   const onKeydown = (event: KeyboardEvent): void => {
     if (event.key !== "Escape" || !controller.state().open) return;
     event.preventDefault();
     dispatch({ type: "close", restoreFocus: true });
   };
-  trigger.addEventListener("keydown", onKeydown);
+  control.addEventListener("keydown", onKeydown);
   popup.addEventListener("keydown", onKeydown);
 
   const undismiss = dismissOnOutsidePointer(
-    [trigger, popup],
+    [shell.root, popup],
     () => controller.state().open,
     () => dispatch({ type: "close", restoreFocus: false }),
   );
@@ -164,12 +167,10 @@ export function renderMultiselectField(
 
     applyPart(shell.root, view.root);
     applyPart(shell.label, view.parts.label);
-    applyPart(trigger, view.parts.trigger);
-    applyPart(chipList, view.parts.chips);
-    applyPart(placeholder, view.parts.placeholder);
+    applyPart(searchButton, view.parts.trigger);
     applyPart(popup, view.parts.popup);
     applyPart(search, view.parts.search);
-    applyPart(group, view.parts.group);
+    applyPart(overlay.grid, view.parts.group);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
@@ -181,7 +182,6 @@ export function renderMultiselectField(
       required: state.required,
     });
 
-    syncSelectedChips(state.counts);
     // `hidden` on the popup part is the contract's; positioning only runs while it is showing.
     if (state.open) {
       positionOverlay(popup, shell.wrapper, anchoring);
@@ -193,15 +193,20 @@ export function renderMultiselectField(
 
     for (const option of options) {
       const key = keyFor(option);
-      const entry = optionEls.get(key);
-      if (!entry) continue;
-      // The part carries `hidden` when the query filters the option out — no second filter here.
+      const handles = optionEls.get(key);
+      if (!handles) continue;
+      const count = state.counts.get(key) ?? 0;
+      // The classes a chip carries — variant and state — are the contract's answer, applied to both
+      // grids so the field and the popup can never disagree about what is taken.
+      const classes = multiselectChipClasses({ mode, selected: count > 0 });
       const part = view.parts[key];
-      if (part) applyPart(entry.chip, part);
-      // A taken option wears the contract's selected modifier, in either mode — that is what a
-      // theme styles, and it must not depend on which renderer drew the chip.
-      entry.chip.classList.toggle("mdy-chip--selected", (state.counts.get(key) ?? 0) > 0);
-      if (entry.count) setText(entry.count, `×${state.counts.get(key) ?? 0}`);
+      for (const [index, handle] of handles.entries()) {
+        // The part carries `hidden` when the query filters the option out. Only the popup's grid
+        // filters: the field shows every option, which is what makes it a picker rather than a list.
+        if (part && index === 1) applyPart(handle.chip, part);
+        handle.chip.className = classes.join(" ");
+        if (handle.count) setText(handle.count, `×${count}`);
+      }
     }
   });
 
