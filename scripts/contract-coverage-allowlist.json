@@ -627,23 +627,7 @@
     ],
     "themes": []
   },
-  "mdy-overlay-panel--above": {
-    "kind": "unstyled",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": []
-  },
   "mdy-overlay-panel--modal": {
-    "kind": "unstyled",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": []
-  },
-  "mdy-overlay-panel--overlay": {
     "kind": "unstyled",
     "adapters": [
       "angular",
