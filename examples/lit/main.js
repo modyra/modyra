@@ -3,6 +3,7 @@
 // cancellable server-side username check and a simulated server error on
 // submit. <mdy-text-field> renders in light DOM, so the theme stylesheet
 // applies to its markup directly.
+import { mountMdyDevtools } from "@modyra/core/devtools";
 import {
   createLitForm,
   crossField,
@@ -13,7 +14,6 @@ import {
   required,
   serverValidator,
 } from "@modyra/lit/adapter";
-import { mountMdyDevtools } from "@modyra/core/devtools";
 import { defineMdyElements } from "@modyra/lit/ui";
 import { html, LitElement, nothing } from "lit";
 
@@ -71,7 +71,7 @@ class SignupApp extends LitElement {
       ],
       history: { debounceMs: 300 },
       // The password never touches storage.
-      draft: { key: "signup-lit", exclude: ["password", "confirm"] },
+      draft: { key: "signup-lit", exclude: ["password", "confirm"] }
     },
   );
 
@@ -141,8 +141,8 @@ class SignupApp extends LitElement {
         <form class="mdy-form" @submit=${this.#submit}>
           <mdy-text-field label="Username" .field=${this.form.f.username}></mdy-text-field>
           ${this.form.f.username.pending()
-            ? html`<div class="mdy-supporting-text" role="status">checking…</div>`
-            : nothing}
+        ? html`<div class="mdy-supporting-text" role="status">checking…</div>`
+        : nothing}
           <mdy-text-field label="Name" .field=${this.form.f.name}></mdy-text-field>
           <mdy-text-field label="Email" type="email" .field=${this.form.f.email}></mdy-text-field>
           <mdy-text-field label="Password" type="password" .field=${this.form.f.password}></mdy-text-field>
