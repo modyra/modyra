@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { dispatchHtmlDrag, openStudio } from "./support/studio.js";
+import { closeDock, dispatchHtmlDrag, openDock, openStudio } from "./support/studio.js";
 
 /**
  * Contract v2 layout authoring: column rows built in the canvas, rendered by
@@ -26,9 +26,14 @@ const columnCounts = (page: import("@playwright/test").Page) =>
   page.locator(".mdy-layout-columns").evaluateAll((rows) => rows.map((row) => row.querySelectorAll(".mdy-layout-column").length));
 
 async function toggleColumns(page: import("@playwright/test").Page, path: string): Promise<void> {
+  // The toolbar floats over the canvas, and arranging happens on the canvas — so put it away first,
+  // exactly as a user does once the fields are in, then put it back: Undo and the templates live
+  // inside it, and a helper must leave the page as it found it.
+  await closeDock(page);
   const field = page.locator(`.plain-canvas-field[data-field-path="${path}"]`);
   await field.hover();
   await field.locator("[data-layout-columns]").click();
+  await openDock(page);
 }
 
 test("two fields become a column row, and a third widens it", async ({ page }) => {
@@ -234,6 +239,34 @@ test("a field can be hidden at one size and shown at another", async ({ page }) 
   await first.locator('[data-toggle-hidden]').click();
   await expect(cell).toHaveCSS('--mdy-layout-column-display-md', 'flex');
   await expect(cell).toHaveCSS('--mdy-layout-column-display', 'none');
+});
+
+test("a group in a row can be hidden at a size, all the way to the canvas", async ({ page }) => {
+  // The whole chain: the group's own control writes the placement, the compiler puts it on the
+  // section that occupies the column, and the renderer applies it to that column.
+  await page.locator('[data-template="group"]').click();
+  await page.locator('[data-name]').fill('shipping');
+  await page.locator('[data-name]').blur();
+  const groupId = await page.locator('.plain-canvas-group').first().getAttribute('data-plain-group');
+
+  await addFields(page, ['city', 'country']);
+  await page.locator('[data-plain-field-into]').first().selectOption(groupId!);
+
+  const group = page.locator('.plain-canvas-group').first();
+  await group.hover();
+  await page.locator(`[data-layout-columns="${groupId}"]`).click();
+  await expect(page.locator('.mdy-layout-columns > .mdy-layout-column')).toHaveCount(2);
+
+  // The toolbar floats over the canvas; with nothing left to add it is in the way, exactly as it is
+  // for a user reaching for a control underneath it.
+  await closeDock(page);
+  await group.hover();
+  await page.locator(`[data-toggle-hidden="${groupId}"]`).click();
+
+  const groupCell = page.locator('.mdy-layout-columns > .mdy-layout-column').filter({ has: page.locator('.plain-canvas-group') });
+  await expect(groupCell).toHaveCSS('--mdy-layout-column-display', 'none');
+  // Hidden at a size is not deleted: the group and its field are still on the canvas to edit.
+  await expect(groupCell.locator('.plain-canvas-field[data-field-path="shipping.city"]')).toBeAttached();
 });
 
 test("a group sits in a column beside a control, keeping its fields", async ({ page }) => {

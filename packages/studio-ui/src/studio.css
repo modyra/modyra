@@ -545,12 +545,28 @@ body {
   min-width: 0;
   overflow: hidden;
 }
+/* A group can occupy a column too, since a container became a layout citizen. It must fit inside one
+   the way a field does — not clipped, because its own controls live in its legend and clipping would
+   put them out of reach. */
+.plain-canvas-form .mdy-layout-column > .plain-canvas-group {
+  min-width: 0;
+}
 .plain-canvas-form .mdy-layout-column .plain-canvas-head {
   flex-wrap: wrap;
   row-gap: 2px;
 }
 .plain-canvas-form .mdy-layout-column .plain-canvas-actions {
   margin-inline-start: auto;
+  /* The head wraps, but the bar inside it was one unbroken row: a group's is a dozen controls wide
+     and overflowed a 135px column by another 130px, straight over the column beside it, where it
+     took the clicks meant for that column's buttons. Wrapping is scoped to a column deliberately —
+     at full width the bar fits on one line, and folding it there would only make every row taller. */
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  /* `flex: 0 0 auto` sizes the bar to its content and refuses to shrink, so `flex-wrap` alone never
+     fires — there is nothing narrower to wrap into. Letting it shrink is what makes the wrap real. */
+  flex: 0 1 auto;
+  min-width: 0;
 }
 @media (max-width: 720px) {
   /* One column per row below the point where side-by-side fields stop being readable. */

@@ -1791,6 +1791,44 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         groupColumns.disabled = !groupCanColumn && !groupInRow;
         if (!groupCanColumn && !groupInRow) groupColumns.title = "Column rows apply to nodes at the form root";
         controls.append(groupColumns);
+
+        // In a row a group is a column like any other, so it gets the same two per-size controls a
+        // field in a row has. Without them the one thing you could not lay out for a screen size was
+        // the thing most worth laying out for one.
+        if (groupInRow) {
+          const groupRow = layoutNodeFor(group.id) as StudioLayoutNode & { kind: "columns" };
+          const groupRowColumns = document.createElement("select");
+          groupRowColumns.dataset.rowColumns = group.id;
+          groupRowColumns.setAttribute("aria-label", `Columns across at ${breakpoint}`);
+          const showing = rowColumnsAt(groupRow, breakpoint);
+          for (let count = 1; count <= groupRow.columns.length; count += 1) {
+            const option = new Option(`${count}×`, String(count));
+            option.selected = count === showing;
+            groupRowColumns.append(option);
+          }
+
+          const groupIsHidden = hiddenAt(group.id, breakpoint);
+          const groupHidden = iconButton(
+            groupIsHidden ? "\u{1f648}" : "\u{1f441}",
+            `${groupIsHidden ? "Show" : "Hide"} ${group.name} at ${breakpoint}`,
+          );
+          groupHidden.dataset.toggleHidden = group.id;
+          groupHidden.setAttribute("aria-pressed", String(groupIsHidden));
+
+          const groupMoveLeft = iconButton("←", `Move ${group.name} left in the row`);
+          groupMoveLeft.dataset.layoutMove = "left";
+          groupMoveLeft.dataset.layoutMoveNode = group.id;
+          const groupColumnIndex = groupRow.columns.findIndex(
+            (column) => column.some((child) => "nodeId" in child && child.nodeId === group.id),
+          );
+          groupMoveLeft.disabled = groupColumnIndex <= 0;
+          const groupMoveRight = iconButton("→", `Move ${group.name} right in the row`);
+          groupMoveRight.dataset.layoutMove = "right";
+          groupMoveRight.dataset.layoutMoveNode = group.id;
+          groupMoveRight.disabled = groupColumnIndex < 0 || groupColumnIndex >= groupRow.columns.length - 1;
+
+          controls.append(groupMoveLeft, groupMoveRight, groupRowColumns, groupHidden);
+        }
         controls.append(groupDuplicate, groupDelete);
       }
       legend.append(

@@ -20,6 +20,19 @@ export async function openDock(page: Page): Promise<void> {
 }
 
 /**
+ * Collapses the floating toolbar, which is what a user does once there is nothing left to add.
+ *
+ * The toolbar floats *over* the canvas by design, so a control far enough down the form sits under
+ * it — and more of the form does now that the canvas can be narrowed to a breakpoint. Idempotent, so
+ * a test can ask for it before every interaction without toggling it back open.
+ */
+export async function closeDock(page: Page): Promise<void> {
+  const panel = page.locator("[data-dock-panel]");
+  if (await panel.isVisible()) await page.locator("[data-dock-toggle]").click();
+  await panel.waitFor({ state: "hidden" });
+}
+
+/**
  * The outline rail is always present now — there is no Structure mode to switch to. Kept as a
  * no-op so the suites that used to switch read as "this part drives the outline".
  */
