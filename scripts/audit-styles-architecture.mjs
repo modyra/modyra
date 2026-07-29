@@ -119,13 +119,14 @@ function checkFieldHeight(css) {
 /**
  * The foundation stands on its own.
  *
- * `--mdy-comp-*` are the token tier's (`modyra-base.css`), and a theme need not load it. Used
- * without a fallback, `width: var(--mdy-comp-switch-track-width)` resolves to nothing and the
- * control collapses: the switch was 0x0 — invisible — in two of the shipped themes.
+ * `--mdy-comp-*` and `--mdy-sys-*` are the token tier's (`modyra-base.css`), and a theme need not
+ * load it. Used without a fallback the declaration is simply dropped: the switch was 0x0 —
+ * invisible — in two of the shipped themes, and the chips lost their border and their corners,
+ * because `border: 1px solid var(--mdy-sys-color-outline)` is invalid when that token is absent.
  */
 function checkTokenFallbacks(css) {
   const found = [];
-  for (const match of css.matchAll(/var\((--mdy-comp-[a-z0-9-]+)\)/g)) {
+  for (const match of css.matchAll(/var\((--mdy-(?:comp|sys)-[a-z0-9-]+)\)/g)) {
     found.push(`uses ${match[1]} with no fallback; the token tier is a theme's to load, not the foundation's to assume`);
   }
   return found;

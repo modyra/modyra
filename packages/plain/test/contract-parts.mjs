@@ -48,15 +48,18 @@ export function partsOf(root, kind) {
       };
     }
     case "multiselect": {
-      // Same shape as select: the popup is portalled to <body>, reachable from the trigger's
-      // `aria-controls` rather than from inside the renderer's own subtree.
-      const popup = document.getElementById(q(".mdy-multiselect")?.getAttribute("aria-controls") ?? "");
+      // The field carries the header and its own grid of option chips; the popup is portalled to
+      // <body> and holds the filter over the same grid, reachable from `aria-controls` on the
+      // search button rather than from inside the renderer's own subtree.
+      const searchButton = q(".mdy-multiselect__search-btn");
+      const popup = document.getElementById(searchButton?.getAttribute("aria-controls") ?? "");
+      const grid = root.querySelector(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid)");
       return {
-        ...shell, trigger: q(".mdy-multiselect"), chips: q(".mdy-multiselect__chips"), chip: q(".mdy-chip"),
-        placeholder: q(".mdy-multiselect__placeholder"),
+        ...shell, inputWrapper: q(".mdy-multiselect"), header: q(".mdy-multiselect__header"), searchButton,
+        options: grid, optionWrapper: grid?.querySelector(".mdy-chip-wrapper"), option: grid?.querySelector(".mdy-chip"),
+        optionCheck: grid?.querySelector(".mdy-chip__check"), optionLabel: grid?.querySelector(".mdy-chip__label"),
         popup, search: popup?.querySelector(".mdy-multiselect-overlay__input"),
-        listbox: popup?.querySelector(".mdy-multiselect__options"), option: popup?.querySelector(".mdy-chip--centered"),
-        optionCheck: popup?.querySelector(".mdy-chip__check"), optionLabel: popup?.querySelector(".mdy-chip__label"),
+        listbox: popup?.querySelector(".mdy-multiselect-overlay__grid"),
       };
     }
     case "datepicker":
@@ -92,11 +95,10 @@ export function partsOf(root, kind) {
  */
 export const ABSENT = {
   select: ["loading", "empty"],
-  // No chip until something is selected, and the search button is select's affordance, not this
-  // one's: the filter field is always present at the top of the popup.
-  // No chip until something is selected; the count and the step buttons are counter mode's, and
-  // the search button is select's affordance — this one's filter field is always in the popup.
-  multiselect: ["chip", "searchButton", "optionCount", "optionStep", "loading", "empty"],
+  // The value chips and the placeholder belong to the compact trigger a renderer may show instead
+  // of the field's own grid; this one shows the grid, as Angular does. The count and the steppers
+  // are counter mode's.
+  multiselect: ["chips", "chip", "placeholder", "optionCount", "optionStep", "loading", "empty"],
   datepicker: ["dialogHeader", "calendar", "actions"],
   // No dial: this renderer types the time rather than drawing a clock face.
   timepicker: ["clock"],
