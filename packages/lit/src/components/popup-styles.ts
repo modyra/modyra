@@ -6,7 +6,7 @@ import {
   type OverlayPosition,
   type OverlayPositionConfig,
 } from "@modyra/core/overlay-position";
-import { anchorOverlay } from "@modyra/widgets";
+import { anchorOverlay, MDY_POPUP_CLASS } from "@modyra/widgets";
 
 /** Visually hidden native input used as the platform picker behind a styled control. */
 export const POPUP_ANCHOR_STYLE = "position:relative";
@@ -27,6 +27,7 @@ export interface OverlayPanelState {
     readonly right: string;
     readonly width: string;
     readonly maxHeight: string;
+    readonly maxWidth: string;
   };
 }
 
@@ -34,6 +35,9 @@ interface OverlayStateConfig extends OverlayPositionConfig {
   readonly lockPosition?: OverlayPosition;
   readonly lockAlignment?: OverlayAlignment;
   readonly widthMode?: "match-anchor" | "auto-content";
+  /** The popup's own size, when the host has measured it, so it is placed where it shows whole. */
+  readonly contentHeight?: number;
+  readonly contentWidth?: number;
 }
 
 export function extractClickX(event?: Event): number | undefined {
@@ -52,7 +56,7 @@ export function computeOverlayPanelState(
       position: "below",
       alignment: "left",
       panelStyle: POPUP_STYLE,
-      cssVars: { top: "auto", bottom: "auto", left: "auto", right: "auto", width: "auto", maxHeight: "50vh" },
+      cssVars: { top: "auto", bottom: "auto", left: "auto", right: "auto", width: "auto", maxHeight: "50vh", maxWidth: "none" },
     };
   }
 
@@ -69,6 +73,10 @@ export function computeOverlayPanelState(
       preferred: config?.preferredPosition,
       matchAnchorWidth: (config?.widthMode ?? "match-anchor") === "match-anchor",
       pointerX: config?.clickX,
+      // Measured by the controller when the panel is in the DOM: with it the popup goes where its
+      // content shows whole, without it the minimum-space rule stands.
+      contentHeight: config?.contentHeight,
+      contentWidth: config?.contentWidth,
       // A locked overlay keeps the side and edge it opened on; its height is measured afresh so a
       // popup near the viewport edge still fits.
       lock: config?.lockPosition && config?.lockAlignment
@@ -85,16 +93,34 @@ export function computeOverlayPanelState(
     right: read("--mdy-overlay-right", "auto"),
     width: read("--mdy-overlay-width", "auto"),
     maxHeight: read("--mdy-overlay-max-height", "50vh"),
+    maxWidth: read("--mdy-overlay-max-width", "none"),
   };
   const transform = read("--mdy-overlay-transform", "none");
   const panelStyle =
     `${POPUP_STYLE};top:${cssVars.top};bottom:${cssVars.bottom};left:${cssVars.left};` +
-    `right:${cssVars.right};width:${cssVars.width};max-height:${cssVars.maxHeight};transform:${transform};`;
+    `right:${cssVars.right};width:${cssVars.width};max-height:${cssVars.maxHeight};` +
+    `max-width:${cssVars.maxWidth};transform:${transform};`;
 
   return { position: anchoring.decision.placement, alignment: anchoring.decision.alignment, panelStyle, cssVars };
 }
 
-type OverlayHost = HTMLElement & { requestUpdate: () => void };
+type OverlayHost = HTMLElement & { requestUpdate: () => void; updateComplete?: Promise<unknown> };
+
+/**
+ * What the popup's content wants, whatever the box is currently clamped to — `scrollHeight` and
+ * `scrollWidth` answer exactly that. Returns null when nothing is laid out yet, because a guessed
+ * size would be placed against as if it had been measured.
+ */
+function measurePopupContent(popup: HTMLElement | null | undefined): { height: number; width: number } | null {
+  if (!popup || popup.hidden) return null;
+  const height = popup.scrollHeight;
+  const width = popup.scrollWidth;
+  if (height === 0 && width === 0) return null;
+  return {
+    height: height + Math.max(0, popup.offsetHeight - popup.clientHeight),
+    width: width + Math.max(0, popup.offsetWidth - popup.clientWidth),
+  };
+}
 
 /**
  * Shared overlay tracker for Lit renderers.
@@ -121,7 +147,14 @@ export class MdyLitOverlayController {
     private readonly getAnchor: () => HTMLElement | undefined = () =>
       host.querySelector<HTMLElement>(".mdy-input-wrapper") ?? host,
     private readonly config?: Pick<OverlayStateConfig, "minSpace" | "minWidth" | "preferredPosition" | "widthMode">,
+    // The panel to measure. It is found by the class the widget catalog puts on every popup, so a
+    // renderer needs no wiring for its popup to be placed where its content fits.
+    private readonly getPopup: () => HTMLElement | null = () =>
+      host.querySelector<HTMLElement>(`.${MDY_POPUP_CLASS}`),
   ) {}
+
+  /** The popup's measured size, taken when it opens and held while it stays open. */
+  private content: { height: number; width: number } | null = null;
 
   get state(): OverlayPanelState {
     return this._state;
@@ -133,6 +166,12 @@ export class MdyLitOverlayController {
     const wasActive = this.active;
     this.active = true;
     this.refresh(true);
+    // The panel is rendered by the update this opening triggers, so the first pass has nothing to
+    // measure. Once it is in the DOM the placement is decided again — still the opening moment,
+    // and now with the popup's real size rather than the minimum-space fallback.
+    void this.host.updateComplete?.then(() => {
+      if (this.active && this.content === null) this.refresh(true);
+    });
     if (!wasActive) {
       window.addEventListener("scroll", this.onScroll, true);
       window.addEventListener("resize", this.onResize);
@@ -142,6 +181,8 @@ export class MdyLitOverlayController {
   close(): void {
     this.active = false;
     this.clickX = undefined;
+    // The next opening measures afresh: the content it holds may be nothing like this one's.
+    this.content = null;
     if (this.scrollRaf !== 0) {
       cancelAnimationFrame(this.scrollRaf);
       this.scrollRaf = 0;
@@ -154,11 +195,15 @@ export class MdyLitOverlayController {
     const anchor = this.getAnchor();
     if (!anchor) return;
     const lockCorner = !reselectCorner && this._state.position !== "overlay";
+    // Measured once, when the panel first exists; re-measuring while open would feed the clamped
+    // box back into the decision that clamped it.
+    this.content ??= measurePopupContent(this.getPopup());
     this._state = computeOverlayPanelState(anchor, {
       ...this.config,
       clickX: reselectCorner ? this.clickX : undefined,
       lockPosition: lockCorner ? this._state.position : undefined,
       lockAlignment: lockCorner ? this._state.alignment : undefined,
+      ...(this.content ? { contentHeight: this.content.height, contentWidth: this.content.width } : {}),
     });
 
     this.host.style.setProperty("--mdy-overlay-top", this._state.cssVars.top);

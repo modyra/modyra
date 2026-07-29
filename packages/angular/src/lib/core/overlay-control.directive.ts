@@ -133,8 +133,31 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    * `current` carries the decision an open overlay is already holding, so following the anchor
    * during scroll does not re-decide its side or height.
    */
+  /**
+   * The popup's own size, measured when it opens and held while it stays open.
+   *
+   * `scrollHeight`/`scrollWidth` report what the content wants whatever `max-height` is currently
+   * clamping the panel to, which is the question placement has to answer. Re-measuring on every
+   * scroll frame would feed the clamped box back into the decision that clamped it.
+   */
+  private panelContent: { height: number; width: number } | null = null;
+
+  private measurePanel(): { height: number; width: number } | null {
+    const host = this.hostRef.nativeElement as HTMLElement;
+    const panel = host.querySelector<HTMLElement>(".mdy-overlay-panel");
+    if (!panel) return null;
+    const height = panel.scrollHeight;
+    const width = panel.scrollWidth;
+    if (height === 0 && width === 0) return null;
+    return {
+      height: height + Math.max(0, panel.offsetHeight - panel.clientHeight),
+      width: width + Math.max(0, panel.offsetWidth - panel.clientWidth),
+    };
+  }
+
   private anchorNow(clickX?: number, current?: MdyOverlayDecision | null) {
     const rect = this.anchor instanceof HTMLElement ? this.anchor.getBoundingClientRect() : this.anchor;
+    const content = this.panelContent;
     const anchoring = anchorOverlay(
       rect,
       { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight },
@@ -145,6 +168,9 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
         matchAnchorWidth: true,
         ...(clickX !== undefined ? { pointerX: clickX } : {}),
         ...(current ? { current } : {}),
+        // With the panel measured the popup goes where its content shows whole; before it is in the
+        // DOM there is nothing to measure, and the minimum-space rule stands for that one frame.
+        ...(content ? { contentHeight: content.height, contentWidth: content.width } : {}),
       },
     );
     const px = (name: string): number | undefined => {
@@ -153,7 +179,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     };
     return {
       decision: anchoring.decision,
-      coords: { top: px("--mdy-overlay-top"), bottom: px("--mdy-overlay-bottom"), left: px("--mdy-overlay-left"), right: px("--mdy-overlay-right"), width: rect.width },
+      coords: { top: px("--mdy-overlay-top"), bottom: px("--mdy-overlay-bottom"), left: px("--mdy-overlay-left"), right: px("--mdy-overlay-right"), width: rect.width, maxWidth: px("--mdy-overlay-max-width") },
       maxHeight: px("--mdy-overlay-max-height") ?? anchoring.decision.maxHeight,
     };
   }
@@ -186,6 +212,23 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     this.maxHeight.set(anchored.maxHeight);
     this.heldDecision = decision;
 
+    // The panel is rendered by the change detection this opening triggers, so the placement above
+    // was taken without knowing how tall the popup is. Once it exists it is measured and the
+    // placement decided again — still the opening moment, and now able to put the popup where its
+    // content shows whole rather than merely where there was room.
+    this.remeasureFrameId = requestAnimationFrame(() => {
+      this.remeasureFrameId = null;
+      if (!this.open()) return;
+      this.panelContent = this.measurePanel();
+      if (this.panelContent === null) return;
+      const remeasured = this.anchorNow(clickX);
+      this.position.set(remeasured.decision.placement);
+      this.alignment.set(remeasured.decision.alignment);
+      this.coords.set(remeasured.coords);
+      this.maxHeight.set(remeasured.maxHeight);
+      this.heldDecision = remeasured.decision;
+    });
+
     if (transition.announce === "opened") this.announcer.announce(this.overlayI18n.overlayOpened);
 
     this.setupGlobalListeners();
@@ -200,6 +243,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
 
   private scrollFrameId: number | null = null;
   private resizeFrameId: number | null = null;
+  private remeasureFrameId: number | null = null;
 
   protected readonly handleScroll = () => {
     if (!this.open()) return;
@@ -292,6 +336,12 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
       cancelAnimationFrame(this.resizeFrameId);
       this.resizeFrameId = null;
     }
+    if (this.remeasureFrameId !== null) {
+      cancelAnimationFrame(this.remeasureFrameId);
+      this.remeasureFrameId = null;
+    }
+    // The next opening measures afresh: the popup may hold nothing like what this one held.
+    this.panelContent = null;
   }
 
   /**

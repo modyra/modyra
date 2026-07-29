@@ -49,6 +49,11 @@ export interface ComputedPosition {
     readonly left?: number | undefined;
     readonly right?: number | undefined;
     readonly width?: number | undefined;
+    /**
+     * The widest the popup may be where it now sits — the room `anchorOverlay` measured on the side
+     * it hangs from. Without it a content-sized popup near a viewport edge shows half off the screen.
+     */
+    readonly maxWidth?: number | undefined;
   };
 }
 
@@ -62,6 +67,7 @@ export function getOverlayStyles(c: ComputedPosition["coords"]) {
     "--mdy-overlay-bottom": c.bottom !== undefined ? `${c.bottom}px` : "unset",
     "--mdy-overlay-left": c.left !== undefined ? `${c.left}px` : "unset",
     "--mdy-overlay-right": c.right !== undefined ? `${c.right}px` : "unset",
+    "--mdy-overlay-max-width": c.maxWidth !== undefined ? `${c.maxWidth}px` : "unset",
   };
 }
 
@@ -101,6 +107,10 @@ function getRect(anchor: OverlayAnchor): DOMRect {
  *
  * Used during scroll to keep the overlay solidary with its anchor corner
  * without switching corners.
+ *
+ * @deprecated Placement is one decision, and it is `anchorOverlay` in `@modyra/widgets`: it takes
+ * the popup's measured size, so it can put the popup where its content shows whole, and every
+ * adapter applies the same answer. No renderer calls this any more.
  */
 export function computeCoordsForAnchor(
   anchor: OverlayAnchor,
@@ -128,6 +138,11 @@ export function computeCoordsForAnchor(
  *                anchor areas not tied to a specific DOM element.
  * @param config  Optional configuration overrides.
  * @returns       The computed `ComputedPosition`.
+ *
+ * @deprecated Superseded by `anchorOverlay` in `@modyra/widgets`, which is the placement contract
+ * all three renderers apply. This one is a second policy that no renderer calls: it knows nothing
+ * of the popup's own size, so it chooses a side with enough room rather than the side where the
+ * content fits, and it cannot report whether the popup will scroll.
  */
 export function computeOverlayPosition(
   anchor: OverlayAnchor,

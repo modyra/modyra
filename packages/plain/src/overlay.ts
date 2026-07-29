@@ -20,11 +20,36 @@ export interface OverlayPlacementOptions {
  * The shape an open popup was given, kept so repositioning follows the anchor without re-deciding
  * the popup's side and height on every scroll frame. Cleared when it closes.
  */
-const heldDecisions = new WeakMap<HTMLElement, MdyOverlayDecision>();
+const heldDecisions = new WeakMap<HTMLElement, { decision: MdyOverlayDecision; content: MdyContentSize | null }>();
+
+interface MdyContentSize {
+  readonly height: number;
+  readonly width: number;
+}
 
 /** Forgets a popup's held shape, so the next opening decides afresh. */
 export function releaseOverlayPlacement(popup: HTMLElement): void {
   heldDecisions.delete(popup);
+}
+
+/**
+ * How much room the popup's content actually wants.
+ *
+ * `scrollHeight`/`scrollWidth` are the content's own size whatever `max-height` is clamping the box
+ * to, which is exactly the question: a popup already squeezed into 200px still reports the 400px it
+ * would like. The borders are added because the placement reasons about the whole box.
+ *
+ * Measured once, when the popup opens — re-measuring on every scroll frame would feed the clamped
+ * width back into the decision that clamped it.
+ */
+function measureContent(popup: HTMLElement): MdyContentSize | null {
+  const height = popup.scrollHeight;
+  const width = popup.scrollWidth;
+  // Nothing laid out: a popup still hidden has no size, and a guessed one is worse than none.
+  if (height === 0 && width === 0) return null;
+  const borderY = Math.max(0, popup.offsetHeight - popup.clientHeight);
+  const borderX = Math.max(0, popup.offsetWidth - popup.clientWidth);
+  return { height: height + borderY, width: width + borderX };
 }
 
 /** Positions `popup` against `anchor` by applying the contract's anchoring, and returns its decision. */
@@ -34,15 +59,23 @@ export function positionOverlay(
   options: OverlayPlacementOptions = {},
 ): MdyOverlayDecision {
   const rect = anchor.getBoundingClientRect();
+  const held = heldDecisions.get(popup);
+  // Measured on the way up, so the popup is placed where its content shows whole; kept afterwards,
+  // so following the anchor never re-measures a box the placement has already clamped.
+  const content = held ? held.content : measureContent(popup);
   // Every coordinate, the placement and the height come from `anchorOverlay`; this renderer only
   // measures and writes. Passing the decision it is already holding keeps an open popup's shape
   // steady while the anchor moves.
   const anchoring = anchorOverlay(
     rect,
     { width: window.innerWidth, height: window.innerHeight },
-    { ...options, current: heldDecisions.get(popup) ?? null },
+    {
+      ...options,
+      current: held?.decision ?? null,
+      ...(content ? { contentHeight: content.height, contentWidth: content.width } : {}),
+    },
   );
-  heldDecisions.set(popup, anchoring.decision);
+  heldDecisions.set(popup, { decision: anchoring.decision, content });
   for (const [property, value] of Object.entries(anchoring.properties)) {
     popup.style.setProperty(property, value);
   }
