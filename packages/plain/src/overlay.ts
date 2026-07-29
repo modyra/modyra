@@ -5,7 +5,7 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import { anchorOverlay, overlayLifecycleTransition, type MdyOverlayDecision } from "@modyra/widgets";
+import { anchorOverlay, overlayLifecycleTransition, partClasses, type MdyOverlayDecision, type MdyPopupWidgetKind } from "@modyra/widgets";
 
 export interface OverlayPlacementOptions {
   /** Smallest usable space before the popup flips or overlays. */
@@ -16,21 +16,56 @@ export interface OverlayPlacementOptions {
   readonly matchAnchorWidth?: boolean;
   /** The edge the widget's popup hangs from, as its contract declares it. */
   readonly alignment?: "left" | "right";
+  /** Which widget this popup belongs to, so its placement is reflected under the contract's name. */
+  readonly kind?: MdyPopupWidgetKind;
+}
+
+/**
+ * The placement, written onto the popup as the state the catalog declares for it.
+ *
+ * The coordinates alone are enough to *put* the popup somewhere; they cannot tell a stylesheet
+ * which side it ended up on. A multiselect opening upwards wants its filter box nearest the
+ * trigger, and no amount of `top`/`left` expresses that. The catalog already declares `above` and
+ * `overlay` as states of every popup part, so this asks `partClasses` for the answer rather than
+ * spelling a modifier here — which is how `mdy-overlay-panel--above`, a name no stylesheet has ever
+ * matched, came to exist in two adapters at once.
+ *
+ * "below" is the ordinary case and carries no class, exactly as the catalog documents.
+ */
+function reflectPlacement(popup: HTMLElement, kind: MdyPopupWidgetKind, placement: MdyOverlayDecision["placement"]): void {
+  const base = partClasses(kind, "popup")[0];
+  if (base === undefined) return;
+  for (const state of ["above", "overlay"] as const) {
+    const applied = partClasses(kind, "popup", { [state]: true });
+    const modifier = applied.find((name) => name !== base && name.startsWith(`${base}--`));
+    if (modifier) popup.classList.toggle(modifier, placement === state);
+  }
+}
+
+/** Removes whichever placement state a popup is wearing, so a closed popup carries none. */
+function clearPlacement(popup: HTMLElement, kind: MdyPopupWidgetKind): void {
+  reflectPlacement(popup, kind, "below");
 }
 
 /**
  * The shape an open popup was given, kept so repositioning follows the anchor without re-deciding
  * the popup's side and height on every scroll frame. Cleared when it closes.
  */
-const heldDecisions = new WeakMap<HTMLElement, { decision: MdyOverlayDecision; content: MdyContentSize | null }>();
+const heldDecisions = new WeakMap<HTMLElement, { decision: MdyOverlayDecision; content: MdyContentSize | null; kind?: MdyPopupWidgetKind }>();
 
 interface MdyContentSize {
   readonly height: number;
   readonly width: number;
 }
 
-/** Forgets a popup's held shape, so the next opening decides afresh. */
+/**
+ * Forgets a popup's held shape, so the next opening decides afresh — and takes its placement state
+ * off with it, because a closed popup is not sitting above anything. The kind is read back from the
+ * held decision rather than asked of the caller, so closing needs to know no more than it did.
+ */
 export function releaseOverlayPlacement(popup: HTMLElement): void {
+  const held = heldDecisions.get(popup);
+  if (held?.kind) clearPlacement(popup, held.kind);
   heldDecisions.delete(popup);
 }
 
@@ -81,11 +116,12 @@ export function positionOverlay(
       ...(content ? { contentHeight: content.height, contentWidth: content.width } : {}),
     },
   );
-  heldDecisions.set(popup, { decision: anchoring.decision, content });
+  heldDecisions.set(popup, { decision: anchoring.decision, content, ...(options.kind ? { kind: options.kind } : {}) });
   for (const [property, value] of Object.entries(anchoring.properties)) {
     popup.style.setProperty(property, value);
   }
   popup.dataset.placement = anchoring.placement;
+  if (options.kind) reflectPlacement(popup, options.kind, anchoring.placement);
   return anchoring.decision;
 }
 

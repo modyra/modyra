@@ -1841,6 +1841,22 @@
         /* The gap is baked into the coordinates by anchorOverlay. */
     }
 
+    /* A popup opening upwards puts its filter box at the bottom, nearest the control the user just
+       clicked — the one thing coordinates cannot express, which is why the catalog declares `above`
+       as a state of the popup part and the renderer reflects it.
+
+       This rule existed before, keyed on the overlay panel's own `--above` modifier: a class no
+       renderer has ever emitted, so an upward-opening multiselect always put its filter at the top,
+       furthest from the pointer. It is keyed on the contract's name now. */
+    .mdy-multiselect__dropdown--above {
+        flex-direction: column-reverse;
+    }
+
+    .mdy-multiselect__dropdown--above .mdy-multiselect-overlay__input {
+        border-bottom: none;
+        border-top: 1px solid var(--mdy-select-border-subtle);
+    }
+
     .mdy-multiselect-overlay__input {
         width: 100%;
         padding: 0.5rem 0.75rem;

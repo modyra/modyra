@@ -257,4 +257,13 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
 });
 
 export type MdyWidgetPart<K extends MdyWidgetKind> = keyof (typeof MDY_WIDGET_CONTRACTS)[K]["parts"] & string;
+
+/**
+ * The kinds whose contract declares a `popup` part — the ones an overlay policy can be asked about.
+ *
+ * Derived from the catalog rather than listed, so a widget that gains or loses a popup changes this
+ * by changing its own definition, and a caller asking `partClasses(kind, "popup")` for a checkbox
+ * fails to compile instead of at runtime.
+ */
+export type MdyPopupWidgetKind = { [K in MdyWidgetKind]: "popup" extends MdyWidgetPart<K> ? K : never }[MdyWidgetKind];
 export const MDY_CANONICAL_UI_CLASSES = Object.freeze([...new Set(MDY_WIDGET_KINDS.flatMap((kind) => MDY_WIDGET_CONTRACTS[kind].rootClasses))].sort());

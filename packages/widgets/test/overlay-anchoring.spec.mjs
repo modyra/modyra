@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { anchorOverlay, overlayAnchoringFor, MDY_WIDGET_CONTRACTS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
+import { anchorOverlay, overlayAnchoringFor, partClasses, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
 
 const VIEWPORT = { width: 1000, height: 800 };
 /** A control in the middle of the page, with room on both sides. */
@@ -249,13 +249,17 @@ test("without a declared edge, the pointer picks the half of the control it land
   assert.equal(anchorOverlay(control, VIEWPORT, { pointerX: 120 }).decision.alignment, "left");
 });
 
-test("the anchoring an adapter reads is the anchoring the catalog declares", () => {
+test("the anchoring an adapter reads is the anchoring the catalog declares, and carries the kind", () => {
+  // The kind rides along so a renderer holding an anchoring can also name the placement state the
+  // catalog declares for that widget's popup, without being told the kind a second time.
   assert.deepEqual(overlayAnchoringFor("datepicker"), {
+    kind: "datepicker",
     matchAnchorWidth: false,
     minSpace: 240,
     alignment: "right",
   });
   assert.deepEqual(overlayAnchoringFor("select"), {
+    kind: "select",
     matchAnchorWidth: true,
     minSpace: 180,
     minWidth: 160,
@@ -263,4 +267,33 @@ test("the anchoring an adapter reads is the anchoring the catalog declares", () 
   });
   // A widget with no popup has no anchoring, and asking for it is not an error.
   assert.deepEqual(overlayAnchoringFor("text"), {});
+});
+
+test("declaring anchoring and declaring a popup part go together, both ways", () => {
+  // `overlayAnchoringFor` reports the kind as an `MdyPopupWidgetKind` on the strength of the
+  // anchoring guard alone — TypeScript cannot narrow a key by a sibling's value, so the cast rests
+  // on this. A widget that gains anchoring without a popup part (or the reverse) fails here rather
+  // than at the call site, where it would ask `partClasses` for a part that does not exist.
+  for (const kind of MDY_WIDGET_KINDS) {
+    const hasAnchoring = Boolean(MDY_WIDGET_CONTRACTS[kind].capabilities.anchoring);
+    const hasPopup = Object.hasOwn(MDY_WIDGET_CONTRACTS[kind].parts, "popup");
+    assert.equal(hasAnchoring, hasPopup, `${kind}: anchoring=${hasAnchoring} but popup part=${hasPopup}`);
+  }
+});
+
+test("every popup part can be asked for its placement states, and below carries none", () => {
+  for (const kind of MDY_WIDGET_KINDS) {
+    if (!Object.hasOwn(MDY_WIDGET_CONTRACTS[kind].parts, "popup")) continue;
+    const base = partClasses(kind, "popup")[0];
+    // "below" is the ordinary case: the contract gives it no class, so a popup sitting below its
+    // anchor is spelled exactly like a popup nobody has placed yet.
+    assert.deepEqual(partClasses(kind, "popup"), MDY_WIDGET_CONTRACTS[kind].parts.popup.classes);
+    for (const state of ["above", "overlay"]) {
+      const applied = partClasses(kind, "popup", { [state]: true });
+      assert.ok(
+        applied.includes(`${base}--${state}`),
+        `${kind}: popup must be able to report --${state} on ${base}`,
+      );
+    }
+  }
 });

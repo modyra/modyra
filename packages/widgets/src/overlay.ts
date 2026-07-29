@@ -11,7 +11,7 @@
  * foundation already positions `.mdy-overlay` from `--mdy-overlay-*`, so an adapter's whole job is
  * to copy these onto the element.
  */
-import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
+import { MDY_WIDGET_CONTRACTS, type MdyPopupWidgetKind, type MdyWidgetKind } from "./catalog.js";
 import { MDY_CSS_PROPERTIES } from "./css.js";
 import {
   decideOverlayPlacement,
@@ -132,6 +132,16 @@ export interface MdyOverlayAnchorOptions {
    * corner an open popup chose and only wants it to stay there while the anchor moves.
    */
   readonly lock?: { readonly placement: MdyOverlayDecision["placement"]; readonly alignment: MdyOverlayDecision["alignment"] } | null;
+  /**
+   * Which widget is being anchored.
+   *
+   * `anchorOverlay` does not read it — placement is geometry, and geometry does not care what the
+   * popup contains. It travels with the options so that a renderer holding an anchoring already
+   * holds everything needed to reflect the result: the catalog declares `above` and `overlay` as
+   * states of every popup part, and a renderer with the kind can name them through `partClasses`
+   * instead of inventing a spelling of its own.
+   */
+  readonly kind?: MdyPopupWidgetKind;
 }
 
 export interface MdyOverlayAnchoring {
@@ -159,6 +169,10 @@ export function overlayAnchoringFor(kind: MdyWidgetKind): MdyOverlayAnchorOption
   const anchoring = MDY_WIDGET_CONTRACTS[kind].capabilities.anchoring;
   if (!anchoring) return {};
   return {
+    // A widget that declares anchoring declares a popup to anchor — the two travel together in the
+    // catalog, and `popupKindsDeclareAnchoring` in the widgets suite is what keeps them together.
+    // The guard above proves it at runtime; TypeScript cannot narrow a key by a sibling's value.
+    kind: kind as MdyPopupWidgetKind,
     matchAnchorWidth: anchoring.matchAnchorWidth,
     minSpace: anchoring.minSpace,
     ...(anchoring.minWidth !== undefined ? { minWidth: anchoring.minWidth } : {}),
