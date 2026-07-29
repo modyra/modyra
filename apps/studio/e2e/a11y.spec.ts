@@ -91,9 +91,14 @@ test.describe("light scheme", () => {
     }
     await page.locator("[data-dock-toggle]").click();
 
-    // Following the system means the shell really repaints, not just declares a preference.
+    // Following the system means the shell really repaints, not just declares a preference. The
+    // light canvas is `#f3f5fa`, not white — deliberately tinted, and painted under two radial
+    // brand washes — so what is checked is that it is a light surface, not one exact colour a
+    // redesign is free to move.
     const background = await page.locator(".studio").evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(background).toBe("rgb(255, 255, 255)");
+    const channels = background.match(/\d+/g)?.slice(0, 3).map(Number) ?? [];
+    expect(channels).toHaveLength(3);
+    expect(Math.min(...channels)).toBeGreaterThan(200);
 
     const found = await violations(page);
     expect(found, describe(found)).toEqual([]);
