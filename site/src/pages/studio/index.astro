@@ -75,7 +75,9 @@ const based = (path: string) =>
   .hero p, .status p { max-width: 62ch; color: var(--page-muted); font-size: 1.12rem; line-height: 1.6; }
   .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.8rem; }
   .actions a { padding: .72rem 1rem; border: 1px solid var(--page-border); border-radius: .55rem; text-decoration: none; }
-  .actions .primary { border-color: transparent; background: var(--mdy-gradient-brand); color: #fff; font-weight: 700; }
+  /* The ink gradient, not the bright one: white text on the bright stops measures as low as
+     2.85:1, and the coral end made the primary action look mis-coloured. */
+  .actions .primary { border-color: transparent; background: var(--mdy-gradient-brand-ink); color: #fff; font-weight: 700; }
   .flow, .boundaries, .status { padding-top: clamp(2.5rem, 6vw, 4.5rem); border-top: 1px solid var(--page-border); }
   h2 { font-size: clamp(1.7rem, 3.5vw, 2.5rem); }
   ol { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding: 0; margin: 2rem 0 0; list-style: none; counter-reset: step; }
