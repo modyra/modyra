@@ -85,18 +85,18 @@
         --mdy-shadow-depth-3: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 8px 3px rgba(0, 0, 0, 0.15);
 
         /* ── Text Field (Filled) ────────────────────────────────────────────────── */
-        --mdy-input-height: var(--mdy-comp-filled-text-field-container-height);
+        --mdy-input-height: var(--mdy-comp-filled-text-field-container-height, 56px);
         /* 56px */
-        --mdy-input-bg: var(--mdy-comp-filled-text-field-container-color);
+        --mdy-input-bg: var(--mdy-comp-filled-text-field-container-color, var(--mdy-sys-color-surface-container-highest));
         --mdy-input-bg-hover: color-mix(in srgb, var(--mdy-input-bg), var(--mdy-on-surface) 8%);
-        --mdy-input-border-radius: var(--mdy-comp-filled-text-field-container-shape);
+        --mdy-input-border-radius: var(--mdy-comp-filled-text-field-container-shape, var(--mdy-sys-shape-corner-extra-small));
         /* 4px */
-        --mdy-input-color: var(--mdy-comp-filled-text-field-input-text-color);
-        --mdy-input-placeholder-color: var(--mdy-comp-filled-text-field-label-text-color);
-        --mdy-input-focus-color: var(--mdy-comp-filled-text-field-focus-active-indicator-color);
-        --mdy-input-icon-color: var(--mdy-comp-filled-text-field-leading-icon-color);
+        --mdy-input-color: var(--mdy-comp-filled-text-field-input-text-color, var(--mdy-sys-color-on-surface));
+        --mdy-input-placeholder-color: var(--mdy-comp-filled-text-field-label-text-color, var(--mdy-sys-color-on-surface-variant));
+        --mdy-input-focus-color: var(--mdy-comp-filled-text-field-focus-active-indicator-color, var(--mdy-sys-color-primary));
+        --mdy-input-icon-color: var(--mdy-comp-filled-text-field-leading-icon-color, var(--mdy-sys-color-on-surface-variant));
         --mdy-input-focus-shadow: inset 0 -2px 0 0 var(--mdy-input-focus-color);
-        --mdy-error-color: var(--mdy-comp-filled-text-field-error-active-indicator-color);
+        --mdy-error-color: var(--mdy-comp-filled-text-field-error-active-indicator-color, var(--mdy-sys-color-error));
         --mdy-error-focus-shadow: inset 0 -2px 0 0 var(--mdy-error-color);
         --mdy-input-font-size: var(--mdy-sys-typescale-body-large-size);
         /* 16px */
@@ -129,13 +129,13 @@
         --mdy-tooltip-border-radius: var(--mdy-corner-extra-small);
 
         /* ── Checkbox ───────────────────────────────────────────────────────────── */
-        --mdy-checkbox-size: var(--mdy-comp-checkbox-container-size);
+        --mdy-checkbox-size: var(--mdy-comp-checkbox-container-size, 18px);
         /* 18px */
-        --mdy-checkbox-border-radius: var(--mdy-comp-checkbox-container-shape);
+        --mdy-checkbox-border-radius: var(--mdy-comp-checkbox-container-shape, 2px);
         /* 2px */
-        --mdy-checkbox-accent: var(--mdy-comp-checkbox-selected-container-color);
-        --mdy-checkbox-checkmark-color: var(--mdy-comp-checkbox-selected-icon-color);
-        --mdy-checkbox-border: var(--mdy-comp-checkbox-unselected-outline-width) solid var(--mdy-comp-checkbox-unselected-outline-color);
+        --mdy-checkbox-accent: var(--mdy-comp-checkbox-selected-container-color, var(--mdy-sys-color-primary));
+        --mdy-checkbox-checkmark-color: var(--mdy-comp-checkbox-selected-icon-color, var(--mdy-sys-color-on-primary));
+        --mdy-checkbox-border: var(--mdy-comp-checkbox-unselected-outline-width, 2px) solid var(--mdy-comp-checkbox-unselected-outline-color, var(--mdy-sys-color-on-surface-variant));
         --mdy-checkbox-gap: 0.75rem;
         --mdy-checkbox-transition: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         /* Tick geometry — override per theme if needed */
@@ -149,94 +149,100 @@
         /* translateY to optically center the rotated L-border */
 
         /* ── Toggle / Switch ────────────────────────────────────────────────────── */
-        --mdy-toggle-width: var(--mdy-comp-switch-track-width);
+        --mdy-toggle-width: var(--mdy-comp-switch-track-width, 52px);
         /* 52px */
-        --mdy-toggle-height: var(--mdy-comp-switch-track-height);
+        --mdy-toggle-height: var(--mdy-comp-switch-track-height, 32px);
         /* 32px */
-        --mdy-toggle-bg: var(--mdy-comp-switch-track-color);
+        --mdy-toggle-bg: var(--mdy-comp-switch-track-color, transparent);
         /* transparent */
-        --mdy-toggle-border: var(--mdy-comp-switch-track-outline-width) solid var(--mdy-comp-switch-track-outline-color);
-        --mdy-toggle-bg-checked: var(--mdy-comp-switch-selected-track-color);
+        --mdy-toggle-border: var(--mdy-comp-switch-track-outline-width, 2px) solid var(--mdy-comp-switch-track-outline-color, var(--mdy-sys-color-outline));
+        --mdy-toggle-bg-checked: var(--mdy-comp-switch-selected-track-color, var(--mdy-sys-color-primary));
         --mdy-toggle-border-checked: 0px solid transparent;
         /* One handle size for both states: the thumb travels, it does not grow. Defaults to the
            selected-handle token because that is the size the control is drawn around; a theme that
            wants a smaller knob moves this one token. */
-        --mdy-toggle-thumb-size: var(--mdy-comp-switch-selected-handle-size);
+        --mdy-toggle-thumb-size: var(--mdy-comp-switch-selected-handle-size, 24px);
         /* 24px */
         /* Deprecated: a state-dependent handle size is no longer honoured. Kept so themes that
            still set it keep resolving; remove with the next major. */
         --mdy-toggle-thumb-size-checked: var(--mdy-toggle-thumb-size);
-        --mdy-toggle-thumb-color: var(--mdy-comp-switch-handle-color);
-        --mdy-toggle-thumb-color-checked: var(--mdy-comp-switch-selected-handle-color);
+        --mdy-toggle-thumb-color: var(--mdy-comp-switch-handle-color, var(--mdy-sys-color-outline));
+        --mdy-toggle-thumb-color-checked: var(--mdy-comp-switch-selected-handle-color, var(--mdy-sys-color-on-primary));
         --mdy-toggle-thumb-offset: 4px;
         --mdy-toggle-gap: 0.75rem;
         --mdy-toggle-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        /* The halo the thumb wears on hover and focus. Sized from the handle rather than fixed, so
+           a theme that resizes the knob keeps a halo that fits its track; the colour follows the
+           thumb, so it reads as the same control lighting up rather than a second thing arriving. */
+        --mdy-toggle-state-layer-size: calc(var(--mdy-toggle-thumb-size) * 1.7);
+        --mdy-toggle-state-layer-color: var(--mdy-toggle-thumb-color-checked);
+        --mdy-toggle-state-layer-opacity: 0.14;
 
         /* ── Radio ──────────────────────────────────────────────────────────────── */
-        --mdy-radio-size: var(--mdy-comp-radio-icon-size);
+        --mdy-radio-size: var(--mdy-comp-radio-icon-size, 20px);
         /* 20px */
-        --mdy-radio-selected-color: var(--mdy-comp-radio-selected-icon-color);
-        --mdy-radio-unselected-color: var(--mdy-comp-radio-unselected-icon-color);
+        --mdy-radio-selected-color: var(--mdy-comp-radio-selected-icon-color, var(--mdy-sys-color-primary));
+        --mdy-radio-unselected-color: var(--mdy-comp-radio-unselected-icon-color, var(--mdy-sys-color-on-surface-variant));
 
         /* ── Segmented Button ───────────────────────────────────────────────────── */
-        --mdy-segmented-height: var(--mdy-comp-segmented-button-height);
+        --mdy-segmented-height: var(--mdy-comp-segmented-button-height, 40px);
         /* 40px */
-        --mdy-segmented-border-radius: var(--mdy-comp-segmented-button-shape);
+        --mdy-segmented-border-radius: var(--mdy-comp-segmented-button-shape, var(--mdy-sys-shape-corner-full));
         /* 9999px */
-        --mdy-segmented-border-color: var(--mdy-comp-segmented-button-outline-color);
-        --mdy-segmented-selected-bg: var(--mdy-comp-segmented-button-selected-container-color);
-        --mdy-segmented-selected-color: var(--mdy-comp-segmented-button-selected-label-text-color);
-        --mdy-segmented-unselected-color: var(--mdy-comp-segmented-button-unselected-label-text-color);
-        --mdy-segmented-font-size: var(--mdy-comp-segmented-button-label-text-font-size);
+        --mdy-segmented-border-color: var(--mdy-comp-segmented-button-outline-color, var(--mdy-sys-color-outline));
+        --mdy-segmented-selected-bg: var(--mdy-comp-segmented-button-selected-container-color, var(--mdy-sys-color-secondary-container));
+        --mdy-segmented-selected-color: var(--mdy-comp-segmented-button-selected-label-text-color, var(--mdy-sys-color-on-secondary-container));
+        --mdy-segmented-unselected-color: var(--mdy-comp-segmented-button-unselected-label-text-color, var(--mdy-sys-color-on-surface));
+        --mdy-segmented-font-size: var(--mdy-comp-segmented-button-label-text-font-size, var(--mdy-sys-typescale-label-large-size));
         /* 14px */
-        --mdy-segmented-font-weight: var(--mdy-comp-segmented-button-label-text-weight);
+        --mdy-segmented-font-weight: var(--mdy-comp-segmented-button-label-text-weight, var(--mdy-sys-typescale-label-large-weight));
         /* 500 */
         --mdy-segmented-btn-bg-selected-hover: color-mix(in srgb, var(--mdy-segmented-selected-bg), var(--mdy-segmented-selected-color) 8%);
 
         --mdy-button-radius: var(--mdy-corner-full);
 
         /* ── Filter Chip ────────────────────────────────────────────────────────── */
-        --mdy-chip-height: var(--mdy-comp-filter-chip-container-height);
+        --mdy-chip-height: var(--mdy-comp-filter-chip-container-height, 32px);
         /* 32px */
-        --mdy-chip-border-radius: var(--mdy-comp-filter-chip-container-shape);
+        --mdy-chip-border-radius: var(--mdy-comp-filter-chip-container-shape, var(--mdy-sys-shape-corner-small));
         /* 8px */
         --mdy-chip-padding: 0 0.75rem;
         --mdy-chip-gap: 0.375rem;
-        --mdy-chip-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
+        --mdy-chip-border: 1px solid var(--mdy-comp-filter-chip-outline-color, var(--mdy-sys-color-outline));
         --mdy-chip-bg: transparent;
-        --mdy-chip-color: var(--mdy-comp-filter-chip-label-text-color);
+        --mdy-chip-color: var(--mdy-comp-filter-chip-label-text-color, var(--mdy-sys-color-on-surface-variant));
         --mdy-chip-font-size: var(--mdy-sys-typescale-label-large-size);
         /* 14px */
-        --mdy-chip-selected-bg: var(--mdy-comp-filter-chip-selected-container-color);
-        --mdy-chip-selected-color: var(--mdy-comp-filter-chip-selected-label-text-color);
-        --mdy-chip-selected-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
+        --mdy-chip-selected-bg: var(--mdy-comp-filter-chip-selected-container-color, var(--mdy-sys-color-secondary-container));
+        --mdy-chip-selected-color: var(--mdy-comp-filter-chip-selected-label-text-color, var(--mdy-sys-color-on-secondary-container));
+        --mdy-chip-selected-border: 1px solid var(--mdy-comp-filter-chip-outline-color, var(--mdy-sys-color-outline));
         --mdy-chip-hover-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
         --mdy-chip-hover-color: var(--mdy-on-surface);
-        --mdy-chip-hover-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
+        --mdy-chip-hover-border: 1px solid var(--mdy-comp-filter-chip-outline-color, var(--mdy-sys-color-outline));
         --mdy-chip-max-width: 11rem;
         --mdy-chip-transition: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 
         /* ── Slider ─────────────────────────────────────────────────────────────── */
-        --mdy-slider-track-height: var(--mdy-comp-slider-active-track-height);
+        --mdy-slider-track-height: var(--mdy-comp-slider-active-track-height, 4px);
         /* 4px */
-        --mdy-slider-thumb-size: var(--mdy-comp-slider-handle-height);
+        --mdy-slider-thumb-size: var(--mdy-comp-slider-handle-height, 20px);
         /* 20px */
-        --mdy-slider-active-color: var(--mdy-comp-slider-active-track-color);
-        --mdy-slider-inactive-color: var(--mdy-comp-slider-inactive-track-color);
-        --mdy-slider-thumb-color: var(--mdy-comp-slider-handle-color);
+        --mdy-slider-active-color: var(--mdy-comp-slider-active-track-color, var(--mdy-sys-color-primary));
+        --mdy-slider-inactive-color: var(--mdy-comp-slider-inactive-track-color, var(--mdy-sys-color-secondary-container));
+        --mdy-slider-thumb-color: var(--mdy-comp-slider-handle-color, var(--mdy-sys-color-primary));
         /* --mdy-slider-fill-pct is set by the TS component on value change */
         --mdy-slider-track-color: linear-gradient(to right,
                 var(--mdy-slider-active-color) var(--mdy-slider-fill-pct, 0%),
                 var(--mdy-slider-inactive-color) var(--mdy-slider-fill-pct, 0%));
 
         /* ── Color Picker ───────────────────────────────────────────────────────── */
-        --mdy-color-swatch-size: var(--mdy-comp-color-picker-swatch-size);
+        --mdy-color-swatch-size: var(--mdy-comp-color-picker-swatch-size, 2.5rem);
         /* 2.5rem */
-        --mdy-color-swatch-radius: var(--mdy-comp-color-picker-swatch-radius);
+        --mdy-color-swatch-radius: var(--mdy-comp-color-picker-swatch-radius, var(--mdy-sys-shape-corner-full));
         /* full */
-        --mdy-color-dropdown-radius: var(--mdy-comp-color-picker-dropdown-radius);
+        --mdy-color-dropdown-radius: var(--mdy-comp-color-picker-dropdown-radius, var(--mdy-sys-shape-corner-medium));
         /* 12px */
-        --mdy-color-dropdown-shadow: var(--mdy-comp-color-picker-dropdown-shadow);
+        --mdy-color-dropdown-shadow: var(--mdy-comp-color-picker-dropdown-shadow, 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.3));
 
         /* ── Spin Button ────────────────────────────────────────────────────────── */
         --mdy-spin-btn-size: 1.5rem;
@@ -267,23 +273,23 @@
         --mdy-file-container-bg: var(--mdy-surface-container);
 
         /* ── Date Picker ────────────────────────────────────────────────────────── */
-        --mdy-datepicker-cell-size: var(--mdy-comp-date-picker-cell-size);
+        --mdy-datepicker-cell-size: var(--mdy-comp-date-picker-cell-size, 2.5rem);
         /* 2.5rem */
-        --mdy-datepicker-cell-font-size: var(--mdy-comp-date-picker-cell-font-size);
+        --mdy-datepicker-cell-font-size: var(--mdy-comp-date-picker-cell-font-size, 0.875rem);
         /* 0.875rem */
-        --mdy-datepicker-popup-padding: var(--mdy-comp-date-picker-popup-padding);
-        --mdy-datepicker-popup-shadow: var(--mdy-comp-date-picker-popup-shadow);
-        --mdy-datepicker-popup-bg: var(--mdy-comp-date-picker-popup-bg);
-        --mdy-datepicker-modal-bg: var(--mdy-comp-date-picker-modal-container-color);
-        --mdy-datepicker-modal-radius: var(--mdy-comp-date-picker-modal-container-shape);
-        --mdy-datepicker-hover-bg: var(--mdy-comp-date-picker-cell-hover-bg);
-        --mdy-datepicker-disabled-opacity: var(--mdy-comp-date-picker-cell-disabled-opacity);
+        --mdy-datepicker-popup-padding: var(--mdy-comp-date-picker-popup-padding, 1.25rem);
+        --mdy-datepicker-popup-shadow: var(--mdy-comp-date-picker-popup-shadow, 0 8px 32px 0 rgba(0, 0, 0, 0.18));
+        --mdy-datepicker-popup-bg: var(--mdy-comp-date-picker-popup-bg, var(--mdy-comp-date-picker-modal-container-color, var(--mdy-sys-color-surface-container-high)));
+        --mdy-datepicker-modal-bg: var(--mdy-comp-date-picker-modal-container-color, var(--mdy-sys-color-surface-container-high));
+        --mdy-datepicker-modal-radius: var(--mdy-comp-date-picker-modal-container-shape, var(--mdy-sys-shape-corner-extra-large));
+        --mdy-datepicker-hover-bg: var(--mdy-comp-date-picker-cell-hover-bg, var(--mdy-sys-color-surface-container-highest));
+        --mdy-datepicker-disabled-opacity: var(--mdy-comp-date-picker-cell-disabled-opacity, 0.25);
         --mdy-datepicker-today-color: var(--mdy-sys-color-primary);
 
         /* ── Date Range ─────────────────────────────────────────────────────────── */
-        --mdy-daterange-in-range-bg: var(--mdy-comp-date-picker-in-range-bg);
-        --mdy-daterange-endpoint-bg: var(--mdy-comp-date-picker-endpoint-bg);
-        --mdy-daterange-endpoint-color: var(--mdy-comp-date-picker-endpoint-color);
+        --mdy-daterange-in-range-bg: var(--mdy-comp-date-picker-in-range-bg, color-mix(in srgb, var(--mdy-sys-color-primary), #fff 75%));
+        --mdy-daterange-endpoint-bg: var(--mdy-comp-date-picker-endpoint-bg, var(--mdy-sys-color-primary));
+        --mdy-daterange-endpoint-color: var(--mdy-comp-date-picker-endpoint-color, var(--mdy-sys-color-on-primary));
         --mdy-daterange-input-min-width: 8ch;
         --mdy-daterange-input-padding: 0 0.5rem;
         --mdy-daterange-sep-padding: 0 0.25rem;
@@ -1136,6 +1142,30 @@
         border-radius: 50%;
         transition: transform var(--mdy-toggle-transition), background var(--mdy-toggle-transition);
         box-shadow: var(--mdy-shadow-depth-1);
+    }
+
+    /* The state layer: a soft halo around the thumb on hover and focus, painted outside the thumb's
+       own box so it tells the user the control is live without moving anything. Sized from the
+       thumb, so a theme that resizes the knob gets a halo that still fits its track. */
+    .mdy-toggle__thumb::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: var(--mdy-toggle-state-layer-size, calc(var(--mdy-toggle-thumb-size) * 1.7));
+        height: var(--mdy-toggle-state-layer-size, calc(var(--mdy-toggle-thumb-size) * 1.7));
+        transform: translate(-50%, -50%) scale(0);
+        border-radius: 50%;
+        background: var(--mdy-toggle-state-layer-color, currentColor);
+        opacity: 0;
+        transition: transform var(--mdy-toggle-transition), opacity var(--mdy-toggle-transition);
+        pointer-events: none;
+    }
+
+    .mdy-toggle:hover input:not(:disabled)+.mdy-toggle__track .mdy-toggle__thumb::after,
+    .mdy-toggle input:focus-visible+.mdy-toggle__track .mdy-toggle__thumb::after {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: var(--mdy-toggle-state-layer-opacity, 0.12);
     }
 
     .mdy-toggle input:checked+.mdy-toggle__track {
@@ -2213,8 +2243,8 @@
         display: flex;
         align-items: stretch;
         border: none;
-        border-radius: var(--mdy-comp-date-picker-popup-radius);
-        background: var(--mdy-comp-date-picker-popup-bg);
+        border-radius: var(--mdy-comp-date-picker-popup-radius, var(--mdy-comp-date-picker-modal-container-shape, var(--mdy-sys-shape-corner-extra-large)));
+        background: var(--mdy-comp-date-picker-popup-bg, var(--mdy-comp-date-picker-modal-container-color, var(--mdy-sys-color-surface-container-high)));
         padding: 0;
         position: relative;
     }
@@ -2233,7 +2263,7 @@
         bottom: 0;
         height: 1px;
         background: var(--mdy-sys-color-outline);
-        border-radius: 0 0 var(--mdy-comp-date-picker-popup-radius) var(--mdy-comp-date-picker-popup-radius);
+        border-radius: 0 0 var(--mdy-comp-date-picker-popup-radius, var(--mdy-comp-date-picker-modal-container-shape, var(--mdy-sys-shape-corner-extra-large))) var(--mdy-comp-date-picker-popup-radius, var(--mdy-comp-date-picker-modal-container-shape, var(--mdy-sys-shape-corner-extra-large)));
         pointer-events: none;
         z-index: 2;
     }
@@ -2254,12 +2284,12 @@
         flex: 1 1 0%;
         min-width: 10.5rem;
         max-width: 100%;
-        padding: var(--mdy-comp-date-picker-input-padding);
+        padding: var(--mdy-comp-date-picker-input-padding, 0.75rem 1rem);
         border: none;
         border-radius: 0;
-        font-size: var(--mdy-comp-date-picker-input-font-size);
-        font-family: var(--mdy-comp-date-picker-input-font-family);
-        color: var(--mdy-comp-date-picker-input-color);
+        font-size: var(--mdy-comp-date-picker-input-font-size, 1rem);
+        font-family: var(--mdy-comp-date-picker-input-font-family, inherit);
+        color: var(--mdy-comp-date-picker-input-color, var(--mdy-sys-color-on-surface));
         outline: none;
         background: transparent;
         transition: border-color 0.15s, box-shadow 0.15s;
@@ -2399,11 +2429,11 @@
         top: 100%;
         left: 0;
         margin-top: 0.25rem;
-        padding: var(--mdy-comp-date-picker-popup-padding);
-        background: var(--mdy-comp-date-picker-popup-bg);
+        padding: var(--mdy-comp-date-picker-popup-padding, 1.25rem);
+        background: var(--mdy-comp-date-picker-popup-bg, var(--mdy-comp-date-picker-modal-container-color, var(--mdy-sys-color-surface-container-high)));
         border: none;
-        border-radius: var(--mdy-comp-date-picker-popup-radius);
-        box-shadow: var(--mdy-comp-date-picker-popup-shadow);
+        border-radius: var(--mdy-comp-date-picker-popup-radius, var(--mdy-comp-date-picker-modal-container-shape, var(--mdy-sys-shape-corner-extra-large)));
+        box-shadow: var(--mdy-comp-date-picker-popup-shadow, 0 8px 32px 0 rgba(0, 0, 0, 0.18));
         max-width: 95vw;
         max-height: 90vh;
         overflow-y: auto;
@@ -2765,11 +2795,11 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: var(--mdy-comp-date-picker-header-gap);
-        padding: var(--mdy-comp-date-picker-header-padding);
-        color: var(--mdy-comp-date-picker-header-color);
-        font-size: var(--mdy-comp-date-picker-header-font-size);
-        font-weight: var(--mdy-comp-date-picker-header-font-weight);
+        gap: var(--mdy-comp-date-picker-header-gap, 0.5rem);
+        padding: var(--mdy-comp-date-picker-header-padding, 0.5rem 1rem 0.25rem 1rem);
+        color: var(--mdy-comp-date-picker-header-color, var(--mdy-sys-color-on-surface-variant));
+        font-size: var(--mdy-comp-date-picker-header-font-size, 1rem);
+        font-weight: var(--mdy-comp-date-picker-header-font-weight, 500);
     }
 
 
@@ -2781,10 +2811,10 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: var(--mdy-comp-date-picker-nav-btn-size);
-        height: var(--mdy-comp-date-picker-nav-btn-size);
+        width: var(--mdy-comp-date-picker-nav-btn-size, 2rem);
+        height: var(--mdy-comp-date-picker-nav-btn-size, 2rem);
         border: none;
-        border-radius: var(--mdy-comp-date-picker-nav-btn-radius);
+        border-radius: var(--mdy-comp-date-picker-nav-btn-radius, 50%);
         background: transparent;
         cursor: pointer;
         color: inherit;
@@ -2794,7 +2824,7 @@
 
 
     .mdy-datepicker__nav-btn:hover {
-        background: var(--mdy-comp-date-picker-nav-btn-hover-bg);
+        background: var(--mdy-comp-date-picker-nav-btn-hover-bg, var(--mdy-sys-color-surface-container-highest));
     }
 
     .mdy-datepicker__header-label {
@@ -2819,15 +2849,15 @@
         border-radius: 100px;
         color: var(--mdy-sys-color-on-surface);
         font-family: inherit;
-        font-size: var(--mdy-comp-date-picker-title-font-size);
-        font-weight: var(--mdy-comp-date-picker-title-font-weight);
+        font-size: var(--mdy-comp-date-picker-title-font-size, 0.875rem);
+        font-weight: var(--mdy-comp-date-picker-title-font-weight, 600);
         cursor: pointer;
         transition: background 0.1s;
     }
 
 
     .mdy-datepicker__view-toggle:hover {
-        background: var(--mdy-comp-date-picker-cell-hover-bg);
+        background: var(--mdy-comp-date-picker-cell-hover-bg, var(--mdy-sys-color-surface-container-highest));
     }
 
     .mdy-datepicker__view-icon {
@@ -2839,9 +2869,9 @@
 
 
     .mdy-datepicker__title {
-        color: var(--mdy-comp-date-picker-title-color);
-        font-weight: var(--mdy-comp-date-picker-title-font-weight);
-        font-size: var(--mdy-comp-date-picker-title-font-size);
+        color: var(--mdy-comp-date-picker-title-color, var(--mdy-sys-color-on-surface));
+        font-weight: var(--mdy-comp-date-picker-title-font-weight, 600);
+        font-size: var(--mdy-comp-date-picker-title-font-size, 0.875rem);
         user-select: none;
     }
 
@@ -2873,10 +2903,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: var(--mdy-comp-date-picker-cell-size);
-        font-size: var(--mdy-comp-date-picker-weekday-font-size);
-        font-weight: var(--mdy-comp-date-picker-weekday-font-weight);
-        color: var(--mdy-comp-date-picker-weekday-color);
+        height: var(--mdy-comp-date-picker-cell-size, 2.5rem);
+        font-size: var(--mdy-comp-date-picker-weekday-font-size, 0.75rem);
+        font-weight: var(--mdy-comp-date-picker-weekday-font-weight, 500);
+        color: var(--mdy-comp-date-picker-weekday-color, var(--mdy-sys-color-on-surface-variant));
         user-select: none;
     }
 
@@ -2891,13 +2921,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: var(--mdy-comp-date-picker-cell-size);
-        height: var(--mdy-comp-date-picker-cell-size);
-        border-radius: var(--mdy-comp-date-picker-cell-border-radius);
-        font-size: var(--mdy-comp-date-picker-cell-font-size);
-        font-family: var(--mdy-comp-date-picker-cell-font-family);
-        font-weight: var(--mdy-comp-date-picker-cell-font-weight);
-        color: var(--mdy-comp-date-picker-cell-color);
+        width: var(--mdy-comp-date-picker-cell-size, 2.5rem);
+        height: var(--mdy-comp-date-picker-cell-size, 2.5rem);
+        border-radius: var(--mdy-comp-date-picker-cell-border-radius, 50%);
+        font-size: var(--mdy-comp-date-picker-cell-font-size, 0.875rem);
+        font-family: var(--mdy-comp-date-picker-cell-font-family, inherit);
+        font-weight: var(--mdy-comp-date-picker-cell-font-weight, 400);
+        color: var(--mdy-comp-date-picker-cell-color, var(--mdy-sys-color-on-surface));
         cursor: pointer;
         user-select: none;
         transition: background 0.1s, color 0.1s;
@@ -2907,39 +2937,39 @@
     }
 
     .mdy-datepicker__cell:hover:not(.mdy-datepicker__cell--disabled):not(.mdy-datepicker__cell--selected) {
-        background: var(--mdy-comp-date-picker-cell-hover-bg);
+        background: var(--mdy-comp-date-picker-cell-hover-bg, var(--mdy-sys-color-surface-container-highest));
     }
 
     .mdy-datepicker__cell--outside {
-        opacity: var(--mdy-comp-date-picker-cell-outside-opacity);
+        opacity: var(--mdy-comp-date-picker-cell-outside-opacity, 0.5);
     }
 
 
     .mdy-datepicker__cell--today:not(.mdy-datepicker__cell--selected) {
-        outline: var(--mdy-comp-date-picker-cell-today-outline);
+        outline: var(--mdy-comp-date-picker-cell-today-outline, 2px solid var(--mdy-sys-color-primary));
         outline-offset: -2px;
         box-shadow: none;
     }
 
     .mdy-datepicker__cell--selected {
-        background: var(--mdy-comp-date-picker-cell-selected-bg);
-        color: var(--mdy-comp-date-picker-cell-selected-color);
+        background: var(--mdy-comp-date-picker-cell-selected-bg, var(--mdy-sys-color-primary));
+        color: var(--mdy-comp-date-picker-cell-selected-color, var(--mdy-sys-color-on-primary));
         font-weight: 600;
         box-shadow: none;
         outline: none;
-        border-radius: var(--mdy-comp-date-picker-cell-border-radius);
+        border-radius: var(--mdy-comp-date-picker-cell-border-radius, 50%);
         border: none;
     }
 
 
     .mdy-datepicker__cell--focused:not(.mdy-datepicker__cell--selected) {
-        background: var(--mdy-comp-date-picker-cell-hover-bg);
-        outline: var(--mdy-comp-date-picker-cell-focus-outline);
+        background: var(--mdy-comp-date-picker-cell-hover-bg, var(--mdy-sys-color-surface-container-highest));
+        outline: var(--mdy-comp-date-picker-cell-focus-outline, 2px solid var(--mdy-sys-color-primary));
         outline-offset: -2px;
     }
 
     .mdy-datepicker__cell--disabled {
-        opacity: var(--mdy-comp-date-picker-cell-disabled-opacity);
+        opacity: var(--mdy-comp-date-picker-cell-disabled-opacity, 0.25);
         cursor: not-allowed;
     }
 
@@ -2955,7 +2985,7 @@
 
     /* ── In-range band (between endpoints) ──────────────────────────────────── */
     .mdy-datepicker__cell--in-range {
-        background: var(--mdy-comp-date-picker-in-range-bg);
+        background: var(--mdy-comp-date-picker-in-range-bg, color-mix(in srgb, var(--mdy-sys-color-primary), #fff 75%));
         border-radius: 0;
         outline: none;
         box-shadow: none;
@@ -2964,7 +2994,7 @@
 
     /* Today inside a range: restore ring without breaking the band */
     .mdy-datepicker__cell--today.mdy-datepicker__cell--in-range {
-        outline: var(--mdy-comp-date-picker-cell-today-outline);
+        outline: var(--mdy-comp-date-picker-cell-today-outline, 2px solid var(--mdy-sys-color-primary));
         outline-offset: -2px;
     }
 
@@ -2974,11 +3004,11 @@
     .mdy-datepicker__cell--range-end {
         position: relative;
         z-index: 1;
-        color: var(--mdy-comp-date-picker-endpoint-color);
+        color: var(--mdy-comp-date-picker-endpoint-color, var(--mdy-sys-color-on-primary));
         font-weight: 600;
-        background: var(--mdy-comp-date-picker-endpoint-bg);
-        border-radius: var(--mdy-comp-date-picker-cell-border-radius);
-        outline: var(--mdy-comp-date-picker-cell-focus-outline);
+        background: var(--mdy-comp-date-picker-endpoint-bg, var(--mdy-sys-color-primary));
+        border-radius: var(--mdy-comp-date-picker-cell-border-radius, 50%);
+        outline: var(--mdy-comp-date-picker-cell-focus-outline, 2px solid var(--mdy-sys-color-primary));
         outline-offset: -2px;
         box-shadow: none;
         border: none;
@@ -3121,7 +3151,7 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 0.5rem;
-        padding: var(--mdy-comp-date-picker-popup-padding);
+        padding: var(--mdy-comp-date-picker-popup-padding, 1.25rem);
     }
 
     .mdy-datepicker__year-picker {
