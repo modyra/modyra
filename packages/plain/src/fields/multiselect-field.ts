@@ -44,8 +44,12 @@ export function renderMultiselectField(
   const search = el("input", parts.search.classes.join(" ")) as HTMLInputElement;
   search.type = "search";
   search.placeholder = "Filter…";
+  // The search sits in the popup's header and the chips in a grid below it, as in Angular: the
+  // popup's anatomy is the contract's, so a theme styles one popup rather than one per renderer.
+  const popupHeader = el("div", parts.popupHeader.classes.join(" "));
+  popupHeader.appendChild(search);
   const group = el("div", parts.listbox.classes.join(" ")) as HTMLDivElement;
-  popup.append(search, group);
+  popup.append(popupHeader, group);
 
   // Both modes draw the contract's chip: a check plus a label when each option is either in or out,
   // and the same chip with two step buttons and a count when an option can be taken several times.
@@ -56,7 +60,7 @@ export function renderMultiselectField(
     setText(label, option.label);
 
     if (mode === "multi") {
-      const chip = el("div", parts.option.classes.join(" "));
+      const chip = el("div", `${parts.option.classes.join(" ")} mdy-chip--counter`);
       chip.title = option.label;
       const step = (sign: "−" | "+", intent: "decrement" | "increment", describe: string): HTMLButtonElement => {
         const button = el("button", parts.optionStep.classes.join(" ")) as HTMLButtonElement;
@@ -71,10 +75,13 @@ export function renderMultiselectField(
       };
       const count = el("span", parts.optionCount.classes.join(" ")) as HTMLSpanElement;
       chip.append(step("−", "decrement", "Decrease"), label, count, step("+", "increment", "Increase"));
-      group.appendChild(chip);
+      // Each option chip sits in the contract's wrapper, which is what the grid lays out.
+      const wrapper = el("div", parts.optionWrapper.classes.join(" "));
+      wrapper.appendChild(chip);
+      group.appendChild(wrapper);
       optionEls.set(key, { chip, count });
     } else {
-      const chip = el("button", parts.option.classes.join(" ")) as HTMLButtonElement;
+      const chip = el("button", `${parts.option.classes.join(" ")} mdy-chip--centered`) as HTMLButtonElement;
       chip.type = "button";
       chip.title = option.label;
       // Empty: the theme draws the tick for renderers that ship no icon set.
@@ -82,7 +89,10 @@ export function renderMultiselectField(
       check.setAttribute("aria-hidden", "true");
       chip.append(check, label);
       chip.addEventListener("click", () => dispatch({ type: "toggle", optionKey: key }));
-      group.appendChild(chip);
+      // Each option chip sits in the contract's wrapper, which is what the grid lays out.
+      const wrapper = el("div", parts.optionWrapper.classes.join(" "));
+      wrapper.appendChild(chip);
+      group.appendChild(wrapper);
       optionEls.set(key, { chip });
     }
   }
@@ -188,6 +198,9 @@ export function renderMultiselectField(
       // The part carries `hidden` when the query filters the option out — no second filter here.
       const part = view.parts[key];
       if (part) applyPart(entry.chip, part);
+      // A taken option wears the contract's selected modifier, in either mode — that is what a
+      // theme styles, and it must not depend on which renderer drew the chip.
+      entry.chip.classList.toggle("mdy-chip--selected", (state.counts.get(key) ?? 0) > 0);
       if (entry.count) setText(entry.count, `×${state.counts.get(key) ?? 0}`);
     }
   });
