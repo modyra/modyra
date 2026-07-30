@@ -203,8 +203,10 @@
         --mdy-select-no-results-color: var(--mdy-ios-gray);
         --mdy-multiselect-overlay-bg: var(--mdy-ios-glass-bg-fallback);
 
-        /* ── Primary / semantic bridge ────────────────────────────────── */
-        --mdy-primary: var(--mdy-ios-blue);
+        /* ── Primary / semantic bridge ──────────────────────────────────
+           Declared at the `sys` tier so the palette maths in modyra-base.css derives from iOS blue
+           rather than from a primary this theme never chose. `--mdy-primary` bridges from it. */
+        --mdy-sys-color-primary: var(--mdy-ios-blue);
         --mdy-on-primary: #ffffff;
         --mdy-base-bg: var(--mdy-ios-secondary-bg);
         --mdy-surface: var(--mdy-ios-bg);
