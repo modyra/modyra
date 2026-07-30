@@ -432,20 +432,22 @@
 
     /* ─── Slider — M3 spec (4dp track, 20dp thumb) ───────────────────────────── */
 
-    /* The *empty* part of the track, not the whole of it. Setting `background` outright replaced the
-       split with one flat colour, so this theme's slider had no filled portion at all — the one
-       thing a slider is for. The foundation composes the split from these two colours. */
-    .mdy-slider {
+    /* Everything this theme says about a slider's colour, said once on the part that contains the
+       whole control. `inactive-color` is the *empty* part of the track, not the whole of it: setting
+       `background` outright replaced the split with one flat colour and left this theme's slider
+       with no filled portion at all. The foundation composes the split, draws the shadow on both
+       vendor thumbs and colours the readout — this only chooses. */
+    .mdy-slider-container {
         --mdy-slider-inactive-color: var(--mdy-surface-container-highest);
+        --mdy-slider-thumb-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
+        --mdy-slider-value-color: var(--mdy-on-surface);
     }
 
     .mdy-slider::-webkit-slider-thumb {
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
         border: none;
     }
 
     .mdy-slider::-moz-range-thumb {
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
         border: none;
     }
 
@@ -454,7 +456,6 @@
     }
 
     .mdy-slider-value {
-        color: var(--mdy-on-surface);
         font-weight: var(--mdy-font-weight-medium);
     }
 

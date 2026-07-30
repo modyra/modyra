@@ -207,6 +207,10 @@
         --mdy-segmented-font-weight: var(--mdy-comp-segmented-button-label-text-weight, var(--mdy-sys-typescale-label-large-weight, 500));
         /* 500 */
         --mdy-segmented-btn-bg-selected-hover: color-mix(in srgb, var(--mdy-segmented-selected-bg), var(--mdy-segmented-selected-color) 8%);
+        /* The unselected button's hover had no token while the selected one did, so a theme could
+           restyle half a control and had to restate the other half as a rule. Same values as before. */
+        --mdy-segmented-btn-bg-hover: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
+        --mdy-segmented-btn-color-hover: var(--mdy-on-surface);
 
         --mdy-button-radius: var(--mdy-corner-full);
 
@@ -228,6 +232,13 @@
         --mdy-chip-hover-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
         --mdy-chip-hover-color: var(--mdy-on-surface);
         --mdy-chip-hover-border: 1px solid var(--mdy-comp-filter-chip-outline-color, var(--mdy-sys-color-outline, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-slate, #94A3B8) 60%)));
+        /* The +/− steppers inside a counter chip. Mixed from `currentColor` — which on those buttons
+           is the chip's own label colour — so the tint darkens a light chip and lightens a dark one.
+           It was a literal `rgba(255,255,255,0.2)`: white, calibrated for the selected chip alone.
+           Measured on an unselected chip in all four themes, the hover moved the rendered colour by
+           exactly 0 — white over white. A hover state that only exists in one of the two states the
+           control has is the kind of thing a token stops you from writing. */
+        --mdy-chip-btn-hover-bg: color-mix(in srgb, currentColor, transparent 88%);
         --mdy-chip-max-width: 11rem;
         --mdy-chip-transition: var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
 
@@ -239,6 +250,11 @@
         --mdy-slider-active-color: var(--mdy-comp-slider-active-track-color, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
         --mdy-slider-inactive-color: var(--mdy-comp-slider-inactive-track-color, var(--mdy-sys-color-secondary-container, color-mix(in srgb, var(--mdy-sys-color-secondary, var(--mdy-ref-color-violet, #A855F7)), var(--mdy-ref-color-cloud, #F8FAFC) 80%)));
         --mdy-slider-thumb-color: var(--mdy-comp-slider-handle-color, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
+        /* The handle's elevation and the value readout beside the track. Neither had a token, so a
+           theme wanting either had to restate the rule — and the shadow twice, once per vendor
+           pseudo-element. The foundation itself draws no shadow, which is what `none` says. */
+        --mdy-slider-thumb-shadow: none;
+        --mdy-slider-value-color: var(--mdy-on-surface-variant);
         /* `--mdy-slider-fill-pct` is written on the control by the renderer, on every value change.
            The gradient it feeds is composed in the rule that *uses* it, not here: a custom property
            substitutes the properties it references when its own declaration is computed, so a
@@ -1257,6 +1273,7 @@
         width: var(--mdy-slider-thumb-size);
         height: var(--mdy-slider-thumb-size);
         background: var(--mdy-slider-thumb-color);
+        box-shadow: var(--mdy-slider-thumb-shadow);
         border-radius: 50%;
         cursor: pointer;
         transition: transform var(--mdy-sys-motion-duration-fast, 0.1s) ease;
@@ -1266,6 +1283,7 @@
         width: var(--mdy-slider-thumb-size);
         height: var(--mdy-slider-thumb-size);
         background: var(--mdy-slider-thumb-color);
+        box-shadow: var(--mdy-slider-thumb-shadow);
         border-radius: 50%;
         cursor: pointer;
         border: none;
@@ -1291,7 +1309,7 @@
         min-width: 2.5rem;
         font-size: 0.875rem;
         font-weight: 500;
-        color: var(--mdy-on-surface-variant);
+        color: var(--mdy-slider-value-color);
         text-align: right;
     }
 
@@ -1466,8 +1484,8 @@
     }
 
     .mdy-segmented__button:hover:not(.mdy-segmented__button--selected):not(:disabled) {
-        background: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
-        color: var(--mdy-on-surface);
+        background: var(--mdy-segmented-btn-bg-hover);
+        color: var(--mdy-segmented-btn-color-hover);
     }
 
     .mdy-segmented__button--selected:hover:not(:disabled) {
@@ -1746,7 +1764,7 @@
     }
 
     .mdy-chip__btn:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.2);
+        background: var(--mdy-chip-btn-hover-bg);
     }
 
     .mdy-chip__btn:disabled {
