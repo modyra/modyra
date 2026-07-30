@@ -12,7 +12,7 @@ import { addMonths, buildDateLocale, formatIsoDate, parseIsoDate, parseLocalized
 import { MDY_WIDGET_CONTRACTS, dateRangeDraftTransition, overlayAnchoringFor, type MdyDateRangeDraftState, type MdyDateRangeValue } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
-import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 
 const EMPTY: MdyDateRangeValue = { start: null, end: null };
@@ -163,7 +163,7 @@ export function renderDaterangeField(
     }
     toggle.disabled = handle.disabled();
     toggle.setAttribute("aria-expanded", String(state.open));
-    popup.hidden = !state.open;
+    setOverlayOpen(popup, state.open);
     // Anchored by the contract, like every other overlay: the placement, the size and the
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
     if (state.open) positionOverlay(popup, shell.wrapper, anchoring);

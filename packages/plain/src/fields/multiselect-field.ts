@@ -14,7 +14,7 @@ import { MDY_WIDGET_CONTRACTS, createMultiselectFieldController, multiselectChip
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 
 export function renderMultiselectField(
   container: HTMLElement,
@@ -182,7 +182,9 @@ export function renderMultiselectField(
       required: state.required,
     });
 
-    // `hidden` on the popup part is the contract's; positioning only runs while it is showing.
+    // `hidden` on the popup part is the contract's; this re-states it through `setOverlayOpen` so
+    // the popover state and the attribute cannot disagree. Positioning only runs while it is showing.
+    setOverlayOpen(popup, state.open);
     if (state.open) {
       positionOverlay(popup, shell.wrapper, anchoring);
     } else {
