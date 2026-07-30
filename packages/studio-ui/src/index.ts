@@ -573,6 +573,8 @@ function isEditableTarget(target: EventTarget | null): boolean {
 interface StudioShell {
   readonly canvas: HTMLElement;
   readonly canvasSurface: HTMLElement;
+  /** Always-visible strip above the canvas: which size is being laid out, and how far it is zoomed. */
+  readonly canvasBar: Region;
   readonly inspectorBody: HTMLElement;
   readonly head: Region;
   readonly outline: Region;
@@ -2323,6 +2325,37 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       </div>`;
   }
 
+  /**
+   * The strip above the canvas: which size the form is being laid out for.
+   *
+   * This used to live inside the floating toolbar, behind a collapsed FAB. Choosing a size is a
+   * constant action while arranging a form — and the canvas below is *showing* that size — so it
+   * belongs where it can be seen and reached without opening anything.
+   */
+  function canvasBarMarkup(): string {
+    const width = BREAKPOINT_WIDTHS[breakpoint];
+    return `
+      <div class="canvas-bar-sizes" role="group" aria-label="Screen size to lay out for">
+        ${BREAKPOINT_ORDER.map((size) => `
+          <button
+            type="button"
+            data-breakpoint="${size}"
+            aria-pressed="${size === breakpoint}"
+            title="Lay out for ${size === "base" ? "the narrowest screen" : `${BREAKPOINT_WIDTHS[size]} and wider`}"
+          >${size}</button>`).join("")}
+      </div>
+      <span class="canvas-bar-width" data-canvas-width>${escapeHtml(width)}</span>
+      <span class="canvas-bar-hint">${breakpoint === "base"
+        ? "the arrangement itself"
+        : `what changes from ${escapeHtml(width)} up`}</span>`;
+  }
+
+  function bindCanvasBar(root: HTMLElement): void {
+    root.querySelectorAll<HTMLButtonElement>("[data-breakpoint]").forEach((button) =>
+      button.addEventListener("click", () => setBreakpoint(button.dataset.breakpoint as StudioLayoutBreakpoint)),
+    );
+  }
+
   function dockMarkup(): string {
     const groups: Array<FieldTemplate["group"]> = ["Fields", "Choice", "Structure"];
     return `
@@ -2340,21 +2373,6 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
             </div>`,
             )
             .join("")}
-        </section>
-        <section class="dock-section">
-          <h3>Layout size</h3>
-          <div class="dock-breakpoints" role="group" aria-label="Screen size to lay out for">
-            ${BREAKPOINT_ORDER.map((size) => `
-              <button
-                type="button"
-                data-breakpoint="${size}"
-                aria-pressed="${size === breakpoint}"
-                title="Lay out for ${size === "base" ? "the narrowest screen" : `${BREAKPOINT_WIDTHS[size]} and wider`}"
-              >${size}</button>`).join("")}
-          </div>
-          <p class="dock-hint">${breakpoint === "base"
-            ? "Editing the arrangement itself. Wider sizes inherit it."
-            : `Editing what changes from ${BREAKPOINT_WIDTHS[breakpoint]} up. Everything else stays as base.`}</p>
         </section>
         <section class="dock-section">
           <h3>Form</h3>
@@ -2529,6 +2547,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
           <aside class="outline" aria-label="Form outline"></aside>
           <div class="studio-resizer" data-resize="outline" aria-label="Resize the outline, or show it when the window is narrow"></div>
           <div class="canvas-column">
+            <div class="canvas-bar"></div>
             <section class="canvas" tabindex="-1">
               <div class="canvas-surface"></div>
             </section>
@@ -2562,6 +2581,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       inspectorBody,
       head: new Region(find<HTMLElement>("header"), bindHead),
       outline: new Region(find<HTMLElement>(".outline"), bindOutline),
+      canvasBar: new Region(find<HTMLElement>(".canvas-bar"), bindCanvasBar),
       dock: new Region(find<HTMLElement>(".dock"), bindDock),
       palette: new Region(find<HTMLElement>(".palette-layer"), bindPalette),
       // Bound explicitly by render(): in live-form mode the listeners belong to DOM that
@@ -2610,6 +2630,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
     view.head.update(headMarkup(indexes));
     view.outline.update(outlineMarkup(rootChildren));
+    view.canvasBar.update(canvasBarMarkup());
     view.dock.update(dockMarkup());
     view.palette.update(paletteMarkup());
     view.canvasSurface.dataset.canvasSurface = canvasMode;
@@ -2905,9 +2926,6 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   }
 
   function bindDock(root: HTMLElement): void {
-    root.querySelectorAll<HTMLButtonElement>("[data-breakpoint]").forEach((button) =>
-      button.addEventListener("click", () => setBreakpoint(button.dataset.breakpoint as StudioLayoutBreakpoint)),
-    );
     root.querySelector<HTMLElement>("[data-dock-toggle]")?.addEventListener("click", () => {
       dockOpen = !dockOpen;
       focusSelector = "[data-dock-toggle]";

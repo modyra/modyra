@@ -229,6 +229,25 @@ test("the breakpoint selector previews the size and authors only that size", asy
   await expect(page.locator('.mdy-layout-columns > .mdy-layout-column')).toHaveCount(2);
 });
 
+test("the size selector is on the canvas, not behind the toolbar", async ({ page }) => {
+  // It used to live inside the floating toolbar, which is collapsed by default and floats over the
+  // canvas — so choosing a size meant opening a FAB first, every time.
+  await closeDock(page);
+  await expect(page.locator('[data-dock-panel]')).toBeHidden();
+
+  const bar = page.locator('.canvas-bar');
+  await expect(bar).toBeVisible();
+  for (const size of ['base', 'sm', 'md', 'lg']) {
+    await expect(bar.locator(`[data-breakpoint="${size}"]`)).toBeVisible();
+  }
+
+  // And it works from there, with the toolbar still shut.
+  await bar.locator('[data-breakpoint="md"]').click();
+  await expect(bar.locator('[data-breakpoint="md"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.plain-canvas-frame')).toHaveAttribute('data-breakpoint-frame', 'md');
+  await expect(page.locator('[data-dock-panel]')).toBeHidden();
+});
+
 test("changing one size leaves every other size alone", async ({ page }) => {
   // Reported: "ogni layout deve avere la sua conformazione, non è che se cambio in SM allora anche
   // MD sarà così." The contract cascades mobile-first because CSS does, so a size stating nothing
