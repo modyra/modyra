@@ -79,3 +79,46 @@ test("the state carries the whole decision, which is what makes holding it possi
   // Nothing measured yet is nothing to hold, rather than a decision made up on the spot.
   assert.equal(computeOverlayPanelState(undefined).decision, null);
 });
+
+/* ── The top layer ────────────────────────────────────────────────────────────────────────────
+ * The last adapter that laid its popups out in the page. The coordinates every adapter writes are
+ * viewport coordinates, and `position: fixed` only means that while no ancestor is a containing
+ * block for fixed descendants — which `container-type` on the form makes every ancestor of every
+ * field. jsdom has no top layer, so what is asserted here is that the popup is handed to the one
+ * function that puts it there, which is also what carries the `manual` policy.
+ */
+const { createLitForm, field } = await import("../dist/adapter.js");
+const { defineMdyElements } = await import("../dist/ui.js");
+const { mount } = await import("./support/dom-env.mjs");
+
+defineMdyElements();
+
+const OVERLAY_ELEMENTS = [
+  ["mdy-datepicker-field", null, ".mdy-datepicker__toggle"],
+  ["mdy-timepicker-field", null, ".mdy-timepicker__toggle"],
+  ["mdy-colors-field", null, ".mdy-colors__toggle-area"],
+  ["mdy-select-field", null, ".mdy-select__trigger"],
+];
+
+for (const [tag, initial, opener] of OVERLAY_ELEMENTS) {
+  test(`<${tag}> puts its open popup in the top layer`, async () => {
+    const form = createLitForm({ value: field(initial) });
+    const element = await mount(tag, (el) => {
+      el.field = form.f.value;
+      el.label = "Field";
+      if (tag === "mdy-select-field") el.options = [{ value: "x", label: "X" }];
+    });
+
+    element.querySelector(opener).click();
+    await element.updateComplete;
+
+    const popup = element.querySelector(".mdy-popup");
+    assert.ok(popup, `${tag} rendered no popup to place`);
+    // `manual`, never `auto`: light dismissal would close the popup before the adapter's own
+    // outside-pointer handling ran, and two things closing one popup is how a click-through looks.
+    assert.equal(popup.getAttribute("popover"), "manual");
+    assert.equal(popup.hidden, false);
+
+    element.remove();
+  });
+}
