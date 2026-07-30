@@ -108,3 +108,53 @@ test("an overlay draws one surface, not a wrapper's as well", async ({ page }) =
   expect(surfaces.belowAnchor).toBeGreaterThanOrEqual(0);
   expect(surfaces.belowAnchor).toBeLessThanOrEqual(12);
 });
+
+test("an overlay is positioned once, by the box that draws it", async ({ page }) => {
+  // `<mdy-overlay-panel>` used to place itself — `position: fixed` with all four insets — while the
+  // popup inside it read the same `--mdy-overlay-*` properties and placed itself a second time. Two
+  // boxes at identical coordinates, agreeing only because both came from one measurement. Measured,
+  // unpositioning either one left the popup exactly where it was, so one of them did nothing.
+  //
+  // The split was also hiding a defect: `max-height` was applied to the wrapper, whose only child is
+  // out of flow, so it clamped nothing — and `--mdy-overlay-max-height` went unwritten, leaving the
+  // popup on the foundation's `50vh` fallback. A popup taller than the room measured for it grew
+  // straight past it.
+  await page.goto("/");
+  await page.waitForSelector("mdy-control-select", { state: "attached", timeout: 15000 });
+  const trigger = page.locator(".mdy-select__trigger").first();
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.click({ force: true });
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll(".mdy-select__dropdown")].some((el) => el.getBoundingClientRect().height > 0),
+  );
+
+  const boxes = await page.evaluate(() => {
+    const popup = [...document.querySelectorAll(".mdy-select__dropdown")]
+      .find((el) => (el as HTMLElement).getBoundingClientRect().height > 0) as HTMLElement;
+    const panel = popup.closest(".mdy-overlay-panel") as HTMLElement;
+    const anchor = document.querySelector(".mdy-select__trigger") as HTMLElement;
+    const panelBox = panel.getBoundingClientRect();
+    const popupBox = popup.getBoundingClientRect();
+    return {
+      panelArea: Math.round(panelBox.width * panelBox.height),
+      popupPosition: getComputedStyle(popup).position,
+      popupMaxHeight: getComputedStyle(popup).maxHeight,
+      declaredMaxHeight: getComputedStyle(panel).getPropertyValue("--mdy-overlay-max-height").trim(),
+      belowAnchor: Math.round(popupBox.top - anchor.getBoundingClientRect().bottom),
+      // The wrapper must not stretch over the viewport either: the UA gives every popover
+      // `inset: 0`, and a full-screen wrapper would swallow every click on the page behind it.
+      cornerIsNotThePanel: !(document.elementFromPoint(4, 4) as HTMLElement)?.closest(".mdy-overlay-panel"),
+    };
+  });
+
+  // The wrapper has no box at all — it hosts the top layer and nothing else.
+  expect(boxes.panelArea).toBe(0);
+  expect(boxes.cornerIsNotThePanel).toBe(true);
+  // The popup is the positioned box, and it is on its control.
+  expect(boxes.popupPosition).toBe("fixed");
+  expect(boxes.belowAnchor).toBeGreaterThanOrEqual(0);
+  expect(boxes.belowAnchor).toBeLessThanOrEqual(12);
+  // The room the policy measured reaches the popup, rather than a wrapper that cannot use it.
+  expect(boxes.declaredMaxHeight).toMatch(/^\d+px$/);
+  expect(boxes.popupMaxHeight).toBe(boxes.declaredMaxHeight);
+});
