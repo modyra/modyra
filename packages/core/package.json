@@ -40,6 +40,10 @@
       "types": "./dist/time-utils.d.ts",
       "default": "./dist/time-utils.js"
     },
+    "./color-utils": {
+      "types": "./dist/color-utils.d.ts",
+      "default": "./dist/color-utils.js"
+    },
     "./options-utils": {
       "types": "./dist/options-utils.d.ts",
       "default": "./dist/options-utils.js"
