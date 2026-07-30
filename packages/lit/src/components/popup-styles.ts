@@ -5,6 +5,7 @@ import {
   anchorOverlay,
   popupPlacementClass,
   overlayAnchoringFor,
+  setOverlayOpen,
   MDY_CSS_PROPERTIES,
   MDY_POPUP_CLASS,
   type MdyOverlayAlignment,
@@ -200,6 +201,12 @@ export class MdyLitOverlayController {
   /** The popup's measured size, taken when it opens and held while it stays open. */
   private content: { height: number; width: number } | null = null;
 
+  /**
+   * The popup currently in the top layer, so it is put there once rather than on every frame.
+   * A closing overlay renders `nothing` and the element goes with it, which is what removes it.
+   */
+  private shown: HTMLElement | null = null;
+
   /** The host widget's declared anchoring, in this controller's vocabulary. */
   private contractConfig(): Partial<OverlayStateConfig> {
     // Every Lit renderer declares the widget it draws. It is `protected`, so it is read
@@ -243,6 +250,12 @@ export class MdyLitOverlayController {
     this.clickX = undefined;
     // The next opening measures afresh: the content it holds may be nothing like this one's.
     this.content = null;
+    // Taken out of the top layer explicitly rather than left to the element's removal, because a
+    // renderer that keeps its popup in the DOM would otherwise leave a closed popup showing.
+    if (this.shown) {
+      setOverlayOpen(this.shown, false);
+      this.shown = null;
+    }
     if (this.scrollRaf !== 0) {
       cancelAnimationFrame(this.scrollRaf);
       this.scrollRaf = 0;
@@ -281,6 +294,18 @@ export class MdyLitOverlayController {
     // The popup is sized from its content, so the width it may take has to reach the element too:
     // without it a content-sized popup near the edge of the screen shows half off it.
     this.host.style.setProperty(prop.maxWidth, this._state.cssVars.maxWidth);
+    // The popup joins the top layer as soon as it exists. The coordinates written above are
+    // viewport coordinates, and a `position: fixed` box only honours those while no ancestor is a
+    // containing block for fixed descendants — which `container-type` on the form makes every
+    // ancestor of every field. This was the last adapter still laying its popups out in the page.
+    //
+    // Once per popup, not once per frame: `refresh` runs on every scroll frame, and `showPopover`
+    // throws on an element already showing.
+    const popup = this.getPopup();
+    if (popup && popup !== this.shown) {
+      setOverlayOpen(popup, true);
+      this.shown = popup;
+    }
     this.host.requestUpdate();
   }
 }

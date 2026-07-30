@@ -21,35 +21,12 @@ export interface OverlayPlacementOptions {
 }
 
 /**
- * Shows or hides a popup, and puts it in the top layer while it is open.
- *
- * One place decides how a popup is shown, the way one place already decides where it is placed. The
- * fields used to assign `popup.hidden` themselves, six times over.
- *
- * The top layer is not decoration. `anchorOverlay` measures against the viewport and this renderer
- * writes those coordinates for a `position: fixed` box — which holds only while no ancestor is a
- * containing block for fixed descendants. Anything with `contain: layout` becomes one, and
- * `container-type` (which the foundation needs so a row can ask how wide its *form* is, rather than
- * how wide the window is) applies exactly that. A popup in the top layer is laid out against the
- * viewport whatever its ancestors do, so the coordinates stay true. It also stops a popup being
- * clipped by an `overflow: hidden` ancestor, which was a standing bug in its own right.
- *
- * `manual` rather than `auto`: light-dismiss would close the popup before this renderer's own
- * outside-pointer handling ran, and two things closing one popup is how a click-through appears.
+ * Showing a popup is `setOverlayOpen` in `@modyra/widgets`, re-exported so this renderer's fields
+ * keep one import for everything overlay. It moved there when Lit's popups joined the top layer:
+ * two adapters calling one function is the contract, two adapters with one copy each is a drift
+ * waiting to happen.
  */
-export function setOverlayOpen(popup: HTMLElement, open: boolean): void {
-  if (popup.getAttribute("popover") !== "manual") popup.setAttribute("popover", "manual");
-  popup.hidden = !open;
-  // `showPopover` throws when the element is already showing, is disconnected, or the browser has no
-  // popover support. None of those should take the field down: `hidden` alone still shows and hides
-  // it, so the popup degrades to where it was before this — visible, in flow's terms, and anchored.
-  try {
-    if (open) popup.showPopover();
-    else popup.hidePopover();
-  } catch {
-    // Nothing to do: the attribute and `hidden` already carry the state.
-  }
-}
+export { setOverlayOpen } from "@modyra/widgets";
 
 /**
  * The placement, written onto the popup as the state the catalog declares for it.
