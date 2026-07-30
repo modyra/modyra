@@ -2484,6 +2484,21 @@
         transition: color var(--mdy-sys-motion-duration-fast, 0.1s);
     }
 
+    /* The inner ring of a 24-hour face.
+     *
+     * A face has twelve positions and 24-hour time has twenty-four hours, so 13–23 and midnight sit
+     * at the same twelve positions on a shorter radius — which is what a clock has always done. The
+     * contract decides which number belongs to which ring (`timepickerDialNumbers`); this decides
+     * how far in the inner one sits, because that is a matter of drawing. Without it all
+     * twenty-four would be stacked twelve deep in twelve places. */
+    .mdy-timepicker-dial__number--inner {
+        transform: translate(-50%, -50%) rotate(calc(var(--index) * 30deg))
+            translateY(calc(var(--tp-hand-length) * -0.6))
+            rotate(calc(var(--index) * -30deg));
+        font-size: 0.78rem;
+        color: var(--tp-on-surface-variant, var(--mdy-on-surface-variant));
+    }
+
     .mdy-timepicker-dial__number--selected {
         color: var(--tp-on-primary);
     }

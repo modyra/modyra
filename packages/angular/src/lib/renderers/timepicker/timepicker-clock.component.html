@@ -21,16 +21,29 @@
       <!-- M3 Dial Variant (Only shows the clock below the header) -->
       <div class="mdy-timepicker-dial-variant">
         <div class="mdy-timepicker-dial">
+          <!-- A dial is a slider around a circle. It had no role, no value and no keyboard: every
+               number on it was reachable only by dragging, which is the one gesture a keyboard
+               cannot make and a screen reader cannot describe. -->
           <div
             #dialFace
             class="mdy-timepicker-dial__face"
+            tabindex="0"
+            [attr.role]="dialAria().role"
+            [attr.aria-valuemin]="dialAria().valueMin"
+            [attr.aria-valuemax]="dialAria().valueMax"
+            [attr.aria-valuenow]="dialAria().valueNow"
+            [attr.aria-valuetext]="dialAria().valueText"
+            [attr.aria-label]="focusedField() === 'hour' ? i18n.timepickerHourLabel : i18n.timepickerMinuteLabel"
+            [attr.aria-disabled]="disabled() ? 'true' : null"
+            (keydown)="onDialKeydown($event)"
             (mousedown)="onDragStart($event)"
             (touchstart)="onDragStart($event)"
           >
             <div class="mdy-timepicker-dial__hand" [style.transform]="'rotate(' + handRotation() + 'deg)'"></div>
             @for (number of dialNumbers(); track number.value) {
               <div class="mdy-timepicker-dial__number"
-                   [class.mdy-timepicker-dial__number--selected]="number.value === selectedDialValue()"
+                   [class.mdy-timepicker-dial__number--selected]="number.value === faceValue()"
+                   [class.mdy-timepicker-dial__number--inner]="number.ring === 'inner'"
                    [style.--index]="number.index">
                 {{ number.label }}
               </div>

@@ -225,7 +225,8 @@ export function renderTimepickerField(
     // The hand points at the draft, through the same angle helpers the numbers are placed by.
     dialHand.style.transform = `rotate(${field === "minute" ? minuteToAngle(state.draft.minute) : hourToAngle(state.draft.hour)}deg)`;
 
-    const numbers = timepickerDialNumbers(field);
+    // The face the format has, so a 24-hour picker can be pointed at its afternoon hours.
+    const numbers = timepickerDialNumbers(field, state.format);
     const selected = timepickerSelectedDialValue(field, state.draft);
     // The face is rebuilt only when it changes hands: hours and minutes are different numbers, but
     // dragging within one field must not replace the elements under the pointer.
@@ -239,6 +240,7 @@ export function renderTimepickerField(
         const node = el("span", parts.dialNumber.classes.join(" "));
         node.dataset.value = String(number.value);
         node.style.setProperty("--index", String(number.index));
+        if (number.ring === "inner") node.classList.add("mdy-timepicker-dial__number--inner");
         node.setAttribute("aria-hidden", "true");
         setText(node, number.label);
         dialFace.appendChild(node);

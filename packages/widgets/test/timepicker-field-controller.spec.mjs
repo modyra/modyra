@@ -178,3 +178,125 @@ test("setValue updates the committed value and re-seeds the draft", () => {
   assert.strictEqual(handle.value(), "09:45 AM");
   assert.deepStrictEqual(controller.state().draft, { hour: 9, minute: 45, period: "AM" });
 });
+
+/* ── The face keeps the format's formalism ────────────────────────────────────────────────────
+ * A twelve-hour clock offers twelve hours and a period beside them; a twenty-four hour clock offers
+ * twenty-four and no period at all. The face used to answer 1–12 whatever the format, so 14:00 was
+ * a value a 24-hour picker held and could not be pointed at.
+ */
+
+test("a 12-hour face offers twelve hours, and only twelve", async () => {
+  const { timepickerDialNumbers } = await import("../dist/index.js");
+  const hours = timepickerDialNumbers("hour", "12h");
+  assert.equal(hours.length, 12);
+  assert.deepEqual([...hours].map((n) => n.value).sort((a, b) => a - b), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  assert.ok(hours.every((n) => n.ring === "outer"), "a twelve-hour face has one ring");
+});
+
+test("a 24-hour face offers all twenty-four, on two rings", async () => {
+  const { timepickerDialNumbers } = await import("../dist/index.js");
+  const hours = timepickerDialNumbers("hour", "24h");
+  assert.equal(hours.length, 24);
+  const values = [...hours].map((n) => n.value).sort((a, b) => a - b);
+  assert.deepEqual(values, Array.from({ length: 24 }, (_, i) => i));
+  // Twelve positions on a face; the second twelve go inside, which is what a clock has always done.
+  assert.equal(hours.filter((n) => n.ring === "outer").length, 12);
+  assert.equal(hours.filter((n) => n.ring === "inner").length, 12);
+  // Every position is used exactly twice — once per ring — so no number lands on top of another.
+  for (const ring of ["outer", "inner"]) {
+    const indexes = hours.filter((n) => n.ring === ring).map((n) => n.index).sort((a, b) => a - b);
+    assert.deepEqual(indexes, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], `${ring} ring`);
+  }
+  // Midnight is named `00` and sits at the top, where 12 sits outside.
+  const midnight = hours.find((n) => n.value === 0);
+  assert.equal(midnight.label, "00");
+  assert.equal(midnight.index, 12);
+});
+
+test("the default is the twelve-hour face, so nothing that never asked has changed", async () => {
+  const { timepickerDialNumbers } = await import("../dist/index.js");
+  assert.deepEqual(timepickerDialNumbers("hour"), timepickerDialNumbers("hour", "12h"));
+  assert.equal(timepickerDialNumbers("minute").length, 12);
+});
+
+/* ── The keyboard on the face ─────────────────────────────────────────────────────────────────
+ * The dial listened for `mousedown` and `touchstart` and nothing else. Everything on it was
+ * reachable only by dragging a hand around a circle.
+ */
+
+test("the arrows turn the hand, and the hand turns clockwise", async () => {
+  const { timepickerDialKeyIntent } = await import("../dist/index.js");
+  assert.deepEqual(timepickerDialKeyIntent("ArrowRight", "hour", "12h", 3), { field: "hour", value: 4 });
+  assert.deepEqual(timepickerDialKeyIntent("ArrowUp", "hour", "12h", 3), { field: "hour", value: 4 });
+  assert.deepEqual(timepickerDialKeyIntent("ArrowLeft", "hour", "12h", 3), { field: "hour", value: 2 });
+  assert.deepEqual(timepickerDialKeyIntent("ArrowDown", "hour", "12h", 3), { field: "hour", value: 2 });
+});
+
+test("a clock is a ring, so the ends wrap rather than stop", async () => {
+  const { timepickerDialKeyIntent } = await import("../dist/index.js");
+  // 12h: after 12 comes 1, and before 1 comes 12. There is no hour zero on this face.
+  assert.equal(timepickerDialKeyIntent("ArrowRight", "hour", "12h", 12).value, 1);
+  assert.equal(timepickerDialKeyIntent("ArrowLeft", "hour", "12h", 1).value, 12);
+  // 24h: after 23 comes 00, which is the hour this face names.
+  assert.equal(timepickerDialKeyIntent("ArrowRight", "hour", "24h", 23).value, 0);
+  assert.equal(timepickerDialKeyIntent("ArrowLeft", "hour", "24h", 0).value, 23);
+  // Minutes run 0–59 either way.
+  assert.equal(timepickerDialKeyIntent("ArrowRight", "minute", "12h", 59).value, 0);
+  assert.equal(timepickerDialKeyIntent("ArrowLeft", "minute", "24h", 0).value, 59);
+});
+
+test("no key produces an hour the format does not have", async () => {
+  const { timepickerDialKeyIntent } = await import("../dist/index.js");
+  const keys = ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"];
+  for (const key of keys) {
+    for (let hour = 1; hour <= 12; hour += 1) {
+      const twelve = timepickerDialKeyIntent(key, "hour", "12h", hour).value;
+      assert.ok(twelve >= 1 && twelve <= 12, `${key} from ${hour} gave ${twelve} on a 12-hour face`);
+    }
+    for (let hour = 0; hour <= 23; hour += 1) {
+      const twentyFour = timepickerDialKeyIntent(key, "hour", "24h", hour).value;
+      assert.ok(twentyFour >= 0 && twentyFour <= 23, `${key} from ${hour} gave ${twentyFour} on a 24-hour face`);
+    }
+    for (const minute of [0, 7, 30, 59]) {
+      const value = timepickerDialKeyIntent(key, "minute", "12h", minute).value;
+      assert.ok(value >= 0 && value <= 59, `${key} from ${minute} gave ${value}`);
+    }
+  }
+});
+
+test("Home and End are the ends of the face the format shows", async () => {
+  const { timepickerDialKeyIntent } = await import("../dist/index.js");
+  assert.equal(timepickerDialKeyIntent("Home", "hour", "12h", 5).value, 1);
+  assert.equal(timepickerDialKeyIntent("End", "hour", "12h", 5).value, 12);
+  assert.equal(timepickerDialKeyIntent("Home", "hour", "24h", 5).value, 0);
+  assert.equal(timepickerDialKeyIntent("End", "hour", "24h", 5).value, 23);
+  assert.equal(timepickerDialKeyIntent("End", "minute", "12h", 5).value, 59);
+});
+
+test("a page turns a quarter of the face for minutes, and three hours for hours", async () => {
+  const { timepickerDialKeyIntent } = await import("../dist/index.js");
+  assert.equal(timepickerDialKeyIntent("PageUp", "minute", "12h", 10).value, 15);
+  assert.equal(timepickerDialKeyIntent("PageDown", "minute", "12h", 2).value, 57);
+  assert.equal(timepickerDialKeyIntent("PageUp", "hour", "24h", 22).value, 1);
+});
+
+test("a key the dial does not claim is left alone", async () => {
+  const { timepickerDialKeyIntent } = await import("../dist/index.js");
+  for (const key of ["Enter", "Escape", "Tab", " ", "a"]) {
+    assert.equal(timepickerDialKeyIntent(key, "hour", "12h", 3), null, key);
+  }
+});
+
+test("what a screen reader is told matches what the arrows can reach", async () => {
+  const { timepickerDialAria, timepickerDialKeyIntent } = await import("../dist/index.js");
+  for (const format of ["12h", "24h"]) {
+    for (const field of ["hour", "minute"]) {
+      const aria = timepickerDialAria(field, format, field === "minute" ? 30 : format === "24h" ? 14 : 5);
+      assert.equal(aria.role, "slider");
+      // The announced bounds are the bounds Home and End land on — one rule, not two.
+      assert.equal(aria.valueMin, timepickerDialKeyIntent("Home", field, format, 5).value, `${format}/${field} min`);
+      assert.equal(aria.valueMax, timepickerDialKeyIntent("End", field, format, 5).value, `${format}/${field} max`);
+      assert.ok(aria.valueText.length > 0);
+    }
+  }
+});
