@@ -109,6 +109,8 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
         </div>
       </div>
 
+      <!-- The clock inside declares no dialog of its own, so this panel is the dialog and carries
+           the name. A modal panel with no name is what axe reports as a dialog-name violation. -->
       <mdy-overlay-panel
         [open]="open()"
         [position]="position()"
@@ -116,6 +118,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
         [coords]="coords()"
         [maxHeight]="maxHeight()"
         [hasBackdrop]="position() === 'overlay'"
+        [dialogLabel]="i18n.timepickerOpenLabel"
         [widthMode]="'auto-content'"
         [panelClass]="'mdy-timepicker__popup mdy-popup'"
         [kind]="'timepicker'"

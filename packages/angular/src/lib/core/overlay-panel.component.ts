@@ -50,8 +50,9 @@ import {
       [ngStyle]="panelStyle()"
       (click)="$event.stopPropagation()"
       (keydown)="onPanelKeydown($event)"
-      [attr.role]="isModal() ? 'dialog' : null"
-      [attr.aria-modal]="isModal() ? 'true' : null"
+      [attr.role]="announcesDialog() ? 'dialog' : null"
+      [attr.aria-modal]="announcesDialog() ? 'true' : null"
+      [attr.aria-label]="announcesDialog() ? dialogLabel() : null"
     >
       <ng-content />
     </div>
@@ -96,10 +97,35 @@ export class MdyOverlayPanelComponent {
   readonly panelRef = viewChild<ElementRef<HTMLElement>>("panel");
 
   /**
+   * The name this panel is announced under, when it is the thing being announced.
+   *
+   * Left unset the panel announces nothing at all — see `announcesDialog`. It is not a default
+   * string on purpose: "dialog" as a name is worse than no dialog, and a name invented here could
+   * not know what the popup holds.
+   */
+  readonly dialogLabel = input<string | null>(null);
+
+  /**
    * Modal semantics only when a backdrop is present: a plain select dropdown
    * must not be announced as a modal dialog by screen readers (B29).
    */
   protected readonly isModal = computed(() => this.hasBackdrop());
+
+  /**
+   * Whether this panel is the dialog, rather than a wrapper around one.
+   *
+   * **The element that carries the role is the element that has a name.** A modal panel used to
+   * take `role="dialog"` unconditionally and never had a name, which axe reports as a serious
+   * dialog-name violation — and for the datepicker it was worse than nameless: `<mdy-calendar>` inside
+   * already declares a named dialog, so a screen reader was given a nameless dialog wrapping a
+   * named one. A popup whose content announces itself leaves `dialogLabel` unset and this panel
+   * goes back to being what it is, a positioned host; a popup whose content does not — the clock,
+   * the palette — passes a name and is announced here.
+   *
+   * The focus trap stays keyed on `isModal`: trapping focus is about the backdrop, not about who
+   * says the word "dialog".
+   */
+  protected readonly announcesDialog = computed(() => this.isModal() && this.dialogLabel() !== null);
 
   constructor() {
     // Top Layer Management (Popover API)

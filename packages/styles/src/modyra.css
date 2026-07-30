@@ -548,6 +548,11 @@
         width: 100%;
         height: 100%;
         opacity: 0 !important;
+        /* It used to sit inside the picker button and be its click surface, which made a focusable
+           control the child of a focusable control — `nested-interactive`, and serious. It is a
+           sibling now, and takes no pointer: the button behind it already opens the popup, and an
+           invisible box over a button is only ever a way to lose the button. */
+        pointer-events: none;
         cursor: pointer;
         padding: 0;
         margin: 0;

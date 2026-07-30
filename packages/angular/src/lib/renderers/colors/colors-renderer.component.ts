@@ -64,19 +64,30 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
               class="mdy-colors__preview-swatch"
               [style.background-color]="value() || '#4361ee'"
             ></div>
-            <!-- Native input is purely visual; the HEX text input is the accessible control -->
-            <input
-              [id]="fieldId"
-              type="color"
-              aria-hidden="true"
-              tabindex="-1"
-              [value]="value() || '#4361ee'"
-              [disabled]="isDisabled()"
-              (input)="onInput($event)"
-              (click)="toggleOverlay($event); $event.stopPropagation(); $event.preventDefault()"
-              class="mdy-colors__native-hidden"
-            />
           </button>
+          <!--
+            The native colour input was *inside* the button above: an invisible type=color
+            stretched over it, aria-hidden, tabindex -1, with a click handler that opened this
+            renderer's own popup and called preventDefault so the OS picker never appeared. A
+            focusable control inside a focusable control is nested-interactive, and serious - the
+            button beneath it already carried the same handler, the same disabled state and the
+            accessible name, so what the input added was the defect.
+
+            It is kept, outside the button, because it is what a form post and an autofill see: the
+            picker itself is this renderer's popup, and the HEX field beside it is the control a
+            user types into. The foundation stops it taking a pointer, so it is no longer the
+            invisible click surface it used to be.
+          -->
+          <input
+            [id]="fieldId"
+            type="color"
+            aria-hidden="true"
+            tabindex="-1"
+            [value]="value() || '#4361ee'"
+            [disabled]="isDisabled()"
+            (input)="onInput($event)"
+            class="mdy-colors__native-hidden"
+          />
 
           <!-- Input: HEX (accessible control) -->
           <input
@@ -118,6 +129,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
         [coords]="coords()"
         [maxHeight]="maxHeight()"
         [hasBackdrop]="position() === 'overlay'"
+        [dialogLabel]="i18n.colorPresetsHeader"
         [widthMode]="'auto-content'"
         (close)="closeOverlay()"
       >
