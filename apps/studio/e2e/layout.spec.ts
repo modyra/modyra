@@ -229,11 +229,43 @@ test("the breakpoint selector previews the size and authors only that size", asy
   await expect(page.locator('.mdy-layout-columns > .mdy-layout-column')).toHaveCount(2);
 });
 
+test("changing one size leaves every other size alone", async ({ page }) => {
+  // Reported: "ogni layout deve avere la sua conformazione, non è che se cambio in SM allora anche
+  // MD sarà così." The contract cascades mobile-first because CSS does, so a size stating nothing
+  // followed the nearest smaller one that did — and editing `sm` dragged `md` and `lg` with it.
+  // Studio pins what the larger sizes are showing before the change, so they stop following.
+  await addFields(page, ["first", "second"]);
+  await page.locator('[data-layout-columns]').last().click();
+  await expect(page.locator('.mdy-layout-columns .mdy-layout-column')).toHaveCount(2);
+
+  const first = page.locator('.plain-canvas-field[data-field-path="first"]');
+  const widthAt = async (size: string) => {
+    await page.locator(`[data-breakpoint="${size}"]`).click();
+    await first.hover();
+    return first.locator('[data-row-columns] option:checked').innerText();
+  };
+
+  await page.locator('[data-breakpoint="sm"]').click();
+  await first.hover();
+  await first.locator('[data-row-columns]').selectOption('1');
+
+  expect(await widthAt('sm')).toBe('1×');
+  // The two that used to follow `sm`, and no longer do.
+  expect(await widthAt('md')).toBe('2×');
+  expect(await widthAt('lg')).toBe('2×');
+  // Smaller sizes were never at risk — the cascade only runs upward — and must not have moved either.
+  expect(await widthAt('base')).toContain('auto');
+
+  // And the same holds a second time, from a size in the middle: `lg` keeps what it shows.
+  expect(await widthAt('md')).toBe('2×');
+  await first.locator('[data-row-columns]').selectOption('1');
+  expect(await widthAt('lg')).toBe('2×');
+});
+
 test("a width says whether this size decided it or inherited it", async ({ page }) => {
-  // Setting a width at `md` also changes `lg`, because `lg` says nothing and reads the nearest
-  // smaller size that does — the mobile-first rule the foundation follows. That is correct, and it
-  // used to be indistinguishable from `lg` having been decided: the control showed the same number
-  // either way and there was no way to stop inheriting.
+  // A size that has never been touched states nothing and shows what it would inherit, marked as
+  // inherited. Once a size *is* decided, the larger ones are pinned rather than left following it —
+  // each size holds its own arrangement — and `auto` is how one is handed back to inheritance.
   await addFields(page, ["first", "second"]);
   await page.locator('[data-layout-columns]').last().click();
   await expect(page.locator('.mdy-layout-columns .mdy-layout-column')).toHaveCount(2);
@@ -242,6 +274,12 @@ test("a width says whether this size decided it or inherited it", async ({ page 
   const width = first.locator('[data-row-columns]');
   const shown = async () => width.locator('option:checked').innerText();
 
+  // Untouched: nothing stated anywhere, so every size reads as inherited.
+  await page.locator('[data-breakpoint="lg"]').click();
+  await first.hover();
+  await expect(width).toHaveValue('');
+  await expect(width).toHaveClass(/inherited/);
+
   await page.locator('[data-breakpoint="md"]').click();
   await first.hover();
   await width.selectOption('1');
@@ -249,26 +287,21 @@ test("a width says whether this size decided it or inherited it", async ({ page 
   await expect(width).not.toHaveClass(/inherited/);
   expect(await shown()).toBe('1×');
 
-  // `lg` reads it, says so, and is marked as not having decided anything itself.
+  // `lg` was pinned to what it was showing, so deciding `md` did not move it.
   await page.locator('[data-breakpoint="lg"]').click();
   await first.hover();
-  await expect(width).toHaveValue('');
-  await expect(width).toHaveClass(/inherited/);
-  expect(await shown()).toContain('from md');
-
-  // `lg` can state its own, which leaves `md` alone…
-  await width.selectOption('2');
+  await expect(width).toHaveValue('2');
   await expect(width).not.toHaveClass(/inherited/);
-  await page.locator('[data-breakpoint="md"]').click();
-  await first.hover();
-  await expect(width).toHaveValue('1');
 
-  // …and hand it back, which is the part that had no control at all.
-  await page.locator('[data-breakpoint="lg"]').click();
-  await first.hover();
+  // Handing `lg` back to inheritance is still possible, and then it follows `md` again.
   await width.selectOption('');
   await expect(width).toHaveClass(/inherited/);
   expect(await shown()).toContain('from md');
+
+  // …and `md` is untouched by any of it.
+  await page.locator('[data-breakpoint="md"]').click();
+  await first.hover();
+  await expect(width).toHaveValue('1');
 });
 
 test("a field can be hidden at one size and shown at another", async ({ page }) => {
@@ -285,17 +318,27 @@ test("a field can be hidden at one size and shown at another", async ({ page }) 
   await expect(first).toHaveClass(/hidden-here/);
   await expect(cell).toHaveCSS('--mdy-layout-column-display', 'none');
 
-  // …and shown again from md, which the cascade needs said explicitly rather than left unsaid. The
-  // node is still reachable, which is the whole reason the canvas marks instead of hiding.
+  // Hidden at `base` alone: the larger sizes were pinned to what they were showing, so hiding here
+  // does not hide them. The node stays reachable at every size, which is the whole reason the canvas
+  // marks instead of removing.
   await page.locator('[data-breakpoint="md"]').click();
   await first.hover();
-  await first.locator('[data-toggle-hidden]').click();
   await expect(first).not.toHaveClass(/hidden-here/);
   await expect(cell).toHaveCSS('--mdy-layout-column-display-md', 'flex');
   await expect(cell).toHaveCSS('--mdy-layout-column-display', 'none');
 
-  // Back to base, where nothing has undone the hiding.
+  // `md` decides for itself, and `base` keeps its own answer.
+  await first.locator('[data-toggle-hidden]').click();
+  await expect(first).toHaveClass(/hidden-here/);
   await page.locator('[data-breakpoint="base"]').click();
+  await first.hover();
+  await expect(first).toHaveClass(/hidden-here/);
+
+  // Showing it again at `base` leaves `md` hidden, which is what per-size means.
+  await first.locator('[data-toggle-hidden]').click();
+  await expect(first).not.toHaveClass(/hidden-here/);
+  await page.locator('[data-breakpoint="md"]').click();
+  await first.hover();
   await expect(first).toHaveClass(/hidden-here/);
 });
 

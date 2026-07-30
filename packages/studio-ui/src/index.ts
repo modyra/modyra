@@ -829,6 +829,31 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     else delete slot.at;
   }
 
+  /**
+   * Writes what the larger sizes are showing, before a change at `size` moves them.
+   *
+   * The contract cascades mobile-first because CSS does: `--mdy-layout-column-count-md` genuinely
+   * falls back to `sm`. So a size that states nothing follows the nearest smaller one that does, and
+   * editing `sm` used to drag `md` and `lg` along with it. Each size is meant to hold its own
+   * arrangement, so the sizes a change would otherwise move are pinned to their current value first
+   * and stop following.
+   *
+   * Only *larger* sizes, and only those saying nothing of their own: the cascade runs one way, so a
+   * smaller size cannot be affected, and one that already states a value was never following. That
+   * keeps a row stating what it needs rather than all four sizes whatever the author touched.
+   */
+  function pinLargerSizes<T>(
+    at: Record<string, T>,
+    size: StudioLayoutBreakpoint,
+    showing: (size: StudioLayoutBreakpoint) => T | undefined,
+  ): void {
+    for (const larger of BREAKPOINT_ORDER.slice(BREAKPOINT_ORDER.indexOf(size) + 1)) {
+      if (at[larger] !== undefined) continue;
+      const current = showing(larger);
+      if (current !== undefined) at[larger] = current;
+    }
+  }
+
   /** Whether a slot is hidden at the size being authored, following the same cascade the CSS does. */
   function hiddenAt(nodeId: string, size: StudioLayoutBreakpoint): boolean {
     const slot = slotIn(project.presentation.layout ?? [], nodeId);
@@ -856,6 +881,15 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       return;
     }
     const next = !hiddenAt(nodeId, breakpoint);
+    // Pin what the larger sizes are showing first, so hiding here does not hide them too.
+    const pinned: Record<string, boolean> = {};
+    pinLargerSizes(pinned, breakpoint, (size) => hiddenAt(nodeId, size));
+    for (const [size, hidden] of Object.entries(pinned)) {
+      const at = slot.at?.[size as StudioLayoutBreakpoint];
+      if (at?.hidden === undefined) {
+        slot.at = { ...(slot.at ?? {}), [size]: { ...(at ?? {}), hidden } };
+      }
+    }
     // At `base` there is nothing smaller to inherit from, so showing again is simply saying nothing.
     writePlacement(slot, { hidden: next ? true : breakpoint === "base" ? null : false });
     selected = nodeId;
@@ -945,7 +979,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       return;
     }
     const next = Math.min(Math.max(1, count), row.columns.length);
-    row.at = { ...(row.at ?? {}), [breakpoint]: next };
+    const at = { ...(row.at ?? {}) };
+    // Before the change, so the sizes reading this one keep the width they are showing now.
+    pinLargerSizes(at, breakpoint, (size) => rowColumnsAt(row, size));
+    at[breakpoint] = next;
+    row.at = at;
     commit(
       createUpdateLayoutCommand(layout, `${next} across at ${breakpoint}`),
       nodeId,
@@ -1098,9 +1136,24 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     if (breakpoint !== "base") {
       const slot = slotIn(layout, nodeId);
       if (!slot) return;
-      const current = slot.at?.[breakpoint]?.column ?? from + 1;
-      const column = current + direction;
+      const columnAt = (size: StudioLayoutBreakpoint): number => {
+        for (let i = BREAKPOINT_ORDER.indexOf(size); i >= 0; i -= 1) {
+          const stated = slot.at?.[BREAKPOINT_ORDER[i]!]?.column;
+          if (stated !== undefined) return stated;
+        }
+        return from + 1;
+      };
+      const column = columnAt(breakpoint) + direction;
       if (column < 1 || column > rowColumnsAt(row, breakpoint)) return;
+      // Pin what the larger sizes show first, so moving here does not move them too.
+      const pinned: Record<string, number> = {};
+      pinLargerSizes(pinned, breakpoint, columnAt);
+      for (const [size, at] of Object.entries(pinned)) {
+        const existing = slot.at?.[size as StudioLayoutBreakpoint];
+        if (existing?.column === undefined) {
+          slot.at = { ...(slot.at ?? {}), [size]: { ...(existing ?? {}), column: at } };
+        }
+      }
       writePlacement(slot, { column });
       selected = nodeId;
       commit(
