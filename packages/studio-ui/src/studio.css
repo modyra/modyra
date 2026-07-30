@@ -347,6 +347,23 @@ body {
   font-weight: 600;
   color: var(--studio-chrome-text);
 }
+.canvas-bar-zoom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: auto;
+  color: var(--studio-chrome-text);
+  font-size: 11px;
+}
+.canvas-bar-zoom select {
+  width: auto !important;
+  padding: 3px 6px;
+  border: 1px solid var(--studio-chrome-border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--studio-chrome-text);
+  font-size: 11px;
+}
 .canvas-bar-hint {
   color: var(--studio-chrome-text);
   font-size: 11px;
@@ -846,6 +863,14 @@ body {
   box-sizing: content-box;
   width: var(--studio-canvas-width, min(100%, 680px));
   max-width: none;
+  /* Scaled from the top left so the form stays put as the zoom changes. A transform rather than the
+     `zoom` property on purpose: `zoom` is inherited into the top layer, and a popup's viewport
+     coordinates were then read in the zoomed space — it landed a hundred pixels off its control. A
+     transform does not reach the top layer, so a popup stays anchored and is drawn full size, which
+     is also what makes it readable while the form around it is half-size. `sizeCanvasToZoom` gives
+     the scaled result a box, since a transform leaves the original one behind. */
+  transform: scale(var(--studio-canvas-zoom, 1));
+  transform-origin: top left;
   margin: 8px auto 96px; /* room for the dock to float over empty space, not over a field */
   padding: 22px 22px 26px;
   border: 1px solid var(--studio-chrome-border);
@@ -2356,4 +2381,13 @@ body {
   border-color: var(--studio-border-strong);
   background: var(--studio-selection);
   color: var(--studio-text-primary);
+}
+
+/* Which breakpoint the preview panel's own width reads as. It lands on one almost never — the width
+   is whatever the panels leave it — so the nearest is what gets named. */
+.preview-size {
+  margin-inline-start: auto;
+  color: var(--studio-chrome-text);
+  font-size: 11px;
+  opacity: 0.85;
 }
