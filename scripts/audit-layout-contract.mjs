@@ -40,6 +40,24 @@ const ADAPTERS = [
 const NO_DYNAMIC_FORM = ["lit"];
 
 /**
+ * Adapters that render nothing at all.
+ *
+ * These ship hooks, composables and command runtimes; the consumer brings the markup. An arrangement
+ * cannot be missing from a package with no elements to arrange, so they are neither a gap nor a
+ * pending batch — but leaving them unmentioned is how "2/2" came to read as "every adapter", when
+ * it means "both of the two that render". What they need instead of a renderer is the arrangement
+ * in a form they can apply themselves, which is `layoutNodeAttributes` and `layoutSlotStyle` in
+ * `@modyra/widgets`: framework-free, and the same two functions the rendering adapters call.
+ */
+const HEADLESS = ["react", "preact", "vue", "svelte", "solid"];
+
+/** The one thing a headless consumer needs, so it cannot quietly stop being exported. */
+const HEADLESS_ENTRY_POINT = {
+  source: "packages/widgets/src/index.ts",
+  exports: ["layoutNodeAttributes", "layoutSlotStyle"],
+};
+
+/**
  * Adapters that have a config-driven form but do not arrange it yet. Recorded rather than waived:
  * the audit asserts the list matches reality, so an adapter can neither start rendering layout
  * without the contract nor stay missing quietly.
@@ -80,6 +98,14 @@ for (const adapter of ADAPTERS) {
   }
 }
 
+// A headless adapter has no renderer, so what it can offer its consumers is the contract itself.
+const widgetsIndex = read(HEADLESS_ENTRY_POINT.source);
+for (const name of HEADLESS_ENTRY_POINT.exports) {
+  if (!widgetsIndex.includes(name)) {
+    failures.push(`${HEADLESS_ENTRY_POINT.source} no longer exports ${name}, which is all a headless adapter has to arrange a form with`);
+  }
+}
+
 const unexpected = missing.filter((name) => !NOT_IMPLEMENTED.includes(name));
 const stale = NOT_IMPLEMENTED.filter((name) => !missing.includes(name));
 for (const name of unexpected) failures.push(`${name} no longer renders layout, but is not listed as missing`);
@@ -88,8 +114,9 @@ for (const name of missing) notes.push(`${name} does not render declarative layo
 
 process.stdout.write("# Declarative layout contract audit\n\n");
 process.stdout.write(`Classes: ${Object.values(MDY_LAYOUT_CLASSES).join(", ")}\n`);
-process.stdout.write(`Adapters rendering layout: ${ADAPTERS.length - missing.length}/${ADAPTERS.length}\n`);
+process.stdout.write(`Adapters rendering layout: ${ADAPTERS.length - missing.length}/${ADAPTERS.length} of the ${ADAPTERS.length} that render\n`);
 for (const name of NO_DYNAMIC_FORM) process.stdout.write(`  n/a: ${name} has no config-driven form to arrange\n`);
+process.stdout.write(`  n/a: ${HEADLESS.join(", ")} render nothing — consumers apply ${HEADLESS_ENTRY_POINT.exports.join(" and ")} themselves\n`);
 for (const note of notes) process.stdout.write(`  pending: ${note}\n`);
 for (const failure of failures) process.stdout.write(`  DEFECT: ${failure}\n`);
 process.stdout.write(failures.length === 0 ? "\nLAYOUT CONTRACT CONSISTENT\n" : `\n${failures.length} defect(s)\n`);

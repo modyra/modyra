@@ -7,9 +7,17 @@
  * "Parity" with Angular's `<mdy-dynamic-form>` means the same value/
  * validation/error semantics for the same Contract, not identical visual
  * output — this shares its scope and its one real limitation with that
- * component exactly: `fields` is a flat list (Contract `layout`/`rules`
- * are not applied here either, matching the Angular renderer's own
- * documented gap, not a new one).
+ * component exactly: `fields` is a flat list, and Contract `layout` is not
+ * applied — because there is nothing here to apply it to.
+ *
+ * That last sentence used to read "matching the Angular renderer's own
+ * documented gap, not a new one", which is no longer true: `<mdy-dynamic-form>`
+ * renders `layout`, and so does the framework-free renderer. The difference is
+ * not a gap this package is waiting to close — it renders no elements at all,
+ * so an arrangement has nothing to arrange. A consumer who wants one applies it
+ * to their own JSX with `layoutNodeAttributes` and `layoutSlotStyle` from
+ * `@modyra/widgets`: framework-free, and the same two functions both rendering
+ * adapters call, so the grid is theirs to place but not theirs to invent.
  *
  * The schema-building and validator-wiring logic below is deliberately a
  * pair of plain functions, not inlined into the hook — this package has no

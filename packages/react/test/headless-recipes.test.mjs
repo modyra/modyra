@@ -216,3 +216,60 @@ test("async pending and submit-time markAllTouched compose with the recipes", as
   ]);
   form.destroy();
 });
+
+// ─── Arranging a config-driven form (mirrored in docs/guides/headless-recipes.md) ───
+//
+// A headless package renders nothing, so a Contract `layout` cannot be applied for you — but it is
+// not yours to invent either. These are the same two functions `@modyra/plain` and
+// `@modyra/angular` call, so a two-column row is the same row whoever drew it. The recipe's JSX is
+// a walk over these values; what is asserted here is the values, because those are the part that
+// has to be right.
+
+/** What a child asks of the column it sits in — a slot and a section answer alike. */
+function placementOf(child) {
+  if (typeof child === "string") return undefined;
+  if ("ref" in child) return child.at;
+  return child.kind === "section" ? child.at : undefined;
+}
+
+test("a headless consumer can arrange a form from the contract, without inventing a grid", async () => {
+  // Taken from the contract rather than spelled here — the first draft of this test wrote
+  // `--mdy-layout-columns` by hand and asserted against a property that does not exist.
+  const {
+    MDY_LAYOUT_CLASSES,
+    MDY_LAYOUT_COLUMN_COUNT_PROPERTIES: count,
+    MDY_LAYOUT_COLUMN_START_PROPERTIES: start,
+    MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES: display,
+    layoutNodeAttributes,
+    layoutSlotStyle,
+  } = await import("@modyra/widgets");
+
+  // One column at base, two from `sm` — the mobile-first case the contract is built around.
+  const row = {
+    kind: "columns",
+    id: "name-row",
+    at: { base: 1, sm: 2 },
+    columns: [["first"], [{ ref: "last", at: { base: { hidden: true }, sm: { hidden: false, column: 2 } } }]],
+  };
+
+  const { className, style } = layoutNodeAttributes(row);
+  assert.equal(className, MDY_LAYOUT_CLASSES.columns);
+  assert.equal(style[count.base], "1");
+  assert.equal(style[count.sm], "2");
+
+  // The placement lands on the column, which is the grid item — not on the field inside it.
+  const second = layoutSlotStyle(row.columns[1].map(placementOf).find(Boolean));
+  assert.equal(second[display.base], "none");
+  assert.equal(second[display.sm], "flex");
+  assert.equal(second[start.sm], "2");
+
+  // A column whose children say nothing gets no properties at all, rather than a set of defaults
+  // that would out-rank a smaller size's declaration.
+  assert.deepEqual(layoutSlotStyle(row.columns[0].map(placementOf).find(Boolean)), {});
+
+  // A section is a `<fieldset>` with the contract's legend class, and its `at` is a placement —
+  // where the section's own column sits — so `layoutNodeAttributes` leaves it to `layoutSlotStyle`.
+  const section = layoutNodeAttributes({ kind: "section", id: "address", label: "Address" });
+  assert.equal(section.className, MDY_LAYOUT_CLASSES.section);
+  assert.deepEqual(section.style, {});
+});
