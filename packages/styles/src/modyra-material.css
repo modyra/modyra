@@ -981,7 +981,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 100%;
+        /* No `height: 100%`. The foundation stretches this button with `align-self: stretch`, and a
+           percentage height on a flex item whose parent has no *specified* height resolves to
+           nothing — measured, this button was 44x0 in this theme and could not be clicked at all,
+           by a user or by a test. Stretch is what fills the row; a percentage only claims to. */
         width: 2.5rem;
         margin-right: -0.75rem;
     }
