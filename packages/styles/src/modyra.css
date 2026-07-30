@@ -34,41 +34,41 @@
 
     :root {
         /* ── Color ──────────────────────────────────────────────────────────────── */
-        --mdy-primary: var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF));
-        --mdy-on-primary: var(--mdy-sys-color-on-primary, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 95%));
-        --mdy-primary-container: var(--mdy-sys-color-primary-container, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 85%));
-        --mdy-on-primary-container: var(--mdy-sys-color-on-primary-container, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-night, #0E0F16) 80%));
-        --mdy-error: var(--mdy-sys-color-error, var(--mdy-ref-color-error, #B3261E));
-        --mdy-on-error: var(--mdy-sys-color-on-error, color-mix(in srgb, var(--mdy-sys-color-error, var(--mdy-ref-color-error, #B3261E)), var(--mdy-ref-color-cloud, #F8FAFC) 90%));
-        --mdy-error-container: var(--mdy-sys-color-error-container, color-mix(in srgb, var(--mdy-sys-color-error, var(--mdy-ref-color-error, #B3261E)), var(--mdy-ref-color-cloud, #F8FAFC) 85%));
-        --mdy-on-error-container: var(--mdy-sys-color-on-error-container, color-mix(in srgb, var(--mdy-sys-color-error, var(--mdy-ref-color-error, #B3261E)), var(--mdy-ref-color-night, #0E0F16) 80%));
-        --mdy-surface: var(--mdy-sys-color-surface, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 96%));
-        --mdy-on-surface: var(--mdy-sys-color-on-surface, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-night, #0E0F16) 80%));
-        --mdy-on-surface-variant: var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%));
-        --mdy-surface-container-lowest: var(--mdy-sys-color-surface-container-lowest, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 100%));
-        --mdy-surface-container-low: var(--mdy-sys-color-surface-container-low, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 96%));
-        --mdy-surface-container: var(--mdy-sys-color-surface-container, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 92%));
-        --mdy-surface-container-high: var(--mdy-sys-color-surface-container-high, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 88%));
-        --mdy-surface-container-highest: var(--mdy-sys-color-surface-container-highest, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 80%));
+        --mdy-primary: var(--mdy-sys-color-primary);
+        --mdy-on-primary: var(--mdy-sys-color-on-primary);
+        --mdy-primary-container: var(--mdy-sys-color-primary-container);
+        --mdy-on-primary-container: var(--mdy-sys-color-on-primary-container);
+        --mdy-error: var(--mdy-sys-color-error);
+        --mdy-on-error: var(--mdy-sys-color-on-error);
+        --mdy-error-container: var(--mdy-sys-color-error-container);
+        --mdy-on-error-container: var(--mdy-sys-color-on-error-container);
+        --mdy-surface: var(--mdy-sys-color-surface);
+        --mdy-on-surface: var(--mdy-sys-color-on-surface);
+        --mdy-on-surface-variant: var(--mdy-sys-color-on-surface-variant);
+        --mdy-surface-container-lowest: var(--mdy-sys-color-surface-container-lowest);
+        --mdy-surface-container-low: var(--mdy-sys-color-surface-container-low);
+        --mdy-surface-container: var(--mdy-sys-color-surface-container);
+        --mdy-surface-container-high: var(--mdy-sys-color-surface-container-high);
+        --mdy-surface-container-highest: var(--mdy-sys-color-surface-container-highest);
         --mdy-surface-container-highest-hover: color-mix(in srgb, var(--mdy-surface-container-highest), var(--mdy-on-surface) 8%);
-        --mdy-outline: var(--mdy-sys-color-outline, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-slate, #94A3B8) 60%));
-        --mdy-outline-variant: var(--mdy-sys-color-outline-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-slate, #94A3B8), var(--mdy-ref-color-cloud, #F8FAFC) 45%) 80%));
+        --mdy-outline: var(--mdy-sys-color-outline);
+        --mdy-outline-variant: var(--mdy-sys-color-outline-variant);
         --mdy-outline-subtle: color-mix(in srgb, var(--mdy-outline-variant), transparent 40%);
 
         /* ── Shape ──────────────────────────────────────────────────────────────── */
-        --mdy-corner-none: var(--mdy-sys-shape-corner-none, 0px);
-        --mdy-corner-extra-small: var(--mdy-sys-shape-corner-extra-small, 4px);
-        --mdy-corner-small: var(--mdy-sys-shape-corner-small, 8px);
-        --mdy-corner-medium: var(--mdy-sys-shape-corner-medium, 12px);
-        --mdy-corner-large: var(--mdy-sys-shape-corner-large, 16px);
-        --mdy-corner-extra-large: var(--mdy-sys-shape-corner-extra-large, 28px);
-        --mdy-corner-full: var(--mdy-sys-shape-corner-full, 9999px);
+        --mdy-corner-none: var(--mdy-sys-shape-corner-none);
+        --mdy-corner-extra-small: var(--mdy-sys-shape-corner-extra-small);
+        --mdy-corner-small: var(--mdy-sys-shape-corner-small);
+        --mdy-corner-medium: var(--mdy-sys-shape-corner-medium);
+        --mdy-corner-large: var(--mdy-sys-shape-corner-large);
+        --mdy-corner-extra-large: var(--mdy-sys-shape-corner-extra-large);
+        --mdy-corner-full: var(--mdy-sys-shape-corner-full);
 
         /* ── State Layer Opacity ────────────────────────────────────────────────── */
-        --mdy-state-hover-opacity: var(--mdy-sys-state-hover-opacity, 0.08);
-        --mdy-state-focus-opacity: var(--mdy-sys-state-focus-opacity, 0.10);
-        --mdy-state-disabled-content-opacity: var(--mdy-sys-state-disabled-content-opacity, 0.38);
-        --mdy-state-disabled-container-opacity: var(--mdy-sys-state-disabled-container-opacity, 0.12);
+        --mdy-state-hover-opacity: var(--mdy-sys-state-hover-opacity);
+        --mdy-state-focus-opacity: var(--mdy-sys-state-focus-opacity);
+        --mdy-state-disabled-content-opacity: var(--mdy-sys-state-disabled-content-opacity);
+        --mdy-state-disabled-container-opacity: var(--mdy-sys-state-disabled-container-opacity);
 
         /* ── Stacking scale ─────────────────────────────────────────────────────────
          * One documented ladder for everything that paints out of flow. The rungs matter more
@@ -93,34 +93,34 @@
         --mdy-shadow-depth-3: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 8px 3px rgba(0, 0, 0, 0.15);
 
         /* ── Text Field (Filled) ────────────────────────────────────────────────── */
-        --mdy-input-height: var(--mdy-comp-filled-text-field-container-height, 56px);
+        --mdy-input-height: var(--mdy-comp-filled-text-field-container-height);
         /* 56px */
-        --mdy-input-bg: var(--mdy-comp-filled-text-field-container-color, var(--mdy-sys-color-surface-container-highest, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 80%)));
+        --mdy-input-bg: var(--mdy-comp-filled-text-field-container-color);
         --mdy-input-bg-hover: color-mix(in srgb, var(--mdy-input-bg), var(--mdy-on-surface) 8%);
-        --mdy-input-border-radius: var(--mdy-comp-filled-text-field-container-shape, var(--mdy-sys-shape-corner-extra-small, 4px));
+        --mdy-input-border-radius: var(--mdy-comp-filled-text-field-container-shape);
         /* 4px */
-        --mdy-input-color: var(--mdy-comp-filled-text-field-input-text-color, var(--mdy-sys-color-on-surface, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-night, #0E0F16) 80%)));
-        --mdy-input-placeholder-color: var(--mdy-comp-filled-text-field-label-text-color, var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%)));
-        --mdy-input-focus-color: var(--mdy-comp-filled-text-field-focus-active-indicator-color, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
-        --mdy-input-icon-color: var(--mdy-comp-filled-text-field-leading-icon-color, var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%)));
+        --mdy-input-color: var(--mdy-comp-filled-text-field-input-text-color);
+        --mdy-input-placeholder-color: var(--mdy-comp-filled-text-field-label-text-color);
+        --mdy-input-focus-color: var(--mdy-comp-filled-text-field-focus-active-indicator-color);
+        --mdy-input-icon-color: var(--mdy-comp-filled-text-field-leading-icon-color);
         --mdy-input-focus-shadow: inset 0 -2px 0 0 var(--mdy-input-focus-color);
-        --mdy-error-color: var(--mdy-comp-filled-text-field-error-active-indicator-color, var(--mdy-sys-color-error, var(--mdy-ref-color-error, #B3261E)));
+        --mdy-error-color: var(--mdy-comp-filled-text-field-error-active-indicator-color);
         --mdy-error-focus-shadow: inset 0 -2px 0 0 var(--mdy-error-color);
-        --mdy-input-font-size: var(--mdy-sys-typescale-body-large-size, 16px);
+        --mdy-input-font-size: var(--mdy-sys-typescale-body-large-size);
         /* 16px */
-        --mdy-input-line-height: var(--mdy-sys-typescale-body-large-line-height, 24px);
+        --mdy-input-line-height: var(--mdy-sys-typescale-body-large-line-height);
         /* 24px */
         --mdy-input-padding: 0.5rem 1rem;
 
         /* ── Label & Helper Text ────────────────────────────────────────────────── */
-        --mdy-label-font-size: var(--mdy-sys-typescale-body-large-size, 16px);
-        --mdy-label-font-weight: var(--mdy-sys-typescale-label-large-weight, 500);
-        --mdy-helper-font-size: var(--mdy-sys-typescale-body-small-size, 12px);
+        --mdy-label-font-size: var(--mdy-sys-typescale-body-large-size);
+        --mdy-label-font-weight: var(--mdy-sys-typescale-label-large-weight);
+        --mdy-helper-font-size: var(--mdy-sys-typescale-body-small-size);
         /* 12px */
-        --mdy-helper-line-height: var(--mdy-sys-typescale-body-small-line-height, 16px);
+        --mdy-helper-line-height: var(--mdy-sys-typescale-body-small-line-height);
         --mdy-helper-padding-top: 4px;
-        --mdy-error-font-size: var(--mdy-sys-typescale-body-small-size, 12px);
-        --mdy-error-line-height: var(--mdy-sys-typescale-body-small-line-height, 16px);
+        --mdy-error-font-size: var(--mdy-sys-typescale-body-small-size);
+        --mdy-error-line-height: var(--mdy-sys-typescale-body-small-line-height);
 
         /* ── Renderer Layout ────────────────────────────────────────────────────── */
         --mdy-renderer-gap: 0;
@@ -137,15 +137,15 @@
         --mdy-tooltip-border-radius: var(--mdy-corner-extra-small);
 
         /* ── Checkbox ───────────────────────────────────────────────────────────── */
-        --mdy-checkbox-size: var(--mdy-comp-checkbox-container-size, 18px);
+        --mdy-checkbox-size: var(--mdy-comp-checkbox-container-size);
         /* 18px */
-        --mdy-checkbox-border-radius: var(--mdy-comp-checkbox-container-shape, 2px);
+        --mdy-checkbox-border-radius: var(--mdy-comp-checkbox-container-shape);
         /* 2px */
-        --mdy-checkbox-accent: var(--mdy-comp-checkbox-selected-container-color, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
-        --mdy-checkbox-checkmark-color: var(--mdy-comp-checkbox-selected-icon-color, var(--mdy-sys-color-on-primary, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 95%)));
-        --mdy-checkbox-border: var(--mdy-comp-checkbox-unselected-outline-width, 2px) solid var(--mdy-comp-checkbox-unselected-outline-color, var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%)));
+        --mdy-checkbox-accent: var(--mdy-comp-checkbox-selected-container-color);
+        --mdy-checkbox-checkmark-color: var(--mdy-comp-checkbox-selected-icon-color);
+        --mdy-checkbox-border: var(--mdy-comp-checkbox-unselected-outline-width) solid var(--mdy-comp-checkbox-unselected-outline-color);
         --mdy-checkbox-gap: 0.75rem;
-        --mdy-checkbox-transition: var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
+        --mdy-checkbox-transition: var(--mdy-sys-motion-duration-base) var(--mdy-sys-motion-easing-standard);
         /* Tick geometry — override per theme if needed */
         --mdy-checkbox-tick-w: 0.3;
         /* fraction of --mdy-checkbox-size */
@@ -157,17 +157,17 @@
         /* translateY to optically center the rotated L-border */
 
         /* ── Toggle / Switch ────────────────────────────────────────────────────── */
-        --mdy-toggle-width: var(--mdy-comp-switch-track-width, 52px);
+        --mdy-toggle-width: var(--mdy-comp-switch-track-width);
         /* 52px */
-        --mdy-toggle-height: var(--mdy-comp-switch-track-height, 32px);
+        --mdy-toggle-height: var(--mdy-comp-switch-track-height);
         /* 32px */
-        --mdy-toggle-bg: var(--mdy-comp-switch-track-color, transparent);
+        --mdy-toggle-bg: var(--mdy-comp-switch-track-color);
         /* transparent */
         /* One width, used by both states and by the travel: the thumb is inset from the padding
            box, so the distance it moves is the track *less its borders*. */
-        --mdy-toggle-border-width: var(--mdy-comp-switch-track-outline-width, 2px);
-        --mdy-toggle-border: var(--mdy-toggle-border-width) solid var(--mdy-comp-switch-track-outline-color, var(--mdy-sys-color-outline, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-slate, #94A3B8) 60%)));
-        --mdy-toggle-bg-checked: var(--mdy-comp-switch-selected-track-color, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
+        --mdy-toggle-border-width: var(--mdy-comp-switch-track-outline-width);
+        --mdy-toggle-border: var(--mdy-toggle-border-width) solid var(--mdy-comp-switch-track-outline-color);
+        --mdy-toggle-bg-checked: var(--mdy-comp-switch-selected-track-color);
         /* Transparent, but the *same width* as the off state's outline: the thumb is inset from the
            padding box, so dropping the border moved the handle two pixels closer to the edge when
            the switch turned on — the shape held, the position did not. */
@@ -175,7 +175,7 @@
         /* One handle size for both states: the thumb travels, it does not grow. Defaults to the
            selected-handle token because that is the size the control is drawn around; a theme that
            wants a smaller knob moves this one token. */
-        --mdy-toggle-thumb-size: var(--mdy-comp-switch-selected-handle-size, 24px);
+        --mdy-toggle-thumb-size: var(--mdy-comp-switch-selected-handle-size);
         /* A handle is round by default and a capsule when a theme asks for one — iOS's is 38x24,
            measured from the platform. Stated as two tokens so a theme expresses that by setting
            them, rather than by re-implementing the thumb and losing the travel and the state layer
@@ -183,11 +183,11 @@
         --mdy-toggle-thumb-width: var(--mdy-toggle-thumb-size);
         --mdy-toggle-thumb-height: var(--mdy-toggle-thumb-size);
         /* 24px */
-        --mdy-toggle-thumb-color: var(--mdy-comp-switch-handle-color, var(--mdy-sys-color-outline, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-slate, #94A3B8) 60%)));
-        --mdy-toggle-thumb-color-checked: var(--mdy-comp-switch-selected-handle-color, var(--mdy-sys-color-on-primary, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 95%)));
+        --mdy-toggle-thumb-color: var(--mdy-comp-switch-handle-color);
+        --mdy-toggle-thumb-color-checked: var(--mdy-comp-switch-selected-handle-color);
         --mdy-toggle-thumb-offset: 4px;
         --mdy-toggle-gap: 0.75rem;
-        --mdy-toggle-transition: var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
+        --mdy-toggle-transition: var(--mdy-sys-motion-duration-slow) var(--mdy-sys-motion-easing-standard);
         /* The halo the thumb wears on hover and focus. Sized from the handle rather than fixed, so
            a theme that resizes the knob keeps a halo that fits its track; the colour follows the
            thumb, so it reads as the same control lighting up rather than a second thing arriving. */
@@ -196,23 +196,23 @@
         --mdy-toggle-state-layer-opacity: 0.14;
 
         /* ── Radio ──────────────────────────────────────────────────────────────── */
-        --mdy-radio-size: var(--mdy-comp-radio-icon-size, 20px);
+        --mdy-radio-size: var(--mdy-comp-radio-icon-size);
         /* 20px */
-        --mdy-radio-selected-color: var(--mdy-comp-radio-selected-icon-color, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
-        --mdy-radio-unselected-color: var(--mdy-comp-radio-unselected-icon-color, var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%)));
+        --mdy-radio-selected-color: var(--mdy-comp-radio-selected-icon-color);
+        --mdy-radio-unselected-color: var(--mdy-comp-radio-unselected-icon-color);
 
         /* ── Segmented Button ───────────────────────────────────────────────────── */
-        --mdy-segmented-height: var(--mdy-comp-segmented-button-height, 40px);
+        --mdy-segmented-height: var(--mdy-comp-segmented-button-height);
         /* 40px */
-        --mdy-segmented-border-radius: var(--mdy-comp-segmented-button-shape, var(--mdy-sys-shape-corner-full, 9999px));
+        --mdy-segmented-border-radius: var(--mdy-comp-segmented-button-shape);
         /* 9999px */
-        --mdy-segmented-border-color: var(--mdy-comp-segmented-button-outline-color, var(--mdy-sys-color-outline, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-slate, #94A3B8) 60%)));
-        --mdy-segmented-selected-bg: var(--mdy-comp-segmented-button-selected-container-color, var(--mdy-sys-color-secondary-container, color-mix(in srgb, var(--mdy-sys-color-secondary, var(--mdy-ref-color-violet, #A855F7)), var(--mdy-ref-color-cloud, #F8FAFC) 80%)));
-        --mdy-segmented-selected-color: var(--mdy-comp-segmented-button-selected-label-text-color, var(--mdy-sys-color-on-secondary-container, color-mix(in srgb, var(--mdy-sys-color-secondary, var(--mdy-ref-color-violet, #A855F7)), var(--mdy-ref-color-night, #0E0F16) 80%)));
-        --mdy-segmented-unselected-color: var(--mdy-comp-segmented-button-unselected-label-text-color, var(--mdy-sys-color-on-surface, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-night, #0E0F16) 80%)));
-        --mdy-segmented-font-size: var(--mdy-comp-segmented-button-label-text-font-size, var(--mdy-sys-typescale-label-large-size, 14px));
+        --mdy-segmented-border-color: var(--mdy-comp-segmented-button-outline-color);
+        --mdy-segmented-selected-bg: var(--mdy-comp-segmented-button-selected-container-color);
+        --mdy-segmented-selected-color: var(--mdy-comp-segmented-button-selected-label-text-color);
+        --mdy-segmented-unselected-color: var(--mdy-comp-segmented-button-unselected-label-text-color);
+        --mdy-segmented-font-size: var(--mdy-comp-segmented-button-label-text-font-size);
         /* 14px */
-        --mdy-segmented-font-weight: var(--mdy-comp-segmented-button-label-text-weight, var(--mdy-sys-typescale-label-large-weight, 500));
+        --mdy-segmented-font-weight: var(--mdy-comp-segmented-button-label-text-weight);
         /* 500 */
         --mdy-segmented-btn-bg-selected-hover: color-mix(in srgb, var(--mdy-segmented-selected-bg), var(--mdy-segmented-selected-color) 8%);
         /* The unselected button's hover had no token while the selected one did, so a theme could
@@ -223,23 +223,23 @@
         --mdy-button-radius: var(--mdy-corner-full);
 
         /* ── Filter Chip ────────────────────────────────────────────────────────── */
-        --mdy-chip-height: var(--mdy-comp-filter-chip-container-height, 32px);
+        --mdy-chip-height: var(--mdy-comp-filter-chip-container-height);
         /* 32px */
-        --mdy-chip-border-radius: var(--mdy-comp-filter-chip-container-shape, var(--mdy-sys-shape-corner-small, 8px));
+        --mdy-chip-border-radius: var(--mdy-comp-filter-chip-container-shape);
         /* 8px */
         --mdy-chip-padding: 0 0.75rem;
         --mdy-chip-gap: 0.375rem;
-        --mdy-chip-border: 1px solid var(--mdy-comp-filter-chip-outline-color, var(--mdy-sys-color-outline, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-slate, #94A3B8) 60%)));
+        --mdy-chip-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
         --mdy-chip-bg: transparent;
-        --mdy-chip-color: var(--mdy-comp-filter-chip-label-text-color, var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%)));
-        --mdy-chip-font-size: var(--mdy-sys-typescale-label-large-size, 14px);
+        --mdy-chip-color: var(--mdy-comp-filter-chip-label-text-color);
+        --mdy-chip-font-size: var(--mdy-sys-typescale-label-large-size);
         /* 14px */
-        --mdy-chip-selected-bg: var(--mdy-comp-filter-chip-selected-container-color, var(--mdy-sys-color-secondary-container, color-mix(in srgb, var(--mdy-sys-color-secondary, var(--mdy-ref-color-violet, #A855F7)), var(--mdy-ref-color-cloud, #F8FAFC) 80%)));
-        --mdy-chip-selected-color: var(--mdy-comp-filter-chip-selected-label-text-color, var(--mdy-sys-color-on-secondary-container, color-mix(in srgb, var(--mdy-sys-color-secondary, var(--mdy-ref-color-violet, #A855F7)), var(--mdy-ref-color-night, #0E0F16) 80%)));
-        --mdy-chip-selected-border: 1px solid var(--mdy-comp-filter-chip-outline-color, var(--mdy-sys-color-outline, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-slate, #94A3B8) 60%)));
+        --mdy-chip-selected-bg: var(--mdy-comp-filter-chip-selected-container-color);
+        --mdy-chip-selected-color: var(--mdy-comp-filter-chip-selected-label-text-color);
+        --mdy-chip-selected-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
         --mdy-chip-hover-bg: color-mix(in srgb, var(--mdy-on-surface), transparent 92%);
         --mdy-chip-hover-color: var(--mdy-on-surface);
-        --mdy-chip-hover-border: 1px solid var(--mdy-comp-filter-chip-outline-color, var(--mdy-sys-color-outline, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-slate, #94A3B8) 60%)));
+        --mdy-chip-hover-border: 1px solid var(--mdy-comp-filter-chip-outline-color);
         /* The +/− steppers inside a counter chip. Mixed from `currentColor` — which on those buttons
            is the chip's own label colour — so the tint darkens a light chip and lightens a dark one.
            It was a literal `rgba(255,255,255,0.2)`: white, calibrated for the selected chip alone.
@@ -248,16 +248,16 @@
            control has is the kind of thing a token stops you from writing. */
         --mdy-chip-btn-hover-bg: color-mix(in srgb, currentColor, transparent 88%);
         --mdy-chip-max-width: 11rem;
-        --mdy-chip-transition: var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
+        --mdy-chip-transition: var(--mdy-sys-motion-duration-base) var(--mdy-sys-motion-easing-standard);
 
         /* ── Slider ─────────────────────────────────────────────────────────────── */
-        --mdy-slider-track-height: var(--mdy-comp-slider-active-track-height, 4px);
+        --mdy-slider-track-height: var(--mdy-comp-slider-active-track-height);
         /* 4px */
-        --mdy-slider-thumb-size: var(--mdy-comp-slider-handle-height, 20px);
+        --mdy-slider-thumb-size: var(--mdy-comp-slider-handle-height);
         /* 20px */
-        --mdy-slider-active-color: var(--mdy-comp-slider-active-track-color, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
-        --mdy-slider-inactive-color: var(--mdy-comp-slider-inactive-track-color, var(--mdy-sys-color-secondary-container, color-mix(in srgb, var(--mdy-sys-color-secondary, var(--mdy-ref-color-violet, #A855F7)), var(--mdy-ref-color-cloud, #F8FAFC) 80%)));
-        --mdy-slider-thumb-color: var(--mdy-comp-slider-handle-color, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
+        --mdy-slider-active-color: var(--mdy-comp-slider-active-track-color);
+        --mdy-slider-inactive-color: var(--mdy-comp-slider-inactive-track-color);
+        --mdy-slider-thumb-color: var(--mdy-comp-slider-handle-color);
         /* The handle's elevation and the value readout beside the track. Neither had a token, so a
            theme wanting either had to restate the rule — and the shadow twice, once per vendor
            pseudo-element. The foundation itself draws no shadow, which is what `none` says. */
@@ -272,13 +272,13 @@
            a circle on it. */
 
         /* ── Color Picker ───────────────────────────────────────────────────────── */
-        --mdy-color-swatch-size: var(--mdy-comp-color-picker-swatch-size, 2.5rem);
+        --mdy-color-swatch-size: var(--mdy-comp-color-picker-swatch-size);
         /* 2.5rem */
-        --mdy-color-swatch-radius: var(--mdy-comp-color-picker-swatch-radius, var(--mdy-sys-shape-corner-full, 9999px));
+        --mdy-color-swatch-radius: var(--mdy-comp-color-picker-swatch-radius);
         /* full */
-        --mdy-color-dropdown-radius: var(--mdy-comp-color-picker-dropdown-radius, var(--mdy-sys-shape-corner-medium, 12px));
+        --mdy-color-dropdown-radius: var(--mdy-comp-color-picker-dropdown-radius);
         /* 12px */
-        --mdy-color-dropdown-shadow: var(--mdy-comp-color-picker-dropdown-shadow, 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.3));
+        --mdy-color-dropdown-shadow: var(--mdy-comp-color-picker-dropdown-shadow);
 
         /* ── Spin Button ────────────────────────────────────────────────────────── */
         --mdy-spin-btn-size: 1.5rem;
@@ -309,23 +309,23 @@
         --mdy-file-container-bg: var(--mdy-surface-container);
 
         /* ── Date Picker ────────────────────────────────────────────────────────── */
-        --mdy-datepicker-cell-size: var(--mdy-comp-date-picker-cell-size, 2.5rem);
+        --mdy-datepicker-cell-size: var(--mdy-comp-date-picker-cell-size);
         /* 2.5rem */
-        --mdy-datepicker-cell-font-size: var(--mdy-comp-date-picker-cell-font-size, 0.875rem);
+        --mdy-datepicker-cell-font-size: var(--mdy-comp-date-picker-cell-font-size);
         /* 0.875rem */
-        --mdy-datepicker-popup-padding: var(--mdy-comp-date-picker-popup-padding, 1.25rem);
-        --mdy-datepicker-popup-shadow: var(--mdy-comp-date-picker-popup-shadow, 0 8px 32px 0 rgba(0, 0, 0, 0.18));
-        --mdy-datepicker-popup-bg: var(--mdy-comp-date-picker-popup-bg, var(--mdy-comp-date-picker-modal-container-color, var(--mdy-sys-color-surface-container-high, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 88%))));
-        --mdy-datepicker-modal-bg: var(--mdy-comp-date-picker-modal-container-color, var(--mdy-sys-color-surface-container-high, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 88%)));
-        --mdy-datepicker-modal-radius: var(--mdy-comp-date-picker-modal-container-shape, var(--mdy-sys-shape-corner-extra-large, 28px));
-        --mdy-datepicker-hover-bg: var(--mdy-comp-date-picker-cell-hover-bg, var(--mdy-sys-color-surface-container-highest, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 80%)));
-        --mdy-datepicker-disabled-opacity: var(--mdy-comp-date-picker-cell-disabled-opacity, 0.25);
-        --mdy-datepicker-today-color: var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF));
+        --mdy-datepicker-popup-padding: var(--mdy-comp-date-picker-popup-padding);
+        --mdy-datepicker-popup-shadow: var(--mdy-comp-date-picker-popup-shadow);
+        --mdy-datepicker-popup-bg: var(--mdy-comp-date-picker-popup-bg);
+        --mdy-datepicker-modal-bg: var(--mdy-comp-date-picker-modal-container-color);
+        --mdy-datepicker-modal-radius: var(--mdy-comp-date-picker-modal-container-shape);
+        --mdy-datepicker-hover-bg: var(--mdy-comp-date-picker-cell-hover-bg);
+        --mdy-datepicker-disabled-opacity: var(--mdy-comp-date-picker-cell-disabled-opacity);
+        --mdy-datepicker-today-color: var(--mdy-sys-color-primary);
 
         /* ── Date Range ─────────────────────────────────────────────────────────── */
-        --mdy-daterange-in-range-bg: var(--mdy-comp-date-picker-in-range-bg, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), #fff 75%));
-        --mdy-daterange-endpoint-bg: var(--mdy-comp-date-picker-endpoint-bg, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
-        --mdy-daterange-endpoint-color: var(--mdy-comp-date-picker-endpoint-color, var(--mdy-sys-color-on-primary, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 95%)));
+        --mdy-daterange-in-range-bg: var(--mdy-comp-date-picker-in-range-bg);
+        --mdy-daterange-endpoint-bg: var(--mdy-comp-date-picker-endpoint-bg);
+        --mdy-daterange-endpoint-color: var(--mdy-comp-date-picker-endpoint-color);
         --mdy-daterange-input-min-width: 8ch;
         --mdy-daterange-input-padding: 0 0.5rem;
         --mdy-daterange-sep-padding: 0 0.25rem;
@@ -372,7 +372,7 @@
         color: var(--mdy-input-icon-color);
         background: transparent;
         border: none;
-        transition: background var(--mdy-sys-motion-duration-base, 0.15s), color var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: background var(--mdy-sys-motion-duration-base), color var(--mdy-sys-motion-duration-base);
         font-size: 1em;
         line-height: 1;
         box-shadow: none;
@@ -498,7 +498,7 @@
         width: 3rem;
         cursor: pointer;
         border-radius: var(--mdy-corner-extra-small);
-        transition: background var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: background var(--mdy-sys-motion-duration-base);
     }
 
     .mdy-colors__primary-picker:hover:not(:disabled) {
@@ -524,7 +524,7 @@
         border-radius: var(--mdy-color-swatch-radius);
         border: 1px solid var(--mdy-outline-variant);
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        transition: transform var(--mdy-sys-motion-duration-slow, 0.2s);
+        transition: transform var(--mdy-sys-motion-duration-slow);
         pointer-events: none;
     }
 
@@ -547,7 +547,7 @@
         padding: 0 0.75rem 0 0.5rem;
         margin: 0 -0.25rem 0 0;
         border-radius: 0 var(--mdy-input-border-radius) var(--mdy-input-border-radius) 0;
-        transition: background var(--mdy-sys-motion-duration-base, 0.15s), color var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: background var(--mdy-sys-motion-duration-base), color var(--mdy-sys-motion-duration-base);
     }
 
     .mdy-colors__toggle-area:hover:not(:disabled) {
@@ -627,7 +627,7 @@
         border: 2px solid transparent;
         cursor: pointer;
         padding: 0;
-        transition: all var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
+        transition: all var(--mdy-sys-motion-duration-slow) var(--mdy-sys-motion-easing-standard);
         background-color: var(--color, transparent);
         outline: 2px solid transparent;
         outline-offset: 2px;
@@ -675,7 +675,7 @@
         gap: var(--mdy-renderer-gap);
         margin-bottom: var(--mdy-renderer-margin-bottom);
         /* Density-aware height: density 0 = 56px, density -4 = 40px (same scale as floating label) */
-        --mdy-input-height: calc(3.5rem + (var(--mdy-floating-density, 0) * 0.25rem));
+        --mdy-input-height: calc(3.5rem + (var(--mdy-floating-density) * 0.25rem));
         /* One line of validation feedback is reserved up front, and the error list is painted into
            that band rather than laid out in it. A message appearing on blur must not grow the
            field and push the rest of the form down — validating must never move the control the
@@ -710,7 +710,7 @@
         border-radius: var(--mdy-input-border-radius) var(--mdy-input-border-radius) 0 0;
         /* Bottom indicator via box-shadow — never causes layout shift */
         box-shadow: inset 0 -1px 0 0 var(--mdy-outline-variant);
-        transition: background-color var(--mdy-sys-motion-duration-slow, 0.2s), box-shadow var(--mdy-sys-motion-duration-slow, 0.2s);
+        transition: background-color var(--mdy-sys-motion-duration-slow), box-shadow var(--mdy-sys-motion-duration-slow);
     }
 
     /* For textareas, align decorators to the top */
@@ -770,7 +770,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: color var(--mdy-sys-motion-duration-slow, 0.2s);
+        transition: color var(--mdy-sys-motion-duration-slow);
     }
 
     .mdy-input-wrapper:focus-within .mdy-input-prefix,
@@ -860,7 +860,7 @@
         box-shadow: inset 0 -1px 0 0 var(--mdy-outline-variant);
         font-size: var(--mdy-input-font-size);
         color: var(--mdy-input-color);
-        transition: background-color var(--mdy-sys-motion-duration-slow, 0.2s), box-shadow var(--mdy-sys-motion-duration-slow, 0.2s);
+        transition: background-color var(--mdy-sys-motion-duration-slow), box-shadow var(--mdy-sys-motion-duration-slow);
         outline: none;
         width: 100%;
     }
@@ -950,7 +950,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: transform var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
+        transition: transform var(--mdy-sys-motion-duration-slow) var(--mdy-sys-motion-easing-standard);
     }
 
     .mdy-renderer--touched .mdy-input-wrapper:has(input[aria-invalid="true"]),
@@ -1201,7 +1201,7 @@
         border: 2px solid var(--mdy-radio-unselected-color);
         border-radius: 50%;
         background: transparent;
-        transition: border-color var(--mdy-sys-motion-duration-base, 0.15s), background var(--mdy-sys-motion-duration-base, 0.15s), box-shadow var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: border-color var(--mdy-sys-motion-duration-base), background var(--mdy-sys-motion-duration-base), box-shadow var(--mdy-sys-motion-duration-base);
         position: relative;
         flex-shrink: 0;
     }
@@ -1217,7 +1217,7 @@
         background: var(--mdy-on-primary);
         border-radius: 50%;
         transform: translate(-50%, -50%) scale(0);
-        transition: transform var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: transform var(--mdy-sys-motion-duration-base);
     }
 
     .mdy-radio-item:hover .mdy-radio-circle {
@@ -1268,8 +1268,8 @@
         /* The split track: filled up to the handle, empty after it. Composed here, on the element
            that carries `--mdy-slider-fill-pct`, so the stop is the value the renderer just wrote. */
         background: linear-gradient(to right,
-                var(--mdy-slider-active-color) var(--mdy-slider-fill-pct, 0%),
-                var(--mdy-slider-inactive-color) var(--mdy-slider-fill-pct, 0%));
+                var(--mdy-slider-active-color) var(--mdy-slider-fill-pct),
+                var(--mdy-slider-inactive-color) var(--mdy-slider-fill-pct));
         outline: none;
         cursor: pointer;
         border-radius: var(--mdy-corner-full);
@@ -1284,7 +1284,7 @@
         box-shadow: var(--mdy-slider-thumb-shadow);
         border-radius: 50%;
         cursor: pointer;
-        transition: transform var(--mdy-sys-motion-duration-fast, 0.1s) ease;
+        transition: transform var(--mdy-sys-motion-duration-fast) ease;
     }
 
     .mdy-slider::-moz-range-thumb {
@@ -1301,7 +1301,7 @@
         color: inherit;
         /* Follows label color */
         margin-left: 0.125rem;
-        transition: color var(--mdy-sys-motion-duration-slow, 0.2s) ease;
+        transition: color var(--mdy-sys-motion-duration-slow) ease;
     }
 
     .mdy-label--has-error .mdy-label__required {
@@ -1327,7 +1327,7 @@
         border: var(--mdy-file-container-border);
         border-radius: var(--mdy-file-container-radius);
         padding: 1.5rem;
-        transition: border-color var(--mdy-sys-motion-duration-slow, 0.2s), background var(--mdy-sys-motion-duration-slow, 0.2s);
+        transition: border-color var(--mdy-sys-motion-duration-slow), background var(--mdy-sys-motion-duration-slow);
         background: var(--mdy-file-container-bg);
     }
 
@@ -1369,7 +1369,7 @@
         font-size: 0.875rem;
         font-weight: 500;
         height: 2.5rem;
-        transition: opacity var(--mdy-sys-motion-duration-slow, 0.2s);
+        transition: opacity var(--mdy-sys-motion-duration-slow);
     }
 
     .mdy-button:hover:not(:disabled) {
@@ -1471,8 +1471,8 @@
         /* M3: 14px */
         color: var(--mdy-segmented-unselected-color);
         /* No padding in transition — internal shift on selection is instant, not animated */
-        transition: background var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1)),
-            color var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
+        transition: background var(--mdy-sys-motion-duration-base) var(--mdy-sys-motion-easing-standard),
+            color var(--mdy-sys-motion-duration-base) var(--mdy-sys-motion-easing-standard);
         white-space: nowrap;
         position: relative;
         user-select: none;
@@ -1561,7 +1561,7 @@
         width: 1rem;
         height: 1rem;
         flex-shrink: 0;
-        animation: mdy-segmented-check-pop 0.25s var(--mdy-sys-motion-easing-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275));
+        animation: mdy-segmented-check-pop 0.25s var(--mdy-sys-motion-easing-spring);
     }
 
     @keyframes mdy-segmented-check-pop {
@@ -1597,7 +1597,7 @@
         padding: 0;
         color: inherit;
         border-radius: 50%;
-        transition: background var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: background var(--mdy-sys-motion-duration-base);
     }
 
     .mdy-multiselect__search-btn:hover:not(:disabled) {
@@ -1646,7 +1646,7 @@
         cursor: pointer;
         user-select: none;
         white-space: nowrap;
-        transition: background var(--mdy-sys-motion-duration-base, 0.15s), color var(--mdy-sys-motion-duration-base, 0.15s), border-color var(--mdy-sys-motion-duration-base, 0.15s), box-shadow var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: background var(--mdy-sys-motion-duration-base), color var(--mdy-sys-motion-duration-base), border-color var(--mdy-sys-motion-duration-base), box-shadow var(--mdy-sys-motion-duration-base);
     }
 
     .mdy-chip--centered {
@@ -1768,7 +1768,7 @@
         cursor: pointer;
         font-family: inherit;
         padding: 0;
-        transition: background var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: background var(--mdy-sys-motion-duration-base);
     }
 
     .mdy-chip__btn:hover:not(:disabled) {
@@ -1814,7 +1814,7 @@
         border-radius: var(--mdy-select-dropdown-border-radius);
         box-shadow: var(--mdy-select-dropdown-shadow);
         /* max-height frozen at open time via --mdy-overlay-max-height (set on host) */
-        max-height: var(--mdy-overlay-max-height, 50vh);
+        max-height: var(--mdy-overlay-max-height);
         overflow: hidden;
     }
 
@@ -1950,7 +1950,7 @@
         width: 1rem;
         height: 1rem;
         color: var(--mdy-select-arrow-color);
-        transition: transform var(--mdy-sys-motion-duration-slow, 0.2s);
+        transition: transform var(--mdy-sys-motion-duration-slow);
         flex-shrink: 0;
         display: flex;
         align-items: center;
@@ -2039,7 +2039,7 @@
         font-size: var(--mdy-input-font-size);
         line-height: var(--mdy-input-line-height);
         cursor: pointer;
-        transition: background var(--mdy-sys-motion-duration-fast, 0.1s);
+        transition: background var(--mdy-sys-motion-duration-fast);
     }
 
     .mdy-select__option--active {
@@ -2088,7 +2088,7 @@
         white-space: nowrap;
         z-index: var(--mdy-z-overlay);
         pointer-events: none;
-        transition: opacity var(--mdy-sys-motion-duration-fast, 0.1s) ease-out, transform var(--mdy-sys-motion-duration-fast, 0.1s) ease-out, visibility var(--mdy-sys-motion-duration-fast, 0.1s);
+        transition: opacity var(--mdy-sys-motion-duration-fast) ease-out, transform var(--mdy-sys-motion-duration-fast) ease-out, visibility var(--mdy-sys-motion-duration-fast);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
@@ -2139,32 +2139,32 @@
         flex: 1 1 0%;
         min-width: 10.5rem;
         max-width: 100%;
-        padding: var(--mdy-comp-date-picker-input-padding, 0.75rem 1rem);
+        padding: var(--mdy-comp-date-picker-input-padding);
         border: none;
         border-radius: 0;
-        font-size: var(--mdy-comp-date-picker-input-font-size, 1rem);
-        font-family: var(--mdy-comp-date-picker-input-font-family, inherit);
-        color: var(--mdy-comp-date-picker-input-color, var(--mdy-sys-color-on-surface, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-night, #0E0F16) 80%)));
+        font-size: var(--mdy-comp-date-picker-input-font-size);
+        font-family: var(--mdy-comp-date-picker-input-font-family);
+        color: var(--mdy-comp-date-picker-input-color);
         outline: none;
         background: transparent;
-        transition: border-color var(--mdy-sys-motion-duration-base, 0.15s), box-shadow var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: border-color var(--mdy-sys-motion-duration-base), box-shadow var(--mdy-sys-motion-duration-base);
     }
 
 
     .mdy-datepicker__input:focus {
-        border-color: var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF));
-        box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), #fff 60%);
+        border-color: var(--mdy-sys-color-primary);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-sys-color-primary), #fff 60%);
         z-index: 1;
     }
 
 
     .mdy-renderer--touched .mdy-datepicker__input[aria-invalid="true"] {
-        border-color: var(--mdy-sys-color-error, var(--mdy-ref-color-error, #B3261E));
+        border-color: var(--mdy-sys-color-error);
     }
 
 
     .mdy-datepicker__input::placeholder {
-        color: var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%));
+        color: var(--mdy-sys-color-on-surface-variant);
     }
 
 
@@ -2175,9 +2175,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%));
+        color: var(--mdy-sys-color-on-surface-variant);
         border-radius: 50%;
-        transition: background-color var(--mdy-sys-motion-duration-slow, 0.2s), color var(--mdy-sys-motion-duration-slow, 0.2s);
+        transition: background-color var(--mdy-sys-motion-duration-slow), color var(--mdy-sys-motion-duration-slow);
         padding: 0;
         width: 32px;
         height: 32px;
@@ -2193,7 +2193,7 @@
 
     .mdy-datepicker__toggle:hover:not(:disabled),
     .mdy-timepicker__toggle:hover:not(:disabled) {
-        background-color: var(--mdy-sys-color-surface-container-highest, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 80%));
+        background-color: var(--mdy-sys-color-surface-container-highest);
     }
 
     /* Trigger geometry for the pickers. It lived only in the Angular renderer's component styles,
@@ -2220,7 +2220,7 @@
         background: none;
         color: inherit;
         cursor: pointer;
-        transition: background-color var(--mdy-sys-motion-duration-slow, 0.2s), color var(--mdy-sys-motion-duration-slow, 0.2s);
+        transition: background-color var(--mdy-sys-motion-duration-slow), color var(--mdy-sys-motion-duration-slow);
     }
 
     .mdy-timepicker__toggle:focus-visible {
@@ -2282,11 +2282,11 @@
      * `anchorOverlay` measured — `absolute` at `top: 100%` was a docked fallback that stopped being
      * reachable when every popup moved to the top layer. */
     .mdy-datepicker__popup {
-        padding: var(--mdy-comp-date-picker-popup-padding, 1.25rem);
-        background: var(--mdy-comp-date-picker-popup-bg, var(--mdy-comp-date-picker-modal-container-color, var(--mdy-sys-color-surface-container-high, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 88%))));
+        padding: var(--mdy-comp-date-picker-popup-padding);
+        background: var(--mdy-comp-date-picker-popup-bg);
         border: none;
-        border-radius: var(--mdy-comp-date-picker-popup-radius, var(--mdy-comp-date-picker-modal-container-shape, var(--mdy-sys-shape-corner-extra-large, 28px)));
-        box-shadow: var(--mdy-comp-date-picker-popup-shadow, 0 8px 32px 0 rgba(0, 0, 0, 0.18));
+        border-radius: var(--mdy-comp-date-picker-popup-radius);
+        box-shadow: var(--mdy-comp-date-picker-popup-shadow);
         max-width: 95vw;
         max-height: 90vh;
         overflow-y: auto;
@@ -2322,15 +2322,15 @@
         --tp-font-family: var(--mdy-font-family, inherit);
         --tp-font-weight: var(--mdy-tp-font-weight, 400);
         --tp-period-font-weight: var(--mdy-tp-period-font-weight, 500);
-        --tp-dial-size: var(--mdy-comp-time-picker-clock-dial-size, 256px);
+        --tp-dial-size: var(--mdy-comp-time-picker-clock-dial-size);
         --tp-num-size: 40px;
         --tp-hand-length: calc(var(--tp-dial-size) / 2 - (var(--tp-num-size) / 2) - 8px);
-        --tp-seg-width: var(--mdy-comp-time-picker-input-segment-width, 96px);
-        --tp-seg-height: var(--mdy-comp-time-picker-input-segment-height, 80px);
+        --tp-seg-width: var(--mdy-comp-time-picker-input-segment-width);
+        --tp-seg-height: var(--mdy-comp-time-picker-input-segment-height);
 
-        background-color: var(--mdy-comp-time-picker-container-color, var(--tp-surface));
+        background-color: var(--mdy-comp-time-picker-container-color);
         border: none;
-        border-radius: var(--mdy-comp-time-picker-container-shape, var(--tp-border-radius));
+        border-radius: var(--mdy-comp-time-picker-container-shape);
         box-shadow: var(--mdy-datepicker-popup-shadow, var(--mdy-select-dropdown-shadow, 0 4px 12px rgba(0, 0, 0, 0.12)));
         padding: 24px;
         display: flex;
@@ -2372,16 +2372,16 @@
     .mdy-timepicker-segment-input {
         width: var(--tp-seg-width) !important;
         height: var(--tp-seg-height) !important;
-        background-color: var(--mdy-comp-time-picker-input-container-color, var(--tp-surface-variant)) !important;
+        background-color: var(--mdy-comp-time-picker-input-container-color) !important;
         border: 1.5px solid transparent !important;
-        border-radius: var(--mdy-comp-time-picker-input-container-shape, var(--tp-border-radius)) !important;
+        border-radius: var(--mdy-comp-time-picker-input-container-shape) !important;
         font-size: 45px !important;
         font-weight: var(--tp-font-weight) !important;
         text-align: center !important;
         color: var(--tp-on-primary-container) !important;
         outline: none !important;
         box-shadow: none !important;
-        transition: background-color var(--mdy-sys-motion-duration-base, 0.15s), border-color var(--mdy-sys-motion-duration-base, 0.15s), color var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: background-color var(--mdy-sys-motion-duration-base), border-color var(--mdy-sys-motion-duration-base), color var(--mdy-sys-motion-duration-base);
         font-family: inherit;
         display: flex;
         align-items: center;
@@ -2401,7 +2401,7 @@
     }
 
     .mdy-timepicker-segment-input:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(--mdy-comp-time-picker-input-container-color, var(--tp-surface-variant)), var(--mdy-on-surface, #000) 8%) !important;
+        background-color: color-mix(in srgb, var(--mdy-comp-time-picker-input-container-color), var(--mdy-on-surface, #000) 8%) !important;
     }
 
     .mdy-timepicker-segment--active .mdy-timepicker-segment-input {
@@ -2431,8 +2431,8 @@
     .mdy-timepicker-period-toggle {
         display: flex;
         flex-direction: column;
-        border: 1.5px solid var(--mdy-comp-time-picker-period-outline-color, var(--tp-outline));
-        border-radius: var(--mdy-comp-time-picker-input-container-shape, var(--tp-border-radius));
+        border: 1.5px solid var(--mdy-comp-time-picker-period-outline-color);
+        border-radius: var(--mdy-comp-time-picker-input-container-shape);
         overflow: hidden;
         height: var(--tp-seg-height);
     }
@@ -2454,11 +2454,11 @@
         font-family: inherit;
         cursor: pointer;
         color: var(--mdy-on-surface-variant, #3f3f46);
-        transition: background-color var(--mdy-sys-motion-duration-base, 0.15s), color var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: background-color var(--mdy-sys-motion-duration-base), color var(--mdy-sys-motion-duration-base);
     }
 
     .mdy-timepicker-period-btn:first-child {
-        border-bottom: 1.5px solid var(--mdy-comp-time-picker-period-outline-color, var(--tp-outline));
+        border-bottom: 1.5px solid var(--mdy-comp-time-picker-period-outline-color);
     }
 
     .mdy-timepicker-period-btn--selected {
@@ -2479,7 +2479,7 @@
     .mdy-timepicker-dial {
         width: var(--tp-dial-size);
         height: var(--tp-dial-size);
-        background-color: var(--mdy-comp-time-picker-clock-dial-container-color, var(--tp-surface-variant));
+        background-color: var(--mdy-comp-time-picker-clock-dial-container-color);
         border-radius: 50%;
         position: relative;
         display: flex;
@@ -2512,7 +2512,7 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(calc(var(--index) * 30deg)) translateY(calc(var(--tp-hand-length) * -1)) rotate(calc(var(--index) * -30deg));
-        transition: color var(--mdy-sys-motion-duration-fast, 0.1s);
+        transition: color var(--mdy-sys-motion-duration-fast);
     }
 
     /* The inner ring of a 24-hour face.
@@ -2589,7 +2589,7 @@
         cursor: pointer;
         padding: 6px;
         border-radius: 50%;
-        transition: background-color var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: background-color var(--mdy-sys-motion-duration-base);
         width: 32px;
         height: 32px;
     }
@@ -2613,7 +2613,7 @@
         border-radius: var(--tp-border-radius);
         cursor: pointer;
         letter-spacing: 0.04em;
-        transition: background-color var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: background-color var(--mdy-sys-motion-duration-base);
     }
 
     .mdy-timepicker-action-btn:hover {
@@ -2638,11 +2638,11 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: var(--mdy-comp-date-picker-header-gap, 0.5rem);
-        padding: var(--mdy-comp-date-picker-header-padding, 0.5rem 1rem 0.25rem 1rem);
-        color: var(--mdy-comp-date-picker-header-color, var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%)));
-        font-size: var(--mdy-comp-date-picker-header-font-size, 1rem);
-        font-weight: var(--mdy-comp-date-picker-header-font-weight, 500);
+        gap: var(--mdy-comp-date-picker-header-gap);
+        padding: var(--mdy-comp-date-picker-header-padding);
+        color: var(--mdy-comp-date-picker-header-color);
+        font-size: var(--mdy-comp-date-picker-header-font-size);
+        font-weight: var(--mdy-comp-date-picker-header-font-weight);
     }
 
 
@@ -2654,20 +2654,20 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: var(--mdy-comp-date-picker-nav-btn-size, 2rem);
-        height: var(--mdy-comp-date-picker-nav-btn-size, 2rem);
+        width: var(--mdy-comp-date-picker-nav-btn-size);
+        height: var(--mdy-comp-date-picker-nav-btn-size);
         border: none;
-        border-radius: var(--mdy-comp-date-picker-nav-btn-radius, 50%);
+        border-radius: var(--mdy-comp-date-picker-nav-btn-radius);
         background: transparent;
         cursor: pointer;
         color: inherit;
         padding: 0;
-        transition: background var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: background var(--mdy-sys-motion-duration-base);
     }
 
 
     .mdy-datepicker__nav-btn:hover {
-        background: var(--mdy-comp-date-picker-nav-btn-hover-bg, var(--mdy-sys-color-surface-container-highest, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 80%)));
+        background: var(--mdy-comp-date-picker-nav-btn-hover-bg);
     }
 
     .mdy-datepicker__header-label {
@@ -2690,17 +2690,17 @@
         background: transparent;
         border: none;
         border-radius: 100px;
-        color: var(--mdy-sys-color-on-surface, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-night, #0E0F16) 80%));
+        color: var(--mdy-sys-color-on-surface);
         font-family: inherit;
-        font-size: var(--mdy-comp-date-picker-title-font-size, 0.875rem);
-        font-weight: var(--mdy-comp-date-picker-title-font-weight, 600);
+        font-size: var(--mdy-comp-date-picker-title-font-size);
+        font-weight: var(--mdy-comp-date-picker-title-font-weight);
         cursor: pointer;
-        transition: background var(--mdy-sys-motion-duration-fast, 0.1s);
+        transition: background var(--mdy-sys-motion-duration-fast);
     }
 
 
     .mdy-datepicker__view-toggle:hover {
-        background: var(--mdy-comp-date-picker-cell-hover-bg, var(--mdy-sys-color-surface-container-highest, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 80%)));
+        background: var(--mdy-comp-date-picker-cell-hover-bg);
     }
 
     .mdy-datepicker__view-icon {
@@ -2712,9 +2712,9 @@
 
 
     .mdy-datepicker__title {
-        color: var(--mdy-comp-date-picker-title-color, var(--mdy-sys-color-on-surface, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-night, #0E0F16) 80%)));
-        font-weight: var(--mdy-comp-date-picker-title-font-weight, 600);
-        font-size: var(--mdy-comp-date-picker-title-font-size, 0.875rem);
+        color: var(--mdy-comp-date-picker-title-color);
+        font-weight: var(--mdy-comp-date-picker-title-font-weight);
+        font-size: var(--mdy-comp-date-picker-title-font-size);
         user-select: none;
     }
 
@@ -2746,10 +2746,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: var(--mdy-comp-date-picker-cell-size, 2.5rem);
-        font-size: var(--mdy-comp-date-picker-weekday-font-size, 0.75rem);
-        font-weight: var(--mdy-comp-date-picker-weekday-font-weight, 500);
-        color: var(--mdy-comp-date-picker-weekday-color, var(--mdy-sys-color-on-surface-variant, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), color-mix(in srgb, var(--mdy-ref-color-night, #0E0F16), var(--mdy-ref-color-slate, #94A3B8) 45%) 60%)));
+        height: var(--mdy-comp-date-picker-cell-size);
+        font-size: var(--mdy-comp-date-picker-weekday-font-size);
+        font-weight: var(--mdy-comp-date-picker-weekday-font-weight);
+        color: var(--mdy-comp-date-picker-weekday-color);
         user-select: none;
     }
 
@@ -2764,55 +2764,55 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: var(--mdy-comp-date-picker-cell-size, 2.5rem);
-        height: var(--mdy-comp-date-picker-cell-size, 2.5rem);
-        border-radius: var(--mdy-comp-date-picker-cell-border-radius, 50%);
-        font-size: var(--mdy-comp-date-picker-cell-font-size, 0.875rem);
-        font-family: var(--mdy-comp-date-picker-cell-font-family, inherit);
-        font-weight: var(--mdy-comp-date-picker-cell-font-weight, 400);
-        color: var(--mdy-comp-date-picker-cell-color, var(--mdy-sys-color-on-surface, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-night, #0E0F16) 80%)));
+        width: var(--mdy-comp-date-picker-cell-size);
+        height: var(--mdy-comp-date-picker-cell-size);
+        border-radius: var(--mdy-comp-date-picker-cell-border-radius);
+        font-size: var(--mdy-comp-date-picker-cell-font-size);
+        font-family: var(--mdy-comp-date-picker-cell-font-family);
+        font-weight: var(--mdy-comp-date-picker-cell-font-weight);
+        color: var(--mdy-comp-date-picker-cell-color);
         cursor: pointer;
         user-select: none;
-        transition: background var(--mdy-sys-motion-duration-fast, 0.1s), color var(--mdy-sys-motion-duration-fast, 0.1s);
+        transition: background var(--mdy-sys-motion-duration-fast), color var(--mdy-sys-motion-duration-fast);
         outline: none;
         box-shadow: none;
         border: none;
     }
 
     .mdy-datepicker__cell:hover:not(.mdy-datepicker__cell--disabled):not(.mdy-datepicker__cell--selected) {
-        background: var(--mdy-comp-date-picker-cell-hover-bg, var(--mdy-sys-color-surface-container-highest, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 80%)));
+        background: var(--mdy-comp-date-picker-cell-hover-bg);
     }
 
     .mdy-datepicker__cell--outside {
-        opacity: var(--mdy-comp-date-picker-cell-outside-opacity, 0.5);
+        opacity: var(--mdy-comp-date-picker-cell-outside-opacity);
     }
 
 
     .mdy-datepicker__cell--today:not(.mdy-datepicker__cell--selected) {
-        outline: var(--mdy-comp-date-picker-cell-today-outline, 2px solid var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
+        outline: var(--mdy-comp-date-picker-cell-today-outline);
         outline-offset: -2px;
         box-shadow: none;
     }
 
     .mdy-datepicker__cell--selected {
-        background: var(--mdy-comp-date-picker-cell-selected-bg, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
-        color: var(--mdy-comp-date-picker-cell-selected-color, var(--mdy-sys-color-on-primary, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 95%)));
+        background: var(--mdy-comp-date-picker-cell-selected-bg);
+        color: var(--mdy-comp-date-picker-cell-selected-color);
         font-weight: 600;
         box-shadow: none;
         outline: none;
-        border-radius: var(--mdy-comp-date-picker-cell-border-radius, 50%);
+        border-radius: var(--mdy-comp-date-picker-cell-border-radius);
         border: none;
     }
 
 
     .mdy-datepicker__cell--focused:not(.mdy-datepicker__cell--selected) {
-        background: var(--mdy-comp-date-picker-cell-hover-bg, var(--mdy-sys-color-surface-container-highest, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 80%)));
-        outline: var(--mdy-comp-date-picker-cell-focus-outline, 2px solid var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
+        background: var(--mdy-comp-date-picker-cell-hover-bg);
+        outline: var(--mdy-comp-date-picker-cell-focus-outline);
         outline-offset: -2px;
     }
 
     .mdy-datepicker__cell--disabled {
-        opacity: var(--mdy-comp-date-picker-cell-disabled-opacity, 0.25);
+        opacity: var(--mdy-comp-date-picker-cell-disabled-opacity);
         cursor: not-allowed;
     }
 
@@ -2828,7 +2828,7 @@
 
     /* ── In-range band (between endpoints) ──────────────────────────────────── */
     .mdy-datepicker__cell--in-range {
-        background: var(--mdy-comp-date-picker-in-range-bg, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), #fff 75%));
+        background: var(--mdy-comp-date-picker-in-range-bg);
         border-radius: 0;
         outline: none;
         box-shadow: none;
@@ -2837,7 +2837,7 @@
 
     /* Today inside a range: restore ring without breaking the band */
     .mdy-datepicker__cell--today.mdy-datepicker__cell--in-range {
-        outline: var(--mdy-comp-date-picker-cell-today-outline, 2px solid var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
+        outline: var(--mdy-comp-date-picker-cell-today-outline);
         outline-offset: -2px;
     }
 
@@ -2847,11 +2847,11 @@
     .mdy-datepicker__cell--range-end {
         position: relative;
         z-index: 1;
-        color: var(--mdy-comp-date-picker-endpoint-color, var(--mdy-sys-color-on-primary, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 95%)));
+        color: var(--mdy-comp-date-picker-endpoint-color);
         font-weight: 600;
-        background: var(--mdy-comp-date-picker-endpoint-bg, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
-        border-radius: var(--mdy-comp-date-picker-cell-border-radius, 50%);
-        outline: var(--mdy-comp-date-picker-cell-focus-outline, 2px solid var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
+        background: var(--mdy-comp-date-picker-endpoint-bg);
+        border-radius: var(--mdy-comp-date-picker-cell-border-radius);
+        outline: var(--mdy-comp-date-picker-cell-focus-outline);
         outline-offset: -2px;
         box-shadow: none;
         border: none;
@@ -2897,7 +2897,7 @@
     .mdy-daterange__group {
         display: flex;
         align-items: stretch;
-        transition: border-color var(--mdy-sys-motion-duration-base, 0.15s), box-shadow var(--mdy-sys-motion-duration-base, 0.15s);
+        transition: border-color var(--mdy-sys-motion-duration-base), box-shadow var(--mdy-sys-motion-duration-base);
     }
 
     /* Container-level focus ring instead of per-input */
@@ -2988,7 +2988,7 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 0.5rem;
-        padding: var(--mdy-comp-date-picker-popup-padding, 1.25rem);
+        padding: var(--mdy-comp-date-picker-popup-padding);
     }
 
     .mdy-datepicker__year-picker {
@@ -3011,7 +3011,7 @@
         font-family: inherit;
         font-size: var(--mdy-datepicker-cell-font-size, 0.875rem);
         cursor: pointer;
-        transition: background var(--mdy-sys-motion-duration-fast, 0.1s), color var(--mdy-sys-motion-duration-fast, 0.1s);
+        transition: background var(--mdy-sys-motion-duration-fast), color var(--mdy-sys-motion-duration-fast);
         outline: none;
     }
 
@@ -3211,13 +3211,13 @@
            `--mdy-overlay-*`. Docked popups fall back to sitting under their anchor. A theme must
            never set these: positioning an overlay is structure, and a theme that did it would be
            deciding whether a popup lands on its control. */
-        inset-block-start: var(--mdy-overlay-top, calc(100% + 0.375rem));
-        inset-block-end: var(--mdy-overlay-bottom, auto);
-        inset-inline-start: var(--mdy-overlay-left, 0);
-        inset-inline-end: var(--mdy-overlay-right, auto);
+        inset-block-start: var(--mdy-overlay-top);
+        inset-block-end: var(--mdy-overlay-bottom);
+        inset-inline-start: var(--mdy-overlay-left);
+        inset-inline-end: var(--mdy-overlay-right);
         width: var(--mdy-overlay-width, auto);
         margin: 0;
-        max-height: var(--mdy-overlay-max-height, 50vh);
+        max-height: var(--mdy-overlay-max-height);
         /* The room `anchorOverlay` measured on the side the popup hangs from. A popup wider than
            its own space would show half off the screen, and a content-sized one has no width to
            clamp it — so the ceiling is stated even when the width is not. */
@@ -3242,7 +3242,7 @@
         color: var(--mdy-overlay-content-color, var(--mdy-on-surface));
         border: var(--mdy-overlay-outline-width, 1px) solid
             var(--mdy-overlay-outline-color, var(--mdy-outline-variant));
-        border-radius: var(--mdy-overlay-shape, var(--mdy-sys-shape-corner-medium, 12px));
+        border-radius: var(--mdy-overlay-shape, var(--mdy-sys-shape-corner-medium));
         box-shadow: var(--mdy-overlay-shadow, var(--mdy-shadow-depth-3));
         padding: var(--mdy-overlay-padding, 0.375rem);
         /* One open and close for every popup in the catalog, whatever opened it.
@@ -3258,9 +3258,9 @@
            the way in. The blanket `prefers-reduced-motion` rule below already covers this. */
         opacity: 1;
         transition:
-            opacity var(--mdy-sys-motion-duration-fast, 0.1s) var(--mdy-sys-motion-easing-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)),
-            display var(--mdy-sys-motion-duration-fast, 0.1s) allow-discrete,
-            overlay var(--mdy-sys-motion-duration-fast, 0.1s) allow-discrete;
+            opacity var(--mdy-sys-motion-duration-fast) var(--mdy-sys-motion-easing-decelerate),
+            display var(--mdy-sys-motion-duration-fast) allow-discrete,
+            overlay var(--mdy-sys-motion-duration-fast) allow-discrete;
     }
 
     /* A popup in the top layer.
@@ -3389,20 +3389,20 @@
     .mdy-popup.mdy-overlay,
     .mdy-overlay {
         position: fixed;
-        top: var(--mdy-overlay-top, auto);
-        bottom: var(--mdy-overlay-bottom, auto);
-        left: var(--mdy-overlay-left, auto);
-        right: var(--mdy-overlay-right, auto);
+        top: var(--mdy-overlay-top);
+        bottom: var(--mdy-overlay-bottom);
+        left: var(--mdy-overlay-left);
+        right: var(--mdy-overlay-right);
         width: var(--mdy-overlay-width, auto);
         max-width: var(--mdy-overlay-max-width, none);
         /* `anchorOverlay` centres a modal placement with a translation; docked placements set it
            to `none`, so one rule serves both. */
         transform: var(--mdy-overlay-transform, none);
         z-index: var(--mdy-overlay-z-index, var(--mdy-z-portal));
-        inset-block-start: var(--mdy-overlay-top, auto);
-        inset-block-end: var(--mdy-overlay-bottom, auto);
-        inset-inline-start: var(--mdy-overlay-left, auto);
-        inset-inline-end: var(--mdy-overlay-right, auto);
+        inset-block-start: var(--mdy-overlay-top);
+        inset-block-end: var(--mdy-overlay-bottom);
+        inset-inline-start: var(--mdy-overlay-left);
+        inset-inline-end: var(--mdy-overlay-right);
     }
 
     /* Overlays are shown by removing `hidden`; without this a theme's `display` would beat the

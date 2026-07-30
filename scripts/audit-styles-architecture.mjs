@@ -111,19 +111,27 @@ function checkFieldHeight(css) {
 }
 
 /**
- * The foundation stands on its own.
+ * The foundation loads the token tier it depends on.
  *
- * `--mdy-comp-*` and `--mdy-sys-*` are the token tier's (`modyra-base.css`), and a theme need not
- * load it. Used without a fallback the declaration is simply dropped: the switch was 0x0 —
- * invisible — in two of the shipped themes, and the chips lost their border and their corners,
- * because `border: 1px solid var(--mdy-sys-color-outline)` is invalid when that token is absent.
+ * This rule used to be the opposite: every `--mdy-sys-*` and `--mdy-comp-*` use needed a literal
+ * fallback, because `modyra-base.css` was a separate file a theme might not load, and an unresolved
+ * `var()` drops the whole declaration — which is how the switch rendered 0x0, invisible, in two of
+ * the shipped themes, and how the chips lost their border and their corners.
+ *
+ * The foundation imports the tier now, so it is never absent, and the 147 fallbacks were 147 copies
+ * of values `modyra-base.css` already owned. Copies are what made them harmful rather than merely
+ * redundant: a literal cannot follow a chosen brand colour, so a page picking a green primary kept
+ * getting indigo out of the fallback. Removing them was verified inert — 2016 computed token
+ * readings across four themes, zero differences.
+ *
+ * What has to hold instead is the import itself, which is what this now checks. Themes are still
+ * free to load the tier or not; nothing here assumes on their behalf.
  */
-function checkTokenFallbacks(css) {
-  const found = [];
-  for (const match of css.matchAll(/var\((--mdy-(?:comp|sys)-[a-z0-9-]+)\)/g)) {
-    found.push(`uses ${match[1]} with no fallback; the token tier is a theme's to load, not the foundation's to assume`);
-  }
-  return found;
+function checkTokenTierIsLoaded(css) {
+  if (/@import\s+["']\.\/modyra-base\.css["']/.test(css)) return [];
+  return [
+    "does not import modyra-base.css; without the token tier every --mdy-sys-* and --mdy-comp-* reference drops the declaration it is in",
+  ];
 }
 
 /**
@@ -170,7 +178,7 @@ for (const name of FOUNDATION) {
     if (!context.includes("var(")) defects.push(`${name}: carries the literal colour ${match[0].trim()}`);
   }
   for (const defect of checkFieldHeight(css)) defects.push(`${name}: ${defect}`);
-  for (const defect of checkTokenFallbacks(css)) defects.push(`${name}: ${defect}`);
+  for (const defect of checkTokenTierIsLoaded(css)) defects.push(`${name}: ${defect}`);
   for (const defect of checkMotion(css, name)) defects.push(defect);
   for (const debt of DEBT) if (debt.matches(name, css)) debtSeen.add(debt.id);
 }
