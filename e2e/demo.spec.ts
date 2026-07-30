@@ -331,3 +331,109 @@ test("a slider's track fills up to its handle, in every theme", async ({ page })
     expect(stops(after.image)[0], `${theme}: fill after moving to max`).toBeGreaterThan(atStart[0]!);
   }
 });
+
+/**
+ * Hover feedback on the controls whose colours were being hardwired rather than tokenised.
+ *
+ * The chip's +/− steppers hovered to `rgba(255, 255, 255, 0.2)` — white, calibrated for the dark
+ * selected chip and, on the unselected one, measured at a shift of exactly 0 in all four themes:
+ * white over white. The tint now mixes from `currentColor`, which on those buttons is the chip's own
+ * label colour, so it darkens a light chip and lightens a dark one by construction.
+ *
+ * The slider's handle shadow moved to `--mdy-slider-thumb-shadow`, set on the container part rather
+ * than restated per vendor pseudo-element. That indirection is the thing worth guarding: get the
+ * scope wrong and the shadow silently disappears, which no unit test would notice.
+ */
+test("chip, segment and slider show what they are doing, in every theme", async ({ page }) => {
+  // Chromium reports `color-mix()` results as `color(srgb r g b / a)` with channels in 0–1, and
+  // everything else as `rgb()` in 0–255. Reading one as the other is how a visible hover measures
+  // as invisible.
+  const rgba = (value: string): [number, number, number, number] => {
+    const n = (value.match(/[\d.]+/g) ?? []).map(Number);
+    const scale = value.startsWith("color(") ? 255 : 1;
+    return [n[0]! * scale, n[1]! * scale, n[2]! * scale, n.length > 3 ? n[3]! : 1];
+  };
+  // How far the hover moves the pixel that ends up on screen. Both the backdrop and the hover can
+  // be translucent — iOS tints its segmented bar and its hover with the same fill — so each is
+  // composited over the page in turn. Treating the backdrop as opaque makes "the same colour twice"
+  // measure as no change, when what it really does is deepen.
+  const over = (top: [number, number, number, number], base: [number, number, number]) =>
+    [0, 1, 2].map((i) => top[i]! * top[3]! + base[i]! * (1 - top[3]!)) as [number, number, number];
+  const shift = (backdrop: string, hover: string): number => {
+    const page: [number, number, number] = [255, 255, 255];
+    const behind = over(rgba(backdrop), page);
+    const withHover = over(rgba(hover), behind);
+    return Math.max(...[0, 1, 2].map((i) => Math.abs(withHover[i]! - behind[i]!)));
+  };
+
+  for (const theme of ["modyra", "modyra-modern", "modyra-material", "modyra-ios"]) {
+    await page.goto("/");
+    await page.waitForSelector(".mdy-chip__btn", { state: "attached", timeout: 15000 });
+    await page.evaluate((name) => {
+      const link = document.getElementById("mdy-theme-link") as HTMLLinkElement | null;
+      if (link) link.href = `styles/${name}.css`;
+    }, theme);
+    await page.waitForTimeout(400);
+
+    // A chip's stepper responds on the unselected chip and on the selected one — the two states
+    // have opposite backgrounds, which is exactly what one fixed colour could not serve.
+    for (const which of ["unselected", "selected"] as const) {
+      const chip =
+        which === "selected"
+          ? page.locator(".mdy-chip--selected, .mdy-chip--value").first()
+          : page.locator(".mdy-chip:not(.mdy-chip--selected)").first();
+      const btn = chip.locator(".mdy-chip__btn:not([disabled])").first();
+      if (!(await btn.count())) continue;
+
+      // The chip's own background where it has one, otherwise the page behind it.
+      const backdrop = await chip.evaluate((el) => {
+        const own = getComputedStyle(el).backgroundColor;
+        return (own.match(/[\d.]+/g) ?? []).length > 3 && own.endsWith("0)")
+          ? "rgb(255, 255, 255)"
+          : own;
+      });
+      await btn.hover();
+      await page.waitForTimeout(150);
+      const hovered = await btn.evaluate((el) => getComputedStyle(el).backgroundColor);
+      expect(
+        shift(backdrop, hovered),
+        `${theme}: hovering a ${which} chip's stepper must be visible against the chip`,
+      ).toBeGreaterThan(8);
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(100);
+    }
+
+    // A segmented button's hover is a colour the theme chose, not a transparent no-op.
+    // `:visible` matters: a collapsed `<details>` keeps a layout box for its contents, so the first
+    // match is a segmented button Chromium never paints and can never hover.
+    const segment = page
+      .locator(".mdy-segmented__button:not(.mdy-segmented__button--selected):visible")
+      .first();
+    if (await segment.count()) {
+      const bar = page.locator(".mdy-segmented:visible").first();
+      const backdrop = await bar.evaluate((el) => getComputedStyle(el).backgroundColor);
+      await segment.hover();
+      await page.waitForTimeout(150);
+      const hovered = await segment.evaluate((el) => getComputedStyle(el).backgroundColor);
+      expect(rgba(hovered)[3], `${theme}: segmented hover must not be fully transparent`).toBeGreaterThan(0);
+      expect(
+        shift(backdrop.endsWith("0)") ? "rgb(255, 255, 255)" : backdrop, hovered),
+        `${theme}: hovering an unselected segment must be visible`,
+      ).toBeGreaterThan(2);
+      await page.mouse.move(0, 0);
+    }
+
+    // The handle keeps the elevation its theme gives it, through the token rather than a rule.
+    // Asserted on the control, not on `::-webkit-slider-thumb`: Chromium's getComputedStyle reports
+    // `none` for that pseudo-element whether the shadow is set by a rule or by this token, so
+    // reading it there would pass and fail for reasons that have nothing to do with the styles.
+    const thumbShadow = await page
+      .locator("mdy-control-slider .mdy-slider")
+      .first()
+      .evaluate((el) => getComputedStyle(el).getPropertyValue("--mdy-slider-thumb-shadow").trim());
+    if (theme === "modyra-material" || theme === "modyra-ios") {
+      expect(thumbShadow, `${theme}: the handle keeps its shadow`).not.toBe("none");
+      expect(thumbShadow, `${theme}: the handle's shadow reaches the control`).toContain("rgba");
+    }
+  }
+});

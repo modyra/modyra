@@ -883,9 +883,20 @@
         display: none;
     }
 
+    /* Was a literal `rgba(120, 120, 128, 0.1)` — a near-twin of this theme's own fill token that,
+       being a literal, kept its light-mode alpha in dark mode while every fill around it moved.
+       The rule stays because the layers require it: this theme flattens the button with
+       `background: transparent` in `mdy.themes`, and a later layer beats any specificity in an
+       earlier one, so the foundation's `:hover` in `mdy.components` cannot reach past it. A theme
+       that neutralises a background must restate the states that background had. */
+    .mdy-segmented {
+        --mdy-segmented-btn-bg-hover: var(--mdy-ios-fill);
+        --mdy-segmented-btn-color-hover: var(--mdy-ios-label);
+    }
+
     .mdy-segmented__button:hover:not(.mdy-segmented__button--selected):not(:disabled) {
-        background: rgba(120, 120, 128, 0.1);
-        color: var(--mdy-ios-label);
+        background: var(--mdy-segmented-btn-bg-hover);
+        color: var(--mdy-segmented-btn-color-hover);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -897,12 +908,9 @@
     /* ═══════════════════════════════════════════════════════════════════
      * SLIDER
      * ═══════════════════════════════════════════════════════════════════ */
-    .mdy-slider::-webkit-slider-thumb {
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.20), 0 0 1px rgba(0, 0, 0, 0.1);
-    }
-
-    .mdy-slider::-moz-range-thumb {
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.20), 0 0 1px rgba(0, 0, 0, 0.1);
+    /* The lifted handle iOS draws, said once rather than once per vendor pseudo-element. */
+    .mdy-slider-container {
+        --mdy-slider-thumb-shadow: 0 3px 8px rgba(0, 0, 0, 0.20), 0 0 1px rgba(0, 0, 0, 0.1);
     }
 
     /* ═══════════════════════════════════════════════════════════════════
