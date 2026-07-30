@@ -110,10 +110,49 @@ test("a column row mounts as the same grid the canvas uses, and its members are 
 
   const grid = container.querySelector(".mdy-layout-columns");
   assert.ok(grid);
-  assert.equal(grid.style.getPropertyValue("--mdy-layout-column-count"), "2");
+  // Mobile-first, from the same `layoutNodeAttributes` the two shipping renderers call: the row
+  // stacks at the narrowest size and takes its declared tracks from `sm` up. Preview used to write
+  // the declared count flat, so it drew one arrangement at every width while the form it previews
+  // changed at three.
+  assert.equal(grid.style.getPropertyValue("--mdy-layout-column-count"), "1");
+  assert.equal(grid.style.getPropertyValue("--mdy-layout-column-count-sm"), "2");
   assert.equal(container.querySelectorAll(".mdy-layout-column").length, 2);
   assert.equal(container.querySelectorAll('[data-preview-node="country"]').length, 1);
   assert.equal(container.querySelectorAll('[data-preview-node="coupon"]').length, 1);
+});
+
+test("preview honours a v3 slot's placement, on the column that can act on it", () => {
+  // Preview is the third renderer of the same layout and it was the one left behind: it wrote the
+  // declared count by hand and ignored every slot's `at`, so per-size placement and visibility were
+  // authorable, shipped, and invisible in the panel that exists to show them.
+  const project = createCheckoutProject();
+  project.presentation = {
+    layout: [{
+      kind: "columns",
+      id: "row",
+      columns: [
+        [{ nodeId: "nd_country" }],
+        [{ nodeId: "nd_coupon", at: { base: { hidden: true }, md: { column: 1, hidden: false } } }],
+      ],
+      at: { sm: 2, lg: 2 },
+    }],
+  };
+  const { form } = buildLiveForm(project, { reactivity: vanillaReactivity() });
+  const { container } = mount(project, form);
+
+  const grid = container.querySelector(".mdy-layout-columns");
+  assert.equal(grid.style.getPropertyValue("--mdy-layout-column-count-sm"), "2");
+  assert.equal(grid.style.getPropertyValue("--mdy-layout-column-count-lg"), "2");
+
+  const cells = container.querySelectorAll(".mdy-layout-column");
+  assert.equal(cells.length, 2);
+  // The placement lands on the column, which is the grid item — the same reading as the two
+  // shipping renderers, so the panel and the form cannot disagree about where a field goes.
+  assert.equal(cells[1].style.getPropertyValue("--mdy-layout-column-display"), "none");
+  assert.equal(cells[1].style.getPropertyValue("--mdy-layout-column-display-md"), "flex");
+  assert.equal(cells[1].style.getPropertyValue("--mdy-layout-column-start-md"), "1");
+  // A column with nothing to say is untouched.
+  assert.equal(cells[0].style.getPropertyValue("--mdy-layout-column-display"), "");
 });
 
 test("the structure signature ignores values and notices a pushed row — that is what stops a remount per keystroke", () => {

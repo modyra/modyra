@@ -20,7 +20,7 @@
  */
 import type { ArrayNode, FieldNode, GroupNode, MdyStudioProject, StudioLayoutNode, StudioSchemaNode } from "@modyra/studio-model";
 import { renderField } from "@modyra/plain";
-import { MDY_LAYOUT_CLASSES, MDY_LAYOUT_COLUMN_COUNT_PROPERTY } from "@modyra/widgets";
+import { MDY_LAYOUT_CLASSES, layoutNodeAttributes, layoutSlotStyle } from "@modyra/widgets";
 import type { MdyDynamicField } from "@modyra/studio-contract";
 import type { MockServerConfig } from "@modyra/studio-preview";
 
@@ -88,6 +88,9 @@ function rowCount(handle: Record<string, unknown> | null): number {
  */
 export function mountPreviewFields(container: HTMLElement, project: MdyStudioProject, options: PreviewMountOptions): PreviewFieldsMount {
   container.replaceChildren();
+  // Preview is a form root like the other two renderers', named the same way. That is what lets the
+  // foundation treat it as a layout container, so the arrangement follows the panel's own width.
+  container.classList.add("mdy-dynamic-form");
   const disposers: Array<() => void> = [];
   if (project.schema.node !== "group") return { dispose: () => container.replaceChildren() };
 
@@ -220,9 +223,22 @@ function mountArrangement(
     const row = rowFor.get(child.id);
     if (row) {
       const grid = element("div", MDY_LAYOUT_CLASSES.columns);
-      grid.style.setProperty(MDY_LAYOUT_COLUMN_COUNT_PROPERTY, String(row.columns.length));
+      // The row's own attributes, from the same function the two shipping renderers call. Writing
+      // the declared count by hand meant Preview showed one arrangement at every size while the form
+      // it previews changed at three — the per-breakpoint counts were never emitted here at all.
+      for (const [property, value] of Object.entries(layoutNodeAttributes(row).style)) {
+        grid.style.setProperty(property, value);
+      }
       for (const column of row.columns) {
         const cell = element("div", MDY_LAYOUT_CLASSES.column);
+        // The column is the grid item, so a slot's placement is applied to it — the same reading as
+        // `@modyra/plain` and `<mdy-dynamic-form>`. First slot with something to say wins.
+        const placed = column.find((slot) => "nodeId" in slot && slot.at !== undefined);
+        if (placed && "nodeId" in placed) {
+          for (const [property, value] of Object.entries(layoutSlotStyle(placed.at))) {
+            cell.style.setProperty(property, value);
+          }
+        }
         for (const slot of column) {
           const node = "nodeId" in slot ? byId.get(slot.nodeId) : undefined;
           if (node) mountNode(cell, node, node.name);
