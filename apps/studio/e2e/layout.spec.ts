@@ -354,3 +354,30 @@ test("a group sits in a column beside a control, keeping its fields", async ({ p
   ).toBeVisible();
   await expect(page.locator('.plain-canvas-field[data-field-path="country"]')).toBeVisible();
 });
+
+test("the preview panel arranges by its own width, not the window's", async ({ page }) => {
+  // The point of container queries, seen from the panel that most needed them: the inspector is a
+  // few hundred pixels wide inside a 1280px window, and a row has to stack there because that is
+  // what the form's own width earns — not spread into two columns because the *window* is wide.
+  await addFields(page, ["first", "second"]);
+  await page.locator('[data-layout-columns]').last().click();
+  await page.locator('[data-inspector-tab="preview"]').click();
+
+  const fields = page.locator('.preview-fields');
+  await expect(fields.locator('.mdy-layout-columns')).toBeVisible();
+  expect(await fields.evaluate((el) => getComputedStyle(el).containerType)).toBe('inline-size');
+
+  const tracksAt = async (width: number | null) =>
+    fields.evaluate((el, w) => {
+      if (w !== null) (el as HTMLElement).style.width = `${w}px`;
+      const row = el.querySelector('.mdy-layout-columns') as HTMLElement;
+      return getComputedStyle(row).gridTemplateColumns.split(' ').length;
+    }, width);
+
+  // As it sits in the inspector: narrow, so stacked.
+  expect(await tracksAt(null)).toBe(1);
+  expect(await tracksAt(320)).toBe(1);
+  // Widened past `sm` it takes its declared tracks — the window never moved.
+  expect(await tracksAt(900)).toBe(2);
+  expect(await page.evaluate(() => window.innerWidth)).toBe(1280);
+});
