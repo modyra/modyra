@@ -443,3 +443,73 @@ test("the preview panel arranges by its own width, not the window's", async ({ p
   expect(await tracksAt(900)).toBe(2);
   expect(await page.evaluate(() => window.innerWidth)).toBe(1280);
 });
+
+test("zoom changes how big the canvas is drawn, never which arrangement it shows", async ({ page }) => {
+  // A `lg` viewport is 80rem. With the outline and inspector open there is nowhere near that much
+  // room, so the size most worth checking was the one you could not see.
+  await addFields(page, ["first", "second"]);
+  await toggleColumns(page, "first");
+  await closeDock(page);
+  await page.locator('[data-breakpoint="lg"]').click();
+
+  const measure = () => page.evaluate(() => {
+    const frame = document.querySelector('.plain-canvas-frame') as HTMLElement;
+    const form = document.querySelector('.plain-canvas-form') as HTMLElement;
+    const row = document.querySelector('.mdy-layout-columns') as HTMLElement;
+    const canvas = document.querySelector('.canvas') as HTMLElement;
+    return {
+      onScreen: Math.round(frame.getBoundingClientRect().width),
+      layout: Math.round(form.offsetWidth),
+      tracks: getComputedStyle(row).gridTemplateColumns.split(' ').length,
+      canvas: canvas.clientWidth,
+    };
+  });
+
+  const full = await measure();
+  expect(full.tracks).toBe(2);
+  expect(full.onScreen).toBeGreaterThan(full.canvas); // too wide to see, which is the problem
+
+  await page.locator('[data-zoom]').selectOption('0.5');
+  const half = await measure();
+  // Drawn at half the size…
+  expect(half.onScreen).toBeLessThan(full.onScreen * 0.6);
+  expect(half.onScreen).toBeGreaterThan(full.onScreen * 0.4);
+  // …while the form still measures `lg` and is still arranged as `lg`. Zoom must never move a
+  // breakpoint: the whole point is to see the wide arrangement, not a narrower one.
+  expect(half.layout).toBe(full.layout);
+  expect(half.tracks).toBe(2);
+
+  // Fit does the arithmetic for you, and the result is inside the canvas.
+  await page.locator('[data-zoom]').selectOption('fit');
+  const fitted = await measure();
+  expect(fitted.onScreen).toBeLessThanOrEqual(fitted.canvas);
+  expect(fitted.tracks).toBe(2);
+  expect(fitted.layout).toBe(full.layout);
+});
+
+test("a popup still lands on its control while the canvas is zoomed", async ({ page }) => {
+  // The reason the zoom is a transform rather than the `zoom` property: `zoom` is inherited into the
+  // top layer, so a popup's viewport coordinates were read in the zoomed space and it landed about a
+  // hundred pixels off its control. Measured, because the first mechanism tried looked fine until it
+  // was measured.
+  await page.locator('[data-template="date"]').click();
+  await closeDock(page);
+  await page.locator('[data-zoom]').selectOption('0.5');
+
+  await page.locator('.mdy-datepicker__trigger').first().click();
+  const geometry = await page.evaluate(() => {
+    const popup = document.querySelector('.mdy-datepicker__popup') as HTMLElement;
+    const anchor = document.querySelector('.mdy-renderer--datepicker .mdy-input-wrapper') as HTMLElement;
+    const p = popup.getBoundingClientRect();
+    const a = anchor.getBoundingClientRect();
+    return {
+      overlap: Math.round(Math.min(p.right, a.right) - Math.max(p.left, a.left)),
+      anchorWidth: Math.round(a.width),
+      dy: Math.round(p.top - a.bottom),
+    };
+  });
+
+  expect(geometry.overlap).toBeGreaterThan(geometry.anchorWidth / 2);
+  expect(geometry.dy).toBeGreaterThanOrEqual(0);
+  expect(geometry.dy).toBeLessThanOrEqual(12);
+});

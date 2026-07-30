@@ -510,6 +510,7 @@ export function previewHeadMarkup(form: MdyTypedForm<never> | null): string {
     <div class="preview-status">
       <span class="preview-status-badge ${state.valid() ? "valid" : "invalid"}">${state.valid() ? "Valid" : "Invalid"}</span>
       ${state.pending() ? '<span class="preview-status-badge pending">Pending</span>' : ""}
+      <span class="preview-size" data-preview-size></span>
     </div>`;
 }
 
@@ -786,6 +787,54 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
    * undoing an edit must not also move you to another screen size.
    */
   let breakpoint: StudioLayoutBreakpoint = "base";
+
+  /**
+   * How far the canvas is scaled down, so a viewport wider than the screen can still be laid out.
+   *
+   * `transform`, not the `zoom` property, and the difference is not cosmetic: `zoom` is inherited
+   * into the top layer, so a popup's viewport coordinates were reinterpreted in the zoomed space and
+   * it landed 100px away from its control. A transform does not reach the top layer — the popup stays
+   * on its control and is drawn at its natural size, which is also easier to read while the form
+   * around it is half-size. The cost is that a transform leaves the layout box untouched, so the
+   * canvas surface is sized to the scaled result explicitly (see `sizeCanvasToZoom`).
+   */
+  const ZOOM_STEPS = [0.5, 0.75, 1, 1.25] as const;
+  let zoom = 1;
+  /** Set when the zoom follows the canvas instead of a chosen step, so it re-fits as the panel moves. */
+  let zoomFits = false;
+
+  function setZoom(next: number | "fit"): void {
+    zoomFits = next === "fit";
+    if (next !== "fit") zoom = next;
+    status = zoomFits ? "Zoom fits the canvas" : `Zoom ${Math.round(zoom * 100)}%`;
+    focusSelector = "[data-zoom]";
+    render();
+  }
+
+  /**
+   * The size a width would be read as. Widths rarely land on a breakpoint exactly — the canvas is
+   * whatever the panels leave it — so the nearest one is the honest answer to "which arrangement am
+   * I looking at" rather than the last button pressed.
+   */
+  function nearestBreakpoint(width: number): StudioLayoutBreakpoint {
+    let closest: StudioLayoutBreakpoint = "base";
+    let distance = Number.POSITIVE_INFINITY;
+    for (const size of BREAKPOINT_ORDER) {
+      const gap = Math.abs(remToPx(BREAKPOINT_WIDTHS[size]) - width);
+      if (gap < distance) {
+        distance = gap;
+        closest = size;
+      }
+    }
+    return closest;
+  }
+
+  /** The breakpoint widths are authored in `rem`; the canvas is measured in pixels. */
+  function remToPx(value: string): number {
+    const rem = Number.parseFloat(value);
+    const root = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    return value.endsWith("rem") ? rem * root : rem;
+  }
 
   function setBreakpoint(next: StudioLayoutBreakpoint): void {
     if (next === breakpoint) return;
@@ -1379,11 +1428,32 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
    * A remount is a real cost — every control is torn down and rebuilt — so it is spent only on a
    * schema, arrangement, row-count, mock-mode or form-identity change. Typing changes none of them.
    */
+  /**
+   * Which size the preview panel's own width reads as.
+   *
+   * Preview arranges by its width, and that width is whatever the panels leave it — it lands on a
+   * breakpoint almost never. The nearest one is the honest answer to "which arrangement am I looking
+   * at", and without it the panel showed an arrangement it never named.
+   */
+  function reportPreviewSize(view: StudioShell): void {
+    const readout = view.previewPanel.querySelector<HTMLElement>("[data-preview-size]");
+    if (!readout) return;
+    const width = Math.round(view.previewFields.clientWidth);
+    if (!width) {
+      readout.textContent = "";
+      return;
+    }
+    const size = nearestBreakpoint(width);
+    readout.textContent = `${width}px \u00b7 ${size}`;
+    readout.title = `The panel is ${width}px wide, which is nearest the ${size} breakpoint`;
+  }
+
   function paintPreview(): void {
     const view = shell;
     if (!view || inspectorTab !== "preview") return;
     scroll.capture();
     view.previewHead.update(previewHeadMarkup(previewForm));
+    reportPreviewSize(view);
 
     const form = previewForm;
     const signature = form
@@ -2347,13 +2417,63 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       <span class="canvas-bar-width" data-canvas-width>${escapeHtml(width)}</span>
       <span class="canvas-bar-hint">${breakpoint === "base"
         ? "the arrangement itself"
-        : `what changes from ${escapeHtml(width)} up`}</span>`;
+        : `what changes from ${escapeHtml(width)} up`}</span>
+      <label class="canvas-bar-zoom">
+        <span>Zoom</span>
+        <select data-zoom aria-label="Canvas zoom">
+          <option value="fit"${zoomFits ? " selected" : ""}>Fit</option>
+          ${ZOOM_STEPS.map((step) => `
+            <option value="${step}"${!zoomFits && step === zoom ? " selected" : ""}>${Math.round(step * 100)}%</option>`).join("")}
+        </select>
+      </label>`;
   }
 
   function bindCanvasBar(root: HTMLElement): void {
     root.querySelectorAll<HTMLButtonElement>("[data-breakpoint]").forEach((button) =>
       button.addEventListener("click", () => setBreakpoint(button.dataset.breakpoint as StudioLayoutBreakpoint)),
     );
+    root.querySelector<HTMLSelectElement>("[data-zoom]")?.addEventListener("change", (event) => {
+      const value = (event.target as HTMLSelectElement).value;
+      setZoom(value === "fit" ? "fit" : Number(value));
+    });
+  }
+
+  /**
+   * Scales the canvas and gives the scaled result a layout box of its own.
+   *
+   * A transform draws the frame smaller but leaves its box the original size, so on its own the
+   * canvas would still demand the room an 80rem form needs however small it looked — which is the
+   * whole thing this is meant to fix. The surface is therefore sized to the scaled dimensions. The
+   * frame's own width is always explicit (the breakpoint's), so sizing its parent from it cannot
+   * feed back into it.
+   */
+  function sizeCanvasToZoom(view: StudioShell): void {
+    const frame = view.canvasSurface.querySelector<HTMLElement>(".plain-canvas-frame");
+    if (!frame) {
+      view.canvasSurface.style.removeProperty("width");
+      view.canvasSurface.style.removeProperty("height");
+      return;
+    }
+    if (zoomFits) {
+      // The room the canvas actually has, against the width the form is laid out at. Never above 1:
+      // fitting is for a viewport too wide to show, not a reason to magnify a narrow one.
+      const available = view.canvas.clientWidth - 36;
+      zoom = Math.min(1, Math.max(0.25, available / Math.max(1, frame.offsetWidth)));
+    }
+    frame.style.setProperty("--studio-canvas-zoom", String(zoom));
+    if (zoom === 1) {
+      view.canvasSurface.style.removeProperty("width");
+      view.canvasSurface.style.removeProperty("height");
+      view.canvasSurface.style.removeProperty("overflow");
+      return;
+    }
+    view.canvasSurface.style.width = `${frame.offsetWidth * zoom}px`;
+    view.canvasSurface.style.height = `${frame.offsetHeight * zoom}px`;
+    // `scrollWidth` is measured from layout boxes, and a transform leaves the frame's at full size —
+    // so without this the canvas scrolled to reach a width that is no longer drawn anywhere. Clipping
+    // is safe: what is painted is the scaled result, which fits, and a popup is in the top layer
+    // where no ancestor's overflow reaches it.
+    view.canvasSurface.style.overflow = "hidden";
   }
 
   function dockMarkup(): string {
@@ -2642,6 +2762,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       if (!contract) bindCanvasSurface(view.canvasSurface); // the blockers list has its own controls
     }
     syncLiveCanvas(contract, view);
+    // After the canvas is built, never before: the scaled box is measured from the frame.
+    sizeCanvasToZoom(view);
 
     view.tabs.update(tabsMarkup(current, diagnostics.length, errorCount));
     view.inspector.update(inspectorBodyMarkup(current, indexes, diagnostics));
