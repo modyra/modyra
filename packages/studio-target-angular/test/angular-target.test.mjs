@@ -95,3 +95,68 @@ test(
     }
   },
 );
+
+/**
+ * An arranged project exports as a form module, and the arrangement does not come with it — this
+ * target emits no markup, so there is nowhere for it to go. What must not happen is losing it in
+ * silence: a form arranged over four breakpoints would otherwise export as a flat schema with
+ * nothing said about it, and the first anyone knew would be when they rendered it.
+ */
+function arrangedProject() {
+  const project = createCheckoutProject();
+  // Two real field ids from the fixture: a layout references nodes by id, never by path (ADR-0002).
+  const [first, second] = project.schema.children
+    .flatMap((child) => (child.node === "group" ? child.children : [child]))
+    .filter((child) => child.node === "field")
+    .map((child) => child.id);
+  return {
+    ...project,
+    presentation: {
+      layout: [
+        {
+          kind: "section",
+          id: "sec_billing",
+          label: "Billing",
+          children: [
+            {
+              kind: "columns",
+              id: "row_name",
+              at: { base: 1, sm: 2 },
+              columns: [[{ nodeId: first }], [{ nodeId: second, at: { sm: { column: 2 } } }]],
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
+
+test("an arranged project is told its arrangement is not carried into the code", async () => {
+  const artifact = await createAngularTarget().generate(arrangedProject(), {});
+  const dropped = artifact.diagnostics.filter((d) => d.code === "LAYOUT_NOT_EXPRESSED");
+  assert.equal(dropped.length, 1, "the loss must be reported exactly once");
+  // Every node, not just the top level: the count is the work that was done.
+  assert.match(dropped[0].message, /4 layout nodes/);
+  assert.equal(dropped[0].propertyPath, "presentation.layout");
+  assert.equal(dropped[0].targetId, "angular");
+  // `info`, not an error: a target that cannot draw is not a target that failed, and this must not
+  // make a project incompatible.
+  assert.equal(dropped[0].severity, "info");
+  const analysis = await createAngularTarget().analyze(arrangedProject(), {});
+  assert.equal(analysis.compatible, true);
+});
+
+test("a project with no arrangement has nothing to report", async () => {
+  const artifact = await createAngularTarget().generate(createCheckoutProject(), {});
+  assert.deepEqual(artifact.diagnostics.filter((d) => d.code === "LAYOUT_NOT_EXPRESSED"), []);
+});
+
+test("the JSON target carries the arrangement, so it reports no loss", async () => {
+  const { createJsonTarget } = await import("../../studio-target-json/dist/index.js");
+  const artifact = await createJsonTarget().generate(arrangedProject(), { pretty: false });
+  assert.deepEqual(artifact.diagnostics.filter((d) => d.code === "LAYOUT_NOT_EXPRESSED"), []);
+  // And it is genuinely in there, rather than merely unreported.
+  const contract = artifact.files.find((f) => f.path === "contract.json");
+  assert.ok(contract, "the JSON target must emit a contract");
+  assert.ok(JSON.parse(contract.content).layout, "the contract must carry the layout");
+});

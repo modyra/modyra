@@ -13,6 +13,9 @@ const CAPABILITIES: TargetCapabilities = {
   supportsGroups: true,
   supportsServerValidators: false,
   supportsFormValidators: false,
+  // The one target that carries an arrangement: it serialises the whole contract, and `layout` is
+  // part of the contract. The code targets emit a form module and no markup, and say so.
+  supportsLayout: true,
 };
 
 export function createJsonTarget(): StudioTarget<JsonTargetOptions> {
