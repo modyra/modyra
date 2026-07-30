@@ -5,8 +5,10 @@ import { MdyDeclarativeAdapter } from "../core/declarative-form-adapter";
 import { MdySelectOption } from "../core/types";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyCheckboxComponent } from "./checkbox/checkbox-renderer.component";
+import { MdyColorsComponent } from "./colors/colors-renderer.component";
 import { MdyDateRangePickerComponent } from "./datepicker/daterange-renderer.component";
 import { MdyDatePickerComponent } from "./datepicker/datepicker.component";
+import { MdyMultiselectComponent } from "./multiselect/multiselect-renderer.component";
 import { MdyRadioGroupComponent } from "./radio/radio-group-renderer.component";
 import { MdySelectComponent } from "./select/select-renderer.component";
 import { MdyTextComponent } from "./text/text-renderer.component";
@@ -27,6 +29,8 @@ function makeAdapter(seed?: Record<string, unknown>): MdyDeclarativeAdapter {
     MdyTextComponent,
     MdySelectComponent,
     MdyCheckboxComponent,
+    MdyColorsComponent,
+    MdyMultiselectComponent,
     MdyRadioGroupComponent,
     MdyDatePickerComponent,
     MdyDateRangePickerComponent,
@@ -35,7 +39,9 @@ function makeAdapter(seed?: Record<string, unknown>): MdyDeclarativeAdapter {
   template: `
     <mdy-form [adapter]="adapter">
       <mdy-control-text name="firstName" label="First Name" placeholder="John" />
-      <mdy-control-select name="fruit" label="Fruit" [options]="fruitOptions" />
+      <!-- Searchable: the plain select renders a native <select>, which has no popup of its own
+           to audit. The custom dropdown is the one with a listbox in it. -->
+      <mdy-control-select name="fruit" label="Fruit" [options]="fruitOptions" [searchable]="true" />
       <mdy-control-checkbox
         name="acceptTerms"
         label="I accept the terms and conditions"
@@ -48,6 +54,9 @@ function makeAdapter(seed?: Record<string, unknown>): MdyDeclarativeAdapter {
       <mdy-control-datepicker name="birthDate" label="Date of Birth" />
       <mdy-control-daterange name="stay" label="Stay" />
       <mdy-control-timepicker name="alarm" label="Alarm" />
+      <mdy-control-colors name="brand" label="Brand colour" />
+      <!-- Searchable, so it renders the button that opens its overlay. -->
+      <mdy-control-multiselect name="toppings" label="Toppings" [options]="fruitOptions" [searchable]="true" />
     </mdy-form>
   `,
 })
@@ -63,28 +72,80 @@ class A11yHost {
   ];
 }
 
+/** Runs axe over a subtree and returns the blocking violations, spelled for a failure message. */
+async function blockingViolations(root: HTMLElement): Promise<string[]> {
+  // jsdom has no layout engine: color-contrast cannot be computed and is
+  // covered by the browser smoke test instead.
+  const results = await axe.run(root, {
+    rules: { "color-contrast": { enabled: false } },
+  });
+  return results.violations
+    .filter(
+      (violation) =>
+        violation.impact === "critical" || violation.impact === "serious",
+    )
+    .map(
+      (violation) =>
+        `${violation.id} (${violation.impact}): ${violation.nodes
+          .map((node) => node.target.join(" "))
+          .join(", ")}`,
+    );
+}
+
 describe("renderer accessibility (axe-core)", () => {
   it("reports no critical or serious violations on the main renderers", async () => {
     const fixture = TestBed.createComponent(A11yHost);
     fixture.detectChanges();
 
-    // jsdom has no layout engine: color-contrast cannot be computed and is
-    // covered by the browser smoke test instead.
-    const results = await axe.run(fixture.nativeElement as HTMLElement, {
-      rules: { "color-contrast": { enabled: false } },
-    });
-    const blocking = results.violations.filter(
-      (violation) =>
-        violation.impact === "critical" || violation.impact === "serious",
-    );
-
-    expect(
-      blocking.map(
-        (violation) =>
-          `${violation.id} (${violation.impact}): ${violation.nodes
-            .map((node) => node.target.join(" "))
-            .join(", ")}`,
-      ),
-    ).toEqual([]);
+    expect(await blockingViolations(fixture.nativeElement as HTMLElement)).toEqual([]);
   });
+
+  /**
+   * The same audit, with the popups open.
+   *
+   * Closed, they are invisible to axe — an overlay panel carries `visibility: hidden` and axe skips
+   * hidden subtrees — so everything a popup *contains* was outside this suite entirely: the
+   * calendar's grid, the clock's dial, a listbox's options. That is most of the ARIA in the library,
+   * and it was untested here by construction rather than by decision. A `role="row"` with no grid
+   * ancestor sat in both calendars the whole time and this suite reported clean.
+   *
+   * Each popup is opened through its own trigger, the way a user opens it, so what is audited is
+   * what a user would actually be given.
+   */
+  const POPUPS: ReadonlyArray<readonly [name: string, opener: string, popup: string]> = [
+    ["datepicker", ".mdy-datepicker__toggle", ".mdy-datepicker__popup"],
+    ["daterange", ".mdy-datepicker__popup--range", ".mdy-datepicker__popup--range"],
+    ["timepicker", ".mdy-timepicker__toggle", ".mdy-timepicker__popup"],
+    ["select", ".mdy-select__trigger", ".mdy-select__dropdown"],
+    ["colors", ".mdy-colors__toggle-area", ".mdy-colors__dropdown"],
+    ["multiselect", ".mdy-multiselect__search-btn", ".mdy-multiselect__dropdown"],
+  ];
+
+  for (const [name, opener, popup] of POPUPS) {
+    it(`reports no critical or serious violations with the ${name} open`, async () => {
+      const fixture = TestBed.createComponent(A11yHost);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+
+      // The daterange shares the datepicker's toggle class, so it is opened by position rather
+      // than by a selector that would find the plain datepicker's toggle first.
+      const triggers = Array.from(
+        host.querySelectorAll<HTMLElement>(
+          name === "daterange" ? ".mdy-datepicker__toggle" : opener,
+        ),
+      );
+      const trigger = name === "daterange" ? triggers[1] : triggers[0];
+      if (!trigger) throw new Error(`no trigger to open the ${name}`);
+      trigger.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      if (!host.querySelector(popup)) {
+        throw new Error(`the ${name} did not open, so nothing inside it was audited`);
+      }
+
+      expect(await blockingViolations(host)).toEqual([]);
+    });
+  }
 });

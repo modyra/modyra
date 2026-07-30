@@ -23,7 +23,14 @@ import { MdyCalendarCellComponent } from "./calendar-cell.component";
   standalone: true,
   imports: [MdyCalendarCellComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: "mdy-datepicker__grid" },
+  host: {
+    class: "mdy-datepicker__grid",
+    // The rows below say `role="row"`, which ARIA requires to sit inside a grid, table or rowgroup.
+    // Nothing said so, so every row in every calendar was an orphan — axe reports it as a critical
+    // required-parent violation. It went unseen because the a11y suite never opened a popup: axe
+    // skips hidden subtrees, and a closed overlay panel is hidden.
+    role: "grid",
+  },
   template: `
     <div class="mdy-datepicker__weekdays" role="row">
       @for (dayName of orderedDayNames(); track $index) {
