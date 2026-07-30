@@ -3278,6 +3278,23 @@
             overlay var(--mdy-sys-motion-duration-fast, 0.1s) allow-discrete;
     }
 
+    /* A popup in the top layer.
+     *
+     * Almost every UA popover style is already answered above — the contract states all four insets,
+     * `margin: 0`, its own border, padding, background and width, and every one of those beats the
+     * UA sheet. `position` is the exception: the UA says `fixed`, the rule above says `absolute`, and
+     * the author rule wins. That matters, because a top-layer element's containing block is the
+     * initial containing block: `absolute` would scroll away with the document while the coordinates
+     * `anchorOverlay` measured are viewport-relative. Fixed is what those coordinates mean.
+     *
+     * Why the top layer at all: a fixed popup is only positioned against the viewport while no
+     * ancestor is a containing block for fixed descendants, and anything carrying `contain: layout`
+     * — which `container-type` implies — becomes one. The top layer takes the popup out of that
+     * question entirely, and out of any `overflow: hidden` ancestor that used to clip it. */
+    .mdy-popup[popover] {
+        position: fixed;
+    }
+
     /* The state a popup animates *from* when it first appears, and *to* when it goes away. Without
        the starting style there is no start value to interpolate from and the popup would still
        appear instantly, however long the transition says it lasts. */
