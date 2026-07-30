@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { anchorOverlay, overlayAnchoringFor, partClasses, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
+import { anchorOverlay, decideOverlayPlacement, overlayAnchoringFor, partClasses, stabilizeOverlayPlacement, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
 
 const VIEWPORT = { width: 1000, height: 800 };
 /** A control in the middle of the page, with room on both sides. */
@@ -78,6 +78,105 @@ test("a lock keeps the corner but re-measures the height", () => {
   // Measured for this position, not inherited: a frozen height is how popups end up off-screen.
   // 152px of real space, raised to the 180px floor the policy guarantees, less the 6px gap.
   assert.equal(locked.properties["--mdy-overlay-max-height"], "174px");
+});
+
+/* ── The policy itself ────────────────────────────────────────────────────────────────────────
+ * `stabilizeOverlayPlacement` is what every adapter's popup does on scroll, and until now it was
+ * only ever reached through `anchorOverlay`'s `current:` door. The tests below call it directly,
+ * because the three facts its docstring claims — the shape is held, `fits` is not, and a modal is
+ * not un-modalled — are each a separate branch and none of them was asserted.
+ */
+
+/** The same control the anchoring tests use, as the geometry the policy is given. */
+const geometry = (over = {}) => ({
+  viewportWidth: 1000,
+  viewportHeight: 800,
+  anchorTop: 300,
+  anchorBottom: 336,
+  anchorLeft: 100,
+  anchorRight: 500,
+  anchorWidth: 400,
+  minSpace: 180,
+  minWidth: 160,
+  preferred: "below",
+  ...over,
+});
+
+test("the shape is the decision taken when it opened, not the one this frame would take", () => {
+  const opened = decideOverlayPlacement(geometry());
+  // The page scrolls 200px: 252px of room left below, still over the 180px minimum.
+  const now = geometry({ anchorTop: 500, anchorBottom: 536 });
+  const measured = decideOverlayPlacement(now);
+  const held = stabilizeOverlayPlacement(opened, measured, now);
+
+  assert.equal(held.placement, "below");
+  assert.equal(held.alignment, opened.alignment);
+  assert.equal(held.maxHeight, 452, "the height it opened with");
+  // The point of the whole function: this frame would have said something else.
+  assert.equal(measured.maxHeight, 252);
+});
+
+test("the height is held but whether the content still shows whole is not", () => {
+  // A 400px popup plus the 6px gap it leaves: it fits the 452px it opened into.
+  const opening = geometry({ desiredHeight: 406 });
+  const opened = decideOverlayPlacement(opening);
+  assert.equal(opened.fits, true);
+
+  // Scrolled until 188px is left — over the minimum, so the side is kept, but the popup is cut.
+  const now = geometry({ anchorTop: 564, anchorBottom: 600, desiredHeight: 406 });
+  const held = stabilizeOverlayPlacement(opened, decideOverlayPlacement(now), now);
+  assert.equal(held.placement, "below", "the shape is held");
+  assert.equal(held.maxHeight, 452, "and so is the height");
+  assert.equal(held.fits, false, "but it is reported as scrolling, because it now does");
+});
+
+test("a modal popup is not un-modalled by room appearing around an anchor it stopped chasing", () => {
+  // It went modal because neither side held it; the room rule must not now drag it back onto a
+  // side, because the placement it is holding is the one that ignores the anchor.
+  const cramped = geometry({ viewportHeight: 240, anchorTop: 100, anchorBottom: 140 });
+  const opened = decideOverlayPlacement(cramped);
+  assert.equal(opened.placement, "overlay");
+
+  const held = stabilizeOverlayPlacement(opened, decideOverlayPlacement(geometry()), geometry());
+  assert.equal(held.placement, "overlay");
+  assert.equal(held.maxHeight, opened.maxHeight);
+});
+
+test("the width follows the anchor even while the shape is held", () => {
+  // The control can be re-laid-out under an open popup — a column widening, a font arriving. The
+  // width is the one thing taken from this frame, because a list narrower than its own control
+  // reads as broken in a way a held height does not.
+  const opened = decideOverlayPlacement(geometry());
+  const now = geometry({ anchorRight: 700, anchorWidth: 600 });
+  const held = stabilizeOverlayPlacement(opened, decideOverlayPlacement(now), now);
+  assert.equal(held.width, 600);
+  assert.equal(opened.width, 400);
+});
+
+test("nothing held is what opening means", () => {
+  const measured = decideOverlayPlacement(geometry());
+  assert.deepEqual(stabilizeOverlayPlacement(null, measured, geometry()), measured);
+});
+
+test("current and lock are two policies, and the difference is measurable", () => {
+  // The same popup, the same scroll, the two doors an adapter can come through. `current` holds
+  // the box and lets the side change when it must; `lock` pins the side and lets the box shrink —
+  // which is content disappearing rather than a popup moving.
+  const opened = anchorOverlay(anchor(), VIEWPORT, { contentHeight: 400 });
+  const scrolledTo = anchor({ top: 564, bottom: 600 });
+
+  const stabilized = anchorOverlay(scrolledTo, VIEWPORT, { contentHeight: 400, current: opened.decision });
+  const locked = anchorOverlay(scrolledTo, VIEWPORT, {
+    contentHeight: 400,
+    lock: { placement: opened.decision.placement, alignment: opened.decision.alignment },
+  });
+
+  assert.equal(stabilized.decision.placement, locked.decision.placement, "both keep the side");
+  assert.equal(stabilized.decision.maxHeight, 452, "current keeps the popup the size it was");
+  assert.equal(locked.decision.maxHeight, 188, "lock shrinks it to the room left");
+  // Both say the content no longer shows whole; only one of them acts on it by resizing.
+  assert.equal(stabilized.decision.fits, false);
+  assert.equal(locked.decision.fits, false);
 });
 
 test("the pointer decides the alignment when one is given", () => {

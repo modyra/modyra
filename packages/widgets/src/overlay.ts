@@ -129,8 +129,14 @@ export interface MdyOverlayAnchorOptions {
    */
   readonly current?: MdyOverlayDecision | null;
   /**
-   * Keep this side and edge, but measure the height again. For a host that already tracks which
-   * corner an open popup chose and only wants it to stay there while the anchor moves.
+   * Keep this side and edge, but measure the height again — so the popup shrinks and scrolls as
+   * its room narrows, rather than moving.
+   *
+   * **This is the exception, not the policy.** `current` is what an open overlay passes: the shape
+   * is held and the side is re-decided only once it has stopped fitting. `lock` trades a popup that
+   * moves for one that quietly loses content off the bottom, which is why no adapter uses it — it
+   * remains for a host that genuinely wants a popup pinned to its corner, and the difference
+   * between the two is asserted in the anchoring suite rather than left to be discovered.
    */
   readonly lock?: { readonly placement: MdyOverlayDecision["placement"]; readonly alignment: MdyOverlayDecision["alignment"] } | null;
   /**

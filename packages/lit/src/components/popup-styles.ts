@@ -8,6 +8,7 @@ import {
   MDY_CSS_PROPERTIES,
   MDY_POPUP_CLASS,
   type MdyOverlayAlignment,
+  type MdyOverlayDecision,
   type MdyOverlayPlacement,
   type MdyWidgetKind,
 } from "@modyra/widgets";
@@ -23,6 +24,12 @@ export const NATIVE_HIDDEN_STYLE =
 export interface OverlayPanelState {
   readonly position: MdyOverlayPlacement;
   readonly alignment: MdyOverlayAlignment;
+  /**
+   * The whole decision behind `position` and `alignment`, kept so it can be handed back as the
+   * overlay's `current` on the next frame. `null` before anything has been measured, which is
+   * exactly the state in which there is nothing to hold.
+   */
+  readonly decision: MdyOverlayDecision | null;
   readonly panelStyle: string;
   readonly cssVars: {
     readonly top: string;
@@ -52,8 +59,11 @@ interface OverlayStateConfig {
   readonly preferredPosition?: "above" | "below";
   /** Where the pointer opened it, so a popup follows the click rather than the element's centre. */
   readonly clickX?: number;
-  readonly lockPosition?: MdyOverlayPlacement;
-  readonly lockAlignment?: MdyOverlayAlignment;
+  /**
+   * The decision this overlay is already holding, when it is open. The same door plain and Angular
+   * come through: the coordinates follow the anchor while the shape stays as it was decided.
+   */
+  readonly current?: MdyOverlayDecision | null;
   readonly widthMode?: "match-anchor" | "auto-content";
   /** The popup's own size, when the host has measured it, so it is placed where it shows whole. */
   readonly contentHeight?: number;
@@ -77,6 +87,7 @@ export function computeOverlayPanelState(
     return {
       position: "below",
       alignment: "left",
+      decision: null,
       panelStyle: POPUP_STYLE,
       cssVars: { top: "auto", bottom: "auto", left: "auto", right: "auto", width: "auto", maxHeight: "50vh", maxWidth: "none" },
     };
@@ -102,11 +113,9 @@ export function computeOverlayPanelState(
       // Declared by the widget: which corner its popup opens from is a property of the widget, not
       // of where its field sits on the page.
       alignment: config?.alignment,
-      // A locked overlay keeps the side and edge it opened on; its height is measured afresh so a
-      // popup near the viewport edge still fits.
-      lock: config?.lockPosition && config?.lockAlignment
-        ? { placement: config.lockPosition, alignment: config.lockAlignment }
-        : null,
+      // An open overlay hands back the decision it is holding, so the popup keeps the shape it
+      // opened with and only its coordinates follow the anchor.
+      current: config?.current ?? null,
     },
   );
 
@@ -130,7 +139,13 @@ export function computeOverlayPanelState(
     `right:${cssVars.right};width:${cssVars.width};max-height:${cssVars.maxHeight};` +
     `max-width:${cssVars.maxWidth};transform:${transform};`;
 
-  return { position: anchoring.decision.placement, alignment: anchoring.decision.alignment, panelStyle, cssVars };
+  return {
+    position: anchoring.decision.placement,
+    alignment: anchoring.decision.alignment,
+    decision: anchoring.decision,
+    panelStyle,
+    cssVars,
+  };
 }
 
 type OverlayHost = HTMLElement & { requestUpdate: () => void; updateComplete?: Promise<unknown> };
@@ -239,7 +254,6 @@ export class MdyLitOverlayController {
   refresh(reselectCorner = true): void {
     const anchor = this.getAnchor();
     if (!anchor) return;
-    const lockCorner = !reselectCorner && this._state.position !== "overlay";
     // Measured once, when the panel first exists; re-measuring while open would feed the clamped
     // box back into the decision that clamped it.
     this.content ??= measurePopupContent(this.getPopup());
@@ -250,8 +264,10 @@ export class MdyLitOverlayController {
       ...this.contractConfig(),
       ...this.config,
       clickX: reselectCorner ? this.clickX : undefined,
-      lockPosition: lockCorner ? this._state.position : undefined,
-      lockAlignment: lockCorner ? this._state.alignment : undefined,
+      // Deciding afresh is what opening and resizing are; a scroll frame holds what it has. The
+      // popup therefore keeps its size while the anchor moves and changes side only once the side
+      // it opened on has genuinely stopped fitting — the policy plain and Angular already follow.
+      current: reselectCorner ? null : this._state.decision,
       ...(this.content ? { contentHeight: this.content.height, contentWidth: this.content.width } : {}),
     });
 
