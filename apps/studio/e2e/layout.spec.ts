@@ -229,6 +229,48 @@ test("the breakpoint selector previews the size and authors only that size", asy
   await expect(page.locator('.mdy-layout-columns > .mdy-layout-column')).toHaveCount(2);
 });
 
+test("a width says whether this size decided it or inherited it", async ({ page }) => {
+  // Setting a width at `md` also changes `lg`, because `lg` says nothing and reads the nearest
+  // smaller size that does — the mobile-first rule the foundation follows. That is correct, and it
+  // used to be indistinguishable from `lg` having been decided: the control showed the same number
+  // either way and there was no way to stop inheriting.
+  await addFields(page, ["first", "second"]);
+  await page.locator('[data-layout-columns]').last().click();
+  await expect(page.locator('.mdy-layout-columns .mdy-layout-column')).toHaveCount(2);
+
+  const first = page.locator('.plain-canvas-field[data-field-path="first"]');
+  const width = first.locator('[data-row-columns]');
+  const shown = async () => width.locator('option:checked').innerText();
+
+  await page.locator('[data-breakpoint="md"]').click();
+  await first.hover();
+  await width.selectOption('1');
+  await expect(width).toHaveValue('1');
+  await expect(width).not.toHaveClass(/inherited/);
+  expect(await shown()).toBe('1×');
+
+  // `lg` reads it, says so, and is marked as not having decided anything itself.
+  await page.locator('[data-breakpoint="lg"]').click();
+  await first.hover();
+  await expect(width).toHaveValue('');
+  await expect(width).toHaveClass(/inherited/);
+  expect(await shown()).toContain('from md');
+
+  // `lg` can state its own, which leaves `md` alone…
+  await width.selectOption('2');
+  await expect(width).not.toHaveClass(/inherited/);
+  await page.locator('[data-breakpoint="md"]').click();
+  await first.hover();
+  await expect(width).toHaveValue('1');
+
+  // …and hand it back, which is the part that had no control at all.
+  await page.locator('[data-breakpoint="lg"]').click();
+  await first.hover();
+  await width.selectOption('');
+  await expect(width).toHaveClass(/inherited/);
+  expect(await shown()).toContain('from md');
+});
+
 test("a field can be hidden at one size and shown at another", async ({ page }) => {
   await addFields(page, ["first", "second"]);
   await page.locator('[data-layout-columns]').last().click();

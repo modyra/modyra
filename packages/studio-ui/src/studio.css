@@ -593,6 +593,12 @@ body {
   flex-wrap: wrap;
   row-gap: 2px;
 }
+/* A width this size did not state, but reads from a smaller one. Italic only: dimming it with
+   `opacity` put the text at 3.87:1 against the canvas, under AA, and the distinction is carried by
+   the option's own words ("auto 2× from sm") — which a screen reader gets and a shade never was. */
+.plain-canvas-actions select.inherited {
+  font-style: italic;
+}
 .plain-canvas-form .mdy-layout-column .plain-canvas-actions {
   margin-inline-start: auto;
   /* The head wraps, but the bar inside it was one unbroken row: a group's is a dozen controls wide
