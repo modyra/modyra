@@ -3309,6 +3309,29 @@
         position: fixed;
     }
 
+    /* An overlay wrapper that is a popover, but is not itself a popup.
+     *
+     * Angular's `<mdy-overlay-panel>` and Lit's equivalent put the *wrapper* in the top layer and
+     * the widget's popup inside it. The rule above answers the UA popover styles for a popup; this
+     * wrapper had nothing answering them, so it kept `background: canvas` and `padding: 0.25em` from
+     * the UA sheet. Its only child is `position: fixed` and therefore out of flow, so the wrapper
+     * collapsed to exactly its own padding — an opaque 8px bar, the popup's full width, painted at
+     * the popup's own origin. Behind a popup with rounded corners it showed through the cutouts,
+     * which on a dark theme is a white notch at each top corner.
+     *
+     * The wrapper carries no surface of its own: the popup inside it is the surface, and it already
+     * states its background, border, radius, shadow and padding. */
+    .mdy-overlay-panel[popover] {
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        color: inherit;
+    }
+
     /* The state a popup animates *from* when it first appears, and *to* when it goes away. Without
        the starting style there is no start value to interpolate from and the popup would still
        appear instantly, however long the transition says it lasts. */

@@ -61,3 +61,50 @@ test("typed form validates the username against the server", async ({
     section.getByText("Username is already taken"),
   ).toBeVisible();
 });
+
+test("an overlay draws one surface, not a wrapper's as well", async ({ page }) => {
+  // `<mdy-overlay-panel>` carries `popover`, so it inherited the UA popover styles — `background:
+  // canvas` and `padding: 0.25em`. Its only child is `position: fixed` and therefore out of flow, so
+  // the wrapper collapsed to exactly its own padding: an opaque bar the popup's full width and 8px
+  // tall, painted at the popup's own origin. Behind a popup with 10px corners it showed through the
+  // cutouts — a white notch at each top corner, and worse the darker the theme.
+  await page.goto("/");
+  await page.waitForSelector("mdy-control-select", { state: "attached", timeout: 15000 });
+  const trigger = page.locator(".mdy-select__trigger").first();
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.click({ force: true });
+  // Wait for the popup to actually be laid out — clicking only asks for it, and this measures boxes.
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll(".mdy-select__dropdown")].some((el) => el.getBoundingClientRect().height > 0),
+  );
+
+  const surfaces = await page.evaluate(() => {
+    const popup = [...document.querySelectorAll(".mdy-select__dropdown")]
+      .find((el) => (el as HTMLElement).getBoundingClientRect().height > 0) as HTMLElement;
+    const panel = popup.closest(".mdy-overlay-panel") as HTMLElement;
+    const ps = getComputedStyle(panel);
+    const popupBox = popup.getBoundingClientRect();
+    const anchor = document.querySelector(".mdy-select__trigger") as HTMLElement;
+    return {
+      panelBackground: ps.backgroundColor,
+      panelPadding: ps.paddingTop,
+      panelBorder: ps.borderTopWidth,
+      panelHeight: Math.round(panel.getBoundingClientRect().height),
+      popupHeight: Math.round(popupBox.height),
+      // The popup must still be the thing with a surface, and still on its control.
+      popupHasSurface: ps.backgroundColor !== getComputedStyle(popup).backgroundColor,
+      belowAnchor: Math.round(popupBox.top - anchor.getBoundingClientRect().bottom),
+    };
+  });
+
+  // The wrapper paints nothing at all.
+  expect(surfaces.panelBackground).toBe("rgba(0, 0, 0, 0)");
+  expect(surfaces.panelPadding).toBe("0px");
+  expect(surfaces.panelBorder).toBe("0px");
+  expect(surfaces.panelHeight).toBe(0);
+  // The popup still does, and is still on its control.
+  expect(surfaces.popupHasSurface).toBe(true);
+  expect(surfaces.popupHeight).toBeGreaterThan(0);
+  expect(surfaces.belowAnchor).toBeGreaterThanOrEqual(0);
+  expect(surfaces.belowAnchor).toBeLessThanOrEqual(12);
+});
