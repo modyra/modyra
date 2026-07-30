@@ -514,6 +514,15 @@ body {
   gap: 4px 12px;
   align-items: start;
 }
+/* The canvas draws the row the *authored* size gets, not the row this window's width happens to
+   select. The foundation's breakpoints are viewport queries and the canvas is a frame inside a wider
+   window, so at `base` it narrowed to a phone and still drew the desktop's row. The count is the
+   renderer's — `instrumentPlainCanvas` only chooses which of the published ones applies — and with
+   no selection it falls back to exactly what the foundation would have done. */
+.plain-canvas-form .mdy-layout-columns {
+  grid-template-columns:
+    repeat(var(--studio-preview-column-count, var(--mdy-layout-column-count, 1)), minmax(0, 1fr));
+}
 /* Spacing only, for the same reason as the row above it. `display` used to be restated here as
    `grid`, which beat the foundation's own `display: var(--mdy-layout-column-display, flex)` — so a
    column hidden at a breakpoint published `none` and went on being displayed. A stacking column is a

@@ -201,12 +201,20 @@ test("the breakpoint selector previews the size and authors only that size", asy
   await expect(frame).toHaveAttribute('data-breakpoint-frame', 'base');
   const baseWidth = await frame.evaluate((el) => el.getBoundingClientRect().width);
 
-  // Choosing a size narrows the canvas to it, so the arrangement on screen is the arrangement being
-  // authored — the foundation's own media queries decide, rather than Studio predicting them.
+  // The arrangement, not only the width. `base` stacks — one track — because that is what the row
+  // does on a phone; the canvas used to narrow to a phone and go on drawing the desktop's two
+  // columns, since the foundation's breakpoints key on the window and the window had not changed.
+  const row = page.locator('.mdy-layout-columns');
+  const trackCount = async () =>
+    (await row.evaluate((el) => getComputedStyle(el).gridTemplateColumns)).split(' ').length;
+  expect(await trackCount()).toBe(1);
+
+  // Choosing a size widens the canvas to it, and the row it draws is that size's row.
   await page.locator('[data-breakpoint="md"]').click();
   await expect(frame).toHaveAttribute('data-breakpoint-frame', 'md');
   await expect(page.locator('[data-breakpoint="md"]')).toHaveAttribute('aria-pressed', 'true');
   expect(await frame.evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(baseWidth);
+  expect(await trackCount()).toBe(2);
 
   // Narrowing the row at md writes an override, and leaves the arrangement itself alone.
   const first = page.locator('.plain-canvas-field[data-field-path="first"]');
@@ -214,10 +222,10 @@ test("the breakpoint selector previews the size and authors only that size", asy
   await first.locator('[data-row-columns]').selectOption('1');
 
   // One track across at md, two from sm: the override lands on md alone, and the arrangement the
-  // other sizes inherit is untouched.
-  const row = page.locator('.mdy-layout-columns');
+  // other sizes inherit is untouched. The canvas draws the md row, so it stacks here and now.
   await expect(row).toHaveCSS('--mdy-layout-column-count-md', '1');
   await expect(row).toHaveCSS('--mdy-layout-column-count-sm', '2');
+  expect(await trackCount()).toBe(1);
   await expect(page.locator('.mdy-layout-columns > .mdy-layout-column')).toHaveCount(2);
 });
 

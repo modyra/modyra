@@ -1446,6 +1446,25 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     fields: ReadonlyArray<{ readonly name: string }>,
     idx: StudioIndexes,
   ): void {
+    // Resolve the track count for the size being authored, per row.
+    //
+    // The foundation's breakpoints are viewport queries, and the canvas is a frame inside a window
+    // that is a different width — so at `base` the canvas narrowed to a phone and still drew the row
+    // the desktop gets. Only Studio knows which size is being previewed, so only Studio can pick
+    // which of the counts the renderer already published applies. The counts stay the renderer's;
+    // this chooses among them rather than inventing a grid, which is what made Studio's canvas drift
+    // from the form the last time tracks were restated here.
+    // The class is spelled out because studio-ui depends on no renderer contract package, the same
+    // way `studio.css` spells it; `audit-layout-contract.mjs` is what keeps the name honest.
+    plainHost.querySelectorAll<HTMLElement>(".mdy-layout-columns").forEach((row) => {
+      const node = (project.presentation.layout ?? []).find(
+        (candidate): candidate is StudioLayoutNode & { kind: "columns" } =>
+          candidate.kind === "columns" && candidate.id === row.dataset.layoutId,
+      );
+      if (!node) return;
+      row.style.setProperty("--studio-preview-column-count", String(rowColumnsAt(node, breakpoint)));
+    });
+
     const nodeIdByPath = new Map(Array.from(idx.pathByNode, ([nodeId, path]) => [path, nodeId]));
     /** Every path at which the schema has a repeater. */
     const arrayPaths = new Set(
