@@ -15,7 +15,7 @@ import { hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFor
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 
 export function renderTimepickerField(
   container: HTMLElement,
@@ -200,7 +200,7 @@ export function renderTimepickerField(
     // The input mirrors the committed value; while it has focus the user's own text wins.
     const display = state.value || "";
     if (!typing && control.value !== display) control.value = display;
-    dialog.hidden = !state.open;
+    setOverlayOpen(dialog, state.open);
     // Anchored by the contract, like every other overlay: the placement, the size and the
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
     if (state.open) positionOverlay(dialog, shell.wrapper, anchoring);

@@ -10,7 +10,7 @@ import type { MdyDynamicColorsField } from "@modyra/core";
 import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, overlayAnchoringFor, type MdyColorValueIntent } from "@modyra/widgets";
 import { applyPart, el, setErrors } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
-import { dismissOnOutsidePointer, positionOverlay, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, setOverlayOpen, trackOverlay } from "../overlay.js";
 
 const DEFAULT_PRESETS = ["#7067ff", "#0e0f16", "#f8fafc", "#94a3b8", "#22c55e", "#ef4444", "#f59e0b", "#3b82f6"];
 
@@ -125,7 +125,7 @@ export function renderColorsField(
     hexInput.disabled = handle.disabled();
     toggle.disabled = handle.disabled();
     toggle.setAttribute("aria-expanded", String(isOpen));
-    popup.hidden = !isOpen;
+    setOverlayOpen(popup, isOpen);
     wrapper.classList.toggle("mdy-colors--open", isOpen);
     // The themes place the panel from `--mdy-overlay-*`; the widget policy decides them.
     if (isOpen) queueMicrotask(() => positionOverlay(popup, shell.wrapper, anchoring));
