@@ -465,6 +465,9 @@ test("zoom changes how big the canvas is drawn, never which arrangement it shows
     };
   });
 
+  // Unscaled first, to establish what "too wide to see" means. The canvas fits by default now, so
+  // this is the state the zoom exists to rescue rather than the one you land in.
+  await page.locator('[data-zoom]').selectOption('1');
   const full = await measure();
   expect(full.tracks).toBe(2);
   expect(full.onScreen).toBeGreaterThan(full.canvas); // too wide to see, which is the problem
@@ -512,4 +515,50 @@ test("a popup still lands on its control while the canvas is zoomed", async ({ p
   expect(geometry.overlap).toBeGreaterThan(geometry.anchorWidth / 2);
   expect(geometry.dy).toBeGreaterThanOrEqual(0);
   expect(geometry.dy).toBeLessThanOrEqual(12);
+});
+
+test("every breakpoint is fully visible by default, so switching size shows the difference", async ({ page }) => {
+  // Reported: "cambiando il breakpoint continuo ad avere lo stesso layout spalmato ovunque." The
+  // arrangement was right all along — what was wrong is that you could not see it. A `md` form is
+  // 64rem and an `lg` form 80rem, the canvas between the panels is a few hundred pixels, and at 100%
+  // it simply scrolled: every size showed the same left-hand slice, measured at 51% of the form at
+  // `lg`. So the canvas fits by default.
+  await addFields(page, ["a", "b", "c"]);
+  await toggleColumns(page, "a");
+  await toggleColumns(page, "c");
+  await closeDock(page);
+
+  const seen = () => page.evaluate(() => {
+    const canvas = document.querySelector('.canvas') as HTMLElement;
+    const frame = document.querySelector('.plain-canvas-frame') as HTMLElement;
+    const form = document.querySelector('.plain-canvas-form') as HTMLElement;
+    const row = document.querySelector('.mdy-layout-columns') as HTMLElement;
+    const f = frame.getBoundingClientRect(); const c = canvas.getBoundingClientRect();
+    return {
+      visible: Math.min(f.right, c.right) - Math.max(f.left, c.left),
+      width: f.width,
+      layout: Math.round(form.offsetWidth),
+      tracks: getComputedStyle(row).gridTemplateColumns.split(' ').length,
+    };
+  });
+
+  // Author a different arrangement at each size…
+  for (const [size, across] of [['lg', '3'], ['md', '2'], ['sm', '1']] as const) {
+    await page.locator(`[data-breakpoint="${size}"]`).click();
+    const a = page.locator('.plain-canvas-field[data-field-path="a"]');
+    await a.hover();
+    await a.locator('[data-row-columns]').selectOption(across);
+  }
+
+  // …and every one of them is both fully on screen and its own arrangement.
+  const widths: number[] = [];
+  for (const [size, tracks] of [['base', 1], ['sm', 1], ['md', 2], ['lg', 3]] as const) {
+    await page.locator(`[data-breakpoint="${size}"]`).click();
+    const r = await seen();
+    expect(r.visible, `${size} is cut off`).toBeGreaterThanOrEqual(r.width - 1);
+    expect(r.tracks, `${size} draws the wrong arrangement`).toBe(tracks);
+    widths.push(r.layout);
+  }
+  // The form really was laid out at four different widths, not one width four times.
+  expect(new Set(widths).size).toBe(4);
 });
