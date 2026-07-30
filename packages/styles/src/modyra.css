@@ -1772,12 +1772,8 @@
         position: relative;
     }
 
+    /* The chip list, as a surface. Where it goes is the primitive's. */
     .mdy-multiselect-overlay__panel {
-        position: absolute;
-        z-index: var(--mdy-z-overlay);
-        top: 100%;
-        left: 0;
-        right: 0;
         display: flex;
         flex-direction: column;
         gap: 0;
@@ -1789,17 +1785,6 @@
         /* max-height frozen at open time via --mdy-overlay-max-height (set on host) */
         max-height: var(--mdy-overlay-max-height, 50vh);
         overflow: hidden;
-    }
-
-    .mdy-renderer--open .mdy-multiselect-overlay__panel {
-        position: fixed;
-        top: var(--mdy-overlay-top, auto);
-        bottom: var(--mdy-overlay-bottom, auto);
-        left: var(--mdy-overlay-left, auto);
-        right: var(--mdy-overlay-right, auto);
-        width: var(--mdy-overlay-width, auto);
-        margin: 0;
-        /* The gap is baked into the coordinates by anchorOverlay. */
     }
 
     /* A popup opening upwards puts its filter box at the bottom, nearest the control the user just
@@ -2261,12 +2246,10 @@
     /* ─── Date Picker Popup ───────────────────────────────────────────────────── */
 
 
+    /* The calendar, as a surface. Where it goes is the primitive's, from the coordinates
+     * `anchorOverlay` measured — `absolute` at `top: 100%` was a docked fallback that stopped being
+     * reachable when every popup moved to the top layer. */
     .mdy-datepicker__popup {
-        position: absolute;
-        z-index: var(--mdy-z-overlay);
-        top: 100%;
-        left: 0;
-        margin-top: 0.25rem;
         padding: var(--mdy-comp-date-picker-popup-padding, 1.25rem);
         background: var(--mdy-comp-date-picker-popup-bg, var(--mdy-comp-date-picker-modal-container-color, var(--mdy-sys-color-surface-container-high, color-mix(in srgb, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)), var(--mdy-ref-color-cloud, #F8FAFC) 88%))));
         border: none;
@@ -2278,22 +2261,14 @@
         box-sizing: border-box;
     }
 
-    .mdy-renderer--open .mdy-datepicker__popup:not(.mdy-datepicker__popup--overlay),
-    .mdy-renderer--open .mdy-timepicker__popup:not(.mdy-timepicker__popup--overlay) {
-        position: fixed;
-        top: var(--mdy-overlay-top, auto);
-        bottom: var(--mdy-overlay-bottom, auto);
-        left: var(--mdy-overlay-left, auto);
-        right: var(--mdy-overlay-right, auto);
-        /* Do NOT use --mdy-overlay-width: pickers are content-sized, not control-width */
-        width: auto;
-        margin: 0;
-        /* Gap is baked into coords via POPUP_GAP in computeCoordsForAnchor */
+    /* A picker is content-sized rather than control-width, and says so through the one property
+       `.mdy-popup` reads for it. Everything else this rule used to state — `position: fixed` and the
+       four insets, re-read from the same `--mdy-overlay-*` properties — the primitive already says
+       for every popup in the catalog. */
+    .mdy-datepicker__popup,
+    .mdy-timepicker__popup {
+        --mdy-overlay-width: auto;
     }
-
-    /* --above and --right positioning is handled entirely via
-   --mdy-overlay-{top,bottom,left,right} CSS variables set on the host.
-   No absolute-position fallbacks needed here. */
 
     /* The per-picker backdrops went the same way as the select's, and for the same reason. */
 
