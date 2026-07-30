@@ -78,13 +78,13 @@ export class AppComponent {
         link.href = `styles/${filename}`;
       }
 
+      // One property, because there is one place a brand colour is declared now. This used to set
+      // `--mdy-primary` as well, and had to: the themes declared their own primary at that short
+      // tier, so setting only the `sys` one could not reach them. Setting both then *froze* the
+      // bridge — an inline `--mdy-primary` outranks the rule that derives it — so the palette could
+      // no longer follow. The whole palette derives from this single line.
       this.document.documentElement.style.setProperty(
         "--mdy-sys-color-primary",
-        config.primaryColor,
-      );
-
-      this.document.documentElement.style.setProperty(
-        "--mdy-primary",
         config.primaryColor,
       );
     });
