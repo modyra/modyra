@@ -514,15 +514,10 @@ body {
   gap: 4px 12px;
   align-items: start;
 }
-/* The canvas draws the row the *authored* size gets, not the row this window's width happens to
-   select. The foundation's breakpoints are viewport queries and the canvas is a frame inside a wider
-   window, so at `base` it narrowed to a phone and still drew the desktop's row. The count is the
-   renderer's — `instrumentPlainCanvas` only chooses which of the published ones applies — and with
-   no selection it falls back to exactly what the foundation would have done. */
-.plain-canvas-form .mdy-layout-columns {
-  grid-template-columns:
-    repeat(var(--studio-preview-column-count, var(--mdy-layout-column-count, 1)), minmax(0, 1fr));
-}
+/* The canvas used to re-state `grid-template-columns` here, resolving the authored size itself,
+   because the foundation's breakpoints were viewport queries and the canvas is a frame inside a
+   wider window. They are container queries now and the frame's width is the form's width, so the
+   foundation answers correctly on its own — and this rule, which outranked it, is gone. */
 /* Spacing only, for the same reason as the row above it. `display` used to be restated here as
    `grid`, which beat the foundation's own `display: var(--mdy-layout-column-display, flex)` — so a
    column hidden at a breakpoint published `none` and went on being displayed. A stacking column is a
@@ -788,8 +783,17 @@ body {
 .plain-canvas-frame {
   /* The frame is the viewport being authored: the breakpoint selector writes `--studio-canvas-width`
      and the canvas narrows to it, so the foundation's own media queries decide the arrangement. A
-     `container-type` would not do — those queries are width queries against the page. */
-  width: min(100%, var(--studio-canvas-width, 680px));
+     the foundation's own queries key on the form's width, so the frame's width is what they see. */
+  /* The authored width exactly, not clamped to the column: previewing `md` has to *be* md wide or
+     the selector is lying, and the foundation's container queries would answer for the column's
+     width instead of the size on the button. `.canvas` scrolls, which is the honest cost. With no
+     size selected it falls back to fitting the column, exactly as before.
+     `content-box` deliberately: the container the queries measure is the form *inside* this frame,
+     so the width has to mean the content box. Measured border-box, the frame's own padding came off
+     the form and `md` answered as `sm` — 1024px of frame is 968px of form. */
+  box-sizing: content-box;
+  width: var(--studio-canvas-width, min(100%, 680px));
+  max-width: none;
   margin: 8px auto 96px; /* room for the dock to float over empty space, not over a field */
   padding: 22px 22px 26px;
   border: 1px solid var(--studio-chrome-border);
@@ -2152,7 +2156,7 @@ body {
 .plain-canvas-frame {
   /* Same custom property as the rule above, with this section's own default: the canvas is the
      viewport being authored, and a fixed width here would quietly undo the breakpoint selector. */
-  width: min(100%, var(--studio-canvas-width, 720px));
+  width: var(--studio-canvas-width, min(100%, 720px));
   margin-top: var(--studio-space-4);
   padding: 28px;
   border-color: var(--studio-border-subtle);

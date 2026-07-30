@@ -3144,17 +3144,31 @@
         min-width: 0;
     }
 
-    /* Mobile-first, and authorable. A row stacks until its first breakpoint and then takes the
-       tracks it was given, which is what the single `max-width: 40rem` rule here used to do for
-       every row alike — the difference is that each step is now a number the layout supplies, so a
-       form can say "two columns from tablet, four from desktop" and be tested at those widths.
-       Every step falls back to the one below it, so declaring only `sm` still behaves. */
+    /* The form is the unit a layout is measured against.
+     *
+     * These were viewport queries, which made a row's arrangement a property of the window rather
+     * than of the form: the same form in a sidebar and in a full-width page laid out identically,
+     * and a preview panel could not show what a narrow form does without lying about its width.
+     * `MDY_LAYOUT_BREAKPOINTS` has always described the *form* — "what a row looks like on a phone,
+     * a tablet, a desktop" — and a container query is what actually asks that question.
+     *
+     * A popup is unaffected: `container-type` makes this a containing block for fixed descendants,
+     * which is why every popup is in the top layer (see `.mdy-popup[popover]`).
+     *
+     * Mobile-first, and authorable. A row stacks until its first breakpoint and then takes the
+     * tracks it was given — each step is a number the layout supplies, so a form can say "two
+     * columns from tablet, four from desktop" and be tested at those widths. Every step falls back
+     * to the one below it, so declaring only `sm` still behaves. */
+    .mdy-dynamic-form {
+        container-type: inline-size;
+        container-name: mdy-form;
+    }
     /* A column's own placement cascades the same way and for the same reason: what a size does not
        say, it inherits from the next smaller one. This is Contract v3's per-slot `at` — where a field
        sits and whether it shows, at a size — and it is why `hidden` is a `display` value rather than
        a class: a class cannot be undone at a larger size without a second class saying the opposite,
        and "hidden on a phone, shown from tablet" is the case worth having. */
-    @media (min-width: 40rem) {
+    @container mdy-form (min-width: 40rem) {
         .mdy-layout-columns {
             grid-template-columns:
                 repeat(var(--mdy-layout-column-count-sm, var(--mdy-layout-column-count, 1)), minmax(0, 1fr));
@@ -3166,7 +3180,7 @@
         }
     }
 
-    @media (min-width: 64rem) {
+    @container mdy-form (min-width: 64rem) {
         .mdy-layout-columns {
             grid-template-columns:
                 repeat(
@@ -3185,7 +3199,7 @@
         }
     }
 
-    @media (min-width: 80rem) {
+    @container mdy-form (min-width: 80rem) {
         .mdy-layout-columns {
             grid-template-columns:
                 repeat(
