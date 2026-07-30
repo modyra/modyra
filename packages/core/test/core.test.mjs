@@ -608,3 +608,30 @@ test("a section occupying a column may be placed; one at the top of the layout m
   }, { mode: "strict" });
   assert.equal(v2WithPlacement.ok, false);
 });
+
+test("the shared v3 fixture parses here, as it does in the Rust and Java SDKs", async () => {
+  // One document, three implementations. Studio emits v3 the moment a layout places a slot per
+  // breakpoint, and both SDKs used to refuse such a document outright — Rust on the version alone,
+  // Java by falling through every branch of its envelope check. This fixture is what stops the
+  // three drifting again: `sdk/rust/.../tests/contract.rs` and `MdyDynamicFormParserTest` read it.
+  const { parseDynamicForm } = await import("../dist/dynamic-config.js");
+  const { readFileSync } = await import("node:fs");
+  const raw = JSON.parse(
+    readFileSync(new URL("../../../spec/fixtures/dynamic-form/v3/placement.json", import.meta.url), "utf8"),
+  );
+
+  const result = parseDynamicForm(raw, { mode: "strict" });
+  assert.equal(result.ok, true, JSON.stringify(result.diagnostics));
+  assert.equal(result.version, 3);
+  assert.equal(result.fields.length, 5);
+
+  const [row, body] = result.layout;
+  assert.deepEqual(row.at, { sm: 2 }, "v2's track counts still ride a v3 document");
+  assert.deepEqual(row.columns[1][0], {
+    ref: "last",
+    at: { base: { hidden: true }, md: { column: 2, hidden: false } },
+  });
+  // A section occupying a column carries that column's placement.
+  assert.equal(body.columns[0][0].kind, "section");
+  assert.deepEqual(body.columns[0][0].at, { base: { hidden: true } });
+});

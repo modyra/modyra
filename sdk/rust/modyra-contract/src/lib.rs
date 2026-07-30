@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValidationMode {
@@ -66,12 +66,45 @@ pub struct Field {
     pub options: Option<Vec<OptionItem>>,
 }
 
-/// A layout slot: a field name, or a nested layout node so a column row can sit
-/// inside a section. Untagged, because the JSON is either a string or an object.
+/// The sizes a layout is authored against, mirroring `MDY_LAYOUT_BREAKPOINTS`.
+pub const LAYOUT_BREAKPOINTS: [&str; 4] = ["base", "sm", "md", "lg"];
+
+/// Where a slot sits and whether it shows, at one size — Contract v3's per-slot
+/// placement. Both keys are optional; a size that states neither is refused.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct SlotPlacement {
+    /// 1-based, like a grid line.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub column: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hidden: Option<bool>,
+}
+
+/// Contract v3's slot: a field name that also says where it sits, per size.
+///
+/// `ref` is a Rust keyword, so the field is `reference` and serde carries the
+/// wire name. Only valid inside a `columns` row — the column is the element a
+/// placement can act on — which `layout_refs` enforces.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LayoutSlot {
+    #[serde(rename = "ref")]
+    pub reference: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub at: Option<BTreeMap<String, SlotPlacement>>,
+}
+
+/// A layout slot: a field name, a v3 slot describing that field's placement, or
+/// a nested layout node so a column row can sit inside a section. Untagged,
+/// because the JSON is a string or one of two object shapes.
+///
+/// Order matters to serde: a string first, then the slot (which a layout node
+/// can never match, having no `ref`), then the node. Putting `Node` first would
+/// make every slot fail to deserialize and take the whole document with it.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum LayoutChild {
     Field(String),
+    Slot(LayoutSlot),
     Node(Box<LayoutNode>),
 }
 
@@ -83,10 +116,18 @@ pub enum LayoutNode {
         #[serde(default)]
         label: Option<String>,
         children: Vec<LayoutChild>,
+        /// v3: a section occupying a column carries that column's placement.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        at: Option<BTreeMap<String, SlotPlacement>>,
     },
     Columns {
         id: String,
         columns: Vec<Vec<LayoutChild>>,
+        /// v2: how many tracks the row shows at each size. Absent here until
+        /// now, which meant a round-trip through this SDK silently dropped a
+        /// responsively-authored row back to one arrangement.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        at: Option<BTreeMap<String, u32>>,
     },
 }
 
@@ -99,6 +140,18 @@ fn layout_refs(node: &LayoutNode, depth: usize, seen: &mut Vec<String>) -> bool 
     if depth > LAYOUT_MAX_DEPTH {
         return false;
     }
+    // How many tracks this node has, so a slot cannot be sent to a column it does
+    // not have. `0` marks a section: placement is refused there, because the
+    // column is the only element a placement can act on.
+    let tracks: u32 = match node {
+        LayoutNode::Section { .. } => 0,
+        LayoutNode::Columns { columns, at, .. } => {
+            let declared = columns.len().max(1) as u32;
+            at.iter()
+                .flat_map(|counts| counts.values().copied())
+                .fold(declared, u32::max)
+        }
+    };
     let slots: Vec<&Vec<LayoutChild>> = match node {
         LayoutNode::Section { children, .. } => vec![children],
         LayoutNode::Columns { columns, .. } => columns.iter().collect(),
@@ -112,15 +165,46 @@ fn layout_refs(node: &LayoutNode, depth: usize, seen: &mut Vec<String>) -> bool 
                     }
                     seen.push(name.clone());
                 }
+                LayoutChild::Slot(placed) => {
+                    if seen.iter().any(|existing| existing == &placed.reference) {
+                        return false;
+                    }
+                    if !valid_placement(placed.at.as_ref(), tracks) {
+                        return false;
+                    }
+                    seen.push(placed.reference.clone());
+                }
                 LayoutChild::Node(nested) => {
                     if !layout_refs(nested, depth + 1, seen) {
                         return false;
+                    }
+                    // A section's own `at` describes the column *this* node gives
+                    // it, so it is checked here rather than inside its own walk.
+                    if let LayoutNode::Section { at, .. } = nested.as_ref() {
+                        if !valid_placement(at.as_ref(), tracks) {
+                            return false;
+                        }
                     }
                 }
             }
         }
     }
     true
+}
+
+/// A per-size placement the row can honour. `tracks` of 0 means there is no
+/// column, and any placement at all is refused.
+fn valid_placement(at: Option<&BTreeMap<String, SlotPlacement>>, tracks: u32) -> bool {
+    let Some(at) = at else { return true };
+    if tracks == 0 {
+        return false;
+    }
+    at.iter().all(|(size, placement)| {
+        LAYOUT_BREAKPOINTS.contains(&size.as_str())
+            // A size that states neither is a typo worth refusing, not a no-op.
+            && (placement.column.is_some() || placement.hidden.is_some())
+            && placement.column.is_none_or(|column| column >= 1 && column <= tracks)
+    })
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -230,11 +314,15 @@ const OPERATORS: &[&str] = &[
 pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, serde_json::Error> {
     let form: DynamicFormV2 = serde_json::from_str(json)?;
     let mut d = Vec::new();
-    if form.version != 2 {
+    // v3 is v2 plus per-slot placement: every other member is read the same way,
+    // so a v3 document parses here exactly as a v2 one does. Studio emits v3 the
+    // moment a layout places a slot per breakpoint, and refusing it outright made
+    // a form authored responsively unreadable by this SDK.
+    if form.version != 2 && form.version != 3 {
         d.push(diag(
             "MDY_DYNAMIC_UNSUPPORTED_VERSION",
             "/version",
-            "expected contract version 2",
+            "expected contract version 2 or 3",
         ));
     }
     let mut names = HashSet::new();

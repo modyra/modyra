@@ -71,8 +71,8 @@ public final class MdyDynamicFormParser {
       accepted = flat.accepted;
       diagnostics.addAll(flat.diagnostics);
       sourceCount = root.size();
-    } else if (root.isObject() && root.path("version").asInt(-1) == 2 && root.has("schema")) {
-      version = 2;
+    } else if (root.isObject() && isStructuredVersion(root.path("version").asInt(-1)) && root.has("schema")) {
+      version = root.path("version").asInt();
       List<MdyDynamicDiagnostic> schemaDiagnostics = new ArrayList<>();
       validateSchema(root.get("schema"), "/schema", 0, schemaDiagnostics, new int[]{0});
       diagnostics.addAll(schemaDiagnostics);
@@ -80,7 +80,7 @@ public final class MdyDynamicFormParser {
       sourceCount = accepted.size();
     } else if (root.isObject() && root.has("fields")) {
       int v = root.path("version").isInt() ? root.path("version").asInt() : -1;
-      if (v != 1 && v != 2) {
+      if (v != 1 && v != 2 && v != 3) {
         return new MdyDynamicFormParseResult(false, null, List.of(), List.of(), List.of(), List.of(), 0, 0);
       }
       version = v;
@@ -106,7 +106,8 @@ public final class MdyDynamicFormParser {
     for (MdyDynamicField field : accepted) names.add(field.name());
     List<JsonNode> layout = new ArrayList<>();
     List<JsonNode> rules = new ArrayList<>();
-    if (version == 2 && root.isObject()) {
+    // v3 is v2 plus per-slot placement: every envelope member is read the same way.
+    if (version != null && isStructuredVersion(version) && root.isObject()) {
       parseLayout(root.path("layout"), names, layout, diagnostics);
       parseRules(root.path("rules"), names, rules, diagnostics);
     }
@@ -317,7 +318,10 @@ public final class MdyDynamicFormParser {
   /** Depth cap for nested layout, matching the TS and Rust parsers. */
   private static final int LAYOUT_MAX_DEPTH = 6;
 
-  // ─── v2 layout / rules: validate against resolved field names, keep raw nodes ───
+  /** The sizes a layout is authored against, mirroring MDY_LAYOUT_BREAKPOINTS. */
+  private static final Set<String> LAYOUT_BREAKPOINTS = Set.of("base", "sm", "md", "lg");
+
+  // ─── v2/v3 layout / rules: validate against resolved field names, keep raw nodes ───
 
   private void parseLayout(JsonNode layoutNode, Set<String> names, List<JsonNode> out, List<MdyDynamicDiagnostic> diagnostics) {
     if (layoutNode.isMissingNode()) return;
@@ -369,15 +373,66 @@ public final class MdyDynamicFormParser {
       return false;
     }
 
+    // How many tracks this node has, so a slot cannot be sent to a column it does not have.
+    // Zero marks a section: placement is refused there, because the column is the only element
+    // a placement can act on.
+    int tracks = 0;
+    if ("columns".equals(kind)) {
+      tracks = Math.max(1, raw.path("columns").size());
+      JsonNode at = raw.path("at");
+      if (at.isObject()) {
+        for (JsonNode count : at) {
+          if (count.isInt()) tracks = Math.max(tracks, count.asInt());
+        }
+      }
+    }
+
     for (JsonNode slot : slots) {
       for (JsonNode child : slot) {
         if (child.isTextual()) {
           String name = child.asText();
           if (!names.contains(name) || !placed.add(name)) return false;
-        } else if (!validLayoutNode(child, names, placed, depth + 1)) {
-          return false;
+        } else if (child.isObject() && child.has("ref")) {
+          // Contract v3's slot: a field name that also says where it sits, per size.
+          if (!child.path("ref").isTextual()) return false;
+          String name = child.path("ref").asText();
+          if (!names.contains(name) || !validPlacement(child.path("at"), tracks) || !placed.add(name)) return false;
+        } else {
+          if (!validLayoutNode(child, names, placed, depth + 1)) return false;
+          // A section's own `at` describes the column *this* node gives it, so it is checked
+          // here rather than inside its own validation.
+          if ("section".equals(child.path("kind").asText(null)) && !validPlacement(child.path("at"), tracks)) return false;
         }
       }
+    }
+    return true;
+  }
+
+  /** Whether a structured envelope carries a schema and a layout — v2 and everything after it. */
+  private static boolean isStructuredVersion(int version) {
+    return version == 2 || version == 3;
+  }
+
+  /**
+   * A per-size placement the row can honour. {@code tracks} of 0 means there is no column at
+   * all, and any placement is refused: {@code grid-column} and {@code display} belong to a grid
+   * item, and only the column is one.
+   */
+  private boolean validPlacement(JsonNode at, int tracks) {
+    if (at.isMissingNode() || at.isNull()) return true;
+    if (tracks == 0 || !at.isObject()) return false;
+    var sizes = at.fieldNames();
+    while (sizes.hasNext()) {
+      String size = sizes.next();
+      if (!LAYOUT_BREAKPOINTS.contains(size)) return false;
+      JsonNode placement = at.get(size);
+      if (!placement.isObject()) return false;
+      JsonNode column = placement.path("column");
+      JsonNode hidden = placement.path("hidden");
+      // A size that states neither is a typo worth refusing, not a no-op to keep.
+      if (column.isMissingNode() && hidden.isMissingNode()) return false;
+      if (!column.isMissingNode() && (!column.isInt() || column.asInt() < 1 || column.asInt() > tracks)) return false;
+      if (!hidden.isMissingNode() && !hidden.isBoolean()) return false;
     }
     return true;
   }
