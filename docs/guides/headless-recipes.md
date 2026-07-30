@@ -351,6 +351,87 @@ demonstration of "native signals map almost 1:1 onto the engine's
 contract" (see `examples/solid/main.jsx` for the full signup form built
 this way).
 
+## Arranging a config-driven form
+
+A Contract config can carry a `layout`: sections, and rows divided into
+columns, with per-breakpoint counts and placements. The rendering adapters
+(`@modyra/angular`, `@modyra/plain`) apply it for you. Headless packages
+render no elements, so nothing there can apply it — but the arrangement is
+not theirs to invent either. Two framework-free functions in
+`@modyra/widgets` turn a layout node into the classes and custom properties
+`@modyra/styles` already understands, and they are the same two functions
+both rendering adapters call:
+
+```jsx
+import {
+  MDY_LAYOUT_CLASSES,
+  layoutNodeAttributes,
+  layoutSlotStyle,
+} from "@modyra/widgets";
+
+/** What a child asks of the column it sits in — a slot and a section answer alike. */
+function placementOf(child) {
+  if (typeof child === "string") return undefined;
+  if ("ref" in child) return child.at;                     // v3 slot
+  return child.kind === "section" ? child.at : undefined;  // a group inside a row
+}
+
+function LayoutNode({ node, renderField }) {
+  const { className, style } = layoutNodeAttributes(node);
+
+  if (node.kind === "section") {
+    return (
+      <fieldset className={className} data-layout-id={node.id}>
+        {node.label && <legend className={MDY_LAYOUT_CLASSES.sectionLabel}>{node.label}</legend>}
+        {node.children.map((child, i) => (
+          <LayoutChild key={i} child={child} renderField={renderField} />
+        ))}
+      </fieldset>
+    );
+  }
+
+  return (
+    <div className={className} style={style} data-layout-id={node.id}>
+      {node.columns.map((column, i) => (
+        // The column is the grid item, so a placement is applied here and not to
+        // anything inside it. The first child with something to say wins.
+        <div key={i} className={MDY_LAYOUT_CLASSES.column} style={layoutSlotStyle(column.map(placementOf).find(Boolean))}>
+          {column.map((child, j) => (
+            <LayoutChild key={j} child={child} renderField={renderField} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LayoutChild({ child, renderField }) {
+  if (typeof child === "string") return renderField(child);
+  if ("ref" in child) return renderField(child.ref);
+  return <LayoutNode node={child} renderField={renderField} />;
+}
+```
+
+`renderField` is your own field markup from the recipes above, looked up by
+name. The JSX is React's; everything it walks is framework-free, so the Vue,
+Solid, Preact and Svelte versions differ only in how they spell an element —
+which is why this one is covered once
+(`packages/react/test/headless-recipes.test.mjs`) rather than five times.
+Three things are worth knowing:
+
+- **The custom properties are the whole responsive story.** A row's track
+  count per breakpoint, a column's starting track, whether it shows at a
+  size — all of it arrives as `--mdy-layout-*` on the elements above, and
+  `@modyra/styles` reads them from **container** queries, so a form nested
+  in a narrow panel arranges itself for the panel rather than for the
+  window.
+- **Splice, don't hoist.** A layout that arranges only part of a form must
+  leave the rest where the author put it: render each node at the position
+  of its first member, not all the nodes first.
+- **Don't spell the classes yourself.** `MDY_LAYOUT_CLASSES` is the same
+  vocabulary every adapter and every theme uses; a literal string here is
+  how one renderer's two-column row stops matching another's.
+
 ## Accessibility checklist
 
 The recipes encode these; keep them when customizing:
