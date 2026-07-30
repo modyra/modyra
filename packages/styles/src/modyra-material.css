@@ -51,10 +51,17 @@
         --mdy-label-font-weight: var(--mdy-font-weight-medium);
         --mdy-input-placeholder-color: var(--mdy-outline);
 
-        /* ─── Key Palette (Zinc Neutral) ───────────────────────────────────────── */
-        --mdy-primary: #18181b;
+        /* ─── Key Palette (Zinc Neutral) ───────────────────────────────────────────
+           Declared at the `sys` tier, which is where the palette maths in modyra-base.css reads
+           from. Set on `--mdy-primary` instead — as this was — the colour arrives *after* the
+           derivation and the rest of the palette keeps deriving from a primary this theme never
+           chose. The short names below still bridge from here, so the zinc tints are unchanged.
+
+           `error` is forced rather than derived: this theme wants its own red, which is exactly the
+           escape hatch the derivation leaves open. */
+        --mdy-sys-color-primary: #18181b;
+        --mdy-sys-color-error: #dc2626;
         --mdy-on-primary: #ffffff;
-        --mdy-error: #dc2626;
         --mdy-on-error: #ffffff;
 
         /* ─── Dynamic Tints (Mathematical derivation from Key Palette) ────────── */

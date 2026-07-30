@@ -16,6 +16,14 @@
 
 @layer mdy.tokens, mdy.base, mdy.components, mdy.themes;
 
+/* The `--mdy-ref-*` / `--mdy-sys-*` / `--mdy-comp-*` tiers, and the palette maths that derives a
+   whole palette from one colour, all live in modyra-base.css. This file was documented as the one to
+   import and did not import it, so a page loading a theme on its own — which is what every
+   framework-free example does — had no sys tier at all and ran entirely on the literal fallbacks
+   spelled into the `var()` chains below. Those fallbacks cannot follow a chosen colour: they are
+   fixed hex. Importing it is what lets a single-file theme derive. */
+@import './modyra-base.css';
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * LAYER: mdy.tokens
  * CSS custom properties — bridge from --mdy-sys-* / comp tokens
