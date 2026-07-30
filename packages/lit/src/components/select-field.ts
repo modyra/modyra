@@ -3,11 +3,11 @@ import { filterOptionsByQuery } from "@modyra/core/ui";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { mdyIcon } from "../base.js";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
+import { MdyDropdownFieldElement } from "./dropdown-field.js";
 import {
   MdyLitOverlayController,
   renderOverlayPanel,
 } from "./popup-styles.js";
-import { MdyDropdownFieldElement } from "./dropdown-field.js";
 
 export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | null> {
   static override properties: PropertyDeclarations = {
@@ -68,7 +68,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           handle.markAsDirty();
         },
       },
-      (part, key) => {
+      (part: string, key: string | undefined) => {
         const view = this.selectAdapter?.view;
         if (!view) return undefined;
         if (part === "trigger") {
@@ -225,17 +225,17 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     const dropdown = html`
       <div
         class="${this.popupClass(position)} mdy-overlay mdy-glass-effect ${alignment === "right"
-          ? "mdy-select__dropdown--right"
-          : ""}"
+        ? "mdy-select__dropdown--right"
+        : ""}"
       >
         ${this.searchable
-          ? html`<input
+        ? html`<input
               type="text"
               class="mdy-select__search"
               .value=${state.query}
               @input=${this.onSearchInput}
             />`
-          : nothing}
+        : nothing}
         <ul
           class="mdy-select__list"
           id=${listbox.id}
@@ -243,45 +243,45 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           aria-labelledby=${trigger.id}
         >
           ${filtered.map((option) => {
-            const key = this.optionKey(option.value);
-            const part = view.parts[key];
-            const selected = state.selectedKey === key;
-            const active = state.activeKey === key;
-            return html`<li
+          const key = this.optionKey(option.value);
+          const part = view.parts[key];
+          const selected = state.selectedKey === key;
+          const active = state.activeKey === key;
+          return html`<li
               class="mdy-select__option ${selected ? "mdy-select__option--selected" : ""} ${active
-                ? "mdy-select__option--active"
-                : ""}"
+              ? "mdy-select__option--active"
+              : ""}"
               id=${part.id}
               role="option"
               aria-selected=${selected ? "true" : "false"}
               aria-disabled=${option.disabled ? "true" : nothing}
               @pointerdown=${(e: Event) => e.preventDefault()}
               @click=${() => {
-                if (!option.disabled) this.pick(handle, option.value);
-              }}
+              if (!option.disabled) this.pick(handle, option.value);
+            }}
             >
               <span class="mdy-select__option-label">${option.label}</span>
             </li>`;
-          })}
+        })}
           ${this.showCreateOption(state.query, filtered)
-            ? html`<li
+        ? html`<li
                 class="mdy-select__option mdy-select__option--create"
                 role="option"
                 @click=${() => this.onCreateOption(state.query)}
               >
                 Create “${state.query.trim()}”
               </li>`
-            : nothing}
+        : nothing}
           ${filtered.length === 0 && !this.showCreateOption(state.query, filtered)
-            ? html`<li class="mdy-select__no-results" role="presentation">
+        ? html`<li class="mdy-select__no-results" role="presentation">
                 ${state.loading
-                  ? html`<div class="mdy-select__loading-content">
+            ? html`<div class="mdy-select__loading-content">
                       ${mdyIcon("LOADER", "mdy-select__loader")}
                       <span>Loading…</span>
                     </div>`
-                  : html`No results`}
+            : html`No results`}
               </li>`
-            : nothing}
+        : nothing}
         </ul>
       </div>
     `;
@@ -305,19 +305,19 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             aria-label=${this.label || nothing}
             ?disabled=${handle.disabled()}
             @click=${(e: Event) => {
-              if (!this._open) this.overlay.open(e);
-              this.toggleOpen(handle);
-            }}
+        if (!this._open) this.overlay.open(e);
+        this.toggleOpen(handle);
+      }}
             @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
           >
             ${text
-              ? html`<span class="mdy-select__value">${text}</span>`
-              : html`<span class="mdy-select__placeholder">${this.placeholder || "\u00A0"}</span>`}
+        ? html`<span class="mdy-select__value">${text}</span>`
+        : html`<span class="mdy-select__placeholder">${this.placeholder || "\u00A0"}</span>`}
           </button>
           <div class="mdy-input-suffix">
             ${state.loading
-              ? mdyIcon("LOADER", "mdy-select__loader")
-              : mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}
+        ? mdyIcon("LOADER", "mdy-select__loader")
+        : mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}
             <slot name="suffix"></slot>
           </div>
         </div>

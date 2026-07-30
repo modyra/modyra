@@ -6,6 +6,7 @@
  * the colour it is named for. The second is the one CSS cannot check for itself.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   MDY_PALETTE_MODELS,
@@ -151,6 +152,61 @@ test("an on- colour is always the better of black and white, never merely the pl
       }
     }
   }
+});
+
+test("the stylesheet and this module hold the same numbers", () => {
+  // Two copies of a number is exactly what drifts. `modyra-base.css` does the arithmetic live in
+  // the browser and this module does it in Node; if someone retunes one, this fails rather than the
+  // two of them quietly disagreeing about what `triadic` means.
+  const css = readFileSync(
+    new URL("../../styles/src/modyra-base.css", import.meta.url),
+    "utf8",
+  );
+  const block = (selector) => {
+    const at = css.indexOf(selector);
+    assert.ok(at > -1, `${selector} is gone from modyra-base.css`);
+    return css.slice(at, css.indexOf("}", at));
+  };
+  const numberIn = (text, name) => {
+    const m = new RegExp(`--mdy-palette-${name}:\\s*([-\\d.]+)`).exec(text);
+    assert.ok(m, `--mdy-palette-${name} is not declared where it was`);
+    return Number(m[1]);
+  };
+
+  // `brand` is the default and lives on :root; the others are attribute-selected.
+  const where = {
+    brand: block(":root {\n    /* Hue offsets"),
+    monochrome: block('[data-mdy-palette="monochrome"]'),
+    complementary: block('[data-mdy-palette="complementary"]'),
+    triadic: block('[data-mdy-palette="triadic"]'),
+  };
+
+  for (const [name, model] of Object.entries(MDY_PALETTE_MODELS)) {
+    for (const role of ["secondary", "tertiary"]) {
+      for (const [axis, key] of [
+        ["h", "h"],
+        ["c", "c"],
+        ["l", "l"],
+      ]) {
+        assert.equal(
+          numberIn(where[name], `${role}-${axis}`),
+          model[role][key],
+          `${name}: ${role}-${axis} differs between the stylesheet and MDY_PALETTE_MODELS`,
+        );
+      }
+    }
+  }
+
+  // Error and the contrast proxy are shared by every model, so they are declared once on :root.
+  const root = where.brand;
+  const brand = MDY_PALETTE_MODELS.brand;
+  assert.equal(numberIn(root, "error-h"), brand.error.h);
+  assert.equal(numberIn(root, "error-c"), brand.error.c);
+  assert.equal(numberIn(root, "error-l"), brand.error.l);
+  assert.equal(numberIn(root, "contrast-threshold"), brand.contrastProxy.threshold);
+  assert.equal(numberIn(root, "luma-chroma-weight"), brand.contrastProxy.chromaWeight);
+  assert.equal(numberIn(root, "luma-hue-offset"), brand.contrastProxy.hueOffset);
+  assert.equal(numberIn(root, "on-chroma"), brand.onChroma);
 });
 
 test("a primary that is not a colour yields no palette", () => {

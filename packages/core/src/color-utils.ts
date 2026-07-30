@@ -41,20 +41,25 @@ export interface MdyPaletteModel {
   /** `h` here is absolute, not an offset — see above. */
   readonly error: { readonly h: number; readonly c: number; readonly l: number };
   /**
-   * Where an `on-` colour flips from white to black: lighter than this takes dark text, darker
-   * takes light text.
+   * How `modyra-base.css` decides whether an `on-` colour is black or white — **not** how this
+   * module decides it.
    *
-   * The value is measured, not chosen. Sweeping hue and chroma and solving for where the WCAG ratio
-   * against black overtakes the ratio against white puts the crossover between **0.508 and 0.590**
-   * OKLCH lightness, mean 0.562 — so 0.56 puts every colour on the better side of the two. It is
-   * worth being exact about: at 0.62 an indigo of lightness 0.607 was handed white text at 4.09:1,
-   * under AA, when the black it should have had gives 5.07:1.
+   * Where black overtakes white has one clean answer in *luminance*: 0.1791, always. A stylesheet
+   * cannot get there, because it holds the colour in OKLCH while WCAG wants sRGB luminance, which
+   * weights green at 0.72 and blue at 0.07 — a blue and a green of identical OKLCH lightness are
+   * nowhere near equally bright. So the stylesheet estimates luminance as
+   * `l³ · (1 + chromaWeight · c · cos(h − hueOffset))`: exact for a grey, fitted for the rest.
    *
-   * The margin is genuinely thin at mid lightness — a colour sitting exactly on the crossover can
-   * reach only ~4.58:1 whichever way it goes, which is AA and no more. That is a property of black
-   * and white text on mid-tone backgrounds, not something a different pivot could fix.
+   * Against 8640 sampled colours that estimate picks the wrong side 142 times and gives up at most
+   * 1.09 ratio points. `derivePalette` does not use it — it measures both candidates, which is
+   * exact — but the constants live here so the two implementations can be compared, and are: the
+   * stylesheet is parsed and checked against these numbers in the test.
    */
-  readonly contrastPivot: number;
+  readonly contrastProxy: {
+    readonly threshold: number;
+    readonly chromaWeight: number;
+    readonly hueOffset: number;
+  };
   /** How much of the brand's chroma an `on-` colour keeps, so text is tinted rather than clinical. */
   readonly onChroma: number;
 }
@@ -72,7 +77,7 @@ export const MDY_PALETTE_MODELS: Readonly<Record<string, MdyPaletteModel>> = Obj
     secondary: Object.freeze({ h: 30, c: 1.05, l: 1.03 }),
     tertiary: Object.freeze({ h: 90, c: 0.85, l: 1.15 }),
     error: Object.freeze({ h: 28, c: 0.82, l: 0.83 }),
-    contrastPivot: 0.56,
+    contrastProxy: Object.freeze({ threshold: 0.1791, chromaWeight: 0.85, hueOffset: 179 }),
     onChroma: 0.08,
   }),
   /** One hue throughout: the accents separate by weight alone. Safe for any brand colour. */
@@ -80,7 +85,7 @@ export const MDY_PALETTE_MODELS: Readonly<Record<string, MdyPaletteModel>> = Obj
     secondary: Object.freeze({ h: 0, c: 0.7, l: 1.08 }),
     tertiary: Object.freeze({ h: 0, c: 0.45, l: 1.2 }),
     error: Object.freeze({ h: 28, c: 0.82, l: 0.83 }),
-    contrastPivot: 0.56,
+    contrastProxy: Object.freeze({ threshold: 0.1791, chromaWeight: 0.85, hueOffset: 179 }),
     onChroma: 0.08,
   }),
   /** The tertiary sits opposite the primary; the secondary stays close to it. */
@@ -88,7 +93,7 @@ export const MDY_PALETTE_MODELS: Readonly<Record<string, MdyPaletteModel>> = Obj
     secondary: Object.freeze({ h: 15, c: 1.0, l: 1.05 }),
     tertiary: Object.freeze({ h: 180, c: 0.9, l: 1.1 }),
     error: Object.freeze({ h: 28, c: 0.82, l: 0.83 }),
-    contrastPivot: 0.56,
+    contrastProxy: Object.freeze({ threshold: 0.1791, chromaWeight: 0.85, hueOffset: 179 }),
     onChroma: 0.08,
   }),
   /** Three hues evenly around the wheel. */
@@ -96,7 +101,7 @@ export const MDY_PALETTE_MODELS: Readonly<Record<string, MdyPaletteModel>> = Obj
     secondary: Object.freeze({ h: 240, c: 0.95, l: 1.05 }),
     tertiary: Object.freeze({ h: 120, c: 0.9, l: 1.1 }),
     error: Object.freeze({ h: 28, c: 0.82, l: 0.83 }),
-    contrastPivot: 0.56,
+    contrastProxy: Object.freeze({ threshold: 0.1791, chromaWeight: 0.85, hueOffset: 179 }),
     onChroma: 0.08,
   }),
 });
@@ -260,8 +265,8 @@ const onColorFor = (paintedHex: string, model: MdyPaletteModel): string => {
   // for where black overtakes white puts the crossover anywhere between 0.508 and 0.590 depending
   // on hue and chroma, so a constant picks the worse side for colours sitting in that band, and in
   // that band the whole margin is about 0.3 of a ratio point. Here there is no reason to guess:
-  // compute both and keep the better. `contrastPivot` remains the model's approximation of exactly
-  // this rule, for the stylesheet, which cannot compute a luminance.
+  // compute both and keep the better. `contrastProxy` carries what the stylesheet does instead,
+  // for comparison — it has no way to compute a luminance.
   return contrastRatio(paintedHex, light) >= contrastRatio(paintedHex, dark) ? light : dark;
 };
 
