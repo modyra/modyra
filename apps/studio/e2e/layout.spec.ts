@@ -562,3 +562,59 @@ test("every breakpoint is fully visible by default, so switching size shows the 
   // The form really was laid out at four different widths, not one width four times.
   expect(new Set(widths).size).toBe(4);
 });
+
+test("one row, two rows at sm and one at md — the same three fields", async ({ page }) => {
+  // The shape asked for, in the words it was asked in: at `sm` username and password share the first
+  // row and the mail is under them; at `md` all three sit in one row. It is one row of three fields
+  // told to be two tracks wide at `sm` and three at `md` — the third field wraps, because a row is a
+  // grid and a grid wraps.
+  //
+  // Asserted from the *drawn* cells rather than from the width control: the tests above check what
+  // the control says, and this checks what the form does with it.
+  await addFields(page, ["username", "password", "mail"]);
+  await toggleColumns(page, "username");
+  await toggleColumns(page, "mail");
+  await expect(page.locator(".mdy-layout-columns .mdy-layout-column")).toHaveCount(3);
+
+  const setWidth = async (size: string, across: string) => {
+    await page.locator(`[data-breakpoint="${size}"]`).click();
+    const field = page.locator('.plain-canvas-field[data-field-path="username"]');
+    await field.hover();
+    await field.locator("[data-row-columns]").selectOption(across);
+  };
+
+  /** Which drawn row each field landed on, top to bottom, by the cell's own y position. */
+  const rows = async (size: string) => {
+    await page.locator(`[data-breakpoint="${size}"]`).click();
+    await page.waitForTimeout(250);
+    return page.locator(".mdy-layout-columns").first().evaluate((row) => {
+      const cells = Array.from(row.querySelectorAll(".mdy-layout-column")) as HTMLElement[];
+      const tops = cells.map((cell) => Math.round(cell.getBoundingClientRect().top));
+      const lines = [...new Set(tops)].sort((a, b) => a - b);
+      return cells.map((cell, i) => ({
+        field: cell.querySelector("[data-field-path]")?.getAttribute("data-field-path") ?? null,
+        line: lines.indexOf(tops[i]!),
+      }));
+    });
+  };
+
+  await setWidth("sm", "2");
+  await setWidth("md", "3");
+
+  // Two rows at `sm`: username and password together, the mail below them.
+  expect(await rows("sm")).toEqual([
+    { field: "username", line: 0 },
+    { field: "password", line: 0 },
+    { field: "mail", line: 1 },
+  ]);
+
+  // One row at `md`: all three on the same line.
+  expect(await rows("md")).toEqual([
+    { field: "username", line: 0 },
+    { field: "password", line: 0 },
+    { field: "mail", line: 0 },
+  ]);
+
+  // And `sm` did not follow `md` when `md` was set — each size holds its own arrangement.
+  expect((await rows("sm")).map((cell) => cell.line)).toEqual([0, 0, 1]);
+});
