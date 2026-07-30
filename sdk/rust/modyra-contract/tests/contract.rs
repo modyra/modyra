@@ -88,3 +88,70 @@ fn rejects_shared_duplicate_layout_reference_fixture() {
     assert!(!result.valid);
     assert!(result.diagnostics.iter().any(|d| d.code == "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE"));
 }
+
+#[test]
+fn accepts_shared_v3_placement_fixture() {
+    // The same document the TS and Java parsers accept. Studio emits v3 the moment a layout places
+    // a slot per breakpoint, so a form authored responsively used to export to something this SDK
+    // refused outright — `expected contract version 2`, before a single field was read.
+    let json = include_str!("../../../../spec/fixtures/dynamic-form/v3/placement.json");
+    let result = parse_v2(json, ValidationMode::Strict).unwrap();
+    assert!(result.valid, "{:?}", result.diagnostics);
+    let form = result.form.expect("form");
+    assert_eq!(form.version, 3);
+
+    use modyra_contract::{LayoutChild, LayoutNode};
+    match &form.layout[0] {
+        LayoutNode::Columns { columns, at, .. } => {
+            // v2's track counts survive the round trip; they used to be dropped silently.
+            assert_eq!(at.as_ref().expect("row at").get("sm").copied(), Some(2));
+            assert!(matches!(&columns[0][0], LayoutChild::Field(name) if name == "first"));
+            match &columns[1][0] {
+                LayoutChild::Slot(slot) => {
+                    assert_eq!(slot.reference, "last");
+                    let at = slot.at.as_ref().expect("slot at");
+                    assert_eq!(at["base"].hidden, Some(true));
+                    assert_eq!(at["md"].column, Some(2));
+                    assert_eq!(at["md"].hidden, Some(false));
+                }
+                other => panic!("expected a v3 slot, got {other:?}"),
+            }
+        }
+        other => panic!("expected a columns row, got {other:?}"),
+    }
+
+    // A section occupying a column carries that column's placement.
+    match &form.layout[1] {
+        LayoutNode::Columns { columns, .. } => match &columns[0][0] {
+            LayoutChild::Node(nested) => match nested.as_ref() {
+                LayoutNode::Section { id, at, .. } => {
+                    assert_eq!(id, "address");
+                    assert_eq!(at.as_ref().expect("section at")["base"].hidden, Some(true));
+                }
+                other => panic!("expected a section, got {other:?}"),
+            },
+            other => panic!("expected a nested node, got {other:?}"),
+        },
+        other => panic!("expected a columns row, got {other:?}"),
+    }
+}
+
+#[test]
+fn refuses_placement_where_no_column_can_honour_it() {
+    // `at` outside a columns row, and a column past the row's tracks: both are refused, the same
+    // way the TS parser refuses them, so the three implementations agree on what a slot may say.
+    let in_section = r#"{"version":3,"fields":[{"name":"a","kind":"text"}],
+        "layout":[{"kind":"section","id":"s","children":[{"ref":"a","at":{"sm":{"hidden":true}}}]}]}"#;
+    let result = parse_v2(in_section, ValidationMode::Strict).unwrap();
+    assert!(!result.valid, "placement in a section must be refused");
+
+    let past_the_end = r#"{"version":3,"fields":[{"name":"a","kind":"text"},{"name":"b","kind":"text"}],
+        "layout":[{"kind":"columns","id":"r","columns":[["a"],[{"ref":"b","at":{"sm":{"column":5}}}]]}]}"#;
+    let result = parse_v2(past_the_end, ValidationMode::Strict).unwrap();
+    assert!(!result.valid, "a column the row does not have must be refused");
+
+    // And a version this SDK has never heard of is still refused.
+    let v4 = r#"{"version":4,"fields":[{"name":"a","kind":"text"}]}"#;
+    let result = parse_v2(v4, ValidationMode::Strict).unwrap();
+    assert!(result.diagnostics.iter().any(|d| d.code == "MDY_DYNAMIC_UNSUPPORTED_VERSION"));
+}
