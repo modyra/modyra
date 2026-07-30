@@ -213,3 +213,77 @@ test("the colour palette is placed by the contract, in every theme", async ({ pa
     expect(placed.padding, theme).toBeGreaterThanOrEqual(16);
   }
 });
+
+test("the clock shows the hours its format has, on two rings, and takes the keyboard", async ({ page }) => {
+  // Reported as "in 24h mode I see 12 hours, not 24" and "the keyboard does nothing on the numbers".
+  // The demo carries both pickers, so the two faces are compared against each other rather than
+  // against a remembered number.
+  await page.goto("/");
+  await page.waitForSelector("mdy-control-timepicker", { state: "attached", timeout: 15000 });
+
+  const read = async (index: number) => {
+    const picker = page.locator("mdy-control-timepicker").nth(index);
+    const toggle = picker.locator(".mdy-timepicker__toggle");
+    await toggle.scrollIntoViewIfNeeded();
+    await toggle.click();
+    await page.waitForTimeout(400);
+    // Scoped to the picker that was opened: a closed panel is `visibility: hidden`, which still has
+    // a box, so "the first face with a height" finds the picker nobody opened.
+    const state = await picker.evaluate((root) => {
+      const face = root.querySelector(".mdy-timepicker-dial__face") as HTMLElement;
+      const numbers = Array.from(face.querySelectorAll(".mdy-timepicker-dial__number")) as HTMLElement[];
+      const box = face.getBoundingClientRect();
+      const cx = box.left + box.width / 2;
+      const cy = box.top + box.height / 2;
+      const radius = (el: HTMLElement) => {
+        const b = el.getBoundingClientRect();
+        return Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy);
+      };
+      const inner = numbers.filter((n) => n.classList.contains("mdy-timepicker-dial__number--inner"));
+      const outer = numbers.filter((n) => !n.classList.contains("mdy-timepicker-dial__number--inner"));
+      return {
+        labels: numbers.map((n) => n.textContent!.trim()),
+        innerCount: inner.length,
+        outerRadius: Math.max(...outer.map(radius)),
+        innerRadius: inner.length ? Math.max(...inner.map(radius)) : 0,
+        role: face.getAttribute("role"),
+        valueMax: face.getAttribute("aria-valuemax"),
+        valueNow: face.getAttribute("aria-valuenow"),
+        focused: document.activeElement === face,
+        hasPeriodToggle: !!root.querySelector(".mdy-timepicker-period-toggle"),
+      };
+    });
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(200);
+    return state;
+  };
+
+  const twelve = await read(0);
+  const day = await read(1);
+
+  // Twelve hours and a period beside them.
+  expect(twelve.labels).toHaveLength(12);
+  expect(twelve.innerCount).toBe(0);
+  expect(twelve.valueMax).toBe("12");
+  expect(twelve.hasPeriodToggle).toBe(true);
+
+  // Twenty-four hours and no period at all — the value 14:00 can now be pointed at.
+  expect(day.labels).toHaveLength(24);
+  expect(day.labels).toContain("14");
+  expect(day.labels).toContain("00");
+  expect(day.valueMax).toBe("23");
+  expect(day.hasPeriodToggle).toBe(false);
+  // On two rings, drawn at two radii. Equal radii means twelve numbers sitting on twelve others,
+  // which is what a component stylesheet's copy of the foundation's placement produced.
+  expect(day.innerCount).toBe(12);
+  expect(day.innerRadius).toBeGreaterThan(0);
+  expect(day.outerRadius - day.innerRadius).toBeGreaterThan(20);
+
+  // The face is the control, and it holds focus as soon as the picker opens — otherwise the arrows
+  // go to the page and the clock has a keyboard nobody can reach.
+  for (const state of [twelve, day]) {
+    expect(state.role).toBe("slider");
+    expect(state.focused).toBe(true);
+    expect(Number(state.valueNow)).not.toBeNaN();
+  }
+});

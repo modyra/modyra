@@ -374,7 +374,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     // The face the format has: 1–12 with a period beside them, or 0–23 with none.
     const numbers = timepickerDialNumbers(field, this.format);
     const parsed = parseTime(this._draftValue) ?? { hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay() };
-    const selected = timepickerSelectedDialValue(field, parsed);
+    // In the units the face shows: on a 24-hour face this marks 14, not the 2 the draft holds.
+    const selected = timepickerSelectedDialValue(field, parsed, this.format);
     return html`
       <div class="mdy-timepicker-dial-variant">
         <div class="mdy-timepicker-dial">

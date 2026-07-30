@@ -209,31 +209,12 @@
     height: 100%;
 }
 
-.mdy-timepicker-dial__number {
-    position: absolute;
-    width: var(--tp-num-size);
-    height: var(--tp-num-size);
-    aspect-ratio: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 0.9rem;
-    font-weight: 500;
-    line-height: 1;
-    color: var(--tp-on-primary-container);
-    // Must be above the hand ::after circle (z-index 2) for text to render on top
-    z-index: 10;
-    pointer-events: none;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(calc(var(--index) * 30deg)) translateY(calc(var(--tp-hand-length) * -1)) rotate(calc(var(--index) * -30deg));
-    transition: color 0.12s;
-}
-
-.mdy-timepicker-dial__number--selected {
-    // White text on the primary-colored hand circle — maximum contrast
-    color: var(--tp-on-primary);
-}
+// The numbers are placed by the foundation (`.mdy-timepicker-dial__number` in modyra.css), which
+// said exactly what this block said — the same properties and the same transform, copied. Component
+// styles are emulated-encapsulation, so they carry an attribute selector and outrank the foundation
+// wherever the two speak: this copy is why the 24-hour face's inner ring drew at the outer radius
+// and every second hour landed on top of a first one. A renderer that re-states placement is a
+// renderer deciding what a widget looks like in a place no theme can reach.
 
 // Hand height must match the translateY distance (94px) for the tip to hit numbers
 .mdy-timepicker-dial__hand {
