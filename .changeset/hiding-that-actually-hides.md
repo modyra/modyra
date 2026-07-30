@@ -16,5 +16,8 @@ or grid, and the one that decides is the foundation's.
 That fix immediately produced a worse problem: with hiding working, hiding a node on the canvas took
 the eye that would unhide it away with the node, and the edit could not be undone. **The canvas is an
 editor, so it marks a hidden column instead of removing it** — dimmed, badged "hidden here", still
-selectable and still editable. The Preview tab and the shipped form hide it for real; only the canvas
-keeps it in reach.
+selectable and still editable. The shipped form hides it for real; only the canvas keeps it in reach.
+
+*(An earlier draft of this note also claimed the Preview tab hid it for real. It did not: Preview
+built its own arrangement and ignored every slot's placement. That is fixed separately, in "Preview
+shows the arrangement it is previewing".)*
