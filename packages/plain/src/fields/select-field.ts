@@ -12,7 +12,7 @@ import { MDY_WIDGET_CONTRACTS, createSelectController, overlayAnchoringFor, type
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
-import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
+import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 
 export function renderSelectField(
   container: HTMLElement,
@@ -179,7 +179,7 @@ export function renderSelectField(
     // other controller here) — errors still render, just via a plain static class.
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
 
-    popup.hidden = !state.open;
+    setOverlayOpen(popup, state.open);
     if (state.open) {
       positionOverlay(popup, shell.wrapper, anchoring);
       queueMicrotask(() => search.focus());
