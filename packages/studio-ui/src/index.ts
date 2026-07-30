@@ -655,6 +655,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   let shell: StudioShell | null = null;
   /** Column widths and the narrow-window slide-overs; built with the shell, torn down with it. */
   let columns: StudioColumns | null = null;
+  /** Watches the canvas so a fitted zoom re-fits when the panels move. Torn down with the shell. */
+  let canvasResize: ResizeObserver | null = null;
   const scroll = new ScrollMemory();
   /** Indexes for the current `project`, derived once per render — every handler reads this instead of rebuilding. */
   let indexes: StudioIndexes = buildIndexes(project);
@@ -800,8 +802,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
    */
   const ZOOM_STEPS = [0.5, 0.75, 1, 1.25] as const;
   let zoom = 1;
-  /** Set when the zoom follows the canvas instead of a chosen step, so it re-fits as the panel moves. */
-  let zoomFits = false;
+  /**
+   * Whether the zoom follows the canvas instead of a chosen step, so it re-fits as the panel moves.
+   *
+   * On by default, and that is the difference between the size selector working and appearing not to.
+   * A `md` form is 64rem and an `lg` form 80rem; the canvas between the outline and the inspector is
+   * a few hundred pixels. At 100% the canvas simply scrolled, so every size showed the *same*
+   * left-hand slice — measured at 51% of the form at `lg` — and switching size looked like it changed
+   * nothing at all. Fitting never magnifies (it is capped at 1), so a size that already fits is
+   * untouched and this costs nothing where it is not needed.
+   */
+  let zoomFits = true;
 
   function setZoom(next: number | "fit"): void {
     zoomFits = next === "fit";
@@ -2722,6 +2733,20 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     canvasController.connect(canvas);
     columns = installColumns(host);
 
+    // A fit is only true for the width it was measured against, and the panels move: dragging the
+    // inspector wider is exactly when a fitted canvas would quietly stop fitting. Watching the canvas
+    // rather than re-rendering keeps this off the render path; sizing writes to the *surface*, so
+    // observing the canvas cannot feed back into itself.
+    // Feature-detected: a fitted canvas is a refinement, not a requirement, and Studio still mounts
+    // where the API is absent — a jsdom test run being the everyday case. Every render fits anyway;
+    // this only catches the resizes that happen between renders.
+    if (typeof ResizeObserver === "function") {
+      canvasResize = new ResizeObserver(() => {
+        if (shell && zoomFits) sizeCanvasToZoom(shell);
+      });
+      canvasResize.observe(canvas);
+    }
+
     // One document-level handler for the whole shortcut set, bound once. Scoped to this mount so
     // an embed (the Astro page) never has its own keystrokes hijacked by a Studio that is not focused.
     document.addEventListener("keydown", onGlobalKeydown);
@@ -3914,6 +3939,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     previewSession.dispose();
     previewEffect = null;
     canvasController.dispose();
+    canvasResize?.disconnect();
+    canvasResize = null;
     columns?.dispose();
     columns = null;
     scroll.clear();
