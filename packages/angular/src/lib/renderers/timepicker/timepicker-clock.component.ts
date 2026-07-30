@@ -20,7 +20,7 @@ import {
   pointerAngle,
   to24Hour,
 } from "@modyra/core/time-utils";
-import { timeClockTransition, timepickerDialNumbers, timepickerSelectedDialValue } from "@modyra/widgets";
+import { timeClockTransition, timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerSelectedDialValue } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
 
@@ -124,7 +124,23 @@ export class MdyTimepickerClockComponent {
   });
 
   /** The numbers on the face, and which one is selected — the contract's, not this component's. */
-  protected readonly dialNumbers = computed(() => timepickerDialNumbers(this.focusedField()));
+  protected readonly dialNumbers = computed(() => timepickerDialNumbers(this.focusedField(), this.format()));
+
+  /**
+   * The number the hand is on, in the units the face shows: 0–23 on a 24-hour face, 1–12 on a
+   * twelve-hour one. The draft is held as 12h with a period whatever the format, so this is the one
+   * place that converts — the keyboard and the announced value both read it.
+   */
+  protected readonly faceValue = computed(() => {
+    if (this.focusedField() === "minute") return this.numericMinute();
+    const p = this.parsed();
+    return this.format() === "24h" ? (p ? to24Hour(p) : 0) : this.numericHour();
+  });
+
+  /** What a screen reader is told the hand is pointing at — the contract's, with the format's bounds. */
+  protected readonly dialAria = computed(() =>
+    timepickerDialAria(this.focusedField(), this.format(), this.faceValue()),
+  );
 
   protected readonly selectedDialValue = computed(() =>
     timepickerSelectedDialValue(this.focusedField(), {
@@ -178,11 +194,34 @@ export class MdyTimepickerClockComponent {
     const field = this.focusedField();
     const next = timeClockTransition(this.value(),
       field === "hour"
-        ? { type: "hour", value, format: "12h" }
+        // The face's own format: on a 24-hour face this number is 0–23, and calling it 12h turned
+        // every afternoon hour into a morning one.
+        ? { type: "hour", value, format: this.format() }
         : { type: "minute", value },
     );
     if (next !== null) this.timePicked.emit(next);
     if (field === "hour") this.scheduleMinuteSwitch(200);
+  }
+
+  /**
+   * The arrows on the face.
+   *
+   * Which key does what, and what it may produce, is `timepickerDialKeyIntent` — so the hours a
+   * keyboard can reach are the hours the face shows, and neither can drift from the other. This
+   * component decides nothing: it reads the key, applies the answer, and stops the page scrolling.
+   */
+  protected onDialKeydown(event: KeyboardEvent): void {
+    if (this.disabled() || this.viewMode() !== "dial") return;
+    const field = this.focusedField();
+    const intent = timepickerDialKeyIntent(event.key, field, this.format(), this.faceValue());
+    if (!intent) return;
+    event.preventDefault();
+    const next = timeClockTransition(this.value(),
+      intent.field === "hour"
+        ? { type: "hour", value: intent.value, format: this.format() }
+        : { type: "minute", value: intent.value },
+    );
+    if (next !== null) this.timePicked.emit(next);
   }
 
   protected onDragStart(event: MouseEvent | TouchEvent): void {

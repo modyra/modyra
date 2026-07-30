@@ -371,7 +371,8 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     // Which numbers the face carries, where each one sits and which is selected are the contract's:
     // minute 0 belongs at the top of the face and a draft of 07 marks the 05 nearest it, and those
     // are exactly the details three renderers would each get slightly differently.
-    const numbers = timepickerDialNumbers(field);
+    // The face the format has: 1–12 with a period beside them, or 0–23 with none.
+    const numbers = timepickerDialNumbers(field, this.format);
     const parsed = parseTime(this._draftValue) ?? { hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay() };
     const selected = timepickerSelectedDialValue(field, parsed);
     return html`
@@ -391,7 +392,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
                 <div
                   class="mdy-timepicker-dial__number ${number.value === selected
                     ? "mdy-timepicker-dial__number--selected"
-                    : ""}"
+                    : ""} ${number.ring === "inner" ? "mdy-timepicker-dial__number--inner" : ""}"
                   style="--index: ${number.index}"
                 >
                   ${number.label}

@@ -68,6 +68,14 @@ export const MDY_STATE_MODIFIERS = Object.freeze({
   above: "above",
   /** The overlay gave up on its anchor and centred itself. */
   overlay: "overlay",
+  /**
+   * On the inner ring of a face that has two.
+   *
+   * A clock face has twelve positions and 24-hour time has twenty-four hours, so the second twelve
+   * sit at the same positions on a shorter radius. Which numbers those are is the contract's
+   * (`timepickerDialNumbers`); this is how a renderer says which ring it drew one on.
+   */
+  inner: "inner",
 });
 
 /** A state a part may declare. */
