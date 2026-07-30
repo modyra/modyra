@@ -126,6 +126,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
       >
         <mdy-timepicker-clock
           [value]="draftValue()"
+          [open]="open()"
           [format]="format()"
           [disabled]="isDisabled()"
           (timePicked)="onTimePicked($event)"

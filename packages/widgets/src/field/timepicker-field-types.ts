@@ -18,6 +18,7 @@
  * host's job, same division of labor as every other controller here).
  */
 import type { MdyFieldHandle } from "@modyra/core";
+import { to24Hour } from "@modyra/core/time-utils";
 import type { MdyTimeFormat, ParsedTime } from "@modyra/core/time-utils";
 
 export interface MdyTimepickerFieldControllerOptions {
@@ -108,9 +109,19 @@ export function timepickerDialNumbers(
  *
  * Minutes are shown in fives, so a draft of 07 marks the 05 that is nearest to it rather than
  * marking nothing at all.
+ *
+ * **In the units the face shows.** The draft holds hours as 1–12 with a period whatever the format,
+ * and a 24-hour face is numbered 0–23 — so answering the draft's hour marked `2` while the user was
+ * looking at `14`. The face's numbers and the face's mark have to be decided by the same rule, or
+ * they will eventually disagree; this is that rule, and `timepickerDialNumbers` is its other half.
  */
-export function timepickerSelectedDialValue(field: "hour" | "minute", draft: ParsedTime): number {
-  return field === "hour" ? draft.hour : (Math.round(draft.minute / 5) * 5) % 60;
+export function timepickerSelectedDialValue(
+  field: "hour" | "minute",
+  draft: ParsedTime,
+  format: MdyTimeFormat = "12h",
+): number {
+  if (field === "minute") return (Math.round(draft.minute / 5) * 5) % 60;
+  return format === "24h" ? to24Hour(draft) : draft.hour;
 }
 
 /** What a key does to the number the dial is pointing at. */

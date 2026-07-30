@@ -1,4 +1,5 @@
-<div class="mdy-timepicker-container" [class.mdy-timepicker--dial]="viewMode() === 'dial'">
+<div class="mdy-timepicker-container" [class.mdy-timepicker--dial]="viewMode() === 'dial'"
+     (keydown)="onClockKeydown($event)">
   <div class="mdy-timepicker-content">
     
     <!-- Unified M3 Header (Used by both Input and Dial variants) -->
@@ -35,7 +36,6 @@
             [attr.aria-valuetext]="dialAria().valueText"
             [attr.aria-label]="focusedField() === 'hour' ? i18n.timepickerHourLabel : i18n.timepickerMinuteLabel"
             [attr.aria-disabled]="disabled() ? 'true' : null"
-            (keydown)="onDialKeydown($event)"
             (mousedown)="onDragStart($event)"
             (touchstart)="onDragStart($event)"
           >

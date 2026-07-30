@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   DestroyRef,
   ElementRef,
   inject,
@@ -37,6 +38,12 @@ export class MdyTimepickerClockComponent {
   readonly value = input<string | null>(null);
   readonly disabled = input<boolean>(false);
   readonly format = input<MdyTimeFormat>("12h");
+  /**
+   * Whether the picker is showing. The clock is always in the DOM — the panel projects it rather
+   * than creating it — so this is the only way it can know it has just been opened, and the dial
+   * needs to know in order to take focus.
+   */
+  readonly open = input<boolean>(false);
   readonly timePicked = output<string>();
   readonly cancelClicked = output<void>();
   readonly confirmClicked = output<void>();
@@ -58,6 +65,12 @@ export class MdyTimepickerClockComponent {
     inject(DestroyRef).onDestroy(() => {
       if (this.switchTimer !== null) clearTimeout(this.switchTimer);
       this.teardownDragListeners();
+    });
+    // Opening is when the dial should take focus, and the clock is never destroyed — the panel
+    // projects it rather than creating it — so an effect on `open` is what "it has just been
+    // shown" looks like here.
+    effect(() => {
+      if (this.open() && this.viewMode() === "dial") this.focusDial();
     });
   }
 
@@ -131,21 +144,15 @@ export class MdyTimepickerClockComponent {
    * twelve-hour one. The draft is held as 12h with a period whatever the format, so this is the one
    * place that converts — the keyboard and the announced value both read it.
    */
-  protected readonly faceValue = computed(() => {
-    if (this.focusedField() === "minute") return this.numericMinute();
-    const p = this.parsed();
-    return this.format() === "24h" ? (p ? to24Hour(p) : 0) : this.numericHour();
-  });
+  protected readonly faceValue = computed(() =>
+    timepickerSelectedDialValue(this.focusedField(), {
+      hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay(),
+    }, this.format()),
+  );
 
   /** What a screen reader is told the hand is pointing at — the contract's, with the format's bounds. */
   protected readonly dialAria = computed(() =>
     timepickerDialAria(this.focusedField(), this.format(), this.faceValue()),
-  );
-
-  protected readonly selectedDialValue = computed(() =>
-    timepickerSelectedDialValue(this.focusedField(), {
-      hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay(),
-    }),
   );
 
   protected readonly handRotation = computed(() => {
@@ -187,6 +194,22 @@ export class MdyTimepickerClockComponent {
 
   protected setViewMode(mode: "input" | "dial"): void {
     this.viewMode.set(mode);
+    if (mode === "dial") this.focusDial();
+  }
+
+  /**
+   * Puts focus on the face, so the arrows have somewhere to arrive.
+   *
+   * The face has been focusable since it became a slider, and nothing ever focused it: opening the
+   * picker left focus on the toggle, outside the popup, so the first arrow went to the page. A
+   * control you can only reach by tabbing past Cancel and Confirm, with nothing saying so, is a
+   * control most people will never find.
+   */
+  private focusDial(): void {
+    const face = this.dialFaceRef()?.nativeElement;
+    if (!face) return;
+    // After the view that renders it, not during: on the opening pass the face may not exist yet.
+    queueMicrotask(() => this.dialFaceRef()?.nativeElement?.focus());
   }
 
   protected onDialNumberClick(value: number): void {
@@ -210,6 +233,21 @@ export class MdyTimepickerClockComponent {
    * keyboard can reach are the hours the face shows, and neither can drift from the other. This
    * component decides nothing: it reads the key, applies the answer, and stops the page scrolling.
    */
+  /**
+   * The arrows work while the clock is showing, wherever focus is inside it.
+   *
+   * Focusing the face on open is not enough on its own: the moment a user tabs to Confirm to commit,
+   * the arrows would go dead again — and "the clock has a keyboard" is not "the dial has a keyboard
+   * as long as you do not move". A keydown anywhere in the clock turns the hand, except from a text
+   * input: the hour and minute boxes in the header are `<input>`s with their own arrow handling, and
+   * taking their keys would make them impossible to correct.
+   */
+  protected onClockKeydown(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+    this.onDialKeydown(event);
+  }
+
   protected onDialKeydown(event: KeyboardEvent): void {
     if (this.disabled() || this.viewMode() !== "dial") return;
     const field = this.focusedField();

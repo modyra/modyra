@@ -112,4 +112,44 @@ describe("the clock face as a control", () => {
     expect(open("12h").host.querySelector(".mdy-timepicker-period-toggle")).toBeTruthy();
     expect(open("24h").host.querySelector(".mdy-timepicker-period-toggle")).toBeNull();
   });
+
+  it("gives the dial focus when the picker opens, so the first arrow lands", () => {
+    const { host } = open("12h");
+    // The clock is projected rather than created, so focus is taken on `open` becoming true.
+    return Promise.resolve().then(() => {
+      expect(document.activeElement).toBe(face(host));
+    });
+  });
+
+  it("the arrows work from anywhere in the clock, except a text input", () => {
+    const { fixture, host } = open("12h");
+    const press = (from: Element, key: string) => {
+      from.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+    };
+    const now = () => face(host).getAttribute("aria-valuenow");
+
+    // From Confirm — where focus lands the moment a user reaches for the button that commits.
+    const confirm = host.querySelector(".mdy-timepicker-action-btn--confirm")!;
+    const before = now();
+    press(confirm, "ArrowRight");
+    expect(now()).not.toBe(before);
+
+    // From an hour or minute box, which has its own arrows and must keep them.
+    const box = host.querySelector(".mdy-timepicker-segment-input");
+    if (box) {
+      const held = now();
+      press(box, "ArrowRight");
+      expect(now()).toBe(held);
+    }
+  });
+
+  it("turning the hand from the face still turns it once, not twice", () => {
+    // The handler moved to the clock root and a keydown on the face bubbles to it. Left on both,
+    // every arrow would step two hours.
+    const { fixture, host } = open("12h");
+    face(host).dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(face(host).getAttribute("aria-valuenow")).toBe("10");
+  });
 });

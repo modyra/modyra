@@ -300,3 +300,46 @@ test("what a screen reader is told matches what the arrows can reach", async () 
     }
   }
 });
+
+test("the mark lands on the number the face shows, not the one the draft holds", async () => {
+  const { timepickerDialNumbers, timepickerSelectedDialValue } = await import("../dist/index.js");
+  // 14:00 — the draft holds it as 2 PM whatever the format, because that is the canonical model.
+  const afternoon = { hour: 2, minute: 0, period: "PM" };
+
+  assert.equal(timepickerSelectedDialValue("hour", afternoon, "12h"), 2);
+  assert.equal(timepickerSelectedDialValue("hour", afternoon, "24h"), 14);
+  // Whatever it answers must be a number actually on that face, or it marks nothing.
+  for (const format of ["12h", "24h"]) {
+    const marked = timepickerSelectedDialValue("hour", afternoon, format);
+    const values = timepickerDialNumbers("hour", format).map((n) => n.value);
+    assert.ok(values.includes(marked), `${format}: ${marked} is not on the face`);
+  }
+
+  // Midnight is 12 AM in the draft and 00 on a 24-hour face — the case an off-by-twelve hides in.
+  const midnight = { hour: 12, minute: 0, period: "AM" };
+  assert.equal(timepickerSelectedDialValue("hour", midnight, "12h"), 12);
+  assert.equal(timepickerSelectedDialValue("hour", midnight, "24h"), 0);
+  // And noon, which converts the other way.
+  assert.equal(timepickerSelectedDialValue("hour", { hour: 12, minute: 0, period: "PM" }, "24h"), 12);
+
+  // Minutes are the same on either face, and still snap to the fives the face is marked in.
+  assert.equal(timepickerSelectedDialValue("minute", { hour: 2, minute: 7, period: "PM" }, "24h"), 5);
+  assert.equal(timepickerSelectedDialValue("minute", { hour: 2, minute: 58, period: "PM" }, "12h"), 0);
+
+  // Every hour of the day marks a number that exists on the face it is shown on.
+  for (let hour24 = 0; hour24 < 24; hour24 += 1) {
+    const draft = {
+      hour: hour24 % 12 === 0 ? 12 : hour24 % 12,
+      minute: 0,
+      period: hour24 >= 12 ? "PM" : "AM",
+    };
+    const marked = timepickerSelectedDialValue("hour", draft, "24h");
+    assert.equal(marked, hour24, `draft for ${hour24} marked ${marked}`);
+  }
+});
+
+test("asking without a format is the twelve-hour answer, as it always was", async () => {
+  const { timepickerSelectedDialValue } = await import("../dist/index.js");
+  const draft = { hour: 2, minute: 0, period: "PM" };
+  assert.equal(timepickerSelectedDialValue("hour", draft), 2);
+});

@@ -227,7 +227,8 @@ export function renderTimepickerField(
 
     // The face the format has, so a 24-hour picker can be pointed at its afternoon hours.
     const numbers = timepickerDialNumbers(field, state.format);
-    const selected = timepickerSelectedDialValue(field, state.draft);
+    // Same units as the numbers above, so the mark cannot land on a different hour than the face.
+    const selected = timepickerSelectedDialValue(field, state.draft, state.format);
     // The face is rebuilt only when it changes hands: hours and minutes are different numbers, but
     // dragging within one field must not replace the elements under the pointer.
     if (dialFace.dataset.field !== field) {
