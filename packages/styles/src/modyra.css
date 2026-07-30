@@ -1947,33 +1947,21 @@
         height: 100%;
     }
 
+    /* The list, as a surface. Where it goes is `.mdy-overlay`'s, from the coordinates
+     * `anchorOverlay` measured.
+     *
+     * This used to be a second copy of the popup primitive: `absolute` with `top: 100%` while
+     * closed, then a sibling rule re-reading every `--mdy-overlay-*` property to switch it to
+     * `fixed` while open. Both said what `.mdy-overlay` already says, for one widget, and the
+     * second one is why the class went unnoticed as missing on Angular's popup — the duplicate was
+     * quietly doing the primitive's job. */
     .mdy-select__dropdown {
-        position: absolute;
-        z-index: var(--mdy-z-overlay);
-        top: 100%;
-        left: 0;
-        right: 0;
-        margin: 0.25rem 0 0;
         background: var(--mdy-select-dropdown-bg);
         border: var(--mdy-select-dropdown-border);
         border-radius: var(--mdy-select-dropdown-border-radius);
         box-shadow: var(--mdy-select-dropdown-shadow);
         overflow: hidden;
     }
-
-    .mdy-renderer--open .mdy-select__dropdown:not(.mdy-select__dropdown--overlay) {
-        position: fixed;
-        top: var(--mdy-overlay-top, auto);
-        bottom: var(--mdy-overlay-bottom, auto);
-        left: var(--mdy-overlay-left, auto);
-        right: var(--mdy-overlay-right, auto);
-        width: var(--mdy-overlay-width, auto);
-        margin: 0;
-        /* Gap is baked into coords via POPUP_GAP in computeCoordsForAnchor */
-    }
-
-    /* --above and --right positioning handled via CSS variables on the host.
-   No absolute-position fallbacks needed. */
 
     /* `.mdy-select__overlay-backdrop` was styled here and emitted by nobody. Every adapter draws one
        backdrop, `mdy-overlay-backdrop`, from the overlay panel — a per-widget backdrop has not

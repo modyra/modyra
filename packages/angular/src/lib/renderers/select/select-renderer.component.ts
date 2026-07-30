@@ -130,7 +130,7 @@ import { MdyDropdownBase } from "../dropdown-base";
         >
           <div
             mdyGlass
-            class="mdy-select__dropdown mdy-popup"
+            class="mdy-select__dropdown mdy-popup mdy-overlay"
             [ngClass]="placementClass()"
             [class.mdy-select__dropdown--right]="alignment() === 'right'"
           >

@@ -970,6 +970,7 @@
         "mdy-input-suffix",
         "mdy-input-wrapper",
         "mdy-input-wrapper--disabled",
+        "mdy-overlay",
         "mdy-overlay-panel",
         "mdy-popup",
         "mdy-renderer",
