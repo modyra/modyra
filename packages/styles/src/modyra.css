@@ -3320,12 +3320,20 @@
      * which on a dark theme is a white notch at each top corner.
      *
      * The wrapper carries no surface of its own: the popup inside it is the surface, and it already
-     * states its background, border, radius, shadow and padding. */
+     * states its background, border, radius, shadow and padding.
+     *
+     * Nor does it carry a box. `inset: auto` is what keeps it from carrying one: the UA gives every
+     * popover `inset: 0`, which with `width`/`height: auto` stretches it over the whole viewport.
+     * The wrapper used to escape that by stating all four insets itself — the popup's own
+     * coordinates, applied a second time to the element around it. The popup positions itself from
+     * those coordinates, so the wrapper is left with what a wrapper is for: the top layer, the
+     * backdrop, and the focus trap. */
     .mdy-overlay-panel[popover] {
         background: none;
         border: none;
         padding: 0;
         margin: 0;
+        inset: auto;
         width: auto;
         height: auto;
         overflow: visible;

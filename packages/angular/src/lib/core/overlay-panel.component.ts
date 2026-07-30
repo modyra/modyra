@@ -130,62 +130,59 @@ export class MdyOverlayPanelComponent {
     });
   }
 
+  /**
+   * The coordinates, published for the popup inside to position itself from — and nothing else.
+   *
+   * This panel used to *also* place itself: the same numbers, applied to this element as `position:
+   * fixed` with all four insets, while the popup inside read the properties and placed itself a
+   * second time. Two boxes at identical coordinates, agreeing only because both were derived from
+   * one measurement; measured, either one alone puts the popup exactly where it is now, so one of
+   * them was always doing nothing.
+   *
+   * The popup is the box that is kept, because it is the box anyone can see — it draws the surface,
+   * it is what the contract names, and it is the one the framework-free renderer positions. What is
+   * left here is what a wrapper is for: the top layer, the backdrop and the focus trap.
+   *
+   * Publishing them properly also settles a defect the split was hiding. `max-height` was applied to
+   * this element, whose only child is out of flow, so it clamped nothing — while
+   * `--mdy-overlay-max-height` went unwritten and the popup fell back to `50vh`. A popup taller than
+   * the room measured for it simply grew past it; measured on the demo, a 323px allowance against a
+   * 360px popup.
+   */
   readonly panelStyle = computed(() => {
     const c = this.coords();
-    const pos = this.position();
-    const isOverlay = pos === "overlay";
-
-    // Compute direct positioning properties so the overlay works regardless of theme.
-    // The theme CSS can still override via !important for custom styling.
-    let top: string | null;
-    let bottom: string | null;
-    let left: string | null;
-    let right: string | null;
-    let transform: string | null = null;
-    let width: string | null;
-    let maxHeight: string | null;
-
-    if (isOverlay) {
-      // Centered modal: perfectly centered in viewport.
-      top = "50%";
-      left = "50%";
-      bottom = "auto";
-      right = "auto";
-      transform = "translate(-50%, -50%)";
-      width = c.width ? `${c.width}px` : null;
-      maxHeight = "80vh";
-    } else {
-      // Anchored: use the computed coords directly.
-      // Always set all four sides explicitly so inline styles override the theme
-      // CSS fallback (e.g. `top: var(--mdy-overlay-top, -9999px)`).
-      top = c.top !== undefined ? `${c.top}px` : "auto";
-      bottom = c.bottom !== undefined ? `${c.bottom}px` : "auto";
-      left = c.left !== undefined ? `${c.left}px` : "auto";
-      right = c.right !== undefined ? `${c.right}px` : "auto";
-      // Width follows widthMode: match-anchor uses trigger width, auto-content expands.
-      width = this.widthMode() === "match-anchor" && c.width ? `${c.width}px` : null;
-      maxHeight = this.maxHeight() ? `${this.maxHeight()}px` : null;
-    }
-
+    const isOverlay = this.position() === "overlay";
+    const width = this.widthMode() === "match-anchor" && c.width ? `${c.width}px` : "auto";
     return {
-      position: "fixed",
+      // The wrapper still swallows clicks meant for its own popup; it has no box of its own to
+      // catch anything else with.
       "pointer-events": this.open() ? "auto" : "none",
-      top,
-      bottom,
-      left,
-      right,
-      transform,
-      width,
-      "max-height": maxHeight,
-      // The room measured on the side the popup hangs from. A content-sized panel — a calendar, a
-      // palette — has no width of its own to keep it on the screen, so the ceiling is what does.
-      "max-width": c.maxWidth !== undefined ? `${c.maxWidth}px` : null,
+      // Whether it is showing is state, not placement, and it stays. A browser without the Popover
+      // API keeps the panel in the page — the component says so and carries on — so this is the
+      // only thing hiding a closed overlay there, and axe finds a closed calendar without it.
       visibility: this.open() ? "visible" : "hidden",
       opacity: this.open() ? "1" : "0",
-      // Keep CSS variables for theme compatibility (themes can reference them for additional styling)
-      "--mdy-overlay-width": width ?? "auto",
       ...overlayStyleProperties(c),
-      border: "none", // Override any theme border for the panel container itself (e.g. popover's default border) so it doesn't interfere with custom panel styles.
+      // A modal placement is centred on the viewport rather than hung off a control, and the
+      // centring is a translation — the same one `anchorOverlay` writes for every other renderer.
+      // Stated after the measured coordinates, because for a modal there is no side left to attach
+      // to and the centre replaces them.
+      ...(isOverlay
+        ? {
+            "--mdy-overlay-top": "50%",
+            "--mdy-overlay-bottom": "auto",
+            "--mdy-overlay-left": "50%",
+            "--mdy-overlay-right": "auto",
+            "--mdy-overlay-transform": "translate(-50%, -50%)",
+            "--mdy-overlay-max-height": "80vh",
+          }
+        : {
+            "--mdy-overlay-transform": "none",
+            // The room the policy measured on the side the popup hangs from. It reaches the popup
+            // now, rather than clamping a wrapper with no height to clamp.
+            "--mdy-overlay-max-height": this.maxHeight() ? `${this.maxHeight()}px` : null,
+          }),
+      "--mdy-overlay-width": width,
     };
   });
 
