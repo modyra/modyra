@@ -876,14 +876,74 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     return size === "base" ? 1 : row.columns.length;
   }
 
-  /** Sets the track count of the row holding `nodeId`, at the size being authored. */
-  function setRowColumnsAt(nodeId: string, count: number): void {
+  /**
+   * Which size a row's current track count actually comes from, or null when nothing authored it.
+   *
+   * A count is inherited from the nearest smaller size that states one — the mobile-first rule the
+   * foundation follows. Showing an inherited number the same way as an authored one is what made
+   * setting `md` look like it had also changed `lg`: it had not, `lg` was reading `md` because it
+   * says nothing itself, and there was no way to see the difference or to stop inheriting.
+   */
+  function rowColumnsSource(
+    row: StudioLayoutNode & { kind: "columns" },
+    size: StudioLayoutBreakpoint,
+  ): StudioLayoutBreakpoint | null {
+    for (let i = BREAKPOINT_ORDER.indexOf(size); i >= 0; i -= 1) {
+      const at = BREAKPOINT_ORDER[i]!;
+      if (typeof row.at?.[at] === "number") return at;
+    }
+    return null;
+  }
+
+  /**
+   * Fills the columns-across control for one row, at the size being authored.
+   *
+   * The first option is "inherit": it names the number this size would show anyway and where that
+   * number comes from, so an inherited width reads as inherited instead of as a decision. Picking a
+   * number states one for this size only; picking "inherit" takes the statement back. At `base`
+   * there is nothing smaller to inherit from, so the option says what the default is instead.
+   */
+  function rowColumnsOptions(select: HTMLSelectElement, row: StudioLayoutNode & { kind: "columns" }): void {
+    const source = rowColumnsSource(row, breakpoint);
+    const authoredHere = source === breakpoint;
+    const inherited = rowColumnsAt(row, breakpoint);
+    const from = source && source !== breakpoint ? ` from ${source}` : "";
+    const auto = new Option(`auto ${inherited}×${from}`, "");
+    auto.selected = !authoredHere;
+    select.append(auto);
+    for (let count = 1; count <= row.columns.length; count += 1) {
+      const option = new Option(`${count}×`, String(count));
+      option.selected = authoredHere && count === inherited;
+      select.append(option);
+    }
+    select.classList.toggle("inherited", !authoredHere);
+    select.title = authoredHere
+      ? `${inherited} across, set at ${breakpoint}`
+      : source
+        ? `${inherited} across, inherited from ${source}`
+        : `${inherited} across, the default at ${breakpoint}`;
+  }
+
+  /** Sets the track count at the size being authored, or clears it so the size inherits again. */
+  function setRowColumnsAt(nodeId: string, count: number | null): void {
     const layout = structuredClone(project.presentation.layout ?? []) as StudioLayoutNode[];
     const row = layout.find(
       (node): node is StudioLayoutNode & { kind: "columns" } =>
         node.kind === "columns" && layoutChildNodeIds(node).includes(nodeId),
     );
     if (!row) return;
+    if (count === null) {
+      const at = { ...(row.at ?? {}) };
+      delete at[breakpoint];
+      if (Object.keys(at).length) row.at = at;
+      else delete row.at;
+      commit(
+        createUpdateLayoutCommand(layout, `Inherit the width at ${breakpoint}`),
+        nodeId,
+        `[data-row-columns="${nodeId}"]`,
+      );
+      return;
+    }
     const next = Math.min(Math.max(1, count), row.columns.length);
     row.at = { ...(row.at ?? {}), [breakpoint]: next };
     commit(
@@ -1820,12 +1880,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
           const groupRowColumns = document.createElement("select");
           groupRowColumns.dataset.rowColumns = group.id;
           groupRowColumns.setAttribute("aria-label", `Columns across at ${breakpoint}`);
-          const showing = rowColumnsAt(groupRow, breakpoint);
-          for (let count = 1; count <= groupRow.columns.length; count += 1) {
-            const option = new Option(`${count}×`, String(count));
-            option.selected = count === showing;
-            groupRowColumns.append(option);
-          }
+          rowColumnsOptions(groupRowColumns, groupRow);
 
           const groupIsHidden = hiddenAt(group.id, breakpoint);
           const groupHidden = iconButton(
@@ -1999,14 +2054,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       const rowColumns = document.createElement("select");
       rowColumns.dataset.rowColumns = nodeId;
       rowColumns.setAttribute("aria-label", `Columns across at ${breakpoint}`);
-      if (row) {
-        const showing = rowColumnsAt(row, breakpoint);
-        for (let count = 1; count <= row.columns.length; count += 1) {
-          const option = new Option(`${count}\u00d7`, String(count));
-          option.selected = count === showing;
-          rowColumns.append(option);
-        }
-      }
+      if (row) rowColumnsOptions(rowColumns, row);
 
       const deleteButton = iconButton("\u00d7", `Delete ${field.name}`);
       deleteButton.dataset.delete = nodeId;
@@ -3019,7 +3067,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       button.addEventListener("click", () => toggleHiddenAt(button.dataset.toggleHidden!)),
     );
     root.querySelectorAll<HTMLSelectElement>("[data-row-columns]").forEach((select) =>
-      select.addEventListener("change", () => setRowColumnsAt(select.dataset.rowColumns!, Number(select.value))),
+      select.addEventListener("change", () =>
+        // The empty value is the "inherit" option: it clears this size's override rather than
+        // setting a width of zero, which `Number("")` would otherwise make of it.
+        setRowColumnsAt(select.dataset.rowColumns!, select.value === "" ? null : Number(select.value)),
+      ),
     );
     root.querySelectorAll<HTMLButtonElement>("[data-layout-columns]").forEach((button) =>
       button.addEventListener("click", () => {
