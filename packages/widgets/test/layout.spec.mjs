@@ -76,8 +76,18 @@ test("the breakpoints are named once, and the foundation switches at those width
   const css = readFileSync(new URL("../../styles/src/modyra.css", import.meta.url), "utf8");
   for (const [size, width] of Object.entries(MDY_LAYOUT_BREAKPOINTS)) {
     if (size === "base") continue;
-    assert.ok(css.includes(`@media (min-width: ${width})`), `the foundation never switches at ${size} (${width})`);
+    // A *container* query, deliberately: these widths describe the form, not the window. Asserted
+    // here because the mechanism is as much a part of the contract as the numbers — a viewport query
+    // at the right width still answers the wrong question.
+    assert.ok(
+      css.includes(`@container mdy-form (min-width: ${width})`),
+      `the foundation never switches at ${size} (${width})`,
+    );
   }
+  assert.ok(
+    /\.mdy-dynamic-form\s*\{[^}]*container-name:\s*mdy-form/.test(css),
+    "the form root is never made the container those queries name",
+  );
 });
 
 test("a slot's placement becomes the column's own properties, per size", () => {

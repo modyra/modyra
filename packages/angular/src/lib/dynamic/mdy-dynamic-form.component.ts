@@ -54,6 +54,11 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
   selector: "mdy-dynamic-form",
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // The form root is named the same in every renderer — `@modyra/plain` has always added this class
+  // to its container. It is what the foundation makes a layout container, so a row asks how wide the
+  // *form* is rather than how wide the window is; a custom element is inline by default and would
+  // carry no layout box to contain.
+  host: { class: "mdy-dynamic-form", style: "display: block" },
   imports: [
     MdyFormComponent,
     MdyTextComponent,
