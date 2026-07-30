@@ -7,6 +7,36 @@
  * real but frozen as hex literals, so picking a new brand colour left the rest of the palette where
  * it was — a green brand still got violet chips.
  *
+ * ## Two palette engines live here
+ *
+ * **Modyra's own, in OKLCH** (`derivePalette`, `MDY_PALETTE_MODELS`) and **Material 3's, in HCT**
+ * (`deriveHctPalette`, `MDY_HCT_PALETTE_MODEL`). They coexist on purpose and neither is a fallback
+ * for the other.
+ *
+ * The OKLCH engine is the one `modyra-base.css` mirrors, and that is the whole reason it exists in
+ * this shape: OKLCH inverts in closed form, so the same arithmetic fits in a stylesheet with no
+ * JavaScript on the page and no dependency anywhere. HCT cannot do that. Its tone is CIE L* while
+ * CAM16 inverts from its own lightness, so getting a colour out of it needs a numeric solve — a
+ * bisection inside a chroma walk — which is fine in Node and impossible in CSS.
+ *
+ * The HCT engine exists because Material 3 is what a great many themes are already built in. A
+ * palette exported from Material Theme Builder is a set of HCT tone stops, and reproducing it means
+ * doing Google's arithmetic, not approximating it in a different colour space. Anyone matching an
+ * existing M3 theme wants `deriveHctPalette`; anyone theming Modyra wants `derivePalette`.
+ *
+ * They disagree, substantially, and the test that prints them side by side exists to keep that
+ * visible. Two examples from it: seeded with a light yellow, the OKLCH model keeps a light primary
+ * (lightness 0.91) while M3 pins every primary to tone 40 and returns a dark olive — M3 *assigns*
+ * tone and chroma where Modyra *scales* them, so an M3 palette looks like an M3 palette whatever it
+ * was seeded with, and a Modyra palette still looks like the colour you chose. And M3's error is
+ * `#ba1a1a` for every source, because its hue, chroma and tone are all absolute, where Modyra's
+ * error keeps the red hue but takes its weight from the brand.
+ *
+ * The `on-` colours differ in kind rather than degree: `onColorFor` measures contrast against black
+ * and against white and keeps the winner, while M3 declares that on-primary *is* tone 100 and
+ * on-primary-container *is* tone 10 and never computes a ratio. Predictable versus adaptive; the
+ * comment on `deriveHctPalette` says what each buys.
+ *
  * This module holds the relationships as numbers, and `modyra-base.css` holds the same numbers as
  * custom properties so the browser can do the arithmetic live, with no JavaScript on the page. The
  * two copies are bound together by a test that parses the stylesheet, because two copies of a number
@@ -297,5 +327,333 @@ export function derivePalette(
     onSecondary: onColorFor(secondary, model),
     onTertiary: onColorFor(tertiary, model),
     onError: onColorFor(error, model),
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// The other palette maths: HCT, the model Material 3 actually uses
+//
+// Everything above this line is Modyra's own OKLCH derivation. Everything below is Google's, and
+// the two are not variations on a theme — they disagree about what a colour *is*.
+//
+// HCT is CAM16 hue and chroma bolted onto CIE L* for tone. CAM16 is an appearance model: it asks
+// what a colour looks like to an observer under stated viewing conditions (a D65 white point, an
+// adapting luminance of 11.73, a mid-grey background, average surround), and its numbers move when
+// those conditions do. OKLab asks a narrower question — perceptual uniformity of difference — and
+// has no viewing conditions at all.
+//
+// So `hexToHct` and `hexToOklch` are **not interchangeable**. Their hues are different quantities on
+// different scales: OKLCH chroma runs 0–0.4, CAM16 chroma runs 0–~120, and even the hue angles do
+// not line up, because CAM16 corrects for the Helmholtz–Kohlrausch effect and the Abney effect and
+// OKLab does not. Never feed one's numbers to the other's constructor. The test that prints them
+// side by side exists to make that concrete rather than to check them against each other.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/** A colour in HCT: hue in degrees, CAM16 chroma (0–~120), tone as CIE L* (0–100). */
+export interface Hct {
+  readonly h: number;
+  readonly c: number;
+  readonly t: number;
+}
+
+// ── CIE plumbing ─────────────────────────────────────────────────────────────
+
+const LAB_E = 216 / 24389;
+const LAB_KAPPA = 24389 / 27;
+
+/** CIE L* (0–100) for a Y in 0–100. This is HCT's "tone", unchanged from plain CIELAB. */
+export function lstarFromY(y: number): number {
+  const scaled = y / 100;
+  const f = scaled > LAB_E ? Math.cbrt(scaled) : (LAB_KAPPA * scaled + 16) / 116;
+  return 116 * f - 16;
+}
+
+/** The Y (0–100) of a CIE L*. */
+export function yFromLstar(lstar: number): number {
+  const ft = (lstar + 16) / 116;
+  const ft3 = ft * ft * ft;
+  return 100 * (ft3 > LAB_E ? ft3 : (116 * ft - 16) / LAB_KAPPA);
+}
+
+const SRGB_TO_XYZ = [
+  [0.41233895, 0.35762064, 0.18051042],
+  [0.2126, 0.7152, 0.0722],
+  [0.01932141, 0.11916382, 0.95034478],
+] as const;
+
+const XYZ_TO_SRGB = [
+  [3.2413774792388685, -1.5376652402851851, -0.49885366846268053],
+  [-0.9691452513005321, 1.8758853451067872, 0.04156585616912061],
+  [0.05562093689691305, -0.20395524564742123, 1.0571799111220335],
+] as const;
+
+const xyzFromRgb = (rgb: readonly [number, number, number]): [number, number, number] => {
+  const lin = rgb.map((c) => toLinear(c) * 100) as [number, number, number];
+  return SRGB_TO_XYZ.map((row) => row[0]! * lin[0] + row[1]! * lin[1] + row[2]! * lin[2]) as [
+    number,
+    number,
+    number,
+  ];
+};
+
+const rgbFromXyz = (xyz: readonly [number, number, number]): [number, number, number] =>
+  XYZ_TO_SRGB.map((row) =>
+    toGamma((row[0]! * xyz[0] + row[1]! * xyz[1] + row[2]! * xyz[2]) / 100),
+  ) as [number, number, number];
+
+// ── CAM16 under Material's default viewing conditions ────────────────────────
+// Computed once, because they depend only on the illuminant and the assumed surround. The constants
+// are M3's own defaults: D65, background L* 50, average surround, illuminant not discounted.
+
+const VIEWING = (() => {
+  const white: [number, number, number] = [95.047, 100.0, 108.883];
+  const adaptingLuminance = (200 / Math.PI) * (yFromLstar(50) / 100);
+  const backgroundLstar = 50;
+  const surround = 2;
+
+  const rW = 0.401288 * white[0] + 0.650173 * white[1] - 0.051461 * white[2];
+  const gW = -0.250268 * white[0] + 1.204414 * white[1] + 0.045854 * white[2];
+  const bW = -0.002079 * white[0] + 0.048952 * white[1] + 0.953127 * white[2];
+
+  const f = 0.8 + surround / 10;
+  const c = f >= 0.9 ? 0.59 + (0.69 - 0.59) * ((f - 0.9) * 10) : 0.525 + (0.59 - 0.525) * ((f - 0.8) * 10);
+  const nc = f;
+  const d = Math.min(
+    1,
+    Math.max(0, f * (1 - (1 / 3.6) * Math.exp((-adaptingLuminance - 42) / 92))),
+  );
+  const rgbD: [number, number, number] = [
+    d * (100 / rW) + 1 - d,
+    d * (100 / gW) + 1 - d,
+    d * (100 / bW) + 1 - d,
+  ];
+
+  const k = 1 / (5 * adaptingLuminance + 1);
+  const k4 = k * k * k * k;
+  const fl = k4 * adaptingLuminance + 0.1 * (1 - k4) * (1 - k4) * Math.cbrt(5 * adaptingLuminance);
+  const n = yFromLstar(backgroundLstar) / white[1];
+  const z = 1.48 + Math.sqrt(n);
+  const nbb = 0.725 / Math.pow(n, 0.2);
+
+  const adapt = (channel: number, scale: number): number => {
+    const af = Math.pow((fl * scale * channel) / 100, 0.42);
+    return (400 * af) / (af + 27.13);
+  };
+  const aw = (2 * adapt(rW, rgbD[0]) + adapt(gW, rgbD[1]) + 0.05 * adapt(bW, rgbD[2])) * nbb;
+
+  return { rgbD, fl, n, z, nbb, ncb: nbb, c, nc, aw };
+})();
+
+const signum = (n: number): number => (n < 0 ? -1 : n > 0 ? 1 : 0);
+
+/** CAM16 hue and chroma of an XYZ colour, under Material's default viewing conditions. */
+const cam16FromXyz = (xyz: readonly [number, number, number]): { h: number; c: number } => {
+  const [x, y, z] = xyz;
+  const rC = 0.401288 * x + 0.650173 * y - 0.051461 * z;
+  const gC = -0.250268 * x + 1.204414 * y + 0.045854 * z;
+  const bC = -0.002079 * x + 0.048952 * y + 0.953127 * z;
+
+  const cone = (value: number, scale: number): number => {
+    const scaled = value * scale;
+    const af = Math.pow((VIEWING.fl * Math.abs(scaled)) / 100, 0.42);
+    return (signum(scaled) * 400 * af) / (af + 27.13);
+  };
+  const rA = cone(rC, VIEWING.rgbD[0]);
+  const gA = cone(gC, VIEWING.rgbD[1]);
+  const bA = cone(bC, VIEWING.rgbD[2]);
+
+  const a = (11 * rA - 12 * gA + bA) / 11;
+  const b = (rA + gA - 2 * bA) / 9;
+  const u = (20 * rA + 20 * gA + 21 * bA) / 20;
+  const p2 = (40 * rA + 20 * gA + bA) / 20;
+
+  let hue = (Math.atan2(b, a) * 180) / Math.PI;
+  if (hue < 0) hue += 360;
+  else if (hue >= 360) hue -= 360;
+
+  const ac = p2 * VIEWING.nbb;
+  const j = 100 * Math.pow(ac / VIEWING.aw, VIEWING.c * VIEWING.z);
+  const huePrime = hue < 20.14 ? hue + 360 : hue;
+  const eHue = 0.25 * (Math.cos((huePrime * Math.PI) / 180 + 2) + 3.8);
+  const p1 = ((50000 / 13) * eHue * VIEWING.nc * VIEWING.ncb) / (u + 0.305);
+  const t = p1 * Math.hypot(a, b);
+  const alpha = Math.pow(t, 0.9) * Math.pow(1.64 - Math.pow(0.29, VIEWING.n), 0.73);
+
+  return { h: hue, c: alpha * Math.sqrt(j / 100) };
+};
+
+/** The XYZ of a CAM16 lightness/chroma/hue. CAM16 inverts analytically; HCT does not (see below). */
+const xyzFromCam16 = (j: number, chroma: number, hue: number): [number, number, number] => {
+  const alpha = chroma === 0 || j === 0 ? 0 : chroma / Math.sqrt(j / 100);
+  const t = Math.pow(alpha / Math.pow(1.64 - Math.pow(0.29, VIEWING.n), 0.73), 1 / 0.9);
+  const hRad = (hue * Math.PI) / 180;
+  const eHue = 0.25 * (Math.cos(hRad + 2) + 3.8);
+  const ac = VIEWING.aw * Math.pow(j / 100, 1 / (VIEWING.c * VIEWING.z));
+  const p1 = eHue * (50000 / 13) * VIEWING.nc * VIEWING.ncb;
+  const p2 = ac / VIEWING.nbb;
+
+  const hSin = Math.sin(hRad);
+  const hCos = Math.cos(hRad);
+  const gamma = (23 * (p2 + 0.305) * t) / (23 * p1 + 11 * t * hCos + 108 * t * hSin);
+  const a = gamma * hCos;
+  const b = gamma * hSin;
+
+  const rA = (460 * p2 + 451 * a + 288 * b) / 1403;
+  const gA = (460 * p2 - 891 * a - 261 * b) / 1403;
+  const bA = (460 * p2 - 220 * a - 6300 * b) / 1403;
+
+  const uncone = (value: number, scale: number): number => {
+    const base = Math.max(0, (27.13 * Math.abs(value)) / (400 - Math.abs(value)));
+    return (signum(value) * (100 / VIEWING.fl) * Math.pow(base, 1 / 0.42)) / scale;
+  };
+  const rF = uncone(rA, VIEWING.rgbD[0]);
+  const gF = uncone(gA, VIEWING.rgbD[1]);
+  const bF = uncone(bA, VIEWING.rgbD[2]);
+
+  return [
+    1.86206786 * rF - 1.01125463 * gF + 0.14918677 * bF,
+    0.38752654 * rF + 0.62144744 * gF - 0.00897398 * bF,
+    -0.0158415 * rF - 0.03412294 * gF + 1.04996444 * bF,
+  ];
+};
+
+/** The HCT of an sRGB hex colour. Returns `null` if the hex is not a colour. */
+export function hexToHct(hex: string): Hct | null {
+  const rgb = parseHex(hex);
+  if (!rgb) return null;
+  const xyz = xyzFromRgb(rgb);
+  const { h, c } = cam16FromXyz(xyz);
+  return { h, c, t: lstarFromY(xyz[1]!) };
+}
+
+const inGamut = (xyz: readonly [number, number, number]): boolean => {
+  const linear = XYZ_TO_SRGB.map(
+    (row) => (row[0]! * xyz[0] + row[1]! * xyz[1] + row[2]! * xyz[2]) / 100,
+  );
+  return linear.every((v) => v >= -0.0001 && v <= 1.0001);
+};
+
+/**
+ * The sRGB hex of an HCT colour, with chroma reduced until the colour fits in sRGB.
+ *
+ * HCT does not invert in closed form the way CAM16 does, because tone is L* — a property of Y — while
+ * CAM16 inverts from *its own* lightness J. So this solves in two nested steps: bisect J until the
+ * resulting Y matches the tone asked for, then walk the chroma down until the result is a colour sRGB
+ * can actually display. Most hues simply cannot hold chroma 84 at tone 40; asking for it and taking
+ * what fits is what Material does too.
+ */
+export function hctToHex(hct: Hct): string {
+  const tone = Math.min(100, Math.max(0, hct.t));
+  const targetY = yFromLstar(tone);
+  // Tone 0 and 100 are black and white whatever the hue claims.
+  if (tone <= 0) return "#000000";
+  if (tone >= 100) return "#ffffff";
+
+  const solveForChroma = (chroma: number): [number, number, number] | null => {
+    if (chroma <= 0) {
+      const grey = toGamma(targetY / 100);
+      return [grey, grey, grey];
+    }
+    // Y rises monotonically with J for a fixed hue and chroma, so bisection is safe.
+    let low = 0.0001;
+    let high = 100;
+    let xyz: [number, number, number] = [0, 0, 0];
+    for (let i = 0; i < 40; i++) {
+      const mid = (low + high) / 2;
+      xyz = xyzFromCam16(mid, chroma, hct.h);
+      if (!Number.isFinite(xyz[1]!)) return null;
+      if (xyz[1]! < targetY) low = mid;
+      else high = mid;
+    }
+    if (Math.abs(xyz[1]! - targetY) > 0.5) return null;
+    return inGamut(xyz) ? xyz : null;
+  };
+
+  for (let chroma = hct.c; chroma >= 0; chroma -= 0.5) {
+    const xyz = solveForChroma(Math.max(0, chroma));
+    if (xyz) return toHex(rgbFromXyz(xyz));
+  }
+  const grey = toGamma(targetY / 100);
+  return toHex([grey, grey, grey]);
+}
+
+/**
+ * Material 3's derivation, as constants.
+ *
+ * Same shape of idea as `MdyPaletteModel` and different in every particular. Chroma here is
+ * **assigned**, not multiplied: M3 does not scale the source's saturation, it replaces it, so every
+ * palette built from any brand colour has the same chromatic weight. That is the point — it is what
+ * makes a Material theme look like a Material theme whatever colour it was seeded with, and it is
+ * also why a muted brand colour comes back more saturated than it went in (`max(chroma, 48)`).
+ *
+ * Modyra's own model multiplies instead, so a quiet brand stays quiet. Neither is more correct;
+ * they want different things.
+ */
+export interface MdyHctPaletteModel {
+  /** Hue offset in degrees from the source, and the chroma the role is assigned. */
+  readonly primary: { readonly hueShift: number; readonly chroma: number; readonly atLeastSource: boolean };
+  readonly secondary: { readonly hueShift: number; readonly chroma: number };
+  readonly tertiary: { readonly hueShift: number; readonly chroma: number };
+  readonly neutral: { readonly hueShift: number; readonly chroma: number };
+  readonly neutralVariant: { readonly hueShift: number; readonly chroma: number };
+  /** Absolute hue, like the OKLCH model's error — the red band, whatever the brand is. */
+  readonly error: { readonly hue: number; readonly chroma: number };
+  /** The tones each role is read at. M3 fixes these; it does not measure contrast. */
+  readonly tones: {
+    readonly role: number;
+    readonly on: number;
+    readonly container: number;
+    readonly onContainer: number;
+  };
+}
+
+export const MDY_HCT_PALETTE_MODEL: MdyHctPaletteModel = Object.freeze({
+  primary: Object.freeze({ hueShift: 0, chroma: 48, atLeastSource: true }),
+  secondary: Object.freeze({ hueShift: 0, chroma: 16 }),
+  tertiary: Object.freeze({ hueShift: 60, chroma: 24 }),
+  neutral: Object.freeze({ hueShift: 0, chroma: 4 }),
+  neutralVariant: Object.freeze({ hueShift: 0, chroma: 8 }),
+  error: Object.freeze({ hue: 25, chroma: 84 }),
+  tones: Object.freeze({ role: 40, on: 100, container: 90, onContainer: 10 }),
+});
+
+/**
+ * Derive a palette the way Material 3 does.
+ *
+ * Same contract as `derivePalette`: sRGB hex in, sRGB hex out, `null` when the input is not a colour.
+ * Everything else about it is different.
+ *
+ * **The `on-` colours are tone stops, not contrast measurements.** `onColorFor` computes the ratio
+ * against black and against white and keeps whichever wins; M3 declares that on-primary *is* tone
+ * 100 and on-primary-container *is* tone 10, and never looks at a contrast ratio at run time. The
+ * guarantee comes from the tone distance instead — a role at tone 40 under text at tone 100 is far
+ * enough apart to pass, by construction, for every hue. It is the more predictable of the two
+ * approaches and the less adaptive: give M3 a role at an unusual tone and the pairing does not
+ * follow, where the measuring version would.
+ */
+export function deriveHctPalette(
+  primary: string,
+  model: MdyHctPaletteModel = MDY_HCT_PALETTE_MODEL,
+): MdyDerivedPalette | null {
+  const source = hexToHct(primary);
+  if (!source) return null;
+
+  const { role, on } = model.tones;
+  const at = (hue: number, chroma: number, tone: number): string =>
+    hctToHex({ h: ((hue % 360) + 360) % 360, c: chroma, t: tone });
+
+  const primaryChroma = model.primary.atLeastSource
+    ? Math.max(source.c, model.primary.chroma)
+    : model.primary.chroma;
+
+  return {
+    primary: at(source.h + model.primary.hueShift, primaryChroma, role),
+    secondary: at(source.h + model.secondary.hueShift, model.secondary.chroma, role),
+    tertiary: at(source.h + model.tertiary.hueShift, model.tertiary.chroma, role),
+    error: at(model.error.hue, model.error.chroma, role),
+    onPrimary: at(source.h + model.primary.hueShift, primaryChroma, on),
+    onSecondary: at(source.h + model.secondary.hueShift, model.secondary.chroma, on),
+    onTertiary: at(source.h + model.tertiary.hueShift, model.tertiary.chroma, on),
+    onError: at(model.error.hue, model.error.chroma, on),
   };
 }
