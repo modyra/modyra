@@ -123,7 +123,7 @@ export class DesignSystemSectionComponent {
 
   readonly initialDesignSystemValues = {
     theme: "modern",
-    primaryColor: "#6750a4",
+    primaryColor: "#f0b511",
     density: -3,
     floating: false,
   };

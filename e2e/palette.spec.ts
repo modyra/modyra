@@ -1,0 +1,197 @@
+import { expect, test } from "@playwright/test";
+
+/**
+ * The palette follows its primary, and every `on-` colour is readable against the colour it names.
+ *
+ * `modyra-base.css` derives secondary, tertiary and error from `--mdy-sys-color-primary` in OKLCH,
+ * with the model chosen by `data-mdy-palette`. The same numbers live in `@modyra/core/color-utils`,
+ * which is where the arithmetic is unit-tested; what can only be checked here is what a browser
+ * actually paints — relative colour syntax, gamut clipping and the `clamp()` step all happen in the
+ * engine, not in the source.
+ *
+ * Colours are read through a canvas rather than from `getComputedStyle`. A derived token computes to
+ * `oklch(…)`, and a contrast ratio needs sRGB channels; filling a pixel and reading it back is the
+ * engine's own conversion rather than a second implementation of it.
+ */
+
+const MODELS = ["brand", "monochrome", "complementary", "triadic"] as const;
+// Saturated, dark, very light, and a red — the light one is what the previous fixed
+// `color-mix(primary, white 95%)` could not serve at all.
+const PRIMARIES = ["#7067FF", "#0A7D2B", "#FFE066", "#18181B", "#B3261E"] as const;
+
+const readPalette = async (
+  page: import("@playwright/test").Page,
+  model: string,
+  primary: string,
+) =>
+  page.evaluate(
+    ([m, p]) => {
+      document.documentElement.setAttribute("data-mdy-palette", m);
+      document.documentElement.style.setProperty("--mdy-sys-color-primary", p);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 1;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+      const probe = document.createElement("div");
+      document.body.appendChild(probe);
+
+      // getComputedStyle resolves the token; the canvas converts it to sRGB the way the engine does.
+      const channels = (token: string): [number, number, number] => {
+        probe.style.color = `var(${token})`;
+        const resolved = getComputedStyle(probe).color;
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = resolved;
+        ctx.fillRect(0, 0, 1, 1);
+        const d = ctx.getImageData(0, 0, 1, 1).data;
+        return [d[0]!, d[1]!, d[2]!];
+      };
+
+      const names = [
+        "primary",
+        "secondary",
+        "tertiary",
+        "error",
+        "on-primary",
+        "on-secondary",
+        "on-tertiary",
+        "on-error",
+      ];
+      const out: Record<string, [number, number, number]> = {};
+      for (const n of names) out[n] = channels(`--mdy-sys-color-${n}`);
+      probe.remove();
+      return out;
+    },
+    [model, primary] as const,
+  );
+
+const luminance = (rgb: readonly [number, number, number]): number => {
+  const lin = rgb.map((c) => {
+    const v = c / 255;
+    return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  }) as [number, number, number];
+  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+};
+
+const contrast = (a: readonly [number, number, number], b: readonly [number, number, number]) => {
+  const la = luminance(a);
+  const lb = luminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+};
+
+const hex = (rgb: readonly [number, number, number]) =>
+  `#${rgb.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+
+test("the palette follows the colour it is derived from", async ({ page }) => {
+  await page.goto("/");
+  for (const model of MODELS) {
+    const a = await readPalette(page, model, "#7067FF");
+    const b = await readPalette(page, model, "#0A7D2B");
+    for (const role of ["secondary", "tertiary"] as const) {
+      expect(
+        hex(a[role]!),
+        `${model}: ${role} must follow the primary, not stay where it was`,
+      ).not.toBe(hex(b[role]!));
+    }
+    // Error harmonises in weight without leaving red — it moves, but never off its hue.
+    expect(hex(a.error!), `${model}: error takes its weight from the primary`).not.toBe(
+      hex(b.error!),
+    );
+    for (const palette of [a, b]) {
+      const [r, g, bl] = palette.error!;
+      expect(r, `${model}: error stayed red — got ${hex(palette.error!)}`).toBeGreaterThan(g);
+      expect(r, `${model}: error stayed red — got ${hex(palette.error!)}`).toBeGreaterThan(bl);
+    }
+  }
+});
+
+test("every on- colour is readable, and close to the best available", async ({ page }) => {
+  // Two bars, because the stylesheet is an approximation and the module is not.
+  //
+  // A stylesheet cannot compute a WCAG luminance: it has the colour in OKLCH and the ratio wants
+  // sRGB, so `modyra-base.css` estimates luminance as `l³ · (1 + 0.85·c·cos(h − 179°))`. Against
+  // 8640 sampled colours that estimate picks the wrong side of the crossover 142 times, giving up
+  // at most 1.09 ratio points. `@modyra/core/color-utils` measures both candidates instead and is
+  // exact — its own test asserts a flat 4.5:1, which is the guarantee for anyone generating a theme
+  // ahead of time rather than deriving it live.
+  //
+  // So what is asserted here is the quality of the approximation: never far from the best colour
+  // available, and never below a floor that stays legible.
+  await page.goto("/");
+  const tooLow: string[] = [];
+  const badlyChosen: string[] = [];
+  for (const model of MODELS) {
+    for (const primary of PRIMARIES) {
+      const p = await readPalette(page, model, primary);
+      for (const role of ["primary", "secondary", "tertiary", "error"] as const) {
+        const bg = p[role]!;
+        const on = p[`on-${role}`]!;
+        const ratio = contrast(bg, on);
+        const best = Math.max(contrast(bg, [255, 255, 255]), contrast(bg, [0, 0, 0]));
+        const label = `${model}/${primary}: on-${role} ${hex(on)} on ${hex(bg)}`;
+        if (ratio < 4.3) tooLow.push(`${label} = ${ratio.toFixed(2)}:1`);
+        if (ratio < best - 0.4) {
+          badlyChosen.push(`${label} = ${ratio.toFixed(2)}:1 where ${best.toFixed(2)}:1 was there`);
+        }
+      }
+    }
+  }
+  expect(tooLow, `below the legible floor:\n${tooLow.join("\n")}`).toEqual([]);
+  expect(badlyChosen, `the approximation chose poorly:\n${badlyChosen.join("\n")}`).toEqual([]);
+});
+
+test("an on- colour is black or white, never the mid grey between them", async ({ page }) => {
+  // The `clamp()` step is only a step if its slope is steep enough. At ×100 a colour landing within
+  // 0.01 of the pivot resolved *inside* the clamp — one measured at lightness 0.5559 against a pivot
+  // of 0.56 produced a mid grey, the worst text colour available on any background.
+  await page.goto("/");
+  for (const model of MODELS) {
+    for (const primary of PRIMARIES) {
+      const p = await readPalette(page, model, primary);
+      for (const role of ["primary", "secondary", "tertiary", "error"] as const) {
+        const on = p[`on-${role}`]!;
+        const mid = (on[0] + on[1] + on[2]) / 3;
+        expect(
+          mid < 40 || mid > 215,
+          `${model}/${primary}: on-${role} is ${hex(on)}, neither dark nor light`,
+        ).toBe(true);
+      }
+    }
+  }
+});
+
+test("a theme that wants its own palette still gets it", async ({ page }) => {
+  // The escape hatch: derivation is the default, not a cage. Declaring a role outright wins.
+  await page.goto("/");
+  const forced = await page.evaluate(() => {
+    document.documentElement.setAttribute("data-mdy-palette", "brand");
+    document.documentElement.style.setProperty("--mdy-sys-color-primary", "#7067FF");
+    document.documentElement.style.setProperty("--mdy-sys-color-secondary", "#00857A");
+    const probe = document.createElement("div");
+    document.body.appendChild(probe);
+    probe.style.color = "var(--mdy-sys-color-secondary)";
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    ctx.fillStyle = getComputedStyle(probe).color;
+    ctx.fillRect(0, 0, 1, 1);
+    const d = ctx.getImageData(0, 0, 1, 1).data;
+    probe.remove();
+    return [d[0]!, d[1]!, d[2]!] as [number, number, number];
+  });
+  expect(hex(forced)).toBe("#00857a");
+});
+
+test("dark mode derives too, instead of reverting to the reference colours", async ({ page }) => {
+  // Dark mode used to restate secondary and tertiary from the fixed violet and coral, so a chosen
+  // brand colour worked in the light theme and quietly stopped applying in the dark one.
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/");
+  const green = await readPalette(page, "brand", "#0A7D2B");
+  const indigo = await readPalette(page, "brand", "#7067FF");
+  expect(hex(green.secondary!), "dark mode: secondary must follow the primary").not.toBe(
+    hex(indigo.secondary!),
+  );
+  // Violet is what it used to fall back to, whatever the brand was.
+  expect(hex(green.secondary!)).not.toBe("#a855f7");
+  await page.emulateMedia({ colorScheme: null });
+});

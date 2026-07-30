@@ -7,11 +7,11 @@ import {
   signal,
 } from "@angular/core";
 import { ContactFormSectionComponent } from "./sections/contact-form-section.component";
+import { CvaInteropSectionComponent } from "./sections/cva-interop-section.component";
 import {
   DesignSystemConfig,
   DesignSystemSectionComponent,
 } from "./sections/design-system-section.component";
-import { CvaInteropSectionComponent } from "./sections/cva-interop-section.component";
 import { DynamicFormSectionComponent } from "./sections/dynamic-form-section.component";
 import { EnterpriseSelectSectionComponent } from "./sections/enterprise-select-section.component";
 import { TypedFormSectionComponent } from "./sections/typed-form-section.component";
@@ -59,7 +59,7 @@ export class AppComponent {
 
   readonly designSystemConfig = signal<DesignSystemConfig>({
     theme: "default",
-    primaryColor: "#6750a4",
+    primaryColor: "#f0b511",
     density: -3,
     floating: false,
   });

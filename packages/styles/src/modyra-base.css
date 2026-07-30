@@ -442,4 +442,156 @@
     --mdy-overlay-max-height: 50vh;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * The relational maths between the colours
+ *
+ * A palette is one colour and a set of relationships, not a list. This one always was: measured in
+ * OKLCH, the stock secondary sat at the primary's hue +24° and the tertiary at +96°. Those
+ * relationships were real and frozen as hex literals, so choosing a brand colour changed the primary
+ * and left everything else where it stood — a green brand still got violet chips.
+ *
+ * A model is nothing but offsets and multipliers, so it is written as numbers and selected with
+ * `data-mdy-palette` on the root (or on any subtree, for a scoped palette). The same numbers live in
+ * `@modyra/core/color-utils`, which is where they are tested — CSS can produce a contrasting colour
+ * but has no way to check one.
+ *
+ * OKLCH rather than HSL: `hsl(60 100% 50%)` and `hsl(240 100% 50%)` claim the same lightness while
+ * one is blinding and the other nearly black, so rotating hue in HSL makes a palette that lurches.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+    /* Hue offsets are degrees added to the primary's; chroma and lightness are multipliers on it.
+       `brand` is the default: +30°/+90°, round numbers deliberately close to — not identical with —
+       the +24°/+96° the palette measured at before it was expressed, so the stock colours shift
+       slightly and on purpose. */
+    --mdy-palette-secondary-h: 30;
+    --mdy-palette-secondary-c: 1.05;
+    --mdy-palette-secondary-l: 1.03;
+    --mdy-palette-tertiary-h: 90;
+    --mdy-palette-tertiary-c: 0.85;
+    --mdy-palette-tertiary-l: 1.15;
+
+    /* Error's hue is absolute, not an offset. It is the one colour in a palette whose meaning is not
+       decorative: an error that has gone green because the brand did is no longer an error. It takes
+       its weight from the primary and stays red. */
+    --mdy-palette-error-h: 28;
+    --mdy-palette-error-c: 0.82;
+    --mdy-palette-error-l: 0.83;
+
+    /* Where an `on-` colour flips from white to black.
+
+       Solving for where the WCAG ratio against black overtakes the ratio against white gives one
+       clean answer in *luminance*: 0.1791, always. The difficulty is that CSS has the colour in
+       OKLCH and WCAG wants sRGB luminance, which weights green at 0.72 and blue at 0.07 — so a blue
+       and a green of identical OKLCH lightness are nowhere near equally bright, and a lightness
+       threshold cannot stand in for a luminance one. Compared against 1080 sampled colours, a
+       constant lightness pivot picks the wrong side 38 times.
+
+       So luminance is approximated instead: `l³` is exact for a grey, and the hue and chroma
+       correction is fitted — `Y ≈ l³ · (1 + 0.85·c·cos(h − 179°))`, which gets it wrong 16 times out
+       of 1080, all on colours within 0.0075 luminance of the crossover, where the two choices are
+       worth the same anyway. */
+    --mdy-palette-contrast-threshold: 0.1791;
+    --mdy-palette-luma-chroma-weight: 0.85;
+    --mdy-palette-luma-hue-offset: 179;
+    /* How much of the background's chroma its `on-` colour keeps, so text reads as tinted rather
+       than clinical. It costs up to 0.15 of a contrast ratio point. */
+    --mdy-palette-on-chroma: 0.08;
+    /* Dark themes carry lighter accents; this is how much lighter. */
+    --mdy-palette-dark-lift: 1.25;
+}
+
+/* One hue throughout — the accents separate by weight alone. The safe choice for any brand colour. */
+[data-mdy-palette="monochrome"] {
+    --mdy-palette-secondary-h: 0;
+    --mdy-palette-secondary-c: 0.7;
+    --mdy-palette-secondary-l: 1.08;
+    --mdy-palette-tertiary-h: 0;
+    --mdy-palette-tertiary-c: 0.45;
+    --mdy-palette-tertiary-l: 1.2;
+}
+
+/* The tertiary sits opposite the primary; the secondary stays beside it. */
+[data-mdy-palette="complementary"] {
+    --mdy-palette-secondary-h: 15;
+    --mdy-palette-secondary-c: 1;
+    --mdy-palette-secondary-l: 1.05;
+    --mdy-palette-tertiary-h: 180;
+    --mdy-palette-tertiary-c: 0.9;
+    --mdy-palette-tertiary-l: 1.1;
+}
+
+/* Three hues evenly around the wheel. */
+[data-mdy-palette="triadic"] {
+    --mdy-palette-secondary-h: 240;
+    --mdy-palette-secondary-c: 0.95;
+    --mdy-palette-secondary-l: 1.05;
+    --mdy-palette-tertiary-h: 120;
+    --mdy-palette-tertiary-c: 0.9;
+    --mdy-palette-tertiary-l: 1.1;
+}
+
+/* Relative colour syntax is what makes the arithmetic possible at all, and it needs Chrome 119,
+   Safari 16.4 or Firefox 128. Everything above this point is untouched, so a browser without it
+   keeps exactly the palette it renders today rather than losing its colours. */
+@supports (color: oklch(from white l c h)) {
+    :root {
+        --mdy-sys-color-secondary: oklch(from var(--mdy-sys-color-primary)
+                calc(l * var(--mdy-palette-secondary-l))
+                calc(c * var(--mdy-palette-secondary-c))
+                calc(h + var(--mdy-palette-secondary-h)));
+        --mdy-sys-color-tertiary: oklch(from var(--mdy-sys-color-primary)
+                calc(l * var(--mdy-palette-tertiary-l))
+                calc(c * var(--mdy-palette-tertiary-c))
+                calc(h + var(--mdy-palette-tertiary-h)));
+        --mdy-sys-color-error: oklch(from var(--mdy-sys-color-primary)
+                calc(l * var(--mdy-palette-error-l))
+                calc(c * var(--mdy-palette-error-c))
+                var(--mdy-palette-error-h));
+
+        /* CSS has no conditional, but lightness and `clamp()` make a step: below the pivot the
+           lightness resolves to 1 and the text is white, above it to 0 and the text is black.
+           The multiplier is what makes it a step rather than a ramp, and it has to be large. At
+           ×100 a colour landing within 0.01 of the pivot resolves *inside* the clamp — a secondary
+           measured at lightness 0.5559 against a pivot of 0.56 produced 0.409, a mid grey, which is
+           the single worst text colour available. ×10000 narrows that band to 0.0001.
+           `--mdy-sys-color-on-primary` used to be `color-mix(primary, cloud 95%)` — 95% white
+           whatever the primary was, which on a light brand colour is white text on a light
+           background. Each of these reads the colour it is named for, and because all four are
+           declared on the same element, they resolve against whatever that colour computed to
+           there — including in dark mode below. */
+        --mdy-sys-color-on-primary: oklch(from var(--mdy-sys-color-primary)
+                clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1)
+                calc(c * var(--mdy-palette-on-chroma)) h);
+        --mdy-sys-color-on-secondary: oklch(from var(--mdy-sys-color-secondary)
+                clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1)
+                calc(c * var(--mdy-palette-on-chroma)) h);
+        --mdy-sys-color-on-tertiary: oklch(from var(--mdy-sys-color-tertiary)
+                clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1)
+                calc(c * var(--mdy-palette-on-chroma)) h);
+        --mdy-sys-color-on-error: oklch(from var(--mdy-sys-color-error)
+                clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1)
+                calc(c * var(--mdy-palette-on-chroma)) h);
+    }
+
+    /* Dark mode derived the same way rather than from fixed reference colours, or choosing a brand
+       colour would work in the light theme and silently revert to violet and coral in the dark one. */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --mdy-sys-color-secondary: oklch(from var(--mdy-sys-color-primary)
+                    calc(l * var(--mdy-palette-secondary-l) * var(--mdy-palette-dark-lift))
+                    calc(c * var(--mdy-palette-secondary-c))
+                    calc(h + var(--mdy-palette-secondary-h)));
+            --mdy-sys-color-tertiary: oklch(from var(--mdy-sys-color-primary)
+                    calc(l * var(--mdy-palette-tertiary-l) * var(--mdy-palette-dark-lift))
+                    calc(c * var(--mdy-palette-tertiary-c))
+                    calc(h + var(--mdy-palette-tertiary-h)));
+            --mdy-sys-color-error: oklch(from var(--mdy-sys-color-primary)
+                    calc(l * var(--mdy-palette-error-l) * var(--mdy-palette-dark-lift))
+                    calc(c * var(--mdy-palette-error-c))
+                    var(--mdy-palette-error-h));
+        }
+    }
+}
+
 } /* end @layer mdy.tokens */
