@@ -307,12 +307,64 @@ body {
 }
 
 /* Anchors the floating dock without putting it inside the scrolling canvas. */
+/* The canvas's own strip: which size the form below is laid out for. Permanent, because choosing a
+   size is a constant action while arranging and the canvas is already showing the answer — it used
+   to sit inside the floating toolbar, behind a FAB that is collapsed by default. */
+.canvas-bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 18px;
+  border-block-end: 1px solid var(--studio-chrome-border);
+  background: var(--studio-chrome-panel);
+}
+.canvas-bar-sizes {
+  display: flex;
+  gap: 4px;
+}
+.canvas-bar-sizes button {
+  width: auto !important;
+  padding: 4px 10px;
+  border: 1px solid var(--studio-chrome-border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--studio-chrome-text);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+/* Solid and darkened, for the reason the toolbar's version carried: cloud on indigo neat is 4.1:1
+   against the 4.5 this size of text needs. */
+.canvas-bar-sizes button[aria-pressed="true"] {
+  border-color: var(--studio-chrome-indigo);
+  background: color-mix(in srgb, var(--studio-chrome-indigo) 72%, #000);
+  color: var(--studio-chrome-cloud);
+}
+.canvas-bar-width {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--studio-chrome-text);
+}
+.canvas-bar-hint {
+  color: var(--studio-chrome-text);
+  font-size: 11px;
+  opacity: 0.85;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .canvas-column {
   position: relative;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
   display: grid;
+  /* The bar takes what it needs, the canvas takes the rest. The dock and the palette are absolute,
+     so they claim no row of their own. */
+  grid-template-rows: auto 1fr;
 }
 .inspector {
   display: flex;
