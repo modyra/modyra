@@ -134,7 +134,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
         (close)="closeOverlay()"
       >
         <div
-          class="mdy-colors__dropdown"
+          class="mdy-colors__dropdown mdy-popup mdy-overlay"
           [ngClass]="placementClass()"
         >
           <div class="mdy-colors__dropdown-header" aria-hidden="true">{{ i18n.colorPresetsHeader }}</div>

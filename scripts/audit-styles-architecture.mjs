@@ -34,13 +34,7 @@ const THEMES = ["modyra-modern.css", "modyra-material.css", "modyra-ios.css", "m
  * Accepted debt, each with the reason it is still here. The audit asserts every entry is still a
  * real finding, so a fixed one cannot linger and a new one cannot hide behind an old one.
  */
-const DEBT = [
-  {
-    id: "material-positions-colors-popup",
-    reason: "Material and iOS still place the colours popup themselves, from before the anchoring contract existed. They move onto `--mdy-overlay-*` when those two themes migrate.",
-    matches: (name, css) => ["modyra-material.css", "modyra-ios.css"].includes(name) && /mdy-colors__dropdown|mdy-select__dropdown/.test(css) && /position\s*:/.test(css),
-  },
-];
+const DEBT = [];
 
 const read = (name) => readFileSync(join(SRC, name), "utf8");
 /** Strips comments so a rule quoted in prose is not read as a rule. */

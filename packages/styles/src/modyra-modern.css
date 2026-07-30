@@ -378,6 +378,16 @@
     list-style: none;
 }
 
+/* A list wants tight padding; a palette wants room around its swatch grid. The foundation says so
+   through `--mdy-overlay-padding`, which this theme cannot honour for one popup while declaring
+   `padding` outright for all of them above — a later layer beats a custom property's reader. Stated
+   here so the palette keeps the roominess it has always had in this theme. Every popup in this file
+   reading the overlay properties instead of re-declaring is the larger cleanup, recorded separately. */
+.mdy-colors__dropdown {
+    padding: 1.25rem;
+    background: var(--mdy-surface-container);
+}
+
 .mdy-popup .mdy-select__option {
     min-height: 2.25rem;
     display: flex;
