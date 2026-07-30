@@ -606,12 +606,11 @@ body {
   flex: 0 1 auto;
   min-width: 0;
 }
-@media (max-width: 720px) {
-  /* One column per row below the point where side-by-side fields stop being readable. */
-  .plain-canvas-form .mdy-layout-columns {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
+/* A `@media (max-width: 720px)` rule used to stack every canvas row on a narrow *window*. It sat
+   after the rule above and matched it for specificity, so it won — and the canvas ignored the size
+   being authored exactly when the author had chosen a wide one on a small screen. The size being
+   authored is the only thing that decides now; the canvas scrolls if the window is smaller, which is
+   what a viewport at that size would do to the real form too. */
 
 /* Insert palette: type-to-add. Overlays the canvas column so it never has to
    compete with the properties panel for room. */
