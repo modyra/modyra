@@ -178,9 +178,10 @@ test("the colour palette is placed by the contract, in every theme", async ({ pa
       if (link) link.href = `styles/${name}.css`;
     }, theme);
     await page.waitForTimeout(450);
-    // Clicked through the DOM: Material collapses this trigger to zero height, which is its own
-    // defect and not this one's — the popup it opens is still the popup under test.
-    await page.evaluate(() => (document.querySelector(".mdy-colors__toggle-area") as HTMLElement).click());
+    // Clicked like a user, in every theme. Material used to collapse this trigger to 44x0 — a
+    // percentage height on a flex item the foundation already stretches — so it could not be
+    // clicked at all there, and this test had to reach past the pointer to open the popup.
+    await page.locator("mdy-control-colors .mdy-colors__toggle-area").first().click();
     await page.waitForTimeout(350);
 
     const placed = await page.evaluate(() => {
