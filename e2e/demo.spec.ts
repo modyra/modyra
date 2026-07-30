@@ -287,3 +287,47 @@ test("the clock shows the hours its format has, on two rings, and takes the keyb
     expect(Number(state.valueNow)).not.toBeNaN();
   }
 });
+
+test("a slider's track fills up to its handle, in every theme", async ({ page }) => {
+  // Reported as reading like "a circle sliding in a box" rather than a slider. Measured, the track
+  // never filled: `--mdy-slider-track-color` composed the gradient at token scope, where
+  // `--mdy-slider-fill-pct` is unset, so both colour stops were frozen at 0% and inherited down
+  // already flat. The renderer wrote the real percentage onto the control every value change and
+  // nothing read it.
+  const stops = (image: string) =>
+    Array.from(image.matchAll(/([\d.]+)%/g)).map((m) => Number(m[1]));
+
+  for (const theme of ["modyra", "modyra-modern", "modyra-material", "modyra-ios"]) {
+    await page.goto("/");
+    await page.waitForSelector("mdy-control-slider", { state: "attached", timeout: 15000 });
+    await page.evaluate((name) => {
+      const link = document.getElementById("mdy-theme-link") as HTMLLinkElement | null;
+      if (link) link.href = `styles/${name}.css`;
+    }, theme);
+    await page.waitForTimeout(400);
+
+    const slider = page.locator("mdy-control-slider .mdy-slider").first();
+    const read = () => slider.evaluate((el) => ({
+      image: getComputedStyle(el).backgroundImage,
+      value: Number((el as HTMLInputElement).value),
+      max: Number((el as HTMLInputElement).max),
+    }));
+
+    const before = await read();
+    expect(before.image, `${theme}: the track must be a split, not one flat colour`).toContain("linear-gradient");
+    const atStart = stops(before.image);
+    expect(atStart.length, theme).toBeGreaterThan(0);
+    // Filled in proportion to the value it is sitting at, not stuck at zero.
+    expect(atStart[0], `${theme}: track fill at value ${before.value}/${before.max}`).toBeGreaterThan(0);
+
+    // And it follows the value: dragging the handle to the end fills the track further.
+    await slider.evaluate((el) => {
+      const input = el as HTMLInputElement;
+      input.value = input.max;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await page.waitForTimeout(200);
+    const after = await read();
+    expect(stops(after.image)[0], `${theme}: fill after moving to max`).toBeGreaterThan(atStart[0]!);
+  }
+});

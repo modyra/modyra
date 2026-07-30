@@ -432,8 +432,11 @@
 
     /* ─── Slider — M3 spec (4dp track, 20dp thumb) ───────────────────────────── */
 
+    /* The *empty* part of the track, not the whole of it. Setting `background` outright replaced the
+       split with one flat colour, so this theme's slider had no filled portion at all — the one
+       thing a slider is for. The foundation composes the split from these two colours. */
     .mdy-slider {
-        background: var(--mdy-surface-container-highest);
+        --mdy-slider-inactive-color: var(--mdy-surface-container-highest);
     }
 
     .mdy-slider::-webkit-slider-thumb {

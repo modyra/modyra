@@ -239,10 +239,13 @@
         --mdy-slider-active-color: var(--mdy-comp-slider-active-track-color, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
         --mdy-slider-inactive-color: var(--mdy-comp-slider-inactive-track-color, var(--mdy-sys-color-secondary-container, color-mix(in srgb, var(--mdy-sys-color-secondary, var(--mdy-ref-color-violet, #A855F7)), var(--mdy-ref-color-cloud, #F8FAFC) 80%)));
         --mdy-slider-thumb-color: var(--mdy-comp-slider-handle-color, var(--mdy-sys-color-primary, var(--mdy-ref-color-indigo, #7067FF)));
-        /* --mdy-slider-fill-pct is set by the TS component on value change */
-        --mdy-slider-track-color: linear-gradient(to right,
-                var(--mdy-slider-active-color) var(--mdy-slider-fill-pct, 0%),
-                var(--mdy-slider-inactive-color) var(--mdy-slider-fill-pct, 0%));
+        /* `--mdy-slider-fill-pct` is written on the control by the renderer, on every value change.
+           The gradient it feeds is composed in the rule that *uses* it, not here: a custom property
+           substitutes the properties it references when its own declaration is computed, so a
+           gradient built at token scope froze `--mdy-slider-fill-pct` at its fallback and inherited
+           down already at 0%. Measured, the active colour stopped at 0% on a slider sitting at 5 of
+           10 — the track never filled in any theme, which is a slider that reads as a bare rail with
+           a circle on it. */
 
         /* ── Color Picker ───────────────────────────────────────────────────────── */
         --mdy-color-swatch-size: var(--mdy-comp-color-picker-swatch-size, 2.5rem);
@@ -1238,9 +1241,11 @@
         appearance: none;
         height: var(--mdy-slider-track-height);
         /* M3: 4px */
-        /* Split track: active portion left of thumb, inactive right.
-       Set --mdy-slider-fill-pct via JS on value change for accurate split. */
-        background: var(--mdy-slider-track-color);
+        /* The split track: filled up to the handle, empty after it. Composed here, on the element
+           that carries `--mdy-slider-fill-pct`, so the stop is the value the renderer just wrote. */
+        background: linear-gradient(to right,
+                var(--mdy-slider-active-color) var(--mdy-slider-fill-pct, 0%),
+                var(--mdy-slider-inactive-color) var(--mdy-slider-fill-pct, 0%));
         outline: none;
         cursor: pointer;
         border-radius: var(--mdy-corner-full);
