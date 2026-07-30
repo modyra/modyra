@@ -570,54 +570,10 @@
         min-width: 0;
     }
 
-    .mdy-colors__dropdown {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        z-index: var(--mdy-z-overlay);
-        background: var(--mdy-surface-container);
-        border: none;
-        border-radius: var(--mdy-color-dropdown-radius);
-        box-shadow: var(--mdy-color-dropdown-shadow);
-        padding: 1.25rem;
-        margin-top: 8px;
-        min-width: 280px;
-        display: none;
-    }
-
-    .mdy-colors--open .mdy-colors__dropdown {
-        display: block;
-        position: fixed;
-        top: var(--mdy-overlay-top, auto);
-        bottom: var(--mdy-overlay-bottom, auto);
-        left: var(--mdy-overlay-left, auto);
-        right: var(--mdy-overlay-right, auto);
-        /* Content-sized, not control-width */
-        width: auto;
-        min-width: 280px;
-        margin: 0;
-        margin-top: 4px;
-    }
-
-    .mdy-colors__dropdown--above {
-        bottom: 100%;
-        top: auto;
-        margin-top: 0;
-        margin-bottom: 8px;
-    }
-
-    .mdy-colors__dropdown--overlay {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: calc(100% - 2rem);
-        max-width: 320px;
-        margin: 0;
-        z-index: var(--mdy-z-modal);
-    }
-
+    /* The palette's surface is stated with the other popups, in `mdy.components` — see
+       `.mdy-colors__dropdown` there. It cannot live in this layer: `.mdy-popup` is a component, and
+       a later layer beats an earlier one whatever the specificity, so a palette that named its own
+       background and padding here would be overruled by the primitive it opted into. */
 
 
     .mdy-colors__dropdown-header {
@@ -3312,6 +3268,41 @@
      * question entirely, and out of any `overflow: hidden` ancestor that used to clip it. */
     .mdy-popup[popover] {
         position: fixed;
+    }
+
+    /* The palette, as a surface and nothing else.
+     *
+     * This used to be a second implementation of the popup primitive, for one widget, over in
+     * `mdy.base`: it positioned itself (`absolute`, `top: 100%`), showed and hid itself
+     * (`display: none`, and `.mdy-colors--open … { display: block }`), and re-derived placement in
+     * `--above` and `--overlay` — the two class names `popupPlacementClass` already produces from
+     * the catalog. Both themes copied that shape, which is the debt the styles audit reported.
+     *
+     * `.mdy-popup` does all of it, for every popup in the catalog, from the coordinates
+     * `anchorOverlay` measured. What is left is what makes a palette look like a palette — and it
+     * has to be stated *here*, in the same layer as the primitive: a later layer beats an earlier
+     * one whatever the specificity, so this block back in `mdy.base` was silently overruled by the
+     * very primitive it had just opted into. Measured, that cost it its padding and its
+     * background. */
+    .mdy-colors__dropdown {
+        /* Stated as the properties `.mdy-popup` already reads, not as declarations of its own.
+         *
+         * A declaration here only wins while no later layer names `.mdy-popup` — and a theme does:
+         * `modyra-modern.css` styles the popup primitive, so a palette that declared its own
+         * `padding` and `background` in this layer lost both to it. Measured: 20px of padding
+         * became 6px, and the palette took the ordinary popup surface.
+         *
+         * A custom property has no such argument to lose. The primitive reads
+         * `--mdy-overlay-padding` and `--mdy-overlay-surface-color` wherever they are set, so this
+         * is the palette asking the one surface to be a little roomier — which is what a widget
+         * should be able to say — rather than drawing a second one. */
+        --mdy-overlay-padding: 1.25rem;
+        --mdy-overlay-surface-color: var(--mdy-surface-container);
+        --mdy-overlay-shape: var(--mdy-color-dropdown-radius);
+        --mdy-overlay-shadow: var(--mdy-color-dropdown-shadow);
+        /* Content-sized rather than control-width — the renderer asks for `auto-content`, and the
+           swatch grid needs room for a row of them. */
+        min-width: 280px;
     }
 
     /* An overlay wrapper that is a popover, but is not itself a popup.

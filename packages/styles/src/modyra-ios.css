@@ -431,11 +431,18 @@
     .mdy-datepicker__popup,
     .mdy-colors__dropdown,
     .mdy-timepicker-container {
-        position: fixed;
         isolation: isolate;
         background: var(--mdy-ios-glass-bg-fallback);
         border: var(--mdy-ios-glass-border);
         box-shadow: var(--mdy-ios-glass-shadow);
+    }
+
+    /* `.mdy-timepicker-container` is the one member of that group that is not a popup — it sits
+       inside the timepicker's popup — so it states the positioning the primitive gives the others.
+       The `position: fixed` this theme used to declare for all five is `.mdy-popup`'s to give: a
+       theme that positions a popup is a theme deciding whether the popup lands on its control. */
+    .mdy-timepicker-container {
+        position: fixed;
     }
 
     @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {

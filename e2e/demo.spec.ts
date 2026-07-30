@@ -158,3 +158,57 @@ test("an overlay is positioned once, by the box that draws it", async ({ page })
   expect(boxes.declaredMaxHeight).toMatch(/^\d+px$/);
   expect(boxes.popupMaxHeight).toBe(boxes.declaredMaxHeight);
 });
+
+test("the colour palette is placed by the contract, in every theme", async ({ page }) => {
+  // The palette was the one popup in the catalog not wearing `mdy-popup`, so the foundation could
+  // not place it — and the foundation, Material and iOS each carried their own copy of the popup
+  // primitive to compensate: position, insets, `display` for open/closed, and their own `--above`
+  // and `--overlay` placement rules. It wears `mdy-popup mdy-overlay` now and they do not.
+  //
+  // The reason this went unseen: the palette lives inside a collapsed <details> in this demo.
+  // Chromium keeps a layout box for that content and never paints it, so it measures like a real
+  // element and cannot be clicked — a popup nothing could open is a popup nothing could check.
+  for (const theme of ["modyra", "modyra-modern", "modyra-material", "modyra-ios"]) {
+    await page.goto("/");
+    await page.waitForSelector("mdy-control-colors", { state: "attached", timeout: 15000 });
+    await page.locator(".playground-accordion > summary").first().click();
+    await page.waitForTimeout(250);
+    await page.evaluate((name) => {
+      const link = document.getElementById("mdy-theme-link") as HTMLLinkElement | null;
+      if (link) link.href = `styles/${name}.css`;
+    }, theme);
+    await page.waitForTimeout(450);
+    // Clicked through the DOM: Material collapses this trigger to zero height, which is its own
+    // defect and not this one's — the popup it opens is still the popup under test.
+    await page.evaluate(() => (document.querySelector(".mdy-colors__toggle-area") as HTMLElement).click());
+    await page.waitForTimeout(350);
+
+    const placed = await page.evaluate(() => {
+      const field = document.querySelector("mdy-control-colors") as HTMLElement;
+      const popup = field.querySelector(".mdy-colors__dropdown") as HTMLElement;
+      const anchor = field.querySelector(".mdy-colors__toggle-area") as HTMLElement;
+      const b = popup.getBoundingClientRect();
+      const a = anchor.getBoundingClientRect();
+      const cs = getComputedStyle(popup);
+      return {
+        onThePrimitive: popup.classList.contains("mdy-popup") && popup.classList.contains("mdy-overlay"),
+        position: cs.position,
+        below: b.top - a.bottom,
+        inViewport: b.left >= 0 && b.top >= 0 && b.right <= window.innerWidth + 1,
+        drawn: b.width > 0 && b.height > 0,
+        // Each theme still gets to say what a palette looks like; what it no longer says is where.
+        padding: parseFloat(cs.padding),
+      };
+    });
+
+    expect(placed.onThePrimitive, theme).toBe(true);
+    // Viewport coordinates, which is what `anchorOverlay` measured.
+    expect(placed.position, theme).toBe("fixed");
+    expect(placed.drawn, theme).toBe(true);
+    expect(placed.inViewport, theme).toBe(true);
+    // Below its control rather than at the page origin, which is where an unplaced popup lands.
+    expect(placed.below, theme).toBeGreaterThanOrEqual(0);
+    // Roomier than an ordinary popup: the palette asks for that through `--mdy-overlay-padding`.
+    expect(placed.padding, theme).toBeGreaterThanOrEqual(16);
+  }
+});

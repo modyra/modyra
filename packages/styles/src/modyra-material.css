@@ -992,49 +992,17 @@
         box-sizing: border-box;
     }
 
+    /* Surface only. This theme used to place the palette itself — `absolute` with `top: 100%`, then
+       `fixed` with the overlay coordinates once open, plus its own `--above` and `--overlay`
+       placement rules — because the Angular renderer's palette was the one popup in the catalog not
+       wearing `mdy-popup`, so the foundation could not place it. It wears it now, and a theme that
+       positions a popup is a theme deciding whether the popup works. */
     .mdy-colors__dropdown {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        z-index: 1000;
         background: var(--mdy-surface-container-high);
         border: none;
         box-shadow: var(--mdy-color-dropdown-shadow);
         border-radius: var(--mdy-color-dropdown-radius);
         padding: 1.5rem;
-        margin-top: 8px;
-        display: none;
-    }
-
-    .mdy-colors--open .mdy-colors__dropdown {
-        display: block;
-        position: fixed;
-        top: var(--mdy-overlay-top, auto);
-        bottom: var(--mdy-overlay-bottom, auto);
-        left: var(--mdy-overlay-left, auto);
-        right: var(--mdy-overlay-right, auto);
-        width: var(--mdy-overlay-width, 300px);
-        margin: 0;
-        margin-top: 4px;
-    }
-
-    .mdy-colors__dropdown--above {
-        bottom: 100%;
-        top: auto;
-        margin-top: 0;
-        margin-bottom: 8px;
-    }
-
-    .mdy-colors__dropdown--overlay {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: calc(100% - 3rem);
-        max-width: 340px;
-        margin: 0;
-        z-index: 9999;
     }
 
     .mdy-colors__dropdown-header {
