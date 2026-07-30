@@ -16,6 +16,15 @@ export interface TargetCapabilities {
   supportsGroups: boolean;
   supportsServerValidators: boolean;
   supportsFormValidators: boolean;
+  /**
+   * Whether the target carries a project's arrangement (`presentation.layout`) into what it emits.
+   *
+   * Optional and false by default, because most targets emit a form module and no markup: there is
+   * nowhere for an arrangement to go, and saying so is not a defect. What it changes is that the
+   * loss is *stated* — `arrangementDiagnostics` reports it rather than letting a form arranged over
+   * four breakpoints export as a flat schema with nothing said about it.
+   */
+  supportsLayout?: boolean;
 }
 
 export type ArtifactFileRole = "source" | "test" | "config" | "docs";

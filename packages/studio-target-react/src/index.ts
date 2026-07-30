@@ -16,6 +16,7 @@
  */
 import {
   buildFormModule,
+  arrangementDiagnostics,
   buildStubsModule,
   type Artifact,
   type ArtifactFile,
@@ -50,7 +51,13 @@ const CAPABILITIES: TargetCapabilities = {
 function generateFiles(project: MdyStudioProject): { files: ArtifactFile[]; diagnostics: StudioDiagnostic[] } {
   const stubsResult = buildStubsModule(project);
   const formResult = buildFormModule(project, stubsResult.nameFor, REACT_PROFILE);
-  const diagnostics = [...stubsResult.diagnostics, ...formResult.diagnostics];
+  // This target emits a form module and no markup, so an arranged project loses its
+  // arrangement here. Reported rather than dropped in silence.
+  const diagnostics = [
+    ...stubsResult.diagnostics,
+    ...formResult.diagnostics,
+    ...arrangementDiagnostics(project, { id: "react", capabilities: CAPABILITIES }),
+  ];
 
   if (!formResult.code) return { files: [], diagnostics };
 

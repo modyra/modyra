@@ -115,3 +115,20 @@ test(
     }
   },
 );
+
+test("an arranged project is told its arrangement is not carried into the code", async () => {
+  // The same report the Angular target makes, from its own call site: this target emits a hook and
+  // no JSX, so there is nowhere for an arrangement to go — and it says so rather than dropping it.
+  const project = createCheckoutProject();
+  const fieldId = project.schema.children.find((child) => child.node === "field").id;
+  const artifact = await createReactTarget().generate(
+    { ...project, presentation: { layout: [{ kind: "columns", id: "row", at: { sm: 2 }, columns: [[{ nodeId: fieldId }]] }] } },
+    {},
+  );
+  const dropped = artifact.diagnostics.filter((d) => d.code === "LAYOUT_NOT_EXPRESSED");
+  assert.equal(dropped.length, 1);
+  assert.equal(dropped[0].targetId, "react");
+  assert.equal(dropped[0].severity, "info");
+  // The recipe that closes the gap is named where the loss is reported, not only in the guide.
+  assert.match(dropped[0].message, /layoutNodeAttributes/);
+});
