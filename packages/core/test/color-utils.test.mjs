@@ -11,7 +11,10 @@ import { test } from "node:test";
 import {
   MDY_PALETTE_MODELS,
   contrastRatio,
+  deriveHctPalette,
   derivePalette,
+  hctToHex,
+  hexToHct,
   hexToOklch,
   oklchToHex,
   parseHex,
@@ -212,4 +215,112 @@ test("the stylesheet and this module hold the same numbers", () => {
 test("a primary that is not a colour yields no palette", () => {
   assert.equal(derivePalette("not a colour"), null);
   assert.equal(derivePalette(""), null);
+});
+
+// ── HCT: Material 3's own palette maths ──────────────────────────────────────
+
+test("HCT reproduces Material 3's documented baseline", () => {
+  // #6750A4 is the colour every M3 example is seeded with, and Google publishes what it produces.
+  // Matching it is the only real proof that CAM16 and the tone solver are right rather than merely
+  // plausible — an appearance model that is subtly wrong still returns confident numbers.
+  const source = hexToHct("#6750A4");
+  assert.ok(Math.abs(source.h - 299) < 1, `source hue ${source.h}, M3 documents ~299`);
+  assert.ok(Math.abs(source.c - 48) < 1, `source chroma ${source.c}, M3 documents ~48`);
+  assert.ok(Math.abs(source.t - 40) < 1, `source tone ${source.t}, M3 documents ~40`);
+
+  const near = (got, want, label) => {
+    const a = parseHex(got);
+    const b = parseHex(want);
+    const off = Math.max(...[0, 1, 2].map((i) => Math.abs(a[i] - b[i])));
+    assert.ok(off <= 2, `${label}: got ${got}, M3 gives ${want} (off by ${off}/255)`);
+  };
+
+  const p = deriveHctPalette("#6750A4");
+  near(p.primary, "#6750a4", "primary");
+  near(p.secondary, "#625b71", "secondary");
+  near(p.tertiary, "#7d5260", "tertiary");
+  // Error is the algorithmic palette at hue 25 / chroma 84. The older hand-picked #B3261E predates
+  // that being generated, so this is the value the stated constants actually produce.
+  near(p.error, "#ba1a1a", "error");
+
+  // The tone stops of the primary palette, which is where containers come from.
+  const tones = { h: source.h, c: Math.max(source.c, 48) };
+  near(hctToHex({ ...tones, t: 10 }), "#21005d", "primary tone 10");
+  near(hctToHex({ ...tones, t: 90 }), "#eaddff", "primary tone 90");
+});
+
+test("HCT round-trips a colour through hue, chroma and tone", () => {
+  for (const hex of ["#7067FF", "#0A7D2B", "#FFE066", "#18181B", "#B3261E", "#00A5B5"]) {
+    const hct = hexToHct(hex);
+    const back = hctToHex(hct);
+    const a = parseHex(hex);
+    const b = parseHex(back);
+    const off = Math.max(...[0, 1, 2].map((i) => Math.abs(a[i] - b[i])));
+    assert.ok(off <= 3, `${hex} -> ${back}, off by ${off}/255`);
+  }
+});
+
+test("HCT tone 0 and 100 are black and white, and tone survives an impossible chroma", () => {
+  assert.equal(hctToHex({ h: 120, c: 84, t: 0 }), "#000000");
+  assert.equal(hctToHex({ h: 120, c: 84, t: 100 }), "#ffffff");
+  // No hue holds chroma 84 at tone 95; the tone is what must be kept, so chroma gives way.
+  const pale = hctToHex({ h: 120, c: 84, t: 95 });
+  assert.ok(Math.abs(hexToHct(pale).t - 95) < 1.5, `tone drifted to ${hexToHct(pale).t}`);
+});
+
+test("HCT keeps error red whatever the brand is, like the OKLCH model does", () => {
+  for (const primary of ["#0A7D2B", "#00A5B5", "#FFE066"]) {
+    const { error } = deriveHctPalette(primary);
+    const [r, g, b] = parseHex(error);
+    assert.ok(r > g && r > b, `${primary}: error came out ${error}`);
+  }
+});
+
+test("a primary that is not a colour yields no HCT palette either", () => {
+  assert.equal(deriveHctPalette("not a colour"), null);
+  assert.equal(hexToHct("#12345"), null);
+});
+
+test("the two palette engines disagree, and by how much", () => {
+  // Printed side by side because the point is not that one is right. HCT assigns chroma (every M3
+  // palette has the same chromatic weight whatever it was seeded with) where Modyra's model
+  // multiplies it (a quiet brand stays quiet). CAM16 hue and OKLab hue are different quantities on
+  // different scales, so the numbers below are not two measurements of one thing.
+  const rows = [];
+  let maxHueGap = 0;
+  for (const source of ["#7067FF", "#0A7D2B", "#FFE066", "#B3261E"]) {
+    const oklch = derivePalette(source, MDY_PALETTE_MODELS.brand);
+    const hct = deriveHctPalette(source);
+    for (const role of ["primary", "secondary", "tertiary", "error"]) {
+      const a = hexToOklch(oklch[role]);
+      const b = hexToOklch(hct[role]);
+      const hueGap = Math.abs(((a.h - b.h + 540) % 360) - 180);
+      maxHueGap = Math.max(maxHueGap, hueGap);
+      rows.push(
+        `${source} ${role.padEnd(9)} oklch ${oklch[role]} (l ${a.l.toFixed(2)} c ${a.c.toFixed(3)} h ${a.h.toFixed(0)})` +
+          `  |  hct ${hct[role]} (l ${b.l.toFixed(2)} c ${b.c.toFixed(3)} h ${b.h.toFixed(0)})`,
+      );
+    }
+  }
+  console.log("\n  Two palette engines, same sources:\n    " + rows.join("\n    ") + "\n");
+
+  // They are genuinely different engines, not two spellings of one. If this ever stops being true,
+  // one of them has been quietly rewritten into the other.
+  assert.ok(maxHueGap > 10, `the two models produced near-identical hues (max gap ${maxHueGap}°)`);
+
+  // And the difference in kind: HCT pins every non-primary role to a fixed chroma, so a saturated
+  // and a muted brand come back equally saturated. The OKLCH model scales, so they do not.
+  const loud = deriveHctPalette("#7067FF");
+  const quiet = deriveHctPalette("#6B6B75");
+  const chromaOf = (hex) => hexToHct(hex).c;
+  assert.ok(
+    Math.abs(chromaOf(loud.secondary) - chromaOf(quiet.secondary)) < 3,
+    "HCT assigns secondary chroma, so it should not depend on how saturated the source was",
+  );
+  const loudO = derivePalette("#7067FF", MDY_PALETTE_MODELS.brand);
+  const quietO = derivePalette("#6B6B75", MDY_PALETTE_MODELS.brand);
+  assert.ok(
+    hexToOklch(loudO.secondary).c > hexToOklch(quietO.secondary).c + 0.05,
+    "the OKLCH model multiplies chroma, so a muted source must stay muted",
+  );
 });
