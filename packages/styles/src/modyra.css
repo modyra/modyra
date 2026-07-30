@@ -1952,15 +1952,16 @@
        backdrop, `mdy-overlay-backdrop`, from the overlay panel — a per-widget backdrop has not
        existed since the panel took the job. */
 
+    /* A modal list: what it is, not where it is.
+     *
+     * The centring used to be spelled here — `fixed`, `top: 50%`, `left: 50%` and the translate —
+     * and `anchorOverlay` writes exactly that through `--mdy-overlay-top/left/transform` when it
+     * gives up on both sides. The `width` here was already dead: the primitive's
+     * `width: var(--mdy-overlay-width)` carries the decided width and outranked it.
+     *
+     * A list that has stopped chasing its control scrolls as a column, and that is this rule's
+     * whole remaining job. */
     .mdy-select__dropdown--overlay {
-        position: fixed;
-        z-index: var(--mdy-z-overlay);
-        top: 50%;
-        left: 50%;
-        right: auto;
-        transform: translate(-50%, -50%);
-        margin: 0;
-        width: min(24rem, 90vw);
         max-height: min(70vh, 24rem);
         display: flex;
         flex-direction: column;
@@ -2272,16 +2273,8 @@
 
     /* The per-picker backdrops went the same way as the select's, and for the same reason. */
 
-    .mdy-datepicker__popup--overlay,
-    .mdy-timepicker__popup--overlay {
-        position: fixed;
-        z-index: var(--mdy-z-overlay);
-        top: 50%;
-        left: 50%;
-        right: auto;
-        transform: translate(-50%, -50%);
-        margin: 0;
-    }
+    /* The pickers' modal placement said the same thing, and said nothing else — so with the
+       centring left to `anchorOverlay` there was no rule left to keep. */
 
     /* ─── Time Picker Container / Dial ────────────────────────────────────────── */
 
@@ -3183,6 +3176,14 @@
            its own space would show half off the screen, and a content-sized one has no width to
            clamp it — so the ceiling is stated even when the width is not. */
         max-width: var(--mdy-overlay-max-width, none);
+        /* The last coordinate `anchorOverlay` writes, and the one this rule used to leave out.
+         *
+         * A modal placement is centred with `top: 50%; left: 50%` and a translate back by half the
+         * popup's own size; the insets above were read here, the translate only by `.mdy-overlay`.
+         * A popup that is not also an overlay — the pickers, whose classes sit on the panel — was
+         * therefore pinned by its top-left corner to the middle of the screen. Measured: the clock
+         * sat at `450,160` in a 900×320 viewport instead of centred on it. */
+        transform: var(--mdy-overlay-transform, none);
         overflow: auto;
         /* A scroll gesture that reaches the end of a popup must not scroll the page behind it. */
         overscroll-behavior: contain;
