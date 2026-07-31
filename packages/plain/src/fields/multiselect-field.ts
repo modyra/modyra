@@ -203,9 +203,18 @@ export function renderMultiselectField(
       const classes = multiselectChipClasses({ mode, selected: count > 0 });
       const part = view.parts[key];
       for (const [index, handle] of handles.entries()) {
-        // The part carries `hidden` when the query filters the option out. Only the popup's grid
-        // filters: the field shows every option, which is what makes it a picker rather than a list.
+        // The part carries `hidden` when the query filters the option out, and an `id`. Only the
+        // popup's grid filters — the field shows every option, which is what makes it a picker
+        // rather than a list — and only one of the two grids can own the id.
+        //
+        // Taking nothing at all for the field grid was too blunt: everything else the part says is
+        // true of both chips, so a disabled multiselect left two operable buttons behind. The field
+        // grid now takes the part with the id and the filtering dropped.
         if (part && index === 1) applyPart(handle.chip, part);
+        else if (part) {
+          const { id: _ownedByThePopup, ...shared } = part;
+          applyPart(handle.chip, { ...shared, attributes: { ...part.attributes, hidden: false } });
+        }
         handle.chip.className = classes.join(" ");
         if (handle.count) setText(handle.count, `×${count}`);
       }
