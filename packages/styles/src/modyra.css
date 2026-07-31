@@ -1546,6 +1546,7 @@
 
     .mdy-segmented__button--selected .mdy-segmented__check {
         visibility: visible;
+        display: flex;
     }
 
     /* A renderer with no icon set leaves the element empty; the theme draws the tick itself. */
@@ -1676,6 +1677,7 @@
     }
 
     .mdy-chip__check {
+        display: flex;
         position: absolute;
         left: 0.75rem;
         width: 1em;
