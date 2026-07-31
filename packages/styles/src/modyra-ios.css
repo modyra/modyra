@@ -952,6 +952,15 @@
     /* ═══════════════════════════════════════════════════════════════════
      * FLOATING LABEL
      * ═══════════════════════════════════════════════════════════════════ */
+
+    /* The manoeuvre is the foundation's; these are iOS's numbers. The label lines up with the
+       control's own 14px inset rather than Material's 16px, and it shrinks to 0.8 rather than
+       0.75 — iOS reduces a risen label less far, and at 15px the difference is legible. */
+    .mdy-renderer.mdy-floating-label {
+        --mdy-fl-label-left: 0.875rem;
+        --mdy-fl-active-scale: 0.8;
+    }
+
     .mdy-renderer.mdy-floating-label:has(.mdy-input-wrapper:focus-within) .mdy-label {
         color: var(--mdy-ios-blue);
     }
