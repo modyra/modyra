@@ -96,12 +96,17 @@ export abstract class MdyFieldElement<T> extends LitElement {
     this.classList.add(...this.rootClasses);
     const handle = this.field;
     if (handle && !this._tracker) {
+      // Every signal a subclass may read while rendering. The list is hand-written, so a signal
+      // left off it is not a missing attribute but an inert binding: the element renders the right
+      // thing once and never again when that signal changes. `readonly` was missing, so a field
+      // marked read-only kept its old DOM until some *other* tracked signal happened to fire.
       this._tracker = new MdyFormController(this, [
         handle.value,
         handle.errors,
         handle.touched,
         handle.required,
         handle.disabled,
+        handle.readonly,
       ]);
       this._tracker.hostConnected();
     }
