@@ -11,6 +11,16 @@ export type {
   MdyFieldA11yOptions,
 } from "./field-a11y.js";
 
+export {
+  fieldShellPartIds,
+  projectFieldShellA11y,
+} from "./shell-a11y.js";
+
+export type {
+  MdyFieldShellA11yOptions,
+  MdyFieldShellFlags,
+} from "./shell-a11y.js";
+
 export type {
   MdyFieldControllerOptions,
   MdyFieldIntent,

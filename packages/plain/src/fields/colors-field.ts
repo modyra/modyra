@@ -7,7 +7,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, overlayAnchoringFor, type MdyColorValueIntent , defaultWidgetIdFactory} from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, overlayAnchoringFor, projectFieldShellA11y, type MdyColorValueIntent , defaultWidgetIdFactory} from "@modyra/widgets";
 import { applyPart, el, setErrors } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, setOverlayOpen, trackOverlay } from "../overlay.js";
@@ -49,6 +49,9 @@ export function renderColorsField(
 
   const hexInput = el("input") as HTMLInputElement;
   hexInput.type = "text";
+  // The field's label points here: the swatch is a colour input with no readable text, so the hex
+  // box is the control a `for` can usefully name.
+  hexInput.id = `${f.name}__hex`;
   hexInput.spellcheck = false;
   hexInput.setAttribute("aria-label", `${f.label ?? "Colour"} — hex value`);
   applyPart(hexInput, definition.parts.hexInput);
@@ -128,6 +131,26 @@ export function renderColorsField(
       const selected = colorValueEquals(value || null, preset);
       swatch.classList.toggle("mdy-color-swatch--selected", selected);
       swatch.setAttribute("aria-selected", String(selected));
+    }
+    // The state-driven half of the contract. `definition.parts` is static — classes and shape — so
+    // on its own it never said the colour was invalid, required, disabled or described by its
+    // errors. Merged into the static part rather than applied after it, because a second
+    // `applyPart` on the same element recomputes classes from the base it captured first.
+    const a11y = projectFieldShellA11y(
+      { disabled: handle.disabled(), required: handle.required() },
+      handle.errors(),
+      { widgetId: f.name, controlId: hexInput.id },
+    );
+    applyPart(shell.label, a11y.label);
+    applyPart(shell.description, a11y.description);
+    applyPart(shell.errorList, a11y.error);
+    // The hex field is the one a user types into, so it is the control the state is about. The
+    // native swatch keeps its own name and follows the same state.
+    for (const [element, part] of [
+      [hexInput, definition.parts.hexInput],
+      [control, definition.parts.control],
+    ] as const) {
+      applyPart(element, { ...part, attributes: { ...part.attributes, ...a11y.control.attributes } });
     }
     control.disabled = handle.disabled();
     hexInput.disabled = handle.disabled();

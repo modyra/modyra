@@ -9,7 +9,7 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
 import { addMonths, buildDateLocale, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
-import { MDY_WIDGET_CONTRACTS, dateRangeDraftTransition, overlayAnchoringFor, type MdyDateRangeDraftState, type MdyDateRangeValue , defaultWidgetIdFactory} from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, dateRangeDraftTransition, overlayAnchoringFor, projectFieldShellA11y, type MdyDateRangeDraftState, type MdyDateRangeValue , defaultWidgetIdFactory} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
@@ -90,6 +90,10 @@ export function renderDaterangeField(
   actions.append(cancelButton, applyButton);
   popup.append(header, grid, actions);
 
+  // The start input is what the label names: a range has two controls and `for` can point at only
+  // one. The other keeps the `aria-label` it already carried.
+  startInput.id = `${f.name}__start`;
+
   wrapper.append(startInput, separator, endInput, toggle, popup);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
@@ -158,11 +162,28 @@ export function renderDaterangeField(
     const anchor = view();
     const value = state.open ? state.draft : asRange(handle.value());
 
+    // The state-driven half of the contract. `definition.parts` is static — classes and shape — so
+    // on its own it never said the range was invalid, required, disabled or described by its errors.
+    const a11y = projectFieldShellA11y(
+      { disabled: handle.disabled(), required: handle.required() },
+      handle.errors(),
+      { widgetId: f.name, controlId: startInput.id },
+    );
+
     applyPart(shell.root, definition.parts.root);
-    applyPart(startInput, definition.parts.startControl);
-    applyPart(endInput, definition.parts.endControl);
-    for (const [input, iso] of [[startInput, value.start], [endInput, value.end]] as const) {
+    applyPart(shell.label, a11y.label);
+    applyPart(shell.description, a11y.description);
+    applyPart(shell.errorList, a11y.error);
+    // Merged, not applied twice: a second `applyPart` on the same element recomputes its classes
+    // from the base it captured on the first call, which would silently drop the part's own.
+    for (const [input, iso, part] of [
+      [startInput, value.start, definition.parts.startControl],
+      [endInput, value.end, definition.parts.endControl],
+    ] as const) {
       if (!typing) input.value = iso ?? "";
+      // Both endpoints carry the state: a range half of which announces itself invalid is worse
+      // than one that says nothing at all.
+      applyPart(input, { ...part, attributes: { ...part.attributes, ...a11y.control.attributes } });
       input.disabled = handle.disabled();
     }
     toggle.disabled = handle.disabled();

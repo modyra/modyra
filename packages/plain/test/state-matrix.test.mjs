@@ -47,6 +47,27 @@ function valueFor(kind) {
   }
 }
 
+/**
+ * The empty value each kind can actually hold.
+ *
+ * This driver used to hand every kind `""`. For a text field that is the empty value; for a
+ * daterange it is a *string where an object belongs*, and `required` rejected it for being an empty
+ * string rather than for being an empty range. The `daterange × invalid` row was green because the
+ * fixture fed it a value the widget can never hold — a green row that was a claim about the driver,
+ * which is the same mistake as a red row that is a claim about the renderer.
+ *
+ * Lit's driver has had this since it was written; Plain's had not.
+ */
+function emptyFor(kind) {
+  switch (kind) {
+    case "multiselect": return [];
+    case "checkbox": case "toggle": return false;
+    case "number": case "slider": return null;
+    case "daterange": return { start: null, end: null };
+    default: return "";
+  }
+}
+
 function controlOf(root) {
   return root.querySelector(".mdy-input-wrapper input, .mdy-input-wrapper textarea, .mdy-input-wrapper select") ??
     root.querySelector("input, textarea, select");
@@ -73,10 +94,10 @@ function mount(kind) {
     drive(state) {
       switch (state) {
         case "pristine": return true;
-        case "empty": handle.set(""); return true;
+        case "empty": handle.set(emptyFor(kind)); return true;
         case "filled": handle.set(valueFor(kind)); return true;
         case "touched": handle.markAsTouched(); return true;
-        case "invalid": handle.set(""); handle.markAsTouched(); return true;
+        case "invalid": handle.set(emptyFor(kind)); handle.markAsTouched(); return true;
         case "focused":
           (controlOf(root) ?? root.querySelector("button, [tabindex]"))?.focus?.();
           return true;
@@ -101,26 +122,38 @@ function mount(kind) {
 }
 
 /**
- * Plain's remaining divergences.
+ * Plain's divergences: **no rendering defects left**.
  *
- * `readonly` is closed, and so is the half of batch D that had a projection to fix: select,
- * multiselect, datepicker and timepicker now apply the native `disabled` as well as the ARIA, and
- * select exposes `aria-invalid`.
+ * The ledger is asserted both ways, so it is a live claim rather than a comment — a new divergence
+ * fails here, and so does a stale entry left behind after its fix.
  *
- * What is left is one finding, not six. **`daterange`, `colors` and `file` have no a11y projection
- * at all** — no controller in `@modyra/widgets` builds one, so these renderers apply the *static*
- * part contract and nothing state-driven. They expose no `aria-invalid`, no `aria-disabled`, no
- * `aria-required` and no `aria-describedby`, which means their error messages are not announced.
- * That is wider than these six rows and is its own batch, on every adapter at once.
+ * What batch D closed, in the order the causes turned out to nest:
+ *
+ * - select, datepicker and timepicker emitted `aria-disabled` and left the control operable. The
+ *   native attribute now goes out with the ARIA.
+ * - the multiselect renders its options twice and only the popup's grid applied the contract part,
+ *   so a disabled multiselect left two live buttons in the field.
+ * - `daterange`, `colors` and `file` had **no a11y projection at all**. No controller in
+ *   `@modyra/widgets` builds one, so those three applied the static part contract and nothing
+ *   state-driven. The six rows understated it: there was no `aria-required` and no
+ *   `aria-describedby` either, so their error lists were rendered, styled, and announced to nobody.
+ *   `projectFieldShellA11y` is the shared half of `projectFieldA11y` for exactly this case.
+ *
+ * The three that remain are **not renderer defects**, and they are new only in the sense that the
+ * driver stopped hiding them (see `emptyFor`). `required` does not reject a kind's own empty value
+ * when that value is not a string: an unchecked required checkbox, an off required toggle and a
+ * required range with both ends unset all report themselves valid. HTML disagrees on the first two —
+ * `<input type="checkbox" required>` unchecked is invalid — so `invalid` is unreachable here rather
+ * than unexposed, and the renderer is telling the truth about a state the form never entered.
+ *
+ * Lit's ledger has carried the same three, for the same reason, since its matrix was written. That
+ * two independent adapters agree is what makes this a validation finding rather than a rendering
+ * one. It is plan 26; fixing it changes which forms submit, so it is not smuggled in here.
  */
 const KNOWN_DIVERGENCES = {
-  "daterange × disabled": ["STATE_ARIA_MISSING"],
-  "colors × disabled": ["STATE_ARIA_MISSING"],
-  "file × disabled": ["STATE_ARIA_MISSING"],
-
-  "daterange × invalid": ["STATE_ARIA_MISSING"],
-  "colors × invalid": ["STATE_ARIA_MISSING"],
-  "file × invalid": ["STATE_ARIA_MISSING"],
+  "checkbox × invalid": ["STATE_ARIA_WRONG"],
+  "toggle × invalid": ["STATE_ARIA_WRONG"],
+  "daterange × invalid": ["STATE_ARIA_WRONG"],
 };
 
 const matrix = await collectStateMatrix({ kinds: KINDS, mount });
