@@ -44,6 +44,9 @@
         },
         "./foundation.css": {
             "default": "./dist/modyra-foundation.css"
+        },
+        "./salience.css": {
+            "default": "./dist/modyra-salience.theme.css"
         }
     },
     "files": [
