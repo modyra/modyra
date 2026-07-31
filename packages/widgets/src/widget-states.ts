@@ -9,7 +9,7 @@
  * Declared from the contract's point of view, deliberately not by reading what any renderer emits:
  * a specification written from the implementation only ever ratifies it.
  */
-import type { MdyWidgetKind } from "./catalog.js";
+import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
 
 /** Every state any widget may declare. */
 export const MDY_WIDGET_STATES = [
@@ -97,6 +97,32 @@ export const MDY_WIDGET_STATE_SUPPORT: Readonly<Record<MdyWidgetKind, readonly M
     file: ["pristine", "touched", "empty", "filled", "invalid", "disabled", "focused"],
     colors: [...CHOOSER, "open"],
   });
+
+/**
+ * The parts that belong to the open overlay rather than to the resting widget.
+ *
+ * The static and the dynamic contract were conflated: `datepicker` and `daterange` mount their
+ * grids and overlays while *closed*, which is predictable but costly on a large form, and — worse
+ * for a specification — left no way to say whether that was required or merely what today's
+ * renderers happen to do.
+ *
+ * Splitting it says: these parts are the *open* contract. A closed widget is not required to render
+ * any of them, so a renderer that later mounts its overlay lazily is not breaking the contract, and
+ * one that mounts eagerly is not breaking it either. What both must do is render them when open.
+ */
+export function overlayOnlyParts(kind: MdyWidgetKind): readonly string[] {
+  const { structure } = MDY_WIDGET_CONTRACTS[kind];
+  const parentOf = new Map(structure.nodes.map((node) => [node.part as string, node.parent as string | undefined]));
+  const out: string[] = [];
+  for (const node of structure.nodes) {
+    let cursor: string | undefined = node.part as string;
+    while (cursor) {
+      if (cursor === "popup") { out.push(node.part as string); break; }
+      cursor = parentOf.get(cursor);
+    }
+  }
+  return out;
+}
 
 /** Whether a kind declares a state. */
 export function widgetSupportsState(kind: MdyWidgetKind, state: MdyWidgetState): boolean {

@@ -102,3 +102,37 @@ test("a popup opening downwards carries no placement state — below is the ordi
     "below must be spelled exactly like a popup nobody has placed",
   );
 });
+
+/**
+ * F-12: which kinds mount their open-overlay parts while closed.
+ *
+ * Not a violation — the split says a closed widget *may* render them and is not required to, so a
+ * renderer that later mounts lazily is not breaking the contract. It is measured because the
+ * conflation of the static and the dynamic contract is what made it unanswerable before, and
+ * because eager mounting is the cost F-12 was raised about.
+ */
+test("the closed contract is separate from the open one", async () => {
+  const { overlayOnlyParts } = await import("../../widgets/dist/index.js");
+  const host = document.createElement("div");
+  document.body.append(host);
+  const mounted = mountMdyForm(host, FIELDS, { submitLabel: null });
+
+  const rows = [];
+  for (const field of FIELDS) {
+    const overlayParts = overlayOnlyParts(field.kind);
+    if (overlayParts.length === 0) continue;
+    const root = host.querySelector(`[data-mdy-field="${field.name}"]`);
+    const parts = partsOf(root, field.kind);
+    const mountedWhileClosed = overlayParts.filter((part) => {
+      const value = parts[part];
+      return Array.isArray(value) ? value.length > 0 : Boolean(value);
+    });
+    rows.push(`    ${field.kind.padEnd(12)} ${mountedWhileClosed.length}/${overlayParts.length} open-only parts mounted while closed` +
+      (mountedWhileClosed.length ? `: ${mountedWhileClosed.join(", ")}` : ""));
+  }
+  console.log(`\n  closed vs open contract — plain\n${rows.join("\n")}\n`);
+
+  mounted.dispose();
+  host.remove();
+  assert.ok(rows.length > 0, "no overlay kind was measured");
+});

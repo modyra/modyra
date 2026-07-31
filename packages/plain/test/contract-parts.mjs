@@ -131,4 +131,13 @@ export const ABSENT = {
  * conformance test asserts this map matches reality exactly, so a gap can neither appear silently
  * nor outlive its fix. Empty means every kind renders the contract's anatomy.
  */
-export const KNOWN_DIVERGENCES = {};
+export const KNOWN_DIVERGENCES = {
+  // F-08. The opener→popup relation is uniform for select and multiselect and absent here: the
+  // calendar toggle opens a popup it does not name with `aria-controls`, so nothing ties the two
+  // together for assistive technology. Recorded, not fixed — task 08 changes fixtures and catalog
+  // declarations, not renderers. Its own batch.
+  datepicker: ["PART_NOT_OWNED:toggle"],
+  timepicker: ["PART_NOT_OWNED:toggle"],
+  daterange: ["PART_NOT_OWNED:toggle"],
+  colors: ["PART_NOT_OWNED:toggle"],
+};

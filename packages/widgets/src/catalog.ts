@@ -189,6 +189,27 @@ const CALENDAR_CELL_STATES: readonly MdyStateName[] = Object.freeze([
   "selected", "today", "outside", "disabled", "focused", "inRange", "rangeStart", "rangeEnd",
 ]);
 
+/**
+ * The part that opens each overlay, and therefore the part that must carry `aria-controls` naming
+ * the popup and `aria-expanded` saying whether it is showing.
+ *
+ * Select and multiselect had this relation uniformly; the pickers and the colour field did not —
+ * some popups had no id an `aria-controls` could name, and in the timepicker the element that opens
+ * the dialog is a different element from the input under test. Declaring the opener is what turns
+ * "some element around here has aria-controls" into a contract an adapter can be held to.
+ *
+ * `file` is absent deliberately: the browser owns its picker, so there is no overlay the contract
+ * can observe and nothing to relate.
+ */
+export const MDY_POPUP_OPENERS: Readonly<Record<string, string>> = Object.freeze({
+  select: "trigger",
+  multiselect: "searchButton",
+  datepicker: "toggle",
+  daterange: "toggle",
+  timepicker: "toggle",
+  colors: "toggle",
+});
+
 /** Anchoring per kind; widgets with no overlay have none. */
 // Every trigger in this catalog sits at the end of its control, so every popup hangs from that end.
 // A list that matches its control's width covers both edges and looks the same either way; a
