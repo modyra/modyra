@@ -131,6 +131,17 @@ export const MDY_DYNAMIC_FIELD_KINDS = [
   "file", "colors",
 ] as const;
 
+/**
+ * What separates the segments of a generated DOM id (`@modyra/widgets`' id factory builds
+ * `${widgetId}__${part}`). It lives here, in the lowest layer, because both the id factory and the
+ * name rules below have to agree on it and `@modyra/core` cannot import `@modyra/widgets`.
+ *
+ * A field name containing it collides: `part("a", "label")` and a field named `a__label` both land
+ * on `a__label`, in different roles, and the browser is happy to hold two elements with one id —
+ * so `getElementById`, `label[for]` and every ARIA IDREF stop being deterministic.
+ */
+export const MDY_ID_DELIMITER = "__";
+
 const MDY_MAX_DYNAMIC_PATTERN_LENGTH = 256;
 const MDY_FORBIDDEN_DYNAMIC_NAMES = new Set([
   "__proto__",
@@ -465,6 +476,13 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     if (f.name.includes(".") || MDY_FORBIDDEN_DYNAMIC_NAMES.has(f.name)) {
       warnDev(
         `Dropped dynamic field "${f.name}": name is reserved or contains forbidden path separators.`,
+      );
+      return false;
+    }
+    if (f.name.includes(MDY_ID_DELIMITER)) {
+      warnDev(
+        `Dropped dynamic field "${f.name}": "${MDY_ID_DELIMITER}" separates the segments of a generated id, ` +
+          `so this name would collide with another field's parts.`,
       );
       return false;
     }

@@ -9,7 +9,7 @@
  */
 import { vanillaReactivity, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyFieldHandle, type MdyFormSchema, type MdyFormValue, type MdyReactivity, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
-import { layoutNodeAttributes, layoutSlotStyle, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
+import { isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
 import { el, setText } from "./dom.js";
 
@@ -39,11 +39,38 @@ export interface MdyPlainForm {
 }
 
 /** Renders a complete form for `fields` into `container`. `container` is cleared first — this function owns everything inside it until `dispose()`. */
+/**
+ * A field name is an identity, and the typed entry point has to hold that precondition as firmly
+ * as the dynamic parser does.
+ *
+ * Two definitions sharing a name used to collapse silently: the `byName` map kept the second, the
+ * `rendered` set stopped the first, and the form came out with one instance where the caller asked
+ * for two — a difference visible only by counting. A name carrying the id delimiter is the same
+ * failure one level down, in the generated ids rather than the field list.
+ */
+function assertMountableNames(fields: ReadonlyArray<MdyDynamicField>): void {
+  const seen = new Set<string>();
+  for (const field of fields) {
+    if (!isValidWidgetId(field.name)) {
+      throw new Error(
+        `mountMdyForm: field name "${field.name}" cannot contain "${MDY_ID_DELIMITER}" — it separates ` +
+          `the segments of a generated id, so this name would collide with another field's parts.`,
+      );
+    }
+    if (seen.has(field.name)) {
+      throw new Error(`mountMdyForm: duplicate field name "${field.name}" — every field needs its own identity.`);
+    }
+    seen.add(field.name);
+  }
+}
+
 export function mountMdyForm(
   container: HTMLElement,
   fields: ReadonlyArray<MdyDynamicField>,
   options: MountMdyFormOptions = {},
 ): MdyPlainForm {
+  assertMountableNames(fields);
+
   container.replaceChildren();
   container.classList.add("mdy-dynamic-form", "mdy-plain-form");
 
