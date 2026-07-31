@@ -98,6 +98,30 @@ const REPEATED_PARTS: ReadonlySet<string> = new Set([
   "errorItem", "chip", "gridcell", "row", "weekday", "swatch", "fileItem", "dialNumber", "action",
 ]);
 
+/**
+ * The class a shell part carries when its widget does not override it.
+ *
+ * `MDY_FIELD_SHELL_CLASSES` declared this vocabulary from the start and nothing checked it: every
+ * shell part came out of `define()` with an empty class list, so `mdy-label` could be renamed to
+ * anything and the conformance suite agreed. Declaring it here is what gives the existing
+ * `PART_CLASS_MISSING` rule something to enforce.
+ *
+ * `control` is deliberately absent. The shell maps it to `mdy-input-wrapper__inliner`, which is the
+ * box *around* the control rather than the control itself — requiring it of the `control` part would
+ * assert something no renderer means.
+ */
+const SHELL_CLASS_FALLBACK: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  label: [MDY_FIELD_SHELL_CLASSES.label],
+  requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker],
+  inputWrapper: [MDY_FIELD_SHELL_CLASSES.inputWrapper],
+  prefix: [MDY_FIELD_SHELL_CLASSES.prefix],
+  suffix: [MDY_FIELD_SHELL_CLASSES.suffix],
+  inlineError: [MDY_FIELD_SHELL_CLASSES.inlineError],
+  supportingText: [MDY_FIELD_SHELL_CLASSES.supportingText],
+  errors: [MDY_FIELD_SHELL_CLASSES.errors],
+  errorItem: [MDY_FIELD_SHELL_CLASSES.errorItem],
+});
+
 /** Per-widget deviations from the shared tables: where a part hangs, and the class it carries. */
 interface MdyWidgetShape {
   readonly parents?: Readonly<Record<string, string>>;
@@ -185,7 +209,7 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
     // A widget's own states replace the shell's rather than adding to them, so a part that means
     // something different here — a multiselect's `inputWrapper`, which is the chip grid — is not
     // silently given states it cannot be in.
-    part(name === "root" ? rootClasses : shape.classes?.[name] ?? [], {}, statesFor(name, shape)),
+    part(name === "root" ? rootClasses : shape.classes?.[name] ?? SHELL_CLASS_FALLBACK[name] ?? [], {}, statesFor(name, shape)),
   ])) as Record<TPart, MdyPartContract>;
   const declared = new Set<string>(partNames);
   const siblingCount = new Map<string, number>();
