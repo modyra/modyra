@@ -332,6 +332,7 @@
     "aria-live",
     "aria-modal",
     "aria-pressed",
+    "aria-readonly",
     "aria-required",
     "aria-selected",
     "aria-valuemax",
@@ -901,6 +902,7 @@
         "aria-disabled",
         "aria-invalid",
         "aria-label",
+        "aria-readonly",
         "aria-required"
       ],
       "selectors": [
@@ -1078,6 +1080,7 @@
         "aria-disabled",
         "aria-invalid",
         "aria-label",
+        "aria-readonly",
         "aria-required"
       ],
       "selectors": [
@@ -1106,6 +1109,7 @@
         "aria-disabled",
         "aria-invalid",
         "aria-label",
+        "aria-readonly",
         "aria-required"
       ],
       "selectors": [
