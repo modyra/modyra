@@ -473,9 +473,14 @@
         --mdy-palette-secondary-h: 30;
         --mdy-palette-secondary-c: 1.05;
         --mdy-palette-secondary-l: 1.03;
+        /* Zero keeps every existing model scale-only; tonal opts into a floor below. */
+        --mdy-palette-secondary-min-c: 0;
         --mdy-palette-tertiary-h: 90;
         --mdy-palette-tertiary-c: 0.85;
         --mdy-palette-tertiary-l: 1.15;
+        /* Both floors are declared here, not only where they bite: `max()` reads them on every
+       model, and an undeclared one makes the whole colour invalid at computed-value time. */
+        --mdy-palette-tertiary-min-c: 0;
 
         /* Error's hue is absolute, not an offset. It is the one colour in a palette whose meaning is not
        decorative: an error that has gone green because the brand did is no longer an error. It takes
@@ -537,13 +542,25 @@
         --mdy-palette-tertiary-l: 1.1;
     }
 
+    [data-mdy-palette="tonal"] {
+        --mdy-palette-secondary-h: 0;
+        --mdy-palette-secondary-c: 1.05;
+        --mdy-palette-secondary-l: 0.52;
+        --mdy-palette-secondary-min-c: 0.1;
+
+        --mdy-palette-tertiary-h: 0;
+        --mdy-palette-tertiary-c: 0.28;
+        --mdy-palette-tertiary-l: 1.3;
+        --mdy-palette-tertiary-min-c: 0.025;
+    }
+
     /* Relative colour syntax is what makes the arithmetic possible at all, and it needs Chrome 119,
    Safari 16.4 or Firefox 128. Everything above this point is untouched, so a browser without it
    keeps exactly the palette it renders today rather than losing its colours. */
     @supports (color: oklch(from white l c h)) {
         :root {
-            --mdy-sys-color-secondary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-secondary-l)) calc(c * var(--mdy-palette-secondary-c)) calc(h + var(--mdy-palette-secondary-h)));
-            --mdy-sys-color-tertiary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-tertiary-l)) calc(c * var(--mdy-palette-tertiary-c)) calc(h + var(--mdy-palette-tertiary-h)));
+            --mdy-sys-color-secondary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-secondary-l)) max(calc(c * var(--mdy-palette-secondary-c)), var(--mdy-palette-secondary-min-c)) calc(h + var(--mdy-palette-secondary-h)));
+            --mdy-sys-color-tertiary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-tertiary-l)) max(calc(c * var(--mdy-palette-tertiary-c)), var(--mdy-palette-tertiary-min-c)) calc(h + var(--mdy-palette-tertiary-h)));
             --mdy-sys-color-error: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-error-l)) calc(c * var(--mdy-palette-error-c)) var(--mdy-palette-error-h));
 
             /* CSS has no conditional, but lightness and `clamp()` make a step: below the pivot the
@@ -567,8 +584,8 @@
        colour would work in the light theme and silently revert to violet and coral in the dark one. */
         @media (prefers-color-scheme: dark) {
             :root {
-                --mdy-sys-color-secondary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-secondary-l) * var(--mdy-palette-dark-lift)) calc(c * var(--mdy-palette-secondary-c)) calc(h + var(--mdy-palette-secondary-h)));
-                --mdy-sys-color-tertiary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-tertiary-l) * var(--mdy-palette-dark-lift)) calc(c * var(--mdy-palette-tertiary-c)) calc(h + var(--mdy-palette-tertiary-h)));
+                --mdy-sys-color-secondary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-secondary-l) * var(--mdy-palette-dark-lift)) max(calc(c * var(--mdy-palette-secondary-c)), var(--mdy-palette-secondary-min-c)) calc(h + var(--mdy-palette-secondary-h)));
+                --mdy-sys-color-tertiary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-tertiary-l) * var(--mdy-palette-dark-lift)) max(calc(c * var(--mdy-palette-tertiary-c)), var(--mdy-palette-tertiary-min-c)) calc(h + var(--mdy-palette-tertiary-h)));
                 --mdy-sys-color-error: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-error-l) * var(--mdy-palette-dark-lift)) calc(c * var(--mdy-palette-error-c)) var(--mdy-palette-error-h));
             }
         }
