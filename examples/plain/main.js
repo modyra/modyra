@@ -292,31 +292,61 @@ const SHELL_SELECTORS = {
   label: ".mdy-label, .mdy-toggle__label",
   requiredMarker: ".mdy-label__required",
   inputWrapper: ".mdy-input-wrapper, .mdy-checkbox, .mdy-toggle",
-  control: "input, textarea, select",
+  // Scoped to the box the contract says holds the control. `input, textarea, select` found *an*
+  // input — a search box, a hidden native picker, whichever came first — and that is a coincidence,
+  // not a contract check.
+  control:
+    ".mdy-input-wrapper > input, .mdy-input-wrapper > textarea, .mdy-input-wrapper > select," +
+    ".mdy-input-wrapper__inliner > input, .mdy-input-wrapper__inliner > textarea, .mdy-input-wrapper__inliner > select",
   supportingText: ".mdy-supporting-text",
   errors: ".mdy-control__errors",
   errorItem: ".mdy-control__error",
 };
+
+/**
+ * This field's popup, wherever the renderer put it.
+ *
+ * A portalled popup is the one part legitimately outside its field's root, so it cannot be found by
+ * containment — but it must not be found by searching the document for a matching class either,
+ * which returns whichever field rendered first and makes a two-instance page report nonsense. It is
+ * found through the relationship the widget itself declared: the id its own trigger names.
+ */
+function portalFor(widgetRoot) {
+  for (const element of widgetRoot.querySelectorAll("[aria-controls]")) {
+    const target = document.getElementById(element.getAttribute("aria-controls"));
+    if (target && !widgetRoot.contains(target)) return target;
+  }
+  return null;
+}
 
 function findPart(widgetRoot, kind, part, resolved = {}) {
   const definition = MDY_WIDGET_CONTRACTS[kind];
   const contract = definition.parts[part];
   const classes = contract?.classes ?? [];
 
+  const parent = definition.structure.nodes.find((node) => node.part === part)?.parent;
+  const within = parent && resolved[parent] instanceof Element ? resolved[parent] : null;
+  const portal = portalFor(widgetRoot);
+  // Never `document`. Either inside this field, or inside the popup this field declared.
+  const scopes = [within ?? widgetRoot, ...(portal ? [portal] : [])];
+
   if (classes.length > 0) {
-    const parent = definition.structure.nodes.find((node) => node.part === part)?.parent;
-    const within = parent && resolved[parent] instanceof Element ? resolved[parent] : null;
-    const scope =
-      within ??
-      (part === "popup" || widgetRoot.querySelector(`.${classes[0]}`)
-        ? widgetRoot
-        : document);
-    const found = scope.querySelector(`.${classes.join(".")}`);
-    if (found) return found;
+    const selector = `.${classes.join(".")}`;
+    for (const scope of scopes) {
+      if (scope.matches?.(selector)) return scope;
+      const found = scope.querySelector(selector);
+      if (found) return found;
+    }
+    return null;
   }
 
   const fallback = SHELL_SELECTORS[part];
-  return fallback ? widgetRoot.querySelector(fallback) : null;
+  if (!fallback) return null;
+  for (const scope of scopes) {
+    const found = scope.querySelector(fallback);
+    if (found) return found;
+  }
+  return null;
 }
 
 function report() {
@@ -324,7 +354,13 @@ function report() {
 
   for (const field of FIELDS) {
     const widgetRoot = formHost.querySelector(`[data-mdy-field="${field.name}"]`);
-    if (!widgetRoot) continue;
+    // A field that rendered nothing used to `continue`, which meant it counted towards a green
+    // banner. A conformance report that treats "produced no DOM at all" as conforming is not a
+    // report — it is the one failure that discredits every other row in it.
+    if (!widgetRoot) {
+      rows.push(`${field.kind}: MISSING_WIDGET_ROOT [field=${field.name}]`);
+      continue;
+    }
 
     const parts = { root: widgetRoot };
     for (const node of MDY_WIDGET_CONTRACTS[field.kind].structure.nodes) {
@@ -357,9 +393,12 @@ function report() {
   }
 
   banner.className = rows.length ? "fail" : "pass";
+  // `FIELDS.length` is fields, not kinds — 18 fields over 17 kinds, because two of them share one.
+  // For a conformance banner the wording is part of the claim, so it says what it counted.
+  const kinds = new Set(FIELDS.map((field) => field.kind)).size;
   banner.textContent = rows.length
     ? `Contract violations in the rendered DOM:\n${rows.join("\n")}`
-    : `All ${FIELDS.length} kinds conform to the widget DOM contract.`;
+    : `All ${FIELDS.length} rendered fields conform to the widget DOM contract, across ${kinds} kinds.`;
 }
 
 function dumpState() {
