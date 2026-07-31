@@ -738,7 +738,11 @@
     }
 
     /* Excluded for the same reason as the reset further down: a boolean control owns its frame. */
-    .mdy-input-wrapper input:not(.mdy-checkbox),
+    /* A slider is exempt for the same reason a checkbox is: it draws itself. This reset flattens a
+       text control's frame, and `background: transparent` at (0,2,1) silently erased the split
+       track composed on `.mdy-slider` at (0,1,0) — the renderer wrote the fill percentage and
+       nothing painted it. */
+    .mdy-input-wrapper input:not(.mdy-checkbox, .mdy-slider),
     .mdy-input-wrapper textarea {
         flex: 1;
         border: none !important;
