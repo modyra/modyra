@@ -2,7 +2,7 @@ import { MDY_CHIP_CLASSES } from "./chip.js";
 import type { MdyPartContract } from "./contract.js";
 import type { MdyStateName } from "./state.js";
 import { MDY_FIELD_SHELL_CLASSES } from "./structure.js";
-import type { MdyWidgetStructure } from "./structure.js";
+import type { MdyWidgetSemanticElement, MdyWidgetStructure } from "./structure.js";
 
 export const MDY_WIDGET_KINDS = ["text", "email", "password", "textarea", "number", "slider", "checkbox", "toggle", "radio", "segmented", "select", "multiselect", "datepicker", "daterange", "timepicker", "file", "colors"] as const;
 export type MdyWidgetKind = (typeof MDY_WIDGET_KINDS)[number];
@@ -104,6 +104,12 @@ interface MdyWidgetShape {
   readonly classes?: Readonly<Record<string, readonly string[]>>;
   /** States this widget's parts may be in, over and above {@link SHARED_STATES}. */
   readonly states?: Readonly<Record<string, readonly MdyStateName[]>>;
+  /**
+   * Semantic element overrides. A boolean control wraps its text in the `<label>` itself, so the
+   * `label` *part* there is the text inside it — declaring it a `<label>` would ask a renderer for
+   * a label inside a label, which is not valid HTML and not what any of them emit.
+   */
+  readonly elements?: Readonly<Record<string, MdyWidgetSemanticElement>>;
 }
 
 /**
@@ -184,20 +190,20 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
   const declared = new Set<string>(partNames);
   const siblingCount = new Map<string, number>();
   const nodes = partNames.map((name) => {
-    if (name === "root") return Object.freeze({ part: name, element: semanticElement(name), order: 0, optional: false });
+    if (name === "root") return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), order: 0, optional: false });
     const override = shape.parents?.[name];
     const parent = (override && declared.has(override) ? override : undefined)
       ?? (PARENT_CANDIDATES[name] ?? []).find((candidate) => declared.has(candidate)) ?? "root";
     const order = siblingCount.get(parent) ?? 0;
     siblingCount.set(parent, order + 1);
-    return Object.freeze({ part: name, element: semanticElement(name), parent: parent as TPart, order, optional: !REQUIRED_PARTS.has(name), repeated: REPEATED_PARTS.has(name) });
+    return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional: !REQUIRED_PARTS.has(name), repeated: REPEATED_PARTS.has(name) });
   });
   return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), capabilities: Object.freeze({ keyboard: true, focus: true, overlay, dismissOnOutsidePointer: overlay, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
 function semanticElement(partName: string) {
   const input = new Set(["control","startControl","endControl","search","hour","minute","hexInput","nativePicker"]);
   const button = new Set(["toggle","decrement","increment","searchButton","clear","modeToggle","action"]);
-  if (partName === "root") return "root" as const; if (partName === "label" || partName === "optionLabel") return "label" as const; if (input.has(partName)) return "input" as const; if (button.has(partName)) return "button" as const; if (partName === "listbox") return "listbox" as const; if (partName === "option" || partName === "swatch") return "option" as const; if (["popup","calendar","clock"].includes(partName)) return "dialog" as const; if (partName === "grid") return "grid" as const; if (partName === "gridcell") return "gridcell" as const; if (["errors","inlineError","loading","empty"].includes(partName)) return "status" as const; return "group" as const;
+  if (partName === "root") return "root" as const; if (partName === "optionLabel") return "text" as const; if (partName === "label") return "label" as const; if (input.has(partName)) return "input" as const; if (button.has(partName)) return "button" as const; if (partName === "listbox") return "listbox" as const; if (partName === "option" || partName === "swatch") return "option" as const; if (["popup","calendar","clock"].includes(partName)) return "popup" as const; if (partName === "grid") return "grid" as const; if (partName === "gridcell") return "gridcell" as const; if (["errors","inlineError","loading","empty"].includes(partName)) return "status" as const; return "group" as const;
 }
 
 export const MDY_WIDGET_CONTRACTS = Object.freeze({
@@ -214,14 +220,25 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // renderer emits, so a theme centres the tick inside it instead of guessing where the box sits
   // behind a label's pseudo-element.
   checkbox: define("checkbox", ["mdy-renderer", "mdy-renderer--checkbox"], ["root", "inputWrapper", "control", "indicator", "label", "requiredMarker", "supportingText", "errors", "errorItem"] as const, false,
-    { parents: { label: "inputWrapper", indicator: "inputWrapper" }, classes: { inputWrapper: ["mdy-checkbox"], control: ["mdy-checkbox__control"], indicator: ["mdy-checkbox__indicator"], label: [MDY_FIELD_SHELL_CLASSES.label], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } }),
+    { parents: { label: "inputWrapper", indicator: "inputWrapper" }, elements: { label: "text" }, classes: { inputWrapper: ["mdy-checkbox"], control: ["mdy-checkbox__control"], indicator: ["mdy-checkbox__indicator"], label: [MDY_FIELD_SHELL_CLASSES.label], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } }),
   toggle: define("toggle", ["mdy-renderer", "mdy-renderer--toggle"], ["root", "inputWrapper", "control", "track", "thumb", "label", "requiredMarker", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
-    { parents: { label: "inputWrapper" }, classes: { inputWrapper: ["mdy-toggle"], control: ["mdy-toggle__control"], track: ["mdy-toggle__track"], thumb: ["mdy-toggle__thumb"], label: ["mdy-toggle__label"], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } }),
+    { parents: { label: "inputWrapper" }, elements: { label: "text" }, classes: { inputWrapper: ["mdy-toggle"], control: ["mdy-toggle__control"], track: ["mdy-toggle__track"], thumb: ["mdy-toggle__thumb"], label: ["mdy-toggle__label"], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } }),
   radio: define("radio", ["mdy-renderer", "mdy-renderer--radio-group"], ["root", "label", "requiredMarker", "group", "option", "optionControl", "optionLabel", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { group: ["mdy-radio-group"], option: ["mdy-radio-item"], optionControl: ["mdy-radio-circle"], optionLabel: ["mdy-radio-label"] },
+      // A native chooser renders each choice as a <label> around its own <input type=radio>. That
+      // is the accessible pattern and what every adapter emits; the ARIA `option` role belongs to a
+      // listbox, which this is not.
+      elements: { option: "label" },
       states: { group: ["horizontal"], option: ["disabled"] } }),
   segmented: define("segmented", ["mdy-renderer", "mdy-renderer--segmented"], ["root", "label", "requiredMarker", "group", "option", "optionCheck", "optionText", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { group: ["mdy-segmented"], option: ["mdy-segmented__button"], optionCheck: ["mdy-segmented__check"], optionText: ["mdy-segmented__text"] },
+      // Left unconstrained, and that is a finding rather than a preference. Plain renders each
+      // choice as a <label> around an <input type=radio>, the same native pattern as radio; Angular
+      // renders a <button>. Both are defensible — a radiogroup, or a toolbar of pressed buttons —
+      // but they are not the same control to a screen reader, and the contract cannot require one
+      // without breaking the other today. Task 16 (renderer equivalence) decides which; until it
+      // does, declaring "either" honestly beats asserting a shape only one adapter meets.
+      elements: { option: "presentation" },
       states: { option: ["selected"] } }),
   select: define("select", ["mdy-renderer", "mdy-renderer--select"], ["root", "label", "requiredMarker", "inputWrapper", "trigger", "value", "placeholder", "arrow", "popup", "search", "listbox", "option", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { trigger: ["mdy-select__trigger"], value: ["mdy-select__value"], placeholder: ["mdy-select__placeholder"], arrow: ["mdy-select__arrow"], popup: ["mdy-select__dropdown", MDY_POPUP_CLASS], search: ["mdy-select__search"], listbox: ["mdy-select__list"], option: ["mdy-select__option"], loading: ["mdy-select__loader"], empty: ["mdy-select__empty"] },
@@ -239,6 +256,12 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // string in a renderer.
   multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "header", "searchButton", "options", "optionWrapper", "option", "optionCheck", "optionStep", "optionLabel", "optionCount", "chips", "chip", "placeholder", "popup", "search", "listbox", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { parents: { header: "inputWrapper", searchButton: "header", options: "root", optionWrapper: "options", option: "optionWrapper", chips: "inputWrapper", chip: "chips", placeholder: "inputWrapper", listbox: "popup", search: "popup" },
+      // This widget is a grid of toggle chips, not a listbox: each choice is a <button> the pointer
+      // and the keyboard both operate, and the container groups them. Declared as what the adapters
+      // actually render. Whether a multi-select *should* instead be a listbox with
+      // aria-multiselectable is an accessibility question, and it belongs to task 08 — not to a
+      // batch whose rule is that no renderer changes.
+      elements: { option: "button", listbox: "group" },
       states: { option: ["selected"], chip: ["selected", "removable"], popup: POPUP_PLACEMENT_STATES },
       classes: { inputWrapper: ["mdy-multiselect"], header: ["mdy-multiselect__header"], searchButton: ["mdy-multiselect__search-btn"], options: ["mdy-multiselect__options"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], listbox: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
@@ -256,12 +279,20 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // `hour` and `minute` share `mdy-timepicker-segment`, so `active` — which of the two the dial
       // is currently editing — hangs off that shared base and is one rule in a theme, not two.
       states: { hour: ["active"], minute: ["active"], period: ["compact"], dialNumber: ["selected", "inner"], action: ["confirm"], popup: POPUP_PLACEMENT_STATES },
+      // The hour and minute *segments* are the containers the header lays out; each holds its own
+      // <input type=number> with an aria-label. Declaring them inputs asked a renderer for a control
+      // that is one level down and not a declared part at all — a gap task 08 should close by naming
+      // the inner control, not one this batch papers over by widening the check.
+      elements: { hour: "group", minute: "group" },
       classes: { control: ["mdy-timepicker__input"], toggle: ["mdy-timepicker__toggle"], popup: ["mdy-timepicker__popup", MDY_POPUP_CLASS], container: ["mdy-timepicker-container"], content: ["mdy-timepicker-content"], header: ["mdy-timepicker-header"], hour: ["mdy-timepicker-segment", "mdy-timepicker-segment--hour"], minute: ["mdy-timepicker-segment", "mdy-timepicker-segment--minute"], period: ["mdy-timepicker-period-toggle"], clock: ["mdy-timepicker-dial"], dialFace: ["mdy-timepicker-dial__face"], dialHand: ["mdy-timepicker-dial__hand"], dialNumber: ["mdy-timepicker-dial__number"], modeToggle: ["mdy-timepicker-mode-toggle"], actions: ["mdy-timepicker-actions"], action: ["mdy-timepicker-action-btn"] } }),
   file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"] },
       states: { dropzone: ["dragover"] } }),
   colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { parents: { control: "nativePicker" },
+      // The picker is the <label> that wraps the hidden <input type=color>; the input is the
+      // `control` part, declared right there in `parents`. Same shape as a boolean control.
+      elements: { nativePicker: "label" },
       states: { swatch: ["active"], popup: POPUP_PLACEMENT_STATES },
       classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } }),
 });

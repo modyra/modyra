@@ -16,6 +16,7 @@ export type MdyDomContractIssueCode =
   | "ABSENT_PART_PRESENT"
   | "PART_MISSING"
   | "PART_CARDINALITY"
+  | "PART_ELEMENT"
   | "PART_CLASS_MISSING"
   | "PART_NOT_CONTAINED"
   | "PART_ORDER"
@@ -76,6 +77,59 @@ function CSS_ESCAPE(value: string): string {
 
 function classesOf(element: Element): readonly string[] {
   return element.getAttribute("class")?.split(/\s+/).filter(Boolean) ?? [];
+}
+
+/**
+ * What each semantic element in the catalog admits. A part may satisfy its element by tag or by an
+ * explicit role — a `div role="textbox"` is a control, and refusing it would forbid every composite
+ * widget — but it may not satisfy it by carrying the right class and nothing else, which is what
+ * the contract allowed until now.
+ *
+ * `undefined` means the catalog declares no semantics for that element: a wrapper, a run of text.
+ * Those are listed rather than defaulted, so an element name nobody thought about fails loudly
+ * instead of silently admitting everything.
+ */
+const SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly string[]; roles: readonly string[] } | undefined>> = Object.freeze({
+  root: undefined,
+  group: undefined,
+  text: undefined,
+  presentation: undefined,
+  label: { tags: ["label"], roles: [] },
+  input: {
+    tags: ["input", "textarea", "select"],
+    roles: ["textbox", "searchbox", "combobox", "spinbutton", "slider", "checkbox", "radio", "switch"],
+  },
+  button: { tags: ["button"], roles: ["button", "switch"] },
+  listbox: { tags: ["select"], roles: ["listbox", "grid"] },
+  option: { tags: ["option"], roles: ["option", "gridcell"] },
+  dialog: { tags: ["dialog"], roles: ["dialog", "alertdialog"] },
+  // A popup is a positioning container. Its accessible semantics live on what it *contains* — the
+  // listbox, the grid, the dialog — so constraining the box itself would only force a role that
+  // says nothing. Declared unconstrained rather than left to fall through, so the omission is a
+  // decision on the record. A real check on what a popup contains belongs with task 08.
+  popup: undefined,
+  grid: { tags: ["table"], roles: ["grid", "rowgroup", "presentation", "none"] },
+  gridcell: { tags: ["td", "th"], roles: ["gridcell", "button"] },
+  // A run of errors is a list, an inline error is a span, a loading note is a paragraph. Named
+  // rather than widened to "anything": this still rejects a control, a button or a bare div.
+  status: { tags: ["output", "ul", "ol", "li", "p", "span"], roles: ["status", "alert", "log", "list", "listitem"] },
+});
+
+/** An `input[type=button]` is a button; a bare `input` is a control. Tags alone cannot say so. */
+function satisfiesSemanticElement(element: Element, semantic: string): boolean {
+  const allowed = SEMANTIC_ELEMENTS[semantic];
+  if (!allowed) return true;
+  const tag = element.tagName.toLowerCase();
+  const role = element.getAttribute("role");
+  if (role && allowed.roles.includes(role)) return true;
+  if (role) return false; // An explicit, non-matching role is a claim, and it is the wrong one.
+  if (semantic === "button" && tag === "input") {
+    return ["button", "submit", "reset", "image"].includes(element.getAttribute("type") ?? "");
+  }
+  if (semantic === "input" && tag === "input") {
+    return !["button", "submit", "reset", "image"].includes(element.getAttribute("type") ?? "");
+  }
+  return allowed.tags.includes(tag);
 }
 
 /** Canonical vocabulary for a kind: root classes, part classes, the shared shell, plus modifiers. */
@@ -218,6 +272,14 @@ export function inspectWidgetDom(
     }
 
     for (const element of elements) {
+      if (!satisfiesSemanticElement(element, node.element as string)) {
+        issues.push({
+          code: "PART_ELEMENT",
+          part: node.part,
+          message: `${node.part} must be a ${node.element}, got <${element.tagName.toLowerCase()}>` +
+            `${element.getAttribute("role") ? ` role="${element.getAttribute("role")}"` : ""}`,
+        });
+      }
       const own = new Set(classesOf(element));
       for (const className of contract?.classes ?? []) {
         if (!own.has(className)) {
