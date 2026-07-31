@@ -178,7 +178,7 @@ test("the stylesheet and this module hold the same numbers", () => {
 
   // `brand` is the default and lives on :root; the others are attribute-selected.
   const where = {
-    brand: block(":root {\n    /* Hue offsets"),
+    brand: block(":root {\n        /* Hue offsets"),
     monochrome: block('[data-mdy-palette="monochrome"]'),
     complementary: block('[data-mdy-palette="complementary"]'),
     triadic: block('[data-mdy-palette="triadic"]'),
