@@ -65,9 +65,21 @@ export interface Oklch {
  * whose meaning is not decorative, and an error that has gone green because the brand did is no
  * longer an error. It harmonises in weight without leaving red.
  */
+export interface MdyPaletteRelation {
+  readonly h: number;
+  readonly c: number;
+  readonly l: number;
+  /**
+   * Optional absolute chroma floor, applied only when the source has a meaningful hue.
+   * Exact and near-neutral colours stay neutral: manufacturing chroma from an undefined hue would
+   * turn numerical noise into an arbitrary brand colour.
+   */
+  readonly minC?: number;
+}
+
 export interface MdyPaletteModel {
-  readonly secondary: { readonly h: number; readonly c: number; readonly l: number };
-  readonly tertiary: { readonly h: number; readonly c: number; readonly l: number };
+  readonly secondary: MdyPaletteRelation;
+  readonly tertiary: MdyPaletteRelation;
   /** `h` here is absolute, not an offset — see above. */
   readonly error: { readonly h: number; readonly c: number; readonly l: number };
   /**
@@ -114,6 +126,19 @@ export const MDY_PALETTE_MODELS: Readonly<Record<string, MdyPaletteModel>> = Obj
   monochrome: Object.freeze({
     secondary: Object.freeze({ h: 0, c: 0.7, l: 1.08 }),
     tertiary: Object.freeze({ h: 0, c: 0.45, l: 1.2 }),
+    error: Object.freeze({ h: 28, c: 0.82, l: 0.83 }),
+    contrastProxy: Object.freeze({ threshold: 0.1791, chromaWeight: 0.85, hueOffset: 179 }),
+    onChroma: 0.08,
+  }),
+  /**
+   * A wide tonal ramp on the brand hue: a deep, chromatic secondary and a pale tertiary.
+   * Unlike the other models, its chroma floors stop muted but still chromatic brands collapsing
+   * into indistinguishable greys. Truly neutral sources remain neutral because their hue is not a
+   * meaningful input to amplify.
+   */
+  tonal: Object.freeze({
+    secondary: Object.freeze({ h: 0, c: 1.05, l: 0.52, minC: 0.1 }),
+    tertiary: Object.freeze({ h: 0, c: 0.28, l: 1.3, minC: 0.025 }),
     error: Object.freeze({ h: 28, c: 0.82, l: 0.83 }),
     contrastProxy: Object.freeze({ threshold: 0.1791, chromaWeight: 0.85, hueOffset: 179 }),
     onChroma: 0.08,
@@ -264,13 +289,22 @@ const clamp01 = (n: number): number => Math.min(1, Math.max(0, n));
 
 const derive = (
   base: Oklch,
-  ratio: { readonly h: number; readonly c: number; readonly l: number },
+  ratio: MdyPaletteRelation,
   absoluteHue: boolean,
-): Oklch => ({
-  l: clamp01(base.l * ratio.l),
-  c: Math.max(0, base.c * ratio.c),
-  h: absoluteHue ? ratio.h : (((base.h + ratio.h) % 360) + 360) % 360,
-});
+): Oklch => {
+  const scaledChroma = Math.max(0, base.c * ratio.c);
+  // OKLCH hue is undefined at zero chroma. Keep exact and near-neutrals neutral rather than
+  // amplifying floating-point noise into an arbitrary tint; a muted chromatic source may use the
+  // floor because its hue still carries an intentional identity.
+  const chroma = !absoluteHue && ratio.minC !== undefined && base.c >= 0.005
+    ? Math.max(scaledChroma, ratio.minC)
+    : scaledChroma;
+  return {
+    l: clamp01(base.l * ratio.l),
+    c: chroma,
+    h: absoluteHue ? ratio.h : (((base.h + ratio.h) % 360) + 360) % 360,
+  };
+};
 
 /**
  * The `on-` colour for a background: black or white, carrying a trace of the background's own hue.

@@ -100,6 +100,81 @@ test("monochrome keeps one hue, triadic and complementary do not", () => {
   assert.ok(Math.abs(off(comp.tertiary) - 180) < 8, `complementary tertiary at +${off(comp.tertiary)}°`);
 });
 
+test("tonal creates a deep-to-pale ramp rather than another hue rotation", () => {
+  const model = MDY_PALETTE_MODELS.tonal;
+  assert.deepEqual(model.secondary, { h: 0, c: 1.05, l: 0.52, minC: 0.1 });
+  assert.deepEqual(model.tertiary, { h: 0, c: 0.28, l: 1.3, minC: 0.025 });
+
+  for (const seed of ["#7067FF", "#0A7D2B", "#FFE066", "#B3261E", "#00A5B5", "#796F86"]) {
+    const base = hexToOklch(seed);
+    const palette = derivePalette(seed, model);
+    const secondary = hexToOklch(palette.secondary);
+    const tertiary = hexToOklch(palette.tertiary);
+    const hueGap = (h) => Math.abs(((h - base.h + 540) % 360) - 180);
+    // This intentionally wide ramp reaches the sRGB boundary for yellow and cyan. Assert the
+    // painted hue with enough room for clipping, not merely the pre-clipping requested value.
+    assert.ok(hueGap(secondary.h) < 14, `${seed}: secondary left the brand hue`);
+    assert.ok(hueGap(tertiary.h) < 14, `${seed}: tertiary left the brand hue`);
+    assert.ok(secondary.l < base.l - 0.12, `${seed}: secondary is not visibly deeper`);
+    assert.ok(tertiary.l > base.l + 0.1 || tertiary.l > 0.97, `${seed}: tertiary is not visibly paler`);
+  }
+});
+
+test("tonal chroma floors rescue muted colours but never invent hue for neutrals", () => {
+  const muted = hexToOklch("#796F86");
+  assert.ok(muted.c > 0.005 && muted.c < 0.1);
+  const palette = derivePalette("#796F86", MDY_PALETTE_MODELS.tonal);
+  assert.ok(hexToOklch(palette.secondary).c >= 0.09, `secondary floor was lost: ${palette.secondary}`);
+  assert.ok(hexToOklch(palette.tertiary).c >= 0.02, `tertiary floor was lost: ${palette.tertiary}`);
+
+  for (const neutral of ["#000000", "#181818", "#808080", "#ffffff"]) {
+    const p = derivePalette(neutral, MDY_PALETTE_MODELS.tonal);
+    assert.ok(hexToOklch(p.secondary).c < 0.006, `${neutral}: secondary invented ${p.secondary}`);
+    assert.ok(hexToOklch(p.tertiary).c < 0.006, `${neutral}: tertiary invented ${p.tertiary}`);
+  }
+});
+
+test("tonal is perceptually distinct from brand and monochrome", () => {
+  const lab = (hex) => {
+    const o = hexToOklch(hex);
+    const h = (o.h * Math.PI) / 180;
+    return [o.l, o.c * Math.cos(h), o.c * Math.sin(h)];
+  };
+  const distance = (a, b) => {
+    const left = lab(a);
+    const right = lab(b);
+    return Math.hypot(...left.map((v, i) => v - right[i]));
+  };
+  for (const seed of ["#7067FF", "#0A7D2B", "#FFE066", "#B3261E", "#00A5B5", "#796F86"]) {
+    const tonal = derivePalette(seed, MDY_PALETTE_MODELS.tonal);
+    for (const name of ["brand", "monochrome"]) {
+      const other = derivePalette(seed, MDY_PALETTE_MODELS[name]);
+      const secondaryGap = distance(tonal.secondary, other.secondary);
+      const pairGap = secondaryGap + distance(tonal.tertiary, other.tertiary);
+      assert.ok(secondaryGap >= 0.14, `${seed}: tonal/${name} secondary gap ${secondaryGap.toFixed(3)}`);
+      assert.ok(pairGap >= 0.27, `${seed}: tonal/${name} pair gap ${pairGap.toFixed(3)}`);
+    }
+  }
+});
+
+test("tonal remains deterministic, valid and readable over a broad sRGB sample", () => {
+  const levels = [0, 32, 64, 96, 128, 160, 192, 224, 255];
+  const hex = (r, g, b) => `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+  let checked = 0;
+  for (const r of levels) for (const g of levels) for (const b of levels) {
+    const seed = hex(r, g, b);
+    const palette = derivePalette(seed, MDY_PALETTE_MODELS.tonal);
+    assert.deepEqual(palette, derivePalette(seed, MDY_PALETTE_MODELS.tonal));
+    for (const role of ["primary", "secondary", "tertiary", "error"]) assert.ok(parseHex(palette[role]));
+    for (const [bg, fg] of [["primary", "onPrimary"], ["secondary", "onSecondary"], ["tertiary", "onTertiary"], ["error", "onError"]]) {
+      assert.ok(contrastRatio(palette[bg], palette[fg]) >= 4.5, `${seed}: ${fg} on ${bg}`);
+    }
+    if (hexToOklch(seed).l > 0.2) assert.notEqual(palette.secondary, palette.tertiary);
+    checked++;
+  }
+  assert.equal(checked, levels.length ** 3);
+});
+
 test("contrast ratio matches the WCAG anchors", () => {
   assert.ok(Math.abs(contrastRatio("#000000", "#ffffff") - 21) < 0.01);
   assert.equal(contrastRatio("#7067FF", "#7067FF"), 1);
@@ -180,6 +255,7 @@ test("the stylesheet and this module hold the same numbers", () => {
   const where = {
     brand: block(":root {\n        /* Hue offsets"),
     monochrome: block('[data-mdy-palette="monochrome"]'),
+    tonal: block('[data-mdy-palette="tonal"]'),
     complementary: block('[data-mdy-palette="complementary"]'),
     triadic: block('[data-mdy-palette="triadic"]'),
   };
@@ -199,6 +275,11 @@ test("the stylesheet and this module hold the same numbers", () => {
       }
     }
   }
+
+  // Chroma floors are opt-in. Existing models preserve their scale-only strategy; tonal mirrors
+  // its two floors into CSS so the browser and this module take the same branch.
+  assert.equal(numberIn(where.tonal, "secondary-min-c"), MDY_PALETTE_MODELS.tonal.secondary.minC);
+  assert.equal(numberIn(where.tonal, "tertiary-min-c"), MDY_PALETTE_MODELS.tonal.tertiary.minC);
 
   // Error and the contrast proxy are shared by every model, so they are declared once on :root.
   const root = where.brand;
@@ -298,7 +379,7 @@ test("the two palette engines disagree, and by how much", () => {
       maxHueGap = Math.max(maxHueGap, hueGap);
       rows.push(
         `${source} ${role.padEnd(9)} oklch ${oklch[role]} (l ${a.l.toFixed(2)} c ${a.c.toFixed(3)} h ${a.h.toFixed(0)})` +
-          `  |  hct ${hct[role]} (l ${b.l.toFixed(2)} c ${b.c.toFixed(3)} h ${b.h.toFixed(0)})`,
+        `  |  hct ${hct[role]} (l ${b.l.toFixed(2)} c ${b.c.toFixed(3)} h ${b.h.toFixed(0)})`,
       );
     }
   }
