@@ -17,432 +17,438 @@
 
 @layer mdy.tokens {
 
-:root {
-    /* ── Reference tier (--mdy-ref-*): brand palette & type. Raw values only. ── */
-    --mdy-ref-color-indigo: #7067FF;  /* primary */
-    --mdy-ref-color-violet: #A855F7;  /* secondary */
-    --mdy-ref-color-coral: #FF6577;   /* accent / action */
-    --mdy-ref-color-night: #0E0F16;   /* dark surface */
-    --mdy-ref-color-cloud: #F8FAFC;   /* light surface / text-on-dark */
-    --mdy-ref-color-slate: #94A3B8;   /* muted text, borders */
-    --mdy-ref-color-error: #B3261E;
-    /* Satoshi woff2 is not shipped (owner approval required) — fallback chain only */
-    --mdy-ref-font-family: "Satoshi", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-}
+    :root {
+        /* ── Reference tier (--mdy-ref-*): brand palette & type. Raw values only. ── */
+        --mdy-ref-color-indigo: #7067FF;
+        /* primary */
+        --mdy-ref-color-violet: #A855F7;
+        /* secondary */
+        --mdy-ref-color-coral: #FF6577;
+        /* accent / action */
+        --mdy-ref-color-night: #0E0F16;
+        /* dark surface */
+        --mdy-ref-color-cloud: #F8FAFC;
+        /* light surface / text-on-dark */
+        --mdy-ref-color-slate: #94A3B8;
+        /* muted text, borders */
+        --mdy-ref-color-error: #B3261E;
+        /* Satoshi woff2 is not shipped (owner approval required) — fallback chain only */
+        --mdy-ref-font-family: "Satoshi", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
 
-:root {
-    /* Date Picker — Range & Popup (additional tokens for full mapping) */
-    --mdy-comp-date-picker-popup-padding: 1.25rem;
-    --mdy-comp-date-picker-popup-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.18);
-    --mdy-comp-date-picker-cell-size: 2.5rem;
-    --mdy-comp-date-picker-cell-border-radius: 50%;
-    --mdy-comp-date-picker-cell-font-size: 0.875rem;
-    --mdy-comp-date-picker-hover-bg: var(--mdy-sys-color-surface-container-highest);
-    --mdy-comp-date-picker-selected-bg: var(--mdy-sys-color-primary);
-    --mdy-comp-date-picker-selected-color: var(--mdy-sys-color-on-primary);
-    --mdy-comp-date-picker-in-range-bg: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 75%);
-    --mdy-comp-date-picker-endpoint-bg: var(--mdy-sys-color-primary);
-    --mdy-comp-date-picker-endpoint-color: var(--mdy-sys-color-on-primary);
-    --mdy-comp-date-picker-disabled-opacity: 0.25;
-    --mdy-comp-date-picker-outside-opacity: 0.5;
-    --mdy-comp-date-picker-header-gap: 0.5rem;
-    --mdy-comp-date-picker-nav-btn-size: 2rem;
-    /* Color System — Light Theme */
-    --mdy-sys-color-primary: var(--mdy-ref-color-indigo);
-    --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 95%);
-    --mdy-sys-color-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 85%);
-    --mdy-sys-color-on-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
-    --mdy-sys-color-secondary: var(--mdy-ref-color-violet);
-    --mdy-sys-color-on-secondary: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 90%);
-    --mdy-sys-color-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 80%);
-    --mdy-sys-color-on-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-night) 80%);
-    --mdy-sys-color-tertiary: var(--mdy-ref-color-coral);
-    --mdy-sys-color-on-tertiary: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 90%);
-    --mdy-sys-color-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 95%);
-    --mdy-sys-color-on-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-night) 80%);
-    --mdy-sys-color-error: var(--mdy-ref-color-error);
-    --mdy-sys-color-on-error: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 90%);
-    --mdy-sys-color-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 85%);
-    --mdy-sys-color-on-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-night) 80%);
-    --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 96%);
-    --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
-    --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-cloud), var(--mdy-ref-color-slate) 18%) 80%);
-    --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 45%) 60%);
-    --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 100%);
-    --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 96%);
-    --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 92%);
-    --mdy-sys-color-surface-container-high: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 88%);
-    --mdy-sys-color-surface-container-highest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
-    --mdy-sys-color-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 98%);
-    --mdy-sys-color-on-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
-    --mdy-sys-color-outline: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-slate) 60%);
-    --mdy-sys-color-outline-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-slate), var(--mdy-ref-color-cloud) 45%) 80%);
-    --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
-    --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
-    --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
-    --mdy-sys-color-scrim: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 90%);
-    --mdy-sys-color-shadow: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+    :root {
+        /* Date Picker — Range & Popup (additional tokens for full mapping) */
+        --mdy-comp-date-picker-popup-padding: 1.25rem;
+        --mdy-comp-date-picker-popup-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.18);
+        --mdy-comp-date-picker-cell-size: 2.5rem;
+        --mdy-comp-date-picker-cell-border-radius: 50%;
+        --mdy-comp-date-picker-cell-font-size: 0.875rem;
+        --mdy-comp-date-picker-hover-bg: var(--mdy-sys-color-surface-container-highest);
+        --mdy-comp-date-picker-selected-bg: var(--mdy-sys-color-primary);
+        --mdy-comp-date-picker-selected-color: var(--mdy-sys-color-on-primary);
+        --mdy-comp-date-picker-in-range-bg: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 75%);
+        --mdy-comp-date-picker-endpoint-bg: var(--mdy-sys-color-primary);
+        --mdy-comp-date-picker-endpoint-color: var(--mdy-sys-color-on-primary);
+        --mdy-comp-date-picker-disabled-opacity: 0.25;
+        --mdy-comp-date-picker-outside-opacity: 0.5;
+        --mdy-comp-date-picker-header-gap: 0.5rem;
+        --mdy-comp-date-picker-nav-btn-size: 2rem;
+        /* Color System — Light Theme */
+        --mdy-sys-color-primary: var(--mdy-ref-color-indigo);
+        --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 95%);
+        --mdy-sys-color-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 85%);
+        --mdy-sys-color-on-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+        --mdy-sys-color-secondary: var(--mdy-ref-color-violet);
+        --mdy-sys-color-on-secondary: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 90%);
+        --mdy-sys-color-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 80%);
+        --mdy-sys-color-on-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-night) 80%);
+        --mdy-sys-color-tertiary: var(--mdy-ref-color-coral);
+        --mdy-sys-color-on-tertiary: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 90%);
+        --mdy-sys-color-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 95%);
+        --mdy-sys-color-on-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-night) 80%);
+        --mdy-sys-color-error: var(--mdy-ref-color-error);
+        --mdy-sys-color-on-error: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 90%);
+        --mdy-sys-color-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 85%);
+        --mdy-sys-color-on-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-night) 80%);
+        --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 96%);
+        --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+        --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-cloud), var(--mdy-ref-color-slate) 18%) 80%);
+        --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 45%) 60%);
+        --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 100%);
+        --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 96%);
+        --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 92%);
+        --mdy-sys-color-surface-container-high: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 88%);
+        --mdy-sys-color-surface-container-highest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+        --mdy-sys-color-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 98%);
+        --mdy-sys-color-on-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+        --mdy-sys-color-outline: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-slate) 60%);
+        --mdy-sys-color-outline-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-slate), var(--mdy-ref-color-cloud) 45%) 80%);
+        --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+        --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+        --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
+        --mdy-sys-color-scrim: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 90%);
+        --mdy-sys-color-shadow: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
 
-    /* Typography */
-    --mdy-sys-typescale-display-large-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-display-large-size: 57px;
-    --mdy-sys-typescale-display-large-line-height: 64px;
-    --mdy-sys-typescale-display-large-weight: 400;
-    --mdy-sys-typescale-display-large-tracking: -0.25px;
-    --mdy-sys-typescale-display-medium-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-display-medium-size: 45px;
-    --mdy-sys-typescale-display-medium-line-height: 52px;
-    --mdy-sys-typescale-display-medium-weight: 400;
-    --mdy-sys-typescale-display-small-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-display-small-size: 36px;
-    --mdy-sys-typescale-display-small-line-height: 44px;
-    --mdy-sys-typescale-display-small-weight: 400;
-    --mdy-sys-typescale-headline-large-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-headline-large-size: 32px;
-    --mdy-sys-typescale-headline-large-line-height: 40px;
-    --mdy-sys-typescale-headline-large-weight: 400;
-    --mdy-sys-typescale-headline-medium-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-headline-medium-size: 28px;
-    --mdy-sys-typescale-headline-medium-line-height: 36px;
-    --mdy-sys-typescale-headline-medium-weight: 400;
-    --mdy-sys-typescale-headline-small-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-headline-small-size: 24px;
-    --mdy-sys-typescale-headline-small-line-height: 32px;
-    --mdy-sys-typescale-headline-small-weight: 400;
-    --mdy-sys-typescale-title-large-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-title-large-size: 22px;
-    --mdy-sys-typescale-title-large-line-height: 28px;
-    --mdy-sys-typescale-title-large-weight: 400;
-    --mdy-sys-typescale-title-medium-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-title-medium-size: 16px;
-    --mdy-sys-typescale-title-medium-line-height: 24px;
-    --mdy-sys-typescale-title-medium-weight: 500;
-    --mdy-sys-typescale-title-medium-tracking: 0.15px;
-    --mdy-sys-typescale-title-small-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-title-small-size: 14px;
-    --mdy-sys-typescale-title-small-line-height: 20px;
-    --mdy-sys-typescale-title-small-weight: 500;
-    --mdy-sys-typescale-title-small-tracking: 0.1px;
-    --mdy-sys-typescale-body-large-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-body-large-size: 16px;
-    --mdy-sys-typescale-body-large-line-height: 24px;
-    --mdy-sys-typescale-body-large-weight: 400;
-    --mdy-sys-typescale-body-large-tracking: 0.5px;
-    --mdy-sys-typescale-body-medium-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-body-medium-size: 14px;
-    --mdy-sys-typescale-body-medium-line-height: 20px;
-    --mdy-sys-typescale-body-medium-weight: 400;
-    --mdy-sys-typescale-body-medium-tracking: 0.25px;
-    --mdy-sys-typescale-body-small-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-body-small-size: 12px;
-    --mdy-sys-typescale-body-small-line-height: 16px;
-    --mdy-sys-typescale-body-small-weight: 400;
-    --mdy-sys-typescale-body-small-tracking: 0.4px;
-    --mdy-sys-typescale-label-large-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-label-large-size: 14px;
-    --mdy-sys-typescale-label-large-line-height: 20px;
-    --mdy-sys-typescale-label-large-weight: 500;
-    --mdy-sys-typescale-label-large-tracking: 0.1px;
-    --mdy-sys-typescale-label-medium-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-label-medium-size: 12px;
-    --mdy-sys-typescale-label-medium-line-height: 16px;
-    --mdy-sys-typescale-label-medium-weight: 500;
-    --mdy-sys-typescale-label-medium-tracking: 0.5px;
-    --mdy-sys-typescale-label-small-font: var(--mdy-ref-font-family);
-    --mdy-sys-typescale-label-small-size: 11px;
-    --mdy-sys-typescale-label-small-line-height: 16px;
-    --mdy-sys-typescale-label-small-weight: 500;
-    --mdy-sys-typescale-label-small-tracking: 0.5px;
+        /* Typography */
+        --mdy-sys-typescale-display-large-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-display-large-size: 57px;
+        --mdy-sys-typescale-display-large-line-height: 64px;
+        --mdy-sys-typescale-display-large-weight: 400;
+        --mdy-sys-typescale-display-large-tracking: -0.25px;
+        --mdy-sys-typescale-display-medium-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-display-medium-size: 45px;
+        --mdy-sys-typescale-display-medium-line-height: 52px;
+        --mdy-sys-typescale-display-medium-weight: 400;
+        --mdy-sys-typescale-display-small-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-display-small-size: 36px;
+        --mdy-sys-typescale-display-small-line-height: 44px;
+        --mdy-sys-typescale-display-small-weight: 400;
+        --mdy-sys-typescale-headline-large-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-headline-large-size: 32px;
+        --mdy-sys-typescale-headline-large-line-height: 40px;
+        --mdy-sys-typescale-headline-large-weight: 400;
+        --mdy-sys-typescale-headline-medium-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-headline-medium-size: 28px;
+        --mdy-sys-typescale-headline-medium-line-height: 36px;
+        --mdy-sys-typescale-headline-medium-weight: 400;
+        --mdy-sys-typescale-headline-small-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-headline-small-size: 24px;
+        --mdy-sys-typescale-headline-small-line-height: 32px;
+        --mdy-sys-typescale-headline-small-weight: 400;
+        --mdy-sys-typescale-title-large-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-title-large-size: 22px;
+        --mdy-sys-typescale-title-large-line-height: 28px;
+        --mdy-sys-typescale-title-large-weight: 400;
+        --mdy-sys-typescale-title-medium-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-title-medium-size: 16px;
+        --mdy-sys-typescale-title-medium-line-height: 24px;
+        --mdy-sys-typescale-title-medium-weight: 500;
+        --mdy-sys-typescale-title-medium-tracking: 0.15px;
+        --mdy-sys-typescale-title-small-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-title-small-size: 14px;
+        --mdy-sys-typescale-title-small-line-height: 20px;
+        --mdy-sys-typescale-title-small-weight: 500;
+        --mdy-sys-typescale-title-small-tracking: 0.1px;
+        --mdy-sys-typescale-body-large-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-body-large-size: 16px;
+        --mdy-sys-typescale-body-large-line-height: 24px;
+        --mdy-sys-typescale-body-large-weight: 400;
+        --mdy-sys-typescale-body-large-tracking: 0.5px;
+        --mdy-sys-typescale-body-medium-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-body-medium-size: 14px;
+        --mdy-sys-typescale-body-medium-line-height: 20px;
+        --mdy-sys-typescale-body-medium-weight: 400;
+        --mdy-sys-typescale-body-medium-tracking: 0.25px;
+        --mdy-sys-typescale-body-small-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-body-small-size: 12px;
+        --mdy-sys-typescale-body-small-line-height: 16px;
+        --mdy-sys-typescale-body-small-weight: 400;
+        --mdy-sys-typescale-body-small-tracking: 0.4px;
+        --mdy-sys-typescale-label-large-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-label-large-size: 14px;
+        --mdy-sys-typescale-label-large-line-height: 20px;
+        --mdy-sys-typescale-label-large-weight: 500;
+        --mdy-sys-typescale-label-large-tracking: 0.1px;
+        --mdy-sys-typescale-label-medium-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-label-medium-size: 12px;
+        --mdy-sys-typescale-label-medium-line-height: 16px;
+        --mdy-sys-typescale-label-medium-weight: 500;
+        --mdy-sys-typescale-label-medium-tracking: 0.5px;
+        --mdy-sys-typescale-label-small-font: var(--mdy-ref-font-family);
+        --mdy-sys-typescale-label-small-size: 11px;
+        --mdy-sys-typescale-label-small-line-height: 16px;
+        --mdy-sys-typescale-label-small-weight: 500;
+        --mdy-sys-typescale-label-small-tracking: 0.5px;
 
-    /* Shape */
-    --mdy-sys-shape-corner-none: 0px;
-    --mdy-sys-shape-corner-extra-small: 4px;
-    --mdy-sys-shape-corner-small: 8px;
-    --mdy-sys-shape-corner-medium: 12px;
-    --mdy-sys-shape-corner-large: 16px;
-    --mdy-sys-shape-corner-extra-large: 28px;
+        /* Shape */
+        --mdy-sys-shape-corner-none: 0px;
+        --mdy-sys-shape-corner-extra-small: 4px;
+        --mdy-sys-shape-corner-small: 8px;
+        --mdy-sys-shape-corner-medium: 12px;
+        --mdy-sys-shape-corner-large: 16px;
+        --mdy-sys-shape-corner-extra-large: 28px;
 
-    /* ─── Motion ──────────────────────────────────────────────────────────────
+        /* ─── Motion ──────────────────────────────────────────────────────────────
        Six durations and seven easings were spread across the foundation and the
        four themes — including `cubic-bezier(0.4, 0, 0.2, 1)` written two ways, the
        same curve spelled differently in two places. A control that opens in 0.15s
        under one theme and 0.2s under another is not the same control, and nothing
        could tell you they had drifted. Named here, in the tier every other value
        comes from. */
-    --mdy-sys-motion-duration-fast: 0.1s;
-    --mdy-sys-motion-duration-base: 0.15s;
-    --mdy-sys-motion-duration-slow: 0.2s;
-    /* The standard curve: most things start and stop on it. */
-    --mdy-sys-motion-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
-    /* Entering the screen — quick to arrive, slow to settle. */
-    --mdy-sys-motion-easing-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
-    /* Overshoots, for a control that should feel physical: a switch, a chip. */
-    --mdy-sys-motion-easing-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    /* Material's emphasized curve — a longer, flatter settle than `standard`, and genuinely a
+        --mdy-sys-motion-duration-fast: 0.1s;
+        --mdy-sys-motion-duration-base: 0.15s;
+        --mdy-sys-motion-duration-slow: 0.2s;
+        /* The standard curve: most things start and stop on it. */
+        --mdy-sys-motion-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+        /* Entering the screen — quick to arrive, slow to settle. */
+        --mdy-sys-motion-easing-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+        /* Overshoots, for a control that should feel physical: a switch, a chip. */
+        --mdy-sys-motion-easing-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        /* Material's emphasized curve — a longer, flatter settle than `standard`, and genuinely a
        different curve rather than a fourth spelling of one. */
-    --mdy-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
-    --mdy-sys-shape-corner-full: 9999px;
+        --mdy-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+        --mdy-sys-shape-corner-full: 9999px;
 
-    /* Elevation */
-    --mdy-sys-elevation-level0: 0px;
-    --mdy-sys-elevation-level1: 1px;
-    --mdy-sys-elevation-level2: 3px;
-    --mdy-sys-elevation-level3: 6px;
-    --mdy-sys-elevation-level4: 8px;
-    --mdy-sys-elevation-level5: 12px;
+        /* Elevation */
+        --mdy-sys-elevation-level0: 0px;
+        --mdy-sys-elevation-level1: 1px;
+        --mdy-sys-elevation-level2: 3px;
+        --mdy-sys-elevation-level3: 6px;
+        --mdy-sys-elevation-level4: 8px;
+        --mdy-sys-elevation-level5: 12px;
 
-    /* State Layer Opacity */
-    --mdy-sys-state-hover-opacity: 0.08;
-    --mdy-sys-state-focus-opacity: 0.10;
-    --mdy-sys-state-pressed-opacity: 0.10;
-    --mdy-sys-state-dragged-opacity: 0.16;
-    --mdy-sys-state-disabled-container-opacity: 0.12;
-    --mdy-sys-state-disabled-content-opacity: 0.38;
-}
-
-/* --- Date Picker: Full M3 Token Set --- */
-:root {
-    /* Grid & Cell */
-    --mdy-comp-date-picker-grid-gap: 0;
-    --mdy-comp-date-picker-cell-size: 2.5rem;
-    --mdy-comp-date-picker-cell-font-size: 0.875rem;
-    --mdy-comp-date-picker-cell-border-radius: 50%;
-    --mdy-comp-date-picker-cell-font-family: inherit;
-    --mdy-comp-date-picker-cell-font-weight: 400;
-    --mdy-comp-date-picker-cell-color: var(--mdy-sys-color-on-surface);
-    --mdy-comp-date-picker-cell-hover-bg: var(--mdy-sys-color-surface-container-highest);
-    --mdy-comp-date-picker-cell-selected-bg: var(--mdy-sys-color-primary);
-    --mdy-comp-date-picker-cell-selected-color: var(--mdy-sys-color-on-primary);
-    --mdy-comp-date-picker-cell-disabled-opacity: 0.25;
-    --mdy-comp-date-picker-cell-outside-opacity: 0.5;
-    --mdy-comp-date-picker-cell-today-outline: 2px solid var(--mdy-sys-color-primary);
-    --mdy-comp-date-picker-cell-focus-outline: 2px solid var(--mdy-sys-color-primary);
-    /* Header */
-    --mdy-comp-date-picker-header-gap: 0.5rem;
-    --mdy-comp-date-picker-header-padding: 0.5rem 1rem 0.25rem 1rem;
-    --mdy-comp-date-picker-header-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-date-picker-header-font-size: 1rem;
-    --mdy-comp-date-picker-header-font-weight: 500;
-    /* Navigation */
-    --mdy-comp-date-picker-nav-btn-size: 2rem;
-    --mdy-comp-date-picker-nav-btn-radius: 50%;
-    --mdy-comp-date-picker-nav-btn-hover-bg: var(--mdy-sys-color-surface-container-highest);
-    /* Popup/Modal */
-    --mdy-comp-date-picker-popup-padding: 1.25rem;
-    --mdy-comp-date-picker-popup-radius: var(--mdy-comp-date-picker-modal-container-shape);
-    --mdy-comp-date-picker-popup-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.18);
-    --mdy-comp-date-picker-popup-bg: var(--mdy-comp-date-picker-modal-container-color);
-    /* Range */
-    --mdy-comp-date-picker-in-range-bg: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 75%);
-    --mdy-comp-date-picker-endpoint-bg: var(--mdy-sys-color-primary);
-    --mdy-comp-date-picker-endpoint-color: var(--mdy-sys-color-on-primary);
-    /* Input */
-    --mdy-comp-date-picker-input-padding: 0.75rem 1rem;
-    --mdy-comp-date-picker-input-radius: var(--mdy-comp-date-picker-modal-container-shape);
-    --mdy-comp-date-picker-input-bg: var(--mdy-sys-color-surface-container-highest);
-    --mdy-comp-date-picker-input-color: var(--mdy-sys-color-on-surface);
-    --mdy-comp-date-picker-input-font-size: 1rem;
-    --mdy-comp-date-picker-input-font-family: inherit;
-    /* Misc */
-    --mdy-comp-date-picker-weekday-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-date-picker-weekday-font-size: 0.75rem;
-    --mdy-comp-date-picker-weekday-font-weight: 500;
-    --mdy-comp-date-picker-title-color: var(--mdy-sys-color-on-surface);
-    --mdy-comp-date-picker-title-font-size: 0.875rem;
-    --mdy-comp-date-picker-title-font-weight: 600;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
-        --mdy-sys-color-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 60%);
-        --mdy-sys-color-on-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
-        --mdy-sys-color-secondary: color-mix(in srgb, var(--mdy-ref-color-violet), var(--mdy-ref-color-cloud) 20%);
-        --mdy-sys-color-on-secondary: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 70%);
-        --mdy-sys-color-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-night) 80%);
-        --mdy-sys-color-on-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 60%);
-        --mdy-sys-color-tertiary: color-mix(in srgb, var(--mdy-ref-color-coral), var(--mdy-ref-color-cloud) 15%);
-        --mdy-sys-color-on-tertiary: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 70%);
-        --mdy-sys-color-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-night) 90%);
-        --mdy-sys-color-on-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 60%);
-        --mdy-sys-color-error: var(--mdy-ref-color-error);
-        --mdy-sys-color-on-error: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 80%);
-        --mdy-sys-color-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-night) 70%);
-        --mdy-sys-color-on-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 60%);
-        --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 85%);
-        --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
-        --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 35%) 60%);
-        --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
-        --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 100%);
-        --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 88%);
-        --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
-        --mdy-sys-color-surface-container-high: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 70%);
-        --mdy-sys-color-surface-container-highest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 58%);
-        --mdy-sys-color-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 95%);
-        --mdy-sys-color-on-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
-        --mdy-sys-color-outline: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-slate) 40%);
-        --mdy-sys-color-outline-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 35%) 60%);
-        --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
-        --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 60%);
-        --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 40%);
+        /* State Layer Opacity */
+        --mdy-sys-state-hover-opacity: 0.08;
+        --mdy-sys-state-focus-opacity: 0.10;
+        --mdy-sys-state-pressed-opacity: 0.10;
+        --mdy-sys-state-dragged-opacity: 0.16;
+        --mdy-sys-state-disabled-container-opacity: 0.12;
+        --mdy-sys-state-disabled-content-opacity: 0.38;
     }
-}
 
-/*
+    /* --- Date Picker: Full M3 Token Set --- */
+    :root {
+        /* Grid & Cell */
+        --mdy-comp-date-picker-grid-gap: 0;
+        --mdy-comp-date-picker-cell-size: 2.5rem;
+        --mdy-comp-date-picker-cell-font-size: 0.875rem;
+        --mdy-comp-date-picker-cell-border-radius: 50%;
+        --mdy-comp-date-picker-cell-font-family: inherit;
+        --mdy-comp-date-picker-cell-font-weight: 400;
+        --mdy-comp-date-picker-cell-color: var(--mdy-sys-color-on-surface);
+        --mdy-comp-date-picker-cell-hover-bg: var(--mdy-sys-color-surface-container-highest);
+        --mdy-comp-date-picker-cell-selected-bg: var(--mdy-sys-color-primary);
+        --mdy-comp-date-picker-cell-selected-color: var(--mdy-sys-color-on-primary);
+        --mdy-comp-date-picker-cell-disabled-opacity: 0.25;
+        --mdy-comp-date-picker-cell-outside-opacity: 0.5;
+        --mdy-comp-date-picker-cell-today-outline: 2px solid var(--mdy-sys-color-primary);
+        --mdy-comp-date-picker-cell-focus-outline: 2px solid var(--mdy-sys-color-primary);
+        /* Header */
+        --mdy-comp-date-picker-header-gap: 0.5rem;
+        --mdy-comp-date-picker-header-padding: 0.5rem 1rem 0.25rem 1rem;
+        --mdy-comp-date-picker-header-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-date-picker-header-font-size: 1rem;
+        --mdy-comp-date-picker-header-font-weight: 500;
+        /* Navigation */
+        --mdy-comp-date-picker-nav-btn-size: 2rem;
+        --mdy-comp-date-picker-nav-btn-radius: 50%;
+        --mdy-comp-date-picker-nav-btn-hover-bg: var(--mdy-sys-color-surface-container-highest);
+        /* Popup/Modal */
+        --mdy-comp-date-picker-popup-padding: 1.25rem;
+        --mdy-comp-date-picker-popup-radius: var(--mdy-comp-date-picker-modal-container-shape);
+        --mdy-comp-date-picker-popup-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.18);
+        --mdy-comp-date-picker-popup-bg: var(--mdy-comp-date-picker-modal-container-color);
+        /* Range */
+        --mdy-comp-date-picker-in-range-bg: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 75%);
+        --mdy-comp-date-picker-endpoint-bg: var(--mdy-sys-color-primary);
+        --mdy-comp-date-picker-endpoint-color: var(--mdy-sys-color-on-primary);
+        /* Input */
+        --mdy-comp-date-picker-input-padding: 0.75rem 1rem;
+        --mdy-comp-date-picker-input-radius: var(--mdy-comp-date-picker-modal-container-shape);
+        --mdy-comp-date-picker-input-bg: var(--mdy-sys-color-surface-container-highest);
+        --mdy-comp-date-picker-input-color: var(--mdy-sys-color-on-surface);
+        --mdy-comp-date-picker-input-font-size: 1rem;
+        --mdy-comp-date-picker-input-font-family: inherit;
+        /* Misc */
+        --mdy-comp-date-picker-weekday-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-date-picker-weekday-font-size: 0.75rem;
+        --mdy-comp-date-picker-weekday-font-weight: 500;
+        --mdy-comp-date-picker-title-color: var(--mdy-sys-color-on-surface);
+        --mdy-comp-date-picker-title-font-size: 0.875rem;
+        --mdy-comp-date-picker-title-font-weight: 600;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+            --mdy-sys-color-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 60%);
+            --mdy-sys-color-on-primary-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
+            --mdy-sys-color-secondary: color-mix(in srgb, var(--mdy-ref-color-violet), var(--mdy-ref-color-cloud) 20%);
+            --mdy-sys-color-on-secondary: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 70%);
+            --mdy-sys-color-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-night) 80%);
+            --mdy-sys-color-on-secondary-container: color-mix(in srgb, var(--mdy-sys-color-secondary), var(--mdy-ref-color-cloud) 60%);
+            --mdy-sys-color-tertiary: color-mix(in srgb, var(--mdy-ref-color-coral), var(--mdy-ref-color-cloud) 15%);
+            --mdy-sys-color-on-tertiary: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 70%);
+            --mdy-sys-color-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-night) 90%);
+            --mdy-sys-color-on-tertiary-container: color-mix(in srgb, var(--mdy-sys-color-tertiary), var(--mdy-ref-color-cloud) 60%);
+            --mdy-sys-color-error: var(--mdy-ref-color-error);
+            --mdy-sys-color-on-error: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 80%);
+            --mdy-sys-color-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-night) 70%);
+            --mdy-sys-color-on-error-container: color-mix(in srgb, var(--mdy-sys-color-error), var(--mdy-ref-color-cloud) 60%);
+            --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 85%);
+            --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+            --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 35%) 60%);
+            --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
+            --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 100%);
+            --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 88%);
+            --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
+            --mdy-sys-color-surface-container-high: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 70%);
+            --mdy-sys-color-surface-container-highest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 58%);
+            --mdy-sys-color-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 95%);
+            --mdy-sys-color-on-background: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 80%);
+            --mdy-sys-color-outline: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-slate) 40%);
+            --mdy-sys-color-outline-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 35%) 60%);
+            --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
+            --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 60%);
+            --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 40%);
+        }
+    }
+
+    /*
  * Component tokens (partial, add more as needed)
  * Example: Text Fields, Checkbox, Date Picker, etc.
  *
  * For brevity, only a subset is included here. Extend as needed from the gist.
  */
 
-:root {
-    /* Text Fields */
-    --mdy-comp-filled-text-field-container-color: var(--mdy-sys-color-surface-container-highest);
-    --mdy-comp-filled-text-field-container-shape: var(--mdy-sys-shape-corner-extra-small);
-    --mdy-comp-filled-text-field-container-height: 56px;
-    --mdy-comp-filled-text-field-label-text-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-filled-text-field-focus-label-text-color: var(--mdy-sys-color-primary);
-    --mdy-comp-filled-text-field-input-text-color: var(--mdy-sys-color-on-surface);
-    --mdy-comp-filled-text-field-active-indicator-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-filled-text-field-focus-active-indicator-color: var(--mdy-sys-color-primary);
-    --mdy-comp-filled-text-field-active-indicator-height: 1px;
-    --mdy-comp-filled-text-field-focus-active-indicator-height: 2px;
-    --mdy-comp-filled-text-field-leading-icon-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-filled-text-field-trailing-icon-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-filled-text-field-supporting-text-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-filled-text-field-error-active-indicator-color: var(--mdy-sys-color-error);
-    --mdy-comp-filled-text-field-error-label-text-color: var(--mdy-sys-color-error);
-    /* Outlined Text Field */
-    --mdy-comp-outlined-text-field-container-height: 56px;
-    --mdy-comp-outlined-text-field-label-text-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-outlined-text-field-focus-label-text-color: var(--mdy-sys-color-primary);
-    --mdy-comp-outlined-text-field-input-text-color: var(--mdy-sys-color-on-surface);
-    --mdy-comp-outlined-text-field-outline-color: var(--mdy-sys-color-outline);
-    --mdy-comp-outlined-text-field-focus-outline-color: var(--mdy-sys-color-primary);
-    --mdy-comp-outlined-text-field-outline-width: 1px;
-    --mdy-comp-outlined-text-field-focus-outline-width: 2px;
-    --mdy-comp-outlined-text-field-container-shape: var(--mdy-sys-shape-corner-extra-small);
-    --mdy-comp-outlined-text-field-supporting-text-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-outlined-text-field-error-outline-color: var(--mdy-sys-color-error);
-    --mdy-comp-outlined-text-field-error-label-text-color: var(--mdy-sys-color-error);
+    :root {
+        /* Text Fields */
+        --mdy-comp-filled-text-field-container-color: var(--mdy-sys-color-surface-container-highest);
+        --mdy-comp-filled-text-field-container-shape: var(--mdy-sys-shape-corner-extra-small);
+        --mdy-comp-filled-text-field-container-height: 56px;
+        --mdy-comp-filled-text-field-label-text-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-filled-text-field-focus-label-text-color: var(--mdy-sys-color-primary);
+        --mdy-comp-filled-text-field-input-text-color: var(--mdy-sys-color-on-surface);
+        --mdy-comp-filled-text-field-active-indicator-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-filled-text-field-focus-active-indicator-color: var(--mdy-sys-color-primary);
+        --mdy-comp-filled-text-field-active-indicator-height: 1px;
+        --mdy-comp-filled-text-field-focus-active-indicator-height: 2px;
+        --mdy-comp-filled-text-field-leading-icon-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-filled-text-field-trailing-icon-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-filled-text-field-supporting-text-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-filled-text-field-error-active-indicator-color: var(--mdy-sys-color-error);
+        --mdy-comp-filled-text-field-error-label-text-color: var(--mdy-sys-color-error);
+        /* Outlined Text Field */
+        --mdy-comp-outlined-text-field-container-height: 56px;
+        --mdy-comp-outlined-text-field-label-text-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-outlined-text-field-focus-label-text-color: var(--mdy-sys-color-primary);
+        --mdy-comp-outlined-text-field-input-text-color: var(--mdy-sys-color-on-surface);
+        --mdy-comp-outlined-text-field-outline-color: var(--mdy-sys-color-outline);
+        --mdy-comp-outlined-text-field-focus-outline-color: var(--mdy-sys-color-primary);
+        --mdy-comp-outlined-text-field-outline-width: 1px;
+        --mdy-comp-outlined-text-field-focus-outline-width: 2px;
+        --mdy-comp-outlined-text-field-container-shape: var(--mdy-sys-shape-corner-extra-small);
+        --mdy-comp-outlined-text-field-supporting-text-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-outlined-text-field-error-outline-color: var(--mdy-sys-color-error);
+        --mdy-comp-outlined-text-field-error-label-text-color: var(--mdy-sys-color-error);
 
-    /* Checkbox */
-    --mdy-comp-checkbox-container-size: 18px;
-    --mdy-comp-checkbox-container-shape: 2px;
-    --mdy-comp-checkbox-state-layer-size: 40px;
-    --mdy-comp-checkbox-state-layer-shape: var(--mdy-sys-shape-corner-full);
-    --mdy-comp-checkbox-icon-size: 18px;
-    --mdy-comp-checkbox-selected-container-color: var(--mdy-sys-color-primary);
-    --mdy-comp-checkbox-selected-icon-color: var(--mdy-sys-color-on-primary);
-    --mdy-comp-checkbox-selected-state-layer-color: var(--mdy-sys-color-primary);
-    --mdy-comp-checkbox-unselected-outline-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-checkbox-unselected-outline-width: 2px;
-    --mdy-comp-checkbox-unselected-state-layer-color: var(--mdy-sys-color-on-surface);
-    --mdy-comp-checkbox-error-container-color: var(--mdy-sys-color-error);
-    --mdy-comp-checkbox-error-icon-color: var(--mdy-sys-color-on-error);
-    --mdy-comp-checkbox-disabled-selected-container-color: var(--mdy-sys-color-on-surface);
-    --mdy-comp-checkbox-disabled-outline-color: var(--mdy-sys-color-on-surface);
+        /* Checkbox */
+        --mdy-comp-checkbox-container-size: 18px;
+        --mdy-comp-checkbox-container-shape: 2px;
+        --mdy-comp-checkbox-state-layer-size: 40px;
+        --mdy-comp-checkbox-state-layer-shape: var(--mdy-sys-shape-corner-full);
+        --mdy-comp-checkbox-icon-size: 18px;
+        --mdy-comp-checkbox-selected-container-color: var(--mdy-sys-color-primary);
+        --mdy-comp-checkbox-selected-icon-color: var(--mdy-sys-color-on-primary);
+        --mdy-comp-checkbox-selected-state-layer-color: var(--mdy-sys-color-primary);
+        --mdy-comp-checkbox-unselected-outline-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-checkbox-unselected-outline-width: 2px;
+        --mdy-comp-checkbox-unselected-state-layer-color: var(--mdy-sys-color-on-surface);
+        --mdy-comp-checkbox-error-container-color: var(--mdy-sys-color-error);
+        --mdy-comp-checkbox-error-icon-color: var(--mdy-sys-color-on-error);
+        --mdy-comp-checkbox-disabled-selected-container-color: var(--mdy-sys-color-on-surface);
+        --mdy-comp-checkbox-disabled-outline-color: var(--mdy-sys-color-on-surface);
 
-    /* Switch */
-    --mdy-comp-switch-track-width: 52px;
-    --mdy-comp-switch-track-height: 32px;
-    --mdy-comp-switch-track-shape: 9999px;
-    --mdy-comp-switch-track-color: transparent;
-    --mdy-comp-switch-track-outline-color: var(--mdy-sys-color-outline);
-    --mdy-comp-switch-track-outline-width: 2px;
-    --mdy-comp-switch-selected-track-color: var(--mdy-sys-color-primary);
-    --mdy-comp-switch-handle-size: 16px;
-    --mdy-comp-switch-selected-handle-size: 24px;
-    --mdy-comp-switch-handle-color: var(--mdy-sys-color-outline);
-    --mdy-comp-switch-selected-handle-color: var(--mdy-sys-color-on-primary);
-    --mdy-comp-switch-handle-shape: var(--mdy-sys-shape-corner-full);
+        /* Switch */
+        --mdy-comp-switch-track-width: 52px;
+        --mdy-comp-switch-track-height: 32px;
+        --mdy-comp-switch-track-shape: 9999px;
+        --mdy-comp-switch-track-color: transparent;
+        --mdy-comp-switch-track-outline-color: var(--mdy-sys-color-outline);
+        --mdy-comp-switch-track-outline-width: 2px;
+        --mdy-comp-switch-selected-track-color: var(--mdy-sys-color-primary);
+        --mdy-comp-switch-handle-size: 16px;
+        --mdy-comp-switch-selected-handle-size: 24px;
+        --mdy-comp-switch-handle-color: var(--mdy-sys-color-outline);
+        --mdy-comp-switch-selected-handle-color: var(--mdy-sys-color-on-primary);
+        --mdy-comp-switch-handle-shape: var(--mdy-sys-shape-corner-full);
 
-    /* Radio Button */
-    --mdy-comp-radio-icon-size: 20px;
-    --mdy-comp-radio-state-layer-size: 40px;
-    --mdy-comp-radio-selected-icon-color: var(--mdy-sys-color-primary);
-    --mdy-comp-radio-unselected-icon-color: var(--mdy-sys-color-on-surface-variant);
+        /* Radio Button */
+        --mdy-comp-radio-icon-size: 20px;
+        --mdy-comp-radio-state-layer-size: 40px;
+        --mdy-comp-radio-selected-icon-color: var(--mdy-sys-color-primary);
+        --mdy-comp-radio-unselected-icon-color: var(--mdy-sys-color-on-surface-variant);
 
-    /* Slider */
-    --mdy-comp-slider-active-track-height: 4px;
-    --mdy-comp-slider-inactive-track-height: 4px;
-    --mdy-comp-slider-handle-height: 20px;
-    --mdy-comp-slider-handle-width: 20px;
-    --mdy-comp-slider-handle-shape: var(--mdy-sys-shape-corner-full);
-    --mdy-comp-slider-active-track-color: var(--mdy-sys-color-primary);
-    --mdy-comp-slider-inactive-track-color: var(--mdy-sys-color-secondary-container);
-    --mdy-comp-slider-handle-color: var(--mdy-sys-color-primary);
-    --mdy-comp-slider-track-shape: var(--mdy-sys-shape-corner-full);
+        /* Slider */
+        --mdy-comp-slider-active-track-height: 4px;
+        --mdy-comp-slider-inactive-track-height: 4px;
+        --mdy-comp-slider-handle-height: 20px;
+        --mdy-comp-slider-handle-width: 20px;
+        --mdy-comp-slider-handle-shape: var(--mdy-sys-shape-corner-full);
+        --mdy-comp-slider-active-track-color: var(--mdy-sys-color-primary);
+        --mdy-comp-slider-inactive-track-color: var(--mdy-sys-color-secondary-container);
+        --mdy-comp-slider-handle-color: var(--mdy-sys-color-primary);
+        --mdy-comp-slider-track-shape: var(--mdy-sys-shape-corner-full);
 
-    /* Segmented Button */
-    --mdy-comp-segmented-button-height: 40px;
-    --mdy-comp-segmented-button-shape: var(--mdy-sys-shape-corner-full);
-    --mdy-comp-segmented-button-outline-color: var(--mdy-sys-color-outline);
-    --mdy-comp-segmented-button-selected-container-color: var(--mdy-sys-color-secondary-container);
-    --mdy-comp-segmented-button-selected-label-text-color: var(--mdy-sys-color-on-secondary-container);
-    --mdy-comp-segmented-button-unselected-label-text-color: var(--mdy-sys-color-on-surface);
-    --mdy-comp-segmented-button-label-text-font-size: var(--mdy-sys-typescale-label-large-size);
-    --mdy-comp-segmented-button-label-text-weight: var(--mdy-sys-typescale-label-large-weight);
+        /* Segmented Button */
+        --mdy-comp-segmented-button-height: 40px;
+        --mdy-comp-segmented-button-shape: var(--mdy-sys-shape-corner-full);
+        --mdy-comp-segmented-button-outline-color: var(--mdy-sys-color-outline);
+        --mdy-comp-segmented-button-selected-container-color: var(--mdy-sys-color-secondary-container);
+        --mdy-comp-segmented-button-selected-label-text-color: var(--mdy-sys-color-on-secondary-container);
+        --mdy-comp-segmented-button-unselected-label-text-color: var(--mdy-sys-color-on-surface);
+        --mdy-comp-segmented-button-label-text-font-size: var(--mdy-sys-typescale-label-large-size);
+        --mdy-comp-segmented-button-label-text-weight: var(--mdy-sys-typescale-label-large-weight);
 
-    /* Filter Chip (Multiselect) */
-    --mdy-comp-filter-chip-container-height: 32px;
-    --mdy-comp-filter-chip-container-shape: var(--mdy-sys-shape-corner-small);
-    --mdy-comp-filter-chip-outline-color: var(--mdy-sys-color-outline);
-    --mdy-comp-filter-chip-selected-container-color: var(--mdy-sys-color-secondary-container);
-    --mdy-comp-filter-chip-selected-label-text-color: var(--mdy-sys-color-on-secondary-container);
-    --mdy-comp-filter-chip-label-text-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-filter-chip-hover-state-layer-color: var(--mdy-sys-color-on-surface);
+        /* Filter Chip (Multiselect) */
+        --mdy-comp-filter-chip-container-height: 32px;
+        --mdy-comp-filter-chip-container-shape: var(--mdy-sys-shape-corner-small);
+        --mdy-comp-filter-chip-outline-color: var(--mdy-sys-color-outline);
+        --mdy-comp-filter-chip-selected-container-color: var(--mdy-sys-color-secondary-container);
+        --mdy-comp-filter-chip-selected-label-text-color: var(--mdy-sys-color-on-secondary-container);
+        --mdy-comp-filter-chip-label-text-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-filter-chip-hover-state-layer-color: var(--mdy-sys-color-on-surface);
 
-    /* Time Picker */
-    --mdy-comp-time-picker-container-color: var(--mdy-sys-color-surface-container-high);
-    --mdy-comp-time-picker-container-shape: var(--mdy-sys-shape-corner-extra-large);
-    --mdy-comp-time-picker-input-container-color: var(--mdy-sys-color-surface-container-highest);
-    --mdy-comp-time-picker-input-container-shape: var(--mdy-sys-shape-corner-small);
-    --mdy-comp-time-picker-input-segment-width: 96px;
-    --mdy-comp-time-picker-input-segment-height: 80px;
-    --mdy-comp-time-picker-clock-dial-container-color: var(--mdy-sys-color-surface-container-highest);
-    --mdy-comp-time-picker-clock-dial-size: 256px;
-    --mdy-comp-time-picker-headline-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-time-picker-selected-segment-color: var(--mdy-sys-color-primary);
-    --mdy-comp-time-picker-selected-segment-container-color: var(--mdy-sys-color-primary-container);
-    --mdy-comp-time-picker-period-outline-color: var(--mdy-sys-color-outline);
+        /* Time Picker */
+        --mdy-comp-time-picker-container-color: var(--mdy-sys-color-surface-container-high);
+        --mdy-comp-time-picker-container-shape: var(--mdy-sys-shape-corner-extra-large);
+        --mdy-comp-time-picker-input-container-color: var(--mdy-sys-color-surface-container-highest);
+        --mdy-comp-time-picker-input-container-shape: var(--mdy-sys-shape-corner-small);
+        --mdy-comp-time-picker-input-segment-width: 96px;
+        --mdy-comp-time-picker-input-segment-height: 80px;
+        --mdy-comp-time-picker-clock-dial-container-color: var(--mdy-sys-color-surface-container-highest);
+        --mdy-comp-time-picker-clock-dial-size: 256px;
+        --mdy-comp-time-picker-headline-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-time-picker-selected-segment-color: var(--mdy-sys-color-primary);
+        --mdy-comp-time-picker-selected-segment-container-color: var(--mdy-sys-color-primary-container);
+        --mdy-comp-time-picker-period-outline-color: var(--mdy-sys-color-outline);
 
-    /* Color Picker (custom — not in M3 spec, inspired by Text Field + Menu) */
-    --mdy-comp-color-picker-swatch-size: 2.5rem;
-    --mdy-comp-color-picker-swatch-height: 1.25rem;
-    --mdy-comp-color-picker-swatch-radius: var(--mdy-sys-shape-corner-full);
-    --mdy-comp-color-picker-dropdown-radius: var(--mdy-sys-shape-corner-medium);
-    --mdy-comp-color-picker-dropdown-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.3);
+        /* Color Picker (custom — not in M3 spec, inspired by Text Field + Menu) */
+        --mdy-comp-color-picker-swatch-size: 2.5rem;
+        --mdy-comp-color-picker-swatch-height: 1.25rem;
+        --mdy-comp-color-picker-swatch-radius: var(--mdy-sys-shape-corner-full);
+        --mdy-comp-color-picker-dropdown-radius: var(--mdy-sys-shape-corner-medium);
+        --mdy-comp-color-picker-dropdown-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.3);
 
-    /* Date Picker (Docked & Modal) */
-    --mdy-comp-date-picker-docked-container-color: var(--mdy-sys-color-surface-container-high);
-    --mdy-comp-date-picker-docked-header-color: var(--mdy-sys-color-on-surface-variant);
-    --mdy-comp-date-picker-docked-selected-date-container-color: var(--mdy-sys-color-primary);
-    --mdy-comp-date-picker-docked-selected-date-label-color: var(--mdy-sys-color-on-primary);
-    --mdy-comp-date-picker-docked-today-date-color: var(--mdy-sys-color-primary);
-    --mdy-comp-date-picker-docked-date-label-color: var(--mdy-sys-color-on-surface);
-    --mdy-comp-date-picker-docked-weekday-color: var(--mdy-sys-color-on-surface);
-    --mdy-comp-date-picker-modal-container-color: var(--mdy-sys-color-surface-container-high);
-    --mdy-comp-date-picker-modal-container-shape: var(--mdy-sys-shape-corner-extra-large);
-    --mdy-comp-date-picker-modal-headline-color: var(--mdy-sys-color-on-surface);
-    --mdy-comp-date-picker-modal-supporting-text-color: var(--mdy-sys-color-on-surface-variant);
-}
+        /* Date Picker (Docked & Modal) */
+        --mdy-comp-date-picker-docked-container-color: var(--mdy-sys-color-surface-container-high);
+        --mdy-comp-date-picker-docked-header-color: var(--mdy-sys-color-on-surface-variant);
+        --mdy-comp-date-picker-docked-selected-date-container-color: var(--mdy-sys-color-primary);
+        --mdy-comp-date-picker-docked-selected-date-label-color: var(--mdy-sys-color-on-primary);
+        --mdy-comp-date-picker-docked-today-date-color: var(--mdy-sys-color-primary);
+        --mdy-comp-date-picker-docked-date-label-color: var(--mdy-sys-color-on-surface);
+        --mdy-comp-date-picker-docked-weekday-color: var(--mdy-sys-color-on-surface);
+        --mdy-comp-date-picker-modal-container-color: var(--mdy-sys-color-surface-container-high);
+        --mdy-comp-date-picker-modal-container-shape: var(--mdy-sys-shape-corner-extra-large);
+        --mdy-comp-date-picker-modal-headline-color: var(--mdy-sys-color-on-surface);
+        --mdy-comp-date-picker-modal-supporting-text-color: var(--mdy-sys-color-on-surface-variant);
+    }
 
-:root {
-    /* Runtime-injected variables — base-tier defaults so every var() resolves.
+    :root {
+        /* Runtime-injected variables — base-tier defaults so every var() resolves.
        --mdy-segments-count is intentionally NOT defined: default and iOS themes
        use different inline fallbacks (1 vs 3); a :root value would override
        the iOS fallback path. It is whitelisted in the token audit instead. */
-    --mdy-floating-density: 0;
-    --mdy-slider-fill-pct: 0%;
-    --mdy-overlay-top: auto;
-    --mdy-overlay-bottom: auto;
-    --mdy-overlay-left: auto;
-    --mdy-overlay-right: auto;
-    --mdy-overlay-max-height: 50vh;
-}
+        --mdy-floating-density: 0;
+        --mdy-slider-fill-pct: 0%;
+        --mdy-overlay-top: auto;
+        --mdy-overlay-bottom: auto;
+        --mdy-overlay-left: auto;
+        --mdy-overlay-right: auto;
+        --mdy-overlay-max-height: 50vh;
+    }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+    /* ═══════════════════════════════════════════════════════════════════════════
  * The relational maths between the colours
  *
  * A palette is one colour and a set of relationships, not a list. This one always was: measured in
@@ -459,26 +465,26 @@
  * one is blinding and the other nearly black, so rotating hue in HSL makes a palette that lurches.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-:root {
-    /* Hue offsets are degrees added to the primary's; chroma and lightness are multipliers on it.
+    :root {
+        /* Hue offsets are degrees added to the primary's; chroma and lightness are multipliers on it.
        `brand` is the default: +30°/+90°, round numbers deliberately close to — not identical with —
        the +24°/+96° the palette measured at before it was expressed, so the stock colours shift
        slightly and on purpose. */
-    --mdy-palette-secondary-h: 30;
-    --mdy-palette-secondary-c: 1.05;
-    --mdy-palette-secondary-l: 1.03;
-    --mdy-palette-tertiary-h: 90;
-    --mdy-palette-tertiary-c: 0.85;
-    --mdy-palette-tertiary-l: 1.15;
+        --mdy-palette-secondary-h: 30;
+        --mdy-palette-secondary-c: 1.05;
+        --mdy-palette-secondary-l: 1.03;
+        --mdy-palette-tertiary-h: 90;
+        --mdy-palette-tertiary-c: 0.85;
+        --mdy-palette-tertiary-l: 1.15;
 
-    /* Error's hue is absolute, not an offset. It is the one colour in a palette whose meaning is not
+        /* Error's hue is absolute, not an offset. It is the one colour in a palette whose meaning is not
        decorative: an error that has gone green because the brand did is no longer an error. It takes
        its weight from the primary and stays red. */
-    --mdy-palette-error-h: 28;
-    --mdy-palette-error-c: 0.82;
-    --mdy-palette-error-l: 0.83;
+        --mdy-palette-error-h: 28;
+        --mdy-palette-error-c: 0.82;
+        --mdy-palette-error-l: 0.83;
 
-    /* Where an `on-` colour flips from white to black.
+        /* Where an `on-` colour flips from white to black.
 
        Solving for where the WCAG ratio against black overtakes the ratio against white gives one
        clean answer in *luminance*: 0.1791, always. The difficulty is that CSS has the colour in
@@ -491,65 +497,56 @@
        correction is fitted — `Y ≈ l³ · (1 + 0.85·c·cos(h − 179°))`, which gets it wrong 16 times out
        of 1080, all on colours within 0.0075 luminance of the crossover, where the two choices are
        worth the same anyway. */
-    --mdy-palette-contrast-threshold: 0.1791;
-    --mdy-palette-luma-chroma-weight: 0.85;
-    --mdy-palette-luma-hue-offset: 179;
-    /* How much of the background's chroma its `on-` colour keeps, so text reads as tinted rather
+        --mdy-palette-contrast-threshold: 0.1791;
+        --mdy-palette-luma-chroma-weight: 0.85;
+        --mdy-palette-luma-hue-offset: 179;
+        /* How much of the background's chroma its `on-` colour keeps, so text reads as tinted rather
        than clinical. It costs up to 0.15 of a contrast ratio point. */
-    --mdy-palette-on-chroma: 0.08;
-    /* Dark themes carry lighter accents; this is how much lighter. */
-    --mdy-palette-dark-lift: 1.25;
-}
+        --mdy-palette-on-chroma: 0.08;
+        /* Dark themes carry lighter accents; this is how much lighter. */
+        --mdy-palette-dark-lift: 1.25;
+    }
 
-/* One hue throughout — the accents separate by weight alone. The safe choice for any brand colour. */
-[data-mdy-palette="monochrome"] {
-    --mdy-palette-secondary-h: 0;
-    --mdy-palette-secondary-c: 0.7;
-    --mdy-palette-secondary-l: 1.08;
-    --mdy-palette-tertiary-h: 0;
-    --mdy-palette-tertiary-c: 0.45;
-    --mdy-palette-tertiary-l: 1.2;
-}
+    /* One hue throughout — the accents separate by weight alone. The safe choice for any brand colour. */
+    [data-mdy-palette="monochrome"] {
+        --mdy-palette-secondary-h: 0;
+        --mdy-palette-secondary-c: 0.7;
+        --mdy-palette-secondary-l: 1.08;
+        --mdy-palette-tertiary-h: 0;
+        --mdy-palette-tertiary-c: 0.45;
+        --mdy-palette-tertiary-l: 1.2;
+    }
 
-/* The tertiary sits opposite the primary; the secondary stays beside it. */
-[data-mdy-palette="complementary"] {
-    --mdy-palette-secondary-h: 15;
-    --mdy-palette-secondary-c: 1;
-    --mdy-palette-secondary-l: 1.05;
-    --mdy-palette-tertiary-h: 180;
-    --mdy-palette-tertiary-c: 0.9;
-    --mdy-palette-tertiary-l: 1.1;
-}
+    /* The tertiary sits opposite the primary; the secondary stays beside it. */
+    [data-mdy-palette="complementary"] {
+        --mdy-palette-secondary-h: 15;
+        --mdy-palette-secondary-c: 1;
+        --mdy-palette-secondary-l: 1.05;
+        --mdy-palette-tertiary-h: 180;
+        --mdy-palette-tertiary-c: 0.9;
+        --mdy-palette-tertiary-l: 1.1;
+    }
 
-/* Three hues evenly around the wheel. */
-[data-mdy-palette="triadic"] {
-    --mdy-palette-secondary-h: 240;
-    --mdy-palette-secondary-c: 0.95;
-    --mdy-palette-secondary-l: 1.05;
-    --mdy-palette-tertiary-h: 120;
-    --mdy-palette-tertiary-c: 0.9;
-    --mdy-palette-tertiary-l: 1.1;
-}
+    /* Three hues evenly around the wheel. */
+    [data-mdy-palette="triadic"] {
+        --mdy-palette-secondary-h: 240;
+        --mdy-palette-secondary-c: 0.95;
+        --mdy-palette-secondary-l: 1.05;
+        --mdy-palette-tertiary-h: 120;
+        --mdy-palette-tertiary-c: 0.9;
+        --mdy-palette-tertiary-l: 1.1;
+    }
 
-/* Relative colour syntax is what makes the arithmetic possible at all, and it needs Chrome 119,
+    /* Relative colour syntax is what makes the arithmetic possible at all, and it needs Chrome 119,
    Safari 16.4 or Firefox 128. Everything above this point is untouched, so a browser without it
    keeps exactly the palette it renders today rather than losing its colours. */
-@supports (color: oklch(from white l c h)) {
-    :root {
-        --mdy-sys-color-secondary: oklch(from var(--mdy-sys-color-primary)
-                calc(l * var(--mdy-palette-secondary-l))
-                calc(c * var(--mdy-palette-secondary-c))
-                calc(h + var(--mdy-palette-secondary-h)));
-        --mdy-sys-color-tertiary: oklch(from var(--mdy-sys-color-primary)
-                calc(l * var(--mdy-palette-tertiary-l))
-                calc(c * var(--mdy-palette-tertiary-c))
-                calc(h + var(--mdy-palette-tertiary-h)));
-        --mdy-sys-color-error: oklch(from var(--mdy-sys-color-primary)
-                calc(l * var(--mdy-palette-error-l))
-                calc(c * var(--mdy-palette-error-c))
-                var(--mdy-palette-error-h));
+    @supports (color: oklch(from white l c h)) {
+        :root {
+            --mdy-sys-color-secondary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-secondary-l)) calc(c * var(--mdy-palette-secondary-c)) calc(h + var(--mdy-palette-secondary-h)));
+            --mdy-sys-color-tertiary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-tertiary-l)) calc(c * var(--mdy-palette-tertiary-c)) calc(h + var(--mdy-palette-tertiary-h)));
+            --mdy-sys-color-error: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-error-l)) calc(c * var(--mdy-palette-error-c)) var(--mdy-palette-error-h));
 
-        /* CSS has no conditional, but lightness and `clamp()` make a step: below the pivot the
+            /* CSS has no conditional, but lightness and `clamp()` make a step: below the pivot the
            lightness resolves to 1 and the text is white, above it to 0 and the text is black.
            The multiplier is what makes it a step rather than a ramp, and it has to be large. At
            ×100 a colour landing within 0.01 of the pivot resolves *inside* the clamp — a secondary
@@ -560,38 +557,23 @@
            background. Each of these reads the colour it is named for, and because all four are
            declared on the same element, they resolve against whatever that colour computed to
            there — including in dark mode below. */
-        --mdy-sys-color-on-primary: oklch(from var(--mdy-sys-color-primary)
-                clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1)
-                calc(c * var(--mdy-palette-on-chroma)) h);
-        --mdy-sys-color-on-secondary: oklch(from var(--mdy-sys-color-secondary)
-                clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1)
-                calc(c * var(--mdy-palette-on-chroma)) h);
-        --mdy-sys-color-on-tertiary: oklch(from var(--mdy-sys-color-tertiary)
-                clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1)
-                calc(c * var(--mdy-palette-on-chroma)) h);
-        --mdy-sys-color-on-error: oklch(from var(--mdy-sys-color-error)
-                clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1)
-                calc(c * var(--mdy-palette-on-chroma)) h);
-    }
+            --mdy-sys-color-on-primary: oklch(from var(--mdy-sys-color-primary) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+            --mdy-sys-color-on-secondary: oklch(from var(--mdy-sys-color-secondary) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+            --mdy-sys-color-on-tertiary: oklch(from var(--mdy-sys-color-tertiary) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+            --mdy-sys-color-on-error: oklch(from var(--mdy-sys-color-error) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+        }
 
-    /* Dark mode derived the same way rather than from fixed reference colours, or choosing a brand
+        /* Dark mode derived the same way rather than from fixed reference colours, or choosing a brand
        colour would work in the light theme and silently revert to violet and coral in the dark one. */
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --mdy-sys-color-secondary: oklch(from var(--mdy-sys-color-primary)
-                    calc(l * var(--mdy-palette-secondary-l) * var(--mdy-palette-dark-lift))
-                    calc(c * var(--mdy-palette-secondary-c))
-                    calc(h + var(--mdy-palette-secondary-h)));
-            --mdy-sys-color-tertiary: oklch(from var(--mdy-sys-color-primary)
-                    calc(l * var(--mdy-palette-tertiary-l) * var(--mdy-palette-dark-lift))
-                    calc(c * var(--mdy-palette-tertiary-c))
-                    calc(h + var(--mdy-palette-tertiary-h)));
-            --mdy-sys-color-error: oklch(from var(--mdy-sys-color-primary)
-                    calc(l * var(--mdy-palette-error-l) * var(--mdy-palette-dark-lift))
-                    calc(c * var(--mdy-palette-error-c))
-                    var(--mdy-palette-error-h));
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --mdy-sys-color-secondary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-secondary-l) * var(--mdy-palette-dark-lift)) calc(c * var(--mdy-palette-secondary-c)) calc(h + var(--mdy-palette-secondary-h)));
+                --mdy-sys-color-tertiary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-tertiary-l) * var(--mdy-palette-dark-lift)) calc(c * var(--mdy-palette-tertiary-c)) calc(h + var(--mdy-palette-tertiary-h)));
+                --mdy-sys-color-error: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-error-l) * var(--mdy-palette-dark-lift)) calc(c * var(--mdy-palette-error-c)) var(--mdy-palette-error-h));
+            }
         }
     }
+
 }
 
-} /* end @layer mdy.tokens */
+/* end @layer mdy.tokens */
