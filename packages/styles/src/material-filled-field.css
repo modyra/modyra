@@ -6,8 +6,9 @@
  * them. They lived in the default stylesheet, which every theme imported, which is what made
  * Material the implicit base of the whole system. They are Material's now.
  *
- * Imported by `modyra-material.css`, and by `modyra.css` so the default entry point keeps the look
- * it has always had.
+ * Imported by `modyra-material.css`, and by `modyra-default.css` so the default entry point keeps
+ * the look it has always had. Not by `modyra.css` — that is the structural layer
+ * `modyra-foundation.css` imports, and a theme that loads it alone gets no field at all.
  */
 
 @layer mdy.components {
@@ -191,7 +192,12 @@
     .mdy-renderer.mdy-floating-label:has(input[type="time"]) .mdy-label,
     .mdy-renderer.mdy-floating-label:has(.mdy-select__option--selected) .mdy-label,
     .mdy-renderer.mdy-floating-label:has(.mdy-chip) .mdy-label,
-    .mdy-renderer.mdy-floating-label:has(input:not(:placeholder-shown)) .mdy-label,
+    /* Scoped to inputs that actually declare a placeholder. Unscoped, this raised the label on
+       every input without a `placeholder` attribute: such an input never matches
+       `:placeholder-shown`, so the negation always matched and the label was permanently floated.
+       `.mdy-label--filled` above is the renderer-owned signal for value-present; this line only
+       still exists to catch a value the renderer did not observe, such as a native autofill. */
+    .mdy-renderer.mdy-floating-label:has(input[placeholder]:not(:placeholder-shown)) .mdy-label,
     .mdy-renderer.mdy-floating-label.mdy-renderer--open .mdy-label {
         transform: translateY(var(--mdy-fl-label-active-top)) scale(0.75);
         /* Scaled top distance based on density */
