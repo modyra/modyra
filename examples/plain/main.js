@@ -8,7 +8,10 @@ import { inspectWidgetDom } from "@modyra/widgets/testing";
 
 const THEMES = {
   modern: "modyra-modern.css",
-  default: "modyra.css",
+  // `modyra.css` is the structural layer that `modyra-foundation.css` imports; loading it alone
+  // renders the foundation without Material's field, which is not what the package ships as its
+  // default. `@modyra/styles/default.css` is this file.
+  default: "modyra-default.css",
   material: "modyra-material.css",
   ios: "modyra-ios.css",
   ionic: "modyra-ionic.css",
@@ -25,7 +28,7 @@ const colors = [
 ];
 
 const FIELDS = [
-  { name: "brand", kind: "colors", label: "Brand colour", initialValue: "#004cff" },
+  { name: "brand", kind: "colors", label: "Brand colour", initialValue: "#0084ff" },
   { name: "birthday", kind: "datepicker", initialValue: "2026-07-15", label: "Birthday" },
   {
     name: "country",

@@ -73,9 +73,11 @@ export class AppComponent {
       ) as HTMLLinkElement;
       if (link) {
         const theme = config.theme || "default";
-        const filename =
-          theme === "default" ? "modyra.css" : `modyra-${theme}.css`;
-        link.href = `styles/${filename}`;
+        // Every theme resolves to `modyra-<name>.css`, the default included. It used to map to
+        // `modyra.css`, which is the structural layer `modyra-foundation.css` imports rather than a
+        // theme — so "Base Theme" rendered the foundation without Material's field, and the
+        // floating label was missing from it.
+        link.href = `styles/modyra-${theme}.css`;
       }
 
       // One property, because there is one place a brand colour is declared now. This used to set
