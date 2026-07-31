@@ -43,6 +43,8 @@ export class MdyTextareaFieldElement extends MdyFieldElement<string | null> {
       placeholder=${this.placeholder}
       .value=${handle.value() ?? ""}
       ?disabled=${handle.disabled()}
+      ?readonly=${handle.readonly()}
+      aria-readonly=${handle.readonly() ? "true" : nothing}
       aria-invalid=${inputAttrs?.["aria-invalid"] ?? (handle.errors().length > 0 ? "true" : "false")}
       aria-required=${inputAttrs?.["aria-required"] ?? (handle.required() ? "true" : "false")}
       aria-describedby=${inputAttrs?.["aria-describedby"] ?? (this.showErrors(handle) ? this.errorsId : nothing)}

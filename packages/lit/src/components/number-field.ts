@@ -42,6 +42,8 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
       step=${this.step ?? nothing}
       .value=${handle.value() === null ? "" : String(handle.value())}
       ?disabled=${handle.disabled()}
+      ?readonly=${handle.readonly()}
+      aria-readonly=${handle.readonly() ? "true" : nothing}
       aria-invalid=${inputAttrs?.["aria-invalid"] ?? (handle.errors().length > 0 ? "true" : "false")}
       aria-required=${inputAttrs?.["aria-required"] ?? (handle.required() ? "true" : "false")}
       aria-describedby=${inputAttrs?.["aria-describedby"] ?? (this.showErrors(handle) ? this.errorsId : nothing)}
