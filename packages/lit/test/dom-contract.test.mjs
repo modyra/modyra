@@ -26,6 +26,11 @@ const ELEMENTS = [
   ["mdy-slider-field", "slider", 0],
   ["mdy-radio-group-field", "radio", null],
   ["mdy-segmented-field", "segmented", null],
+  // `email` and `password` are the text element under a different input type: same anatomy, and
+  // leaving them out meant two of the seventeen kinds were never inspected on this adapter at all.
+  ["mdy-text-field", "email", ""],
+  ["mdy-text-field", "password", ""],
+  ["mdy-file-field", "file", null],
 ];
 
 function partsOf(root, kind) {
@@ -39,6 +44,12 @@ function partsOf(root, kind) {
     errorItem: q(".mdy-control__error"),
   };
   switch (kind) {
+    case "file":
+      return { ...shell, inputWrapper: null, dropzone: q(".mdy-file-container"), control: q(".mdy-file-input"), content: q(".mdy-file-content"), fileList: q(".mdy-file-list"), clear: q(".mdy-file-clear") };
+    case "daterange": {
+      const inputs = root.querySelectorAll(".mdy-daterange__input");
+      return { ...shell, startControl: inputs[0] ?? null, endControl: inputs[1] ?? null, separator: q(".mdy-daterange__sep"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup") };
+    }
     case "checkbox":
       return { ...shell, control: q('input[type="checkbox"]'), indicator: q(".mdy-checkbox__indicator") };
     case "toggle":
@@ -68,6 +79,7 @@ for (const [tag, kind, initial] of ELEMENTS) {
       el.field = form.f.value;
       el.label = "Label";
       if (kind === "radio" || kind === "segmented") el.options = [option];
+      if (kind === "email" || kind === "password") el.type = kind;
     });
 
     const issues = inspectWidgetDom(element, kind, { parts: partsOf(element, kind) });
@@ -104,6 +116,7 @@ const OVERLAY_ELEMENTS = [
   ["mdy-colors-field", "colors", null, ".mdy-colors__toggle-area"],
   ["mdy-select-field", "select", null, ".mdy-select__trigger"],
   ["mdy-multiselect-field", "multiselect", [], ".mdy-multiselect__search-btn, .mdy-multiselect"],
+  ["mdy-daterange-field", "daterange", null, ".mdy-datepicker__toggle"],
 ];
 
 for (const [tag, kind, initial, opener] of OVERLAY_ELEMENTS) {
