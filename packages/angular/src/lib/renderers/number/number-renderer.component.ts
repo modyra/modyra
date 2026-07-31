@@ -48,6 +48,8 @@ import { inputNumber } from "../renderer-projection";
         [placeholder]="placeholder()"
         [value]="value() ?? ''"
         [disabled]="isDisabled()"
+        [readonly]="isReadonly()"
+        [attr.aria-readonly]="isReadonly() ? 'true' : null"
         (input)="onInput($event)"
         (blur)="dispatchValueBlur('number')"
         [attr.aria-invalid]="hasErrors()"

@@ -38,6 +38,8 @@ import { inputText } from "../renderer-projection";
         [placeholder]="placeholder()"
         [value]="value() ?? ''"
         [disabled]="isDisabled()"
+        [readonly]="isReadonly()"
+        [attr.aria-readonly]="isReadonly() ? 'true' : null"
         [rows]="rows()"
         (input)="onInput($event)"
         (blur)="dispatchValueBlur('textarea')"

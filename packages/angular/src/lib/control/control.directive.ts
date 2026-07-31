@@ -244,6 +244,17 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   protected readonly isDisabled: Signal<boolean> = computed(() =>
     this.fieldState().disabled(),
   );
+  /**
+   * Read but not written.
+   *
+   * Angular had no counterpart to `isDisabled`, so no template could bind the native attribute and
+   * a field a form had marked read-only kept accepting typing. `dispatchValueIntent` already fed
+   * `readonly` to the scalar controller, which meant the blocking half worked while the DOM said
+   * nothing — the confusing state this closes.
+   */
+  protected readonly isReadonly: Signal<boolean> = computed(() =>
+    this.fieldState().readonly(),
+  );
   protected readonly isValid: Signal<boolean> = computed(() =>
     this.fieldState().valid(),
   );
