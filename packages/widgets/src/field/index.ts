@@ -118,3 +118,5 @@ export type {
   MdyTimepickerFieldState,
   MdyTimepickerViewMode,
 } from "./timepicker-field-types.js";
+
+export { sliderFillPercent } from "./slider-field-types.js";
