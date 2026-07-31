@@ -4,9 +4,14 @@
  * Same judgement as Plain and Lit — `collectStateMatrix` from `@modyra/widgets/testing` — with only
  * the driving here. Until this existed a state defect in Angular was invisible: the matrix ran on
  * Plain alone, which is how `readonly` was fixed there, reported closed, and stayed broken here.
+ *
+ * It then ran on eight of seventeen kinds, which was the same blindness one level down: every
+ * composite — select, multiselect, the three pickers, colors, file, radio, segmented — was driven
+ * into no state by any Angular test. This drives all seventeen, over the catalogue fixture the DOM
+ * contract suite uses, so the two cannot disagree about where a part lives.
  */
 import "@angular/compiler";
-import { Component, Injector, signal } from "@angular/core";
+import { signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import {
   collectStateMatrix,
@@ -15,113 +20,99 @@ import {
 } from "@modyra/widgets/testing";
 import type { MdyWidgetKind } from "@modyra/widgets";
 
-import { MdyDeclarativeAdapter } from "../core/declarative-form-adapter";
-import { MdyFormComponent } from "../form/mdy-form.component";
-import { MdyCheckboxComponent } from "./checkbox/checkbox-renderer.component";
-import { MdyNumberComponent } from "./number/number-renderer.component";
-import { MdySliderComponent } from "./slider/slider-renderer.component";
-import { MdyTextComponent } from "./text/text-renderer.component";
-import { MdyTextareaComponent } from "./textarea/textarea-renderer.component";
-import { MdyToggleComponent } from "./toggle/toggle-renderer.component";
+import { CATALOG_KINDS, CatalogHost, partsOf } from "./catalog-host.spec";
 
-/**
- * The kinds that declare `readonly` plus the boolean pair, which is where this batch's change
- * lands. The composite kinds already answer to `dom-contract.spec.ts` on all seventeen; widening
- * the *state* matrix to them is worth its own batch rather than being smuggled into this one.
- */
-const KINDS: readonly MdyWidgetKind[] = [
-  "text", "email", "password", "textarea", "number", "slider", "checkbox", "toggle",
-];
+const KINDS: readonly MdyWidgetKind[] = CATALOG_KINDS.map(({ kind }) => kind);
+const ENTRY = new Map(CATALOG_KINDS.map((entry) => [entry.kind, entry]));
 
-@Component({
-  standalone: true,
-  imports: [
-    MdyFormComponent, MdyTextComponent, MdyTextareaComponent, MdyNumberComponent,
-    MdyCheckboxComponent, MdyToggleComponent, MdySliderComponent,
-  ],
-  template: `
-    <mdy-form [adapter]="adapter">
-      <mdy-control-text name="text" label="Text" />
-      <mdy-control-text name="mail" label="Mail" type="email" />
-      <mdy-control-text name="secret" label="Secret" type="password" />
-      <mdy-control-textarea name="notes" label="Notes" />
-      <mdy-control-number name="age" label="Age" />
-      <mdy-control-slider name="volume" label="Volume" />
-      <mdy-control-checkbox name="terms" label="Terms" />
-      <mdy-control-toggle name="news" label="News" />
-    </mdy-form>
-  `,
-})
-class MatrixHost {
-  adapter = new MdyDeclarativeAdapter(signal({}), undefined, TestBed.inject(Injector));
-}
-
-/** Which control in the host answers for each kind, and the selector that finds its root. */
-const FIELD_FOR: Readonly<Record<string, { name: string; selector: string }>> = {
-  text: { name: "text", selector: "mdy-control-text[type=text], mdy-control-text:not([type])" },
-  email: { name: "mail", selector: "mdy-control-text[type=email]" },
-  password: { name: "secret", selector: "mdy-control-text[type=password]" },
-  textarea: { name: "notes", selector: "mdy-control-textarea" },
-  number: { name: "age", selector: "mdy-control-number" },
-  slider: { name: "volume", selector: "mdy-control-slider" },
-  checkbox: { name: "terms", selector: "mdy-control-checkbox" },
-  toggle: { name: "news", selector: "mdy-control-toggle" },
-};
-
+/** A value each kind will actually accept — a filled state reached with a rejected value is empty. */
 function valueFor(kind: MdyWidgetKind): unknown {
   switch (kind) {
     case "number": case "slider": return 7;
     case "checkbox": case "toggle": return true;
+    case "multiselect": return ["a"];
+    case "radio": case "segmented": case "select": return "a";
+    case "datepicker": return "2026-07-15";
+    case "daterange": return { start: "2026-07-15", end: "2026-07-20" };
+    case "timepicker": return "10:30";
+    case "colors": return "#004cff";
+    case "file": return null;
     default: return "value";
   }
 }
 
+/**
+ * The empty value each kind can hold.
+ *
+ * Not `""` for everything. Plain's driver did that, and a daterange handed a string where an object
+ * belongs was rejected by `required` for being an empty string rather than for being an empty
+ * range — so its `invalid` row was green because of the fixture. Do not reintroduce that here.
+ */
 function emptyFor(kind: MdyWidgetKind): unknown {
   switch (kind) {
+    case "multiselect": return [];
     case "checkbox": case "toggle": return false;
     case "number": case "slider": return null;
+    case "daterange": return { start: null, end: null };
     default: return "";
   }
 }
 
 function controlOf(root: Element): Element | null {
-  return root.querySelector(".mdy-input-wrapper input, .mdy-input-wrapper textarea, .mdy-input-wrapper select")
-    ?? root.querySelector("input, textarea, select");
+  return root.querySelector(
+    ".mdy-input-wrapper input, .mdy-input-wrapper textarea, .mdy-input-wrapper select",
+  ) ?? root.querySelector("input, textarea, select");
 }
 
-function partsOf(root: Element): Record<string, Element | null> {
-  const q = (selector: string): Element | null => root.querySelector(selector);
-  return {
-    label: q(".mdy-label, .mdy-toggle__label"),
-    requiredMarker: q(".mdy-label__required"),
-    inputWrapper: q(".mdy-input-wrapper, .mdy-checkbox, .mdy-toggle"),
-    control: controlOf(root),
-    supportingText: q(".mdy-supporting-text"),
-    errors: q(".mdy-control__errors"),
-    errorItem: q(".mdy-control__error"),
-  };
-}
+/** The element that opens each composite's overlay, by the part the catalogue names. */
+const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
+  + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
 
 /**
- * Angular's divergences from the state contract, recorded rather than waived. This ledger is new —
- * the matrix has never run against Angular — so its first contents are a measurement.
+ * Angular's divergences from the state contract, recorded rather than waived, and asserted both
+ * ways: a new divergence fails, and so does a stale entry that outlived its fix.
+ *
+ * These first seventeen-kind contents are a measurement, not a regression. Each was checked against
+ * the renderer source before being believed — a red row is a claim about the renderer, and this
+ * milestone has had it be the harness seven times.
+ *
+ * The eight `× invalid` rows the eight-kind version carried are gone: they were unreachable because
+ * the host declared no validators, and `mdyRequired` closed them.
+ *
+ * **`daterange × open` is not here, and neither is any picker's.** They open. Only select's and
+ * multiselect's overlays could not be reached from the public API in this fixture, and those are
+ * reported as undrivable rather than passed over — Angular renders a native `<select>` unless an
+ * option template or search is supplied, so there is no trigger to click, which is the same root as
+ * `PART_MISSING:trigger` in the DOM ledger.
  */
 const KNOWN_DIVERGENCES: Record<string, string[]> = {
-  // `invalid` is unreachable here rather than broken: this host declares no validators, so a field
-  // emptied and touched is still valid and there are no errors to render. Reaching it means giving
-  // the host real validators, which is worth doing and is not this batch.
-  "text × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
-  "email × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
-  "password × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
-  "textarea × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
-  "number × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
-  "slider × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
+  // Not renderer defects — the field is genuinely valid, and the renderer is telling the truth
+  // about a state the form never entered. `required` does not reject a kind's own empty value when
+  // that value is not a string, so an unchecked checkbox, an off toggle and a range with both ends
+  // unset all report themselves valid. The row proves it twice over: `aria-invalid="false"` *and*
+  // no error list, which only renders when there are errors to put in it.
+  //
+  // Plain and Lit ledger exactly these three, for exactly this reason. **Three independent adapters
+  // agreeing is what makes it a validation finding rather than a rendering one** — it is plan 26.
   "checkbox × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
   "toggle × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
+  "daterange × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
 
-  // Real: the slider exposes no `aria-disabled`. Angular hand-writes each attribute per template,
-  // so an attribute the projection supplies is present only where someone bound it.
+  // Real, and one finding rather than four. Every Angular renderer hand-picks which ARIA states it
+  // exposes, and they picked different subsets:
+  //
+  //   segmented         binds aria-disabled, never aria-invalid
+  //   slider, radio     bind aria-invalid, never aria-disabled
+  //   file              binds aria-invalid, never aria-disabled
+  //
+  // Verified in the templates, not inferred from the rows. Nothing decides centrally which states a
+  // control must expose, so each template is its own answer and no two agree. That is plan 25's
+  // premise, and this is its strongest evidence yet: not adapters lagging behind a projection, but
+  // no single source of truth for them to lag behind.
+  "segmented × invalid": ["STATE_ARIA_MISSING"],
   "slider × disabled": ["STATE_ARIA_MISSING"],
+  "radio × disabled": ["STATE_ARIA_MISSING"],
+  "file × disabled": ["STATE_ARIA_MISSING"],
 };
 
 describe("Angular renderers, against the widget state contract", () => {
@@ -129,18 +120,17 @@ describe("Angular renderers, against the widget state contract", () => {
     const matrix = await collectStateMatrix({
       kinds: KINDS,
       mount(kind): MdyStateFixture {
-        const fixture = TestBed.createComponent(MatrixHost);
+        const fixture = TestBed.createComponent(CatalogHost);
         fixture.detectChanges();
-        const entry = FIELD_FOR[kind];
+        const entry = ENTRY.get(kind);
         if (!entry) throw new Error(`no host control declared for ${kind}`);
-        const { name, selector } = entry;
-        const root = fixture.nativeElement.querySelector(selector) as Element;
+        const root = fixture.nativeElement.querySelector(entry.selector) as Element;
         const adapter = fixture.componentInstance.adapter;
-        const field = adapter.getField(name);
+        const field = adapter.getField(entry.name);
 
         return {
           root,
-          parts: () => partsOf(root),
+          parts: () => partsOf(root, kind),
           control: () => controlOf(root),
           // Angular renders on change detection, not on a task.
           settle: () => { fixture.detectChanges(); },
@@ -157,8 +147,18 @@ describe("Angular renderers, against the widget state contract", () => {
                 return true;
               case "focused": (controlOf(root) as HTMLElement | null)?.focus?.(); return true;
               case "selected": field?.().value.set(valueFor(kind)); return true;
-              case "disabled": adapter.setDisabled(name, signal(true)); return true;
-              case "readonly": adapter.setReadonly(name, signal(true)); return true;
+              case "disabled": adapter.setDisabled(entry.name, signal(true)); return true;
+              case "readonly": adapter.setReadonly(entry.name, signal(true)); return true;
+              case "open": {
+                const opener = root.querySelector(OPENER) as HTMLElement | null;
+                if (!opener) return false;
+                opener.click();
+                fixture.detectChanges();
+                return true;
+              }
+              // Nothing in the public API puts a field into a loading state; async options are the
+              // adapter's own concern. Recorded rather than faked.
+              case "loading": return false;
               default: return false;
             }
           },
@@ -168,7 +168,7 @@ describe("Angular renderers, against the widget state contract", () => {
 
     // eslint-disable-next-line no-console -- the matrix is the deliverable; a matrix nobody can read
     // the shape of will silently lose rows.
-    console.log(matrix.report("angular, readonly-declaring kinds"));
+    console.log(matrix.report("angular, every kind"));
 
     expect(matrix.asserted + matrix.undrivable.length).toBe(matrix.expected);
     expect(matrix.observed).toEqual(normalizeStateLedger(KNOWN_DIVERGENCES));
