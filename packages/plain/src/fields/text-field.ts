@@ -7,7 +7,12 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicNumberField, MdyDynamicTextField } from "@modyra/core";
-import { createFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import {
+  createFieldController,
+  MDY_CSS_PROPERTIES,
+  MDY_WIDGET_CONTRACTS,
+  sliderFillPercent,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 
@@ -36,16 +41,21 @@ export function renderTextField(
   const shell = buildFieldShell(f.label, f.kind);
   const input = (isTextarea ? el("textarea") : el("input")) as HTMLInputElement | HTMLTextAreaElement;
   if (f.placeholder) input.placeholder = f.placeholder;
-  if (!isTextarea && isNumeric) {
-    const numberField = f as MdyDynamicNumberField;
-    const numberInput = input as HTMLInputElement;
-    if (numberField.min !== undefined) numberInput.min = String(numberField.min);
-    if (numberField.max !== undefined) numberInput.max = String(numberField.max);
-    if (numberField.step !== undefined) numberInput.step = String(numberField.step);
+  // Written as attributes, which every element type accepts and the IDL properties reflect: plain
+  // renders against a DOM shim in its own tests, so it never reaches for a DOM global like
+  // `HTMLInputElement` to narrow with.
+  if (f.kind === "number" || f.kind === "slider") {
+    if (f.min !== undefined) input.setAttribute("min", String(f.min));
+    if (f.max !== undefined) input.setAttribute("max", String(f.max));
+    if (f.step !== undefined) input.setAttribute("step", String(f.step));
   }
   // A slider is not a bare input: the contract gives it a container and a displayed value, and
   // the themes lay both out. Every class here comes from the catalog, none from this file.
   const slider = f.kind === "slider" ? MDY_WIDGET_CONTRACTS.slider : null;
+  // The same range a bare `<input type="range">` assumes when the field declares neither, so the
+  // painted fill and the handle agree about where the track starts and ends.
+  const sliderMin = f.kind === "slider" ? f.min ?? 0 : 0;
+  const sliderMax = f.kind === "slider" ? f.max ?? 100 : 100;
   let sliderValue: HTMLSpanElement | null = null;
   if (slider) {
     const track = el("div") as HTMLDivElement;
@@ -72,7 +82,15 @@ export function renderTextField(
     const view = controller.view();
     applyPart(shell.label, view.parts.label);
     applyPart(input, view.parts.input);
-    if (sliderValue) setText(sliderValue, String(state.value ?? ""));
+    if (sliderValue) {
+      setText(sliderValue, String(state.value ?? ""));
+      // On the control, not the track: the gradient is composed on the element that carries the
+      // property, or it freezes at the fallback (modyra.css:266-269).
+      input.style.setProperty(
+        MDY_CSS_PROPERTIES.control.sliderFill,
+        `${sliderFillPercent(state.value, sliderMin, sliderMax)}%`,
+      );
+    }
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
