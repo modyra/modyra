@@ -64,8 +64,8 @@ function dateRange({ id = "d1" } = {}) {
   const endControl = el("input", "mdy-datepicker__input mdy-daterange__input", { id: `${id}-end` });
   const toggle = el("button", "mdy-datepicker__toggle", { "aria-controls": `${id}-popup`, "aria-expanded": "true" });
   wrapper.append(startControl, separator, endControl, toggle);
-  const popup = el("div", "mdy-datepicker__popup mdy-popup mdy-datepicker__popup--range", { id: `${id}-popup` });
-  const calendar = el("div", null);
+  const popup = el("div", "mdy-datepicker__popup mdy-popup mdy-datepicker__popup--range", { id: `${id}-popup`, role: "dialog" });
+  const calendar = el("div", null, { role: "group" });
   const grid = el("div", "mdy-datepicker__grid", { role: "grid" });
   const row = el("div", "mdy-datepicker__row", { role: "row" });
   const gridcell = el("div", "mdy-datepicker__cell", { role: "gridcell" });
@@ -94,7 +94,7 @@ function selectField({ id = "s1", optionCount = 3 } = {}) {
   const value = el("span", "mdy-select__value");
   trigger.append(value);
   wrapper.append(trigger);
-  const popup = el("div", "mdy-select__dropdown mdy-popup", { id: `${id}-popup` });
+  const popup = el("div", "mdy-select__dropdown mdy-popup", { id: `${id}-popup`, role: "dialog" });
   const listbox = el("div", "mdy-select__list", { role: "listbox" });
   const options = [];
   for (let i = 0; i < optionCount; i++) {

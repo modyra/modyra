@@ -180,3 +180,36 @@ test("a declared count the DOM does match passes", () => {
   assert.deepEqual(inspectWidgetDom(root, "text", { parts, counts: { errorItem: 1 } }), []);
   root.remove();
 });
+
+/* ── F-03: `semanticElement` is enforced ───────────────────────────────────────
+ * The catalog says what element a part is; nothing checked tag or effective role, so a part
+ * with the right class and the wrong tag was green with its keyboard behaviour gone. */
+
+test("a control that is a div, not an input, is reported", () => {
+  const { root, parts } = buildTextField();
+  const impostor = el("div", null, {});
+  parts.control.replaceWith(impostor);
+  const issues = inspectWidgetDom(root, "text", { parts: { ...parts, control: impostor } });
+  const codes = issues.map((issue) => issue.code);
+  assert.ok(codes.includes("PART_ELEMENT"), `expected PART_ELEMENT, got ${codes.join(", ")}`);
+  root.remove();
+});
+
+test("a label that is a span, not a label, is reported", () => {
+  const { root, parts } = buildTextField();
+  const impostor = el("span", "mdy-label", {});
+  parts.label.replaceWith(impostor);
+  const issues = inspectWidgetDom(root, "text", { parts: { ...parts, label: impostor, requiredMarker: undefined } });
+  const codes = issues.map((issue) => issue.code);
+  assert.ok(codes.includes("PART_ELEMENT"), `expected PART_ELEMENT, got ${codes.join(", ")}`);
+  root.remove();
+});
+
+test("an explicit role satisfies the semantic element without the tag", () => {
+  const { root, parts } = buildTextField();
+  const divControl = el("div", null, { role: "textbox", "aria-describedby": "f1-errors" });
+  parts.control.replaceWith(divControl);
+  const issues = inspectWidgetDom(root, "text", { parts: { ...parts, control: divControl } });
+  assert.deepEqual(issues.filter((issue) => issue.code === "PART_ELEMENT"), []);
+  root.remove();
+});
