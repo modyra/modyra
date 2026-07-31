@@ -12,6 +12,8 @@ import { inspectWidgetStructure } from "./structure-tests.js";
 
 export type MdyDomContractIssueCode =
   | "ROOT_CLASS_MISSING"
+  | "ABSENT_PART_NOT_OPTIONAL"
+  | "ABSENT_PART_PRESENT"
   | "PART_MISSING"
   | "PART_CLASS_MISSING"
   | "PART_NOT_CONTAINED"
@@ -33,7 +35,13 @@ export type MdyDomPartMap = Readonly<Record<string, Element | readonly Element[]
 export interface MdyDomContractOptions {
   /** Which element(s) materialize each part. Parts absent from the map are treated as not rendered. */
   readonly parts?: MdyDomPartMap;
-  /** Parts legitimately not rendered in this state — a closed popup, an error list with no errors. */
+  /**
+   * Parts legitimately not rendered in this state — a closed popup, an error list with no errors.
+   *
+   * This is a fixture describing a state, not a silencer. Naming a part the contract declares
+   * mandatory is itself a violation, and so is naming a part that is still in the DOM: an adapter
+   * does not get to decide what the contract requires of it.
+   */
   readonly absentParts?: readonly string[];
   /** Reject `mdy-*` classes that the contract does not define. Off by default while the
    * per-part class vocabulary is still being filled in from the Angular baseline. */
@@ -51,6 +59,11 @@ const ARIA_REFERENCES = ["aria-describedby", "aria-labelledby", "aria-controls",
 function toArray(value: Element | readonly Element[] | null | undefined): readonly Element[] {
   if (!value) return [];
   return Array.isArray(value) ? value : [value as Element];
+}
+
+/** Class names are contract-authored, but they still reach `querySelector` — escape them. */
+function CSS_ESCAPE(value: string): string {
+  return value.replace(/[^\w-]/g, (character) => `\\${character}`);
 }
 
 function classesOf(element: Element): readonly string[] {
@@ -116,7 +129,39 @@ export function inspectWidgetDom(
   for (const [part, value] of Object.entries(parts)) resolved.set(part, toArray(value));
 
   for (const node of definition.structure.nodes) {
-    if (node.part === "root" || absent.has(node.part)) continue;
+    if (node.part === "root") continue;
+    if (absent.has(node.part)) {
+      // The contract decides what may be missing. A caller naming a mandatory part is claiming a
+      // state the contract does not have.
+      if (!node.optional) {
+        issues.push({
+          code: "ABSENT_PART_NOT_OPTIONAL",
+          part: node.part,
+          message: `${node.part} is required by the ${kind} contract and cannot be declared absent`,
+        });
+        continue;
+      }
+      // And a part declared absent has to actually be gone — otherwise "absent" is just a word
+      // that turns off the checks for whatever is still on the screen.
+      const claimed = resolved.get(node.part) ?? [];
+      const contract = definition.parts[node.part as keyof typeof definition.parts] as MdyPartContract | undefined;
+      // All of the part's classes, not any: `chip` is `.mdy-chip.mdy-chip--value` and `option` is
+      // `.mdy-chip`, so matching on one of them finds every option and calls it a chip.
+      const selector = (contract?.classes ?? []).map((className) => `.${CSS_ESCAPE(className)}`).join("");
+      const found = claimed.length > 0
+        ? claimed
+        : selector
+          ? Array.from(root.querySelectorAll(selector))
+          : [];
+      if (found.length > 0) {
+        issues.push({
+          code: "ABSENT_PART_PRESENT",
+          part: node.part,
+          message: `${node.part} was declared absent but ${found.length} element(s) for it are in the DOM`,
+        });
+      }
+      continue;
+    }
     const elements = resolved.get(node.part) ?? [];
     if (elements.length === 0) {
       if (!node.optional) {

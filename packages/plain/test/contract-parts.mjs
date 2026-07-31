@@ -68,6 +68,8 @@ export function partsOf(root, kind) {
       return {
         ...shell, control: q(".mdy-timepicker__input"), toggle: q(".mdy-timepicker__toggle"), popup: q(".mdy-timepicker__popup"),
         header: q(".mdy-timepicker-header"), period: q(".mdy-timepicker-period-toggle"), actions: q(".mdy-timepicker-actions"),
+        container: q(".mdy-timepicker-container"), content: q(".mdy-timepicker-content"),
+        clock: q(".mdy-timepicker-dial"), dialFace: q(".mdy-timepicker-dial__face"), dialHand: q(".mdy-timepicker-dial__hand"),
         ...(() => { const [hour, minute] = root.querySelectorAll(".mdy-timepicker-segment"); return { hour, minute }; })(),
       };
     case "daterange": {
@@ -100,8 +102,12 @@ export const ABSENT = {
   // are counter mode's.
   multiselect: ["chips", "chip", "placeholder", "optionCount", "optionStep", "loading", "empty"],
   datepicker: ["dialogHeader", "calendar", "actions"],
-  // No dial: this renderer types the time rather than drawing a clock face.
-  timepicker: ["clock"],
+  // This used to read "no dial: this renderer types the time rather than drawing a clock face".
+  // It does draw one — `timepicker-field.ts` builds the clock from the contract's own classes — and
+  // the entry outlived the renderer that justified it. Nothing noticed, because `absentParts` was a
+  // silencer: naming a part switched its checks off rather than asserting it was gone. Task 06
+  // closed that, and this was the first thing it found.
+  timepicker: [],
   daterange: ["calendar"],
   colors: [],
   file: ["fileItem"],
