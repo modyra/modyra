@@ -41,8 +41,13 @@ export function projectSelectA11y(
       "aria-expanded": String(open),
       "aria-controls": idFactory.part(widgetId, "listbox"),
       "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
+      "aria-invalid": String(invalid),
       // Disabled alone: a read-only control still takes focus and can be copied from.
       "aria-disabled": String(disabled),
+      // The native attribute, not only the ARIA. A trigger that says `aria-disabled="true"` and
+      // stays clickable is disabled in appearance only — the multiselect trigger has carried this
+      // all along, and the two were inconsistent for no reason.
+      disabled,
       "data-loading": loading || undefined,
     },
   };
