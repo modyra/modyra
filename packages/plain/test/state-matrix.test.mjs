@@ -143,21 +143,15 @@ function control0() { return "value"; }
  *
  * Two clusters, and both were predicted by the technical review before the matrix existed:
  *
- *  1. `readonly` does nothing. `form.setReadonly()` sets the field state, the handle never exposes
- *     it, and no renderer reflects it: no native `readonly`, and `aria-readonly` stays "false".
- *     A field marked read-only still accepts typing — verified by typing into one.
- *  2. `disabled` on composite kinds reaches some of their native controls and not all. A date
- *     field's toggle button is disabled while its text input still accepts typing.
+ * `readonly` was the first cluster and is now closed: `MdyFieldHandle` exposes it, the controllers
+ * read it from the form instead of a local signal, and a read-only field refuses typing.
  *
- * Plus `invalid` not being exposed at all on a few composites.
+ * What is left:
+ *  1. `disabled` on composite kinds reaches some of their native controls and not all. A date
+ *     field's toggle button is disabled while its text input still accepts typing.
+ *  2. `invalid` is not exposed at all on a few composites.
  */
 const KNOWN_DIVERGENCES = {
-  "text × readonly": ["STATE_ARIA_WRONG", "STATE_NOT_APPLIED"],
-  "email × readonly": ["STATE_ARIA_WRONG", "STATE_NOT_APPLIED"],
-  "password × readonly": ["STATE_ARIA_WRONG", "STATE_NOT_APPLIED"],
-  "textarea × readonly": ["STATE_ARIA_WRONG", "STATE_NOT_APPLIED"],
-  "number × readonly": ["STATE_ARIA_WRONG", "STATE_NOT_APPLIED"],
-
   // `disabled` reaches some of a composite's native controls and not all of them.
   "select × disabled": ["STATE_NOT_APPLIED"],
   "multiselect × disabled": ["STATE_NOT_APPLIED"],

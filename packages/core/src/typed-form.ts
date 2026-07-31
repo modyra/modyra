@@ -148,6 +148,14 @@ export interface MdyFieldHandle<TValue> {
   readonly pending: MdySignal<boolean>;
   readonly required: MdySignal<boolean>;
   readonly disabled: MdySignal<boolean>;
+  /**
+   * Read but not written.
+   *
+   * `MdyFieldState` has carried this since the engine did, and `setReadonly()` has always set it —
+   * but it was never exposed here, so no renderer could read it and `readonly` was a state a form
+   * could enter and nothing could show. A field marked read-only still accepted typing.
+   */
+  readonly readonly: MdySignal<boolean>;
   set(value: TValue): void;
   markAsTouched(): void;
   markAsDirty(): void;
@@ -898,6 +906,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       pending: state.pending,
       required: state.required,
       disabled: state.disabled,
+      readonly: state.readonly,
       set: (v: unknown): void => state.value.set(v),
       markAsTouched: (): void => state.touched.set(true),
       markAsDirty: (): void => state.dirty.set(true),

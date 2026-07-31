@@ -96,7 +96,11 @@ export function createDatepickerFieldController(
       open: open(),
       invalid: !handle.valid(),
       disabled: handle.disabled(),
-      readonly: readonly(),
+      // The form owns this state; `setReadonly()` stays an imperative override for a renderer
+    // that has no form behind it. Read from the handle like every other field of this
+    // projection — `readonly` alone came from the local signal, which is why a form could
+    // set it and nothing downstream ever saw it.
+    readonly: handle.readonly() || readonly(),
       required: handle.required(),
       touched: handle.touched(),
       dirty: handle.dirty(),

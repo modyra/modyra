@@ -24,6 +24,7 @@ function setup(variant = "radio", initialValue = null) {
   const pending = rx.signal(false);
   const required = rx.signal(false);
   const disabled = rx.signal(false);
+  const readonly = rx.signal(false);
 
   const handle = {
     path: "size",
@@ -35,6 +36,7 @@ function setup(variant = "radio", initialValue = null) {
     pending,
     required,
     disabled,
+    readonly,
     set(v) {
       value.set(v);
     },
