@@ -8,7 +8,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicFileField } from "@modyra/core";
-import { clearFileSelection, fileSelectionTransition, MDY_WIDGET_CONTRACTS, type MdyFileCandidate } from "@modyra/widgets";
+import { clearFileSelection, fileSelectionTransition, MDY_WIDGET_CONTRACTS, projectFieldShellA11y, type MdyFileCandidate } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell } from "../field-shell.js";
 
@@ -36,6 +36,9 @@ export function renderFileField(
   applyPart(dropzone, definition.parts.dropzone);
   const control = el("input") as HTMLInputElement;
   control.type = "file";
+  // Named so the shell's label can point at it. The native input is visually hidden and the browse
+  // button forwards to it, but it is still the control the label is about.
+  control.id = f.name;
   applyPart(control, definition.parts.control);
   control.multiple = Boolean(f.multiple);
   if (f.accept) control.accept = f.accept;
@@ -98,6 +101,22 @@ export function renderFileField(
 
   const effectRef = reactivity.effect(() => {
     const files = selected();
+    // The state-driven half of the contract. `definition.parts` is static — classes and shape — so
+    // on its own it never said the field was invalid, required, disabled or described by its
+    // errors. Merged into the static part rather than applied after it, because a second
+    // `applyPart` on the same element recomputes classes from the base it captured first.
+    const a11y = projectFieldShellA11y(
+      { disabled: handle.disabled(), required: handle.required() },
+      handle.errors(),
+      { widgetId: f.name, controlId: control.id },
+    );
+    applyPart(shell.label, a11y.label);
+    applyPart(shell.description, a11y.description);
+    applyPart(shell.errorList, a11y.error);
+    applyPart(control, {
+      ...definition.parts.control,
+      attributes: { ...definition.parts.control.attributes, ...a11y.control.attributes },
+    });
     control.disabled = handle.disabled();
     browse.disabled = handle.disabled();
     clear.disabled = handle.disabled() || files.length === 0;
