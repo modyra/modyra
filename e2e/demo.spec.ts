@@ -318,18 +318,26 @@ test("a slider's track fills up to its handle, in every theme", async ({ page })
 
       const style = getComputedStyle(el);
       const width = el.clientWidth;
-      const thumb = Number.parseFloat(style.getPropertyValue("--mdy-slider-thumb-size"));
       const ratio = Number(style.getPropertyValue("--mdy-slider-fill").trim());
 
       // The stop is a percentage of the control's own box, so it has to be resolved inside a box of
       // exactly that width — the host is given the width outright rather than assumed to share it.
+      // Both lengths are resolved by layout rather than parsed: a theme is free to state the handle
+      // size in `rem`, and `parseFloat("1rem")` is 1, which would silently measure against a 1px
+      // handle and let a real misalignment through.
       const host = document.createElement("div");
       host.style.cssText = `position:absolute;left:-9999px;top:0;width:${width}px;`;
-      const probe = document.createElement("div");
-      probe.style.width = style.getPropertyValue("--mdy-slider-fill-stop");
-      host.append(probe);
+      const resolve = (value: string) => {
+        const probe = document.createElement("div");
+        probe.style.width = value;
+        host.append(probe);
+        const px = probe.getBoundingClientRect().width;
+        probe.remove();
+        return px;
+      };
       el.parentElement!.append(host);
-      const stopPx = probe.getBoundingClientRect().width;
+      const stopPx = resolve(style.getPropertyValue("--mdy-slider-fill-stop"));
+      const thumb = resolve(style.getPropertyValue("--mdy-slider-thumb-size"));
       host.remove();
 
       return { ratio, thumb, width, stopPx, centrePx: thumb / 2 + ratio * (width - thumb) };
