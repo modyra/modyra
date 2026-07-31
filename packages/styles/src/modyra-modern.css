@@ -354,6 +354,110 @@
         display: none;
     }
 
+    /* ─── Slider ──────────────────────────────────────────────────────────────── */
+
+    /* A 20px handle on a 4px rail is M3's proportion, and stacked in a form it reads as heavy —
+       the knob dominates a track it barely touches. Modern inverts the emphasis: a slightly
+       thicker rail so the fill is legible, and a smaller handle that sits on it rather than
+       straddling it.
+
+       Written as `--mdy-slider-*` on the container, not as `--mdy-comp-slider-*`: the foundation
+       derives one from the other at `:root` (modyra.css:253), and a custom property substitutes
+       what it references when its own declaration is computed — so a comp token set further down
+       would already have been read and would change nothing here. Same reason Material states
+       these here. */
+    .mdy-slider-container {
+        --mdy-slider-track-height: 6px;
+        --mdy-slider-thumb-size: 1rem;
+        --mdy-slider-inactive-color: var(--mdy-surface-container-highest);
+        --mdy-slider-thumb-shadow:
+            0 1px 2px rgb(0 0 0 / 0.18),
+            0 0 0 1px color-mix(in srgb, var(--mdy-primary) 35%, transparent);
+        --mdy-slider-value-color: var(--mdy-on-surface-variant);
+        /* The handle's response to the pointer, and the halo a keyboard user needs. Named here so
+           the four rules below stay one decision rather than four. */
+        --mdy-modern-slider-thumb-hover: scale(1.12);
+        --mdy-modern-slider-thumb-active: scale(1.22);
+        --mdy-modern-slider-focus-ring: 0 0 0 0.3125rem color-mix(in srgb, var(--mdy-primary) 22%, transparent);
+    }
+
+    /* The fill stop is `thumb/2 + ratio * (100% - thumb)` and reads `--mdy-slider-thumb-size`, so
+       shrinking the handle above keeps the fill under its centre with nothing further to do. */
+
+    .mdy-slider::-webkit-slider-thumb {
+        border: none;
+        transition:
+            transform var(--mdy-sys-motion-duration-fast) var(--mdy-sys-motion-easing-standard),
+            box-shadow var(--mdy-sys-motion-duration-fast) var(--mdy-sys-motion-easing-standard);
+    }
+
+    .mdy-slider::-moz-range-thumb {
+        border: none;
+        transition:
+            transform var(--mdy-sys-motion-duration-fast) var(--mdy-sys-motion-easing-standard),
+            box-shadow var(--mdy-sys-motion-duration-fast) var(--mdy-sys-motion-easing-standard);
+    }
+
+    .mdy-slider:hover:not(:disabled)::-webkit-slider-thumb {
+        transform: var(--mdy-modern-slider-thumb-hover);
+    }
+
+    .mdy-slider:hover:not(:disabled)::-moz-range-thumb {
+        transform: var(--mdy-modern-slider-thumb-hover);
+    }
+
+    .mdy-slider:active:not(:disabled)::-webkit-slider-thumb {
+        transform: var(--mdy-modern-slider-thumb-active);
+    }
+
+    .mdy-slider:active:not(:disabled)::-moz-range-thumb {
+        transform: var(--mdy-modern-slider-thumb-active);
+    }
+
+    /* The foundation sets `outline: none` on the control and leaves the indicator to the theme.
+       A halo on the handle, not an outline around the rail: the outline would trace a 6px band the
+       full width of the form and say nothing about where the handle is. The ring is a shape change,
+       so it does not rely on colour alone. */
+    .mdy-slider:focus-visible::-webkit-slider-thumb {
+        box-shadow: var(--mdy-slider-thumb-shadow), var(--mdy-modern-slider-focus-ring);
+    }
+
+    .mdy-slider:focus-visible::-moz-range-thumb {
+        box-shadow: var(--mdy-slider-thumb-shadow), var(--mdy-modern-slider-focus-ring);
+    }
+
+    /* Unavailable, without moving anything: the track flattens to one colour and the handle stops
+       inviting the pointer. */
+    .mdy-slider:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    /* Motion is a preference a person states. The growth on hover and press is the motion here, so
+       it is the part that goes — the focus halo stays, because a focus indicator is not decoration.
+       Each vendor pseudo-element gets its own rule: grouped in one selector list, the one an engine
+       does not recognise takes the whole rule down with it. */
+    @media (prefers-reduced-motion: reduce) {
+
+        .mdy-slider::-webkit-slider-thumb {
+            transition: none;
+        }
+
+        .mdy-slider::-moz-range-thumb {
+            transition: none;
+        }
+
+        .mdy-slider:hover:not(:disabled)::-webkit-slider-thumb,
+        .mdy-slider:active:not(:disabled)::-webkit-slider-thumb {
+            transform: none;
+        }
+
+        .mdy-slider:hover:not(:disabled)::-moz-range-thumb,
+        .mdy-slider:active:not(:disabled)::-moz-range-thumb {
+            transform: none;
+        }
+    }
+
 }
 
 
