@@ -1,6 +1,6 @@
 import { html, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import { MDY_CSS_PROPERTIES, sliderFillPercent } from "@modyra/widgets";
+import { MDY_CSS_PROPERTIES, sliderFillRatio } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
 
 // ─── Slider ──────────────────────────────────────────────────────────────────
@@ -25,13 +25,13 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
 
   protected override renderControl(handle: MdyFieldHandle<number>): unknown {
     const value = handle.value() ?? this.min;
-    const pct = sliderFillPercent(value, this.min, this.max);
+    const fill = sliderFillRatio(value, this.min, this.max);
     return html`<div class="${this.partClass("track")}">
       <input
         id=${this.fieldId}
         type="range"
         class="${this.partClass("control")}"
-        style="${MDY_CSS_PROPERTIES.control.sliderFill}: ${pct}%"
+        style="${MDY_CSS_PROPERTIES.control.sliderFill}: ${fill}"
         min=${this.min}
         max=${this.max}
         step=${this.step}

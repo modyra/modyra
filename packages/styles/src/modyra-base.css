@@ -440,7 +440,9 @@
        use different inline fallbacks (1 vs 3); a :root value would override
        the iOS fallback path. It is whitelisted in the token audit instead. */
         --mdy-floating-density: 0;
-        --mdy-slider-fill-pct: 0%;
+        /* Unitless 0–1, written by the renderer. The stylesheet needs a number to multiply the
+       track's usable width by, and cannot divide a percentage back into one. */
+        --mdy-slider-fill: 0;
         --mdy-overlay-top: auto;
         --mdy-overlay-bottom: auto;
         --mdy-overlay-left: auto;

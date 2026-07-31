@@ -11,7 +11,7 @@ import {
   createFieldController,
   MDY_CSS_PROPERTIES,
   MDY_WIDGET_CONTRACTS,
-  sliderFillPercent,
+  sliderFillRatio,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -88,7 +88,7 @@ export function renderTextField(
       // property, or it freezes at the fallback (modyra.css:266-269).
       input.style.setProperty(
         MDY_CSS_PROPERTIES.control.sliderFill,
-        `${sliderFillPercent(state.value, sliderMin, sliderMax)}%`,
+        String(sliderFillRatio(state.value, sliderMin, sliderMax)),
       );
     }
     applyPart(shell.description, view.parts.description);

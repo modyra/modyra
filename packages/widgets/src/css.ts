@@ -43,8 +43,16 @@ export const MDY_CSS_PROPERTIES = Object.freeze({
   }),
   /** Written per control, where a theme needs a number only the renderer knows. */
   control: Object.freeze({
-    /** How far along the slider's value sits, as a percentage, for the filled part of the track. */
-    sliderFill: "--mdy-slider-fill-pct",
+    /**
+     * How far along the slider's value sits, as a **unitless ratio in 0–1** — not a percentage.
+     *
+     * The stylesheet has to place the stop at `thumb/2 + ratio * (100% - thumb)`, because a range
+     * input's handle travels by its centre and never hangs off either end. That needs the ratio as
+     * a number it can multiply a length by, and `calc()` cannot divide by a percentage to recover
+     * one. A renderer cannot do the arithmetic itself either: the handle's size is a theme token,
+     * and a renderer that knew it would be drawing the theme.
+     */
+    sliderFill: "--mdy-slider-fill",
     /** How many segments a segmented control has, so the group divides itself evenly. */
     segmentCount: "--mdy-segments-count",
     /**

@@ -294,8 +294,46 @@ test("a slider's track fills up to its handle, in every theme", async ({ page })
   // `--mdy-slider-fill-pct` is unset, so both colour stops were frozen at 0% and inherited down
   // already flat. The renderer wrote the real percentage onto the control every value change and
   // nothing read it.
-  const stops = (image: string) =>
-    Array.from(image.matchAll(/([\d.]+)%/g)).map((m) => Number(m[1]));
+  //
+  // It then filled to the wrong place: reported as "sfasata rispetto al cursore". A range input's
+  // handle travels by its *centre*, from `thumb/2` to `100% - thumb/2`, so a stop at `ratio * 100%`
+  // follows the element instead of the handle and misses it by `thumb * (ratio - 0.5)` — measured
+  // at -10px, 0px and +10px for the three positions below. Hence the measurement here: the stop is
+  // resolved to real pixels and compared with where the handle actually is. Reading the gradient's
+  // percentages back out cannot see this, and neither can any unit test.
+  //
+  // Not through `::-webkit-slider-thumb` — Chromium reports `none` for it whatever the rule says.
+
+  /** Resolve `--mdy-slider-fill-stop` to pixels, and say where the handle's centre really is. */
+  const geometry = (locator: ReturnType<typeof page.locator>, value: "min" | "mid" | "max") =>
+    locator.evaluate(async (el, position) => {
+      const input = el as HTMLInputElement;
+      const min = Number(input.min || 0);
+      const max = Number(input.max || 100);
+      input.value = String(position === "min" ? min : position === "max" ? max : (min + max) / 2);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      // The renderer writes the ratio in an effect; read once it has flushed and been styled, or
+      // the measurement pairs this value with the previous ratio and passes for the wrong reason.
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+      const style = getComputedStyle(el);
+      const width = el.clientWidth;
+      const thumb = Number.parseFloat(style.getPropertyValue("--mdy-slider-thumb-size"));
+      const ratio = Number(style.getPropertyValue("--mdy-slider-fill").trim());
+
+      // The stop is a percentage of the control's own box, so it has to be resolved inside a box of
+      // exactly that width — the host is given the width outright rather than assumed to share it.
+      const host = document.createElement("div");
+      host.style.cssText = `position:absolute;left:-9999px;top:0;width:${width}px;`;
+      const probe = document.createElement("div");
+      probe.style.width = style.getPropertyValue("--mdy-slider-fill-stop");
+      host.append(probe);
+      el.parentElement!.append(host);
+      const stopPx = probe.getBoundingClientRect().width;
+      host.remove();
+
+      return { ratio, thumb, width, stopPx, centrePx: thumb / 2 + ratio * (width - thumb) };
+    }, value);
 
   for (const theme of ["modyra", "modyra-modern", "modyra-material", "modyra-ios"]) {
     await page.goto("/");
@@ -307,28 +345,25 @@ test("a slider's track fills up to its handle, in every theme", async ({ page })
     await page.waitForTimeout(400);
 
     const slider = page.locator("mdy-control-slider .mdy-slider").first();
-    const read = () => slider.evaluate((el) => ({
-      image: getComputedStyle(el).backgroundImage,
-      value: Number((el as HTMLInputElement).value),
-      max: Number((el as HTMLInputElement).max),
-    }));
+    const image = await slider.evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(image, `${theme}: the track must be a split, not one flat colour`).toContain("linear-gradient");
 
-    const before = await read();
-    expect(before.image, `${theme}: the track must be a split, not one flat colour`).toContain("linear-gradient");
-    const atStart = stops(before.image);
-    expect(atStart.length, theme).toBeGreaterThan(0);
-    // Filled in proportion to the value it is sitting at, not stuck at zero.
-    expect(atStart[0], `${theme}: track fill at value ${before.value}/${before.max}`).toBeGreaterThan(0);
+    const seen: number[] = [];
+    for (const position of ["min", "mid", "max"] as const) {
+      const g = await geometry(slider, position);
+      expect(g.thumb, `${theme}: the handle size must come from its token`).toBeGreaterThan(0);
+      // The whole bug: correct at the midpoint and half a handle out at each end. Asserting the
+      // middle alone would have passed throughout.
+      expect(
+        Math.abs(g.stopPx - g.centrePx),
+        `${theme}/${position}: fill stops at ${g.stopPx.toFixed(2)}px, handle centre is at ${g.centrePx.toFixed(2)}px (thumb ${g.thumb}px, width ${g.width}px)`,
+      ).toBeLessThanOrEqual(0.5);
+      seen.push(g.stopPx);
+    }
 
-    // And it follows the value: dragging the handle to the end fills the track further.
-    await slider.evaluate((el) => {
-      const input = el as HTMLInputElement;
-      input.value = input.max;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-    await page.waitForTimeout(200);
-    const after = await read();
-    expect(stops(after.image)[0], `${theme}: fill after moving to max`).toBeGreaterThan(atStart[0]!);
+    // And it still follows the value rather than sitting at one place.
+    expect(seen[1]!, `${theme}: fill at the midpoint`).toBeGreaterThan(seen[0]!);
+    expect(seen[2]!, `${theme}: fill at the maximum`).toBeGreaterThan(seen[1]!);
   }
 });
 
