@@ -134,7 +134,12 @@ const KNOWN_DIVERGENCES: Partial<Record<MdyWidgetKind, string[]>> = {
   multiselect: ["PART_ORDER:inputWrapper", "ARIA_DANGLING_REF:label"],
   // `nativePicker` was declared a <label> in task 06, from Plain, which wraps the hidden colour
   // input in one. Angular does not, and its `control` sits outside the picker as a result.
-  colors: ["PART_ELEMENT:nativePicker", "PART_NOT_CONTAINED:control"],
+  colors: ["PART_ELEMENT:nativePicker", "PART_NOT_CONTAINED:control", "PART_NOT_OWNED:toggle"],
+  // F-08, the same gap Plain has: the opener carries no `aria-controls` naming the popup it opens.
+  // Uniform for select and multiselect, absent for every picker. Recorded, fixed in its own batch.
+  datepicker: ["PART_NOT_OWNED:toggle"],
+  daterange: ["PART_NOT_OWNED:toggle"],
+  timepicker: ["PART_NOT_OWNED:toggle"],
 };
 
 describe("Angular renderers, against the widget DOM contract", () => {
