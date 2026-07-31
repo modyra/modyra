@@ -44,6 +44,10 @@
       "types": "./dist/color-utils.d.ts",
       "default": "./dist/color-utils.js"
     },
+    "./theme-compiler": {
+      "types": "./dist/theme-compiler.d.ts",
+      "default": "./dist/theme-compiler.js"
+    },
     "./options-utils": {
       "types": "./dist/options-utils.d.ts",
       "default": "./dist/options-utils.js"
