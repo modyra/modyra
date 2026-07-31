@@ -67,6 +67,38 @@
         letter-spacing: 0;
     }
 
+    /* ─── The floating label, Modern's proportions ────────────────────────────────
+     *
+     * The manoeuvre is the foundation's; only the numbers are here. Modern's field is 36px, and a
+     * label cannot rise inside 36px — so a floating field grows to 48px rather than to Material's
+     * 56px, which would make the one theme that reads compact the tallest on the page. The label
+     * lines up with the control's own 10px inset instead of Material's 16px. */
+    .mdy-renderer.mdy-floating-label {
+        /* 52px at density 0, four short of Material, and it tracks density on the same 4px step —
+           a fixed height would make Modern the one theme the density control cannot reach. The
+           floor is the point: two tiers of text need room, and at density -3 an unclamped Modern
+           field came out at 36px, which put the risen label on top of the value. */
+        --mdy-fl-height: max(2.75rem, calc(3.25rem + (var(--mdy-fl-density-val, 0) * 0.25rem)));
+        /* The label lines up with the control's own 10px inset, not Material's 16px. Everything
+           else — where it rests, where it rises to, how far it shrinks — is the foundation's, and
+           Modern has no reason to disagree with it. */
+        --mdy-fl-label-left: 0.625rem;
+    }
+
+    /* Risen, it is a caption over the field rather than a heading beside it: Modern's label weight
+       is 600, which at 0.75 scale reads as a smudge. */
+    .mdy-renderer.mdy-floating-label:has(.mdy-input-wrapper:focus-within) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-label--filled) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-label--has-error) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(input[type="date"]) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(input[type="time"]) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-select__option--selected) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-chip) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(input[placeholder]:not(:placeholder-shown)) .mdy-label,
+    .mdy-renderer.mdy-floating-label.mdy-renderer--open .mdy-label {
+        font-weight: 500;
+    }
+
     /* ─── Shape and density ───────────────────────────────────────────────────── */
 
     .mdy-renderer {

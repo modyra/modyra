@@ -3431,6 +3431,176 @@
         display: none;
     }
 
+    /* ─── The floating label: the mechanism ───────────────────────────────────────
+     *
+     * A label that starts inside its field and rises out of the way is a layout manoeuvre, not a
+     * design language. It lived in Material's filled field, which meant Modern, iOS and Ionic could
+     * carry `.mdy-floating-label` on the host, set `.mdy-label--filled` correctly, and have nothing
+     * at all happen — an opt-in that silently did nothing. What is here is the manoeuvre: where the
+     * label sits at rest, where it goes when active, and the room the control has to give up so the
+     * risen label has somewhere to land.
+     *
+     * What is *not* here is any of the numbers that make it look like a particular design system.
+     * Every one is a custom property with a default, and a theme owns its own:
+     *
+     *   --mdy-fl-input-height   the field's height while floating           (default 3.5rem)
+     *   --mdy-fl-rest-y         the label's resting offset                  (default: centred)
+     *   --mdy-fl-rest-scale     the label's resting scale                   (default 1)
+     *   --mdy-fl-active-y       the label's risen offset                    (default 0.5rem)
+     *   --mdy-fl-active-scale   the label's risen scale                     (default 0.75)
+     *   --mdy-fl-label-left     the label's inline offset                   (default 1rem)
+     *   --mdy-fl-label-height   the room a risen label occupies             (default 0.75rem)
+     *   --mdy-fl-gap-mid        the gap between risen label and text        (default 0.125rem)
+     *   --mdy-floating-density  density hook, 0 to -3                       (default 0)
+     *
+     * Material declares none of them: the defaults *are* its numbers, so its geometry is unchanged
+     * — resting `translateY(18px) scale(1)`, active `translateY(8px) scale(0.75)`, measured. */
+
+    .mdy-renderer.mdy-floating-label {
+        --mdy-fl-density-val: var(--mdy-floating-density, 0);
+        --mdy-fl-label-height: 0.75rem;
+
+        /* Height shrinks with density: 56px at 0, 40px at -3. */
+        --mdy-fl-height: calc(3.5rem + (var(--mdy-fl-density-val) * 0.25rem));
+        --mdy-fl-input-height: var(--mdy-fl-height);
+        /* Kept as the name Material's own rules and the colours renderer already read. */
+        --mdy-floating-input-height: var(--mdy-fl-input-height);
+
+        --mdy-fl-active-y: calc(0.5rem + (var(--mdy-fl-density-val) * 0.0625rem));
+        --mdy-fl-label-active-top: var(--mdy-fl-active-y);
+        --mdy-fl-active-scale: 0.75;
+
+        /* At rest the label is centred on the control's text: half the leftover height once the
+           label's own line box is accounted for. */
+        --mdy-fl-rest-y: calc((var(--mdy-fl-input-height) - 1.25rem) / 2);
+        --mdy-fl-rest-scale: 1;
+
+        --mdy-fl-label-left: 1rem;
+        --mdy-fl-gap-mid: calc(0.125rem + (var(--mdy-fl-density-val) * 0.03125rem));
+
+        /* The room the risen label needs, and what is left for the text under it. */
+        --mdy-fl-pad-top: calc(var(--mdy-fl-active-y) + var(--mdy-fl-label-height) + var(--mdy-fl-gap-mid));
+        --mdy-fl-pad-bottom: calc(var(--mdy-fl-input-height) - var(--mdy-fl-pad-top) - 1.45rem);
+        --mdy-floating-input-padding: var(--mdy-fl-pad-top) 1rem var(--mdy-fl-pad-bottom);
+
+        position: relative;
+        margin-top: 0;
+    }
+
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper {
+        height: var(--mdy-fl-input-height);
+        min-height: var(--mdy-fl-input-height);
+        align-items: stretch;
+    }
+
+    /* The control gives up its top padding so the risen label has somewhere to be. */
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper input,
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper select,
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper textarea,
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper .mdy-select__trigger {
+        padding: var(--mdy-floating-input-padding) !important;
+        height: var(--mdy-fl-input-height) !important;
+        box-sizing: border-box;
+        line-height: inherit;
+    }
+
+    /* A textarea grows, so it cannot centre anything: the label sits in allocated top padding. */
+    .mdy-renderer.mdy-floating-label.mdy-renderer--textarea {
+        --mdy-fl-pad-top-textarea: 2.25rem;
+        --mdy-fl-rest-y: 0.625rem;
+    }
+
+    .mdy-renderer.mdy-floating-label.mdy-renderer--textarea .mdy-input-wrapper {
+        height: auto;
+        min-height: 6rem;
+        align-items: stretch;
+    }
+
+    .mdy-renderer.mdy-floating-label.mdy-renderer--textarea .mdy-input-wrapper textarea {
+        height: auto !important;
+        padding-top: var(--mdy-fl-pad-top-textarea) !important;
+    }
+
+    /* A native select's baseline is irregular enough to clip at the bottom without this. */
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper select {
+        padding-top: calc(var(--mdy-fl-pad-top) - 1px) !important;
+        padding-bottom: 0 !important;
+        line-height: var(--mdy-input-line-height) !important;
+    }
+
+    .mdy-renderer.mdy-floating-label .mdy-input-wrapper .mdy-select__trigger {
+        display: flex;
+        align-items: flex-start;
+    }
+
+    /* While the label rests over the control, the control's own text would collide with it. */
+    .mdy-renderer.mdy-floating-label:not(:has(:focus-within)):not(:has(.mdy-label--filled)) select,
+    .mdy-renderer.mdy-floating-label:not(:has(:focus-within)):not(:has(.mdy-label--filled)) .mdy-select__trigger {
+        color: transparent !important;
+    }
+
+    .mdy-renderer.mdy-floating-label:not(:has(:focus-within)):not(:has(.mdy-label--filled)) .mdy-select__value {
+        opacity: 0 !important;
+    }
+
+    /* The label itself. Position and motion here; face and colour are the theme's. */
+    .mdy-renderer.mdy-floating-label .mdy-label {
+        position: absolute;
+        left: var(--mdy-label-left-offset, var(--mdy-fl-label-left));
+        top: 0;
+        z-index: 10;
+        pointer-events: auto;
+        transform-origin: left top;
+        margin-bottom: 0;
+        /* At rest the label stands in for the placeholder, so it has to be the size of the text it
+           is covering. A theme that wants otherwise sets `--mdy-fl-label-font-size`. */
+        font-size: var(--mdy-fl-label-font-size, var(--mdy-input-font-size, 1rem));
+        transform: translateY(var(--mdy-fl-rest-y)) scale(var(--mdy-fl-rest-scale));
+        transition: transform var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+            font-size var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+            color var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
+    }
+
+    /* While the label rests over the control, the control's placeholder would be a second line of
+       text under it. It comes back on focus, when the label has risen out of the way. Written as a
+       direct selector on the control rather than through `:has`, so it holds whatever the host
+       classes turn out to be. */
+    .mdy-renderer.mdy-floating-label input:placeholder-shown:not(:focus)::placeholder,
+    .mdy-renderer.mdy-floating-label textarea:placeholder-shown:not(:focus)::placeholder {
+        opacity: 0 !important;
+        color: transparent !important;
+        visibility: hidden !important;
+    }
+
+    .mdy-renderer.mdy-floating-label input:focus::placeholder,
+    .mdy-renderer.mdy-floating-label textarea:focus::placeholder,
+    .mdy-renderer.mdy-floating-label input:not(:placeholder-shown)::placeholder,
+    .mdy-renderer.mdy-floating-label textarea:not(:placeholder-shown)::placeholder {
+        opacity: 1 !important;
+        color: var(--mdy-input-placeholder-color) !important;
+        visibility: visible !important;
+    }
+
+    /* A select has no `:placeholder-shown`, so its placeholder is a class the renderer sets. */
+    .mdy-renderer.mdy-floating-label:not(:has(:focus-within)):not(:has(.mdy-label--filled)) .mdy-select__placeholder {
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+
+    /* Risen. `.mdy-label--filled` is the renderer's signal and is the one that matters; the rest
+       cover controls whose value is not a text value, and a value the renderer never saw. */
+    .mdy-renderer.mdy-floating-label:has(.mdy-input-wrapper:focus-within) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-label--filled) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-label--has-error) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(input[type="date"]) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(input[type="time"]) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-select__option--selected) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(.mdy-chip) .mdy-label,
+    .mdy-renderer.mdy-floating-label:has(input[placeholder]:not(:placeholder-shown)) .mdy-label,
+    .mdy-renderer.mdy-floating-label.mdy-renderer--open .mdy-label {
+        transform: translateY(var(--mdy-fl-active-y)) scale(var(--mdy-fl-active-scale));
+    }
+
 }
 
 /* end @layer mdy.components */
