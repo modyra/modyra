@@ -146,10 +146,15 @@ function control0() { return "value"; }
  * `readonly` was the first cluster and is now closed: `MdyFieldHandle` exposes it, the controllers
  * read it from the form instead of a local signal, and a read-only field refuses typing.
  *
- * What is left:
- *  1. `disabled` on composite kinds reaches some of their native controls and not all. A date
- *     field's toggle button is disabled while its text input still accepts typing.
- *  2. `invalid` is not exposed at all on a few composites.
+ * What is left, and it is smaller than it first read. The check used to demand `disabled` on every
+ * native control in the widget, including all forty-six cells of a calendar inside a *closed*
+ * popup, which is noise rather than a contract — it is now scoped to the widget's own interactive
+ * surface. What survives that is real:
+ *
+ *  1. `disabled` does not reach a composite's trigger or toggle button, and the datepicker's text
+ *     input stays typeable. Six kinds.
+ *  2. `invalid` is not exposed to assistive technology at all on select, daterange, colors, file,
+ *     and `aria-disabled` is missing on daterange, colors and file.
  */
 const KNOWN_DIVERGENCES = {
   // `disabled` reaches some of a composite's native controls and not all of them.
@@ -157,8 +162,8 @@ const KNOWN_DIVERGENCES = {
   "multiselect × disabled": ["STATE_NOT_APPLIED"],
   "datepicker × disabled": ["STATE_NOT_APPLIED"],
   "timepicker × disabled": ["STATE_NOT_APPLIED"],
-  "daterange × disabled": ["STATE_ARIA_MISSING", "STATE_NOT_APPLIED"],
-  "colors × disabled": ["STATE_ARIA_MISSING", "STATE_NOT_APPLIED"],
+  "daterange × disabled": ["STATE_ARIA_MISSING"],
+  "colors × disabled": ["STATE_ARIA_MISSING"],
   "file × disabled": ["STATE_ARIA_MISSING"],
 
   // `invalid` is not exposed to assistive technology at all on these.
