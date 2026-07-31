@@ -132,11 +132,16 @@ async function mount(kind) {
     root: element,
     parts: () => partsOf(element, kind),
     control: () => controlOf(element),
-    // Lit batches into its own update cycle; a signal write outside it needs both a task turn and a
-    // requested update before the DOM reflects anything.
+    // Lit batches into its own update cycle, so a signal write outside it needs a task turn before
+    // the DOM reflects anything.
+    //
+    // This deliberately does NOT call `requestUpdate()`. It used to, and that hid a real bug:
+    // `MdyFormController` subscribes to a hand-written list of signals, `readonly` was not on it,
+    // and Lit therefore never re-rendered when a field was marked read-only. Forcing an update made
+    // the attribute appear anyway, so the row passed while the adapter was inert. Whether the
+    // element subscribed to the signal that changed is exactly what this matrix is for.
     settle: async () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
-      element.requestUpdate();
       await element.updateComplete;
     },
     dispose: () => element.remove(),
