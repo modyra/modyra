@@ -41,7 +41,8 @@ export function projectSelectA11y(
       "aria-expanded": String(open),
       "aria-controls": idFactory.part(widgetId, "listbox"),
       "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
-      "aria-disabled": String(disabled || readonly),
+      // Disabled alone: a read-only control still takes focus and can be copied from.
+      "aria-disabled": String(disabled),
       "data-loading": loading || undefined,
     },
   };

@@ -82,7 +82,11 @@ export function projectDatepickerFieldA11y(
         "aria-labelledby": labelId,
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),
-        "aria-disabled": String(state.disabled || state.readonly),
+        // `aria-disabled` reflects `disabled` alone. A read-only control is not disabled: it takes
+        // focus, its text can be selected and copied, and announcing it as disabled tells a
+        // screen-reader user they cannot interact with something they can. `aria-readonly`
+        // carries read-only, and only on the kinds that declare the state.
+        "aria-disabled": String(state.disabled),
         "aria-describedby": describedBy,
       },
     },

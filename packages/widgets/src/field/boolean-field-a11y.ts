@@ -95,7 +95,11 @@ export function projectBooleanFieldA11y(
         "aria-checked": String(state.checked),
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),
-        "aria-disabled": String(state.disabled || state.readonly),
+        // `aria-disabled` reflects `disabled` alone. A read-only control is not disabled: it takes
+        // focus, its text can be selected and copied, and announcing it as disabled tells a
+        // screen-reader user they cannot interact with something they can. `aria-readonly`
+        // carries read-only, and only on the kinds that declare the state.
+        "aria-disabled": String(state.disabled),
         "aria-describedby": describedBy,
         // Emitted only when true. A control that is not read-only says nothing, rather than
         // announcing `aria-readonly="false"` — which on a slider, a checkbox or a radio group
