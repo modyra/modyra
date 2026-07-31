@@ -1,31 +1,161 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,"><link id="theme" rel="stylesheet" href="./themes/modyra-modern.css"><title>Modyra × plain</title>
-<style>
-  body { margin: 0; padding: 2rem; font: 15px/1.5 system-ui, sans-serif; background: var(--mdy-surface, #fff); color: var(--mdy-on-surface, #111); }
-  header { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-bottom: 1.5rem; }
-  header h1 { margin: 0 1rem 0 0; font-size: 1.125rem; }
-  header button { padding: .3rem .7rem; border: 1px solid currentcolor; border-radius: .4rem; background: transparent; color: inherit; cursor: pointer; font: inherit; }
-  header button[aria-pressed="true"] { background: currentcolor; }
-  header button[aria-pressed="true"] span { filter: invert(1); }
-  main { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
-  pre { margin: 0; padding: 1rem; overflow: auto; max-height: 80vh; border-radius: .5rem; background: rgb(0 0 0 / 6%); font-size: 12px; }
-  #conformance:not(:empty) { padding: .75rem 1rem; border-radius: .5rem; margin-bottom: 1rem; }
-  #conformance.pass { background: rgb(0 128 0 / 12%); }
-  #conformance.fail { background: rgb(200 0 0 / 12%); white-space: pre-wrap; }
-  @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
-</style>
-</head>
-<body>
-  <header>
-    <h1>@modyra/plain — full catalog</h1>
-    <div data-themes></div>
-  </header>
-  <main>
-    <div>
-      <div id="conformance"></div>
-      <div data-form></div>
-    </div>
-    <pre data-state></pre>
-  </main>
-  <script type="module" src="./main.js"></script>
-</body></html>
+<html lang="en" data-mdy-theme="modyra-salience">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+
+    <!-- Foundation and canonical ref -> sys -> comp token contract. -->
+    <link id="modyra-base" rel="stylesheet" href="./themes/modyra-base.css" />
+
+    <!-- Structural/component theme. This can change without changing the colour engine. -->
+    <link
+      id="modyra-theme"
+      rel="stylesheet"
+      href="./themes/modyra-modern.css"
+    />
+
+    <!-- Build-time fallback for salience. Runtime compilation replaces it after main.js starts. -->
+    <link
+      id="modyra-compiled-theme"
+      rel="stylesheet"
+      href="./themes/modyra-salience.theme.css"
+    />
+
+    <title>Modyra × plain</title>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 2rem;
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+        background: var(--mdy-sys-color-background, #fff);
+        color: var(--mdy-sys-color-on-background, #111);
+      }
+
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      header h1 {
+        margin: 0 1rem 0 0;
+        font-size: 1.125rem;
+      }
+
+      header button {
+        padding: 0.3rem 0.7rem;
+        border: 1px solid currentcolor;
+        border-radius: 0.4rem;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+      }
+
+      header button[aria-pressed="true"] {
+        background: currentcolor;
+      }
+
+      header button[aria-pressed="true"] span {
+        filter: invert(1);
+      }
+
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .bar > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+
+      .bar-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        opacity: 0.6;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        gap: 2rem;
+        align-items: start;
+      }
+
+      pre {
+        margin: 0;
+        padding: 1rem;
+        overflow: auto;
+        max-height: 80vh;
+        border-radius: 0.5rem;
+        background: var(--mdy-sys-color-surface-container, rgb(0 0 0 / 6%));
+        color: var(--mdy-sys-color-on-surface, currentcolor);
+        font-size: 12px;
+      }
+
+      #conformance:not(:empty) {
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      #conformance.pass {
+        background: rgb(0 128 0 / 12%);
+      }
+
+      #conformance.fail {
+        background: rgb(200 0 0 / 12%);
+        white-space: pre-wrap;
+      }
+
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>@modyra/plain — full catalog</h1>
+
+      <div class="bar">
+        <span class="bar-label">theme</span>
+        <div data-themes></div>
+      </div>
+
+      <div class="bar">
+        <span class="bar-label">palette maths</span>
+        <div data-palette></div>
+      </div>
+
+      <div class="bar">
+        <span class="bar-label">mode</span>
+        <div data-color-mode></div>
+      </div>
+    </header>
+
+    <main>
+      <div>
+        <div id="conformance"></div>
+        <div data-form></div>
+      </div>
+
+      <pre data-state></pre>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
