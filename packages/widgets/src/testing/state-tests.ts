@@ -110,8 +110,15 @@ export function inspectWidgetState(
   // date field whose toggle button is disabled while its text input still accepts typing is
   // disabled in appearance only.
   if (contract.nativeAttribute) {
+    // Only the widget's own interactive surface. A closed overlay's contents are not part of it —
+    // demanding `disabled` on all forty-six cells of a calendar that is not on screen is not a
+    // contract, it is noise, and a disabled field should not be open in the first place.
+    const popups = partElements(options.parts, "popup");
+    const insidePopup = (element: Element): boolean =>
+      popups.some((popup) => popup === element || popup.contains(element));
     const candidates = [control, ...Array.from(root.querySelectorAll("input, select, textarea, button"))]
-      .filter((element): element is Element => Boolean(element));
+      .filter((element): element is Element => Boolean(element))
+      .filter((element) => !insidePopup(element));
     const seen = new Set<Element>();
     for (const element of candidates) {
       if (seen.has(element)) continue;
