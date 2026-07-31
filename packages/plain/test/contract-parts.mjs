@@ -132,12 +132,7 @@ export const ABSENT = {
  * nor outlive its fix. Empty means every kind renders the contract's anatomy.
  */
 export const KNOWN_DIVERGENCES = {
-  // F-08. The opener→popup relation is uniform for select and multiselect and absent here: the
-  // calendar toggle opens a popup it does not name with `aria-controls`, so nothing ties the two
-  // together for assistive technology. Recorded, not fixed — task 08 changes fixtures and catalog
-  // declarations, not renderers. Its own batch.
-  datepicker: ["PART_NOT_OWNED:toggle"],
-  timepicker: ["PART_NOT_OWNED:toggle"],
-  daterange: ["PART_NOT_OWNED:toggle"],
-  colors: ["PART_NOT_OWNED:toggle"],
+  // Empty. F-08 is closed: every opener names the popup it opens, the relation select and
+  // multiselect always had. Keep it empty — the assertion matches both ways, so a new divergence
+  // fails and a stale entry fails too.
 };

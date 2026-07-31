@@ -204,9 +204,15 @@ const CALENDAR_CELL_STATES: readonly MdyStateName[] = Object.freeze([
 export const MDY_POPUP_OPENERS: Readonly<Record<string, string>> = Object.freeze({
   select: "trigger",
   multiselect: "searchButton",
-  datepicker: "toggle",
+  // The pickers follow the combobox pattern: the typeable control is what carries `role=combobox`,
+  // `aria-expanded` and now `aria-controls`, and the calendar/clock button beside it is a second
+  // affordance for the same popup. The opener is therefore the control, not the button — naming the
+  // button here would ask for the relation in a place the pattern does not put it.
+  datepicker: "control",
+  // Daterange wires its own toggle rather than following the combobox pattern its sibling does.
   daterange: "toggle",
-  timepicker: "toggle",
+  timepicker: "control",
+  // Colours is the exception: it has no combobox control, so its toggle really is the opener.
   colors: "toggle",
 });
 

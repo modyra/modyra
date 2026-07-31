@@ -7,7 +7,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, overlayAnchoringFor, type MdyColorValueIntent } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, overlayAnchoringFor, type MdyColorValueIntent , defaultWidgetIdFactory} from "@modyra/widgets";
 import { applyPart, el, setErrors } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, setOverlayOpen, trackOverlay } from "../overlay.js";
@@ -67,6 +67,10 @@ export function renderColorsField(
   // `mdy-overlay` is the portal variant of the shared container: positioned from the
   // `--mdy-overlay-*` properties `positionOverlay` writes, exactly as the select's popup is.
   const popup = el("div", "mdy-overlay") as HTMLDivElement;
+  // Same relation the select has always declared: the toggle says it opens a listbox and whether
+  // it is showing, so it has to say which one.
+  popup.id = defaultWidgetIdFactory.part(f.name, "popup");
+  toggle.setAttribute("aria-controls", popup.id);
   applyPart(popup, definition.parts.popup);
   const presetList = el("div") as HTMLDivElement;
   applyPart(presetList, definition.parts.presets);

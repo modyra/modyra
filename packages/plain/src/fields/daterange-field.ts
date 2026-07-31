@@ -9,7 +9,7 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
 import { addMonths, buildDateLocale, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
-import { MDY_WIDGET_CONTRACTS, dateRangeDraftTransition, overlayAnchoringFor, type MdyDateRangeDraftState, type MdyDateRangeValue } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, dateRangeDraftTransition, overlayAnchoringFor, type MdyDateRangeDraftState, type MdyDateRangeValue , defaultWidgetIdFactory} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
@@ -64,6 +64,10 @@ export function renderDaterangeField(
   toggle.setAttribute("aria-haspopup", "dialog");
 
   const popup = el("div", `${MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
+  // The toggle said it had a dialog and whether it was open, and never said which one. Naming it
+  // is what ties opener to popup for assistive technology — the relation select has always had.
+  popup.id = defaultWidgetIdFactory.part(f.name, "popup");
+  toggle.setAttribute("aria-controls", popup.id);
   const header = el("div", "mdy-datepicker__header") as HTMLDivElement;
   const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   prevButton.type = "button";

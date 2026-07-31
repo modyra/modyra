@@ -78,6 +78,8 @@ export function projectTimepickerFieldA11y(
         role: "combobox",
         "aria-haspopup": "dialog",
         "aria-expanded": String(state.open),
+        // Names the dialog it opens, the way select names its listbox.
+        "aria-controls": dialogId,
         "aria-labelledby": labelId,
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),

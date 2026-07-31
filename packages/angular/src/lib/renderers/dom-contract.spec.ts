@@ -135,11 +135,16 @@ const KNOWN_DIVERGENCES: Partial<Record<MdyWidgetKind, string[]>> = {
   // `nativePicker` was declared a <label> in task 06, from Plain, which wraps the hidden colour
   // input in one. Angular does not, and its `control` sits outside the picker as a result.
   colors: ["PART_ELEMENT:nativePicker", "PART_NOT_CONTAINED:control", "PART_NOT_OWNED:toggle"],
-  // F-08, the same gap Plain has: the opener carries no `aria-controls` naming the popup it opens.
-  // Uniform for select and multiselect, absent for every picker. Recorded, fixed in its own batch.
-  datepicker: ["PART_NOT_OWNED:toggle"],
+  // F-08 is closed centrally — the a11y projections now declare `aria-controls`, and Plain is clean.
+  // Angular remains divergent for a different reason, and it is a *placement* question rather than a
+  // missing relation: Angular puts `aria-expanded` on the toggle button beside the input, while the
+  // shared projection puts the whole combobox relation on the input itself. Making them agree means
+  // deciding which element owns the expanded state and giving the CDK panel an id the opener can
+  // name — a renderer-equivalence decision, so it belongs to task 16 rather than to a defect batch.
+  datepicker: ["PART_NOT_OWNED:control"],
+  timepicker: ["PART_NOT_OWNED:control"],
+  // Same placement question; Angular's daterange toggle carries the state and names no popup.
   daterange: ["PART_NOT_OWNED:toggle"],
-  timepicker: ["PART_NOT_OWNED:toggle"],
 };
 
 describe("Angular renderers, against the widget DOM contract", () => {
