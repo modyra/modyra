@@ -18,6 +18,7 @@ function setup(checked = false, variant = "checkbox") {
   const pending = rx.signal(false);
   const required = rx.signal(false);
   const disabled = rx.signal(false);
+  const readonly = rx.signal(false);
 
   const handle = {
     path: "agree",
@@ -29,6 +30,7 @@ function setup(checked = false, variant = "checkbox") {
     pending,
     required,
     disabled,
+    readonly,
     set(v) {
       value.set(v);
     },

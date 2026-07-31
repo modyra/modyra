@@ -30,6 +30,7 @@ function setupMockHandle(initialValue = "") {
   const pending = rx.signal(false);
   const required = rx.signal(false);
   const disabled = rx.signal(false);
+  const readonly = rx.signal(false);
 
   const handle = {
     path: "mock",
@@ -41,6 +42,7 @@ function setupMockHandle(initialValue = "") {
     pending,
     required,
     disabled,
+    readonly,
     set(v) {
       value.set(v);
     },
