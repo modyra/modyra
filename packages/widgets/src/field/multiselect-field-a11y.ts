@@ -78,6 +78,8 @@ export function projectMultiselectFieldA11y<TValue>(
     multiselectFieldPartIds(options.widgetId);
   const hasErrors = errors.length > 0;
   const describedBy = hasErrors ? errorId : descriptionId;
+  // Whether interaction is blocked — which read-only does share with disabled. Kept for the
+  // native attribute below; the ARIA must still distinguish the two, so it reads `state.disabled`.
   const interactionDisabled = state.disabled || state.readonly;
 
   return {
@@ -107,7 +109,7 @@ export function projectMultiselectFieldA11y<TValue>(
         "aria-labelledby": labelId,
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),
-        "aria-disabled": String(interactionDisabled),
+        "aria-disabled": String(state.disabled),
         "aria-describedby": describedBy,
         disabled: state.disabled,
       },
@@ -143,7 +145,7 @@ export function projectMultiselectFieldA11y<TValue>(
         "aria-labelledby": labelId,
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),
-        "aria-disabled": String(interactionDisabled),
+        "aria-disabled": String(state.disabled),
         "aria-describedby": describedBy,
       },
     },
