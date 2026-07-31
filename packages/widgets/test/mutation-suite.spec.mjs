@@ -22,6 +22,18 @@ import { inspectWidgetDom } from "../dist/testing/index.js";
 const dom = new JSDOM("<!doctype html><html><body></body></html>");
 const document = dom.window.document;
 
+let fixtureSeq = 0;
+/** Every element a fixture mounts, so one mutation's DOM cannot become another's duplicate id. */
+const mounted = [];
+function mount(element) {
+  document.body.append(element);
+  mounted.push(element);
+  return element;
+}
+function clearMounted() {
+  for (const element of mounted.splice(0)) element.remove();
+}
+
 function el(tag, className, attributes = {}) {
   const node = document.createElement(tag);
   if (className) node.setAttribute("class", className);
@@ -32,7 +44,7 @@ function el(tag, className, attributes = {}) {
 /* ── Conforming fixtures ──────────────────────────────────────────────────────
  * Each returns { root, parts }, mounted in the document so id lookups resolve. */
 
-function textField({ id = "t1" } = {}) {
+function textField({ id = `t${(fixtureSeq += 1)}` } = {}) {
   const root = el("div", "mdy-renderer mdy-renderer--text");
   const label = el("label", "mdy-label", { for: `${id}-control` });
   const marker = el("span", "mdy-label__required");
@@ -45,7 +57,7 @@ function textField({ id = "t1" } = {}) {
   const errorItem = el("li", "mdy-control__error");
   errors.append(errorItem);
   root.append(label, wrapper, supporting, errors);
-  document.body.append(root);
+  mount(root);
   return {
     root,
     parts: {
@@ -55,7 +67,7 @@ function textField({ id = "t1" } = {}) {
   };
 }
 
-function dateRange({ id = "d1" } = {}) {
+function dateRange({ id = `d${(fixtureSeq += 1)}` } = {}) {
   const root = el("div", "mdy-renderer mdy-renderer--datepicker mdy-renderer--daterange");
   const label = el("label", "mdy-label");
   const wrapper = el("div", "mdy-input-wrapper");
@@ -74,7 +86,7 @@ function dateRange({ id = "d1" } = {}) {
   calendar.append(grid);
   popup.append(calendar);
   root.append(label, wrapper, popup);
-  document.body.append(root);
+  mount(root);
   return {
     root,
     parts: {
@@ -84,7 +96,7 @@ function dateRange({ id = "d1" } = {}) {
   };
 }
 
-function selectField({ id = "s1", optionCount = 3 } = {}) {
+function selectField({ id = `s${(fixtureSeq += 1)}`, optionCount = 3 } = {}) {
   const root = el("div", "mdy-renderer mdy-renderer--select");
   const label = el("label", "mdy-label");
   const wrapper = el("div", "mdy-input-wrapper");
@@ -104,7 +116,7 @@ function selectField({ id = "s1", optionCount = 3 } = {}) {
   }
   popup.append(listbox);
   root.append(label, wrapper, popup);
-  document.body.append(root);
+  mount(root);
   return {
     root,
     parts: { label, inputWrapper: wrapper, trigger, value, popup, listbox, option: options },
@@ -125,7 +137,7 @@ const MUTATIONS = [
       // bare div that never carried the contract's classes.
       const orphan = el("div", null);
       orphan.append(...fx.root.childNodes);
-      document.body.append(orphan);
+      mount(orphan);
       return { root: orphan, kind: "text", options: { parts: fx.parts } };
     },
   },
@@ -161,7 +173,7 @@ const MUTATIONS = [
     build: selectField,
     mutate: (fx) => {
       const stranger = el("div", null, { id: "someone-elses-popup" });
-      document.body.append(stranger);
+      mount(stranger);
       fx.parts.trigger.setAttribute("aria-controls", "someone-elses-popup");
       return { root: fx.root, kind: "select", options: { parts: fx.parts } };
     },
@@ -170,7 +182,7 @@ const MUTATIONS = [
     n: 6, id: "duplicate-id", title: "duplicate id",
     build: textField,
     mutate: (fx) => {
-      const twin = el("input", null, { id: "t1-control" });
+      const twin = el("input", null, { id: fx.parts.control.getAttribute("id") });
       fx.parts.inputWrapper.append(twin);
       return { root: fx.root, kind: "text", options: { parts: fx.parts } };
     },
@@ -273,24 +285,15 @@ const MUTATIONS = [
  * Shrinking this list is the deliverable of Milestone A — do not grow it to make a build pass.
  */
 const EXPECTED_UNCAUGHT = new Set([
-  // The shell's class vocabulary is not enforced per part: every shell part in the contract
-  // carries an empty class list, so `mdy-label` can be renamed freely. Only the root's classes
-  // and the widget-specific part classes are checked.
-  "class-renamed",
-  // `aria-controls` is only checked for pointing at *something*, never at the right thing.
-  "aria-controls-crosswired",
-  // Nothing checks id uniqueness.
-  "duplicate-id",
-  // `for` is an HTML attribute, not an ARIA one, and the reference check only walks ARIA.
-  "label-for-dangling",
-  // Ownership is not modelled: a widget may present any element as its part.
-  "foreign-popup",
-  // Nothing requires the native control to agree with its ARIA state.
-  "aria-only-disabled",
-  // Closed 2026-07-31 by task 06:
-  //   F-01 — "popup-present-when-unmounted" now raises ABSENT_PART_PRESENT.
-  //   F-02 — "wrong-cardinality" now raises PART_CARDINALITY against a declared count.
-  // Left as a note because the rows they vacated are the point of the ratchet.
+  // Empty. Every one of the fourteen is caught, each by a rule that names the part it broke.
+  //
+  // Closed 2026-07-31 by task 06: 14 (ABSENT_PART_PRESENT), 11 (PART_CARDINALITY).
+  // Closed 2026-07-31 by task 07: 2 (PART_CLASS_MISSING, once the shell parts declared their
+  // classes), 5 and 9 (ARIA_FOREIGN_REF / PART_NOT_OWNED), 6 (ID_DUPLICATE), 7 (the reference walk
+  // learned `for`), 10 (ARIA_STATE_NOT_APPLIED).
+  //
+  // Keep it empty. A mutation that stops being caught is a regression, and the assertion below
+  // will say so.
 ]);
 
 /** Run every mutation once and record what the inspector actually said. */
@@ -305,7 +308,7 @@ function runAll() {
       issues = [{ code: "THREW", part: "?", message: String(error && error.message) }];
     }
     results.push({ ...mutation, issues, caught: issues.length > 0 });
-    fx.root.remove();
+    clearMounted();
   }
   return results;
 }
@@ -319,7 +322,7 @@ test("every unmutated fixture conforms", () => {
       textField: "text", dateRange: "daterange", selectField: "select",
     }[name], { parts: fx.parts });
     assert.deepEqual(issues, [], `${name} should conform, got ${JSON.stringify(issues)}`);
-    fx.root.remove();
+    clearMounted();
   }
 });
 

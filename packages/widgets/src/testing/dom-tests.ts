@@ -21,6 +21,12 @@ export type MdyDomContractIssueCode =
   | "PART_NOT_CONTAINED"
   | "PART_ORDER"
   | "ARIA_DANGLING_REF"
+  | "ARIA_AMBIGUOUS_REF"
+  | "ARIA_FOREIGN_REF"
+  | "ARIA_STATE_INCOHERENT"
+  | "ARIA_STATE_NOT_APPLIED"
+  | "ID_DUPLICATE"
+  | "PART_NOT_OWNED"
   | "ARIA_NON_STRING_STATE"
   | "INVENTED_CLASS"
   | "STRUCTURE";
@@ -345,6 +351,133 @@ export function inspectWidgetDom(
       if (value !== "true" && value !== "false" && !(state === "aria-invalid" && value === "grammar")) {
         issues.push({ code: "ARIA_NON_STRING_STATE", part: "root", message: `${state} must be "true" or "false", got ${JSON.stringify(value)}` });
       }
+    }
+  }
+
+  // ─── Identity and ownership ────────────────────────────────────────────────
+  // Structure proves a widget is shaped right. None of it proves that *this* widget's parts are
+  // its own: two selects on a page are structurally identical, and the failures below are the ones
+  // that only exist once there are two of something.
+
+  const document_ = root.ownerDocument;
+
+  // An id claimed twice is not a cosmetic problem: the browser permits it, and every lookup that
+  // resolves by id — getElementById, label[for], every ARIA IDREF — silently picks one of them.
+  for (const element of scope) {
+    const id = element.getAttribute("id");
+    if (!id) continue;
+    const claimants = document_?.querySelectorAll(`[id="${CSS_ESCAPE(id)}"]`).length ?? 1;
+    if (claimants > 1) {
+      issues.push({
+        code: "ID_DUPLICATE",
+        part: "root",
+        message: `id ${id} is claimed by ${claimants} elements`,
+      });
+    }
+  }
+
+  // A reference must resolve to one element, and that element must belong to this widget — being
+  // outside the root is not the test, because a portalled popup is legitimately outside it. What
+  // makes it this widget's is that this widget declared it as a part.
+  const ownedElements = new Set<Element>();
+  for (const [, elements] of resolved) for (const element of elements) ownedElements.add(element);
+  const ownsElement = (element: Element): boolean => {
+    if (root.contains(element)) return true;
+    for (const owned of ownedElements) if (owned === element || owned.contains(element)) return true;
+    return false;
+  };
+
+  for (const element of scope) {
+    // `for` is an IDREF exactly like the ARIA ones — it is only HTML rather than ARIA, which is the
+    // sole reason the reference walk used to skip it. A label pointing at a control that does not
+    // exist is a label that does nothing when clicked and names nothing to a screen reader.
+    const references = element.tagName.toLowerCase() === "label"
+      ? [...ARIA_REFERENCES, "for"]
+      : ARIA_REFERENCES;
+    for (const attribute of references) {
+      const value = element.getAttribute(attribute);
+      if (!value) continue;
+      for (const id of value.split(/\s+/).filter(Boolean)) {
+        const matches = document_?.querySelectorAll(`[id="${CSS_ESCAPE(id)}"]`) ?? [];
+        // The ARIA attributes get their dangling check in the pass above; `for` only exists here.
+        if (matches.length === 0 && attribute === "for") {
+          issues.push({
+            code: "ARIA_DANGLING_REF",
+            part: "label",
+            message: `label[for] points at missing id ${id}`,
+          });
+          continue;
+        }
+        if (matches.length > 1) {
+          issues.push({
+            code: "ARIA_AMBIGUOUS_REF",
+            part: "root",
+            message: `${attribute} points at id ${id}, which ${matches.length} elements claim`,
+          });
+          continue;
+        }
+        const target = matches[0];
+        if (target && !ownsElement(target)) {
+          issues.push({
+            code: "ARIA_FOREIGN_REF",
+            part: "root",
+            message: `${attribute} points at ${id}, which is not a part of this widget`,
+          });
+        }
+      }
+    }
+  }
+
+  // The popup a trigger names must be the popup this widget declared. Without this, a widget can
+  // present any compatible element as its overlay and nothing notices whose it is.
+  if (definition.capabilities.overlay) {
+    const declaredPopups = resolved.get("popup") ?? [];
+    for (const element of scope) {
+      const controls = element.getAttribute("aria-controls");
+      if (!controls) continue;
+      const named = document_?.getElementById(controls);
+      if (!named || declaredPopups.length === 0) continue;
+      const matchesDeclared = declaredPopups.some(
+        (popup) => popup === named || popup.contains(named) || named.contains(popup),
+      );
+      if (!matchesDeclared) {
+        issues.push({
+          code: "PART_NOT_OWNED",
+          part: "popup",
+          message: `aria-controls names ${controls}, which is not the popup this widget declared`,
+        });
+      }
+    }
+  }
+
+  // A control that says it is expanded, and no popup. `absentParts` covers the other direction —
+  // declared closed while still rendered — so between them the claim and the DOM have to agree.
+  const popupAbsent = absent.has("popup") || (resolved.get("popup") ?? []).length === 0;
+  if (definition.capabilities.overlay && popupAbsent) {
+    for (const element of scope) {
+      if (element.getAttribute("aria-expanded") === "true") {
+        issues.push({
+          code: "ARIA_STATE_INCOHERENT",
+          part: "popup",
+          message: `aria-expanded="true" but no popup is rendered`,
+        });
+      }
+    }
+  }
+
+  // ARIA that describes a native control must agree with the control. `aria-disabled` alone leaves
+  // the element focusable and operable: the assistive technology is told one thing and the pointer
+  // and keyboard do another.
+  const NATIVE_DISABLEABLE = new Set(["input", "select", "textarea", "button", "fieldset", "optgroup", "option"]);
+  for (const element of scope) {
+    if (element.getAttribute("aria-disabled") !== "true") continue;
+    if (!NATIVE_DISABLEABLE.has(element.tagName.toLowerCase())) continue;
+    if (!element.hasAttribute("disabled")) {
+      issues.push({
+        code: "ARIA_STATE_NOT_APPLIED",
+        part: "root",
+        message: `<${element.tagName.toLowerCase()}> has aria-disabled="true" but is not actually disabled`,
+      });
     }
   }
 
