@@ -88,6 +88,10 @@ export function projectDatepickerFieldA11y(
         // carries read-only, and only on the kinds that declare the state.
         "aria-disabled": String(state.disabled),
         "aria-describedby": describedBy,
+        // The native attribute too. Plain applies this part to the typeable input, so without it a
+        // disabled datepicker announced itself disabled and still accepted a typed date — the
+        // exact gap `nativeAttribute` exists to catch.
+        disabled: state.disabled,
       },
     },
     grid: {

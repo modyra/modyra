@@ -89,6 +89,9 @@ export function projectTimepickerFieldA11y(
         // carries read-only, and only on the kinds that declare the state.
         "aria-disabled": String(state.disabled),
         "aria-describedby": describedBy,
+        // The native attribute too, for the same reason as the datepicker: this part lands on a
+        // typeable input, and ARIA alone left it operable.
+        disabled: state.disabled,
       },
     },
     dialog: {
