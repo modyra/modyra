@@ -87,7 +87,20 @@ export function partsOf(root, kind) {
     case "toggle":
       return { ...shell, inputWrapper: q(".mdy-toggle"), track: q(".mdy-toggle__track"), thumb: q(".mdy-toggle__thumb"), control: q(".mdy-toggle__control"), label: q(".mdy-toggle__label") };
     default:
-      return { ...shell, control: q("input, textarea, select") };
+      // Scoped to the wrapper the contract says holds the control, and returned as *every* match
+      // rather than the first. `q("input, textarea, select")` found an input — any input, anywhere
+      // in the root, a search box or a hidden native picker included — and handed back one of them,
+      // so a renderer emitting two controls looked identical to one emitting the right single
+      // control. Returning the set is what lets the cardinality rule see the difference.
+      return {
+        ...shell,
+        control: Array.from(
+          root.querySelectorAll(
+            ".mdy-input-wrapper > input, .mdy-input-wrapper > textarea, .mdy-input-wrapper > select," +
+              ".mdy-input-wrapper__inliner > input, .mdy-input-wrapper__inliner > textarea, .mdy-input-wrapper__inliner > select",
+          ),
+        ),
+      };
   }
 }
 
