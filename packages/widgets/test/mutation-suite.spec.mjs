@@ -287,9 +287,8 @@ const EXPECTED_UNCAUGHT = new Set([
   "aria-only-disabled",
   // No cardinality anywhere: one option is as contract-conforming as three.
   "wrong-cardinality",
-  // The `absentParts` bypass — the adapter declares a part absent and the inspector believes it
-  // without looking at the DOM, so a popup that is present while declared unmounted is invisible.
-  "popup-present-when-unmounted",
+  // Closed 2026-07-31 by task 06 / F-01: "popup-present-when-unmounted" now raises
+  // ABSENT_PART_PRESENT. Left here as a note because the row it vacated is the point of the ratchet.
 ]);
 
 /** Run every mutation once and record what the inspector actually said. */

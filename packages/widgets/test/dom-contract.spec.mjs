@@ -121,3 +121,34 @@ test("assert throws one error listing every violation", () => {
   });
   root.remove();
 });
+
+/* ── F-01: `absentParts` must not be a free bypass ──────────────────────────────
+ * The contract decides what may be missing, not the caller. Probes from the audit of
+ * 2026-07-30, each of which passed against the code before this gate existed. */
+
+test("absentParts cannot silence a part the contract requires", () => {
+  const root = el("div", "mdy-renderer mdy-renderer--text");
+  document.body.append(root);
+  const issues = inspectWidgetDom(root, "text", { absentParts: ["control", "inputWrapper"] });
+  assert.ok(issues.length > 0, "an empty root passed by naming its required parts absent");
+  const codes = issues.map((issue) => issue.code);
+  assert.ok(codes.includes("ABSENT_PART_NOT_OPTIONAL"), `expected ABSENT_PART_NOT_OPTIONAL, got ${codes.join(", ")}`);
+  root.remove();
+});
+
+test("a part declared absent must actually be absent from the DOM", () => {
+  const { root, parts } = buildTextField();
+  const issues = inspectWidgetDom(root, "text", { parts, absentParts: ["errors"] });
+  const codes = issues.map((issue) => issue.code);
+  assert.ok(codes.includes("ABSENT_PART_PRESENT"), `expected ABSENT_PART_PRESENT, got ${codes.join(", ")}`);
+  root.remove();
+});
+
+test("declaring an optional part absent is still fine when it really is", () => {
+  const { root, parts } = buildTextField();
+  parts.supportingText.remove();
+  const trimmed = { ...parts };
+  delete trimmed.supportingText;
+  assert.deepEqual(inspectWidgetDom(root, "text", { parts: trimmed, absentParts: ["supportingText"] }), []);
+  root.remove();
+});
