@@ -75,6 +75,10 @@ export function projectDatepickerFieldA11y(
         role: "combobox",
         "aria-haspopup": "grid",
         "aria-expanded": String(state.open),
+        // Says *which* grid. The trigger declared it had a popup and whether it was showing, and
+        // never named it, so nothing tied the two together — uniform on select and multiselect,
+        // absent on every picker.
+        "aria-controls": gridId,
         "aria-labelledby": labelId,
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),
