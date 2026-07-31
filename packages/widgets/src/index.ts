@@ -30,6 +30,8 @@ export type {
 
 export {
   defaultWidgetIdFactory,
+  isValidWidgetId,
+  MDY_ID_DELIMITER,
 } from "./ids.js";
 export type {
   MdyWidgetIdFactory,
