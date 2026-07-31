@@ -15,6 +15,7 @@ export type MdyDomContractIssueCode =
   | "ABSENT_PART_NOT_OPTIONAL"
   | "ABSENT_PART_PRESENT"
   | "PART_MISSING"
+  | "PART_CARDINALITY"
   | "PART_CLASS_MISSING"
   | "PART_NOT_CONTAINED"
   | "PART_ORDER"
@@ -43,6 +44,13 @@ export interface MdyDomContractOptions {
    * does not get to decide what the contract requires of it.
    */
   readonly absentParts?: readonly string[];
+  /**
+   * How many elements each part must have in this state, for parts the contract lets repeat.
+   * The contract knows a part repeats; only the caller knows the state has three options and not
+   * one, so the count comes from here and the *DOM* is what answers it — not the part map, which
+   * is the adapter restating its own claim.
+   */
+  readonly counts?: Readonly<Record<string, number>>;
   /** Reject `mdy-*` classes that the contract does not define. Off by default while the
    * per-part class vocabulary is still being filled in from the Angular baseline. */
   readonly strictClasses?: boolean;
@@ -128,6 +136,14 @@ export function inspectWidgetDom(
   resolved.set("root", [root]);
   for (const [part, value] of Object.entries(parts)) resolved.set(part, toArray(value));
 
+  // A portalled popup lives outside the root, so anything that searches the DOM has to look there
+  // too — otherwise a part is "missing" purely because the browser moved it.
+  const portalRoots = new Set<Element>();
+  for (const [part, elements] of resolved) {
+    for (const element of elements) if (isPortalled(part, element)) portalRoots.add(element);
+  }
+  const searchScope: readonly Element[] = [root, ...portalRoots];
+
   for (const node of definition.structure.nodes) {
     if (node.part === "root") continue;
     if (absent.has(node.part)) {
@@ -170,6 +186,37 @@ export function inspectWidgetDom(
       continue;
     }
     const contract = definition.parts[node.part as keyof typeof definition.parts] as MdyPartContract | undefined;
+
+    // A part the contract does not mark `repeated` is singular: two of them is not a richer
+    // rendering, it is an ambiguous one, and every later check would silently pick the first.
+    if (!node.repeated && elements.length > 1) {
+      issues.push({
+        code: "PART_CARDINALITY",
+        part: node.part,
+        message: `${node.part} is singular in the ${kind} contract but ${elements.length} were rendered`,
+      });
+    }
+
+    const expected = options.counts?.[node.part];
+    if (expected !== undefined) {
+      // Count the DOM, not the map. A part with classes can be counted for real; one without has
+      // nothing to search on, so the map is all there is.
+      const selector = (contract?.classes ?? []).map((className) => `.${CSS_ESCAPE(className)}`).join("");
+      const actual = selector
+        ? searchScope.reduce(
+            (total, container) => total + container.querySelectorAll(selector).length,
+            0,
+          )
+        : elements.length;
+      if (actual !== expected) {
+        issues.push({
+          code: "PART_CARDINALITY",
+          part: node.part,
+          message: `${node.part} was declared to have ${expected} element(s), the DOM has ${actual}`,
+        });
+      }
+    }
+
     for (const element of elements) {
       const own = new Set(classesOf(element));
       for (const className of contract?.classes ?? []) {
@@ -216,10 +263,6 @@ export function inspectWidgetDom(
 
   // ARIA is checked across the portal too: a reference that dangles outside the root is still a
   // broken reference.
-  const portalRoots = new Set<Element>();
-  for (const [part, elements] of resolved) {
-    for (const element of elements) if (isPortalled(part, element)) portalRoots.add(element);
-  }
   const scope: readonly Element[] = [
     root, ...Array.from(root.querySelectorAll("*")),
     ...[...portalRoots].flatMap((portal) => [portal, ...Array.from(portal.querySelectorAll("*"))]),

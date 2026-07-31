@@ -220,7 +220,9 @@ const MUTATIONS = [
       fx.parts.option[1].remove();
       fx.parts.option[2].remove();
       const parts = { ...fx.parts, option: [fx.parts.option[0]] };
-      return { root: fx.root, kind: "select", options: { parts } };
+      // The state has three options. Only the caller can say so — the contract knows `option`
+      // repeats, not how many times — so the count is declared and the DOM has to answer it.
+      return { root: fx.root, kind: "select", options: { parts, counts: { option: 3 } } };
     },
   },
   {
@@ -285,10 +287,10 @@ const EXPECTED_UNCAUGHT = new Set([
   "foreign-popup",
   // Nothing requires the native control to agree with its ARIA state.
   "aria-only-disabled",
-  // No cardinality anywhere: one option is as contract-conforming as three.
-  "wrong-cardinality",
-  // Closed 2026-07-31 by task 06 / F-01: "popup-present-when-unmounted" now raises
-  // ABSENT_PART_PRESENT. Left here as a note because the row it vacated is the point of the ratchet.
+  // Closed 2026-07-31 by task 06:
+  //   F-01 — "popup-present-when-unmounted" now raises ABSENT_PART_PRESENT.
+  //   F-02 — "wrong-cardinality" now raises PART_CARDINALITY against a declared count.
+  // Left as a note because the rows they vacated are the point of the ratchet.
 ]);
 
 /** Run every mutation once and record what the inspector actually said. */

@@ -152,3 +152,31 @@ test("declaring an optional part absent is still fine when it really is", () => 
   assert.deepEqual(inspectWidgetDom(root, "text", { parts: trimmed, absentParts: ["supportingText"] }), []);
   root.remove();
 });
+
+/* ── F-02: cardinality is normative ────────────────────────────────────────────
+ * The model had `repeated` and the inspector took the first match. Probed in the audit:
+ * two `.mdy-control` elements passed as `control`. */
+
+test("a singular part rendered twice is reported", () => {
+  const { root, parts } = buildTextField();
+  const twin = el("input", null, {});
+  parts.inputWrapper.append(twin);
+  const issues = inspectWidgetDom(root, "text", { parts: { ...parts, control: [parts.control, twin] } });
+  const codes = issues.map((issue) => issue.code);
+  assert.ok(codes.includes("PART_CARDINALITY"), `expected PART_CARDINALITY, got ${codes.join(", ")}`);
+  root.remove();
+});
+
+test("a declared count that the DOM does not match is reported", () => {
+  const { root, parts } = buildTextField();
+  const issues = inspectWidgetDom(root, "text", { parts, counts: { errorItem: 3 } });
+  const codes = issues.map((issue) => issue.code);
+  assert.ok(codes.includes("PART_CARDINALITY"), `expected PART_CARDINALITY, got ${codes.join(", ")}`);
+  root.remove();
+});
+
+test("a declared count the DOM does match passes", () => {
+  const { root, parts } = buildTextField();
+  assert.deepEqual(inspectWidgetDom(root, "text", { parts, counts: { errorItem: 1 } }), []);
+  root.remove();
+});

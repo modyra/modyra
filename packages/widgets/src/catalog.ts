@@ -88,6 +88,16 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
 /** Parts an adapter must always render — the control, and whatever physically holds it. */
 const REQUIRED_PARTS: ReadonlySet<string> = new Set(["control", "startControl", "endControl", "trigger", "group", "inputWrapper", "dropzone", "track"]);
 
+/**
+ * Parts a widget renders once per item rather than once. Everything else is singular, and that is
+ * the point: without this line, "how many of these may there be" had no answer, so two controls
+ * were as conforming as one. A part that repeats says so here; a part that does not, cannot.
+ */
+const REPEATED_PARTS: ReadonlySet<string> = new Set([
+  "option", "optionWrapper", "optionLabel", "optionCheck", "optionStep", "optionCount",
+  "errorItem", "chip", "gridcell", "row", "weekday", "swatch", "fileItem", "dialNumber", "action",
+]);
+
 /** Per-widget deviations from the shared tables: where a part hangs, and the class it carries. */
 interface MdyWidgetShape {
   readonly parents?: Readonly<Record<string, string>>;
@@ -180,7 +190,7 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
       ?? (PARENT_CANDIDATES[name] ?? []).find((candidate) => declared.has(candidate)) ?? "root";
     const order = siblingCount.get(parent) ?? 0;
     siblingCount.set(parent, order + 1);
-    return Object.freeze({ part: name, element: semanticElement(name), parent: parent as TPart, order, optional: !REQUIRED_PARTS.has(name) });
+    return Object.freeze({ part: name, element: semanticElement(name), parent: parent as TPart, order, optional: !REQUIRED_PARTS.has(name), repeated: REPEATED_PARTS.has(name) });
   });
   return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), capabilities: Object.freeze({ keyboard: true, focus: true, overlay, dismissOnOutsidePointer: overlay, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
