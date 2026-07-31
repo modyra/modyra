@@ -29,6 +29,15 @@ export type {
 } from "./commands.js";
 
 export {
+  MDY_WIDGET_STATES,
+  MDY_WIDGET_STATE_CONTRACTS,
+  MDY_WIDGET_STATE_SUPPORT,
+  widgetStateMatrixSize,
+  widgetSupportsState,
+} from "./widget-states.js";
+export type { MdyWidgetState, MdyWidgetStateContract } from "./widget-states.js";
+
+export {
   defaultWidgetIdFactory,
   isValidWidgetId,
   MDY_ID_DELIMITER,
