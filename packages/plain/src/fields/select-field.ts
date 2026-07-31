@@ -94,7 +94,11 @@ export function renderSelectField(
   shell.label.htmlFor = controller.view().parts.trigger.id ?? "";
   // The select controller's view has no description/error parts, so the shell's own canonical
   // classes are all these two carry; only the live region needs adding.
-  shell.errorList.setAttribute("role", "alert");
+  // `role="alert"` on a <ul> is what axe's aria-allowed-role objects to: alert is not a role a list
+  // may take, and applying it discards the list semantics without gaining a live region that
+  // announces reliably. `aria-live="assertive"` gets the interruption without the role conflict,
+  // and the element stays a list.
+  shell.errorList.setAttribute("aria-live", "assertive");
 
   const lookup: MdyElementLookup = (part, key) => {
     if (part === "trigger") return trigger;

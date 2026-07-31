@@ -40,6 +40,10 @@ export function renderColorsField(
   applyPart(preview, definition.parts.preview);
   const control = el("input") as HTMLInputElement;
   control.type = "color";
+  // The native colour input is visually hidden behind the swatch, so it has no visible label of its
+  // own and axe reported it as a control with no accessible name. The <label> that wraps it is the
+  // picker, whose text is the swatch — nothing a screen reader can read — so the name is given here.
+  control.setAttribute("aria-label", f.label ? `${f.label} colour value` : "Colour value");
   applyPart(control, definition.parts.control);
   picker.append(preview, control);
 
