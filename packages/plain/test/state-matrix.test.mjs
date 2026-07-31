@@ -169,10 +169,11 @@ const KNOWN_DIVERGENCES = {
 };
 
 /**
- * `aria-readonly="false"` on kinds that have no read-only rendering — the signature of a common
- * ARIA shell applied mechanically to every control, and the second defect the review predicted.
+ * Empty. `aria-readonly` is now emitted only when it is true, so a control with no read-only
+ * rendering says nothing instead of announcing `aria-readonly="false"` — the ARIA shell the review
+ * called out. Keep it empty: the assertion matches exactly, so a new offender fails.
  */
-const KNOWN_UNSUPPORTED_ARIA = ["slider", "checkbox", "toggle", "radio", "segmented"];
+const KNOWN_UNSUPPORTED_ARIA = [];
 
 const results = [];
 const undrivable = [];
