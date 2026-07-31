@@ -1269,11 +1269,25 @@
         appearance: none;
         height: var(--mdy-slider-track-height);
         /* M3: 4px */
+        /* Where the fill ends: under the centre of the handle. A range input's handle travels by
+           its centre, from `thumb/2` to `100% - thumb/2`, and never hangs off either end — so a
+           stop at `ratio * 100%` tracks the element instead of the handle and misses it by
+           `thumb * (ratio - 0.5)`: half a handle short at the minimum, half a handle past at the
+           maximum, correct only at the midpoint. Reading the size from its token rather than a
+           constant means a theme that resizes the handle stays aligned without touching this. */
+        --mdy-slider-fill-stop:
+            calc(var(--mdy-slider-thumb-size) / 2
+                    + var(--mdy-slider-fill) * (100% - var(--mdy-slider-thumb-size)));
+        /* Kept for anything that *reads* the old name. Declared here rather than at token scope for
+           the same reason the gradient is: a custom property substitutes what it references when
+           its own declaration is computed, so at `:root` this would freeze at the root's 0.
+           Writing this property no longer has any effect — write `--mdy-slider-fill`. */
+        --mdy-slider-fill-pct: calc(var(--mdy-slider-fill) * 100%);
         /* The split track: filled up to the handle, empty after it. Composed here, on the element
-           that carries `--mdy-slider-fill-pct`, so the stop is the value the renderer just wrote. */
+           that carries the ratio, so the stop is the value the renderer just wrote. */
         background: linear-gradient(to right,
-                var(--mdy-slider-active-color) var(--mdy-slider-fill-pct),
-                var(--mdy-slider-inactive-color) var(--mdy-slider-fill-pct));
+                var(--mdy-slider-active-color) var(--mdy-slider-fill-stop),
+                var(--mdy-slider-inactive-color) var(--mdy-slider-fill-stop));
         outline: none;
         cursor: pointer;
         border-radius: var(--mdy-corner-full);
