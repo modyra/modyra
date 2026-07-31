@@ -277,9 +277,23 @@
     "mdy-supporting-text",
     "mdy-text",
     "mdy-timepicker",
+    "mdy-timepicker--dial",
+    "mdy-timepicker-action-btn",
+    "mdy-timepicker-action-btn--confirm",
+    "mdy-timepicker-actions",
     "mdy-timepicker-clock",
+    "mdy-timepicker-container",
+    "mdy-timepicker-content",
+    "mdy-timepicker-dial",
+    "mdy-timepicker-dial-variant",
+    "mdy-timepicker-dial__face",
+    "mdy-timepicker-dial__hand",
+    "mdy-timepicker-dial__number",
+    "mdy-timepicker-dial__number--inner",
+    "mdy-timepicker-dial__number--selected",
     "mdy-timepicker-fields",
     "mdy-timepicker-header",
+    "mdy-timepicker-mode-toggle",
     "mdy-timepicker-period-btn",
     "mdy-timepicker-period-btn--selected",
     "mdy-timepicker-period-toggle",
@@ -292,6 +306,7 @@
     "mdy-timepicker-segment-input--readonly",
     "mdy-timepicker-segment-label",
     "mdy-timepicker-separator",
+    "mdy-timepicker-spacer",
     "mdy-timepicker__icon",
     "mdy-timepicker__input",
     "mdy-timepicker__popup",
@@ -318,7 +333,11 @@
     "aria-modal",
     "aria-pressed",
     "aria-required",
-    "aria-selected"
+    "aria-selected",
+    "aria-valuemax",
+    "aria-valuemin",
+    "aria-valuenow",
+    "aria-valuetext"
   ],
   "files": {
     "packages/angular/src/lib/control/chips.directive.ts": {
@@ -1092,6 +1111,35 @@
       "selectors": [
         "mdy-control-textarea"
       ]
+    },
+    "packages/angular/src/lib/renderers/timepicker/timepicker-clock.component.html": {
+      "classes": [
+        "mdy-timepicker--dial",
+        "mdy-timepicker-action-btn",
+        "mdy-timepicker-action-btn--confirm",
+        "mdy-timepicker-actions",
+        "mdy-timepicker-container",
+        "mdy-timepicker-content",
+        "mdy-timepicker-dial",
+        "mdy-timepicker-dial-variant",
+        "mdy-timepicker-dial__face",
+        "mdy-timepicker-dial__hand",
+        "mdy-timepicker-dial__number",
+        "mdy-timepicker-dial__number--inner",
+        "mdy-timepicker-dial__number--selected",
+        "mdy-timepicker-header",
+        "mdy-timepicker-mode-toggle",
+        "mdy-timepicker-spacer"
+      ],
+      "aria": [
+        "aria-disabled",
+        "aria-label",
+        "aria-valuemax",
+        "aria-valuemin",
+        "aria-valuenow",
+        "aria-valuetext"
+      ],
+      "selectors": []
     },
     "packages/angular/src/lib/renderers/timepicker/timepicker-clock.component.ts": {
       "classes": [
