@@ -103,20 +103,21 @@ function mount(kind) {
 /**
  * Plain's remaining divergences.
  *
- * `readonly` is closed. What is left is batch D: `disabled` not reaching a composite's trigger or
- * toggle button and the datepicker's input staying typeable, plus `aria-invalid` and `aria-disabled`
- * missing on a few composites.
+ * `readonly` is closed, and so is the half of batch D that had a projection to fix: select,
+ * multiselect, datepicker and timepicker now apply the native `disabled` as well as the ARIA, and
+ * select exposes `aria-invalid`.
+ *
+ * What is left is one finding, not six. **`daterange`, `colors` and `file` have no a11y projection
+ * at all** — no controller in `@modyra/widgets` builds one, so these renderers apply the *static*
+ * part contract and nothing state-driven. They expose no `aria-invalid`, no `aria-disabled`, no
+ * `aria-required` and no `aria-describedby`, which means their error messages are not announced.
+ * That is wider than these six rows and is its own batch, on every adapter at once.
  */
 const KNOWN_DIVERGENCES = {
-  "select × disabled": ["STATE_NOT_APPLIED"],
-  "multiselect × disabled": ["STATE_NOT_APPLIED"],
-  "datepicker × disabled": ["STATE_NOT_APPLIED"],
-  "timepicker × disabled": ["STATE_NOT_APPLIED"],
   "daterange × disabled": ["STATE_ARIA_MISSING"],
   "colors × disabled": ["STATE_ARIA_MISSING"],
   "file × disabled": ["STATE_ARIA_MISSING"],
 
-  "select × invalid": ["STATE_ARIA_MISSING"],
   "daterange × invalid": ["STATE_ARIA_MISSING"],
   "colors × invalid": ["STATE_ARIA_MISSING"],
   "file × invalid": ["STATE_ARIA_MISSING"],
