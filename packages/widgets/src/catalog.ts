@@ -280,12 +280,14 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // string in a renderer.
   multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "header", "searchButton", "options", "optionWrapper", "option", "optionCheck", "optionStep", "optionLabel", "optionCount", "chips", "chip", "placeholder", "popup", "search", "listbox", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { parents: { header: "inputWrapper", searchButton: "header", options: "root", optionWrapper: "options", option: "optionWrapper", chips: "inputWrapper", chip: "chips", placeholder: "inputWrapper", listbox: "popup", search: "popup" },
-      // This widget is a grid of toggle chips, not a listbox: each choice is a <button> the pointer
-      // and the keyboard both operate, and the container groups them. Declared as what the adapters
-      // actually render. Whether a multi-select *should* instead be a listbox with
-      // aria-multiselectable is an accessibility question, and it belongs to task 08 — not to a
-      // batch whose rule is that no renderer changes.
-      elements: { option: "button", listbox: "group" },
+      // This widget is a grid of chips, not a listbox, and the chip's element depends on the mode:
+      // a <button> in toggle mode, a <div> carrying its own +/- step buttons in counter mode. The
+      // contract has no way to say "this part's element depends on that option", so `option` is
+      // declared unconstrained rather than asserting the half of it that a single-mode fixture
+      // happens to show — which is what it did until the demo, in counter mode, said otherwise.
+      // Expressing per-mode anatomy is task 15's problem. Whether a multi-select should instead be
+      // a listbox with aria-multiselectable is task 08's.
+      elements: { option: "presentation", listbox: "group" },
       states: { option: ["selected"], chip: ["selected", "removable"], popup: POPUP_PLACEMENT_STATES },
       classes: { inputWrapper: ["mdy-multiselect"], header: ["mdy-multiselect__header"], searchButton: ["mdy-multiselect__search-btn"], options: ["mdy-multiselect__options"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], listbox: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
