@@ -28,15 +28,16 @@ import { CATALOG_KINDS, CatalogHost, partsOf } from "./catalog-host.spec";
  * What remains below is unchanged, and none of it is an ARIA reference.
  */
 const KNOWN_DIVERGENCES: Partial<Record<MdyWidgetKind, string[]>> = {
-  // Angular's select renders a native <select> unless an option template or search is supplied —
-  // the custom trigger sits behind `@if (optionTpl() || searchable())`. The contract makes `trigger`
-  // required, so in its native mode Angular has no element to offer. Either the contract must let a
-  // native <select> satisfy `trigger`, or the renderer must always emit one. That is a
-  // renderer-equivalence decision, not a fixture bug: Plain always renders a trigger.
-  select: ["PART_MISSING:trigger"],
-  // The chips wrapper precedes the input wrapper in Angular and follows it in Plain, and the label
-  // points at an id no element in this fixture carries.
-  multiselect: ["PART_ORDER:inputWrapper", "ARIA_DANGLING_REF:label"],
+  // The trigger exists — the fixture is `searchable`, so the custom trigger behind
+  // `@if (optionTpl() || searchable())` is rendered — but it does not sit inside the element the
+  // contract calls its owner. Whether a native `<select>` may satisfy `trigger` at all remains a
+  // renderer-equivalence question; this is the narrower one of where the part lives, and it is the
+  // same question as `datepicker`/`timepicker` below.
+  select: ["PART_NOT_OWNED:trigger"],
+  // The chips wrapper precedes the input wrapper in Angular and follows it in Plain, the label
+  // points at an id no element in this fixture carries, and the search button has the same
+  // ownership question as the select trigger.
+  multiselect: ["PART_ORDER:inputWrapper", "ARIA_DANGLING_REF:label", "PART_NOT_OWNED:searchButton"],
   // `nativePicker` was declared a <label> in task 06, from Plain, which wraps the hidden colour
   // input in one. Angular does not, and its `control` sits outside the picker as a result.
   colors: ["PART_ELEMENT:nativePicker", "PART_NOT_CONTAINED:control", "PART_NOT_OWNED:toggle"],

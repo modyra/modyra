@@ -66,11 +66,12 @@ export const CATALOG_KINDS: ReadonlyArray<{
 ];
 
 /**
- * Every control is `mdyRequired`.
+ * Every control is `mdyRequired`, and select and multiselect are `searchable`.
  *
- * Without a validator no field can ever be invalid, so every `× invalid` row in the state matrix
- * read as a renderer divergence when it was a fixture with nothing to fail. The marker and
- * `aria-required` that come with it are part of the contract these suites check, not noise.
+ * Without a validator no field can be invalid, so every `invalid` row measures nothing. Without
+ * `searchable` the select renders a native `<select>` and has no trigger to click, so its overlay
+ * transitions cannot be driven at all. The required marker and `aria-required` that come with the
+ * validator are part of the contract these suites check, not noise.
  */
 @Component({
   standalone: true,
@@ -94,8 +95,8 @@ export const CATALOG_KINDS: ReadonlyArray<{
       <mdy-control-segmented name="billing" label="Billing" [options]="options" mdyRequired />
       <mdy-control-text name="mail" label="Mail" type="email" mdyRequired />
       <mdy-control-text name="secret" label="Secret" type="password" mdyRequired />
-      <mdy-control-select name="country" label="Country" [options]="options" mdyRequired />
-      <mdy-control-multiselect name="tags" label="Tags" [options]="options" mdyRequired />
+      <mdy-control-select name="country" label="Country" [options]="options" searchable mdyRequired />
+      <mdy-control-multiselect name="tags" label="Tags" [options]="options" searchable mdyRequired />
       <mdy-control-datepicker name="birthday" label="Birthday" mdyRequired />
       <mdy-control-daterange name="trip" label="Trip" mdyRequired />
       <mdy-control-timepicker name="slot" label="Slot" mdyRequired />
