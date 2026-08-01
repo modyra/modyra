@@ -7,6 +7,7 @@
  */
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
 import type { MdyPartContract } from "../contract.js";
+import { MDY_STATE_MODIFIERS } from "../state.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_SHARED_UI_CLASSES } from "../structure.js";
 import { inspectWidgetStructure } from "./structure-tests.js";
 
@@ -58,11 +59,9 @@ export interface MdyDomContractOptions {
    * is the adapter restating its own claim.
    */
   readonly counts?: Readonly<Record<string, number>>;
-  /** Reject `mdy-*` classes that the contract does not define. Off by default while the
-   * per-part class vocabulary is still being filled in from the Angular baseline. */
+  /** Reject `mdy-*` classes the contract does not define. A renderer that needs a hook of its own
+   * namespaces it under {@link adapterPrefix} rather than spelling a contract class. */
   readonly strictClasses?: boolean;
-  /** Extra classes accepted under `strictClasses` — theme hooks the contract does not own. */
-  readonly allowedClasses?: readonly string[];
   /**
    * Prefix an adapter uses to namespace classes of its own, such as `mdy-plain-`.
    *
@@ -138,6 +137,8 @@ const SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly string[]; role
   // A run of errors is a list, an inline error is a span, a loading note is a paragraph. Named
   // rather than widened to "anything": this still rejects a control, a button or a bare div.
   status: { tags: ["output", "ul", "ol", "li", "p", "span"], roles: ["status", "alert", "log", "list", "listitem"] },
+  // A graphic with an accessible name. The tag is whatever draws it, so the role is what counts.
+  image: { tags: ["img", "svg"], roles: ["img"] },
 });
 
 /** An `input[type=button]` is a button; a bare `input` is a control. Tags alone cannot say so. */
@@ -158,7 +159,7 @@ function satisfiesSemanticElement(element: Element, semantic: string): boolean {
 }
 
 /** Canonical vocabulary for a kind: root classes, part classes, the shared shell, plus modifiers. */
-function canonicalClasses(kind: MdyWidgetKind, extra: readonly string[]): ReadonlySet<string> {
+function canonicalClasses(kind: MdyWidgetKind): ReadonlySet<string> {
   const definition = MDY_WIDGET_CONTRACTS[kind];
   const parts: readonly MdyPartContract[] = Object.values(definition.parts);
   const S = MDY_FIELD_STATE_CLASSES;
@@ -177,7 +178,6 @@ function canonicalClasses(kind: MdyWidgetKind, extra: readonly string[]): Readon
     // and the classes that belong to no single widget.
     ...definition.presentationClasses,
     ...MDY_SHARED_UI_CLASSES,
-    ...extra,
   ]);
 }
 
@@ -196,7 +196,10 @@ function declaredModifiers(kind: MdyWidgetKind): ReadonlyMap<string, ReadonlySet
     if (!part.states?.length) continue;
     for (const className of part.classes) {
       const known = byBase.get(className) ?? new Set<string>();
-      for (const state of part.states) known.add(state);
+      // A state's name and the modifier it becomes are not the same string — `hasError` is spelled
+      // `--has-error` on the element. Comparing the name against the class suffix rejected every
+      // state where the two differ, which no fixture had yet put on screen.
+      for (const state of part.states) known.add(MDY_STATE_MODIFIERS[state]);
       byBase.set(className, known);
     }
   }
@@ -572,7 +575,7 @@ export function inspectWidgetDom(
   }
 
   if (options.strictClasses) {
-    const canonical = canonicalClasses(kind, options.allowedClasses ?? []);
+    const canonical = canonicalClasses(kind);
     const declared = declaredModifiers(kind);
     for (const element of scope) {
       for (const className of classesOf(element)) {

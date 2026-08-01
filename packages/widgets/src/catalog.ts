@@ -327,7 +327,11 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   toggle: "button", searchButton: "button", clear: "button",
   modeToggle: "button", action: "button", optionStep: "button", chip: "button",
   // Announcements.
-  errors: "status", inlineError: "status", loading: "status", empty: "status", errorItem: "status",
+  errors: "status", loading: "status", empty: "status", errorItem: "status",
+  // An icon carrying its message as a label, not a live region: the message itself already reaches
+  // assistive technology through the control's `aria-describedby`, and announcing it twice is worse
+  // than announcing it once.
+  inlineError: "image",
   // Supporting text describes the control; it is not an announcement, and it carries no live role.
   supportingText: "text",
   // Text the user reads.
