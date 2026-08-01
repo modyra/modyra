@@ -5,7 +5,7 @@
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_CSS_PROPERTIES } from "../css.js";
-import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
+import { MDY_FIELD_STATE_CLASSES, MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type {
   MdyOptionFieldState,
   MdyOptionFieldVariant,
@@ -37,15 +37,14 @@ export function optionFieldPartIds(widgetId: string): {
 export function optionFieldRootClasses<TValue>(
   state: MdyOptionFieldState<TValue>,
 ): readonly string[] {
+  // Through the shared vocabulary rather than as literals: these were eight hand-written
+  // `mdy-field--*` names and no theme styled one of them.
+  const S = MDY_FIELD_STATE_CLASSES;
   return [
-    "mdy-field",
-    ...(state.invalid ? ["mdy-field--invalid"] : []),
-    ...(state.disabled ? ["mdy-field--disabled"] : []),
-    ...(state.readonly ? ["mdy-field--readonly"] : []),
-    ...(state.required ? ["mdy-field--required"] : []),
-    ...(state.touched ? ["mdy-field--touched"] : []),
-    ...(state.dirty ? ["mdy-field--dirty"] : []),
-    ...(state.pending ? ["mdy-field--pending"] : []),
+    S.field,
+    ...S.fieldStates
+      .filter((name: string) => Boolean((state as unknown as Record<string, unknown>)[name]))
+      .map((name: string) => `${S.field}--${name}`),
   ];
 }
 
