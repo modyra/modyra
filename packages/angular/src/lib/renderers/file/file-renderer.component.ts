@@ -46,7 +46,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
         (change)="onFileChange($event)"
         (blur)="dispatchValueBlur('file')"
         [attr.aria-invalid]="hasErrors()"
-        [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
+        [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-required]="ariaRequired() || isRequired()"
       />
 

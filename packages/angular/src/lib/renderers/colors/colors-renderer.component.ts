@@ -98,7 +98,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             [disabled]="isDisabled()"
             [attr.aria-label]="label() || i18n.colorHexLabel"
             [attr.aria-invalid]="touched() && hasErrors() ? 'true' : null"
-            [attr.aria-describedby]="touched() && hasErrors() ? fieldId + '-errors' : null"
+            [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-required]="isRequired() ? 'true' : null"
             [attr.aria-disabled]="isDisabled() ? 'true' : null"
             (input)="onTextInput($event)"

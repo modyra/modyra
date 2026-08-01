@@ -42,7 +42,7 @@ import { inputText } from "../renderer-projection";
         (change)="onChange($event)"
         (blur)="dispatchValueBlur('slider')"
         [attr.aria-invalid]="hasErrors()"
-        [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
+        [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-required]="ariaRequired() || isRequired()"
       />
       @if (showValue()) {

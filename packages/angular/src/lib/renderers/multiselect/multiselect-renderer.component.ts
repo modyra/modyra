@@ -88,7 +88,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       role="group"
       [attr.aria-label]="label() || null"
       [attr.aria-invalid]="hasErrors()"
-      [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
+      [attr.aria-describedby]="describedById(fieldId)"
       [attr.aria-required]="ariaRequired() || isRequired()"
       [attr.aria-disabled]="effectiveAriaDisabled()"
     >

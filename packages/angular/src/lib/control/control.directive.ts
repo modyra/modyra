@@ -265,6 +265,33 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   protected readonly effectiveAriaDisabled: Signal<boolean> = computed(
     () => this.ariaDisabled() ?? this.isDisabled(),
   );
+
+  /**
+   * Whether the error list is actually in the DOM.
+   *
+   * This is the *same* condition every renderer template guards the list with. It lives here
+   * because it used to live in thirteen places and drift: the templates rendered the list on
+   * `!inlineErrors && touched() && hasErrors()` and pointed `aria-describedby` at it on
+   * `hasErrors()` alone. An invalid but untouched field — the resting state of every required field
+   * on page load — therefore described itself by an element that did not exist, and so did every
+   * field using inline errors.
+   */
+  protected readonly errorsRendered: Signal<boolean> = computed(
+    () => !this.inlineErrors && this.touched() && this.hasErrors(),
+  );
+
+  /**
+   * The id for `aria-describedby`, or `null` when there is nothing rendered to name.
+   *
+   * Takes the renderer's own `fieldId` because each renderer mints its own, and returns the id the
+   * error-list component actually puts on the element — pointing at anything else is how the
+   * reference dangled in the first place. Angular's supporting text carries no id, so there is no
+   * description to fall back to; a control with no errors describes itself by nothing rather than
+   * by an id nobody rendered.
+   */
+  protected describedById(fieldId: string): string | null {
+    return this.errorsRendered() ? `${fieldId}-errors` : null;
+  }
   /** Whether the field is required (deduced from validators). */
   protected readonly isRequired: Signal<boolean> = computed(() =>
     this.fieldState().required(),

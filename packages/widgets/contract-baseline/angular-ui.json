@@ -379,6 +379,7 @@
         "mdy-renderer--touched"
       ],
       "aria": [
+        "aria-describedby",
         "aria-disabled"
       ],
       "selectors": []
