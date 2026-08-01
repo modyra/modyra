@@ -61,6 +61,42 @@ function partsOf(root, kind) {
       return kind === "segmented"
         ? { ...shell, group: q(".mdy-segmented"), option: q(".mdy-segmented__button"), optionCheck: q(".mdy-segmented__check"), optionText: q(".mdy-segmented__text") }
         : { ...shell, group: q(".mdy-radio-group"), option: q(".mdy-radio-item"), optionControl: q(".mdy-radio-circle"), optionLabel: q(".mdy-radio-label") };
+    // The overlay kinds. Without these they fell through to the text-field default, so the trigger,
+    // the toggle and the search button — the parts the contract names as openers — were left to be
+    // resolved by class alone, and a fixture cannot assert what it never named.
+    case "select":
+      return { ...shell, trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), arrow: q(".mdy-select__arrow"), popup: q(".mdy-select__dropdown"), listbox: q(".mdy-select__list"), option: Array.from(root.querySelectorAll(".mdy-select__option")) };
+    case "multiselect":
+      return {
+        ...shell, inputWrapper: q(".mdy-multiselect"), searchButton: q(".mdy-multiselect__search-btn"),
+        header: q(".mdy-multiselect__header"), popup: q(".mdy-multiselect__dropdown"),
+        // The popup's grid carries both `mdy-multiselect__options` and the overlay class, so the
+        // field's own grid has to be named by exclusion — resolving `options` by its single class
+        // finds two elements and reports the part as duplicated.
+        options: q(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid)"),
+        placeholder: q(".mdy-multiselect__placeholder"),
+        // Both grids hold chips, so the field's own have to be named from its grid rather than by
+        // class across the whole widget — otherwise the first match is the popup's.
+        optionWrapper: Array.from(root.querySelectorAll(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid) .mdy-chip-wrapper")),
+        option: Array.from(root.querySelectorAll(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid) .mdy-chip")),
+        optionCheck: Array.from(root.querySelectorAll(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid) .mdy-chip__check")),
+        optionLabel: Array.from(root.querySelectorAll(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid) .mdy-chip__label")),
+      };
+    case "datepicker":
+      return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), calendar: q(".mdy-datepicker__calendar"), grid: q(".mdy-datepicker__grid") };
+    case "timepicker":
+      return { ...shell, control: q(".mdy-timepicker__input"), toggle: q(".mdy-timepicker__toggle"), popup: q(".mdy-timepicker__popup") };
+    case "colors":
+      return {
+        ...shell, control: q(".mdy-colors__native-hidden"), hexInput: q(".mdy-colors__hex-input"),
+        toggle: q(".mdy-colors__toggle-area"), popup: q(".mdy-colors__dropdown"),
+        presets: q(".mdy-colors__presets"),
+        // The control's picker is the part. This element carries `mdy-colors__primary-picker` and so
+        // does a second button inside the palette, which the contract declares singular — naming the
+        // part here says which one it is. Whether the palette's button should carry a class of its
+        // own is an open question about published surface, not something a fixture decides.
+        nativePicker: q(".mdy-input-wrapper .mdy-colors__primary-picker"),
+      };
     default:
       return { ...shell, control: q("input, textarea") };
   }
@@ -170,6 +206,58 @@ for (const [tag, kind, initial, opener] of OVERLAY_ELEMENTS) {
     assert.equal(element._open, false, `${tag} stayed open after a pointer outside it`);
 
     outside.remove();
+    element.remove();
+  });
+}
+
+/**
+ * The DOM contract, with the overlay open.
+ *
+ * At rest an overlay widget renders none of its popup, so the listbox and its options, the calendar
+ * grid and its cells, the clock face — forty-five parts across six kinds — had their classes,
+ * parents, order, semantics and cardinality checked nowhere. `overlayOnlyParts` names them, which is
+ * what makes this suite's scope a measurement rather than a guess.
+ */
+const ABSENT_WHILE_OPEN = {
+  select: ["empty", "loading"],
+  multiselect: ["empty", "loading", "chips", "chip", "optionStep", "optionCount"],
+  datepicker: ["actions"],
+  daterange: ["actions"],
+  timepicker: [],
+  colors: [],
+};
+
+for (const [tag, kind, initial, opener] of OVERLAY_ELEMENTS) {
+  test(`<${tag}> renders the ${kind} contract while it is open`, async () => {
+    const { MDY_POPUP_OPENERS } = await import("../../widgets/dist/index.js");
+    const form = createLitForm({ value: field(initial) });
+    const element = await mount(tag, (el) => {
+      el.field = form.f.value;
+      el.label = "Label";
+      if (kind === "select" || kind === "multiselect") el.options = [option];
+    });
+
+    element.querySelector(opener).click();
+    await element.updateComplete;
+
+    // The element carrying the relation is the part the contract names, which is not always the one
+    // a pointer lands on: a datepicker's opener is its typeable control.
+    const parts = partsOf(element, kind);
+    const declaredOpener = parts[MDY_POPUP_OPENERS[kind].opener];
+    assert.ok(declaredOpener, `${kind}: the declared opener part is not mapped`);
+    assert.equal(declaredOpener.getAttribute("aria-expanded"), "true", `${kind} did not open`);
+
+    const issues = inspectWidgetDom(element, kind, {
+      parts,
+      absentParts: ABSENT_WHILE_OPEN[kind] ?? [],
+      strictClasses: true,
+    });
+    assert.deepEqual(
+      issues.map((issue) => `${issue.code}:${issue.part}`),
+      [],
+      `${kind}: ${issues.map((issue) => issue.message).join(" / ")}`,
+    );
+
     element.remove();
   });
 }

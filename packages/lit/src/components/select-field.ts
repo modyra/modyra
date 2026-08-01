@@ -208,6 +208,14 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
   override render(): unknown {
     const handle = this.field;
     if (!handle || !this.selectAdapter) return super.render();
+    // Which description is on screen is this element's decision — it renders one or the other — so
+    // it has to tell the projection before reading the trigger back out of it. `aria-describedby`
+    // must name an element that exists.
+    const blockErrors = !this.inlineErrors && this.showErrors(handle);
+    this.selectAdapter.setDescribedBy({
+      errorsVisible: blockErrors,
+      descriptionVisible: !blockErrors,
+    });
     const state = this.selectAdapter.state;
     const view = this.selectAdapter.view;
     const trigger = view.parts.trigger;
@@ -297,7 +305,9 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             id=${trigger.id}
             aria-haspopup=${trigger.attributes["aria-haspopup"]}
             aria-expanded=${trigger.attributes["aria-expanded"] === "true" ? "true" : "false"}
+            role=${trigger.role ?? nothing}
             aria-controls=${trigger.attributes["aria-controls"]}
+            aria-describedby=${trigger.attributes["aria-describedby"] ?? nothing}
             aria-activedescendant=${trigger.attributes["aria-activedescendant"] ?? nothing}
             aria-disabled=${trigger.attributes["aria-disabled"] === "true" ? "true" : nothing}
             aria-invalid=${handle.errors().length > 0 ? "true" : "false"}

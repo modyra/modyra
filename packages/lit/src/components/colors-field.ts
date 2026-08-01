@@ -1,4 +1,5 @@
 import { mdyPart } from "../mdy-part.js";
+import { overlayControlledId } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
@@ -71,8 +72,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     return html`
       <div
         class="${this.popupClass(position)} mdy-overlay"
-        role="listbox"
-        aria-label="Color presets"
+        id=${overlayControlledId("colors", this.fieldId) ?? nothing}
         @keydown=${(e: KeyboardEvent) => {
           if (e.key === "Escape") {
             e.preventDefault();
@@ -81,7 +81,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
         }}
       >
         <div class="mdy-colors__dropdown-header">Presets</div>
-        <div class="mdy-colors__presets">
+        <div class="mdy-colors__presets" role="listbox" aria-label="Colour presets">
           ${this.presets.map(
             (preset) => html`<button
               type="button"
@@ -184,6 +184,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               ?disabled=${handle.disabled()}
               aria-haspopup="listbox"
               aria-expanded=${this._open ? "true" : "false"}
+              aria-controls=${this._open ? overlayControlledId("colors", this.fieldId) ?? nothing : nothing}
               aria-label=${`${this.label} — open color presets`}
               @click=${(e: Event) => {
                 if (this._open) {

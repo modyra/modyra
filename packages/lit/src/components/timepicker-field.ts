@@ -1,4 +1,5 @@
 import { mdyPart } from "../mdy-part.js";
+import { overlayControlledId } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { angleToHour, angleToMinute, buildTimeString, formatTime, formatTimeAs, getCurrentTime, getPointerCoords, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
@@ -494,6 +495,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             ?disabled=${handle.disabled()}
             aria-haspopup="dialog"
             aria-expanded=${this._open ? "true" : "false"}
+            aria-controls=${this._open ? overlayControlledId("timepicker", this.fieldId) ?? nothing : nothing}
             ${mdyPart(this.controlPart(handle))}
             autocomplete="off"
             @change=${(e: Event) => {
@@ -534,7 +536,10 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           // Wrapped in the contract's `popup` part: every overlay in the catalog is the same
           // container, and only its content differs. Without it these two pickers were the
           // only popups drawn straight into the panel, with a container of their own.
-          html`<div class="${this.popupClass(this.overlay.state.position)} mdy-overlay">${this.renderPopup(handle)}</div>`,
+          html`<div
+            class="${this.popupClass(this.overlay.state.position)} mdy-overlay"
+            id=${overlayControlledId("timepicker", this.fieldId) ?? nothing}
+          >${this.renderPopup(handle)}</div>`,
           this._open,
           {
             position: this.overlay.state.position,

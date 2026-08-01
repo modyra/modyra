@@ -88,7 +88,10 @@ export function renderDaterangeField(
   applyButton.type = "button";
   setText(applyButton, "Apply");
   actions.append(cancelButton, applyButton);
-  popup.append(header, grid, actions);
+  // Same frame as the single-date picker: the popup positions, the calendar lays out.
+  const calendar = el("div", MDY_WIDGET_CONTRACTS.daterange.parts.calendar.classes.join(" "));
+  calendar.append(header, grid, actions);
+  popup.append(calendar);
 
   // The start input is what the label names: a range has two controls and `for` can point at only
   // one. The other keeps the `aria-label` it already carried.

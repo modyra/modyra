@@ -1,4 +1,5 @@
 import { mdyPart } from "../mdy-part.js";
+import { overlayControlledId } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { addMonths, buildMonthGrid, type CalendarCell, type CalendarDate, daysInMonth, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
@@ -359,6 +360,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             return html`<button
               type="button"
               class=${classes}
+              role="gridcell"
               tabindex=${cell.iso === this._focusedIso ? "0" : "-1"}
               aria-selected=${cell.iso === selectedIso ? "true" : "false"}
               ?disabled=${disabled}
@@ -462,7 +464,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           </div>
         </div>
         ${this._view === "calendar"
-          ? html`<div class="mdy-datepicker__grid">
+          ? html`<div class="mdy-datepicker__grid" role="grid" id=${overlayControlledId("datepicker", this.fieldId) ?? nothing}>
               ${this.renderCalendarGrid(handle)}
             </div>`
           : this._view === "month"
@@ -486,6 +488,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           ?disabled=${handle.disabled()}
           aria-haspopup="dialog"
           aria-expanded=${this._open ? "true" : "false"}
+          aria-controls=${this._open ? overlayControlledId("datepicker", this.fieldId) ?? nothing : nothing}
           ${mdyPart(this.controlPart(handle))}
           @change=${(e: Event) => {
             const el = e.target as HTMLInputElement;
