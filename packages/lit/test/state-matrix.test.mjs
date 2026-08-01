@@ -96,7 +96,14 @@ function partsOf(root, kind) {
     case "select":
       return { ...shell, trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), popup: q(".mdy-select__dropdown"), listbox: q(".mdy-select__list") };
     case "multiselect":
-      return { ...shell, inputWrapper: q(".mdy-multiselect"), popup: q(".mdy-multiselect__dropdown") };
+      return {
+        ...shell,
+        inputWrapper: q(".mdy-multiselect"),
+        // The opener the contract names. Without it the inspector cannot see the relation the
+        // button carries, and reports the state as unexposed.
+        searchButton: q(".mdy-multiselect__search-btn"),
+        popup: q(".mdy-multiselect__dropdown"),
+      };
     case "datepicker":
       return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup") };
     case "daterange": {
@@ -176,11 +183,7 @@ async function mount(kind) {
  * Lit's divergences from the state contract, recorded rather than waived. Asserted both ways: a new
  * divergence fails, and so does an entry left behind after its fix.
  */
-const KNOWN_DIVERGENCES = {
-  // The popup does not open from the search button in this fixture, so `open` is a fixture
-  // limitation rather than a renderer defect.
-  "multiselect × open": ["STATE_ARIA_MISSING"],
-};
+const KNOWN_DIVERGENCES = {};
 
 const matrix = await collectStateMatrix({ kinds: KINDS, mount });
 

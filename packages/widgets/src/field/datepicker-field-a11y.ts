@@ -4,6 +4,7 @@
  * `calendarKeyboardTarget`'s own doc comment already describes the
  * interaction model this implements.
  */
+import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
@@ -74,11 +75,8 @@ export function projectDatepickerFieldA11y(
       attributes: {
         role: "combobox",
         "aria-haspopup": "grid",
-        "aria-expanded": String(state.open),
-        // Says *which* grid. The trigger declared it had a popup and whether it was showing, and
-        // never named it, so nothing tied the two together — uniform on select and multiselect,
-        // absent on every picker.
-        "aria-controls": gridId,
+        ...projectOverlayOpenerA11y("datepicker", { widgetId: options.widgetId, open: state.open })
+          ?.attributes,
         "aria-labelledby": labelId,
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),

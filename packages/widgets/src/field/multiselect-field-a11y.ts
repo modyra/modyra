@@ -4,6 +4,7 @@
  * (`role="group"` + `aria-pressed` on toggle chips), not listbox/option
  * semantics — this mirrors that choice rather than inventing a new one.
  */
+import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import { blocksFocus } from "../interactivity.js";
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
@@ -100,10 +101,8 @@ export function projectMultiselectFieldA11y<TValue>(
       classes: ["mdy-multiselect"],
       attributes: {
         "aria-haspopup": "listbox",
-        // A string, not a boolean: `aria-expanded="false"` is a state, and dropping the attribute
-        // leaves the trigger with a required one missing.
-        "aria-expanded": String(state.open),
-        "aria-controls": popupId,
+        ...projectOverlayOpenerA11y("multiselect", { widgetId: options.widgetId, open: state.open })
+          ?.attributes,
         "aria-labelledby": labelId,
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),

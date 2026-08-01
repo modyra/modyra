@@ -1,3 +1,5 @@
+import { overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
   afterNextRender,
@@ -31,7 +33,7 @@ import { MdyDropdownBase } from "../dropdown-base";
 @Component({
   selector: "mdy-control-multiselect",
   standalone: true,
-  imports: [
+  imports: [MdyPartDirective, 
     MdyControlLabelComponent,
     MdyErrorListComponent,
     NgTemplateOutlet,
@@ -68,6 +70,7 @@ import { MdyDropdownBase } from "../dropdown-base";
           <button
             type="button"
             class="mdy-multiselect__search-btn"
+            [mdyPart]="openerPart()"
             [disabled]="isDisabled()"
             (click)="toggleOverlay($event)"
             [attr.aria-label]="i18n.searchOptionsLabel"
@@ -156,6 +159,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       [hasBackdrop]="position() === 'overlay'"
       [widthMode]="'match-anchor'"
       [panelClass]="'mdy-multiselect-overlay__panel mdy-multiselect__dropdown mdy-popup'"
+      [panelId]="popupId()"
       [kind]="'multiselect'"
       (close)="closeOverlay()"
     >
@@ -239,6 +243,16 @@ export class MdyMultiselectComponent<TValue = string>
   readonly filterFn = input<((value: TValue) => boolean) | undefined>(undefined);
 
   protected readonly fieldId = `mdy-control-multiselect-${MdyBaseControl.nextId()}`;
+
+  /** The id the opener names, which the projected panel has to carry. */
+  protected readonly popupId = computed(
+    () => overlayControlledId("multiselect", this.fieldId) ?? "",
+  );
+
+  /** The relation between this widget's opener and the overlay it opens. */
+  protected readonly openerPart = computed(
+    () => projectOverlayOpenerA11y("multiselect", { widgetId: this.fieldId, open: this.open() })!,
+  );
 
   protected readonly filteredOptions = computed(() => {
     const fn = this.filterFn();

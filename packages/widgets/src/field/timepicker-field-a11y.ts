@@ -1,6 +1,7 @@
 /**
  * Accessibility projection for the timepicker field widget.
  */
+import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
@@ -77,9 +78,8 @@ export function projectTimepickerFieldA11y(
       attributes: {
         role: "combobox",
         "aria-haspopup": "dialog",
-        "aria-expanded": String(state.open),
-        // Names the dialog it opens, the way select names its listbox.
-        "aria-controls": dialogId,
+        ...projectOverlayOpenerA11y("timepicker", { widgetId: options.widgetId, open: state.open })
+          ?.attributes,
         "aria-labelledby": labelId,
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),
