@@ -53,6 +53,21 @@ For the project motivation and development approach, see [Project background](do
 - Versioning is [changesets](https://github.com/changesets/changesets)-driven:
   any user-facing change adds a file under `.changeset/` (`pnpm changeset`).
 
+### Comments and documentation
+
+- **Comments say what the code does, not how it came to be.** No change
+  history, no "used to be", no account of how a problem was solved. That
+  belongs in the commit message, the changeset, or `.modyra/handoffs/`.
+- **A package does not name the packages derived from it.** `@modyra/widgets`
+  is the framework-agnostic contract; `@modyra/angular`, `@modyra/lit` and
+  `@modyra/plain` consume it. A comment in `widgets` citing one of them as
+  its reference inverts that dependency in the reader's head, even though
+  the import graph stays clean. Describe the behaviour the contract
+  requires; if one adapter's approach is the reason, the reason is the
+  behaviour, not the adapter.
+- The same holds in reverse for anything shared: state what the rule is,
+  not which consumer prompted it.
+
 ## Where help is wanted
 
 - Visual regression testing (the axe a11y spec and the Playwright smoke
