@@ -120,6 +120,38 @@ export type MdyFormValue<S extends MdyFormSchema> = {
   : never;
 };
 
+/**
+ * What a submit actually sends.
+ *
+ * Deliberately weaker than {@link MdyFormValue}: **any field may be disabled at runtime**, and a
+ * disabled field is not submitted — HTML has never submitted one. A total type here would promise
+ * something no runtime check guarantees, which is the difference this type exists to state.
+ *
+ * `form.value()` stays total, because that is the live editing model and every field is in it.
+ * The gap between the two types *is* the semantics: `value()` is what the user is editing,
+ * `submitValue()` is what leaves the browser.
+ *
+ * A read-only field is present in both. It holds a real answer the form is asserting; the user
+ * simply may not change it.
+ *
+ * **Optional at every level the schema declares, and no deeper.** A leaf inside a group can be
+ * disabled on its own, so groups recurse. An object-valued *leaf* must not: a daterange is
+ * `{ start, end }`, and making its halves optional would describe a shape the form can never
+ * produce — either the field is submitted whole or it is absent. Only the schema knows which
+ * objects are groups, which is why this is driven by `S` rather than by the value type.
+ *
+ * Arrays keep their element type. A row is submitted whole or not at all.
+ */
+export type MdySubmittedValue<S extends MdyFormSchema> = {
+  readonly [K in keyof S]?: S[K] extends MdyFieldDescriptor<infer V>
+  ? V
+  : S[K] extends MdyGroupDescriptor<infer C>
+  ? MdySubmittedValue<C>
+  : S[K] extends MdyArrayDescriptor<infer I>
+  ? ReadonlyArray<MdyArrayItemValue<I>>
+  : never;
+};
+
 /** Deep partial of the schema value — accepted by `patch`. */
 export type MdyFormPatch<S extends MdyFormSchema> = {
   readonly [K in keyof S]?: S[K] extends MdyFieldDescriptor<infer V>
@@ -385,7 +417,7 @@ export abstract class MdyTypedFormBase<
   S extends MdyFormSchema,
   THandle,
   TBooleanSignal extends MdySignal<boolean> = MdySignal<boolean>,
-> implements MdyFormAdapter<MdyFormValue<S>>, MdyFormRegistry<TBooleanSignal> {
+> implements MdyFormAdapter<MdyFormValue<S>, MdySubmittedValue<S>>, MdyFormRegistry<TBooleanSignal> {
   protected readonly _schema: S;
   protected readonly _adapter: MdyFormEngine;
   /** Leaf paths in schema order. */
@@ -490,13 +522,38 @@ export abstract class MdyTypedFormBase<
     return this._adapter.errorsFor(String(path));
   }
 
+  /**
+   * What would be sent right now: every field except the disabled ones.
+   *
+   * Pairs with {@link MdyTypedFormBase.getValue}, which stays total. Reach for this when you need
+   * to show or log the payload without submitting.
+   */
+  submitValue(): MdySubmittedValue<S> {
+    return this._flatToSubmitted(this._adapter.submitValue());
+  }
+
+  /**
+   * A submitted value is missing its disabled fields, so it must be checked against the schema as a
+   * *partial* — `_flatToValue` asserts totality and throws on the very shape this produces.
+   * `MdySubmittedValue<S>` and `MdyFormPatch<S>` are the same deep-optional shape over one schema,
+   * so the check is shared rather than restated.
+   */
+  protected _flatToSubmitted(flat: Record<string, unknown>): MdySubmittedValue<S> {
+    return this._flatToPatch(flat) as unknown as MdySubmittedValue<S>;
+  }
+
+  /**
+   * The callback receives {@link MdySubmittedValue}, not {@link MdyFormValue}, because a disabled
+   * field is not submitted and any field may be disabled at runtime. Narrowing at the call site is
+   * the honest cost of the type telling the truth.
+   */
   async submit(
     action: (
-      value: MdyFormValue<S>,
+      value: MdySubmittedValue<S>,
     ) => Promise<MdyFormError[] | void> | MdyFormError[] | void,
   ): Promise<void> {
     return this._adapter.submit((flat) =>
-      action(this._flatToValue(flat)),
+      action(this._flatToSubmitted(flat)),
     );
   }
 
@@ -504,7 +561,9 @@ export abstract class MdyTypedFormBase<
     this._adapter.markAllTouched();
   }
 
-  buildSubmitEvent(value: MdyFormValue<S>): MdyFormSubmitEvent<MdyFormValue<S>> {
+  buildSubmitEvent(
+    value: MdySubmittedValue<S>,
+  ): MdyFormSubmitEvent<MdyFormValue<S>, MdySubmittedValue<S>> {
     return {
       value,
       valid: this.state.valid(),
@@ -869,7 +928,7 @@ export abstract class MdyTypedFormBase<
  */
 export class MdyTypedForm<S extends MdyFormSchema>
   extends MdyTypedFormBase<S, MdyFieldHandle<unknown>>
-  implements MdyFormAdapter<MdyFormValue<S>>, MdyFormRegistry {
+  implements MdyFormAdapter<MdyFormValue<S>, MdySubmittedValue<S>>, MdyFormRegistry {
   readonly state: MdyFormState;
   readonly f: MdyFieldHandleTree<S>;
   readonly value: MdySignal<MdyFormValue<S>>;

@@ -18,6 +18,7 @@ import type {
   MdyAsyncValidatorFn,
   MdyFieldError,
   MdyFieldState,
+  MdyInteractivity,
   ValidatorFn,
 } from "./types.js";
 
@@ -115,6 +116,12 @@ export function createFieldRecord(
     ];
   });
 
+  // Two bindings feed one state, and `disabled` wins when both are set: it permits strictly less,
+  // and a field the form is not asking about cannot also be a field it is asserting an answer for.
+  const interactivity = rx.computed<MdyInteractivity>(() =>
+    disabledSignal()() ? "disabled" : readonlySignal()() ? "readonly" : "enabled",
+  );
+
   const state: MdyFieldState<unknown> = {
     value,
     touched,
@@ -122,8 +129,10 @@ export function createFieldRecord(
     required: rx.computed(() => requiredKeys().size > 0),
     valid: rx.computed(() => errors().length === 0),
     errors,
-    disabled: rx.computed(() => disabledSignal()()),
-    readonly: rx.computed(() => readonlySignal()()),
+    interactivity,
+    // Derived, so they cannot drift from each other or from `interactivity`.
+    disabled: rx.computed(() => interactivity() === "disabled"),
+    readonly: rx.computed(() => interactivity() === "readonly"),
     pending: pending.asReadonly(),
   };
 

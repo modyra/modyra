@@ -7,16 +7,22 @@
  * no framework: pure `document.createElement`/`addEventListener`, wired to
  * @modyra/widgets' headless controllers.
  */
-import { vanillaReactivity, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyFieldHandle, type MdyFormSchema, type MdyFormValue, type MdyReactivity, type MdyTypedForm } from "@modyra/core";
+import { vanillaReactivity, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
 import { isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
 import { el, setText } from "./dom.js";
 
 export interface MountMdyFormOptions {
-  /** Called on submit once the form is valid; return field-level errors to reject, same contract as `form.submit()`. */
+  /**
+   * Called on submit once the form is valid; return field-level errors to reject, same contract as
+   * `form.submit()`.
+   *
+   * The value is **partial**: a disabled field is not submitted, and any field may be disabled at
+   * runtime. Read a key defensively rather than assuming the schema's shape.
+   */
   readonly onSubmit?: (
-    value: MdyFormValue<MdyFormSchema>,
+    value: MdySubmittedValue<MdyFormSchema>,
   ) => Promise<import("@modyra/core").MdyFormError[] | void> | import("@modyra/core").MdyFormError[] | void;
   /** Text for the generated submit button. Pass `null` to render no submit button (host drives `handle.form.submit()` itself). */
   readonly submitLabel?: string | null;

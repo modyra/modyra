@@ -312,11 +312,17 @@ export class MdyFormEngine
       const value = this.value();
       return fns.flatMap(fn => fn(value));
     });
+    // A disabled field is not validated, for the same reason it is not submitted: the form is not
+    // asking the question. Without this, a disabled required-empty field blocked submission of a
+    // value it was not even contributing to — and there was no way for the user to unblock it,
+    // because they could not type into it either.
     const valid = _rx.computed(
       () =>
-        this._fieldNames().every(
-          n => this._fields.get(n)?.state.valid() ?? true,
-        ) && this._crossErrors().length === 0,
+        this._fieldNames().every((n) => {
+          const rec = this._fields.get(n);
+          if (!rec) return true;
+          return rec.state.interactivity() === "disabled" || rec.state.valid();
+        }) && this._crossErrors().length === 0,
     );
     const pending = _rx.computed(() =>
       this._fieldNames().some(n => this._fields.get(n)?.state.pending() ?? false),
@@ -498,9 +504,38 @@ export class MdyFormEngine
     return () => rec.state;
   }
 
+  /**
+   * Every field's value, including disabled ones.
+   *
+   * This is the *live editing model*, and it stays total on purpose. Drafts, history, cross-field
+   * validators and async validation contexts all read it: a draft that dropped a field because it
+   * happened to be disabled when the user walked away would lose their work, and a cross-field rule
+   * comparing two fields needs both of them whatever their interactivity.
+   *
+   * {@link MdyFormEngine.submitValue} is what actually gets sent.
+   */
   getValue(): Record<string, unknown> {
     return Object.fromEntries(
       Array.from(this._fields.entries()).map(([n, r]) => [n, r.state.value()]),
+    );
+  }
+
+  /**
+   * What a submit actually sends: every field except the disabled ones.
+   *
+   * A disabled control is not a control with an unavailable answer, it is a question the form is
+   * not asking — HTML has never submitted one. A read-only field *is* submitted, because it holds a
+   * real answer the form is asserting on the user's behalf.
+   *
+   * The return type is deliberately weaker than {@link MdyFormEngine.getValue}'s at the typed layer
+   * (`MdySubmittedValue<S>`): any field may be disabled at runtime, so a total type would be
+   * claiming something no runtime check guarantees.
+   */
+  submitValue(): Record<string, unknown> {
+    return Object.fromEntries(
+      Array.from(this._fields.entries())
+        .filter(([, r]) => r.state.interactivity() !== "disabled")
+        .map(([n, r]) => [n, r.state.value()]),
     );
   }
 
@@ -589,7 +624,8 @@ export class MdyFormEngine
     }
     this._submitting.set(true);
     this._submitCount.update(n => n + 1);
-    const value = this.getValue();
+    // Disabled fields are not sent. See `submitValue`.
+    const value = this.submitValue();
     try {
       const errors = (await action(value)) ?? [];
       // Server-returned errors are untrusted: an unsafe path (__proto__

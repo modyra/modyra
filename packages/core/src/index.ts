@@ -121,6 +121,7 @@ export type {
   MdyFormPatch,
   MdyFormSchema,
   MdyFormValue,
+  MdySubmittedValue,
   MdyGroupDescriptor,
   MdyItemHandleTree,
   MdyTypedFormBaseOptions,
