@@ -61,6 +61,7 @@ export type {
 export * from "./types.js";
 
 export {
+  completeRange,
   compose,
   composeFirst,
   crossField,

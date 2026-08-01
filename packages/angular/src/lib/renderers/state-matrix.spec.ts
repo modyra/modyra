@@ -86,17 +86,15 @@ const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__
  * `PART_MISSING:trigger` in the DOM ledger.
  */
 const KNOWN_DIVERGENCES: Record<string, string[]> = {
-  // Not renderer defects — the field is genuinely valid, and the renderer is telling the truth
-  // about a state the form never entered. `required` does not reject a kind's own empty value when
-  // that value is not a string, so an unchecked checkbox, an off toggle and a range with both ends
-  // unset all report themselves valid. The row proves it twice over: `aria-invalid="false"` *and*
-  // no error list, which only renders when there are errors to put in it.
+  // The three `× invalid` rows that used to sit here — checkbox, toggle and daterange — were never
+  // renderer defects. The field was genuinely valid, and the renderer was telling the truth about a
+  // state the form never entered. Plain and Lit ledgered exactly the same three, which is what made
+  // it a validation finding rather than a rendering one. Plan 26 closed it: `required` now treats
+  // `false` and an empty range as empty.
   //
-  // Plain and Lit ledger exactly these three, for exactly this reason. **Three independent adapters
-  // agreeing is what makes it a validation finding rather than a rendering one** — it is plan 26.
-  "checkbox × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
-  "toggle × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
-  "daterange × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
+  // Angular loses all three outright, where Lit keeps `toggle × invalid` — Angular binds
+  // `aria-invalid` on the boolean kinds and Lit does not. The validator fix uncovered which
+  // adapters were only ever *appearing* to agree.
 
   // Real, and one finding rather than four. Every Angular renderer hand-picks which ARIA states it
   // exposes, and they picked different subsets:

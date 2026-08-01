@@ -139,22 +139,15 @@ function mount(kind) {
  *   `aria-describedby` either, so their error lists were rendered, styled, and announced to nobody.
  *   `projectFieldShellA11y` is the shared half of `projectFieldA11y` for exactly this case.
  *
- * The three that remain are **not renderer defects**, and they are new only in the sense that the
- * driver stopped hiding them (see `emptyFor`). `required` does not reject a kind's own empty value
- * when that value is not a string: an unchecked required checkbox, an off required toggle and a
- * required range with both ends unset all report themselves valid. HTML disagrees on the first two —
- * `<input type="checkbox" required>` unchecked is invalid — so `invalid` is unreachable here rather
- * than unexposed, and the renderer is telling the truth about a state the form never entered.
- *
- * Lit's ledger has carried the same three, for the same reason, since its matrix was written. That
- * two independent adapters agree is what makes this a validation finding rather than a rendering
- * one. It is plan 26; fixing it changes which forms submit, so it is not smuggled in here.
+ * The last three rows were never renderer defects. `required` did not reject a kind's own empty
+ * value when that value was not a string, so an unchecked required checkbox, an off required toggle
+ * and a required range with both ends unset all reported themselves valid — the renderer was telling
+ * the truth about a state the form never entered. Three adapters ledgered them identically, which is
+ * what made it a validation finding. Closed by plan 26: `required` now treats `false` and an empty
+ * range as empty, and a *partial* range is rejected by `completeRange` whether or not the field is
+ * required.
  */
-const KNOWN_DIVERGENCES = {
-  "checkbox × invalid": ["STATE_ARIA_WRONG"],
-  "toggle × invalid": ["STATE_ARIA_WRONG"],
-  "daterange × invalid": ["STATE_ARIA_WRONG"],
-};
+const KNOWN_DIVERGENCES = {};
 
 const matrix = await collectStateMatrix({ kinds: KINDS, mount });
 

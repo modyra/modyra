@@ -2,6 +2,7 @@ import { MdySelectOption, ValidatorFn } from "./types.js";
 import {
   eachOneOf,
   email,
+  completeRange,
   max,
   maxLength,
   min,
@@ -873,6 +874,15 @@ export function buildDynamicFieldValidators(field: MdyDynamicField): {
     const values = field.options.map((option) => option.value);
     return {
       validators: [...base.validators, eachOneOf(values) as ValidatorFn<never>],
+      marksRequired: base.marksRequired,
+    };
+  }
+  // A half-set range names no interval, so it is invalid whether or not the field is required —
+  // the same way an option outside the declared set is invalid above. Leaving it to `required`
+  // would mean an optional range could be submitted with a start and no end.
+  if (field.kind === "daterange") {
+    return {
+      validators: [...base.validators, completeRange() as ValidatorFn<never>],
       marksRequired: base.marksRequired,
     };
   }
