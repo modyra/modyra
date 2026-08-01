@@ -9,6 +9,7 @@ import test from "node:test";
 
 import { vanillaReactivity } from "@modyra/core";
 import { createMultiselectFieldController } from "../dist/field/index.js";
+import { MDY_VALUE_CONTRACTS } from "../../core/dist/index.js";
 
 const options = [
   { value: "small", label: "Small" },
@@ -203,4 +204,20 @@ test("setValue updates state programmatically", () => {
   controller.setValue(["small", "large"]);
   assert.deepStrictEqual(handle.value(), ["small", "large"]);
   assert.strictEqual(controller.state().selectedKeys.has("large"), true);
+});
+
+/* ── The declared commit mode ───────────────────────────────────────────────────
+ * The other half of what `MDY_VALUE_CONTRACTS` distinguishes: a `live` kind writes through on the
+ * interaction itself. Asserting only the `confirm` side would leave the two modes indistinguishable
+ * — a contract where every kind behaved the same would still pass.
+ */
+test("a live-mode kind writes through on the interaction itself", () => {
+  assert.strictEqual(MDY_VALUE_CONTRACTS.multiselect.commit, "live");
+
+  const { controller, handle } = setup();
+  const before = handle.value();
+
+  controller.dispatch({ type: "toggle", optionKey: "medium" });
+
+  assert.notDeepStrictEqual(handle.value(), before, "the interaction did not reach the field");
 });

@@ -19,6 +19,10 @@ for being an empty string rather than for being an empty range — its row was g
 fixture. All three adapters now assert their fixtures against the declared shape, and reintroducing
 that fixture fails the suite.
 
+The commit mode is bound to behaviour rather than described: a confirm-mode kind is asserted to leave
+the field untouched until it is confirmed, and a live-mode kind to write through on the interaction.
+Asserting only one side would leave the two modes indistinguishable.
+
 Two defects surfaced the moment the check ran. Every fixture drove `slider` empty as `null`, which is
 a state the kind cannot be in: a thumb is always somewhere. Correcting it showed that `required`
 alone can never fail on a slider, so `slider × invalid` had been green because the state was

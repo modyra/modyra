@@ -9,6 +9,7 @@ import test from "node:test";
 
 import { vanillaReactivity } from "@modyra/core";
 import { createTimepickerFieldController } from "../dist/field/index.js";
+import { MDY_VALUE_CONTRACTS } from "../../core/dist/index.js";
 
 function setup(overrides = {}) {
   const rx = vanillaReactivity();
@@ -349,4 +350,39 @@ test("asking without a format is the twelve-hour answer, as it always was", asyn
   const { timepickerSelectedDialValue } = await import("../dist/index.js");
   const draft = { hour: 2, minute: 0, period: "PM" };
   assert.equal(timepickerSelectedDialValue("hour", draft), 2);
+});
+
+/* ── The declared commit mode ───────────────────────────────────────────────────
+ * `MDY_VALUE_CONTRACTS` says this kind commits on confirmation rather than live. A declaration
+ * nothing checks is documentation, and this is the check: the difference between the two modes is
+ * observable on the handle, so it can be asserted rather than described.
+ */
+test("a confirm-mode kind writes nothing to the field until it is confirmed", () => {
+  assert.strictEqual(MDY_VALUE_CONTRACTS.timepicker.commit, "confirm");
+
+  const { controller, handle } = setup({ initialValue: "10:30 AM" });
+  const before = handle.value();
+
+  controller.dispatch({ type: "open" });
+  controller.dispatch({ type: "set-hour", hour: 4 });
+  controller.dispatch({ type: "set-minute", minute: 15 });
+  controller.dispatch({ type: "set-period", period: "PM" });
+
+  // The dial has moved and the field has not.
+  assert.strictEqual(controller.state().draft.hour, 4);
+  assert.strictEqual(handle.value(), before, "the draft reached the field before it was confirmed");
+
+  controller.dispatch({ type: "confirm" });
+  assert.notStrictEqual(handle.value(), before, "confirming wrote nothing");
+});
+
+test("cancelling a confirm-mode kind leaves the field as it found it", () => {
+  const { controller, handle } = setup({ initialValue: "10:30 AM" });
+  const before = handle.value();
+
+  controller.dispatch({ type: "open" });
+  controller.dispatch({ type: "set-hour", hour: 4 });
+  controller.dispatch({ type: "cancel" });
+
+  assert.strictEqual(handle.value(), before);
 });
