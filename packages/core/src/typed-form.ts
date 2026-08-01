@@ -28,6 +28,7 @@ import {
   MdyFormState,
   MdyFormSubmitEvent,
   MdyFormValidatorFn,
+  MdyInteractivity,
   MdySubmitMode,
   ValidatorFn,
 } from "./types.js";
@@ -179,6 +180,12 @@ export interface MdyFieldHandle<TValue> {
   readonly valid: MdySignal<boolean>;
   readonly pending: MdySignal<boolean>;
   readonly required: MdySignal<boolean>;
+  /**
+   * What the user may do, as one value. `disabled` and `readonly` below are its derived halves,
+   * kept because renderers read them; new code should ask this through the predicates in
+   * `@modyra/widgets` instead of recombining the booleans.
+   */
+  readonly interactivity: MdySignal<MdyInteractivity>;
   readonly disabled: MdySignal<boolean>;
   /**
    * Read but not written.
@@ -964,6 +971,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       valid: state.valid,
       pending: state.pending,
       required: state.required,
+      interactivity: state.interactivity,
       disabled: state.disabled,
       readonly: state.readonly,
       set: (v: unknown): void => state.value.set(v),

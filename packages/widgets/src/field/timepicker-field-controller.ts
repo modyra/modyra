@@ -9,6 +9,7 @@
  * (`@modyra/core/time-utils`) — nothing reinvented, only wired into this
  * package's `MdyFieldHandle`-driven controller shape.
  */
+import { blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { vanillaReactivity } from "@modyra/core";
 import {
@@ -69,6 +70,9 @@ export function createTimepickerFieldController(
     invalid: !handle.valid(),
     disabled: handle.disabled(),
     readonly: readonly(),
+    // One value the whole controller agrees on; `disabled`/`readonly` above are the
+    // derived halves kept for renderers that still read them.
+    interactivity: handle.interactivity(),
     required: handle.required(),
     touched: handle.touched(),
     dirty: handle.dirty(),
@@ -124,7 +128,7 @@ export function createTimepickerFieldController(
     }
     if (intent.type === "focus") return [];
 
-    if (state().disabled || state().readonly) return [];
+    if (blocksValueChange(state().interactivity)) return [];
 
     switch (intent.type) {
       case "open":

@@ -21,6 +21,10 @@ function setup(overrides = {}) {
   const required = rx.signal(false);
   const disabled = rx.signal(false);
   const readonly = rx.signal(false);
+  // Derived exactly as the engine derives it, so a stand-in handle cannot describe a state the
+  // real one can never be in.
+  const interactivity = rx.computed(() =>
+    disabled() ? "disabled" : readonly() ? "readonly" : "enabled");
 
   const handle = {
     path: "date",
@@ -33,6 +37,7 @@ function setup(overrides = {}) {
     required,
     disabled,
     readonly,
+    interactivity,
     set(v) {
       value.set(v);
     },

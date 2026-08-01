@@ -5,6 +5,7 @@
  * contract plus a small intent/command surface for focus/blur/input.
  */
 
+import { blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { vanillaReactivity } from "@modyra/core";
 
@@ -49,6 +50,15 @@ export function createFieldController<TValue>(
     // projection — `readonly` alone came from the local signal, which is why a form could
     // set it and nothing downstream ever saw it.
     readonly: handle.readonly() || readonly(),
+    // One value the whole controller agrees on; `disabled`/`readonly` above are its derived
+    // halves, kept for renderers that still read them.
+    //
+    // The local override can only ever *reduce* what is permitted. `setReadonly()` is a published
+    // escape hatch for a renderer with no form behind it, and it must not be able to re-enable a
+    // field the form disabled.
+    interactivity: handle.interactivity() === "enabled" && readonly()
+      ? ("readonly" as const)
+      : handle.interactivity(),
     required: handle.required(),
     touched: handle.touched(),
     dirty: handle.dirty(),
@@ -81,7 +91,8 @@ export function createFieldController<TValue>(
       return [{ type: "mark-touched" }];
     }
 
-    if (state().disabled || state().readonly) {
+    // A write. Blocked for read-only as well as disabled — this is the half the two states share.
+    if (blocksValueChange(state().interactivity)) {
       return [];
     }
 

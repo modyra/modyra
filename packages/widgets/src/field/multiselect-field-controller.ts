@@ -8,6 +8,7 @@
  * own component wires its field state through its own two-hop adapter
  * indirection rather than a portable handle.
  */
+import { blocksFocus, blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { vanillaReactivity } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
@@ -81,6 +82,15 @@ export function createMultiselectFieldController<TValue>(
     // projection — `readonly` alone came from the local signal, which is why a form could
     // set it and nothing downstream ever saw it.
     readonly: handle.readonly() || readonly(),
+    // One value the whole controller agrees on; `disabled`/`readonly` above are its derived
+    // halves, kept for renderers that still read them.
+    //
+    // The local override can only ever *reduce* what is permitted. `setReadonly()` is a published
+    // escape hatch for a renderer with no form behind it, and it must not be able to re-enable a
+    // field the form disabled.
+    interactivity: handle.interactivity() === "enabled" && readonly()
+      ? ("readonly" as const)
+      : handle.interactivity(),
       required: handle.required(),
       touched: handle.touched(),
       dirty: handle.dirty(),
@@ -122,7 +132,7 @@ export function createMultiselectFieldController<TValue>(
   function a11yOption(key: string, option: MdySelectOption<TValue>, currentState: MdyMultiselectFieldState<TValue>) {
     const selected = currentState.selectedKeys.has(key);
     const count = currentState.counts.get(key) ?? 0;
-    const disabled = option.disabled || currentState.disabled || currentState.readonly;
+    const disabled = option.disabled || blocksValueChange(currentState.interactivity);
     // Filtering is the contract's: an option the query does not match is hidden here, so every
     // renderer filters identically by applying the part rather than reimplementing the match.
     const visible = filteredOptions().some((candidate) => keyFor(candidate) === key);
@@ -141,7 +151,9 @@ export function createMultiselectFieldController<TValue>(
         ...(mode === "single" ? { "aria-pressed": String(selected) } : { "data-count": count }),
         "aria-disabled": String(disabled),
         hidden: !visible,
-        disabled: option.disabled || currentState.disabled,
+        // The NATIVE attribute, so it asks the focus question, not the write question: a
+        // read-only chip must stay reachable.
+        disabled: option.disabled || blocksFocus(currentState.interactivity),
       },
     };
   }
@@ -226,12 +238,12 @@ export function createMultiselectFieldController<TValue>(
     if (intent.type === "focus") {
       return [];
     }
-    const disabled = state().disabled || state().readonly;
+    const disabled = blocksValueChange(state().interactivity);
     if (intent.type === "open") return overlay({ type: "open", disabled, available: true });
     if (intent.type === "toggleOpen") return overlay({ type: "toggle", disabled, available: true });
     if (intent.type === "close") return overlay({ type: "close", restoreFocus: intent.restoreFocus });
 
-    if (state().disabled || state().readonly) {
+    if (blocksValueChange(state().interactivity)) {
       return [];
     }
 

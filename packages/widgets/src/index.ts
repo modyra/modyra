@@ -88,3 +88,5 @@ export type { MdyColorValueIntent, MdyColorValueTransition, MdyDateDraftIntent, 
 
 export { createValueWidgetController } from "./value-controller.js";
 export type { MdyValueWidgetController, MdyValueWidgetControllerOptions, MdyValueWidgetIntent, MdyValueWidgetState } from "./value-controller.js";
+
+export { blocksFocus, blocksValueChange } from "./interactivity.js";

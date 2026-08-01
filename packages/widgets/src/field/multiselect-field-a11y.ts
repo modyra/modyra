@@ -4,6 +4,7 @@
  * (`role="group"` + `aria-pressed` on toggle chips), not listbox/option
  * semantics — this mirrors that choice rather than inventing a new one.
  */
+import { blocksFocus } from "../interactivity.js";
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
@@ -78,9 +79,6 @@ export function projectMultiselectFieldA11y<TValue>(
     multiselectFieldPartIds(options.widgetId);
   const hasErrors = errors.length > 0;
   const describedBy = hasErrors ? errorId : descriptionId;
-  // Whether interaction is blocked — which read-only does share with disabled. Kept for the
-  // native attribute below; the ARIA must still distinguish the two, so it reads `state.disabled`.
-  const interactionDisabled = state.disabled || state.readonly;
 
   return {
     root: {
@@ -134,7 +132,12 @@ export function projectMultiselectFieldA11y<TValue>(
       attributes: {
         "aria-controls": groupId,
         "aria-label": "Filter options",
-        disabled: interactionDisabled,
+        // The **native** attribute, so the question is whether the control can be reached — not
+        // whether it can be written. This read `disabled || readonly`, which took focus away from a
+        // read-only multiselect and removed the one capability read-only exists to preserve. The
+        // search box does not change the value; it filters what is shown, which a user who may read
+        // the field must still be able to do.
+        disabled: blocksFocus(state.interactivity),
       },
     },
     group: {

@@ -36,6 +36,22 @@ export interface MdyWidgetStateContract {
   readonly requiresParts?: readonly string[];
   /** Parts that must NOT exist in this state. */
   readonly forbidsParts?: readonly string[];
+  /**
+   * What the state means for the *form*, as against the DOM.
+   *
+   * Declared rather than implied. `disabled` and `readonly` render almost identically and behave
+   * completely differently, and for a long time Modyra rendered the difference while behaving
+   * identically — both were submitted, both were validated. A contract that only describes
+   * attributes cannot catch that, because nothing about the markup is wrong.
+   */
+  readonly behaviour?: {
+    /** Whether a field in this state is included in what a submit sends. */
+    readonly submitted: boolean;
+    /** Whether a field in this state is validated. */
+    readonly validated: boolean;
+    /** Whether the user can still reach the control: focus it, select its text, copy it. */
+    readonly reachable: boolean;
+  };
 }
 
 export const MDY_WIDGET_STATE_CONTRACTS: Readonly<Record<MdyWidgetState, MdyWidgetStateContract>> =
@@ -45,8 +61,18 @@ export const MDY_WIDGET_STATE_CONTRACTS: Readonly<Record<MdyWidgetState, MdyWidg
     empty: {},
     filled: {},
     invalid: { aria: { attribute: "aria-invalid", value: "true" }, requiresParts: ["errors"] },
-    disabled: { aria: { attribute: "aria-disabled", value: "true" }, nativeAttribute: "disabled" },
-    readonly: { aria: { attribute: "aria-readonly", value: "true" }, nativeAttribute: "readonly" },
+    // The two states that look alike and are not. A disabled field is a question the form is not
+    // asking; a read-only one is a question it has answered on the user's behalf.
+    disabled: {
+      aria: { attribute: "aria-disabled", value: "true" },
+      nativeAttribute: "disabled",
+      behaviour: { submitted: false, validated: false, reachable: false },
+    },
+    readonly: {
+      aria: { attribute: "aria-readonly", value: "true" },
+      nativeAttribute: "readonly",
+      behaviour: { submitted: true, validated: true, reachable: true },
+    },
     open: { aria: { attribute: "aria-expanded", value: "true" }, requiresParts: ["popup"] },
     focused: {},
     selected: {},

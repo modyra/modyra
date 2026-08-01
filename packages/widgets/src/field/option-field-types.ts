@@ -2,6 +2,7 @@
  * Option-based field widget types (radio group / segmented).
  */
 
+import type { MdyInteractivity } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 
 export type MdyOptionFieldVariant = "radio" | "segmented";
@@ -27,6 +28,11 @@ export interface MdyOptionFieldState<TValue> {
   readonly selectedKey: string | null;
   readonly invalid: boolean;
   readonly disabled: boolean;
+  /**
+   * What the user may do. Ask it through `blocksValueChange`/`blocksFocus` rather than comparing
+   * strings — the point of the union is that no call site invents its own combination again.
+   */
+  readonly interactivity: MdyInteractivity;
   readonly readonly: boolean;
   readonly required: boolean;
   readonly touched: boolean;
