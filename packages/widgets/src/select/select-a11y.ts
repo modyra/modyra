@@ -4,6 +4,7 @@
 
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
+import { fieldShellPartIds } from "../field/shell-a11y.js";
 import type { MdyPartContract } from "../contract.js";
 
 const SELECT = MDY_WIDGET_CONTRACTS.select;
@@ -21,6 +22,15 @@ export interface MdySelectA11yOptions {
   readonly idFactory: typeof defaultWidgetIdFactory;
   /** Keys of options currently visible to the user. */
   readonly visibleKeys: readonly string[];
+  /**
+   * Whether the error list and the supporting text are on screen.
+   *
+   * `aria-describedby` must name an element that exists, so what the trigger describes itself by
+   * follows what was *rendered* rather than what is wrong. The renderer knows both; this projection
+   * cannot see the DOM.
+   */
+  readonly errorsVisible?: boolean;
+  readonly descriptionVisible?: boolean;
 }
 
 export interface MdySelectA11yProjection {
@@ -35,6 +45,10 @@ export function projectSelectA11y(
   options: MdySelectA11yOptions,
 ): MdySelectA11yProjection {
   const { widgetId, idFactory, open, activeKey, selectedKey, disabled, readonly, invalid, loading, visibleKeys } = options;
+  const { descriptionId, errorId } = fieldShellPartIds(widgetId);
+  const describedBy = options.errorsVisible
+    ? errorId
+    : (options.descriptionVisible ?? true) ? descriptionId : null;
 
   const trigger: MdyPartContract = {
     id: idFactory.part(widgetId, "trigger"),
@@ -45,6 +59,9 @@ export function projectSelectA11y(
       ...projectOverlayOpenerA11y("select", { widgetId, open })?.attributes,
       "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
       "aria-invalid": String(invalid),
+      // The relation every other kind's projection already made, and this one did not: without it a
+      // select's errors reach no assistive technology at all.
+      "aria-describedby": describedBy,
       // Disabled alone: a read-only control still takes focus and can be copied from.
       "aria-disabled": String(disabled),
       // The native attribute, not only the ARIA. A trigger that says `aria-disabled="true"` and

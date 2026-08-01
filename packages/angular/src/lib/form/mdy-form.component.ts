@@ -57,9 +57,9 @@ function isDeclarativeRegistry(value: unknown): value is MdyDeclarativeRegistry 
   );
 }
 
-function hasFieldNames<T extends Record<string, unknown>>(
-  adapter: MdyFormAdapter<T>,
-): adapter is MdyFormAdapter<T> & { readonly fieldNames: Signal<readonly string[]> } {
+function hasFieldNames<T extends Record<string, unknown>, TSubmit>(
+  adapter: MdyFormAdapter<T, TSubmit>,
+): adapter is MdyFormAdapter<T, TSubmit> & { readonly fieldNames: Signal<readonly string[]> } {
   return typeof Reflect.get(adapter, "fieldNames") === "function";
 }
 
@@ -112,18 +112,22 @@ function hasFieldNames<T extends Record<string, unknown>>(
 })
 export class MdyFormComponent<
   T extends Record<string, unknown>,
-> implements MdyFormAdapter<T, Partial<T>>, MdyDeclarativeRegistry {
+  // What a submit sends. `Partial<T>` is the declarative default, but a typed form knows its schema
+  // and produces a deeper answer — groups are optional all the way down. Pinning the default here
+  // made the precise type unassignable to the general one, which is backwards.
+  TSubmit = Partial<T>,
+> implements MdyFormAdapter<T, TSubmit>, MdyDeclarativeRegistry {
   // ── Inputs ──────────────────────────────────────────────────────────────────
 
   /** Explicit adapter — if omitted the form creates one automatically. */
-  readonly adapter = input<MdyFormAdapter<T>>();
+  readonly adapter = input<MdyFormAdapter<T, TSubmit>>();
 
   /**
    * Typed form model created with `mdyForm()`. Takes precedence over the
    * internal declarative adapter; `[adapter]` still wins over both.
    * `[formValue]` is ignored in this mode — initial values live in the schema.
    */
-  readonly form = input<(MdyFormAdapter<T> & MdyDeclarativeRegistry) | undefined>(undefined);
+  readonly form = input<(MdyFormAdapter<T, TSubmit> & MdyDeclarativeRegistry) | undefined>(undefined);
 
   /**
    * The submit action.
@@ -132,7 +136,7 @@ export class MdyFormComponent<
    * disabled at runtime. Read a key defensively rather than assuming the form's shape.
    */
   readonly action = input<
-    | ((value: Partial<T>) => Promise<MdyFormError[] | void> | MdyFormError[] | void)
+    | ((value: TSubmit) => Promise<MdyFormError[] | void> | MdyFormError[] | void)
     | undefined
   >(undefined);
 
@@ -163,7 +167,7 @@ export class MdyFormComponent<
   readonly draftKey = input<string | undefined>(undefined);
 
   // ── Outputs ─────────────────────────────────────────────────────────────────
-  readonly submitted = output<MdyFormSubmitEvent<T>>();
+  readonly submitted = output<MdyFormSubmitEvent<T, TSubmit>>();
 
   // ── Internal declarative adapter ─────────────────────────────────────────────
   private readonly _declarativeAdapter: MdyDeclarativeAdapter;
@@ -236,8 +240,8 @@ export class MdyFormComponent<
   }
 
   /** Active adapter: [adapter] wins, then [form], then the internal one. */
-  private get _active(): MdyFormAdapter<T> {
-    return this.adapter() ?? this.form() ?? this._declarativeAdapter as MdyFormAdapter<T>;
+  private get _active(): MdyFormAdapter<T, TSubmit> {
+    return this.adapter() ?? this.form() ?? this._declarativeAdapter as unknown as MdyFormAdapter<T, TSubmit>;
   }
 
   /**
@@ -338,7 +342,7 @@ export class MdyFormComponent<
   }
 
   /** Every field except the disabled ones — what a submit actually sends. */
-  submitValue(): Partial<T> {
+  submitValue(): TSubmit {
     return this._active.submitValue();
   }
 
@@ -352,7 +356,7 @@ export class MdyFormComponent<
 
   async submit(
     action: (
-      value: Partial<T>,
+      value: TSubmit,
     ) => Promise<MdyFormError[] | void> | MdyFormError[] | void,
   ): Promise<void> {
     return this._active.submit(action);
@@ -362,7 +366,7 @@ export class MdyFormComponent<
     this._active.markAllTouched();
   }
 
-  buildSubmitEvent(value: Partial<T>): MdyFormSubmitEvent<T, Partial<T>> {
+  buildSubmitEvent(value: TSubmit): MdyFormSubmitEvent<T, TSubmit> {
     return this._active.buildSubmitEvent(value);
   }
 

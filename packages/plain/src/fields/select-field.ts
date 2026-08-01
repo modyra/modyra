@@ -8,7 +8,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, createSelectController, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createSelectController, fieldShellPartIds, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -106,6 +106,12 @@ export function renderSelectField(
   // announces reliably. `aria-live="assertive"` gets the interruption without the role conflict,
   // and the element stays a list.
   shell.errorList.setAttribute("aria-live", "assertive");
+  // The ids the trigger names. Every other kind gets these from the shell projection; this one
+  // builds its trigger from the select projection, so the two ends of the relation have to be given
+  // the same names explicitly or `aria-describedby` points at nothing.
+  const shellIds = fieldShellPartIds(f.name);
+  shell.description.id = shellIds.descriptionId;
+  shell.errorList.id = shellIds.errorId;
 
   const lookup: MdyElementLookup = (part, key) => {
     if (part === "trigger") return trigger;
@@ -180,14 +186,16 @@ export function renderSelectField(
     controller.setValue(handle.value());
     controller.setDisabled(handle.disabled());
     controller.setInvalid(!handle.valid());
+    // The trigger describes itself by whichever of the two is on screen, and this renderer is what
+    // decides that: the error list appears once the field is touched and has something to say.
+    const errorsShown = handle.touched() && handle.errors().length > 0;
+    controller.setDescribedBy({ errorsVisible: errorsShown, descriptionVisible: !errorsShown });
 
     const state = controller.state();
     const view = controller.view();
     applyPart(trigger, view.parts.trigger);
     applyPart(search, view.parts.search);
     applyPart(listbox, view.parts.listbox);
-    // select-controller's contract has no description/error parts (unlike every
-    // other controller here) — errors still render, just via a plain static class.
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
 
     setOverlayOpen(popup, state.open);
