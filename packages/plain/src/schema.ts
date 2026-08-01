@@ -11,35 +11,17 @@ import {
   buildDynamicFieldValidators,
   createForm,
   field,
+  mdyEmptyValueFor,
   type MdyDynamicField,
   type MdyFormSchema,
   type MdyReactivity,
   type MdyTypedForm,
 } from "@modyra/core";
 
-function defaultValueFor(f: MdyDynamicField): unknown {
-  if (f.initialValue !== undefined) return f.initialValue;
-  switch (f.kind) {
-    case "number":
-    case "slider":
-      return 0;
-    case "checkbox":
-    case "toggle":
-      return false;
-    case "multiselect":
-    case "file":
-      return [];
-    case "daterange":
-      return { start: null, end: null };
-    default:
-      return f.kind === "select" || f.kind === "radio" || f.kind === "segmented" || f.kind === "datepicker" || f.kind === "timepicker" ? null : "";
-  }
-}
-
 /** Builds the (validator-free) schema for a flat field list — every field gets its default value; validators come from {@link applyDynamicFieldValidators}. */
 export function buildFormSchema(fields: ReadonlyArray<MdyDynamicField>): MdyFormSchema {
   const schema: Record<string, unknown> = {};
-  for (const f of fields) schema[f.name] = field(defaultValueFor(f) as never, []);
+  for (const f of fields) schema[f.name] = field(mdyEmptyValueFor(f) as never, []);
   return schema as MdyFormSchema;
 }
 

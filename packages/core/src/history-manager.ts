@@ -205,8 +205,8 @@ export class MdyHistoryManager {
    * by {@link import("./form-engine.js").MdyFormEngine.mutate} right after
    * its callback returns, so a burst of field writes inside `mutate()`
    * becomes exactly one undo entry regardless of whether the adapter's
-   * effects run synchronously (Vue/Solid) or are scheduler-deferred
-   * (vanilla/Angular). A no-op when history isn't enabled.
+   * effects run synchronously or are scheduler-deferred. A no-op when
+   * history isn't enabled.
    */
   recordNow(): void {
     if (!this._effect) return;

@@ -17,6 +17,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  MDY_DYNAMIC_FIELD_KINDS,
+  mdyEmptyValueFor,
   buildDynamicFieldValidators,
   completeRange,
   required,
@@ -95,4 +97,43 @@ test("a required daterange rejects empty and half-set for different reasons", ()
   assert.equal(run({ start: null, end: null }).length, 1, "empty: required alone");
   assert.equal(run({ start: "2026-07-15", end: null }).length, 1, "half-set: completeRange alone");
   assert.deepEqual(run({ start: "2026-07-15", end: "2026-07-20" }), [], "whole: neither");
+});
+
+/* ── What a kind holds when it holds nothing ────────────────────────────────────
+ * The empty value is the other half of the same question: `required` can only reject what it is
+ * given, so a kind whose empty value is a *usable* one is a kind `required` cannot police. This
+ * table used to live in a renderer, where it answered only for the forms that renderer built.
+ */
+test("every kind has an empty value, and it is not a value the user might mean", () => {
+  const emptyFor = (kind, extra = {}) => mdyEmptyValueFor({ name: "f", kind, ...extra });
+
+  assert.equal(emptyFor("number"), null, "0 is a number a user may mean");
+  assert.equal(emptyFor("text"), "");
+  assert.equal(emptyFor("email"), "");
+  assert.equal(emptyFor("checkbox"), false);
+  assert.equal(emptyFor("select", { options: [] }), null);
+  assert.deepEqual(emptyFor("multiselect", { options: [] }), []);
+  assert.deepEqual(emptyFor("daterange"), { start: null, end: null });
+
+  // A thumb is always somewhere, so a slider is the one kind whose empty value is a real one — and
+  // it is the slider's own minimum, not zero.
+  assert.equal(emptyFor("slider", { min: 10, max: 20 }), 10);
+  assert.equal(emptyFor("slider"), 0);
+
+  // An explicit initial value always wins.
+  assert.equal(emptyFor("number", { initialValue: 42 }), 42);
+});
+
+test("a required field is invalid at its empty value, for every kind that can be empty", () => {
+  const check = required();
+  for (const kind of MDY_DYNAMIC_FIELD_KINDS) {
+    // The slider is the documented exception: it always holds a position, so it is never empty.
+    if (kind === "slider") continue;
+    const empty = mdyEmptyValueFor({ name: "f", kind, options: [] });
+    assert.equal(
+      check(empty).length > 0,
+      true,
+      `${kind}: required accepts its own empty value (${JSON.stringify(empty)})`,
+    );
+  }
 });

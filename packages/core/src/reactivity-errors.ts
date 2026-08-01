@@ -46,7 +46,8 @@ export class MdyAdapterContractError extends Error {
   }
 }
 
-/** A feature requiring an active runtime context (e.g. an Angular Injector) was used before activation. */
+/** A feature requiring an active runtime context — a host framework's injector — was used before
+ * activation. */
 export class MdyActivationError extends Error {
   constructor(readonly feature: string) {
     super(`[modyra] "${feature}" requires the adapter to be activated with a runtime context first.`);

@@ -17,7 +17,9 @@ const fields = [
 test("buildFormSchema gives every field kind its default value", () => {
   const schema = buildFormSchema(fields);
   assert.equal(schema.email.initial, "");
-  assert.equal(schema.age.initial, 0);
+  // Not 0: zero is a number a user may mean, so a field defaulted to it is one `required` can
+  // never fail.
+  assert.equal(schema.age.initial, null);
   assert.equal(schema.subscribe.initial, false);
   assert.equal(schema.country.initial, null);
 });

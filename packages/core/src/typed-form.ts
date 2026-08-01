@@ -397,11 +397,11 @@ export interface MdyTypedFormBaseOptions<
 }
 
 /**
- * Framework-agnostic typed form implementation shared by core and Angular.
+ * Framework-agnostic typed form implementation.
  *
  * The base owns the schema registration, handle-tree building, nested value
  * mapping and the flat-path delegation surface. Subclasses only provide:
- * - the underlying {@link MdyFormEngine} (or an Angular-branded extension);
+ * - the underlying {@link MdyFormEngine}, or a branded extension of it;
  * - a `_buildHandle` factory matching their signal type;
  * - the public `value` / `f` declarations with the correct signal/handle types.
  */
@@ -422,8 +422,8 @@ export abstract class MdyTypedFormBase<
   protected readonly _arrays: ReadonlyMap<string, MdyArrayManager>;
 
   /**
-   * Concrete handle tree type is declared by subclasses (core uses
-   * {@link MdyFieldHandleTree}, Angular uses Signal-based handles).
+   * Concrete handle tree type is declared by subclasses: this package uses
+   * {@link MdyFieldHandleTree}, and an adapter substitutes its own signal type.
    */
   abstract readonly f: unknown;
   abstract readonly state: MdyFormState;
