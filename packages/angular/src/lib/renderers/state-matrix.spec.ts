@@ -20,10 +20,25 @@ import {
   type MdyStateFixture,
 } from "@modyra/widgets/testing";
 import type { MdyWidgetKind } from "@modyra/widgets";
+import { explainValueMismatch } from "@modyra/core";
 
 import { CATALOG_KINDS, CatalogHost, partsOf } from "./catalog-host.spec";
 
 const KINDS: readonly MdyWidgetKind[] = CATALOG_KINDS.map(({ kind }) => kind);
+
+/**
+ * The values this fixture drives with are the values the contract says the kind holds.
+ *
+ * A driver that hands the wrong shape produces a green row about a state the widget was never in.
+ */
+describe("the state-matrix fixture", () => {
+  it("drives each kind with a value of its declared shape", () => {
+    for (const kind of KINDS) {
+      expect(`${kind} empty: ${explainValueMismatch(kind, emptyFor(kind))}`).toBe(`${kind} empty: null`);
+      expect(`${kind} filled: ${explainValueMismatch(kind, valueFor(kind))}`).toBe(`${kind} filled: null`);
+    }
+  });
+});
 const ENTRY = new Map(CATALOG_KINDS.map((entry) => [entry.kind, entry]));
 
 /** A value each kind will actually accept — a filled state reached with a rejected value is empty. */
@@ -37,7 +52,7 @@ function valueFor(kind: MdyWidgetKind): unknown {
     case "daterange": return { start: "2026-07-15", end: "2026-07-20" };
     case "timepicker": return "10:30";
     case "colors": return "#004cff";
-    case "file": return null;
+    case "file": return [new File(["content"], "report.txt", { type: "text/plain" })];
     default: return "value";
   }
 }
@@ -53,7 +68,10 @@ function emptyFor(kind: MdyWidgetKind): unknown {
   switch (kind) {
     case "multiselect": return [];
     case "checkbox": case "toggle": return false;
-    case "number": case "slider": return null;
+    case "number": return null;
+    // A slider is never empty: its thumb is somewhere, and that somewhere is its minimum.
+    case "slider": return 0;
+    case "file": return [];
     case "daterange": return { start: null, end: null };
     default: return "";
   }

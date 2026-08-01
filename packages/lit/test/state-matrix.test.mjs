@@ -10,9 +10,10 @@ import { test } from "node:test";
 import { installDomGlobals, mount as mountElement } from "./support/dom-env.mjs";
 
 installDomGlobals();
-const { createLitForm, field, required } = await import("../dist/adapter.js");
+const { createLitForm, field, required, min } = await import("../dist/adapter.js");
 const { defineMdyElements } = await import("../dist/ui.js");
 const { collectStateMatrix, normalizeStateLedger } = await import("../../widgets/dist/testing/index.js");
+const { explainValueMismatch } = await import("../../core/dist/index.js");
 
 defineMdyElements();
 
@@ -51,7 +52,7 @@ function valueFor(kind) {
     case "daterange": return { start: "2026-07-15", end: "2026-07-20" };
     case "timepicker": return "10:30";
     case "colors": return "#004cff";
-    case "file": return null;
+    case "file": return [new File(["content"], "report.txt", { type: "text/plain" })];
     default: return "value";
   }
 }
@@ -61,7 +62,11 @@ function emptyFor(kind) {
   switch (kind) {
     case "multiselect": return [];
     case "checkbox": case "toggle": return false;
-    case "number": case "slider": return null;
+    case "number": return null;
+    case "file": return [];
+    // A slider is never empty: its thumb is somewhere, and that somewhere is its minimum. Driving
+    // `null` asked the renderer for a state the kind cannot be in.
+    case "slider": return 0;
     case "daterange": return { start: null, end: null };
     default: return "";
   }
@@ -126,7 +131,10 @@ async function mount(kind) {
   const { tag, initial } = TAG_FOR.get(kind);
   // Required, so the `invalid` state is reachable at all. Without a validator the field can never
   // be invalid and every `invalid` row reads as a renderer divergence when it is a fixture gap.
-  const form = createLitForm({ value: field(initial, [required()]) });
+  // A slider is never empty, so `required` alone can never fail on one and its `invalid` row would
+  // be green because the state is unreachable rather than because the renderer is right.
+  const validators = kind === "slider" ? [required(), min(1)] : [required()];
+  const form = createLitForm({ value: field(initial, validators) });
   const element = await mountElement(tag, (el) => {
     el.field = form.f.value;
     el.label = "Label";
@@ -204,4 +212,18 @@ test("lit's divergences are exactly the recorded ones", () => {
 
 test("no Lit element exposes ARIA for a state it does not declare", () => {
   assert.deepEqual(matrix.unsupportedAria, []);
+});
+
+/**
+ * The values this fixture drives with are the values the contract says the kind holds.
+ *
+ * A driver that hands the wrong shape produces a green row about a state the widget was never in:
+ * `daterange` once received `""` from a fixture that used one empty value for every kind, and
+ * nothing noticed. The kind declares its shape; this is where the fixture answers to it.
+ */
+test("the fixture drives each kind with a value of its declared shape", () => {
+  for (const kind of KINDS) {
+    assert.equal(explainValueMismatch(kind, emptyFor(kind)), null, `${kind}: empty`);
+    assert.equal(explainValueMismatch(kind, valueFor(kind)), null, `${kind}: filled`);
+  }
 });

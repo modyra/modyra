@@ -19,6 +19,7 @@ installDomGlobals();
 const { mountMdyForm } = await import("../dist/index.js");
 const { collectStateMatrix, normalizeStateLedger } = await import("../../widgets/dist/testing/index.js");
 const { partsOf } = await import("./contract-parts.mjs");
+const { explainValueMismatch } = await import("../../core/dist/index.js");
 
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 const NEEDS_OPTIONS = new Set(["radio", "segmented", "select", "multiselect"]);
@@ -42,7 +43,7 @@ function valueFor(kind) {
     case "daterange": return { start: "2026-07-15", end: "2026-07-20" };
     case "timepicker": return "10:30";
     case "colors": return "#004cff";
-    case "file": return null;
+    case "file": return [new File(["content"], "report.txt", { type: "text/plain" })];
     default: return "value";
   }
 }
@@ -62,7 +63,11 @@ function emptyFor(kind) {
   switch (kind) {
     case "multiselect": return [];
     case "checkbox": case "toggle": return false;
-    case "number": case "slider": return null;
+    case "number": return null;
+    case "file": return [];
+    // A slider is never empty: its thumb is somewhere, and that somewhere is its minimum. Driving
+    // `null` asked the renderer for a state the kind cannot be in.
+    case "slider": return 0;
     case "daterange": return { start: null, end: null };
     default: return "";
   }
@@ -77,7 +82,10 @@ function mount(kind) {
   const host = document.createElement("div");
   document.body.append(host);
   const fieldFor = (extra) => ({
-    name: "f", kind, label: "F", validators: { required: true },
+    name: "f", kind, label: "F",
+    // A slider is never empty, so `required` alone can never fail on one and its `invalid` row would
+    // be green because the state is unreachable rather than because the renderer is right.
+    validators: kind === "slider" ? { required: true, min: 1 } : { required: true },
     ...(NEEDS_OPTIONS.has(kind) ? { options: OPTIONS } : {}),
     ...extra,
   });
@@ -175,4 +183,18 @@ test("plain's divergences are exactly the recorded ones", () => {
 
 test("no kind exposes ARIA for a state it does not declare", () => {
   assert.deepEqual(matrix.unsupportedAria, []);
+});
+
+/**
+ * The values this fixture drives with are the values the contract says the kind holds.
+ *
+ * A driver that hands the wrong shape produces a green row about a state the widget was never in:
+ * `daterange` once received `""` from a fixture that used one empty value for every kind, and
+ * nothing noticed. The kind declares its shape; this is where the fixture answers to it.
+ */
+test("the fixture drives each kind with a value of its declared shape", () => {
+  for (const kind of KINDS) {
+    assert.equal(explainValueMismatch(kind, emptyFor(kind)), null, `${kind}: empty`);
+    assert.equal(explainValueMismatch(kind, valueFor(kind)), null, `${kind}: filled`);
+  }
 });

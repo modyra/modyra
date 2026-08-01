@@ -129,6 +129,7 @@ export type {
 
 // ─── Dynamic forms (AI/CMS-declared configs) ─────────────────────────────────
 export * from "./dynamic-config.js";
+export * from "./value-contracts.js";
 
 // NOTE: satellite utilities (date/time, i18n, icons, keyboard, overlay
 // positioning, serialize, devtools, options-utils) are intentionally NOT
