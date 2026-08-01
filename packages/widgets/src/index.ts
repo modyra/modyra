@@ -25,6 +25,20 @@ export type {
   MdyWidgetStructureNode,
 } from "./structure.js";
 
+export { MDY_LABELABLE_TAGS, MDY_WIDGET_RELATIONS } from "./relations.js";
+export type { MdyRelationAttribute, MdyWidgetRelation } from "./relations.js";
+
+export {
+  MDY_DISABLED_BLOCKS_TRANSITIONS,
+  MDY_WIDGET_TRANSITIONS,
+  transitionsFrom,
+} from "./transitions.js";
+export type {
+  MdyOverlayPhase,
+  MdyTransitionTrigger,
+  MdyWidgetTransition,
+} from "./transitions.js";
+
 export type {
   MdyElementTarget,
   MdyUiCommand,

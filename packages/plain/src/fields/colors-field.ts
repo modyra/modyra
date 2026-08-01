@@ -117,9 +117,14 @@ export function renderColorsField(
   for (const { preset, swatch } of swatches) {
     swatch.addEventListener("click", () => commit({ type: "preset", value: preset }));
   }
-  popup.addEventListener("keydown", (event) => {
+  // Escape closes and hands focus back, from wherever the user is. This overlay does not take focus
+  // when it opens, so listening on the popup alone left the palette impossible to dismiss by
+  // keyboard from the control that opened it.
+  const onEscape = (event: KeyboardEvent) => {
     if (event.key === "Escape") { open.set(false); toggle.focus(); }
-  });
+  };
+  popup.addEventListener("keydown", onEscape);
+  wrapper.addEventListener("keydown", onEscape);
 
   const effectRef = reactivity.effect(() => {
     const value = typeof handle.value() === "string" ? (handle.value() as string) : "";

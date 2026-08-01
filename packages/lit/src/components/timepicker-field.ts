@@ -472,7 +472,18 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
     this.classList.toggle("mdy-renderer--open", this._open);
     return html`
-      <div class="mdy-timepicker">
+      <div
+        class="mdy-timepicker"
+        @keydown=${(e: KeyboardEvent) => {
+          // The popup handles Escape inside itself, but it does not take focus when it opens — so
+          // from the control, which is where the keyboard actually is, the picker could be opened
+          // and not dismissed.
+          if (e.key === "Escape" && this._open) {
+            e.preventDefault();
+            this.closePopup(handle);
+          }
+        }}
+      >
         <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
           <input
             id=${this.fieldId}

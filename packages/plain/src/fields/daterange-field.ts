@@ -146,9 +146,14 @@ export function renderDaterangeField(
   nextButton.addEventListener("click", () => view.set(addMonths(view(), 1)));
   cancelButton.addEventListener("click", () => dispatch({ type: "cancel" }));
   applyButton.addEventListener("click", () => dispatch({ type: "confirm" }));
-  popup.addEventListener("keydown", (event) => {
+  // Escape dismisses from wherever the user is. This overlay does not take focus when it opens, so
+  // listening on the popup alone meant the handler could only ever fire if the user had already
+  // reached inside it — the keyboard could open the range and not close it.
+  const onEscape = (event: KeyboardEvent) => {
     if (event.key === "Escape") dispatch({ type: "cancel" });
-  });
+  };
+  popup.addEventListener("keydown", onEscape);
+  wrapper.addEventListener("keydown", onEscape);
 
   const undismiss = dismissOnOutsidePointer([wrapper], () => draft().open, () => dispatch({ type: "cancel" }));
 

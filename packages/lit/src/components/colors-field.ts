@@ -113,7 +113,17 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
     this.classList.toggle("mdy-renderer--open", this._open);
     return html`
-      <div class="mdy-colors ${this._open ? "mdy-colors--open" : ""}">
+      <div
+        class="mdy-colors ${this._open ? "mdy-colors--open" : ""}"
+        @keydown=${(e: KeyboardEvent) => {
+          // The palette handles Escape inside itself and does not take focus when it opens, so from
+          // the control the palette could be opened and not dismissed.
+          if (e.key === "Escape" && this._open) {
+            e.preventDefault();
+            this.close(handle);
+          }
+        }}
+      >
         <div class="mdy-input-wrapper ${handle.disabled() ? "mdy-input-wrapper--disabled" : ""}">
           <div class="mdy-input-wrapper__inliner">
             <button
