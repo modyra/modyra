@@ -24,6 +24,22 @@ export interface MdyStateFixture {
   /** The focusable, operable control, when the adapter can name it. */
   control?(): Element | null;
   /**
+   * The value the field currently holds, as the form reports it.
+   *
+   * The state matrix reads the DOM and does not need this; a canonical observation compares the
+   * value alongside the shape, and reading it from the DOM would ask each renderer to agree about
+   * how it *displays* a value rather than which one it holds.
+   */
+  value?(): unknown;
+  /**
+   * Elements outside the widget's subtree that may hold its overlay.
+   *
+   * A popup lifted into a portal is still the widget's. An observation that could not reach it
+   * would call every portalled overlay absent and every eager one present — a difference in
+   * mounting strategy reported as a difference in the widget.
+   */
+  portalRoots?(): readonly Element[];
+  /**
    * Put the widget in `state`. Return false when the public API offers no way to reach it — that is
    * a finding in itself and is reported rather than skipped silently.
    */

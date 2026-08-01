@@ -2,11 +2,16 @@
  * The catalogue fixture: one host mounting all seventeen kinds, and one map saying where each
  * contract part lives in the Angular DOM.
  *
- * Shared by `dom-contract.spec.ts` (is the shape right) and `state-matrix.spec.ts` (does it behave
- * right in each state). Those two had separate hosts and separate part resolvers, and the state
- * matrix's was text-field-shaped — the same duplication that made Plain's matrix misjudge radio and
- * segmented earlier in this milestone, reporting renderer defects that were really the resolver
- * looking for a text input inside a radio group.
+ * Shared by `dom-contract.spec.ts` (is the shape right), `state-matrix.spec.ts` (does it behave
+ * right in each state) and `equivalence.spec.ts` (do the three renderers agree). Those suites had
+ * separate hosts and separate part resolvers, and the state matrix's was text-field-shaped — the
+ * same duplication that made Plain's matrix misjudge radio and segmented earlier in this milestone,
+ * reporting renderer defects that were really the resolver looking for a text input inside a radio
+ * group.
+ *
+ * `mountStateFixture` is the driving half, here for the same reason: the suite that asks whether a
+ * state looks right and the suite that asks whether three renderers agree about it must be looking
+ * at the same widget.
  *
  * **Named `.spec.ts` on purpose.** `tsconfig.lib.json` excludes `**\/*.spec.ts` from the published
  * build and `jest.config.cjs` matches `src/**\/*.spec.ts`; any other name would either ship this
@@ -16,7 +21,9 @@
  */
 import { Component, Injector, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
+import { By } from "@angular/platform-browser";
 import type { MdyWidgetKind } from "@modyra/widgets";
+import type { MdyStateFixture } from "@modyra/widgets/testing";
 import { MdyDeclarativeAdapter } from "../core/declarative-form-adapter";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyPrefixDirective } from "../control/prefix.directive";
@@ -178,6 +185,114 @@ export function partsOf(
     default:
       return { ...shell, control: q("input, textarea") };
   }
+}
+
+const ENTRY = new Map(CATALOG_KINDS.map((entry) => [entry.kind, entry]));
+
+/** A value each kind will actually accept — a filled state reached with a rejected value is empty. */
+export function valueFor(kind: MdyWidgetKind): unknown {
+  switch (kind) {
+    case "number": case "slider": return 7;
+    case "checkbox": case "toggle": return true;
+    case "multiselect": return ["a"];
+    case "radio": case "segmented": case "select": return "a";
+    case "datepicker": return "2026-07-15";
+    case "daterange": return { start: "2026-07-15", end: "2026-07-20" };
+    case "timepicker": return "10:30";
+    case "colors": return "#004cff";
+    case "file": return [new File(["content"], "report.txt", { type: "text/plain" })];
+    default: return "value";
+  }
+}
+
+/**
+ * The empty value each kind can hold.
+ *
+ * Not `""` for everything: a daterange handed a string where an object belongs is rejected by
+ * `required` for being an empty string rather than for being an empty range, so its `invalid` row
+ * goes green because of the fixture.
+ */
+export function emptyFor(kind: MdyWidgetKind): unknown {
+  switch (kind) {
+    case "multiselect": return [];
+    case "checkbox": case "toggle": return false;
+    case "number": return null;
+    // A slider is never empty: its thumb is somewhere, and that somewhere is its minimum.
+    case "slider": return 0;
+    case "file": return [];
+    case "daterange": return { start: null, end: null };
+    default: return "";
+  }
+}
+
+export function controlOf(root: Element): Element | null {
+  return root.querySelector(
+    ".mdy-input-wrapper input, .mdy-input-wrapper textarea, .mdy-input-wrapper select",
+  ) ?? root.querySelector("input, textarea, select");
+}
+
+/** The element that opens each composite's overlay, by the part the catalogue names. */
+export const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
+  + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
+
+/** Mount one widget of `kind` on the catalogue host, ready to drive into any declared state. */
+export function mountStateFixture(kind: MdyWidgetKind): MdyStateFixture {
+  const fixture = TestBed.createComponent(CatalogHost);
+  fixture.detectChanges();
+  const entry = ENTRY.get(kind);
+  if (!entry) throw new Error(`no host control declared for ${kind}`);
+  const root = fixture.nativeElement.querySelector(entry.selector) as Element;
+  const adapter = fixture.componentInstance.adapter;
+  const field = adapter.getField(entry.name);
+
+  return {
+    root,
+    parts: () => partsOf(root, kind),
+    control: () => controlOf(root),
+    value: () => field?.().value(),
+    // A panel projected into a CDK overlay is still this widget's. A snapshot that could not reach
+    // it would call every lifted overlay absent.
+    portalRoots: () => Array.from(root.ownerDocument.body.children).filter(
+      (element) => !root.contains(element) && element.querySelector?.("[class*='__dropdown']"),
+    ),
+    // Angular renders on change detection, not on a task.
+    settle: () => { fixture.detectChanges(); },
+    dispose: () => fixture.destroy(),
+    drive(state): boolean {
+      switch (state) {
+        case "pristine": return true;
+        case "empty": field?.().value.set(emptyFor(kind)); return true;
+        case "filled": field?.().value.set(valueFor(kind)); return true;
+        case "touched": field?.().touched.set(true); return true;
+        case "invalid":
+          field?.().value.set(emptyFor(kind));
+          field?.().touched.set(true);
+          return true;
+        case "focused": (controlOf(root) as HTMLElement | null)?.focus?.(); return true;
+        case "selected": field?.().value.set(valueFor(kind)); return true;
+        case "disabled": adapter.setDisabled(entry.name, signal(true)); return true;
+        case "readonly": adapter.setReadonly(entry.name, signal(true)); return true;
+        case "open": {
+          const opener = root.querySelector(OPENER) as HTMLElement | null;
+          if (!opener) return false;
+          opener.click();
+          fixture.detectChanges();
+          return true;
+        }
+        case "loading": {
+          // Async options are the renderer's concern, not the form's, so the state is driven
+          // through the control that owns it.
+          const control = fixture.debugElement.query(By.css(entry.selector))
+            ?.componentInstance as { loadingOverride?: { set(v: boolean): void } } | undefined;
+          if (!control?.loadingOverride) return false;
+          control.loadingOverride.set(true);
+          fixture.detectChanges();
+          return true;
+        }
+        default: return false;
+      }
+    },
+  };
 }
 
 describe("the catalogue fixture", () => {
