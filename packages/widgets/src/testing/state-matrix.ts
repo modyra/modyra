@@ -32,6 +32,14 @@ export interface MdyStateFixture {
    */
   value?(): unknown;
   /**
+   * Send a key to the widget, wherever focus currently is.
+   *
+   * The adapter owns this because only it knows where its overlay puts focus, and a key dispatched
+   * at a guessed element tests the guess rather than the widget. Returns false when there is
+   * nothing to send it to.
+   */
+  press?(key: string): boolean;
+  /**
    * Put the widget in `state`. Return false when the public API offers no way to reach it — that is
    * a finding in itself and is reported rather than skipped silently.
    */

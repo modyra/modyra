@@ -15,7 +15,7 @@ import { installDomGlobals } from "./support/dom-env.mjs";
 
 installDomGlobals();
 const {
-  canonicalWidgetSnapshot, compareToCanonical,
+  canonicalWidgetSnapshot, compareToCanonical, MDY_CANONICAL_AFTER_ESCAPE,
   MDY_CANONICAL_AT_REST, MDY_CANONICAL_DISABLED, MDY_CANONICAL_INVALID, MDY_CANONICAL_OPEN,
 } = await import("../../widgets/dist/testing/index.js");
 const { mount } = await import("./support/state-fixture.mjs");
@@ -59,4 +59,41 @@ for (const { name, expectations, validators, drive } of STATES) {
       }
     });
   }
+}
+
+/**
+ * The same gesture, executed by every renderer: open the overlay, then dismiss it from the keyboard.
+ *
+ * The first check here about what an element *does* rather than what it looks like in a state it was
+ * put into. The expectation is declared once in `@modyra/widgets/testing`, like every other, so the
+ * three renderers answer the same question about the same sequence.
+ */
+for (const [kind, expectation] of Object.entries(MDY_CANONICAL_AFTER_ESCAPE)) {
+  test(`${kind} returns to the opener when Escape dismisses it`, async () => {
+    const fixture = await mount(kind, { validators: false });
+    assert.ok(fixture.drive("open"), `${kind}: not openable`);
+    await fixture.settle();
+    try {
+      assert.deepEqual(
+        compareToCanonical(
+          canonicalWidgetSnapshot(fixture.root, kind, { value: fixture.value() }),
+          MDY_CANONICAL_OPEN[kind],
+        ),
+        KNOWN_DIVERGENCES.open?.[kind] ?? [],
+        `${kind}: the overlay did not open as expected`,
+      );
+
+      assert.ok(fixture.press("Escape"), `${kind}: nothing to send Escape to`);
+      await fixture.settle();
+      assert.deepEqual(
+        compareToCanonical(
+          canonicalWidgetSnapshot(fixture.root, kind, { value: fixture.value() }),
+          expectation,
+        ),
+        KNOWN_DIVERGENCES["after escape"]?.[kind] ?? [],
+      );
+    } finally {
+      fixture.dispose();
+    }
+  });
 }

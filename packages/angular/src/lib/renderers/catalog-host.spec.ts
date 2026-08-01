@@ -323,6 +323,24 @@ export function mountStateFixture(
     // Angular renders on change detection, not on a task.
     settle: () => { fixture.detectChanges(); },
     dispose: () => fixture.destroy(),
+    /**
+     * Send a key where the user actually is.
+     *
+     * An overlay that moves focus into itself handles a key there; one that leaves focus on the
+     * opener handles it there. Dispatching at a guessed element tests the guess rather than the
+     * widget.
+     */
+    press: (key: string): boolean => {
+      const popup = partsOf(root, kind).popup as Element | null;
+      const active = root.ownerDocument.activeElement;
+      const target = active && (root.contains(active) || popup?.contains(active))
+        ? (active as HTMLElement)
+        : (root.querySelector(OPENER) as HTMLElement | null);
+      if (!target) return false;
+      target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+      fixture.detectChanges();
+      return true;
+    },
     drive(state): boolean {
       switch (state) {
         case "pristine": return true;
