@@ -8,7 +8,8 @@
  *
  * Declared independently of those functions on purpose. A table derived from the implementation
  * checks nothing; this states what the transitions are supposed to be, and
- * `transitions.spec.mjs` holds {@link overlayLifecycleTransition} and {@link widgetKeyIntent} to it.
+ * `transitions.spec.mjs` holds {@link overlayLifecycleTransition} — the one every renderer routes
+ * through — and {@link widgetKeyIntent} to it.
  */
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
 
@@ -79,4 +80,80 @@ export function transitionsFrom(
   phase: MdyOverlayPhase,
 ): readonly MdyWidgetTransition[] {
   return MDY_WIDGET_TRANSITIONS[kind].filter((transition) => transition.from === phase);
+}
+
+/**
+ * What a key does, per kind.
+ *
+ * `widgetKeyIntent` answered this for years without asking which widget it was looking at: every
+ * kind but `number` was told ArrowDown means "move to the next option", so a text field navigated a
+ * list it does not have, a textarea was told Enter opens something, and a slider — whose arrows must
+ * change its value — was given list navigation instead of a step.
+ *
+ * What a key may do follows from what the kind *is*: a widget with options navigates them, one with
+ * a range steps it, one with two states toggles, one with an overlay opens and closes it. Declaring
+ * that per kind is what stops the answer from being the same everywhere.
+ */
+export interface MdyKeyBinding {
+  readonly key: string;
+  /** Only when the overlay is showing, only when it is not, or either way. */
+  readonly when?: MdyOverlayPhase;
+  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel";
+}
+
+/** Kinds whose value is chosen from a list the keyboard walks. */
+const NAVIGATES_OPTIONS: readonly string[] = Object.freeze([
+  "select", "multiselect", "radio", "segmented", "datepicker", "daterange", "timepicker", "colors",
+]);
+/** Kinds whose value is a point on a range the keyboard nudges. */
+const STEPS_A_RANGE: readonly string[] = Object.freeze(["number", "slider"]);
+/** Kinds with exactly two states, which Space flips. */
+const TOGGLES: readonly string[] = Object.freeze(["checkbox", "toggle", "radio", "segmented"]);
+
+function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
+  const overlay = MDY_WIDGET_CONTRACTS[kind].capabilities.overlay;
+  const bindings: MdyKeyBinding[] = [];
+
+  if (overlay) {
+    bindings.push({ key: "Escape", when: "open", intent: "cancel" });
+    bindings.push({ key: "Enter", when: "closed", intent: "open" });
+    bindings.push({ key: "Enter", when: "open", intent: "commit" });
+    // The combobox pattern: pressing down on a closed control opens it rather than doing nothing,
+    // which is how a keyboard user reaches the list at all.
+    bindings.push({ key: "ArrowDown", when: "closed", intent: "open" });
+  }
+  if (NAVIGATES_OPTIONS.includes(kind)) {
+    for (const key of ["ArrowDown", "ArrowUp", "Home", "End"]) {
+      bindings.push({ key, ...(overlay ? { when: "open" as const } : {}), intent: "move" });
+    }
+  }
+  if (STEPS_A_RANGE.includes(kind)) {
+    // Only the arrows. Home and End on a range mean "go to the minimum" and "to the maximum", and
+    // the intent vocabulary has no word for that — declaring them as `step` would say something
+    // untrue rather than leave a gap on the record.
+    bindings.push({ key: "ArrowUp", intent: "step" }, { key: "ArrowDown", intent: "step" });
+  }
+  if (TOGGLES.includes(kind)) bindings.push({ key: " ", intent: "toggle" });
+
+  return Object.freeze(bindings);
+}
+
+/** Every key each kind answers to. A kind that answers to none declares none. */
+export const MDY_WIDGET_KEYBOARD: Readonly<Record<MdyWidgetKind, readonly MdyKeyBinding[]>> =
+  Object.freeze(
+    Object.fromEntries(
+      (Object.keys(MDY_WIDGET_CONTRACTS) as MdyWidgetKind[]).map((kind) => [kind, keyboardFor(kind)]),
+    ) as Record<MdyWidgetKind, readonly MdyKeyBinding[]>,
+  );
+
+/** What this kind does with this key in this phase, or `null` if it does not claim it. */
+export function keyBindingFor(
+  kind: MdyWidgetKind,
+  key: string,
+  open: boolean,
+): MdyKeyBinding | null {
+  const phase: MdyOverlayPhase = open ? "open" : "closed";
+  return MDY_WIDGET_KEYBOARD[kind].find(
+    (binding) => binding.key === key && (binding.when === undefined || binding.when === phase),
+  ) ?? null;
 }
