@@ -1,6 +1,7 @@
 ---
 "@modyra/core": minor
 "@modyra/plain": major
+"@modyra/angular": major
 ---
 
 What a field holds when it holds nothing is now the contract's answer, not a renderer's.
@@ -19,5 +20,10 @@ somewhere, so an untouched slider reads as filled. Every other kind is now rejec
 its empty value, and a test asserts exactly that across the whole kind list — which is the check that
 would have caught the `0`.
 
+`<mdy-dynamic-form>` used the same function instead of spelling the defaults per kind in its
+template — a third table, which defaulted only checkbox, toggle and multiselect and left a number
+field `undefined`.
+
 **Breaking for `@modyra/plain`**: a `number` field with no `initialValue` starts `null` rather than
-`0`, and a `slider` starts at `min`. Set `initialValue` to keep the old behaviour.
+`0`, and a `slider` starts at `min`. Set `initialValue` to keep the old behaviour. The same applies to `<mdy-dynamic-form>`, where a
+number field previously started `undefined` and a slider ignored its `min`.
