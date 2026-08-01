@@ -106,7 +106,10 @@ function classesOf(element: Element): readonly string[] {
 const SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly string[]; roles: readonly string[] } | undefined>> = Object.freeze({
   root: undefined,
   group: undefined,
-  text: undefined,
+  // Prose the user reads. Which block or inline element carries it is presentation, and renderers
+  // differ freely; what it may not be is a control, a button or an interactive element pretending
+  // to be a caption.
+  text: { tags: ["p", "div", "span", "output", "strong", "em", "small", "abbr"], roles: ["presentation", "none"] },
   presentation: undefined,
   label: { tags: ["label"], roles: [] },
   input: {
@@ -129,6 +132,9 @@ const SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly string[]; role
   popup: undefined,
   grid: { tags: ["table"], roles: ["grid", "rowgroup", "presentation", "none"] },
   gridcell: { tags: ["td", "th"], roles: ["gridcell", "button"] },
+  // The heading of a grid column — a weekday above a calendar. It is a cell, not prose, and saying
+  // so is what keeps the grid navigable.
+  columnheader: { tags: ["th"], roles: ["columnheader"] },
   // A run of errors is a list, an inline error is a span, a loading note is a paragraph. Named
   // rather than widened to "anything": this still rejects a control, a button or a bare div.
   status: { tags: ["output", "ul", "ol", "li", "p", "span"], roles: ["status", "alert", "log", "list", "listitem"] },

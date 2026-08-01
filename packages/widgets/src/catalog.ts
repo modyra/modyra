@@ -302,10 +302,59 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
   });
   return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), capabilities: Object.freeze({ keyboard: true, focus: true, overlay, dismissOnOutsidePointer: overlay, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
-function semanticElement(partName: string) {
-  const input = new Set(["control","startControl","endControl","search","hour","minute","hexInput","nativePicker"]);
-  const button = new Set(["toggle","decrement","increment","searchButton","clear","modeToggle","action"]);
-  if (partName === "root") return "root" as const; if (partName === "optionLabel") return "text" as const; if (partName === "label") return "label" as const; if (input.has(partName)) return "input" as const; if (button.has(partName)) return "button" as const; if (partName === "listbox") return "listbox" as const; if (partName === "option" || partName === "swatch") return "option" as const; if (["popup","calendar","clock"].includes(partName)) return "popup" as const; if (partName === "grid") return "grid" as const; if (partName === "gridcell") return "gridcell" as const; if (["errors","inlineError","loading","empty"].includes(partName)) return "status" as const; return "group" as const;
+/**
+ * The semantic every part answers to, declared rather than defaulted.
+ *
+ * This used to end in `return "group"`, so a part nobody had classified silently admitted any
+ * element at all — 121 of 237 nodes were `group` because the question had never been asked. A name
+ * missing from here now throws: the contract does not get to have no opinion by accident.
+ *
+ * `group` still appears, and means the same as it always did — a container the contract does not
+ * constrain further. The difference is that it is now an answer rather than the absence of one.
+ */
+const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Object.freeze({
+  root: "root", label: "label",
+  // Controls and the things that operate them.
+  control: "input", startControl: "input", endControl: "input", search: "input", hour: "input",
+  minute: "input", hexInput: "input", nativePicker: "input",
+  // The trigger is the widget's control surface, not a plain button: it carries `role="combobox"`,
+  // and a native `<select>` satisfies it too.
+  trigger: "input",
+  toggle: "button", searchButton: "button", clear: "button",
+  modeToggle: "button", action: "button", optionStep: "button", chip: "button",
+  // Announcements.
+  errors: "status", inlineError: "status", loading: "status", empty: "status", errorItem: "status",
+  // Supporting text describes the control; it is not an announcement, and it carries no live role.
+  supportingText: "text",
+  // Text the user reads.
+  value: "text", placeholder: "text", optionLabel: "text", optionText: "text", optionCount: "text",
+  separator: "text", requiredMarker: "text",
+  weekday: "columnheader",
+  // Decoration: it carries meaning for the eye, and none for assistive technology.
+  arrow: "presentation", indicator: "presentation", thumb: "presentation", preview: "presentation",
+  optionCheck: "presentation", optionControl: "presentation", dialHand: "presentation",
+  dialFace: "presentation",
+  // The numbers are painted on the face; the face takes the pointer, so they announce nothing.
+  dialNumber: "presentation",
+  // Structures with their own semantics.
+  listbox: "listbox", option: "option", swatch: "option", popup: "popup", calendar: "popup",
+  clock: "popup", dialog: "dialog", grid: "grid", gridcell: "gridcell",
+  // Containers the contract deliberately leaves unconstrained.
+  group: "group", inputWrapper: "group", prefix: "group", suffix: "group", container: "group",
+  content: "group", header: "group", dialogHeader: "group", actions: "group", chips: "group",
+  options: "group", optionWrapper: "group", presets: "group", dropzone: "group", fileList: "group",
+  fileItem: "group", weekdays: "group", row: "group", track: "group", period: "group",
+});
+
+function semanticElement(partName: string): MdyWidgetSemanticElement {
+  const semantic = PART_SEMANTICS[partName];
+  if (!semantic) {
+    throw new RangeError(
+      `[modyra] Part "${partName}" has no declared semantic. Add it to PART_SEMANTICS — a part the ` +
+      `contract has no opinion about admits every element, which is not a contract.`,
+    );
+  }
+  return semantic;
 }
 
 export const MDY_WIDGET_CONTRACTS = Object.freeze({
