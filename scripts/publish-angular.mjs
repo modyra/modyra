@@ -12,7 +12,7 @@ if (currentAngularVersion === expectedVersion) {
   console.log(`Skipping @modyra/angular@${expectedVersion} (already published)`);
 } else {
   const publishArgs = stageMode
-    ? ["stage", "publish", "--access", "public"]
+    ? ["publish", "--dry-run", "--access", "public"]
     : ["publish", "--access", "public"];
   if (shouldUseProvenance()) {
     publishArgs.push("--provenance");
