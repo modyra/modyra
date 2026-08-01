@@ -35,17 +35,13 @@ export function createBooleanFieldController(
     checked: handle.value() === true,
     invalid: !handle.valid(),
     disabled: handle.disabled(),
-    // The form owns this state; `setReadonly()` stays an imperative override for a renderer
-    // that has no form behind it. Read from the handle like every other field of this
-    // projection — `readonly` alone came from the local signal, which is why a form could
-    // set it and nothing downstream ever saw it.
+    // The form owns this state; `setReadonly()` is an imperative override for a renderer with no
+    // form behind it.
     readonly: handle.readonly() || readonly(),
-    // One value the whole controller agrees on; `disabled`/`readonly` above are its derived
-    // halves, kept for renderers that still read them.
+    // `disabled`/`readonly` above are the derived halves of this one value.
     //
-    // The local override can only ever *reduce* what is permitted. `setReadonly()` is a published
-    // escape hatch for a renderer with no form behind it, and it must not be able to re-enable a
-    // field the form disabled.
+    // The imperative override can only ever narrow what is permitted: `setReadonly()` serves a
+    // renderer with no form behind it, and must not re-enable a field the form disabled.
     interactivity: handle.interactivity() === "enabled" && readonly()
       ? ("readonly" as const)
       : handle.interactivity(),

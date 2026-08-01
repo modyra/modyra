@@ -61,8 +61,7 @@ export function createOptionFieldController<TValue>(
     invalid: !handle.valid(),
     disabled: handle.disabled(),
     readonly: readonly(),
-    // One value the whole controller agrees on; `disabled`/`readonly` above are the
-    // derived halves kept for renderers that still read them.
+    // `disabled`/`readonly` above are the derived halves of this one value.
     interactivity: handle.interactivity(),
     required: handle.required(),
     touched: handle.touched(),
@@ -118,8 +117,8 @@ export function createOptionFieldController<TValue>(
         role: "radio",
         "aria-checked": String(selected),
         "aria-disabled": String(option.disabled || blocksFocus(currentState.interactivity)),
-        // The native attribute asks the focus question. An option group has no read-only
-        // rendering, so this differs from `aria-disabled` above only if a host sets it directly.
+        // The native attribute asks the focus question. An option group has no read-only rendering,
+        // so this differs from `aria-disabled` above only when a host sets the state directly.
         disabled: option.disabled || blocksFocus(currentState.interactivity),
       },
     };

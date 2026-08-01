@@ -80,10 +80,9 @@ export interface MdyFormError {
 /**
  * How much a user may do to a field. One value, not two booleans.
  *
- * `disabled` and `readonly` used to be independent flags, which made `disabled && readonly`
- * representable and meaningless and left every call site to invent its own combination of them —
- * fourteen did, and they did not agree. The states are ordered by how much they permit, and they
- * are mutually exclusive by construction:
+ * One value rather than two flags, so `disabled && readonly` is unrepresentable and no call site
+ * has to decide what the combination means. The states are ordered by how much they permit and are
+ * mutually exclusive by construction:
  *
  * - `"enabled"` — the user may focus it and change it.
  * - `"readonly"` — the user may focus it, select its text and copy it, but not change it. It is
@@ -91,8 +90,9 @@ export interface MdyFormError {
  * - `"disabled"` — the user may do neither. It is **not submitted and not validated**, because the
  *   form is not asking the question at all. This is what HTML means by the word.
  *
- * Ask {@link MdyInteractivity} what it permits through the predicates in `@modyra/widgets` rather
- * than comparing strings at a call site; that is how the fourteen disagreed.
+ * Ask it what it permits through the interactivity predicates rather than comparing strings at a
+ * call site: the two questions — may the value change, may the control be reached — diverge on
+ * `readonly`, and a site that answers only one of them will answer it for both.
  */
 export type MdyInteractivity = "enabled" | "readonly" | "disabled";
 
@@ -103,12 +103,12 @@ export interface MdyFieldState<TValue> {
   readonly dirty: MdyWritableSignal<boolean>;
   /**
    * The single source of truth for what the user may do. {@link MdyFieldState.disabled} and
-   * {@link MdyFieldState.readonly} are derived from it and cannot disagree with it or each other.
+   * {@link MdyFieldState.readonly} derive from it and cannot disagree with it or each other.
    */
   readonly interactivity: MdySignal<MdyInteractivity>;
-  /** Derived from {@link MdyFieldState.interactivity}. Kept so existing renderers keep working. */
+  /** Derived from {@link MdyFieldState.interactivity}. */
   readonly disabled: MdySignal<boolean>;
-  /** Derived from {@link MdyFieldState.interactivity}. Kept so existing renderers keep working. */
+  /** Derived from {@link MdyFieldState.interactivity}. */
   readonly readonly: MdySignal<boolean>;
   readonly pending: MdySignal<boolean>;
   readonly required: MdySignal<boolean>;
@@ -126,7 +126,7 @@ export interface MdyFormSubmitEvent<T extends object, TSubmit = Partial<T>> {
   /**
    * What was submitted. Not `T`: a disabled field is not sent, and any field may be disabled at
    * runtime. `TSubmit` carries the schema's exact submitted shape where one is known; the default
-   * is the widest honest statement for an adapter that does not know its schema.
+   * is the widest accurate statement available without a schema.
    */
   readonly value: TSubmit;
   readonly valid: boolean;
@@ -145,9 +145,9 @@ export interface MdyFormState {
 }
 
 /**
- * `TSubmit` is the shape a submit actually produces, kept as its own parameter so a typed form can
- * supply its exact schema-derived type instead of having it flattened to `Partial<T>`. The default
- * is what an adapter can honestly say when it does not know its schema: any field may be missing.
+ * `TSubmit` is the shape a submit produces, kept as its own parameter so a schema-aware form can
+ * supply its exact derived type instead of having it flattened. The default states what is true
+ * without a schema: any field may be missing.
  */
 export interface MdyFormAdapter<T extends object, TSubmit = Partial<T>> {
   readonly state: MdyFormState;

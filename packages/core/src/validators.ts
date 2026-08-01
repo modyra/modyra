@@ -41,10 +41,8 @@ function isEmptyRange(value: unknown): boolean {
 /**
  * Fail if the value is empty.
  *
- * "Empty" is per shape, not per type, because a kind whose empty value is neither a string nor
- * nullish used to escape this entirely: an unchecked required checkbox and a required date range
- * with both ends unset both reported themselves **valid**. Three adapters ledgered that
- * independently before it was fixed.
+ * "Empty" is per shape, not per type. A field's empty value depends on what it holds, so a rule
+ * that only understands strings and nullish values silently passes every other kind:
  *
  * - `null` / `undefined`
  * - a blank string

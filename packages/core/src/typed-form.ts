@@ -124,24 +124,19 @@ export type MdyFormValue<S extends MdyFormSchema> = {
 /**
  * What a submit actually sends.
  *
- * Deliberately weaker than {@link MdyFormValue}: **any field may be disabled at runtime**, and a
- * disabled field is not submitted — HTML has never submitted one. A total type here would promise
- * something no runtime check guarantees, which is the difference this type exists to state.
+ * Weaker than {@link MdyFormValue} because any field may be disabled at runtime and a disabled
+ * field is not submitted. A total type would promise something no runtime check guarantees.
  *
- * `form.value()` stays total, because that is the live editing model and every field is in it.
- * The gap between the two types *is* the semantics: `value()` is what the user is editing,
- * `submitValue()` is what leaves the browser.
+ * The gap between the two types is the semantics: {@link MdyFormValue} is what the user is editing
+ * and always complete; this is what leaves the process. A read-only field is present in both — it
+ * holds a real answer the form asserts, the user simply may not change it.
  *
- * A read-only field is present in both. It holds a real answer the form is asserting; the user
- * simply may not change it.
+ * Optional at every level the schema declares, and no deeper. A leaf inside a group can be disabled
+ * on its own, so groups recurse; an object-valued *leaf* must not, since making the halves of a
+ * date range optional would describe a payload the form can never produce. Only the schema
+ * distinguishes the two, which is why this is driven by `S` rather than by the value type.
  *
- * **Optional at every level the schema declares, and no deeper.** A leaf inside a group can be
- * disabled on its own, so groups recurse. An object-valued *leaf* must not: a daterange is
- * `{ start, end }`, and making its halves optional would describe a shape the form can never
- * produce — either the field is submitted whole or it is absent. Only the schema knows which
- * objects are groups, which is why this is driven by `S` rather than by the value type.
- *
- * Arrays keep their element type. A row is submitted whole or not at all.
+ * Arrays keep their element type: a row is submitted whole or not at all.
  */
 export type MdySubmittedValue<S extends MdyFormSchema> = {
   readonly [K in keyof S]?: S[K] extends MdyFieldDescriptor<infer V>
@@ -180,20 +175,10 @@ export interface MdyFieldHandle<TValue> {
   readonly valid: MdySignal<boolean>;
   readonly pending: MdySignal<boolean>;
   readonly required: MdySignal<boolean>;
-  /**
-   * What the user may do, as one value. `disabled` and `readonly` below are its derived halves,
-   * kept because renderers read them; new code should ask this through the predicates in
-   * `@modyra/widgets` instead of recombining the booleans.
-   */
+  /** What the user may do, as one value; `disabled` and `readonly` below are its derived halves. */
   readonly interactivity: MdySignal<MdyInteractivity>;
   readonly disabled: MdySignal<boolean>;
-  /**
-   * Read but not written.
-   *
-   * `MdyFieldState` has carried this since the engine did, and `setReadonly()` has always set it —
-   * but it was never exposed here, so no renderer could read it and `readonly` was a state a form
-   * could enter and nothing could show. A field marked read-only still accepted typing.
-   */
+  /** Read but not written: the user may focus the control and copy from it, but not change it. */
   readonly readonly: MdySignal<boolean>;
   set(value: TValue): void;
   markAsTouched(): void;
@@ -540,8 +525,8 @@ export abstract class MdyTypedFormBase<
   }
 
   /**
-   * A submitted value is missing its disabled fields, so it must be checked against the schema as a
-   * *partial* — `_flatToValue` asserts totality and throws on the very shape this produces.
+   * A submitted value is missing its disabled fields, so it is checked against the schema as a
+   * *partial*; {@link MdyTypedFormBase._flatToValue} asserts totality and rejects this shape.
    * `MdySubmittedValue<S>` and `MdyFormPatch<S>` are the same deep-optional shape over one schema,
    * so the check is shared rather than restated.
    */

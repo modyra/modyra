@@ -313,9 +313,8 @@ export class MdyFormEngine
       return fns.flatMap(fn => fn(value));
     });
     // A disabled field is not validated, for the same reason it is not submitted: the form is not
-    // asking the question. Without this, a disabled required-empty field blocked submission of a
-    // value it was not even contributing to — and there was no way for the user to unblock it,
-    // because they could not type into it either.
+    // asking the question. Validating one would block submission on a value the field does not
+    // contribute, and the user cannot clear the error because they cannot type into it.
     const valid = _rx.computed(
       () =>
         this._fieldNames().every((n) => {
