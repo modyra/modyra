@@ -77,12 +77,38 @@ export interface MdyFormError {
 
 // ─── Field state ─────────────────────────────────────────────────────────────
 
+/**
+ * How much a user may do to a field. One value, not two booleans.
+ *
+ * `disabled` and `readonly` used to be independent flags, which made `disabled && readonly`
+ * representable and meaningless and left every call site to invent its own combination of them —
+ * fourteen did, and they did not agree. The states are ordered by how much they permit, and they
+ * are mutually exclusive by construction:
+ *
+ * - `"enabled"` — the user may focus it and change it.
+ * - `"readonly"` — the user may focus it, select its text and copy it, but not change it. It is
+ *   **submitted and validated**, because it holds a real answer the form is asserting.
+ * - `"disabled"` — the user may do neither. It is **not submitted and not validated**, because the
+ *   form is not asking the question at all. This is what HTML means by the word.
+ *
+ * Ask {@link MdyInteractivity} what it permits through the predicates in `@modyra/widgets` rather
+ * than comparing strings at a call site; that is how the fourteen disagreed.
+ */
+export type MdyInteractivity = "enabled" | "readonly" | "disabled";
+
 export interface MdyFieldState<TValue> {
   readonly value: MdyWritableSignal<TValue>;
   readonly valid: MdySignal<boolean>;
   readonly touched: MdyWritableSignal<boolean>;
   readonly dirty: MdyWritableSignal<boolean>;
+  /**
+   * The single source of truth for what the user may do. {@link MdyFieldState.disabled} and
+   * {@link MdyFieldState.readonly} are derived from it and cannot disagree with it or each other.
+   */
+  readonly interactivity: MdySignal<MdyInteractivity>;
+  /** Derived from {@link MdyFieldState.interactivity}. Kept so existing renderers keep working. */
   readonly disabled: MdySignal<boolean>;
+  /** Derived from {@link MdyFieldState.interactivity}. Kept so existing renderers keep working. */
   readonly readonly: MdySignal<boolean>;
   readonly pending: MdySignal<boolean>;
   readonly required: MdySignal<boolean>;
@@ -96,8 +122,13 @@ export type MdyFieldRef<TValue> = () => MdyFieldState<TValue>;
 
 export type MdySubmitMode = "valid-only" | "always" | "manual";
 
-export interface MdyFormSubmitEvent<T extends object> {
-  readonly value: T;
+export interface MdyFormSubmitEvent<T extends object, TSubmit = Partial<T>> {
+  /**
+   * What was submitted. Not `T`: a disabled field is not sent, and any field may be disabled at
+   * runtime. `TSubmit` carries the schema's exact submitted shape where one is known; the default
+   * is the widest honest statement for an adapter that does not know its schema.
+   */
+  readonly value: TSubmit;
   readonly valid: boolean;
   readonly errors: ReadonlyArray<MdyFormError>;
 }
@@ -113,19 +144,36 @@ export interface MdyFormState {
   readonly lastSubmitErrors: MdySignal<ReadonlyArray<MdyFormError>>;
 }
 
-export interface MdyFormAdapter<T extends object> {
+/**
+ * `TSubmit` is the shape a submit actually produces, kept as its own parameter so a typed form can
+ * supply its exact schema-derived type instead of having it flattened to `Partial<T>`. The default
+ * is what an adapter can honestly say when it does not know its schema: any field may be missing.
+ */
+export interface MdyFormAdapter<T extends object, TSubmit = Partial<T>> {
   readonly state: MdyFormState;
   readonly value: MdySignal<T>;
+  /** The live editing model: every field, including the disabled ones. */
   getValue(): T;
+  /**
+   * What a submit would send: every field except the disabled ones.
+   *
+   * Weaker than {@link MdyFormAdapter.getValue} on purpose — a disabled field is not submitted, and
+   * any field may be disabled at runtime.
+   */
+  submitValue(): TSubmit;
   getField<K extends keyof T>(name: K): MdyFieldRef<T[K]> | null;
   errorsFor(path: keyof T | string): MdySignal<ReadonlyArray<MdyFormError>>;
+  /**
+   * The action receives {@link MdyFormAdapter.submitValue}, so its parameter is `Partial<T>`: a
+   * disabled field is not sent, and any field may be disabled at runtime.
+   */
   submit(
     action: (
-      value: T,
+      value: TSubmit,
     ) => Promise<MdyFormError[] | void> | MdyFormError[] | void,
   ): Promise<void>;
   markAllTouched(): void;
-  buildSubmitEvent(value: T): MdyFormSubmitEvent<T>;
+  buildSubmitEvent(value: TSubmit): MdyFormSubmitEvent<T, TSubmit>;
   patchValue(partial: Partial<T>): void;
   setValue(value: T): void;
   reset(): void;
