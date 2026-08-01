@@ -153,8 +153,18 @@ export function canonicalWidgetSnapshot(
     const controls = element?.getAttribute("aria-controls");
     const named = controls ? root.ownerDocument?.getElementById(controls) : null;
     if (!named || root.contains(named)) return [];
-    // The panel the id lands on, or the outermost box that holds it — an adapter may wrap it.
-    return [named];
+    // The whole portalled tree, not just the element the id names. A relation may point at the
+    // *listbox* while the popup that holds it is an ancestor, so scoping to the named element alone
+    // reports the popup as absent on exactly the kinds whose relation is most precise.
+    let outermost: Element = named;
+    for (
+      let cursor = named.parentElement;
+      cursor && cursor !== root.ownerDocument?.body && !root.contains(cursor);
+      cursor = cursor.parentElement
+    ) {
+      outermost = cursor;
+    }
+    return [outermost];
   };
 
   /**
@@ -265,9 +275,28 @@ export function canonicalWidgetSnapshot(
     });
   }
 
+  // Each state read from the most universal signal it has, not from one place.
+  //
+  // A class is the only expression of `touched`, so that one is read from the root. `disabled` and
+  // `invalid` are not: a checkbox, a toggle and a file field carry no `--disabled` class at all —
+  // they are natively disabled, and a theme styles `:disabled` — while a radio and a slider put a
+  // modifier on their wrapper. Reading either state from classes reported half the catalogue as
+  // having no state, and reading it from the native and ARIA attributes reports every kind alike.
   const S = MDY_FIELD_STATE_CLASSES;
   const rootClasses = new Set(root.getAttribute("class")?.split(/\s+/).filter(Boolean) ?? []);
-  const state = S.fieldStates.filter((name: string) => rootClasses.has(`${S.field}--${name}`));
+
+  /** The elements a state can be expressed on: whatever the kind uses to take input. */
+  const operable: readonly Element[] = ["control", "startControl", "endControl", "trigger", "searchButton", "group", "toggle"]
+    .flatMap((part) => [...(resolved.get(part) ?? [])]);
+  const anyOperable = (test: (element: Element) => boolean): boolean => operable.some(test);
+
+  const state: string[] = [];
+  if (rootClasses.has(`${S.field}--touched`)) state.push("touched");
+  if (isOpen) state.push("open");
+  if (anyOperable((e) => e.hasAttribute("disabled") || e.getAttribute("aria-disabled") === "true")) {
+    state.push("disabled");
+  }
+  if (anyOperable((e) => e.getAttribute("aria-invalid") === "true")) state.push("invalid");
 
   const active = document_?.activeElement ?? null;
   const focusOwner = active && active !== document_?.body ? partOf(active) : null;

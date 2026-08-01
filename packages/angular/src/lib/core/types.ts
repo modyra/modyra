@@ -45,7 +45,7 @@ export type {
  * Only sound for a type whose members are all signals: a zero-argument method is structurally a
  * signal too and would be re-branded into one.
  */
-type AsAngularSignals<T> = {
+export type AsAngularSignals<T> = {
   readonly [K in keyof T]: T[K] extends MdyWritableSignal<infer V>
   ? WritableSignal<V>
   : T[K] extends MdySignal<infer V>

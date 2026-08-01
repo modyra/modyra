@@ -13,12 +13,14 @@ import {
   MdyTypedFormBase,
   type MdyTypedFormBaseOptions,
   type MdySubmittedValue,
+  type MdyFieldHandle as CoreFieldHandle,
 } from "@modyra/core";
 import {
   MdyDeclarativeAdapter,
   MdyDeclarativeRegistry,
 } from "./declarative-form-adapter";
 import {
+  type AsAngularSignals,
   MdyFieldError,
   MdyFieldRef,
   MdyFormAdapter,
@@ -67,21 +69,22 @@ export type MdyWiden<T> = CoreWiden<T>;
  * Bind it to a renderer with `[field]="form.f.email"` — a typo on the
  * handle path is a compile error, unlike the stringly `name` attribute.
  */
-export interface MdyFieldHandle<TValue> {
-  /** Flat adapter path of the field (dot-separated for nested groups). */
-  readonly path: string;
-  readonly value: Signal<TValue>;
-  readonly errors: Signal<ReadonlyArray<MdyFieldError>>;
-  readonly touched: Signal<boolean>;
-  readonly dirty: Signal<boolean>;
-  readonly valid: Signal<boolean>;
-  readonly pending: Signal<boolean>;
-  readonly required: Signal<boolean>;
-  readonly disabled: Signal<boolean>;
-  set(value: TValue): void;
-  markAsTouched(): void;
-  markAsDirty(): void;
-}
+/**
+ * Typed handle for a single field, with Angular-branded signals.
+ *
+ * Derived from the engine's handle rather than restated. Written out member by member it drifted the
+ * moment the engine gained one: `interactivity` and `readonly` arrived in the contract and not in
+ * the copy, so a handle built here satisfied this file's idea of the type, compiled, and threw
+ * `handle.readonly is not a function` the first time a widget controller asked.
+ */
+export type MdyFieldHandle<TValue> =
+  // The signal members re-branded, the commands passed through. `markAsTouched(): void` is
+  // structurally a zero-argument accessor, so a blanket mapping would rewrite it as `Signal<void>`.
+  AsAngularSignals<Omit<CoreFieldHandle<TValue>, MdyFieldHandleCommands>>
+  & Pick<CoreFieldHandle<TValue>, MdyFieldHandleCommands>;
+
+/** The handle's imperative half: what a renderer calls, as against what it reads. */
+type MdyFieldHandleCommands = "set" | "markAsTouched" | "markAsDirty";
 
 /** Typed handle for a repeatable array item, exposed on `form.f` (`form.f.items`). */
 export interface MdyArrayHandle<TItemHandle, TItemValue> {
@@ -311,7 +314,11 @@ export class MdyTypedForm<S extends MdyFormSchema>
       valid: state.valid,
       pending: state.pending,
       required: state.required,
+      // What the user may do, and its two derived halves. These were missing: the handle satisfied
+      // this file's own copy of the type, and threw the moment a widget controller read them.
+      interactivity: state.interactivity,
       disabled: state.disabled,
+      readonly: state.readonly,
       set: (v: unknown): void => state.value.set(v),
       markAsTouched: (): void => state.touched.set(true),
       markAsDirty: (): void => state.dirty.set(true),

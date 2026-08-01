@@ -54,6 +54,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
         role="radiogroup"
         aria-labelledby=${this.label ? this.labelId : nothing}
         aria-describedby=${groupAttrs?.["aria-describedby"] ?? nothing}
+        aria-disabled=${groupAttrs?.["aria-disabled"] ?? nothing}
         aria-invalid=${groupAttrs?.["aria-invalid"] ?? (handle.errors().length > 0 ? "true" : "false")}
         aria-required=${groupAttrs?.["aria-required"] ?? (handle.required() ? "true" : "false")}
       >
