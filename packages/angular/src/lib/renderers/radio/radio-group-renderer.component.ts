@@ -33,6 +33,7 @@ import { MdySelectOption } from "../../core/types";
       class="mdy-radio-group"
       [class.mdy-radio-group--horizontal]="layout() === 'horizontal'"
       role="radiogroup"
+      [mdyPart]="controlPart()"
       [attr.aria-labelledby]="label() ? fieldId + '-label' : null"
     >
       @for (opt of options(); track opt.value) {
@@ -45,7 +46,6 @@ import { MdySelectOption } from "../../core/types";
             [disabled]="isDisabled()"
             (change)="onSelectionChange(opt.value)"
             (blur)="dispatchValueBlur('radio')"
-            [mdyPart]="controlPart()"
           />
           <span class="mdy-radio-circle"></span>
           <span class="mdy-radio-label">{{ opt.label }}</span>

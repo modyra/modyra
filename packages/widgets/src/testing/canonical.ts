@@ -285,8 +285,15 @@ export function canonicalWidgetSnapshot(
   const S = MDY_FIELD_STATE_CLASSES;
   const rootClasses = new Set(root.getAttribute("class")?.split(/\s+/).filter(Boolean) ?? []);
 
-  /** The elements a state can be expressed on: whatever the kind uses to take input. */
-  const operable: readonly Element[] = ["control", "startControl", "endControl", "trigger", "searchButton", "group", "toggle"]
+  /**
+   * The elements a state can be expressed on: whatever the kind uses to take input.
+   *
+   * `hexInput` is here because a colour field's accessible control is not the one named `control`.
+   * That part is the native picker — unfocusable in two renderers — while the text input beside it
+   * is what the label names and what the user types in. Leaving it out reported a renderer that
+   * exposes its state on the element a user actually reaches as exposing no state at all.
+   */
+  const operable: readonly Element[] = ["control", "startControl", "endControl", "trigger", "searchButton", "group", "toggle", "hexInput"]
     .flatMap((part) => [...(resolved.get(part) ?? [])]);
   const anyOperable = (test: (element: Element) => boolean): boolean => operable.some(test);
 
@@ -591,21 +598,18 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
   });
 
 /**
- * The part that carries `aria-describedby` for each kind: whatever the user operates.
+ * The part that carries `aria-describedby` for a kind, read from the contract rather than restated.
  *
- * Not derivable from the resting relations. Most kinds declare a `label[for]` naming exactly this
- * element and the groups declare `aria-labelledby` back the other way, but a checkbox and a toggle
- * declare neither — their label wraps the control instead of pointing at it — and a rule that
- * guessed would be silently wrong on the two kinds where nothing states it.
+ * A table here would be a second source for one relation, which is the shape of the defect this
+ * milestone keeps finding: two spellings that agree today and diverge the moment one moves.
  */
-const DESCRIBED_BY: Readonly<Partial<Record<MdyWidgetKind, string>>> = Object.freeze({
-  text: "control", email: "control", password: "control", textarea: "control",
-  number: "control", slider: "control", checkbox: "control", toggle: "control",
-  radio: "group", segmented: "group",
-  select: "trigger", multiselect: "searchButton",
-  datepicker: "control", timepicker: "control", daterange: "startControl",
-  file: "control", colors: "control",
-});
+function describedByCarrier(kind: MdyWidgetKind): string {
+  const relation = MDY_WIDGET_RELATIONS[kind]?.find(
+    (candidate) => candidate.attribute === "aria-describedby",
+  );
+  if (!relation) throw new Error(`${kind} declares no aria-describedby relation`);
+  return relation.from;
+}
 
 /**
  * What every renderer must observably produce for a kind the user has left invalid.
@@ -638,7 +642,7 @@ export const MDY_CANONICAL_INVALID: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         relationships: Object.freeze([
           ...rest.relationships,
           {
-            from: DESCRIBED_BY[kind as MdyWidgetKind]!,
+            from: describedByCarrier(kind as MdyWidgetKind),
             attribute: "aria-describedby",
             to: "errors",
           },

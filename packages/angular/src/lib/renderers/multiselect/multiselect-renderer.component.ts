@@ -76,6 +76,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             (click)="toggleOverlay($event)"
             [attr.aria-label]="i18n.searchOptionsLabel"
             [attr.aria-invalid]="hasErrors()"
+            [attr.aria-describedby]="describedById(fieldId)"
           >
             @if (effectiveLoading()) {
               <mdy-icon name="LOADER" class="mdy-select__loader" style="font-size: 1rem;" />
@@ -88,11 +89,12 @@ import { MdyDropdownBase } from "../dropdown-base";
     }
   </div>
 
+    <!-- The description belongs on the control the label names, which is the search button. A
+         reference on this group described the errors to a container the user never lands on. -->
     <div
       class="mdy-multiselect__options"
       role="group"
       [attr.aria-label]="label() || null"
-      [attr.aria-describedby]="describedById(fieldId)"
       [attr.aria-disabled]="effectiveAriaDisabled()"
     >
       @for (opt of filteredOptions(); track opt.value) {

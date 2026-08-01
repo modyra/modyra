@@ -25,29 +25,9 @@ import { mountStateFixture } from "./catalog-host.spec";
  * one, recorded until its own batch fixes it. Asserted both ways: a new divergence fails, and so
  * does an entry left behind after its fix.
  *
- * **Three kinds render an error list that reaches nobody.** `radio`, `multiselect` and `colors`
- * carry no `aria-describedby` at all in the state where there is finally something to describe, so
- * the error is on screen, styled, and announced to no assistive technology. `radio` and `colors`
- * additionally never expose `aria-invalid`, so the field does not say it is wrong either.
- *
- * The other two renderers reach the list on all seventeen kinds, which is what makes these defects
- * rather than a permitted difference. Recorded rather than fixed: it is this adapter's projection to
- * repair, in a batch that can check the fix against every kind at once instead of the three that
- * happened to be measured here.
+ * Empty: every kind this adapter renders produces the canonical observation in both states.
  */
-const KNOWN_DIVERGENCES: Record<string, Partial<Record<MdyWidgetKind, string[]>>> = {
-  invalid: {
-    radio: [
-      "group aria-describedby names nothing, expected errors",
-      "state is [touched], expected [invalid, touched]",
-    ],
-    multiselect: ["searchButton aria-describedby names nothing, expected errors"],
-    colors: [
-      "control aria-describedby names nothing, expected errors",
-      "state is [touched], expected [invalid, touched]",
-    ],
-  },
-};
+const KNOWN_DIVERGENCES: Record<string, Partial<Record<MdyWidgetKind, string[]>>> = {};
 
 /**
  * At rest, no validator has run: nothing has been decided about the field before the user reached
