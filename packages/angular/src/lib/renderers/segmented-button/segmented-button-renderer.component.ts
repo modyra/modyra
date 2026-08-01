@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { booleanAttribute, ChangeDetectionStrategy, Component, computed, ElementRef, input, InputSignalWithTransform, viewChild } from "@angular/core";
 import { MDY_WIDGET_CONTRACTS, optionNavigationIndex } from "@modyra/widgets";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -10,7 +11,7 @@ import { MdySelectOption } from "../../core/types";
 @Component({
   selector: "mdy-control-segmented",
   standalone: true,
-  imports: [NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent, MdyIconComponent],
+  imports: [MdyPartDirective, NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent, MdyIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "mdy-renderer mdy-renderer--segmented",
@@ -34,6 +35,7 @@ import { MdySelectOption } from "../../core/types";
       #track
       class="mdy-segmented"
       role="radiogroup"
+      [mdyPart]="controlPart()"
       [attr.aria-labelledby]="label() ? fieldId + '-label' : null"
       (pointerdown)="onTrackPointerDown($event)"
       (pointermove)="onTrackPointerMove($event)"

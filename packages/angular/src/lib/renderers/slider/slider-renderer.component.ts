@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, effect, ElementRef, input, viewChild } from "@angular/core";
 import { MDY_CSS_PROPERTIES, MDY_WIDGET_CONTRACTS, sliderFillRatio } from "@modyra/widgets";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -9,7 +10,7 @@ import { inputText } from "../renderer-projection";
 @Component({
   selector: "mdy-control-slider",
   standalone: true,
-  imports: [NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent],
+  imports: [MdyPartDirective, NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "mdy-renderer mdy-renderer--slider",
@@ -41,9 +42,7 @@ import { inputText } from "../renderer-projection";
         (input)="onInput($event)"
         (change)="onChange($event)"
         (blur)="dispatchValueBlur('slider')"
-        [attr.aria-invalid]="hasErrors()"
-        [attr.aria-describedby]="describedById(fieldId)"
-        [attr.aria-required]="ariaRequired() || isRequired()"
+        [mdyPart]="controlPart()"
       />
       @if (showValue()) {
         <span class="mdy-slider-value">{{ value() }}</span>

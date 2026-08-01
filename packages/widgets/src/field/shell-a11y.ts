@@ -39,6 +39,17 @@ export interface MdyFieldShellA11yOptions {
    * Defaults to "there are errors", which is correct for a renderer that always shows them.
    */
   readonly errorsVisible?: boolean;
+  /**
+   * Whether the supporting-text element is in the document.
+   *
+   * Same reason as {@link MdyFieldShellA11yOptions.errorsVisible}: a renderer that only emits
+   * supporting text when a host supplies some would otherwise be described by an element that does
+   * not exist. When neither a description nor an error list is present, the control describes
+   * itself by nothing.
+   *
+   * Defaults to true, for a renderer that always emits the element.
+   */
+  readonly descriptionVisible?: boolean;
 }
 
 /** The ids a shell's parts carry, so a renderer can put them on its own elements. */
@@ -69,6 +80,9 @@ export function projectFieldShellA11y(
   const hasErrors = errors.length > 0;
   // What the control describes itself by depends on what was *rendered*, not on what is wrong.
   const errorsVisible = options.errorsVisible ?? hasErrors;
+  const describedBy = errorsVisible
+    ? errorId
+    : (options.descriptionVisible ?? true) ? descriptionId : null;
 
   return {
     label: {
@@ -85,8 +99,8 @@ export function projectFieldShellA11y(
         // announcing it disabled tells a screen-reader user they cannot interact with something
         // they can.
         "aria-disabled": String(flags.disabled),
-        // Names the error list only while it is rendered; otherwise the description.
-        "aria-describedby": errorsVisible ? errorId : descriptionId,
+        // Names the error list only while it is rendered; otherwise the description, if there is one.
+        "aria-describedby": describedBy,
       },
     },
     description: {

@@ -69,49 +69,17 @@ const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__
   + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
 
 /**
- * Angular's divergences from the state contract, recorded rather than waived, and asserted both
- * ways: a new divergence fails, and so does a stale entry that outlived its fix.
+ * Angular's divergences from the state contract: none.
  *
- * These first seventeen-kind contents are a measurement, not a regression. Each was checked against
- * the renderer source before being believed — a red row is a claim about the renderer, and this
- * milestone has had it be the harness seven times.
+ * Asserted in both directions, so a new divergence fails here and so does an entry left behind
+ * after its fix.
  *
- * The eight `× invalid` rows the eight-kind version carried are gone: they were unreachable because
- * the host declared no validators, and `mdyRequired` closed them.
- *
- * **`daterange × open` is not here, and neither is any picker's.** They open. Only select's and
- * multiselect's overlays could not be reached from the public API in this fixture, and those are
- * reported as undrivable rather than passed over — Angular renders a native `<select>` unless an
- * option template or search is supplied, so there is no trigger to click, which is the same root as
- * `PART_MISSING:trigger` in the DOM ledger.
+ * `select` and `multiselect` report `open` and `loading` as undrivable rather than passing: this
+ * host renders a native `<select>` unless an option template or search is supplied, so there is no
+ * trigger to click. Four pairs of overlay behaviour are unmeasured, and the matrix says so instead
+ * of counting them as passes.
  */
-const KNOWN_DIVERGENCES: Record<string, string[]> = {
-  // The three `× invalid` rows that used to sit here — checkbox, toggle and daterange — were never
-  // renderer defects. The field was genuinely valid, and the renderer was telling the truth about a
-  // state the form never entered. Plain and Lit ledgered exactly the same three, which is what made
-  // it a validation finding rather than a rendering one. Plan 26 closed it: `required` now treats
-  // `false` and an empty range as empty.
-  //
-  // Angular loses all three outright, where Lit keeps `toggle × invalid` — Angular binds
-  // `aria-invalid` on the boolean kinds and Lit does not. The validator fix uncovered which
-  // adapters were only ever *appearing* to agree.
-
-  // Real, and one finding rather than four. Every Angular renderer hand-picks which ARIA states it
-  // exposes, and they picked different subsets:
-  //
-  //   segmented         binds aria-disabled, never aria-invalid
-  //   slider, radio     bind aria-invalid, never aria-disabled
-  //   file              binds aria-invalid, never aria-disabled
-  //
-  // Verified in the templates, not inferred from the rows. Nothing decides centrally which states a
-  // control must expose, so each template is its own answer and no two agree. That is plan 25's
-  // premise, and this is its strongest evidence yet: not adapters lagging behind a projection, but
-  // no single source of truth for them to lag behind.
-  "segmented × invalid": ["STATE_ARIA_MISSING"],
-  "slider × disabled": ["STATE_ARIA_MISSING"],
-  "radio × disabled": ["STATE_ARIA_MISSING"],
-  "file × disabled": ["STATE_ARIA_MISSING"],
-};
+const KNOWN_DIVERGENCES: Record<string, string[]> = {};
 
 describe("Angular renderers, against the widget state contract", () => {
   it("every declared state of every kind is asserted, and the divergences are the recorded ones", async () => {

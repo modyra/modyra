@@ -216,6 +216,7 @@
     "mdy-multiselect__search-btn",
     "mdy-overlay",
     "mdy-overlay-panel",
+    "mdy-part",
     "mdy-popup",
     "mdy-radio-circle",
     "mdy-radio-group",
@@ -828,17 +829,15 @@
         "mdy-file-placeholder",
         "mdy-floating-label",
         "mdy-inline-errors",
+        "mdy-part",
         "mdy-renderer",
         "mdy-renderer--file",
         "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
-        "aria-describedby",
         "aria-hidden",
-        "aria-invalid",
-        "aria-label",
-        "aria-required"
+        "aria-label"
       ],
       "selectors": [
         "mdy-control-file"
@@ -940,6 +939,7 @@
         "mdy-control-radio",
         "mdy-control-radio-",
         "mdy-error-list",
+        "mdy-part",
         "mdy-radio-circle",
         "mdy-radio-group",
         "mdy-radio-group--horizontal",
@@ -952,10 +952,7 @@
         "mdy-supporting-text"
       ],
       "aria": [
-        "aria-describedby",
-        "aria-invalid",
-        "aria-labelledby",
-        "aria-required"
+        "aria-labelledby"
       ],
       "selectors": [
         "mdy-control-radio"
@@ -968,6 +965,7 @@
         "mdy-control-segmented-",
         "mdy-error-list",
         "mdy-icon",
+        "mdy-part",
         "mdy-renderer",
         "mdy-renderer--segmented",
         "mdy-renderer--touched",
@@ -1053,6 +1051,7 @@
         "mdy-control-slider-",
         "mdy-error-list",
         "mdy-inline-errors",
+        "mdy-part",
         "mdy-renderer",
         "mdy-renderer--slider",
         "mdy-renderer--touched",
@@ -1061,11 +1060,7 @@
         "mdy-slider-value",
         "mdy-supporting-text"
       ],
-      "aria": [
-        "aria-describedby",
-        "aria-invalid",
-        "aria-required"
-      ],
+      "aria": [],
       "selectors": [
         "mdy-control-slider"
       ]

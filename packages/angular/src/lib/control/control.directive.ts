@@ -315,6 +315,8 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
       {
         widgetId: this.fieldId,
         errorsVisible: this.errorsRendered(),
+        // Supporting text is only emitted when a host projects some.
+        descriptionVisible: !!this.supportingText(),
       },
     ).control,
   );
