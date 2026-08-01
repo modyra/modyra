@@ -296,9 +296,16 @@ export function canonicalWidgetSnapshot(
  * by three renderers, and an expectation written inside an adapter's suite is three expectations that
  * happen to agree today.
  *
- * Only what the contract makes normative. Eager or lazy mounting is explicitly free, so a part a
- * renderer builds on demand is not listed — an adapter that mounts it early and hides it produces the
- * same observation, and `canonicalWidgetSnapshot` already ignores hidden subtrees.
+ * `parts` is what every renderer actually shows at rest, measured across all three rather than
+ * reasoned about: an empirical floor, so one dropping a part is visible even where the contract
+ * would permit it. `optional` is every other part the kind declares — presence there depends on a
+ * free choice (eager or lazy mounting) or on what the consumer supplied (a supporting text, a
+ * prefix, a custom option template), and two renderers disagreeing about one are both right.
+ *
+ * `aria-describedby` is deliberately absent from every `relationships` list. At rest, with no errors
+ * and nothing supplied to describe, what it names depends on whether a renderer materialises an
+ * empty description box — one does, another does not, and both conform. It becomes normative once
+ * there is something to say, which belongs to the invalid state's expectation rather than this one.
  */
 export interface MdyCanonicalExpectation {
   /** Parts every renderer shows at rest. */
@@ -311,25 +318,145 @@ export interface MdyCanonicalExpectation {
 
 export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>> =
   Object.freeze({
+    text: Object.freeze({
+      parts: Object.freeze(["root", "label", "inputWrapper", "control"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "prefix", "suffix", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "control" },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "absent" as const,
+    }),
+    email: Object.freeze({
+      parts: Object.freeze(["root", "label", "inputWrapper", "control"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "prefix", "suffix", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "control" },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "absent" as const,
+    }),
+    password: Object.freeze({
+      parts: Object.freeze(["root", "label", "inputWrapper", "control"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "prefix", "suffix", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "control" },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "absent" as const,
+    }),
+    textarea: Object.freeze({
+      parts: Object.freeze(["root", "label", "inputWrapper", "control"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "control" },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "absent" as const,
+    }),
+    number: Object.freeze({
+      parts: Object.freeze(["root", "label", "inputWrapper", "control"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "control" },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "absent" as const,
+    }),
+    slider: Object.freeze({
+      parts: Object.freeze(["root", "label", "track", "control", "value"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "control" },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "absent" as const,
+    }),
+    checkbox: Object.freeze({
+      parts: Object.freeze(["root", "inputWrapper", "control", "indicator", "label"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "errors", "errorItem"]),
+      relationships: Object.freeze([
+
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "absent" as const,
+    }),
+    toggle: Object.freeze({
+      parts: Object.freeze(["root", "inputWrapper", "control", "track", "thumb", "label"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "absent" as const,
+    }),
+    radio: Object.freeze({
+      parts: Object.freeze(["root", "label", "group", "option", "optionControl", "optionLabel"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "group", attribute: "aria-labelledby", to: "label" },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "absent" as const,
+    }),
+    segmented: Object.freeze({
+      parts: Object.freeze(["root", "label", "group", "option", "optionCheck", "optionText"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "group", attribute: "aria-labelledby", to: "label" },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "absent" as const,
+    }),
     select: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "trigger", "placeholder", "arrow"]),
-      // The error list: one renderer mounts it with the field so its id always resolves, another
-      // builds it with the errors. Both are conforming — the part is optional and, with no list on
-      // screen, `aria-describedby` names the supporting text either way, which is the relation the
-      // contract actually requires. The `value` part is the same question: it appears with a
-      // selection, and a renderer may reserve the element or not.
-      optional: Object.freeze(["errors", "supportingText", "requiredMarker", "value"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "value", "popup", "search", "listbox", "option", "loading", "empty", "inlineError", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "trigger" },
-        // Closed, the listbox is not on screen for the reference to land on. That every renderer
-        // resolves it to nothing is itself the agreement.
         { from: "trigger", attribute: "aria-controls", to: null },
-        // `aria-describedby` is deliberately absent from this list. At rest, with no errors and no
-        // supporting text supplied, what it names depends on whether a renderer materialises an
-        // empty description element — an eager/lazy choice the contract leaves free. One renderer
-        // renders the box and names it, another renders nothing and names nothing, and both are
-        // right. The relation becomes normative once there is something to describe, which is the
-        // invalid state's expectation rather than this one's.
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "closed" as const,
+    }),
+    multiselect: Object.freeze({
+      parts: Object.freeze(["root", "label", "inputWrapper", "header", "searchButton", "options", "option", "optionCheck", "optionLabel"]),
+      optional: Object.freeze(["optionWrapper", "supportingText", "requiredMarker", "chips", "chip", "placeholder", "optionStep", "optionCount", "popup", "search", "listbox", "loading", "empty", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "searchButton" },
+        { from: "searchButton", attribute: "aria-controls", to: null },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "closed" as const,
+    }),
+    datepicker: Object.freeze({
+      parts: Object.freeze(["root", "label", "inputWrapper", "control", "toggle"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "control" },
+        { from: "control", attribute: "aria-controls", to: null },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "closed" as const,
+    }),
+    timepicker: Object.freeze({
+      parts: Object.freeze(["root", "label", "inputWrapper", "control", "toggle"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "dialog", "container", "content", "header", "hour", "minute", "period", "clock", "dialFace", "dialHand", "dialNumber", "modeToggle", "actions", "action", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "control" },
+        { from: "control", attribute: "aria-controls", to: null },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "closed" as const,
+    }),
+    daterange: Object.freeze({
+      parts: Object.freeze(["root", "label", "inputWrapper", "startControl", "separator", "endControl", "toggle"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "startControl" },
+        { from: "toggle", attribute: "aria-controls", to: null },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "closed" as const,
+    }),
+    file: Object.freeze({
+      parts: Object.freeze(["root", "label", "dropzone", "control", "content"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "fileList", "fileItem", "clear", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "control" },
+      ] as readonly MdyCanonicalRelationship[]),
+      overlay: "absent" as const,
+    }),
+    colors: Object.freeze({
+      parts: Object.freeze(["root", "label", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "presets", "swatch", "inlineError", "errors", "errorItem"]),
+      relationships: Object.freeze([
+        { from: "label", attribute: "for", to: "hexInput" },
+        { from: "toggle", attribute: "aria-controls", to: null },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "closed" as const,
     }),
