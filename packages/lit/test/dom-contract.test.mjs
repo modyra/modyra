@@ -91,11 +91,7 @@ function partsOf(root, kind) {
         ...shell, control: q(".mdy-colors__native-hidden"), hexInput: q(".mdy-colors__hex-input"),
         toggle: q(".mdy-colors__toggle-area"), popup: q(".mdy-colors__dropdown"),
         presets: q(".mdy-colors__presets"),
-        // The control's picker is the part. This element carries `mdy-colors__primary-picker` and so
-        // does a second button inside the palette, which the contract declares singular — naming the
-        // part here says which one it is. Whether the palette's button should carry a class of its
-        // own is an open question about published surface, not something a fixture decides.
-        nativePicker: q(".mdy-input-wrapper .mdy-colors__primary-picker"),
+        nativePicker: q(".mdy-colors__primary-picker"),
       };
     default:
       return { ...shell, control: q("input, textarea") };
