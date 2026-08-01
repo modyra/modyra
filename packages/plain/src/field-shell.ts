@@ -1,10 +1,8 @@
 /**
- * Every field kind shares the same outer shell. The structure is not arbitrary: it is the
- * documented theme class structure that `@modyra/angular` and `@modyra/lit` already render
- * (see packages/lit/src/base.ts) — `mdy-renderer`, `mdy-label`, `mdy-input-wrapper`,
- * `mdy-control__errors`. The shipped `@modyra/styles` themes target exactly these, so
- * emitting them is what makes a plain-rendered form look like an Angular- or Lit-rendered
- * one instead of an unstyled approximation of it.
+ * Every field kind shares the same outer shell: `mdy-renderer`, `mdy-label`, `mdy-input-wrapper`,
+ * `mdy-control__errors`. The structure is the contract's, and the shipped `@modyra/styles` themes
+ * target exactly these classes — a renderer that spells them differently produces a form the themes
+ * cannot style.
  *
  * Renderers build the control themselves and insert it into the wrapper.
  */
@@ -14,7 +12,7 @@ import { el, setText } from "./dom.js";
 export interface FieldShell {
   readonly root: HTMLDivElement;
   readonly label: HTMLLabelElement;
-  /** Holds the control between the prefix/suffix slots, like the Lit base element's wrapper. */
+  /** Holds the control, between the prefix and suffix when the field supplies them. */
   readonly wrapper: HTMLDivElement;
   readonly description: HTMLParagraphElement;
   readonly errorList: HTMLUListElement;
@@ -22,7 +20,16 @@ export interface FieldShell {
   syncState(state: { touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean; required?: boolean }): void;
 }
 
-export function buildFieldShell(labelText: string | undefined, kind: MdyWidgetKind): FieldShell {
+export interface FieldShellAffixes {
+  readonly prefix?: string;
+  readonly suffix?: string;
+}
+
+export function buildFieldShell(
+  labelText: string | undefined,
+  kind: MdyWidgetKind,
+  affixes: FieldShellAffixes = {},
+): FieldShell {
   const root = el("div") as HTMLDivElement;
   root.classList.add(...MDY_WIDGET_CONTRACTS[kind].rootClasses);
 
@@ -37,7 +44,18 @@ export function buildFieldShell(labelText: string | undefined, kind: MdyWidgetKi
   // The themes lay the wrapper out as a flex row and expect the control inside an inliner —
   // without it the control is a flex item with no basis and collapses to nothing.
   const inliner = el("div", MDY_FIELD_SHELL_CLASSES.control);
+  // Only when there is something to put in them: an empty affix is a gap the theme still spaces.
+  if (affixes.prefix) {
+    const prefix = el("div", MDY_FIELD_SHELL_CLASSES.prefix);
+    setText(prefix, affixes.prefix);
+    wrapper.appendChild(prefix);
+  }
   wrapper.appendChild(inliner);
+  if (affixes.suffix) {
+    const suffix = el("div", MDY_FIELD_SHELL_CLASSES.suffix);
+    setText(suffix, affixes.suffix);
+    wrapper.appendChild(suffix);
+  }
   const description = el("p", MDY_FIELD_SHELL_CLASSES.supportingText) as HTMLParagraphElement;
   const errorList = el("ul", MDY_FIELD_SHELL_CLASSES.errors) as HTMLUListElement;
 

@@ -76,16 +76,27 @@ function controlOf(root) {
 function mount(kind) {
   const host = document.createElement("div");
   document.body.append(host);
-  const field = {
+  const fieldFor = (extra) => ({
     name: "f", kind, label: "F", validators: { required: true },
     ...(NEEDS_OPTIONS.has(kind) ? { options: OPTIONS } : {}),
+    ...extra,
+  });
+  let mounted = mountMdyForm(host, [fieldFor({})], { submitLabel: null });
+  let root = host.querySelector(`[data-mdy-field="f"]`);
+  let handle = mounted.form.f.f;
+
+  // `loading` is a property of the field the renderer reads as it builds, not a signal it watches,
+  // so driving it means building the field again rather than poking the DOM this one produced.
+  const remount = (extra) => {
+    mounted.dispose();
+    host.replaceChildren();
+    mounted = mountMdyForm(host, [fieldFor(extra)], { submitLabel: null });
+    root = host.querySelector(`[data-mdy-field="f"]`);
+    handle = mounted.form.f.f;
   };
-  const mounted = mountMdyForm(host, [field], { submitLabel: null });
-  const root = host.querySelector(`[data-mdy-field="f"]`);
-  const handle = mounted.form.f.f;
 
   return {
-    root,
+    get root() { return root; },
     parts: () => partsOf(root, kind),
     control: () => controlOf(root),
     // Plain's effects land on a task rather than synchronously.
@@ -112,10 +123,7 @@ function mount(kind) {
           trigger.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
           return true;
         }
-        // Undrivable because this renderer has no loading affordance at all: neither its select nor
-        // its multiselect renders the `loading` part the contract declares, and nothing in its API
-        // asks for one. Lit and Angular both implement it. Reported rather than faked.
-        case "loading": return false;
+        case "loading": remount({ loading: true }); return true;
         default: return false;
       }
     },

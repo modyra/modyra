@@ -43,6 +43,14 @@ interface MdyDynamicFieldBase {
    * is called.
    */
   readonly sensitive?: boolean;
+  /**
+   * Short content set against the control — a currency mark, a unit, a domain.
+   *
+   * Rendered only when supplied: an always-present empty box is padding with nothing in it. Declared
+   * on the kinds whose anatomy has the parts, which is the free-text family.
+   */
+  readonly prefix?: string;
+  readonly suffix?: string;
 }
 
 /** Free-text kinds. */
@@ -77,6 +85,14 @@ export interface MdyDynamicOptionsField extends MdyDynamicFieldBase {
    * `"multi"` is a bag: the same option can be taken several times and the chip counts them.
    */
   readonly mode?: "single" | "multi";
+  /**
+   * The options are being fetched. Select and multiselect show it on the control, so a field waiting
+   * on its list says so without being opened.
+   *
+   * Distinct from the field's `pending`, which is asynchronous *validation* of a value the user has
+   * already given.
+   */
+  readonly loading?: boolean;
 }
 
 /** Single-instant date/time kinds. */

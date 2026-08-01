@@ -75,6 +75,13 @@ export function renderSelectField(
   const arrow = el("span", parts.arrow.classes.join(" "));
   arrow.setAttribute("aria-hidden", "true");
   trigger.append(valueText, placeholderText, arrow);
+  // Waiting on its options: the indicator sits on the control, where it is visible without opening
+  // the list it is waiting for. It replaces the arrow, which has nothing to point at yet.
+  if (f.loading) {
+    const loading = el("span", parts.loading.classes.join(" "));
+    loading.setAttribute("role", "status");
+    arrow.replaceWith(loading);
+  }
   wrapper.append(trigger);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);

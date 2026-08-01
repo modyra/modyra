@@ -39,6 +39,14 @@ export function renderMultiselectField(
   searchButton.type = "button";
   searchButton.setAttribute("aria-label", "Search the options");
   setText(searchButton, "⌕");
+  // Waiting on its options: the indicator goes on the search button, which is the control here, so
+  // the field says it is loading without being opened.
+  if (f.loading) {
+    const loading = el("span", parts.loading.classes.join(" "));
+    loading.setAttribute("role", "status");
+    setText(searchButton, "");
+    searchButton.appendChild(loading);
+  }
   header.appendChild(searchButton);
   control.appendChild(header);
 

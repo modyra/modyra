@@ -73,6 +73,9 @@ function partsOf(root, kind) {
 
 const KNOWN_DIVERGENCES = {};
 
+/** The kinds whose anatomy declares a prefix and a suffix. */
+const AFFIX_KINDS = new Set(["text", "email", "password"]);
+
 for (const [tag, kind, initial] of ELEMENTS) {
   test(`<${tag}> renders the ${kind} contract`, async () => {
     const form = createLitForm({ value: field(initial) });
@@ -81,7 +84,22 @@ for (const [tag, kind, initial] of ELEMENTS) {
       el.label = "Label";
       if (kind === "radio" || kind === "segmented") el.options = [option];
       if (kind === "email" || kind === "password") el.type = kind;
+      // `prefix` and `suffix` render only when a host projects something into them, so a fixture
+      // that slots nothing leaves two declared parts unbuilt on every kind that has them.
+      if (AFFIX_KINDS.has(kind)) {
+        for (const slot of ["prefix", "suffix"]) {
+          const affix = document.createElement("span");
+          affix.setAttribute("slot", slot);
+          affix.textContent = slot === "prefix" ? "@" : ".com";
+          el.append(affix);
+        }
+      }
     });
+
+    if (AFFIX_KINDS.has(kind)) {
+      assert.ok(element.querySelector(".mdy-input-prefix"), `${kind} projected a prefix and rendered none`);
+      assert.ok(element.querySelector(".mdy-input-suffix"), `${kind} projected a suffix and rendered none`);
+    }
 
     const issues = inspectWidgetDom(element, kind, {
       parts: partsOf(element, kind),

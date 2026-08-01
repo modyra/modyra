@@ -44,6 +44,7 @@ export function partsOf(root, kind) {
       const popup = document.querySelector(`#${root.querySelector(".mdy-select__trigger")?.getAttribute("aria-controls")}`)?.closest(".mdy-select__dropdown");
       return {
         ...shell, trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), arrow: q(".mdy-select__arrow"),
+        loading: q(".mdy-select__loader"),
         popup, search: popup?.querySelector(".mdy-select__search"), listbox: popup?.querySelector(".mdy-select__list"), option: popup?.querySelector(".mdy-select__option"),
       };
     }
@@ -56,6 +57,7 @@ export function partsOf(root, kind) {
       const grid = root.querySelector(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid)");
       return {
         ...shell, inputWrapper: q(".mdy-multiselect"), header: q(".mdy-multiselect__header"), searchButton,
+        loading: q(".mdy-select__loader"),
         options: grid, optionWrapper: grid?.querySelector(".mdy-chip-wrapper"), option: grid?.querySelector(".mdy-chip"),
         optionCheck: grid?.querySelector(".mdy-chip__check"), optionLabel: grid?.querySelector(".mdy-chip__label"),
         popup, search: popup?.querySelector(".mdy-multiselect-overlay__input"),
