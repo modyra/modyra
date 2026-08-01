@@ -454,8 +454,13 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       elements: { option: "presentation", listbox: "group" },
       states: { option: ["selected"], chip: ["selected", "removable"], popup: POPUP_PLACEMENT_STATES },
       classes: { inputWrapper: ["mdy-multiselect"], header: ["mdy-multiselect__header"], searchButton: ["mdy-multiselect__search-btn"], options: ["mdy-multiselect__options"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], listbox: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
-      presentation: ["mdy-chip--centered"] ,
-      required: ["header", "option", "optionCheck", "optionLabel", "options", "searchButton"] }),
+      // The two mode markers a chip carries. `--centered` reserves the width its tick will need in
+      // toggle mode; `--counter` is the bag mode, whose chip has step buttons instead of a tick.
+      presentation: ["mdy-chip--centered", "mdy-chip--counter"] ,
+      // `optionCheck` is toggle mode's: a counter chip has a count between two steppers and no tick
+      // to draw, so requiring it would ask every counter-mode renderer for an element that means
+      // nothing there.
+      required: ["header", "option", "optionLabel", "options", "searchButton"] }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { control: ["mdy-datepicker__input"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] },
       states: { gridcell: CALENDAR_CELL_STATES, popup: POPUP_PLACEMENT_STATES } ,

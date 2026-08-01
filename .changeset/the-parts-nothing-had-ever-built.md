@@ -18,6 +18,12 @@ control, matching the other adapters, so its state matrix no longer reports the 
 empty affix is a gap the theme still spaces, so they appear only when there is something to put in
 them. Both arrive as optional properties on the dynamic field config.
 
+Counter mode was the same story. `optionStep` and `optionCount` exist only on a multiselect in
+`"multi"` mode and no fixture had ever used it, which is why `mdy-chip--centered` was declared and
+its opposite `mdy-chip--counter` was not. `optionCheck` stops being mandatory: a counter chip has a
+count between two steppers and no tick, so requiring it asked every counter-mode renderer for an
+element that means nothing there.
+
 New coverage, each falsified by breaking the renderer it checks: a file field with files chosen, a
 text field with both affixes, Lit's slotted affixes, and the value-chip presentation the multiselect
 catalogue declares as its compact alternative — declared, styled and reachable through
