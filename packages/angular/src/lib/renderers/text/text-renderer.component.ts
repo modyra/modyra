@@ -93,11 +93,18 @@ export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
   protected readonly inputAriaRequired = computed(
     () => this.fieldView()?.parts.input?.attributes["aria-required"] ?? this.isRequired(),
   );
-  protected readonly inputAriaDescribedby = computed(() => {
-    const describedBy = this.fieldView()?.parts.input?.attributes["aria-describedby"];
-    if (describedBy) return describedBy;
-    return this.inlineErrors && this.touched() && this.hasErrors() ? `${this.fieldId}-errors` : null;
-  });
+  /**
+   * The text kinds had the opposite defect to the other thirteen renderers, which is why they never
+   * appeared in the dangling-reference ledger: this emitted **nothing** in the normal case, so there
+   * was no reference to dangle and no association either.
+   *
+   * Two things were wrong. The fallback tested `inlineErrors &&`, the inverse of the condition the
+   * list renders under, so it named the list exactly when the list was not there. And the
+   * projection's own `aria-describedby` names `${widgetId}__errors`, while `<mdy-error-list>`
+   * renders `${fieldId}-errors` — different strings, so taking the projection's answer would have
+   * dangled too. Both now defer to the one predicate that knows whether the list exists.
+   */
+  protected readonly inputAriaDescribedby = computed(() => this.describedById(this.fieldId));
 
   ngOnInit(): void {
     const handle = this.field();

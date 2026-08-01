@@ -25,7 +25,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         (change)="onChange($event)"
         (blur)="dispatchValueBlur('checkbox')"
         [attr.aria-invalid]="hasErrors()"
-        [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
+        [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-required]="ariaRequired() || isRequired()"
         [attr.aria-disabled]="effectiveAriaDisabled()"
         [attr.aria-label]="label() || null"

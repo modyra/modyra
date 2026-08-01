@@ -45,7 +45,7 @@ import { MdySelectOption } from "../../core/types";
             (change)="onSelectionChange(opt.value)"
             (blur)="dispatchValueBlur('radio')"
             [attr.aria-invalid]="hasErrors()"
-            [attr.aria-describedby]="hasErrors() ? fieldId + '-errors' : null"
+            [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-required]="ariaRequired() || isRequired()"
           />
           <span class="mdy-radio-circle"></span>
