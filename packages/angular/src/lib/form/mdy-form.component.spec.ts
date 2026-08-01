@@ -25,6 +25,7 @@ function makeNonRegistryAdapter(
     state: backing.state as MdyFormState,
     value: backing.value as Signal<Record<string, unknown>>,
     getValue: () => backing.getValue(),
+    submitValue: () => backing.submitValue(),
     getField: (name) => backing.getField(name as string) as MdyFieldRef<unknown> | null,
     errorsFor: (path) => backing.errorsFor(path as string) as Signal<ReadonlyArray<MdyFormError>>,
     submit: (action) => backing.submit(action),

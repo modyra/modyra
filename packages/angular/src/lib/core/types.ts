@@ -2,10 +2,15 @@ import { Signal, WritableSignal } from "@angular/core";
 import type {
   MdyControlOption,
   MdyFieldError,
+  MdyFieldState as CoreFieldState,
+  MdyFormAdapter as CoreFormAdapter,
   MdyFormError,
+  MdyFormState as CoreFormState,
   MdyFormSubmitEvent,
   MdySelectOption,
-  ValidatorFn
+  MdySignal,
+  MdyWritableSignal,
+  ValidatorFn,
 } from "@modyra/core";
 
 export type {
@@ -32,20 +37,26 @@ export type {
 // ─── Field State ─────────────────────────────────────────────────────────────
 
 /**
- * Mirrors the FieldState exposed by @angular/forms/signals.
- * Stable public contract — isolated from upstream API changes.
+ * Re-brands the engine's structural signals as Angular's own.
+ *
+ * The engine describes reactivity through a minimal contract whose signal type is a bare `(): T`.
+ * At runtime these controls are built on Angular's primitives, so the branded types are accurate —
+ * and derived rather than restated, so a member added to the engine's state arrives here with no
+ * edit and the two cannot describe different shapes.
+ *
+ * Only sound for a type whose members are all signals: a zero-argument method is structurally a
+ * signal too and would be re-branded into one.
  */
-export interface MdyFieldState<TValue> {
-  readonly value: WritableSignal<TValue>;
-  readonly valid: Signal<boolean>;
-  readonly touched: WritableSignal<boolean>;
-  readonly dirty: WritableSignal<boolean>;
-  readonly disabled: Signal<boolean>;
-  readonly readonly: Signal<boolean>;
-  readonly pending: Signal<boolean>;
-  readonly required: Signal<boolean>;
-  readonly errors: Signal<ReadonlyArray<MdyFieldError>>;
-}
+type AsAngularSignals<T> = {
+  readonly [K in keyof T]: T[K] extends MdyWritableSignal<infer V>
+  ? WritableSignal<V>
+  : T[K] extends MdySignal<infer V>
+  ? Signal<V>
+  : T[K];
+};
+
+/** Reactive state of a single field, with Angular-branded signals. */
+export type MdyFieldState<TValue> = AsAngularSignals<CoreFieldState<TValue>>;
 
 /** Callable that returns the FieldState for a field. */
 export type MdyFieldRef<TValue> = () => MdyFieldState<TValue>;
@@ -85,43 +96,31 @@ export interface MdyControlRendererConfig {
 }
 
 // ─── Form State & Adapter ─────────────────────────────────────────────────────
-export interface MdyFormState {
-  readonly valid: Signal<boolean>;
-  readonly pending: Signal<boolean>;
-  readonly submitting: Signal<boolean>;
-  readonly submitCount: Signal<number>;
-  readonly canSubmit: Signal<boolean>;
-  readonly lastSubmitErrors: Signal<ReadonlyArray<MdyFormError>>;
-}
 
-export interface MdyFormAdapter<T extends object> {
+/** Reactive state of the whole form, with Angular-branded signals. */
+export type MdyFormState = AsAngularSignals<CoreFormState>;
+
+/**
+ * The engine's adapter contract with Angular-branded reactive members.
+ *
+ * Extends the engine's rather than repeating it, so every method — and every method the engine
+ * gains — is inherited. {@link AsAngularSignals} cannot be applied wholesale here: `getValue(): T`
+ * is structurally a signal and would be re-branded into one, so the two genuinely reactive members
+ * are overridden by name and nothing else is touched.
+ *
+ * Reset semantics, which the engine's own documentation does not fix:
+ * - Fields with an explicit `[initialValue]` binding reset to that value.
+ * - Fields seeded only via `[formValue]` reset to `null`; `[formValue]` is a prefill seed, not a
+ *   persistent reset target.
+ * - All `touched` and `dirty` states are cleared.
+ */
+export interface MdyFormAdapter<T extends object, TSubmit = Partial<T>>
+  extends Omit<CoreFormAdapter<T, TSubmit>, "state" | "value" | "getField"> {
   readonly state: MdyFormState;
   /** Reactive signal that emits the current form value on every change. */
   readonly value: Signal<T>;
-  getValue(): T;
   getField<K extends keyof T>(name: K): MdyFieldRef<T[K]> | null;
   errorsFor(path: keyof T | string): Signal<ReadonlyArray<MdyFormError>>;
-  submit(
-    action: (
-      value: T,
-    ) => Promise<MdyFormError[] | void> | MdyFormError[] | void,
-  ): Promise<void>;
-  markAllTouched(): void;
-  buildSubmitEvent(value: T): MdyFormSubmitEvent<T>;
-  /** Merge partial values into the form without touching other fields. */
-  patchValue(partial: Partial<T>): void;
-  /** Replace the entire form value. */
-  setValue(value: T): void;
-  /**
-   * Resets all fields to their declared initial values and clears touched/dirty state.
-   *
-   * Reset semantics:
-   * - Fields with an explicit `[initialValue]` binding reset to that value.
-   * - Fields seeded only via `[formValue]` (no `[initialValue]`) reset to `null`.
-   *   `[formValue]` is a prefill seed, not a persistent reset target.
-   * - All `touched` and `dirty` states are cleared to `false`.
-   */
-  reset(): void;
 }
 
 // ─── Form Context (provided to child controls via DI) ─────────────────────────

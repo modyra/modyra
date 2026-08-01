@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from "@angular/core";
+import { defaultWidgetIdFactory } from "@modyra/widgets";
+import { ChangeDetectionStrategy, Component, input, computed } from "@angular/core";
 import { MdyFieldError } from "../core/types";
 
 /**
@@ -18,7 +19,7 @@ import { MdyFieldError } from "../core/types";
   host: { style: "display: contents" },
   template: `
     <ul
-      [id]="fieldId() + '-errors'"
+      [id]="errorsId()"
       class="mdy-control__errors"
       role="alert"
       aria-live="polite"
@@ -32,4 +33,13 @@ import { MdyFieldError } from "../core/types";
 export class MdyErrorListComponent {
   readonly fieldId = input.required<string>();
   readonly errors = input.required<ReadonlyArray<MdyFieldError>>();
+
+  /**
+   * The id comes from the shared factory rather than a local string, so that everything naming this
+   * list — a projection's `aria-describedby` included — resolves to the element actually rendered.
+   * Two spellings of one relation is how a reference silently dangles.
+   */
+  protected readonly errorsId = computed(() =>
+    defaultWidgetIdFactory.part(this.fieldId(), "errors"),
+  );
 }

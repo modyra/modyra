@@ -8,6 +8,7 @@
     "[mdyInlineErrors]",
     "[mdyNumberSpinButtons]",
     "[mdyOption]",
+    "[mdyPart]",
     "[mdyPrefix]",
     "[mdySuffix]",
     "[mdySupportingText]",
@@ -380,7 +381,9 @@
       ],
       "aria": [
         "aria-describedby",
-        "aria-disabled"
+        "aria-disabled",
+        "aria-invalid",
+        "aria-required"
       ],
       "selectors": []
     },
@@ -391,6 +394,7 @@
         "mdy-error-list"
       ],
       "aria": [
+        "aria-describedby",
         "aria-live"
       ],
       "selectors": [
@@ -450,6 +454,13 @@
       ],
       "selectors": [
         "mdy-icon"
+      ]
+    },
+    "packages/angular/src/lib/control/mdy-part.directive.ts": {
+      "classes": [],
+      "aria": [],
+      "selectors": [
+        "[mdyPart]"
       ]
     },
     "packages/angular/src/lib/control/option.directive.ts": {

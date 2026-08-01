@@ -112,7 +112,7 @@ function hasFieldNames<T extends Record<string, unknown>>(
 })
 export class MdyFormComponent<
   T extends Record<string, unknown>,
-> implements MdyFormAdapter<T>, MdyDeclarativeRegistry {
+> implements MdyFormAdapter<T, Partial<T>>, MdyDeclarativeRegistry {
   // ── Inputs ──────────────────────────────────────────────────────────────────
 
   /** Explicit adapter — if omitted the form creates one automatically. */
@@ -125,8 +125,14 @@ export class MdyFormComponent<
    */
   readonly form = input<(MdyFormAdapter<T> & MdyDeclarativeRegistry) | undefined>(undefined);
 
+  /**
+   * The submit action.
+   *
+   * Receives `Partial<T>`, not `T`: a disabled field is not submitted, and any field may be
+   * disabled at runtime. Read a key defensively rather than assuming the form's shape.
+   */
   readonly action = input<
-    | ((value: T) => Promise<MdyFormError[] | void> | MdyFormError[] | void)
+    | ((value: Partial<T>) => Promise<MdyFormError[] | void> | MdyFormError[] | void)
     | undefined
   >(undefined);
 
@@ -331,6 +337,11 @@ export class MdyFormComponent<
     return this._active.getValue();
   }
 
+  /** Every field except the disabled ones — what a submit actually sends. */
+  submitValue(): Partial<T> {
+    return this._active.submitValue();
+  }
+
   getField<K extends keyof T>(name: K): MdyFieldRef<T[K]> | null {
     return this._active.getField(name);
   }
@@ -341,7 +352,7 @@ export class MdyFormComponent<
 
   async submit(
     action: (
-      value: T,
+      value: Partial<T>,
     ) => Promise<MdyFormError[] | void> | MdyFormError[] | void,
   ): Promise<void> {
     return this._active.submit(action);
@@ -351,7 +362,7 @@ export class MdyFormComponent<
     this._active.markAllTouched();
   }
 
-  buildSubmitEvent(value: T): MdyFormSubmitEvent<T> {
+  buildSubmitEvent(value: Partial<T>): MdyFormSubmitEvent<T, Partial<T>> {
     return this._active.buildSubmitEvent(value);
   }
 
@@ -379,6 +390,7 @@ export class MdyFormComponent<
     }
     const act = this.action();
     await this.submit(act ?? (() => undefined));
-    this.submitted.emit(this._active.buildSubmitEvent(this.getValue()));
+    // The event carries what was sent, not the live model: a disabled field is in one, not both.
+    this.submitted.emit(this._active.buildSubmitEvent(this.submitValue()));
   }
 }
