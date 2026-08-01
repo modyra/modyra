@@ -19,6 +19,8 @@ import { TestBed } from "@angular/core/testing";
 import type { MdyWidgetKind } from "@modyra/widgets";
 import { MdyDeclarativeAdapter } from "../core/declarative-form-adapter";
 import { MdyFormComponent } from "../form/mdy-form.component";
+import { MdyPrefixDirective } from "../control/prefix.directive";
+import { MdySuffixDirective } from "../control/suffix.directive";
 import { MdyRequiredDirective } from "../validators/directives/mdy-required.directive";
 import { MdyCheckboxComponent } from "./checkbox/checkbox-renderer.component";
 import { MdyNumberComponent } from "./number/number-renderer.component";
@@ -81,11 +83,14 @@ export const CATALOG_KINDS: ReadonlyArray<{
     MdyRadioGroupComponent, MdySegmentedButtonComponent,
     MdySelectComponent, MdyMultiselectComponent, MdyDatePickerComponent,
     MdyDateRangePickerComponent, MdyTimepickerComponent, MdyFileComponent, MdyColorsComponent,
-    MdyRequiredDirective,
+    MdyRequiredDirective, MdyPrefixDirective, MdySuffixDirective,
   ],
   template: `
     <mdy-form [adapter]="adapter">
-      <mdy-control-text name="text" label="Text" mdyRequired />
+      <mdy-control-text name="text" label="Text" mdyRequired>
+        <ng-template mdyPrefix>@</ng-template>
+        <ng-template mdySuffix>.com</ng-template>
+      </mdy-control-text>
       <mdy-control-textarea name="notes" label="Notes" mdyRequired />
       <mdy-control-number name="age" label="Age" mdyRequired />
       <mdy-control-checkbox name="terms" label="Terms" mdyRequired />
