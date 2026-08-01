@@ -7,7 +7,7 @@ export const MDY_WIDGET_CONTRACT_VERSION = 1 as const;
 export type MdyWidgetSemanticElement =
   | "root" | "label" | "input" | "button" | "group" | "status"
   | "listbox" | "option" | "dialog" | "grid" | "gridcell"
-  | "presentation" | "popup" | "text" | "affordance" | "columnheader";
+  | "presentation" | "popup" | "text" | "affordance" | "columnheader" | "image";
 
 /** One node in a widget's framework-independent structural anatomy. */
 export interface MdyWidgetStructureNode<TPart extends string = string> {
@@ -40,7 +40,7 @@ export const MDY_FIELD_SHELL_CLASSES = Object.freeze({
   prefix: "mdy-input-prefix",
   control: "mdy-input-wrapper__inliner",
   suffix: "mdy-input-suffix",
-  inlineError: "mdy-inline-error-icon",
+  inlineError: "mdy-control__inline-errors",
   supportingText: "mdy-supporting-text",
   errors: "mdy-control__errors",
   errorItem: "mdy-control__error",
@@ -75,6 +75,13 @@ export const MDY_FIELD_STATE_CLASSES = Object.freeze({
  */
 export const MDY_SHARED_UI_CLASSES = Object.freeze([
   "mdy-button",
+  // What the inline error draws inside itself. The part is one element on thirteen kinds; its icon
+  // and its tooltip are the same two classes wherever it appears.
+  "mdy-control__inline-errors-icon",
+  "mdy-control__inline-errors-tooltip",
+  // Set on the field root when it shows its errors inline instead of as a list. A choice about the
+  // whole field rather than one kind's anatomy, and the themes key off it.
+  "mdy-inline-errors",
   "mdy-overlay",
   "mdy-overlay-panel",
   "mdy-glass-effect",
@@ -92,7 +99,7 @@ export const MDY_FIELD_SHELL_STRUCTURE = Object.freeze({
     { part: "prefix", element: "presentation", parent: "inputWrapper", order: 0, optional: true },
     { part: "control", element: "input", parent: "inputWrapper", order: 1 },
     { part: "suffix", element: "presentation", parent: "inputWrapper", order: 2, optional: true },
-    { part: "inlineError", element: "status", parent: "label", order: 1, optional: true },
+    { part: "inlineError", element: "image", parent: "label", order: 1, optional: true },
     { part: "supportingText", element: "text", parent: "root", order: 2, optional: true },
     { part: "errors", element: "status", parent: "root", order: 3, optional: true },
     { part: "errorItem", element: "text", parent: "errors", order: 0, optional: true, repeated: true },
