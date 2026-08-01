@@ -1,10 +1,13 @@
 /**
  * The declared transitions, against the implementation every adapter routes through.
  *
- * `overlayLifecycleTransition` and `widgetKeyIntent` are called by all three renderers, so holding
- * them to the table holds the renderers to it. The table is written independently rather than
- * derived from these functions — a declaration read out of the implementation it checks is not a
- * check.
+ * `overlayLifecycleTransition` is called by all three renderers, so holding it to the table holds the
+ * renderers to it. `widgetKeyIntent` is held to the table as well, but nothing consumes that one:
+ * each renderer writes its own key handling, so the agreement here is between the contract and a
+ * function, not yet between the contract and what a user's keyboard does.
+ *
+ * The table is written independently rather than derived from these functions — a declaration read
+ * out of the implementation it checks is not a check.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -14,6 +17,8 @@ import {
   overlayLifecycleTransition,
   transitionsFrom,
   widgetKeyIntent,
+  MDY_WIDGET_KEYBOARD,
+  keyBindingFor,
 } from "../dist/index.js";
 
 const KINDS = Object.keys(MDY_WIDGET_CONTRACTS);
@@ -98,4 +103,43 @@ test("a disabled widget does not transition", () => {
   );
   assert.equal(actual.state.open, false);
   assert.equal(actual.effect, "none");
+});
+
+/* ── The keyboard, per kind ─────────────────────────────────────────────────────
+ * `widgetKeyIntent` answered without asking which widget it was looking at. These hold it to the
+ * declaration, and the first three are the answers it used to get wrong.
+ */
+test("a kind claims only the keys it can act on", () => {
+  // A free-text field has no options to walk and no overlay to open: the native control owns its
+  // keyboard entirely, and the widget layer must not claim keys out from under it.
+  for (const kind of ["text", "email", "password", "textarea", "file"]) {
+    assert.equal(MDY_WIDGET_KEYBOARD[kind].length, 0, `${kind} claims keys`);
+    for (const key of ["ArrowDown", "ArrowUp", "Enter", "Home", "End"]) {
+      assert.equal(widgetKeyIntent(kind, key, false), null, `${kind} claimed ${key}`);
+    }
+  }
+});
+
+test("a range steps on the arrows rather than walking a list", () => {
+  for (const kind of ["number", "slider"]) {
+    assert.deepEqual(widgetKeyIntent(kind, "ArrowUp", false), { type: "increment" }, kind);
+    assert.deepEqual(widgetKeyIntent(kind, "ArrowDown", false), { type: "decrement" }, kind);
+  }
+});
+
+test("the declaration and the intent function agree, for every kind and key", () => {
+  const KEYS = ["Escape", "ArrowDown", "ArrowUp", "Home", "End", "Enter", " ", "Tab", "q"];
+  for (const kind of KINDS) {
+    for (const key of KEYS) {
+      for (const open of [false, true]) {
+        const declared = keyBindingFor(kind, key, open);
+        const actual = widgetKeyIntent(kind, key, open);
+        assert.equal(
+          declared === null,
+          actual === null,
+          `${kind} × ${key} × open=${open}: declaration says ${declared?.intent ?? "nothing"}, function says ${actual?.type ?? "nothing"}`,
+        );
+      }
+    }
+  }
 });

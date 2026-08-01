@@ -13,8 +13,9 @@ Escape closes it. Those are the parts a user experiences, and they existed only 
 two shared functions.
 
 The table is written independently of those functions rather than derived from them — a declaration
-read out of the implementation it checks is not a check — and `overlayLifecycleTransition` and
-`widgetKeyIntent`, which all three renderers route through, are held to it.
+read out of the implementation it checks is not a check — and `overlayLifecycleTransition`, which all
+three renderers route through, is held to it. `widgetKeyIntent` is held to it too, but that function
+has no adapter consumer: every renderer implements its own key handling.
 
 Declaring it alone would have proved nothing, so all three adapters now **replay** the transition
 against a real DOM: open the overlay, press Escape where focus actually is, and assert the opener's

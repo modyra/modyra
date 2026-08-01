@@ -1,6 +1,7 @@
 import { angleToHour, angleToMinute, buildTimeString, parseTime, type MdyTimeFormat } from "@modyra/core/time-utils";
 import type { MdyUiCommand } from "./commands.js";
 import type { MdyWidgetKind } from "./catalog.js";
+import { keyBindingFor } from "./transitions.js";
 
 export type MdyWidgetKeyIntent =
   | { readonly type: "open" }
@@ -177,14 +178,25 @@ export function stabilizeOverlayPlacement(
 
 /** Canonical keyboard mapping. Framework adapters must not reinterpret these keys. */
 export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean): MdyWidgetKeyIntent | null {
-  if (key === "Escape" && open) return { type: "cancel", restoreFocus: true };
-  if (key === "ArrowDown") return kind === "number" ? { type: "decrement" } : { type: "move", target: "next" };
-  if (key === "ArrowUp") return kind === "number" ? { type: "increment" } : { type: "move", target: "previous" };
-  if (key === "Home") return { type: "move", target: "first" };
-  if (key === "End") return { type: "move", target: "last" };
-  if (key === "Enter") return open ? { type: "commit" } : { type: "open" };
-  if (key === " " && ["checkbox", "toggle", "radio", "segmented"].includes(kind)) return { type: "toggle" };
-  return null;
+  // Reads the kind's declared bindings rather than answering the same way for all seventeen. It used
+  // to special-case `number` and the four togglable kinds and give everything else list navigation,
+  // so a text field claimed ArrowDown, a textarea claimed Enter, and a slider — whose arrows must
+  // change its value — was told to move through options it does not have.
+  const binding = keyBindingFor(kind, key, open);
+  if (!binding) return null;
+  switch (binding.intent) {
+    case "cancel": return { type: "cancel", restoreFocus: true };
+    case "open": return { type: "open" };
+    case "commit": return { type: "commit" };
+    case "toggle": return { type: "toggle" };
+    case "step":
+      return key === "ArrowUp" ? { type: "increment" } : { type: "decrement" };
+    case "move":
+      return {
+        type: "move",
+        target: key === "ArrowDown" ? "next" : key === "ArrowUp" ? "previous" : key === "Home" ? "first" : "last",
+      };
+  }
 }
 
 export function overlayCloseCommands(restoreFocus: boolean): readonly MdyUiCommand[] {

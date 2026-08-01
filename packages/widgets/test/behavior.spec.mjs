@@ -7,7 +7,10 @@ test("overlay placement resolves collision without a DOM dependency", () => {
   assert.deepEqual(decideOverlayPlacement({ viewportWidth: 320, viewportHeight: 240, anchorTop: 100, anchorBottom: 140, anchorLeft: 40, anchorRight: 280, anchorWidth: 240, minSpace: 128, minWidth: 250, preferred: "below" }), { placement: "overlay", alignment: "left", maxHeight: 168, width: 250, fits: true });
 });
 test("keyboard mapping owns navigation, commit, cancel and primitive toggles", () => {
-  assert.deepEqual(widgetKeyIntent("select", "ArrowDown", false), { type: "move", target: "next" });
+  // Down on a *closed* combobox opens it; the list is only navigable once it is on screen. This
+  // used to answer "move to the next option" for a control showing no options at all.
+  assert.deepEqual(widgetKeyIntent("select", "ArrowDown", false), { type: "open" });
+  assert.deepEqual(widgetKeyIntent("select", "ArrowDown", true), { type: "move", target: "next" });
   assert.deepEqual(widgetKeyIntent("select", "Escape", true), { type: "cancel", restoreFocus: true });
   assert.deepEqual(widgetKeyIntent("toggle", " ", false), { type: "toggle" });
   assert.deepEqual(overlayCloseCommands(true), [{ type: "close-overlay" }, { type: "restore-focus", target: { part: "trigger" } }]);

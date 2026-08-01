@@ -30,10 +30,13 @@ export type { MdyRelationAttribute, MdyWidgetRelation } from "./relations.js";
 
 export {
   MDY_DISABLED_BLOCKS_TRANSITIONS,
+  MDY_WIDGET_KEYBOARD,
   MDY_WIDGET_TRANSITIONS,
+  keyBindingFor,
   transitionsFrom,
 } from "./transitions.js";
 export type {
+  MdyKeyBinding,
   MdyOverlayPhase,
   MdyTransitionTrigger,
   MdyWidgetTransition,
