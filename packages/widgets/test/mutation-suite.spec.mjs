@@ -101,7 +101,7 @@ function selectField({ id = `s${(fixtureSeq += 1)}`, optionCount = 3 } = {}) {
   const label = el("label", "mdy-label");
   const wrapper = el("div", "mdy-input-wrapper");
   const trigger = el("button", "mdy-select__trigger", {
-    id: `${id}-trigger`, "aria-controls": `${id}-popup`, "aria-expanded": "true",
+    id: `${id}-trigger`, role: "combobox", "aria-controls": `${id}-popup`, "aria-expanded": "true",
   });
   const value = el("span", "mdy-select__value");
   const placeholder = el("span", "mdy-select__placeholder");
