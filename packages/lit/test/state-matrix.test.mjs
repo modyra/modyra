@@ -94,11 +94,12 @@ function partsOf(root, kind) {
     case "segmented":
       return { ...shell, group: q(".mdy-segmented"), option: q(".mdy-segmented__button"), optionCheck: q(".mdy-segmented__check"), optionText: q(".mdy-segmented__text") };
     case "select":
-      return { ...shell, trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), popup: q(".mdy-select__dropdown"), listbox: q(".mdy-select__list") };
+      return { ...shell, loading: q(".mdy-select__loader"), trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), popup: q(".mdy-select__dropdown"), listbox: q(".mdy-select__list") };
     case "multiselect":
       return {
         ...shell,
         inputWrapper: q(".mdy-multiselect"),
+        loading: q(".mdy-select__loader"),
         // The opener the contract names. Without it the inspector cannot see the relation the
         // button carries, and reports the state as unexposed.
         searchButton: q(".mdy-multiselect__search-btn"),
@@ -172,7 +173,8 @@ async function mount(kind) {
           trigger.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
           return true;
         }
-        case "loading": return false;
+        // A public property on the element, so the state the contract declares is reachable.
+        case "loading": element.loading = true; return true;
         default: return false;
       }
     },
@@ -183,7 +185,13 @@ async function mount(kind) {
  * Lit's divergences from the state contract, recorded rather than waived. Asserted both ways: a new
  * divergence fails, and so does an entry left behind after its fix.
  */
-const KNOWN_DIVERGENCES = {};
+const KNOWN_DIVERGENCES = {
+  // The multiselect renders its loader only inside an open popup that has no results to show, so a
+  // loading field with options available presents nothing. The select renders one on the control
+  // itself, and so does Angular for both kinds — an equivalence question rather than a missing
+  // affordance.
+  "multiselect × loading": ["STATE_PART_MISSING"],
+};
 
 const matrix = await collectStateMatrix({ kinds: KINDS, mount });
 
