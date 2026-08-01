@@ -13,6 +13,7 @@
 import "@angular/compiler";
 import { signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
+import { By } from "@angular/platform-browser";
 import {
   collectStateMatrix,
   normalizeStateLedger,
@@ -118,9 +119,16 @@ describe("Angular renderers, against the widget state contract", () => {
                 fixture.detectChanges();
                 return true;
               }
-              // Nothing in the public API puts a field into a loading state; async options are the
-              // adapter's own concern. Recorded rather than faked.
-              case "loading": return false;
+              case "loading": {
+                // Async options are the renderer's concern, not the form's, so the state is driven
+                // through the control that owns it.
+                const control = fixture.debugElement.query(By.css(entry.selector))
+                  ?.componentInstance as { loadingOverride?: { set(v: boolean): void } } | undefined;
+                if (!control?.loadingOverride) return false;
+                control.loadingOverride.set(true);
+                fixture.detectChanges();
+                return true;
+              }
               default: return false;
             }
           },

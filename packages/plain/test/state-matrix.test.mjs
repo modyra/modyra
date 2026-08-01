@@ -112,8 +112,9 @@ function mount(kind) {
           trigger.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
           return true;
         }
-        // Nothing in the public API puts a field into a loading state; async options are the
-        // adapter's own concern. Recorded rather than faked.
+        // Undrivable because this renderer has no loading affordance at all: neither its select nor
+        // its multiselect renders the `loading` part the contract declares, and nothing in its API
+        // asks for one. Lit and Angular both implement it. Reported rather than faked.
         case "loading": return false;
         default: return false;
       }
