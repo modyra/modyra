@@ -1,3 +1,4 @@
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgClass, NgTemplateOutlet } from "@angular/common";
 import {
   afterNextRender,
@@ -16,7 +17,7 @@ import {
   viewChild,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
-import { MDY_WIDGET_CONTRACTS, popupPlacementClass, reconcileSelectValue, selectKeyboardAction } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, popupPlacementClass, reconcileSelectValue, selectKeyboardAction, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -31,7 +32,7 @@ import { MdyDropdownBase } from "../dropdown-base";
 @Component({
   selector: "mdy-control-select",
   standalone: true,
-  imports: [NgClass,
+  imports: [MdyPartDirective, NgClass,
     NgTemplateOutlet,
     MdyControlLabelComponent,
     MdyErrorListComponent,
@@ -76,6 +77,7 @@ import { MdyDropdownBase } from "../dropdown-base";
           <button
             type="button"
             class="mdy-select__trigger"
+            [mdyPart]="openerPart()"
             [id]="fieldId"
             [disabled]="isDisabled()"
             [attr.aria-expanded]="open()"
@@ -147,6 +149,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             }
             <ul
               class="mdy-select__list"
+              [id]="popupId()"
               role="listbox"
               [attr.aria-labelledby]="fieldId"
             >
@@ -317,6 +320,14 @@ export class MdySelectComponent<TValue = string>
   }
 
   protected readonly fieldId = `mdy-control-select-${MdyBaseControl.nextId()}`;
+
+  /** The id the opener names — the listbox, which is what carries the overlay's role. */
+  protected readonly popupId = computed(() => overlayControlledId("select", this.fieldId) ?? "");
+
+  /** The relation between this widget's opener and the overlay it opens. */
+  protected readonly openerPart = computed(
+    () => projectOverlayOpenerA11y("select", { widgetId: this.fieldId, open: this.open() })!,
+  );
 
   protected readonly dropUp = computed(() => this.position() === "above");
 

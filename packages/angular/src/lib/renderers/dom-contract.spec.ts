@@ -81,12 +81,6 @@ const UNDECLARED_CLASSES = [
 ];
 
 const KNOWN_DIVERGENCES: Partial<Record<MdyWidgetKind, string[]>> = {
-  // The trigger exists — the fixture is `searchable`, so the custom trigger behind
-  // `@if (optionTpl() || searchable())` is rendered — but it does not sit inside the element the
-  // contract calls its owner. Whether a native `<select>` may satisfy `trigger` at all remains a
-  // renderer-equivalence question; this is the narrower one of where the part lives, and it is the
-  // same question as `datepicker`/`timepicker` below.
-  select: ["PART_NOT_OWNED:trigger"],
   // The chips wrapper precedes the input wrapper in Angular and follows it in Plain, and the label
   // points at an id no element in this fixture carries.
   multiselect: ["PART_ORDER:inputWrapper", "ARIA_DANGLING_REF:label"],

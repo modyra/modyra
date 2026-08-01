@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import { assertWidgetDomContract, inspectWidgetDom } from "../dist/testing/index.js";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } from "../dist/index.js";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>");
 const document = dom.window.document;
@@ -212,4 +213,15 @@ test("an explicit role satisfies the semantic element without the tag", () => {
   const issues = inspectWidgetDom(root, "text", { parts: { ...parts, control: divControl } });
   assert.deepEqual(issues.filter((issue) => issue.code === "PART_ELEMENT"), []);
   root.remove();
+});
+
+test("every declared opener relation names parts the contract actually has", () => {
+  // The relation is contract data pointing at contract data. A part named here and missing from the
+  // catalogue produces an `aria-controls` naming an id no part is responsible for rendering, and
+  // nothing downstream can tell that from a renderer that simply forgot.
+  for (const [kind, relation] of Object.entries(MDY_POPUP_OPENERS)) {
+    const parts = MDY_WIDGET_CONTRACTS[kind].parts;
+    assert.ok(relation.opener in parts, `${kind}: opener "${relation.opener}" is not a declared part`);
+    assert.ok(relation.controls in parts, `${kind}: controls "${relation.controls}" is not a declared part`);
+  }
 });

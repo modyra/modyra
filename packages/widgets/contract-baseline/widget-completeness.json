@@ -338,6 +338,7 @@
         "control",
         "toggle",
         "popup",
+        "dialog",
         "container",
         "content",
         "header",
