@@ -12,33 +12,41 @@ import { mount as mountElement } from "./dom-env.mjs";
 
 const { createLitForm, field, required, min } = await import("../../dist/adapter.js");
 const { defineMdyElements } = await import("../../dist/ui.js");
+const { MDY_CANONICAL_EMPTY } = await import("../../../widgets/dist/testing/index.js");
 
 defineMdyElements();
 
 const option = { value: "a", label: "A" };
 
-/** The elements this package defines, the kind each answers to, and the value it starts from. */
+/**
+ * The elements this package defines, and the kind each answers to.
+ *
+ * The value each starts from is **not** here: it is the kind's own empty, from the one table every
+ * adapter reads. A per-element initial value is where "the same initial state" quietly stops being
+ * the same — a number field started at `0` is filled and valid while the other renderers start
+ * empty and required-failing, and the two were never asked the same question.
+ */
 export const ELEMENTS = [
-  ["mdy-text-field", "text", ""],
-  ["mdy-text-field", "email", ""],
-  ["mdy-text-field", "password", ""],
-  ["mdy-textarea-field", "textarea", ""],
-  ["mdy-number-field", "number", 0],
-  ["mdy-slider-field", "slider", 0],
-  ["mdy-checkbox-field", "checkbox", false],
-  ["mdy-toggle-field", "toggle", false],
-  ["mdy-radio-group-field", "radio", null],
-  ["mdy-segmented-field", "segmented", null],
-  ["mdy-select-field", "select", null],
-  ["mdy-multiselect-field", "multiselect", []],
-  ["mdy-datepicker-field", "datepicker", null],
-  ["mdy-daterange-field", "daterange", null],
-  ["mdy-timepicker-field", "timepicker", null],
-  ["mdy-colors-field", "colors", null],
-  ["mdy-file-field", "file", null],
+  ["mdy-text-field", "text"],
+  ["mdy-text-field", "email"],
+  ["mdy-text-field", "password"],
+  ["mdy-textarea-field", "textarea"],
+  ["mdy-number-field", "number"],
+  ["mdy-slider-field", "slider"],
+  ["mdy-checkbox-field", "checkbox"],
+  ["mdy-toggle-field", "toggle"],
+  ["mdy-radio-group-field", "radio"],
+  ["mdy-segmented-field", "segmented"],
+  ["mdy-select-field", "select"],
+  ["mdy-multiselect-field", "multiselect"],
+  ["mdy-datepicker-field", "datepicker"],
+  ["mdy-daterange-field", "daterange"],
+  ["mdy-timepicker-field", "timepicker"],
+  ["mdy-colors-field", "colors"],
+  ["mdy-file-field", "file"],
 ];
 export const KINDS = ELEMENTS.map(([, kind]) => kind);
-const TAG_FOR = new Map(ELEMENTS.map(([tag, kind, initial]) => [kind, { tag, initial }]));
+const TAG_FOR = new Map(ELEMENTS.map(([tag, kind]) => [kind, tag]));
 
 export function valueFor(kind) {
   switch (kind) {
@@ -55,19 +63,17 @@ export function valueFor(kind) {
   }
 }
 
-/** The empty value each kind accepts. A multiselect handed "" throws rather than emptying. */
+/**
+ * The empty value each kind accepts, from the one table every adapter reads.
+ *
+ * Copies are handed out because a fixture that returns the shared array lets a renderer mutate the
+ * table every other adapter compares against.
+ */
 export function emptyFor(kind) {
-  switch (kind) {
-    case "multiselect": return [];
-    case "checkbox": case "toggle": return false;
-    case "number": return null;
-    case "file": return [];
-    // A slider is never empty: its thumb is somewhere, and that somewhere is its minimum. Driving
-    // `null` asked the renderer for a state the kind cannot be in.
-    case "slider": return 0;
-    case "daterange": return { start: null, end: null };
-    default: return "";
-  }
+  const empty = MDY_CANONICAL_EMPTY[kind];
+  if (Array.isArray(empty)) return [...empty];
+  if (empty && typeof empty === "object") return { ...empty };
+  return empty;
 }
 
 export function controlOf(root) {
@@ -125,15 +131,21 @@ export function partsOf(root, kind) {
   }
 }
 
-/** Mount one element of `kind`, ready to drive into any state the contract declares for it. */
-export async function mount(kind) {
-  const { tag, initial } = TAG_FOR.get(kind);
-  // Required, so the `invalid` state is reachable at all. Without a validator the field can never
-  // be invalid and every `invalid` row reads as a renderer divergence when it is a fixture gap.
+/**
+ * Mount one element of `kind`, ready to drive into any state the contract declares for it.
+ *
+ * `validators` is on by default because most states are unreachable without them: a field with no
+ * validator can never be invalid, so every `invalid` row would be green about a state the element
+ * cannot enter. Turn them off to observe an element genuinely **at rest** — a required field that is
+ * empty is already failing, and a renderer free to show that immediately (the contract permits it)
+ * would make "at rest" and "invalid" the same observation.
+ */
+export async function mount(kind, { validators: withValidators = true } = {}) {
+  const tag = TAG_FOR.get(kind);
   // A slider is never empty, so `required` alone can never fail on one and its `invalid` row would
   // be green because the state is unreachable rather than because the renderer is right.
-  const validators = kind === "slider" ? [required(), min(1)] : [required()];
-  const form = createLitForm({ value: field(initial, validators) });
+  const validators = !withValidators ? [] : kind === "slider" ? [required(), min(1)] : [required()];
+  const form = createLitForm({ value: field(emptyFor(kind), validators) });
   const element = await mountElement(tag, (el) => {
     el.field = form.f.value;
     el.label = "Label";

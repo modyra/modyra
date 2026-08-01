@@ -24,7 +24,9 @@ const KNOWN_DIVERGENCES = {};
 
 for (const [kind, expectation] of Object.entries(MDY_CANONICAL_AT_REST)) {
   test(`${kind} produces the canonical observation at rest`, async () => {
-    const fixture = mount(kind);
+    // At rest means at rest: no validator has run, so nothing has been decided about the field
+    // before the user reached it.
+    const fixture = mount(kind, { validators: false });
     await fixture.settle();
     try {
       const snapshot = canonicalWidgetSnapshot(fixture.root, kind, {

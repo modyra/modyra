@@ -10,6 +10,7 @@
  */
 const { mountMdyForm } = await import("../../dist/index.js");
 const { partsOf } = await import("../contract-parts.mjs");
+const { MDY_CANONICAL_EMPTY } = await import("../../../widgets/dist/testing/index.js");
 
 export const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 const NEEDS_OPTIONS = new Set(["radio", "segmented", "select", "multiselect"]);
@@ -46,36 +47,40 @@ export function valueFor(kind) {
 }
 
 /**
- * The empty value each kind can actually hold.
+ * The empty value each kind can actually hold, from the one table every adapter reads.
  *
  * A driver that hands every kind `""` is telling the truth for a text field and lying for a
  * daterange, where it is a *string where an object belongs*: `required` then rejects it for being an
  * empty string rather than for being an empty range, and the row is green about a state the widget
  * was never in.
+ *
+ * Copies are handed out because a fixture that returns the shared array lets a renderer mutate the
+ * table every other adapter compares against.
  */
 export function emptyFor(kind) {
-  switch (kind) {
-    case "multiselect": return [];
-    case "checkbox": case "toggle": return false;
-    case "number": return null;
-    case "file": return [];
-    // A slider is never empty: its thumb is somewhere, and that somewhere is its minimum. Driving
-    // `null` asks the renderer for a state the kind cannot be in.
-    case "slider": return 0;
-    case "daterange": return { start: null, end: null };
-    default: return "";
-  }
+  const empty = MDY_CANONICAL_EMPTY[kind];
+  if (Array.isArray(empty)) return [...empty];
+  if (empty && typeof empty === "object") return { ...empty };
+  return empty;
 }
 
-/** Mount one widget of `kind`, ready to drive into any state the contract declares for it. */
-export function mount(kind) {
+/**
+ * Mount one widget of `kind`, ready to drive into any state the contract declares for it.
+ *
+ * `validators` is on by default because most states are unreachable without them: a field with no
+ * validator can never be invalid, so every `invalid` row would be green about a state the widget
+ * cannot enter. Turn them off to observe a widget genuinely **at rest** — a required field that is
+ * empty is already failing, and a renderer free to show that immediately (the contract permits it)
+ * would make "at rest" and "invalid" the same observation.
+ */
+export function mount(kind, { validators = true } = {}) {
   const host = document.createElement("div");
   document.body.append(host);
   const fieldFor = (extra) => ({
     name: "f", kind, label: "F",
     // A slider is never empty, so `required` alone can never fail on one and its `invalid` row would
     // be green because the state is unreachable rather than because the renderer is right.
-    validators: kind === "slider" ? { required: true, min: 1 } : { required: true },
+    ...(validators ? { validators: kind === "slider" ? { required: true, min: 1 } : { required: true } } : {}),
     ...(NEEDS_OPTIONS.has(kind) ? { options: OPTIONS } : {}),
     ...extra,
   });

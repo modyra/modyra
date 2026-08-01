@@ -23,7 +23,7 @@ import { Component, Injector, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { By } from "@angular/platform-browser";
 import type { MdyWidgetKind } from "@modyra/widgets";
-import type { MdyStateFixture } from "@modyra/widgets/testing";
+import { MDY_CANONICAL_EMPTY, type MdyStateFixture } from "@modyra/widgets/testing";
 import { MdyDeclarativeAdapter } from "../core/declarative-form-adapter";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyPrefixDirective } from "../control/prefix.directive";
@@ -121,8 +121,73 @@ export const CATALOG_KINDS: ReadonlyArray<{
   `,
 })
 export class CatalogHost {
-  adapter = new MdyDeclarativeAdapter(signal({}), undefined, TestBed.inject(Injector));
+  adapter = new MdyDeclarativeAdapter(signal(emptyModel()), undefined, TestBed.inject(Injector));
   options = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
+}
+
+/**
+ * The same seventeen controls with no validator on any of them.
+ *
+ * A required field that is empty is already failing, and a renderer is free to show that
+ * immediately — the contract makes the error list's visibility the renderer's choice. Observing a
+ * widget *at rest* therefore needs a field nothing has judged yet, or "at rest" and "invalid" are
+ * the same observation and the second proves nothing.
+ *
+ * The guard test below mounts both hosts, so a kind added to one and forgotten in the other fails
+ * rather than narrowing a suite in silence.
+ */
+@Component({
+  standalone: true,
+  imports: [
+    MdyFormComponent, MdyTextComponent, MdyTextareaComponent, MdyNumberComponent,
+    MdyCheckboxComponent, MdyToggleComponent, MdySliderComponent,
+    MdyRadioGroupComponent, MdySegmentedButtonComponent,
+    MdySelectComponent, MdyMultiselectComponent, MdyDatePickerComponent,
+    MdyDateRangePickerComponent, MdyTimepickerComponent, MdyFileComponent, MdyColorsComponent,
+    MdyPrefixDirective, MdySuffixDirective,
+  ],
+  template: `
+    <mdy-form [adapter]="adapter">
+      <mdy-control-text name="text" label="Text">
+        <ng-template mdyPrefix>&#64;</ng-template>
+        <ng-template mdySuffix>.com</ng-template>
+      </mdy-control-text>
+      <mdy-control-textarea name="notes" label="Notes" />
+      <mdy-control-number name="age" label="Age" />
+      <mdy-control-checkbox name="terms" label="Terms" />
+      <mdy-control-toggle name="news" label="News" />
+      <mdy-control-slider name="volume" label="Volume" />
+      <mdy-control-radio name="plan" label="Plan" [options]="options" />
+      <mdy-control-segmented name="billing" label="Billing" [options]="options" />
+      <mdy-control-text name="mail" label="Mail" type="email" />
+      <mdy-control-text name="secret" label="Secret" type="password" />
+      <mdy-control-select name="country" label="Country" [options]="options" searchable />
+      <mdy-control-multiselect name="tags" label="Tags" [options]="options" searchable />
+      <mdy-control-datepicker name="birthday" label="Birthday" />
+      <mdy-control-daterange name="trip" label="Trip" />
+      <mdy-control-timepicker name="slot" label="Slot" />
+      <mdy-control-file name="cv" label="CV" />
+      <mdy-control-colors name="brand" label="Brand" />
+    </mdy-form>
+  `,
+})
+export class RestingCatalogHost {
+  adapter = new MdyDeclarativeAdapter(signal(emptyModel()), undefined, TestBed.inject(Injector));
+  options = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
+}
+
+/**
+ * Every field seeded with its kind's own empty value.
+ *
+ * Left to itself this adapter starts every field at `null` whatever the kind, so a text field holds
+ * `null` where the other renderers hold `""` — the same widget, two initial states, and Milestone C
+ * compares "the same initial state" by definition. The fixture states it rather than inheriting a
+ * default that differs per adapter.
+ */
+function emptyModel(): Record<string, unknown> {
+  const model: Record<string, unknown> = {};
+  for (const { kind, name } of CATALOG_KINDS) model[name] = emptyFor(kind);
+  return model;
 }
 
 /**
@@ -206,23 +271,20 @@ export function valueFor(kind: MdyWidgetKind): unknown {
 }
 
 /**
- * The empty value each kind can hold.
+ * The empty value each kind can hold, from the one table every adapter reads.
  *
  * Not `""` for everything: a daterange handed a string where an object belongs is rejected by
  * `required` for being an empty string rather than for being an empty range, so its `invalid` row
  * goes green because of the fixture.
+ *
+ * Copies are handed out because a fixture that returns the shared array lets a renderer mutate the
+ * table every other adapter compares against.
  */
 export function emptyFor(kind: MdyWidgetKind): unknown {
-  switch (kind) {
-    case "multiselect": return [];
-    case "checkbox": case "toggle": return false;
-    case "number": return null;
-    // A slider is never empty: its thumb is somewhere, and that somewhere is its minimum.
-    case "slider": return 0;
-    case "file": return [];
-    case "daterange": return { start: null, end: null };
-    default: return "";
-  }
+  const empty = MDY_CANONICAL_EMPTY[kind];
+  if (Array.isArray(empty)) return [...empty];
+  if (empty && typeof empty === "object") return { ...empty };
+  return empty;
 }
 
 export function controlOf(root: Element): Element | null {
@@ -235,9 +297,17 @@ export function controlOf(root: Element): Element | null {
 export const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
   + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
 
-/** Mount one widget of `kind` on the catalogue host, ready to drive into any declared state. */
-export function mountStateFixture(kind: MdyWidgetKind): MdyStateFixture {
-  const fixture = TestBed.createComponent(CatalogHost);
+/**
+ * Mount one widget of `kind` on the catalogue host, ready to drive into any declared state.
+ *
+ * `validators` is on by default because most states are unreachable without them: a field with no
+ * validator can never be invalid. Turn them off to observe a widget genuinely at rest.
+ */
+export function mountStateFixture(
+  kind: MdyWidgetKind,
+  { validators = true }: { validators?: boolean } = {},
+): MdyStateFixture {
+  const fixture = TestBed.createComponent(validators ? CatalogHost : RestingCatalogHost);
   fixture.detectChanges();
   const entry = ENTRY.get(kind);
   if (!entry) throw new Error(`no host control declared for ${kind}`);
@@ -296,17 +366,21 @@ export function mountStateFixture(kind: MdyWidgetKind): MdyStateFixture {
 }
 
 describe("the catalogue fixture", () => {
-  it("mounts every kind the contract declares", () => {
-    const fixture = TestBed.createComponent(CatalogHost);
-    fixture.detectChanges();
+  it.each([["validating", CatalogHost], ["resting", RestingCatalogHost]] as const)(
+    "the %s host mounts every kind the contract declares",
+    (_label, host) => {
+      const fixture = TestBed.createComponent(host);
+      fixture.detectChanges();
 
-    const missing = CATALOG_KINDS
-      .filter(({ selector }) => !fixture.nativeElement.querySelector(selector))
-      .map(({ kind }) => kind);
+      const missing = CATALOG_KINDS
+        .filter(({ selector }) => !fixture.nativeElement.querySelector(selector))
+        .map(({ kind }) => kind);
 
-    // A kind that stops mounting would otherwise narrow both dependent suites in silence: they
-    // would assert less and still report green.
-    expect(missing).toEqual([]);
-    expect(CATALOG_KINDS).toHaveLength(17);
-  });
+      // A kind that stops mounting would otherwise narrow every dependent suite in silence: they
+      // would assert less and still report green. Both hosts, because a kind added to one and
+      // forgotten in the other is the same silence one level down.
+      expect(missing).toEqual([]);
+      expect(CATALOG_KINDS).toHaveLength(17);
+    },
+  );
 });

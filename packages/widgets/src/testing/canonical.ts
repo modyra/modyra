@@ -343,7 +343,55 @@ export interface MdyCanonicalExpectation {
   readonly optional: readonly string[];
   readonly relationships: readonly MdyCanonicalRelationship[];
   readonly overlay: MdyCanonicalOverlay;
+  /** The states the widget reflects, in the contract's own vocabulary, order-insensitive. */
+  readonly state: readonly string[];
+  /** The value the field holds. */
+  readonly value: unknown;
+  /** The part focus rests on, or `null` when focus is nowhere in the widget. */
+  readonly focusOwner: string | null;
 }
+
+/**
+ * The empty value of each kind: what a field holds before anyone has given it one.
+ *
+ * One table, consumed by every adapter's fixture, because "the same initial state" is half of what
+ * Milestone C compares. Three fixtures that each decide for themselves are three different
+ * questions: a number field started at `0` is filled and valid, one started at `null` is empty and
+ * required-failing, and the two renderers were never asked the same thing.
+ *
+ * Not derivable from `MDY_VALUE_CONTRACTS`, which says a kind's shape and whether it is nullable —
+ * `null` and `[]` are both legal for a multiselect and only one of them is what an untouched field
+ * holds.
+ */
+export const MDY_CANONICAL_EMPTY: Readonly<Partial<Record<MdyWidgetKind, unknown>>> = Object.freeze({
+  text: "",
+  email: "",
+  password: "",
+  textarea: "",
+  number: null,
+  // A slider is never empty: its thumb is somewhere, and that somewhere is its minimum.
+  slider: 0,
+  checkbox: false,
+  toggle: false,
+  radio: null,
+  segmented: null,
+  select: null,
+  multiselect: Object.freeze([]),
+  datepicker: null,
+  timepicker: null,
+  daterange: Object.freeze({ start: null, end: null }),
+  file: Object.freeze([]),
+  colors: "",
+});
+
+/**
+ * A widget at rest reflects no state at all.
+ *
+ * Not `touched`, because nobody has touched it; not `invalid`, because nothing has been validated
+ * against it yet; not `open`, because an overlay opens on a user's action. A renderer that starts in
+ * one of them has decided something on the user's behalf before the user arrived.
+ */
+const AT_REST: readonly string[] = Object.freeze([]);
 
 export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>> =
   Object.freeze({
@@ -354,6 +402,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "label", attribute: "for", to: "control" },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "absent" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.text,
+      focusOwner: null,
     }),
     email: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "control"]),
@@ -362,6 +413,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "label", attribute: "for", to: "control" },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "absent" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.email,
+      focusOwner: null,
     }),
     password: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "control"]),
@@ -370,6 +424,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "label", attribute: "for", to: "control" },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "absent" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.password,
+      focusOwner: null,
     }),
     textarea: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "control"]),
@@ -378,6 +435,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "label", attribute: "for", to: "control" },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "absent" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.textarea,
+      focusOwner: null,
     }),
     number: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "control"]),
@@ -386,6 +446,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "label", attribute: "for", to: "control" },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "absent" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.number,
+      focusOwner: null,
     }),
     slider: Object.freeze({
       parts: Object.freeze(["root", "label", "track", "control", "value"]),
@@ -394,6 +457,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "label", attribute: "for", to: "control" },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "absent" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.slider,
+      focusOwner: null,
     }),
     checkbox: Object.freeze({
       parts: Object.freeze(["root", "inputWrapper", "control", "indicator", "label"]),
@@ -402,6 +468,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
 
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "absent" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.checkbox,
+      focusOwner: null,
     }),
     toggle: Object.freeze({
       parts: Object.freeze(["root", "inputWrapper", "control", "track", "thumb", "label"]),
@@ -410,6 +479,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
 
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "absent" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.toggle,
+      focusOwner: null,
     }),
     radio: Object.freeze({
       parts: Object.freeze(["root", "label", "group", "option", "optionControl", "optionLabel"]),
@@ -418,6 +490,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "group", attribute: "aria-labelledby", to: "label" },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "absent" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.radio,
+      focusOwner: null,
     }),
     segmented: Object.freeze({
       parts: Object.freeze(["root", "label", "group", "option", "optionCheck", "optionText"]),
@@ -426,6 +501,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "group", attribute: "aria-labelledby", to: "label" },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "absent" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.segmented,
+      focusOwner: null,
     }),
     select: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "trigger", "placeholder", "arrow"]),
@@ -435,6 +513,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "trigger", attribute: "aria-controls", to: null },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "closed" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.select,
+      focusOwner: null,
     }),
     multiselect: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "header", "searchButton", "options", "option", "optionCheck", "optionLabel"]),
@@ -444,6 +525,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "searchButton", attribute: "aria-controls", to: null },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "closed" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.multiselect,
+      focusOwner: null,
     }),
     datepicker: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "control", "toggle"]),
@@ -453,6 +537,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "control", attribute: "aria-controls", to: null },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "closed" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.datepicker,
+      focusOwner: null,
     }),
     timepicker: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "control", "toggle"]),
@@ -462,6 +549,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "control", attribute: "aria-controls", to: null },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "closed" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.timepicker,
+      focusOwner: null,
     }),
     daterange: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "startControl", "separator", "endControl", "toggle"]),
@@ -471,6 +561,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "toggle", attribute: "aria-controls", to: null },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "closed" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.daterange,
+      focusOwner: null,
     }),
     file: Object.freeze({
       parts: Object.freeze(["root", "label", "dropzone", "control", "content"]),
@@ -479,6 +572,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "label", attribute: "for", to: "control" },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "absent" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.file,
+      focusOwner: null,
     }),
     colors: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle"]),
@@ -488,8 +584,42 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
         { from: "toggle", attribute: "aria-controls", to: null },
       ] as readonly MdyCanonicalRelationship[]),
       overlay: "closed" as const,
+      state: AT_REST,
+      value: MDY_CANONICAL_EMPTY.colors,
+      focusOwner: null,
     }),
   });
+
+/**
+ * Value equality across the shapes a kind can hold.
+ *
+ * A daterange holds an object and a multiselect an array, so identity would report every renderer
+ * as diverging from every other. Structural, one level deep, which is as deep as any kind's value
+ * goes — a `File` is compared by identity because two files with the same bytes are still two
+ * different values to the form.
+ */
+function sameValue(actual: unknown, expected: unknown): boolean {
+  if (Object.is(actual, expected)) return true;
+  if (Array.isArray(actual) && Array.isArray(expected)) {
+    return actual.length === expected.length && actual.every((item, i) => Object.is(item, expected[i]));
+  }
+  if (typeof actual === "object" && typeof expected === "object" && actual && expected) {
+    const a = actual as Record<string, unknown>;
+    const b = expected as Record<string, unknown>;
+    const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+    return [...keys].every((key) => Object.is(a[key], b[key]));
+  }
+  return false;
+}
+
+/** A value as it reads in a divergence message. */
+function describe(value: unknown): string {
+  if (value === null) return "null";
+  if (value === undefined) return "undefined";
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "object") return JSON.stringify(value) ?? String(value);
+  return String(value);
+}
 
 /** How a renderer's snapshot departs from the canonical expectation, in the contract's words. */
 export function compareToCanonical(
@@ -520,6 +650,24 @@ export function compareToCanonical(
   }
   if (snapshot.overlay !== expectation.overlay) {
     differences.push(`overlay is ${snapshot.overlay}, expected ${expectation.overlay}`);
+  }
+
+  // Order is a renderer's own business — the contract says which states are reflected, not the
+  // sequence a snapshot happened to collect them in.
+  const observedState = [...snapshot.state].sort().join(", ");
+  const expectedState = [...expectation.state].sort().join(", ");
+  if (observedState !== expectedState) {
+    differences.push(`state is [${observedState}], expected [${expectedState}]`);
+  }
+
+  if (!sameValue(snapshot.value, expectation.value)) {
+    differences.push(`value is ${describe(snapshot.value)}, expected ${describe(expectation.value)}`);
+  }
+
+  if (snapshot.focusOwner !== expectation.focusOwner) {
+    differences.push(
+      `focus rests on ${snapshot.focusOwner ?? "nothing"}, expected ${expectation.focusOwner ?? "nothing"}`,
+    );
   }
   return differences;
 }
