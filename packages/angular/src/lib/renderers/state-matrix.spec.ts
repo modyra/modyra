@@ -69,17 +69,19 @@ const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__
   + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
 
 /**
- * Angular's divergences from the state contract: none.
+ * Angular's divergences from the state contract, asserted in both directions: a new divergence fails
+ * here, and so does an entry left behind after its fix.
  *
- * Asserted in both directions, so a new divergence fails here and so does an entry left behind
- * after its fix.
- *
- * `select` and `multiselect` report `open` and `loading` as undrivable rather than passing: this
- * host renders a native `<select>` unless an option template or search is supplied, so there is no
- * trigger to click. Four pairs of overlay behaviour are unmeasured, and the matrix says so instead
- * of counting them as passes.
+ * `loading` stays undrivable for `select` and `multiselect`: nothing in the public API puts a field
+ * into that state, and the matrix reports it rather than counting it as a pass.
  */
-const KNOWN_DIVERGENCES: Record<string, string[]> = {};
+const KNOWN_DIVERGENCES: Record<string, string[]> = {
+  // Real, and checked at source: the multiselect renderer binds `aria-expanded` on no element at
+  // all. Its shared projection emits the attribute on the trigger; this renderer hand-writes its
+  // ARIA and does not read that projection, which is the same cause as the rows the other kinds
+  // shed when they started binding the shell projection. Lit records the same row.
+  "multiselect × open": ["STATE_ARIA_MISSING"],
+};
 
 describe("Angular renderers, against the widget state contract", () => {
   it("every declared state of every kind is asserted, and the divergences are the recorded ones", async () => {
