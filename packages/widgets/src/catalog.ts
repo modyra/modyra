@@ -353,7 +353,11 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   // Containers the contract deliberately leaves unconstrained.
   group: "group", inputWrapper: "group", prefix: "group", suffix: "group", container: "group",
   content: "group", header: "group", dialogHeader: "group", actions: "group", chips: "group",
-  options: "group", optionWrapper: "group", presets: "group", dropzone: "group", fileList: "group",
+  options: "group", optionWrapper: "group", dropzone: "group", fileList: "group",
+  // A palette you pick one colour from. All three renderers say `role="listbox"` over
+  // `role="option"` swatches, which is what it is; calling it an unconstrained group let the
+  // contract have no opinion about a widget every renderer had already agreed on.
+  presets: "listbox",
   fileItem: "group", weekdays: "group", row: "group", track: "group", period: "group",
 });
 

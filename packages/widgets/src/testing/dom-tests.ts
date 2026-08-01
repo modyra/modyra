@@ -6,7 +6,7 @@
  * harness, in jsdom, in a browser — is held to the same gate.
  */
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
-import { MDY_LABELABLE_TAGS, MDY_WIDGET_RELATIONS } from "../relations.js";
+import { MDY_LABELABLE_TAGS, MDY_WIDGET_RELATIONS, partsRequiringName } from "../relations.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_STATE_MODIFIERS } from "../state.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_SHARED_UI_CLASSES } from "../structure.js";
@@ -33,6 +33,7 @@ export type MdyDomContractIssueCode =
   | "RELATION_MISSING"
   | "RELATION_WRONG_TARGET"
   | "RELATION_NOT_LABELABLE"
+  | "NAME_MISSING"
   | "INVENTED_CLASS"
   | "STRUCTURE";
 
@@ -219,6 +220,27 @@ function isModifierOf(
   if (base === className || !canonical.has(base)) return false;
   const allowed = declared.get(base);
   return allowed ? allowed.has(className.slice(base.length + 2)) : true;
+}
+
+
+/**
+ * Whether an element has an accessible name, by any of the mechanisms the contract admits.
+ *
+ * Deliberately permissive about *how*: `aria-label`, a resolved `aria-labelledby`, a `label[for]`,
+ * a wrapping label, or the element's own text. The contract requires a name, not a mechanism.
+ */
+function accessibleName(element: Element, document_: Document | null | undefined): boolean {
+  if (element.getAttribute("aria-label")?.trim()) return true;
+  const labelledBy = element.getAttribute("aria-labelledby");
+  if (labelledBy && document_) {
+    for (const id of labelledBy.split(/\s+/).filter(Boolean)) {
+      if (document_.getElementById(id)?.textContent?.trim()) return true;
+    }
+  }
+  const id = element.getAttribute("id");
+  if (id && document_?.querySelector(`label[for="${CSS_ESCAPE(id)}"]`)?.textContent?.trim()) return true;
+  if (element.closest("label")?.textContent?.trim()) return true;
+  return !!element.textContent?.trim();
 }
 
 /** Pure inspection: returns every way the rendered DOM departs from the contract. */
@@ -581,6 +603,21 @@ export function inspectWidgetDom(
           });
         }
       }
+    }
+  }
+
+  // A part whose semantic is a landmark of its own — a listbox, a grid, a dialog — must be
+  // announced with a name. Which mechanism supplies it is the renderer's choice and the text is the
+  // renderer's to translate; that there is one is not optional, because an unnamed container leaves
+  // the user to guess what they have landed in.
+  for (const part of partsRequiringName(kind)) {
+    for (const element of resolved.get(part) ?? []) {
+      if (accessibleName(element, document_)) continue;
+      issues.push({
+        code: "NAME_MISSING",
+        part,
+        message: `${part} is a ${MDY_WIDGET_CONTRACTS[kind].structure.nodes.find((n) => n.part === part)?.element} and must have an accessible name`,
+      });
     }
   }
 
