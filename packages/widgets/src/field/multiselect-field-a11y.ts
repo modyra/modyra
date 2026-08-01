@@ -8,7 +8,7 @@ import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import { blocksFocus } from "../interactivity.js";
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
-import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
+import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import type { MdyMultiselectFieldState } from "./multiselect-field-types.js";
 
 export interface MdyMultiselectFieldA11yOptions {
@@ -37,18 +37,13 @@ export function multiselectFieldPartIds(widgetId: string): {
 }
 
 /** Computes the public state classes for the multiselect field root. */
-export function multiselectFieldRootClasses<TValue>(
-  state: MdyMultiselectFieldState<TValue>,
-): readonly string[] {
+export function multiselectFieldRootClasses<TValue>(state: MdyMultiselectFieldState<TValue>): readonly string[] {
+  const S = MDY_FIELD_STATE_CLASSES;
   return [
-    "mdy-field",
-    ...(state.invalid ? ["mdy-field--invalid"] : []),
-    ...(state.disabled ? ["mdy-field--disabled"] : []),
-    ...(state.readonly ? ["mdy-field--readonly"] : []),
-    ...(state.required ? ["mdy-field--required"] : []),
-    ...(state.touched ? ["mdy-field--touched"] : []),
-    ...(state.dirty ? ["mdy-field--dirty"] : []),
-    ...(state.pending ? ["mdy-field--pending"] : []),
+    S.field,
+    ...S.fieldStates
+      .filter((name: string) => Boolean((state as unknown as Record<string, unknown>)[name]))
+      .map((name: string) => `${S.field}--${name}`),
   ];
 }
 

@@ -36,6 +36,10 @@ export const MDY_STATE_MODIFIERS = Object.freeze({
   open: "open",
   /** Failing validation. */
   error: "error",
+  /** Failing validation, named as the projections name it on a control rather than a field. */
+  invalid: "invalid",
+  /** Waiting on something asynchronous — options being fetched, most often. */
+  loading: "loading",
   /** Has a value — what a floating label rises for. */
   filled: "filled",
   /** Has an error to show, as distinct from `error`: the label reserves room, the wrapper paints. */

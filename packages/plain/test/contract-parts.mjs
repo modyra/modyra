@@ -70,7 +70,11 @@ export function partsOf(root, kind) {
         header: q(".mdy-timepicker-header"), period: q(".mdy-timepicker-period-toggle"), actions: q(".mdy-timepicker-actions"),
         container: q(".mdy-timepicker-container"), content: q(".mdy-timepicker-content"),
         clock: q(".mdy-timepicker-dial"), dialFace: q(".mdy-timepicker-dial__face"), dialHand: q(".mdy-timepicker-dial__hand"),
-        ...(() => { const [hour, minute] = root.querySelectorAll(".mdy-timepicker-segment"); return { hour, minute }; })(),
+        // By modifier, not by document order: each segment is a container holding its own input,
+        // so taking the first two elements paired the hour's container with the hour's input and
+        // called the second one `minute`.
+        hour: root.querySelector(".mdy-timepicker-segment--hour"),
+        minute: root.querySelector(".mdy-timepicker-segment--minute"),
       };
     case "daterange": {
       const [start, end] = root.querySelectorAll(".mdy-daterange__input");

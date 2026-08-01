@@ -7,7 +7,7 @@
  */
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
 import type { MdyPartContract } from "../contract.js";
-import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
+import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import { inspectWidgetStructure } from "./structure-tests.js";
 
 export type MdyDomContractIssueCode =
@@ -142,10 +142,18 @@ function satisfiesSemanticElement(element: Element, semantic: string): boolean {
 function canonicalClasses(kind: MdyWidgetKind, extra: readonly string[]): ReadonlySet<string> {
   const definition = MDY_WIDGET_CONTRACTS[kind];
   const parts: readonly MdyPartContract[] = Object.values(definition.parts);
+  const S = MDY_FIELD_STATE_CLASSES;
   return new Set([
     ...definition.rootClasses,
     ...parts.flatMap((part) => part.classes),
     ...Object.values(MDY_FIELD_SHELL_CLASSES),
+    // The vocabulary the projections emit. It is contract data too, and leaving it out made the
+    // contract flag classes it produces itself.
+    S.field,
+    ...S.fieldStates.map((state) => `${S.field}--${state}`),
+    S.control,
+    ...S.controlStates.map((state) => `${S.control}--${state}`),
+    S.rendererOpen,
     ...extra,
   ]);
 }

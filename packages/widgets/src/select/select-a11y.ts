@@ -3,7 +3,10 @@
  */
 
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
+import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import type { MdyPartContract } from "../contract.js";
+
+const SELECT = MDY_WIDGET_CONTRACTS.select;
 import type { defaultWidgetIdFactory } from "../ids.js";
 
 export interface MdySelectA11yOptions {
@@ -96,7 +99,7 @@ function buildTriggerClasses(
   invalid: boolean,
   loading: boolean,
 ): readonly string[] {
-  const classes = ["mdy-select__trigger"];
+  const classes = [...SELECT.parts.trigger.classes];
   if (open) classes.push("mdy-select__trigger--open", "mdy-control--open");
   if (disabled) classes.push("mdy-select__trigger--disabled", "mdy-control--disabled");
   if (readonly) classes.push("mdy-select__trigger--readonly");
@@ -106,8 +109,8 @@ function buildTriggerClasses(
 }
 
 function buildListboxClasses(open: boolean): readonly string[] {
-  const classes = ["mdy-select__listbox"];
-  if (open) classes.push("mdy-select__listbox--open");
+  const classes = [...SELECT.parts.listbox.classes];
+  if (open) classes.push(...SELECT.parts.listbox.classes.map((c) => `${c}--open`));
   return classes;
 }
 

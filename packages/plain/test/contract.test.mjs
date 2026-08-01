@@ -22,21 +22,37 @@ const { ABSENT, FIELDS, KNOWN_DIVERGENCES, partsOf } = await import("./contract-
  * they want different answers:
  *
  * - `mdy-plain-*` are adapter-internal hooks the contract has no opinion on.
- * - Several come from the widget's own runtime a11y projections rather than the catalog —
- *   `mdy-datepicker__trigger`, `mdy-timepicker__dialog`, `mdy-select__listbox`, `mdy-field`. The
- *   vocabulary is built from the static catalog alone, so the contract flags classes it emits itself.
- * - The rest are structural classes the themes style and the catalog has never described.
+ * - The rest are structural classes the themes style and the catalogue has never described.
+ *
+ * The projections no longer contribute to this list: they read their classes from the catalogue, so
+ * there is one vocabulary rather than two.
  */
 const UNDECLARED_CLASSES = [
-  "mdy-chip--centered", "mdy-colors", "mdy-datepicker", "mdy-datepicker__action-btn",
-  "mdy-datepicker__action-btn--primary", "mdy-datepicker__header", "mdy-datepicker__header-label",
-  "mdy-datepicker__nav-btn", "mdy-datepicker__trigger", "mdy-field", "mdy-file-info",
-  "mdy-file-placeholder", "mdy-button", "mdy-overlay", "mdy-plain-colors", "mdy-plain-datepicker",
-  "mdy-plain-daterange", "mdy-plain-timepicker", "mdy-select", "mdy-select__arrow",
-  "mdy-select__listbox", "mdy-timepicker", "mdy-timepicker--dial", "mdy-timepicker-fields",
-  "mdy-timepicker-period-btn", "mdy-timepicker-segment-input", "mdy-timepicker-separator",
-  "mdy-timepicker-spacer", "mdy-timepicker__hour",
-  "mdy-timepicker__minute", "mdy-timepicker__trigger",
+  "mdy-button",
+  "mdy-chip--centered",
+  "mdy-colors",
+  "mdy-datepicker",
+  "mdy-datepicker__action-btn",
+  "mdy-datepicker__action-btn--primary",
+  "mdy-datepicker__header",
+  "mdy-datepicker__header-label",
+  "mdy-datepicker__nav-btn",
+  "mdy-file-info",
+  "mdy-file-placeholder",
+  "mdy-overlay",
+  "mdy-plain-colors",
+  "mdy-plain-datepicker",
+  "mdy-plain-daterange",
+  "mdy-plain-timepicker",
+  "mdy-select",
+  "mdy-select__arrow",
+  "mdy-timepicker",
+  "mdy-timepicker--dial",
+  "mdy-timepicker-fields",
+  "mdy-timepicker-period-btn",
+  "mdy-timepicker-segment-input",
+  "mdy-timepicker-separator",
+  "mdy-timepicker-spacer",
 ];
 
 
