@@ -79,7 +79,11 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
   arrow: ["inputWrapper", "trigger"], value: ["trigger", "inputWrapper"], placeholder: ["trigger", "inputWrapper"],
   track: ["inputWrapper"], thumb: ["track"], chips: ["trigger"], chip: ["chips"], searchButton: ["trigger"],
   group: [], option: ["optionWrapper", "listbox", "options", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"], optionCount: ["option"], optionStep: ["option"],
-  search: ["popup"], listbox: ["popup"], optionWrapper: ["options", "listbox"], options: ["root"], loading: ["popup"], empty: ["popup"],
+  search: ["popup"], listbox: ["popup"], optionWrapper: ["options", "listbox"], options: ["root"],
+  // A field that is loading has to say so without being opened, so the indicator belongs to the
+  // control. `empty` is the opposite case: "no options match" is a statement about the list, and it
+  // has nothing to say until there is a list on screen.
+  loading: ["inputWrapper", "popup"], empty: ["popup"],
   // A container and its content are the popup's own frame. Without them here they fell through to
   // `root`, which said the whole dial was a resting-state part and made a closed picker look like a
   // renderer that had lost thirteen of them.
