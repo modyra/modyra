@@ -138,7 +138,16 @@ export function projectMultiselectFieldA11y<TValue>(
       classes: ["mdy-multiselect__options"],
       attributes: {
         // `role="group"` supports neither `aria-invalid` nor `aria-required`: they say something
-        // about a value, and a group holds no value. Both live on the trigger, which does.
+        // about a value, and a group holds no value. `aria-invalid` moves to the trigger, which
+        // supports it.
+        //
+        // `aria-required` has nowhere to go on this widget, and that is a gap rather than an
+        // oversight. The chips are toggle buttons in a group by deliberate choice (see the note at
+        // the top of this file), and neither `group` nor `button` supports the attribute — so the
+        // requirement reaches assistive technology through nothing. It did not before either: an
+        // attribute a role does not support is not announced, so writing it here only produced
+        // markup axe reports as critical. Closing it needs a visually-hidden "required" in the label,
+        // which is shared CSS this package does not own yet.
         role: "group",
         "aria-labelledby": labelId,
         "aria-disabled": String(state.disabled),

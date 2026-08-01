@@ -99,7 +99,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
         </div>
         <button
           type="button"
-          class="mdy-colors__primary-picker"
+          class="mdy-button"
           @click=${() => {
             this.querySelector<HTMLInputElement>("input[type=color]")?.showPicker?.();
           }}
