@@ -128,6 +128,10 @@ export function partsOf(
   kind: MdyWidgetKind,
 ): Record<string, Element | readonly Element[] | null> {
   const q = (selector: string) => root.querySelector(selector);
+  // A part the contract marks `repeated` has to be mapped with every element it rendered. Mapping
+  // one of many makes each of its children look mis-parented, since the child belongs to a sibling
+  // the map never mentioned.
+  const qa = (selector: string) => Array.from(root.querySelectorAll(selector));
   const shell = {
     label: q(".mdy-label, .mdy-toggle__label"),
     requiredMarker: q(".mdy-label__required"),
@@ -150,7 +154,7 @@ export function partsOf(
     case "select":
       return { ...shell, inputWrapper: q(".mdy-input-wrapper"), loading: q(".mdy-select__loader"), trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), placeholder: q(".mdy-select__placeholder"), arrow: q(".mdy-select__arrow"), popup: popupOf(root, ".mdy-select__dropdown"), listbox: popupOf(root, ".mdy-select__dropdown")?.querySelector(".mdy-select__list") ?? null, option: Array.from(popupOf(root, ".mdy-select__dropdown")?.querySelectorAll(".mdy-select__option") ?? []) };
     case "multiselect":
-      return { ...shell, inputWrapper: q(".mdy-multiselect"), loading: q(".mdy-select__loader"), header: q(".mdy-multiselect__header"), searchButton: q(".mdy-multiselect__search-btn"), options: q(".mdy-multiselect__options"), optionWrapper: q(".mdy-chip-wrapper"), option: q(".mdy-chip"), optionLabel: q(".mdy-chip__label"), popup: popupOf(root, ".mdy-multiselect__dropdown") };
+      return { ...shell, inputWrapper: q(".mdy-multiselect"), loading: q(".mdy-select__loader"), header: q(".mdy-multiselect__header"), searchButton: q(".mdy-multiselect__search-btn"), options: q(".mdy-multiselect__options"), optionWrapper: qa(".mdy-chip-wrapper"), option: qa(".mdy-chip"), optionLabel: qa(".mdy-chip__label"), popup: popupOf(root, ".mdy-multiselect__dropdown") };
     case "datepicker":
       return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: popupOf(root, ".mdy-datepicker__popup"), grid: popupOf(root, ".mdy-datepicker__popup")?.querySelector(".mdy-datepicker__grid") ?? null };
     case "daterange": {
