@@ -2,6 +2,7 @@
  * Headless option-based field controller (radio group / segmented).
  */
 
+import { blocksFocus, blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { vanillaReactivity } from "@modyra/core";
 
@@ -60,6 +61,9 @@ export function createOptionFieldController<TValue>(
     invalid: !handle.valid(),
     disabled: handle.disabled(),
     readonly: readonly(),
+    // One value the whole controller agrees on; `disabled`/`readonly` above are the
+    // derived halves kept for renderers that still read them.
+    interactivity: handle.interactivity(),
     required: handle.required(),
     touched: handle.touched(),
     dirty: handle.dirty(),
@@ -106,15 +110,17 @@ export function createOptionFieldController<TValue>(
         variant === "segmented" ? "mdy-segmented__button" : "mdy-radio-item",
         ...(selected ? [variant === "segmented" ? "mdy-segmented__button--selected" : "mdy-radio-item--selected"] : []),
         ...(currentActiveKey === key ? [variant === "segmented" ? "mdy-segmented__button--active" : "mdy-radio-item--active"] : []),
-        ...(option.disabled || currentState.disabled || currentState.readonly
+        ...(option.disabled || blocksValueChange(currentState.interactivity)
           ? [variant === "segmented" ? "mdy-segmented__button--disabled" : "mdy-radio-item--disabled"]
           : []),
       ],
       attributes: {
         role: "radio",
         "aria-checked": String(selected),
-        "aria-disabled": String(option.disabled || currentState.disabled || currentState.readonly),
-        disabled: option.disabled || currentState.disabled,
+        "aria-disabled": String(option.disabled || blocksFocus(currentState.interactivity)),
+        // The native attribute asks the focus question. An option group has no read-only
+        // rendering, so this differs from `aria-disabled` above only if a host sets it directly.
+        disabled: option.disabled || blocksFocus(currentState.interactivity),
       },
     };
   }
@@ -160,7 +166,7 @@ export function createOptionFieldController<TValue>(
       return [{ type: "mark-touched" }];
     }
 
-    if (state().disabled || state().readonly) {
+    if (blocksValueChange(state().interactivity)) {
       return [];
     }
 

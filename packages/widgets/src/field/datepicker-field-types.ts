@@ -11,6 +11,7 @@
  * sub-views and the "modal" confirm/cancel draft variant are deliberately
  * not ported in this first cut (see datepicker-field-controller.ts).
  */
+import type { MdyInteractivity } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 
 export interface MdyDatepickerFieldControllerOptions {
@@ -48,6 +49,11 @@ export interface MdyDatepickerFieldState {
   readonly open: boolean;
   readonly invalid: boolean;
   readonly disabled: boolean;
+  /**
+   * What the user may do. Ask it through `blocksValueChange`/`blocksFocus` rather than comparing
+   * strings — the point of the union is that no call site invents its own combination again.
+   */
+  readonly interactivity: MdyInteractivity;
   readonly readonly: boolean;
   readonly required: boolean;
   readonly touched: boolean;

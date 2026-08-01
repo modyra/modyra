@@ -17,6 +17,7 @@
  * the controller itself owns no pointer/DOM listeners (that stays the
  * host's job, same division of labor as every other controller here).
  */
+import type { MdyInteractivity } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { to24Hour } from "@modyra/core/time-utils";
 import type { MdyTimeFormat, ParsedTime } from "@modyra/core/time-utils";
@@ -243,6 +244,11 @@ export interface MdyTimepickerFieldState {
   readonly viewMode: MdyTimepickerViewMode;
   readonly invalid: boolean;
   readonly disabled: boolean;
+  /**
+   * What the user may do. Ask it through `blocksValueChange`/`blocksFocus` rather than comparing
+   * strings — the point of the union is that no call site invents its own combination again.
+   */
+  readonly interactivity: MdyInteractivity;
   readonly readonly: boolean;
   readonly required: boolean;
   readonly touched: boolean;

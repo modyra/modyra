@@ -6,6 +6,7 @@
  * option is either in the array or not) and `"multi"` (a counter/bag:
  * incrementing an already-selected option appends another array entry).
  */
+import type { MdyInteractivity } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 
 export type MdyMultiselectFieldMode = "single" | "multi";
@@ -37,6 +38,11 @@ export interface MdyMultiselectFieldState<TValue> {
   readonly open: boolean;
   readonly invalid: boolean;
   readonly disabled: boolean;
+  /**
+   * What the user may do. Ask it through `blocksValueChange`/`blocksFocus` rather than comparing
+   * strings — the point of the union is that no call site invents its own combination again.
+   */
+  readonly interactivity: MdyInteractivity;
   readonly readonly: boolean;
   readonly required: boolean;
   readonly touched: boolean;

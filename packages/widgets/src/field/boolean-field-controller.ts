@@ -2,6 +2,7 @@
  * Headless boolean field controller (checkbox / toggle switch).
  */
 
+import { blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { vanillaReactivity } from "@modyra/core";
 
@@ -39,6 +40,15 @@ export function createBooleanFieldController(
     // projection — `readonly` alone came from the local signal, which is why a form could
     // set it and nothing downstream ever saw it.
     readonly: handle.readonly() || readonly(),
+    // One value the whole controller agrees on; `disabled`/`readonly` above are its derived
+    // halves, kept for renderers that still read them.
+    //
+    // The local override can only ever *reduce* what is permitted. `setReadonly()` is a published
+    // escape hatch for a renderer with no form behind it, and it must not be able to re-enable a
+    // field the form disabled.
+    interactivity: handle.interactivity() === "enabled" && readonly()
+      ? ("readonly" as const)
+      : handle.interactivity(),
     required: handle.required(),
     touched: handle.touched(),
     dirty: handle.dirty(),
@@ -68,7 +78,7 @@ export function createBooleanFieldController(
       return [{ type: "mark-touched" }];
     }
 
-    if (state().disabled || state().readonly) {
+    if (blocksValueChange(state().interactivity)) {
       return [];
     }
 
