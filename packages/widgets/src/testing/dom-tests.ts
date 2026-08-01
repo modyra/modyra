@@ -7,7 +7,7 @@
  */
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
 import type { MdyPartContract } from "../contract.js";
-import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
+import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_SHARED_UI_CLASSES } from "../structure.js";
 import { inspectWidgetStructure } from "./structure-tests.js";
 
 export type MdyDomContractIssueCode =
@@ -63,6 +63,14 @@ export interface MdyDomContractOptions {
   readonly strictClasses?: boolean;
   /** Extra classes accepted under `strictClasses` — theme hooks the contract does not own. */
   readonly allowedClasses?: readonly string[];
+  /**
+   * Prefix an adapter uses to namespace classes of its own, such as `mdy-plain-`.
+   *
+   * A renderer may need a hook the contract has no opinion on. Namespacing it is what keeps that
+   * distinguishable from inventing a contract class, and the prefix is declared rather than the
+   * individual names so the check stays a rule instead of a list.
+   */
+  readonly adapterPrefix?: string;
 }
 
 const ARIA_BOOLEAN_STATES = new Set([
@@ -154,6 +162,10 @@ function canonicalClasses(kind: MdyWidgetKind, extra: readonly string[]): Readon
     S.control,
     ...S.controlStates.map((state) => `${S.control}--${state}`),
     S.rendererOpen,
+    // Structure the themes style that the kind declares but does not make a part of its anatomy,
+    // and the classes that belong to no single widget.
+    ...definition.presentationClasses,
+    ...MDY_SHARED_UI_CLASSES,
     ...extra,
   ]);
 }
@@ -554,6 +566,7 @@ export function inspectWidgetDom(
     for (const element of scope) {
       for (const className of classesOf(element)) {
         if (!className.startsWith("mdy-")) continue;
+        if (options.adapterPrefix && className.startsWith(options.adapterPrefix)) continue;
         if (canonical.has(className) || isModifierOf(className, canonical, declared)) continue;
         issues.push({ code: "INVENTED_CLASS", part: "root", message: `${className} is not part of the ${kind} contract` });
       }

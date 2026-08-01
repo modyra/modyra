@@ -70,20 +70,6 @@ function partsOf(root, kind) {
  * Divergences the Lit elements still have from the contract, recorded rather than waived — the
  * assertion below matches this map exactly, so one can neither appear silently nor outlive its fix.
  */
-/**
- * Classes these elements use that the widget contract does not declare.
- *
- * Enumerated rather than waived, so a class added tomorrow fails until it is either declared by the
- * contract or added here deliberately.
- */
-const UNDECLARED_CLASSES = [
-  "mdy-button",
-  "mdy-file-icon",
-  "mdy-file-info",
-  "mdy-file-placeholder",
-  "mdy-segmented__button--first",
-  "mdy-segmented__button--last",
-];
 
 const KNOWN_DIVERGENCES = {};
 
@@ -101,7 +87,6 @@ for (const [tag, kind, initial] of ELEMENTS) {
       parts: partsOf(element, kind),
       // The class vocabulary is contract data: a theme can only style what it can enumerate.
       strictClasses: true,
-      allowedClasses: UNDECLARED_CLASSES,
     });
     assert.deepEqual(
       issues.map((issue) => `${issue.code}:${issue.part}`),

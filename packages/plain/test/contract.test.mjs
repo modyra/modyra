@@ -14,46 +14,6 @@ const { mountMdyForm } = await import("../dist/index.js");
 const { inspectWidgetDom } = await import("../../widgets/dist/testing/index.js");
 const { ABSENT, FIELDS, KNOWN_DIVERGENCES, partsOf } = await import("./contract-parts.mjs");
 
-/**
- * Classes this renderer uses that the widget contract does not declare.
- *
- * Enumerated rather than waived: the list is finite and asserted, so a class added tomorrow fails
- * until it is either declared by the contract or added here deliberately. Three groups sit in it and
- * they want different answers:
- *
- * - `mdy-plain-*` are adapter-internal hooks the contract has no opinion on.
- * - The rest are structural classes the themes style and the catalogue has never described.
- *
- * The projections no longer contribute to this list: they read their classes from the catalogue, so
- * there is one vocabulary rather than two.
- */
-const UNDECLARED_CLASSES = [
-  "mdy-button",
-  "mdy-chip--centered",
-  "mdy-colors",
-  "mdy-datepicker",
-  "mdy-datepicker__action-btn",
-  "mdy-datepicker__action-btn--primary",
-  "mdy-datepicker__header",
-  "mdy-datepicker__header-label",
-  "mdy-datepicker__nav-btn",
-  "mdy-file-info",
-  "mdy-file-placeholder",
-  "mdy-overlay",
-  "mdy-plain-colors",
-  "mdy-plain-datepicker",
-  "mdy-plain-daterange",
-  "mdy-plain-timepicker",
-  "mdy-select",
-  "mdy-select__arrow",
-  "mdy-timepicker",
-  "mdy-timepicker--dial",
-  "mdy-timepicker-fields",
-  "mdy-timepicker-period-btn",
-  "mdy-timepicker-segment-input",
-  "mdy-timepicker-separator",
-  "mdy-timepicker-spacer",
-];
 
 
 test("every rendered field conforms to its widget DOM contract", () => {
@@ -69,7 +29,8 @@ test("every rendered field conforms to its widget DOM contract", () => {
       absentParts: ABSENT[field.kind] ?? [],
       // The class vocabulary is contract data: a theme can only style what it can enumerate.
       strictClasses: true,
-      allowedClasses: UNDECLARED_CLASSES,
+      // Classes this renderer namespaces as its own; the contract has no opinion on them.
+      adapterPrefix: "mdy-plain-",
     });
     // Exact match, both ways: a new violation fails, and so does a stale entry left behind by a
     // renderer batch that already fixed it.
