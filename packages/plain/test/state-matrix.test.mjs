@@ -2,11 +2,11 @@
  * The state matrix, driven against the Plain renderer.
  *
  * The traversal, the report and the divergence bookkeeping are shared — `collectStateMatrix` in
- * `@modyra/widgets/testing` — so this file is only a driver. Angular and Lit have their own, and all
+ * `@modyra/widgets/testing` — so this file is only a driver. Every adapter has their own, and all
  * three answer to the same judgement.
  *
  * That split was the design from the start and went unused for a while, which is how a defect fixed
- * in Plain and still live in Angular and Lit passed for closed.
+ * in one adapter and still live in the others passed for closed.
  *
  * Divergences are recorded, not fixed, unless a batch says otherwise. The ledger is asserted both
  * ways: a new divergence fails, and so does a stale entry that outlived its fix.
@@ -57,7 +57,7 @@ function valueFor(kind) {
  * fixture fed it a value the widget can never hold — a green row that was a claim about the driver,
  * which is the same mistake as a red row that is a claim about the renderer.
  *
- * Lit's driver has had this since it was written; Plain's had not.
+ * Another adapter's driver has had this since it was written; this one had not.
  */
 function emptyFor(kind) {
   switch (kind) {

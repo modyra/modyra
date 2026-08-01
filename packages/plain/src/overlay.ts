@@ -22,7 +22,7 @@ export interface OverlayPlacementOptions {
 
 /**
  * Showing a popup is `setOverlayOpen` in `@modyra/widgets`, re-exported so this renderer's fields
- * keep one import for everything overlay. It moved there when Lit's popups joined the top layer:
+ * keep one import for everything overlay. It moved there when a second adapter's popups joined the top layer:
  * two adapters calling one function is the contract, two adapters with one copy each is a drift
  * waiting to happen.
  */

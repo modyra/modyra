@@ -16,7 +16,7 @@ import {
 /**
  * Hex string value model (`#rrggbb`). Preview swatch opening the platform
  * color picker, plus the accessible hex text input — the same closed-state
- * structure the themes style for the Angular renderer.
+ * structure the themes style.
  */
 export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
   static override properties: PropertyDeclarations = {

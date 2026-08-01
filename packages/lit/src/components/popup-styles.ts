@@ -61,8 +61,9 @@ interface OverlayStateConfig {
   /** Where the pointer opened it, so a popup follows the click rather than the element's centre. */
   readonly clickX?: number;
   /**
-   * The decision this overlay is already holding, when it is open. The same door plain and Angular
-   * come through: the coordinates follow the anchor while the shape stays as it was decided.
+   * The decision this overlay is already holding, when it is open. The same door every other
+   * renderer comes through: the coordinates follow the anchor while the shape stays as it was
+   * decided.
    */
   readonly current?: MdyOverlayDecision | null;
   readonly widthMode?: "match-anchor" | "auto-content";
@@ -95,7 +96,7 @@ export function computeOverlayPanelState(
   }
 
   // The anchoring is `anchorOverlay` in @modyra/widgets — the same call the framework-free renderer
-  // makes — so a Lit popup attaches exactly where an Angular or Plain one would. This function
+  // makes — so this popup attaches exactly where any other one would. This function
   // measures, and translates the properties it gets back into the panel's inline style.
   const rect = anchorEl.getBoundingClientRect();
   const anchoring = anchorOverlay(
@@ -279,7 +280,7 @@ export class MdyLitOverlayController {
       clickX: reselectCorner ? this.clickX : undefined,
       // Deciding afresh is what opening and resizing are; a scroll frame holds what it has. The
       // popup therefore keeps its size while the anchor moves and changes side only once the side
-      // it opened on has genuinely stopped fitting — the policy plain and Angular already follow.
+      // it opened on has genuinely stopped fitting — the policy every other renderer already follow.
       current: reselectCorner ? null : this._state.decision,
       ...(this.content ? { contentHeight: this.content.height, contentWidth: this.content.width } : {}),
     });
@@ -324,7 +325,7 @@ export interface RenderOverlayPanelOptions {
 }
 
 /**
- * Minimal Lit equivalent of the Angular `<mdy-overlay-panel>` markup.
+ * The overlay panel markup, in this renderer's idiom.
  *
  * It does **not** reflect the placement. This wrapper is a marker, not a box — it lays nothing out
  * (`display: contents`) — so a placement class here would style nothing however correctly it was
@@ -341,7 +342,7 @@ export function renderOverlayPanel(
   const modalClass = options?.modal ? " mdy-overlay-panel--modal" : "";
   const rightClass = options?.alignment === "right" ? " mdy-overlay-panel--right" : "";
   // The panel is a marker, not a box: it lays nothing out (`display: contents`), so the popup part
-  // inside it is the single container — the same one Plain portals and Angular projects. Two nested
+  // inside it is the single container — the same one every renderer portals and a host-projected panel wrular projects. Two nested
   // positioned boxes is what put a Lit popup 35px below where its anchor said it belonged.
   return html`
     <div class="mdy-overlay-backdrop"></div>

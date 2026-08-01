@@ -29,7 +29,7 @@ export function renderColorsField(
   const shell = buildFieldShell(f.label, "colors");
   // The themes lay this control out from the outside in — `.mdy-colors` *contains* the input
   // wrapper (`.mdy-colors .mdy-input-wrapper` is a flex row with no padding), which is how the
-  // Angular renderer nests it too. Building it the other way round collapses the row to nothing.
+  // contract nests it that way too. Building it the other way round collapses the row to nothing.
   const wrapper = el("div", "mdy-colors mdy-plain-colors") as HTMLDivElement;
   shell.root.insertBefore(wrapper, shell.wrapper);
   wrapper.append(shell.wrapper);
@@ -61,7 +61,7 @@ export function renderColorsField(
   applyPart(toggle, definition.parts.toggle);
   toggle.setAttribute("aria-haspopup", "listbox");
   toggle.setAttribute("aria-label", "Show the preset colours");
-  // The themes draw the caret on `.mdy-select__arrow`, exactly as the Angular renderer nests it
+  // The themes draw the caret on `.mdy-select__arrow`, which is where the contract nests it
   // inside this toggle — an empty button would have no size at all.
   const toggleArrow = el("span", "mdy-select__arrow");
   toggleArrow.setAttribute("aria-hidden", "true");

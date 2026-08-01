@@ -1,7 +1,7 @@
 /**
  * The state matrix, driven against the Angular renderers.
  *
- * Same judgement as Plain and Lit — `collectStateMatrix` from `@modyra/widgets/testing` — with only
+ * Same judgement as every other adapter — `collectStateMatrix` from `@modyra/widgets/testing` — with only
  * the driving here. Until this existed a state defect in Angular was invisible: the matrix ran on
  * Plain alone, which is how `readonly` was fixed there, reported closed, and stayed broken here.
  *

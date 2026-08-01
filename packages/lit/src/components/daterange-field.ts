@@ -20,7 +20,7 @@ type RangePhase = "pick-start" | "pick-end";
 /**
  * Date range picker renderer — compact two-input calendar picker for selecting
  * a start and end date. Matches the structure, classes and interaction of the
- * Angular `MdyDateRangePickerComponent`.
+ * the catalogue's `daterange` anatomy.
  */
 export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | null> {
   static override properties: PropertyDeclarations = {

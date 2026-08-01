@@ -1,12 +1,12 @@
 /**
  * Renders the "timepicker" kind via createTimepickerFieldController: a typeable input and a toggle
- * opening the same draft/commit dialog Angular's timepicker shows — the clock face, the two number
+ * opening the draft/commit dialog the contract describes — the clock face, the two number
  * fields behind the mode toggle, and the AM/PM pair.
  *
  * The clock is the picker. Where the pointer is on the face is all this renderer works out; what
  * time that is, which numbers the face carries and which one is selected are the contract's
  * (`set-from-angle`, `timepickerDialNumbers`, `timepickerSelectedDialValue`), so the gesture means
- * the same thing here as it does in Angular.
+ * the same thing here as it does anywhere else.
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDateField } from "@modyra/core";
@@ -29,7 +29,7 @@ export function renderTimepickerField(
   const controller = createTimepickerFieldController({ widgetId: f.name, handle, format }, reactivity);
 
   const shell = buildFieldShell(f.label, "timepicker");
-  // Same anatomy as the Angular renderer: a typeable input plus a toggle button opening the
+  // The catalogue's timepicker anatomy: a typeable input plus a toggle button opening the
   // dialog, rather than one button doing both jobs.
   const control = el("input", "mdy-timepicker__input") as HTMLInputElement;
   control.type = "text";
@@ -45,7 +45,7 @@ export function renderTimepickerField(
   // because a renderer whose panel is not modal has no dialog to name.
   dialog.id = overlayControlledId("timepicker", f.name) ?? "";
   // The popup's anatomy is the contract's, and its classes are the ones the shipped themes already
-  // style for the Angular renderer — which is what makes the three look alike rather than merely
+  // style — which is what makes every renderer look alike rather than merely
   // behave alike.
   const header = el("div", parts.header.classes.join(" "));
   const fields = el("div", "mdy-timepicker-fields");
@@ -160,7 +160,7 @@ export function renderTimepickerField(
 
   /**
    * Picking on the face. The angle-to-time arithmetic is the contract's `set-from-angle`, which
-   * calls the same snapping the Angular clock uses — this only reports where the pointer is.
+   * calls the shared snapping — this only reports where the pointer is.
    */
   function pickFromPointer(event: PointerEvent): void {
     const state = controller.state();

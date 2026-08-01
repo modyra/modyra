@@ -30,7 +30,7 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
     return nothing;
   }
 
-  /** Same structure as the Angular renderer: label wraps input + text. */
+  /** The contract's boolean anatomy: label wraps input + text. */
   override render(): unknown {
     const handle = this.field;
     if (!handle) return nothing;

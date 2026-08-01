@@ -8,7 +8,7 @@
  * directly — this file lives under `src/` and is `tsc`-compiled, and this
  * repo's core package has no `@types/node`, so importing Node's test runner
  * types here would fail to compile. Every adapter package (core itself,
- * Vue, Solid, Preact, Svelte, Lit, React, Angular) supplies its own real
+ * Vue, Solid, Preact, Svelte, React and the rest) supplies its own real
  * `node:test`/`node:assert` (or Jest equivalents) from its own `.mjs`/`.spec.ts`.
  */
 

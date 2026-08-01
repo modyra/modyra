@@ -117,7 +117,7 @@ export function partsOf(root, kind) {
 export const ABSENT = {
   select: ["loading", "empty"],
   // The value chips and the placeholder belong to the compact trigger a renderer may show instead
-  // of the field's own grid; this one shows the grid, as Angular does. The count and the steppers
+  // of the field's own grid; this one shows the grid, as the catalogue declares. The count and the steppers
   // are counter mode's.
   multiselect: ["chips", "chip", "placeholder", "optionCount", "optionStep", "loading", "empty"],
   datepicker: ["actions"],

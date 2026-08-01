@@ -25,7 +25,7 @@ export function setText(node: HTMLElement, text: string): void {
 export function setErrors(container: HTMLElement, messages: ReadonlyArray<string>): void {
   container.replaceChildren();
   for (const message of messages) {
-    // `mdy-control__error` is the class the shipped themes style, same as the Lit renderers.
+    // `mdy-control__error` is the class the shipped themes style, whichever renderer emits itrers.
     const li = el("li", "mdy-control__error");
     setText(li, message);
     container.appendChild(li);

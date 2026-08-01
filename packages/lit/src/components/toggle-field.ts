@@ -28,7 +28,7 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
     return nothing;
   }
 
-  /** Same structure as the Angular renderer: input + track/thumb + label. */
+  /** The contract's toggle anatomy: input + track/thumb + label. */
   override render(): unknown {
     const handle = this.field;
     if (!handle) return nothing;

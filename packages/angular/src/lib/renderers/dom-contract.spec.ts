@@ -2,7 +2,7 @@
  * Runtime DOM conformance for the Angular renderers.
  *
  * The static audits prove the renderers *reference* the contract; this mounts them and checks what
- * they actually rendered with the same `assertWidgetDomContract` the Lit and Plain suites use, so
+ * they actually rendered with the same `assertWidgetDomContract` every adapter's suite uses, so
  * all three adapters answer to one gate rather than three descriptions of one.
  *
  * The host and the part map are shared with `state-matrix.spec.ts` — see `catalog-host.spec.ts`.

@@ -335,7 +335,7 @@ export class MdySelectComponent<TValue = string>
    * Which side the list ended up on, named by the catalog rather than spelled here.
    *
    * `above` and `overlay` are declared states of the select's `popup` part, so the class comes from
-   * `popupPlacementClass` — the same call Plain and Lit make. `right` is a declared state too, and
+   * `popupPlacementClass` — the call every renderer makes. `right` is a declared state too, and
    * the binding below still spells it: deriving it here means threading the alignment through the
    * same call, which is a change to that helper rather than to this component.
    */
