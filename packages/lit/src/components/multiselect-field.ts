@@ -237,7 +237,9 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               aria-haspopup="listbox"
               aria-expanded=${this._open ? "true" : "false"}
             >
-              ${mdyIcon("SEARCH", "")}
+              ${this.loading
+        ? mdyIcon("LOADER", "mdy-select__loader")
+        : mdyIcon("SEARCH", "")}
             </button>
           </div>
         </div>
