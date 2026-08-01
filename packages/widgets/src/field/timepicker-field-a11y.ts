@@ -29,7 +29,7 @@ export function timepickerFieldPartIds(widgetId: string): {
     hourId: `${widgetId}__hour`,
     minuteId: `${widgetId}__minute`,
     descriptionId: `${widgetId}__description`,
-    errorId: `${widgetId}__error`,
+    errorId: `${widgetId}__errors`,
   };
 }
 

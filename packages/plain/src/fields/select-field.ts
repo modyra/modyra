@@ -191,6 +191,16 @@ export function renderSelectField(
     const errorsShown = handle.touched() && handle.errors().length > 0;
     controller.setDescribedBy({ errorsVisible: errorsShown, descriptionVisible: !errorsShown });
 
+    // The shell's own state, which every other kind here reflects and this one did not: the themes
+    // key the touched and error treatments off the renderer root and the wrapper.
+    shell.syncState({
+      touched: handle.touched(),
+      disabled: handle.disabled(),
+      hasError: handle.errors().length > 0,
+      filled: handle.value() !== null && handle.value() !== undefined,
+      required: handle.required(),
+    });
+
     const state = controller.state();
     const view = controller.view();
     applyPart(trigger, view.parts.trigger);

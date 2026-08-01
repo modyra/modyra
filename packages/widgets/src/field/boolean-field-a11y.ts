@@ -26,7 +26,7 @@ export function booleanFieldPartIds(widgetId: string): {
     inputId: `${widgetId}__input`,
     labelId: `${widgetId}__label`,
     descriptionId: `${widgetId}__description`,
-    errorId: `${widgetId}__error`,
+    errorId: `${widgetId}__errors`,
   };
 }
 

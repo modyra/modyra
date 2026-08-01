@@ -34,7 +34,7 @@ export function multiselectFieldPartIds(widgetId: string): {
     popupId: `${widgetId}__popup`,
     searchId: `${widgetId}__search`,
     descriptionId: `${widgetId}__description`,
-    errorId: `${widgetId}__error`,
+    errorId: `${widgetId}__errors`,
   };
 }
 

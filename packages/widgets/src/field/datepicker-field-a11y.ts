@@ -27,7 +27,7 @@ export function datepickerFieldPartIds(widgetId: string): {
     triggerId: `${widgetId}__trigger`,
     gridId: `${widgetId}__grid`,
     descriptionId: `${widgetId}__description`,
-    errorId: `${widgetId}__error`,
+    errorId: `${widgetId}__errors`,
   };
 }
 

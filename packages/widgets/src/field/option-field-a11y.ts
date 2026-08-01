@@ -29,7 +29,7 @@ export function optionFieldPartIds(widgetId: string): {
     labelId: `${widgetId}__label`,
     groupId: `${widgetId}__group`,
     descriptionId: `${widgetId}__description`,
-    errorId: `${widgetId}__error`,
+    errorId: `${widgetId}__errors`,
   };
 }
 
