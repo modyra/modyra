@@ -75,6 +75,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             [disabled]="isDisabled()"
             (click)="toggleOverlay($event)"
             [attr.aria-label]="i18n.searchOptionsLabel"
+            [attr.aria-invalid]="hasErrors()"
           >
             @if (effectiveLoading()) {
               <mdy-icon name="LOADER" class="mdy-select__loader" style="font-size: 1rem;" />
@@ -91,9 +92,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       class="mdy-multiselect__options"
       role="group"
       [attr.aria-label]="label() || null"
-      [attr.aria-invalid]="hasErrors()"
       [attr.aria-describedby]="describedById(fieldId)"
-      [attr.aria-required]="ariaRequired() || isRequired()"
       [attr.aria-disabled]="effectiveAriaDisabled()"
     >
       @for (opt of filteredOptions(); track opt.value) {

@@ -50,8 +50,8 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
  */
 export const MDY_OVERLAY_PORTAL_CLASS = "mdy-overlay";
 
-function part(classes: readonly string[] = [], attributes: MdyPartContract["attributes"] = {}, states: readonly MdyStateName[] = []): MdyPartContract {
-  return Object.freeze({ classes: Object.freeze([...classes]), attributes: Object.freeze({ ...attributes }), ...(states.length ? { states: Object.freeze([...states]) } : {}) });
+function part(classes: readonly string[] = [], attributes: MdyPartContract["attributes"] = {}, states: readonly MdyStateName[] = [], role?: string): MdyPartContract {
+  return Object.freeze({ classes: Object.freeze([...classes]), attributes: Object.freeze({ ...attributes }), ...(states.length ? { states: Object.freeze([...states]) } : {}), ...(role ? { role } : {}) });
 }
 
 /**
@@ -143,6 +143,14 @@ const SHELL_CLASS_FALLBACK: Readonly<Record<string, readonly string[]>> = Object
 interface MdyWidgetShape {
   readonly parents?: Readonly<Record<string, string>>;
   readonly classes?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * The ARIA role a part must carry, where the contract requires one.
+   *
+   * Distinct from `element`, which says what a part may *be*: `SEMANTIC_ELEMENTS` lists the roles a
+   * semantic admits, and this names the one it has to have. Without it the contract could say a part
+   * may be a listbox and never say that it is one.
+   */
+  readonly roles?: Readonly<Record<string, string>>;
   /** States this widget's parts may be in, over and above {@link SHARED_STATES}. */
   readonly states?: Readonly<Record<string, readonly MdyStateName[]>>;
   /**
@@ -200,6 +208,27 @@ const SHARED_STATES: Readonly<Record<string, readonly MdyStateName[]>> = Object.
  * emitted. The root is the exception, because every root carries `mdy-renderer` whatever else it
  * also carries.
  */
+/**
+ * The role a part must carry: the kind's own declaration, then the shared table, then the role the
+ * overlay relation already names for an opener — derived rather than restated, so the two cannot
+ * disagree.
+ */
+function roleFor(kind: MdyWidgetKind, name: string, shape: MdyWidgetShape): string | undefined {
+  const own = shape.roles?.[name];
+  if (own) return own;
+  if (MDY_POPUP_OPENERS[kind]?.opener === name) return MDY_POPUP_OPENERS[kind]?.role;
+  return SHARED_ROLES[name];
+}
+
+/**
+ * Roles that mean the same thing on every kind that has the part.
+ *
+ * Empty today. The error list looked like the obvious member and is not one: it is a `<ul>`, and
+ * `role="alert"` would replace its list semantics rather than add urgency to them. It announces
+ * through `aria-live` instead, which is an attribute and not this table's business.
+ */
+const SHARED_ROLES: Readonly<Record<string, string>> = Object.freeze({});
+
 function statesFor(name: string, shape: MdyWidgetShape): readonly MdyStateName[] {
   const own = shape.states?.[name];
   if (own) return own;
@@ -294,7 +323,7 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
     // A widget's own states replace the shell's rather than adding to them, so a part that means
     // something different here — a multiselect's `inputWrapper`, which is the chip grid — is not
     // silently given states it cannot be in.
-    part(name === "root" ? rootClasses : shape.classes?.[name] ?? SHELL_CLASS_FALLBACK[name] ?? [], {}, statesFor(name, shape)),
+    part(name === "root" ? rootClasses : shape.classes?.[name] ?? SHELL_CLASS_FALLBACK[name] ?? [], {}, statesFor(name, shape), roleFor(kind, name, shape)),
   ])) as Record<TPart, MdyPartContract>;
   const declared = new Set<string>(partNames);
   const siblingCount = new Map<string, number>();
@@ -406,9 +435,11 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // behind a label's pseudo-element.
   checkbox: define("checkbox", ["mdy-renderer", "mdy-renderer--checkbox"], ["root", "inputWrapper", "control", "indicator", "label", "requiredMarker", "supportingText", "errors", "errorItem"] as const, false,
     { parents: { label: "inputWrapper", indicator: "inputWrapper" }, elements: { label: "text" }, classes: { inputWrapper: ["mdy-checkbox"], control: ["mdy-checkbox__control"], indicator: ["mdy-checkbox__indicator"], label: [MDY_FIELD_SHELL_CLASSES.label], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } ,
+      roles: { control: "checkbox" } ,
       required: ["indicator"] }),
   toggle: define("toggle", ["mdy-renderer", "mdy-renderer--toggle"], ["root", "inputWrapper", "control", "track", "thumb", "label", "requiredMarker", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { parents: { label: "inputWrapper" }, elements: { label: "text" }, classes: { inputWrapper: ["mdy-toggle"], control: ["mdy-toggle__control"], track: ["mdy-toggle__track"], thumb: ["mdy-toggle__thumb"], label: ["mdy-toggle__label"], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } ,
+      roles: { control: "switch" } ,
       required: ["thumb"] }),
   radio: define("radio", ["mdy-renderer", "mdy-renderer--radio-group"], ["root", "label", "requiredMarker", "group", "option", "optionControl", "optionLabel", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { group: ["mdy-radio-group"], option: ["mdy-radio-item"], optionControl: ["mdy-radio-circle"], optionLabel: ["mdy-radio-label"] },
@@ -416,6 +447,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // is the accessible pattern and what every adapter emits; the ARIA `option` role belongs to a
       // listbox, which this is not.
       elements: { option: "label" },
+      roles: { group: "radiogroup" } ,
       states: { group: ["horizontal"], option: ["disabled"] } ,
       required: ["option", "optionControl", "optionLabel"] }),
   segmented: define("segmented", ["mdy-renderer", "mdy-renderer--segmented"], ["root", "label", "requiredMarker", "group", "option", "optionCheck", "optionText", "supportingText", "errors", "errorItem"] as const, false,
@@ -427,6 +459,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // without breaking the other today. Task 16 (renderer equivalence) decides which; until it
       // does, declaring "either" honestly beats asserting a shape only one adapter meets.
       elements: { option: "presentation" },
+      roles: { group: "radiogroup" } ,
       states: { option: ["selected"] } ,
       presentation: ["mdy-segmented__button--first", "mdy-segmented__button--last"] ,
       required: ["option", "optionCheck", "optionText"] }),
@@ -435,6 +468,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // `selected` is the value; `active` is where the keyboard is. They are genuinely different —
       // arrowing through a list moves `active` without changing what is chosen — and a renderer that
       // conflated them would make the list unnavigable for anyone not using a pointer.
+      roles: { listbox: "listbox", option: "option" } ,
       states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], listbox: ["open"], option: ["selected", "active", "hidden"], popup: POPUP_PLACEMENT_STATES } ,
       presentation: ["mdy-select", "mdy-select__option-label"] ,
       required: ["arrow", "placeholder"] }),
@@ -471,11 +505,13 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       required: ["header", "option", "optionLabel", "options", "searchButton"] }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { control: ["mdy-datepicker__input"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] },
+      roles: { grid: "grid", row: "row", weekdays: "row", weekday: "columnheader", gridcell: "gridcell" } ,
       states: { gridcell: CALENDAR_CELL_STATES, popup: POPUP_PLACEMENT_STATES } ,
       presentation: ["mdy-datepicker", "mdy-datepicker__action-btn", "mdy-datepicker__action-btn--primary", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle"] ,
       required: ["toggle", "calendar"] }),
   daterange: define("daterange", ["mdy-renderer", "mdy-renderer--datepicker", "mdy-renderer--daterange"], ["root", "label", "requiredMarker", "inputWrapper", "startControl", "separator", "endControl", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { startControl: ["mdy-datepicker__input", "mdy-daterange__input"], endControl: ["mdy-datepicker__input", "mdy-daterange__input"], separator: ["mdy-daterange__sep"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS, "mdy-datepicker__popup--range"], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] },
+      roles: { grid: "grid", row: "row", weekdays: "row", weekday: "columnheader", gridcell: "gridcell" } ,
       states: { gridcell: CALENDAR_CELL_STATES, popup: POPUP_PLACEMENT_STATES } ,
       presentation: ["mdy-datepicker", "mdy-datepicker__action-btn", "mdy-datepicker__action-btn--primary", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle", "mdy-daterange__group", "mdy-daterange__hint", "mdy-daterange__input-sizer"] ,
       required: ["separator", "toggle", "calendar"] }),
@@ -514,6 +550,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // The native input is therefore a sibling under the wrapper rather than a child of the
       // picker: where it sits is a rendering choice, that it exists is the contract.
       elements: { nativePicker: "affordance" },
+      roles: { presets: "listbox", swatch: "option" } ,
       states: { swatch: ["active"], popup: POPUP_PLACEMENT_STATES },
       classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,
       presentation: ["mdy-colors", "mdy-colors__dropdown-header", "mdy-select__arrow"] ,

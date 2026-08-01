@@ -112,7 +112,10 @@ export function projectFieldShellA11y(
       id: errorId,
       classes: [MDY_FIELD_SHELL_CLASSES.errors],
       attributes: {
-        role: "alert",
+        // A live region and nothing more. This used to carry `role="alert"` as well, which replaced
+        // the list semantics of the <ul> it sits on — axe reports every <li> inside such a list as an
+        // orphaned list item, and a screen reader sees the same thing. `aria-live` already announces
+        // the list when it appears, so the role added nothing and cost the structure.
         "aria-live": "polite",
       },
     },

@@ -243,7 +243,6 @@ export abstract class MdyFieldElement<T> extends LitElement {
     return html`<ul
       class="${SHELL.errors}"
       id=${this.errorsId}
-      role="alert"
       aria-live="polite"
     >
       ${handle.errors().map(

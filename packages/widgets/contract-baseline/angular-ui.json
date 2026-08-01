@@ -889,8 +889,7 @@
         "aria-disabled",
         "aria-invalid",
         "aria-label",
-        "aria-pressed",
-        "aria-required"
+        "aria-pressed"
       ],
       "selectors": [
         "mdy-control-multiselect"
