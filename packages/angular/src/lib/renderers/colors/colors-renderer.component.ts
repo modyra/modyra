@@ -1,3 +1,4 @@
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgClass, NgTemplateOutlet } from "@angular/common";
 import {
   ChangeDetectionStrategy,
@@ -7,7 +8,7 @@ import {
   input,
 } from "@angular/core";
 
-import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, popupPlacementClass } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -19,7 +20,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
 @Component({
   selector: "mdy-control-colors",
   standalone: true,
-  imports: [
+  imports: [MdyPartDirective, 
     NgClass,
     NgTemplateOutlet,
     MdyControlLabelComponent,
@@ -55,7 +56,6 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             type="button"
             class="mdy-colors__primary-picker"
             [disabled]="isDisabled()"
-            [attr.aria-expanded]="open()"
             aria-haspopup="dialog"
             [attr.aria-label]="i18n.colorPresetsHeader"
             (click)="toggleOverlay($event); $event.stopPropagation()"
@@ -111,6 +111,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
           <button
             type="button"
             class="mdy-input-suffix mdy-colors__toggle-area"
+            [mdyPart]="openerPart()"
             [disabled]="isDisabled()"
             [attr.aria-expanded]="open()"
             aria-haspopup="listbox"
@@ -135,6 +136,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
       >
         <div
           class="mdy-colors__dropdown mdy-popup mdy-overlay"
+          [id]="popupId()"
           [ngClass]="placementClass()"
         >
           <div class="mdy-colors__dropdown-header" aria-hidden="true">{{ i18n.colorPresetsHeader }}</div>
@@ -185,6 +187,14 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   ]);
 
   protected readonly fieldId = `mdy-control-colors-${MdyBaseControl.nextId()}`;
+
+  /** The id the opener names, which the projected panel has to carry. */
+  protected readonly popupId = computed(() => overlayControlledId("colors", this.fieldId) ?? "");
+
+  /** The relation between this widget's opener and the overlay it opens. */
+  protected readonly openerPart = computed(
+    () => projectOverlayOpenerA11y("colors", { widgetId: this.fieldId, open: this.open() })!,
+  );
   protected readonly hexInputId = `${this.fieldId}-hex`;
 
   /**

@@ -548,6 +548,7 @@
         "mdy-input-wrapper__inliner",
         "mdy-overlay",
         "mdy-overlay-panel",
+        "mdy-part",
         "mdy-popup",
         "mdy-renderer",
         "mdy-renderer--colors",
@@ -716,6 +717,7 @@
         "mdy-input-wrapper",
         "mdy-input-wrapper--disabled",
         "mdy-overlay-panel",
+        "mdy-part",
         "mdy-popup",
         "mdy-range-calendar",
         "mdy-renderer",
@@ -727,7 +729,6 @@
       "aria": [
         "aria-describedby",
         "aria-disabled",
-        "aria-expanded",
         "aria-haspopup",
         "aria-hidden",
         "aria-invalid",
