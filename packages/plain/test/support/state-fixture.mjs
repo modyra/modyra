@@ -103,11 +103,6 @@ export function mount(kind, { validators = true } = {}) {
     parts: () => partsOf(root, kind),
     control: () => controlOf(root),
     value: () => handle.value(),
-    // A popup lifted out of the widget's subtree is still the widget's. A snapshot that could not
-    // reach it would call every portalled overlay absent.
-    portalRoots: () => Array.from(document.body.children).filter(
-      (element) => !host.contains(element) && element.querySelector?.("[class*='__dropdown']"),
-    ),
     // Plain's effects land on a task rather than synchronously.
     settle: () => new Promise((resolve) => setTimeout(resolve, 20)),
     dispose: () => { mounted.dispose(); host.remove(); },
