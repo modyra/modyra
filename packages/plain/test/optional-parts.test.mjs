@@ -91,3 +91,40 @@ test("a text field with no affixes renders neither", async () => {
   assert.equal(root.querySelector(".mdy-input-prefix"), null);
   assert.equal(root.querySelector(".mdy-input-suffix"), null);
 });
+
+/* ── Counter mode ───────────────────────────────────────────────────────────────
+ * `optionStep` and `optionCount` exist only on a multiselect in `"multi"` mode, where an option can
+ * be taken several times. Every fixture used the default toggle mode, so the two parts were declared
+ * and checked nowhere.
+ */
+test("a counter-mode multiselect renders its steppers and count, and conforms", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  mountMdyForm(host, [{
+    name: "tags", kind: "multiselect", label: "Tags", mode: "multi",
+    options: [{ value: "a", label: "A" }, { value: "b", label: "B" }],
+  }], { submitLabel: null });
+  await settle();
+
+  const root = host.querySelector('[data-mdy-field="tags"]');
+  assert.ok(root.querySelector(".mdy-chip__btn"), "no step button rendered");
+  assert.ok(root.querySelector(".mdy-chip__count"), "no count rendered");
+
+  const parts = partsOf(root, "multiselect");
+  const issues = inspectWidgetDom(root, "multiselect", {
+    parts: {
+      ...parts,
+      // A repeated part is mapped with every element it rendered: mapping one of several makes each
+      // of the others' children look mis-parented.
+      optionWrapper: Array.from(root.querySelectorAll(".mdy-chip-wrapper")),
+      option: Array.from(root.querySelectorAll(".mdy-chip")),
+      optionLabel: Array.from(root.querySelectorAll(".mdy-chip__label")),
+      optionStep: Array.from(root.querySelectorAll(".mdy-chip__btn")),
+      optionCount: Array.from(root.querySelectorAll(".mdy-chip__count")),
+    },
+    absentParts: ["chips", "chip", "placeholder", "loading", "empty", "optionCheck"],
+    strictClasses: true,
+    adapterPrefix: "mdy-plain-",
+  });
+  assert.deepEqual(issues, []);
+});
