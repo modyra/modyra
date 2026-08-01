@@ -110,3 +110,36 @@ export const MDY_WIDGET_RELATIONS: Readonly<Record<MdyWidgetKind, readonly MdyWi
 export const MDY_LABELABLE_TAGS: readonly string[] = Object.freeze([
   "button", "input", "meter", "output", "progress", "select", "textarea",
 ]);
+
+/**
+ * How a part comes by its accessible name.
+ *
+ * Dimension 2's remaining half. `element` says what a part *is* and the relations say what it points
+ * at; this says how a screen reader is supposed to announce it.
+ */
+export type MdyAccessibleNameSource =
+  /** The host language does it: a `<label for>`, or a label wrapping the control. */
+  | "native"
+  /** `aria-labelledby`, naming a part that carries the text. */
+  | "labelledby"
+  /** `aria-label`, because there is no visible text to point at. An icon-only button, a palette. */
+  | "label";
+
+/**
+ * Semantics that must carry a name whatever kind they appear on.
+ *
+ * A rule rather than a table per kind, because the requirement comes from what the element *is*: a
+ * listbox, a grid or a dialog with no name is announced as an unlabelled container, and the user has
+ * to guess what they have landed in. Which mechanism supplies it is the renderer's to choose — the
+ * text is the renderer's to translate — but that it has one is not optional.
+ */
+export const MDY_SEMANTICS_REQUIRING_NAME: readonly string[] = Object.freeze([
+  "listbox", "dialog", "grid",
+]);
+
+/** The parts of a kind that must be announced with a name of their own. */
+export function partsRequiringName(kind: MdyWidgetKind): readonly string[] {
+  return MDY_WIDGET_CONTRACTS[kind].structure.nodes
+    .filter((node) => MDY_SEMANTICS_REQUIRING_NAME.includes(node.element))
+    .map((node) => node.part);
+}

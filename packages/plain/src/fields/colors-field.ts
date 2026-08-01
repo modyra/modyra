@@ -78,6 +78,9 @@ export function renderColorsField(
   const presetList = el("div") as HTMLDivElement;
   applyPart(presetList, definition.parts.presets);
   presetList.setAttribute("role", "listbox");
+  // A listbox with no name is announced as an unlabelled container, and the user has to guess what
+  // they have landed in.
+  presetList.setAttribute("aria-label", "Colour presets");
   popup.append(presetList);
 
   const swatches = presets.map((preset) => {
