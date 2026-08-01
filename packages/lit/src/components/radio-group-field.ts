@@ -53,6 +53,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
         class="${this.partClass("group")} ${this.layout === "horizontal" ? "mdy-radio-group--horizontal" : ""}"
         role="radiogroup"
         aria-labelledby=${this.label ? this.labelId : nothing}
+        aria-describedby=${groupAttrs?.["aria-describedby"] ?? nothing}
         aria-invalid=${groupAttrs?.["aria-invalid"] ?? (handle.errors().length > 0 ? "true" : "false")}
         aria-required=${groupAttrs?.["aria-required"] ?? (handle.required() ? "true" : "false")}
       >

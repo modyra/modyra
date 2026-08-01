@@ -6,6 +6,7 @@
  * harness, in jsdom, in a browser — is held to the same gate.
  */
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
+import { MDY_LABELABLE_TAGS, MDY_WIDGET_RELATIONS } from "../relations.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_STATE_MODIFIERS } from "../state.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_SHARED_UI_CLASSES } from "../structure.js";
@@ -29,6 +30,9 @@ export type MdyDomContractIssueCode =
   | "ID_DUPLICATE"
   | "PART_NOT_OWNED"
   | "ARIA_NON_STRING_STATE"
+  | "RELATION_MISSING"
+  | "RELATION_WRONG_TARGET"
+  | "RELATION_NOT_LABELABLE"
   | "INVENTED_CLASS"
   | "STRUCTURE";
 
@@ -518,6 +522,65 @@ export function inspectWidgetDom(
         part: openerPart,
         message: `${openerPart} opens the ${kind} popup and must carry aria-controls naming it`,
       });
+    }
+  }
+
+  // Every relation the kind declares, checked against what was rendered.
+  //
+  // The direction that matters is the missing one: a part carrying no reference at all has nothing
+  // to dangle, so a field whose errors reach no assistive technology was indistinguishable from one
+  // with no errors. A relation is required exactly when both ends are on screen.
+  for (const relation of MDY_WIDGET_RELATIONS[kind]) {
+    const carriers = resolved.get(relation.from) ?? [];
+    if (carriers.length === 0) continue;
+    // Any of the declared targets, not the first: which one a reference names is a runtime decision
+    // the contract leaves open on purpose. `aria-describedby` points at the error list while there
+    // are errors to read and at the supporting text otherwise, and the error list is in the document
+    // either way — so "the first one rendered" would demand it name an empty list.
+    const candidates = relation.to
+      .map((part) => ({ part, elements: resolved.get(part) ?? [] }))
+      .filter((candidate) => candidate.elements.length > 0);
+    if (candidates.length === 0) continue;
+    const target = { part: relation.to.join(" or "), elements: candidates.flatMap((c) => c.elements) };
+
+    const carrier = carriers[0]!;
+    const reference = carrier.getAttribute(relation.attribute);
+    if (!reference) {
+      issues.push({
+        code: "RELATION_MISSING",
+        part: relation.from,
+        message: `${relation.from} must name ${target.part} with ${relation.attribute}`,
+      });
+      continue;
+    }
+
+    const named: Element[] = [];
+    for (const id of reference.split(/\s+/).filter(Boolean)) {
+      const element = document_?.getElementById(id);
+      if (element) named.push(element);
+    }
+    if (named.length > 0 && !named.some((element) => target.elements.some(
+      (expected) => expected === element || expected.contains(element) || element.contains(expected),
+    ))) {
+      issues.push({
+        code: "RELATION_WRONG_TARGET",
+        part: relation.from,
+        message: `${relation.from} names ${reference} with ${relation.attribute}, not the ${target.part}`,
+      });
+    }
+
+    // `label[for]` resolves only to a labelable element. Naming anything else is markup the browser
+    // ignores, so the label neither names the control nor moves focus to it.
+    if (relation.attribute === "for") {
+      for (const element of named) {
+        if (!MDY_LABELABLE_TAGS.includes(element.tagName.toLowerCase())) {
+          issues.push({
+            code: "RELATION_NOT_LABELABLE",
+            part: relation.from,
+            message: `label[for] names a <${element.tagName.toLowerCase()}>, which is not labelable`,
+          });
+        }
+      }
     }
   }
 

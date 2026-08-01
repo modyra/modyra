@@ -22,12 +22,12 @@ function el(tag, className, attributes = {}) {
 /** A conforming text field: shell classes, ordered parts, a resolvable aria-describedby. */
 function buildTextField({ errorId = "f1-errors" } = {}) {
   const root = el("div", "mdy-renderer mdy-renderer--text");
-  const label = el("label", "mdy-label");
+  const label = el("label", "mdy-label", { for: "f1-control" });
   const marker = el("span", "mdy-label__required");
   label.append(marker);
   const wrapper = el("div", "mdy-input-wrapper");
   const inliner = el("div", "mdy-input-wrapper__inliner");
-  const control = el("input", null, { "aria-describedby": errorId, "aria-invalid": "true" });
+  const control = el("input", null, { id: "f1-control", "aria-describedby": errorId, "aria-invalid": "true" });
   inliner.append(control);
   wrapper.append(inliner);
   const supporting = el("p", "mdy-supporting-text");

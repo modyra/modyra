@@ -69,7 +69,7 @@ function textField({ id = `t${(fixtureSeq += 1)}` } = {}) {
 
 function dateRange({ id = `d${(fixtureSeq += 1)}` } = {}) {
   const root = el("div", "mdy-renderer mdy-renderer--datepicker mdy-renderer--daterange");
-  const label = el("label", "mdy-label");
+  const label = el("label", "mdy-label", { for: `${id}-start` });
   const wrapper = el("div", "mdy-input-wrapper");
   const startControl = el("input", "mdy-datepicker__input mdy-daterange__input", { id: `${id}-start` });
   const separator = el("span", "mdy-daterange__sep");
@@ -98,7 +98,7 @@ function dateRange({ id = `d${(fixtureSeq += 1)}` } = {}) {
 
 function selectField({ id = `s${(fixtureSeq += 1)}`, optionCount = 3 } = {}) {
   const root = el("div", "mdy-renderer mdy-renderer--select");
-  const label = el("label", "mdy-label");
+  const label = el("label", "mdy-label", { for: `${id}-trigger` });
   const wrapper = el("div", "mdy-input-wrapper");
   const trigger = el("button", "mdy-select__trigger", {
     id: `${id}-trigger`, role: "combobox", "aria-controls": `${id}-popup`, "aria-expanded": "true",

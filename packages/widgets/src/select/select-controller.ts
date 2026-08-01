@@ -35,6 +35,8 @@ export interface MdySelectController<TValue>
   setInvalid(invalid: boolean): void;
   /** Update the loading state. */
   setLoading(loading: boolean): void;
+  /** Which of the field's descriptions are on screen, so the trigger names one that exists. */
+  setDescribedBy(next: { errorsVisible?: boolean; descriptionVisible?: boolean }): void;
 }
 
 export function createSelectController<TValue>(
@@ -96,6 +98,10 @@ export function createSelectController<TValue>(
   const touched = reactivity.signal(false);
   const dirty = reactivity.signal(false);
   const loading = reactivity.signal(initialLoading);
+  // What the trigger may describe itself by. The renderer owns the answer because it owns whether
+  // the elements are on screen; the default is the resting field — a description and no errors.
+  const errorsVisible = reactivity.signal(false);
+  const descriptionVisible = reactivity.signal(true);
 
   const state: MdySignal<MdySelectState<TValue>> = reactivity.computed(() => ({
     open: open(),
@@ -127,6 +133,8 @@ export function createSelectController<TValue>(
       loading: loading(),
       idFactory,
       visibleKeys: visibleKeys(q),
+      errorsVisible: errorsVisible(),
+      descriptionVisible: descriptionVisible(),
     });
 
     const parts: Record<string, ReturnType<typeof a11y.option>> = {};
@@ -299,6 +307,11 @@ export function createSelectController<TValue>(
     invalid.set(nextInvalid);
   }
 
+  function setDescribedBy(next: { errorsVisible?: boolean; descriptionVisible?: boolean }): void {
+    if (next.errorsVisible !== undefined) errorsVisible.set(next.errorsVisible);
+    if (next.descriptionVisible !== undefined) descriptionVisible.set(next.descriptionVisible);
+  }
+
   function setLoading(nextLoading: boolean): void {
     loading.set(nextLoading);
   }
@@ -318,6 +331,7 @@ export function createSelectController<TValue>(
     setReadonly,
     setInvalid,
     setLoading,
+    setDescribedBy,
     destroy,
   };
 }
