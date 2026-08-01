@@ -53,10 +53,17 @@ const LABEL_TARGET: Readonly<Record<string, string>> = Object.freeze({
   // radio and segmented are groups, named below.
 });
 
-/** The part that describes itself by the field's errors or supporting text. */
+/**
+ * The part that describes itself by the field's errors or supporting text.
+ *
+ * The same part the label names, wherever the kind has one: a field cannot have its name on one
+ * element and its description on another and still be one control to a screen reader. `colors` said
+ * `control` here and `hexInput` above — `control` is the native picker, which renderers are free to
+ * make unfocusable, so the description hung off an element the user cannot reach.
+ */
 const DESCRIBED_BY_CARRIER: Readonly<Record<string, string>> = Object.freeze({
   text: "control", email: "control", password: "control", textarea: "control",
-  number: "control", slider: "control", file: "control", colors: "control",
+  number: "control", slider: "control", file: "control", colors: "hexInput",
   checkbox: "control", toggle: "control",
   datepicker: "control", timepicker: "control",
   daterange: "startControl",
