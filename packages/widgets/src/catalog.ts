@@ -46,7 +46,7 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
  * Carried by a popup that a renderer lifts out of its field and positions against the viewport,
  * alongside {@link MDY_POPUP_CLASS}. The container is the same either way; this only says the
  * coordinates are viewport coordinates, which is what a portalled popup needs and a projected one
- * (Angular's CDK panel) must not have.
+ * that a panel positioned by its host, in its own coordinate space, must not have.
  */
 export const MDY_OVERLAY_PORTAL_CLASS = "mdy-overlay";
 
@@ -74,8 +74,8 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
   prefix: ["inputWrapper"], suffix: ["inputWrapper"],
   control: ["dropzone", "inputWrapper", "track"], startControl: ["inputWrapper"], endControl: ["inputWrapper"], separator: ["inputWrapper"],
   decrement: ["inputWrapper"], increment: ["inputWrapper"], trigger: ["inputWrapper"], toggle: ["inputWrapper"],
-  // The arrow may be drawn inside a button trigger (Angular, Lit) or beside an input one (Plain);
-  // what the contract requires is that it lives in the wrapper, and containment is transitive.
+  // The arrow may be drawn inside a button trigger or beside an input one; what the contract
+  // requires is that it lives in the wrapper, and containment is transitive.
   arrow: ["inputWrapper", "trigger"], value: ["trigger", "inputWrapper"], placeholder: ["trigger", "inputWrapper"],
   track: ["inputWrapper"], thumb: ["track"], chips: ["trigger"], chip: ["chips"], searchButton: ["trigger"],
   group: [], option: ["optionWrapper", "listbox", "options", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"], optionCount: ["option"], optionStep: ["option"],
@@ -413,9 +413,9 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       required: ["option", "optionControl", "optionLabel"] }),
   segmented: define("segmented", ["mdy-renderer", "mdy-renderer--segmented"], ["root", "label", "requiredMarker", "group", "option", "optionCheck", "optionText", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { group: ["mdy-segmented"], option: ["mdy-segmented__button"], optionCheck: ["mdy-segmented__check"], optionText: ["mdy-segmented__text"] },
-      // Left unconstrained, and that is a finding rather than a preference. Plain renders each
-      // choice as a <label> around an <input type=radio>, the same native pattern as radio; Angular
-      // renders a <button>. Both are defensible — a radiogroup, or a toolbar of pressed buttons —
+      // Left unconstrained, and that is a finding rather than a preference. A choice may be a
+      // <label> around an <input type=radio>, the same native pattern as radio, or a <button>.
+      // Both are defensible — a radiogroup, or a toolbar of pressed buttons —
       // but they are not the same control to a screen reader, and the contract cannot require one
       // without breaking the other today. Task 16 (renderer equivalence) decides which; until it
       // does, declaring "either" honestly beats asserting a shape only one adapter meets.
@@ -431,10 +431,10 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], listbox: ["open"], option: ["selected", "active", "hidden"], popup: POPUP_PLACEMENT_STATES } ,
       presentation: ["mdy-select", "mdy-select__option-label"] ,
       required: ["arrow", "placeholder"] }),
-  // The option chips use the chip vocabulary the Angular renderer established — `mdy-chip` with a
-  // check, a label and, in counter mode, the two step buttons and a count. That vocabulary is the
-  // contract, which is what makes an option look the same whichever renderer drew it.
-  // Angular's anatomy, which is the reference: the options are chips in a grid *in the field*, and
+  // The option chips use the shared chip vocabulary — `mdy-chip` with a check, a label and, in
+  // counter mode, the two step buttons and a count. That vocabulary is the contract, which is what
+  // makes an option look the same whichever renderer drew it.
+  // The anatomy: the options are chips in a grid *in the field*, and
   // the header's search button opens a popup holding the same grid over a filter box. A trigger
   // showing value chips (`chips`/`chip`/`placeholder`) is the compact alternative, so those parts
   // stay declared and optional. Which classes a chip carries is `multiselectChipClasses`, never a

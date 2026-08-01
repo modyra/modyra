@@ -1,12 +1,13 @@
 /**
- * Headless multiselect field controller. Modeled on Angular's real, working
- * `MdyMultiselectComponent` (packages/angular/src/lib/renderers/multiselect)
- * — same `"single"`/`"multi"` selection semantics and the same shared
- * `filterOptionsByQuery` search logic that renderer already reuses from
- * select — ported into the `MdyFieldHandle`-driven shape every controller
- * in this package follows (see option-field-controller.ts), since Angular's
- * own component wires its field state through its own two-hop adapter
- * indirection rather than a portable handle.
+ * Headless multiselect field controller.
+ *
+ * Two selection semantics over one value, which is always an array. `"single"` is a toggle-set: an
+ * option is in or out. `"multi"` lets the same option be taken more than once, so the value carries
+ * repeats and the chip shows a count.
+ *
+ * Searching narrows what the host renders rather than what the field holds: `filteredOptions` is the
+ * list to draw once a query exists, and the selection survives a query that hides it. The filter is
+ * `filterOptionsByQuery`, shared with select so one search behaves the same in both.
  */
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
@@ -25,7 +26,9 @@ import type {
 
 export interface MdyMultiselectFieldController<TValue>
   extends MdyWidgetController<MdyMultiselectFieldState<TValue>, MdyMultiselectFieldIntent> {
-  /** Options remaining after `state().query` filters them (same `filterOptionsByQuery` search Angular's own multiselect/select renderers already share) — the host renders this list, not the full `options` array, once a search intent has narrowed it. */
+  /** Options remaining after `state().query` filters them, through the `filterOptionsByQuery`
+   * search shared with select. Once a search intent has narrowed the list, the host renders this
+   * rather than the full `options` array. */
   readonly filteredOptions: MdySignal<readonly MdySelectOption<TValue>[]>;
   /** Set the selected values programmatically without producing a command. */
   setValue(values: ReadonlyArray<TValue>): void;
@@ -134,7 +137,7 @@ export function createMultiselectFieldController<TValue>(
     const visible = filteredOptions().some((candidate) => keyFor(candidate) === key);
     return {
       id: `${widgetId}__opt__${key}`,
-      // The chip vocabulary the Angular renderer established, projected once here so every
+      // The shared chip vocabulary, projected once here so every
       // renderer draws the same chip: `--centered` reserves the check's width in toggle mode,
       // `--counter` is the bag mode with its step buttons.
       classes: [

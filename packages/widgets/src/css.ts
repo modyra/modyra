@@ -7,9 +7,9 @@
  * renderer that spells one differently produces an element that is styled as if the number were
  * never supplied: a popup at the top-left of the screen, a one-column grid, an empty slider track.
  *
- * Until now every name was a string literal, and `--mdy-overlay-left` appeared as one in four
- * packages at once — `@modyra/widgets`, `@modyra/core`, `@modyra/angular` and `@modyra/lit`. Four
- * copies of a name is four chances to typo it and no way to find out that anyone did.
+ * Declared once, here. A property name written as a string literal wherever it is needed is a name
+ * with no single spelling: each copy is a chance to typo it, and a typo produces an element styled
+ * as if the number were never supplied rather than an error anyone can see.
  */
 
 /** Every `--mdy-*` property the contract defines, grouped by what writes it. */

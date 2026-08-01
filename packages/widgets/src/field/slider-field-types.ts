@@ -16,7 +16,7 @@
  * but cannot divide by a percentage to get that number back out of one.
  *
  * A range with no width has no fill: `max <= min` answers `0` rather than dividing by a nudged
- * denominator, which is Angular's answer and the one that degrades visibly instead of arbitrarily.
+ * denominator: an empty range degrades visibly instead of arbitrarily.
  * A value that is absent or not a number fills to the minimum — a slider that has not been touched
  * yet sits at its start, and never paints `NaN`. It takes `unknown` for that reason: a renderer
  * holds the field's value at its own width (`string | number`, often optional), and narrowing it

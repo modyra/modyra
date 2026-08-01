@@ -5,8 +5,8 @@
  * right in a named state — which parts it grew, what it exposes to assistive technology, and
  * whether the behaviour actually changed or only the ARIA claiming it did.
  *
- * Driving a renderer into a state is the adapter's job: Plain sets a property, Angular pushes a
- * signal, Lit sets an attribute, and no shared helper can do all three honestly. What is shared is
+ * Driving a renderer into a state is the adapter's job: one sets a property, another pushes a
+ * signal, a third sets an attribute, and no shared helper can do all three honestly. What is shared is
  * the *judgement* — every adapter drives its own control and then hands the DOM here. Task 16's
  * cross-renderer equivalence is meant to be built on exactly this split.
  */

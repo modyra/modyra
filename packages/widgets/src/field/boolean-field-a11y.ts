@@ -87,8 +87,8 @@ export function projectBooleanFieldA11y(
       id: inputId,
       classes: [],
       attributes: {
-        // A switch is a checkbox input with `role="switch"`, exactly as the Angular renderer
-        // writes it — dropping the type would leave a text input behind.
+        // A switch is a checkbox input carrying `role="switch"`. Dropping the type would leave a
+        // text input behind.
         type: "checkbox",
         role: isSwitch ? "switch" : "checkbox",
         checked: state.checked,

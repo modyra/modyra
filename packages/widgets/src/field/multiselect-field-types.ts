@@ -1,10 +1,10 @@
 /**
- * Multiselect field widget types. Modeled on Angular's real, working
- * `MdyMultiselectComponent` (packages/angular/src/lib/renderers/multiselect):
- * value is a plain array, not a Set, and the widget supports the same two
- * selection semantics Angular's does — `"single"` (a toggle-set: each
- * option is either in the array or not) and `"multi"` (a counter/bag:
- * incrementing an already-selected option appends another array entry).
+ * Multiselect field widget types.
+ *
+ * The value is an array rather than a Set, because order is part of it and the same option may
+ * appear more than once. Two selection semantics use that: `"single"` is a toggle-set — an option is
+ * in the array or not — and `"multi"` is a bag, where taking an already-taken option appends another
+ * entry and the chip shows how many.
  */
 import type { MdyInteractivity } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";

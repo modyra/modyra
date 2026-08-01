@@ -1,8 +1,10 @@
 /**
- * Accessibility projection for the multiselect field widget. Angular's real
- * `MdyMultiselectComponent` intentionally uses a chip-group a11y pattern
- * (`role="group"` + `aria-pressed` on toggle chips), not listbox/option
- * semantics — this mirrors that choice rather than inventing a new one.
+ * Accessibility projection for the multiselect field widget.
+ *
+ * The options are a group of toggle buttons — `role="group"` with `aria-pressed` on each chip — not
+ * a listbox. A listbox announces "N of M selected" and expects a single roving focus through a list
+ * the user opens; these chips are all on screen at once and each is independently on or off, which
+ * is what a pressed toggle already means.
  */
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import { blocksFocus } from "../interactivity.js";
