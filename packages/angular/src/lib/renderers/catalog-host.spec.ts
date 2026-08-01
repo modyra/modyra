@@ -21,6 +21,7 @@ import { MdyDeclarativeAdapter } from "../core/declarative-form-adapter";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyPrefixDirective } from "../control/prefix.directive";
 import { MdySuffixDirective } from "../control/suffix.directive";
+import { MdyMinDirective } from "../validators/directives/mdy-min.directive";
 import { MdyRequiredDirective } from "../validators/directives/mdy-required.directive";
 import { MdyCheckboxComponent } from "./checkbox/checkbox-renderer.component";
 import { MdyNumberComponent } from "./number/number-renderer.component";
@@ -83,7 +84,7 @@ export const CATALOG_KINDS: ReadonlyArray<{
     MdyRadioGroupComponent, MdySegmentedButtonComponent,
     MdySelectComponent, MdyMultiselectComponent, MdyDatePickerComponent,
     MdyDateRangePickerComponent, MdyTimepickerComponent, MdyFileComponent, MdyColorsComponent,
-    MdyRequiredDirective, MdyPrefixDirective, MdySuffixDirective,
+    MdyRequiredDirective, MdyMinDirective, MdyPrefixDirective, MdySuffixDirective,
   ],
   template: `
     <mdy-form [adapter]="adapter">
@@ -95,7 +96,9 @@ export const CATALOG_KINDS: ReadonlyArray<{
       <mdy-control-number name="age" label="Age" mdyRequired />
       <mdy-control-checkbox name="terms" label="Terms" mdyRequired />
       <mdy-control-toggle name="news" label="News" mdyRequired />
-      <mdy-control-slider name="volume" label="Volume" mdyRequired />
+      <!-- A slider is never empty, so mdyRequired alone can never fail on one and its invalid row
+           would be green because the state is unreachable rather than because the renderer is right. -->
+      <mdy-control-slider name="volume" label="Volume" mdyRequired [mdyMin]="1" />
       <mdy-control-radio name="plan" label="Plan" [options]="options" mdyRequired />
       <mdy-control-segmented name="billing" label="Billing" [options]="options" mdyRequired />
       <mdy-control-text name="mail" label="Mail" type="email" mdyRequired />
