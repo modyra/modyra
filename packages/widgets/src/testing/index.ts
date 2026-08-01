@@ -11,3 +11,5 @@ export { collectStateMatrix, normalizeStateLedger } from "./state-matrix.js";
 export type { MdyStateFixture, MdyStateMatrixOptions, MdyStateMatrixResult, MdyStateMatrixRow } from "./state-matrix.js";
 export type { MdyStateInspectOptions, MdyStateIssue, MdyStateIssueCode } from "./state-tests.js";
 export type { MdyStructureContractIssue } from "./structure-tests.js";
+export { canonicalWidgetSnapshot, compareToCanonical, MDY_CANONICAL_AT_REST } from "./canonical.js";
+export type { MdyCanonicalExpectation, MdyCanonicalOptions, MdyCanonicalOverlay, MdyCanonicalPart, MdyCanonicalRelationship, MdyCanonicalSnapshot } from "./canonical.js";
