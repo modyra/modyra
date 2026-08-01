@@ -8,7 +8,8 @@
  */
 import type { MdyPartContract } from "./contract.js";
 
-const BASE_CLASS_MARKER = "__mdyPartBaseClasses";
+/** The classes this applier put on an element last time, so it can take back only its own. */
+const OWNED_CLASSES = "__mdyPartClasses";
 
 /**
  * Applies an {@link MdyPartContract} — classes, styles, id, role, attributes — to an element,
@@ -17,21 +18,19 @@ const BASE_CLASS_MARKER = "__mdyPartBaseClasses";
  * Safe to re-run on every state change: it patches the same element rather than replacing it, so
  * focus and caret position survive.
  *
- * Classes set on the element at creation time are preserved. The first call records them, and every
- * later call rebuilds `class` from that baseline plus the contract's own — otherwise re-applying a
- * part would drop structural classes the contract does not know about.
+ * Only the classes the contract names are touched. An element's classes come from more than one
+ * place — written once at creation, toggled by a host binding on every change — and rewriting the
+ * whole attribute would drop the ones this does not own, silently and without breaking rendering.
+ * A contract naming no classes therefore leaves `class` untouched.
  */
 export function applyPart(node: HTMLElement, part: MdyPartContract): void {
-  const nodeWithMarker = node as HTMLElement & { [BASE_CLASS_MARKER]?: string };
-  if (nodeWithMarker[BASE_CLASS_MARKER] === undefined) {
-    nodeWithMarker[BASE_CLASS_MARKER] = node.className;
+  const owner = node as HTMLElement & { [OWNED_CLASSES]?: readonly string[] };
+  const next = part.classes.filter(Boolean);
+  for (const className of owner[OWNED_CLASSES] ?? []) {
+    if (!next.includes(className)) node.classList.remove(className);
   }
-  const base = nodeWithMarker[BASE_CLASS_MARKER];
-  // The baseline may already carry the canonical class the contract names, so dedupe rather than
-  // stack `mdy-label mdy-label`.
-  const classes = [...new Set([...(base ?? "").split(/\s+/), ...part.classes].filter(Boolean))];
-  if (classes.length > 0) node.className = classes.join(" ");
-  else node.removeAttribute("class");
+  for (const className of next) node.classList.add(className);
+  owner[OWNED_CLASSES] = next;
 
   for (const [property, value] of Object.entries(part.style ?? {})) {
     node.style.setProperty(property, value);
