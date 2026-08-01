@@ -1,3 +1,4 @@
+import { mdyPart } from "../mdy-part.js";
 import { html, nothing } from "lit";
 import { createBooleanFieldController, type MdyBooleanFieldController } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
@@ -34,8 +35,6 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
     const handle = this.field;
     if (!handle) return nothing;
     this.syncStateClasses(handle);
-    const input = this.fieldController?.view().parts.input;
-    const inputAttrs = input?.attributes;
     return html`
       <label class="${this.partClass("inputWrapper")}">
         <input
@@ -44,9 +43,7 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
           type="checkbox"
           .checked=${handle.value() === true}
           ?disabled=${handle.disabled()}
-          aria-invalid=${inputAttrs?.["aria-invalid"] ?? (handle.errors().length > 0 ? "true" : "false")}
-          aria-required=${inputAttrs?.["aria-required"] ?? (handle.required() ? "true" : "false")}
-          aria-describedby=${inputAttrs?.["aria-describedby"] ?? (this.showErrors(handle) ? this.errorsId : nothing)}
+          ${mdyPart(this.controlPart(handle))}
           @change=${(e: Event) => {
             if (this.fieldController) {
               this.fieldController.dispatch({ type: "toggle" });

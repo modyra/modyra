@@ -1,3 +1,4 @@
+import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { createFieldController, type MdyFieldController } from "@modyra/widgets";
@@ -43,8 +44,6 @@ export class MdyTextFieldElement extends MdyFieldElement<string | null> {
   }
 
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
-    const input = this.fieldController?.view().parts.input;
-    const inputAttrs = input?.attributes;
     return html`<input
       id=${this.fieldId}
       type=${this.type}
@@ -54,9 +53,7 @@ export class MdyTextFieldElement extends MdyFieldElement<string | null> {
       ?disabled=${handle.disabled()}
       ?readonly=${handle.readonly()}
       aria-readonly=${handle.readonly() ? "true" : nothing}
-      aria-invalid=${inputAttrs?.["aria-invalid"] ?? (handle.errors().length > 0 ? "true" : "false")}
-      aria-required=${inputAttrs?.["aria-required"] ?? (handle.required() ? "true" : "false")}
-      aria-describedby=${inputAttrs?.["aria-describedby"] ?? (this.showErrors(handle) ? this.errorsId : nothing)}
+      ${mdyPart(this.controlPart(handle))}
       @input=${(e: Event) => {
         const value = (e.target as HTMLInputElement).value;
         if (this.fieldController) {

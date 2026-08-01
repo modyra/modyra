@@ -1,3 +1,4 @@
+import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle } from "@modyra/core";
 import { addMonths, buildMonthGrid, type CalendarCell, type CalendarDate, compareDates, daysInMonth, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
@@ -640,9 +641,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               ?disabled=${handle.disabled()}
               aria-haspopup="dialog"
               aria-expanded=${this._open ? "true" : "false"}
-              aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-              aria-required=${handle.required() ? "true" : "false"}
-              aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
+              ${mdyPart(this.controlPart(handle))}
               aria-label=${`${baseLabel}Start date`}
               autocomplete="off"
               @change=${(e: Event) => {
@@ -669,9 +668,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               ?disabled=${handle.disabled()}
               aria-haspopup="dialog"
               aria-expanded=${this._open ? "true" : "false"}
-              aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-              aria-required=${handle.required() ? "true" : "false"}
-              aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
+              ${mdyPart(this.controlPart(handle))}
               aria-label=${`${baseLabel}End date`}
               autocomplete="off"
               @change=${(e: Event) => {

@@ -66,7 +66,7 @@
         "widgetHasRootClass",
         "mdy-control-label",
         "mdy-error-list",
-        "aria-describedby"
+        "mdyPart"
       ],
       "contractProjection": {
         "parts": [
@@ -74,7 +74,7 @@
           "MDY_WIDGET_CONTRACTS."
         ],
         "aria": [
-          "aria-describedby"
+          "mdyPart"
         ]
       }
     },
@@ -124,7 +124,7 @@
         "widgetHasRootClass",
         "role=\"radiogroup\"",
         "mdy-error-list",
-        "aria-describedby"
+        "mdyPart"
       ],
       "contractProjection": {
         "parts": [
@@ -133,7 +133,7 @@
         ],
         "aria": [
           "role=\"radiogroup\"",
-          "aria-describedby"
+          "mdyPart"
         ]
       }
     },
@@ -233,8 +233,7 @@
         "MDY_WIDGET_CONTRACTS.file",
         "widgetHasRootClass",
         "type=\"file\"",
-        "aria-invalid",
-        "aria-describedby",
+        "mdyPart",
         "fileClearSelection",
         "mdy-error-list"
       ],
@@ -244,8 +243,7 @@
           "MDY_WIDGET_CONTRACTS."
         ],
         "aria": [
-          "aria-invalid",
-          "aria-describedby"
+          "mdyPart"
         ]
       }
     },

@@ -39,7 +39,7 @@
         "widgetHasRootClass",
         "mdy-control-label",
         "mdy-error-list",
-        "aria-describedby"
+        "mdyPart"
       ]
     },
     "checkbox": {
@@ -68,7 +68,7 @@
         "widgetHasRootClass",
         "role=\"radiogroup\"",
         "mdy-error-list",
-        "aria-describedby"
+        "mdyPart"
       ]
     },
     "segmented": {
@@ -125,8 +125,7 @@
         "MDY_WIDGET_CONTRACTS.file",
         "widgetHasRootClass",
         "type=\"file\"",
-        "aria-invalid",
-        "aria-describedby",
+        "mdyPart",
         "fileClearSelection",
         "mdy-error-list"
       ]

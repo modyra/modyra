@@ -1,3 +1,4 @@
+import { mdyPart } from "../mdy-part.js";
 import { html, nothing } from "lit";
 import { createBooleanFieldController, type MdyBooleanFieldController } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
@@ -43,7 +44,7 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
           .checked=${handle.value() === true}
           ?disabled=${handle.disabled()}
           aria-checked=${inputAttrs?.["aria-checked"] ?? (handle.value() === true ? "true" : "false")}
-          aria-required=${inputAttrs?.["aria-required"] ?? (handle.required() ? "true" : "false")}
+          ${mdyPart(this.controlPart(handle))}
           @change=${(e: Event) => {
             if (this.fieldController) {
               this.fieldController.dispatch({ type: "toggle" });

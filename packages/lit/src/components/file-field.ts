@@ -1,3 +1,4 @@
+import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { MdyFieldElement, mdyIcon } from "../base.js";
@@ -59,8 +60,7 @@ export class MdyFileFieldElement extends MdyFieldElement<File | File[] | null> {
           ?multiple=${this.multiple}
           accept=${this.accept || nothing}
           ?disabled=${handle.disabled()}
-          aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-          aria-required=${handle.required() ? "true" : "false"}
+          ${mdyPart(this.controlPart(handle))}
           @change=${(e: Event) => pick(Array.from((e.target as HTMLInputElement).files ?? []))}
           @blur=${() => handle.markAsTouched()}
         />

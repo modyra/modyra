@@ -1,3 +1,4 @@
+import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
@@ -138,6 +139,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               <input
                 type="color"
                 class="mdy-colors__native-hidden"
+                ${mdyPart(this.controlPart(handle))}
                 tabindex="-1"
                 style=${NATIVE_HIDDEN_STYLE}
                 .value=${handle.value() ?? "#000000"}
@@ -161,8 +163,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               .value=${handle.value() ?? ""}
               placeholder="#000000"
               aria-label=${`${this.label} (hex)`}
-              aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-              aria-required=${handle.required() ? "true" : "false"}
+              ${mdyPart(this.controlPart(handle))}
               ?disabled=${handle.disabled()}
               @change=${(e: Event) => this.set(handle, (e.target as HTMLInputElement).value)}
               @blur=${() => handle.markAsTouched()}
