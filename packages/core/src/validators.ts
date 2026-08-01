@@ -1,4 +1,5 @@
 import { MdyFormValidatorFn, ValidatorFn } from "./types.js";
+import { MDY_VALUE_CONTRACTS, matchesValueShape, type MdyValueKind } from "./value-contracts.js";
 
 /**
  * Built-in pure validator functions.
@@ -63,6 +64,27 @@ export const required = <T>(message = 'This field is required'): ValidatorFn<T> 
     return [];
   };
   return Object.assign(fn, { [MDY_MARKS_REQUIRED]: true });
+};
+
+/**
+ * Fail a value whose shape is not the one its kind holds.
+ *
+ * The counterpart of `oneOf` for kinds that have no option list: it guards the same doorway, which is
+ * a value arriving from outside the widget — a restored draft, a network config, a scripted `set()`.
+ * A string field handed `42` used to report itself valid, because every rule it had asked whether the
+ * value was *empty* and none asked whether it was a string.
+ *
+ * Nullish is not its business: whether a field may be empty is `required`'s question, and answering
+ * it here too would make an optional field invalid for holding nothing.
+ */
+export const valueShape = <T>(
+  kind: MdyValueKind,
+  message?: string,
+): ValidatorFn<T> => (value) => {
+  if (value === null || value === undefined) return [];
+  const contract = MDY_VALUE_CONTRACTS[kind];
+  if (!contract || matchesValueShape(contract.shape, value)) return [];
+  return [message ?? `This field holds ${contract.shape}`];
 };
 
 /**

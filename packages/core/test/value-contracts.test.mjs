@@ -71,3 +71,58 @@ test("NaN is not a number a field may hold", () => {
   assert.equal(matchesValueShape("number", Number.NaN), false);
   assert.match(explainValueMismatch("number", Number.NaN), /number holds number/);
 });
+
+/* ── The value lifecycle ────────────────────────────────────────────────────────
+ * The rest of the value dimension: not *what* a field holds but how what it holds changes. These
+ * are the semantics every adapter inherits from the engine, so pinning them here pins them for all
+ * three — none of the three has an event surface of its own that could disagree.
+ */
+import { createForm, field, required, vanillaReactivity, buildDynamicFieldValidators } from "../dist/index.js";
+
+const formWith = (initial, validators = []) =>
+  createForm({ f: field(initial, validators) }, vanillaReactivity());
+
+test("a programmatic write does not make a field dirty", () => {
+  const form = formWith("");
+  form.f.f.set("hello");
+  // `dirty` says the user changed it. A value pushed in from a draft, a fetch or a script has not
+  // been touched by anyone, and a form that reported otherwise would prompt about unsaved work
+  // nobody did.
+  assert.equal(form.f.f.dirty(), false);
+  assert.equal(form.f.f.touched(), false);
+});
+
+test("touched and dirty are independent of validity", () => {
+  const form = formWith("", [required()]);
+  assert.equal(form.f.f.valid(), false);
+  assert.equal(form.f.f.touched(), false);
+  form.f.f.markAsTouched();
+  assert.equal(form.f.f.touched(), true);
+  assert.equal(form.f.f.valid(), false, "touching a field does not fix it");
+});
+
+test("reset returns the value and clears what the interaction recorded", () => {
+  const form = formWith("start");
+  form.f.f.set("changed");
+  form.f.f.markAsTouched();
+  form.f.f.markAsDirty();
+  form.reset();
+  assert.equal(form.f.f.value(), "start");
+  assert.equal(form.f.f.touched(), false);
+  assert.equal(form.f.f.dirty(), false);
+});
+
+test("a value from outside that is not the kind's shape is invalid", () => {
+  // The doorway `oneOf` guards for the option kinds, guarded for the rest: a restored draft, a
+  // network config or a scripted write is not the widget's own value.
+  const errorsFrom = (built, value) => built.validators.flatMap((v) => v(value));
+  for (const [kind, wrong] of [["text", 42], ["number", "12"], ["checkbox", "yes"], ["daterange", "2026-01-01"]]) {
+    const built = buildDynamicFieldValidators({ name: "f", kind, options: [] });
+    assert.equal(errorsFrom(built, wrong).length >= 1, true, `${kind} accepted ${JSON.stringify(wrong)}`);
+  }
+});
+
+test("the shape guard leaves emptiness to required", () => {
+  const optional = buildDynamicFieldValidators({ name: "f", kind: "text" });
+  assert.deepEqual(optional.validators.flatMap((v) => v(null)), [], "an optional field may hold nothing");
+});
