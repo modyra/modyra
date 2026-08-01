@@ -1,20 +1,17 @@
 /**
- * Headless datepicker field controller. Modeled on Angular's real, working
- * `MdyDatePickerComponent`/`MdyCalendarComponent`
- * (packages/angular/src/lib/renderers/datepicker) — same ISO-string field
- * value, same `{viewYear, viewMonth}` + roving-tabindex `focusedDate` view
- * state, and the *exact* `calendarKeyboardTarget` pure function Angular's
- * own calendar already delegates to (`@modyra/core/keyboard` — nothing
- * reinvented, only wired into this package's `MdyFieldHandle`-driven
- * controller shape, same as option-field-controller.ts).
+ * Headless datepicker field controller.
  *
- * Deliberately not ported in this first cut: the "modal" variant's
- * separate confirm/cancel draft state, and the month/year drill-down
- * sub-views — both are UI affordances layered on top of the same
- * cell-grid/keyboard-nav core this controller already provides, not a
- * distinct semantic contract; a host can still build them by holding its
- * own draft ISO string and only calling `setValue`/`select-date` on
- * confirm.
+ * The field value is an ISO date string. Which month the calendar is showing and which cell the
+ * keyboard is on are view state, held separately: paging to another month does not change the value,
+ * and moving focus across the grid does not select. `calendarKeyboardTarget` (`@modyra/core/keyboard`)
+ * answers where an arrow key lands, including across a month boundary.
+ *
+ * The grid uses a roving tabindex — one cell is reachable by Tab and the arrows move which one — so
+ * a calendar is one stop in the page's tab order rather than thirty-odd.
+ *
+ * No draft state here: selecting commits. A host wanting confirm/cancel holds its own ISO string and
+ * calls `setValue` on confirm. Month and year drill-down views are likewise the host's, built on the
+ * same grid and keyboard behaviour.
  */
 import { blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";

@@ -1,21 +1,16 @@
 /**
- * Timepicker field widget types. Modeled on Angular's real, working
- * `MdyTimepickerComponent`/`MdyTimepickerClockComponent`
- * (packages/angular/src/lib/renderers/timepicker): the committed field
- * value is a single formatted time string in the configured `format`
- * ("12h"/"24h"), but — matching Angular's own component exactly — the
- * *draft* model while editing is always canonical 12h `ParsedTime`
- * (`@modyra/core/time-utils`), converted at the boundary via
- * `parseAnyTime`/`formatTimeAs`. Editing is draft/commit, same as
- * Angular's clock: nothing reaches the field until `"confirm"`.
+ * Timepicker field widget types.
  *
- * The dial-drag/angle math itself (`pointerAngle`, `angleToHour`,
- * `angleToMinute`, `hourToAngle`, `minuteToAngle`) already lives, pure and
- * portable, in `@modyra/core/time-utils` — this controller exposes a
- * `"set-from-angle"` intent that calls straight into it, so a host
- * building a drag-dial doesn't need to duplicate the snapping logic, but
- * the controller itself owns no pointer/DOM listeners (that stays the
- * host's job, same division of labor as every other controller here).
+ * The committed value is a formatted time string in the configured `format` ("12h"/"24h"). The draft
+ * held while editing is always canonical 12h `ParsedTime` (`@modyra/core/time-utils`), converted at
+ * the boundary by `parseAnyTime` and `formatTimeAs`, so the dial has one representation to move
+ * through whatever the field displays. Editing is draft/commit: nothing reaches the field until
+ * `"confirm"`.
+ *
+ * The angle maths (`pointerAngle`, `angleToHour`, `angleToMinute`, `hourToAngle`, `minuteToAngle`)
+ * is pure and lives in `@modyra/core/time-utils`. The `"set-from-angle"` intent calls into it, so a
+ * host building a drag-dial gets the snapping without reimplementing it — but the controller owns no
+ * pointer or DOM listeners, which stays the host's job as it does for every controller here.
  */
 import type { MdyInteractivity } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
@@ -27,7 +22,7 @@ export interface MdyTimepickerFieldControllerOptions {
   readonly widgetId: string;
   /** Form engine handle; value is a formatted time string or null. */
   readonly handle: MdyFieldHandle<string | null>;
-  /** Display/value format — defaults to "12h", matching Angular's own default. */
+  /** Display and value format. Defaults to "12h". */
   readonly format?: MdyTimeFormat;
   /** Whether the widget is visually/programmatically readonly. */
   readonly readonly?: boolean;
@@ -230,7 +225,8 @@ export interface MdyTimepickerFieldState {
   /** Committed field value, in `format` — null until a value has ever been confirmed. */
   readonly value: string | null;
   readonly format: MdyTimeFormat;
-  /** Canonical 12h working copy while the picker is open — always populated (never blank), matching Angular's own "seed with the current time if empty" behavior. */
+  /** Canonical 12h working copy while the picker is open. Always populated: an empty field seeds it
+   * with the current time, so the dial always has a hand to move. */
   readonly draft: ParsedTime;
   readonly open: boolean;
   readonly focusedField: "hour" | "minute";

@@ -1,15 +1,13 @@
 /**
- * Datepicker field widget types. Modeled on Angular's real, working
- * `MdyDatePickerComponent`/`MdyCalendarComponent`
- * (packages/angular/src/lib/renderers/datepicker): the committed field
- * value is always an ISO `YYYY-MM-DD` string (or `null`), the calendar
- * view state is `{viewYear, viewMonth}` plus a roving-tabindex
- * `focusedDate`, and keyboard navigation is the *exact* same
- * `calendarKeyboardTarget` pure function Angular's own `MdyCalendarComponent`
- * already delegates to (`@modyra/core/keyboard`) — nothing reinvented here,
- * only wired into this package's controller shape. Month/year drill-down
- * sub-views and the "modal" confirm/cancel draft variant are deliberately
- * not ported in this first cut (see datepicker-field-controller.ts).
+ * Datepicker field widget types.
+ *
+ * The committed value is an ISO `YYYY-MM-DD` string or `null`. Which month is on screen
+ * (`{viewYear, viewMonth}`) and which cell the keyboard is on (`focusedDate`) are view state kept
+ * apart from it, so paging and moving focus change what is shown without selecting anything.
+ * Keyboard navigation resolves through `calendarKeyboardTarget` (`@modyra/core/keyboard`).
+ *
+ * Month and year drill-down views, and a confirm/cancel draft, belong to the host — see
+ * datepicker-field-controller.ts.
  */
 import type { MdyInteractivity } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";

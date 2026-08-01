@@ -1,9 +1,9 @@
 /**
  * The chip.
  *
- * A chip is one primitive with variants, not one shape per place it appears. The Angular renderer
- * established it — an option you can take, a counter you can step, a value already taken — and the
- * foundation styles exactly that: `.mdy-chip` carries the box, the variants carry the difference.
+ * A chip is one primitive with variants, not one shape per place it appears: an option you can
+ * take, a counter you can step, a value already taken. The foundation styles exactly that —
+ * `.mdy-chip` carries the box, the variants carry the difference.
  *
  * Naming it here is what lets the variants stay derived. A renderer that wrote `"mdy-chip--counter"`
  * as a string is a renderer deciding what a counter chip is, and the next one spells it differently

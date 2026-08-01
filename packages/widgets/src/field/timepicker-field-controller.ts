@@ -1,13 +1,14 @@
 /**
- * Headless timepicker field controller. Modeled on Angular's real, working
- * `MdyTimepickerComponent`/`MdyTimepickerClockComponent`
- * (packages/angular/src/lib/renderers/timepicker) — same draft/commit
- * interaction (nothing reaches the field until `"confirm"`), same
- * canonical-12h internal working model regardless of the field's own
- * `format`, and the same `parseAnyTime`/`formatTimeAs`/`angleToHour`/
- * `angleToMinute` pure helpers Angular's clock already uses
- * (`@modyra/core/time-utils`) — nothing reinvented, only wired into this
- * package's `MdyFieldHandle`-driven controller shape.
+ * Headless timepicker field controller.
+ *
+ * The picker edits a draft: turning the dial, typing a segment and switching period all change a
+ * working copy, and nothing reaches the field until `"confirm"`. Cancelling discards it, so a
+ * dismissed picker leaves the value exactly as it found it.
+ *
+ * The working copy is canonical 12h whatever the field's own `format` says, which keeps one
+ * representation for the dial to move through; `formatTimeAs` converts on the way out. The angle and
+ * parsing maths lives in `@modyra/core/time-utils` — a renderer drawing its own clock face needs the
+ * same functions.
  */
 import { blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";

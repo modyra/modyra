@@ -2,8 +2,8 @@
  * Runtime DOM conformance.
  *
  * The static audits in `scripts/` prove that an adapter *references* the contract; this proves
- * that what it actually rendered matches it. It takes real elements, so any adapter — Angular in
- * TestBed, Lit in jsdom, Plain anywhere — is held to the same gate.
+ * that what it actually rendered matches it. It takes real elements, so any adapter — in a test
+ * harness, in jsdom, in a browser — is held to the same gate.
  */
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
 import type { MdyPartContract } from "../contract.js";
@@ -63,7 +63,7 @@ export interface MdyDomContractOptions {
    * namespaces it under {@link adapterPrefix} rather than spelling a contract class. */
   readonly strictClasses?: boolean;
   /**
-   * Prefix an adapter uses to namespace classes of its own, such as `mdy-plain-`.
+   * Prefix an adapter uses to namespace classes of its own, such as `mdy-<adapter>-`.
    *
    * A renderer may need a hook the contract has no opinion on. Namespacing it is what keeps that
    * distinguishable from inventing a contract class, and the prefix is declared rather than the

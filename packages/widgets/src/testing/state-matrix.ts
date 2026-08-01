@@ -2,9 +2,10 @@
  * The state matrix, once, for every adapter.
  *
  * `inspectWidgetState` was split so the judgement is shared and only the *driving* is per-adapter —
- * Plain sets a property, Angular pushes a signal, Lit sets an attribute, and no helper can do all
- * three honestly. That split went unused: the matrix existed for Plain alone, which is how a defect
- * fixed in Plain and missing in Angular and Lit passed for closed.
+ * One adapter sets a property, another pushes a signal, a third sets an attribute, and no helper
+ * can do all three honestly. Every adapter runs its own matrix over this one collector: a matrix
+ * that exists for a single adapter is how a defect fixed in one and missing in the rest passes for
+ * closed.
  *
  * This is the shared half. An adapter supplies a driver; it inherits the traversal, the report and
  * the divergence bookkeeping. Assertions stay with the caller, because the three suites run under

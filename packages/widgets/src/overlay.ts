@@ -33,8 +33,8 @@ export type MdyOverlayAlignment = MdyOverlayDecision["alignment"];
 /**
  * Where a popup ends up, in viewport coordinates.
  *
- * For a host that positions its panel itself — Angular hands these to the CDK — rather than by
- * copying the custom properties onto the element. Same decision, read a different way.
+ * For a host that positions its panel itself, rather than by copying the custom properties onto the
+ * element. Same decision, read a different way.
  */
 export interface MdyOverlayCoords {
   readonly top?: number | undefined;
