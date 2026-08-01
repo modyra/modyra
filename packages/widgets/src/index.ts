@@ -90,3 +90,4 @@ export { createValueWidgetController } from "./value-controller.js";
 export type { MdyValueWidgetController, MdyValueWidgetControllerOptions, MdyValueWidgetIntent, MdyValueWidgetState } from "./value-controller.js";
 
 export { blocksFocus, blocksValueChange } from "./interactivity.js";
+export { applyPart } from "./apply-part.js";

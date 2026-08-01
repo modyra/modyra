@@ -6,51 +6,15 @@
  * caret position survive a re-render (rebuilding an <input> on every
  * keystroke would steal focus from the user typing into it).
  */
-import type { MdyPartContract } from "@modyra/widgets";
+// `applyPart` now lives in `@modyra/widgets` and is re-exported here so Plain's eighty-six call
+// sites keep their import. It was always framework-agnostic; keeping it in Plain is what let the
+// other two adapters drift, because only Plain was applying the projection's whole attribute map.
+export { applyPart } from "@modyra/widgets";
 
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
   if (className) node.className = className;
   return node;
-}
-
-const BASE_CLASS_MARKER = "__mdyPlainBaseClasses";
-
-/** Applies an {@link MdyPartContract} (classes + attributes) to a real element, replacing only what the contract controls each call. */
-export function applyPart(node: HTMLElement, part: MdyPartContract): void {
-  const nodeWithMarker = node as HTMLElement & { [BASE_CLASS_MARKER]?: string };
-  // Preserve any class the host/renderer set once at creation time (e.g. "mdy-plain-input")
-  // that isn't part of the controller-driven class list, so re-applying doesn't drop it.
-  if (nodeWithMarker[BASE_CLASS_MARKER] === undefined) {
-    nodeWithMarker[BASE_CLASS_MARKER] = node.className;
-  }
-  const base = nodeWithMarker[BASE_CLASS_MARKER];
-  // The shell already emits the canonical class the controller names, so dedupe rather than
-  // stack `mdy-label mdy-label`.
-  const classes = [...new Set([...(base ?? "").split(/\s+/), ...part.classes].filter(Boolean))];
-  if (classes.length > 0) node.className = classes.join(" ");
-  else node.removeAttribute("class");
-
-  for (const [property, value] of Object.entries(part.style ?? {})) {
-    node.style.setProperty(property, value);
-  }
-
-  if (part.id) node.id = part.id;
-  if (part.role) node.setAttribute("role", part.role);
-
-  for (const [key, value] of Object.entries(part.attributes)) {
-    // `false` removes the attribute, which is what HTML boolean attributes want (`disabled`)
-    // but never what ARIA state attributes want: `aria-checked="false"` is a state, and
-    // dropping it leaves a role="switch" with a required attribute missing. Controllers
-    // therefore emit ARIA states as the strings "true"/"false".
-    if (value === null || value === undefined || value === false) {
-      node.removeAttribute(key);
-    } else if (value === true) {
-      node.setAttribute(key, "");
-    } else {
-      node.setAttribute(key, String(value));
-    }
-  }
 }
 
 /** Sets text content only when it actually changed, to avoid unnecessary reflow/selection loss. */
