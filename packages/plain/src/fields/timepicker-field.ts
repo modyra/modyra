@@ -10,7 +10,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDateField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, createTimepickerFieldController, overlayAnchoringFor, timepickerDialNumbers, timepickerSelectedDialValue, type MdyElementLookup } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createTimepickerFieldController, overlayAnchoringFor, timepickerDialNumbers, timepickerSelectedDialValue, type MdyElementLookup, overlayControlledId } from "@modyra/widgets";
 import { hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/time-utils";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -41,6 +41,9 @@ export function renderTimepickerField(
   // names the dialog, the hour and the minute.
   const parts = MDY_WIDGET_CONTRACTS.timepicker.parts;
   const dialog = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
+  // The id the opener names. The relation points at the popup rather than the dialog inside it,
+  // because a renderer whose panel is not modal has no dialog to name.
+  dialog.id = overlayControlledId("timepicker", f.name) ?? "";
   // The popup's anatomy is the contract's, and its classes are the ones the shipped themes already
   // style for the Angular renderer — which is what makes the three look alike rather than merely
   // behave alike.
@@ -190,7 +193,7 @@ export function renderTimepickerField(
     applyPart(shell.label, view.parts.label);
     applyPart(control, view.parts.trigger);
     toggle.disabled = state.disabled;
-    applyPart(dialog, view.parts.dialog);
+    applyPart(dialog, { ...view.parts.dialog, id: overlayControlledId("timepicker", f.name) ?? undefined });
     applyPart(hourInput, view.parts.hour);
     applyPart(minuteInput, view.parts.minute);
     applyPart(shell.description, view.parts.description);

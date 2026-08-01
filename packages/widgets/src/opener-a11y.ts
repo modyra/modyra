@@ -31,6 +31,7 @@ export function projectOverlayOpenerA11y(
   if (!relation) return null;
   return {
     classes: [],
+    ...(relation.role ? { role: relation.role } : {}),
     attributes: {
       "aria-expanded": String(options.open),
       "aria-controls": idFactory.part(options.widgetId, relation.controls),

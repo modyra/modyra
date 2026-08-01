@@ -1,3 +1,4 @@
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
   afterNextRender,
@@ -21,8 +22,7 @@ import {
   MDY_WIDGET_CONTRACTS,
   timeDraftTransition,
   timeInputTransition,
-  type MdyTimeDraftState,
-} from "@modyra/widgets";
+  type MdyTimeDraftState, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -35,7 +35,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
 @Component({
   selector: "mdy-control-timepicker",
   standalone: true,
-  imports: [
+  imports: [MdyPartDirective, 
     NgTemplateOutlet,
     MdyControlLabelComponent,
     MdyErrorListComponent,
@@ -74,6 +74,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           type="text"
           [id]="fieldId"
           class="mdy-timepicker__input"
+          [mdyPart]="openerPart()"
           [value]="value() || ''"
           [disabled]="isDisabled()"
           [placeholder]="effectivePlaceholder()"
@@ -121,6 +122,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
         [dialogLabel]="i18n.timepickerOpenLabel"
         [widthMode]="'auto-content'"
         [panelClass]="'mdy-timepicker__popup mdy-popup'"
+        [panelId]="popupId()"
         [kind]="'timepicker'"
         (close)="closeOverlay()"
       >
@@ -162,6 +164,14 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   );
 
   protected readonly fieldId = `mdy-control-timepicker-${MdyBaseControl.nextId()}`;
+
+  /** The id the opener names — the dialog, which is what carries the overlay's role. */
+  protected readonly popupId = computed(() => overlayControlledId("timepicker", this.fieldId) ?? "");
+
+  /** The relation between this widget's opener and the overlay it opens. */
+  protected readonly openerPart = computed(
+    () => projectOverlayOpenerA11y("timepicker", { widgetId: this.fieldId, open: this.open() })!,
+  );
   private readonly timeDraft = signal<MdyTimeDraftState>({ committed: null, draft: getCurrentTime(), open: false });
   protected readonly draftValue = computed(() => this.timeDraft().draft);
   private readonly injector = inject(Injector);

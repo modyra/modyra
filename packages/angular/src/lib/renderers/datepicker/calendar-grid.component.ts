@@ -25,6 +25,7 @@ import { MdyCalendarCellComponent } from "./calendar-cell.component";
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "mdy-datepicker__grid",
+    "[attr.id]": "gridId() || null",
     // The rows below say `role="row"`, which ARIA requires to sit inside a grid, table or rowgroup.
     // Nothing said so, so every row in every calendar was an orphan — axe reports it as a critical
     // required-parent violation. It went unseen because the a11y suite never opened a popup: axe
@@ -62,6 +63,8 @@ import { MdyCalendarCellComponent } from "./calendar-cell.component";
 export class MdyCalendarGridComponent {
   readonly year = input.required<number>();
   readonly month = input.required<number>();
+  /** The id this widget's opener names through `aria-controls`. */
+  readonly gridId = input<string>("");
   readonly selectedDate = input<CalendarDate | null>(null);
   readonly focusedDate = input<CalendarDate | null>(null);
   readonly minDate = input<CalendarDate | null>(null);
