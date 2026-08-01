@@ -29,23 +29,13 @@ import { CATALOG_KINDS, CatalogHost, partsOf } from "./catalog-host.spec";
  */
 
 
-const KNOWN_DIVERGENCES: Partial<Record<MdyWidgetKind, string[]>> = {
-  // The chips wrapper precedes the input wrapper in Angular and follows it in Plain, and the label
-  // points at an id no element in this fixture carries.
-  multiselect: ["PART_ORDER:inputWrapper", "ARIA_DANGLING_REF:label"],
-  // `nativePicker` was declared a <label> in task 06, from Plain, which wraps the hidden colour
-  // input in one. Angular does not, and its `control` sits outside the picker as a result.
-  colors: ["PART_ELEMENT:nativePicker", "PART_NOT_CONTAINED:control"],
-  // F-08 is closed centrally — the a11y projections now declare `aria-controls`, and Plain is clean.
-  // Angular remains divergent for a different reason, and it is a *placement* question rather than a
-  // missing relation: Angular puts `aria-expanded` on the toggle button beside the input, while the
-  // shared projection puts the whole combobox relation on the input itself. Making them agree means
-  // deciding which element owns the expanded state and giving the CDK panel an id the opener can
-  // name — a renderer-equivalence decision, so it belongs to task 16 rather than to a defect batch.
-  datepicker: ["PART_NOT_OWNED:control"],
-  timepicker: ["PART_NOT_OWNED:control"],
-
-};
+/**
+ * Angular's divergences from the DOM contract: none.
+ *
+ * Asserted in both directions, so a new divergence fails here and so does an entry left behind after
+ * its fix.
+ */
+const KNOWN_DIVERGENCES: Partial<Record<MdyWidgetKind, string[]>> = {};
 
 describe("Angular renderers, against the widget DOM contract", () => {
   it.each(CATALOG_KINDS.map(({ kind, selector }) => [kind, selector]))(

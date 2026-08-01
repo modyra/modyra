@@ -219,22 +219,30 @@ export interface MdyPopupOpener {
   readonly opener: string;
   /** The part the relation names — the element carrying the overlay's role. */
   readonly controls: string;
+  /**
+   * The role the opener takes, where the pattern requires one.
+   *
+   * A typeable control that also opens a list is a combobox, and `aria-expanded` and
+   * `aria-controls` are only allowed on it once it says so. An opener that is already a button
+   * needs no role and declares none.
+   */
+  readonly role?: string;
 }
 
 export const MDY_POPUP_OPENERS: Readonly<Record<string, MdyPopupOpener>> = Object.freeze({
   // `controls` is the part the relation names, and it is not always the popup: ARIA points at the
   // element carrying the role — a listbox, a grid, a dialog — which for some kinds sits inside the
   // popup rather than being it.
-  select: { opener: "trigger", controls: "listbox" },
+  select: { opener: "trigger", controls: "listbox", role: "combobox" },
   multiselect: { opener: "searchButton", controls: "popup" },
   // The pickers follow the combobox pattern: the typeable control is what carries `role=combobox`,
   // `aria-expanded` and `aria-controls`, and the calendar/clock button beside it is a second
   // affordance for the same popup. The opener is therefore the control, not the button — naming the
   // button here would ask for the relation in a place the pattern does not put it.
-  datepicker: { opener: "control", controls: "grid" },
+  datepicker: { opener: "control", controls: "grid", role: "combobox" },
   // Daterange wires its own toggle rather than following the combobox pattern its sibling does.
   daterange: { opener: "toggle", controls: "popup" },
-  timepicker: { opener: "control", controls: "dialog" },
+  timepicker: { opener: "control", controls: "popup", role: "combobox" },
   // Colours is the exception: it has no combobox control, so its toggle really is the opener.
   colors: { opener: "toggle", controls: "popup" },
 });
@@ -374,10 +382,14 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       states: { dropzone: ["dragover"] } ,
       presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder"] }),
   colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
-    { parents: { control: "nativePicker" },
-      // The picker is the <label> that wraps the hidden <input type=color>; the input is the
-      // `control` part, declared right there in `parents`. Same shape as a boolean control.
-      elements: { nativePicker: "label" },
+    { // The picker is the affordance a pointer uses to reach the colour, and the contract does not
+      // say how a renderer builds one. A `<label>` wrapping the hidden `<input type=color>` and a
+      // `<button>` beside it are both correct, and the second avoids nesting one focusable control
+      // inside another — so requiring the first would mandate the weaker of the two.
+      //
+      // The native input is therefore a sibling under the wrapper rather than a child of the
+      // picker: where it sits is a rendering choice, that it exists is the contract.
+      elements: { nativePicker: "presentation" },
       states: { swatch: ["active"], popup: POPUP_PLACEMENT_STATES },
       classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,
       presentation: ["mdy-colors", "mdy-colors__dropdown-header", "mdy-select__arrow"] }),

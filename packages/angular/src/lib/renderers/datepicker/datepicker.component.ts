@@ -1,3 +1,4 @@
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
   afterNextRender,
@@ -21,8 +22,7 @@ import {
   dateDraftTransition,
   dateValueTransition,
   MDY_WIDGET_CONTRACTS,
-  type MdyDateDraftState,
-} from "@modyra/widgets";
+  type MdyDateDraftState, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -37,7 +37,7 @@ import { MdyCalendarComponent } from "./calendar.component";
 @Component({
   selector: "mdy-control-datepicker",
   standalone: true,
-  imports: [
+  imports: [MdyPartDirective, 
     NgTemplateOutlet,
     MdyCalendarComponent,
     MdyControlLabelComponent,
@@ -74,6 +74,7 @@ import { MdyCalendarComponent } from "./calendar.component";
           [id]="fieldId"
           type="text"
           class="mdy-datepicker__input"
+          [mdyPart]="openerPart()"
           [placeholder]="placeholder()"
           [value]="displayValue()"
           [disabled]="isDisabled()"
@@ -125,6 +126,7 @@ import { MdyCalendarComponent } from "./calendar.component";
         }
 
         <mdy-calendar
+        [gridId]="popupId()"
           #calendar
           [selectedDate]="variant() === 'modal' ? tempSelectedDate() : parsedSelectedDate()"
           [minDate]="parsedMinDate()"
@@ -168,6 +170,14 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   protected override readonly minSpace = 450;
 
   protected readonly fieldId = `mdy-control-datepicker-${MdyBaseControl.nextId()}`;
+
+  /** The id the opener names — the grid, which is what carries the overlay's role. */
+  protected readonly popupId = computed(() => overlayControlledId("datepicker", this.fieldId) ?? "");
+
+  /** The relation between this widget's opener and the overlay it opens. */
+  protected readonly openerPart = computed(
+    () => projectOverlayOpenerA11y("datepicker", { widgetId: this.fieldId, open: this.open() })!,
+  );
 
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   private readonly calendarRef = viewChild<MdyCalendarComponent>("calendar");

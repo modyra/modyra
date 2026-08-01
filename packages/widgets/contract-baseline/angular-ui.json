@@ -322,6 +322,7 @@
   "aria": [
     "aria-activedescendant",
     "aria-checked",
+    "aria-controls",
     "aria-current",
     "aria-describedby",
     "aria-disabled",
@@ -601,6 +602,7 @@
         "mdy-datepicker__weekdays"
       ],
       "aria": [
+        "aria-controls",
         "aria-label"
       ],
       "selectors": [
@@ -669,6 +671,7 @@
         "mdy-input-wrapper",
         "mdy-input-wrapper--disabled",
         "mdy-overlay-panel",
+        "mdy-part",
         "mdy-popup",
         "mdy-renderer",
         "mdy-renderer--datepicker",
@@ -1203,6 +1206,7 @@
         "mdy-input-wrapper",
         "mdy-input-wrapper--disabled",
         "mdy-overlay-panel",
+        "mdy-part",
         "mdy-popup",
         "mdy-renderer",
         "mdy-renderer--timepicker",

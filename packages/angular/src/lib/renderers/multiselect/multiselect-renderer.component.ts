@@ -54,8 +54,7 @@ import { MdyDropdownBase } from "../dropdown-base";
     "[class.mdy-renderer--touched]": "touched()",
   },
   template: `
-    <div class="mdy-multiselect" #wrapper [class.mdy-multiselect--open]="open()">
-      <mdy-control-label
+    <mdy-control-label
       [label]="label()"
       [forId]="fieldId"
       [required]="isRequired()"
@@ -63,6 +62,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       [showInlineError]="inlineErrors && touched() && hasErrors()"
       [errorText]="inlineErrorText()"
     />
+    <div class="mdy-multiselect" #wrapper [class.mdy-multiselect--open]="open()">
 
     @if (label() || searchable()) {
       <div class="mdy-multiselect__header">
@@ -70,6 +70,7 @@ import { MdyDropdownBase } from "../dropdown-base";
           <button
             type="button"
             class="mdy-multiselect__search-btn"
+            [id]="fieldId"
             [mdyPart]="openerPart()"
             [disabled]="isDisabled()"
             (click)="toggleOverlay($event)"
