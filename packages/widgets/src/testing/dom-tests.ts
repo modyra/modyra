@@ -10,6 +10,7 @@ import { MDY_LABELABLE_TAGS, MDY_WIDGET_RELATIONS, partsRequiringName } from "..
 import type { MdyPartContract } from "../contract.js";
 import { MDY_STATE_MODIFIERS } from "../state.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_SHARED_UI_CLASSES } from "../structure.js";
+import { overlayOnlyParts } from "../widget-states.js";
 import { inspectWidgetStructure } from "./structure-tests.js";
 
 export type MdyDomContractIssueCode =
@@ -75,6 +76,14 @@ export interface MdyDomContractOptions {
    * individual names so the check stays a rule instead of a list.
    */
   readonly adapterPrefix?: string;
+  /**
+   * Whether the widget's overlay is showing.
+   *
+   * A part that only exists inside the popup cannot be required of a closed widget, so the contract
+   * can mark one required and still be satisfied at rest. Left unset, those parts are not demanded:
+   * a caller that has not said which state it is inspecting is not held to the open one.
+   */
+  readonly open?: boolean;
 }
 
 const ARIA_BOOLEAN_STATES = new Set([
@@ -342,7 +351,11 @@ export function inspectWidgetDom(
     }
     const elements = resolved.get(node.part) ?? [];
     if (elements.length === 0) {
-      if (!node.optional) {
+      // A required part that lives inside the overlay is required *of an open widget*. Demanding it
+      // at rest would make every closed picker non-conforming; never demanding it means a part the
+      // contract calls mandatory is one nothing checks.
+      const onlyWhileOpen = overlayOnlyParts(kind).includes(node.part);
+      if (!node.optional && (!onlyWhileOpen || options.open === true)) {
         issues.push({ code: "PART_MISSING", part: node.part, message: `required part ${node.part} was not rendered` });
       }
       continue;
