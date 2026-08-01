@@ -25,7 +25,9 @@ describe("Angular renderers, against the canonical observation", () => {
   it.each(Object.keys(MDY_CANONICAL_AT_REST).map((kind) => [kind]))(
     "%s produces the canonical observation at rest",
     async (kind) => {
-      const fixture = mountStateFixture(kind as MdyWidgetKind);
+      // At rest means at rest: no validator has run, so nothing has been decided about the field
+      // before the user reached it.
+      const fixture = mountStateFixture(kind as MdyWidgetKind, { validators: false });
       await fixture.settle();
 
       const snapshot = canonicalWidgetSnapshot(fixture.root, kind as MdyWidgetKind, {
