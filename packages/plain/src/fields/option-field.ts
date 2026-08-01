@@ -65,6 +65,15 @@ export function renderOptionField(
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
     const view = controller.view();
+    // The shell's own state, which every other kind here reflects and this one did not: the themes
+    // key the touched and error treatments off the renderer root and the wrapper.
+    shell.syncState({
+      touched: handle.touched(),
+      disabled: handle.disabled(),
+      hasError: handle.errors().length > 0,
+      filled: handle.value() !== null && handle.value() !== undefined,
+      required: handle.required(),
+    });
     applyPart(shell.label, view.parts.label);
     applyPart(group, view.parts.group);
     applyPart(shell.description, view.parts.description);
