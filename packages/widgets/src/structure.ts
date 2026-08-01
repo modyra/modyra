@@ -66,6 +66,21 @@ export const MDY_FIELD_STATE_CLASSES = Object.freeze({
   rendererOpen: "mdy-renderer--open",
 } as const);
 
+/**
+ * Classes that belong to no single widget: the shared button, the overlay machinery, the surface
+ * treatments a theme applies wherever it likes.
+ *
+ * Declared here because they are still contract data — a renderer may emit them and a theme may
+ * rely on them — but they are not a kind's anatomy and do not belong to any one catalogue entry.
+ */
+export const MDY_SHARED_UI_CLASSES = Object.freeze([
+  "mdy-button",
+  "mdy-overlay",
+  "mdy-overlay-panel",
+  "mdy-glass-effect",
+  "mdy-glass-effect--medium",
+]);
+
 /** Base field anatomy. Widget-specific contracts extend this ordered tree. */
 export const MDY_FIELD_SHELL_STRUCTURE = Object.freeze({
   kind: "field-shell",
