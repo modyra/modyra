@@ -486,6 +486,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           placeholder=${this.placeholder}
           .value=${handle.value() ?? ""}
           ?disabled=${handle.disabled()}
+          role="combobox"
           aria-haspopup="dialog"
           aria-expanded=${this._open ? "true" : "false"}
           aria-controls=${this._open ? overlayControlledId("datepicker", this.fieldId) ?? nothing : nothing}

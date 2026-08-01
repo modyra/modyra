@@ -21,7 +21,6 @@ import { MdyFieldError } from "../core/types";
     <ul
       [id]="errorsId()"
       class="mdy-control__errors"
-      role="alert"
       aria-live="polite"
     >
       @for (err of errors(); track $index) {

@@ -35,6 +35,7 @@ export type MdyDomContractIssueCode =
   | "RELATION_WRONG_TARGET"
   | "RELATION_NOT_LABELABLE"
   | "NAME_MISSING"
+  | "PART_ROLE"
   | "INVENTED_CLASS"
   | "STRUCTURE";
 
@@ -233,6 +234,30 @@ function isModifierOf(
 
 
 /**
+ * The role an element already has from its tag, before any `role` attribute.
+ *
+ * A contract that required the attribute would ask a renderer to spell what the host language
+ * already says: `<input type="checkbox">` *is* a checkbox, and writing `role="checkbox"` on it adds
+ * nothing. Only the roles the catalogue actually declares are listed; anything else is `null`, which
+ * means "the attribute is the only way to say it".
+ */
+function implicitRole(element: Element): string | null {
+  const tag = element.tagName.toLowerCase();
+  if (tag === "button") return "button";
+  if (tag === "table") return "table";
+  if (tag === "tr") return "row";
+  if (tag === "th") return "columnheader";
+  if (tag === "td") return "gridcell";
+  if (tag === "option") return "option";
+  if (tag !== "input") return null;
+  const type = (element.getAttribute("type") ?? "text").toLowerCase();
+  if (type === "checkbox") return "checkbox";
+  if (type === "radio") return "radio";
+  if (type === "range") return "slider";
+  return null;
+}
+
+/**
  * Whether an element has an accessible name, by any of the mechanisms the contract admits.
  *
  * Deliberately permissive about *how*: `aria-label`, a resolved `aria-labelledby`, a `label[for]`,
@@ -309,6 +334,7 @@ export function inspectWidgetDom(
   for (const node of definition.structure.nodes) {
     if (node.part === "root" || resolved.has(node.part) || absent.has(node.part)) continue;
     const contract = definition.parts[node.part as keyof typeof definition.parts] as MdyPartContract | undefined;
+
     const selector = (contract?.classes ?? []).map((className) => `.${CSS_ESCAPE(className)}`).join("");
     if (!selector) continue;
     const found = searchScope.flatMap((container) => Array.from(container.querySelectorAll(selector)));
@@ -361,6 +387,22 @@ export function inspectWidgetDom(
       continue;
     }
     const contract = definition.parts[node.part as keyof typeof definition.parts] as MdyPartContract | undefined;
+
+    // A part the contract gives a role must carry it. `element` says what a part may be — the
+    // semantic lists the roles it admits — and this says which one it has to have, so the contract
+    // can require a listbox rather than merely permit one.
+    if (contract?.role) {
+      for (const element of elements) {
+        const actual = element.getAttribute("role") ?? implicitRole(element);
+        if (actual !== contract.role) {
+          issues.push({
+            code: "PART_ROLE",
+            part: node.part,
+            message: `${node.part} must carry role="${contract.role}", got ${actual ? `role="${actual}"` : `<${element.tagName.toLowerCase()}> with none`}`,
+          });
+        }
+      }
+    }
 
     // A part the contract does not mark `repeated` is singular: two of them is not a richer
     // rendering, it is an ambiguous one, and every later check would silently pick the first.

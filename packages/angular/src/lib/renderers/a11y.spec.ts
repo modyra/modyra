@@ -1,4 +1,5 @@
 import { Component, Injector, signal } from "@angular/core";
+import { CATALOG_KINDS, CatalogHost } from "./catalog-host.spec";
 import { TestBed } from "@angular/core/testing";
 import * as axe from "axe-core";
 import { MdyDeclarativeAdapter } from "../core/declarative-form-adapter";
@@ -148,4 +149,31 @@ describe("renderer accessibility (axe-core)", () => {
       expect(await blockingViolations(host)).toEqual([]);
     });
   }
+});
+
+/**
+ * The same audit, with the error lists on screen.
+ *
+ * An error list renders only once a field is touched and failing, and nothing here had ever driven a
+ * field into that state — the fields in this file carry no validators, so they cannot fail. Every
+ * `mdy-control__errors` in the library was therefore outside this suite by construction, and that is
+ * the element the whole error-reporting path ends at. The catalogue host is used instead: every
+ * control there is `mdyRequired`, so touching one is enough to make it report.
+ */
+describe("renderer accessibility, with errors showing", () => {
+  it("reports no critical or serious violations once the fields are invalid and touched", async () => {
+    const fixture = TestBed.createComponent(CatalogHost);
+    fixture.detectChanges();
+    for (const { name } of CATALOG_KINDS) {
+      fixture.componentInstance.adapter.getField(name)?.().touched.set(true);
+    }
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    // A run that renders no error list proves nothing about error lists.
+    const lists = host.querySelectorAll(".mdy-control__errors");
+    expect(`error lists on screen: ${lists.length > 0}`).toBe("error lists on screen: true");
+
+    expect(await blockingViolations(host)).toEqual([]);
+  });
 });
