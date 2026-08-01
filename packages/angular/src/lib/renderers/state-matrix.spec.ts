@@ -14,15 +14,12 @@
 import "@angular/compiler";
 import { collectStateMatrix, normalizeStateLedger } from "@modyra/widgets/testing";
 import type { MdyWidgetKind } from "@modyra/widgets";
-import { MDY_WIDGET_TRANSITIONS } from "@modyra/widgets";
 import { explainValueMismatch } from "@modyra/core";
 
 import {
   CATALOG_KINDS,
   emptyFor,
   mountStateFixture,
-  OPENER,
-  partsOf,
   valueFor,
 } from "./catalog-host.spec";
 
@@ -62,51 +59,5 @@ describe("Angular renderers, against the widget state contract", () => {
     expect(matrix.asserted + matrix.undrivable.length).toBe(matrix.expected);
     expect(matrix.observed).toEqual(normalizeStateLedger(KNOWN_DIVERGENCES));
     expect(matrix.unsupportedAria).toEqual([]);
-  });
-});
-
-/**
- * Escape closes an open overlay — the transition the contract declares, replayed against the DOM.
- *
- * The matrix proves the widget looks right in a state it was put into; this proves it *gets* there.
- * A renderer whose Escape handler is bound where focus never lands passes every other check here.
- */
-describe("the declared transitions", () => {
-  const closable = KINDS.filter((kind) =>
-    MDY_WIDGET_TRANSITIONS[kind].some(
-      (t) => t.from === "open" && t.trigger.type === "key" && t.trigger.key === "Escape",
-    ),
-  );
-
-  it("declares Escape on every overlay kind", () => {
-    expect(closable.length).toBeGreaterThan(0);
-  });
-
-  it.each(closable.map((kind) => [kind]))("%s closes on Escape", async (kind) => {
-    const fixture = mountStateFixture(kind);
-    const root = fixture.root;
-
-    const opener = root.querySelector(OPENER) as HTMLElement | null;
-    expect(opener).toBeTruthy();
-    expect(fixture.drive("open")).toBe(true);
-    await fixture.settle();
-
-    // `aria-expanded` on the opener is the contract's own statement of open-ness, and the one
-    // signal every adapter carries — a closed CDK panel is still resolvable, so its presence says
-    // nothing.
-    expect(`${kind} opened: ${opener!.getAttribute("aria-expanded")}`).toBe(`${kind} opened: true`);
-    const popup = partsOf(root, kind).popup as Element | null;
-
-    // Where the user actually is: an overlay that takes focus handles Escape inside itself, one
-    // that leaves focus on the opener handles it there.
-    const active = document.activeElement;
-    const target = active && (root.contains(active) || popup!.contains(active))
-      ? (active as HTMLElement)
-      : opener!;
-    target.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    await fixture.settle();
-
-    expect(`${kind} closed: ${opener!.getAttribute("aria-expanded")}`).toBe(`${kind} closed: false`);
-    fixture.dispose();
   });
 });

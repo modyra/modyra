@@ -76,6 +76,26 @@ export function emptyFor(kind) {
   return empty;
 }
 
+/** The element that opens each composite's overlay, by the part the catalogue names. */
+export const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
+  + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
+
+/**
+ * Send a key where the user actually is.
+ *
+ * An overlay that moves focus into itself handles a key there; one that leaves focus on the opener
+ * handles it there. Dispatching at a guessed element tests the guess rather than the widget.
+ */
+export function pressKey(root, popup, key) {
+  const active = root.ownerDocument.activeElement;
+  const target = active && (root.contains(active) || popup?.contains(active))
+    ? active
+    : root.querySelector(OPENER);
+  if (!target) return false;
+  target.dispatchEvent(new window.KeyboardEvent("keydown", { key, bubbles: true }));
+  return true;
+}
+
 export function controlOf(root) {
   return root.querySelector(".mdy-input-wrapper input, .mdy-input-wrapper textarea, .mdy-input-wrapper select") ??
     root.querySelector("input, textarea, select");
@@ -173,6 +193,7 @@ export async function mount(kind, { validators: withValidators = true } = {}) {
       await element.updateComplete;
     },
     dispose: () => element.remove(),
+    press: (key) => pressKey(element, partsOf(element, kind).popup, key),
     drive(state) {
       const handle = form.f.value;
       switch (state) {
@@ -186,9 +207,7 @@ export async function mount(kind, { validators: withValidators = true } = {}) {
         case "disabled": form.setDisabled("value", () => true); return true;
         case "readonly": form.setReadonly("value", () => true); return true;
         case "open": {
-          const trigger = element.querySelector(
-            ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle, .mdy-colors__toggle-area, .mdy-multiselect__search-btn",
-          );
+          const trigger = element.querySelector(OPENER);
           if (!trigger) return false;
           trigger.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
           return true;

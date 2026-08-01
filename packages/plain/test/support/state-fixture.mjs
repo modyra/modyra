@@ -24,6 +24,26 @@ export const KINDS = [
   "file",
 ];
 
+/** The element that opens each composite's overlay, by the part the catalogue names. */
+export const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
+  + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
+
+/**
+ * Send a key where the user actually is.
+ *
+ * An overlay that moves focus into itself handles a key there; one that leaves focus on the opener
+ * handles it there. Dispatching at a guessed element tests the guess rather than the widget.
+ */
+export function pressKey(root, popup, key) {
+  const active = root.ownerDocument.activeElement;
+  const target = active && (root.contains(active) || popup?.contains(active))
+    ? active
+    : root.querySelector(OPENER);
+  if (!target) return false;
+  target.dispatchEvent(new window.KeyboardEvent("keydown", { key, bubbles: true }));
+  return true;
+}
+
 /** The element that takes input, wherever the kind puts it. */
 export function controlOf(root) {
   return root.querySelector(".mdy-input-wrapper input, .mdy-input-wrapper textarea, .mdy-input-wrapper select") ??
@@ -106,6 +126,7 @@ export function mount(kind, { validators = true } = {}) {
     // Plain's effects land on a task rather than synchronously.
     settle: () => new Promise((resolve) => setTimeout(resolve, 20)),
     dispose: () => { mounted.dispose(); host.remove(); },
+    press: (key) => pressKey(root, partsOf(root, kind).popup, key),
     drive(state) {
       switch (state) {
         case "pristine": return true;
@@ -120,9 +141,7 @@ export function mount(kind, { validators = true } = {}) {
         case "disabled": mounted.form.setDisabled("f", () => true); return true;
         case "readonly": mounted.form.setReadonly("f", () => true); return true;
         case "open": {
-          const trigger = root.querySelector(
-            ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle, .mdy-colors__toggle-area, .mdy-multiselect__search-btn",
-          );
+          const trigger = root.querySelector(OPENER);
           if (!trigger) return false;
           trigger.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
           return true;

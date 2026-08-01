@@ -42,6 +42,14 @@ export interface MdyCanonicalRelationship {
 /** Whether the widget's overlay exists, and if so whether it is showing. */
 export type MdyCanonicalOverlay = "absent" | "closed" | "open";
 
+/**
+ * A `focusOwner` expectation meaning "some part of this widget, and the contract does not say which".
+ *
+ * The difference between a requirement and an over-specification: after an overlay closes, focus
+ * landing on the document body is always wrong, and which part catches it is the renderer's design.
+ */
+export const MDY_FOCUS_WITHIN = "somewhere in the widget";
+
 export interface MdyCanonicalSnapshot {
   readonly kind: string;
   readonly parts: readonly MdyCanonicalPart[];
@@ -350,8 +358,14 @@ export interface MdyCanonicalExpectation {
   readonly optional: readonly string[];
   readonly relationships: readonly MdyCanonicalRelationship[];
   readonly overlay: MdyCanonicalOverlay;
-  /** The states the widget reflects, in the contract's own vocabulary, order-insensitive. */
-  readonly state: readonly string[];
+  /**
+   * The states the widget reflects, in the contract's own vocabulary, order-insensitive, and absent
+   * when the contract does not constrain them.
+   *
+   * Absent only where renderers make different defensible choices — whether abandoning an
+   * interaction counts as having touched the field is a product decision, not a rendering one.
+   */
+  readonly state?: readonly string[];
   /** The value the field holds. */
   readonly value: unknown;
   /**
@@ -736,6 +750,35 @@ export const MDY_CANONICAL_OPEN: Readonly<Partial<Record<MdyWidgetKind, MdyCanon
   ));
 
 /**
+ * What every renderer must produce once an open overlay has been dismissed from the keyboard.
+ *
+ * The first expectation in this file that describes the result of an *action* rather than a state
+ * something was put into. Opening a widget and pressing Escape is one gesture every overlay kind
+ * supports, and the contract declares the transition; this is what the widget must look like
+ * afterwards.
+ *
+ * **Focus returns into the widget**, and the contract says no more than that. A dismissed overlay
+ * that leaves focus on the document body drops the user at the top of the page with no way back to
+ * where they were, which is the one outcome closing a popup must never have. *Which* part receives
+ * it is a design choice: the opener the user activated is the obvious answer, and a range picker
+ * putting them back in its start field so they can keep typing is a defensible one.
+ *
+ * **`state` is deliberately absent.** Whether opening a picker and abandoning it counts as having
+ * touched the field decides when validation errors appear, and the renderers disagree uniformly
+ * rather than by accident. That is a product decision and this contract does not get to make it by
+ * recording whichever renderer was measured first.
+ */
+export const MDY_CANONICAL_AFTER_ESCAPE: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>> =
+  Object.freeze(Object.fromEntries(
+    Object.entries(MDY_CANONICAL_AT_REST)
+      .filter(([kind, rest]) => rest.overlay !== "absent" && MDY_POPUP_OPENERS[kind as MdyWidgetKind])
+      .map(([kind, { state: _restingState, ...rest }]) => [
+        kind,
+        Object.freeze({ ...rest, focusOwner: MDY_FOCUS_WITHIN }),
+      ]),
+  ));
+
+/**
  * Value equality across the shapes a kind can hold.
  *
  * A daterange holds an object and a multiselect an array, so identity would report every renderer
@@ -798,11 +841,14 @@ export function compareToCanonical(
   }
 
   // Order is a renderer's own business — the contract says which states are reflected, not the
-  // sequence a snapshot happened to collect them in.
-  const observedState = [...snapshot.state].sort().join(", ");
-  const expectedState = [...expectation.state].sort().join(", ");
-  if (observedState !== expectedState) {
-    differences.push(`state is [${observedState}], expected [${expectedState}]`);
+  // sequence a snapshot happened to collect them in. An expectation that omits `state` says the
+  // contract leaves it free, which is not the same as expecting no state at all.
+  if (expectation.state !== undefined) {
+    const observedState = [...snapshot.state].sort().join(", ");
+    const expectedState = [...expectation.state].sort().join(", ");
+    if (observedState !== expectedState) {
+      differences.push(`state is [${observedState}], expected [${expectedState}]`);
+    }
   }
 
   if (!sameValue(snapshot.value, expectation.value)) {
@@ -811,10 +857,15 @@ export function compareToCanonical(
 
   // An expectation that omits `focusOwner` says the contract leaves it free, which is not the same
   // as expecting focus to be nowhere.
-  if (expectation.focusOwner !== undefined && snapshot.focusOwner !== expectation.focusOwner) {
-    differences.push(
-      `focus rests on ${snapshot.focusOwner ?? "nothing"}, expected ${expectation.focusOwner ?? "nothing"}`,
-    );
+  if (expectation.focusOwner !== undefined) {
+    const wrong = expectation.focusOwner === MDY_FOCUS_WITHIN
+      ? snapshot.focusOwner === null
+      : snapshot.focusOwner !== expectation.focusOwner;
+    if (wrong) {
+      differences.push(
+        `focus rests on ${snapshot.focusOwner ?? "nothing"}, expected ${expectation.focusOwner ?? "nothing"}`,
+      );
+    }
   }
   return differences;
 }

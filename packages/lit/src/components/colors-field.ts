@@ -46,6 +46,16 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     handle.markAsDirty();
   }
 
+  /**
+   * Put focus back on the area that opened the palette.
+   *
+   * Only on keyboard dismissal. Closing because the user clicked somewhere else must leave focus
+   * where they clicked, so this is not folded into `close`.
+   */
+  private restoreFocus(): void {
+    this.querySelector<HTMLElement>(".mdy-colors__toggle-area")?.focus();
+  }
+
   private close(handle: MdyFieldHandle<string | null>): void {
     if (!this._open) return;
     applyOverlayIntent(this, { type: "close" });
@@ -77,6 +87,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
           if (e.key === "Escape") {
             e.preventDefault();
             this.close(handle);
+            this.restoreFocus();
           }
         }}
       >
@@ -121,6 +132,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
           if (e.key === "Escape" && this._open) {
             e.preventDefault();
             this.close(handle);
+            this.restoreFocus();
           }
         }}
       >

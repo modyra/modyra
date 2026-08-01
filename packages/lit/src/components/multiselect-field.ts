@@ -129,6 +129,16 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     }
   }
 
+  /**
+   * Put focus back on the button that opened the list.
+   *
+   * Only on keyboard dismissal. Closing because the user clicked somewhere else must leave focus
+   * where they clicked, so this is not folded into `close`.
+   */
+  private restoreFocus(): void {
+    this.querySelector<HTMLElement>(".mdy-multiselect__search-btn")?.focus();
+  }
+
   protected override close(handle: MdyFieldHandle<readonly unknown[]>): void {
     if (!this._open) return;
     this._open = false;
@@ -153,6 +163,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       if (this._open) {
         e.preventDefault();
         this.close(handle);
+        this.restoreFocus();
       }
       return;
     }

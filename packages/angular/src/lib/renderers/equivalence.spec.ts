@@ -14,6 +14,7 @@ import type { MdyWidgetKind } from "@modyra/widgets";
 import {
   canonicalWidgetSnapshot,
   compareToCanonical,
+  MDY_CANONICAL_AFTER_ESCAPE,
   MDY_CANONICAL_AT_REST,
   MDY_CANONICAL_DISABLED,
   MDY_CANONICAL_INVALID,
@@ -27,9 +28,26 @@ import { mountStateFixture } from "./catalog-host.spec";
  * one, recorded until its own batch fixes it. Asserted both ways: a new divergence fails, and so
  * does an entry left behind after its fix.
  *
- * Empty: every kind this adapter renders produces the canonical observation in both states.
+ * **`select`, `datepicker` and `daterange` leave focus on the document body when Escape dismisses
+ * them.** The user is dropped at the top of the page with no way back to the field they were in.
+ * Both other renderers return focus into the widget on every overlay kind, and this adapter's own
+ * multiselect does too, so this is a defect rather than a permitted difference.
+ *
+ * Recorded rather than fixed here: these three close through the shared overlay panel, whose `close`
+ * output is also emitted for a backdrop click. Restoring focus at that point would yank it away from
+ * whatever the user clicked, which is a worse bug than the one being fixed, so the repair needs a
+ * batch that can separate keyboard dismissal from pointer dismissal.
+ *
+ * The hand-written Escape test this suite replaced asserted only that `aria-expanded` became false,
+ * which is why three kinds could strand the keyboard and stay green.
  */
-const KNOWN_DIVERGENCES: Record<string, Partial<Record<MdyWidgetKind, string[]>>> = {};
+const KNOWN_DIVERGENCES: Record<string, Partial<Record<MdyWidgetKind, string[]>>> = {
+  "after escape": {
+    select: ["focus rests on nothing, expected somewhere in the widget"],
+    datepicker: ["focus rests on nothing, expected somewhere in the widget"],
+    daterange: ["focus rests on nothing, expected somewhere in the widget"],
+  },
+};
 
 /**
  * At rest, no validator has run: nothing has been decided about the field before the user reached
@@ -72,3 +90,36 @@ describe.each(STATES.map((state) => [state.name, state] as const))(
     );
   },
 );
+
+/**
+ * The same gesture, executed by every renderer: open the overlay, then dismiss it from the keyboard.
+ *
+ * The first check here about what a widget *does* rather than what it looks like in a state it was
+ * put into. The expectation is declared once in `@modyra/widgets/testing`, like every other, so the
+ * three renderers answer the same question about the same sequence — this replaced a hand-written
+ * Escape test that each adapter kept its own copy of.
+ */
+describe("Angular renderers, dismissing an overlay from the keyboard", () => {
+  it.each(Object.keys(MDY_CANONICAL_AFTER_ESCAPE).map((kind) => [kind]))(
+    "%s returns focus into the widget",
+    async (kind) => {
+      const fixture = mountStateFixture(kind as MdyWidgetKind, { validators: false });
+      expect(`${kind} openable: ${fixture.drive("open")}`).toBe(`${kind} openable: true`);
+      await fixture.settle();
+
+      expect(compareToCanonical(
+        canonicalWidgetSnapshot(fixture.root, kind as MdyWidgetKind, { value: fixture.value?.() }),
+        MDY_CANONICAL_OPEN[kind as MdyWidgetKind]!,
+      )).toEqual(KNOWN_DIVERGENCES.open?.[kind as MdyWidgetKind] ?? []);
+
+      expect(`${kind} keyed: ${fixture.press?.("Escape")}`).toBe(`${kind} keyed: true`);
+      await fixture.settle();
+
+      expect(compareToCanonical(
+        canonicalWidgetSnapshot(fixture.root, kind as MdyWidgetKind, { value: fixture.value?.() }),
+        MDY_CANONICAL_AFTER_ESCAPE[kind as MdyWidgetKind]!,
+      )).toEqual(KNOWN_DIVERGENCES["after escape"]?.[kind as MdyWidgetKind] ?? []);
+      fixture.dispose();
+    },
+  );
+});
