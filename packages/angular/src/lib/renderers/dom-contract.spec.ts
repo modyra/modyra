@@ -27,6 +27,59 @@ import { CATALOG_KINDS, CatalogHost, partsOf } from "./catalog-host.spec";
  *
  * What remains below is unchanged, and none of it is an ARIA reference.
  */
+
+/**
+ * Classes these renderers use that the widget contract does not declare.
+ *
+ * Enumerated rather than waived, so a class added tomorrow fails until it is either declared by the
+ * contract or added here deliberately. Three groups sit in the list and want different answers:
+ * adapter-internal hooks the contract has no opinion on, classes the widget's own runtime
+ * projections emit but the static catalogue never lists, and structural classes the themes style
+ * that the catalogue has simply never described.
+ */
+const UNDECLARED_CLASSES = [
+  "mdy-button",
+  "mdy-chip--centered",
+  "mdy-colors",
+  "mdy-colors__dropdown-header",
+  "mdy-datepicker",
+  "mdy-datepicker__calendar",
+  "mdy-datepicker__header",
+  "mdy-datepicker__header-label",
+  "mdy-datepicker__header-nav",
+  "mdy-datepicker__icon",
+  "mdy-datepicker__nav-btn",
+  "mdy-datepicker__title",
+  "mdy-datepicker__view-icon",
+  "mdy-datepicker__view-toggle",
+  "mdy-daterange__group",
+  "mdy-daterange__hint",
+  "mdy-daterange__input-sizer",
+  "mdy-file-icon",
+  "mdy-file-info",
+  "mdy-file-placeholder",
+  "mdy-glass-effect",
+  "mdy-glass-effect--medium",
+  "mdy-overlay",
+  "mdy-overlay-panel",
+  "mdy-segmented__button--first",
+  "mdy-segmented__button--last",
+  "mdy-select",
+  "mdy-select__arrow",
+  "mdy-select__option-label",
+  "mdy-timepicker",
+  "mdy-timepicker--dial",
+  "mdy-timepicker-dial-variant",
+  "mdy-timepicker-fields",
+  "mdy-timepicker-period-btn",
+  "mdy-timepicker-period-btn--selected",
+  "mdy-timepicker-segment-input",
+  "mdy-timepicker-segment-input--readonly",
+  "mdy-timepicker-separator",
+  "mdy-timepicker-spacer",
+  "mdy-timepicker__icon",
+];
+
 const KNOWN_DIVERGENCES: Partial<Record<MdyWidgetKind, string[]>> = {
   // The trigger exists — the fixture is `searchable`, so the custom trigger behind
   // `@if (optionTpl() || searchable())` is rendered — but it does not sit inside the element the
@@ -63,6 +116,9 @@ describe("Angular renderers, against the widget DOM contract", () => {
 
       const issues = inspectWidgetDom(root, kind as MdyWidgetKind, {
         parts: partsOf(root, kind as MdyWidgetKind),
+        // The class vocabulary is contract data: a theme can only style what it can enumerate.
+        strictClasses: true,
+        allowedClasses: UNDECLARED_CLASSES,
       });
       expect(issues.map((issue) => `${issue.code}:${issue.part}`))
         .toEqual(KNOWN_DIVERGENCES[kind as MdyWidgetKind] ?? []);
