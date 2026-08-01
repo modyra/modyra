@@ -276,12 +276,26 @@ function stripComments(ts) {
     .replace(/\/\/[^\n]*/g, "");
 }
 
+/**
+ * Module specifiers, removed before any class scan.
+ *
+ * A path is not a class name, and the whole-file scan cannot tell them apart: importing
+ * `../mdy-part.js` made every file that binds a part contract look as though it emitted a
+ * `mdy-part` class, on thirteen kinds at once.
+ */
+function stripModuleSpecifiers(ts) {
+  return ts
+    .replace(/\bfrom\s+["'][^"']*["']/g, "")
+    .replace(/\bimport\s+["'][^"']*["']/g, "")
+    .replace(/\bimport\(\s*["'][^"']*["']\s*\)/g, "");
+}
+
 function extractLitAllTokens(ts) {
   // Scan the whole file for mdy-* tokens. This is robust against nested
   // template literals and conditional class strings. Tokens ending in `-`
   // are placeholders (e.g. mdy-field-) and are ignored. CSS custom property
   // names (--mdy-*) are not class names and are skipped.
-  const code = stripComments(ts);
+  const code = stripModuleSpecifiers(stripComments(ts));
   const classes = [];
   const tokenRe = /(?<!-)mdy-[A-Za-z0-9_-]+/g;
   let m;
