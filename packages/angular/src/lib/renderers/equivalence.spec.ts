@@ -15,7 +15,9 @@ import {
   canonicalWidgetSnapshot,
   compareToCanonical,
   MDY_CANONICAL_AT_REST,
+  MDY_CANONICAL_DISABLED,
   MDY_CANONICAL_INVALID,
+  MDY_CANONICAL_OPEN,
   type MdyCanonicalExpectation,
 } from "@modyra/widgets/testing";
 import { mountStateFixture } from "./catalog-host.spec";
@@ -31,7 +33,9 @@ const KNOWN_DIVERGENCES: Record<string, Partial<Record<MdyWidgetKind, string[]>>
 
 /**
  * At rest, no validator has run: nothing has been decided about the field before the user reached
- * it. Invalid is driven, because a state nobody drove into is a state the widget was never in.
+ * it. Every other state is driven, because a state nobody drove into is a state the widget was
+ * never in — and each is measured on its own, so a renderer that got two of them wrong is not
+ * reported once.
  */
 const STATES: ReadonlyArray<{
   readonly name: string;
@@ -41,6 +45,8 @@ const STATES: ReadonlyArray<{
 }> = [
   { name: "at rest", expectations: MDY_CANONICAL_AT_REST, validators: false, drive: null },
   { name: "invalid", expectations: MDY_CANONICAL_INVALID, validators: true, drive: "invalid" },
+  { name: "disabled", expectations: MDY_CANONICAL_DISABLED, validators: false, drive: "disabled" },
+  { name: "open", expectations: MDY_CANONICAL_OPEN, validators: false, drive: "open" },
 ];
 
 describe.each(STATES.map((state) => [state.name, state] as const))(
@@ -57,7 +63,6 @@ describe.each(STATES.map((state) => [state.name, state] as const))(
 
         const snapshot = canonicalWidgetSnapshot(fixture.root, kind as MdyWidgetKind, {
           value: fixture.value?.(),
-          portalRoots: fixture.portalRoots?.() ?? [],
         });
 
         expect(compareToCanonical(snapshot, state.expectations[kind as MdyWidgetKind]!))

@@ -160,11 +160,6 @@ export async function mount(kind, { validators: withValidators = true } = {}) {
     parts: () => partsOf(element, kind),
     control: () => controlOf(element),
     value: () => form.f.value.value(),
-    // A popup lifted out of the element's subtree is still the element's. A snapshot that could not
-    // reach it would call every portalled overlay absent.
-    portalRoots: () => Array.from(document.body.children).filter(
-      (node) => !element.contains(node) && node.querySelector?.("[class*='__dropdown']"),
-    ),
     // Lit batches into its own update cycle, so a signal write outside it needs a task turn before
     // the DOM reflects anything.
     //

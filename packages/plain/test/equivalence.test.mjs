@@ -15,8 +15,10 @@ import { test } from "node:test";
 import { installDomGlobals } from "./support/dom-env.mjs";
 
 installDomGlobals();
-const { canonicalWidgetSnapshot, compareToCanonical, MDY_CANONICAL_AT_REST, MDY_CANONICAL_INVALID } =
-  await import("../../widgets/dist/testing/index.js");
+const {
+  canonicalWidgetSnapshot, compareToCanonical,
+  MDY_CANONICAL_AT_REST, MDY_CANONICAL_DISABLED, MDY_CANONICAL_INVALID, MDY_CANONICAL_OPEN,
+} = await import("../../widgets/dist/testing/index.js");
 const { mount } = await import("./support/state-fixture.mjs");
 
 /**
@@ -24,17 +26,28 @@ const { mount } = await import("./support/state-fixture.mjs");
  * one, recorded until its own batch fixes it. Asserted both ways: a new divergence fails, and so
  * does an entry left behind after its fix.
  *
- * Empty: every kind this renderer draws produces the canonical observation in both states.
+ * **Opening a `daterange` leaves focus where it was.** Its own datepicker moves focus into the
+ * calendar grid, and so does the other renderer's daterange, so a keyboard user opening this one
+ * gets a calendar they cannot reach without tabbing to it. A behaviour defect rather than a
+ * rendering one, recorded here and belonging to the batch that proves keyboard intent.
  */
-const KNOWN_DIVERGENCES = {};
+const KNOWN_DIVERGENCES = {
+  open: {
+    daterange: ["focus rests on nothing, expected gridcell"],
+  },
+};
 
 /**
  * At rest, no validator has run: nothing has been decided about the field before the user reached
- * it. Invalid is driven, because a state nobody drove into is a state the widget was never in.
+ * it. Every other state is driven, because a state nobody drove into is a state the widget was
+ * never in — and each is measured on its own, so a renderer that got two of them wrong is not
+ * reported once.
  */
 const STATES = [
   { name: "at rest", expectations: MDY_CANONICAL_AT_REST, validators: false, drive: null },
   { name: "invalid", expectations: MDY_CANONICAL_INVALID, validators: true, drive: "invalid" },
+  { name: "disabled", expectations: MDY_CANONICAL_DISABLED, validators: false, drive: "disabled" },
+  { name: "open", expectations: MDY_CANONICAL_OPEN, validators: false, drive: "open" },
 ];
 
 for (const { name, expectations, validators, drive } of STATES) {
@@ -44,10 +57,7 @@ for (const { name, expectations, validators, drive } of STATES) {
       if (drive) assert.ok(fixture.drive(drive), `${kind}: ${drive} is not drivable`);
       await fixture.settle();
       try {
-        const snapshot = canonicalWidgetSnapshot(fixture.root, kind, {
-          value: fixture.value(),
-          portalRoots: fixture.portalRoots(),
-        });
+        const snapshot = canonicalWidgetSnapshot(fixture.root, kind, { value: fixture.value() });
         assert.deepEqual(
           compareToCanonical(snapshot, expectation),
           KNOWN_DIVERGENCES[name]?.[kind] ?? [],

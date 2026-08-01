@@ -320,11 +320,6 @@ export function mountStateFixture(
     parts: () => partsOf(root, kind),
     control: () => controlOf(root),
     value: () => field?.().value(),
-    // A panel projected into a CDK overlay is still this widget's. A snapshot that could not reach
-    // it would call every lifted overlay absent.
-    portalRoots: () => Array.from(root.ownerDocument.body.children).filter(
-      (element) => !root.contains(element) && element.querySelector?.("[class*='__dropdown']"),
-    ),
     // Angular renders on change detection, not on a task.
     settle: () => { fixture.detectChanges(); },
     dispose: () => fixture.destroy(),

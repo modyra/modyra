@@ -354,8 +354,16 @@ export interface MdyCanonicalExpectation {
   readonly state: readonly string[];
   /** The value the field holds. */
   readonly value: unknown;
-  /** The part focus rests on, or `null` when focus is nowhere in the widget. */
-  readonly focusOwner: string | null;
+  /**
+   * The part focus rests on, `null` when focus is nowhere in the widget, and absent when the
+   * contract does not constrain it.
+   *
+   * Left absent only where two renderers make different, defensible choices — a combobox may keep
+   * focus on its input and drive the list with `aria-activedescendant`, or move focus into a search
+   * field, and both are documented patterns. Freezing one of them here would buy agreement by
+   * forbidding a legitimate implementation, which is the failure this contract is written to avoid.
+   */
+  readonly focusOwner?: string | null;
 }
 
 /**
@@ -656,6 +664,78 @@ export const MDY_CANONICAL_INVALID: Readonly<Partial<Record<MdyWidgetKind, MdyCa
   ));
 
 /**
+ * What every renderer must produce for a kind the form has disabled.
+ *
+ * Rest plus one state, and deliberately nothing else. A disabled field that is also required and
+ * empty is two states at once, and a renderer getting either wrong would be reported the same way —
+ * so this is measured against a field no validator has judged, like rest itself.
+ */
+export const MDY_CANONICAL_DISABLED: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>> =
+  Object.freeze(Object.fromEntries(
+    Object.entries(MDY_CANONICAL_AT_REST).map(([kind, rest]) => [
+      kind,
+      Object.freeze({ ...rest, state: Object.freeze(["disabled"]) }),
+    ]),
+  ));
+
+/**
+ * Where focus goes when a kind's overlay opens.
+ *
+ * A calendar takes focus into its grid: a grid the keyboard cannot reach is a grid only a mouse can
+ * use, and both calendar kinds are the same widget with a second endpoint.
+ *
+ * The kinds absent from this table are **unconstrained on purpose**:
+ *
+ * - A combobox may keep focus on its opener and drive the list with `aria-activedescendant`, or move
+ *   focus into a search field. The authoring practices document both, so naming one here would make
+ *   a renderer wrong for making a legitimate choice.
+ * - A timepicker's overlay may open on its dial or on its inputs — it has a `modeToggle` precisely
+ *   because both are modes. `timepickerDialKeyIntent` says the dial is keyboard-driven wherever it
+ *   is shown, but nothing declares which mode a renderer opens in, and focus follows that.
+ */
+const FOCUS_ON_OPEN: Readonly<Partial<Record<MdyWidgetKind, string | null>>> = Object.freeze({
+  datepicker: "gridcell",
+  daterange: "gridcell",
+  colors: null,
+});
+
+/**
+ * What every renderer must produce for a kind whose overlay is open.
+ *
+ * Only the kinds that have one: a text field has no open state to disagree about.
+ *
+ * `popup` stops being optional here. At rest a renderer may mount it eagerly or build it on demand
+ * and both conform; once the widget is open, a renderer showing no popup is not making a free
+ * choice.
+ */
+export const MDY_CANONICAL_OPEN: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>> =
+  Object.freeze(Object.fromEntries(
+    Object.entries(MDY_CANONICAL_AT_REST)
+      .filter(([, rest]) => rest.overlay !== "absent")
+      .map(([kind, { focusOwner: _restingFocus, ...rest }]) => [
+        kind,
+        Object.freeze({
+          ...rest,
+          parts: Object.freeze([...rest.parts, "popup"]),
+          optional: Object.freeze(rest.optional.filter((part) => part !== "popup")),
+          // Closed, the opener names nothing; open, it names what the contract says it controls.
+          // The same relation with a target, not a second relation.
+          relationships: Object.freeze(rest.relationships.map((relation) =>
+            relation.attribute === "aria-controls"
+              ? { ...relation, to: MDY_POPUP_OPENERS[kind as MdyWidgetKind]?.controls ?? null }
+              : relation,
+          )),
+          overlay: "open" as const,
+          state: Object.freeze(["open"]),
+          // Present only for the kinds the contract constrains; omitted leaves the choice free.
+          ...(kind in FOCUS_ON_OPEN
+            ? { focusOwner: FOCUS_ON_OPEN[kind as MdyWidgetKind] ?? null }
+            : {}),
+        }),
+      ]),
+  ));
+
+/**
  * Value equality across the shapes a kind can hold.
  *
  * A daterange holds an object and a multiselect an array, so identity would report every renderer
@@ -729,7 +809,9 @@ export function compareToCanonical(
     differences.push(`value is ${describe(snapshot.value)}, expected ${describe(expectation.value)}`);
   }
 
-  if (snapshot.focusOwner !== expectation.focusOwner) {
+  // An expectation that omits `focusOwner` says the contract leaves it free, which is not the same
+  // as expecting focus to be nowhere.
+  if (expectation.focusOwner !== undefined && snapshot.focusOwner !== expectation.focusOwner) {
     differences.push(
       `focus rests on ${snapshot.focusOwner ?? "nothing"}, expected ${expectation.focusOwner ?? "nothing"}`,
     );

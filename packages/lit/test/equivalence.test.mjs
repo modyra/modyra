@@ -14,8 +14,10 @@ import { test } from "node:test";
 import { installDomGlobals } from "./support/dom-env.mjs";
 
 installDomGlobals();
-const { canonicalWidgetSnapshot, compareToCanonical, MDY_CANONICAL_AT_REST, MDY_CANONICAL_INVALID } =
-  await import("../../widgets/dist/testing/index.js");
+const {
+  canonicalWidgetSnapshot, compareToCanonical,
+  MDY_CANONICAL_AT_REST, MDY_CANONICAL_DISABLED, MDY_CANONICAL_INVALID, MDY_CANONICAL_OPEN,
+} = await import("../../widgets/dist/testing/index.js");
 const { mount } = await import("./support/state-fixture.mjs");
 
 /**
@@ -29,11 +31,15 @@ const KNOWN_DIVERGENCES = {};
 
 /**
  * At rest, no validator has run: nothing has been decided about the field before the user reached
- * it. Invalid is driven, because a state nobody drove into is a state the element was never in.
+ * it. Every other state is driven, because a state nobody drove into is a state the element was
+ * never in — and each is measured on its own, so an element that got two of them wrong is not
+ * reported once.
  */
 const STATES = [
   { name: "at rest", expectations: MDY_CANONICAL_AT_REST, validators: false, drive: null },
   { name: "invalid", expectations: MDY_CANONICAL_INVALID, validators: true, drive: "invalid" },
+  { name: "disabled", expectations: MDY_CANONICAL_DISABLED, validators: false, drive: "disabled" },
+  { name: "open", expectations: MDY_CANONICAL_OPEN, validators: false, drive: "open" },
 ];
 
 for (const { name, expectations, validators, drive } of STATES) {
@@ -43,10 +49,7 @@ for (const { name, expectations, validators, drive } of STATES) {
       if (drive) assert.ok(fixture.drive(drive), `${kind}: ${drive} is not drivable`);
       await fixture.settle();
       try {
-        const snapshot = canonicalWidgetSnapshot(fixture.root, kind, {
-          value: fixture.value(),
-          portalRoots: fixture.portalRoots(),
-        });
+        const snapshot = canonicalWidgetSnapshot(fixture.root, kind, { value: fixture.value() });
         assert.deepEqual(
           compareToCanonical(snapshot, expectation),
           KNOWN_DIVERGENCES[name]?.[kind] ?? [],

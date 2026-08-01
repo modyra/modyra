@@ -32,14 +32,6 @@ export interface MdyStateFixture {
    */
   value?(): unknown;
   /**
-   * Elements outside the widget's subtree that may hold its overlay.
-   *
-   * A popup lifted into a portal is still the widget's. An observation that could not reach it
-   * would call every portalled overlay absent and every eager one present — a difference in
-   * mounting strategy reported as a difference in the widget.
-   */
-  portalRoots?(): readonly Element[];
-  /**
    * Put the widget in `state`. Return false when the public API offers no way to reach it — that is
    * a finding in itself and is reported rather than skipped silently.
    */
