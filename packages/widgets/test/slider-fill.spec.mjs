@@ -1,10 +1,9 @@
 /**
  * How far along a slider's track the value sits is one calculation, shared by every renderer.
  *
- * It existed inline in Angular and in Lit, and the two disagreed about a zero-width range: Angular
- * answered 0, Lit divided by a nudged denominator and answered whatever `value - min` happened to
- * be. Plain never computed it at all, which is why its track was uniformly grey. One function,
- * one answer.
+ * Written inline it produced a different answer in each renderer for a zero-width range — 0, or
+ * whatever `value - min` happened to be over a nudged denominator, or nothing at all because the
+ * fill was never computed. One function, one answer.
  *
  * It answers a **ratio**, not a percentage. The stylesheet places the stop at
  * `thumb/2 + ratio * (100% - thumb)` so the fill ends under the handle's centre, and `calc()` can
@@ -36,7 +35,7 @@ test("a value outside the range clamps to the track", () => {
 });
 
 test("a range with no width has no fill", () => {
-  // Angular's answer, kept: 0 degrades to an empty track, where dividing by a nudged denominator
+  // 0 degrades to an empty track, where dividing by a nudged denominator
   // paints an arbitrary ratio that depends on how far the value happens to sit from min.
   assert.equal(sliderFillRatio(5, 5, 5), 0);
   assert.equal(sliderFillRatio(5, 10, 5), 0);

@@ -117,7 +117,7 @@ function classesOf(element: Element): readonly string[] {
  * Those are listed rather than defaulted, so an element name nobody thought about fails loudly
  * instead of silently admitting everything.
  */
-const SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly string[]; roles: readonly string[] } | undefined>> = Object.freeze({
+export const MDY_SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly string[]; roles: readonly string[] } | undefined>> = Object.freeze({
   root: undefined,
   group: undefined,
   // Prose the user reads. Which block or inline element carries it is presentation, and renderers
@@ -158,7 +158,7 @@ const SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly string[]; role
 
 /** An `input[type=button]` is a button; a bare `input` is a control. Tags alone cannot say so. */
 function satisfiesSemanticElement(element: Element, semantic: string): boolean {
-  const allowed = SEMANTIC_ELEMENTS[semantic];
+  const allowed = MDY_SEMANTIC_ELEMENTS[semantic];
   if (!allowed) return true;
   const tag = element.tagName.toLowerCase();
   const role = element.getAttribute("role");

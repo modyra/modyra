@@ -1,7 +1,8 @@
 /**
- * Datepicker field controller conformance tests. Modeled on Angular's real
- * MdyDatePickerComponent/MdyCalendarComponent semantics — see
- * datepicker-field-controller.ts's own doc comment.
+ * Datepicker field controller conformance tests.
+ *
+ * The value is an ISO string; which month is shown and which cell the keyboard is on are view state
+ * kept apart from it. See datepicker-field-controller.ts for the behaviour these assert.
  */
 
 import assert from "node:assert";

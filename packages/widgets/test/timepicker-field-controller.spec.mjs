@@ -1,7 +1,8 @@
 /**
- * Timepicker field controller conformance tests. Modeled on Angular's real
- * MdyTimepickerComponent/MdyTimepickerClockComponent semantics — see
- * timepicker-field-controller.ts's own doc comment.
+ * Timepicker field controller conformance tests.
+ *
+ * Editing is draft/commit: the dial moves a working copy and nothing reaches the field until
+ * `"confirm"`. See timepicker-field-controller.ts for the behaviour these assert.
  */
 
 import assert from "node:assert";

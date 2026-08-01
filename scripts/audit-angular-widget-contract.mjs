@@ -17,7 +17,7 @@ import { MDY_WIDGET_CONTRACTS, popupPlacementClass } from "../packages/widgets/d
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const sourceRoot = join(root, "packages/angular/src/lib");
-const baselinePath = join(root, "packages/widgets/contract-baseline/angular-ui.json");
+const baselinePath = join(root, "packages/angular/contract-baseline/angular-ui.json");
 const check = process.argv.includes("--check");
 const rendererRoots = [join(sourceRoot, "renderers"), join(sourceRoot, "control")];
 const files = [];
@@ -89,7 +89,7 @@ const serialized = `${JSON.stringify(manifest, null, 2)}\n`;
 if (check) {
   const expected = readFileSync(baselinePath, "utf8");
   if (expected !== serialized) {
-    console.error("Angular UI contract differs from packages/widgets/contract-baseline/angular-ui.json");
+    console.error("Angular UI contract differs from packages/angular/contract-baseline/angular-ui.json");
     console.error("Run: node scripts/audit-angular-widget-contract.mjs --write and review the semantic UI change.");
     process.exit(1);
   }

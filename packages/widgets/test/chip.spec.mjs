@@ -2,8 +2,8 @@
  * The chip primitive and its variants.
  *
  * Every renderer asks this one function what classes a chip carries, so these assertions are the
- * reason a theme can style `.mdy-chip--selected` once and have it apply to a chip drawn by Angular,
- * by Lit or by the framework-free renderer.
+ * reason a theme can style `.mdy-chip--selected` once and have it apply to every chip on screen,
+ * whichever renderer drew it.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -55,7 +55,7 @@ test("the multiselect's chip parts are the chip vocabulary, not names of their o
 });
 
 test("the field carries the options, and the popup the same grid with the overlay class", () => {
-  // Angular's anatomy: the chips are in the field, and the search button opens a popup holding the
+  // The anatomy: the chips are in the field, and the search button opens a popup holding the
   // same grid over a filter box. The shared class is what lets one rule lay out both.
   const { parts, structure } = MDY_WIDGET_CONTRACTS.multiselect;
   assert.deepEqual(parts.options.classes, ["mdy-multiselect__options"]);
