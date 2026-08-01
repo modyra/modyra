@@ -1,3 +1,14 @@
+/**
+ * Readiness gate for the Angular renderers, measured from source.
+ *
+ * Every count here answers "does this renderer's source reference the contract token it should" —
+ * it greps files and never mounts a component. `sourceAriaEvidence` says a renderer names the ARIA
+ * it is responsible for, or names the directive that supplies it; it does not say the attribute
+ * reaches the DOM.
+ *
+ * That is checked by `renderers/dom-contract.spec.ts` and by the three adapters' state matrices,
+ * which mount the widgets and read real elements.
+ */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -86,8 +97,8 @@ if (existsSync(projectionPath)) {
 const blockers = [];
 if (behaviorContractConsumers !== Object.keys(renderers).length) blockers.push("Angular behavior evidence is incomplete");
 if (!sharedOverlayPlacement || !sharedOverlayLifecycle) blockers.push("overlay policy remains framework-local");
-if (parityFixtures !== Object.keys(renderers).length) blockers.push(`normalized per-control DOM parity fixtures cover ${parityFixtures}/${Object.keys(renderers).length} renderers`);
-if (contractPartProjections !== Object.keys(renderers).length || ariaProjections !== Object.keys(renderers).length) blockers.push("contract parts and ARIA are not yet projected by every renderer");
+if (parityFixtures !== Object.keys(renderers).length) blockers.push(`normalized per-control source parity fixtures cover ${parityFixtures}/${Object.keys(renderers).length} renderers`);
+if (contractPartProjections !== Object.keys(renderers).length || ariaProjections !== Object.keys(renderers).length) blockers.push("some renderer source does not reference the contract parts and ARIA it owns");
 const result = {
   status: blockers.length === 0 ? "PATCH 3 READY" : "PATCH 3 BLOCKED",
   renderers: Object.keys(renderers).length,
@@ -96,9 +107,9 @@ const result = {
   sharedOverlayPlacement,
   sharedOverlayLifecycle,
   parityFixtures,
-  contractPartProjections,
-  ariaProjections,
-  projectionFailures,
+  sourcePartEvidence: contractPartProjections,
+  sourceAriaEvidence: ariaProjections,
+  sourceEvidenceGaps: projectionFailures,
   missingBehavior,
   fixtureFailures,
   blockers,

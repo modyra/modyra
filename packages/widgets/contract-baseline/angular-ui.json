@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "source": "packages/angular/src/lib/{control,renderers}",
-  "note": "Golden semantic surface before Angular is migrated to the complete @modyra/widgets contract.",
+  "note": "Semantic surface referenced by Angular renderer source. Text scan, not rendered DOM — see dom-contract.spec.ts and the state matrices for what the widgets actually render.",
   "selectors": [
     "[mdyChips]",
     "[mdyDependsOn]",
