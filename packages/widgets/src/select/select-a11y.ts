@@ -2,6 +2,7 @@
  * Select accessibility projection.
  */
 
+import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import type { MdyPartContract } from "../contract.js";
 import type { defaultWidgetIdFactory } from "../ids.js";
 
@@ -38,8 +39,7 @@ export function projectSelectA11y(
     classes: buildTriggerClasses(open, disabled, readonly, invalid, loading),
     attributes: {
       "aria-haspopup": "listbox",
-      "aria-expanded": String(open),
-      "aria-controls": idFactory.part(widgetId, "listbox"),
+      ...projectOverlayOpenerA11y("select", { widgetId, open })?.attributes,
       "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
       "aria-invalid": String(invalid),
       // Disabled alone: a read-only control still takes focus and can be copied from.

@@ -75,13 +75,7 @@ const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__
  * `loading` stays undrivable for `select` and `multiselect`: nothing in the public API puts a field
  * into that state, and the matrix reports it rather than counting it as a pass.
  */
-const KNOWN_DIVERGENCES: Record<string, string[]> = {
-  // Real, and checked at source: the multiselect renderer binds `aria-expanded` on no element at
-  // all. Its shared projection emits the attribute on the trigger; this renderer hand-writes its
-  // ARIA and does not read that projection, which is the same cause as the rows the other kinds
-  // shed when they started binding the shell projection. Lit records the same row.
-  "multiselect × open": ["STATE_ARIA_MISSING"],
-};
+const KNOWN_DIVERGENCES: Record<string, string[]> = {};
 
 describe("Angular renderers, against the widget state contract", () => {
   it("every declared state of every kind is asserted, and the divergences are the recorded ones", async () => {

@@ -201,19 +201,29 @@ const CALENDAR_CELL_STATES: readonly MdyStateName[] = Object.freeze([
  * `file` is absent deliberately: the browser owns its picker, so there is no overlay the contract
  * can observe and nothing to relate.
  */
-export const MDY_POPUP_OPENERS: Readonly<Record<string, string>> = Object.freeze({
-  select: "trigger",
-  multiselect: "searchButton",
+export interface MdyPopupOpener {
+  /** The part the user operates to open the overlay, and the one that must carry the relation. */
+  readonly opener: string;
+  /** The part the relation names — the element carrying the overlay's role. */
+  readonly controls: string;
+}
+
+export const MDY_POPUP_OPENERS: Readonly<Record<string, MdyPopupOpener>> = Object.freeze({
+  // `controls` is the part the relation names, and it is not always the popup: ARIA points at the
+  // element carrying the role — a listbox, a grid, a dialog — which for some kinds sits inside the
+  // popup rather than being it.
+  select: { opener: "trigger", controls: "listbox" },
+  multiselect: { opener: "searchButton", controls: "popup" },
   // The pickers follow the combobox pattern: the typeable control is what carries `role=combobox`,
-  // `aria-expanded` and now `aria-controls`, and the calendar/clock button beside it is a second
+  // `aria-expanded` and `aria-controls`, and the calendar/clock button beside it is a second
   // affordance for the same popup. The opener is therefore the control, not the button — naming the
   // button here would ask for the relation in a place the pattern does not put it.
-  datepicker: "control",
+  datepicker: { opener: "control", controls: "grid" },
   // Daterange wires its own toggle rather than following the combobox pattern its sibling does.
-  daterange: "toggle",
-  timepicker: "control",
+  daterange: { opener: "toggle", controls: "popup" },
+  timepicker: { opener: "control", controls: "dialog" },
   // Colours is the exception: it has no combobox control, so its toggle really is the opener.
-  colors: "toggle",
+  colors: { opener: "toggle", controls: "popup" },
 });
 
 /** Anchoring per kind; widgets with no overlay have none. */

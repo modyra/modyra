@@ -34,10 +34,9 @@ const KNOWN_DIVERGENCES: Partial<Record<MdyWidgetKind, string[]>> = {
   // renderer-equivalence question; this is the narrower one of where the part lives, and it is the
   // same question as `datepicker`/`timepicker` below.
   select: ["PART_NOT_OWNED:trigger"],
-  // The chips wrapper precedes the input wrapper in Angular and follows it in Plain, the label
-  // points at an id no element in this fixture carries, and the search button has the same
-  // ownership question as the select trigger.
-  multiselect: ["PART_ORDER:inputWrapper", "ARIA_DANGLING_REF:label", "PART_NOT_OWNED:searchButton"],
+  // The chips wrapper precedes the input wrapper in Angular and follows it in Plain, and the label
+  // points at an id no element in this fixture carries.
+  multiselect: ["PART_ORDER:inputWrapper", "ARIA_DANGLING_REF:label"],
   // `nativePicker` was declared a <label> in task 06, from Plain, which wraps the hidden colour
   // input in one. Angular does not, and its `control` sits outside the picker as a result.
   colors: ["PART_ELEMENT:nativePicker", "PART_NOT_CONTAINED:control", "PART_NOT_OWNED:toggle"],

@@ -871,6 +871,7 @@
         "mdy-multiselect__options",
         "mdy-multiselect__search-btn",
         "mdy-overlay-panel",
+        "mdy-part",
         "mdy-popup",
         "mdy-renderer",
         "mdy-renderer--multiselect",

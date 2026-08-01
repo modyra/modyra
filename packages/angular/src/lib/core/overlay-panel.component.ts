@@ -42,6 +42,7 @@ import {
     <div
       #panel
       popover="manual"
+      [attr.id]="panelId() || null"
       class="mdy-overlay-panel"
       [class.mdy-overlay-panel--right]="alignment() === 'right'"
       [class.mdy-overlay-panel--modal]="hasBackdrop() && (position() === 'overlay')"
@@ -72,6 +73,13 @@ export class MdyOverlayPanelComponent {
   readonly hasBackdrop = input<boolean>(false);
   readonly widthMode = input<"match-anchor" | "auto-content">("match-anchor");
   readonly panelClass = input<string>("");
+  /**
+   * The id an opener names through `aria-controls`.
+   *
+   * The panel is projected outside the field it belongs to, so the relation is the only thing tying
+   * the two together; without an id there is nothing for the opener to point at.
+   */
+  readonly panelId = input<string>("");
   /**
    * Which widget this panel is holding, so the placement is reflected under the name the catalog
    * gives it rather than one this component made up.

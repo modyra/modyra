@@ -432,7 +432,7 @@ export function inspectWidgetDom(
   // holds `aria-controls` points at this widget's own popup; this says *which part* is supposed to
   // hold it, so a widget cannot satisfy the relation from some other element that happens to have
   // one — and a widget that declares an opener and never wires it up is now visible.
-  const openerPart = MDY_POPUP_OPENERS[kind];
+  const openerPart = MDY_POPUP_OPENERS[kind]?.opener;
   if (definition.capabilities.overlay && openerPart && (resolved.get("popup") ?? []).length > 0) {
     const openers = resolved.get(openerPart) ?? [];
     if (openers.length > 0 && !openers.some((element) => element.hasAttribute("aria-controls"))) {
