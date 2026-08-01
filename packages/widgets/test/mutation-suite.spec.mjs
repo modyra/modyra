@@ -77,7 +77,7 @@ function dateRange({ id = `d${(fixtureSeq += 1)}` } = {}) {
   const toggle = el("button", "mdy-datepicker__toggle", { "aria-controls": `${id}-popup`, "aria-expanded": "true" });
   wrapper.append(startControl, separator, endControl, toggle);
   const popup = el("div", "mdy-datepicker__popup mdy-popup mdy-datepicker__popup--range", { id: `${id}-popup`, role: "dialog" });
-  const calendar = el("div", null, { role: "group" });
+  const calendar = el("div", "mdy-datepicker__calendar", { role: "group" });
   const grid = el("div", "mdy-datepicker__grid", { role: "grid" });
   const row = el("div", "mdy-datepicker__row", { role: "row" });
   const gridcell = el("div", "mdy-datepicker__cell", { role: "gridcell" });

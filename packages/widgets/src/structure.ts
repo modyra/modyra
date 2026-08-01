@@ -7,7 +7,7 @@ export const MDY_WIDGET_CONTRACT_VERSION = 1 as const;
 export type MdyWidgetSemanticElement =
   | "root" | "label" | "input" | "button" | "group" | "status"
   | "listbox" | "option" | "dialog" | "grid" | "gridcell"
-  | "presentation" | "popup" | "text";
+  | "presentation" | "popup" | "text" | "affordance";
 
 /** One node in a widget's framework-independent structural anatomy. */
 export interface MdyWidgetStructureNode<TPart extends string = string> {
