@@ -1005,6 +1005,7 @@
         "mdy-input-wrapper--disabled",
         "mdy-overlay",
         "mdy-overlay-panel",
+        "mdy-part",
         "mdy-popup",
         "mdy-renderer",
         "mdy-renderer--select",

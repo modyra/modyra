@@ -35,7 +35,7 @@ const UNDECLARED_CLASSES = [
   "mdy-plain-daterange", "mdy-plain-timepicker", "mdy-select", "mdy-select__arrow",
   "mdy-select__listbox", "mdy-timepicker", "mdy-timepicker--dial", "mdy-timepicker-fields",
   "mdy-timepicker-period-btn", "mdy-timepicker-segment-input", "mdy-timepicker-separator",
-  "mdy-timepicker-spacer", "mdy-timepicker__dialog", "mdy-timepicker__hour",
+  "mdy-timepicker-spacer", "mdy-timepicker__hour",
   "mdy-timepicker__minute", "mdy-timepicker__trigger",
 ];
 
