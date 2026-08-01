@@ -11,6 +11,7 @@ import {
 } from "@angular/core";
 import {
   buildDynamicFieldValidators,
+  mdyEmptyValueFor,
   MdyDynamicField,
   MdyDynamicLayoutChild,
   MdyDynamicLayoutNode,
@@ -139,7 +140,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [name]="f.name"
                 [label]="f.label ?? ''"
                 [placeholder]="f.placeholder ?? ''"
-                [initialValue]="f.initialValue"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("email") {
@@ -148,7 +149,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [name]="f.name"
                 [label]="f.label ?? ''"
                 [placeholder]="f.placeholder ?? ''"
-                [initialValue]="f.initialValue"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("password") {
@@ -157,7 +158,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [name]="f.name"
                 [label]="f.label ?? ''"
                 [placeholder]="f.placeholder ?? ''"
-                [initialValue]="f.initialValue"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("textarea") {
@@ -165,7 +166,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [name]="f.name"
                 [label]="f.label ?? ''"
                 [placeholder]="f.placeholder ?? ''"
-                [initialValue]="f.initialValue"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("number") {
@@ -176,7 +177,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [minValue]="f.min ?? null"
                 [maxValue]="f.max ?? null"
                 [step]="f.step ?? 1"
-                [initialValue]="f.initialValue"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("slider") {
@@ -186,21 +187,21 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [min]="f.min ?? 0"
                 [max]="f.max ?? 100"
                 [step]="f.step ?? 1"
-                [initialValue]="f.initialValue"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("checkbox") {
               <mdy-control-checkbox
                 [name]="f.name"
                 [label]="f.label ?? ''"
-                [initialValue]="f.initialValue ?? false"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("toggle") {
               <mdy-control-toggle
                 [name]="f.name"
                 [label]="f.label ?? ''"
-                [initialValue]="f.initialValue ?? false"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("select") {
@@ -209,7 +210,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [label]="f.label ?? ''"
                 [placeholder]="f.placeholder ?? ''"
                 [options]="f.options"
-                [initialValue]="f.initialValue"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("radio") {
@@ -217,7 +218,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [name]="f.name"
                 [label]="f.label ?? ''"
                 [options]="f.options"
-                [initialValue]="f.initialValue"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("multiselect") {
@@ -225,7 +226,7 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [name]="f.name"
                 [label]="f.label ?? ''"
                 [options]="f.options"
-                [initialValue]="f.initialValue ?? []"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("segmented") {
@@ -233,21 +234,21 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
                 [name]="f.name"
                 [label]="f.label ?? ''"
                 [options]="f.options"
-                [initialValue]="f.initialValue"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("datepicker") {
               <mdy-control-datepicker
                 [name]="f.name"
                 [label]="f.label ?? ''"
-                [initialValue]="f.initialValue"
+                [initialValue]="emptyFor(f)"
               />
             }
             @case ("timepicker") {
               <mdy-control-timepicker
                 [name]="f.name"
                 [label]="f.label ?? ''"
-                [initialValue]="f.initialValue"
+                [initialValue]="emptyFor(f)"
               />
             }
           }
@@ -259,6 +260,16 @@ import { MdyToggleComponent } from "../renderers/toggle/toggle-renderer.componen
 export class MdyDynamicFormComponent {
   /** Serializable field configs, rendered in order. */
   readonly fields = input.required<ReadonlyArray<MdyDynamicField>>();
+
+  /**
+   * What a field starts as when the config names no initial value.
+   *
+   * The answer is the contract's, not this template's: spelling it per kind here made a third table
+   * beside the one the rule reads, and the three did not agree.
+   */
+  protected emptyFor(field: MdyDynamicField): unknown {
+    return mdyEmptyValueFor(field);
+  }
 
   /**
    * Contract v2 layout: sections and column rows, nestable. Fields the layout names render inside
