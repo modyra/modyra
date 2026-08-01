@@ -18,6 +18,7 @@
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
 import { MDY_WIDGET_RELATIONS } from "../relations.js";
 import { MDY_FIELD_STATE_CLASSES } from "../structure.js";
+import { MDY_SEMANTIC_ELEMENTS } from "./dom-tests.js";
 
 /** One part, as the contract can describe it without naming a framework. */
 export interface MdyCanonicalPart {
@@ -92,6 +93,13 @@ function insideClosedOverlay(element: Element, root: Element): boolean {
     if (cursor.classList.contains("mdy-popup")) return true;
   }
   return false;
+}
+
+/** A selector for the tags and roles a semantic admits, for parts the contract gives no class. */
+function semanticSelector(element: string | undefined): string {
+  const allowed = element ? MDY_SEMANTIC_ELEMENTS[element] : undefined;
+  if (!allowed) return "";
+  return [...allowed.tags, ...allowed.roles.map((role) => `[role="${role}"]`)].join(", ");
 }
 
 function escapeClass(value: string): string {
@@ -172,11 +180,19 @@ export function canonicalWidgetSnapshot(
   // A closed overlay is not observed, however its renderer chose to hide it.
   const scopes: readonly Element[] = isOpen ? [root, ...ownPortal()] : [root];
 
+  const nodeFor = new Map(definition.structure.nodes.map((node) => [node.part as string, node]));
+
   const find = (part: string): readonly Element[] => {
     if (part === "root") return [root];
     const classes = definition.parts[part as keyof typeof definition.parts]?.classes ?? [];
-    if (!classes.length) return [];
-    const selector = classes.map((className: string) => `.${escapeClass(className)}`).join("");
+    // A part with no class of its own is still on screen — the free-text kinds' `control` is the
+    // bare `<input>`. Falling back to the semantic is what keeps the most important part of a text
+    // field in the observation rather than silently absent, and it stays renderer-blind: the tags and
+    // roles come from the contract's own table.
+    const selector = classes.length
+      ? classes.map((className: string) => `.${escapeClass(className)}`).join("")
+      : semanticSelector(nodeFor.get(part)?.element);
+    if (!selector) return [];
     const found: Element[] = [];
     for (const scope of scopes) {
       if (scope !== root && scope.matches?.(selector)) found.push(scope);
@@ -210,6 +226,10 @@ export function canonicalWidgetSnapshot(
    * the wrapper on every kind, and two renderers pointing at different elements would look alike.
    */
   const partOf = (element: Element): string | null => {
+    // A reference landing on something the user cannot observe resolves to nothing. Climbing to an
+    // ancestor that *is* observable would report an eagerly-mounted hidden popup as "the wrapper",
+    // while a renderer that had not built it yet reports nothing — the same widget, two answers.
+    if (!isObservable(element, root) || (!isOpen && insideClosedOverlay(element, root))) return null;
     let best: { part: string; depth: number } | null = null;
     for (const [part, elements] of resolved) {
       if (part === "root") continue;

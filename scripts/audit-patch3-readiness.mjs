@@ -67,7 +67,7 @@ const overlaySource = readFileSync(resolve(root, "packages/angular/src/lib/core/
 // this. What must never pass is a renderer computing a placement of its own.
 const sharedOverlayPlacement = overlaySource.includes("anchorOverlay") || overlaySource.includes("decideOverlayPlacement");
 const sharedOverlayLifecycle = overlaySource.includes("overlayLifecycleTransition");
-const fixturePath = resolve(root, "packages/widgets/contract-baseline/angular-dom/source-parity.json");
+const fixturePath = resolve(root, "packages/angular/contract-baseline/angular-dom/source-parity.json");
 const fixtureFailures = [];
 let parityFixtures = 0;
 if (existsSync(fixturePath)) {
@@ -79,7 +79,7 @@ if (existsSync(fixturePath)) {
     else fixtureFailures.push({ kind, missing });
   }
 }
-const projectionPath = resolve(root, "packages/widgets/contract-baseline/angular-dom/contract-projection.json");
+const projectionPath = resolve(root, "packages/angular/contract-baseline/angular-dom/contract-projection.json");
 const projectionFailures = [];
 let contractPartProjections = 0;
 let ariaProjections = 0;

@@ -1,7 +1,8 @@
 /**
- * Multiselect field controller conformance tests. Modeled on Angular's real
- * MdyMultiselectComponent semantics (toggle-set "single" mode, counter/bag
- * "multi" mode) — see multiselect-field-controller.ts's own doc comment.
+ * Multiselect field controller conformance tests.
+ *
+ * Two selection semantics over one array value: `"single"` is a toggle-set, `"multi"` a bag that
+ * counts repeats. See multiselect-field-controller.ts for the behaviour these assert.
  */
 
 import assert from "node:assert";

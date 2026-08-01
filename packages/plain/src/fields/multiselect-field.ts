@@ -175,7 +175,12 @@ export function renderMultiselectField(
 
     applyPart(shell.root, view.root);
     applyPart(shell.label, view.parts.label);
-    applyPart(searchButton, view.parts.trigger);
+    // The projection's `trigger` describes the control *area* — its classes are the input wrapper's
+    // — and its opener semantics. Here those live on two elements: the wrapper is the area, the
+    // button is what opens the popup. Applying the whole part put `mdy-multiselect` on the button
+    // as well, so one class named two elements and the catalogue's singular `inputWrapper` had two
+    // candidates.
+    applyPart(searchButton, { ...view.parts.trigger, classes: [] });
     applyPart(popup, view.parts.popup);
     applyPart(search, view.parts.search);
     applyPart(overlay.grid, view.parts.group);
