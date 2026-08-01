@@ -129,6 +129,51 @@ export type MdyDynamicField =
   | MdyDynamicFileField
   | MdyDynamicColorsField;
 
+/**
+ * What a field of this kind holds when it holds nothing.
+ *
+ * One table, in the lowest layer, because "empty" is a property of the kind rather than of whoever
+ * renders it: two adapters answering separately is how the same form validates differently in each.
+ *
+ * A kind whose empty value is a *usable* value cannot be required. `number` is `null` and not `0`
+ * for exactly that reason — zero is a number the user may well mean, so a field defaulted to it is
+ * one `required` can never fail. `slider` is the deliberate exception: a thumb is always somewhere,
+ * so an untouched slider sits at its minimum and reads as filled.
+ */
+export function mdyEmptyValueFor(field: MdyDynamicField): unknown {
+  if (field.initialValue !== undefined) return field.initialValue;
+  switch (field.kind) {
+    case "number":
+      return null;
+    // Its own minimum, not zero: a slider bounded 10–20 that starts at 0 sits outside the range it
+    // declares, and the first drag is the only thing that would ever bring it back in.
+    case "slider":
+      return field.min ?? 0;
+    case "checkbox":
+    case "toggle":
+      return false;
+    case "multiselect":
+    case "file":
+      return [];
+    case "daterange":
+      return { start: null, end: null };
+    case "select":
+    case "radio":
+    case "segmented":
+    case "datepicker":
+    case "timepicker":
+      return null;
+    case "text":
+    case "textarea":
+    case "email":
+    case "password":
+    case "colors":
+      return "";
+    default:
+      return assertNeverField(field);
+  }
+}
+
 /** Exhaustiveness helper for kind switches. */
 export function assertNeverField(field: never): never {
   throw new Error(

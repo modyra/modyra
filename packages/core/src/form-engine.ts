@@ -695,8 +695,8 @@ export class MdyFormEngine
   /**
    * Groups every field write inside `fn` into exactly one history entry
    * (when history is enabled), regardless of whether the reactivity
-   * adapter's effects run synchronously (Vue/Solid) or are scheduler-
-   * deferred (vanilla/Angular). Delegates to the adapter's own `batch()`
+   * adapter's effects run synchronously or are scheduler-deferred.
+   * Delegates to the adapter's own `batch()`
    * when it reports the capability (none do yet — piano Milestone 3); works
    * correctly without it either way.
    *

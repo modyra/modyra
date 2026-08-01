@@ -1,7 +1,9 @@
 /**
  * Framework-free keyboard interaction logic for the composite widgets.
- * Components (Angular today, other adapters tomorrow) translate DOM events
- * into these pure decisions and apply the returned target to their state.
+ *
+ * A component translates a DOM event into one of these pure decisions and applies the target it
+ * returns to its own state. Nothing here touches the DOM, so the same key means the same thing
+ * wherever the widget is drawn.
  */
 import {
   addDays,

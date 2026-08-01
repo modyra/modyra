@@ -2,11 +2,10 @@
  * Reactive contract the form engine is written against.
  *
  * The engine never imports a framework: it only needs something that can
- * create writable signals, derived computations and effects. Adapters bind
- * these to their host framework (Angular passes its native signals, so the
- * engine's state integrates with change detection); `vanillaReactivity()`
- * is a dependency-tracked implementation for Node, CLIs and plain unit
- * tests.
+ * create writable signals, derived computations and effects. An adapter binds
+ * these to its host framework's own primitives, so the engine's state takes
+ * part in that framework's change detection; `vanillaReactivity()` is a
+ * dependency-tracked implementation for Node, CLIs and plain unit tests.
  *
  * spec this contract is being migrated towards. `capabilities`, `createScope`,
  * `id` and `kind` are optional on the type for now so existing adapters
