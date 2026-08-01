@@ -591,6 +591,67 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
   });
 
 /**
+ * The part that carries `aria-describedby` for each kind: whatever the user operates.
+ *
+ * Not derivable from the resting relations. Most kinds declare a `label[for]` naming exactly this
+ * element and the groups declare `aria-labelledby` back the other way, but a checkbox and a toggle
+ * declare neither — their label wraps the control instead of pointing at it — and a rule that
+ * guessed would be silently wrong on the two kinds where nothing states it.
+ */
+const DESCRIBED_BY: Readonly<Partial<Record<MdyWidgetKind, string>>> = Object.freeze({
+  text: "control", email: "control", password: "control", textarea: "control",
+  number: "control", slider: "control", checkbox: "control", toggle: "control",
+  radio: "group", segmented: "group",
+  select: "trigger", multiselect: "searchButton",
+  datepicker: "control", timepicker: "control", daterange: "startControl",
+  file: "control", colors: "control",
+});
+
+/**
+ * What every renderer must observably produce for a kind the user has left invalid.
+ *
+ * Derived from the resting expectation rather than restated, because the invalid state *is* the
+ * resting one plus what invalidity adds: the error list, the reference that names it, and the two
+ * states the field now reflects. A second hand-written table would drift from the first the moment
+ * a part moved, and the drift would look like a renderer defect.
+ *
+ * The three things invalidity changes:
+ *
+ * - **`errors` and `errorItem` stop being optional.** At rest a renderer may or may not materialise
+ *   an empty list and both conform; once there is an error to show, a renderer that shows none is
+ *   not making a free choice.
+ * - **`aria-describedby` becomes normative.** At rest it may name an empty description box, or
+ *   nothing, depending on whether the renderer builds one. Here it must reach the error list, or the
+ *   error is rendered, styled, and announced to nobody.
+ * - **The field reflects `invalid` and `touched`.** `invalid` because it is; `touched` because a
+ *   field the user has not reached is not one they are being told is wrong.
+ */
+export const MDY_CANONICAL_INVALID: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>> =
+  Object.freeze(Object.fromEntries(
+    Object.entries(MDY_CANONICAL_AT_REST).map(([kind, rest]) => [
+      kind,
+      Object.freeze({
+        parts: Object.freeze([...rest.parts, "errors", "errorItem"]),
+        optional: Object.freeze(
+          rest.optional.filter((part) => part !== "errors" && part !== "errorItem"),
+        ),
+        relationships: Object.freeze([
+          ...rest.relationships,
+          {
+            from: DESCRIBED_BY[kind as MdyWidgetKind]!,
+            attribute: "aria-describedby",
+            to: "errors",
+          },
+        ] as readonly MdyCanonicalRelationship[]),
+        overlay: rest.overlay,
+        state: Object.freeze(["invalid", "touched"]),
+        value: rest.value,
+        focusOwner: null,
+      }),
+    ]),
+  ));
+
+/**
  * Value equality across the shapes a kind can hold.
  *
  * A daterange holds an object and a multiselect an array, so identity would report every renderer
