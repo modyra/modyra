@@ -357,6 +357,24 @@ function semanticElement(partName: string): MdyWidgetSemanticElement {
   return semantic;
 }
 
+/**
+ * Variation the contract permits, and why.
+ *
+ * Measured across all three renderers in the resting state. Each of these is a part left `optional`
+ * on purpose; without the reason written down, "optional" is indistinguishable from "nobody asked".
+ *
+ * - `select.value` and `multiselect.placeholder` are an either/or: a renderer shows the chosen value
+ *   or, when there is none, the placeholder. Both parts exist; only one is on screen at a time.
+ * - `supportingText` may be replaced by the error list rather than shown beside it. Renderers differ,
+ *   and both are defensible — which is why a projection is told whether the description was rendered
+ *   rather than assuming it.
+ * - `file.clear` and `file.fileList` are a feature choice: a file field may offer to clear its
+ *   selection and to list what was chosen, and one that does neither is still a file field.
+ *
+ * One measured difference is *not* covered here and is not a rendering question: the numeric kinds
+ * start at `0` in one renderer and `null` in another, so `required` passes on one and fails on the
+ * other. That is a value-semantics disagreement and belongs with the value dimension, not the DOM.
+ */
 export const MDY_WIDGET_CONTRACTS = Object.freeze({
   text: define("text", ["mdy-renderer", "mdy-renderer--text"], ["root", "label", "requiredMarker", "inputWrapper", "prefix", "control", "suffix", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
   email: define("email", ["mdy-renderer", "mdy-renderer--text"], ["root", "label", "requiredMarker", "inputWrapper", "prefix", "control", "suffix", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
