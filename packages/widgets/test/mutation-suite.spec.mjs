@@ -104,7 +104,9 @@ function selectField({ id = `s${(fixtureSeq += 1)}`, optionCount = 3 } = {}) {
     id: `${id}-trigger`, "aria-controls": `${id}-popup`, "aria-expanded": "true",
   });
   const value = el("span", "mdy-select__value");
-  trigger.append(value);
+  const placeholder = el("span", "mdy-select__placeholder");
+  const arrow = el("span", "mdy-select__arrow");
+  trigger.append(value, placeholder, arrow);
   wrapper.append(trigger);
   const popup = el("div", "mdy-select__dropdown mdy-popup", { id: `${id}-popup`, role: "dialog" });
   const listbox = el("div", "mdy-select__list", { role: "listbox" });

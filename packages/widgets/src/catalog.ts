@@ -155,6 +155,18 @@ interface MdyWidgetShape {
    * which is the one thing this contract sets out not to do.
    */
   readonly presentation?: readonly string[];
+  /**
+   * Parts this kind must render at rest, over and above the ones every field has.
+   *
+   * `REQUIRED_PARTS` names the eight parts that are mandatory whatever the widget is — the control
+   * and whatever holds it. Everything else was optional by default, which is not the same as a
+   * decision that it may be absent: it meant no renderer could be caught omitting a checkbox's
+   * indicator or a select's arrow, because the contract had never been asked.
+   *
+   * What goes here is measured, not assumed: a part all three renderers emit in the resting state.
+   * A part some of them omit stays optional, and the reason belongs next to it.
+   */
+  readonly required?: readonly string[];
 }
 
 /**
@@ -286,7 +298,7 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
       ?? (PARENT_CANDIDATES[name] ?? []).find((candidate) => declared.has(candidate)) ?? "root";
     const order = siblingCount.get(parent) ?? 0;
     siblingCount.set(parent, order + 1);
-    return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional: !REQUIRED_PARTS.has(name), repeated: REPEATED_PARTS.has(name) });
+    return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional: !(REQUIRED_PARTS.has(name) || shape.required?.includes(name)), repeated: REPEATED_PARTS.has(name) });
   });
   return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), capabilities: Object.freeze({ keyboard: true, focus: true, overlay, dismissOnOutsidePointer: overlay, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
@@ -303,23 +315,27 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   textarea: define("textarea", ["mdy-renderer", "mdy-renderer--textarea"], ["root", "label", "requiredMarker", "inputWrapper", "control", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
   number: define("number", ["mdy-renderer", "mdy-renderer--number"], ["root", "label", "requiredMarker", "inputWrapper", "control", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
   slider: define("slider", ["mdy-renderer", "mdy-renderer--slider"], ["root", "label", "requiredMarker", "track", "control", "value", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
-    { classes: { track: ["mdy-slider-container"], control: ["mdy-slider"], value: ["mdy-slider-value"] } }),
+    { classes: { track: ["mdy-slider-container"], control: ["mdy-slider"], value: ["mdy-slider-value"] } ,
+      required: ["value"] }),
   // Boolean controls wrap their input and their text in one clickable element, so the label sits
   // inside the wrapper next to the control rather than above it.
   // `indicator` is the drawn box, the checkbox's answer to the toggle's track: a real element every
   // renderer emits, so a theme centres the tick inside it instead of guessing where the box sits
   // behind a label's pseudo-element.
   checkbox: define("checkbox", ["mdy-renderer", "mdy-renderer--checkbox"], ["root", "inputWrapper", "control", "indicator", "label", "requiredMarker", "supportingText", "errors", "errorItem"] as const, false,
-    { parents: { label: "inputWrapper", indicator: "inputWrapper" }, elements: { label: "text" }, classes: { inputWrapper: ["mdy-checkbox"], control: ["mdy-checkbox__control"], indicator: ["mdy-checkbox__indicator"], label: [MDY_FIELD_SHELL_CLASSES.label], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } }),
+    { parents: { label: "inputWrapper", indicator: "inputWrapper" }, elements: { label: "text" }, classes: { inputWrapper: ["mdy-checkbox"], control: ["mdy-checkbox__control"], indicator: ["mdy-checkbox__indicator"], label: [MDY_FIELD_SHELL_CLASSES.label], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } ,
+      required: ["indicator"] }),
   toggle: define("toggle", ["mdy-renderer", "mdy-renderer--toggle"], ["root", "inputWrapper", "control", "track", "thumb", "label", "requiredMarker", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
-    { parents: { label: "inputWrapper" }, elements: { label: "text" }, classes: { inputWrapper: ["mdy-toggle"], control: ["mdy-toggle__control"], track: ["mdy-toggle__track"], thumb: ["mdy-toggle__thumb"], label: ["mdy-toggle__label"], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } }),
+    { parents: { label: "inputWrapper" }, elements: { label: "text" }, classes: { inputWrapper: ["mdy-toggle"], control: ["mdy-toggle__control"], track: ["mdy-toggle__track"], thumb: ["mdy-toggle__thumb"], label: ["mdy-toggle__label"], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } ,
+      required: ["thumb"] }),
   radio: define("radio", ["mdy-renderer", "mdy-renderer--radio-group"], ["root", "label", "requiredMarker", "group", "option", "optionControl", "optionLabel", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { group: ["mdy-radio-group"], option: ["mdy-radio-item"], optionControl: ["mdy-radio-circle"], optionLabel: ["mdy-radio-label"] },
       // A native chooser renders each choice as a <label> around its own <input type=radio>. That
       // is the accessible pattern and what every adapter emits; the ARIA `option` role belongs to a
       // listbox, which this is not.
       elements: { option: "label" },
-      states: { group: ["horizontal"], option: ["disabled"] } }),
+      states: { group: ["horizontal"], option: ["disabled"] } ,
+      required: ["option", "optionControl", "optionLabel"] }),
   segmented: define("segmented", ["mdy-renderer", "mdy-renderer--segmented"], ["root", "label", "requiredMarker", "group", "option", "optionCheck", "optionText", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { group: ["mdy-segmented"], option: ["mdy-segmented__button"], optionCheck: ["mdy-segmented__check"], optionText: ["mdy-segmented__text"] },
       // Left unconstrained, and that is a finding rather than a preference. Plain renders each
@@ -330,14 +346,16 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // does, declaring "either" honestly beats asserting a shape only one adapter meets.
       elements: { option: "presentation" },
       states: { option: ["selected"] } ,
-      presentation: ["mdy-segmented__button--first", "mdy-segmented__button--last"] }),
+      presentation: ["mdy-segmented__button--first", "mdy-segmented__button--last"] ,
+      required: ["option", "optionCheck", "optionText"] }),
   select: define("select", ["mdy-renderer", "mdy-renderer--select"], ["root", "label", "requiredMarker", "inputWrapper", "trigger", "value", "placeholder", "arrow", "popup", "search", "listbox", "option", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { trigger: ["mdy-select__trigger"], value: ["mdy-select__value"], placeholder: ["mdy-select__placeholder"], arrow: ["mdy-select__arrow"], popup: ["mdy-select__dropdown", MDY_POPUP_CLASS], search: ["mdy-select__search"], listbox: ["mdy-select__list"], option: ["mdy-select__option"], loading: ["mdy-select__loader"], empty: ["mdy-select__empty"] },
       // `selected` is the value; `active` is where the keyboard is. They are genuinely different —
       // arrowing through a list moves `active` without changing what is chosen — and a renderer that
       // conflated them would make the list unnavigable for anyone not using a pointer.
       states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], listbox: ["open"], option: ["selected", "active", "hidden"], popup: POPUP_PLACEMENT_STATES } ,
-      presentation: ["mdy-select", "mdy-select__option-label"] }),
+      presentation: ["mdy-select", "mdy-select__option-label"] ,
+      required: ["arrow", "placeholder"] }),
   // The option chips use the chip vocabulary the Angular renderer established — `mdy-chip` with a
   // check, a label and, in counter mode, the two step buttons and a count. That vocabulary is the
   // contract, which is what makes an option look the same whichever renderer drew it.
@@ -358,15 +376,18 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       elements: { option: "presentation", listbox: "group" },
       states: { option: ["selected"], chip: ["selected", "removable"], popup: POPUP_PLACEMENT_STATES },
       classes: { inputWrapper: ["mdy-multiselect"], header: ["mdy-multiselect__header"], searchButton: ["mdy-multiselect__search-btn"], options: ["mdy-multiselect__options"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], listbox: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
-      presentation: ["mdy-chip--centered"] }),
+      presentation: ["mdy-chip--centered"] ,
+      required: ["header", "option", "optionCheck", "optionLabel", "options", "searchButton"] }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { control: ["mdy-datepicker__input"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] },
       states: { gridcell: CALENDAR_CELL_STATES, popup: POPUP_PLACEMENT_STATES } ,
-      presentation: ["mdy-datepicker", "mdy-datepicker__action-btn", "mdy-datepicker__action-btn--primary", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle"] }),
+      presentation: ["mdy-datepicker", "mdy-datepicker__action-btn", "mdy-datepicker__action-btn--primary", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle"] ,
+      required: ["toggle"] }),
   daterange: define("daterange", ["mdy-renderer", "mdy-renderer--datepicker", "mdy-renderer--daterange"], ["root", "label", "requiredMarker", "inputWrapper", "startControl", "separator", "endControl", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { startControl: ["mdy-datepicker__input", "mdy-daterange__input"], endControl: ["mdy-datepicker__input", "mdy-daterange__input"], separator: ["mdy-daterange__sep"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS, "mdy-datepicker__popup--range"], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] },
       states: { gridcell: CALENDAR_CELL_STATES, popup: POPUP_PLACEMENT_STATES } ,
-      presentation: ["mdy-datepicker", "mdy-datepicker__action-btn", "mdy-datepicker__action-btn--primary", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle", "mdy-daterange__group", "mdy-daterange__hint", "mdy-daterange__input-sizer"] }),
+      presentation: ["mdy-datepicker", "mdy-datepicker__action-btn", "mdy-datepicker__action-btn--primary", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle", "mdy-daterange__group", "mdy-daterange__hint", "mdy-daterange__input-sizer"] ,
+      required: ["separator", "toggle"] }),
   // The clock is the picker, and its anatomy is named here down to the hand and the numbers on the
   // face: a renderer that drew its own dial would be a different widget wearing the same classes,
   // and the foundation places a number from the `--index` it is given, not from where a renderer
@@ -384,11 +405,13 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // The element the popup frames and the relation names: it carries `role="dialog"` and the
       // modal semantics, which the positioning container does not.
       classes: { control: ["mdy-timepicker__input"], toggle: ["mdy-timepicker__toggle"], popup: ["mdy-timepicker__popup", MDY_POPUP_CLASS], dialog: ["mdy-timepicker__dialog"], container: ["mdy-timepicker-container"], content: ["mdy-timepicker-content"], header: ["mdy-timepicker-header"], hour: ["mdy-timepicker-segment", "mdy-timepicker-segment--hour"], minute: ["mdy-timepicker-segment", "mdy-timepicker-segment--minute"], period: ["mdy-timepicker-period-toggle"], clock: ["mdy-timepicker-dial"], dialFace: ["mdy-timepicker-dial__face"], dialHand: ["mdy-timepicker-dial__hand"], dialNumber: ["mdy-timepicker-dial__number"], modeToggle: ["mdy-timepicker-mode-toggle"], actions: ["mdy-timepicker-actions"], action: ["mdy-timepicker-action-btn"] } ,
-      presentation: ["mdy-timepicker", "mdy-timepicker--dial", "mdy-timepicker__icon", "mdy-timepicker-dial-variant", "mdy-timepicker-fields", "mdy-timepicker-period-btn", "mdy-timepicker-period-btn--selected", "mdy-timepicker-segment-input", "mdy-timepicker-segment-input--readonly", "mdy-timepicker-separator", "mdy-timepicker-spacer"] }),
+      presentation: ["mdy-timepicker", "mdy-timepicker--dial", "mdy-timepicker__icon", "mdy-timepicker-dial-variant", "mdy-timepicker-fields", "mdy-timepicker-period-btn", "mdy-timepicker-period-btn--selected", "mdy-timepicker-segment-input", "mdy-timepicker-segment-input--readonly", "mdy-timepicker-separator", "mdy-timepicker-spacer"] ,
+      required: ["toggle"] }),
   file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"] },
       states: { dropzone: ["dragover"] } ,
-      presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder"] }),
+      presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder"] ,
+      required: ["content"] }),
   colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { // The picker is the affordance a pointer uses to reach the colour, and the contract does not
       // say how a renderer builds one. A `<label>` wrapping the hidden `<input type=color>` and a
@@ -400,7 +423,8 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       elements: { nativePicker: "affordance" },
       states: { swatch: ["active"], popup: POPUP_PLACEMENT_STATES },
       classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,
-      presentation: ["mdy-colors", "mdy-colors__dropdown-header", "mdy-select__arrow"] }),
+      presentation: ["mdy-colors", "mdy-colors__dropdown-header", "mdy-select__arrow"] ,
+      required: ["hexInput", "nativePicker", "preview", "toggle"] }),
 });
 
 export type MdyWidgetPart<K extends MdyWidgetKind> = keyof (typeof MDY_WIDGET_CONTRACTS)[K]["parts"] & string;
