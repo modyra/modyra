@@ -261,3 +261,56 @@ test("no projection invents a class the contract does not know", async () => {
   }
   assert.deepEqual([...invented], [], "a projection names a class the catalogue cannot account for");
 });
+
+/* ── The value-chip presentation ────────────────────────────────────────────────
+ * `chips`/`chip` describe the compact multiselect: the taken values shown on the control instead of
+ * only as chosen options in the grid. The catalogue declares them optional because a renderer may
+ * offer either, and no first-party renderer offers this one — which left the anatomy declared and
+ * never once built. A part nothing constructs is a part whose parents, classes and order have never
+ * been answered, so this builds it and holds it to the same gate as everything else.
+ */
+function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = {}) {
+  const root = el("div", "mdy-renderer mdy-renderer--multiselect");
+  const wrapper = el("div", "mdy-multiselect");
+  const header = el("div", "mdy-multiselect__header");
+  const searchButton = el("button", "mdy-multiselect__search-btn");
+  header.append(searchButton);
+  const chips = el("div", "mdy-multiselect__chips");
+  const chip = el("button", chipClasses);
+  chips.append(chip);
+  wrapper.append(header, chips);
+  const options = el("div", "mdy-multiselect__options");
+  const optionWrapper = el("div", "mdy-chip-wrapper");
+  const option = el("button", "mdy-chip");
+  const optionCheck = el("span", "mdy-chip__check");
+  const optionLabel = el("span", "mdy-chip__label");
+  option.append(optionCheck, optionLabel);
+  optionWrapper.append(option);
+  options.append(optionWrapper);
+  root.append(wrapper, options);
+  document.body.append(root);
+  return {
+    root,
+    parts: {
+      inputWrapper: wrapper, header, searchButton, chips, chip,
+      options, optionWrapper, option, optionCheck, optionLabel,
+    },
+  };
+}
+
+/** Parts of the multiselect this presentation does not put on screen. */
+const COMPACT_ABSENT = ["popup", "search", "listbox", "loading", "empty", "optionStep", "optionCount", "placeholder"];
+
+test("the value-chip presentation the catalogue declares actually conforms", () => {
+  const { root, parts } = buildCompactMultiselect();
+  assert.deepEqual(
+    inspectWidgetDom(root, "multiselect", { parts, absentParts: COMPACT_ABSENT, strictClasses: true }),
+    [],
+  );
+});
+
+test("a value chip missing its variant is not a value chip", () => {
+  const { root, parts } = buildCompactMultiselect({ chipClasses: "mdy-chip" });
+  const codes = inspectWidgetDom(root, "multiselect", { parts, absentParts: COMPACT_ABSENT }).map((i) => i.code);
+  assert.ok(codes.includes("PART_CLASS_MISSING"), `expected PART_CLASS_MISSING, got ${codes.join(", ") || "nothing"}`);
+});

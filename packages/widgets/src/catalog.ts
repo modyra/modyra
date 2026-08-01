@@ -96,7 +96,10 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
   preview: ["nativePicker", "inputWrapper"], nativePicker: ["inputWrapper"], hexInput: ["inputWrapper", "popup"], presets: ["popup"], swatch: ["presets"],
   // Resolved against what the kind declares: a timepicker's content frames its dial inside the
   // popup, a file field's frames its dropzone.
-  content: ["container", "popup", "dropzone"], fileList: ["dropzone"], fileItem: ["fileList"], clear: ["fileItem", "dropzone"],
+  content: ["container", "popup", "dropzone"], fileList: ["dropzone"], fileItem: ["fileList"],
+  // Clearing empties the whole field rather than one row, so the button sits beside the list, not
+  // inside an item. Containment is transitive, so a renderer may nest it further.
+  clear: ["dropzone"],
   errorItem: ["errors"],
 });
 /** Parts an adapter must always render — the control, and whatever physically holds it. */
@@ -485,7 +488,9 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"] },
       states: { dropzone: ["dragover"] } ,
-      presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder"] ,
+      // The name is what every renderer puts in the item; the meta line beside it — size, type — is
+      // optional decoration that some do and some do not.
+      presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder", "mdy-file-name", "mdy-file-meta"] ,
       required: ["content"] }),
   colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { // The picker is the affordance a pointer uses to reach the colour, and the contract does not
