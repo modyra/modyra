@@ -84,7 +84,9 @@ test("every root can report open and touched, whatever the widget", () => {
 test("every popup reflects the placement the anchoring policy chose", () => {
   for (const kind of MDY_WIDGET_KINDS) {
     if (!MDY_WIDGET_CONTRACTS[kind].capabilities.overlay) continue;
-    assert.deepEqual(partStates(kind, "popup"), ["above", "overlay"], kind);
+    // `right` joined them: which side a popup hangs from is a placement decision the anchoring
+    // policy makes, and it was the one an adapter still had to spell as a literal.
+    assert.deepEqual(partStates(kind, "popup"), ["above", "overlay", "right"], kind);
   }
 });
 

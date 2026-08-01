@@ -1,4 +1,5 @@
 import { mdyPart } from "../mdy-part.js";
+import { overlayControlledId } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
 import { MDY_CHIP_CLASSES, multiselectChipClasses } from "@modyra/widgets";
@@ -176,7 +177,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     // The contract's `popup` part, not bare content: an overlay rendered straight into a
     // `display: contents` panel takes part in layout and shifts the page open.
     const overlay = html`
-      <div class="${this.popupClass(position)} mdy-overlay">
+      <div
+        class="${this.popupClass(position)} mdy-overlay"
+        id=${overlayControlledId("multiselect", this.fieldId) ?? nothing}
+      >
       <input
         type="text"
         class="mdy-multiselect-overlay__input"
@@ -206,7 +210,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
         <div
           class="mdy-multiselect ${this._open ? "mdy-multiselect--open" : ""}"
-          id=${triggerId}
           @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
           @click=${(e: Event) => {
             // The whole trigger opens the popup, not only the search affordance: every other widget
@@ -228,6 +231,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           <div class="mdy-multiselect__header">
             <button
               type="button"
+              id=${triggerId}
               class="mdy-multiselect__search-btn"
               ?disabled=${handle.disabled()}
               @click=${(e: Event) => {
@@ -237,6 +241,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               aria-label="Show options"
               aria-haspopup="listbox"
               aria-expanded=${this._open ? "true" : "false"}
+              aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}
+              aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
             >
               ${this.loading
         ? mdyIcon("LOADER", "mdy-select__loader")

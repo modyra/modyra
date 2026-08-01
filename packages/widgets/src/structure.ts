@@ -84,6 +84,9 @@ export const MDY_SHARED_UI_CLASSES = Object.freeze([
   "mdy-inline-errors",
   "mdy-overlay",
   "mdy-overlay-panel",
+  // The scrim behind a modal overlay. One backdrop per panel rather than one per widget, which is
+  // why it belongs to the overlay machinery and to no kind's anatomy.
+  "mdy-overlay-backdrop",
   "mdy-glass-effect",
   "mdy-glass-effect--medium",
 ]);

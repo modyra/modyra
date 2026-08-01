@@ -278,7 +278,8 @@ function buildCompactMultiselect({ chipClasses = "mdy-chip mdy-chip--value" } = 
   const chips = el("div", "mdy-multiselect__chips");
   const chip = el("button", chipClasses);
   chips.append(chip);
-  wrapper.append(header, chips);
+  // The value area comes before the affordance that changes it, which is what the anatomy declares.
+  wrapper.append(chips, header);
   const options = el("div", "mdy-multiselect__options");
   const optionWrapper = el("div", "mdy-chip-wrapper");
   const option = el("button", "mdy-chip");

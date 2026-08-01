@@ -78,6 +78,11 @@ export class MdyLitSelectAdapter<TValue = unknown> {
     this.controller.setReadonly(readonly);
   }
 
+  /** Which of the field's descriptions is on screen, so the trigger names one that exists. */
+  setDescribedBy(next: { errorsVisible?: boolean; descriptionVisible?: boolean }): void {
+    this.controller.setDescribedBy(next);
+  }
+
   setInvalid(invalid: boolean): void {
     this.controller.setInvalid(invalid);
   }

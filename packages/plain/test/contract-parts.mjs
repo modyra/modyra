@@ -120,14 +120,14 @@ export const ABSENT = {
   // of the field's own grid; this one shows the grid, as Angular does. The count and the steppers
   // are counter mode's.
   multiselect: ["chips", "chip", "placeholder", "optionCount", "optionStep", "loading", "empty"],
-  datepicker: ["calendar", "actions"],
+  datepicker: ["actions"],
   // This used to read "no dial: this renderer types the time rather than drawing a clock face".
   // It does draw one — `timepicker-field.ts` builds the clock from the contract's own classes — and
   // the entry outlived the renderer that justified it. Nothing noticed, because `absentParts` was a
   // silencer: naming a part switched its checks off rather than asserting it was gone. Task 06
   // closed that, and this was the first thing it found.
   timepicker: [],
-  daterange: ["calendar"],
+  daterange: [],
   colors: [],
   file: ["fileItem"],
 };

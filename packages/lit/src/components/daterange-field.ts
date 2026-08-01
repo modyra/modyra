@@ -1,4 +1,5 @@
 import { mdyPart } from "../mdy-part.js";
+import { overlayControlledId } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle } from "@modyra/core";
 import { addMonths, buildMonthGrid, type CalendarCell, type CalendarDate, compareDates, daysInMonth, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
@@ -500,6 +501,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
             return html`<button
               type="button"
               class=${classes}
+              role="gridcell"
               tabindex=${this.isCellFocused(cell) ? "0" : "-1"}
               aria-selected=${rangeEndpoint ? "true" : "false"}
               ?disabled=${disabled}
@@ -609,7 +611,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
           </div>
         </div>
         ${this._view === "calendar"
-          ? html`<div class="mdy-datepicker__grid">
+          ? html`<div class="mdy-datepicker__grid" role="grid">
               ${this.renderCalendarGrid(handle)}
             </div>
             <div class="mdy-daterange__hint" aria-live="polite">${hint}</div>`
@@ -689,6 +691,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               ?disabled=${handle.disabled()}
               aria-label="Open date range picker"
               aria-expanded=${this._open ? "true" : "false"}
+              aria-controls=${this._open ? overlayControlledId("daterange", this.fieldId) ?? nothing : nothing}
               tabindex="-1"
               @click=${(e: Event) => (this._open ? this.closePopup(handle) : this.openPopup(handle, e))}
             >
@@ -700,7 +703,10 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
           // Wrapped in the contract's `popup` part: every overlay in the catalog is the same
           // container, and only its content differs. Without it these two pickers were the
           // only popups drawn straight into the panel, with a container of their own.
-          html`<div class="${this.popupClass(this.overlay.state.position)} mdy-overlay">${this.renderPopup(handle)}</div>`,
+          html`<div
+            class="${this.popupClass(this.overlay.state.position)} mdy-overlay"
+            id=${overlayControlledId("daterange", this.fieldId) ?? nothing}
+          >${this.renderPopup(handle)}</div>`,
           this._open,
           {
             position: this.overlay.state.position,

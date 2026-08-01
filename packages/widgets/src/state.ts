@@ -72,6 +72,9 @@ export const MDY_STATE_MODIFIERS = Object.freeze({
   above: "above",
   /** The overlay gave up on its anchor and centred itself. */
   overlay: "overlay",
+  /** The overlay hangs from the end of its anchor rather than the start. The start is the ordinary
+   * case and carries no class, exactly as "below" does for placement. */
+  right: "right",
   /**
    * On the inner ring of a face that has two.
    *

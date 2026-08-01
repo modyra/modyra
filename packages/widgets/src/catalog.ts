@@ -215,7 +215,7 @@ function statesFor(name: string, shape: MdyWidgetShape): readonly MdyStateName[]
  * other way. Every popup declares the same two because it is the same decision for all of them:
  * "below" is the ordinary case and needs no class.
  */
-const POPUP_PLACEMENT_STATES: readonly MdyStateName[] = Object.freeze(["above", "overlay"]);
+const POPUP_PLACEMENT_STATES: readonly MdyStateName[] = Object.freeze(["above", "overlay", "right"]);
 
 /**
  * Everything a day in a calendar can be at once.
@@ -438,6 +438,10 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], listbox: ["open"], option: ["selected", "active", "hidden"], popup: POPUP_PLACEMENT_STATES } ,
       presentation: ["mdy-select", "mdy-select__option-label"] ,
       required: ["arrow", "placeholder"] }),
+  // What the control shows for the current selection comes before the affordance that changes it:
+  // the chips, or the placeholder standing in for them while nothing is chosen, then the header with
+  // its search button. The order used to fall out of the sequence these names were written in, which
+  // is not a decision — it put the placeholder after the search affordance, which no renderer does.
   // The option chips use the shared chip vocabulary — `mdy-chip` with a check, a label and, in
   // counter mode, the two step buttons and a count. That vocabulary is the contract, which is what
   // makes an option look the same whichever renderer drew it.
@@ -446,7 +450,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // showing value chips (`chips`/`chip`/`placeholder`) is the compact alternative, so those parts
   // stay declared and optional. Which classes a chip carries is `multiselectChipClasses`, never a
   // string in a renderer.
-  multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "header", "searchButton", "options", "optionWrapper", "option", "optionCheck", "optionStep", "optionLabel", "optionCount", "chips", "chip", "placeholder", "popup", "search", "listbox", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
+  multiselect: define("multiselect", ["mdy-renderer", "mdy-renderer--multiselect"], ["root", "label", "requiredMarker", "inputWrapper", "chips", "chip", "placeholder", "header", "searchButton", "options", "optionWrapper", "option", "optionCheck", "optionStep", "optionLabel", "optionCount", "popup", "search", "listbox", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { parents: { header: "inputWrapper", searchButton: "header", options: "root", optionWrapper: "options", option: "optionWrapper", chips: "inputWrapper", chip: "chips", placeholder: "inputWrapper", listbox: "popup", search: "popup" },
       // This widget is a grid of chips, not a listbox, and the chip's element depends on the mode:
       // a <button> in toggle mode, a <div> carrying its own +/- step buttons in counter mode. The
@@ -492,7 +496,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // The element the popup frames and the relation names: it carries `role="dialog"` and the
       // modal semantics, which the positioning container does not.
       classes: { control: ["mdy-timepicker__input"], toggle: ["mdy-timepicker__toggle"], popup: ["mdy-timepicker__popup", MDY_POPUP_CLASS], dialog: ["mdy-timepicker__dialog"], container: ["mdy-timepicker-container"], content: ["mdy-timepicker-content"], header: ["mdy-timepicker-header"], hour: ["mdy-timepicker-segment", "mdy-timepicker-segment--hour"], minute: ["mdy-timepicker-segment", "mdy-timepicker-segment--minute"], period: ["mdy-timepicker-period-toggle"], clock: ["mdy-timepicker-dial"], dialFace: ["mdy-timepicker-dial__face"], dialHand: ["mdy-timepicker-dial__hand"], dialNumber: ["mdy-timepicker-dial__number"], modeToggle: ["mdy-timepicker-mode-toggle"], actions: ["mdy-timepicker-actions"], action: ["mdy-timepicker-action-btn"] } ,
-      presentation: ["mdy-timepicker", "mdy-timepicker--dial", "mdy-timepicker__icon", "mdy-timepicker-dial-variant", "mdy-timepicker-fields", "mdy-timepicker-period-btn", "mdy-timepicker-period-btn--selected", "mdy-timepicker-segment-input", "mdy-timepicker-segment-input--readonly", "mdy-timepicker-separator", "mdy-timepicker-spacer"] ,
+      presentation: ["mdy-timepicker", "mdy-timepicker--dial", "mdy-timepicker__icon", "mdy-timepicker-dial-variant", "mdy-timepicker-fields", "mdy-timepicker-period-btn", "mdy-timepicker-period-btn--selected", "mdy-timepicker-segment-input", "mdy-timepicker-segment-input--readonly", "mdy-timepicker-separator", "mdy-timepicker-spacer", "mdy-timepicker-segment-label"] ,
       required: ["toggle"] }),
   file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"] },

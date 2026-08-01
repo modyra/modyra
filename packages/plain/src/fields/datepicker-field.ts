@@ -52,7 +52,12 @@ export function renderDatepickerField(
   nextButton.setAttribute("aria-label", "Next month");
   header.append(prevButton, monthLabel, nextButton);
   const grid = buildCalendarGrid("datepicker");
-  popup.append(header, grid);
+  // The calendar frames the month inside the popup. The popup positions and the calendar lays out:
+  // the themes give this element the column flow the header and grid sit in, so a popup holding them
+  // directly is a picker the shipped themes cannot arrange.
+  const calendar = el("div", MDY_WIDGET_CONTRACTS.datepicker.parts.calendar.classes.join(" "));
+  calendar.append(header, grid);
+  popup.append(calendar);
 
   const wrapper = el("div", "mdy-datepicker mdy-plain-datepicker");
   wrapper.append(control, toggle, popup);
