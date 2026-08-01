@@ -12,6 +12,7 @@ import {
   group as coreGroup,
   MdyTypedFormBase,
   type MdyTypedFormBaseOptions,
+  type MdySubmittedValue,
 } from "@modyra/core";
 import {
   MdyDeclarativeAdapter,
@@ -164,15 +165,19 @@ export interface MdyTypedFormLike extends MdyDeclarativeRegistry {
   readonly state: MdyFormState;
   readonly value: Signal<Record<string, unknown>>;
   getValue(): Record<string, unknown>;
+  /** Every field except the disabled ones — what a submit actually sends. */
+  submitValue(): Partial<Record<string, unknown>>;
   getField(name: string): MdyFieldRef<unknown> | null;
   errorsFor(path: string): Signal<ReadonlyArray<MdyFormError>>;
   submit(
     action: (
-      value: Record<string, unknown>,
+      value: Partial<Record<string, unknown>>,
     ) => Promise<MdyFormError[] | void> | MdyFormError[] | void,
   ): Promise<void>;
   markAllTouched(): void;
-  buildSubmitEvent(value: never): MdyFormSubmitEvent<Record<string, unknown>>;
+  buildSubmitEvent(
+    value: never,
+  ): MdyFormSubmitEvent<Record<string, unknown>, Partial<Record<string, unknown>>>;
   patchValue(partial: never): void;
   setValue(value: never): void;
   reset(): void;
@@ -235,7 +240,7 @@ export function mdyForm<S extends MdyFormSchema>(
  */
 export class MdyTypedForm<S extends MdyFormSchema>
   extends MdyTypedFormBase<S, MdyFieldHandle<unknown>, Signal<boolean>>
-  implements MdyFormAdapter<MdyFormValue<S>>, MdyDeclarativeRegistry {
+  implements MdyFormAdapter<MdyFormValue<S>, MdySubmittedValue<S>>, MdyDeclarativeRegistry {
   declare protected readonly _adapter: MdyDeclarativeAdapter;
 
   override readonly state: MdyFormState;

@@ -16,9 +16,13 @@ import {
 import { MDY_DECLARATIVE_REGISTRY, MDY_FLOATING_LABELS, MDY_FORM_ADAPTER, MDY_INLINE_ERRORS } from "../core/tokens";
 import { MdyFieldHandle } from "../core/typed-form";
 import { MdyFieldError, MdyFieldState, MdyFormAdapter } from "../core/types";
+import type { MdyInteractivity } from "@modyra/core";
 import {
   createValueWidgetController,
   type MdyValueWidgetController,
+  defaultWidgetIdFactory,
+  projectFieldShellA11y,
+  type MdyPartContract,
   type MdyValueWidgetIntent,
   type MdyWidgetKind,
 } from "@modyra/widgets";
@@ -193,7 +197,9 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
       const touched = signal(false);
       const dirty = signal(false);
       const off: Signal<boolean> = computed(() => false);
+      const interactivity: Signal<MdyInteractivity> = computed(() => "enabled");
       this._detachedState = {
+        interactivity,
         value,
         touched,
         dirty,
@@ -269,12 +275,9 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   /**
    * Whether the error list is actually in the DOM.
    *
-   * This is the *same* condition every renderer template guards the list with. It lives here
-   * because it used to live in thirteen places and drift: the templates rendered the list on
-   * `!inlineErrors && touched() && hasErrors()` and pointed `aria-describedby` at it on
-   * `hasErrors()` alone. An invalid but untouched field — the resting state of every required field
-   * on page load — therefore described itself by an element that did not exist, and so did every
-   * field using inline errors.
+   * The single condition every renderer template guards the list with, so that anything naming the
+   * list — `aria-describedby` above all — cannot disagree with whether it was rendered. An invalid
+   * but untouched field is the common case: it has errors and shows none.
    */
   protected readonly errorsRendered: Signal<boolean> = computed(
     () => !this.inlineErrors && this.touched() && this.hasErrors(),
@@ -283,15 +286,41 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   /**
    * The id for `aria-describedby`, or `null` when there is nothing rendered to name.
    *
-   * Takes the renderer's own `fieldId` because each renderer mints its own, and returns the id the
-   * error-list component actually puts on the element — pointing at anything else is how the
-   * reference dangled in the first place. Angular's supporting text carries no id, so there is no
-   * description to fall back to; a control with no errors describes itself by nothing rather than
-   * by an id nobody rendered.
+   * Takes the renderer's own `fieldId`, since each renderer mints one, and returns the id the error
+   * list actually carries. Supporting text carries no id here, so a control with no visible errors
+   * describes itself by nothing rather than by an id no element holds.
    */
   protected describedById(fieldId: string): string | null {
-    return this.errorsRendered() ? `${fieldId}-errors` : null;
+    // The shared factory, so this and the error list cannot spell the same relation two ways.
+    return this.errorsRendered() ? defaultWidgetIdFactory.part(fieldId, "errors") : null;
   }
+
+  /**
+   * The semantic state of this control, as the shared contract projects it.
+   *
+   * A renderer binding `[mdyPart]="controlPart()"` receives `aria-invalid`, `aria-required`,
+   * `aria-disabled` and `aria-describedby` from the shared projection, so no renderer decides for
+   * itself which of a widget's states to expose.
+   *
+   * `errorsVisible` is answered here because the projection cannot know it: these renderers defer
+   * the error list until the field is touched, so having errors is not the same as showing them.
+   */
+  protected readonly controlPart: Signal<MdyPartContract> = computed(() =>
+    projectFieldShellA11y(
+      {
+        disabled: this.ariaDisabled() ?? this.isDisabled(),
+        required: this.ariaRequired() || this.isRequired(),
+      },
+      this.errors(),
+      {
+        widgetId: this.fieldId,
+        errorsVisible: this.errorsRendered(),
+      },
+    ).control,
+  );
+
+  /** The renderer's own id, which the projection needs in order to name the parts it relates. */
+  protected abstract readonly fieldId: string;
   /** Whether the field is required (deduced from validators). */
   protected readonly isRequired: Signal<boolean> = computed(() =>
     this.fieldState().required(),
