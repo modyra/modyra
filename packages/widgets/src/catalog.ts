@@ -306,7 +306,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // `selected` is the value; `active` is where the keyboard is. They are genuinely different —
       // arrowing through a list moves `active` without changing what is chosen — and a renderer that
       // conflated them would make the list unnavigable for anyone not using a pointer.
-      states: { arrow: ["open"], option: ["selected", "active", "hidden"], popup: POPUP_PLACEMENT_STATES } }),
+      states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], listbox: ["open"], option: ["selected", "active", "hidden"], popup: POPUP_PLACEMENT_STATES } }),
   // The option chips use the chip vocabulary the Angular renderer established — `mdy-chip` with a
   // check, a label and, in counter mode, the two step buttons and a count. That vocabulary is the
   // contract, which is what makes an option look the same whichever renderer drew it.
@@ -341,7 +341,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
     { parents: { dialog: "popup", header: "content", clock: "content", dialFace: "clock", dialHand: "dialFace", dialNumber: "dialFace", content: "container", actions: "container", modeToggle: "actions", action: "actions" },
       // `hour` and `minute` share `mdy-timepicker-segment`, so `active` — which of the two the dial
       // is currently editing — hangs off that shared base and is one rule in a theme, not two.
-      states: { hour: ["active"], minute: ["active"], period: ["compact"], dialNumber: ["selected", "inner"], action: ["confirm"], popup: POPUP_PLACEMENT_STATES },
+      states: { hour: ["active", "focused"], minute: ["active", "focused"], period: ["compact"], dialNumber: ["selected", "inner"], action: ["confirm"], popup: POPUP_PLACEMENT_STATES },
       // The hour and minute *segments* are the containers the header lays out; each holds its own
       // <input type=number> with an aria-label. Declaring them inputs asked a renderer for a control
       // that is one level down and not a declared part at all — a gap task 08 should close by naming

@@ -1,10 +1,12 @@
 /**
  * Accessibility projection for the timepicker field widget.
  */
+import { partClasses } from "../part-classes.js";
+import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
-import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
+import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import type { MdyTimepickerFieldState } from "./timepicker-field-types.js";
 
 export interface MdyTimepickerFieldA11yOptions {
@@ -32,15 +34,12 @@ export function timepickerFieldPartIds(widgetId: string): {
 }
 
 export function timepickerFieldRootClasses(state: MdyTimepickerFieldState): readonly string[] {
+  const S = MDY_FIELD_STATE_CLASSES;
   return [
-    "mdy-field",
-    ...(state.invalid ? ["mdy-field--invalid"] : []),
-    ...(state.disabled ? ["mdy-field--disabled"] : []),
-    ...(state.readonly ? ["mdy-field--readonly"] : []),
-    ...(state.required ? ["mdy-field--required"] : []),
-    ...(state.touched ? ["mdy-field--touched"] : []),
-    ...(state.dirty ? ["mdy-field--dirty"] : []),
-    ...(state.pending ? ["mdy-field--pending"] : []),
+    S.field,
+    ...S.fieldStates
+      .filter((name: string) => Boolean((state as unknown as Record<string, unknown>)[name]))
+      .map((name: string) => `${S.field}--${name}`),
   ];
 }
 
@@ -74,7 +73,7 @@ export function projectTimepickerFieldA11y(
     },
     trigger: {
       id: triggerId,
-      classes: ["mdy-timepicker__trigger"],
+      classes: [...MDY_WIDGET_CONTRACTS.timepicker.parts.control.classes],
       attributes: {
         role: "combobox",
         "aria-haspopup": "dialog",
@@ -96,12 +95,12 @@ export function projectTimepickerFieldA11y(
     },
     dialog: {
       id: dialogId,
-      classes: ["mdy-timepicker__dialog"],
+      classes: [...MDY_WIDGET_CONTRACTS.timepicker.parts.dialog.classes],
       attributes: { role: "dialog", "aria-labelledby": labelId, "aria-modal": "true" },
     },
     hour: {
       id: hourId,
-      classes: ["mdy-timepicker__hour", ...(state.focusedField === "hour" ? ["mdy-timepicker__hour--focused"] : [])],
+      classes: partClasses("timepicker", "hour", { focused: state.focusedField === "hour" }),
       attributes: {
         role: "spinbutton",
         "aria-label": "Hour",
@@ -112,7 +111,7 @@ export function projectTimepickerFieldA11y(
     },
     minute: {
       id: minuteId,
-      classes: ["mdy-timepicker__minute", ...(state.focusedField === "minute" ? ["mdy-timepicker__minute--focused"] : [])],
+      classes: partClasses("timepicker", "minute", { focused: state.focusedField === "minute" }),
       attributes: {
         role: "spinbutton",
         "aria-label": "Minute",

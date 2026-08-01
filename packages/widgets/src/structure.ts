@@ -46,6 +46,26 @@ export const MDY_FIELD_SHELL_CLASSES = Object.freeze({
   errorItem: "mdy-control__error",
 } satisfies Record<MdyFieldShellPart, string>);
 
+/**
+ * State classes every field carries, independent of kind.
+ *
+ * The projections emit these on the field root and on the operable control, so they are contract
+ * data in exactly the way a part's classes are — declared here rather than written as literals, so
+ * one vocabulary answers both what a renderer should emit and what a theme may rely on.
+ */
+export const MDY_FIELD_STATE_CLASSES = Object.freeze({
+  /** Base the field root's state modifiers hang from. */
+  field: "mdy-field",
+  /** States the field root reflects. */
+  fieldStates: ["invalid", "disabled", "readonly", "required", "touched", "dirty", "pending"],
+  /** Base the operable control's state modifiers hang from. */
+  control: "mdy-control",
+  /** States a control reflects, across every kind that has one. */
+  controlStates: ["disabled", "invalid", "open"],
+  /** The root modifier an overlay widget carries while its popup is showing. */
+  rendererOpen: "mdy-renderer--open",
+} as const);
+
 /** Base field anatomy. Widget-specific contracts extend this ordered tree. */
 export const MDY_FIELD_SHELL_STRUCTURE = Object.freeze({
   kind: "field-shell",

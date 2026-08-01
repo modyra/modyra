@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import { assertWidgetDomContract, inspectWidgetDom } from "../dist/testing/index.js";
-import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } from "../dist/index.js";
+import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } from "../dist/index.js";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>");
 const document = dom.window.document;
@@ -224,4 +224,40 @@ test("every declared opener relation names parts the contract actually has", () 
     assert.ok(relation.opener in parts, `${kind}: opener "${relation.opener}" is not a declared part`);
     assert.ok(relation.controls in parts, `${kind}: controls "${relation.controls}" is not a declared part`);
   }
+});
+
+test("no projection invents a class the contract does not know", async () => {
+  // The projections and the catalogue are one vocabulary. A class literal here that the catalogue
+  // cannot account for is a second one, which is how a renderer ends up emitting something no theme
+  // can enumerate and no check can recognise.
+  const { readFileSync, readdirSync } = await import("node:fs");
+  const dir = new URL("../src/field/", import.meta.url);
+  const files = readdirSync(dir).filter((name) => name.endsWith("a11y.ts"));
+  files.push("../select/select-a11y.ts");
+
+  const canonical = new Set();
+  for (const kind of Object.keys(MDY_WIDGET_CONTRACTS)) {
+    const d = MDY_WIDGET_CONTRACTS[kind];
+    for (const c of d.rootClasses) canonical.add(c);
+    for (const part of Object.values(d.parts)) {
+      for (const c of part.classes) {
+        canonical.add(c);
+        for (const state of part.states ?? []) canonical.add(`${c}--${state}`);
+      }
+    }
+  }
+  for (const c of Object.values(MDY_FIELD_SHELL_CLASSES)) canonical.add(c);
+  const S = MDY_FIELD_STATE_CLASSES;
+  canonical.add(S.field).add(S.control).add(S.rendererOpen);
+  for (const state of S.fieldStates) canonical.add(`${S.field}--${state}`);
+  for (const state of S.controlStates) canonical.add(`${S.control}--${state}`);
+
+  const invented = new Set();
+  for (const file of files) {
+    const source = readFileSync(new URL(file, dir), "utf8");
+    for (const [, className] of source.matchAll(/"(mdy-[\w-]+)"/g)) {
+      if (!canonical.has(className)) invented.add(`${file}: ${className}`);
+    }
+  }
+  assert.deepEqual([...invented], [], "a projection names a class the catalogue cannot account for");
 });

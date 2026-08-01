@@ -12,6 +12,7 @@ export type {
 
 export {
   MDY_FIELD_SHELL_CLASSES,
+  MDY_FIELD_STATE_CLASSES,
   MDY_FIELD_SHELL_STRUCTURE,
   MDY_WIDGET_CONTRACT_VERSION,
 } from "./structure.js";
