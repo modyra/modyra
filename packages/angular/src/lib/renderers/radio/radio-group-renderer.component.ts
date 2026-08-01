@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, input } from "@angular/core";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -9,7 +10,7 @@ import { MdySelectOption } from "../../core/types";
 @Component({
   selector: "mdy-control-radio",
   standalone: true,
-  imports: [NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent],
+  imports: [MdyPartDirective, NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "mdy-renderer mdy-renderer--radio-group",
@@ -44,9 +45,7 @@ import { MdySelectOption } from "../../core/types";
             [disabled]="isDisabled()"
             (change)="onSelectionChange(opt.value)"
             (blur)="dispatchValueBlur('radio')"
-            [attr.aria-invalid]="hasErrors()"
-            [attr.aria-describedby]="describedById(fieldId)"
-            [attr.aria-required]="ariaRequired() || isRequired()"
+            [mdyPart]="controlPart()"
           />
           <span class="mdy-radio-circle"></span>
           <span class="mdy-radio-label">{{ opt.label }}</span>

@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, output, signal, viewChild } from "@angular/core";
 import { MDY_WIDGET_CONTRACTS, clearFileSelection, fileSelectionTransition } from "@modyra/widgets";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -9,7 +10,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
 @Component({
   selector: "mdy-control-file",
   standalone: true,
-  imports: [NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent],
+  imports: [MdyPartDirective, NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
@@ -45,9 +46,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
         [disabled]="isDisabled()"
         (change)="onFileChange($event)"
         (blur)="dispatchValueBlur('file')"
-        [attr.aria-invalid]="hasErrors()"
-        [attr.aria-describedby]="describedById(fieldId)"
-        [attr.aria-required]="ariaRequired() || isRequired()"
+        [mdyPart]="controlPart()"
       />
 
       <div class="mdy-file-content">
