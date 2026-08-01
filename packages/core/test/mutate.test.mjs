@@ -2,7 +2,7 @@
  * Milestone 6 (piano-modyra-reactivity-adapter-api.md §12.1): form.mutate()
  * must coalesce a burst of field writes into exactly one history entry,
  * regardless of whether the reactivity adapter's effects run synchronously
- * (Vue/Solid) or are scheduler-deferred (vanilla/Angular).
+ * synchronously or are scheduler-deferred.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";

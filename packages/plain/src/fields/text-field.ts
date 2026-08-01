@@ -94,7 +94,7 @@ export function renderTextField(
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
-    // The themes style these state classes, the same ones the Lit base element toggles.
+    // The themes style these state classes, the contract's own base element toggles.
     shell.syncState({
       touched: handle.touched(),
       disabled: handle.disabled(),

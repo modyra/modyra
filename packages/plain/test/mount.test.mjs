@@ -38,7 +38,7 @@ const fields = [
 ];
 
 function byLabel(container, text) {
-  // The label carries a `mdy-label__required` marker inside it, same as the Lit renderers,
+  // The label carries a `mdy-label__required` marker inside it, as the contract's label anatomy declarers,
   // so compare the label's own text rather than the whole subtree. A boolean control puts its
   // text in a span inside the clickable wrapper, so both shapes are searched.
   const ownText = (l) =>
@@ -445,7 +445,7 @@ test("toggle preserves the widget input and adds a visual track and thumb", () =
   const host = document.createElement("div");
   document.body.append(host);
   const mounted = mountMdyForm(host, [{ name: "enabled", kind: "toggle", label: "Enabled" }], { submitLabel: null });
-  // Same anatomy the Angular renderer emits, so the shipped themes style both identically.
+  // The anatomy the catalogue declares, so the shipped themes style both identically.
   assert.ok(host.querySelector("label.mdy-toggle > input[type=checkbox]"));
   assert.ok(host.querySelector("label.mdy-toggle > .mdy-toggle__track > .mdy-toggle__thumb"));
   assert.ok(host.querySelector("label.mdy-toggle > .mdy-toggle__label"));

@@ -9,7 +9,7 @@
  *
  * spec this contract is being migrated towards. `capabilities`, `createScope`,
  * `id` and `kind` are optional on the type for now so existing adapters
- * (Vue/Solid/Angular) keep compiling unmodified — they become load-bearing
+ * (Vue, Solid, and the signal-based frameworks generally) keep compiling unmodified — they become load-bearing
  * once each adapter is migrated (Milestones 2-4 of that plan).
  */
 import { MdyDestroyedScopeError } from "./reactivity-errors.js";

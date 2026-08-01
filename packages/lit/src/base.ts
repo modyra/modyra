@@ -74,7 +74,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
    * The placement cannot live on the overlay wrapper: that is a marker with `display: contents` and
    * no geometry, so `mdy-overlay-panel--above` styled nothing however it was spelled. It belongs
    * here, on the popup itself, under the name the catalog gives it — the same class Plain writes and
-   * Angular's panel projects.
+   * a host-projected panel does.
    */
   protected popupClass(placement: MdyOverlayPlacement): string {
     const state = popupPlacementClass(this.widgetKind as MdyPopupWidgetKind, placement);
@@ -163,11 +163,11 @@ export abstract class MdyFieldElement<T> extends LitElement {
   }
 
   /**
-   * Shared label block, matching the Angular `mdy-control-label` component.
+   * Shared label block, matching the contract's label anatomy component.
    * - `labelId` is used for group renderers (radio, segmented); when set, no
    *   `for` attribute is emitted and the radiogroup references it via
    *   `aria-labelledby`.
-   * - Renders nothing when the label is empty, exactly like the Angular side.
+   * - Renders nothing when the label is empty, as the contract's shell side.
    */
   protected renderLabel(
     handle: MdyFieldHandle<T>,
@@ -252,7 +252,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   }
 
   /**
-   * Single-source host state classes shared with the Angular host bindings.
+   * Single-source host state classes, the contract's own state bindings.
    * Subclasses with extra host modifiers (e.g. `--open`) call this and then
    * toggle their own class.
    */

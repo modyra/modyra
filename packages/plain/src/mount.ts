@@ -1,7 +1,7 @@
 /**
  * Top-level entry point: given a container element and a flat Dynamic
  * Form Contract field list (the same shape `useMdyDynamicForm` in
- * @modyra/react and `<mdy-dynamic-form>` in @modyra/angular already
+ * other adapters' declarative form entry points already
  * consume), builds a real running @modyra/core form and renders real,
  * interactive DOM for every field — no virtual DOM, no template engine,
  * no framework: pure `document.createElement`/`addEventListener`, wired to

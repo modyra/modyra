@@ -35,7 +35,7 @@ export function renderDaterangeField(
   const definition = MDY_WIDGET_CONTRACTS.daterange;
   const bounds = { minIso: options.minDate ?? null, maxIso: options.maxDate ?? null };
   // Month and weekday names, and which day starts the week, all come from Intl through
-  // `buildDateLocale` — the same bundle the Angular renderer is given by DI.
+  // `buildDateLocale` — the same bundle every renderer is given by DI.
   const dateLocale = buildDateLocale(options.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language), options.firstDayOfWeek);
 
   const draft = reactivity.signal<MdyDateRangeDraftState>({

@@ -1,7 +1,7 @@
 /**
  * The state matrix, driven against the Lit elements.
  *
- * Same judgement as Plain and Angular — `collectStateMatrix` from `@modyra/widgets/testing` — with
+ * Same judgement as every other adapter — `collectStateMatrix` from `@modyra/widgets/testing` — with
  * only the driving here. Until this existed, a state defect in Lit was invisible: the matrix ran on
  * Plain alone, so `readonly` could be fixed there and stay broken here with a green board.
  */

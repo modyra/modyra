@@ -1,7 +1,7 @@
 /**
  * Renders radio/segmented kinds via createOptionFieldController — real
  * native <input type=radio> per option (segmented is the same semantics,
- * a CSS-only visual variant, exactly like Angular's own segmented button
+ * a CSS-only visual variant, as the catalogue's segmented anatomy declares — a button
  * reusing the radiogroup pattern).
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
@@ -39,7 +39,7 @@ export function renderOptionField(
     input.value = key;
     row.appendChild(input);
     // The drawn control is its own element — the radio's circle, the segment's checkmark — exactly
-    // as the Angular and Lit renderers emit it. Putting that class on the native input instead made
+    // as every renderer emits it. Putting that class on the native input instead made
     // the input answer to `.mdy-segmented__button`, so every segment appeared twice in the DOM.
     const control = el("span") as HTMLSpanElement;
     control.className = parts.control.classes.join(" ");

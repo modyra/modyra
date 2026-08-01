@@ -1,6 +1,5 @@
 /**
- * Renders the "multiselect" kind via createMultiselectFieldController, in the anatomy the Angular
- * renderer established and the catalog now names: the options are chips in a grid in the field, and
+ * Renders the "multiselect" kind via createMultiselectFieldController, in the anatomy the catalogue names: the options are chips in a grid in the field, and
  * the header's search button opens a popup holding the same grid over a filter box.
  *
  * The two grids are the same builder, and which classes a chip carries is `multiselectChipClasses`.

@@ -3,7 +3,7 @@
  *
  * This adapter used to come through `anchorOverlay`'s `lock` door: it pinned the side the popup
  * opened on and re-measured the height every frame, so a popup near the bottom of the window shrank
- * as you scrolled and its content went behind a scrollbar. Plain and Angular come through `current`,
+ * as you scrolled and its content went behind a scrollbar. The other renderers come through `current`,
  * which holds the shape and changes side only once the side has genuinely stopped fitting.
  *
  * These assert the policy from this adapter's own state, because "all three adapters agree" is a

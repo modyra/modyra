@@ -1,6 +1,6 @@
 /**
  * The Modyra control catalog for Lit — one element per field kind, with
- * the same DOM structure and class contract as the Angular renderers, so
+ * the DOM structure and class contract the catalogue declares, so
  * the shipped themes style both identically.
  *
  * Value models match the engine's conventions: dates are ISO

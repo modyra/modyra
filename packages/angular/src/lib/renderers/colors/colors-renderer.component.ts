@@ -201,7 +201,7 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
    * Which side the palette ended up on, named by the catalog rather than spelled here.
    *
    * `above` and `overlay` are declared states of the colors `popup` part, so the class comes from
-   * `popupPlacementClass` — the same call Plain and Lit make.
+   * `popupPlacementClass` — the call every renderer makes.
    */
   protected readonly placementClass = computed(() => popupPlacementClass("colors", this.position()) ?? "");
 

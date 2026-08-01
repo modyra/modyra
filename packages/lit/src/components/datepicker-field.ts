@@ -20,7 +20,7 @@ type CalendarView = "calendar" | "month" | "year";
  * ISO `yyyy-MM-dd` value model — identical to the engine's convention.
  * Styled text input (typed dates parsed in the page locale or as ISO) with
  * a calendar toggle opening a full keyboard-navigable month grid — the
- * same structure and classes the themes style for the Angular renderer.
+ * structure and classes the themes style.
  */
 export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   static override properties: PropertyDeclarations = {

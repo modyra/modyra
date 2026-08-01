@@ -4,7 +4,7 @@
  * These are two different questions and they used to be one. `required` only understood strings,
  * arrays and nullish values, so every kind whose empty value is another shape escaped it: an
  * unchecked required checkbox and a required range with both ends unset both reported themselves
- * **valid**. Plain, Angular and Lit each ledgered that independently in their state matrices, which
+ * **valid**. Every adapter ledgered that independently in their state matrices, which
  * is what identified it as a validation defect rather than a rendering one.
  *
  * Nothing rejected a *half-set* range at all, and that is not the same defect. A range is one value
