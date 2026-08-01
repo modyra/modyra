@@ -204,6 +204,20 @@ export function inspectWidgetDom(
   }
   const searchScope: readonly Element[] = [root, ...portalRoots];
 
+  // The caller's map is an override, not the definition of what exists. A part it does not name is
+  // looked up by the classes the contract gives it, over the same scope every other check uses, so a
+  // rendered part is inspected whether or not the caller thought to mention it. Without this an
+  // optional part could sit on screen with its element, classes, containment and order unchecked,
+  // and a caller could silence any check by omission.
+  for (const node of definition.structure.nodes) {
+    if (node.part === "root" || resolved.has(node.part) || absent.has(node.part)) continue;
+    const contract = definition.parts[node.part as keyof typeof definition.parts] as MdyPartContract | undefined;
+    const selector = (contract?.classes ?? []).map((className) => `.${CSS_ESCAPE(className)}`).join("");
+    if (!selector) continue;
+    const found = searchScope.flatMap((container) => Array.from(container.querySelectorAll(selector)));
+    if (found.length > 0) resolved.set(node.part, found);
+  }
+
   for (const node of definition.structure.nodes) {
     if (node.part === "root") continue;
     if (absent.has(node.part)) {
@@ -294,11 +308,12 @@ export function inspectWidgetDom(
       }
     }
     const parentElements = node.parent ? resolved.get(node.parent) ?? [] : [root];
-    const parent = parentElements[0];
-    if (parent) {
+    // Any of them, not the first: a parent part can repeat — a calendar has six rows, a chip group
+    // has one wrapper per option — and a child belongs to whichever instance holds it.
+    if (parentElements.length > 0) {
       for (const element of elements) {
         if (isPortalled(node.part, element)) continue;
-        if (element !== parent && !parent.contains(element)) {
+        if (!parentElements.some((parent) => element === parent || parent.contains(element))) {
           issues.push({ code: "PART_NOT_CONTAINED", part: node.part, message: `${node.part} must render inside ${node.parent ?? "root"}` });
         }
       }
