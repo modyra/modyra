@@ -24,18 +24,9 @@ const { mount } = await import("./support/state-fixture.mjs");
  * one, recorded until its own batch fixes it. Asserted both ways: a new divergence fails, and so
  * does an entry left behind after its fix.
  *
- * **`datepicker` and `timepicker` never reflect `touched`.** Their renderers do not call the field
- * shell's `syncState`, so the root carries no `mdy-renderer--touched` and the wrapper no error
- * modifier — the treatments three themes key off. Every other kind here either calls it or sets the
- * class directly. A rendering defect, recorded rather than fixed: it is this renderer's to fix, in
- * a batch that can verify the themes still key off what they used to.
+ * Empty: every kind this renderer draws produces the canonical observation in both states.
  */
-const KNOWN_DIVERGENCES = {
-  invalid: {
-    datepicker: ["state is [invalid], expected [invalid, touched]"],
-    timepicker: ["state is [invalid], expected [invalid, touched]"],
-  },
-};
+const KNOWN_DIVERGENCES = {};
 
 /**
  * At rest, no validator has run: nothing has been decided about the field before the user reached

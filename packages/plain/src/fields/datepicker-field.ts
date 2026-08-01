@@ -121,6 +121,10 @@ export function renderDatepickerField(
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
+    shell.syncState({
+      touched: handle.touched(), disabled: handle.disabled(),
+      hasError: !handle.valid(), filled: state.selectedDate !== "", required: handle.required(),
+    });
 
     // The input mirrors the committed value; while it has focus the user's own text wins.
     const display = state.selectedDate || "";
