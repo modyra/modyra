@@ -23,17 +23,9 @@ const { mount } = await import("./support/state-fixture.mjs");
  * one, recorded until its own batch fixes it. Asserted both ways: a new divergence fails, and so
  * does an entry left behind after its fix.
  *
- * **`multiselect` never reflects `invalid`.** An empty, required, touched multiselect carries
- * `aria-invalid` nowhere, so the one state where a screen reader has something to say is the one it
- * is not told about. The kind reflects `touched` and renders its error list, which is what hid this:
- * the list is on screen and the reference reaches it, so only reading the state itself finds the
- * gap. A rendering defect, recorded rather than fixed — it belongs to this adapter's own batch.
+ * Empty: every kind this renderer draws produces the canonical observation in both states.
  */
-const KNOWN_DIVERGENCES = {
-  invalid: {
-    multiselect: ["state is [touched], expected [invalid, touched]"],
-  },
-};
+const KNOWN_DIVERGENCES = {};
 
 /**
  * At rest, no validator has run: nothing has been decided about the field before the user reached
