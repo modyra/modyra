@@ -1,3 +1,15 @@
+/**
+ * Source-level record of the semantic surface the Angular renderers reference.
+ *
+ * Scans renderer source for class names, ARIA attribute names and selectors and compares the result
+ * against a stored manifest, so a change to the surface has to be reviewed rather than merged
+ * unnoticed. It reads text, never a rendered document: a token appearing here means a file mentions
+ * it, not that an element carries it.
+ *
+ * What the DOM actually renders is checked by `renderers/dom-contract.spec.ts` and by the three
+ * state matrices, which mount the widgets and inspect real elements. Attributes supplied at runtime
+ * by a projection are invisible to this scan and visible to those.
+ */
 import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -66,7 +78,7 @@ for (const file of files.sort()) {
 const manifest = {
   schemaVersion: 1,
   source: "packages/angular/src/lib/{control,renderers}",
-  note: "Golden semantic surface before Angular is migrated to the complete @modyra/widgets contract.",
+  note: "Semantic surface referenced by Angular renderer source. Text scan, not rendered DOM — see dom-contract.spec.ts and the state matrices for what the widgets actually render.",
   selectors: [...selectors].sort(),
   rendererModifiers: [...rendererModifiers].sort(),
   classes: [...classes].sort(),
@@ -81,7 +93,11 @@ if (check) {
     console.error("Run: node scripts/audit-angular-widget-contract.mjs --write and review the semantic UI change.");
     process.exit(1);
   }
-  console.log(`Angular UI golden contract verified: ${manifest.classes.length} classes, ${manifest.aria.length} ARIA attributes, ${manifest.selectors.length} selectors.`);
+  console.log(
+    `Angular UI source surface unchanged: ${manifest.classes.length} classes, ` +
+    `${manifest.aria.length} ARIA attribute names, ${manifest.selectors.length} selectors referenced. ` +
+    "Rendered DOM is checked by dom-contract.spec.ts and the state matrices.",
+  );
 } else {
   writeFileSync(baselinePath, serialized);
   console.log(`Wrote ${relative(root, baselinePath)}`);
