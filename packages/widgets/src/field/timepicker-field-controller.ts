@@ -70,8 +70,7 @@ export function createTimepickerFieldController(
     invalid: !handle.valid(),
     disabled: handle.disabled(),
     readonly: readonly(),
-    // One value the whole controller agrees on; `disabled`/`readonly` above are the
-    // derived halves kept for renderers that still read them.
+    // `disabled`/`readonly` above are the derived halves of this one value.
     interactivity: handle.interactivity(),
     required: handle.required(),
     touched: handle.touched(),

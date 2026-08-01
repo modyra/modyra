@@ -39,10 +39,9 @@ export interface MdyWidgetStateContract {
   /**
    * What the state means for the *form*, as against the DOM.
    *
-   * Declared rather than implied. `disabled` and `readonly` render almost identically and behave
-   * completely differently, and for a long time Modyra rendered the difference while behaving
-   * identically — both were submitted, both were validated. A contract that only describes
-   * attributes cannot catch that, because nothing about the markup is wrong.
+   * Two states can render almost identically and behave completely differently — `disabled` and
+   * `readonly` differ in whether the field is sent and checked at all. A contract describing only
+   * attributes cannot express that, because nothing about the markup distinguishes them.
    */
   readonly behaviour?: {
     /** Whether a field in this state is included in what a submit sends. */
@@ -61,8 +60,8 @@ export const MDY_WIDGET_STATE_CONTRACTS: Readonly<Record<MdyWidgetState, MdyWidg
     empty: {},
     filled: {},
     invalid: { aria: { attribute: "aria-invalid", value: "true" }, requiresParts: ["errors"] },
-    // The two states that look alike and are not. A disabled field is a question the form is not
-    // asking; a read-only one is a question it has answered on the user's behalf.
+    // A disabled field is a question the form is not asking; a read-only one is a question it has
+    // answered on the user's behalf.
     disabled: {
       aria: { attribute: "aria-disabled", value: "true" },
       nativeAttribute: "disabled",

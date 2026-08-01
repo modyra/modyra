@@ -132,11 +132,8 @@ export function projectMultiselectFieldA11y<TValue>(
       attributes: {
         "aria-controls": groupId,
         "aria-label": "Filter options",
-        // The **native** attribute, so the question is whether the control can be reached — not
-        // whether it can be written. This read `disabled || readonly`, which took focus away from a
-        // read-only multiselect and removed the one capability read-only exists to preserve. The
-        // search box does not change the value; it filters what is shown, which a user who may read
-        // the field must still be able to do.
+        // The native attribute, so the question is reachability rather than writability. Filtering
+        // does not change the value, so a user who may read the field must still be able to do it.
         disabled: blocksFocus(state.interactivity),
       },
     },

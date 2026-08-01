@@ -1,22 +1,15 @@
 /**
- * The accessibility projection for the kinds that have no controller.
+ * The accessibility projection every field shell shares, independent of what the control is.
  *
- * `daterange`, `colors` and `file` are rendered without a widgets controller. That is a deliberate
- * split and still is: the range policy, the colour transitions and the file selection all live in
- * `@modyra/widgets`, and the renderers own only DOM and events. What went with it by accident is the
- * ARIA — nothing built a projection for these three, so they applied the *static* part contract and
- * nothing state-driven.
+ * Carries the state a screen reader needs — validity, requiredness, interactivity — and the
+ * relations that tie the control to its label, description and error list. A widget that has no
+ * controller of its own still needs all of it: without `aria-describedby` the error list is
+ * rendered, styled, and announced to nobody.
  *
- * The state matrix found six rows of it (`aria-invalid` and `aria-disabled` absent on all three).
- * The hole is wider than those rows: there was no `aria-required` and no `aria-describedby` either,
- * so a screen reader was never told that a range was invalid, and never told why — the error list
- * was rendered and tied to nothing.
- *
- * This is the shared half of {@link projectFieldA11y} with the input's own concerns left out —
- * `type`, `inputmode`, `autocomplete` and `readonly` all belong to a text control, and none of these
- * three kinds is one. Root classes are deliberately not projected here: the shell already applies
- * the kind's root classes, and restating them would be a second source of truth for something that
- * is not broken.
+ * Deliberately narrower than a full field projection. `type`, `inputmode`, `autocomplete` and
+ * `readonly` belong to a text control and are not projected here. Root classes are not projected
+ * either: the shell already applies the kind's own, and restating them would create a second source
+ * of truth.
  */
 import type { MdyFieldError } from "@modyra/core";
 import { defaultWidgetIdFactory as idFactory } from "../ids.js";
@@ -36,6 +29,16 @@ export interface MdyFieldShellA11yOptions {
    * names it rather than this guessing which control is the primary one.
    */
   readonly controlId?: string;
+  /**
+   * Whether the error list is actually in the document.
+   *
+   * The caller owns this because only the caller knows when it renders one. A renderer that defers
+   * the list until the field is touched has errors long before it shows them, and deriving this
+   * from `errors.length` would make `aria-describedby` name an element that is not in the document.
+   *
+   * Defaults to "there are errors", which is correct for a renderer that always shows them.
+   */
+  readonly errorsVisible?: boolean;
 }
 
 /** The ids a shell's parts carry, so a renderer can put them on its own elements. */
@@ -64,6 +67,8 @@ export function projectFieldShellA11y(
 } {
   const { labelId, descriptionId, errorId } = fieldShellPartIds(options.widgetId);
   const hasErrors = errors.length > 0;
+  // What the control describes itself by depends on what was *rendered*, not on what is wrong.
+  const errorsVisible = options.errorsVisible ?? hasErrors;
 
   return {
     label: {
@@ -76,12 +81,12 @@ export function projectFieldShellA11y(
       attributes: {
         "aria-invalid": String(hasErrors),
         "aria-required": String(flags.required),
-        // Disabled alone, never folded with read-only — none of these three kinds declares
-        // read-only, and the two states are not interchangeable where they both exist.
+        // Disabled alone, never folded with read-only: a read-only control is reachable, and
+        // announcing it disabled tells a screen-reader user they cannot interact with something
+        // they can.
         "aria-disabled": String(flags.disabled),
-        // The point of the exercise. Without this the error list was rendered, styled, and
-        // announced to nobody.
-        "aria-describedby": hasErrors ? errorId : descriptionId,
+        // Names the error list only while it is rendered; otherwise the description.
+        "aria-describedby": errorsVisible ? errorId : descriptionId,
       },
     },
     description: {

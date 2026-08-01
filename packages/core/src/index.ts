@@ -3,10 +3,9 @@
  *
  * Typed field trees, sync/async/cross-field validation, dirty/touched
  * tracking, drafts, undo/redo and change tracking, all written against a
- * minimal reactive contract ({@link MdyReactivity}). Framework packages
- * (e.g. `@modyra/angular` for Angular) bind that contract to their native
- * signals; `vanillaReactivity()` runs the same engine in Node, CLIs and
- * plain unit tests.
+ * minimal reactive contract ({@link MdyReactivity}). A host binds that contract to whatever
+ * reactive primitives it has; `vanillaReactivity()` runs the same engine in Node, CLIs and plain
+ * unit tests.
  */
 export {
   reactivityRunsEffects,
