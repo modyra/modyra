@@ -150,9 +150,37 @@ function canonicalClasses(kind: MdyWidgetKind, extra: readonly string[]): Readon
   ]);
 }
 
-function isModifierOf(className: string, canonical: ReadonlySet<string>): boolean {
+/**
+ * Which modifiers each canonical base may carry, from the states its part declares.
+ *
+ * A part's `states` exist to make the classes it can ever carry finite and knowable, which is what
+ * lets a theme enumerate them. A base with no declared states is unconstrained: the vocabulary is
+ * still being filled in, and refusing every modifier on an undeclared base would reject the classes
+ * the renderers legitimately use today.
+ */
+function declaredModifiers(kind: MdyWidgetKind): ReadonlyMap<string, ReadonlySet<string>> {
+  const definition = MDY_WIDGET_CONTRACTS[kind];
+  const byBase = new Map<string, Set<string>>();
+  for (const part of Object.values(definition.parts) as readonly MdyPartContract[]) {
+    if (!part.states?.length) continue;
+    for (const className of part.classes) {
+      const known = byBase.get(className) ?? new Set<string>();
+      for (const state of part.states) known.add(state);
+      byBase.set(className, known);
+    }
+  }
+  return byBase;
+}
+
+function isModifierOf(
+  className: string,
+  canonical: ReadonlySet<string>,
+  declared: ReadonlyMap<string, ReadonlySet<string>>,
+): boolean {
   const base = className.split("--")[0];
-  return base !== className && canonical.has(base);
+  if (base === className || !canonical.has(base)) return false;
+  const allowed = declared.get(base);
+  return allowed ? allowed.has(className.slice(base.length + 2)) : true;
 }
 
 /** Pure inspection: returns every way the rendered DOM departs from the contract. */
@@ -514,10 +542,11 @@ export function inspectWidgetDom(
 
   if (options.strictClasses) {
     const canonical = canonicalClasses(kind, options.allowedClasses ?? []);
+    const declared = declaredModifiers(kind);
     for (const element of scope) {
       for (const className of classesOf(element)) {
         if (!className.startsWith("mdy-")) continue;
-        if (canonical.has(className) || isModifierOf(className, canonical)) continue;
+        if (canonical.has(className) || isModifierOf(className, canonical, declared)) continue;
         issues.push({ code: "INVENTED_CLASS", part: "root", message: `${className} is not part of the ${kind} contract` });
       }
     }
