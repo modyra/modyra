@@ -2,7 +2,7 @@
 "@modyra/widgets": minor
 "@modyra/plain": patch
 "@modyra/lit": patch
-"@modyra/angular": major
+"@modyra/angular": minor
 ---
 
 Milestone B, batch 2: the references between a widget's parts are contract data.

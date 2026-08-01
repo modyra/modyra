@@ -1,6 +1,6 @@
 ---
-"@modyra/core": major
-"@modyra/plain": major
+"@modyra/core": minor
+"@modyra/plain": minor
 ---
 
 A disabled field is no longer submitted or validated

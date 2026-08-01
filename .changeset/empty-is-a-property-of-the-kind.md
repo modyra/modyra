@@ -1,7 +1,7 @@
 ---
 "@modyra/core": minor
-"@modyra/plain": major
-"@modyra/angular": major
+"@modyra/plain": minor
+"@modyra/angular": minor
 ---
 
 What a field holds when it holds nothing is now the contract's answer, not a renderer's.

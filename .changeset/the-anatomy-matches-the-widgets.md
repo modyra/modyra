@@ -1,5 +1,5 @@
 ---
-"@modyra/widgets": major
+"@modyra/widgets": minor
 ---
 
 The declared anatomy matches what the widgets actually are
@@ -27,3 +27,8 @@ another. The previous release made it unconstrained, which let anything satisfy 
 
 The calendar header may sit inside the calendar or directly in the popup, the same transitive rule
 the grid already had.
+
+**Breaking.** The timepicker's dial parts move under `popup`, so `overlayOnlyParts("timepicker")`
+returns fifteen parts rather than two. Anything reading the declared parentage — a conformance
+fixture, a theme selector written against the old tree, a renderer that mounted the dial outside its
+overlay — sees a different answer.

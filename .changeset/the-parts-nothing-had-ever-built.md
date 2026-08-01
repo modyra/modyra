@@ -1,7 +1,7 @@
 ---
 "@modyra/core": minor
 "@modyra/plain": minor
-"@modyra/widgets": major
+"@modyra/widgets": minor
 ---
 
 The optional parts that only exist once something is supplied are built and checked for the first

@@ -1,6 +1,6 @@
 ---
-"@modyra/widgets": major
-"@modyra/angular": major
+"@modyra/widgets": minor
+"@modyra/angular": minor
 "@modyra/lit": patch
 ---
 

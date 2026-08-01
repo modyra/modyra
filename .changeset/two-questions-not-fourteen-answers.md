@@ -1,5 +1,5 @@
 ---
-"@modyra/widgets": major
+"@modyra/widgets": minor
 ---
 
 A read-only control can still be reached
@@ -24,3 +24,8 @@ Widget state carries `interactivity` alongside the derived `disabled`/`readonly`
 renderer reading either still works. `setReadonly()` remains an imperative escape hatch for a
 renderer with no form behind it, and can now only ever *reduce* what is permitted — it cannot
 re-enable a field the form disabled.
+
+**Breaking.** `MdyInteractivity` — `"enabled" | "readonly" | "disabled"` — replaces the independent
+`disabled` and `readonly` booleans on controller options and field state. Callers reading either
+boolean should read `interactivity`, or use `blocksValueChange` / `blocksFocus`, which answer the two
+questions the fourteen hand-written combinations were each guessing at.
