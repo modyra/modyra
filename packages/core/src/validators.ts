@@ -15,15 +15,74 @@ import { MdyFormValidatorFn, ValidatorFn } from "./types.js";
  */
 export const MDY_MARKS_REQUIRED: unique symbol = Symbol("mdyMarksRequired");
 
-/** Fail if value is null, undefined, empty string, or empty array */
+/**
+ * Whether a start/end pair has both endpoints unset.
+ *
+ * Structural on purpose: `@modyra/core` does not import a widget's value type, and any
+ * `{ start, end }` a caller supplies means the same thing here.
+ */
+function rangeEndpoints(value: unknown): { start: boolean; end: boolean } | null {
+  if (typeof value !== "object" || value === null) return null;
+  if (!("start" in value) || !("end" in value)) return null;
+  const { start, end } = value as { start: unknown; end: unknown };
+  // A cleared date input reports `""`, not null, so an endpoint is set only when it holds
+  // something. Both halves answer to the same predicate — `required` and `completeRange`
+  // disagreeing about what "set" means is how a range ends up empty *and* incomplete.
+  const isSet = (endpoint: unknown): boolean =>
+    endpoint !== null && endpoint !== undefined && endpoint !== "";
+  return { start: isSet(start), end: isSet(end) };
+}
+
+function isEmptyRange(value: unknown): boolean {
+  const endpoints = rangeEndpoints(value);
+  return endpoints !== null && !endpoints.start && !endpoints.end;
+}
+
+/**
+ * Fail if the value is empty.
+ *
+ * "Empty" is per shape, not per type, because a kind whose empty value is neither a string nor
+ * nullish used to escape this entirely: an unchecked required checkbox and a required date range
+ * with both ends unset both reported themselves **valid**. Three adapters ledgered that
+ * independently before it was fixed.
+ *
+ * - `null` / `undefined`
+ * - a blank string
+ * - an empty array — an unselected multiselect
+ * - `false` — an unchecked checkbox or an off toggle, as in HTML, where
+ *   `<input type="checkbox" required>` unchecked does not satisfy the constraint. A toggle whose
+ *   "off" is a real answer should simply not be marked required.
+ * - a `{ start, end }` pair with both ends unset. A *partial* range is not empty and is not this
+ *   validator's business — it is invalid on its own terms, see {@link completeRange}.
+ */
 export const required = <T>(message = 'This field is required'): ValidatorFn<T> => {
   const fn = (value: T): readonly string[] => {
     if (value === null || value === undefined) return [message];
     if (typeof value === 'string' && value.trim() === '') return [message];
     if (Array.isArray(value) && value.length === 0) return [message];
+    if (value === false) return [message];
+    if (isEmptyRange(value)) return [message];
     return [];
   };
   return Object.assign(fn, { [MDY_MARKS_REQUIRED]: true });
+};
+
+/**
+ * Fail a start/end pair that has one endpoint and not the other.
+ *
+ * A range is a single value with two halves, so half of one is not a partially-entered value the
+ * way half a postcode is — it names no interval at all. This holds **independently of
+ * `required`**: an optional range may be left entirely empty, and may not be left half-set.
+ *
+ * Empty is deliberately allowed here. Whether an empty range is acceptable is `required`'s
+ * question, and answering it twice would give a field two errors for one mistake.
+ */
+export const completeRange = <T>(
+  message = 'Enter both a start and an end date',
+): ValidatorFn<T> => (value) => {
+  const endpoints = rangeEndpoints(value);
+  if (endpoints === null) return [];
+  return endpoints.start === endpoints.end ? [] : [message];
 };
 
 /** Minimum string/array length */

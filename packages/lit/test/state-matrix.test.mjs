@@ -198,12 +198,16 @@ const KNOWN_DIVERGENCES = {
   "colors × disabled": ["STATE_ARIA_MISSING"],
   "file × disabled": ["STATE_ARIA_MISSING"],
 
-  // `invalid` is unreachable on the kinds whose empty value is not "" — a checkbox at false, a
-  // slider at null, a range with both ends unset. Whether `required` should reject those at all is
-  // a validation question, so they are held rather than guessed at.
-  "checkbox × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
-  "toggle × invalid": ["STATE_ARIA_MISSING", "STATE_PART_MISSING"],
-  "daterange × invalid": ["STATE_ARIA_WRONG", "STATE_PART_MISSING"],
+  // `invalid` used to be unreachable on the kinds whose empty value is not "" — a checkbox at
+  // false, a range with both ends unset — so `checkbox` and `daterange` sat here for a validation
+  // reason rather than a rendering one. Plan 26 closed that: `required` now treats `false` and an
+  // empty range as empty, and both rows are gone.
+  //
+  // What is left is the rendering defect those rows were hiding. `toggle`, `slider`, `segmented`
+  // and `colors` never emit `aria-invalid` at all — the same cherry-picking that costs Lit its
+  // fifteen `aria-disabled` rows above. `toggle × invalid` shrank from two codes to one when the
+  // field became genuinely invalid: the error list appears, and the ARIA still does not.
+  "toggle × invalid": ["STATE_ARIA_MISSING"],
   "slider × invalid": ["STATE_ARIA_MISSING"],
   "segmented × invalid": ["STATE_ARIA_MISSING"],
   "colors × invalid": ["STATE_ARIA_MISSING"],
