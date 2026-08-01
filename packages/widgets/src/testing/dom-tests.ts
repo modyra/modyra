@@ -117,6 +117,11 @@ const SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly string[]; role
   listbox: { tags: ["select"], roles: ["listbox", "grid"] },
   option: { tags: ["option"], roles: ["option", "gridcell"] },
   dialog: { tags: ["dialog"], roles: ["dialog", "alertdialog"] },
+  // The thing a pointer uses to reach a value the widget owns. A `<label>` wrapping a hidden native
+  // input and a `<button>` beside one are both correct, and the second avoids nesting a focusable
+  // control inside another — so this admits either rather than picking the pattern one renderer
+  // happened to use first. It is not unconstrained: a bare div still fails.
+  affordance: { tags: ["label", "button"], roles: ["button"] },
   // A popup is a positioning container. Its accessible semantics live on what it *contains* — the
   // listbox, the grid, the dialog — so constraining the box itself would only force a role that
   // says nothing. Declared unconstrained rather than left to fall through, so the omission is a

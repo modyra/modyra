@@ -80,11 +80,19 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
   track: ["inputWrapper"], thumb: ["track"], chips: ["trigger"], chip: ["chips"], searchButton: ["trigger"],
   group: [], option: ["optionWrapper", "listbox", "options", "group"], optionControl: ["option"], optionLabel: ["option"], optionCheck: ["option"], optionText: ["option"], optionCount: ["option"], optionStep: ["option"],
   search: ["popup"], listbox: ["popup"], optionWrapper: ["options", "listbox"], options: ["root"], loading: ["popup"], empty: ["popup"],
-  dialogHeader: ["popup"], header: ["popup"], calendar: ["popup"], clock: ["popup"], actions: ["popup"],
+  // A container and its content are the popup's own frame. Without them here they fell through to
+  // `root`, which said the whole dial was a resting-state part and made a closed picker look like a
+  // renderer that had lost thirteen of them.
+  container: ["popup"],
+  // Same reasoning as `grid` below: the header belongs to the calendar where a renderer draws one
+  // and to the popup where it does not. What the contract requires is that it is inside the overlay.
+  dialogHeader: ["calendar", "popup"], header: ["content", "popup"], calendar: ["popup"], clock: ["content", "popup"], actions: ["container", "popup"],
   grid: ["calendar", "popup"], weekdays: ["grid"], weekday: ["weekdays"], row: ["grid"], gridcell: ["row", "grid"],
   hour: ["header", "popup"], minute: ["header", "popup"], period: ["header", "popup"],
   preview: ["nativePicker", "inputWrapper"], nativePicker: ["inputWrapper"], hexInput: ["inputWrapper", "popup"], presets: ["popup"], swatch: ["presets"],
-  content: ["dropzone"], fileList: ["dropzone"], fileItem: ["fileList"], clear: ["fileItem", "dropzone"],
+  // Resolved against what the kind declares: a timepicker's content frames its dial inside the
+  // popup, a file field's frames its dropzone.
+  content: ["container", "popup", "dropzone"], fileList: ["dropzone"], fileItem: ["fileList"], clear: ["fileItem", "dropzone"],
   errorItem: ["errors"],
 });
 /** Parts an adapter must always render — the control, and whatever physically holds it. */
@@ -293,7 +301,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   email: define("email", ["mdy-renderer", "mdy-renderer--text"], ["root", "label", "requiredMarker", "inputWrapper", "prefix", "control", "suffix", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
   password: define("password", ["mdy-renderer", "mdy-renderer--text"], ["root", "label", "requiredMarker", "inputWrapper", "prefix", "control", "suffix", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
   textarea: define("textarea", ["mdy-renderer", "mdy-renderer--textarea"], ["root", "label", "requiredMarker", "inputWrapper", "control", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
-  number: define("number", ["mdy-renderer", "mdy-renderer--number"], ["root", "label", "requiredMarker", "inputWrapper", "control", "decrement", "increment", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
+  number: define("number", ["mdy-renderer", "mdy-renderer--number"], ["root", "label", "requiredMarker", "inputWrapper", "control", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
   slider: define("slider", ["mdy-renderer", "mdy-renderer--slider"], ["root", "label", "requiredMarker", "track", "control", "value", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { track: ["mdy-slider-container"], control: ["mdy-slider"], value: ["mdy-slider-value"] } }),
   // Boolean controls wrap their input and their text in one clickable element, so the label sits
@@ -352,13 +360,13 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       classes: { inputWrapper: ["mdy-multiselect"], header: ["mdy-multiselect__header"], searchButton: ["mdy-multiselect__search-btn"], options: ["mdy-multiselect__options"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], listbox: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
       presentation: ["mdy-chip--centered"] }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
-    { classes: { control: ["mdy-datepicker__input"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] },
+    { classes: { control: ["mdy-datepicker__input"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] },
       states: { gridcell: CALENDAR_CELL_STATES, popup: POPUP_PLACEMENT_STATES } ,
-      presentation: ["mdy-datepicker", "mdy-datepicker__action-btn", "mdy-datepicker__action-btn--primary", "mdy-datepicker__calendar", "mdy-datepicker__header", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle"] }),
-  daterange: define("daterange", ["mdy-renderer", "mdy-renderer--datepicker", "mdy-renderer--daterange"], ["root", "label", "requiredMarker", "inputWrapper", "startControl", "separator", "endControl", "toggle", "popup", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
-    { classes: { startControl: ["mdy-datepicker__input", "mdy-daterange__input"], endControl: ["mdy-datepicker__input", "mdy-daterange__input"], separator: ["mdy-daterange__sep"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS, "mdy-datepicker__popup--range"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] },
+      presentation: ["mdy-datepicker", "mdy-datepicker__action-btn", "mdy-datepicker__action-btn--primary", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle"] }),
+  daterange: define("daterange", ["mdy-renderer", "mdy-renderer--datepicker", "mdy-renderer--daterange"], ["root", "label", "requiredMarker", "inputWrapper", "startControl", "separator", "endControl", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
+    { classes: { startControl: ["mdy-datepicker__input", "mdy-daterange__input"], endControl: ["mdy-datepicker__input", "mdy-daterange__input"], separator: ["mdy-daterange__sep"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS, "mdy-datepicker__popup--range"], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] },
       states: { gridcell: CALENDAR_CELL_STATES, popup: POPUP_PLACEMENT_STATES } ,
-      presentation: ["mdy-datepicker", "mdy-datepicker__action-btn", "mdy-datepicker__action-btn--primary", "mdy-datepicker__calendar", "mdy-datepicker__header", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle", "mdy-daterange__group", "mdy-daterange__hint", "mdy-daterange__input-sizer"] }),
+      presentation: ["mdy-datepicker", "mdy-datepicker__action-btn", "mdy-datepicker__action-btn--primary", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle", "mdy-daterange__group", "mdy-daterange__hint", "mdy-daterange__input-sizer"] }),
   // The clock is the picker, and its anatomy is named here down to the hand and the numbers on the
   // face: a renderer that drew its own dial would be a different widget wearing the same classes,
   // and the foundation places a number from the `--index` it is given, not from where a renderer
@@ -389,7 +397,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       //
       // The native input is therefore a sibling under the wrapper rather than a child of the
       // picker: where it sits is a rendering choice, that it exists is the contract.
-      elements: { nativePicker: "presentation" },
+      elements: { nativePicker: "affordance" },
       states: { swatch: ["active"], popup: POPUP_PLACEMENT_STATES },
       classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,
       presentation: ["mdy-colors", "mdy-colors__dropdown-header", "mdy-select__arrow"] }),
