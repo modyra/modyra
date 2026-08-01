@@ -251,6 +251,8 @@ for (const [tag, kind, initial, opener] of OVERLAY_ELEMENTS) {
       parts,
       absentParts: ABSENT_WHILE_OPEN[kind] ?? [],
       strictClasses: true,
+      // The overlay is showing, so the parts that only exist inside it are required of this run.
+      open: true,
     });
     assert.deepEqual(
       issues.map((issue) => `${issue.code}:${issue.part}`),

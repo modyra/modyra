@@ -11,6 +11,7 @@
 import { TestBed } from "@angular/core/testing";
 import { inspectWidgetDom } from "@modyra/widgets/testing";
 import type { MdyWidgetKind } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { CATALOG_KINDS, CatalogHost, partsOf } from "./catalog-host.spec";
 
 /**
@@ -53,6 +54,66 @@ describe("Angular renderers, against the widget DOM contract", () => {
       });
       expect(issues.map((issue) => `${issue.code}:${issue.part}`))
         .toEqual(KNOWN_DIVERGENCES[kind as MdyWidgetKind] ?? []);
+    },
+  );
+});
+
+/**
+ * The DOM contract, with the overlay open.
+ *
+ * At rest an overlay widget renders none of its popup, so the listbox and its options, the calendar
+ * grid and its cells, the clock face had their classes, parents, order, semantics and cardinality
+ * checked nowhere. `overlayOnlyParts` names them, which is what makes this suite's scope a
+ * measurement rather than a guess.
+ */
+const OPENER = ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
+  + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn";
+
+/** Parts that stay absent even with the overlay open. A state, not a waiver: `absentParts` asserts
+ * they really are absent, so a renderer showing a no-results note over a populated list still fails. */
+const ABSENT_WHILE_OPEN: Partial<Record<MdyWidgetKind, string[]>> = {
+  select: ["empty", "loading"],
+  multiselect: ["empty", "loading", "chips", "chip", "optionStep", "optionCount"],
+  datepicker: ["actions"],
+  daterange: ["actions"],
+};
+
+const OVERLAY_KINDS = CATALOG_KINDS.filter(
+  ({ kind }) => MDY_WIDGET_CONTRACTS[kind].capabilities.overlay,
+);
+
+describe("Angular renderers, with the overlay open", () => {
+  it("covers every overlay kind the catalogue declares", () => {
+    expect(OVERLAY_KINDS.length).toBe(6);
+  });
+
+  it.each(OVERLAY_KINDS.map(({ kind, selector }) => [kind, selector]))(
+    "%s conforms while it is open",
+    (kind, selector) => {
+      const fixture = TestBed.createComponent(CatalogHost);
+      fixture.detectChanges();
+      const root = fixture.nativeElement.querySelector(selector as string) as Element;
+
+      const affordance = root.querySelector(OPENER) as HTMLElement | null;
+      expect(`${kind} has an opener: ${!!affordance}`).toBe(`${kind} has an opener: true`);
+      affordance!.click();
+      fixture.detectChanges();
+
+      // The element carrying the relation is the part the contract names, which is not always the
+      // one a pointer lands on: a datepicker's opener is its typeable control.
+      const parts = partsOf(root, kind as MdyWidgetKind);
+      const declaredOpener = parts[MDY_POPUP_OPENERS[kind as string]!.opener] as Element | null;
+      expect(`${kind} opened: ${declaredOpener?.getAttribute("aria-expanded")}`)
+        .toBe(`${kind} opened: true`);
+
+      const issues = inspectWidgetDom(root, kind as MdyWidgetKind, {
+        parts,
+        absentParts: ABSENT_WHILE_OPEN[kind as MdyWidgetKind] ?? [],
+        strictClasses: true,
+        // The overlay is showing, so the parts that only exist inside it are required of this run.
+        open: true,
+      });
+      expect(issues.map((issue) => `${issue.code}:${issue.part} — ${issue.message}`)).toEqual([]);
     },
   );
 });
