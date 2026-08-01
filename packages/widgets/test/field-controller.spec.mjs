@@ -127,8 +127,10 @@ test("view exposes ARIA contract", () => {
   assert.strictEqual(view.parts.input.attributes["aria-required"], "true");
   assert.strictEqual(view.parts.input.attributes["aria-describedby"].includes("email__errors"), true);
   assert.strictEqual(view.parts.label.attributes.for, "email");
-  assert.strictEqual(view.root.classes.includes("mdy-field--invalid"), true);
-  assert.strictEqual(view.root.classes.includes("mdy-field--required"), true);
+  // The root carries the renderer base. Invalid and required are *announced* — `aria-invalid` and
+  // `aria-required` above — and are no longer also spelled as root classes: the `mdy-field--*`
+  // vocabulary that carried them was declared for years and painted by no theme.
+  assert.strictEqual(view.root.classes.includes("mdy-renderer"), true);
 });
 
 test("view updates when value becomes valid", () => {
@@ -136,6 +138,6 @@ test("view updates when value becomes valid", () => {
   controller.dispatch({ type: "input", value: "a@b.co" });
   const view = controller.view();
   assert.strictEqual(view.parts.input.attributes["aria-invalid"], "false");
-  assert.strictEqual(view.root.classes.includes("mdy-field--invalid"), false);
+  assert.strictEqual(view.root.classes.includes("mdy-renderer"), true);
   assert.strictEqual(view.parts.input.attributes["aria-describedby"].includes("email__description"), true);
 });

@@ -107,7 +107,9 @@ test("checkbox view exposes ARIA contract", () => {
   assert.strictEqual(view.parts.input.attributes.role, "checkbox");
   assert.strictEqual(view.parts.input.attributes.checked, true);
   assert.strictEqual(view.parts.input.attributes["aria-checked"], "true");
-  assert.strictEqual(view.root.classes.includes("mdy-field--checked"), true);
+  // Not a `--checked` class: the themes style `:checked` on the input, which the attributes above
+  // already assert. The root carries the renderer base and the states a *field* has.
+  assert.strictEqual(view.root.classes.includes("mdy-renderer"), true);
 });
 
 test("switch view exposes ARIA contract", () => {

@@ -49,19 +49,28 @@ export const MDY_FIELD_SHELL_CLASSES = Object.freeze({
 /**
  * State classes every field carries, independent of kind.
  *
- * The projections emit these on the field root and on the operable control, so they are contract
- * data in exactly the way a part's classes are — declared here rather than written as literals, so
- * one vocabulary answers both what a renderer should emit and what a theme may rely on.
+ * Declared here rather than written as literals, so one vocabulary answers both what a renderer
+ * should emit and what a theme may rely on.
+ *
+ * These names are measured, not invented. The previous set — `mdy-field--invalid`,
+ * `mdy-control--open` and the rest — was styled by **no theme** and emitted by **no renderer**: a
+ * renderer built from the contract alone would have produced classes nothing painted, which is the
+ * one failure mode this vocabulary exists to prevent. What is really on screen is a modifier on the
+ * renderer root, one on the wrapper holding the control, and one on the label.
  */
 export const MDY_FIELD_STATE_CLASSES = Object.freeze({
   /** Base the field root's state modifiers hang from. */
-  field: "mdy-field",
+  field: "mdy-renderer",
   /** States the field root reflects. */
-  fieldStates: ["invalid", "disabled", "readonly", "required", "touched", "dirty", "pending"],
-  /** Base the operable control's state modifiers hang from. */
-  control: "mdy-control",
-  /** States a control reflects, across every kind that has one. */
-  controlStates: ["disabled", "invalid", "open"],
+  fieldStates: ["touched", "open"],
+  /** Base the wrapper holding the control, which is where a field shows it is unusable or wrong. */
+  control: "mdy-input-wrapper",
+  /** States that wrapper reflects. */
+  controlStates: ["disabled", "error"],
+  /** Base the label's own modifiers hang from. */
+  label: "mdy-label",
+  /** States the label reflects: whether the field has a value, and whether it is failing. */
+  labelStates: ["filled", "has-error"],
   /** The root modifier an overlay widget carries while its popup is showing. */
   rendererOpen: "mdy-renderer--open",
 } as const);

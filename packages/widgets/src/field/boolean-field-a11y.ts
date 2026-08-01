@@ -4,7 +4,7 @@
 
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
-import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
+import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import type {
   MdyBooleanFieldState,
   MdyBooleanFieldVariant,
@@ -30,18 +30,19 @@ export function booleanFieldPartIds(widgetId: string): {
   };
 }
 
-/** Computes the public state classes for the boolean field root. */
+/**
+ * Computes the public state classes for the boolean field root.
+ *
+ * Through the shared vocabulary rather than as literals: these were nine hand-written `mdy-field--*`
+ * names, and no theme styled a single one of them.
+ */
 export function booleanFieldRootClasses(state: MdyBooleanFieldState): readonly string[] {
+  const S = MDY_FIELD_STATE_CLASSES;
   return [
-    "mdy-field",
-    `mdy-field--${state.checked ? "checked" : "unchecked"}`,
-    ...(state.invalid ? ["mdy-field--invalid"] : []),
-    ...(state.disabled ? ["mdy-field--disabled"] : []),
-    ...(state.readonly ? ["mdy-field--readonly"] : []),
-    ...(state.required ? ["mdy-field--required"] : []),
-    ...(state.touched ? ["mdy-field--touched"] : []),
-    ...(state.dirty ? ["mdy-field--dirty"] : []),
-    ...(state.pending ? ["mdy-field--pending"] : []),
+    S.field,
+    ...S.fieldStates
+      .filter((name: string) => Boolean((state as unknown as Record<string, unknown>)[name]))
+      .map((name: string) => `${S.field}--${name}`),
   ];
 }
 
