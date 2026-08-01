@@ -1,3 +1,4 @@
+import { mdyPart } from "../mdy-part.js";
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
 import { MDY_CHIP_CLASSES, multiselectChipClasses } from "@modyra/widgets";
@@ -218,9 +219,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           }}
           role="group"
           aria-label=${this.label || nothing}
-          aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-          aria-required=${handle.required() ? "true" : "false"}
-          aria-describedby=${showBlockErrors ? this.errorsId : nothing}
+          ${mdyPart(this.controlPart(handle))}
         >
           ${(handle.value() ?? []).length === 0
             ? html`<span class="${this.partClass("placeholder")}">${this.label ? `Select ${this.label.toLowerCase()}…` : "Select…"}</span>`

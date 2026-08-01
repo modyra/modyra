@@ -1,3 +1,4 @@
+import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { createFieldController, type MdyFieldController } from "@modyra/widgets";
@@ -33,7 +34,6 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
   }
 
   protected override renderControl(handle: MdyFieldHandle<number | null>): unknown {
-    const inputAttrs = this.fieldController?.view().parts.input.attributes;
     return html`<input
       id=${this.fieldId}
       type="number"
@@ -44,9 +44,7 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
       ?disabled=${handle.disabled()}
       ?readonly=${handle.readonly()}
       aria-readonly=${handle.readonly() ? "true" : nothing}
-      aria-invalid=${inputAttrs?.["aria-invalid"] ?? (handle.errors().length > 0 ? "true" : "false")}
-      aria-required=${inputAttrs?.["aria-required"] ?? (handle.required() ? "true" : "false")}
-      aria-describedby=${inputAttrs?.["aria-describedby"] ?? (this.showErrors(handle) ? this.errorsId : nothing)}
+      ${mdyPart(this.controlPart(handle))}
       @input=${(e: Event) => {
         const n = (e.target as HTMLInputElement).valueAsNumber;
         const value = Number.isNaN(n) ? null : n;

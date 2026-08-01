@@ -173,46 +173,12 @@ async function mount(kind) {
 }
 
 /**
- * Lit's divergences from the state contract, recorded rather than waived. This ledger is new — the
- * matrix has never run against Lit before — so its first contents are a measurement, not a
- * regression. Asserted both ways.
+ * Lit's divergences from the state contract, recorded rather than waived. Asserted both ways: a new
+ * divergence fails, and so does an entry left behind after its fix.
  */
 const KNOWN_DIVERGENCES = {
-  // Lit never emits `aria-disabled`. It binds `?disabled` and takes only three attributes from the
-  // a11y projection — aria-invalid, aria-required, aria-describedby — so the native attribute lands
-  // and the ARIA never does. One gap, seen once per kind. `radio` and `select` escape it because
-  // they build their own ARIA.
-  "text × disabled": ["STATE_ARIA_MISSING"],
-  "email × disabled": ["STATE_ARIA_MISSING"],
-  "password × disabled": ["STATE_ARIA_MISSING"],
-  "textarea × disabled": ["STATE_ARIA_MISSING"],
-  "number × disabled": ["STATE_ARIA_MISSING"],
-  "slider × disabled": ["STATE_ARIA_MISSING"],
-  "checkbox × disabled": ["STATE_ARIA_MISSING"],
-  "toggle × disabled": ["STATE_ARIA_MISSING"],
-  "segmented × disabled": ["STATE_ARIA_MISSING"],
-  "multiselect × disabled": ["STATE_ARIA_MISSING"],
-  "datepicker × disabled": ["STATE_ARIA_MISSING"],
-  "daterange × disabled": ["STATE_ARIA_MISSING"],
-  "timepicker × disabled": ["STATE_ARIA_MISSING"],
-  "colors × disabled": ["STATE_ARIA_MISSING"],
-  "file × disabled": ["STATE_ARIA_MISSING"],
-
-  // `invalid` used to be unreachable on the kinds whose empty value is not "" — a checkbox at
-  // false, a range with both ends unset — so `checkbox` and `daterange` sat here for a validation
-  // reason rather than a rendering one. Plan 26 closed that: `required` now treats `false` and an
-  // empty range as empty, and both rows are gone.
-  //
-  // What is left is the rendering defect those rows were hiding. `toggle`, `slider`, `segmented`
-  // and `colors` never emit `aria-invalid` at all — the same cherry-picking that costs Lit its
-  // fifteen `aria-disabled` rows above. `toggle × invalid` shrank from two codes to one when the
-  // field became genuinely invalid: the error list appears, and the ARIA still does not.
-  "toggle × invalid": ["STATE_ARIA_MISSING"],
-  "slider × invalid": ["STATE_ARIA_MISSING"],
-  "segmented × invalid": ["STATE_ARIA_MISSING"],
-  "colors × invalid": ["STATE_ARIA_MISSING"],
-
-  // The multiselect popup does not open from the search button in this fixture.
+  // The popup does not open from the search button in this fixture, so `open` is a fixture
+  // limitation rather than a renderer defect.
   "multiselect × open": ["STATE_ARIA_MISSING"],
 };
 

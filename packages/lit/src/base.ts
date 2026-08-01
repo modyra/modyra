@@ -4,7 +4,9 @@ import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import { defaultWidgetIdFactory as ID, MDY_FIELD_SHELL_CLASSES as SHELL, MDY_WIDGET_CONTRACTS, type MdyWidgetKind,
   popupPlacementClass,
+  projectFieldShellA11y,
   type MdyOverlayPlacement,
+  type MdyPartContract,
   type MdyPopupWidgetKind,
 } from "@modyra/widgets";
 import { MdyFormController } from "./adapter.js";
@@ -96,10 +98,9 @@ export abstract class MdyFieldElement<T> extends LitElement {
     this.classList.add(...this.rootClasses);
     const handle = this.field;
     if (handle && !this._tracker) {
-      // Every signal a subclass may read while rendering. The list is hand-written, so a signal
-      // left off it is not a missing attribute but an inert binding: the element renders the right
-      // thing once and never again when that signal changes. `readonly` was missing, so a field
-      // marked read-only kept its old DOM until some *other* tracked signal happened to fire.
+      // Every signal a subclass may read while rendering. A signal left off this list does not
+      // produce a missing attribute — it produces an inert binding, rendered once and never
+      // updated when that signal changes.
       this._tracker = new MdyFormController(this, [
         handle.value,
         handle.errors,
@@ -200,6 +201,29 @@ export abstract class MdyFieldElement<T> extends LitElement {
     if (!this.querySelector(`[slot="${slot}"]`)) return nothing;
     const className = slot === "prefix" ? SHELL.prefix : SHELL.suffix;
     return html`<div class="${className}"><slot name="${slot}"></slot></div>`;
+  }
+
+  /**
+   * The semantic state of this control, as the shared contract projects it.
+   *
+   * An element binding `${mdyPart(this.controlPart(handle))}` receives `aria-invalid`,
+   * `aria-required`, `aria-disabled` and `aria-describedby` from the projection, so no element
+   * decides for itself which of a widget's states to expose.
+   *
+   * The visibility flags are answered here because the projection cannot know them: these elements
+   * render the error list only once the field is touched, and supporting text only when a host
+   * slots some in.
+   */
+  protected controlPart(handle: MdyFieldHandle<T>): MdyPartContract {
+    return projectFieldShellA11y(
+      { disabled: handle.disabled(), required: handle.required() },
+      handle.errors(),
+      {
+        widgetId: this.fieldId,
+        errorsVisible: this.showErrors(handle),
+        descriptionVisible: true,
+      },
+    ).control;
   }
 
   /** Id the controllers point `aria-describedby` at when the field has no errors. */

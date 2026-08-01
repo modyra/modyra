@@ -1,3 +1,4 @@
+import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { angleToHour, angleToMinute, buildTimeString, formatTime, formatTimeAs, getCurrentTime, getPointerCoords, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
@@ -482,9 +483,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             ?disabled=${handle.disabled()}
             aria-haspopup="dialog"
             aria-expanded=${this._open ? "true" : "false"}
-            aria-invalid=${handle.errors().length > 0 ? "true" : "false"}
-            aria-required=${handle.required() ? "true" : "false"}
-            aria-describedby=${this.showErrors(handle) ? this.errorsId : nothing}
+            ${mdyPart(this.controlPart(handle))}
             autocomplete="off"
             @change=${(e: Event) => {
               const input = e.target as HTMLInputElement;

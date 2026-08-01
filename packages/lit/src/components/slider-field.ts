@@ -1,3 +1,4 @@
+import { mdyPart } from "../mdy-part.js";
 import { html, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { MDY_CSS_PROPERTIES, sliderFillRatio } from "@modyra/widgets";
@@ -37,7 +38,7 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
         step=${this.step}
         .value=${String(value)}
         ?disabled=${handle.disabled()}
-        aria-required=${handle.required() ? "true" : "false"}
+        ${mdyPart(this.controlPart(handle))}
         @input=${(e: Event) => {
           handle.set((e.target as HTMLInputElement).valueAsNumber);
           handle.markAsDirty();
