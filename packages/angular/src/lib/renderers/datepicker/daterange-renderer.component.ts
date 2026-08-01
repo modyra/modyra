@@ -1,3 +1,4 @@
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
   afterNextRender,
@@ -19,8 +20,7 @@ import {
   MDY_WIDGET_CONTRACTS,
   dateRangeDraftTransition,
   dateRangeValueTransition,
-  type MdyDateRangeDraftState,
-} from "@modyra/widgets";
+  type MdyDateRangeDraftState, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -36,7 +36,7 @@ import { inputText, isoDateText } from "../renderer-projection";
 @Component({
   selector: "mdy-control-daterange",
   standalone: true,
-  imports: [
+  imports: [MdyPartDirective, 
     NgTemplateOutlet,
     MdyRangeCalendarComponent,
     MdyControlLabelComponent,
@@ -115,9 +115,9 @@ import { inputText, isoDateText } from "../renderer-projection";
           <button
             type="button"
             class="mdy-datepicker__toggle"
+            [mdyPart]="openerPart()"
             [disabled]="isDisabled()"
             [attr.aria-label]="i18n.datepickerToggleLabel"
-            [attr.aria-expanded]="open()"
             [attr.aria-haspopup]="'dialog'"
             tabindex="-1"
             (click)="toggleOverlay($event)"
@@ -128,6 +128,7 @@ import { inputText, isoDateText } from "../renderer-projection";
       </div>
 
       <mdy-overlay-panel
+        [panelId]="popupId()"
         [open]="open()"
         [position]="position()"
         [alignment]="alignment()"
@@ -193,6 +194,14 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   protected override readonly minSpace = 450;
 
   protected readonly fieldId = `mdy-daterange-${MdyBaseControl.nextId()}`;
+
+  /** The id the opener names, which the projected panel has to carry. */
+  protected readonly popupId = computed(() => overlayControlledId("daterange", this.fieldId) ?? "");
+
+  /** The relation between this widget's opener and the overlay it opens. */
+  protected readonly openerPart = computed(
+    () => projectOverlayOpenerA11y("daterange", { widgetId: this.fieldId, open: this.open() })!,
+  );
 
   protected readonly lastFocused = signal<"start" | "end">("start");
 

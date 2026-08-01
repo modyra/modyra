@@ -92,7 +92,7 @@ const KNOWN_DIVERGENCES: Partial<Record<MdyWidgetKind, string[]>> = {
   multiselect: ["PART_ORDER:inputWrapper", "ARIA_DANGLING_REF:label"],
   // `nativePicker` was declared a <label> in task 06, from Plain, which wraps the hidden colour
   // input in one. Angular does not, and its `control` sits outside the picker as a result.
-  colors: ["PART_ELEMENT:nativePicker", "PART_NOT_CONTAINED:control", "PART_NOT_OWNED:toggle"],
+  colors: ["PART_ELEMENT:nativePicker", "PART_NOT_CONTAINED:control"],
   // F-08 is closed centrally — the a11y projections now declare `aria-controls`, and Plain is clean.
   // Angular remains divergent for a different reason, and it is a *placement* question rather than a
   // missing relation: Angular puts `aria-expanded` on the toggle button beside the input, while the
@@ -101,8 +101,7 @@ const KNOWN_DIVERGENCES: Partial<Record<MdyWidgetKind, string[]>> = {
   // name — a renderer-equivalence decision, so it belongs to task 16 rather than to a defect batch.
   datepicker: ["PART_NOT_OWNED:control"],
   timepicker: ["PART_NOT_OWNED:control"],
-  // Same placement question; Angular's daterange toggle carries the state and names no popup.
-  daterange: ["PART_NOT_OWNED:toggle"],
+
 };
 
 describe("Angular renderers, against the widget DOM contract", () => {
