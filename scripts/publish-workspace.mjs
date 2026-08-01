@@ -37,7 +37,10 @@ for (const pkg of packages) {
     continue;
   }
 
-  const publishArgs = stageMode ? ["stage", "publish"] : ["publish"];
+  // `npm stage` is not a command. This built `npm stage publish`, which fails the moment it is
+  // reached — and it was never reached, because every package was already published at the version
+  // being staged and got skipped first. A rehearsal is `npm publish --dry-run`.
+  const publishArgs = stageMode ? ["publish", "--dry-run"] : ["publish"];
   if (pkg.name !== "@modyra/styles") {
     publishArgs.push("--access", "public");
   }
