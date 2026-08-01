@@ -1,5 +1,5 @@
 ---
-"@modyra/widgets": major
+"@modyra/widgets": minor
 ---
 
 The `inlineError` part is named by the class renderers actually emit. It was declared as
@@ -21,3 +21,9 @@ Two further corrections the same fixture exposed:
 
 `allowedClasses` is removed from the DOM inspector options. Nothing passed it; a renderer that needs
 a class of its own namespaces it under `adapterPrefix`.
+
+**Breaking.** `inlineError`'s class changes from `mdy-inline-error-icon` to
+`mdy-control__inline-errors`, and its semantic from `status` to `image`. Nothing emitted the old
+name — that was the defect — so no first-party renderer changes; a theme or a custom renderer
+selecting on it matched nothing before and still matches nothing, but the contract now names what is
+really on screen.

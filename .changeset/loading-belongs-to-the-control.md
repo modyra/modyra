@@ -1,5 +1,5 @@
 ---
-"@modyra/widgets": major
+"@modyra/widgets": minor
 "@modyra/lit": minor
 ---
 
@@ -10,3 +10,7 @@ nothing to say until there is a list on screen.
 
 Lit's multiselect renders its loader on the search button, which is what its own select and the
 contract already did.
+
+**Breaking.** `loading` hangs from the control, so a renderer whose only loading indicator lives
+inside the popup no longer satisfies the loading state. Move it to the control, as every first-party
+renderer now does.

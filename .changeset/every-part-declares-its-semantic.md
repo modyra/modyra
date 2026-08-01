@@ -1,5 +1,5 @@
 ---
-"@modyra/widgets": major
+"@modyra/widgets": minor
 ---
 
 Every part declares what element it is, and an undeclared one fails
@@ -23,3 +23,7 @@ prose rather than as a live status, which it never was.
 Declaring the semantics found one real divergence: supporting text is a `<div>` in one renderer and a
 `<p>` in another. Both are prose and both now conform, which is the answer — the contract had simply
 never said so.
+
+**Breaking.** A part whose element does not satisfy its declared semantic now fails conformance where
+the contract previously had no opinion — and an unclassified part name throws rather than admitting
+anything. First-party renderers already conform; a custom one may need its element corrected.

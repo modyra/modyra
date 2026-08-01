@@ -1,5 +1,5 @@
 ---
-"@modyra/widgets": major
+"@modyra/widgets": minor
 ---
 
 Milestone B: the keyboard is declared per kind, and `widgetKeyIntent` stops answering the same way
