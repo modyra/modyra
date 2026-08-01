@@ -26,7 +26,15 @@ import { join } from "node:path";
 // "deliberate feature, not a leak" shape as every budget bump above this
 // one. Real total after the change: whole entry 14.1 KB gzip, realistic
 // surface 10.6 KB gzip. Budgets kept tight just above both.
-const WHOLE_BUDGET_KB = 15;
+// 2026-08-01 (Milestone B, dimension 6 — the value contract): MDY_VALUE_CONTRACTS,
+// matchesValueShape/explainValueMismatch (value-contracts.ts), mdyEmptyValueFor and the valueShape
+// validator wired into buildDynamicFieldValidators. All always reachable from the main entry — the
+// dynamic path calls them on every field — so the same "deliberate feature, not a leak" shape as
+// every bump above. Verified against the message this check prints: no satellite (i18n, datetime,
+// icons, devtools) appears in the whole-entry bundle. The budget was already at the line before
+// this — 15.0 KB against 15 — so the headroom it looked like it had was not real.
+// Real total after the change: whole entry 15.6 KB gzip, realistic surface 10.9 KB.
+const WHOLE_BUDGET_KB = 16;
 const SURFACE_BUDGET_KB = 11;
 
 const outDir = join(tmpdir(), "mdy-core-bundle-check");
