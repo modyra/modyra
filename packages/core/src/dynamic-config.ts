@@ -10,6 +10,7 @@ import {
   oneOf,
   pattern,
   required,
+  valueShape,
 } from "./validators.js";
 
 /**
@@ -919,7 +920,13 @@ export function buildDynamicFieldValidators(field: MdyDynamicField): {
   readonly validators: ReadonlyArray<ValidatorFn<never>>;
   readonly marksRequired: boolean;
 } {
-  const base = buildDynamicValidators(field.validators ?? {});
+  const declared = buildDynamicValidators(field.validators ?? {});
+  // Every kind guards its own shape, the same doorway `oneOf` guards for the kinds that have an
+  // option list: a value from a restored draft or a scripted write is not the widget's own.
+  const base = {
+    ...declared,
+    validators: [...declared.validators, valueShape(field.kind) as ValidatorFn<never>],
+  };
   if (
     field.kind === "select" ||
     field.kind === "radio" ||

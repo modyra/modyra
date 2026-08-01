@@ -163,16 +163,18 @@ test("buildDynamicFieldValidators auto-whitelists declared options", () => {
       { value: "two", label: "Two" },
     ],
   });
-  const [check] = select.validators;
-  assert.deepEqual(check("one"), []);
-  assert.equal(check("three").length, 1);
+  // Every validator the builder produced, not the first one: they are always applied as a set, and
+  // a test that indexes into them asserts their order rather than their effect.
+  const errorsFrom = (built, value) => built.validators.flatMap((validator) => validator(value));
+  assert.deepEqual(errorsFrom(select, "one"), []);
+  assert.equal(errorsFrom(select, "three").length, 1);
 
   const radio = buildDynamicFieldValidators({
     name: "r",
     kind: "radio",
     options: [{ value: 1, label: "One" }],
   });
-  assert.equal(radio.validators[0](2).length, 1);
+  assert.equal(errorsFrom(radio, 2).length, 1);
 
   const multi = buildDynamicFieldValidators({
     name: "tags",
@@ -182,12 +184,14 @@ test("buildDynamicFieldValidators auto-whitelists declared options", () => {
       { value: "b", label: "B" },
     ],
   });
-  assert.deepEqual(multi.validators[0](["a", "b"]), []);
-  assert.equal(multi.validators[0](["a", "x"]).length, 1);
+  assert.deepEqual(errorsFrom(multi, ["a", "b"]), []);
+  assert.equal(errorsFrom(multi, ["a", "x"]).length, 1);
 
-  // Non-option kinds are untouched.
+  // A non-option kind gets no whitelist, but it does guard its own shape: a text field handed a
+  // number is a value from outside the widget, exactly as an option outside the list is.
   const text = buildDynamicFieldValidators({ name: "t", kind: "text" });
-  assert.equal(text.validators.length, 0);
+  assert.deepEqual(errorsFrom(text, "anything"), []);
+  assert.equal(errorsFrom(text, 42).length, 1);
 });
 
 test("dynamic form end-to-end: out-of-options initial value is invalid at creation", () => {
