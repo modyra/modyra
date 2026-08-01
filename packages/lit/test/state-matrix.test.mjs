@@ -227,3 +227,50 @@ test("the fixture drives each kind with a value of its declared shape", () => {
     assert.equal(explainValueMismatch(kind, valueFor(kind)), null, `${kind}: filled`);
   }
 });
+
+/**
+ * Escape closes an open overlay — the transition the contract declares, replayed against the DOM.
+ *
+ * The matrix proves the widget looks right in a state it was put into; this proves it *gets* there.
+ * A renderer whose Escape handler is bound where focus never lands passes every other check here.
+ */
+const { MDY_WIDGET_TRANSITIONS } = await import("../../widgets/dist/index.js");
+
+test("Escape closes an open overlay, on every kind that declares the transition", async () => {
+  const closable = KINDS.filter((kind) =>
+    MDY_WIDGET_TRANSITIONS[kind].some(
+      (t) => t.from === "open" && t.trigger.type === "key" && t.trigger.key === "Escape",
+    ),
+  );
+  assert.ok(closable.length > 0, "no kind declares Escape");
+
+  for (const kind of closable) {
+    const fixture = await mount(kind);
+    try {
+      if (!fixture.drive("open")) continue;
+      await fixture.settle();
+      const popup = fixture.parts().popup;
+      assert.ok(popup, `${kind}: no popup after opening`);
+      // `aria-expanded` on the opener is the contract's own statement of open-ness, and the signal
+      // every adapter carries. Asserting it rather than the popup's visibility holds all three to
+      // the same claim.
+      const openerEl = fixture.root.querySelector("[aria-expanded]");
+      assert.equal(openerEl?.getAttribute("aria-expanded"), "true", `${kind}: the opener did not open it`);
+
+      // Where the user actually is: an overlay that takes focus handles Escape inside itself, one
+      // that leaves focus on the opener handles it there.
+      const target = document.activeElement && fixture.root.contains(document.activeElement)
+        ? document.activeElement
+        : fixture.root.querySelector(
+            ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle, .mdy-colors__toggle-area, .mdy-multiselect__search-btn",
+          );
+      target.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      await fixture.settle();
+
+      assert.equal(popup.hidden, true, `${kind}: Escape left the popup showing`);
+      assert.equal(openerEl?.getAttribute("aria-expanded"), "false", `${kind}: Escape did not close the overlay`);
+    } finally {
+      fixture.dispose();
+    }
+  }
+});

@@ -207,6 +207,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         <div
           class="mdy-multiselect ${this._open ? "mdy-multiselect--open" : ""}"
           id=${triggerId}
+          @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
           @click=${(e: Event) => {
             // The whole trigger opens the popup, not only the search affordance: every other widget
             // in the catalog opens from its trigger. Clicks that landed on a control inside it —

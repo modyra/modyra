@@ -147,6 +147,14 @@ export function renderTimepickerField(
   periodButton.addEventListener("click", () => dispatch({ type: "set-period", period: controller.state().draft.period === "AM" ? "PM" : "AM" }));
   confirmButton.addEventListener("click", () => dispatch({ type: "confirm" }));
   cancelButton.addEventListener("click", () => dispatch({ type: "cancel" }));
+  // Escape is the same intent as Cancel, from wherever the user is: the picker edits a draft, and
+  // dismissing it has to discard that draft rather than leave it half-applied. Bound on both the
+  // control and the popup because this overlay does not take focus when it opens.
+  const onEscape = (event: KeyboardEvent) => {
+    if (event.key === "Escape") dispatch({ type: "cancel" });
+  };
+  wrapper.addEventListener("keydown", onEscape);
+  dialog.addEventListener("keydown", onEscape);
   modeToggle.addEventListener("click", () =>
     dispatch({ type: "set-view-mode", mode: controller.state().viewMode === "dial" ? "input" : "dial" }));
 
