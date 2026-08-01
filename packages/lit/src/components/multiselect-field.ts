@@ -243,6 +243,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               aria-expanded=${this._open ? "true" : "false"}
               aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}
               aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
+              aria-invalid=${this.showErrors(handle) ? "true" : nothing}
             >
               ${this.loading
         ? mdyIcon("LOADER", "mdy-select__loader")
