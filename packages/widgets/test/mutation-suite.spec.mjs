@@ -247,6 +247,19 @@ const MUTATIONS = [
     },
   },
   {
+    n: 15, id: "part-wrong-element", title: "part rendered as the wrong element",
+    build: textField,
+    mutate: (fx) => {
+      // The label keeps its class, its text and its place — only the tag is wrong, so every check
+      // that looks at classes or position still passes. A <div> cannot carry `for`, so a screen
+      // reader loses the association while the markup looks right.
+      const impostor = el("div", "mdy-label");
+      impostor.append(...fx.parts.label.childNodes);
+      fx.parts.label.replaceWith(impostor);
+      return { root: fx.root, kind: "text", options: { parts: { ...fx.parts, label: impostor } } };
+    },
+  },
+  {
     n: 13, id: "popup-open-but-absent", title: "popup declared open but absent",
     build: selectField,
     mutate: (fx) => {
@@ -285,7 +298,7 @@ const MUTATIONS = [
  * Shrinking this list is the deliverable of Milestone A — do not grow it to make a build pass.
  */
 const EXPECTED_UNCAUGHT = new Set([
-  // Empty. Every one of the fourteen is caught, each by a rule that names the part it broke.
+  // Empty. Every one of the fifteen is caught, each by a rule that names the part it broke.
   //
   // Closed 2026-07-31 by task 06: 14 (ABSENT_PART_PRESENT), 11 (PART_CARDINALITY).
   // Closed 2026-07-31 by task 07: 2 (PART_CLASS_MISSING, once the shell parts declared their
