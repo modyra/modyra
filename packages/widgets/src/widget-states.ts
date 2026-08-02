@@ -9,7 +9,8 @@
  * Declared from the contract's point of view, deliberately not by reading what any renderer emits:
  * a specification written from the implementation only ever ratifies it.
  */
-import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
+import { type MdyWidgetKind } from "./catalog.js";
+import { dynamicParts } from "./ssr.js";
 
 /** Every state any widget may declare. */
 export const MDY_WIDGET_STATES = [
@@ -134,19 +135,15 @@ export const MDY_WIDGET_STATE_SUPPORT: Readonly<Record<MdyWidgetKind, readonly M
  * Splitting it says: these parts are the *open* contract. A closed widget is not required to render
  * any of them, so a renderer that later mounts its overlay lazily is not breaking the contract, and
  * one that mounts eagerly is not breaking it either. What both must do is render them when open.
+ *
+ * The same question as {@link dynamicParts}, and now the same answer. This walked the anatomy itself,
+ * rooting on the part *named* `popup` where the other roots on the part whose *element is* `popup`;
+ * the two agreed on all seventeen kinds only because every popup-element part happens to sit inside
+ * the one called `popup`. Two derivations of one rule can only be kept honest by luck, and the other
+ * is the one with the fixed-point walk and the test that runs it over unordered anatomies.
  */
 export function overlayOnlyParts(kind: MdyWidgetKind): readonly string[] {
-  const { structure } = MDY_WIDGET_CONTRACTS[kind];
-  const parentOf = new Map(structure.nodes.map((node) => [node.part as string, node.parent as string | undefined]));
-  const out: string[] = [];
-  for (const node of structure.nodes) {
-    let cursor: string | undefined = node.part as string;
-    while (cursor) {
-      if (cursor === "popup") { out.push(node.part as string); break; }
-      cursor = parentOf.get(cursor);
-    }
-  }
-  return out;
+  return dynamicParts(kind);
 }
 
 /** Whether a kind declares a state. */
