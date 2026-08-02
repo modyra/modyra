@@ -64,6 +64,19 @@ export function dynamicPartsOf(nodes: readonly MdyWidgetStructureNode[]): readon
  *
  * Never empty. A widget with no static anatomy would be one that renders nothing until it is
  * opened, and no kind is that.
+ *
+ * ## Nothing in this repository reads this, on purpose
+ *
+ * `dynamicParts` has a consumer — the conformance manifests decide eager versus lazy overlays with
+ * it. `staticParts` and {@link isFullyServerRenderable} do not, and none is being invented for them.
+ *
+ * They answer "what would a server emit", and the server half of the roadmap was scoped out by an
+ * explicit decision: no framework SSR renderer ships here, so no code in this repository has that
+ * question. What exists is the contract-level guarantee — every kind's projection is computable
+ * with no DOM — and these two are the shape of the answer a host implementing SSR would need.
+ *
+ * That is a deliberate export without an internal caller, not an unfinished one. Wiring a consumer
+ * to make the number look better would be a consumer that exists to be counted.
  */
 export function staticParts(kind: MdyWidgetKind): readonly string[] {
   const dynamic = new Set(dynamicParts(kind));
