@@ -1,0 +1,3487 @@
+{
+  "contractVersion": 1,
+  "kinds": {
+    "text": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--text"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-wrapper"
+          ],
+          "states": [
+            "disabled",
+            "error"
+          ]
+        },
+        "prefix": {
+          "element": "group",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-prefix"
+          ],
+          "states": []
+        },
+        "control": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [],
+          "states": []
+        },
+        "suffix": {
+          "element": "group",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-suffix"
+          ],
+          "states": []
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "control"
+          ]
+        },
+        {
+          "from": "control",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": false,
+        "dismissOnOutsidePointer": false
+      },
+      "keyboard": []
+    },
+    "email": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--text"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-wrapper"
+          ],
+          "states": [
+            "disabled",
+            "error"
+          ]
+        },
+        "prefix": {
+          "element": "group",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-prefix"
+          ],
+          "states": []
+        },
+        "control": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [],
+          "states": []
+        },
+        "suffix": {
+          "element": "group",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-suffix"
+          ],
+          "states": []
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "control"
+          ]
+        },
+        {
+          "from": "control",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": false,
+        "dismissOnOutsidePointer": false
+      },
+      "keyboard": []
+    },
+    "password": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--text"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-wrapper"
+          ],
+          "states": [
+            "disabled",
+            "error"
+          ]
+        },
+        "prefix": {
+          "element": "group",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-prefix"
+          ],
+          "states": []
+        },
+        "control": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [],
+          "states": []
+        },
+        "suffix": {
+          "element": "group",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-suffix"
+          ],
+          "states": []
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "control"
+          ]
+        },
+        {
+          "from": "control",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": false,
+        "dismissOnOutsidePointer": false
+      },
+      "keyboard": []
+    },
+    "textarea": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--textarea"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-wrapper"
+          ],
+          "states": [
+            "disabled",
+            "error"
+          ]
+        },
+        "control": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [],
+          "states": []
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "control"
+          ]
+        },
+        {
+          "from": "control",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": false,
+        "dismissOnOutsidePointer": false
+      },
+      "keyboard": []
+    },
+    "number": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--number"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-wrapper"
+          ],
+          "states": [
+            "disabled",
+            "error"
+          ]
+        },
+        "control": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [],
+          "states": []
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "control"
+          ]
+        },
+        {
+          "from": "control",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": false,
+        "dismissOnOutsidePointer": false
+      },
+      "keyboard": [
+        "0",
+        "1"
+      ]
+    },
+    "slider": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--slider"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "track": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-slider-container"
+          ],
+          "states": []
+        },
+        "control": {
+          "element": "input",
+          "parent": "track",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-slider"
+          ],
+          "states": []
+        },
+        "value": {
+          "element": "text",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-slider-value"
+          ],
+          "states": []
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "control"
+          ]
+        },
+        {
+          "from": "control",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": false,
+        "dismissOnOutsidePointer": false
+      },
+      "keyboard": [
+        "0",
+        "1"
+      ]
+    },
+    "checkbox": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--checkbox"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-checkbox"
+          ],
+          "states": []
+        },
+        "control": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": "checkbox",
+          "classes": [
+            "mdy-checkbox__control"
+          ],
+          "states": []
+        },
+        "indicator": {
+          "element": "presentation",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-checkbox__indicator"
+          ],
+          "states": []
+        },
+        "label": {
+          "element": "text",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": []
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "control",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": false,
+        "dismissOnOutsidePointer": false
+      },
+      "keyboard": [
+        "0"
+      ]
+    },
+    "toggle": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--toggle"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-toggle"
+          ],
+          "states": []
+        },
+        "control": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": "switch",
+          "classes": [
+            "mdy-toggle__control"
+          ],
+          "states": []
+        },
+        "track": {
+          "element": "group",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-toggle__track"
+          ],
+          "states": []
+        },
+        "thumb": {
+          "element": "presentation",
+          "parent": "track",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-toggle__thumb"
+          ],
+          "states": []
+        },
+        "label": {
+          "element": "text",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-toggle__label"
+          ],
+          "states": []
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": []
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "control",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": false,
+        "dismissOnOutsidePointer": false
+      },
+      "keyboard": [
+        "0"
+      ]
+    },
+    "radio": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--radio-group"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "group": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": "radiogroup",
+          "classes": [
+            "mdy-radio-group"
+          ],
+          "states": [
+            "horizontal"
+          ]
+        },
+        "option": {
+          "element": "label",
+          "parent": "group",
+          "optional": false,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-radio-item"
+          ],
+          "states": [
+            "disabled"
+          ]
+        },
+        "optionControl": {
+          "element": "presentation",
+          "parent": "option",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-radio-circle"
+          ],
+          "states": []
+        },
+        "optionLabel": {
+          "element": "text",
+          "parent": "option",
+          "optional": false,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-radio-label"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "group",
+          "attribute": "aria-labelledby",
+          "to": [
+            "label"
+          ]
+        },
+        {
+          "from": "group",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": false,
+        "dismissOnOutsidePointer": false
+      },
+      "keyboard": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ]
+    },
+    "segmented": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--segmented"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "group": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": "radiogroup",
+          "classes": [
+            "mdy-segmented"
+          ],
+          "states": []
+        },
+        "option": {
+          "element": "presentation",
+          "parent": "group",
+          "optional": false,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-segmented__button"
+          ],
+          "states": [
+            "selected"
+          ]
+        },
+        "optionCheck": {
+          "element": "presentation",
+          "parent": "option",
+          "optional": false,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-segmented__check"
+          ],
+          "states": []
+        },
+        "optionText": {
+          "element": "text",
+          "parent": "option",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-segmented__text"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "group",
+          "attribute": "aria-labelledby",
+          "to": [
+            "label"
+          ]
+        },
+        {
+          "from": "group",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": false,
+        "dismissOnOutsidePointer": false
+      },
+      "keyboard": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ]
+    },
+    "select": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--select"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-wrapper"
+          ],
+          "states": [
+            "disabled",
+            "error"
+          ]
+        },
+        "trigger": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": "combobox",
+          "classes": [
+            "mdy-select__trigger"
+          ],
+          "states": [
+            "disabled",
+            "invalid",
+            "loading",
+            "open",
+            "readonly"
+          ]
+        },
+        "value": {
+          "element": "text",
+          "parent": "trigger",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-select__value"
+          ],
+          "states": []
+        },
+        "placeholder": {
+          "element": "text",
+          "parent": "trigger",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-select__placeholder"
+          ],
+          "states": []
+        },
+        "arrow": {
+          "element": "presentation",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-select__arrow"
+          ],
+          "states": [
+            "open"
+          ]
+        },
+        "popup": {
+          "element": "popup",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-popup",
+            "mdy-select__dropdown"
+          ],
+          "states": [
+            "above",
+            "overlay",
+            "right"
+          ]
+        },
+        "search": {
+          "element": "input",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-select__search"
+          ],
+          "states": []
+        },
+        "listbox": {
+          "element": "listbox",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": "listbox",
+          "classes": [
+            "mdy-select__list"
+          ],
+          "states": [
+            "open"
+          ]
+        },
+        "option": {
+          "element": "option",
+          "parent": "listbox",
+          "optional": true,
+          "repeated": true,
+          "role": "option",
+          "classes": [
+            "mdy-select__option"
+          ],
+          "states": [
+            "active",
+            "hidden",
+            "selected"
+          ]
+        },
+        "loading": {
+          "element": "status",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-select__loader"
+          ],
+          "states": []
+        },
+        "empty": {
+          "element": "status",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-select__empty"
+          ],
+          "states": []
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "trigger"
+          ]
+        },
+        {
+          "from": "trigger",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        },
+        {
+          "from": "trigger",
+          "attribute": "aria-controls",
+          "to": [
+            "listbox"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": true,
+        "dismissOnOutsidePointer": true,
+        "anchoring": {
+          "matchAnchorWidth": true,
+          "minSpace": 180,
+          "minWidth": 160,
+          "alignment": "right"
+        }
+      },
+      "keyboard": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ]
+    },
+    "multiselect": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--multiselect"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect"
+          ],
+          "states": []
+        },
+        "chips": {
+          "element": "group",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__chips"
+          ],
+          "states": []
+        },
+        "chip": {
+          "element": "button",
+          "parent": "chips",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-chip",
+            "mdy-chip--value"
+          ],
+          "states": [
+            "removable",
+            "selected"
+          ]
+        },
+        "placeholder": {
+          "element": "text",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__placeholder"
+          ],
+          "states": []
+        },
+        "header": {
+          "element": "group",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__header"
+          ],
+          "states": []
+        },
+        "searchButton": {
+          "element": "button",
+          "parent": "header",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__search-btn"
+          ],
+          "states": []
+        },
+        "options": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect__options"
+          ],
+          "states": []
+        },
+        "optionWrapper": {
+          "element": "group",
+          "parent": "options",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-chip-wrapper"
+          ],
+          "states": []
+        },
+        "option": {
+          "element": "presentation",
+          "parent": "optionWrapper",
+          "optional": false,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-chip"
+          ],
+          "states": [
+            "selected"
+          ]
+        },
+        "optionCheck": {
+          "element": "presentation",
+          "parent": "option",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-chip__check"
+          ],
+          "states": []
+        },
+        "optionStep": {
+          "element": "button",
+          "parent": "option",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-chip__btn"
+          ],
+          "states": []
+        },
+        "optionLabel": {
+          "element": "text",
+          "parent": "option",
+          "optional": false,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-chip__label"
+          ],
+          "states": []
+        },
+        "optionCount": {
+          "element": "text",
+          "parent": "option",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-chip__count"
+          ],
+          "states": []
+        },
+        "popup": {
+          "element": "popup",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect-overlay__panel",
+            "mdy-multiselect__dropdown",
+            "mdy-popup"
+          ],
+          "states": [
+            "above",
+            "overlay",
+            "right"
+          ]
+        },
+        "search": {
+          "element": "input",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect-overlay__input"
+          ],
+          "states": []
+        },
+        "listbox": {
+          "element": "group",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect-overlay__grid",
+            "mdy-multiselect__options"
+          ],
+          "states": []
+        },
+        "loading": {
+          "element": "status",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-select__loader"
+          ],
+          "states": []
+        },
+        "empty": {
+          "element": "status",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-multiselect-overlay__empty"
+          ],
+          "states": []
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "searchButton"
+          ]
+        },
+        {
+          "from": "searchButton",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        },
+        {
+          "from": "searchButton",
+          "attribute": "aria-controls",
+          "to": [
+            "popup"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": true,
+        "dismissOnOutsidePointer": true,
+        "anchoring": {
+          "matchAnchorWidth": true,
+          "minSpace": 180,
+          "minWidth": 160,
+          "alignment": "right"
+        }
+      },
+      "keyboard": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ]
+    },
+    "datepicker": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--datepicker"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-wrapper"
+          ],
+          "states": [
+            "disabled",
+            "error"
+          ]
+        },
+        "control": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": "combobox",
+          "classes": [
+            "mdy-datepicker__input"
+          ],
+          "states": []
+        },
+        "toggle": {
+          "element": "button",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__toggle"
+          ],
+          "states": []
+        },
+        "popup": {
+          "element": "popup",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__popup",
+            "mdy-popup"
+          ],
+          "states": [
+            "above",
+            "overlay",
+            "right"
+          ]
+        },
+        "dialogHeader": {
+          "element": "group",
+          "parent": "calendar",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__header"
+          ],
+          "states": []
+        },
+        "calendar": {
+          "element": "popup",
+          "parent": "popup",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__calendar"
+          ],
+          "states": []
+        },
+        "grid": {
+          "element": "grid",
+          "parent": "calendar",
+          "optional": true,
+          "repeated": false,
+          "role": "grid",
+          "classes": [
+            "mdy-datepicker__grid"
+          ],
+          "states": []
+        },
+        "weekdays": {
+          "element": "group",
+          "parent": "grid",
+          "optional": true,
+          "repeated": false,
+          "role": "row",
+          "classes": [
+            "mdy-datepicker__weekdays"
+          ],
+          "states": []
+        },
+        "weekday": {
+          "element": "columnheader",
+          "parent": "weekdays",
+          "optional": true,
+          "repeated": true,
+          "role": "columnheader",
+          "classes": [
+            "mdy-datepicker__weekday"
+          ],
+          "states": []
+        },
+        "row": {
+          "element": "group",
+          "parent": "grid",
+          "optional": true,
+          "repeated": true,
+          "role": "row",
+          "classes": [
+            "mdy-datepicker__row"
+          ],
+          "states": []
+        },
+        "gridcell": {
+          "element": "gridcell",
+          "parent": "row",
+          "optional": true,
+          "repeated": true,
+          "role": "gridcell",
+          "classes": [
+            "mdy-datepicker__cell"
+          ],
+          "states": [
+            "disabled",
+            "focused",
+            "inRange",
+            "outside",
+            "rangeEnd",
+            "rangeStart",
+            "selected",
+            "today"
+          ]
+        },
+        "actions": {
+          "element": "group",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__actions"
+          ],
+          "states": []
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "control"
+          ]
+        },
+        {
+          "from": "control",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        },
+        {
+          "from": "control",
+          "attribute": "aria-controls",
+          "to": [
+            "grid"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": true,
+        "dismissOnOutsidePointer": true,
+        "anchoring": {
+          "matchAnchorWidth": false,
+          "minSpace": 240,
+          "alignment": "right"
+        }
+      },
+      "keyboard": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ]
+    },
+    "daterange": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--datepicker",
+            "mdy-renderer--daterange"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-wrapper"
+          ],
+          "states": [
+            "disabled",
+            "error"
+          ]
+        },
+        "startControl": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__input",
+            "mdy-daterange__input"
+          ],
+          "states": []
+        },
+        "separator": {
+          "element": "text",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-daterange__sep"
+          ],
+          "states": []
+        },
+        "endControl": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__input",
+            "mdy-daterange__input"
+          ],
+          "states": []
+        },
+        "toggle": {
+          "element": "button",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__toggle"
+          ],
+          "states": []
+        },
+        "popup": {
+          "element": "popup",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__popup",
+            "mdy-datepicker__popup--range",
+            "mdy-popup"
+          ],
+          "states": [
+            "above",
+            "overlay",
+            "right"
+          ]
+        },
+        "dialogHeader": {
+          "element": "group",
+          "parent": "calendar",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__header"
+          ],
+          "states": []
+        },
+        "calendar": {
+          "element": "popup",
+          "parent": "popup",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__calendar"
+          ],
+          "states": []
+        },
+        "grid": {
+          "element": "grid",
+          "parent": "calendar",
+          "optional": true,
+          "repeated": false,
+          "role": "grid",
+          "classes": [
+            "mdy-datepicker__grid"
+          ],
+          "states": []
+        },
+        "weekdays": {
+          "element": "group",
+          "parent": "grid",
+          "optional": true,
+          "repeated": false,
+          "role": "row",
+          "classes": [
+            "mdy-datepicker__weekdays"
+          ],
+          "states": []
+        },
+        "weekday": {
+          "element": "columnheader",
+          "parent": "weekdays",
+          "optional": true,
+          "repeated": true,
+          "role": "columnheader",
+          "classes": [
+            "mdy-datepicker__weekday"
+          ],
+          "states": []
+        },
+        "row": {
+          "element": "group",
+          "parent": "grid",
+          "optional": true,
+          "repeated": true,
+          "role": "row",
+          "classes": [
+            "mdy-datepicker__row"
+          ],
+          "states": []
+        },
+        "gridcell": {
+          "element": "gridcell",
+          "parent": "row",
+          "optional": true,
+          "repeated": true,
+          "role": "gridcell",
+          "classes": [
+            "mdy-datepicker__cell"
+          ],
+          "states": [
+            "disabled",
+            "focused",
+            "inRange",
+            "outside",
+            "rangeEnd",
+            "rangeStart",
+            "selected",
+            "today"
+          ]
+        },
+        "actions": {
+          "element": "group",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__actions"
+          ],
+          "states": []
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "startControl"
+          ]
+        },
+        {
+          "from": "startControl",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        },
+        {
+          "from": "toggle",
+          "attribute": "aria-controls",
+          "to": [
+            "popup"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": true,
+        "dismissOnOutsidePointer": true,
+        "anchoring": {
+          "matchAnchorWidth": false,
+          "minSpace": 240,
+          "alignment": "right"
+        }
+      },
+      "keyboard": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ]
+    },
+    "timepicker": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--timepicker"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-wrapper"
+          ],
+          "states": [
+            "disabled",
+            "error"
+          ]
+        },
+        "control": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": "combobox",
+          "classes": [
+            "mdy-timepicker__input"
+          ],
+          "states": []
+        },
+        "toggle": {
+          "element": "button",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker__toggle"
+          ],
+          "states": []
+        },
+        "popup": {
+          "element": "popup",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-popup",
+            "mdy-timepicker__popup"
+          ],
+          "states": [
+            "above",
+            "overlay",
+            "right"
+          ]
+        },
+        "dialog": {
+          "element": "dialog",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker__dialog"
+          ],
+          "states": []
+        },
+        "container": {
+          "element": "group",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-container"
+          ],
+          "states": []
+        },
+        "content": {
+          "element": "group",
+          "parent": "container",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-content"
+          ],
+          "states": []
+        },
+        "header": {
+          "element": "group",
+          "parent": "content",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-header"
+          ],
+          "states": []
+        },
+        "hour": {
+          "element": "group",
+          "parent": "header",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-segment",
+            "mdy-timepicker-segment--hour"
+          ],
+          "states": [
+            "active",
+            "focused"
+          ]
+        },
+        "minute": {
+          "element": "group",
+          "parent": "header",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-segment",
+            "mdy-timepicker-segment--minute"
+          ],
+          "states": [
+            "active",
+            "focused"
+          ]
+        },
+        "period": {
+          "element": "group",
+          "parent": "header",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-period-toggle"
+          ],
+          "states": [
+            "compact"
+          ]
+        },
+        "clock": {
+          "element": "popup",
+          "parent": "content",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-dial"
+          ],
+          "states": []
+        },
+        "dialFace": {
+          "element": "presentation",
+          "parent": "clock",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-dial__face"
+          ],
+          "states": []
+        },
+        "dialHand": {
+          "element": "presentation",
+          "parent": "dialFace",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-dial__hand"
+          ],
+          "states": []
+        },
+        "dialNumber": {
+          "element": "presentation",
+          "parent": "dialFace",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-dial__number"
+          ],
+          "states": [
+            "inner",
+            "selected"
+          ]
+        },
+        "modeToggle": {
+          "element": "button",
+          "parent": "actions",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-mode-toggle"
+          ],
+          "states": []
+        },
+        "actions": {
+          "element": "group",
+          "parent": "container",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-actions"
+          ],
+          "states": []
+        },
+        "action": {
+          "element": "button",
+          "parent": "actions",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-action-btn"
+          ],
+          "states": [
+            "confirm"
+          ]
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "control"
+          ]
+        },
+        {
+          "from": "control",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        },
+        {
+          "from": "control",
+          "attribute": "aria-controls",
+          "to": [
+            "popup"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": true,
+        "dismissOnOutsidePointer": true,
+        "anchoring": {
+          "matchAnchorWidth": false,
+          "minSpace": 240,
+          "alignment": "right"
+        }
+      },
+      "keyboard": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ]
+    },
+    "file": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--file"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "dropzone": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-file-container"
+          ],
+          "states": [
+            "dragover"
+          ]
+        },
+        "control": {
+          "element": "input",
+          "parent": "dropzone",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-file-input"
+          ],
+          "states": []
+        },
+        "content": {
+          "element": "group",
+          "parent": "dropzone",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-file-content"
+          ],
+          "states": []
+        },
+        "fileList": {
+          "element": "group",
+          "parent": "dropzone",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-file-list"
+          ],
+          "states": []
+        },
+        "fileItem": {
+          "element": "group",
+          "parent": "fileList",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-file-item"
+          ],
+          "states": []
+        },
+        "clear": {
+          "element": "button",
+          "parent": "dropzone",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-file-clear"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "control"
+          ]
+        },
+        {
+          "from": "control",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": false,
+        "dismissOnOutsidePointer": false
+      },
+      "keyboard": []
+    },
+    "colors": {
+      "parts": {
+        "root": {
+          "element": "root",
+          "parent": null,
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-renderer",
+            "mdy-renderer--colors"
+          ],
+          "states": [
+            "open",
+            "touched"
+          ]
+        },
+        "label": {
+          "element": "label",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label"
+          ],
+          "states": [
+            "filled",
+            "hasError"
+          ]
+        },
+        "requiredMarker": {
+          "element": "text",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-label__required"
+          ],
+          "states": [
+            "filled"
+          ]
+        },
+        "inputWrapper": {
+          "element": "group",
+          "parent": "root",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-input-wrapper"
+          ],
+          "states": [
+            "disabled",
+            "error"
+          ]
+        },
+        "nativePicker": {
+          "element": "affordance",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-colors__primary-picker"
+          ],
+          "states": []
+        },
+        "preview": {
+          "element": "presentation",
+          "parent": "nativePicker",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-colors__preview-swatch"
+          ],
+          "states": []
+        },
+        "control": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-colors__native-hidden"
+          ],
+          "states": []
+        },
+        "hexInput": {
+          "element": "input",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-colors__hex-input"
+          ],
+          "states": []
+        },
+        "toggle": {
+          "element": "button",
+          "parent": "inputWrapper",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-colors__toggle-area"
+          ],
+          "states": []
+        },
+        "popup": {
+          "element": "popup",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-colors__dropdown",
+            "mdy-popup"
+          ],
+          "states": [
+            "above",
+            "overlay",
+            "right"
+          ]
+        },
+        "presets": {
+          "element": "listbox",
+          "parent": "popup",
+          "optional": true,
+          "repeated": false,
+          "role": "listbox",
+          "classes": [
+            "mdy-colors__presets"
+          ],
+          "states": []
+        },
+        "swatch": {
+          "element": "option",
+          "parent": "presets",
+          "optional": true,
+          "repeated": true,
+          "role": "option",
+          "classes": [
+            "mdy-color-swatch"
+          ],
+          "states": [
+            "active"
+          ]
+        },
+        "inlineError": {
+          "element": "image",
+          "parent": "label",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__inline-errors"
+          ],
+          "states": []
+        },
+        "supportingText": {
+          "element": "text",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-supporting-text"
+          ],
+          "states": []
+        },
+        "errors": {
+          "element": "status",
+          "parent": "root",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-control__errors"
+          ],
+          "states": []
+        },
+        "errorItem": {
+          "element": "status",
+          "parent": "errors",
+          "optional": true,
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-control__error"
+          ],
+          "states": []
+        }
+      },
+      "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "hexInput"
+          ]
+        },
+        {
+          "from": "hexInput",
+          "attribute": "aria-describedby",
+          "to": [
+            "errors",
+            "supportingText"
+          ]
+        },
+        {
+          "from": "toggle",
+          "attribute": "aria-controls",
+          "to": [
+            "popup"
+          ]
+        }
+      ],
+      "capabilities": {
+        "keyboard": true,
+        "focus": true,
+        "overlay": true,
+        "dismissOnOutsidePointer": true,
+        "anchoring": {
+          "matchAnchorWidth": false,
+          "minSpace": 120,
+          "minWidth": 280,
+          "alignment": "right"
+        }
+      },
+      "keyboard": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ]
+    }
+  }
+}
