@@ -38,6 +38,8 @@
     "demo:solid": "npm run build:examples && node scripts/serve-example.mjs solid 4305",
     "demo:svelte": "npm run build:examples && node scripts/serve-example.mjs svelte 4306",
     "docs:reactivity-matrix": "npm run build:core && node --conditions=browser scripts/reactivity-capability-matrix.mjs",
+    "docs:conformance-manifest": "npm run build:plain && tsc -p packages/lit/tsconfig.json && node scripts/conformance-manifest.mjs",
+    "test:conformance-manifest": "node scripts/conformance-manifest.mjs --check",
     "docs:sync": "node scripts/sync-docs-site.mjs",
     "docs:dev": "npm --prefix site run dev",
     "docs:build": "npm --prefix site run build",
@@ -57,7 +59,7 @@
     "plain-preview:dev": "npm run build:plain && node apps/plain-preview/build.mjs && node apps/plain-preview/server.mjs",
     "test:widget-contract": "node scripts/audit-angular-widget-contract.mjs --check && node scripts/audit-widget-contract-completeness.mjs && npm run build:core && tsc -p packages/widgets/tsconfig.json && node --test packages/widgets/test/*.spec.mjs",
     "test:plain-contract": "npm run build:plain && node scripts/audit-plain-full-catalog.mjs && node scripts/audit-plain-widget-contract.mjs",
-    "test:contracts": "node scripts/audit-package-independence.mjs && npm run test:widget-contract && npm run test:plain-contract && npm run test:plain && npm run test:layout-contract && node scripts/audit-patch3-readiness.mjs --require-ready",
+    "test:contracts": "node scripts/audit-package-independence.mjs && npm run test:widget-contract && npm run test:plain-contract && npm run test:plain && npm run test:layout-contract && npm run test:conformance-manifest && node scripts/audit-patch3-readiness.mjs --require-ready",
     "test:layout-contract": "node scripts/audit-layout-contract.mjs --check",
     "test:styles-architecture": "node scripts/audit-styles-architecture.mjs --check",
     "test:contract-coverage": "node scripts/audit-contract-style-coverage.mjs --check"

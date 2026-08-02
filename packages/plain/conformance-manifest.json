@@ -1,0 +1,50 @@
+{
+  "renderer": "@modyra/plain",
+  "contractVersion": "1",
+  "generatedBy": "scripts/conformance-manifest.mjs — do not edit by hand",
+  "supportedKinds": [
+    "text",
+    "email",
+    "password",
+    "textarea",
+    "number",
+    "slider",
+    "checkbox",
+    "toggle",
+    "radio",
+    "segmented",
+    "select",
+    "multiselect",
+    "datepicker",
+    "daterange",
+    "timepicker",
+    "file",
+    "colors"
+  ],
+  "unsupportedKinds": [],
+  "supportedFeatures": {
+    "serverRender": {
+      "supported": false,
+      "observedBy": "the package's exported symbols",
+      "evidence": "no export turns a form into markup, so there is nothing a server could call"
+    },
+    "lazyOverlays": {
+      "supported": false,
+      "observedBy": "mounting each kind closed, then opening it, and looking for the parts inside its popup in both states",
+      "evidence": "eager: select, multiselect, datepicker, daterange, timepicker, colors · unobservable: none"
+    },
+    "rtl": {
+      "supported": null,
+      "observedBy": null,
+      "evidence": "not measurable in this harness: RTL is a layout property and jsdom has no layout. The evidence is the browser suite in e2e/rtl.spec.ts."
+    }
+  },
+  "overlayStrategy": {
+    "select": "eager",
+    "multiselect": "eager",
+    "datepicker": "eager",
+    "daterange": "eager",
+    "timepicker": "eager",
+    "colors": "eager"
+  }
+}
