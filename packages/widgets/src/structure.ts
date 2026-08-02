@@ -1,4 +1,5 @@
 import type { MdyPartContract } from "./contract.js";
+import { MDY_STATE_MODIFIERS, stateClass, type MdyStateName } from "./state.js";
 
 /** Version of the framework-agnostic UI contract implemented by this package. */
 export const MDY_WIDGET_CONTRACT_VERSION = 1 as const;
@@ -47,33 +48,61 @@ export const MDY_FIELD_SHELL_CLASSES = Object.freeze({
 } satisfies Record<MdyFieldShellPart, string>);
 
 /**
+ * States every field-like widget's shell parts share.
+ *
+ * The shell is the same shell whatever it wraps, so its states are declared once rather than
+ * seventeen times: a wrapper is disabled or in error, a label is filled or has an error to make room
+ * for, a root is open or has been touched.
+ *
+ * Beside the shell's classes rather than in the catalogue, because a shell part's name and the
+ * states it may be in are one fact, and {@link MDY_FIELD_STATE_CLASSES} is derived from both.
+ */
+export const MDY_SHELL_PART_STATES: Readonly<Record<string, readonly MdyStateName[]>> =
+  Object.freeze({
+    root: ["open", "touched"],
+    inputWrapper: ["disabled", "error"],
+    label: ["filled", "hasError"],
+    requiredMarker: ["filled"],
+  });
+
+/**
  * State classes every field carries, independent of kind.
  *
- * Declared here rather than written as literals, so one vocabulary answers both what a renderer
- * should emit and what a theme may rely on.
+ * **Derived**, not restated. Every member here already existed as one of `MDY_FIELD_SHELL_CLASSES`,
+ * `MDY_SHELL_PART_STATES` or `MDY_STATE_MODIFIERS`, written out a second time and in a second
+ * vocabulary: `labelStates` said `"has-error"`, the modifier, where the shell states say
+ * `"hasError"`, the state. Two tables for one fact drift the moment one of them is edited, and they
+ * drift silently — a theme rule keyed to the spelling nobody updated simply stops matching.
  *
- * These names are measured, not invented. The previous set — `mdy-field--invalid`,
- * `mdy-control--open` and the rest — was styled by **no theme** and emitted by **no renderer**: a
- * renderer built from the contract alone would have produced classes nothing painted, which is the
- * one failure mode this vocabulary exists to prevent. What is really on screen is a modifier on the
- * renderer root, one on the wrapper holding the control, and one on the label.
+ * The names are measured, not invented. An earlier set — `mdy-field--invalid`, `mdy-control--open`
+ * and the rest — was styled by **no theme** and emitted by **no renderer**: a renderer built from
+ * the contract alone would have produced classes nothing painted, which is the one failure mode this
+ * vocabulary exists to prevent. What is really on screen is a modifier on the renderer root, one on
+ * the wrapper holding the control, and one on the label.
+ *
+ * `fieldStates` and `controlStates` are read twice over by their consumers — once as a key into the
+ * field's state, once as the modifier suffix — so they are the state *names*, which for these is
+ * also how they are spelled as classes.
  */
+const shellStates = (part: string): readonly string[] =>
+  (MDY_SHELL_PART_STATES[part] ?? []).map((state) => MDY_STATE_MODIFIERS[state]);
+
 export const MDY_FIELD_STATE_CLASSES = Object.freeze({
   /** Base the field root's state modifiers hang from. */
-  field: "mdy-renderer",
+  field: MDY_FIELD_SHELL_CLASSES.root,
   /** States the field root reflects. */
-  fieldStates: ["touched", "open"],
+  fieldStates: Object.freeze(shellStates("root")),
   /** Base the wrapper holding the control, which is where a field shows it is unusable or wrong. */
-  control: "mdy-input-wrapper",
+  control: MDY_FIELD_SHELL_CLASSES.inputWrapper,
   /** States that wrapper reflects. */
-  controlStates: ["disabled", "error"],
+  controlStates: Object.freeze(shellStates("inputWrapper")),
   /** Base the label's own modifiers hang from. */
-  label: "mdy-label",
+  label: MDY_FIELD_SHELL_CLASSES.label,
   /** States the label reflects: whether the field has a value, and whether it is failing. */
-  labelStates: ["filled", "has-error"],
+  labelStates: Object.freeze(shellStates("label")),
   /** The root modifier an overlay widget carries while its popup is showing. */
-  rendererOpen: "mdy-renderer--open",
-} as const);
+  rendererOpen: stateClass(MDY_FIELD_SHELL_CLASSES.root, "open"),
+});
 
 /**
  * Classes that belong to no single widget: the shared button, the overlay machinery, the surface

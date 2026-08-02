@@ -26,8 +26,17 @@ export type {
 } from "./structure.js";
 
 export { dynamicParts, isFullyServerRenderable, staticParts } from "./ssr.js";
-export { MDY_LABELABLE_TAGS, MDY_WIDGET_RELATIONS } from "./relations.js";
-export type { MdyRelationAttribute, MdyWidgetRelation } from "./relations.js";
+export {
+  MDY_LABELABLE_TAGS,
+  MDY_SEMANTICS_REQUIRING_NAME,
+  MDY_WIDGET_RELATIONS,
+  partsRequiringName,
+} from "./relations.js";
+export type {
+  MdyAccessibleNameSource,
+  MdyRelationAttribute,
+  MdyWidgetRelation,
+} from "./relations.js";
 
 export {
   MDY_DISABLED_BLOCKS_TRANSITIONS,

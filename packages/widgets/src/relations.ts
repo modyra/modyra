@@ -40,7 +40,7 @@ export interface MdyWidgetRelation {
  * here and names its group with `aria-labelledby` instead. Pointing a label at a non-labelable
  * element produces markup that validates as nothing and does not move focus on click.
  */
-const LABEL_TARGET: Readonly<Record<string, string>> = Object.freeze({
+const LABEL_TARGET: Readonly<Partial<Record<MdyWidgetKind, string>>> = Object.freeze({
   text: "control", email: "control", password: "control", textarea: "control",
   number: "control", slider: "control", file: "control",
   datepicker: "control", timepicker: "control",
@@ -61,7 +61,7 @@ const LABEL_TARGET: Readonly<Record<string, string>> = Object.freeze({
  * `control` here and `hexInput` above — `control` is the native picker, which renderers are free to
  * make unfocusable, so the description hung off an element the user cannot reach.
  */
-const DESCRIBED_BY_CARRIER: Readonly<Record<string, string>> = Object.freeze({
+const DESCRIBED_BY_CARRIER: Readonly<Partial<Record<MdyWidgetKind, string>>> = Object.freeze({
   text: "control", email: "control", password: "control", textarea: "control",
   number: "control", slider: "control", file: "control", colors: "hexInput",
   checkbox: "control", toggle: "control",
@@ -73,7 +73,7 @@ const DESCRIBED_BY_CARRIER: Readonly<Record<string, string>> = Object.freeze({
 });
 
 /** Kinds whose control surface is a container, and therefore names its label rather than being named. */
-const GROUP_LABELLED: readonly string[] = Object.freeze(["radio", "segmented"]);
+const GROUP_LABELLED: readonly MdyWidgetKind[] = Object.freeze(["radio", "segmented"]);
 
 function relationsFor(kind: MdyWidgetKind): readonly MdyWidgetRelation[] {
   const declared = new Set<string>(MDY_WIDGET_CONTRACTS[kind].structure.nodes.map((node) => node.part));
