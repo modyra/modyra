@@ -93,18 +93,18 @@
         --mdy-shadow-depth-3: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 8px 3px rgba(0, 0, 0, 0.15);
 
         /* ── Text Field (Filled) ────────────────────────────────────────────────── */
-        --mdy-input-height: var(--mdy-comp-filled-text-field-container-height);
+        --mdy-input-height: var(--mdy-comp-field-container-height);
         /* 56px */
-        --mdy-input-bg: var(--mdy-comp-filled-text-field-container-color);
+        --mdy-input-bg: var(--mdy-comp-field-container-color);
         --mdy-input-bg-hover: color-mix(in srgb, var(--mdy-input-bg), var(--mdy-on-surface) 8%);
-        --mdy-input-border-radius: var(--mdy-comp-filled-text-field-container-shape);
+        --mdy-input-border-radius: var(--mdy-comp-field-container-shape);
         /* 4px */
-        --mdy-input-color: var(--mdy-comp-filled-text-field-input-text-color);
-        --mdy-input-placeholder-color: var(--mdy-comp-filled-text-field-label-text-color);
-        --mdy-input-focus-color: var(--mdy-comp-filled-text-field-focus-active-indicator-color);
-        --mdy-input-icon-color: var(--mdy-comp-filled-text-field-leading-icon-color);
+        --mdy-input-color: var(--mdy-comp-field-input-text-color);
+        --mdy-input-placeholder-color: var(--mdy-comp-field-label-text-color);
+        --mdy-input-focus-color: var(--mdy-comp-field-focus-active-indicator-color);
+        --mdy-input-icon-color: var(--mdy-comp-field-leading-icon-color);
         --mdy-input-focus-shadow: inset 0 -2px 0 0 var(--mdy-input-focus-color);
-        --mdy-error-color: var(--mdy-comp-filled-text-field-error-active-indicator-color);
+        --mdy-error-color: var(--mdy-comp-field-error-active-indicator-color);
         --mdy-error-focus-shadow: inset 0 -2px 0 0 var(--mdy-error-color);
         --mdy-input-font-size: var(--mdy-sys-typescale-body-large-size);
         /* 16px */

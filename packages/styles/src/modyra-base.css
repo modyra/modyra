@@ -318,6 +318,34 @@
         --mdy-comp-filled-text-field-supporting-text-color: var(--mdy-sys-color-on-surface-variant);
         --mdy-comp-filled-text-field-error-active-indicator-color: var(--mdy-sys-color-error);
         --mdy-comp-filled-text-field-error-label-text-color: var(--mdy-sys-color-error);
+
+        /* ─── The neutral field tier ───────────────────────────────────────────
+         *
+         * What a field looks like, said without naming a design system. The
+         * foundation reads these; `--mdy-comp-filled-text-field-*` above are the
+         * Material spelling of the same values and are **deprecated aliases**,
+         * kept so a theme written against them keeps working.
+         *
+         * Each neutral token reads its Material predecessor first and falls back
+         * to the same value, so a theme that still sets the old name is picked up
+         * here, and a theme that sets the new one overrides this declaration
+         * outright. Neither spelling is lost while both exist.
+         */
+        --mdy-comp-field-container-color: var(--mdy-comp-filled-text-field-container-color, var(--mdy-sys-color-surface-container-highest));
+        --mdy-comp-field-container-shape: var(--mdy-comp-filled-text-field-container-shape, var(--mdy-sys-shape-corner-extra-small));
+        --mdy-comp-field-container-height: var(--mdy-comp-filled-text-field-container-height, 56px);
+        --mdy-comp-field-label-text-color: var(--mdy-comp-filled-text-field-label-text-color, var(--mdy-sys-color-on-surface-variant));
+        --mdy-comp-field-focus-label-text-color: var(--mdy-comp-filled-text-field-focus-label-text-color, var(--mdy-sys-color-primary));
+        --mdy-comp-field-input-text-color: var(--mdy-comp-filled-text-field-input-text-color, var(--mdy-sys-color-on-surface));
+        --mdy-comp-field-active-indicator-color: var(--mdy-comp-filled-text-field-active-indicator-color, var(--mdy-sys-color-on-surface-variant));
+        --mdy-comp-field-focus-active-indicator-color: var(--mdy-comp-filled-text-field-focus-active-indicator-color, var(--mdy-sys-color-primary));
+        --mdy-comp-field-active-indicator-height: var(--mdy-comp-filled-text-field-active-indicator-height, 1px);
+        --mdy-comp-field-focus-active-indicator-height: var(--mdy-comp-filled-text-field-focus-active-indicator-height, 2px);
+        --mdy-comp-field-leading-icon-color: var(--mdy-comp-filled-text-field-leading-icon-color, var(--mdy-sys-color-on-surface-variant));
+        --mdy-comp-field-trailing-icon-color: var(--mdy-comp-filled-text-field-trailing-icon-color, var(--mdy-sys-color-on-surface-variant));
+        --mdy-comp-field-supporting-text-color: var(--mdy-comp-filled-text-field-supporting-text-color, var(--mdy-sys-color-on-surface-variant));
+        --mdy-comp-field-error-active-indicator-color: var(--mdy-comp-filled-text-field-error-active-indicator-color, var(--mdy-sys-color-error));
+        --mdy-comp-field-error-label-text-color: var(--mdy-comp-filled-text-field-error-label-text-color, var(--mdy-sys-color-error));
         /* Outlined Text Field */
         --mdy-comp-outlined-text-field-container-height: 56px;
         --mdy-comp-outlined-text-field-label-text-color: var(--mdy-sys-color-on-surface-variant);
