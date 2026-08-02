@@ -235,6 +235,35 @@ export function runReactivityContractTests(
     destroy();
   });
 
+  test(`${name}: a destroyed scope stops the effects it owns`, async () => {
+    const { reactivity: rx, flushIfSupported, destroy } = createHarness();
+    if (!rx.createScope || rx.capabilities?.effects !== true) {
+      destroy();
+      return;
+    }
+
+    // The ownership guarantee itself, which the cleanup and cascade checks above do not reach: they
+    // prove a scope tells its listeners it died, not that anything created inside it stopped. An
+    // adapter whose `run()` does not actually own what it wraps passes both of them, and leaks
+    // every effect a form ever made.
+    const scope = rx.createScope({ debugName: "ownership" });
+    const source = rx.signal(0);
+    let runs = 0;
+    // `options.scope` is the ownership channel; `scope.run()` only enters the reactive context and
+    // does not transfer ownership on every adapter.
+    rx.effect(() => { source(); runs++; }, { scope });
+    await flushIfSupported();
+    const before = runs;
+    assert.ok(before > 0, "the effect should have run at least once while its scope was alive");
+
+    scope.destroy();
+    source.set(1);
+    await flushIfSupported();
+
+    assert.equal(runs, before, "an effect created inside a destroyed scope must not run again");
+    destroy();
+  });
+
   test(`${name}: registering on a destroyed scope throws a typed error`, () => {
     const { reactivity: rx, destroy } = createHarness();
     if (!rx.createScope) {

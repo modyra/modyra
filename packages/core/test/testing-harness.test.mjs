@@ -20,8 +20,8 @@ runReactivityContractTests(test, assert, "core/testing harness", () => ({
 }));
 
 test("core/testing harness: destroy() was called once per registered test", () => {
-  // 10 tests are registered above (4 universal + 3 scope/capability-gated +
+  // 11 tests are registered above (4 universal + 4 scope/capability-gated +
   // 3 batch/flush/observe-gated); each calls destroy() exactly once via
   // createHarness()'s returned object.
-  assert.equal(destroyed, 10);
+  assert.equal(destroyed, 11);
 });
