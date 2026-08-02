@@ -1,9 +1,16 @@
 /**
  * Runtime capabilities contract.
  *
- * Adapters report what the current runtime can do. The controller uses this
- * information to avoid emitting commands that cannot be executed (e.g. focus
- * commands during SSR or in a non-DOM environment).
+ * Adapters report what the current runtime can do, and pass the report to
+ * {@link processWidgetCommands}, which drops the commands that need a DOM when there is none —
+ * focus, scrolling, announcing — and runs the rest.
+ *
+ * The header used to say a *controller* consulted the report to avoid emitting such commands. No
+ * controller took one, both report functions had no consumer at all, and `processWidgetCommands`
+ * relied on its element lookup returning nothing. The claim described behaviour that existed
+ * nowhere, which is worse than no claim: it reads as a guarantee. The execution point is the honest
+ * place for it — a controller decides what should happen, and whether it *can* happen is a property
+ * of the runtime doing it.
  */
 
 import type { MdyUiCommand } from "./commands.js";

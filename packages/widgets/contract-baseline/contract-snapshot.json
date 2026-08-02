@@ -153,8 +153,6 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": false,
         "dismissOnOutsidePointer": false
       },
@@ -312,8 +310,6 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": false,
         "dismissOnOutsidePointer": false
       },
@@ -471,8 +467,6 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": false,
         "dismissOnOutsidePointer": false
       },
@@ -608,8 +602,6 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": false,
         "dismissOnOutsidePointer": false
       },
@@ -745,14 +737,12 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": false,
         "dismissOnOutsidePointer": false
       },
       "keyboard": [
-        "0",
-        "1"
+        "ArrowDown:step",
+        "ArrowUp:step"
       ]
     },
     "slider": {
@@ -895,14 +885,12 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": false,
         "dismissOnOutsidePointer": false
       },
       "keyboard": [
-        "0",
-        "1"
+        "ArrowDown:step",
+        "ArrowUp:step"
       ]
     },
     "checkbox": {
@@ -1027,13 +1015,11 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": false,
         "dismissOnOutsidePointer": false
       },
       "keyboard": [
-        "0"
+        "Space:toggle"
       ]
     },
     "toggle": {
@@ -1177,13 +1163,11 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": false,
         "dismissOnOutsidePointer": false
       },
       "keyboard": [
-        "0"
+        "Space:toggle"
       ]
     },
     "radio": {
@@ -1330,17 +1314,15 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": false,
         "dismissOnOutsidePointer": false
       },
       "keyboard": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4"
+        "ArrowDown:move",
+        "ArrowUp:move",
+        "End:move",
+        "Home:move",
+        "Space:toggle"
       ]
     },
     "segmented": {
@@ -1485,17 +1467,15 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": false,
         "dismissOnOutsidePointer": false
       },
       "keyboard": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4"
+        "ArrowDown:move",
+        "ArrowUp:move",
+        "End:move",
+        "Home:move",
+        "Space:toggle"
       ]
     },
     "select": {
@@ -1755,8 +1735,6 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": true,
         "dismissOnOutsidePointer": true,
         "anchoring": {
@@ -1767,15 +1745,16 @@
         }
       },
       "keyboard": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8"
+        "ArrowDown@closed:open",
+        "ArrowDown@open:move",
+        "ArrowUp@open:move",
+        "End@open:move",
+        "Enter@closed:open",
+        "Enter@open:commit",
+        "Escape@open:cancel",
+        "Home@open:move",
+        "Space@closed:open",
+        "Tab@open:cancel"
       ]
     },
     "multiselect": {
@@ -2103,8 +2082,6 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": true,
         "dismissOnOutsidePointer": true,
         "anchoring": {
@@ -2115,15 +2092,16 @@
         }
       },
       "keyboard": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8"
+        "ArrowDown@closed:open",
+        "ArrowDown@open:move",
+        "ArrowUp@open:move",
+        "End@open:move",
+        "Enter@closed:open",
+        "Enter@open:commit",
+        "Escape@open:cancel",
+        "Home@open:move",
+        "Space@closed:open",
+        "Tab@open:cancel"
       ]
     },
     "datepicker": {
@@ -2389,8 +2367,6 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": true,
         "dismissOnOutsidePointer": true,
         "anchoring": {
@@ -2400,15 +2376,15 @@
         }
       },
       "keyboard": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8"
+        "ArrowDown@closed:open",
+        "ArrowDown@open:move",
+        "ArrowUp@open:move",
+        "End@open:move",
+        "Enter@closed:open",
+        "Enter@open:commit",
+        "Escape@open:cancel",
+        "Home@open:move",
+        "Tab@open:cancel"
       ]
     },
     "daterange": {
@@ -2700,8 +2676,6 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": true,
         "dismissOnOutsidePointer": true,
         "anchoring": {
@@ -2711,15 +2685,16 @@
         }
       },
       "keyboard": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8"
+        "ArrowDown@closed:open",
+        "ArrowDown@open:move",
+        "ArrowUp@open:move",
+        "End@open:move",
+        "Enter@closed:open",
+        "Enter@open:commit",
+        "Escape@open:cancel",
+        "Home@open:move",
+        "Space@closed:open",
+        "Tab@open:cancel"
       ]
     },
     "timepicker": {
@@ -3057,8 +3032,6 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": true,
         "dismissOnOutsidePointer": true,
         "anchoring": {
@@ -3068,15 +3041,15 @@
         }
       },
       "keyboard": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8"
+        "ArrowDown@closed:open",
+        "ArrowDown@open:move",
+        "ArrowUp@open:move",
+        "End@open:move",
+        "Enter@closed:open",
+        "Enter@open:commit",
+        "Escape@open:cancel",
+        "Home@open:move",
+        "Tab@open:cancel"
       ]
     },
     "file": {
@@ -3243,8 +3216,6 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": false,
         "dismissOnOutsidePointer": false
       },
@@ -3473,8 +3444,6 @@
         }
       ],
       "capabilities": {
-        "keyboard": true,
-        "focus": true,
         "overlay": true,
         "dismissOnOutsidePointer": true,
         "anchoring": {
@@ -3485,15 +3454,16 @@
         }
       },
       "keyboard": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8"
+        "ArrowDown@closed:open",
+        "ArrowDown@open:move",
+        "ArrowUp@open:move",
+        "End@open:move",
+        "Enter@closed:open",
+        "Enter@open:commit",
+        "Escape@open:cancel",
+        "Home@open:move",
+        "Space@closed:open",
+        "Tab@open:cancel"
       ]
     }
   }

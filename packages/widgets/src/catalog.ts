@@ -15,11 +15,27 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
   /** Classes this kind's renderers may carry that are not parts. See `MdyWidgetShape.presentation`. */
   readonly presentationClasses: readonly string[];
   readonly capabilities: {
-    readonly keyboard: boolean;
-    readonly focus: boolean;
+    /**
+     * Whether this kind owns an overlay.
+     *
+     * The only one of these that ever varied. `keyboard` and `focus` were declared beside it and
+     * were `true` on all seventeen kinds — every widget here is operable from the keyboard and can
+     * hold focus, so as *per-kind flags* they said nothing, and a consumer branching on one was
+     * branching on a constant. They are gone rather than left as decoration: a declared capability
+     * that cannot be false is a promise with no content.
+     */
     readonly overlay: boolean;
-    /** A pointer outside the overlay dismisses it. True wherever there is an overlay: a popup a
-     * click elsewhere cannot dismiss is the exception, and would have to be declared as one. */
+    /**
+     * A pointer outside the overlay dismisses it.
+     *
+     * Exactly `overlay` on every kind today, and kept because it is the one of the four that can
+     * meaningfully be false: a popup a click elsewhere cannot dismiss is a real design, and this is
+     * where it would be declared.
+     *
+     * It does **not** say which event delivers the dismissal, and that gap is measured rather than
+     * theoretical — the renderers do not agree, and a drag beginning outside an open popup fires
+     * one binding and not the other. Naming the event is the next thing this capability needs.
+     */
     readonly dismissOnOutsidePointer: boolean;
     /**
      * How this widget's popup attaches, for `anchorOverlay`. A list belongs under its control and
@@ -294,6 +310,19 @@ export interface MdyPopupOpener {
    * needs no role and declares none.
    */
   readonly role?: string;
+  /**
+   * Whether the opener is a control the user types into.
+   *
+   * `opener` names the element that carries the overlay relation, and for the combobox kinds that is
+   * correctly the typeable control — the pattern puts `aria-expanded` nowhere else. But the same
+   * declaration was being read as "the element that toggles the overlay", and those are not the same
+   * element's job: a pointer landing in a text field is the user reaching for the caret, not for a
+   * switch, and a press of the space bar there is a space character.
+   *
+   * Saying so once here is what keeps the relation on the element the pattern requires while the
+   * behaviour follows what the element actually is.
+   */
+  readonly typeable?: boolean;
 }
 
 export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupOpener>>> = Object.freeze({
@@ -306,10 +335,10 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
   // `aria-expanded` and `aria-controls`, and the calendar/clock button beside it is a second
   // affordance for the same popup. The opener is therefore the control, not the button — naming the
   // button here would ask for the relation in a place the pattern does not put it.
-  datepicker: { opener: "control", controls: "grid", role: "combobox" },
+  datepicker: { opener: "control", controls: "grid", role: "combobox", typeable: true },
   // Daterange wires its own toggle rather than following the combobox pattern its sibling does.
   daterange: { opener: "toggle", controls: "popup" },
-  timepicker: { opener: "control", controls: "popup", role: "combobox" },
+  timepicker: { opener: "control", controls: "popup", role: "combobox", typeable: true },
   // Colours is the exception: it has no combobox control, so its toggle really is the opener.
   colors: { opener: "toggle", controls: "popup" },
 });
@@ -347,7 +376,7 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
     siblingCount.set(parent, order + 1);
     return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional: !(REQUIRED_PARTS.has(name) || shape.required?.includes(name)), repeated: REPEATED_PARTS.has(name) });
   });
-  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), capabilities: Object.freeze({ keyboard: true, focus: true, overlay, dismissOnOutsidePointer: overlay, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
+  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
 /**
  * The semantic every part answers to, declared rather than defaulted.
