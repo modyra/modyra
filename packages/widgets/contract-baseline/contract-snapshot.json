@@ -964,7 +964,10 @@
           "classes": [
             "mdy-label"
           ],
-          "states": []
+          "states": [
+            "filled",
+            "hasError"
+          ]
         },
         "requiredMarker": {
           "element": "text",
@@ -975,7 +978,9 @@
           "classes": [
             "mdy-label__required"
           ],
-          "states": []
+          "states": [
+            "filled"
+          ]
         },
         "supportingText": {
           "element": "text",
@@ -1112,7 +1117,9 @@
           "classes": [
             "mdy-label__required"
           ],
-          "states": []
+          "states": [
+            "filled"
+          ]
         },
         "inlineError": {
           "element": "image",
@@ -1767,7 +1774,8 @@
         "4",
         "5",
         "6",
-        "7"
+        "7",
+        "8"
       ]
     },
     "multiselect": {
@@ -2114,7 +2122,8 @@
         "4",
         "5",
         "6",
-        "7"
+        "7",
+        "8"
       ]
     },
     "datepicker": {
@@ -2398,7 +2407,8 @@
         "4",
         "5",
         "6",
-        "7"
+        "7",
+        "8"
       ]
     },
     "daterange": {
@@ -2708,7 +2718,8 @@
         "4",
         "5",
         "6",
-        "7"
+        "7",
+        "8"
       ]
     },
     "timepicker": {
@@ -3064,7 +3075,8 @@
         "4",
         "5",
         "6",
-        "7"
+        "7",
+        "8"
       ]
     },
     "file": {
@@ -3480,7 +3492,8 @@
         "4",
         "5",
         "6",
-        "7"
+        "7",
+        "8"
       ]
     }
   }
