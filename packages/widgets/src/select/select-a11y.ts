@@ -31,6 +31,13 @@ export interface MdySelectA11yOptions {
    */
   readonly errorsVisible?: boolean;
   readonly descriptionVisible?: boolean;
+  /**
+   * Whether the listbox is in the document.
+   *
+   * Not the same question as `open`: an eagerly-mounted popup is present and hidden while closed, a
+   * lazily-mounted one does not exist until it opens. Defaults to true.
+   */
+  readonly popupRendered?: boolean;
 }
 
 export interface MdySelectA11yProjection {
@@ -56,7 +63,7 @@ export function projectSelectA11y(
     classes: buildTriggerClasses(open, disabled, readonly, invalid, loading),
     attributes: {
       "aria-haspopup": "listbox",
-      ...projectOverlayOpenerA11y("select", { widgetId, open })?.attributes,
+      ...projectOverlayOpenerA11y("select", { widgetId, open, controlsRendered: options.popupRendered ?? true })?.attributes,
       "aria-activedescendant": activeKey ? idFactory.item(widgetId, "option", activeKey) : undefined,
       "aria-invalid": String(invalid),
       // The relation every other kind's projection already made, and this one did not: without it a

@@ -14,6 +14,18 @@ export interface MdyOverlayOpenerA11yOptions {
   readonly widgetId: string;
   /** Whether the overlay is showing. */
   readonly open: boolean;
+  /**
+   * Whether the element the opener controls is in the document.
+   *
+   * Not the same question as `open`: a renderer that builds its popup eagerly keeps it mounted and
+   * hidden while closed, and one that builds it on demand has nothing to point at until it does.
+   * `aria-controls` naming an id that resolves to nothing is a dangling reference, which assistive
+   * technology cannot follow and which no amount of correct `aria-expanded` makes up for.
+   *
+   * Defaults to true — an eagerly-mounted popup, which is what every caller assumed before this
+   * existed.
+   */
+  readonly controlsRendered?: boolean;
 }
 
 /**
@@ -33,8 +45,13 @@ export function projectOverlayOpenerA11y(
     classes: [],
     ...(relation.role ? { role: relation.role } : {}),
     attributes: {
+      // A property of the opener in both states: an opener that drops it while closed reads as a
+      // control with no overlay at all.
       "aria-expanded": String(options.open),
-      "aria-controls": idFactory.part(options.widgetId, relation.controls),
+      // Emitted only while there is something to name.
+      "aria-controls": (options.controlsRendered ?? true)
+        ? idFactory.part(options.widgetId, relation.controls)
+        : null,
     },
   };
 }
