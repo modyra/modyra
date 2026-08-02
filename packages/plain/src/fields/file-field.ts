@@ -24,6 +24,7 @@ export function renderFileField(
   f: MdyDynamicFileField,
   handle: MdyFieldHandle<unknown>,
   reactivity: MdyReactivity = vanillaReactivity(),
+  widgetId: string = f.name,
 ): () => void {
   const definition = MDY_WIDGET_CONTRACTS.file;
   const selectionOptions = { accept: f.accept, multiple: Boolean(f.multiple) };
@@ -38,7 +39,7 @@ export function renderFileField(
   control.type = "file";
   // Named so the shell's label can point at it. The native input is visually hidden and the browse
   // button forwards to it, but it is still the control the label is about.
-  control.id = f.name;
+  control.id = widgetId;
   applyPart(control, definition.parts.control);
   control.multiple = Boolean(f.multiple);
   if (f.accept) control.accept = f.accept;
@@ -108,7 +109,7 @@ export function renderFileField(
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
       handle.errors(),
-      { widgetId: f.name, controlId: control.id },
+      { widgetId: widgetId, controlId: control.id },
     );
     applyPart(shell.label, a11y.label);
     applyPart(shell.description, a11y.description);

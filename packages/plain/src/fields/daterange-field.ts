@@ -29,6 +29,7 @@ export function renderDaterangeField(
   handle: MdyFieldHandle<unknown>,
   reactivity: MdyReactivity = vanillaReactivity(),
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
+  widgetId: string = f.name,
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("daterange");
@@ -66,7 +67,7 @@ export function renderDaterangeField(
   const popup = el("div", `${MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   // The toggle said it had a dialog and whether it was open, and never said which one. Naming it
   // is what ties opener to popup for assistive technology — the relation select has always had.
-  popup.id = defaultWidgetIdFactory.part(f.name, "popup");
+  popup.id = defaultWidgetIdFactory.part(widgetId, "popup");
   toggle.setAttribute("aria-controls", popup.id);
   const header = el("div", "mdy-datepicker__header") as HTMLDivElement;
   const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
@@ -95,7 +96,7 @@ export function renderDaterangeField(
 
   // The start input is what the label names: a range has two controls and `for` can point at only
   // one. The other keeps the `aria-label` it already carried.
-  startInput.id = `${f.name}__start`;
+  startInput.id = `${widgetId}__start`;
 
   wrapper.append(startInput, separator, endInput, toggle, popup);
   insertControl(shell, wrapper);
@@ -175,7 +176,7 @@ export function renderDaterangeField(
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
       handle.errors(),
-      { widgetId: f.name, controlId: startInput.id },
+      { widgetId: widgetId, controlId: startInput.id },
     );
 
     applyPart(shell.root, definition.parts.root);

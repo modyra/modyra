@@ -20,10 +20,11 @@ export function renderDatepickerField(
   handle: MdyFieldHandle<string | null>,
   reactivity: MdyReactivity = vanillaReactivity(),
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
+  widgetId: string = f.name,
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("datepicker");
-  const controller = createDatepickerFieldController({ widgetId: f.name, handle, ...options }, reactivity);
+  const controller = createDatepickerFieldController({ widgetId: widgetId, handle, ...options }, reactivity);
   // Month and weekday names, and the first day of the week, come from Intl via `buildDateLocale`.
   const dateLocale = buildDateLocale(options.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language), options.firstDayOfWeek);
 

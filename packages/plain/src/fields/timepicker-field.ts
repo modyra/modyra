@@ -23,10 +23,11 @@ export function renderTimepickerField(
   handle: MdyFieldHandle<string | null>,
   reactivity: MdyReactivity = vanillaReactivity(),
   format: MdyTimeFormat = "12h",
+  widgetId: string = f.name,
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("timepicker");
-  const controller = createTimepickerFieldController({ widgetId: f.name, handle, format }, reactivity);
+  const controller = createTimepickerFieldController({ widgetId: widgetId, handle, format }, reactivity);
 
   const shell = buildFieldShell(f.label, "timepicker");
   // The catalogue's timepicker anatomy: a typeable input plus a toggle button opening the
@@ -43,7 +44,7 @@ export function renderTimepickerField(
   const dialog = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   // The id the opener names. The relation points at the popup rather than the dialog inside it,
   // because a renderer whose panel is not modal has no dialog to name.
-  dialog.id = overlayControlledId("timepicker", f.name) ?? "";
+  dialog.id = overlayControlledId("timepicker", widgetId) ?? "";
   // The popup's anatomy is the contract's, and its classes are the ones the shipped themes already
   // style — which is what makes every renderer look alike rather than merely
   // behave alike.
@@ -243,7 +244,7 @@ export function renderTimepickerField(
     applyPart(shell.label, view.parts.label);
     applyPart(control, view.parts.trigger);
     toggle.disabled = state.disabled;
-    applyPart(dialog, { ...view.parts.dialog, id: overlayControlledId("timepicker", f.name) ?? undefined });
+    applyPart(dialog, { ...view.parts.dialog, id: overlayControlledId("timepicker", widgetId) ?? undefined });
     applyPart(hourInput, view.parts.hour);
     applyPart(minuteInput, view.parts.minute);
     applyPart(shell.description, view.parts.description);

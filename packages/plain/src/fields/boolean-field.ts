@@ -16,9 +16,10 @@ export function renderBooleanField(
   f: MdyDynamicBooleanField,
   handle: MdyFieldHandle<boolean>,
   reactivity: MdyReactivity = vanillaReactivity(),
+  widgetId: string = f.name,
 ): () => void {
   const isToggle = f.kind === "toggle";
-  const controller = createBooleanFieldController({ widgetId: f.name, handle, variant: isToggle ? "switch" : "checkbox" }, reactivity);
+  const controller = createBooleanFieldController({ widgetId: widgetId, handle, variant: isToggle ? "switch" : "checkbox" }, reactivity);
   const definition = f.kind === "toggle" ? MDY_WIDGET_CONTRACTS.toggle : MDY_WIDGET_CONTRACTS.checkbox;
 
   const root = el("div") as HTMLDivElement;

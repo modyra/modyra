@@ -15,11 +15,12 @@ export function renderOptionField(
   f: MdyDynamicOptionsField,
   handle: MdyFieldHandle<unknown>,
   reactivity: MdyReactivity = vanillaReactivity(),
+  widgetId: string = f.name,
 ): () => void {
   const variant = f.kind === "segmented" ? "segmented" : "radio";
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
-  const controller = createOptionFieldController({ widgetId: f.name, handle, options, variant, keyFor }, reactivity);
+  const controller = createOptionFieldController({ widgetId: widgetId, handle, options, variant, keyFor }, reactivity);
 
   // Both variants are one radio group semantically, but each names its parts its own way in the
   // contract; picking the definition per variant keeps every class in the catalog.
@@ -35,7 +36,7 @@ export function renderOptionField(
     row.className = parts.option.classes.join(" ");
     const input = el("input") as HTMLInputElement;
     input.type = "radio";
-    input.name = f.name;
+    input.name = widgetId;
     input.value = key;
     row.appendChild(input);
     // The drawn control is its own element — the radio's circle, the segment's checkmark — exactly

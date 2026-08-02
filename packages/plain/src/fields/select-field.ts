@@ -19,6 +19,7 @@ export function renderSelectField(
   f: MdyDynamicOptionsField,
   handle: MdyFieldHandle<unknown>,
   reactivity: MdyReactivity = vanillaReactivity(),
+  widgetId: string = f.name,
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("select");
@@ -27,7 +28,7 @@ export function renderSelectField(
 
   const controller = createSelectController<unknown>(
     {
-      widgetId: f.name,
+      widgetId: widgetId,
       options,
       keyFor,
       value: handle.value(),
@@ -109,7 +110,7 @@ export function renderSelectField(
   // The ids the trigger names. Every other kind gets these from the shell projection; this one
   // builds its trigger from the select projection, so the two ends of the relation have to be given
   // the same names explicitly or `aria-describedby` points at nothing.
-  const shellIds = fieldShellPartIds(f.name);
+  const shellIds = fieldShellPartIds(widgetId);
   shell.description.id = shellIds.descriptionId;
   shell.errorList.id = shellIds.errorId;
 

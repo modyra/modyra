@@ -29,12 +29,13 @@ export function renderTextField(
   f: MdyDynamicTextField | MdyDynamicNumberField,
   handle: MdyFieldHandle<string | number>,
   reactivity: MdyReactivity = vanillaReactivity(),
+  widgetId: string = f.name,
 ): () => void {
   const isTextarea = f.kind === "textarea";
   const isNumeric = f.kind === "number" || f.kind === "slider";
 
   const controller = createFieldController(
-    { widgetId: f.name, handle, inputType: isTextarea ? undefined : NATIVE_INPUT_TYPE[f.kind] },
+    { widgetId: widgetId, handle, inputType: isTextarea ? undefined : NATIVE_INPUT_TYPE[f.kind] },
     reactivity,
   );
 

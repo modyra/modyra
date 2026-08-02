@@ -19,6 +19,7 @@ export function renderColorsField(
   f: MdyDynamicColorsField,
   handle: MdyFieldHandle<unknown>,
   reactivity: MdyReactivity = vanillaReactivity(),
+  widgetId: string = f.name,
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("colors");
@@ -51,7 +52,7 @@ export function renderColorsField(
   hexInput.type = "text";
   // The field's label points here: the swatch is a colour input with no readable text, so the hex
   // box is the control a `for` can usefully name.
-  hexInput.id = `${f.name}__hex`;
+  hexInput.id = `${widgetId}__hex`;
   hexInput.spellcheck = false;
   hexInput.setAttribute("aria-label", `${f.label ?? "Colour"} — hex value`);
   applyPart(hexInput, definition.parts.hexInput);
@@ -72,7 +73,7 @@ export function renderColorsField(
   const popup = el("div", "mdy-overlay") as HTMLDivElement;
   // Same relation the select has always declared: the toggle says it opens a listbox and whether
   // it is showing, so it has to say which one.
-  popup.id = defaultWidgetIdFactory.part(f.name, "popup");
+  popup.id = defaultWidgetIdFactory.part(widgetId, "popup");
   toggle.setAttribute("aria-controls", popup.id);
   applyPart(popup, definition.parts.popup);
   const presetList = el("div") as HTMLDivElement;
@@ -147,7 +148,7 @@ export function renderColorsField(
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
       handle.errors(),
-      { widgetId: f.name, controlId: hexInput.id },
+      { widgetId: widgetId, controlId: hexInput.id },
     );
     applyPart(shell.label, a11y.label);
     applyPart(shell.description, a11y.description);
