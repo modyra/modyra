@@ -212,10 +212,18 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
       const raw = anchoring.properties[name];
       return raw === undefined || raw === "auto" ? undefined : Number.parseFloat(raw);
     };
+    const maxHeight = px(prop.maxHeight) ?? anchoring.decision.maxHeight;
     return {
       decision: anchoring.decision,
-      coords: { top: px(prop.top), bottom: px(prop.bottom), left: px(prop.left), right: px(prop.right), width: rect.width, maxWidth: px(prop.maxWidth) },
-      maxHeight: px(prop.maxHeight) ?? anchoring.decision.maxHeight,
+      // The placement and the height travel with the coordinates. A modal is centred rather than
+      // hung off a control, and that is not expressible as an inset — carrying the placement is what
+      // lets the contract serialise it instead of each host inventing the centring for itself.
+      coords: {
+        top: px(prop.top), bottom: px(prop.bottom), left: px(prop.left), right: px(prop.right),
+        width: rect.width, maxWidth: px(prop.maxWidth),
+        maxHeight, placement: anchoring.decision.placement,
+      },
+      maxHeight,
     };
   }
 

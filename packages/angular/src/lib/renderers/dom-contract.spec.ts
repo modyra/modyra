@@ -102,7 +102,7 @@ describe("Angular renderers, with the overlay open", () => {
       // The element carrying the relation is the part the contract names, which is not always the
       // one a pointer lands on: a datepicker's opener is its typeable control.
       const parts = partsOf(root, kind as MdyWidgetKind);
-      const declaredOpener = parts[MDY_POPUP_OPENERS[kind as string]!.opener] as Element | null;
+      const declaredOpener = parts[MDY_POPUP_OPENERS[kind as MdyWidgetKind]!.opener] as Element | null;
       expect(`${kind} opened: ${declaredOpener?.getAttribute("aria-expanded")}`)
         .toBe(`${kind} opened: true`);
 
