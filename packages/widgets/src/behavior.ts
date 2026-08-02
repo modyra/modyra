@@ -1,6 +1,7 @@
 import { angleToHour, angleToMinute, buildTimeString, parseTime, type MdyTimeFormat } from "@modyra/core/time-utils";
 import type { MdyUiCommand } from "./commands.js";
 import type { MdyWidgetKind } from "./catalog.js";
+import { isDateInRange, parseIsoDate } from "@modyra/core/date-utils";
 import { keyBindingFor } from "./transitions.js";
 import { acceptTimeField } from "./time-bounds.js";
 
@@ -349,11 +350,13 @@ export function dateWithinBounds(
   minIso: string | null | undefined,
   maxIso: string | null | undefined,
 ): boolean {
-  const normalized = iso.slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return false;
-  if (minIso && normalized < minIso.slice(0, 10)) return false;
-  if (maxIso && normalized > maxIso.slice(0, 10)) return false;
-  return true;
+  // Delegates rather than comparing strings of its own. The calendar bounds its cells with
+  // `isDateInRange` over parsed dates, and this took the same decision by lexicographic comparison
+  // — two spellings of one rule, which is the shape that drifts. The shape check stays here because
+  // it is the half a parsed comparison cannot make: `parseIsoDate` is what rejects a malformed one.
+  const parsed = parseIsoDate(iso.slice(0, 10));
+  if (!parsed) return false;
+  return isDateInRange(parsed, parseIsoDate(minIso ?? null), parseIsoDate(maxIso ?? null));
 }
 
 export type MdyDateValueIntent =
