@@ -3,7 +3,7 @@ import { overlayControlledId } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { angleToHour, angleToMinute, buildTimeString, formatTime, formatTimeAs, getCurrentTime, getPointerCoords, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
-import { timepickerDialNumbers, timepickerSelectedDialValue } from "@modyra/widgets";
+import { acceptTimeField, stepTimeField, timeFieldBounds, timepickerDialNumbers, timepickerSelectedDialValue } from "@modyra/widgets";
 import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
@@ -164,8 +164,46 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     }, delayMs);
   }
 
+  /**
+   * Arrow keys step the segment, wrapping at the range's ends.
+   *
+   * The bounds come from `timeFieldBounds`, not from literals beside each input — the hour's two
+   * variants are easy to keep straight and the minute's 0–59 is the one that gets lost. A step also
+   * pulls an out-of-range segment back inside, because stepping is how a user leaves a bad value.
+   */
+  private stepSegment(event: KeyboardEvent, field: "hour" | "minute"): boolean {
+    const delta = event.key === "ArrowUp" ? 1 : event.key === "ArrowDown" ? -1 : 0;
+    if (delta === 0) return false;
+    event.preventDefault();
+    const input = event.target as HTMLInputElement;
+    const entry = acceptTimeField(field, this.format, input.value);
+    const from = entry.type === "accepted" ? entry.value : timeFieldBounds(field, this.format).min;
+    input.value = String(stepTimeField(field, this.format, from, delta));
+    input.removeAttribute("aria-invalid");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
+  }
+
+  /** Mark a segment whose contents are outside the range it advertises. */
+  private markSegment(input: HTMLInputElement, field: "hour" | "minute"): void {
+    const bounds = timeFieldBounds(field, this.format);
+    input.min = String(bounds.min);
+    input.max = String(bounds.max);
+    // An empty box is being cleared, not asserted.
+    const bad = input.value.trim().length > 0
+      && acceptTimeField(field, this.format, input.value).type === "rejected";
+    if (bad) {
+      input.setAttribute("aria-invalid", "true");
+      input.title = `${bounds.min}–${bounds.max}`;
+    } else {
+      input.removeAttribute("aria-invalid");
+      input.removeAttribute("title");
+    }
+  }
+
   private onHourInput(event: Event): void {
     const target = event.target as HTMLInputElement;
+    this.markSegment(target, "hour");
     const raw = target.value;
     const h = parseInt(raw, 10);
     const p = this.parsed();
@@ -191,6 +229,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
 
   private onMinuteInput(event: Event): void {
     const target = event.target as HTMLInputElement;
+    this.markSegment(target, "minute");
     const raw = target.value;
     const m = raw === "" ? 0 : parseInt(raw, 10);
     if (isNaN(m) || m < 0 || m > 59) {
@@ -306,6 +345,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
                 if (this._viewMode === "dial") this._focusedField = "hour";
               }}
               @keydown=${(e: KeyboardEvent) => {
+                if (this.stepSegment(e, "hour")) return;
                 if (["e", "E", "+", "-", ".", ","].includes(e.key)) e.preventDefault();
               }}
               @paste=${(e: ClipboardEvent) => {
@@ -329,6 +369,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
                 if (this._viewMode === "dial") this._focusedField = "minute";
               }}
               @keydown=${(e: KeyboardEvent) => {
+                if (this.stepSegment(e, "minute")) return;
                 if (["e", "E", "+", "-", ".", ","].includes(e.key)) e.preventDefault();
               }}
               @paste=${(e: ClipboardEvent) => {
