@@ -7,6 +7,17 @@
  */
 
 import type { MdyUiCommand } from "./commands.js";
+import type { MdyWidgetRuntimeCapabilities } from "./runtime.js";
+
+/**
+ * The commands that need a real DOM to mean anything.
+ *
+ * Focus, scrolling and announcing all reach for an element or the document. The rest are the
+ * controller telling its host what changed, which is as true on a server as in a browser.
+ */
+const DOM_COMMANDS: ReadonlySet<MdyUiCommand["type"]> = new Set([
+  "focus", "restore-focus", "scroll-into-view", "announce",
+]);
 
 /** Looks up a widget part element, optionally by item key. */
 export type MdyElementLookup = (
@@ -33,18 +44,34 @@ export interface MdyWidgetCommandContext {
   scheduleFocus(el: HTMLElement): void;
   scheduleScroll(el: HTMLElement): void;
   announce(message: string): void;
+  /**
+   * What the runtime can do, from {@link browserRuntimeCapabilities}.
+   *
+   * Optional, and omitting it keeps every command executing as before. Supplying it is what makes
+   * the capability report mean something: with no DOM the commands that need one are dropped here
+   * rather than attempted. `runtime.ts` has always said a controller consults the report "to avoid
+   * emitting commands that cannot be executed" — nothing did, so the report was a description of
+   * behaviour that existed nowhere.
+   */
+  readonly capabilities?: MdyWidgetRuntimeCapabilities;
 }
 
 /**
  * Walks a list of UI commands and invokes framework-specific side effects
  * through the provided context. Focus/scroll operations are only scheduled;
  * the adapter flushes them with its own DOM timing.
+ *
+ * Commands that need a DOM are skipped where the runtime says there is none. The state-changing
+ * ones — opening, closing, marking touched — still run: they are the controller's own bookkeeping
+ * and mean the same thing on a server as in a browser.
  */
 export function processWidgetCommands(
   commands: readonly MdyUiCommand[],
   context: MdyWidgetCommandContext,
 ): void {
+  const dom = context.capabilities?.dom ?? true;
   for (const command of commands) {
+    if (!dom && DOM_COMMANDS.has(command.type)) continue;
     switch (command.type) {
       case "focus":
       case "restore-focus": {

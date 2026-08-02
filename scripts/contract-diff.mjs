@@ -66,7 +66,12 @@ function snapshot() {
         from: relation.from, attribute: relation.attribute, to: [...relation.to],
       })),
       capabilities: definition.capabilities,
-      keyboard: Object.keys(MDY_WIDGET_KEYBOARD[kind] ?? {}).sort(),
+      // The bindings themselves, not `Object.keys` of the array — that recorded "0", "1", "2", so the
+      // diff compared how *many* keys a kind declared and never which. Renaming Escape to Enter was
+      // invisible; declaring Tab reported "key declared: 8".
+      keyboard: (MDY_WIDGET_KEYBOARD[kind] ?? [])
+        .map((b) => `${b.key === " " ? "Space" : b.key}${b.when ? `@${b.when}` : ""}:${b.intent}`)
+        .sort(),
     };
   }
   return { contractVersion: MDY_WIDGET_CONTRACT_VERSION, kinds };
@@ -176,11 +181,19 @@ for (const kind of Object.keys(current.kinds).filter((k) => baseline.kinds[k])) 
     }
   }
 
-  for (const [capability, value] of Object.entries(now.capabilities)) {
+  // Over the union of both sides. Iterating the *current* capabilities alone could never see one
+  // that had been withdrawn — it is not there to iterate — which is the change the compatibility
+  // table calls major and the only one this comparison exists to catch.
+  const capabilityNames = new Set([
+    ...Object.keys(now.capabilities ?? {}),
+    ...Object.keys(was.capabilities ?? {}),
+  ]);
+  for (const capability of capabilityNames) {
+    const value = now.capabilities?.[capability];
     const before = was.capabilities?.[capability];
     if (JSON.stringify(before) !== JSON.stringify(value)) {
       // Withdrawing a capability breaks a consumer relying on it; granting one cannot.
-      const withdrawn = before === true && value === false;
+      const withdrawn = before !== undefined && (value === undefined || (before === true && value === false));
       record(withdrawn ? "major" : "minor", kind, `capability ${capability}: ${JSON.stringify(before) ?? "none"} → ${JSON.stringify(value)}`);
     }
   }

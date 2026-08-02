@@ -12,7 +12,7 @@ import { test } from "node:test";
 const {
   MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, browserRuntimeCapabilities, createCatalogWidgetController,
   dynamicParts, isFullyServerRenderable, ssrRuntimeCapabilities, staticParts,
-  defaultWidgetIdFactory, fieldPartIds, projectFieldA11y,
+  defaultWidgetIdFactory, fieldPartIds, projectFieldA11y, processWidgetCommands,
 } = await import("../dist/index.js");
 
 test("this process has no DOM, or nothing below proves anything", () => {
@@ -143,4 +143,70 @@ test("a dynamic part is inside the popup, transitively", () => {
       assert.ok(cursor && popups.has(cursor.part), `${kind}.${part}: called dynamic but not under a popup`);
     }
   }
+});
+
+/**
+ * The capability report has a consumer, so it can be wrong in a way something notices.
+ *
+ * It was declared, corrected once for reporting a browser from a bare Node process, and consumed by
+ * nothing — so the correction was unfalsifiable and the header's claim that a controller used it to
+ * suppress impossible commands described behaviour that existed nowhere.
+ */
+test("with no DOM, the commands that need one are not executed", () => {
+  const done = [];
+  const context = {
+    lookup: () => ({ tagName: "INPUT" }),
+    handlers: {
+      setOpen: (open) => done.push(`setOpen:${open}`),
+      onChange: () => done.push("change"),
+      onTouched: () => done.push("touched"),
+    },
+    scheduleFocus: () => done.push("focus"),
+    scheduleScroll: () => done.push("scroll"),
+    announce: (m) => done.push(`announce:${m}`),
+    capabilities: ssrRuntimeCapabilities,
+  };
+  processWidgetCommands([
+    { type: "focus", target: { part: "control" } },
+    { type: "restore-focus", target: { part: "trigger" } },
+    { type: "scroll-into-view", target: { part: "option", key: "a" } },
+    { type: "announce", message: "two results" },
+    { type: "open-overlay", anchor: { part: "trigger" } },
+    { type: "emit-change" },
+    { type: "mark-touched" },
+  ], context);
+
+  // The state the controller is reporting still happens: it means the same thing on a server.
+  assert.deepEqual(done, ["setOpen:true", "change", "touched"]);
+});
+
+test("with a DOM, every command still runs", () => {
+  const done = [];
+  const context = {
+    lookup: () => ({ tagName: "INPUT" }),
+    handlers: { setOpen: (open) => done.push(`setOpen:${open}`) },
+    scheduleFocus: () => done.push("focus"),
+    scheduleScroll: () => done.push("scroll"),
+    announce: () => done.push("announce"),
+    capabilities: { ...ssrRuntimeCapabilities, dom: true },
+  };
+  processWidgetCommands([
+    { type: "focus", target: { part: "control" } },
+    { type: "scroll-into-view", target: { part: "option" } },
+    { type: "announce", message: "x" },
+    { type: "close-overlay" },
+  ], context);
+  assert.deepEqual(done, ["focus", "scroll", "announce", "setOpen:false"]);
+});
+
+test("a context that says nothing about its runtime behaves as it always did", () => {
+  const done = [];
+  processWidgetCommands([{ type: "focus", target: { part: "control" } }], {
+    lookup: () => ({ tagName: "INPUT" }),
+    handlers: { setOpen: () => {} },
+    scheduleFocus: () => done.push("focus"),
+    scheduleScroll: () => {},
+    announce: () => {},
+  });
+  assert.deepEqual(done, ["focus"], "omitting capabilities must not change behaviour");
 });
