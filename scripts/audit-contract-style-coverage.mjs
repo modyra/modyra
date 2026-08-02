@@ -48,6 +48,8 @@ import {
   MDY_OVERLAY_PORTAL_CLASS,
   MDY_POPUP_CLASS,
   MDY_WIDGET_KINDS,
+  MDY_STATE_EXPRESSION,
+  MDY_WIDGET_CONTRACTS,
   multiselectChipClasses,
   stateClass,
   widgetStateClasses,
@@ -260,6 +262,59 @@ if (write) {
   process.exit(0);
 }
 
+/**
+ * Whether each kind delivers the way it says it shows "unusable" — `MDY_STATE_EXPRESSION`.
+ *
+ * The rest of this audit compares *classes*, so it can only see one of the two mechanisms in use.
+ * Seven kinds express `disabled`/`error` through a structural selector on the native control
+ * instead, and for those the class comparison has nothing to compare: half the expression of the
+ * state sat outside everything checked here.
+ *
+ * `"class"` is answered by the existing comparison — the modifier is a contract class like any
+ * other. `"structural"` is answered here: some theme rule must mention one of the kind's own classes
+ * *and* test `:disabled`, `[disabled]` or `aria-invalid`. That is a weaker check than a named class,
+ * deliberately: the point is to tell a kind that shows the state from one that shows nothing, not to
+ * dictate the selector.
+ */
+function structuralStateCoverage() {
+  const themeSource = readdirSync(STYLES_DIR)
+    .filter((f) => f.endsWith(".css"))
+    .map((f) => stripComments(readFileSync(join(STYLES_DIR, f), "utf8")))
+    .join("\n");
+  // Selectors only: a declaration block mentioning `disabled` in a custom property name is not a
+  // rule reaching the state.
+  // `:not(:disabled)` styles the *enabled* state and is common on hover rules. Counting it reported
+  // the checkbox as covered after its only real `:disabled` rule had been deleted — a rule that
+  // matches when the state is absent is not a rule that shows the state.
+  const withoutNegations = (selector) => selector.replace(/:not\([^)]*\)/g, "");
+  const selectors = themeSource.split("}").map((rule) => withoutNegations(rule.split("{")[0] ?? ""));
+  const reaching = selectors.filter((s) => /:disabled|\[disabled\]|aria-invalid/.test(s));
+
+  // Only classes this kind alone declares. The shared shell vocabulary — `mdy-renderer`,
+  // `mdy-label`, `mdy-control__errors` — belongs to all seventeen, so matching on it says a rule
+  // written for some other kind covers this one. `.mdy-renderer select:disabled` reported `file` as
+  // covered on the first run of this check, which is the whole failure it is meant to detect.
+  const owners = new Map();
+  for (const kind of MDY_WIDGET_KINDS) {
+    for (const part of Object.values(MDY_WIDGET_CONTRACTS[kind].parts)) {
+      for (const className of part.classes ?? []) {
+        owners.set(className, (owners.get(className) ?? new Set()).add(kind));
+      }
+    }
+  }
+
+  const uncovered = [];
+  for (const kind of MDY_WIDGET_KINDS) {
+    if (MDY_STATE_EXPRESSION[kind] !== "structural") continue;
+    const own = [...owners].filter(([, kinds]) => kinds.size === 1 && kinds.has(kind)).map(([c]) => c);
+    const hit = reaching.some((selector) => own.some((className) => selector.includes(className)));
+    if (!hit) uncovered.push(kind);
+  }
+  return uncovered;
+}
+
+const structurallyUncovered = structuralStateCoverage();
+
 console.log("# Contract coverage of the visual surface\n");
 console.log(`Contract can produce: ${contract.size} classes`);
 console.log(`Renderers emit: ${emitted.size}   Themes style: ${styled.size}`);
@@ -307,6 +362,12 @@ if (check) {
   if (staleUnpainted.length) {
     console.error(`\n${staleUnpainted.length} _unpainted entr(ies) now painted — remove them:`);
     for (const c of staleUnpainted) console.error(`  ${c}`);
+    failed = true;
+  }
+  if (structurallyUncovered.length) {
+    console.error(`\n${structurallyUncovered.length} kind(s) declare a structural state expression and no theme reaches it:`);
+    for (const k of structurallyUncovered) console.error(`  ${k} — disabled and error are announced and never shown`);
+    console.error("Add a rule reaching :disabled/aria-invalid for that kind, or change its MDY_STATE_EXPRESSION.");
     failed = true;
   }
   if (failed) process.exit(1);

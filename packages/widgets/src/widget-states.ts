@@ -146,6 +146,46 @@ export function overlayOnlyParts(kind: MdyWidgetKind): readonly string[] {
   return dynamicParts(kind);
 }
 
+/**
+ * How a kind shows that it is unusable or wrong — the visual half of `disabled` and `error`.
+ *
+ * Two mechanisms are in use and both are legitimate:
+ *
+ * - **`"class"`** — a modifier on the field's wrapper, `mdy-input-wrapper--disabled`. Ten kinds,
+ *   every one whose wrapper *is* `mdy-input-wrapper`.
+ * - **`"structural"`** — a theme rule that reaches the state through the DOM instead, because the
+ *   kind's wrapper is its own (`mdy-checkbox`, `mdy-slider-container`, `mdy-radio-group`…) and the
+ *   native control below it already carries the truth: `.mdy-checkbox__control:disabled +
+ *   .mdy-checkbox__indicator`, `:has([aria-invalid="true"])`.
+ *
+ * Declared rather than inferred, and this is the point of the table. `widgetStateClasses` — what the
+ * style audit compares a theme against — can only see the first mechanism, so for the seven kinds
+ * using the second, half the expression of "this field is unusable" sat outside everything this
+ * repository checks. An audit that cannot see a mechanism cannot tell a kind that *shows* it is
+ * disabled from one that merely claims to.
+ *
+ * Giving those seven wrappers `disabled`/`error` state classes instead would be the wrong fix twice
+ * over: it mints seven classes no theme paints, and it contradicts `statesFor`'s rule that a part
+ * redeclaring its class to something different does not inherit the shell's states.
+ *
+ * **This declares what a kind is expected to do, not what the themes were found doing.** `file`
+ * says `"structural"` and no theme currently reaches it at all — that is the declaration working:
+ * the gap is reported instead of being written down as intended.
+ */
+export const MDY_STATE_EXPRESSION: Readonly<Record<MdyWidgetKind, "class" | "structural">> =
+  Object.freeze({
+    text: "class", email: "class", password: "class", textarea: "class", number: "class",
+    select: "class", datepicker: "class", daterange: "class", timepicker: "class", colors: "class",
+    // Their wrapper is their own, so the modifier would be a class nothing paints.
+    checkbox: "structural", toggle: "structural", segmented: "structural", multiselect: "structural",
+    // The control carries it: `.mdy-slider:disabled`, not the container around it.
+    slider: "structural",
+    // On the option, not the group. A disabled radio *group* is not the same claim as a disabled
+    // radio, and only the second is currently expressed.
+    radio: "structural",
+    file: "structural",
+  });
+
 /** Whether a kind declares a state. */
 export function widgetSupportsState(kind: MdyWidgetKind, state: MdyWidgetState): boolean {
   return MDY_WIDGET_STATE_SUPPORT[kind].includes(state);

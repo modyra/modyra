@@ -59,6 +59,7 @@ export type {
 
 export {
   MDY_WIDGET_STATES,
+  MDY_STATE_EXPRESSION,
   MDY_WIDGET_STATE_CONTRACTS,
   MDY_WIDGET_STATE_SUPPORT,
   overlayOnlyParts,
