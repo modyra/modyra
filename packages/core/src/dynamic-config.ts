@@ -96,13 +96,35 @@ export interface MdyDynamicOptionsField extends MdyDynamicFieldBase {
   readonly loading?: boolean;
 }
 
+/**
+ * How a calendar is presented, independent of what it holds.
+ *
+ * Without these a form cannot ask for a locale other than the browser's, and a renderer has nothing
+ * to consult but `navigator.language` — which is the visitor's preference, not the form's. A
+ * booking form for an Italian office shows an Italian calendar to a visitor whose browser is in
+ * English, and only the form knows that.
+ */
+export interface MdyDynamicCalendarOptions {
+  /** BCP 47 tag. Unset follows the browser. Month and weekday names and the week's first day follow it. */
+  readonly locale?: string;
+  /**
+   * 0 = Sunday … 6 = Saturday. Unset follows {@link MdyDynamicCalendarOptions.locale}, which is
+   * almost always what a user expects; set it only to override the locale deliberately.
+   */
+  readonly firstDayOfWeek?: number;
+  /** Earliest selectable date, ISO `yyyy-MM-dd`. Presentation only — bounds are enforced by validators. */
+  readonly minDate?: string;
+  /** Latest selectable date, ISO `yyyy-MM-dd`. */
+  readonly maxDate?: string;
+}
+
 /** Single-instant date/time kinds. */
-export interface MdyDynamicDateField extends MdyDynamicFieldBase {
+export interface MdyDynamicDateField extends MdyDynamicFieldBase, MdyDynamicCalendarOptions {
   readonly kind: "datepicker" | "timepicker";
 }
 
 /** A start/end pair. Its own interface so a `kind` switch narrows to one value shape. */
-export interface MdyDynamicDaterangeField extends MdyDynamicFieldBase {
+export interface MdyDynamicDaterangeField extends MdyDynamicFieldBase, MdyDynamicCalendarOptions {
   readonly kind: "daterange";
 }
 
@@ -214,6 +236,56 @@ const MDY_FORBIDDEN_DYNAMIC_NAMES = new Set([
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+/** ISO `yyyy-MM-dd`, and a real date rather than a well-shaped impossible one. */
+function isIsoDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+/**
+ * Calendar presentation coming from a config file rather than from typed code.
+ *
+ * The locale is checked because a malformed tag does not degrade — `Intl` throws a `RangeError`,
+ * and a config that reached a renderer with `"en_US"` in it would take the form down at mount
+ * rather than render an approximate calendar.
+ */
+function hasValidCalendarOptions(field: Partial<MdyDynamicCalendarOptions>, name: string): boolean {
+  if (field.locale !== undefined) {
+    let usable = typeof field.locale === "string";
+    if (usable) {
+      try {
+        Intl.getCanonicalLocales(field.locale as string);
+      } catch {
+        usable = false;
+      }
+    }
+    if (!usable) {
+      warnDev(`Dropped dynamic field "${name}": locale must be a valid BCP 47 tag, e.g. "it-IT".`);
+      return false;
+    }
+  }
+  if (field.firstDayOfWeek !== undefined) {
+    const day = field.firstDayOfWeek;
+    if (!isFiniteNumber(day) || !Number.isInteger(day) || day < 0 || day > 6) {
+      warnDev(`Dropped dynamic field "${name}": firstDayOfWeek must be an integer from 0 (Sunday) to 6.`);
+      return false;
+    }
+  }
+  for (const bound of ["minDate", "maxDate"] as const) {
+    if (field[bound] !== undefined && !isIsoDate(field[bound])) {
+      warnDev(`Dropped dynamic field "${name}": ${bound} must be an ISO date, e.g. "2026-08-02".`);
+      return false;
+    }
+  }
+  if (field.minDate !== undefined && field.maxDate !== undefined && field.minDate > field.maxDate) {
+    warnDev(`Dropped dynamic field "${name}": minDate cannot be later than maxDate.`);
+    return false;
+  }
+  return true;
 }
 
 function hasValidOptions(options: unknown): options is ReadonlyArray<MdySelectOption<unknown>> {
@@ -603,6 +675,9 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
           return false;
         }
       }
+    }
+    if (f.kind === "datepicker" || f.kind === "timepicker" || f.kind === "daterange") {
+      if (!hasValidCalendarOptions(f as Partial<MdyDynamicCalendarOptions>, f.name)) return false;
     }
     const needsOptions = ["select", "radio", "multiselect", "segmented"];
     if (needsOptions.includes(f.kind as string)) {

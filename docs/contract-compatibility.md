@@ -78,3 +78,8 @@ version.
 - **Behaviour beyond the snapshot.** The snapshot holds structure, relations, classes, states,
   declared keys and capabilities. That a declared key *does* something is proved by the keyboard
   suites, not by this diff.
+- **The Dynamic Form Contract is a different surface.** `MdyDynamicField` and its kinds are public
+  API and are versioned by ordinary package semver; the snapshot does not describe them, so adding
+  a field to one classifies as `patch` here while still being a `minor` release. Judge that surface
+  by the usual rules for a TypeScript interface — a new optional property is additive, a new
+  required one or a removal is not.

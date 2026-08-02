@@ -639,3 +639,35 @@ test("the shared v3 fixture parses here, as it does in the Rust and Java SDKs", 
   assert.equal(body.columns[0][0].kind, "section");
   assert.deepEqual(body.columns[0][0].at, { base: { hidden: true } });
 });
+
+test("parseDynamicFields keeps usable calendar options and drops unusable ones", () => {
+  const parsed = parseDynamicFields([
+    { name: "ok", kind: "datepicker", locale: "it-IT", firstDayOfWeek: 1, minDate: "2026-01-01", maxDate: "2026-12-31" },
+    { name: "bare", kind: "datepicker" },
+    { name: "range", kind: "daterange", locale: "de-DE" },
+    // A malformed tag does not degrade: Intl throws a RangeError, so a config carrying one would
+    // take the form down at mount rather than render an approximate calendar.
+    { name: "badLocale", kind: "datepicker", locale: "en_US" },
+    { name: "emptyLocale", kind: "datepicker", locale: "" },
+    { name: "badDay", kind: "datepicker", firstDayOfWeek: 7 },
+    { name: "fractionalDay", kind: "datepicker", firstDayOfWeek: 1.5 },
+    { name: "badMin", kind: "datepicker", minDate: "01/01/2026" },
+    { name: "impossibleDate", kind: "datepicker", minDate: "2026-02-30" },
+    { name: "inverted", kind: "datepicker", minDate: "2026-12-31", maxDate: "2026-01-01" },
+  ]);
+
+  assert.deepEqual(parsed.map((field) => field.name), ["ok", "bare", "range"]);
+  assert.equal(parsed[0].locale, "it-IT");
+  assert.equal(parsed[0].minDate, "2026-01-01");
+  // Unset stays unset rather than being filled in with a default the form never asked for.
+  assert.equal(parsed[1].locale, undefined);
+  assert.equal(parsed[1].firstDayOfWeek, undefined);
+});
+
+test("a declared locale survives the parser and is the one a renderer would use", () => {
+  const [field] = parseDynamicFields([{ name: "when", kind: "datepicker", locale: "it-IT" }]);
+  // The tag is only worth keeping if it is one `buildDateLocale` accepts — the parser's guarantee
+  // and the consumer's expectation are the same guarantee.
+  assert.equal(buildDateLocale(field.locale).firstDayOfWeek, 1);
+  assert.equal(buildDateLocale("en-US").firstDayOfWeek, 0);
+});
