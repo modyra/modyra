@@ -159,3 +159,63 @@ test("draft: excludes coupon, persists other fields, and restores on a fresh for
   assert.equal(second.f.shipping.city.value(), "Rome");
   assert.equal(second.f.coupon.value(), "", "excluded field never restores from draft");
 });
+
+/**
+ * Milestone G proof 6 asks that Studio emit the same public schema the renderers consume, with no
+ * privileged path. It has one: this builder reads the project model directly and never calls
+ * `compileToContract`, so what the designer watches and what the designer exports are produced by
+ * two different pieces of code that nothing compares.
+ *
+ * These tests pin the divergence rather than assert it away. Whether the preview *should* refuse a
+ * project that cannot be exported is a product decision — previewing work in progress is a
+ * legitimate thing to want — so the current answer is recorded here and will fail loudly if it
+ * changes in either direction.
+ */
+test("the preview renders a project the exported contract cannot express", async () => {
+  const { compileToContract } = await import("../../studio-contract/dist/index.js");
+  const project = createCheckoutProject();
+
+  const { contract, diagnostics: compiled } = compileToContract(project);
+  const { form, diagnostics: previewed } = buildLiveForm(project);
+
+  // The export reports what it had to drop: a form-level validator and a server validator, neither
+  // of which Contract v2 can carry.
+  assert.ok(compiled.some((d) => d.code === "UNSUPPORTED_FEATURE"));
+  assert.ok(contract, "the checkout fixture is exportable");
+
+  // The preview builds all of it and reports nothing, which is the asymmetry: the designer is shown
+  // a working cross-field rule that the exported contract does not contain.
+  assert.deepEqual(previewed, []);
+  assert.ok(form);
+  assert.ok(project.formValidators.length > 0);
+});
+
+test("a project that cannot be exported at all still previews clean", async () => {
+  const { compileToContract } = await import("../../studio-contract/dist/index.js");
+  const project = createCheckoutProject();
+  // A select with no options: `studio-model` flags it and `compileToContract` calls it
+  // UNCOMPILABLE_FIELD, which blocks the whole compilation.
+  const withBroken = {
+    ...project,
+    schema: {
+      ...project.schema,
+      children: [
+        ...project.schema.children,
+        {
+          node: "field", id: "fld_broken", name: "broken", label: "Broken",
+          fieldKind: "select", valueType: "string", initialValue: "", validators: [], options: [],
+        },
+      ],
+    },
+  };
+
+  const { contract, diagnostics: compiled } = compileToContract(withBroken);
+  assert.equal(contract, null, "compilation is blocked");
+  assert.ok(compiled.some((d) => d.code === "UNCOMPILABLE_FIELD"));
+
+  const { form, diagnostics: previewed } = buildLiveForm(withBroken);
+  assert.deepEqual(previewed, [], "the preview reports nothing");
+  assert.ok(form, "and builds anyway");
+  // Including the field that blocked the export.
+  assert.ok(Object.keys(form.value()).includes("broken"));
+});
