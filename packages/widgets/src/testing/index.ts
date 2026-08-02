@@ -8,6 +8,8 @@ export type { MdyDomContractIssue, MdyDomContractIssueCode, MdyDomContractOption
 export { assertWidgetStructureContract, inspectWidgetStructure } from "./structure-tests.js";
 export { inspectUnsupportedStateAria, inspectWidgetState } from "./state-tests.js";
 export { collectStateMatrix, normalizeStateLedger } from "./state-matrix.js";
+export { idsUnder, inspectCoexistence, inspectUnmount, MDY_LIFECYCLE_ISSUE, MDY_LIFECYCLE_TRANSITIONS } from "./lifecycle.js";
+export type { MdyLifecycleIssue, MdyLifecycleIssueCode, MdyLifecycleTransition, MdyUnmountObservation } from "./lifecycle.js";
 export type { MdyStateFixture, MdyStateMatrixOptions, MdyStateMatrixResult, MdyStateMatrixRow } from "./state-matrix.js";
 export type { MdyStateInspectOptions, MdyStateIssue, MdyStateIssueCode } from "./state-tests.js";
 export type { MdyStructureContractIssue } from "./structure-tests.js";
