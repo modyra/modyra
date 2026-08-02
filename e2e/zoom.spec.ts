@@ -50,6 +50,15 @@ test("no Modyra element pushes the page sideways at 200% text", async ({ page })
       .slice(0, 8);
   });
   expect(offenders).toEqual([]);
+
+  // And the page as a whole, which is a weaker claim about Modyra and a stronger one about the
+  // demo: WCAG 1.4.10's failure is having to scroll sideways to read. It is asserted second because
+  // when it broke, the cause was the demo's own non-wrapping action row rather than any field —
+  // separating the two is what stopped that being reported as a framework defect.
+  const documentOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(documentOverflow).toBeLessThanOrEqual(2);
 });
 
 test("the select still opens at 200% text, and its popup is on screen", async ({ page }) => {
