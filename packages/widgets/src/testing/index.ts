@@ -2,6 +2,8 @@
  * Conformance testing kit for Modyra widget adapters.
  */
 
+export { expectedWeekdayOrder, inspectCalendarWeekStart, MDY_CALENDAR_ISSUE } from "./calendar.js";
+export type { MdyCalendarIssue, MdyCalendarIssueCode } from "./calendar.js";
 export { runCommandExecutionTests } from "./command-tests.js";
 export { assertWidgetDomContract, inspectWidgetDom } from "./dom-tests.js";
 export type { MdyDomContractIssue, MdyDomContractIssueCode, MdyDomContractOptions, MdyDomPartMap } from "./dom-tests.js";
