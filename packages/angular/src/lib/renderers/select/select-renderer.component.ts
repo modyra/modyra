@@ -17,7 +17,7 @@ import {
   viewChild,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
-import { MDY_WIDGET_CONTRACTS, popupPlacementClass, reconcileSelectValue, selectKeyboardAction, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, popupAlignmentClass, popupPlacementClass, reconcileSelectValue, selectKeyboardAction, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -137,7 +137,6 @@ import { MdyDropdownBase } from "../dropdown-base";
             mdyGlass
             class="mdy-select__dropdown mdy-popup mdy-overlay"
             [ngClass]="placementClass()"
-            [class.mdy-select__dropdown--right]="alignment() === 'right'"
           >
             @if (searchable()) {
               <input
@@ -342,7 +341,16 @@ export class MdySelectComponent<TValue = string>
    * the binding below still spells it: deriving it here means threading the alignment through the
    * same call, which is a change to that helper rather than to this component.
    */
-  protected readonly placementClass = computed(() => popupPlacementClass("select", this.position()) ?? "");
+  /**
+   * Where the popup ended up, both halves from the contract.
+   *
+   * The edge used to be a hardcoded `[class.mdy-select__dropdown--right]` here — the catalog's own
+   * spelling, written out by hand, which is how it stayed correct and unauditable at the same time.
+   */
+  protected readonly placementClass = computed(() => [
+    popupPlacementClass("select", this.position()),
+    popupAlignmentClass("select", this.alignment()),
+  ].filter((name): name is string => name !== null).join(" "));
 
   protected readonly overlayMode = computed(
     () => this.position() === "overlay",

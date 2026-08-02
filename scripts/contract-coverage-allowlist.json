@@ -1,18 +1,18 @@
 {
   "_note": "Classes outside the widget contract. This list may only ever shrink: each batch contractualises some of it. Reseed with --write only when deliberately recording a new baseline.",
-  "_generated": "107 findings",
+  "_generated": "106 findings",
   "_unpaintedNote": "Contract classes no theme paints, each with the reason it is acceptable. Same rule: may only ever shrink. \"unreviewed\" means nobody has decided yet — it is a to-do, not a verdict.",
   "_unpainted": {
     "mdy-chip-wrapper": "the themes paint .mdy-chip; the wrapper is a layout box with no treatment of its own",
-    "mdy-colors__dropdown--above": "declared placement state with no derivation and no rule — popupPlacementClass covers above/overlay only, never alignment. See docs/contract-gaps.md C1/C2; awaiting batch 5",
-    "mdy-colors__dropdown--overlay": "declared placement state with no derivation and no rule — popupPlacementClass covers above/overlay only, never alignment. See docs/contract-gaps.md C1/C2; awaiting batch 5",
-    "mdy-colors__dropdown--right": "declared placement state with no derivation and no rule — popupPlacementClass covers above/overlay only, never alignment. See docs/contract-gaps.md C1/C2; awaiting batch 5",
-    "mdy-datepicker__popup--above": "declared placement state with no derivation and no rule — popupPlacementClass covers above/overlay only, never alignment. See docs/contract-gaps.md C1/C2; awaiting batch 5",
+    "mdy-colors__dropdown--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-colors__dropdown--overlay": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-colors__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-datepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-datepicker__popup--range": "unreviewed",
-    "mdy-datepicker__popup--right": "declared placement state with no derivation and no rule — popupPlacementClass covers above/overlay only, never alignment. See docs/contract-gaps.md C1/C2; awaiting batch 5",
+    "mdy-datepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-multiselect__dropdown": "the popup also carries mdy-multiselect-overlay__panel, which is the class the themes paint",
-    "mdy-multiselect__dropdown--overlay": "declared placement state with no derivation and no rule — popupPlacementClass covers above/overlay only, never alignment. See docs/contract-gaps.md C1/C2; awaiting batch 5",
-    "mdy-multiselect__dropdown--right": "declared placement state with no derivation and no rule — popupPlacementClass covers above/overlay only, never alignment. See docs/contract-gaps.md C1/C2; awaiting batch 5",
+    "mdy-multiselect__dropdown--overlay": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-multiselect__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-renderer--checkbox": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--datepicker": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--daterange": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
@@ -22,8 +22,7 @@
     "mdy-renderer--text": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--timepicker": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--toggle": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
-    "mdy-select__dropdown--above": "declared placement state with no derivation and no rule — popupPlacementClass covers above/overlay only, never alignment. See docs/contract-gaps.md C1/C2; awaiting batch 5",
-    "mdy-select__dropdown--right": "declared placement state with no derivation and no rule — popupPlacementClass covers above/overlay only, never alignment. See docs/contract-gaps.md C1/C2; awaiting batch 5",
+    "mdy-select__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-select__empty": "unreviewed",
     "mdy-select__list--open": "unreviewed",
     "mdy-select__trigger--disabled": "declared state on select.trigger; no theme paints any of the five, so the trigger state vocabulary is unadopted",
@@ -35,8 +34,8 @@
     "mdy-timepicker-segment--hour": "the shared mdy-timepicker-segment base is what the themes paint — one rule for both segments, by design",
     "mdy-timepicker-segment--minute": "the shared mdy-timepicker-segment base is what the themes paint — one rule for both segments, by design",
     "mdy-timepicker__dialog": "unreviewed",
-    "mdy-timepicker__popup--above": "declared placement state with no derivation and no rule — popupPlacementClass covers above/overlay only, never alignment. See docs/contract-gaps.md C1/C2; awaiting batch 5",
-    "mdy-timepicker__popup--right": "declared placement state with no derivation and no rule — popupPlacementClass covers above/overlay only, never alignment. See docs/contract-gaps.md C1/C2; awaiting batch 5",
+    "mdy-timepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
+    "mdy-timepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-toggle__control": "the themes reach the input by descendant selector (.mdy-toggle input:disabled), not by its part class",
     "mdy-toggle__label": "unreviewed"
   },
@@ -617,14 +616,6 @@
     "themes": []
   },
   "mdy-overlay-panel--modal": {
-    "kind": "unstyled",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": []
-  },
-  "mdy-overlay-panel--right": {
     "kind": "unstyled",
     "adapters": [
       "angular",

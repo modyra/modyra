@@ -2034,6 +2034,20 @@
         flex-direction: column;
     }
 
+    /* A list opening upwards puts its search box at the bottom, next to the control the user is
+       typing in — reaching over the whole list to get to it is what the unflipped order asks for.
+       The multiselect, whose popup has the same anatomy (search, then list), has always done this;
+       the select declared the state and no rule answered it. */
+    .mdy-select__dropdown--above {
+        display: flex;
+        flex-direction: column-reverse;
+    }
+
+    .mdy-select__dropdown--above .mdy-select__search {
+        border-bottom: none;
+        border-top: 1px solid var(--mdy-select-border-subtle);
+    }
+
     .mdy-select__search {
         display: block;
         width: 100%;
