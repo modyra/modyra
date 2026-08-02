@@ -1,0 +1,373 @@
+# Contract gaps
+
+The widget contract's known open defects, measured 2026-08-02 against the built package and the
+shipped stylesheets. `contract-compatibility.md` says what a change to the contract costs; this says
+what is currently wrong with it.
+
+Each finding is classified by the evidence behind it:
+
+| | |
+| --- | --- |
+| **Observed** | reproduced against `packages/widgets/dist` or the shipped CSS |
+| **Probable** | supported by code paths, not executed |
+| **Possible** | plausible, undemonstrated |
+
+The shape almost all of them share: **a rule that is declared, correct, and wired to nothing.** The
+contract is in better shape than the things that check it, which is why most of these are invisible
+to a green suite.
+
+**Status.** A1, A3, B1, B2, B3, C5, E1, E2, G4 and H are fixed; F is partly fixed. **Open**: A2, C1,
+C2, C3, C4, C6, D, E3, F's part-keyed tables, G1, G2, G3. C1/C2 (the placement classes) and D
+(withdrawing a capability, which is a *major* change) are gated and deliberately untouched.
+
+---
+
+## A1 — `statesFor` stripped shell states on redeclaration, not on difference — **fixed**
+
+**Observed.** `packages/widgets/src/catalog.ts:232`
+
+```ts
+if (name !== "root" && shape.classes?.[name] !== undefined) return [];
+```
+
+A widget that gives a part a class of its own has made it a different part, and that part does not
+inherit the shell's states. The rule is right; the guard tests the wrong thing. It asks *whether a
+class was declared*, not *whether it differs* — so a kind that redeclares a part with the shell's own
+class loses the states anyway.
+
+`checkbox` declares `label: [MDY_FIELD_SHELL_CLASSES.label]`, byte-identical to the fallback:
+
+```
+partClasses("checkbox", "label", { filled: true })  ->  throws
+partClasses("text",     "label", { filled: true })  ->  mdy-label mdy-label--filled
+```
+
+Both parts carry `mdy-label`; only one can be told it is filled.
+
+Affected by accident, the class being identical: `checkbox.label`, `checkbox.requiredMarker`,
+`toggle.requiredMarker`. Affected correctly, the class being genuinely different:
+`checkbox.inputWrapper`, `toggle.inputWrapper`, `toggle.label`, `multiselect.inputWrapper`.
+
+The fix is a value comparison against `SHELL_CLASS_FALLBACK[name]`. Any correction here must leave
+the second group still throwing — `mdy-multiselect` is the chip grid, and giving it
+`mdy-multiselect--disabled` would mint a class no theme has styled.
+
+## A2 — Seven kinds cannot express `disabled` or `error` on their wrapper
+
+**Observed.**
+
+`MDY_FIELD_STATE_CLASSES` (`structure.ts:61`) is documented as the state classes every field carries
+independent of kind, and names `mdy-input-wrapper` with `disabled` and `error`. That is true of ten
+kinds and false of seven:
+
+| kind | wrapper part | class |
+| --- | --- | --- |
+| slider | track | `mdy-slider-container` |
+| checkbox | inputWrapper | `mdy-checkbox` |
+| toggle | inputWrapper | `mdy-toggle` |
+| radio | group | `mdy-radio-group` |
+| segmented | group | `mdy-segmented` |
+| multiselect | inputWrapper | `mdy-multiselect` |
+| file | dropzone | `mdy-file-container` |
+
+Nothing is broken on screen: the themes reach these states structurally instead, through
+`.mdy-checkbox__control:disabled + .mdy-checkbox__indicator` and `:has([aria-invalid="true"])`.
+
+The defect is that the contract's class vocabulary and the themes' attribute selectors are two
+independent mechanisms for one idea, and `widgetStateClasses` — which the style audit compares the
+CSS against — can only see the first. Half the expression of "this field is unusable" is outside
+what the contract can check.
+
+## A3 — `MDY_FIELD_STATE_CLASSES` restated the shell states in a second vocabulary — **fixed**
+
+**Observed.** `structure.ts:61` hand-maintains what `catalog.ts:194` and `SHELL_CLASS_FALLBACK`
+already derive, in a different spelling: `labelStates: ["filled", "has-error"]` — modifier text —
+against `SHARED_STATES.label: ["filled", "hasError"]` — state names. `rendererOpen:
+"mdy-renderer--open"` restates `stateClass("mdy-renderer", "open")`.
+
+Two tables for one fact, in two files, in two vocabularies. `ssr.ts` states the rule this breaks: a
+second hand-maintained table drifts the moment a kind gains a part, and it drifts silently.
+
+## B1 — `Tab` was declared in one of the two keyboard paths — **fixed**
+
+**Observed.**
+
+```
+widgetKeyIntent("select", "Tab", open)         ->  null
+keyBindingFor("select", "Tab", true)           ->  null
+selectKeyboardAction({ key: "Tab", open })     ->  { type: "close", restoreFocus: false }
+```
+
+`MDY_WIDGET_KEYBOARD` (`transitions.ts:113`) never declares `Tab`, and `widgetKeyIntent` derives from
+it. `behavior.ts:281` and `:354` both close on it. A renderer that consults the declarative table
+leaves its list open behind a user who has tabbed away; one that calls `selectKeyboardAction` does
+not.
+
+Two contract paths to one behaviour — the same shape already recorded for `ArrowDown`, where
+`select-controller.ts:222` opens on a `move` the policy cannot perform.
+
+## B2 — Two derivations of "what lives inside the popup" — **fixed**
+
+**Observed.** `widget-states.ts:138` (`overlayOnlyParts`) roots its walk on the part **named**
+`popup`. `ssr.ts:56` (`dynamicParts`) roots on the part whose **element is** `popup`.
+
+They agree on all seventeen kinds — by accident. Every popup-element part (`calendar`, `clock`)
+happens to sit under the part named `popup`, so the two predicates select the same subtree. A kind
+whose popup-element part sits elsewhere splits them, and nothing would report it.
+
+`ssr.ts` carries the fixed-point walk and the reversed-order test that proved it. `overlayOnlyParts`
+has neither, and is the one with real consumers.
+
+## B3 — The overlay coordinate projection was incomplete, and a renderer filled the gap differently — **fixed**
+
+**Observed.** `overlayStyleProperties` (`overlay.ts:64`) emits five of the eight `--mdy-overlay-*`
+properties. It has no `transform`, no `maxHeight`, no `width` — so a host positioning a panel from
+`MdyOverlayCoords` must supply the rest itself.
+
+Angular does, and disagrees. `overlay-panel.component.ts:199` writes `--mdy-overlay-max-height: 80vh`
+for a modal placement; `anchorOverlay` computes the same case as `viewport.height * 0.7`. The same
+widget, given up on its anchor and centred, is a different height depending on which renderer drew
+it.
+
+## C1 — The `right` popup class exists in three spellings, none of them the contract's
+
+**Observed.** `POPUP_PLACEMENT_STATES` (`catalog.ts:247`) declares `above`, `overlay` and `right` on
+all six popup kinds. For `right`:
+
+- `popupPlacementClass` (`overlay.ts:214`) takes a *placement* and returns `null` for anything but
+  `above` and `overlay`. Nothing derives the alignment class.
+- No theme styles `mdy-select__dropdown--right` or any sibling.
+- Angular (`overlay-panel.component.ts:47`) and Lit (`popup-styles.ts:349`) each hardcode
+  `mdy-overlay-panel--right`, which no stylesheet matches either.
+
+`mdy-select__dropdown--right` currently sits in the style audit's allowlist as a **stale entry** —
+recorded evidence that a renderer once emitted the contract's spelling and stopped.
+
+`popupPlacementClass` exists because this happened once before, to `--above`, in two adapters at
+once. It has happened again to `--right`, in a case the function does not cover.
+
+## C2 — Eighteen popup placement classes declared, five styled
+
+**Observed.**
+
+```
+UNSTYLED  mdy-select__dropdown--above        styled    mdy-select__dropdown--overlay
+styled    mdy-multiselect__dropdown--above   UNSTYLED  mdy-multiselect__dropdown--overlay
+UNSTYLED  mdy-datepicker__popup--above       styled    mdy-datepicker__popup--overlay
+UNSTYLED  mdy-timepicker__popup--above       styled    mdy-timepicker__popup--overlay
+UNSTYLED  mdy-colors__dropdown--above        UNSTYLED  mdy-colors__dropdown--overlay
+          all six --right                              none styled
+```
+
+`--above` is derived for six kinds and painted for one. A select that flips above its anchor carries
+a class no rule matches, so nothing about it adapts — the arrow still points the wrong way.
+
+## C3 — The runtime-capability contract has no enforcement path
+
+**Observed.** `runtime.ts` states that the controller consults the capability report to avoid
+emitting commands that cannot be executed, focus during SSR being the named example. No controller
+does:
+
+- `browserRuntimeCapabilities` and `ssrRuntimeCapabilities` have no consumers outside their own
+  spec, the README and a changeset.
+- No controller accepts an `MdyWidgetRuntimeCapabilities`. `createCatalogWidgetController` emits
+  `{ type: "focus" }` unconditionally.
+- `processWidgetCommands` never consults capabilities; it relies on the element lookup returning
+  `undefined`.
+- `createMdyAnnouncer` runs its own `typeof document === "undefined"` check, which is the decision
+  the capability report exists to centralise.
+
+The report was corrected once already — it used to assert a DOM rather than probe for one, and
+reported a browser from a bare Node process. Nothing consumed it then either, which is why nothing
+caught it. **Open decision**: either thread capabilities into the controllers, or say what the
+report actually is. The doc comment and the code state different contracts and only one can stay.
+
+## C4 — `staticParts` and `isFullyServerRenderable` have no consumer
+
+**Observed.** Declared, self-consistent, proved against the catalogue, and consumed by nothing but
+their own spec. The same criticism the SSR batch made of the capability report.
+
+**`dynamicParts` is excluded**: `scripts/support/observe-renderer.mjs:56` consumes it to decide
+whether a renderer builds its overlay eagerly or lazily, which is what produced the measured
+divergence in the conformance manifests — Plain eager on all six overlay kinds, Lit lazy on all six.
+Two of the three symbols are unconsumed, not three.
+
+## C5 — The accessible-name half of the relations contract was not exported — **fixed**
+
+**Observed.** `relations.ts:127` declares `MdyAccessibleNameSource`,
+`MDY_SEMANTICS_REQUIRING_NAME` and `partsRequiringName` — how a part comes by the name a screen
+reader announces. `partsRequiringName` is used internally by `testing/dom-tests.ts`. None of the
+three is exported from `index.ts`, so an adapter writing its own checks cannot reach any of them.
+
+## D — Three declared capabilities carry no information
+
+**Observed.** `define()` (`catalog.ts:339`) hardcodes `keyboard: true` and `focus: true` for all
+seventeen kinds, and sets `dismissOnOutsidePointer` to exactly `overlay`. Verified: both distinct
+value sets are `[true]`, and the third is equal to `overlay` on every kind. A consumer branching on
+any of them is branching on a constant. `MDY_DISABLED_BLOCKS_TRANSITIONS = true` is the same shape.
+
+`dismissOnOutsidePointer` names its own exception — a popup a click elsewhere cannot dismiss would
+have to be declared as one — which the derivation makes unexpressible.
+
+It is also **underspecified where it does apply**, and that has already produced a divergence: the
+contract does not say which event delivers the dismissal. Plain and Lit listen on `pointerdown`,
+Angular on `click`. A drag that starts outside an open popup fires `pointerdown` and never `click`,
+so Plain and Lit dismiss on scroll-start and Angular does not. A capability that says *whether* but
+not *how* leaves the renderers to agree by luck.
+
+**Withdrawing a capability is a major change.** See `contract-compatibility.md`.
+
+## E1 — The style audit could not see a class the contract declares and nobody paints — **fixed**
+
+**Observed, and closed.** `scripts/audit-contract-style-coverage.mjs:202` classified over
+
+```js
+kind: where && themes ? "drift" : where ? "unstyled" : "dead",
+```
+
+whose candidate universe is *what renderers emit* ∪ *what themes style*. A class the **contract
+declares** that neither touches was not a candidate at all and produced no finding in any of the
+three categories — which is where every placement class of C1 and C2 sat.
+
+A fourth category, `unpainted`, now takes its candidates from the contract instead, with its own
+allowlist under `_unpainted` and its own `--check` gate. **36 contract classes go unpainted**, each
+now carrying the reason it is acceptable; 6 are still marked `unreviewed`, which is a to-do rather
+than a verdict.
+
+The category is deliberately *not* phrased as "and no renderer emits it". Emission is detected by
+scanning string literals, and a renderer that asks the contract for its classes — `rootClasses`,
+`partClasses` — writes no literal to find; claiming those unemitted would report a defect that is not
+there. `mdy-renderer--text` is the example: unpainted by design, emitted by every text renderer.
+
+**Two things this surfaced that the finding had not:**
+
+- The audit was **already failing** on 4 stale allowlist entries, and nothing ran it (see E2). Those
+  are now cleared.
+- `mdy-select__trigger--disabled`, `--invalid`, `--loading`, `--open`, `--readonly` — the select
+  trigger declares five states and **no theme paints any of them**. A whole part's state vocabulary
+  is unadopted, which C2 had not isolated.
+
+## E2 — Most test scripts were unreachable from `npm test` — **mostly fixed**
+
+**Observed.** `npm test` reached only `test:core`, `test:adapters`, `test:widgets`, `test:angular`
+and `test:guides` — **18 of 24 scripts unreachable, including every contract audit.**
+
+That is how the style-coverage audit came to be red without anyone noticing: it had been failing on
+4 stale allowlist entries, and no aggregate ran it.
+
+`test:contracts` is now inside `npm test`, and `test:contract-coverage` inside `test:contracts`.
+**9 of 24 remain unreachable**, and the split is now deliberate rather than accidental:
+
+| still out | why |
+| --- | --- |
+| `test:e2e`, `test:studio` | need a browser or a separate app build |
+| `test:perf`, `test:bundle`, `test:core-bundle`, `test:form-scale`, `test:angular-renderer-budget` | budgets and benchmarks, not correctness gates |
+| `test:themes`, `test:styles-architecture` | pass today; left out as a styles concern rather than a contract one — an open question, not a decision |
+
+## E3 — Conformance covers three adapters
+
+**Observed.** `dom-contract`, `state-matrix` and `equivalence` suites exist for **plain**, **lit**
+and **angular**. `react`, `vue`, `solid`, `preact` and `svelte` have a widgets test and a reactivity
+test, and no contract conformance.
+
+Consistent with the stated adapter priority, so this is a scope boundary rather than a defect — but
+it is a boundary a consumer of those five packages cannot currently read anywhere.
+
+## F — Contract tables keyed by bare `string` — **partly fixed**
+
+**Probable.** `MDY_POPUP_OPENERS`, `ANCHORING`, `LABEL_TARGET`, `DESCRIBED_BY_CARRIER`,
+`PARENT_CANDIDATES`, `SHELL_CLASS_FALLBACK`, `PART_SEMANTICS` and `SHARED_STATES` are all
+`Record<string, …>`. A stale or misspelled kind or part key is silently ignored rather than failing
+to compile.
+
+`relationsFor` (`relations.ts:83`) compounds it. Each lookup is guarded by `declared.has(target)`, so
+a wrong key **drops the relation** instead of erroring — a field whose errors reach no assistive
+technology, which is the failure the relations table was declared to make catchable.
+
+`PART_SEMANTICS` throws on a missing key. That is the right pattern, and it is now joined by the
+four **kind-keyed** tables — `MDY_POPUP_OPENERS`, `ANCHORING`, `LABEL_TARGET`, `DESCRIBED_BY_CARRIER`
+— which take `MdyWidgetKind` instead of `string`, so a stale or misspelled kind fails to compile.
+Narrowing them immediately found `projectOverlayOpenerA11y` and `overlayControlledId` accepting a
+bare `string`; both now take a kind.
+
+**Still open: the part-keyed tables.** `PARENT_CANDIDATES`, `SHELL_CLASS_FALLBACK` and
+`MDY_SHELL_PART_STATES` are keyed by part names that differ per kind, so there is no single union to
+narrow them to without deriving one from the catalogue. Left as it is rather than half-done.
+
+## G1 — The opener-is-a-toggle rule is applied to openers that are text inputs
+
+**Observed**, and it has already produced a divergence.
+
+`transitionsFor` (`transitions.ts`) declares, for every kind with an overlay, that a pointer press on
+the opener while open closes it — an opener is a toggle, not a one-way switch. For `datepicker` and
+`timepicker` the opener is `control`: the typeable input. The contract therefore states that clicking
+into the text field of an open date picker dismisses its calendar.
+
+One renderer implements it literally and one does not:
+
+| | binds the toggle to |
+| --- | --- |
+| `packages/plain/src/fields/datepicker-field.ts:87` | the toggle button **and the control** |
+| `packages/plain/src/fields/timepicker-field.ts:122` | the toggle button **and the control** |
+| `packages/angular/.../datepicker.component.ts:98` | the toggle button only |
+
+So clicking into the input of an open date picker closes the calendar in one renderer and not the
+other, and the contract sanctions the worse of the two.
+
+**Recommendation, not yet applied.** `opener` is carrying two jobs. For the ARIA relation it is
+right that the opener is `control`: the combobox pattern requires `aria-expanded` and `aria-controls`
+on the typeable element. For the *transition* it is wrong, because a press on a text input is the
+user reaching for the caret, not for a switch. The two uses should be separated rather than the
+declaration changed — changing it would move the ARIA relation off the element the pattern requires.
+
+## G2 — `ArrowUp` does not open a closed overlay
+
+**Possible.** `ArrowDown` opens; `ArrowUp` is declared by neither the table nor the policy, and APG's
+combobox pattern specifies both. The two paths agree, so this is a gap rather than a disagreement.
+
+## G3 — `Space` is the Tab defect again, still open
+
+**Observed.** The same two-paths shape as B1, and it survived that batch:
+
+```
+selectKeyboardAction(" ", closed)  ->  { type: "open" }
+keyBindingFor("select", " ", false)  ->  null
+```
+
+The policy opens a closed select on Space; the declarative table claims the key for no overlay kind.
+
+**Deliberately not fixed with B1**, and the reason is the gate. `Tab` could be declared in
+`keyboardFor` because it means the same thing on all six overlay kinds. `Space` does not: declaring
+it there would give it to `datepicker` and `timepicker`, whose opener is a typeable control where
+Space must type a space character. Making the table agree with the policy therefore needs a decision
+about *which kinds* Space opens, not a one-line addition — which is exactly the kind of question the
+contract should be asked before a renderer answers it by accident.
+
+## G4 — `stepTimeField` had no finite guard — **fixed**
+
+**Possible.** `time-bounds.ts:98` computes from `Math.round(current)`; a non-finite `current`
+propagates to `NaN`. Stepping is documented as how a user leaves a bad value, so it is the one
+operation that should not refuse — a `NaN` current should be brought into range like any other.
+
+## H — The `aria-describedby` fallback was unfulfilled — **fixed, `480c514`**
+
+**Observed, and resolved.** Kept here because the reason it stayed hidden generalises.
+
+`MDY_WIDGET_RELATIONS` declares `aria-describedby` pointing at `["errors", "supportingText"]` — the
+error list while there is one, the supporting text otherwise. No element in the Angular package
+carried the `<fieldId>__description` id. Four kinds bound the shared projection and named an id that
+existed nowhere; the other eleven used a helper that only ever names the error list, so their
+supporting text was rendered, styled and announced to nobody. Measured on the demo: **0 → 36**
+controls with a non-empty computed accessible description, **4 → 0** dangling references.
+
+The checker had the right rule the whole time — `RELATION_MISSING` (`testing/dom-tests.ts:627`) fires
+when a carrier holds no reference while a target is rendered. It never fired because **Angular's
+`describedby.spec.ts` drives fixtures that render errors, so the description branch was never under
+test.** The gap was in the fixture, not the rule.
+
+The generalisable part: every accessibility check in this repository stopped at the attribute — is
+`aria-describedby` present, does it resolve *in this fixture*. Nothing asked the browser what
+description it actually computed. `e2e/screen-reader.spec.ts` now does.
+
+**This is E1's shape a third time**, and the sharpest statement of it: a rule that is correct, and a
+suite whose fixtures never reach the branch the rule guards, are indistinguishable from green.
