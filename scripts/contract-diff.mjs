@@ -21,7 +21,7 @@
  * someone reorganised an implementation detail, and a report that cries wolf stops being read.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import {
   MDY_WIDGET_CONTRACTS, MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_KEYBOARD, MDY_WIDGET_KINDS,
@@ -214,7 +214,42 @@ for (const [scope, scoped] of byScope) {
 console.log(`\nclassification: ${level}`);
 console.log(`  ${changes.filter((c) => c.severity === "major").length} major · ${changes.filter((c) => c.severity === "minor").length} minor`);
 
+if (process.argv.includes("--require-changeset")) {
+  const declared = declaredReleaseLevel();
+  console.log(`\nchangesets declare: ${declared ?? "nothing"}`);
+  if (SEVERITY[declared ?? "patch"] < SEVERITY[level]) {
+    console.error(
+      `\nCONTRACT CHANGE UNDERSTATED — the contract moved by a ${level}, `
+      + `but the pending changesets declare ${declared ?? "no release"}.`,
+    );
+    console.error(`Add a changeset marking a @modyra package as "${level}".`);
+    process.exit(1);
+  }
+  console.log("the declared release covers the contract change");
+}
+
 if (check) {
   console.error("\nCONTRACT MOVED — review the classification above, then accept it with `npm run contract:snapshot`.");
   process.exit(1);
+}
+
+/**
+ * The largest bump the pending changesets ask for, across every Modyra package.
+ *
+ * Any of them will do, because `fixed: [["@modyra/*"]]` moves the workspace as one version: a minor
+ * on the engine releases the contract as a minor whether or not the contract's own package is
+ * named. Checking only `@modyra/widgets` would demand a second changeset that changes no version.
+ */
+function declaredReleaseLevel() {
+  let highest = null;
+  for (const file of readdirSync(resolve(root, ".changeset"))) {
+    if (!file.endsWith(".md") || file === "README.md") continue;
+    const text = readFileSync(resolve(root, ".changeset", file), "utf8");
+    const frontmatter = text.split("---")[1];
+    if (!frontmatter) continue;
+    for (const [, bump] of frontmatter.matchAll(/"@modyra\/[^"]+"\s*:\s*(patch|minor|major)/g)) {
+      if (highest === null || SEVERITY[bump] > SEVERITY[highest]) highest = bump;
+    }
+  }
+  return highest;
 }
