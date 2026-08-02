@@ -2,6 +2,7 @@ import { angleToHour, angleToMinute, buildTimeString, parseTime, type MdyTimeFor
 import type { MdyUiCommand } from "./commands.js";
 import type { MdyWidgetKind } from "./catalog.js";
 import { keyBindingFor } from "./transitions.js";
+import { acceptTimeField } from "./time-bounds.js";
 
 export type MdyWidgetKeyIntent =
   | { readonly type: "open" }
@@ -565,17 +566,20 @@ export function timeClockTransition(
   intent: MdyTimeClockIntent,
 ): string | null {
   const current = parseTime(currentValue) ?? { hour: 12, minute: 0, period: "AM" as const };
+  // The ranges come from `timeFieldBounds`, not from literals here. They were stated in three
+  // places with the hour's two variants easy to keep straight and the minute's 0–59 easy to lose.
   if (intent.type === "hour") {
+    if (!Number.isInteger(intent.value)) return null;
+    if (acceptTimeField("hour", intent.format, intent.value).type === "rejected") return null;
     if (intent.format === "24h") {
-      if (!Number.isInteger(intent.value) || intent.value < 0 || intent.value > 23) return null;
       const hour = intent.value % 12 === 0 ? 12 : intent.value % 12;
       return buildTimeString(hour, current.minute, intent.value >= 12 ? "PM" : "AM");
     }
-    if (!Number.isInteger(intent.value) || intent.value < 1 || intent.value > 12) return null;
     return buildTimeString(intent.value, current.minute, current.period);
   }
   if (intent.type === "minute") {
-    if (!Number.isInteger(intent.value) || intent.value < 0 || intent.value > 59) return null;
+    if (!Number.isInteger(intent.value)) return null;
+    if (acceptTimeField("minute", "24h", intent.value).type === "rejected") return null;
     return buildTimeString(current.hour, intent.value, current.period);
   }
   if (intent.type === "period") return buildTimeString(current.hour, current.minute, intent.value);

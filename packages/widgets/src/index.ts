@@ -102,6 +102,8 @@ export type { MdyPopupWidgetKind, MdyWidgetDefinition, MdyWidgetKind, MdyWidgetP
 export { createCatalogWidgetController } from "./catalog-controller.js";
 export type { MdyCatalogWidgetIntent, MdyCatalogWidgetState } from "./catalog-controller.js";
 
+export { acceptTimeField, stepTimeField, timeFieldBounds } from "./time-bounds.js";
+export type { MdyTimeEntry, MdyTimeField, MdyTimeFieldBounds, MdyTimeRejection } from "./time-bounds.js";
 export { createFocusCustodian } from "./focus.js";
 export { portalRootFor } from "./portal.js";
 export type { MdyFocusCustodian } from "./focus.js";
