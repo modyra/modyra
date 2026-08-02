@@ -102,6 +102,9 @@ export type { MdyPopupWidgetKind, MdyWidgetDefinition, MdyWidgetKind, MdyWidgetP
 export { createCatalogWidgetController } from "./catalog-controller.js";
 export type { MdyCatalogWidgetIntent, MdyCatalogWidgetState } from "./catalog-controller.js";
 
+export { createFocusCustodian } from "./focus.js";
+export { portalRootFor } from "./portal.js";
+export type { MdyFocusCustodian } from "./focus.js";
 export { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayAlignment, decideOverlayPlacement, MDY_OVERLAY_VIEWPORT_MARGIN, fileSelectionTransition, clearFileSelection, listboxNavigationIndex, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, overlayLifecycleTransition, selectKeyboardAction, shouldCloseMultiselectOverlay, stabilizeOverlayPlacement, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "./behavior.js";
 export type { MdyColorValueIntent, MdyColorValueTransition, MdyDateDraftIntent, MdyDateDraftState, MdyDateDraftTransition, MdyDateRangeDraftIntent, MdyDateRangeDraftState, MdyDateRangeDraftTransition, MdyDateRangeValue, MdyDateValueIntent, MdyFileCandidate, MdyFileSelectionOptions, MdyFileSelectionTransition, MdyMultiselectOverlayAction, MdyMultiselectValueIntent, MdyOptionNavigationTarget, MdyOverlayDecision, MdyOverlayGeometry, MdyOverlayLifecycleIntent, MdyOverlayLifecycleState, MdyOverlayLifecycleTransition, MdySelectKeyboardAction, MdyTimeClockIntent, MdyTimeDraftIntent, MdyTimeDraftState, MdyTimeDraftTransition, MdyWidgetKeyIntent } from "./behavior.js";
 

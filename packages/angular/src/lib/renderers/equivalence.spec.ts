@@ -41,13 +41,8 @@ import { mountStateFixture } from "./catalog-host.spec";
  * The hand-written Escape test this suite replaced asserted only that `aria-expanded` became false,
  * which is why three kinds could strand the keyboard and stay green.
  */
-const KNOWN_DIVERGENCES: Record<string, Partial<Record<MdyWidgetKind, string[]>>> = {
-  "after escape": {
-    select: ["focus rests on nothing, expected somewhere in the widget"],
-    datepicker: ["focus rests on nothing, expected somewhere in the widget"],
-    daterange: ["focus rests on nothing, expected somewhere in the widget"],
-  },
-};
+const KNOWN_DIVERGENCES: Record<string, Partial<Record<MdyWidgetKind, string[]>>> = {};
+
 
 /**
  * At rest, no validator has run: nothing has been decided about the field before the user reached

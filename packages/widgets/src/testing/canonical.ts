@@ -19,7 +19,7 @@ import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../
 import { MDY_WIDGET_RELATIONS } from "../relations.js";
 import { MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import { MDY_SEMANTIC_ELEMENTS } from "./dom-tests.js";
-import { portalRootFor } from "./portal.js";
+import { portalRootFor } from "../portal.js";
 
 /** One part, as the contract can describe it without naming a framework. */
 export interface MdyCanonicalPart {

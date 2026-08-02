@@ -9,6 +9,8 @@ import {
 } from "@angular/core";
 import {
   anchorOverlay,
+  createFocusCustodian,
+  portalRootFor,
   overlayAnchoringFor,
   overlayLifecycleTransition,
   MDY_CSS_PROPERTIES,
@@ -72,13 +74,27 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   /** Reference to the host element for position calculation. */
   protected readonly hostRef = inject(ElementRef<HTMLElement>);
 
+  /**
+   * Who held focus before this overlay took it.
+   *
+   * The widget contract's rule rather than this directive's: focus is borrowed, and a move that is
+   * not taken did not happen. Three kinds here used to dismiss onto `<body>` because the restore
+   * aimed at an element the close had already removed, and `focus()` fails silently.
+   */
+  private readonly focus = createFocusCustodian(
+    () => this.wrapperRef()?.nativeElement ?? this.hostRef.nativeElement ?? null,
+  );
+
   protected readonly announcer = inject(MdyA11yAnnouncer);
   private readonly overlayI18n = inject(MDY_I18N_MESSAGES);
 
   constructor() {
     super();
     // Remove global listeners if the component is destroyed while open.
-    inject(DestroyRef).onDestroy(() => this.applyLifecycle({ type: "destroy" }));
+    inject(DestroyRef).onDestroy(() => {
+      this.applyLifecycle({ type: "destroy" });
+      this.focus.release();
+    });
   }
 
   /**
@@ -318,17 +334,66 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   private applyLifecycle(intent: MdyOverlayLifecycleIntent): void {
     const transition = overlayLifecycleTransition({ open: this.open() }, intent);
     if (transition.effect === "none") return;
+    // Recorded before the overlay opens, while the trigger still holds focus. Afterwards there is
+    // nothing left to record: the widget has already moved it.
+    if (transition.state.open) this.focus.remember();
+    // Whether the user is standing inside the thing about to disappear, asked before it goes.
+    //
+    // The intent's own `restoreFocus` is not enough: a component that handles Escape itself closes
+    // through a plain `close`, so the flag arrives false and the overlay takes the user's focus
+    // down with it. What decides is the DOM — focus inside the portal being torn down has to go
+    // somewhere, while focus anywhere else belongs to whatever the user just clicked and must be
+    // left alone.
+    const strandsFocus = !transition.state.open && this.focusWasStranded();
     this.open.set(transition.state.open);
     if (transition.effect === "setup") this.setupGlobalListeners();
     if (transition.effect === "teardown") this.teardownGlobalListeners();
     if (transition.announce === "opened") this.announcer.announce(this.overlayI18n.overlayOpened);
     if (transition.announce === "closed") this.announcer.announce(this.overlayI18n.overlayClosed);
-    if (transition.restoreFocus) this.restoreOverlayTriggerFocus();
+    if (transition.restoreFocus || strandsFocus) this.restoreOverlayTriggerFocus();
   }
 
-  /** Hosts may override when their trigger is not the first interactive element. */
+  /**
+   * Whether closing has left the user's focus with nowhere to be.
+   *
+   * Two shapes, and the second is the one that kept escaping earlier attempts:
+   *
+   * - Focus is still inside this widget's own portalled overlay, which is about to go.
+   * - Focus is on an element that is **already detached**. A component that handles its own key
+   *   press tears the popup down and triggers change detection before this directive is told, so by
+   *   the time the lifecycle runs there is no portal left to be inside — only an orphaned
+   *   `activeElement` pointing into a tree that is no longer in the document. A browser reports
+   *   that as `<body>` a moment later; either way the user has lost their place.
+   *
+   * Focus that is connected and outside this widget belongs to whatever the user just clicked, and
+   * is left alone — which is what keeps an outside click from having its focus stolen back.
+   */
+  private focusWasStranded(): boolean {
+    const wrapper = this.wrapperRef()?.nativeElement;
+    const active = wrapper?.ownerDocument?.activeElement ?? null;
+    if (!wrapper || !active) return false;
+    if (!active.isConnected) return true;
+    if (active === wrapper.ownerDocument.body) return false;
+    // The panel is asked about **before** containment, and that ordering is the whole fix. This
+    // overlay renders its panel *inside* the wrapper rather than portalling it, so focus in the
+    // open popup is also focus inside the widget — and a containment check answers "not stranded"
+    // for exactly the case that strands people. The panel is what is going away, wherever it sits.
+    if (active.closest(".mdy-overlay-panel")) return true;
+    if (wrapper.contains(active)) return false;
+    return Boolean(portalRootFor(wrapper)?.contains(active));
+  }
+
+  /**
+   * Hosts may override when their trigger is not the first interactive element.
+   *
+   * The preference is a hint, not the answer: the custodian verifies it actually took focus and
+   * falls through to whoever held it before, then into the widget. Overriding this to name a
+   * better element is safe; overriding it to name a missing one no longer strands the user.
+   */
   protected restoreOverlayTriggerFocus(): void {
-    this.wrapperRef()?.nativeElement.querySelector<HTMLElement>("button, input, [tabindex='0']")?.focus();
+    const wrapper = this.wrapperRef()?.nativeElement;
+    const preferred = wrapper?.querySelector<HTMLElement>("button, input, [tabindex='0']") ?? null;
+    this.focus.restore(preferred);
   }
 
   private setupGlobalListeners(): void {
