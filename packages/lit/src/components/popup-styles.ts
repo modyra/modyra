@@ -107,6 +107,12 @@ export function computeOverlayPanelState(
       minWidth: config?.minWidth,
       preferred: config?.preferredPosition,
       matchAnchorWidth: (config?.widthMode ?? "match-anchor") === "match-anchor",
+      // The widget declares which *inline* edge its popup hangs from; only the live direction says
+      // which physical edge that is.
+      direction:
+        anchorEl.ownerDocument.defaultView?.getComputedStyle(anchorEl).direction === "rtl"
+          ? "rtl"
+          : "ltr",
       pointerX: config?.clickX,
       // Measured by the controller when the panel is in the DOM: with it the popup goes where its
       // content shows whole, without it the minimum-space rule stands.

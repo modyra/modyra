@@ -191,6 +191,9 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
         minWidth: this.minWidth(),
         preferred: this.preferredPosition,
         matchAnchorWidth: true,
+        // The widget declares which *inline* edge its popup hangs from; only the live direction
+        // says which physical edge that is.
+        direction: this.overlayDirection(),
         // The widget's own anchoring wins over the defaults above: those are what a control falls
         // back to when the catalog does not know it, not a decision it gets to keep making.
         ...(this.overlayKind ? overlayAnchoringFor(this.overlayKind) : {}),
@@ -352,6 +355,13 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     if (transition.announce === "closed") this.announcer.announce(this.overlayI18n.overlayClosed);
     if (transition.restoreFocus || strandsFocus) this.restoreOverlayTriggerFocus();
   }
+
+  /** The writing direction the anchor is laid out in, read rather than assumed. */
+  private overlayDirection(): "ltr" | "rtl" {
+    const el = this.wrapperRef()?.nativeElement ?? this.hostRef.nativeElement;
+    return el?.ownerDocument?.defaultView?.getComputedStyle(el).direction === "rtl" ? "rtl" : "ltr";
+  }
+
 
   /**
    * Whether closing has left the user's focus with nowhere to be.

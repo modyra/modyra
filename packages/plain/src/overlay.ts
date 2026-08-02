@@ -117,6 +117,13 @@ export function positionOverlay(
     { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight },
     {
       ...options,
+      // The direction the field is actually laid out in, read from the DOM rather than assumed.
+      // The widget declares which *inline* edge its popup hangs from; only the live direction can
+      // say which physical edge that is.
+      direction:
+        anchor.ownerDocument.defaultView?.getComputedStyle(anchor).direction === "rtl"
+          ? "rtl"
+          : "ltr",
       current: held?.decision ?? null,
       ...(content ? { contentHeight: content.height, contentWidth: content.width } : {}),
     },
