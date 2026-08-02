@@ -95,7 +95,18 @@ export function stepTimeField(
 ): number {
   const { min, max } = timeFieldBounds(field, format);
   const size = max - min + 1;
-  const offset = Math.round(current) - min + Math.round(delta);
+  const by = Number.isFinite(delta) ? Math.round(delta) : 0;
+  // A field holding nothing at all — an empty box read as a number, a parse that failed — enters the
+  // range at the end the user is moving away from: up from nothing is the first hour, down from
+  // nothing is the last. Arithmetic on a non-finite `current` produces `NaN`, which the caller stores
+  // and the user then cannot step out of, so the one operation whose whole purpose is to leave a bad
+  // value would be the one that preserves it.
+  //
+  // Entering at `min + by` instead would put the first press on the *second* value and leave the
+  // first unreachable by the keyboard, which is the sort of thing only a guard written for the
+  // arithmetic rather than for the user produces.
+  if (!Number.isFinite(current)) return by < 0 ? max : min;
+  const offset = Math.round(current) - min + by;
   // `%` keeps the sign of the dividend in JavaScript, so a downward step past the start needs the
   // extra turn to come back positive.
   return (((offset % size) + size) % size) + min;
