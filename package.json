@@ -18,6 +18,7 @@
     "test:bundle": "npm --prefix packages/angular/bundle-test run build && node scripts/check-bundle.mjs",
     "test:angular-renderer-budget": "node scripts/audit-angular-renderer-budget.mjs",
     "test:core-bundle": "npm run build:core && node scripts/check-core-bundle.mjs",
+    "test:form-scale": "npm run build:plain && node scripts/benchmark-forms.mjs --check",
     "build:core": "tsc -p packages/core/tsconfig.json",
     "test:core": "npm run build:core && node --test packages/core/test/*.test.mjs",
     "build:packages": "npm run build:core && tsc -p packages/widgets/tsconfig.json && tsc -p packages/zod/tsconfig.json && tsc -p packages/standard-schema/tsconfig.json && tsc -p packages/vue/tsconfig.json && tsc -p packages/react/tsconfig.json && tsc -p packages/lit/tsconfig.json && tsc -p packages/solid/tsconfig.json && tsc -p packages/preact/tsconfig.json && tsc -p packages/svelte/tsconfig.json && npm run build:styles",

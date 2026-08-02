@@ -71,5 +71,13 @@ jobs:
           pnpm run test:e2e
         continue-on-error: true
 
+      # DOM weight per field and post-unmount leaks for forms of 100/500/1000 fields. Budgets and
+      # their reasoning live in packages/plain/metrics/form-scale-budget.json; only exact figures
+      # are gated, never the jsdom timings the run also prints. Non-blocking until the numbers have
+      # held across a few runs on CI hardware — flip continue-on-error to false then.
+      - name: Form scale budgets
+        run: pnpm run test:form-scale
+        continue-on-error: true
+
       - name: Production dependency audit
         run: pnpm audit --prod

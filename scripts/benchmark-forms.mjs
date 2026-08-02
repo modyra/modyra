@@ -24,8 +24,12 @@
  * registry and no honest memory or latency figure, and a fabricated number is worse than a missing
  * one. Post-unmount DOM stands in for the leak question it can answer.
  *
- *   node scripts/benchmark-forms.mjs [--runs 5] [--sizes 100,500,1000]
+ *   node scripts/benchmark-forms.mjs [--runs 5] [--sizes 100,500,1000] [--check]
+ *
+ * `--check` compares against `packages/plain/metrics/form-scale-budget.json` and exits non-zero on a
+ * breach. Only the exact figures are gated there, and that file says why.
  */
+import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 
 const args = process.argv.slice(2);
@@ -35,6 +39,8 @@ const flag = (name, fallback) => {
 };
 const RUNS = Number(flag("--runs", "5"));
 const SIZES = String(flag("--sizes", "100,500,1000")).split(",").map(Number);
+const CHECK = args.includes("--check");
+const BUDGET_PATH = new URL("../packages/plain/metrics/form-scale-budget.json", import.meta.url);
 
 /** The kinds a generated form cycles through, so the mix is not all text fields. */
 const KINDS = [
@@ -268,12 +274,33 @@ async function main() {
   attach a form-level validator.
 `);
 
-  // No budgets, deliberately. This exits 0 whatever it measures; a later batch turns the recorded
-  // baseline into thresholds, which is the only order in which a threshold means anything.
   const leaking = rows.some((r) => r.leakedAfterUnmount > 0) || churn.leftInBody > 0;
   if (leaking) {
     console.log("  NOTE: DOM remained after unmount. That is a leak, not a budget, and it is a defect.\n");
   }
+
+  // Without `--check` this reports and exits 0 whatever it measures, so it stays usable as an
+  // exploratory run. The gate is opt-in because the timings it prints are not gateable.
+  if (!CHECK) return;
+
+  const budget = JSON.parse(readFileSync(BUDGET_PATH, "utf8"));
+  const breaches = [];
+  const gate = (name, actual) => {
+    const limit = budget.gated[name];
+    if (actual > limit.max) breaches.push({ metric: name, actual, budget: limit.max, why: limit.why });
+  };
+  for (const row of rows) {
+    gate("nodesPerField", row.nodesPerField);
+    gate("leakedAfterUnmount", row.leakedAfterUnmount);
+  }
+  gate("churnLeftInBody", churn.leftInBody);
+
+  console.log(JSON.stringify({
+    status: breaches.length ? "FORM SCALE BUDGET BLOCKED" : "FORM SCALE BUDGET CLEAN",
+    baselineCommit: budget.baselineCommit,
+    breaches,
+  }, null, 2));
+  if (breaches.length) process.exitCode = 1;
 }
 
 await main();
