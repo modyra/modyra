@@ -405,3 +405,43 @@ test("the two palette engines disagree, and by how much", () => {
     "the OKLCH model multiplies chroma, so a muted source must stay muted",
   );
 });
+
+/**
+ * The Material theme's forced accents are Material's own arithmetic, not a colour someone liked.
+ *
+ * Zinc's chroma is 0.0059. The OKLCH model *scales* the seed's chroma, so scaling almost nothing
+ * leaves almost nothing — the derived secondary came out `#1b191c` and the chip painting from it
+ * measured 1.00:1 against `surface-container-highest`: a selected state indistinguishable from its
+ * background. M3 *assigns* chroma instead, which is the whole reason a Material theme should take
+ * Material's answer here.
+ *
+ * Two hardcoded hexes in a stylesheet claiming to come from a function is exactly the shape that
+ * drifts, so this asserts they still do.
+ */
+test("the Material theme's forced accents match deriveHctPalette", () => {
+  const css = readFileSync(
+    new URL("../../styles/src/modyra-material.css", import.meta.url),
+    "utf8",
+  );
+  const declared = (name) => {
+    const match = css.match(new RegExp(`--mdy-sys-color-${name}:\\s*(#[0-9a-fA-F]{6})`));
+    assert.ok(match, `--mdy-sys-color-${name} is not declared in modyra-material.css`);
+    return match[1].toLowerCase();
+  };
+
+  const seed = declared("primary");
+  assert.equal(seed, "#18181b", "the theme's seed changed; the accents below must be recomputed");
+
+  const m3 = deriveHctPalette(seed);
+  assert.equal(declared("secondary"), m3.secondary.toLowerCase(),
+    "the forced secondary no longer equals what M3 derives from this theme's seed");
+  assert.equal(declared("tertiary"), m3.tertiary.toLowerCase(),
+    "the forced tertiary no longer equals what M3 derives from this theme's seed");
+
+  // And the point of forcing at all: what the OKLCH derivation would have produced is grey.
+  const derived = derivePalette(seed, MDY_PALETTE_MODELS.brand);
+  assert.ok(
+    hexToOklch(m3.secondary).c > hexToOklch(derived.secondary).c + 0.02,
+    "the forced accent must carry materially more chroma than the derivation it replaces",
+  );
+});
