@@ -140,9 +140,16 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     bindings.push({ key: "Tab", when: "open", intent: "cancel", restoresFocus: false });
     bindings.push({ key: "Enter", when: "closed", intent: "open" });
     bindings.push({ key: "Enter", when: "open", intent: "commit" });
-    // The combobox pattern: pressing down on a closed control opens it rather than doing nothing,
-    // which is how a keyboard user reaches the list at all.
+    // The combobox pattern: pressing an arrow on a closed control opens it rather than doing
+    // nothing, which is how a keyboard user reaches the list at all.
+    //
+    // Both directions, and neither carries a move. APG has the up arrow open *onto the last option*
+    // and the down arrow onto the first — which is what happens here anyway, one layer down:
+    // `listboxNavigationIndex` answers `ArrowUp` from nothing-active with the last option and
+    // `ArrowDown` with the first. Declaring a second intent on the same key would restate that in a
+    // place it can drift from.
     bindings.push({ key: "ArrowDown", when: "closed", intent: "open" });
+    bindings.push({ key: "ArrowUp", when: "closed", intent: "open" });
     // Space opens too — but only where the opener is not a control the user types into. In a text
     // field the space bar is a space character, and a widget that opened its calendar instead would
     // be unable to accept "12 March". The keyboard policy has opened on Space for as long as it has

@@ -269,10 +269,14 @@ export function selectKeyboardAction(input: {
   };
   const target = move[key];
   if (target && (!searchFocused || key === "ArrowDown" || key === "ArrowUp")) {
-    // A closed list has nothing to move through. `ArrowDown` on a collapsed combobox opens it —
+    // A closed list has nothing to move through. Either arrow on a collapsed combobox opens it —
     // the authoring practices' behaviour, and what a user reaching for the list expects — rather
     // than silently advancing an active option nobody can see.
-    if (!open) return key === "ArrowDown" ? { type: "open" } : null;
+    //
+    // Both directions, matching the declared bindings. Opening does not also move: the list opens
+    // with nothing active, and the next arrow lands where the direction says, because
+    // `listboxNavigationIndex` answers `ArrowUp` from nothing-active with the last option.
+    if (!open) return key === "ArrowDown" || key === "ArrowUp" ? { type: "open" } : null;
     return { type: "move", target };
   }
   if (key === "Escape" && open) return { type: "close", restoreFocus: true };
