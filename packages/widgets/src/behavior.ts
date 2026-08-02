@@ -187,7 +187,7 @@ export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean)
   const binding = keyBindingFor(kind, key, open);
   if (!binding) return null;
   switch (binding.intent) {
-    case "cancel": return { type: "cancel", restoreFocus: true };
+    case "cancel": return { type: "cancel", restoreFocus: binding.restoresFocus ?? true };
     case "open": return { type: "open" };
     case "commit": return { type: "commit" };
     case "toggle": return { type: "toggle" };

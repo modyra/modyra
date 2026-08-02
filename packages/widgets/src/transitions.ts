@@ -99,6 +99,16 @@ export interface MdyKeyBinding {
   /** Only when the overlay is showing, only when it is not, or either way. */
   readonly when?: MdyOverlayPhase;
   readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel";
+  /**
+   * Whether dismissing on this key returns focus to the opener. Only a `cancel` dismisses, so only a
+   * `cancel` answers it, and the default is to restore.
+   *
+   * The two dismissals differ, and the difference is the whole reason this is declared rather than
+   * assumed. Escape means *put me back where I was*, so focus returns to the opener. Tab is already
+   * carrying focus to the next control, and pulling it back would trap the user in the field they
+   * just left — the same key, the same close, the opposite answer.
+   */
+  readonly restoresFocus?: boolean;
 }
 
 /** Kinds whose value is chosen from a list the keyboard walks. */
@@ -115,7 +125,11 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
   const bindings: MdyKeyBinding[] = [];
 
   if (overlay) {
-    bindings.push({ key: "Escape", when: "open", intent: "cancel" });
+    bindings.push({ key: "Escape", when: "open", intent: "cancel", restoresFocus: true });
+    // Tab dismisses without taking focus back. Leaving it undeclared did not make the list stay
+    // open — it made the *table* disagree with the policy the renderers actually call, so a renderer
+    // built from the declared bindings alone left a popup floating over a form the user had left.
+    bindings.push({ key: "Tab", when: "open", intent: "cancel", restoresFocus: false });
     bindings.push({ key: "Enter", when: "closed", intent: "open" });
     bindings.push({ key: "Enter", when: "open", intent: "commit" });
     // The combobox pattern: pressing down on a closed control opens it rather than doing nothing,
