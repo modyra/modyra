@@ -55,7 +55,15 @@ function transitionsFor(kind: MdyWidgetKind): readonly MdyWidgetTransition[] {
   const transitions: MdyWidgetTransition[] = [
     { from: "closed", trigger: { type: "pointer", part: opener.opener }, to: "open" },
     // The same press again closes it: an opener is a toggle, not a one-way switch.
-    { from: "open", trigger: { type: "pointer", part: opener.opener }, to: "closed" },
+    //
+    // Except where the opener is the control the user types into. A press there is the user placing
+    // the caret, and answering it by closing the calendar takes the field away at the moment they
+    // reached for it. The rule was written for a button and applied to every opener alike, and one
+    // renderer implemented it literally while another did not — so the same click did different
+    // things depending on who drew the widget, with the contract endorsing the worse of the two.
+    ...(opener.typeable
+      ? []
+      : [{ from: "open" as const, trigger: { type: "pointer" as const, part: opener.opener }, to: "closed" as const }]),
     { from: "open", trigger: { type: "key", key: "Escape" }, to: "closed", restoresFocus: true },
   ];
 
@@ -135,6 +143,14 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // The combobox pattern: pressing down on a closed control opens it rather than doing nothing,
     // which is how a keyboard user reaches the list at all.
     bindings.push({ key: "ArrowDown", when: "closed", intent: "open" });
+    // Space opens too — but only where the opener is not a control the user types into. In a text
+    // field the space bar is a space character, and a widget that opened its calendar instead would
+    // be unable to accept "12 March". The keyboard policy has opened on Space for as long as it has
+    // existed and this table claimed the key for nothing, so the two disagreed in the same way they
+    // did over Tab; declaring it needed the opener to be able to say what it is.
+    if (!MDY_POPUP_OPENERS[kind]?.typeable) {
+      bindings.push({ key: " ", when: "closed", intent: "open" });
+    }
   }
   if (NAVIGATES_OPTIONS.includes(kind)) {
     for (const key of ["ArrowDown", "ArrowUp", "Home", "End"]) {

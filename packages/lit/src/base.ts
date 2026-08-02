@@ -3,8 +3,10 @@ import { MDY_ICONS } from "@modyra/core/ui";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import { defaultWidgetIdFactory as ID, MDY_FIELD_SHELL_CLASSES as SHELL, MDY_WIDGET_CONTRACTS, type MdyWidgetKind,
+  popupAlignmentClass,
   popupPlacementClass,
   projectFieldShellA11y,
+  type MdyOverlayAlignment,
   type MdyOverlayPlacement,
   type MdyPartContract,
   type MdyPopupWidgetKind,
@@ -76,9 +78,13 @@ export abstract class MdyFieldElement<T> extends LitElement {
    * here, on the popup itself, under the name the catalog gives it — the same class Plain writes and
    * a host-projected panel does.
    */
-  protected popupClass(placement: MdyOverlayPlacement): string {
-    const state = popupPlacementClass(this.widgetKind as MdyPopupWidgetKind, placement);
-    return state ? `${this.partClass("popup")} ${state}` : this.partClass("popup");
+  protected popupClass(placement: MdyOverlayPlacement, alignment?: MdyOverlayAlignment): string {
+    const kind = this.widgetKind as MdyPopupWidgetKind;
+    const states = [
+      popupPlacementClass(kind, placement),
+      alignment ? popupAlignmentClass(kind, alignment) : null,
+    ].filter((name): name is string => name !== null);
+    return [this.partClass("popup"), ...states].join(" ");
   }
 
   constructor() {

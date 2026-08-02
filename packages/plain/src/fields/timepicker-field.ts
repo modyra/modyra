@@ -119,7 +119,10 @@ export function renderTimepickerField(
   let typing = false;
   const toggleOverlay = () => dispatch(controller.state().open ? { type: "close", restoreFocus: false } : { type: "open" });
   toggle.addEventListener("click", toggleOverlay);
-  control.addEventListener("click", toggleOverlay);
+  // The control opens the overlay and never closes it: it is the field the user types into, so a
+  // click there is the caret being placed, not a switch being flipped. The toggle button is the
+  // switch. `MDY_POPUP_OPENERS[kind].typeable` is where the contract says so.
+  control.addEventListener("click", () => { if (!controller.state().open) dispatch({ type: "open" }); });
   control.addEventListener("input", () => { typing = true; });
   control.addEventListener("blur", () => { typing = false; dispatch({ type: "blur" }); });
   // A typed time goes through the draft the dialog edits, then commits — one path, one policy.
