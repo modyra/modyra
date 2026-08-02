@@ -40,9 +40,9 @@
     :root {
         /* M3's filled field is 56px with only a bottom indicator; the modern shape is a
            shorter, fully-bordered control on the untinted end of the surface ramp. */
-        --mdy-comp-filled-text-field-container-height: 2.25rem;
-        --mdy-comp-filled-text-field-container-shape: var(--mdy-sys-shape-corner-small);
-        --mdy-comp-filled-text-field-container-color: var(--mdy-sys-color-surface-container-lowest);
+        --mdy-comp-field-container-height: 2.25rem;
+        --mdy-comp-field-container-shape: var(--mdy-sys-shape-corner-small);
+        --mdy-comp-field-container-color: var(--mdy-sys-color-surface-container-lowest);
 
         /* Cells scale with the control: a 2.5rem cell under a 2.25rem field reads as a
            calendar borrowed from a larger form. */
