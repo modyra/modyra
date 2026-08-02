@@ -20,6 +20,28 @@ state and emit **commands**; renderers translate commands into DOM changes.
   (`defaultWidgetIdFactory`).
 - **Runtime capabilities** — `browserRuntimeCapabilities` /
   `ssrRuntimeCapabilities` so controllers stay SSR-safe.
+- **What exists before a browser does** — `staticParts` / `dynamicParts` /
+  `isFullyServerRenderable` split each kind's anatomy into the closed
+  control, which is markup a server can emit, and the overlay.
+
+## What "SSR-safe" means here, and what it does not
+
+The contract is computable without a DOM: every kind produces its whole view
+contract — ids, ARIA, classes — in a process with no `document`, and
+`browserRuntimeCapabilities()` probes for one rather than assuming it, so a
+controller is never handed a command it cannot execute. `staticParts(kind)`
+names the half of the anatomy a server can emit.
+
+That is a guarantee about this package and nothing more. **It does not say a
+form can be rendered on a server today**: producing markup, and hydrating a
+client against it, belongs to a renderer, and this contract neither performs
+nor requires it. A host building one gets a contract that will not reach for
+the DOM underneath it, deterministic ids to hydrate against, and the
+static/dynamic split to decide what to emit; the rendering itself is theirs.
+
+The split is a statement about anatomy, not a rendering strategy. A renderer
+that mounts its popup eagerly emits the dynamic parts while closed; one that
+mounts lazily emits them on open. Both are conformant.
 - **Conformance testing kit** (`@modyra/widgets/testing`) — fixtures and
   `runCommandExecutionTests()` to prove a new renderer honours the
   contract.
