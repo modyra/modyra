@@ -225,6 +225,16 @@ export function renderDaterangeField(
       button.classList.toggle("mdy-datepicker__cell--selected", isStart || isEnd);
       button.setAttribute("aria-selected", String(isStart || isEnd));
     }
+
+    // A calendar takes focus into its grid when it opens, which its own datepicker sibling already
+    // did and this one did not: a grid the keyboard cannot reach is a grid only a mouse can use.
+    // The start endpoint is where the range begins, so that is where the user is put; failing that,
+    // the first day that can be picked.
+    if (state.open && !popup.contains(document.activeElement)) {
+      const target = (value.start ? cellEls.get(value.start) : undefined)
+        ?? [...cellEls.values()].find((cell) => !cell.disabled);
+      target?.focus();
+    }
   });
 
   return () => {

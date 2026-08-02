@@ -22,20 +22,12 @@ const {
 const { mount } = await import("./support/state-fixture.mjs");
 
 /**
- * Divergences this renderer is allowed, each with the reason it is not a defect — or, where it is
- * one, recorded until its own batch fixes it. Asserted both ways: a new divergence fails, and so
- * does an entry left behind after its fix.
+ * Divergences this renderer is allowed, each with the reason it is not a defect.
  *
- * **Opening a `daterange` leaves focus where it was.** Its own datepicker moves focus into the
- * calendar grid, and so does the other renderer's daterange, so a keyboard user opening this one
- * gets a calendar they cannot reach without tabbing to it. A behaviour defect rather than a
- * rendering one, recorded here and belonging to the batch that proves keyboard intent.
+ * **Empty.** Every kind this renderer draws produces the canonical observation in all four states
+ * and after the Escape sequence.
  */
-const KNOWN_DIVERGENCES = {
-  open: {
-    daterange: ["focus rests on nothing, expected gridcell"],
-  },
-};
+const KNOWN_DIVERGENCES = {};
 
 /**
  * At rest, no validator has run: nothing has been decided about the field before the user reached
