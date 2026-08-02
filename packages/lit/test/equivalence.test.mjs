@@ -16,7 +16,8 @@ import { installDomGlobals } from "./support/dom-env.mjs";
 installDomGlobals();
 const {
   canonicalWidgetSnapshot, compareToCanonical, MDY_CANONICAL_AFTER_ESCAPE,
-  MDY_CANONICAL_AT_REST, MDY_CANONICAL_DISABLED, MDY_CANONICAL_INVALID, MDY_CANONICAL_OPEN,
+  MDY_CANONICAL_AT_REST, MDY_CANONICAL_DISABLED, MDY_CANONICAL_FILLED_OBSERVATION,
+  MDY_CANONICAL_INVALID, MDY_CANONICAL_OPEN,
 } = await import("../../widgets/dist/testing/index.js");
 const { mount } = await import("./support/state-fixture.mjs");
 
@@ -40,6 +41,8 @@ const STATES = [
   { name: "invalid", expectations: MDY_CANONICAL_INVALID, validators: true, drive: "invalid" },
   { name: "disabled", expectations: MDY_CANONICAL_DISABLED, validators: false, drive: "disabled" },
   { name: "open", expectations: MDY_CANONICAL_OPEN, validators: false, drive: "open" },
+  // The roadmap's *programmatic update*: a value the form put there, not one the user typed.
+  { name: "filled", expectations: MDY_CANONICAL_FILLED_OBSERVATION, validators: false, drive: "filled" },
 ];
 
 for (const { name, expectations, validators, drive } of STATES) {
@@ -92,6 +95,40 @@ for (const [kind, expectation] of Object.entries(MDY_CANONICAL_AFTER_ESCAPE)) {
         ),
         KNOWN_DIVERGENCES["after escape"]?.[kind] ?? [],
       );
+    } finally {
+      fixture.dispose();
+    }
+  });
+}
+
+/**
+ * The roadmap's *reset*: a widget given a value and then returned to the one it started with must
+ * look exactly as it did before it was ever touched.
+ *
+ * The one comparison that cannot be made from a single observation, because it is about two of them
+ * being the same. A renderer that leaves a class, an attribute or a stale display value behind
+ * passes every other check here — the state it is left in is legal, it is simply not the one it
+ * started in.
+ */
+for (const [kind, expectation] of Object.entries(MDY_CANONICAL_AT_REST)) {
+  test(`${kind} returns to its resting observation when reset`, async () => {
+    const fixture = await mount(kind, { validators: false });
+    await fixture.settle();
+    const before = canonicalWidgetSnapshot(fixture.root, kind, { value: fixture.value() });
+
+    try {
+      assert.ok(fixture.drive("filled"), `${kind}: not fillable`);
+      await fixture.settle();
+      assert.ok(fixture.drive("empty"), `${kind}: not clearable`);
+      await fixture.settle();
+
+      const after = canonicalWidgetSnapshot(fixture.root, kind, { value: fixture.value() });
+      assert.deepEqual(
+        compareToCanonical(after, expectation),
+        KNOWN_DIVERGENCES.reset?.[kind] ?? [],
+        `${kind}: the reset observation differs from the resting one`,
+      );
+      assert.deepEqual(after.parts.map((p) => p.part).sort(), before.parts.map((p) => p.part).sort());
     } finally {
       fixture.dispose();
     }

@@ -349,8 +349,13 @@ export interface MdyCanonicalExpectation {
    * interaction counts as having touched the field is a product decision, not a rendering one.
    */
   readonly state?: readonly string[];
-  /** The value the field holds. */
-  readonly value: unknown;
+  /**
+   * The value the field holds, and absent when the contract cannot name it.
+   *
+   * Absent only where no shared table could: a file field's filled value is a `File`, and two files
+   * with the same bytes are still different values, so each fixture makes its own.
+   */
+  readonly value?: unknown;
   /**
    * The part focus rests on, `null` when focus is nowhere in the widget, and absent when the
    * contract does not constrain it.
@@ -733,6 +738,53 @@ export const MDY_CANONICAL_OPEN: Readonly<Partial<Record<MdyWidgetKind, MdyCanon
   ));
 
 /**
+ * The value each kind holds once something has been put in it.
+ *
+ * The counterpart to `MDY_CANONICAL_EMPTY`, and needed for the same reason: "the same actions" means
+ * nothing unless every renderer is handed the same value to render.
+ */
+export const MDY_CANONICAL_FILLED: Readonly<Partial<Record<MdyWidgetKind, unknown>>> = Object.freeze({
+  text: "value", email: "value", password: "value", textarea: "value",
+  number: 7, slider: 7,
+  checkbox: true, toggle: true,
+  radio: "a", segmented: "a", select: "a",
+  multiselect: Object.freeze(["a"]),
+  datepicker: "2026-07-15",
+  timepicker: "10:30",
+  daterange: Object.freeze({ start: "2026-07-15", end: "2026-07-20" }),
+  colors: "#004cff",
+  // A file is the one kind whose filled value cannot be written down here: it is a `File`, and two
+  // files with the same bytes are still two different values. Its fixture supplies its own.
+});
+
+/**
+ * What every renderer must produce for a kind holding a value it was given from outside.
+ *
+ * The roadmap's *programmatic update*: a value set by the form rather than typed by the user. It is
+ * the same widget as at rest with something in it, and the only anatomical difference measured
+ * across the catalogue is the select's — a filled select shows its value, so the placeholder that
+ * stands in for one becomes optional rather than required.
+ *
+ * No state is reflected. Putting a value in a field is not the user touching it, and a renderer that
+ * marked it touched would show validation for an interaction that never happened.
+ */
+export const MDY_CANONICAL_FILLED_OBSERVATION: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>> =
+  Object.freeze(Object.fromEntries(
+    Object.entries(MDY_CANONICAL_AT_REST).map(([kind, { value: _restingValue, ...rest }]) => [
+      kind,
+      Object.freeze({
+        ...rest,
+        parts: Object.freeze(rest.parts.filter((part) => part !== "placeholder")),
+        optional: Object.freeze([...rest.optional, "placeholder"]),
+        // A kind the table cannot name drops the constraint rather than asserting the wrong thing.
+        ...(kind in MDY_CANONICAL_FILLED
+          ? { value: MDY_CANONICAL_FILLED[kind as MdyWidgetKind] }
+          : {}),
+      }),
+    ]),
+  ));
+
+/**
  * What every renderer must produce once an open overlay has been dismissed from the keyboard.
  *
  * The first expectation in this file that describes the result of an *action* rather than a state
@@ -834,7 +886,7 @@ export function compareToCanonical(
     }
   }
 
-  if (!sameValue(snapshot.value, expectation.value)) {
+  if ("value" in expectation && !sameValue(snapshot.value, expectation.value)) {
     differences.push(`value is ${describe(snapshot.value)}, expected ${describe(expectation.value)}`);
   }
 

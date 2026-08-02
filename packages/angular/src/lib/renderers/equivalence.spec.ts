@@ -17,6 +17,7 @@ import {
   MDY_CANONICAL_AFTER_ESCAPE,
   MDY_CANONICAL_AT_REST,
   MDY_CANONICAL_DISABLED,
+  MDY_CANONICAL_FILLED_OBSERVATION,
   MDY_CANONICAL_INVALID,
   MDY_CANONICAL_OPEN,
   type MdyCanonicalExpectation,
@@ -60,6 +61,8 @@ const STATES: ReadonlyArray<{
   { name: "invalid", expectations: MDY_CANONICAL_INVALID, validators: true, drive: "invalid" },
   { name: "disabled", expectations: MDY_CANONICAL_DISABLED, validators: false, drive: "disabled" },
   { name: "open", expectations: MDY_CANONICAL_OPEN, validators: false, drive: "open" },
+  // The roadmap's *programmatic update*: a value the form put there, not one the user typed.
+  { name: "filled", expectations: MDY_CANONICAL_FILLED_OBSERVATION, validators: false, drive: "filled" },
 ];
 
 describe.each(STATES.map((state) => [state.name, state] as const))(
@@ -114,6 +117,42 @@ describe("Angular renderers, dismissing an overlay from the keyboard", () => {
         canonicalWidgetSnapshot(fixture.root, kind as MdyWidgetKind, { value: fixture.value?.() }),
         MDY_CANONICAL_AFTER_ESCAPE[kind as MdyWidgetKind]!,
       )).toEqual(KNOWN_DIVERGENCES["after escape"]?.[kind as MdyWidgetKind] ?? []);
+      fixture.dispose();
+    },
+  );
+});
+
+/**
+ * The roadmap's *reset*: a widget given a value and then returned to the one it started with must
+ * look exactly as it did before it was ever touched.
+ *
+ * The one comparison that cannot be made from a single observation, because it is about two of them
+ * being the same. A renderer that leaves a class, an attribute or a stale display value behind
+ * passes every other check here — the state it is left in is legal, it is simply not the one it
+ * started in.
+ */
+describe("Angular renderers, reset to where they started", () => {
+  it.each(Object.keys(MDY_CANONICAL_AT_REST).map((kind) => [kind]))(
+    "%s returns to its resting observation",
+    async (kind) => {
+      const fixture = mountStateFixture(kind as MdyWidgetKind, { validators: false });
+      await fixture.settle();
+      const before = canonicalWidgetSnapshot(fixture.root, kind as MdyWidgetKind, {
+        value: fixture.value?.(),
+      });
+
+      expect(`${kind} fillable: ${fixture.drive("filled" as never)}`).toBe(`${kind} fillable: true`);
+      await fixture.settle();
+      expect(`${kind} clearable: ${fixture.drive("empty" as never)}`).toBe(`${kind} clearable: true`);
+      await fixture.settle();
+
+      const after = canonicalWidgetSnapshot(fixture.root, kind as MdyWidgetKind, {
+        value: fixture.value?.(),
+      });
+      expect(compareToCanonical(after, MDY_CANONICAL_AT_REST[kind as MdyWidgetKind]!))
+        .toEqual(KNOWN_DIVERGENCES["reset"]?.[kind as MdyWidgetKind] ?? []);
+      expect(after.parts.map((p) => p.part).sort())
+        .toEqual(before.parts.map((p) => p.part).sort());
       fixture.dispose();
     },
   );
