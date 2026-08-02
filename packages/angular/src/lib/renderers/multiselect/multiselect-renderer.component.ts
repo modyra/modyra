@@ -74,6 +74,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             [mdyPart]="openerPart()"
             [disabled]="isDisabled()"
             (click)="toggleOverlay($event)"
+            (keydown)="onOverlayKeydown($event)"
             [attr.aria-label]="i18n.searchOptionsLabel"
             [attr.aria-invalid]="hasErrors()"
             [attr.aria-describedby]="describedById(fieldId)"
@@ -284,10 +285,16 @@ export class MdyMultiselectComponent<TValue = string>
       activeKey: active ? this.optionKey(active.value) : null,
     });
     if (!action) return;
-    event.preventDefault();
+    // Tab keeps its native meaning: the list closes and the browser carries focus onward. Cancelling
+    // it leaves the user inside a panel being torn down.
+    if (event.key !== "Tab") event.preventDefault();
     if (action.type === "close") {
       this.closeOverlay();
-      this.hostRef.nativeElement.querySelector(".mdy-multiselect__search-btn")?.focus();
+      // The action says whether focus comes back. Escape hands it to the button that opened the
+      // list; Tab is already on its way elsewhere, and pulling it back traps the user in the field.
+      if (action.restoreFocus) {
+        this.hostRef.nativeElement.querySelector(".mdy-multiselect__search-btn")?.focus();
+      }
       return;
     }
     if (action.type === "open") {

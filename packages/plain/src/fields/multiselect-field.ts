@@ -9,7 +9,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, createMultiselectFieldController, multiselectChipClasses, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, multiselectOverlayAction, createMultiselectFieldController, multiselectChipClasses, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -153,10 +153,30 @@ export function renderMultiselectField(
 
   searchButton.addEventListener("click", () => dispatch({ type: "toggleOpen" }));
   search.addEventListener("input", () => dispatch({ type: "search", query: search.value }));
+  /**
+   * The keyboard policy is `multiselectOverlayAction`, not a handler here.
+   *
+   * This renderer answered **only Escape**: no opening, no Tab, no navigation. A list opened with a
+   * pointer could not be left with the keyboard except by Escape.
+   *
+   * `move` and `select` are **not** dispatched, and that is a real gap rather than an oversight:
+   * this renderer's controller has no active option to move — its intents are `toggle`,
+   * `increment` and `decrement` over the chips, with no cursor. Arrow-key navigation needs that
+   * cursor first, which is a controller change and its own batch. Opening, dismissing and yielding
+   * focus are wired now because they map exactly.
+   */
   const onKeydown = (event: KeyboardEvent): void => {
-    if (event.key !== "Escape" || !controller.state().open) return;
-    event.preventDefault();
-    dispatch({ type: "close", restoreFocus: true });
+    const state = controller.state();
+    const action = multiselectOverlayAction({
+      key: event.key,
+      open: state.open,
+      query: search.value,
+      activeKey: null,
+    });
+    if (!action || action.type === "move" || action.type === "select") return;
+    // Tab keeps its native meaning: the list closes and focus carries on to the next control.
+    if (event.key !== "Tab") event.preventDefault();
+    dispatch(action);
   };
   control.addEventListener("keydown", onKeydown);
   popup.addEventListener("keydown", onKeydown);

@@ -91,3 +91,70 @@ test("Tab closes the list and lets focus carry on", async ({ page }) => {
     message: "Tab must not restore focus to the field being left",
   }).toBeNull();
 });
+
+/**
+ * The multiselect, held to the same two rules.
+ *
+ * A separate widget with its own policy function — one commits and closes, the other keeps choosing
+ * — but a closed list has nothing to move through in either, and Tab means the same thing in both.
+ * Asserting them separately is what stops the two policies drifting into different keyboards.
+ */
+const MULTI = ".mdy-renderer--multiselect";
+const MULTI_OPENER = `${MULTI} .mdy-multiselect__search-btn`;
+
+const expectMultiOpen = (page: import("@playwright/test").Page, open: boolean) =>
+  expect(page.locator(MULTI_OPENER).first()).toHaveAttribute("aria-expanded", String(open));
+
+const multiFocusedPart = (page: import("@playwright/test").Page) =>
+  page.evaluate((sel) => {
+    const active = document.activeElement;
+    if (!active || !active.closest(sel)) return null;
+    return (active.className as string).split(" ").find((c) => c.startsWith("mdy-")) ?? "unknown";
+  }, MULTI);
+
+test.describe("multiselect", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator(MULTI_OPENER).first()).toBeVisible();
+    await page.locator(MULTI_OPENER).first().focus();
+  });
+
+  test("ArrowDown opens a closed list", async ({ page }) => {
+    await expectMultiOpen(page, false);
+    await page.keyboard.press("ArrowDown");
+    await expectMultiOpen(page, true);
+  });
+
+  test("ArrowUp does not open a closed list", async ({ page }) => {
+    await page.keyboard.press("ArrowUp");
+    await expectMultiOpen(page, false);
+  });
+
+  test("Escape closes and leaves focus inside the widget", async ({ page }) => {
+    await page.keyboard.press("ArrowDown");
+    await expectMultiOpen(page, true);
+
+    await page.keyboard.press("Escape");
+    await expectMultiOpen(page, false);
+    await expect.poll(() => multiFocusedPart(page), {
+      message: "Escape must not leave the user on the document body",
+    }).not.toBeNull();
+  });
+
+  test("Tab closes the list and lets focus carry on", async ({ page }) => {
+    await page.keyboard.press("ArrowDown");
+    await expectMultiOpen(page, true);
+
+    await page.keyboard.press("Tab");
+    await expectMultiOpen(page, false);
+
+    // Not "focus left the widget": a multiselect's chips are tabbable and are legitimately the next
+    // thing after its opener, so leaving is the wrong bar. What Tab must not do is *pull focus
+    // back* to the control the user was leaving — which is what cancelling the key would cause.
+    const onOpener = await page.evaluate(
+      (sel) => document.activeElement?.matches(sel) ?? false,
+      MULTI_OPENER,
+    );
+    expect(onOpener, "Tab must not restore focus to the opener it was leaving").toBe(false);
+  });
+});

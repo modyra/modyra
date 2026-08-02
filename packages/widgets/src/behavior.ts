@@ -343,7 +343,15 @@ export function multiselectOverlayAction(input: {
     End: "last",
   };
   const target = moves[key];
-  if (target) return { type: "move", target };
+  if (target) {
+    // A closed list has nothing to move through. `ArrowDown` reaches for the options and opens it;
+    // the others have nothing above or beyond a collapsed control to reach.
+    if (!open) return key === "ArrowDown" ? { type: "open" } : null;
+    return { type: "move", target };
+  }
+  // Tab closes and lets focus go where it was headed. A list left open follows the user to the next
+  // field, and focus pulled back traps them in the one they just left.
+  if (key === "Tab" && open) return { type: "close", restoreFocus: false };
   if (key === "Backspace" && query.length === 0) return { type: "search", query: "" };
   return null;
 }
