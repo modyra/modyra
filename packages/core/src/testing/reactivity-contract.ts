@@ -235,6 +235,52 @@ export function runReactivityContractTests(
     destroy();
   });
 
+  test(`${name}: a declared signalEquality is actually honoured`, async () => {
+    const { reactivity: rx, flushIfSupported, destroy } = createHarness();
+    if (rx.capabilities?.signalEquality !== true || rx.capabilities?.effects !== true) {
+      destroy();
+      return;
+    }
+
+    // Declaring the capability is the easy half. An adapter that accepts `equal` and drops it on the
+    // floor passes every other check here — the shape is right, the types are right, and the option
+    // is simply ignored. That is the "accepted but unhonoured option" this contract exists to make
+    // impossible to ship quietly.
+    const s = rx.signal("a", { equal: () => true });
+    let runs = 0;
+    rx.effect(() => { s(); runs++; });
+    await flushIfSupported();
+    const before = runs;
+
+    s.set("completely different");
+    await flushIfSupported();
+
+    assert.equal(s(), "a", "a comparator calling every value equal must suppress the write");
+    assert.equal(runs, before, "and must not notify anything that was watching");
+    destroy();
+  });
+
+  test(`${name}: a declared computedEquality is actually honoured`, async () => {
+    const { reactivity: rx, flushIfSupported, destroy } = createHarness();
+    if (rx.capabilities?.computedEquality !== true || rx.capabilities?.effects !== true) {
+      destroy();
+      return;
+    }
+
+    const source = rx.signal(1);
+    const c = rx.computed(() => source(), { equal: () => true });
+    let runs = 0;
+    rx.effect(() => { c(); runs++; });
+    await flushIfSupported();
+    const before = runs;
+
+    source.set(2);
+    await flushIfSupported();
+
+    assert.equal(runs, before, "a computed whose comparator calls every value equal must not notify");
+    destroy();
+  });
+
   test(`${name}: a destroyed scope stops the effects it owns`, async () => {
     const { reactivity: rx, flushIfSupported, destroy } = createHarness();
     if (!rx.createScope || rx.capabilities?.effects !== true) {
