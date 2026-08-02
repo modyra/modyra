@@ -37,6 +37,16 @@ const MIRROR_CASES = [
   { family: "suffix", widget: ".mdy-renderer--text", part: ".mdy-input-suffix" },
   { family: "daterange", widget: ".mdy-renderer--daterange", part: ".mdy-daterange__sep" },
   { family: "segmented", widget: ".mdy-renderer--segmented", part: ".mdy-segmented__button" },
+  { family: "datepicker", widget: ".mdy-renderer--datepicker", part: ".mdy-datepicker__toggle" },
+  { family: "timepicker", widget: ".mdy-renderer--timepicker", part: ".mdy-timepicker__toggle" },
+  { family: "colors", widget: ".mdy-renderer--colors", part: ".mdy-colors__toggle-area" },
+  { family: "multiselect", widget: ".mdy-renderer--multiselect", part: ".mdy-multiselect__search-btn" },
+  { family: "checkbox", widget: ".mdy-renderer--checkbox", part: ".mdy-checkbox__indicator" },
+  { family: "radio", widget: ".mdy-renderer--radio-group", part: ".mdy-radio-circle" },
+  { family: "slider", widget: ".mdy-renderer--slider", part: ".mdy-slider-value" },
+  { family: "file", widget: ".mdy-renderer--file", part: ".mdy-file-container" },
+  { family: "label", widget: ".mdy-renderer--text", part: ".mdy-label" },
+  { family: "errors", widget: ".mdy-renderer--text", part: ".mdy-control__errors" },
 ] as const;
 
 /**
@@ -45,7 +55,14 @@ const MIRROR_CASES = [
  * Asserted in both directions like every other ledger in this repo: an entry that starts mirroring
  * must be removed, so a fix cannot land silently and a regression cannot hide behind a stale note.
  */
-const NOT_YET_MIRRORED: Record<string, string> = {};
+const NOT_YET_MIRRORED: Record<string, string> = {
+  // Measured: the toggle sits 189px from the inline start in LTR and 181px from it in RTL — 8px
+  // further in. Its own padding, margin and corner radii are logical and do flip (4/12 becomes
+  // 12/4), so the remaining 8px belongs to something beside it inside the field, not to the button.
+  // Recorded rather than chased: the fixture has located it to within a single widget, which is
+  // what a batch needs to start from.
+  colors: "the toggle lands 8px inside where it should — a second physical rule in the colour field",
+};
 
 /**
  * Measured, and it corrected the guess this ledger was first written from.
