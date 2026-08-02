@@ -7,7 +7,7 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { acceptTimeField, stepTimeField, timeFieldBounds } from "../dist/index.js";
+import { acceptTimeField, dateWithinBounds as dateWithinBoundsSync, stepTimeField, timeFieldBounds } from "../dist/index.js";
 
 test("the hour's range depends on the clock, the minute's never does", () => {
   assert.deepEqual(timeFieldBounds("hour", "12h"), { min: 1, max: 12 });
@@ -82,4 +82,34 @@ test("stepping brings an out-of-range value back inside rather than refusing", (
   // move while the field is wrong.
   const landed = stepTimeField("hour", "12h", 99, 1);
   assert.ok(landed >= 1 && landed <= 12, `expected a valid hour, got ${landed}`);
+});
+
+/**
+ * The date side of the same question, and the reason it is in this file.
+ *
+ * `dateWithinBounds` is a public export of `@modyra/widgets` that **no renderer called**. The
+ * calendar bounds its own cells with `isDateInRange` over parsed dates, so the two took the same
+ * decision by different arithmetic — one lexicographic over strings, one structural — and only one
+ * of them was exercised by anything that ships.
+ */
+test("the exported date bound agrees with the one the calendar actually uses", async () => {
+  const { dateWithinBounds } = await import("../dist/index.js");
+  const { isDateInRange, parseIsoDate } = await import("../../core/dist/date-utils.js");
+
+  const cases = [
+    ["2026-07-27", "2026-01-01", "2026-12-31"],
+    ["2025-12-31", "2026-01-01", null],
+    ["2027-01-01", null, "2026-12-31"],
+    ["2026-01-01", "2026-01-01", "2026-01-01"],
+  ];
+  for (const [iso, min, max] of cases) {
+    const viaCalendar = isDateInRange(parseIsoDate(iso), parseIsoDate(min), parseIsoDate(max));
+    assert.equal(dateWithinBounds(iso, min, max), viaCalendar, `${iso} in ${min}..${max}`);
+  }
+});
+
+test("a malformed date is out of bounds whatever the bounds are", () => {
+  // The half a parsed comparison cannot make: there is nothing to compare.
+  assert.equal(dateWithinBoundsSync("not-a-date", null, null), false);
+  assert.equal(dateWithinBoundsSync("2026-13-01", null, null), false);
 });
