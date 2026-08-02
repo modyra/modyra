@@ -59,7 +59,7 @@ import { inputText } from "../renderer-projection";
     @if (!inlineErrors && touched() && hasErrors()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
-      <div class="mdy-supporting-text">
+      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     }

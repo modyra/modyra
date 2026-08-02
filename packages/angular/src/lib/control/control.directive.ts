@@ -284,15 +284,30 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   );
 
   /**
+   * The id the supporting-text element carries, or `null` when none is rendered.
+   *
+   * Bound as `[id]` on that element by every renderer that draws one. Without it the text is
+   * rendered, styled, and announced to nobody: a description no reference can reach is invisible to
+   * assistive technology however carefully it is worded.
+   */
+  protected descriptionId(fieldId: string): string | null {
+    // Rendered in the branch the error list does not occupy, so the two are never both present.
+    return !this.errorsRendered() && this.supportingText()
+      ? defaultWidgetIdFactory.part(fieldId, "description")
+      : null;
+  }
+
+  /**
    * The id for `aria-describedby`, or `null` when there is nothing rendered to name.
    *
-   * Takes the renderer's own `fieldId`, since each renderer mints one, and returns the id the error
-   * list actually carries. Supporting text carries no id here, so a control with no visible errors
-   * describes itself by nothing rather than by an id no element holds.
+   * Takes the renderer's own `fieldId`, since each renderer mints one. The error list wins where
+   * there is one, the supporting text answers otherwise, and a control with neither describes itself
+   * by nothing — never by an id no element holds.
    */
   protected describedById(fieldId: string): string | null {
-    // The shared factory, so this and the error list cannot spell the same relation two ways.
-    return this.errorsRendered() ? defaultWidgetIdFactory.part(fieldId, "errors") : null;
+    // The shared factory, so this and the elements it names cannot spell the same relation two ways.
+    if (this.errorsRendered()) return defaultWidgetIdFactory.part(fieldId, "errors");
+    return this.descriptionId(fieldId);
   }
 
   /**
