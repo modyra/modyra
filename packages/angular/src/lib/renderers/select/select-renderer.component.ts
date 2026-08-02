@@ -425,7 +425,10 @@ export class MdySelectComponent<TValue = string>
       createAvailable: this.showCreateOption(),
     });
     if (!action) return;
-    event.preventDefault();
+    // Tab keeps its native meaning: the list closes and the browser carries focus to the next
+    // control. Cancelling it leaves the user standing in a panel that is being torn down, and the
+    // overlay's focus rescue then pulls them back into the field they were trying to leave.
+    if (event.key !== "Tab") event.preventDefault();
     if (action.type === "create") {
       this.onCreateOption();
       return;
@@ -434,7 +437,10 @@ export class MdySelectComponent<TValue = string>
       this.openOverlay();
       return;
     }
-    if (action.type === "move" && !this.open()) this.openOverlay();
+    // No compensation here. `ArrowDown` on a closed list is answered by the contract with `open`,
+    // and this renderer used to open on a `move` it could not perform — which meant the keyboard
+    // worked while the policy that describes it was wrong, and a regression in the contract stayed
+    // invisible from the outside.
     this.selectAdapter.dispatch(action);
   }
 

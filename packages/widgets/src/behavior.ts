@@ -245,7 +245,12 @@ export type MdySelectKeyboardAction =
   | { readonly type: "open" }
   | { readonly type: "select"; readonly optionKey: string }
   | { readonly type: "create" }
-  | { readonly type: "close"; readonly restoreFocus: true };
+  /**
+   * `restoreFocus` is false when the key that closed the list is also taking focus somewhere else.
+   * Escape returns the user to the trigger; Tab is already on its way to the next control, and
+   * pulling focus back would trap them in the field they just left.
+   */
+  | { readonly type: "close"; readonly restoreFocus: boolean };
 
 /** Canonical select keyboard policy. The host only prevents the native event and executes the action. */
 export function selectKeyboardAction(input: {
@@ -264,9 +269,16 @@ export function selectKeyboardAction(input: {
   };
   const target = move[key];
   if (target && (!searchFocused || key === "ArrowDown" || key === "ArrowUp")) {
+    // A closed list has nothing to move through. `ArrowDown` on a collapsed combobox opens it —
+    // the authoring practices' behaviour, and what a user reaching for the list expects — rather
+    // than silently advancing an active option nobody can see.
+    if (!open) return key === "ArrowDown" ? { type: "open" } : null;
     return { type: "move", target };
   }
   if (key === "Escape" && open) return { type: "close", restoreFocus: true };
+  // Tab closes and lets focus go where it was headed. A list left open behind a user who has moved
+  // to the next control is a popup floating over a form they are no longer in.
+  if (key === "Tab" && open) return { type: "close", restoreFocus: false };
   if (key === "Enter") {
     if (createAvailable) return { type: "create" };
     if (!open) return { type: "open" };
