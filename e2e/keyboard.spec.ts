@@ -299,3 +299,66 @@ test.describe("segmented", () => {
     }).not.toBe(before);
   });
 });
+
+/**
+ * The file field, and the honest limit of what a browser test can ask of it.
+ *
+ * Opening the picker ends in a native OS dialog that Playwright cannot see, so "Enter opens the file
+ * chooser" is not assertable here and pretending otherwise would be a green that means nothing.
+ * What *is* assertable is everything up to that boundary: the affordance is reachable by keyboard,
+ * it is a real control rather than a decorated `div`, and the input it forwards to is not itself a
+ * tab stop competing with it.
+ */
+const FILE = ".mdy-renderer--file";
+
+test.describe("file", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator(FILE).first()).toBeVisible();
+  });
+
+  test("the browse affordance is reachable from the keyboard", async ({ page }) => {
+    const browse = page.locator(`${FILE} button:visible`).first();
+    await expect(browse).toBeVisible();
+    await browse.focus();
+    await expect(browse, "a dropzone nobody can tab to is a mouse-only control").toBeFocused();
+  });
+
+  test("the affordance is a real button, not a styled div", async ({ page }) => {
+    // The difference matters to a screen reader and to the keyboard: a `div` with a click handler
+    // announces nothing and receives no Enter.
+    const tag = await page.evaluate((sel) => {
+      const host = document.querySelector(sel);
+      const el = [...(host?.querySelectorAll("button") ?? [])].find((b) => (b as HTMLElement).offsetParent !== null);
+      return el?.tagName ?? null;
+    }, FILE);
+    expect(tag).toBe("BUTTON");
+  });
+
+  test("one affordance, and a recorded question about which element owns it", async ({ page }) => {
+    const stops = await page.evaluate((sel) => {
+      const host = document.querySelector(sel)!;
+      const input = host.querySelector<HTMLInputElement>('input[type="file"]');
+      const button = [...host.querySelectorAll("button")].find((b) => (b as HTMLElement).offsetParent !== null);
+      const tabbable = (el: HTMLElement | null | undefined) => {
+        if (!el) return false;
+        const cs = getComputedStyle(el);
+        return !el.hidden && cs.display !== "none" && cs.visibility !== "hidden" && el.tabIndex >= 0;
+      };
+      return { input: tabbable(input), button: tabbable(button) };
+    }, FILE);
+
+    // **Measured: both are tab stops.** The input is visually hidden by the clip technique, which
+    // deliberately keeps it focusable, and the button beside it forwards clicks to it. So a keyboard
+    // user meets the same affordance twice — once announced as "choose file", once as "Browse".
+    //
+    // Which one should own it is a decision, not a defect, and the two answers are both defensible:
+    // the contract's `label[for]` names the *input*, which argues the button should leave the tab
+    // order; but the button is the visible affordance and the only one a sighted keyboard user can
+    // see themselves land on. Recorded here with the measurement rather than settled unilaterally.
+    expect(
+      `input:${stops.input} button:${stops.button}`,
+      "if this changed, the duplicate tab stop was resolved — update the note above",
+    ).toBe("input:true button:true");
+  });
+});
