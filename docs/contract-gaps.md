@@ -388,3 +388,39 @@ description it actually computed. `e2e/screen-reader.spec.ts` now does.
 
 **This is E1's shape a third time**, and the sharpest statement of it: a rule that is correct, and a
 suite whose fixtures never reach the branch the rule guards, are indistinguishable from green.
+
+## I — The number field's spin buttons are styled, emitted, and declared nowhere
+
+**Observed.** Found by a guard added for a different reason.
+
+`PARENT_CANDIDATES` (`catalog.ts`) was keyed by `decrement` and `increment`. **No kind declares
+either part.** The keys had been looked up on every widget build since they were written and matched
+nothing, which is the failure mode that made a key check worth adding: a table entry that matches
+nothing is indistinguishable from one that is simply never needed.
+
+Deleting them is correct — but the reason they were written is not resolved by deleting them.
+`@modyra/angular` really does render spin buttons, through the opt-in
+`number-spin-buttons.directive.ts`:
+
+- they carry `mdy-spin-btn` and `mdy-spin-btn-up` / `--down`, so they wear the shared vocabulary;
+- `modyra.css:365` **styles them**, and four custom properties configure them;
+- the widget contract declares **no part** for either, so no anatomy, relation, state or equivalence
+  check has ever looked at them;
+- **no other renderer has them at all**;
+- they are `tabIndex = -1` and positioned with inline styles rather than by a theme rule.
+
+So they are the inverse of the audit's usual shape. Everything else here is *declared and wired to
+nothing*; this is **emitted and styled and declared by nothing** — invisible to the contract in the
+one direction the contract cannot see, because every audit starts from what the contract declares.
+
+**Not decided.** Three coherent answers and they are genuinely different products:
+
+1. **Declare them optional** on `number`. Then the contract covers them, Angular conforms, and the
+   other renderers stay conformant by not rendering them.
+2. **Take the Modyra classes off them.** If they are a host-level affordance rather than part of the
+   widget, they should not wear the shared vocabulary or be styled by the shared themes.
+3. **Drop the directive.** `<input type="number">` has native spinners; these are `tabIndex = -1`, so
+   they add a pointer affordance and no keyboard one.
+
+Whichever is chosen, the current state — styled by the theme, named by no contract, present in one
+renderer — is the one answer that is not defensible.

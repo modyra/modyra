@@ -89,7 +89,7 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
   requiredMarker: ["label"], inlineError: ["label"],
   prefix: ["inputWrapper"], suffix: ["inputWrapper"],
   control: ["dropzone", "inputWrapper", "track"], startControl: ["inputWrapper"], endControl: ["inputWrapper"], separator: ["inputWrapper"],
-  decrement: ["inputWrapper"], increment: ["inputWrapper"], trigger: ["inputWrapper"], toggle: ["inputWrapper"],
+  trigger: ["inputWrapper"], toggle: ["inputWrapper"],
   // The arrow may be drawn inside a button trigger or beside an input one; what the contract
   // requires is that it lives in the wrapper, and containment is transitive.
   arrow: ["inputWrapper", "trigger"], value: ["trigger", "inputWrapper"], placeholder: ["trigger", "inputWrapper"],
@@ -596,6 +596,41 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       presentation: ["mdy-colors", "mdy-colors__dropdown-header", "mdy-select__arrow"] ,
       required: ["hexInput", "nativePicker", "preview", "toggle"] }),
 });
+
+/**
+ * Every part name any kind declares — the only names the tables above may be keyed by.
+ *
+ * These three tables are keyed by part and are **deliberately partial**: most parts need no parent
+ * hint, are not shell parts, and carry no shell states, so a lookup that misses is an answer rather
+ * than a mistake. `PART_SEMANTICS` can throw on a miss because every part must have a semantic;
+ * these cannot, and typing them to a union is no better — the union would have to be derived from
+ * the catalogue these tables help build.
+ *
+ * What is left to get wrong is the other direction: a **key naming a part that does not exist**.
+ * A renamed or misspelled one goes on being looked up, never matching, and silently contributing
+ * nothing — the parent hint stops applying, the shell class stops being inherited, and the widget
+ * still renders, slightly differently, forever.
+ *
+ * So the check is on the keys, once, at load. It costs one pass over three small objects.
+ */
+const DECLARED_PART_NAMES: ReadonlySet<string> = new Set(
+  MDY_WIDGET_KINDS.flatMap((kind) => MDY_WIDGET_CONTRACTS[kind].structure.nodes.map((node) => node.part as string)),
+);
+
+for (const [table, keys] of [
+  ["PARENT_CANDIDATES", Object.keys(PARENT_CANDIDATES)],
+  ["SHELL_CLASS_FALLBACK", Object.keys(SHELL_CLASS_FALLBACK)],
+  ["MDY_SHELL_PART_STATES", Object.keys(SHARED_STATES)],
+] as const) {
+  const stale = keys.filter((key) => !DECLARED_PART_NAMES.has(key));
+  if (stale.length > 0) {
+    throw new RangeError(
+      `[modyra] ${table} is keyed by part(s) no kind declares: ${stale.join(", ")}. `
+      + `A key that matches nothing is looked up forever and contributes nothing — rename it to a `
+      + `real part or delete it.`,
+    );
+  }
+}
 
 export type MdyWidgetPart<K extends MdyWidgetKind> = keyof (typeof MDY_WIDGET_CONTRACTS)[K]["parts"] & string;
 
