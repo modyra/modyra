@@ -1243,6 +1243,7 @@
         "mdy-timepicker-segment-label"
       ],
       "aria": [
+        "aria-invalid",
         "aria-label"
       ],
       "selectors": [

@@ -12,6 +12,7 @@ import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.c
       <div class="mdy-timepicker-fields">
         <mdy-timepicker-segment
           unit="hour"
+          [format]="format()"
           [value]="hour()"
           [label]="i18n.timepickerHourLabel"
           [active]="focusedField() === 'hour'"
@@ -27,6 +28,7 @@ import { MdyTimepickerPeriodToggleComponent } from "./timepicker-period-toggle.c
 
         <mdy-timepicker-segment
           unit="minute"
+          [format]="format()"
           [value]="minute()"
           [label]="i18n.timepickerMinuteLabel"
           [active]="focusedField() === 'minute'"
