@@ -5,6 +5,15 @@ engine — a thin variant of `@modyra/react`: same `vanillaReactivity()` +
 `useSyncExternalStore` pattern, ported to `preact/hooks` and
 `preact/compat`.
 
+> **Headless.** This package renders no markup — you bring your own. Modyra's DOM conformance
+> suites (anatomy, state matrix, renderer equivalence) check the three adapters that *do* render;
+> they do not apply here, because there is no part to find and no rendered state to compare. What
+> this package promises — value, validation, error and lifecycle semantics — is checked by its own
+> suites and the shared reactivity capability tests. Accessibility and theming are yours;
+> `@modyra/widgets` exports the same projections, id policy and class vocabulary the rendering
+> adapters use, so your markup can be built from the contract rather than guessed.
+
+
 ```bash
 npm install @modyra/preact
 ```

@@ -9,7 +9,7 @@
 
 Modyra keeps form state, validation and operations in a framework-independent core. Adapters connect the same form model to Angular, React, Vue, Lit, Solid, Preact and Svelte.
 
-> **Project status:** Modyra is under active development and has not reached 1.0. The core engine and Angular integration currently receive the broadest coverage. Other adapters share the same conformance suite, but differ in UI coverage, SSR behavior and framework-specific integration depth. Pin versions in production and review release notes before upgrading.
+> **Project status:** Modyra is under active development and has not reached 1.0. The core engine and Angular integration currently receive the broadest coverage. The three adapters that render — Angular, Lit and Plain — share the same DOM conformance suite; the five headless ones render nothing and so are checked on semantics rather than markup ([what that means](#what-headless-means-for-conformance)). Adapters also differ in SSR behavior and framework-specific integration depth. Pin versions in production and review release notes before upgrading.
 
 [![CI](https://github.com/modyra/modyra/actions/workflows/ci.yml/badge.svg)](https://github.com/modyra/modyra/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@modyra/core)](https://www.npmjs.com/package/@modyra/core)
@@ -71,17 +71,39 @@ Validators are factories: use `required()` rather than `required`. Errors are re
 | [`@modyra/core`](packages/core) | Framework-independent form engine | Primary package, no framework runtime |
 | [`@modyra/widgets`](packages/widgets) | Headless interaction and accessibility controllers | Framework-independent |
 | [`@modyra/angular`](packages/angular) | Angular signals adapter and UI catalog | Broadest UI integration |
-| [`@modyra/react`](packages/react) | React adapter using `useSyncExternalStore` | Headless |
-| [`@modyra/vue`](packages/vue) | Vue reactivity adapter | Headless |
+| [`@modyra/react`](packages/react) | React adapter using `useSyncExternalStore` | Headless — renders nothing; no DOM conformance |
+| [`@modyra/vue`](packages/vue) | Vue reactivity adapter | Headless — renders nothing; no DOM conformance |
 | [`@modyra/lit`](packages/lit) | Lit adapter and custom elements | UI catalog available |
-| [`@modyra/solid`](packages/solid) | Solid signals adapter | Headless |
-| [`@modyra/preact`](packages/preact) | Preact adapter | Headless; see SSR note in its README |
-| [`@modyra/svelte`](packages/svelte) | Svelte store bridge | Headless |
+| [`@modyra/solid`](packages/solid) | Solid signals adapter | Headless — renders nothing; no DOM conformance |
+| [`@modyra/preact`](packages/preact) | Preact adapter | Headless — renders nothing; no DOM conformance. See SSR note in its README |
+| [`@modyra/svelte`](packages/svelte) | Svelte store bridge | Headless — renders nothing; no DOM conformance |
 | [`@modyra/zod`](packages/zod) | Zod schema adapter | Optional `zod` peer |
 | [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter | Vendor-neutral |
 | [`@modyra/styles`](packages/styles) | Shared CSS themes | Optional |
 
 Adapter capabilities and known differences are listed in the generated [reactivity capability matrix](docs/reactivity-capability-matrix.md).
+
+### What "headless" means for conformance
+
+Modyra's widget contract describes a rendered control: its parts, the relations between them, the
+classes a theme selects on, and how each part looks in every state. Three suites check an adapter
+against it — DOM anatomy, the state matrix, and renderer equivalence — and a fourth, the conformance
+CLI, runs them together.
+
+**Those suites apply to the three adapters that render**: `@modyra/angular`, `@modyra/lit` and
+`@modyra/plain`. Angular and Lit ship UI catalogs; Plain is the framework-free renderer.
+
+**`@modyra/react`, `@modyra/vue`, `@modyra/solid`, `@modyra/preact` and `@modyra/svelte` render
+nothing at all** — they bind the form engine to a framework's reactivity and you bring your own
+markup. There is no part for an anatomy check to find and no rendered state for a matrix to compare,
+so those three suites do not apply to them. That is the design, not a gap: what they *do* promise —
+value, validation, error and lifecycle semantics — is checked by their own suites and by the shared
+reactivity capability tests, on every one of the eight packages.
+
+The practical consequence when choosing: with a headless adapter, accessibility and theming are
+yours. `@modyra/widgets` exports the same projections, id policy and class vocabulary the rendering
+adapters use, so your markup can be built from the contract rather than guessed — but nothing checks
+that it was.
 
 ## Example: cancellable server validation
 
