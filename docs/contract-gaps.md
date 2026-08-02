@@ -16,9 +16,19 @@ The shape almost all of them share: **a rule that is declared, correct, and wire
 contract is in better shape than the things that check it, which is why most of these are invisible
 to a green suite.
 
-**Status.** A1, A3, B1, B2, B3, C5, E1, E2, G4 and H are fixed; F is partly fixed. **Open**: A2, C1,
-C2, C3, C4, C6, D, E3, F's part-keyed tables, G1, G2, G3. C1/C2 (the placement classes) and D
-(withdrawing a capability, which is a *major* change) are gated and deliberately untouched.
+**Status.** A1, A3, B1, B2, B3, C1, C3, C5, D, E1, E2, G1, G3, G4 and H are fixed; C2 and F are
+partly fixed. **Open**: A2, C2's unpainted classes, C4, C6, E3, F's part-keyed tables, G2 — none
+urgent, each with its reason recorded.
+
+**One new finding, in the tool that classifies contract changes.** `contract-diff` compared
+capabilities by iterating the *current* ones, so a withdrawn capability was never visited: the single
+change `contract-compatibility.md` calls major was the one its gate could not see. Its keyboard
+comparison also recorded `Object.keys` of an array — the indices `"0"`, `"1"` — so it knew how many
+keys a kind declared and never which. Both fixed, both falsified by mutation.
+
+That is the third instance of one lesson this session, after E1 and after a test written *in* this
+work that derived its expectation from the data it was checking: **a check is only as good as the set
+of candidates it considers.**
 
 ---
 
@@ -129,7 +139,7 @@ for a modal placement; `anchorOverlay` computes the same case as `viewport.heigh
 widget, given up on its anchor and centred, is a different height depending on which renderer drew
 it.
 
-## C1 — The `right` popup class exists in three spellings, none of them the contract's
+## C1 — The `right` popup class existed in three spellings, none of them the contract's — **fixed**
 
 **Observed.** `POPUP_PLACEMENT_STATES` (`catalog.ts:247`) declares `above`, `overlay` and `right` on
 all six popup kinds. For `right`:
@@ -146,7 +156,7 @@ recorded evidence that a renderer once emitted the contract's spelling and stopp
 `popupPlacementClass` exists because this happened once before, to `--above`, in two adapters at
 once. It has happened again to `--right`, in a case the function does not cover.
 
-## C2 — Eighteen popup placement classes declared, five styled
+## C2 — Eighteen popup placement classes declared, six styled — **derivation fixed, painting still open**
 
 **Observed.**
 
@@ -159,10 +169,17 @@ UNSTYLED  mdy-colors__dropdown--above        UNSTYLED  mdy-colors__dropdown--ove
           all six --right                              none styled
 ```
 
-`--above` is derived for six kinds and painted for one. A select that flips above its anchor carries
+**Now derived for all six kinds, including the range picker it silently got wrong** (see C1), and
+`--right` is derived at all for the first time. Painting is the half still open: the select gained the
+`--above` rule its anatomy wanted, because its popup is `search` then `listbox` exactly like the
+multiselect's and that widget has flipped its column for as long as the class existed. The remaining
+13 stay allowlisted with the reason stated — a placement class earns a rule only where the popup has
+an asymmetry to answer, and a calendar has nothing to flip.
+
+Historically: `--above` was derived for six kinds and painted for one. A select that flipped above its anchor carried
 a class no rule matches, so nothing about it adapts — the arrow still points the wrong way.
 
-## C3 — The runtime-capability contract has no enforcement path
+## C3 — The runtime-capability contract had no enforcement path — **fixed**
 
 **Observed.** `runtime.ts` states that the controller consults the capability report to avoid
 emitting commands that cannot be executed, focus during SSR being the named example. No controller
@@ -199,7 +216,7 @@ Two of the three symbols are unconsumed, not three.
 reader announces. `partsRequiringName` is used internally by `testing/dom-tests.ts`. None of the
 three is exported from `index.ts`, so an adapter writing its own checks cannot reach any of them.
 
-## D — Three declared capabilities carry no information
+## D — Three declared capabilities carried no information — **fixed (major)**
 
 **Observed.** `define()` (`catalog.ts:339`) hardcodes `keyboard: true` and `focus: true` for all
 seventeen kinds, and sets `dismissOnOutsidePointer` to exactly `overlay`. Verified: both distinct
@@ -294,7 +311,7 @@ bare `string`; both now take a kind.
 `MDY_SHELL_PART_STATES` are keyed by part names that differ per kind, so there is no single union to
 narrow them to without deriving one from the catalogue. Left as it is rather than half-done.
 
-## G1 — The opener-is-a-toggle rule is applied to openers that are text inputs
+## G1 — The opener-is-a-toggle rule was applied to openers that are text inputs — **fixed**
 
 **Observed**, and it has already produced a divergence.
 
@@ -325,7 +342,7 @@ declaration changed — changing it would move the ARIA relation off the element
 **Possible.** `ArrowDown` opens; `ArrowUp` is declared by neither the table nor the policy, and APG's
 combobox pattern specifies both. The two paths agree, so this is a gap rather than a disagreement.
 
-## G3 — `Space` is the Tab defect again, still open
+## G3 — `Space` was the Tab defect again — **fixed**
 
 **Observed.** The same two-paths shape as B1, and it survived that batch:
 
