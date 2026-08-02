@@ -16,9 +16,23 @@
  *   unstyled — the contract or a renderer has it, and no theme paints it
  *   dead — a theme styles it and no renderer emits it
  *
+ * Those three take their candidates from what renderers emit and what themes style. A class the
+ * **contract declares** that neither of them touches is in none of the three sets, so it produced no
+ * finding of any kind — which is where eleven declared popup placement classes sat while this audit
+ * exited 0. That is the fourth way:
+ *
+ *   unpainted — the contract declares it and no theme paints it
+ *
+ * Its candidates come from the contract instead, so it is the one category that can see a rule
+ * nobody has adopted. It is deliberately **not** phrased as "and no renderer emits it": emission is
+ * detected by scanning string literals, and a renderer that asks the contract for its classes —
+ * `rootClasses`, `partClasses` — writes no literal to find. Claiming those are unemitted would
+ * report a defect that is not there.
+ *
  * Findings are held in a versioned allowlist that may only ever shrink. A new off-contract class
  * fails `--check`; an allowlist entry that is no longer a finding is reported as stale, so the list
- * cannot quietly outlive what it was covering.
+ * cannot quietly outlive what it was covering. The unpainted set is allowlisted and gated the same
+ * way, under `_unpainted`, so a contract class that stops being painted cannot arrive unnoticed.
  *
  * Usage:
  *   node scripts/audit-contract-style-coverage.mjs          # report
@@ -206,31 +220,43 @@ for (const className of new Set([...emitted.keys(), ...styled.keys()])) {
 }
 findings.sort((a, b) => a.class.localeCompare(b.class));
 
-// Classes the contract names that nothing paints. Not a failure — a `mdy-renderer--text` hook exists
-// for consumers to style — but it is the other half of the picture, and the count belongs in the
-// report so it cannot drift upwards unnoticed.
+// Classes the contract names that nothing paints — the fourth category, and the only one whose
+// candidates come from the contract rather than from what is already in use. A declared class no
+// theme paints is a rule a renderer can adopt and see nothing happen.
 const unpainted = [...contract].filter((c) => !styled.has(c)).sort();
 
-const allowlist = (() => {
+const rawAllowlist = (() => {
   try {
-    const raw = JSON.parse(readFileSync(ALLOWLIST_PATH, "utf8"));
-    return new Set(Object.keys(raw).filter((k) => !k.startsWith("_")));
+    return JSON.parse(readFileSync(ALLOWLIST_PATH, "utf8"));
   } catch {
-    return new Set();
+    return {};
   }
 })();
+
+const allowlist = new Set(Object.keys(rawAllowlist).filter((k) => !k.startsWith("_")));
+const unpaintedAllowlist = rawAllowlist._unpainted ?? {};
 
 const fresh = findings.filter((f) => !allowlist.has(f.class));
 const stale = [...allowlist].filter((c) => !findings.some((f) => f.class === c)).sort();
 
+const freshUnpainted = unpainted.filter((c) => !(c in unpaintedAllowlist));
+const staleUnpainted = Object.keys(unpaintedAllowlist).filter((c) => !unpainted.includes(c)).sort();
+
 if (write) {
   const entries = Object.fromEntries(findings.map((f) => [f.class, { kind: f.kind, adapters: f.adapters, themes: f.themes }]));
+  // An existing reason is kept: it says *why* a declared class goes unpainted, which is the whole
+  // value of the entry and is not recoverable by measuring again.
+  const unpaintedEntries = Object.fromEntries(
+    unpainted.map((c) => [c, unpaintedAllowlist[c] ?? "unreviewed"]),
+  );
   writeFileSync(ALLOWLIST_PATH, `${JSON.stringify({
     _note: "Classes outside the widget contract. This list may only ever shrink: each batch contractualises some of it. Reseed with --write only when deliberately recording a new baseline.",
     _generated: `${findings.length} findings`,
+    _unpaintedNote: "Contract classes no theme paints, each with the reason it is acceptable. Same rule: may only ever shrink. 'unreviewed' means nobody has decided yet — it is a to-do, not a verdict.",
+    _unpainted: unpaintedEntries,
     ...entries,
   }, null, 2)}\n`);
-  console.log(`Wrote ${relative(ROOT, ALLOWLIST_PATH)} with ${findings.length} findings.`);
+  console.log(`Wrote ${relative(ROOT, ALLOWLIST_PATH)} with ${findings.length} findings and ${unpainted.length} unpainted contract classes.`);
   process.exit(0);
 }
 
@@ -250,7 +276,15 @@ for (const kind of ["drift", "unstyled", "dead"]) {
   console.log("");
 }
 
+console.log(`## unpainted — the contract declares it, no theme paints it: ${unpainted.length}`);
+for (const c of unpainted) {
+  const reason = unpaintedAllowlist[c];
+  console.log(`  ${reason === undefined ? "+" : " "} ${c}${reason ? `  — ${reason}` : ""}`);
+}
+console.log("");
+
 console.log(`Total off contract: ${findings.length}   allowlisted: ${findings.length - fresh.length}   new: ${fresh.length}   stale entries: ${stale.length}`);
+console.log(`Unpainted contract classes: ${unpainted.length}   allowlisted: ${unpainted.length - freshUnpainted.length}   new: ${freshUnpainted.length}   stale entries: ${staleUnpainted.length}`);
 
 if (check) {
   let failed = false;
@@ -262,6 +296,17 @@ if (check) {
   if (stale.length) {
     console.error(`\n${stale.length} allowlist entr(ies) no longer needed — remove them:`);
     for (const c of stale) console.error(`  ${c}`);
+    failed = true;
+  }
+  if (freshUnpainted.length) {
+    console.error(`\n${freshUnpainted.length} contract class(es) no theme paints and not allowlisted:`);
+    for (const c of freshUnpainted) console.error(`  ${c}`);
+    console.error("Paint it, stop declaring it, or record under _unpainted why it is acceptable.");
+    failed = true;
+  }
+  if (staleUnpainted.length) {
+    console.error(`\n${staleUnpainted.length} _unpainted entr(ies) now painted — remove them:`);
+    for (const c of staleUnpainted) console.error(`  ${c}`);
     failed = true;
   }
   if (failed) process.exit(1);

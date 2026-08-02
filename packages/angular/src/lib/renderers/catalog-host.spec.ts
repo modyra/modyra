@@ -23,7 +23,7 @@ import { Component, Injector, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { By } from "@angular/platform-browser";
 import type { MdyWidgetKind } from "@modyra/widgets";
-import { MDY_CANONICAL_EMPTY, type MdyStateFixture } from "@modyra/widgets/testing";
+import { findPartElement, MDY_CANONICAL_EMPTY, type MdyStateFixture } from "@modyra/widgets/testing";
 import { MdyDeclarativeAdapter } from "../core/declarative-form-adapter";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyPrefixDirective } from "../control/prefix.directive";
@@ -237,10 +237,9 @@ export function partsOf(
       return { ...shell, inputWrapper: q(".mdy-multiselect"), loading: q(".mdy-select__loader"), header: q(".mdy-multiselect__header"), searchButton: q(".mdy-multiselect__search-btn"), options: q(".mdy-multiselect__options"), optionWrapper: qa(".mdy-chip-wrapper"), option: qa(".mdy-chip"), optionLabel: qa(".mdy-chip__label"), popup: popupOf(root, ".mdy-multiselect__dropdown") };
     case "datepicker":
       return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: popupOf(root, ".mdy-datepicker__popup"), grid: popupOf(root, ".mdy-datepicker__popup")?.querySelector(".mdy-datepicker__grid") ?? null };
-    case "daterange": {
-      const inputs = root.querySelectorAll(".mdy-daterange__input");
-      return { ...shell, startControl: inputs[0] ?? null, endControl: inputs[1] ?? null, separator: q(".mdy-daterange__sep"), toggle: q(".mdy-datepicker__toggle"), popup: popupOf(root, ".mdy-datepicker__popup") };
-    }
+    case "daterange":
+      // Identical classes on both inputs, so the contract's declared order is what separates them.
+      return { ...shell, startControl: findPartElement(root, "daterange", "startControl"), endControl: findPartElement(root, "daterange", "endControl"), separator: q(".mdy-daterange__sep"), toggle: q(".mdy-datepicker__toggle"), popup: popupOf(root, ".mdy-datepicker__popup") };
     case "timepicker":
       return { ...shell, control: q(".mdy-timepicker__input"), toggle: q(".mdy-timepicker__toggle"), popup: popupOf(root, ".mdy-timepicker__popup") };
     case "file":
