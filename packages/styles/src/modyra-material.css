@@ -58,9 +58,29 @@
            chose. The short names below still bridge from here, so the zinc tints are unchanged.
 
            `error` is forced rather than derived: this theme wants its own red, which is exactly the
-           escape hatch the derivation leaves open. */
+           escape hatch the derivation leaves open.
+
+           `secondary` and `tertiary` are forced for a different reason, and the values are not
+           invented. Zinc's chroma measures 0.0059 — the OKLCH derivation *scales* the seed's chroma,
+           so scaling almost nothing leaves almost nothing: the secondary came out `#1b191c` and the
+           chip that paints from it measured **1.00:1 against `surface-container-highest`**, which is
+           to say the selected state was invisible.
+
+           Material 3 *assigns* chroma instead of scaling it — secondary is chroma 16 whatever the
+           seed — which is why an M3 palette looks like an M3 palette however neutral its source. So
+           a Material theme takes Material's answer: these are `deriveHctPalette("#18181b")` from
+           `@modyra/core/color-utils`, Google's own arithmetic rather than a colour someone picked.
+           A test asserts they still equal what that function returns, so they cannot drift from the
+           algorithm they claim to come from.
+
+           This buys back the *hue* — a selected chip is identifiably tinted rather than grey. It
+           does not on its own reach WCAG's 3:1 for non-text contrast, because the container tone is
+           an 80% white mix either way; that is a separate question about container tones, not about
+           the seed. */
         --mdy-sys-color-primary: #18181b;
         --mdy-sys-color-error: #dc2626;
+        --mdy-sys-color-secondary: #5b5d72;
+        --mdy-sys-color-tertiary: #77536d;
         --mdy-on-primary: #ffffff;
         --mdy-on-error: #ffffff;
 
