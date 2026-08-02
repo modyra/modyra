@@ -21,12 +21,13 @@ export function renderMultiselectField(
   handle: MdyFieldHandle<ReadonlyArray<unknown>>,
   reactivity: MdyReactivity = vanillaReactivity(),
   mode: "single" | "multi" = "single",
+  widgetId: string = f.name,
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("multiselect");
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
-  const controller = createMultiselectFieldController({ widgetId: f.name, handle, options, keyFor, mode }, reactivity);
+  const controller = createMultiselectFieldController({ widgetId: widgetId, handle, options, keyFor, mode }, reactivity);
 
   const parts = MDY_WIDGET_CONTRACTS.multiselect.parts;
   const shell = buildFieldShell(f.label, "multiselect");

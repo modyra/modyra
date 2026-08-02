@@ -33,7 +33,29 @@ export interface MountMdyFormOptions {
    * rather than silently dropping fields.
    */
   readonly layout?: ReadonlyArray<MdyDynamicLayoutNode>;
+  /**
+   * Scopes every id this form generates, so two forms can share a page.
+   *
+   * A widget id is otherwise the field name alone, and every generated id derives from it — the
+   * input's own id, `label[for]`, `aria-describedby`, `aria-errormessage`, the popup, and the radio
+   * group's `name`. Two forms built from the same field names therefore mint the same ids, and the
+   * second form's relationships silently resolve to the first form's elements. Neither form examined
+   * alone looks wrong, which is why only a page holding both can detect it.
+   *
+   * Unset is the default and leaves every id exactly as it would be without this option.
+   */
+  readonly idPrefix?: string;
 }
+
+/**
+ * Joins a prefix to a field name to form a widget id.
+ *
+ * A single character that neither part may contain, which is what makes two distinct prefixes
+ * provably unable to collide: the joiner's first occurrence always ends the prefix, so
+ * `p1 + name1 === p2 + name2` forces `p1 === p2`. Were the prefix allowed to contain it,
+ * `"a" + "b-c"` and `"a-b" + "c"` would be the same id.
+ */
+const ID_PREFIX_JOINER = "-";
 
 export interface MdyPlainForm {
   /** The real, running @modyra/core form backing every rendered field. */
@@ -54,7 +76,22 @@ export interface MdyPlainForm {
  * for two — a difference visible only by counting. A name carrying the id delimiter is the same
  * failure one level down, in the generated ids rather than the field list.
  */
-function assertMountableNames(fields: ReadonlyArray<MdyDynamicField>): void {
+function assertMountableNames(fields: ReadonlyArray<MdyDynamicField>, idPrefix: string | undefined): void {
+  if (idPrefix !== undefined) {
+    if (!isValidWidgetId(idPrefix)) {
+      throw new Error(
+        `mountMdyForm: idPrefix "${idPrefix}" must be non-empty and cannot contain "${MDY_ID_DELIMITER}" — ` +
+          `it separates the segments of a generated id.`,
+      );
+    }
+    if (idPrefix.includes(ID_PREFIX_JOINER)) {
+      throw new Error(
+        `mountMdyForm: idPrefix "${idPrefix}" cannot contain "${ID_PREFIX_JOINER}" — it joins the prefix to ` +
+          `the field name, and a prefix carrying it would let two different prefixes produce the same id.`,
+      );
+    }
+  }
+
   const seen = new Set<string>();
   for (const field of fields) {
     if (!isValidWidgetId(field.name)) {
@@ -75,7 +112,12 @@ export function mountMdyForm(
   fields: ReadonlyArray<MdyDynamicField>,
   options: MountMdyFormOptions = {},
 ): MdyPlainForm {
-  assertMountableNames(fields);
+  assertMountableNames(fields, options.idPrefix);
+
+  // The widget id is the identity a field's DOM is built from; the field name stays the data path.
+  // They are the same string unless the host scopes this form.
+  const widgetIdFor = (name: string): string =>
+    options.idPrefix === undefined ? name : `${options.idPrefix}${ID_PREFIX_JOINER}${name}`;
 
   container.replaceChildren();
   container.classList.add("mdy-dynamic-form", "mdy-plain-form");
@@ -93,7 +135,7 @@ export function mountMdyForm(
     const handle = fieldHandles[name];
     if (!field || !handle || rendered.has(name)) return;
     rendered.add(name);
-    disposers.push(renderField(target, field, handle, reactivity));
+    disposers.push(renderField(target, field, handle, reactivity, widgetIdFor(name)));
     // Name the root so a host can find a field's DOM without depending on child order —
     // which stops holding once a layout row nests fields inside it.
     const root = target.lastElementChild;

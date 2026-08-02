@@ -38,10 +38,10 @@ const OTHER_FIELDS = [
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-function mount(fields = FIELDS) {
+function mount(fields = FIELDS, options = {}) {
   const host = document.createElement("div");
   document.body.append(host);
-  const mounted = mountMdyForm(host, fields, { submitLabel: null });
+  const mounted = mountMdyForm(host, fields, { submitLabel: null, ...options });
   return { host, mounted };
 }
 
@@ -166,22 +166,95 @@ test("two forms with different field names coexist without sharing an id", async
   second.mounted.dispose();
 });
 
-test("two forms with the same field names mint the same ids", { todo: "needs the id scheme of task 07" }, async () => {
-  const first = mount(FIELDS);
-  const second = mount(FIELDS);
+// An id is what ties a control to its label, its description and its error list. Two forms built
+// from the same field names mint the same ids unless one of them is scoped, and then the second
+// form's `label[for]`, `aria-describedby` and `aria-errormessage` all resolve to the *first* form's
+// elements — while nothing about either form, examined alone, looks wrong.
+test("two forms with the same field names collide unless one is scoped", async () => {
+  const unscopedFirst = mount(FIELDS);
+  const unscopedSecond = mount(FIELDS);
   await settle();
 
-  // An id is what ties a control to its label, its description and its error list. Two forms
-  // built from the same field names produce the same ids, so the second form's `label[for]`,
-  // `aria-describedby` and `aria-errormessage` all resolve to the *first* form's elements — and
-  // nothing about either form, examined alone, looks wrong.
-  //
-  // A widget id is the field name and nothing else, so this cannot be closed inside a renderer:
-  // it needs an instance-scoped id, which redefines every generated id in the public DOM.
-  assert.deepEqual(inspectCoexistence(idsUnder(first.host), idsUnder(second.host)), []);
+  // The defect the option exists for. Asserted rather than assumed, so the scoped case below is
+  // known to be closing something real.
+  const collision = inspectCoexistence(idsUnder(unscopedFirst.host), idsUnder(unscopedSecond.host));
+  assert.equal(collision.length, 1);
+  assert.equal(collision[0].code, "ID_COLLIDED_ACROSS_INSTANCES");
+
+  unscopedFirst.mounted.dispose();
+  unscopedSecond.mounted.dispose();
+
+  const first = mount(FIELDS);
+  const second = mount(FIELDS, { idPrefix: "second" });
+  await settle();
+
+  assert.deepEqual(
+    inspectCoexistence(idsUnder(first.host), idsUnder(second.host)),
+    [],
+    "a shared id points one instance's relationships at the other instance's DOM",
+  );
 
   first.mounted.dispose();
   second.mounted.dispose();
+});
+
+test("a scoped form still resolves its own relationships", async () => {
+  const { host, mounted } = mount(FIELDS, { idPrefix: "scoped" });
+  await settle();
+
+  // Scoping is only worth anything if the relationships still land. Every IDREF the form emits
+  // must name an element inside the form that emitted it — a prefix applied to the ids but not to
+  // the references would leave a form whose parts point nowhere, and every id-uniqueness check
+  // above would still pass.
+  const IDREF_ATTRIBUTES = ["for", "aria-describedby", "aria-errormessage", "aria-labelledby", "aria-controls", "aria-activedescendant"];
+  const dangling = [];
+  for (const element of host.querySelectorAll("*")) {
+    for (const attribute of IDREF_ATTRIBUTES) {
+      const value = element.getAttribute(attribute);
+      if (!value) continue;
+      for (const id of value.split(/\s+/)) {
+        if (document.getElementById(id) === null) dangling.push(`${attribute}="${id}"`);
+      }
+    }
+  }
+  assert.deepEqual(dangling, [], "a scoped form references ids that do not exist");
+
+  // And the scope is actually applied, rather than the option being accepted and ignored.
+  const scopedIds = [...idsUnder(host)];
+  assert.ok(scopedIds.length > 0);
+  assert.ok(
+    scopedIds.every((id) => id.startsWith("scoped-")),
+    `unscoped id(s): ${scopedIds.filter((id) => !id.startsWith("scoped-")).join(", ")}`,
+  );
+
+  mounted.dispose();
+});
+
+test("no prefix leaves every id exactly as it was", async () => {
+  const { host, mounted } = mount(FIELDS);
+  await settle();
+
+  // The option is additive, and this is the half that says so: the default mount is the one every
+  // other suite in this package asserts against, and it must not have moved.
+  const ids = [...idsUnder(host)].sort();
+  assert.ok(ids.includes("name"), `the input's own id is the field name: ${ids.join(", ")}`);
+  assert.ok(ids.includes("name__label"));
+  assert.ok(ids.includes("name__errors"));
+
+  mounted.dispose();
+});
+
+test("a prefix that would make ids ambiguous is refused at the boundary", () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+
+  // Both rules exist to keep a generated id unambiguous, so both are enforced where the form is
+  // built rather than discovered as a duplicate id somewhere in the document.
+  assert.throws(() => mountMdyForm(host, FIELDS, { idPrefix: "a__b" }), /idPrefix/);
+  assert.throws(() => mountMdyForm(host, FIELDS, { idPrefix: "a-b" }), /idPrefix/);
+  assert.throws(() => mountMdyForm(host, FIELDS, { idPrefix: "" }), /idPrefix/);
+
+  host.remove();
 });
 
 test("a remount reuses the ids the unmount gave back", async () => {
