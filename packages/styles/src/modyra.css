@@ -1370,6 +1370,20 @@
         background: color-mix(in srgb, var(--mdy-input-focus-color), transparent 95%);
     }
 
+    /* A file field showed neither of its two unusable states: a disabled dropzone looked exactly
+       like a usable one and an invalid one looked exactly like a valid one, in every theme. Reached
+       structurally, from the native control, because this kind's wrapper is its own class and not
+       `mdy-input-wrapper` — the same way the checkbox and the slider reach theirs. */
+    .mdy-file-container:has(.mdy-file-input:disabled) {
+        opacity: var(--mdy-disabled-opacity, 0.5);
+        cursor: not-allowed;
+        background: var(--mdy-input-disabled-bg, var(--mdy-file-container-bg));
+    }
+
+    .mdy-file-container:has(.mdy-file-input[aria-invalid="true"]) {
+        border-color: var(--mdy-error-color);
+    }
+
     .mdy-file-input {
         position: absolute;
         width: 1px;
