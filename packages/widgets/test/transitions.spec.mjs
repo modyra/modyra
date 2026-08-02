@@ -12,6 +12,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  MDY_POPUP_OPENERS,
   MDY_WIDGET_CONTRACTS,
   MDY_WIDGET_TRANSITIONS,
   overlayLifecycleTransition,
@@ -35,12 +36,23 @@ test("exactly the overlay kinds declare transitions", () => {
   }
 });
 
-test("the opener toggles: it opens a closed overlay and closes an open one", () => {
+test("the opener toggles, unless it is the control the user types into", () => {
+  // Named, not read off the catalogue — see the `typeable` test below for why.
+  const CLOSES_ON_ITS_OPENER = ["select", "multiselect", "daterange", "colors"];
   for (const kind of OVERLAY_KINDS) {
+    const typeable = !CLOSES_ON_ITS_OPENER.includes(kind);
     for (const from of ["closed", "open"]) {
       const declared = transitionsFrom(kind, from).find((t) => t.trigger.type === "pointer");
-      assert.ok(declared, `${kind}: no pointer transition from ${from}`);
 
+      // A press in a text field places the caret. Closing the calendar in answer takes the field
+      // away at the moment the user reached for it, so the kinds whose opener is their control
+      // declare no pointer transition out of `open` — the toggle button beside it is the switch.
+      if (from === "open" && typeable) {
+        assert.equal(declared, undefined, `${kind}: a typeable opener must not close on a pointer`);
+        continue;
+      }
+
+      assert.ok(declared, `${kind}: no pointer transition from ${from}`);
       const actual = overlayLifecycleTransition(
         { open: from === "open" },
         { type: "toggle", disabled: false, available: true },
@@ -51,6 +63,76 @@ test("the opener toggles: it opens a closed overlay and closes an open one", () 
         `${kind}: toggling from ${from} disagrees with the contract`,
       );
     }
+  }
+});
+
+/**
+ * Every opener opens. Only the ones that are not text fields also close.
+ *
+ * Stated separately because the rule above now has an exception, and an exception is exactly where a
+ * table stops being checked: without this, declaring every opener typeable would leave the suite
+ * green on a contract where no pointer opened anything.
+ */
+test("a pointer on the opener opens a closed overlay, on every kind", () => {
+  for (const kind of OVERLAY_KINDS) {
+    const declared = transitionsFrom(kind, "closed").find((t) => t.trigger.type === "pointer");
+    assert.ok(declared, `${kind}: nothing opens it with a pointer`);
+    assert.equal(declared.trigger.part, MDY_POPUP_OPENERS[kind].opener, kind);
+    assert.equal(declared.to, "open", kind);
+  }
+});
+
+/**
+ * `typeable` is pinned to the anatomy, not taken on trust.
+ *
+ * Everything below reads `typeable` to decide what to expect, so on its own none of it can catch the
+ * flag being *wrong*: marking every opener typeable satisfied the whole suite, because each
+ * expectation moved with the declaration. A rule derived from the data it is checking is not a check
+ * — the same thing this file's own header says about the transition table.
+ *
+ * So it is tied to something independent. `control` is the part that holds the field's typed value —
+ * the one a `label[for]` names and the user edits — and the kinds whose opener *is* that part are
+ * exactly the kinds where a press is a caret and a space is a space. A future kind that opens from
+ * some other text field is a deliberate change to this line, not a silent one.
+ */
+test("a kind is typeable exactly when its opener is the field's own control", () => {
+  for (const kind of OVERLAY_KINDS) {
+    const opener = MDY_POPUP_OPENERS[kind];
+    assert.equal(
+      opener.typeable === true,
+      opener.opener === "control",
+      `${kind}: opener is "${opener.opener}" but typeable is ${opener.typeable === true}`,
+    );
+  }
+});
+
+/**
+ * Space opens the kinds whose opener is a button, and is left to the text field on the others.
+ *
+ * The keyboard policy has opened on Space for as long as it has existed while this table claimed the
+ * key for nothing — the same disagreement Tab had. A widget that opened its calendar on the space
+ * bar could not accept "12 March".
+ */
+test("Space opens an overlay unless its opener is typed into", () => {
+  // Named rather than derived, for the reason above: this is the list the behaviour is asserted
+  // against, so it has to be able to disagree with the catalogue.
+  const OPENS_ON_SPACE = ["select", "multiselect", "daterange", "colors"];
+  const LEAVES_SPACE_ALONE = ["datepicker", "timepicker"];
+  assert.deepEqual(
+    [...OPENS_ON_SPACE, ...LEAVES_SPACE_ALONE].sort(),
+    [...OVERLAY_KINDS].sort(),
+    "every overlay kind must appear in exactly one of the two lists",
+  );
+
+  for (const kind of OPENS_ON_SPACE) {
+    assert.deepEqual(widgetKeyIntent(kind, " ", false), { type: "open" }, `${kind}: Space should open`);
+  }
+  for (const kind of LEAVES_SPACE_ALONE) {
+    assert.equal(widgetKeyIntent(kind, " ", false), null, `${kind}: Space belongs to the text field`);
+  }
+  // Space never claims an open overlay: what it does there belongs to whatever has focus inside.
+  for (const kind of OVERLAY_KINDS) {
+    assert.equal(widgetKeyIntent(kind, " ", true), null, `${kind}: Space while open`);
   }
 });
 
