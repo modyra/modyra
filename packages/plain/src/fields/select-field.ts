@@ -8,7 +8,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, createSelectController, fieldShellPartIds, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, selectKeyboardAction, createSelectController, fieldShellPartIds, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -138,36 +138,31 @@ export function renderSelectField(
   trigger.addEventListener("focusout", onFocusOut);
   popup.addEventListener("focusout", onFocusOut);
   search.addEventListener("input", () => dispatch({ type: "search", query: search.value }));
+  /**
+   * The keyboard policy is `selectKeyboardAction`, not a switch here.
+   *
+   * This renderer had its own, and it disagreed with the contract in ways only a user would notice:
+   * `ArrowDown` on a closed list advanced an active option nobody could see instead of opening it,
+   * and `Tab` left the list hanging open over the next field. A key handler per renderer is three
+   * keyboards that happen to agree on the easy keys.
+   */
   const onKeydown = (event: KeyboardEvent): void => {
-    switch (event.key) {
-      case "ArrowDown":
-        event.preventDefault();
-        dispatch({ type: "move", target: "next" });
-        break;
-      case "ArrowUp":
-        event.preventDefault();
-        dispatch({ type: "move", target: "previous" });
-        break;
-      case "Home":
-        event.preventDefault();
-        dispatch({ type: "move", target: "first" });
-        break;
-      case "End":
-        event.preventDefault();
-        dispatch({ type: "move", target: "last" });
-        break;
-      case "Enter": {
-        const activeKey = controller.state().activeKey;
-        if (activeKey) {
-          event.preventDefault();
-          dispatch({ type: "select", optionKey: activeKey });
-        }
-        break;
-      }
-      case "Escape":
-        dispatch({ type: "close", restoreFocus: true });
-        break;
-    }
+    const state = controller.state();
+    const action = selectKeyboardAction({
+      key: event.key,
+      open: state.open,
+      searchFocused: event.target === search,
+      activeKey: state.activeKey,
+      createAvailable: false,
+    });
+    if (!action) return;
+    // Tab must keep its native meaning — the list closes and focus carries on to the next control.
+    if (event.key !== "Tab") event.preventDefault();
+    // The intent records *how* the list was opened, which the action does not carry: it answers
+    // what to do, and this answers who asked. `create` is not offered by this renderer — it has no
+    // "add this option" affordance — so the contract never returns it here.
+    if (action.type === "create") return;
+    dispatch(action.type === "open" ? { type: "open", source: "keyboard" } : action);
   };
   trigger.addEventListener("keydown", onKeydown);
   search.addEventListener("keydown", onKeydown);

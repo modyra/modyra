@@ -25,7 +25,15 @@ test("option navigation resolves roving indices in Widgets", () => {
 });
 
 test("select keyboard policy resolves host actions without Angular", () => {
-  assert.deepEqual(selectKeyboardAction({ key: "ArrowDown", open: false, searchFocused: false, activeKey: null, createAvailable: false }), { type: "move", target: "next" });
+  // A closed list has nothing to move through: `ArrowDown` opens it, which is what the contract
+  // states and what a user reaching for the options expects. This asserted `move` before, which is
+  // an action on options nobody can see.
+  assert.deepEqual(selectKeyboardAction({ key: "ArrowDown", open: false, searchFocused: false, activeKey: null, createAvailable: false }), { type: "open" });
+  assert.equal(selectKeyboardAction({ key: "ArrowUp", open: false, searchFocused: false, activeKey: null, createAvailable: false }), null, "ArrowUp does not open a closed list");
+  assert.deepEqual(selectKeyboardAction({ key: "ArrowDown", open: true, searchFocused: false, activeKey: null, createAvailable: false }), { type: "move", target: "next" });
+  // Tab closes and lets focus continue; Escape closes and hands it back.
+  assert.deepEqual(selectKeyboardAction({ key: "Tab", open: true, searchFocused: false, activeKey: null, createAvailable: false }), { type: "close", restoreFocus: false });
+  assert.equal(selectKeyboardAction({ key: "Tab", open: false, searchFocused: false, activeKey: null, createAvailable: false }), null, "Tab through a closed field is not the widget's business");
   assert.deepEqual(selectKeyboardAction({ key: "Enter", open: false, searchFocused: false, activeKey: null, createAvailable: false }), { type: "open" });
   assert.deepEqual(selectKeyboardAction({ key: "Enter", open: true, searchFocused: false, activeKey: "it", createAvailable: false }), { type: "select", optionKey: "it" });
   assert.deepEqual(selectKeyboardAction({ key: "Enter", open: true, searchFocused: true, activeKey: null, createAvailable: true }), { type: "create" });
