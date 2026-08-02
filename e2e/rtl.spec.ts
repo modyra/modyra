@@ -23,7 +23,13 @@ import { expect, test } from "@playwright/test";
  * measure. It is the instrument the rest of this task is built on, not a claim that RTL works.
  */
 
-/** Families in the order §10 lists them, cheapest first, with the part whose position carries it. */
+/**
+ * Families in the order §10 lists them, cheapest first, with the part whose position carries it.
+ *
+ * `widget` documents which kind each part belongs to; the measurement finds the part itself and uses
+ * its own enclosing renderer, so a part living on a control other than the first of its kind is
+ * still measured.
+ */
 const MIRROR_CASES = [
   { family: "toggle", widget: ".mdy-renderer--toggle", part: ".mdy-toggle__thumb" },
   { family: "select", widget: ".mdy-renderer--select", part: ".mdy-select__arrow" },
@@ -39,9 +45,7 @@ const MIRROR_CASES = [
  * Asserted in both directions like every other ledger in this repo: an entry that starts mirroring
  * must be removed, so a fix cannot land silently and a regression cannot hide behind a stale note.
  */
-const NOT_YET_MIRRORED: Record<string, string> = {
-  select: "the arrow keeps its left offset — 4 physical declarations on the trigger and arrow",
-};
+const NOT_YET_MIRRORED: Record<string, string> = {};
 
 /**
  * Measured, and it corrected the guess this ledger was first written from.
@@ -57,14 +61,30 @@ const NOT_YET_MIRRORED: Record<string, string> = {
  * translate, a float. Counting declarations finds the first kind and the second equally.
  *
  * So the plan's §10 batching order, which was drawn from that same reasoning, is not the order the
- * work is actually in. `select` is the one measured failure here.
+ * work is actually in.
+ *
+ * `select` was the one measured failure, and it fits the rule exactly: its arrow is *absolutely*
+ * positioned, so the flow cannot re-order it the way it re-orders a flex child — it stays on
+ * whichever physical edge was named. `right: 0.75rem` became `inset-inline-end`, and the ledger is
+ * empty for the six families measured here.
  */
 
-/** Offset of `part` from `widget`, measured from both inline edges. */
+/**
+ * Offset of `part` from its widget, measured from both inline edges.
+ *
+ * It takes the first widget **of that kind which actually contains the part**, and both simpler
+ * rules were wrong in ways that hid themselves:
+ *
+ * - *First widget of the kind* skipped `prefix` and `suffix` entirely, because the demo carries them
+ *   on a text field that is not the first one. A skip reads exactly like "nothing to measure".
+ * - *First part anywhere on the page* measured the colour picker, whose markup includes both a
+ *   `.mdy-select__arrow` and a `.mdy-input-suffix`. That one is worse: it reported confidently about
+ *   the wrong widget.
+ */
 async function insets(page: import("@playwright/test").Page, widget: string, part: string) {
   return page.evaluate(
     ([w, p]) => {
-      const host = document.querySelector(w);
+      const host = [...document.querySelectorAll(w)].find((el) => el.querySelector(p));
       const el = host?.querySelector(p);
       if (!host || !el) return null;
       const a = host.getBoundingClientRect();
@@ -95,7 +115,7 @@ test.describe("RTL", () => {
       await page.goto("/");
       await page.evaluate(() => document.documentElement.setAttribute("dir", "ltr"));
       const ltr = await insets(page, widget, part);
-      test.skip(ltr === null, `${family}: ${part} is not in the demo, nothing to measure`);
+      test.skip(ltr === null, `${family}: no ${widget} in the demo carries ${part}`);
 
       await page.evaluate(() => document.documentElement.setAttribute("dir", "rtl"));
       const rtl = await insets(page, widget, part);

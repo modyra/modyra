@@ -945,7 +945,10 @@
  */
     .mdy-input-wrapper .mdy-select__arrow {
         position: absolute;
-        right: 0.75rem;
+        /* Logical, not `right`. This one is absolutely positioned, so the flow cannot re-order it
+           the way it re-orders a flex child — it stays where it is told, on whichever physical edge
+           was named. Under `dir=rtl` that put the arrow on the wrong side of the trigger. */
+        inset-inline-end: 0.75rem;
         top: 0;
         bottom: 0;
         margin: auto 0;
@@ -1966,7 +1969,7 @@
     }
 
     .mdy-select__arrow {
-        margin-left: 0.5rem;
+        margin-inline-start: 0.5rem;
         width: 1rem;
         height: 1rem;
         color: var(--mdy-select-arrow-color);
