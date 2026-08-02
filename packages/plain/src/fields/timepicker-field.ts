@@ -10,7 +10,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDateField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, createTimepickerFieldController, overlayAnchoringFor, timepickerDialNumbers, timepickerSelectedDialValue, type MdyElementLookup, overlayControlledId } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, acceptTimeField, createTimepickerFieldController, stepTimeField, timeFieldBounds, overlayAnchoringFor, timepickerDialNumbers, timepickerSelectedDialValue, type MdyElementLookup, overlayControlledId } from "@modyra/widgets";
 import { hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/time-utils";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -134,16 +134,58 @@ export function renderTimepickerField(
     if (parsed.period) dispatch({ type: "set-period", period: parsed.period });
     dispatch({ type: "confirm" });
   });
-  hourInput.addEventListener("input", () => {
-    const hour = Number(hourInput.value);
-    if (Number.isFinite(hour)) dispatch({ type: "set-hour", hour });
-  });
-  hourInput.addEventListener("focus", () => dispatch({ type: "focus-field", field: "hour" }));
-  minuteInput.addEventListener("input", () => {
-    const minute = Number(minuteInput.value);
-    if (Number.isFinite(minute)) dispatch({ type: "set-minute", minute });
-  });
-  minuteInput.addEventListener("focus", () => dispatch({ type: "focus-field", field: "minute" }));
+  /**
+   * A typed segment, judged against the range the contract states for it.
+   *
+   * `Number.isFinite` accepted `25` and `61` and handed them on, so an impossible time was dropped
+   * somewhere downstream with nothing on screen to say the entry was wrong. The rejection carries
+   * its reason and its bounds, so the box can say what it expected.
+   */
+  const bindSegment = (
+    input: HTMLInputElement,
+    field: "hour" | "minute",
+    apply: (value: number) => void,
+  ): void => {
+    const bounds = () => timeFieldBounds(field, format);
+    input.min = String(bounds().min);
+    input.max = String(bounds().max);
+
+    input.addEventListener("input", () => {
+      const entry = acceptTimeField(field, format, input.value);
+      if (entry.type === "accepted") {
+        input.removeAttribute("aria-invalid");
+        input.removeAttribute("title");
+        apply(entry.value);
+        return;
+      }
+      // An empty box is being cleared, not asserted: it is not an error until it is left.
+      if (input.value.trim().length === 0) {
+        input.removeAttribute("aria-invalid");
+        return;
+      }
+      input.setAttribute("aria-invalid", "true");
+      input.title = `${bounds().min}–${bounds().max}`;
+    });
+
+    // Stepping wraps, which is the other half of the same contract: an arrow key scans the range
+    // rather than asserting a value, so the end of it is not a wall.
+    input.addEventListener("keydown", (event) => {
+      const delta = event.key === "ArrowUp" ? 1 : event.key === "ArrowDown" ? -1 : 0;
+      if (delta === 0) return;
+      event.preventDefault();
+      const current = acceptTimeField(field, format, input.value);
+      const from = current.type === "accepted" ? current.value : bounds().min;
+      const next = stepTimeField(field, format, from, delta);
+      input.value = String(next);
+      input.removeAttribute("aria-invalid");
+      apply(next);
+    });
+
+    input.addEventListener("focus", () => dispatch({ type: "focus-field", field }));
+  };
+
+  bindSegment(hourInput, "hour", (hour) => dispatch({ type: "set-hour", hour }));
+  bindSegment(minuteInput, "minute", (minute) => dispatch({ type: "set-minute", minute }));
   periodButton.addEventListener("click", () => dispatch({ type: "set-period", period: controller.state().draft.period === "AM" ? "PM" : "AM" }));
   confirmButton.addEventListener("click", () => dispatch({ type: "confirm" }));
   cancelButton.addEventListener("click", () => dispatch({ type: "cancel" }));
