@@ -6,7 +6,7 @@
  * kind-specific projections call it too, which is what keeps one answer to a relation that appears
  * on six kinds and three adapters.
  */
-import { MDY_POPUP_OPENERS } from "./catalog.js";
+import { MDY_POPUP_OPENERS, type MdyWidgetKind } from "./catalog.js";
 import type { MdyPartContract } from "./contract.js";
 import { defaultWidgetIdFactory as idFactory } from "./ids.js";
 
@@ -24,7 +24,7 @@ export interface MdyOverlayOpenerA11yOptions {
  * overlay at all.
  */
 export function projectOverlayOpenerA11y(
-  kind: string,
+  kind: MdyWidgetKind,
   options: MdyOverlayOpenerA11yOptions,
 ): MdyPartContract | null {
   const relation = MDY_POPUP_OPENERS[kind];
@@ -40,7 +40,7 @@ export function projectOverlayOpenerA11y(
 }
 
 /** The id the opener names, for a renderer that has to put it on the controlled element. */
-export function overlayControlledId(kind: string, widgetId: string): string | null {
+export function overlayControlledId(kind: MdyWidgetKind, widgetId: string): string | null {
   const relation = MDY_POPUP_OPENERS[kind];
   return relation ? idFactory.part(widgetId, relation.controls) : null;
 }
