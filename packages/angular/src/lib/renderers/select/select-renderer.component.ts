@@ -111,7 +111,11 @@ import { MdyDropdownBase } from "../dropdown-base";
           @if (effectiveLoading()) {
             <mdy-icon name="LOADER" class="mdy-select__loader" />
           } @else {
-            <mdy-icon name="CHEVRON_DOWN" class="mdy-select__arrow" />
+            <mdy-icon
+              name="CHEVRON_DOWN"
+              class="mdy-select__arrow"
+              [class.mdy-select__arrow--open]="open()"
+            />
           }
           @if (suffix(); as s) {
             <div class="mdy-input-suffix">

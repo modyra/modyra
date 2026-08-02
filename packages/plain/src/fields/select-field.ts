@@ -209,6 +209,9 @@ export function renderSelectField(
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
 
     setOverlayOpen(popup, state.open);
+    // The chevron points down when closed and up when open — the stylesheet has always carried the
+    // rotation, and the select was the one overlay kind that never asked for it.
+    arrow.classList.toggle("mdy-select__arrow--open", state.open);
     if (state.open) {
       positionOverlay(popup, shell.wrapper, anchoring);
       queueMicrotask(() => search.focus());

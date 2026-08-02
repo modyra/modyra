@@ -1014,6 +1014,7 @@
         "mdy-renderer--touched",
         "mdy-select",
         "mdy-select__arrow",
+        "mdy-select__arrow--open",
         "mdy-select__dropdown",
         "mdy-select__dropdown--above",
         "mdy-select__dropdown--overlay",

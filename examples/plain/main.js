@@ -4,7 +4,7 @@ import { MDY_PALETTE_MODELS } from "@modyra/core/color-utils";
 import { compileMdyTheme, serializeMdyThemeCss } from "@modyra/core/theme-compiler";
 import { mountMdyForm } from "@modyra/plain";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
-import { inspectWidgetDom } from "@modyra/widgets/testing";
+import { inspectWidgetDom, portalRootFor } from "@modyra/widgets/testing";
 
 const THEMES = {
   modern: "modyra-modern.css",
@@ -303,22 +303,6 @@ const SHELL_SELECTORS = {
   errorItem: ".mdy-control__error",
 };
 
-/**
- * This field's popup, wherever the renderer put it.
- *
- * A portalled popup is the one part legitimately outside its field's root, so it cannot be found by
- * containment — but it must not be found by searching the document for a matching class either,
- * which returns whichever field rendered first and makes a two-instance page report nonsense. It is
- * found through the relationship the widget itself declared: the id its own trigger names.
- */
-function portalFor(widgetRoot) {
-  for (const element of widgetRoot.querySelectorAll("[aria-controls]")) {
-    const target = document.getElementById(element.getAttribute("aria-controls"));
-    if (target && !widgetRoot.contains(target)) return target;
-  }
-  return null;
-}
-
 function findPart(widgetRoot, kind, part, resolved = {}) {
   const definition = MDY_WIDGET_CONTRACTS[kind];
   const contract = definition.parts[part];
@@ -326,7 +310,11 @@ function findPart(widgetRoot, kind, part, resolved = {}) {
 
   const parent = definition.structure.nodes.find((node) => node.part === part)?.parent;
   const within = parent && resolved[parent] instanceof Element ? resolved[parent] : null;
-  const portal = portalFor(widgetRoot);
+  // The contract's own lookup, not a copy of it. This example shipped its own and it was
+  // subtly wrong: it took the element `aria-controls` names — the listbox — without walking
+  // up to the popup holding it, so an open select reported its popup absent and the audit
+  // flagged `aria-expanded="true"` beside a missing popup on a widget that was correct.
+  const portal = portalRootFor(widgetRoot);
   // Never `document`. Either inside this field, or inside the popup this field declared.
   const scopes = [within ?? widgetRoot, ...(portal ? [portal] : [])];
 

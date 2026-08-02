@@ -199,6 +199,12 @@ export function renderMultiselectField(
     setOverlayOpen(popup, state.open);
     if (state.open) {
       positionOverlay(popup, shell.wrapper, anchoring);
+      // Focus goes where the user is about to type, exactly as the select does. A search box that
+      // opens without focus asks for a second click before a keystroke does anything, and a
+      // keyboard user has no way to reach it at all without tabbing into a popup that just appeared.
+      // The microtask is because the popup is shown in this same effect: focusing a `hidden` element
+      // silently does nothing.
+      queueMicrotask(() => search.focus());
     } else {
       // The next opening decides its own side and height rather than inheriting this one's.
       releaseOverlayPlacement(popup);
