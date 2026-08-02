@@ -4,7 +4,7 @@
  * a declarative form template already does over `MdyDynamicField.kind`.
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
-import type { MdyDynamicField } from "@modyra/core";
+import type { MdyDynamicDateField, MdyDynamicDaterangeField, MdyDynamicField } from "@modyra/core";
 import { renderDaterangeField } from "./daterange-field.js";
 import { renderColorsField } from "./colors-field.js";
 import { renderFileField } from "./file-field.js";
@@ -15,6 +15,16 @@ import { renderOptionField } from "./option-field.js";
 import { renderSelectField } from "./select-field.js";
 import { renderTextField } from "./text-field.js";
 import { renderTimepickerField } from "./timepicker-field.js";
+
+/** The calendar presentation a date field declares, in the shape its renderer takes. */
+function calendarOptionsOf(f: MdyDynamicDateField | MdyDynamicDaterangeField): {
+  readonly minDate?: string | null;
+  readonly maxDate?: string | null;
+  readonly locale?: string;
+  readonly firstDayOfWeek?: number;
+} {
+  return { minDate: f.minDate, maxDate: f.maxDate, locale: f.locale, firstDayOfWeek: f.firstDayOfWeek };
+}
 
 /**
  * @param widgetId The identity every generated id derives from. Defaults to the field name, which
@@ -47,9 +57,9 @@ export function renderField(
     case "multiselect":
       return renderMultiselectField(container, f, handle as unknown as MdyFieldHandle<ReadonlyArray<unknown>>, reactivity, f.mode ?? "single", widgetId);
     case "datepicker":
-      return renderDatepickerField(container, f, handle as unknown as MdyFieldHandle<string | null>, reactivity, undefined, widgetId);
+      return renderDatepickerField(container, f, handle as unknown as MdyFieldHandle<string | null>, reactivity, calendarOptionsOf(f), widgetId);
     case "daterange":
-      return renderDaterangeField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, undefined, widgetId);
+      return renderDaterangeField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, calendarOptionsOf(f), widgetId);
     case "file":
       return renderFileField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, widgetId);
     case "colors":

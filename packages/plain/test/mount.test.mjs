@@ -759,3 +759,21 @@ test("contract v2 layout renders the canonical grid vocabulary", async () => {
   mounted.dispose();
   host.remove();
 });
+
+test("a field's declared locale reaches its calendar", async () => {
+  // Without this the renderer has nothing to consult but `navigator.language` — the visitor's
+  // preference, not the form's. A booking form for an Italian office shows an Italian calendar to
+  // a visitor whose browser is in English, and only the form knows that.
+  const host = document.createElement("div");
+  document.body.append(host);
+  const mounted = mountMdyForm(host, [{ name: "when", kind: "datepicker", label: "When", locale: "it-IT" }], { submitLabel: null });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+
+  const weekdays = [...host.querySelectorAll(".mdy-datepicker__weekday")].map((node) => node.textContent.trim());
+  assert.deepEqual(weekdays, ["L", "M", "M", "G", "V", "S", "D"]);
+  // And the browser's own locale is genuinely different, or this asserts nothing.
+  assert.notEqual(navigator.language, "it-IT");
+
+  mounted.dispose();
+  host.remove();
+});
