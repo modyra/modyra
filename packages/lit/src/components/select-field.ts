@@ -217,6 +217,9 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       errorsVisible: blockErrors,
       descriptionVisible: !blockErrors,
     });
+    // The same rule for the other reference the trigger carries: this element builds its listbox on
+    // open, so while closed there is nothing for `aria-controls` to name.
+    this.selectAdapter.setPopupRendered(this._open);
     const state = this.selectAdapter.state;
     const view = this.selectAdapter.view;
     const trigger = view.parts.trigger;
@@ -233,9 +236,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
 
     const dropdown = html`
       <div
-        class="${this.popupClass(position)} mdy-overlay mdy-glass-effect ${alignment === "right"
-        ? "mdy-select__dropdown--right"
-        : ""}"
+        class="${this.popupClass(position, alignment)} mdy-overlay mdy-glass-effect"
       >
         ${this.searchable
         ? html`<input

@@ -37,6 +37,8 @@ export interface MdySelectController<TValue>
   setLoading(loading: boolean): void;
   /** Which of the field's descriptions are on screen, so the trigger names one that exists. */
   setDescribedBy(next: { errorsVisible?: boolean; descriptionVisible?: boolean }): void;
+  /** Whether the listbox is mounted, so the trigger controls something that exists. */
+  setPopupRendered(rendered: boolean): void;
 }
 
 export function createSelectController<TValue>(
@@ -102,6 +104,9 @@ export function createSelectController<TValue>(
   // the elements are on screen; the default is the resting field — a description and no errors.
   const errorsVisible = reactivity.signal(false);
   const descriptionVisible = reactivity.signal(true);
+  // Eager by default: the popup is in the document whether or not it is open, which is what every
+  // renderer did before a lazily-mounted one existed.
+  const popupRendered = reactivity.signal(true);
 
   const state: MdySignal<MdySelectState<TValue>> = reactivity.computed(() => ({
     open: open(),
@@ -135,6 +140,7 @@ export function createSelectController<TValue>(
       visibleKeys: visibleKeys(q),
       errorsVisible: errorsVisible(),
       descriptionVisible: descriptionVisible(),
+      popupRendered: popupRendered(),
     });
 
     const parts: Record<string, ReturnType<typeof a11y.option>> = {};
@@ -311,6 +317,10 @@ export function createSelectController<TValue>(
     if (next.descriptionVisible !== undefined) descriptionVisible.set(next.descriptionVisible);
   }
 
+  function setPopupRendered(rendered: boolean): void {
+    popupRendered.set(rendered);
+  }
+
   function setLoading(nextLoading: boolean): void {
     loading.set(nextLoading);
   }
@@ -331,6 +341,7 @@ export function createSelectController<TValue>(
     setInvalid,
     setLoading,
     setDescribedBy,
+    setPopupRendered,
     destroy,
   };
 }

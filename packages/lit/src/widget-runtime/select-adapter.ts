@@ -79,6 +79,10 @@ export class MdyLitSelectAdapter<TValue = unknown> {
   }
 
   /** Which of the field's descriptions is on screen, so the trigger names one that exists. */
+  setPopupRendered(rendered: boolean): void {
+    this.controller.setPopupRendered(rendered);
+  }
+
   setDescribedBy(next: { errorsVisible?: boolean; descriptionVisible?: boolean }): void {
     this.controller.setDescribedBy(next);
   }
