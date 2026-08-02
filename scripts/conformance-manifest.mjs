@@ -68,8 +68,21 @@ for (const renderer of OBSERVED) {
   results.push({ renderer, manifest });
 }
 
+/**
+ * Every published adapter this harness does not produce a manifest for, and why.
+ *
+ * Two different reasons, and the difference matters to anyone reading the list. Angular renders and
+ * is checked — just not from here. The five below render nothing at all, so there is no manifest to
+ * produce: a conformance manifest reports which kinds an adapter *draws*, and they draw none.
+ * Listing them with the same silence as Angular would read as "not measured yet".
+ */
 const notObserved = {
-  "@modyra/angular": "its conformance suite runs under Jest with Angular's TestBed, which this harness does not drive",
+  "@modyra/angular": "renders, and is checked — but its conformance suite runs under Jest with Angular's TestBed, which this harness does not drive",
+  "@modyra/react": "headless: renders no markup, so there are no kinds to report",
+  "@modyra/vue": "headless: renders no markup, so there are no kinds to report",
+  "@modyra/solid": "headless: renders no markup, so there are no kinds to report",
+  "@modyra/preact": "headless: renders no markup, so there are no kinds to report",
+  "@modyra/svelte": "headless: renders no markup, so there are no kinds to report",
 };
 
 let drift = false;
