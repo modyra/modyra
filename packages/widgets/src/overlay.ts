@@ -103,6 +103,18 @@ export interface MdyOverlayAnchorOptions {
   readonly preferred?: "above" | "below";
   /** Match the anchor's width (a select's list) or size to content (a calendar). */
   readonly matchAnchorWidth?: boolean;
+  /**
+   * The writing direction the field is laid out in. Defaults to `"ltr"`.
+   *
+   * Only the **declared** alignment mirrors. `overlayAnchoringFor(kind)` says which edge of the
+   * control a popup hangs from — the end where the trigger sits, the arrow, the calendar button —
+   * and that is an inline idea: in a right-to-left field the same edge is the left one.
+   *
+   * Everything else here stays physical on purpose. How much room there is before the viewport's
+   * right edge, and where the pointer landed, are facts about the screen and the user's hand; they
+   * do not mirror, and a popup that ignored them would hang off the side of the window.
+   */
+  readonly direction?: "ltr" | "rtl";
   /** Distance between the anchor and the popup. */
   readonly gap?: number;
   /**
@@ -239,7 +251,14 @@ export function anchorOverlay(
     // room minus that gap, so comparing the bare content height would call a squeeze a fit.
     ...(options.contentHeight !== undefined ? { desiredHeight: options.contentHeight + gap } : {}),
     ...(options.contentWidth !== undefined ? { desiredWidth: options.contentWidth } : {}),
-    ...(options.alignment !== undefined ? { preferredAlignment: options.alignment } : {}),
+    ...(options.alignment !== undefined
+      ? {
+          preferredAlignment:
+            options.direction === "rtl"
+              ? (options.alignment === "right" ? ("left" as const) : ("right" as const))
+              : options.alignment,
+        }
+      : {}),
   };
   const measured = decideOverlayPlacement(geometry);
   let decision: MdyOverlayDecision;
