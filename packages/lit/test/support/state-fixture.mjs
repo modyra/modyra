@@ -12,7 +12,7 @@ import { mount as mountElement } from "./dom-env.mjs";
 
 const { createLitForm, field, required, min } = await import("../../dist/adapter.js");
 const { defineMdyElements } = await import("../../dist/ui.js");
-const { MDY_CANONICAL_EMPTY } = await import("../../../widgets/dist/testing/index.js");
+const { MDY_CANONICAL_EMPTY, findPartElement: contractPart } = await import("../../../widgets/dist/testing/index.js");
 
 defineMdyElements();
 
@@ -136,10 +136,9 @@ export function partsOf(root, kind) {
       };
     case "datepicker":
       return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup") };
-    case "daterange": {
-      const inputs = root.querySelectorAll(".mdy-daterange__input");
-      return { ...shell, startControl: inputs[0] ?? null, endControl: inputs[1] ?? null, toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup") };
-    }
+    case "daterange":
+      // Identical classes on both inputs, so the contract's declared order is what separates them.
+      return { ...shell, startControl: contractPart(root, "daterange", "startControl"), endControl: contractPart(root, "daterange", "endControl"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup") };
     case "timepicker":
       return { ...shell, control: q(".mdy-timepicker__input"), toggle: q(".mdy-timepicker__toggle"), popup: q(".mdy-timepicker__popup") };
     case "colors":

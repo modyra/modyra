@@ -5,6 +5,7 @@
 export { expectedWeekdayOrder, inspectCalendarWeekStart, MDY_CALENDAR_ISSUE } from "./calendar.js";
 export type { MdyCalendarIssue, MdyCalendarIssueCode } from "./calendar.js";
 export { runCommandExecutionTests } from "./command-tests.js";
+export { findPartElement, partSelector } from "./part-lookup.js";
 export { assertWidgetDomContract, inspectWidgetDom } from "./dom-tests.js";
 export type { MdyDomContractIssue, MdyDomContractIssueCode, MdyDomContractOptions, MdyDomPartMap } from "./dom-tests.js";
 export { assertWidgetStructureContract, inspectWidgetStructure } from "./structure-tests.js";

@@ -2,6 +2,8 @@
  * Shared map from contract parts to the elements Plain renders for them, plus the parts a widget
  * legitimately does not render in its initial closed, error-free state.
  */
+const { findPartElement: contractPart } = await import("../../widgets/dist/testing/index.js");
+
 const option = { value: "x", label: "X" };
 export const FIELDS = [
   { name: "a", kind: "text", label: "A" },
@@ -78,10 +80,11 @@ export function partsOf(root, kind) {
         hour: root.querySelector(".mdy-timepicker-segment--hour"),
         minute: root.querySelector(".mdy-timepicker-segment--minute"),
       };
-    case "daterange": {
-      const [start, end] = root.querySelectorAll(".mdy-daterange__input");
-      return { ...shell, startControl: start, separator: q(".mdy-daterange__sep"), endControl: end, toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), weekdays: q(".mdy-datepicker__weekdays"), weekday: q(".mdy-datepicker__weekday"), row: q(".mdy-datepicker__row"), gridcell: q(".mdy-datepicker__cell"), actions: q(".mdy-datepicker__actions") };
-    }
+    case "daterange":
+      // The two inputs carry identical classes, so no selector separates them. What does is in the
+      // contract — the anatomy declares their order — and `findPartElement` reads it, rather than
+      // this file knowing that the second one is the end.
+      return { ...shell, startControl: contractPart(root, "daterange", "startControl"), separator: q(".mdy-daterange__sep"), endControl: contractPart(root, "daterange", "endControl"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), weekdays: q(".mdy-datepicker__weekdays"), weekday: q(".mdy-datepicker__weekday"), row: q(".mdy-datepicker__row"), gridcell: q(".mdy-datepicker__cell"), actions: q(".mdy-datepicker__actions") };
     case "colors":
       return { ...shell, nativePicker: q(".mdy-colors__primary-picker"), preview: q(".mdy-colors__preview-swatch"), control: q(".mdy-colors__native-hidden"), hexInput: q(".mdy-colors__hex-input"), toggle: q(".mdy-colors__toggle-area"), popup: q(".mdy-colors__dropdown"), presets: q(".mdy-colors__presets"), swatch: q(".mdy-color-swatch") };
     case "file":
