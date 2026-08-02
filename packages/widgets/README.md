@@ -55,6 +55,35 @@ conformance fixtures and testing kit.
 Out of scope: a general DOM AST, a custom virtual DOM, node/portal/teleport
 management, any direct DOM access from controllers.
 
+## Contract data and checker data
+
+Two kinds of export live here, and the difference decides whether *you* should
+read one.
+
+**Contract data** is what a renderer implements: the catalogue
+(`MDY_WIDGET_CONTRACTS`), the relations, the keyboard bindings, the projections
+(`projectFieldA11y`, `projectOverlayOpenerA11y`, …), the id policy, the state
+and class vocabularies. If a renderer ignores any of it, it renders a different
+widget. Read these.
+
+**Checker data** describes how conformance is *measured*, not what a widget owes:
+
+| | |
+| --- | --- |
+| `MDY_WIDGET_STATE_SUPPORT`, `widgetSupportsState`, `widgetStateMatrixSize` | which `kind × state` pairs a matrix should contain, and how many |
+| `transitionsFrom`, `MDY_DISABLED_BLOCKS_TRANSITIONS` | which transitions a suite should drive |
+| `MDY_LABELABLE_TAGS` | which tags `for=` may legally point at, so a checker can tell a wrong label from an unlabelable control |
+
+A renderer that reads these is asking the marking scheme what to write. It gains
+nothing: every fact they encode is already implied by the contract data it
+implements. They are exported because a **third-party conformance harness**
+needs them — the same reason `@modyra/widgets/testing` is public — and for no
+other reason.
+
+The rule, if you need one: **if ignoring it would change what the user sees, it
+is contract data. If ignoring it would only change what a test reports, it is
+checker data.**
+
 ## Why it exists
 
 Every Modyra adapter renders the same controls. Encoding keyboard
