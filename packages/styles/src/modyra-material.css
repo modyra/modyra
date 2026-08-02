@@ -1017,7 +1017,10 @@
            nothing — measured, this button was 44x0 in this theme and could not be clicked at all,
            by a user or by a test. Stretch is what fills the row; a percentage only claims to. */
         width: 2.5rem;
-        margin-right: -0.75rem;
+        /* Logical: this pulls the toggle back over the field's inline-end padding so it sits flush
+           with the edge. Written as `margin-right` it kept pulling leftwards under `dir=rtl`, where
+           the toggle is at the left — so it opened a gap at one end and overhung the other. */
+        margin-inline-end: -0.75rem;
     }
 
     .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-colors__toggle-area {
