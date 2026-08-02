@@ -763,16 +763,16 @@ export const MDY_CANONICAL_OPEN: Readonly<Partial<Record<MdyWidgetKind, MdyCanon
  * it is a design choice: the opener the user activated is the obvious answer, and a range picker
  * putting them back in its start field so they can keep typing is a defensible one.
  *
- * **`state` is deliberately absent.** Whether opening a picker and abandoning it counts as having
- * touched the field decides when validation errors appear, and the renderers disagree uniformly
- * rather than by accident. That is a product decision and this contract does not get to make it by
- * recording whichever renderer was measured first.
+ * **Abandoning an interaction does not touch the field.** A user who opens a picker, changes their
+ * mind and presses Escape has decided nothing, and must not be shown a "required" error for a field
+ * they never filled. Closing an overlay is therefore not a validation event, which is why the state
+ * here is the resting one.
  */
 export const MDY_CANONICAL_AFTER_ESCAPE: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>> =
   Object.freeze(Object.fromEntries(
     Object.entries(MDY_CANONICAL_AT_REST)
       .filter(([kind, rest]) => rest.overlay !== "absent" && MDY_POPUP_OPENERS[kind as MdyWidgetKind])
-      .map(([kind, { state: _restingState, ...rest }]) => [
+      .map(([kind, rest]) => [
         kind,
         Object.freeze({ ...rest, focusOwner: MDY_FOCUS_WITHIN }),
       ]),

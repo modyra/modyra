@@ -125,7 +125,6 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       this.overlay.open();
     } else {
       this.overlay.close();
-      handle.markAsTouched();
     }
   }
 
@@ -139,11 +138,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     this.querySelector<HTMLElement>(".mdy-multiselect__search-btn")?.focus();
   }
 
-  protected override close(handle: MdyFieldHandle<readonly unknown[]>): void {
+  protected override close(_handle: MdyFieldHandle<readonly unknown[]>): void {
     if (!this._open) return;
     this._open = false;
     this.overlay.close();
-    handle.markAsTouched();
   }
 
   override disconnectedCallback(): void {

@@ -120,12 +120,11 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     this.overlay.open(event);
   }
 
-  private closePopup(handle: MdyFieldHandle<string | null>, refocus = true): void {
+  private closePopup(_handle: MdyFieldHandle<string | null>, refocus = true): void {
     if (!this._open) return;
     applyOverlayIntent(this, { type: "close", restoreFocus: refocus });
     this.overlay.close();
     this._view = "calendar";
-    handle.markAsTouched();
     if (refocus) this.querySelector<HTMLInputElement>(".mdy-datepicker__input")?.focus();
   }
 

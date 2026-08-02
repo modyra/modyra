@@ -99,8 +99,9 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         if (open) {
           this.overlay.open();
         } else {
+          // Closing is not a validation event: the adapter reports a real touch through
+          // `onTouched`, and a user who opened the list and dismissed it decided nothing.
           this.overlay.close();
-          handle.markAsTouched();
         }
         this.requestUpdate();
       },
