@@ -93,7 +93,9 @@ function isUsernameTaken(value: string, signal?: AbortSignal): Promise<boolean> 
           />
         </div>
 
-        <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem;">
+        <!-- Wraps because it has to: at 200% text this row is wider than its column, and a
+             non-wrapping flex row pushes its buttons off the side of the page. -->
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 0.5rem;">
           <button type="submit" [disabled]="!typedForm.state.canSubmit()">
             Submit typed
           </button>
@@ -123,7 +125,7 @@ function isUsernameTaken(value: string, signal?: AbortSignal): Promise<boolean> 
           >
             Redo
           </button>
-          <code style="font-size: 0.75rem;">
+          <code style="font-size: 0.75rem; min-width: 0; overflow-wrap: anywhere;">
             valid: {{ typedForm.state.valid() }} ·
             city: {{ typedForm.f.address.city.value() }}
           </code>
