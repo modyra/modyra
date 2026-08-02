@@ -1747,6 +1747,7 @@
       "keyboard": [
         "ArrowDown@closed:open",
         "ArrowDown@open:move",
+        "ArrowUp@closed:open",
         "ArrowUp@open:move",
         "End@open:move",
         "Enter@closed:open",
@@ -2094,6 +2095,7 @@
       "keyboard": [
         "ArrowDown@closed:open",
         "ArrowDown@open:move",
+        "ArrowUp@closed:open",
         "ArrowUp@open:move",
         "End@open:move",
         "Enter@closed:open",
@@ -2378,6 +2380,7 @@
       "keyboard": [
         "ArrowDown@closed:open",
         "ArrowDown@open:move",
+        "ArrowUp@closed:open",
         "ArrowUp@open:move",
         "End@open:move",
         "Enter@closed:open",
@@ -2687,6 +2690,7 @@
       "keyboard": [
         "ArrowDown@closed:open",
         "ArrowDown@open:move",
+        "ArrowUp@closed:open",
         "ArrowUp@open:move",
         "End@open:move",
         "Enter@closed:open",
@@ -3043,6 +3047,7 @@
       "keyboard": [
         "ArrowDown@closed:open",
         "ArrowDown@open:move",
+        "ArrowUp@closed:open",
         "ArrowUp@open:move",
         "End@open:move",
         "Enter@closed:open",
@@ -3456,6 +3461,7 @@
       "keyboard": [
         "ArrowDown@closed:open",
         "ArrowDown@open:move",
+        "ArrowUp@closed:open",
         "ArrowUp@open:move",
         "End@open:move",
         "Enter@closed:open",

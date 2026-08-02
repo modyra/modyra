@@ -29,7 +29,12 @@ test("select keyboard policy resolves host actions without Angular", () => {
   // states and what a user reaching for the options expects. This asserted `move` before, which is
   // an action on options nobody can see.
   assert.deepEqual(selectKeyboardAction({ key: "ArrowDown", open: false, searchFocused: false, activeKey: null, createAvailable: false }), { type: "open" });
-  assert.equal(selectKeyboardAction({ key: "ArrowUp", open: false, searchFocused: false, activeKey: null, createAvailable: false }), null, "ArrowUp does not open a closed list");
+  // And so does `ArrowUp`, which the authoring practices specify too and this policy used to
+  // answer with nothing. Opening does not also move: the list opens with nothing active, and the
+  // next arrow lands where its direction says, because `listboxNavigationIndex` answers `ArrowUp`
+  // from nothing-active with the *last* option and `ArrowDown` with the first. Declaring a move on
+  // the opening press would restate that one layer up, where it can drift from it.
+  assert.deepEqual(selectKeyboardAction({ key: "ArrowUp", open: false, searchFocused: false, activeKey: null, createAvailable: false }), { type: "open" }, "ArrowUp opens a closed list");
   assert.deepEqual(selectKeyboardAction({ key: "ArrowDown", open: true, searchFocused: false, activeKey: null, createAvailable: false }), { type: "move", target: "next" });
   // Tab closes and lets focus continue; Escape closes and hands it back.
   assert.deepEqual(selectKeyboardAction({ key: "Tab", open: true, searchFocused: false, activeKey: null, createAvailable: false }), { type: "close", restoreFocus: false });
