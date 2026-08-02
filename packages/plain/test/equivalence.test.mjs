@@ -18,7 +18,7 @@ installDomGlobals();
 const {
   canonicalWidgetSnapshot, compareToCanonical, MDY_CANONICAL_AFTER_ESCAPE,
   MDY_CANONICAL_AT_REST, MDY_CANONICAL_DISABLED, MDY_CANONICAL_FILLED_OBSERVATION,
-  MDY_CANONICAL_INVALID, MDY_CANONICAL_OPEN,
+  MDY_CANONICAL_INVALID, MDY_CANONICAL_OPEN, inspectCalendarWeekStart,
 } = await import("../../widgets/dist/testing/index.js");
 const { mount } = await import("./support/state-fixture.mjs");
 
@@ -135,4 +135,40 @@ for (const [kind, expectation] of Object.entries(MDY_CANONICAL_AT_REST)) {
       fixture.dispose();
     }
   });
+}
+
+/**
+ * A calendar begins its week where its user's locale does.
+ *
+ * Not part of the canonical snapshot, because the expectation depends on the locale rather than on
+ * the contract alone. It belongs beside it: this is an observation two renderers can disagree on
+ * while both produce a well-formed grid, which is the class of difference this milestone exists to
+ * catch.
+ *
+ * Two locales, chosen because they start the week on different days. One locale proves nothing —
+ * a renderer with the week start hardcoded is correct in exactly the locale whose value it
+ * hardcoded, and a suite that only ever runs there is measuring its own environment.
+ */
+for (const locale of ["en-US", "it-IT"]) {
+  for (const kind of ["datepicker", "daterange"]) {
+    test(`${kind}: the week starts where ${locale} starts`, async () => {
+      const original = navigator.language;
+      Object.defineProperty(navigator, "language", { value: locale, configurable: true });
+      try {
+        const mounted = await mount(kind);
+        await mounted.settle?.();
+        await mounted.drive?.("open");
+        await mounted.settle?.();
+
+        const root = mounted.root.shadowRoot ?? mounted.root;
+        const rendered = [...root.querySelectorAll(".mdy-datepicker__weekday")].map((node) => node.textContent.trim());
+        assert.ok(rendered.length > 0, `${kind}: no weekday headers were rendered, so nothing was compared`);
+        assert.deepEqual(inspectCalendarWeekStart(rendered, locale), []);
+
+        mounted.dispose();
+      } finally {
+        Object.defineProperty(navigator, "language", { value: original, configurable: true });
+      }
+    });
+  }
 }

@@ -2,7 +2,7 @@ import { mdyPart } from "../mdy-part.js";
 import { overlayControlledId } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle } from "@modyra/core";
-import { addMonths, buildMonthGrid, type CalendarCell, type CalendarDate, compareDates, daysInMonth, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
+import { addMonths, buildDateLocale, buildMonthGrid, type CalendarCell, type CalendarDate, compareDates, daysInMonth, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
 import { calendarKeyboardTarget } from "@modyra/core/ui";
 import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
@@ -45,7 +45,12 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   declare max?: string;
   declare startPlaceholder: string;
   declare endPlaceholder: string;
-  declare firstDayOfWeek: number;
+  /**
+   * 0 = Sunday, 1 = Monday. Unset follows the locale, which is what a calendar owes its user: a
+   * week does not begin on the same day everywhere, and a fixed default renders one locale's
+   * calendar to all of them.
+   */
+  declare firstDayOfWeek?: number;
   declare dateFilter?: (date: string) => boolean;
   /** `"docked"` (default) opens inline; `"modal"` shows a header and Cancel/OK actions. */
   declare variant: "docked" | "modal";
@@ -73,7 +78,6 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     super();
     this.startPlaceholder = "Start";
     this.endPlaceholder = "End";
-    this.firstDayOfWeek = 1;
     this.variant = "docked";
     this._open = false;
     this._view = "calendar";
@@ -98,6 +102,11 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
 
   private get locale(): string {
     return typeof navigator !== "undefined" ? navigator.language : "en-US";
+  }
+
+  /** The host's choice if it made one, the locale's otherwise. */
+  private get weekStart(): number {
+    return this.firstDayOfWeek ?? buildDateLocale(this.locale).firstDayOfWeek;
   }
 
   private get startInputId(): string {
@@ -136,7 +145,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   private weekdayNames(): string[] {
     const format = new Intl.DateTimeFormat(this.locale, { weekday: "narrow" });
     return Array.from({ length: 7 }, (_, i) => {
-      const day = ((this.firstDayOfWeek + i + 6) % 7) + 1;
+      const day = ((this.weekStart + i + 6) % 7) + 1;
       return format.format(new Date(Date.UTC(2024, 0, day)));
     });
   }
@@ -149,7 +158,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 
   private rows(): CalendarCell[][] {
-    const cells = buildMonthGrid(this._viewYear, this._viewMonth, this.firstDayOfWeek);
+    const cells = buildMonthGrid(this._viewYear, this._viewMonth, this.weekStart);
     const rows: CalendarCell[][] = [];
     for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7) as CalendarCell[]);
     return rows;
