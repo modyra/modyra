@@ -25,6 +25,7 @@ export type {
   MdyWidgetStructureNode,
 } from "./structure.js";
 
+export { dynamicParts, isFullyServerRenderable, staticParts } from "./ssr.js";
 export { MDY_LABELABLE_TAGS, MDY_WIDGET_RELATIONS } from "./relations.js";
 export type { MdyRelationAttribute, MdyWidgetRelation } from "./relations.js";
 

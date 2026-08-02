@@ -30,16 +30,33 @@ export const ssrRuntimeCapabilities: MdyWidgetRuntimeCapabilities = {
   pointerEvents: false,
 };
 
-/** Runtime capabilities in a modern browser. */
-export function browserRuntimeCapabilities(): MdyWidgetRuntimeCapabilities {
+/**
+ * Runtime capabilities of the environment this is called in.
+ *
+ * Every capability is probed, `dom` included. A report that asserts a DOM rather than looking for
+ * one is worse than no report at all: the controller consults it precisely to decide whether a
+ * command can be executed, so on a server it would be told to focus something that does not exist.
+ * With no DOM the answer is {@link ssrRuntimeCapabilities} exactly.
+ *
+ * `hydrated` is the one dimension no global can answer — a browser that has parsed server markup
+ * but not yet attached to it is indistinguishable from one that has. It follows `dom` by default,
+ * which is right once the client owns the page, and a renderer that knows it is still hydrating
+ * says so.
+ */
+export function browserRuntimeCapabilities(
+  options: { readonly hydrated?: boolean } = {},
+): MdyWidgetRuntimeCapabilities {
   const g = globalThis as typeof globalThis & {
+    document?: unknown;
     HTMLElement?: { prototype: Record<string, unknown> };
     ResizeObserver?: unknown;
     PointerEvent?: unknown;
   };
+  const dom = typeof g.document !== "undefined" && typeof g.HTMLElement !== "undefined";
+  if (!dom) return ssrRuntimeCapabilities;
   return {
     dom: true,
-    hydrated: true,
+    hydrated: options.hydrated ?? true,
     popover:
       typeof g.HTMLElement !== "undefined" &&
       "popover" in g.HTMLElement.prototype,
