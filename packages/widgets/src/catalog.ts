@@ -1,7 +1,7 @@
 import { MDY_CHIP_CLASSES } from "./chip.js";
 import type { MdyPartContract } from "./contract.js";
 import type { MdyStateName } from "./state.js";
-import { MDY_FIELD_SHELL_CLASSES } from "./structure.js";
+import { MDY_FIELD_SHELL_CLASSES, MDY_SHELL_PART_STATES } from "./structure.js";
 import type { MdyWidgetSemanticElement, MdyWidgetStructure } from "./structure.js";
 
 export const MDY_WIDGET_KINDS = ["text", "email", "password", "textarea", "number", "slider", "checkbox", "toggle", "radio", "segmented", "select", "multiselect", "datepicker", "daterange", "timepicker", "file", "colors"] as const;
@@ -187,27 +187,12 @@ interface MdyWidgetShape {
 /**
  * States every field-like widget's shell parts share.
  *
- * The shell is the same shell whatever it wraps, so its states are declared once rather than
- * seventeen times: a wrapper is disabled or in error, a label is filled or has an error to make room
- * for, a root is open or has been touched.
+ * Declared in `structure.ts` beside the shell's classes, because the two answer one question — what
+ * a shell part is called and what it may be doing — and `MDY_FIELD_STATE_CLASSES` is derived from
+ * both. Kept re-bound here under its old name so the catalogue reads as it always has.
  */
-const SHARED_STATES: Readonly<Record<string, readonly MdyStateName[]>> = Object.freeze({
-  root: ["open", "touched"],
-  inputWrapper: ["disabled", "error"],
-  label: ["filled", "hasError"],
-  requiredMarker: ["filled"],
-});
+const SHARED_STATES = MDY_SHELL_PART_STATES;
 
-/**
- * The states a part ends up with: the widget's own if it declares any, otherwise the shell's — but
- * only where the part really is the shell's.
- *
- * A widget that gives a part a class of its own has made it a different part. A multiselect's
- * `inputWrapper` is `mdy-multiselect`, the grid of chips; handing it `mdy-input-wrapper`'s states
- * would mint `mdy-multiselect--disabled`, a class no theme has ever styled and no renderer has ever
- * emitted. The root is the exception, because every root carries `mdy-renderer` whatever else it
- * also carries.
- */
 /**
  * The role a part must carry: the kind's own declaration, then the shared table, then the role the
  * overlay relation already names for an opener — derived rather than restated, so the two cannot
@@ -229,10 +214,36 @@ function roleFor(kind: MdyWidgetKind, name: string, shape: MdyWidgetShape): stri
  */
 const SHARED_ROLES: Readonly<Record<string, string>> = Object.freeze({});
 
+/**
+ * Whether a widget has made a shell part into a part of its own.
+ *
+ * The test is the class it carries, not the fact that it names one. A kind that restates the shell's
+ * own class has changed nothing — `checkbox` declares `label: ["mdy-label"]` so that its label sits
+ * inside the wrapper, and that is still `mdy-label`, still the element a floating label rises on.
+ * Reading the declaration alone as "different part" took `filled` and `hasError` away from it.
+ */
+function redeclaresShellPart(name: string, shape: MdyWidgetShape): boolean {
+  const declared = shape.classes?.[name];
+  if (declared === undefined) return false;
+  const shell = SHELL_CLASS_FALLBACK[name];
+  if (shell === undefined) return true;
+  return declared.length !== shell.length || declared.some((className, i) => className !== shell[i]);
+}
+
+/**
+ * The states a part ends up with: the widget's own if it declares any, otherwise the shell's — but
+ * only where the part really is the shell's.
+ *
+ * A widget that gives a part a class of its **own** has made it a different part. A multiselect's
+ * `inputWrapper` is `mdy-multiselect`, the grid of chips; handing it `mdy-input-wrapper`'s states
+ * would mint `mdy-multiselect--disabled`, a class no theme has ever styled and no renderer has ever
+ * emitted. The root is the exception, because every root carries `mdy-renderer` whatever else it
+ * also carries.
+ */
 function statesFor(name: string, shape: MdyWidgetShape): readonly MdyStateName[] {
   const own = shape.states?.[name];
   if (own) return own;
-  if (name !== "root" && shape.classes?.[name] !== undefined) return [];
+  if (name !== "root" && redeclaresShellPart(name, shape)) return [];
   return SHARED_STATES[name] ?? [];
 }
 
@@ -285,7 +296,7 @@ export interface MdyPopupOpener {
   readonly role?: string;
 }
 
-export const MDY_POPUP_OPENERS: Readonly<Record<string, MdyPopupOpener>> = Object.freeze({
+export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupOpener>>> = Object.freeze({
   // `controls` is the part the relation names, and it is not always the popup: ARIA points at the
   // element carrying the role — a listbox, a grid, a dialog — which for some kinds sits inside the
   // popup rather than being it.
@@ -308,7 +319,7 @@ export const MDY_POPUP_OPENERS: Readonly<Record<string, MdyPopupOpener>> = Objec
 // A list that matches its control's width covers both edges and looks the same either way; a
 // content-sized popup does not, which is why declaring it is what stops the same calendar opening
 // from the left corner on one form and the right corner on another.
-const ANCHORING: Readonly<Record<string, { matchAnchorWidth: boolean; minSpace: number; minWidth?: number; alignment?: "left" | "right" }>> = Object.freeze({
+const ANCHORING: Readonly<Partial<Record<MdyWidgetKind, { matchAnchorWidth: boolean; minSpace: number; minWidth?: number; alignment?: "left" | "right" }>>> = Object.freeze({
   select: { matchAnchorWidth: true, minSpace: 180, minWidth: 160, alignment: "right" },
   multiselect: { matchAnchorWidth: true, minSpace: 180, minWidth: 160, alignment: "right" },
   datepicker: { matchAnchorWidth: false, minSpace: 240, alignment: "right" },
