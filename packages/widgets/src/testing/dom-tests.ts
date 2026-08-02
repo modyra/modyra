@@ -341,12 +341,25 @@ export function inspectWidgetDom(
     if (found.length > 0) resolved.set(node.part, found);
   }
 
+  /** Whether any ancestor of `part` was also declared absent. Containment is transitive. */
+  const parentOf = new Map(definition.structure.nodes.map((node) => [node.part as string, node.parent as string | undefined]));
+  const hasAbsentAncestor = (part: string): boolean => {
+    for (let cursor = parentOf.get(part), depth = 0; cursor && depth < 20; cursor = parentOf.get(cursor), depth += 1) {
+      if (absent.has(cursor)) return true;
+    }
+    return false;
+  };
+
   for (const node of definition.structure.nodes) {
     if (node.part === "root") continue;
     if (absent.has(node.part)) {
       // The contract decides what may be missing. A caller naming a mandatory part is claiming a
-      // state the contract does not have.
-      if (!node.optional) {
+      // state the contract does not have — unless the part's own parent is absent too, in which
+      // case the absence is entailed rather than claimed. A datepicker's `calendar` is mandatory and
+      // its `popup` is optional, so a renderer that builds its popup on open cannot report its
+      // resting state at all without this: it would be told that a part inside a container it
+      // legitimately did not render is nevertheless required to be there.
+      if (!node.optional && !hasAbsentAncestor(node.part)) {
         issues.push({
           code: "ABSENT_PART_NOT_OPTIONAL",
           part: node.part,
