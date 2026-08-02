@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { anchorOverlay, decideOverlayPlacement, overlayAnchoringFor, overlayStyleProperties, partClasses, stabilizeOverlayPlacement, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
+import { anchorOverlay, decideOverlayPlacement, overlayAnchoringFor, overlayStyleProperties, partClasses, popupAlignmentClass, popupPlacementClass, stabilizeOverlayPlacement, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
 
 const VIEWPORT = { width: 1000, height: 800 };
 /** A control in the middle of the page, with room on both sides. */
@@ -453,4 +453,37 @@ test("a modal keeps the policy's height, not a host's guess", () => {
     overlayStyleProperties(coordsFrom(properties, decision))["--mdy-overlay-max-height"],
     "560px",
   );
+});
+
+/**
+ * A popup's placement class is the one the state *added*, not the first class shaped like a modifier.
+ *
+ * The range picker's popup carries `mdy-datepicker__popup--range` in its resting class list — a
+ * variant marker, not a placement — and matching by shape returned it for every placement the popup
+ * was asked about. A range calendar opening above therefore reported a class that says nothing about
+ * where it is, and the class the catalog declares for "above" was never emitted by anything.
+ */
+test("a popup that already carries a modifier still reports its real placement", () => {
+  const resting = partClasses("daterange", "popup");
+  assert.ok(
+    resting.includes("mdy-datepicker__popup--range"),
+    "precondition: the range popup carries a variant class at rest",
+  );
+  assert.equal(popupPlacementClass("daterange", "above"), "mdy-datepicker__popup--above");
+  assert.equal(popupPlacementClass("daterange", "overlay"), "mdy-datepicker__popup--overlay");
+  assert.equal(popupAlignmentClass("daterange", "right"), "mdy-datepicker__popup--right");
+});
+
+test("every popup kind derives all three placement states, and the ordinary cases carry none", () => {
+  for (const kind of MDY_WIDGET_KINDS) {
+    if (!MDY_WIDGET_CONTRACTS[kind].parts.popup) continue;
+    const base = partClasses(kind, "popup")[0];
+    assert.equal(popupPlacementClass(kind, "above"), `${base}--above`, kind);
+    assert.equal(popupPlacementClass(kind, "overlay"), `${base}--overlay`, kind);
+    assert.equal(popupAlignmentClass(kind, "right"), `${base}--right`, kind);
+    // Below and left are the ordinary cases: the contract gives them no class, so a popup in the
+    // usual place is spelled exactly like one nobody has placed yet.
+    assert.equal(popupPlacementClass(kind, "below"), null, kind);
+    assert.equal(popupAlignmentClass(kind, "left"), null, kind);
+  }
 });

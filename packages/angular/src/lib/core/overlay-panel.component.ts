@@ -11,6 +11,7 @@ import {
 } from "@angular/core";
 import {
   overlayStyleProperties,
+  popupAlignmentClass,
   popupPlacementClass,
   type MdyOverlayAlignment,
   type MdyOverlayCoords,
@@ -44,7 +45,6 @@ import {
       popover="manual"
       [attr.id]="panelId() || null"
       class="mdy-overlay-panel"
-      [class.mdy-overlay-panel--right]="alignment() === 'right'"
       [class.mdy-overlay-panel--modal]="hasBackdrop() && (position() === 'overlay')"
       [class.mdy-overlay-panel--visible]="open()"
       [ngClass]="[panelClass(), placementClass()]"
@@ -89,11 +89,21 @@ export class MdyOverlayPanelComponent {
    */
   readonly kind = input<MdyPopupWidgetKind | null>(null);
 
-  /** The catalog's placement state for this popup, or nothing when it sits in the ordinary place. */
+  /**
+   * The catalog's placement and alignment states for this popup, or nothing where it sits in the
+   * ordinary place and hangs from the ordinary edge.
+   *
+   * The edge used to be `mdy-overlay-panel--right`, spelled here rather than asked for — a third
+   * name for a class the catalog already declares on every popup, and one no stylesheet matches.
+   * Both halves of the decision now come from the same place the placement does.
+   */
   protected readonly placementClass = computed(() => {
     const kind = this.kind();
     if (!kind) return "";
-    return popupPlacementClass(kind, this.position()) ?? "";
+    return [
+      popupPlacementClass(kind, this.position()),
+      popupAlignmentClass(kind, this.alignment()),
+    ].filter((name): name is string => name !== null).join(" ");
   });
 
   // "close" mirrors the dialog element's vocabulary and is part of the

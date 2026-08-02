@@ -257,10 +257,38 @@ export function overlayAnchoringFor(kind: MdyWidgetKind): MdyOverlayAnchorOption
  */
 export function popupPlacementClass(kind: MdyPopupWidgetKind, placement: MdyOverlayPlacement): string | null {
   if (placement !== "above" && placement !== "overlay") return null;
-  const base = partClasses(kind, "popup")[0];
-  if (base === undefined) return null;
-  const applied = partClasses(kind, "popup", { [placement]: true });
-  return applied.find((name) => name !== base && name.startsWith(`${base}--`)) ?? null;
+  return popupStateClass(kind, placement);
+}
+
+/**
+ * The class a popup wears to say which edge it hangs from, or `null` for the ordinary case.
+ *
+ * The other half of the same decision. `left` is the ordinary case and carries no class, exactly as
+ * `below` does for placement.
+ *
+ * This existed in the catalog — every popup declares `right` alongside `above` and `overlay` — and
+ * had no derivation, so the adapters each invented `mdy-overlay-panel--right`, a name no stylesheet
+ * has ever matched, while the contract's own spelling went unemitted and dropped out of the style
+ * audit as a stale entry. That is the same failure {@link popupPlacementClass} was written to end for
+ * `--above`, in the one case it did not cover.
+ */
+export function popupAlignmentClass(kind: MdyPopupWidgetKind, alignment: MdyOverlayAlignment): string | null {
+  return alignment === "right" ? popupStateClass(kind, "right") : null;
+}
+
+/**
+ * The popup's own class for one of its declared states, derived rather than spelled.
+ *
+ * The answer is what the state *added*, not the first class shaped like a modifier of the base. A
+ * popup may already carry one statically: the range picker's is
+ * `["mdy-datepicker__popup", "mdy-popup", "mdy-datepicker__popup--range"]`, and matching by shape
+ * returned `--range` — a variant marker — for every placement it was ever asked about, so a range
+ * calendar opening above reported a class that says nothing about where it is.
+ */
+function popupStateClass(kind: MdyPopupWidgetKind, state: "above" | "overlay" | "right"): string | null {
+  const plain = new Set(partClasses(kind, "popup"));
+  const applied = partClasses(kind, "popup", { [state]: true });
+  return applied.find((name) => !plain.has(name)) ?? null;
 }
 
 const clamp = (value: number, low: number, high: number): number =>

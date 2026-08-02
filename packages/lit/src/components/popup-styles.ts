@@ -346,7 +346,11 @@ export function renderOverlayPanel(
 ): unknown {
   if (!open) return nothing;
   const modalClass = options?.modal ? " mdy-overlay-panel--modal" : "";
-  const rightClass = options?.alignment === "right" ? " mdy-overlay-panel--right" : "";
+  // No alignment class here. This wrapper is `display: contents` and lays nothing out, so a class on
+  // it styles nothing however it is spelled — the same reasoning that moved `--above` off it. The
+  // edge belongs on the popup part inside, under the name the catalog gives it, which is what
+  // `popupAlignmentClass` answers.
+  const rightClass = "";
   // The panel is a marker, not a box: it lays nothing out (`display: contents`), so the popup part
   // inside it is the single container — the same one every renderer portals and a host-projected panel wrular projects. Two nested
   // positioned boxes is what put a Lit popup 35px below where its anchor said it belonged.
