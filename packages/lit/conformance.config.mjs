@@ -28,3 +28,15 @@ export const mount = fixture.mount;
 export const absentParts = Object.fromEntries(
   kinds.map((kind) => [kind, overlayOnlyParts(kind)]),
 );
+
+/**
+ * Two instances that are meant to differ — which for this renderer is just two mounts.
+ *
+ * Each element mints its own `mdy-field-N` at construction, so instances are scoped whether or not
+ * anyone asks. A renderer whose ids come from caller-supplied field names has to be told a scope
+ * instead; this one has nothing to be told.
+ *
+ * The scope argument is unused on purpose: the suite asks for two instances that should not share
+ * ids, and this renderer cannot produce two that do.
+ */
+export const mountScoped = (kind) => mount(kind);
