@@ -19,8 +19,9 @@ import { expect, test } from "@playwright/test";
  *
  * ## What it does not do
  *
- * It covers six families, not seventeen kinds, and two of those six have no part in the demo to
- * measure. It is the instrument the rest of this task is built on, not a claim that RTL works.
+ * It covers sixteen families across the four packaged themes, which is the surface the demo renders —
+ * not all seventeen kinds, and not the overlay placement, which is contract-level and tested in
+ * `@modyra/widgets`.
  */
 
 /**
@@ -106,6 +107,29 @@ async function insets(page: import("@playwright/test").Page, widget: string, par
   );
 }
 
+/**
+ * The packaged themes, because geometry being theme-independent is an assumption until measured.
+ *
+ * A theme can change padding, radii and affix sizes, any of which could reintroduce a physical
+ * offset the default theme does not have.
+ */
+const THEMES = ["modyra.css", "modyra-modern.css", "modyra-material.css", "modyra-ios.css"] as const;
+
+async function useTheme(page: import("@playwright/test").Page, file: string): Promise<void> {
+  await page.evaluate(async (href) => {
+    const link = document.getElementById("mdy-theme-link") as HTMLLinkElement | null;
+    if (!link) throw new Error("the demo has no #mdy-theme-link to swap");
+    if (link.getAttribute("href") === `styles/${href}`) return;
+    await new Promise<void>((resolve) => {
+      link.addEventListener("load", () => resolve(), { once: true });
+      link.addEventListener("error", () => resolve(), { once: true });
+      link.setAttribute("href", `styles/${href}`);
+    });
+  }, file);
+  // One frame, so the swapped sheet has been applied before anything is measured.
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r(null))));
+}
+
 test.describe("RTL", () => {
   test("the fixture can drive the document in both directions", async ({ page }) => {
     await page.goto("/");
@@ -145,3 +169,36 @@ test.describe("RTL", () => {
     });
   }
 });
+
+/**
+ * Every family, every packaged theme.
+ *
+ * One test per theme rather than per family: a theme either mirrors or it does not, and naming the
+ * families that failed in one message is more useful than sixty-four green ticks. The per-family
+ * tests above stay because they are what a single regression should fail on.
+ */
+for (const theme of THEMES) {
+  test(`every family mirrors under ${theme}`, async ({ page }) => {
+    await page.goto("/");
+    await useTheme(page, theme);
+
+    const broken: string[] = [];
+    for (const { family, widget, part } of MIRROR_CASES) {
+      await page.evaluate(() => document.documentElement.setAttribute("dir", "ltr"));
+      const ltr = await insets(page, widget, part);
+      if (!ltr) continue;   // not in the demo under this theme; the per-family tests report the skip
+
+      await page.evaluate(() => document.documentElement.setAttribute("dir", "rtl"));
+      const rtl = await insets(page, widget, part);
+      if (!rtl) { broken.push(`${family} (vanished under rtl)`); continue; }
+
+      const mirrored = Math.abs(ltr.fromLeft - rtl.fromRight) <= 1.5;
+      const expected = NOT_YET_MIRRORED[family] === undefined;
+      if (mirrored !== expected) {
+        broken.push(`${family} (${ltr.fromLeft.toFixed(1)} vs ${rtl.fromRight.toFixed(1)})`);
+      }
+    }
+
+    expect(`${theme}: ${broken.join(", ") || "all mirror"}`).toBe(`${theme}: all mirror`);
+  });
+}
