@@ -1,106 +1,45 @@
+// The clock's component-scoped styles: what is left after the foundation states the rest.
+//
+// Angular compiles this with emulated encapsulation, so every rule here carries an
+// `[_ngcontent-*]` attribute and **outranks `modyra.css` wherever both speak**. A theme cannot
+// override anything in this file. That is why it is kept as small as it is: a declaration that is
+// also in the foundation is not a safe copy, it is a rule no theme can reach.
+//
+// Every declaration below is one `modyra.css` does **not** state. They fall into two groups, and
+// the difference matters to whoever audits this next:
+//
+//   * **Genuinely local** — encapsulated geometry and transitions with no foundation counterpart.
+//   * **Same property, different fallback** — the foundation states the property with another
+//     fallback value, so these are not duplicates and were left alone. They are also, for the same
+//     specificity reason, the declarations a theme cannot touch. Reconciling them is a change to
+//     what the clock looks like, not a de-duplication, and belongs to its own batch.
+//
 // ── Container ────────────────────────────────────────────────────────────────
 //
 // All --tp-* tokens cascade from global --mdy-* workspace tokens.
 // No M3 purple fallbacks; primary color always matches --mdy-input-focus-color.
 //
 .mdy-timepicker-container {
-    // ── Thematic Colors ───────────────────────────────────────────────────
-    --tp-primary: var(--mdy-tp-primary, var(--mdy-primary));
-    --tp-on-primary: var(--mdy-tp-on-primary, var(--mdy-on-primary));
-    --tp-primary-container: var(--mdy-tp-primary-container, var(--mdy-primary-container));
-    --tp-on-primary-container: var(--mdy-tp-on-primary-container, var(--mdy-on-primary-container));
-    --tp-surface: var(--mdy-tp-surface, var(--mdy-surface));
-    --tp-surface-variant: var(--mdy-tp-surface-variant, var(--mdy-surface-container));
-    --tp-outline: var(--mdy-tp-outline, var(--mdy-outline-variant));
-    --tp-border-radius: var(--mdy-tp-border-radius, var(--mdy-datepicker-popup-border-radius, var(--mdy-input-border-radius)));
-
-    // ── Typography ────────────────────────────────────────────────────────
+    // Same property, different fallback: the foundation declares each of these too, with values of
+    // its own. Left as-is rather than reconciled.
     --tp-font-family: var(--mdy-font-family, "Roboto", sans-serif);
-    --tp-font-weight: var(--mdy-tp-font-weight, 400);
-    --tp-period-font-weight: var(--mdy-tp-period-font-weight, 500);
-
-    // ── Computed Dimensions ───────────────────────────────────────────────
     --tp-dial-size: var(--mdy-comp-time-picker-clock-dial-size, 256px);
-    --tp-num-size: 40px;
-    --tp-hand-length: calc(var(--tp-dial-size) / 2 - (var(--tp-num-size) / 2) - 8px);
-
-    // ── Segment / Box Dimensions (M3: 96×80px) ────────────────────────────
     --tp-seg-width: var(--mdy-comp-time-picker-input-segment-width, 96px);
     --tp-seg-height: var(--mdy-comp-time-picker-input-segment-height, 80px);
     --tp-header-seg-width: var(--tp-seg-width);
 
     background-color: var(--mdy-comp-time-picker-container-color, var(--tp-surface));
-    border: none;
     border-radius: var(--mdy-comp-time-picker-container-shape, var(--tp-border-radius));
-    box-shadow: var(--mdy-datepicker-popup-shadow, var(--mdy-select-dropdown-shadow, 0 4px 12px rgba(0, 0, 0, 0.12)));
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    width: fit-content;
-    max-width: 95vw;
-    max-height: 95vh;
-    overflow-y: auto;
-    box-sizing: border-box;
-    font-family: var(--tp-font-family);
-}
-
-// ── Inner content wrapper ─────────────────────────────────────────────────────
-
-.mdy-timepicker-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-}
-
-// ── Header (Shared between Input and Dial) ────────────────────────────────────
-
-.mdy-timepicker-header {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-}
-
-.mdy-timepicker-fields {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.mdy-timepicker-segment {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
 }
 
 .mdy-timepicker-segment-input {
-    width: var(--tp-seg-width) !important;
-    height: var(--tp-seg-height) !important;
-    /* M3: surface-container-highest background */
+    // `!important` here beats the foundation twice over — by specificity and by weight. Same
+    // property, different fallback; reconciling it is a visual change, not a cleanup.
     background-color: var(--mdy-comp-time-picker-input-container-color, var(--tp-surface-variant)) !important;
-    border: 1.5px solid transparent !important;
-    /* M3: small shape = 8px */
     border-radius: var(--mdy-comp-time-picker-input-container-shape, var(--tp-border-radius)) !important;
-    /* M3: display-medium = 45px */
-    font-size: 45px !important;
-    font-weight: var(--tp-font-weight) !important;
-    text-align: center !important;
-    color: var(--tp-on-primary-container) !important;
-    outline: none !important;
-    box-shadow: none !important;
     transition: background-color 0.15s, border-color 0.15s, color 0.15s;
-    font-family: inherit;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: text;
-    padding: 0 !important;
 
-    &--readonly {
-        cursor: pointer !important;
-    }
-
+    // The spin buttons are a UA control the foundation says nothing about.
     &::-webkit-inner-spin-button,
     &::-webkit-outer-spin-button {
         -webkit-appearance: none;
@@ -112,242 +51,51 @@
     }
 }
 
-.mdy-timepicker-segment--active .mdy-timepicker-segment-input {
-    background-color: var(--tp-primary) !important;
-    border-color: var(--tp-primary) !important;
-    color: var(--tp-on-primary) !important;
-}
-
-.mdy-timepicker-segment-label {
-    font-size: 0.75rem;
-    color: var(--tp-outline);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-left: 4px;
-}
-
-.mdy-timepicker-separator {
-    font-size: 45px; /* M3: matches display-medium segment font */
-    color: var(--tp-on-primary-container);
-    font-weight: var(--tp-font-weight);
-    align-self: flex-start;
-    height: var(--tp-seg-height);
-    display: flex;
-    align-items: center;
-}
-
 // ── AM/PM segmented toggle ────────────────────────────────────────────────────
 
 .mdy-timepicker-period-toggle {
-    display: flex;
-    flex-direction: column;
-    /* M3: outline color + small shape */
+    // Same property, different fallback.
     border: 1.5px solid var(--mdy-comp-time-picker-period-outline-color, var(--tp-outline));
     border-radius: var(--mdy-comp-time-picker-input-container-shape, var(--tp-border-radius));
-    overflow: hidden;
-    height: var(--tp-seg-height);
-}
-
-.mdy-timepicker-period-toggle--compact {
-    height: auto;
-    align-self: center;
-    margin-left: 8px;
 }
 
 .mdy-timepicker-period-btn {
-    flex: 1;
-    border: none;
-    background: transparent;
-    padding: 0;
     width: 52px; // Fixed width to prevent shift when font-weight changes
-    font-size: 0.875rem;
-    font-weight: var(--tp-period-font-weight);
-    font-family: inherit;
-    cursor: pointer;
-    color: var(--mdy-on-surface-variant, #3f3f46);
     transition: background-color 0.15s, color 0.15s;
 
+    // The divider between the stacked AM and PM buttons; the foundation draws no such rule.
     &:first-child {
         border-bottom: 1.5px solid var(--mdy-comp-time-picker-period-outline-color, var(--tp-outline));
-    }
-
-    &--selected {
-        // Solid primary bg — same treatment as active hour/minute segments
-        background-color: var(--tp-primary);
-        color: var(--tp-on-primary);
-        font-weight: 600;
-    }
-
-    &:hover:not(:disabled):not(&--selected) {
-        background-color: var(--mdy-datepicker-hover-bg, rgba(0, 0, 0, 0.06));
-    }
-
-    &:disabled {
-        opacity: 0.4;
-        cursor: default;
     }
 }
 
 // ── Dial Variant ──────────────────────────────────────────────────────────────
 
 .mdy-timepicker-dial {
-    width: var(--tp-dial-size);
-    height: var(--tp-dial-size);
+    // Same property, different fallback.
     background-color: var(--mdy-comp-time-picker-clock-dial-container-color, var(--tp-surface-variant));
-    border-radius: 50%;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    user-select: none;
-    touch-action: none;
-}
-
-.mdy-timepicker-dial__face {
-    position: relative;
-    width: 100%;
-    height: 100%;
-}
-
-// The numbers are placed by the foundation (`.mdy-timepicker-dial__number` in modyra.css), which
-// said exactly what this block said — the same properties and the same transform, copied. Component
-// styles are emulated-encapsulation, so they carry an attribute selector and outrank the foundation
-// wherever the two speak: this copy is why the 24-hour face's inner ring drew at the outer radius
-// and every second hour landed on top of a first one. A renderer that re-states placement is a
-// renderer deciding what a widget looks like in a place no theme can reach.
-
-// Hand height must match the translateY distance (94px) for the tip to hit numbers
-.mdy-timepicker-dial__hand {
-    position: absolute;
-    bottom: 50%;
-    left: calc(50% - 1px);
-    width: 2px;
-    height: var(--tp-hand-length);
-    background-color: var(--tp-primary);
-    transform-origin: bottom center;
-    // No CSS transition — it causes a full reverse spin when crossing 12 o'clock
-    // (CSS interpolates 350°→10° as -340° instead of the intended +20°)
-
-    // Dot at the tip (to sit behind the number)
-    &::after {
-        content: "";
-        position: absolute;
-        top: calc(var(--tp-num-size) / -2);
-        left: calc(var(--tp-num-size) / -2 + 1px); /* Perfectly center on 2px hand */
-        width: var(--tp-num-size);
-        height: var(--tp-num-size);
-        aspect-ratio: 1;
-        background-color: var(--tp-primary);
-        border-radius: 50%;
-        z-index: 2;
-    }
-
-    // Small pivot dot at center
-    &::before {
-        content: "";
-        position: absolute;
-        bottom: -4px;
-        left: -3px;
-        width: 8px;
-        height: 8px;
-        background-color: var(--tp-primary);
-        border-radius: 50%;
-    }
-}
-
-// ── Actions bar (Cancel / OK + mode toggle) ────────────────────────────────────
-
-.mdy-timepicker-actions {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    gap: 4px;
-}
-
-.mdy-timepicker-spacer {
-    flex: 1;
 }
 
 .mdy-timepicker-mode-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    color: var(--mdy-on-surface-variant, #3f3f46);
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 50%;
     transition: background-color 0.15s;
-    width: 32px;
-    height: 32px;
-
-    &:hover {
-        background-color: var(--mdy-datepicker-hover-bg, rgba(0, 0, 0, 0.06));
-    }
-
-    svg {
-        display: block;
-    }
 }
 
 .mdy-timepicker-action-btn {
-    background: none;
-    border: none;
-    color: var(--tp-primary);
-    font-weight: 600;
-    font-size: 0.875rem;
-    font-family: inherit;
-    padding: 6px 12px;
-    border-radius: var(--tp-border-radius);
-    cursor: pointer;
-    letter-spacing: 0.04em;
     transition: background-color 0.15s;
-
-    &:hover {
-        background-color: var(--mdy-datepicker-hover-bg, rgba(0, 0, 0, 0.06));
-    }
-
-    &--confirm {
-        font-weight: 700;
-    }
 }
 
 // ── Input Renderer Styles (MdyTimepickerComponent) ───────────────────────────
 
 .mdy-timepicker {
-    position: relative;
     width: 100%;
 }
 
-.mdy-timepicker__input {
-    flex: 1;
-    width: 0; // Force flex to control width, preventing grow
-    min-width: 0;
-    box-sizing: border-box;
-}
-
 .mdy-timepicker__toggle {
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: inherit;
     /* Inherit focus color from .mdy-input-suffix */
-    border-radius: 50%;
     transition: background-color 0.2s, color 0.2s;
-    padding: 0;
-    width: 32px;
-    height: 32px;
 
     &:hover:not(:disabled) {
         background-color: var(--mdy-surface-container-highest);
-    }
-
-    &:focus-visible {
-        outline: 2px solid var(--mdy-primary);
     }
 }
 
@@ -364,6 +112,8 @@
     // Only z-index and the modal-center fallback are set here.
     z-index: 1000;
 
+    // The one rule in this file the foundation states nowhere at all: the centred modal fallback
+    // for when the popup cannot be anchored.
     &--overlay {
         position: fixed;
         z-index: 1001;
