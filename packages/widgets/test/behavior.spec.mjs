@@ -151,3 +151,23 @@ test("overlay lifecycle owns open, toggle, outside, escape, destroy and restorat
   assert.equal(overlayLifecycleTransition(opened.state, { type: "escape" }).restoreFocus, true);
   assert.equal(overlayLifecycleTransition(opened.state, { type: "destroy" }).announce, null);
 });
+
+/**
+ * The multiselect's keyboard policy, held to the same two rules as the select's.
+ *
+ * They are separate functions because the widgets differ — one commits and closes, the other keeps
+ * choosing — but a closed list has nothing to move through in either, and Tab means the same thing
+ * in both.
+ */
+test("multiselect keyboard policy opens on ArrowDown and yields on Tab", () => {
+  const at = (over) => multiselectOverlayAction({ key: "x", open: true, query: "", activeKey: null, ...over });
+
+  assert.deepEqual(at({ key: "ArrowDown", open: false }), { type: "open" }, "a closed list opens");
+  assert.equal(at({ key: "ArrowUp", open: false }), null, "and only downwards");
+  assert.equal(at({ key: "Home", open: false }), null);
+  assert.deepEqual(at({ key: "ArrowDown" }), { type: "move", target: "next" }, "open, it moves");
+
+  assert.deepEqual(at({ key: "Tab" }), { type: "close", restoreFocus: false }, "Tab yields focus");
+  assert.equal(at({ key: "Tab", open: false }), null, "tabbing past a closed field is not its business");
+  assert.deepEqual(at({ key: "Escape" }), { type: "close", restoreFocus: true }, "Escape hands it back");
+});
