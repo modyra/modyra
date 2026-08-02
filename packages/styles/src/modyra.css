@@ -463,13 +463,17 @@
         align-items: center;
         width: 100%;
         height: 100%;
-        padding: 0 0.25rem 0 0.75rem;
+        /* Logical: the field's inner padding is asymmetric — more room where the text starts than
+           where the affixes sit — and written physically that 8px difference stayed on the left
+           under `dir=rtl`, pushing everything at the inline end 8px inside where it belongs. */
+        padding-block: 0;
+        padding-inline: 0.75rem 0.25rem;
         box-sizing: border-box;
     }
 
     .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-input-wrapper__inliner {
         padding-top: var(--mdy-fl-pad-top);
-        padding-left: 1rem;
+        padding-inline-start: 1rem;
         align-items: center;
     }
 

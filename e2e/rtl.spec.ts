@@ -55,14 +55,8 @@ const MIRROR_CASES = [
  * Asserted in both directions like every other ledger in this repo: an entry that starts mirroring
  * must be removed, so a fix cannot land silently and a regression cannot hide behind a stale note.
  */
-const NOT_YET_MIRRORED: Record<string, string> = {
-  // Measured: the toggle sits 189px from the inline start in LTR and 181px from it in RTL — 8px
-  // further in. Its own padding, margin and corner radii are logical and do flip (4/12 becomes
-  // 12/4), so the remaining 8px belongs to something beside it inside the field, not to the button.
-  // Recorded rather than chased: the fixture has located it to within a single widget, which is
-  // what a batch needs to start from.
-  colors: "the toggle lands 8px inside where it should — a second physical rule in the colour field",
-};
+const NOT_YET_MIRRORED: Record<string, string> = {};
+
 
 /**
  * Measured, and it corrected the guess this ledger was first written from.
