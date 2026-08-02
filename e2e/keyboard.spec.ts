@@ -158,3 +158,144 @@ test.describe("multiselect", () => {
     expect(onOpener, "Tab must not restore focus to the opener it was leaving").toBe(false);
   });
 });
+
+/**
+ * The datepicker, asked the same two questions.
+ *
+ * Its grid navigation already lives in the contract (`calendarKeyboardTarget`), which is why this
+ * batch asks only what the other two batches found missing: whether the overlay can be reached from
+ * the keyboard at all, and whether leaving it behaves.
+ */
+const DATE = ".mdy-renderer--datepicker";
+const DATE_INPUT = `${DATE} .mdy-datepicker__input`;
+const DATE_TOGGLE = `${DATE} .mdy-datepicker__toggle`;
+
+const expectDateOpen = (page: import("@playwright/test").Page, open: boolean) =>
+  expect(page.locator(DATE_TOGGLE).first()).toHaveAttribute("aria-expanded", String(open));
+
+const dateFocusedPart = (page: import("@playwright/test").Page) =>
+  page.evaluate((sel) => {
+    const active = document.activeElement;
+    if (!active || !active.closest(sel)) return null;
+    return (active.className as string).split(" ").find((c) => c.startsWith("mdy-")) ?? "unknown";
+  }, DATE);
+
+test.describe("datepicker", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator(DATE_TOGGLE).first()).toBeVisible();
+  });
+
+  test("the calendar can be opened from the keyboard", async ({ page }) => {
+    await page.locator(DATE_TOGGLE).first().focus();
+    await expectDateOpen(page, false);
+    await page.keyboard.press("Enter");
+    await expectDateOpen(page, true);
+  });
+
+  test("Escape closes the calendar and leaves focus inside the widget", async ({ page }) => {
+    await page.locator(DATE_TOGGLE).first().focus();
+    await page.keyboard.press("Enter");
+    await expectDateOpen(page, true);
+
+    await page.keyboard.press("Escape");
+    await expectDateOpen(page, false);
+    await expect.poll(() => dateFocusedPart(page), {
+      message: "Escape must not leave the user on the document body",
+    }).not.toBeNull();
+  });
+
+  test("the arrows move through the grid once it is open", async ({ page }) => {
+    await page.locator(DATE_TOGGLE).first().focus();
+    await page.keyboard.press("Enter");
+    await expectDateOpen(page, true);
+
+    const focusedDay = () => page.evaluate(() =>
+      (document.activeElement as HTMLElement | null)?.textContent?.trim() ?? null);
+    const before = await focusedDay();
+    await page.keyboard.press("ArrowRight");
+    // `role="grid"` says nothing about whether the arrows move through it. This is the difference.
+    await expect.poll(focusedDay).not.toBe(before);
+  });
+});
+
+/**
+ * The date range: the same calendar, opened from a second endpoint.
+ */
+const RANGE = ".mdy-renderer--daterange";
+const RANGE_TOGGLE = `${RANGE} .mdy-datepicker__toggle`;
+
+test.describe("daterange", () => {
+  const expectOpenRange = (page: import("@playwright/test").Page, open: boolean) =>
+    expect(page.locator(RANGE_TOGGLE).first()).toHaveAttribute("aria-expanded", String(open));
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator(RANGE_TOGGLE).first()).toBeVisible();
+    await page.locator(RANGE_TOGGLE).first().focus();
+  });
+
+  test("the calendar can be opened from the keyboard", async ({ page }) => {
+    await expectOpenRange(page, false);
+    await page.keyboard.press("Enter");
+    await expectOpenRange(page, true);
+  });
+
+  test("Escape closes it and leaves focus inside the widget", async ({ page }) => {
+    await page.keyboard.press("Enter");
+    await expectOpenRange(page, true);
+    await page.keyboard.press("Escape");
+    await expectOpenRange(page, false);
+
+    const inside = await page.evaluate(
+      (sel) => document.activeElement?.closest(sel) !== null,
+      RANGE,
+    );
+    expect(inside, "Escape must not leave the user on the document body").toBe(true);
+  });
+});
+
+/**
+ * The segmented control: a radiogroup, where the arrows are the whole interaction.
+ *
+ * It has no overlay, so the questions are different — there is nothing to open or dismiss. What
+ * matters is that `role="radiogroup"` is not just an attribute: the arrows must actually move the
+ * selection, which is precisely the gap this milestone exists to close.
+ */
+const SEGMENTED = ".mdy-renderer--segmented";
+
+test.describe("segmented", () => {
+  /**
+   * The host is identified by **where focus actually is**, not by guessing which instance is on
+   * screen.
+   *
+   * The demo renders more than one segmented control, and every earlier attempt here picked the
+   * host one way and read the selection another — focusing one instance and asserting about a
+   * different one, which reports a working widget as broken. Letting the browser tell us which host
+   * holds focus removes the guess.
+   */
+  test("the arrows move the selection", async ({ page }) => {
+    await page.goto("/");
+    const option = page.locator(`${SEGMENTED} .mdy-segmented__button:visible`).first();
+    await expect(option).toBeVisible();
+    await option.focus();
+
+    // If focus did not take, everything after this asserts about a keystroke the widget never saw.
+    await expect(option).toBeFocused();
+
+    const checkedInFocusedHost = () => page.evaluate(() => {
+      const host = document.activeElement?.closest(".mdy-renderer--segmented");
+      const marked = host?.querySelector('[aria-checked="true"], [aria-pressed="true"]');
+      return marked?.textContent?.trim() ?? null;
+    });
+
+    const before = await checkedInFocusedHost();
+    expect(before, "the control starts with something selected").not.toBeNull();
+
+    await page.keyboard.press("ArrowRight");
+    // `role="radiogroup"` says nothing about whether the arrows move the selection. This does.
+    await expect.poll(checkedInFocusedHost, {
+      message: 'role="radiogroup" is not a keyboard: the arrows must move the selection',
+    }).not.toBe(before);
+  });
+});
