@@ -19,6 +19,7 @@ import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../
 import { MDY_WIDGET_RELATIONS } from "../relations.js";
 import { MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import { MDY_SEMANTIC_ELEMENTS } from "./dom-tests.js";
+import { portalRootFor } from "./portal.js";
 
 /** One part, as the contract can describe it without naming a framework. */
 export interface MdyCanonicalPart {
@@ -152,28 +153,10 @@ export function canonicalWidgetSnapshot(
    */
   const ownPortal = (): readonly Element[] => {
     if (options.portalRoots) return options.portalRoots;
-    const opener = MDY_POPUP_OPENERS[kind]?.opener;
-    if (!opener) return [];
-    const classes = definition.parts[opener as keyof typeof definition.parts]?.classes ?? [];
-    if (!classes.length) return [];
-    const selector = classes.map((className: string) => `.${escapeClass(className)}`).join("");
-    const element = root.matches?.(selector) ? root : root.querySelector(selector);
-    const controls = element?.getAttribute("aria-controls");
-    const named = controls ? root.ownerDocument?.getElementById(controls) : null;
-    if (!named || root.contains(named)) return [];
-    // The whole portalled tree, not just the element the id names. A relation may point at the
-    // *listbox* while the popup that holds it is an ancestor, so scoping to the named element alone
-    // reports the popup as absent on exactly the kinds whose relation is most precise.
-    let outermost: Element = named;
-    for (
-      let cursor = named.parentElement;
-      cursor && cursor !== root.ownerDocument?.body && !root.contains(cursor);
-      cursor = cursor.parentElement
-    ) {
-      outermost = cursor;
-    }
-    return [outermost];
+    const portal = portalRootFor(root);
+    return portal ? [portal] : [];
   };
+
 
   /**
    * Whether the overlay is showing, taken from the relation rather than from the DOM's own hiding.

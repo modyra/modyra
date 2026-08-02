@@ -328,7 +328,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           <div class="mdy-input-suffix">
             ${state.loading
         ? mdyIcon("LOADER", "mdy-select__loader")
-        : mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}
+        : mdyIcon("CHEVRON_DOWN", `mdy-select__arrow ${this._open ? "mdy-select__arrow--open" : ""}`)}
             <slot name="suffix"></slot>
           </div>
         </div>
