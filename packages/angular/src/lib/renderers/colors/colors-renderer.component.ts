@@ -128,7 +128,6 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
         [position]="position()"
         [alignment]="alignment()"
         [coords]="coords()"
-        [maxHeight]="maxHeight()"
         [hasBackdrop]="position() === 'overlay'"
         [dialogLabel]="i18n.colorPresetsHeader"
         [widthMode]="'auto-content'"

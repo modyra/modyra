@@ -117,7 +117,6 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
         [position]="position()"
         [alignment]="alignment()"
         [coords]="coords()"
-        [maxHeight]="maxHeight()"
         [hasBackdrop]="position() === 'overlay'"
         [dialogLabel]="i18n.timepickerOpenLabel"
         [widthMode]="'auto-content'"

@@ -129,7 +129,6 @@ import { MdyDropdownBase } from "../dropdown-base";
           [position]="position()"
           [alignment]="alignment()"
           [coords]="coords()"
-          [maxHeight]="maxHeight()"
           [hasBackdrop]="overlayMode()"
           [widthMode]="widthMode()"
           (close)="closeOverlay()"

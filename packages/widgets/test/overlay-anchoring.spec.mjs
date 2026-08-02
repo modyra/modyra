@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { anchorOverlay, decideOverlayPlacement, overlayAnchoringFor, partClasses, stabilizeOverlayPlacement, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
+import { anchorOverlay, decideOverlayPlacement, overlayAnchoringFor, overlayStyleProperties, partClasses, stabilizeOverlayPlacement, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
 
 const VIEWPORT = { width: 1000, height: 800 };
 /** A control in the middle of the page, with room on both sides. */
@@ -395,4 +395,62 @@ test("every popup part can be asked for its placement states, and below carries 
       );
     }
   }
+});
+
+/**
+ * The two ways to read a placement must say the same thing.
+ *
+ * `anchorOverlay` returns the custom properties directly; `overlayStyleProperties` serialises the
+ * coordinates for a host that carries them around instead. They are two projections of one
+ * decision, and while the second omitted `transform`, `max-height` and `width`, a host on that path
+ * had to complete the decision itself — which is how a modal came to be given a height the policy
+ * never chose, and the same popup ended up a different size on one renderer than on the others.
+ *
+ * A projection that omits part of the decision is a projection each host completes differently.
+ */
+const coordsFrom = (properties, decision, rect) => {
+  const px = (name) => {
+    const raw = properties[name];
+    return raw === undefined || raw === "auto" || raw === "unset" || raw.endsWith("%") ? undefined : Number.parseFloat(raw);
+  };
+  return {
+    top: px("--mdy-overlay-top"), bottom: px("--mdy-overlay-bottom"),
+    left: px("--mdy-overlay-left"), right: px("--mdy-overlay-right"),
+    maxWidth: px("--mdy-overlay-max-width"), maxHeight: px("--mdy-overlay-max-height"),
+    width: rect === undefined ? undefined : decision.width,
+    placement: decision.placement,
+  };
+};
+
+test("overlayStyleProperties agrees with anchorOverlay on every placement", () => {
+  const cases = [
+    ["below", anchor(), { matchAnchorWidth: true }],
+    ["above", anchor({ top: 700, bottom: 736 }), { matchAnchorWidth: true }],
+    // Neither side has room, so the popup gives up on its anchor and centres itself.
+    ["overlay", anchor({ top: 380, bottom: 420 }), { matchAnchorWidth: true, minSpace: 400 }],
+    ["content-sized", anchor(), { matchAnchorWidth: false, contentWidth: 300 }],
+  ];
+  for (const [name, rect, options] of cases) {
+    const { decision, properties } = anchorOverlay(rect, VIEWPORT, options);
+    const coords = coordsFrom(properties, decision, options.matchAnchorWidth ? rect : undefined);
+    const projected = overlayStyleProperties(coords);
+    for (const key of ["--mdy-overlay-top", "--mdy-overlay-bottom", "--mdy-overlay-left", "--mdy-overlay-right", "--mdy-overlay-transform", "--mdy-overlay-max-height"]) {
+      assert.equal(
+        projected[key], properties[key],
+        `${name}: ${key} — anchorOverlay says ${properties[key]}, the coords projection says ${projected[key]}`,
+      );
+    }
+  }
+});
+
+test("a modal keeps the policy's height, not a host's guess", () => {
+  const { decision, properties } = anchorOverlay(anchor({ top: 380, bottom: 420 }), VIEWPORT, { minSpace: 400 });
+  assert.equal(decision.placement, "overlay");
+  // 70% of an 800px viewport. The number is the contract's; a host writing `80vh` here is the
+  // defect this test exists to catch.
+  assert.equal(properties["--mdy-overlay-max-height"], "560px");
+  assert.equal(
+    overlayStyleProperties(coordsFrom(properties, decision))["--mdy-overlay-max-height"],
+    "560px",
+  );
 });

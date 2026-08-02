@@ -69,7 +69,6 @@ export class MdyOverlayPanelComponent {
   readonly position = input<MdyOverlayPlacement>("below");
   readonly alignment = input<MdyOverlayAlignment>("left");
   readonly coords = input.required<MdyOverlayCoords>();
-  readonly maxHeight = input<number>(0);
   readonly hasBackdrop = input<boolean>(false);
   readonly widthMode = input<"match-anchor" | "auto-content">("match-anchor");
   readonly panelClass = input<string>("");
@@ -185,8 +184,6 @@ export class MdyOverlayPanelComponent {
    */
   readonly panelStyle = computed(() => {
     const c = this.coords();
-    const isOverlay = this.position() === "overlay";
-    const width = this.widthMode() === "match-anchor" && c.width ? `${c.width}px` : "auto";
     return {
       // The wrapper still swallows clicks meant for its own popup; it has no box of its own to
       // catch anything else with.
@@ -196,27 +193,14 @@ export class MdyOverlayPanelComponent {
       // only thing hiding a closed overlay there, and axe finds a closed calendar without it.
       visibility: this.open() ? "visible" : "hidden",
       opacity: this.open() ? "1" : "0",
-      ...overlayStyleProperties(c),
-      // A modal placement is centred on the viewport rather than hung off a control, and the
-      // centring is a translation — the same one `anchorOverlay` writes for every other renderer.
-      // Stated after the measured coordinates, because for a modal there is no side left to attach
-      // to and the centre replaces them.
-      ...(isOverlay
-        ? {
-            "--mdy-overlay-top": "50%",
-            "--mdy-overlay-bottom": "auto",
-            "--mdy-overlay-left": "50%",
-            "--mdy-overlay-right": "auto",
-            "--mdy-overlay-transform": "translate(-50%, -50%)",
-            "--mdy-overlay-max-height": "80vh",
-          }
-        : {
-            "--mdy-overlay-transform": "none",
-            // The room the policy measured on the side the popup hangs from. It reaches the popup
-            // now, rather than clamping a wrapper with no height to clamp.
-            "--mdy-overlay-max-height": this.maxHeight() ? `${this.maxHeight()}px` : null,
-          }),
-      "--mdy-overlay-width": width,
+      // Every overlay property comes from the contract, the centring and the height included. This
+      // component used to state the modal case itself and chose `80vh` where the policy computes
+      // 70% of the viewport, so the same popup was a different size here than in every other
+      // renderer. A projection that omits part of the decision is a projection each host completes
+      // differently.
+      ...overlayStyleProperties(
+        this.widthMode() === "match-anchor" ? c : { ...c, width: undefined },
+      ),
     };
   });
 

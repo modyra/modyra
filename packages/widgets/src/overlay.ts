@@ -45,6 +45,25 @@ export interface MdyOverlayCoords {
   /** The widest the popup may be where it now sits — the room measured on the side it hangs from.
    * Without it a content-sized popup near a viewport edge shows half off the screen. */
   readonly maxWidth?: number | undefined;
+  /**
+   * The tallest the popup may be on the side it was given, so a long list scrolls rather than
+   * overflowing the viewport.
+   *
+   * Carried here rather than left to the host because it is the other half of the placement
+   * decision: a side is chosen for the room it has, and the number describing that room has to
+   * arrive with the coordinates or the popup grows past the space it was placed in.
+   */
+  readonly maxHeight?: number | undefined;
+  /**
+   * Which side the popup ended up on, because `"overlay"` is not a coordinate.
+   *
+   * A modal placement has given up on its anchor and centres itself on the viewport, which is a
+   * percentage offset and a translation rather than the measured insets the other placements use.
+   * Without the placement travelling with the numbers there is no way to serialise that from coords
+   * alone, so every host on this path had to special-case it — and one of them picked a different
+   * height for the modal than the policy did.
+   */
+  readonly placement?: MdyOverlayPlacement | undefined;
 }
 
 /** A placed popup: the side, the edge, and the coordinates that follow from them. */
@@ -57,19 +76,44 @@ export interface MdyOverlayPlacementResult {
 /**
  * Coordinates as the custom properties the foundation positions from.
  *
- * Every unused coordinate is written as `unset` rather than left out: a popup that moves from
- * hanging left to hanging right must stop having a `left`, and a property left in place from the
- * previous placement is inherited and quietly wins.
+ * Every unused coordinate is written out rather than left off: a popup that moves from hanging left
+ * to hanging right must stop having a `left`, and a property left in place from the previous
+ * placement is inherited and quietly wins.
+ *
+ * An unused inset is `auto`, which is the value {@link anchorOverlay} writes and therefore the one
+ * every theme has been reading. `unset` would leave `var()` invalid at computed-value time and let
+ * a stylesheet fallback answer instead — a difference that only shows on the placements a host
+ * exercises least, which is exactly where the two projections had already drifted apart.
  */
 export function overlayStyleProperties(coords: MdyOverlayCoords): Readonly<Record<string, string>> {
   const prop = MDY_CSS_PROPERTIES.overlay;
-  const px = (value: number | undefined): string => (value !== undefined ? `${value}px` : "unset");
+  const px = (value: number | undefined): string => (value !== undefined ? `${Math.round(value)}px` : "auto");
+  const height = px(coords.maxHeight);
+  const width = px(coords.width);
+  if (coords.placement === "overlay") {
+    // Centred on the viewport: there is no side left to attach to, so the insets are replaced rather
+    // than measured. The height is still the one the policy decided — a host that substitutes its
+    // own makes the same widget a different size depending on which renderer drew it.
+    return Object.freeze({
+      [prop.top]: "50%",
+      [prop.bottom]: "auto",
+      [prop.left]: "50%",
+      [prop.right]: "auto",
+      [prop.transform]: "translate(-50%, -50%)",
+      [prop.maxWidth]: px(coords.maxWidth),
+      [prop.maxHeight]: height,
+      [prop.width]: width,
+    });
+  }
   return Object.freeze({
     [prop.top]: px(coords.top),
     [prop.bottom]: px(coords.bottom),
     [prop.left]: px(coords.left),
     [prop.right]: px(coords.right),
+    [prop.transform]: "none",
     [prop.maxWidth]: px(coords.maxWidth),
+    [prop.maxHeight]: height,
+    [prop.width]: width,
   });
 }
 

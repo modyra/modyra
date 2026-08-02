@@ -133,7 +133,6 @@ import { inputText, isoDateText } from "../renderer-projection";
         [position]="position()"
         [alignment]="alignment()"
         [coords]="coords()"
-        [maxHeight]="maxHeight()"
         [hasBackdrop]="variant() === 'modal' || position() === 'overlay'"
         [widthMode]="'auto-content'"
         [panelClass]="'mdy-datepicker__popup mdy-popup mdy-datepicker__popup--range'"
