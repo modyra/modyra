@@ -113,3 +113,36 @@ test("a malformed date is out of bounds whatever the bounds are", () => {
   assert.equal(dateWithinBoundsSync("not-a-date", null, null), false);
   assert.equal(dateWithinBoundsSync("2026-13-01", null, null), false);
 });
+
+/**
+ * Stepping is how a user leaves a bad value, so it must not be the one operation that refuses to.
+ *
+ * A field holding nothing readable — an empty box coerced to a number, a parse that failed — used to
+ * make the arithmetic produce `NaN`, which the caller then stored: the value became unreachable by
+ * the very key meant to change it.
+ */
+test("a field holding nothing enters the range from the end the user is leaving", () => {
+  // Up from nothing is the first value, down from nothing is the last. Entering at `min + delta`
+  // would put the first press on the second value and leave the first unreachable by keyboard.
+  assert.equal(stepTimeField("hour", "12h", Number.NaN, 1), 1);
+  assert.equal(stepTimeField("hour", "12h", Number.NaN, -1), 12);
+  assert.equal(stepTimeField("hour", "24h", Number.NaN, 1), 0);
+  assert.equal(stepTimeField("hour", "24h", Number.NaN, -1), 23);
+  assert.equal(stepTimeField("minute", "24h", Number.NaN, 1), 0);
+  assert.equal(stepTimeField("minute", "24h", Number.NaN, -1), 59);
+});
+
+test("no input can make stepping produce a value outside the range", () => {
+  for (const [field, format] of [["hour", "12h"], ["hour", "24h"], ["minute", "24h"]]) {
+    const { min, max } = timeFieldBounds(field, format);
+    for (const current of [Number.NaN, Infinity, -Infinity, -5, 999, 0, min, max]) {
+      for (const delta of [Number.NaN, Infinity, -Infinity, -3, -1, 0, 1, 3]) {
+        const got = stepTimeField(field, format, current, delta);
+        assert.ok(
+          Number.isInteger(got) && got >= min && got <= max,
+          `step(${field}, ${format}, ${current}, ${delta}) = ${got}, outside ${min}..${max}`,
+        );
+      }
+    }
+  }
+});
