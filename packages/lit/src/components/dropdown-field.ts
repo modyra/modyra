@@ -33,13 +33,12 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
 
   /** Opening and closing is one policy for every adapter: `overlayLifecycleTransition`. */
   private applyLifecycle(
-    handle: MdyFieldHandle<T>,
+    _handle: MdyFieldHandle<T>,
     intent: Parameters<typeof overlayLifecycleTransition>[1],
   ): void {
     const transition = overlayLifecycleTransition({ open: this._open }, intent);
     if (transition.state.open === this._open) return;
     this._open = transition.state.open;
-    if (transition.effect === "teardown") handle.markAsTouched();
   }
 
   protected toggleOpen(handle: MdyFieldHandle<T>): void {

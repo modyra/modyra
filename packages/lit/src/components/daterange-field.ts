@@ -172,12 +172,11 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     this.overlay.open(event);
   }
 
-  private closePopup(handle: MdyFieldHandle<MdyDateRange | null>, refocus = true): void {
+  private closePopup(_handle: MdyFieldHandle<MdyDateRange | null>, refocus = true): void {
     if (!this._open) return;
     applyOverlayIntent(this, { type: "close" });
     this.overlay.close();
     this._view = "calendar";
-    handle.markAsTouched();
     if (refocus) {
       this.querySelector<HTMLInputElement>(".mdy-daterange__input")?.focus();
     }

@@ -56,11 +56,10 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     this.querySelector<HTMLElement>(".mdy-colors__toggle-area")?.focus();
   }
 
-  private close(handle: MdyFieldHandle<string | null>): void {
+  private close(_handle: MdyFieldHandle<string | null>): void {
     if (!this._open) return;
     applyOverlayIntent(this, { type: "close" });
     this.overlay.close();
-    handle.markAsTouched();
   }
 
   override connectedCallback(): void {

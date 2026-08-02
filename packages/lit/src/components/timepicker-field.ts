@@ -100,11 +100,10 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this.overlay.open(event);
   }
 
-  private closePopup(handle: MdyFieldHandle<string | null>): void {
+  private closePopup(_handle: MdyFieldHandle<string | null>): void {
     if (!this._open) return;
     applyOverlayIntent(this, { type: "close" });
     this.overlay.close();
-    handle.markAsTouched();
     this.querySelector<HTMLInputElement>(".mdy-timepicker__input")?.focus();
   }
 
