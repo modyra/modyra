@@ -167,7 +167,6 @@ test.describe("multiselect", () => {
  * the keyboard at all, and whether leaving it behaves.
  */
 const DATE = ".mdy-renderer--datepicker";
-const DATE_INPUT = `${DATE} .mdy-datepicker__input`;
 const DATE_TOGGLE = `${DATE} .mdy-datepicker__toggle`;
 
 const expectDateOpen = (page: import("@playwright/test").Page, open: boolean) =>
