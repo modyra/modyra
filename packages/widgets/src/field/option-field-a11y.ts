@@ -16,6 +16,17 @@ export interface MdyOptionFieldA11yOptions {
   readonly variant: MdyOptionFieldVariant;
   /** How many options the group renders. The segmented theme sizes its tick gutter from it. */
   readonly optionCount: number;
+  /**
+   * Whether the error list is actually in the document.
+   *
+   * The caller owns this because only the caller knows when it renders one. A renderer that defers
+   * the list until the field is touched has errors long before it shows them, and deriving this
+   * from `errors.length` makes `aria-describedby` name an element that is not in the document.
+   *
+   * Defaults to "there are errors", which is correct for a renderer that always shows them — and is
+   * what every caller got before this existed.
+   */
+  readonly errorsVisible?: boolean;
 }
 
 /** Builds the static IDs used by an option field widget view. */
@@ -62,7 +73,8 @@ export function projectOptionFieldA11y<TValue>(
 } {
   const { labelId, groupId, descriptionId, errorId } = optionFieldPartIds(options.widgetId);
   const hasErrors = errors.length > 0;
-  const describedBy = hasErrors ? errorId : descriptionId;
+  // What the group describes itself by depends on what was *rendered*, not on what is wrong.
+  const describedBy = (options.errorsVisible ?? hasErrors) ? errorId : descriptionId;
 
   return {
     root: {

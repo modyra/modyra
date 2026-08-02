@@ -19,6 +19,9 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
       handle,
       options: this.options as ReadonlyArray<MdySelectOption<unknown>>,
       variant: "segmented",
+      // This element renders its error list only once the field is touched, so the projection
+      // must not point at a list that is not there yet.
+      errorsVisible: (state) => state.touched && state.invalid,
     });
   }
 

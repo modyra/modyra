@@ -76,6 +76,7 @@ export function createOptionFieldController<TValue>(
       widgetId,
       variant,
       optionCount: allOptions.length,
+      ...(options.errorsVisible ? { errorsVisible: options.errorsVisible(currentState) } : {}),
     });
 
     const parts: Record<string, ReturnType<typeof a11yOption>> = {};

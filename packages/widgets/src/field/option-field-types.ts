@@ -20,6 +20,17 @@ export interface MdyOptionFieldControllerOptions<TValue> {
   readonly variant?: MdyOptionFieldVariant;
   /** Whether the widget is visually/programmatically readonly. */
   readonly readonly?: boolean;
+  /**
+   * Whether the error list is in the document, given the field's state.
+   *
+   * Unlike the field shell, this widget's accessibility projection sits behind the controller, so a
+   * renderer cannot answer for itself and has to be asked here. A renderer that defers its error
+   * list until the field is touched says so, and `aria-describedby` then names the supporting text
+   * while the list is absent rather than an element that is not there.
+   *
+   * Defaults to "there are errors", which is what every caller got before this existed.
+   */
+  readonly errorsVisible?: (state: MdyOptionFieldState<TValue>) => boolean;
 }
 
 /** Semantic state of an option-based field widget. */
