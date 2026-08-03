@@ -181,9 +181,19 @@
         transform: translateY(-25%) rotate(45deg);
     }
 
-    .mdy-renderer--select .mdy-input-wrapper:focus-within .mdy-select__arrow:empty::after {
-        transform: translateY(25%) rotate(225deg);
-    }
+    /*
+     * The caret does not turn on focus, and nothing here may make it.
+     *
+     * Which way the arrow points is the `open` state, which the catalogue declares on the `arrow`
+     * part and the renderer emits as `mdy-select__arrow--open`. The foundation rotates the box by
+     * that class; the caret rides along and holds its resting 45°.
+     *
+     * A second rotation keyed on `:focus-within` composed with that one — the caret is a child of
+     * the box, so the two angles add — and it fired at the wrong moment besides. A portalled popup
+     * puts focus outside the wrapper, so the rule missed while the list was open and matched once
+     * focus returned to the trigger on selection: the caret pointed up at a closed list, and got
+     * there by winding forward 180° while the box unwound 180° behind it.
+     */
 
     /* The panel is anchored on .mdy-select, which is inside the wrapper; the wrapper's own
        rounded corners would otherwise clip the first option. */
