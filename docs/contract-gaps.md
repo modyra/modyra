@@ -19,12 +19,12 @@ to a green suite.
 **Status.** The headings below are the source of truth; this list is a convenience for a reader who
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J3
 - **Partly fixed** — C2 (derived, not painted), E2 (most scripts reachable), F (kind-keyed tables
   narrowed, part-keyed ones key-checked)
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — J1, J2, J3, J4
+- **Open** — J1, J2, J4
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -544,22 +544,41 @@ Two things follow, and only the first is recorded elsewhere:
 **Not decided.** Either the contract grows conditional anatomy (a part whose element varies by a
 declared option), or multiselect splits into two kinds, or the mode stops being a runtime option.
 
-## J3 — `timepicker` segments hide their real control one level down — **open**
+## J3 — `timepicker` segments hide their real control one level down — **fixed**
 
-**Observed.** `packages/widgets/src/catalog.ts`, the `timepicker` shape declares
-`elements: { hour: "group", minute: "group" }`.
+**Observed.** `hour` and `minute` were declared `group`: the containers the header lays out. Each
+holds an `<input type="number">` — the element a user types into, and the one carrying the accessible
+name — and that input was **not a declared part**, so no anatomy, relation, state or equivalence
+check reached it.
 
-`hour` and `minute` are the containers the header lays out. Each holds an `<input type="number">`
-with its own aria-label — the element a user actually types into, and the element that carries the
-accessible name. That input is **not a declared part**, so it sits one level below anything the
-contract can see: no anatomy, relation, state or equivalence check reaches it.
+**Fixed by naming the control**, not by widening the check. `hourControl` and `minuteControl` are
+optional parts of `timepicker` with the `input` semantic, parented to their segment, carrying
+`mdy-timepicker-segment-input` — which left the presentation list in the same change, so the style
+audit now covers it as a part class. Classified `minor` by `npm run contract:diff`: two new optional
+parts describing elements all three renderers already drew.
 
-Declaring the segments as controls instead would be worse — it would ask every renderer for a
-control at a level where none exists.
+### Two defects the naming exposed
 
-**Not decided.** The fix is to name the inner control as a part of its own, not to widen the check
-until the current shape passes. Widening is the failure mode this document exists to catch: a check
-relaxed to fit the code stops being a check.
+**The accessibility projection and the catalogue disagreed about what `hour` meant.**
+`projectTimepickerFieldA11y` returned a `hour` part carrying `role="spinbutton"`, `aria-label` and
+`aria-valuenow` — control semantics — and Plain applied it to the input while separately building a
+segment `<div>` with the same classes. Two elements therefore claimed to be `hour`, and the resolver
+took the first. The projection now returns `hour` (the segment's classes and its `focused` state) and
+`hourControl` (the id, the class, the spinbutton semantics) as separate parts, each applied to its
+own element.
+
+**`inspectWidgetDom` could not resolve two parts that share their classes.** Its fallback lookup —
+used for any part a caller does not name — matched on classes alone, so both segment inputs resolved
+to both parts and a correct widget was reported as ambiguous. `daterange`'s `startControl` and
+`endControl` have shared classes since long before this, and any harness that did not name them
+explicitly had the same hole. Both resolvers now read the same rule, `partsSharingClassesWith`:
+declared order among the parts that share a selector.
+
+**Verified adversarially.** A `<div>` in place of Plain's hour input does **not** fail on its own —
+the renderer's projection puts `role="spinbutton"` on whatever element it is given, and a
+`<div role="spinbutton">` satisfies the `input` semantic by design, the same principle as
+[ADR 0012](architecture/0012-a-choice-is-a-radio-by-role-or-by-tag.md). Removing the role as well
+produces `PART_ELEMENT:hourControl` against the real renderer, which is the check biting.
 
 ## J4 — Two contract checks accept an answer from anywhere — **open**
 
