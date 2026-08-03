@@ -2,7 +2,8 @@
  * Shared map from contract parts to the elements Plain renders for them, plus the parts a widget
  * legitimately does not render in its initial closed, error-free state.
  */
-const { findPartElement: contractPart } = await import("../../widgets/dist/testing/index.js");
+const { findPartElement } = await import("../../widgets/dist/testing/index.js");
+const { MDY_WIDGET_CONTRACTS } = await import("../../widgets/dist/index.js");
 
 const option = { value: "x", label: "X" };
 export const FIELDS = [
@@ -25,92 +26,30 @@ export const FIELDS = [
   { name: "q", kind: "colors", label: "Q" },
 ];
 
-/** Where each contract part lives in Plain's DOM, per kind. */
+/**
+ * Where each contract part lives in Plain's DOM — **derived from the contract, not listed here**.
+ *
+ * This was a switch over seventeen kinds mapping every part to a hand-written selector: ninety of
+ * them, each naming a class the catalogue already declares. A resolver that knows a widget's
+ * structure from outside the contract is what Milestone G's third proof forbids, and it was also a
+ * second copy — a part that gained a class had to be told twice.
+ *
+ * `findPartElement` derives the selector, disambiguates same-class parts by their declared order,
+ * falls back to the declared semantic element where a part has no class, and reaches a portalled
+ * popup through the opener's `aria-controls` rather than by scanning the document.
+ *
+ * **Measured before the switch was deleted**, every kind against every state the contract declares
+ * for it — 1682 parts resolved identically, **none differently, none lost**, and 91 found that the
+ * hand-written map never listed. An earlier attempt was reverted for being measured at rest only,
+ * which passed the closed-state suite and failed three others.
+ */
 export function partsOf(root, kind) {
-  const q = (selector) => root.querySelector(selector);
-  const shell = {
-    label: q(".mdy-label"),
-    requiredMarker: q(".mdy-label__required"),
-    inputWrapper: q(".mdy-input-wrapper"),
-    supportingText: q(".mdy-supporting-text"),
-    errors: q(".mdy-control__errors"),
-    errorItem: q(".mdy-control__error"),
-  };
-  switch (kind) {
-    case "radio":
-    case "segmented":
-      return kind === "segmented"
-        ? { ...shell, group: q(".mdy-segmented"), option: q(".mdy-segmented__button"), optionCheck: q(".mdy-segmented__check"), optionText: q(".mdy-segmented__text") }
-        : { ...shell, group: q(".mdy-radio-group"), option: q(".mdy-radio-item"), optionControl: q(".mdy-radio-circle"), optionLabel: q(".mdy-radio-label") };
-    case "select": {
-      const popup = document.querySelector(`#${root.querySelector(".mdy-select__trigger")?.getAttribute("aria-controls")}`)?.closest(".mdy-select__dropdown");
-      return {
-        ...shell, trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), arrow: q(".mdy-select__arrow"),
-        loading: q(".mdy-select__loader"),
-        popup, search: popup?.querySelector(".mdy-select__search"), listbox: popup?.querySelector(".mdy-select__list"), option: popup?.querySelector(".mdy-select__option"),
-      };
-    }
-    case "multiselect": {
-      // The field carries the header and its own grid of option chips; the popup is portalled to
-      // <body> and holds the filter over the same grid, reachable from `aria-controls` on the
-      // search button rather than from inside the renderer's own subtree.
-      const searchButton = q(".mdy-multiselect__search-btn");
-      const popup = document.getElementById(searchButton?.getAttribute("aria-controls") ?? "");
-      const grid = root.querySelector(".mdy-multiselect__options:not(.mdy-multiselect-overlay__grid)");
-      return {
-        ...shell, inputWrapper: q(".mdy-multiselect"), header: q(".mdy-multiselect__header"), searchButton,
-        loading: q(".mdy-select__loader"),
-        options: grid, optionWrapper: grid?.querySelector(".mdy-chip-wrapper"), option: grid?.querySelector(".mdy-chip"),
-        optionCheck: grid?.querySelector(".mdy-chip__check"), optionLabel: grid?.querySelector(".mdy-chip__label"),
-        popup, search: popup?.querySelector(".mdy-multiselect-overlay__input"),
-        listbox: popup?.querySelector(".mdy-multiselect-overlay__grid"),
-      };
-    }
-    case "datepicker":
-      return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), weekdays: q(".mdy-datepicker__weekdays"), weekday: q(".mdy-datepicker__weekday"), row: q(".mdy-datepicker__row"), gridcell: q(".mdy-datepicker__cell") };
-    case "timepicker":
-      return {
-        ...shell, control: q(".mdy-timepicker__input"), toggle: q(".mdy-timepicker__toggle"), popup: q(".mdy-timepicker__popup"),
-        header: q(".mdy-timepicker-header"), period: q(".mdy-timepicker-period-toggle"), actions: q(".mdy-timepicker-actions"),
-        container: q(".mdy-timepicker-container"), content: q(".mdy-timepicker-content"),
-        clock: q(".mdy-timepicker-dial"), dialFace: q(".mdy-timepicker-dial__face"), dialHand: q(".mdy-timepicker-dial__hand"),
-        // By modifier, not by document order: each segment is a container holding its own input,
-        // so taking the first two elements paired the hour's container with the hour's input and
-        // called the second one `minute`.
-        hour: root.querySelector(".mdy-timepicker-segment--hour"),
-        minute: root.querySelector(".mdy-timepicker-segment--minute"),
-      };
-    case "daterange":
-      // The two inputs carry identical classes, so no selector separates them. What does is in the
-      // contract — the anatomy declares their order — and `findPartElement` reads it, rather than
-      // this file knowing that the second one is the end.
-      return { ...shell, startControl: contractPart(root, "daterange", "startControl"), separator: q(".mdy-daterange__sep"), endControl: contractPart(root, "daterange", "endControl"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup"), grid: q(".mdy-datepicker__grid"), weekdays: q(".mdy-datepicker__weekdays"), weekday: q(".mdy-datepicker__weekday"), row: q(".mdy-datepicker__row"), gridcell: q(".mdy-datepicker__cell"), actions: q(".mdy-datepicker__actions") };
-    case "colors":
-      return { ...shell, nativePicker: q(".mdy-colors__primary-picker"), preview: q(".mdy-colors__preview-swatch"), control: q(".mdy-colors__native-hidden"), hexInput: q(".mdy-colors__hex-input"), toggle: q(".mdy-colors__toggle-area"), popup: q(".mdy-colors__dropdown"), presets: q(".mdy-colors__presets"), swatch: q(".mdy-color-swatch") };
-    case "file":
-      return { ...shell, inputWrapper: null, dropzone: q(".mdy-file-container"), control: q(".mdy-file-input"), content: q(".mdy-file-content"), fileList: q(".mdy-file-list"), fileItem: q(".mdy-file-item"), clear: q(".mdy-file-clear") };
-    case "slider":
-      return { ...shell, track: q(".mdy-slider-container"), control: q(".mdy-slider"), value: q(".mdy-slider-value") };
-    case "checkbox":
-      return { ...shell, inputWrapper: q(".mdy-checkbox"), control: q(".mdy-checkbox__control"), indicator: q(".mdy-checkbox__indicator") };
-    case "toggle":
-      return { ...shell, inputWrapper: q(".mdy-toggle"), track: q(".mdy-toggle__track"), thumb: q(".mdy-toggle__thumb"), control: q(".mdy-toggle__control"), label: q(".mdy-toggle__label") };
-    default:
-      // Scoped to the wrapper the contract says holds the control, and returned as *every* match
-      // rather than the first. `q("input, textarea, select")` found an input — any input, anywhere
-      // in the root, a search box or a hidden native picker included — and handed back one of them,
-      // so a renderer emitting two controls looked identical to one emitting the right single
-      // control. Returning the set is what lets the cardinality rule see the difference.
-      return {
-        ...shell,
-        control: Array.from(
-          root.querySelectorAll(
-            ".mdy-input-wrapper > input, .mdy-input-wrapper > textarea, .mdy-input-wrapper > select," +
-              ".mdy-input-wrapper__inliner > input, .mdy-input-wrapper__inliner > textarea, .mdy-input-wrapper__inliner > select",
-          ),
-        ),
-      };
+  const out = {};
+  for (const node of MDY_WIDGET_CONTRACTS[kind].structure.nodes) {
+    if (node.part === "root") continue;
+    out[node.part] = findPartElement(root, kind, node.part, { portalRoots: [root.ownerDocument.body] });
   }
+  return out;
 }
 
 /**

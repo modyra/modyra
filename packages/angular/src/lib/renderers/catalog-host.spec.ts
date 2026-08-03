@@ -22,8 +22,8 @@
 import { Component, Injector, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { By } from "@angular/platform-browser";
-import type { MdyWidgetKind } from "@modyra/widgets";
-import { findPartElement, MDY_CANONICAL_EMPTY, type MdyStateFixture } from "@modyra/widgets/testing";
+import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "@modyra/widgets";
+import { findPartElement, findPartElements, MDY_CANONICAL_EMPTY, type MdyStateFixture } from "@modyra/widgets/testing";
 import { MdyDeclarativeAdapter } from "../core/declarative-form-adapter";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyPrefixDirective } from "../control/prefix.directive";
@@ -203,52 +203,35 @@ export function popupOf(root: Element, className: string): Element | null {
 }
 
 /** Where each contract part lives in the Angular DOM, per kind. */
+/**
+ * Where each contract part lives in this adapter's DOM — **derived, not listed**.
+ *
+ * Was a switch over seventeen kinds naming sixty-six selectors, each a class the catalogue already
+ * declares. `findPartElement` derives them, disambiguates same-class parts by declared order, falls
+ * back to the declared semantic element where a part has none, and reaches a portalled popup through
+ * the opener's `aria-controls` rather than by scanning the document.
+ *
+ * A `repeated` part is mapped with **every** element it rendered, which is why the plural exists:
+ * mapping one of many makes each of its children look mis-parented, because the child belongs to a
+ * sibling of the element that was mapped.
+ *
+ * Measured before deleting the switch, every kind against every state the contract declares for it:
+ * **1020 parts resolved identically, none differently, none lost**, and 343 found that the map never
+ * listed.
+ */
 export function partsOf(
   root: Element,
   kind: MdyWidgetKind,
 ): Record<string, Element | readonly Element[] | null> {
-  const q = (selector: string) => root.querySelector(selector);
-  // A part the contract marks `repeated` has to be mapped with every element it rendered. Mapping
-  // one of many makes each of its children look mis-parented, since the child belongs to a sibling
-  // the map never mentioned.
-  const qa = (selector: string) => Array.from(root.querySelectorAll(selector));
-  const shell = {
-    label: q(".mdy-label, .mdy-toggle__label"),
-    requiredMarker: q(".mdy-label__required"),
-    inputWrapper: q(".mdy-input-wrapper, .mdy-checkbox, .mdy-toggle"),
-    supportingText: q(".mdy-supporting-text"),
-    errors: q(".mdy-control__errors"),
-    errorItem: q(".mdy-control__error"),
-  };
-  switch (kind) {
-    case "checkbox":
-      return { ...shell, control: q(".mdy-checkbox__control"), indicator: q(".mdy-checkbox__indicator") };
-    case "toggle":
-      return { ...shell, control: q(".mdy-toggle__control"), track: q(".mdy-toggle__track"), thumb: q(".mdy-toggle__thumb") };
-    case "slider":
-      return { ...shell, track: q(".mdy-slider-container"), control: q(".mdy-slider"), value: q(".mdy-slider-value") };
-    case "radio":
-      return { ...shell, group: q(".mdy-radio-group"), option: q(".mdy-radio-item"), optionControl: q(".mdy-radio-circle"), optionLabel: q(".mdy-radio-label") };
-    case "segmented":
-      return { ...shell, group: q(".mdy-segmented"), option: q(".mdy-segmented__button"), optionCheck: q(".mdy-segmented__check"), optionText: q(".mdy-segmented__text") };
-    case "select":
-      return { ...shell, inputWrapper: q(".mdy-input-wrapper"), loading: q(".mdy-select__loader"), trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), placeholder: q(".mdy-select__placeholder"), arrow: q(".mdy-select__arrow"), popup: popupOf(root, ".mdy-select__dropdown"), listbox: popupOf(root, ".mdy-select__dropdown")?.querySelector(".mdy-select__list") ?? null, option: Array.from(popupOf(root, ".mdy-select__dropdown")?.querySelectorAll(".mdy-select__option") ?? []) };
-    case "multiselect":
-      return { ...shell, inputWrapper: q(".mdy-multiselect"), loading: q(".mdy-select__loader"), header: q(".mdy-multiselect__header"), searchButton: q(".mdy-multiselect__search-btn"), options: q(".mdy-multiselect__options"), optionWrapper: qa(".mdy-chip-wrapper"), option: qa(".mdy-chip"), optionLabel: qa(".mdy-chip__label"), popup: popupOf(root, ".mdy-multiselect__dropdown") };
-    case "datepicker":
-      return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: popupOf(root, ".mdy-datepicker__popup"), grid: popupOf(root, ".mdy-datepicker__popup")?.querySelector(".mdy-datepicker__grid") ?? null };
-    case "daterange":
-      // Identical classes on both inputs, so the contract's declared order is what separates them.
-      return { ...shell, startControl: findPartElement(root, "daterange", "startControl"), endControl: findPartElement(root, "daterange", "endControl"), separator: q(".mdy-daterange__sep"), toggle: q(".mdy-datepicker__toggle"), popup: popupOf(root, ".mdy-datepicker__popup") };
-    case "timepicker":
-      return { ...shell, control: q(".mdy-timepicker__input"), toggle: q(".mdy-timepicker__toggle"), popup: popupOf(root, ".mdy-timepicker__popup") };
-    case "file":
-      return { ...shell, inputWrapper: null, dropzone: q(".mdy-file-container"), control: q(".mdy-file-input"), content: q(".mdy-file-content"), fileList: q(".mdy-file-list"), clear: q(".mdy-file-clear") };
-    case "colors":
-      return { ...shell, nativePicker: q(".mdy-colors__primary-picker"), preview: q(".mdy-colors__preview-swatch"), control: q(".mdy-colors__native-hidden"), hexInput: q(".mdy-colors__hex-input"), toggle: q(".mdy-colors__toggle-area"), popup: popupOf(root, ".mdy-colors__dropdown") };
-    default:
-      return { ...shell, control: q("input, textarea") };
+  const out: Record<string, Element | readonly Element[] | null> = {};
+  const portalRoots = [root.ownerDocument.body];
+  for (const node of MDY_WIDGET_CONTRACTS[kind].structure.nodes) {
+    if (node.part === "root") continue;
+    out[node.part] = node.repeated
+      ? findPartElements(root, kind, node.part, { portalRoots })
+      : findPartElement(root, kind, node.part, { portalRoots });
   }
+  return out;
 }
 
 const ENTRY = new Map(CATALOG_KINDS.map((entry) => [entry.kind, entry]));

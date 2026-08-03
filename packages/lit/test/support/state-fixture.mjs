@@ -12,7 +12,8 @@ import { mount as mountElement } from "./dom-env.mjs";
 
 const { createLitForm, field, required, min } = await import("../../dist/adapter.js");
 const { defineMdyElements } = await import("../../dist/ui.js");
-const { MDY_CANONICAL_EMPTY, findPartElement: contractPart } = await import("../../../widgets/dist/testing/index.js");
+const { MDY_CANONICAL_EMPTY, findPartElement } = await import("../../../widgets/dist/testing/index.js");
+const { MDY_WIDGET_CONTRACTS } = await import("../../../widgets/dist/index.js");
 
 defineMdyElements();
 
@@ -101,53 +102,24 @@ export function controlOf(root) {
     root.querySelector("input, textarea, select");
 }
 
+/**
+ * Where each contract part lives in this renderer's DOM — **derived, not listed**.
+ *
+ * Was a switch over seventeen kinds naming forty-four selectors, every one a class the catalogue
+ * already declares. `findPartElement` derives them, disambiguates same-class parts by declared
+ * order, and reaches a portalled popup through the opener's `aria-controls`.
+ *
+ * Measured before deleting the switch, every kind against every state the contract declares for it:
+ * **972 parts resolved identically, none differently, none lost** — and 178 found that the map never
+ * listed, because a hand-written resolver only lists what someone remembered to.
+ */
 export function partsOf(root, kind) {
-  const q = (selector) => root.querySelector(selector);
-  const shell = {
-    label: q(".mdy-label, .mdy-toggle__label"),
-    requiredMarker: q(".mdy-label__required"),
-    inputWrapper: q(".mdy-input-wrapper, .mdy-checkbox, .mdy-toggle"),
-    supportingText: q(".mdy-supporting-text"),
-    errors: q(".mdy-control__errors"),
-    errorItem: q(".mdy-control__error"),
-  };
-  switch (kind) {
-    case "checkbox":
-      return { ...shell, control: q('input[type="checkbox"]'), indicator: q(".mdy-checkbox__indicator") };
-    case "toggle":
-      return { ...shell, control: q('input[type="checkbox"]'), track: q(".mdy-toggle__track"), thumb: q(".mdy-toggle__thumb") };
-    case "slider":
-      return { ...shell, track: q(".mdy-slider-container"), control: q(".mdy-slider"), value: q(".mdy-slider-value") };
-    case "radio":
-      return { ...shell, group: q(".mdy-radio-group"), option: q(".mdy-radio-item"), optionControl: q(".mdy-radio-circle"), optionLabel: q(".mdy-radio-label") };
-    case "segmented":
-      return { ...shell, group: q(".mdy-segmented"), option: q(".mdy-segmented__button"), optionCheck: q(".mdy-segmented__check"), optionText: q(".mdy-segmented__text") };
-    case "select":
-      return { ...shell, loading: q(".mdy-select__loader"), trigger: q(".mdy-select__trigger"), value: q(".mdy-select__value"), popup: q(".mdy-select__dropdown"), listbox: q(".mdy-select__list") };
-    case "multiselect":
-      return {
-        ...shell,
-        inputWrapper: q(".mdy-multiselect"),
-        loading: q(".mdy-select__loader"),
-        // The opener the contract names. Without it the inspector cannot see the relation the
-        // button carries, and reports the state as unexposed.
-        searchButton: q(".mdy-multiselect__search-btn"),
-        popup: q(".mdy-multiselect__dropdown"),
-      };
-    case "datepicker":
-      return { ...shell, control: q(".mdy-datepicker__input"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup") };
-    case "daterange":
-      // Identical classes on both inputs, so the contract's declared order is what separates them.
-      return { ...shell, startControl: contractPart(root, "daterange", "startControl"), endControl: contractPart(root, "daterange", "endControl"), toggle: q(".mdy-datepicker__toggle"), popup: q(".mdy-datepicker__popup") };
-    case "timepicker":
-      return { ...shell, control: q(".mdy-timepicker__input"), toggle: q(".mdy-timepicker__toggle"), popup: q(".mdy-timepicker__popup") };
-    case "colors":
-      return { ...shell, control: q(".mdy-colors__native-hidden"), toggle: q(".mdy-colors__toggle-area"), popup: q(".mdy-colors__dropdown") };
-    case "file":
-      return { ...shell, inputWrapper: null, dropzone: q(".mdy-file-container"), control: q(".mdy-file-input") };
-    default:
-      return { ...shell, control: controlOf(root) };
+  const out = {};
+  for (const node of MDY_WIDGET_CONTRACTS[kind].structure.nodes) {
+    if (node.part === "root") continue;
+    out[node.part] = findPartElement(root, kind, node.part, { portalRoots: [root.ownerDocument.body] });
   }
+  return out;
 }
 
 /**

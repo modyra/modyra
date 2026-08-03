@@ -104,6 +104,58 @@ export interface MdyPartLookupOptions {
 }
 
 /**
+ * Every element rendered for a kind's part.
+ *
+ * The plural exists for the parts the anatomy marks `repeated` — options, grid cells, error items.
+ * Mapping one of many makes each of its children look mis-parented, because the child belongs to a
+ * sibling of the element that was mapped.
+ *
+ * Same derivation as {@link findPartElement}, and it deliberately does **not** apply the declared-
+ * order tie-break: that picks one element out of a group sharing a class, which is the opposite of
+ * what a caller asking for all of them wants.
+ */
+export function findPartElements(
+  root: ParentNode,
+  kind: MdyWidgetKind,
+  part: string,
+  options: MdyPartLookupOptions = {},
+): readonly Element[] {
+  const selector = partSelector(kind, part);
+  if (selector === null) {
+    const single = findPartElement(root, kind, part, options);
+    return single ? [single] : [];
+  }
+  // A part sharing its classes with another is not repeated in the sense this serves — the group
+  // would include the sibling part's elements too, so fall back to the single, ordered answer.
+  if (partsSharingClassesWith(kind, part).length > 1) {
+    const single = findPartElement(root, kind, part, options);
+    return single ? [single] : [];
+  }
+
+  for (const scope of scopesFor(root, kind, part, options)) {
+    const found = Array.from(scope.querySelectorAll(selector));
+    const self = scope as Partial<Element>;
+    const all = typeof self.matches === "function" && self.matches(selector)
+      ? [scope as Element, ...found]
+      : found;
+    if (all.length > 0) return all;
+  }
+  return [];
+}
+
+/** Where a part may legitimately be looked for: the root, plus this widget's popup if portalled. */
+function scopesFor(
+  root: ParentNode,
+  kind: MdyWidgetKind,
+  part: string,
+  options: MdyPartLookupOptions,
+): readonly ParentNode[] {
+  if (!dynamicParts(kind).includes(part)) return [root];
+  const popup = portalledPopup(root, kind, options.portalRoots ?? []);
+  return popup ? [root, popup] : [root];
+}
+
+/**
  * The element rendered for a kind's part, or `null` when it is not in the tree.
  *
  * Document order is the tie-break, matched against the anatomy's declared order, because that is
@@ -130,11 +182,7 @@ export function findPartElement(
   // reported a datepicker's `actions` present because the *daterange* next to it renders one under
   // the same class. `MDY_POPUP_OPENERS` says which part opens the overlay and which it controls;
   // `aria-controls` on that opener is the only thing that identifies *this* widget's popup.
-  const scopes: ParentNode[] = [root];
-  if (dynamicParts(kind).includes(part)) {
-    const popup = portalledPopup(root, kind, options.portalRoots ?? []);
-    if (popup) scopes.push(popup);
-  }
+  const scopes = scopesFor(root, kind, part, options);
   const selector = partSelector(kind, part);
 
   if (selector === null) {
@@ -156,7 +204,16 @@ export function findPartElement(
   if (index < 0) return null;
 
   for (const scope of scopes) {
-    const matches = scope.querySelectorAll(selector);
+    // The scope itself counts. When the part being looked up *is* the portalled popup, the scope
+    // resolved for it is that very element — and `querySelectorAll` never returns the node it was
+    // called on, so searching inside the popup for the popup found nothing.
+    //
+    // Duck-typed rather than `instanceof Element`: this package computes in processes with no DOM
+    // globals, and a bare `Element` reference is a `ReferenceError` the moment a selector is built.
+    const within = Array.from(scope.querySelectorAll(selector));
+    const self = scope as Partial<Element>;
+    const matchesItself = typeof self.matches === "function" && self.matches(selector);
+    const matches = matchesItself ? [scope as Element, ...within] : within;
     if (matches.length > index) return matches[index] ?? null;
   }
   return null;
