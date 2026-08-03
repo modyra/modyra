@@ -1,6 +1,6 @@
 # ADR 0011: A capability names the event it depends on
 
-Status: Accepted
+Status: Superseded by [ADR 0013](0013-the-dismissal-names-its-gesture.md)
 
 ## Context
 
