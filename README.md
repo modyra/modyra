@@ -74,6 +74,7 @@ Validators are factories: use `required()` rather than `required`. Errors are re
 | [`@modyra/react`](packages/react) | React adapter using `useSyncExternalStore` | Headless — renders nothing; no DOM conformance |
 | [`@modyra/vue`](packages/vue) | Vue reactivity adapter | Headless — renders nothing; no DOM conformance |
 | [`@modyra/lit`](packages/lit) | Lit adapter and custom elements | UI catalog available |
+| [`@modyra/plain`](packages/plain) | Framework-free renderer | UI catalog, no framework runtime |
 | [`@modyra/solid`](packages/solid) | Solid signals adapter | Headless — renders nothing; no DOM conformance |
 | [`@modyra/preact`](packages/preact) | Preact adapter | Headless — renders nothing; no DOM conformance. See SSR note in its README |
 | [`@modyra/svelte`](packages/svelte) | Svelte store bridge | Headless — renders nothing; no DOM conformance |

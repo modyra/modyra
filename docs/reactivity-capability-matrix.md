@@ -1,12 +1,12 @@
 <!--
   GENERATED FILE — do not edit by hand.
   Run `node scripts/reactivity-capability-matrix.mjs` to regenerate.
-  Source: each adapter's own `MdyReactivity.capabilities` (piano-modyra-reactivity-adapter-api.md §15).
+  Source: each adapter's own `MdyReactivity.capabilities`; see docs/guides/reactivity-adapter-guide.md.
 -->
 
 # Reactivity adapter capability matrix
 
-Generated 2026-07-29.
+Generated 2026-08-03.
 
 | Adapter | effects | effectOwnership | signalEquality | computedEquality | batching | deterministicFlush | directObservation | writableComputed | graphInspection | serverSnapshots | Note |
 |---|---|---|---|---|---|---|---|---|---|---|---|

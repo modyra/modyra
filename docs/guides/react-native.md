@@ -71,6 +71,7 @@ between them. `@modyra/core/async-draft-storage` is that cache:
 
 ```ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createForm } from "@modyra/core";
 import { createHydratedDraftStorage } from "@modyra/core/async-draft-storage";
 
 const storage = createHydratedDraftStorage({
@@ -80,7 +81,7 @@ const storage = createHydratedDraftStorage({
 });
 
 await storage.ready;              // before restoring, so a read cannot miss the saved draft
-mdyForm(schema, { draft: { key: "checkout-draft", storage } });
+createForm(schema, { draft: { key: "checkout-draft", storage } });
 ```
 
 Two behaviours worth knowing rather than discovering:
