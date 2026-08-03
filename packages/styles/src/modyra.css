@@ -1610,7 +1610,7 @@
         width: 1rem;
         height: 1rem;
         flex-shrink: 0;
-        animation: mdy-segmented-check-pop 0.25s var(--mdy-sys-motion-easing-spring);
+        animation: mdy-segmented-check-pop 0.25s var(--mdy-sys-motion-easing-decelerate);
     }
 
     @keyframes mdy-segmented-check-pop {
