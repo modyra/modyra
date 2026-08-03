@@ -70,3 +70,7 @@ under `examples/` and the headless-recipes doc section (shadcn/Radix-style
 props mappers). Every core primitive — typed fields, arrays, async/server
 validation, drafts, undo/redo — already works today through
 `createSolidForm`/`useSolidForm`.
+
+## License
+
+MIT © [Lorenzo Muscherà](https://github.com/lorenzomusche)
