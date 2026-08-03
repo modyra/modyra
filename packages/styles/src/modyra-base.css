@@ -562,6 +562,11 @@
         --mdy-palette-contrast-threshold: 0.1791;
         --mdy-palette-luma-chroma-weight: 0.85;
         --mdy-palette-luma-hue-offset: 179;
+        /* The same crossover expressed in lightness, for the tier that cannot run the correction:
+       `l³ = 0.1791` is exact for a grey, so the pivot is its cube root. It picks the worse of black
+       and white 38 times in 1080 against the corrected form's 16 — a fraction of a ratio point on
+       colours near the crossover, never the difference between readable and not. */
+        --mdy-palette-lightness-pivot: 0.5636;
         /* How much of the background's chroma its `on-` colour keeps, so text reads as tinted rather
        than clinical. It costs up to 0.15 of a contrast ratio point. */
         --mdy-palette-on-chroma: 0.08;
@@ -620,6 +625,32 @@
             --mdy-sys-color-tertiary: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-tertiary-l)) max(calc(c * var(--mdy-palette-tertiary-c)), var(--mdy-palette-tertiary-min-c)) calc(h + var(--mdy-palette-tertiary-h)));
             --mdy-sys-color-error: oklch(from var(--mdy-sys-color-primary) calc(l * var(--mdy-palette-error-l)) calc(c * var(--mdy-palette-error-c)) var(--mdy-palette-error-h));
 
+
+            /* The readable text colour, in the form every engine with relative colour can run.
+           `clamp()` over a lightness pivot is the conditional CSS does not have: above the pivot it
+           resolves to 0 and the text is black, below it to 1 and the text is white. The multiplier
+           makes it a step rather than a ramp, and it has to be large — at ×100 a colour within 0.01
+           of the pivot resolves *inside* the clamp and yields a mid grey, the single worst text
+           colour available. ×10000 narrows that band to 0.0001.
+
+           A fixed mix cannot stand in for this. `color-mix(primary, white 95%)` is 95% white
+           whatever the background is, so on a light background it is white text on white — which is
+           what this tier exists to prevent, and it is measurable: 1.10:1 where the pivot gives 15:1.
+
+           The tier below overrides all four where the chroma correction can be computed. */
+            --mdy-sys-color-on-primary: oklch(from var(--mdy-sys-color-primary) clamp(0, (var(--mdy-palette-lightness-pivot) - l) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+            --mdy-sys-color-on-secondary: oklch(from var(--mdy-sys-color-secondary) clamp(0, (var(--mdy-palette-lightness-pivot) - l) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+            --mdy-sys-color-on-tertiary: oklch(from var(--mdy-sys-color-tertiary) clamp(0, (var(--mdy-palette-lightness-pivot) - l) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+            --mdy-sys-color-on-error: oklch(from var(--mdy-sys-color-error) clamp(0, (var(--mdy-palette-lightness-pivot) - l) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+        }
+
+        /* The correction needs more than relative colour: it needs `pow()` and `cos()` **inside a
+       colour channel**, which is a narrower capability than the block around it tests. An engine
+       with relative colour but without that maths parses these declarations, fails them and drops
+       them — so without a guard of their own they would fall past the tier above to a fixed mix and
+       land on unreadable text. The guard states what the code uses, not what it is written in. */
+        @supports (color: oklch(from white calc(pow(l, 3)) c h)) {
+
             /* CSS has no conditional, but lightness and `clamp()` make a step: below the pivot the
            lightness resolves to 1 and the text is white, above it to 0 and the text is black.
            The multiplier is what makes it a step rather than a ramp, and it has to be large. At
@@ -630,11 +661,18 @@
            whatever the primary is, which on a light brand colour is white text on a light
            background. Each of these reads the colour it is named for, and because all four are
            declared on the same element, they resolve against whatever that colour computed to
-           there — including in dark mode below. */
-            --mdy-sys-color-on-primary: oklch(from var(--mdy-sys-color-primary) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
-            --mdy-sys-color-on-secondary: oklch(from var(--mdy-sys-color-secondary) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
-            --mdy-sys-color-on-tertiary: oklch(from var(--mdy-sys-color-tertiary) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
-            --mdy-sys-color-on-error: oklch(from var(--mdy-sys-color-error) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+           there — including in dark mode below.
+
+           This is an approximation, and knowingly so: a stylesheet has the colour in OKLCH and a
+           WCAG ratio wants sRGB luminance, so the pivot estimates what it cannot measure. The exact
+           form — both candidates computed, the better ratio kept — is `onColorFor` in
+           `@modyra/core/color-utils`, for anyone generating a palette ahead of time. */
+            :root {
+                --mdy-sys-color-on-primary: oklch(from var(--mdy-sys-color-primary) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+                --mdy-sys-color-on-secondary: oklch(from var(--mdy-sys-color-secondary) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+                --mdy-sys-color-on-tertiary: oklch(from var(--mdy-sys-color-tertiary) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+                --mdy-sys-color-on-error: oklch(from var(--mdy-sys-color-error) clamp(0, (var(--mdy-palette-contrast-threshold) - pow(l, 3) * (1 + var(--mdy-palette-luma-chroma-weight) * c * cos((h - var(--mdy-palette-luma-hue-offset)) * 1deg))) * 10000, 1) calc(c * var(--mdy-palette-on-chroma)) h);
+            }
         }
 
         /* Dark mode derived the same way rather than from fixed reference colours, or choosing a brand

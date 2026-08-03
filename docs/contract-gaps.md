@@ -24,7 +24,7 @@ does not want to scroll, and `npm run test:docs` fails if the two disagree.
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — J1, J2, K
+- **Open** — J1, J2, K, M
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -848,3 +848,39 @@ Six failures were the harness. `newCDPSession` is Chromium-only, and three specs
 - **the computed accessibility tree** — no other engine exposes one to an automation client, and a
   name computed in JavaScript would be this repository's opinion of the algorithm. The dangling-
   reference half of that spec is DOM-only and still runs everywhere; only the tree assertions stop.
+
+## M — a readable text colour is estimated, never measured — **open**
+
+**Observed.** `packages/styles/src/modyra-base.css`, and the reason it surfaced here: twenty `on-*`
+pairs fell below the contrast floor on one engine, and the fix only moved the estimate.
+
+A stylesheet cannot compute a WCAG contrast ratio. It has the colour in OKLCH; the ratio wants sRGB
+luminance, which weights green at 0.72 and blue at 0.07 — so two colours of identical OKLCH lightness
+are nowhere near equally bright. Every form the stylesheet can take is therefore an estimate of the
+one question that matters: **is black or white more readable on this background?**
+
+Three tiers ship, and each is worse than the one above it:
+
+| tier | condition | worst pair | gives away |
+| --- | --- | --- | --- |
+| chroma-corrected pivot | `pow()`/`cos()` in a colour channel | 4.35:1 | 0.40 |
+| lightness pivot | relative colour only | 4.09:1 | 0.96 |
+| fixed mix | no relative colour | **1.10:1** | unbounded |
+
+The third is not a fallback, it is a failure with a colour attached: `color-mix(primary, white 95%)`
+is 95% white whatever the background is, so on a light background it is white text on white. It
+predates the other two and remains what an engine without relative colour gets.
+
+**Nothing here reaches AA.** 4.5:1 is the requirement for normal text and no tier meets it, because
+none of them can measure what they are approximating.
+
+**The exact computation already exists and is not what the themes use.** `onColorFor` in
+`@modyra/core/color-utils` builds both candidates, measures `contrastRatio` against each, and keeps
+the better — no pivot, no estimate, no hue correction to fit. Its own tests assert a flat 4.5:1.
+
+**Not decided.** The gap is not arithmetic, it is *when* the arithmetic runs. Live derivation in CSS
+buys a palette that follows a primary the host sets at runtime, and pays for it with an estimate that
+cannot reach AA and degrades twice on the way down. Generating the palette ahead of time with
+`color-utils` — a build step, or a theme emitted per brand colour — is exact and gives that up. A 1.0
+that ships accessible colour has to choose, and the current answer is the one nobody chose: whichever
+tier the engine happens to land in.
