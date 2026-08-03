@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 /**
- * Browser checks over the packaged demos. Chromium only: a smoke check, not a cross-browser matrix.
+ * Browser checks over the packaged demos, on three engines.
  *
  * Three renderers, three servers. Some questions only a real browser can answer — focus, native key
  * defaults, computed accessible names, layout at 200% text — and the answer can differ per renderer,
@@ -17,34 +17,49 @@ import { defineConfig } from "@playwright/test";
  * Build first: `npm run build:demo` for Angular, `npm run build:examples` for the other two.
  */
 const RENDERERS = [
-  { name: "angular", port: 4173, command: "node scripts/serve-static.mjs dist/demo/browser 4173" },
-  { name: "plain", port: 4307, command: "node scripts/serve-example.mjs plain 4307" },
-  { name: "lit", port: 4303, command: "node scripts/serve-example.mjs lit 4303" },
-];
+  {
+    name: "angular", port: 4173, command: "node scripts/serve-static.mjs dist/demo/browser 4173",
+    match: { testIgnore: ["plain/**", "lit/**"] },
+  },
+  {
+    name: "plain", port: 4307, command: "node scripts/serve-example.mjs plain 4307",
+    match: { testMatch: ["plain/**/*.spec.ts", "shared/**/*.spec.ts"] },
+  },
+  {
+    name: "lit", port: 4303, command: "node scripts/serve-example.mjs lit 4303",
+    match: { testMatch: ["lit/**/*.spec.ts", "shared/**/*.spec.ts"] },
+  },
+] as const;
+
+/**
+ * The engines, and the naming rule.
+ *
+ * Chromium keeps the bare renderer name — `plain`, `lit`, `angular` — so every existing invocation
+ * and every recorded result still means what it did. The other two suffix the engine, which is what
+ * a failure has to say to be actionable: a contract that only holds on Blink is a finding about the
+ * contract, and it is unreadable if the report cannot name the engine that disagreed.
+ */
+const ENGINES = [
+  { browserName: "chromium", suffix: "" },
+  { browserName: "firefox", suffix: "-firefox" },
+  { browserName: "webkit", suffix: "-webkit" },
+] as const;
 
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
-  use: { browserName: "chromium" },
-  projects: [
-    {
-      name: "angular",
-      testIgnore: ["plain/**", "lit/**"],
-      use: { baseURL: "http://localhost:4173" },
-    },
-    {
-      name: "plain",
-      testMatch: ["plain/**/*.spec.ts", "shared/**/*.spec.ts"],
-      use: { baseURL: "http://localhost:4307" },
-    },
-    {
-      name: "lit",
-      testMatch: ["lit/**/*.spec.ts", "shared/**/*.spec.ts"],
-      use: { baseURL: "http://localhost:4303" },
-    },
-  ],
+  projects: RENDERERS.flatMap((renderer) =>
+    ENGINES.map((engine) => ({
+      name: `${renderer.name}${engine.suffix}`,
+      ...renderer.match,
+      use: {
+        baseURL: `http://localhost:${renderer.port}`,
+        browserName: engine.browserName,
+      },
+    })),
+  ),
   webServer: RENDERERS.map(({ command, port }) => ({
     command,
     url: `http://localhost:${port}`,

@@ -98,7 +98,15 @@ test("a completed gesture outside dismisses — the row the contract names", asy
   await expectOpen(page, false);
 });
 
-test("a cancelled pointer does not dismiss", async ({ page }) => {
+test("a cancelled pointer does not dismiss", async ({ page, browserName }) => {
+  // Chromium only, and not because the rule is. A *genuine* `pointercancel` is one the browser
+  // decides to send, and CDP's `Input.dispatchTouchEvent` is the only way to make a browser decide
+  // that; Firefox and WebKit expose no equivalent. Dispatching a synthetic event instead would
+  // assert the handler and never the browser, which is the whole point of testing this here.
+  //
+  // The rule itself is asserted engine-independently in `packages/widgets/test/dismissal.spec.mjs`.
+  test.skip(browserName !== "chromium", "a real pointercancel needs CDP");
+
   await page.locator(TRIGGER).first().tap();
   await expectOpen(page, true);
 

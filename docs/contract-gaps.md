@@ -20,8 +20,8 @@ to a green suite.
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
 - **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J3, J4a, J4b
-- **Partly fixed** — C2 (derived, not painted), E2 (most scripts reachable), F (kind-keyed tables
-  narrowed, part-keyed ones key-checked)
+- **Partly fixed** — C2, E2, F, L — derived but not painted; most scripts reachable; kind-keyed
+  tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
 - **Open** — J1, J2, K
@@ -729,3 +729,81 @@ names each carries. Whether that is worth freezing before 1.0, or whether the ho
 these helpers are not part of the promise and should stop being exported from the root, is the
 question. The second reading is cheaper and narrows the 1.0 surface, which is the direction
 `ROADMAP.md` is already pointing.
+
+## L — every browser claim was Chromium's — **partly fixed**
+
+**Observed.** `playwright.config.ts` ran `browserName: "chromium"` and nothing else. Overlay
+placement, focus restoration, the dismissal gesture, the affordance column, the caret angle and the
+field heights were all verified on one engine.
+
+**Fixed:** the config now crosses three renderers with three engines — nine projects. Chromium keeps
+the bare project name so every recorded result still means what it did; Firefox and WebKit suffix the
+engine, because a failure that cannot name the engine that disagreed is not actionable.
+
+**Not fixed:** what the other two engines then said. Every exception below is recorded with its
+engine, which is what this finding stays open for.
+
+### Two predictions, both dismissed
+
+`:has()` and `:focus-visible` were expected to be the first casualties. Neither failed on any engine.
+The affordance column and the focus-ring finding hold on all three.
+
+### A real defect, on the platform it matters most on — WebKit
+
+`e2e/plain/dismiss.spec.ts:30` and `e2e/touch.spec.ts:36`: **a tap outside an open popup does not
+dismiss it on WebKit.** Measured directly, tapping an `<h1>` with the list open:
+
+| engine | events delivered |
+| --- | --- |
+| Chromium | `pointerdown` `touchstart` `pointerup` `touchend` `mousedown` `mouseup` `click` |
+| WebKit | `pointerdown` `touchstart` `pointerup` `touchend` — **and nothing else** |
+
+ADR 0013 completes the dismissal gesture on `click`, deliberately: a drag that ends on a different
+element produces no click, and that is exactly the gesture a touch user makes to scroll the page
+behind an open popup. Completing on `pointerup` would dismiss there.
+
+WebKit only synthesises mouse events and a click for elements it considers clickable. A page's own
+background is not one, so on Safari — desktop and iOS — the pair never completes and the popup stays
+open. This is user-facing, on the engine every iOS browser uses.
+
+The discriminator ADR 0013 actually wants is *movement*: a tap has none, a scroll has plenty. `click`
+was standing in for that, and one engine does not supply it. Resolving this amends ADR 0013 and is
+tracked separately.
+
+### A regression the routine suite cannot see — every engine
+
+`e2e/rtl.spec.ts` fails on **Chromium too**, and did so before the engines were added — verified by
+running the unmodified config:
+
+```
+RTL › suffix mirrors under dir=rtl          suffix stopped mirroring
+every family mirrors under modyra.css       (and modern, material, ios)
+```
+
+`npm test` does not run Playwright, so the browser suite has been red with nothing routine saying so.
+That is the finding, more than the mirroring itself: a suite outside the default command is a suite
+nobody is watching.
+
+### Engine differences in the themes — Firefox
+
+| spec | difference |
+| --- | --- |
+| `demo.spec.ts:291` | `modyra-material`'s slider track computes `background-image: none` where a `linear-gradient` split is expected |
+| `palette.spec.ts:107` | the derived `on-*` colours resolve to near-black — `on-primary #0b0a08 on #18181b = 1.12:1` — where Chromium picks a legible one. Twenty pairs below the contrast floor across `brand` and `monochrome` |
+
+The palette one is the more serious: the theme's colour derivation is what fails, so a Firefox user
+sees unreadable text rather than a wrong gradient.
+
+`demo.spec.ts:162` and `:390` failed in the full run and passed in isolation. Flaky, not an engine
+difference — recorded so the next reader does not chase them.
+
+### Tests that asserted Chromium rather than the contract — resolved
+
+Six failures were the harness. `newCDPSession` is Chromium-only, and three specs used it:
+
+- **a real `pointercancel`** — only CDP can make a browser send one, and a dispatched event would
+  assert the handler rather than the browser. Skipped off Chromium with that reason stated; the rule
+  itself is asserted engine-independently in `packages/widgets/test/dismissal.spec.mjs`.
+- **the computed accessibility tree** — no other engine exposes one to an automation client, and a
+  name computed in JavaScript would be this repository's opinion of the algorithm. The dangling-
+  reference half of that spec is DOM-only and still runs everywhere; only the tree assertions stop.
