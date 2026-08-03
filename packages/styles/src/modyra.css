@@ -1973,13 +1973,24 @@
     }
 
     /* Redundant overlay item styles removed; now using unified .mdy-chip system. */
+    /* The scrolling half of the panel: the search box keeps its own height, the chips take the rest.
+     *
+     * Expressed as flex, not as `max-height: 100%`. The panel states a `max-height` and no `height`,
+     * so its height is *indefinite*, and a percentage against an indefinite containing block is
+     * undefined territory: one engine resolves it to `none`, another to zero, and on the second the
+     * panel collapses to the search box with nothing under it.
+     *
+     * `min-height: 0` is the half that is easy to leave out. A flex item's default `min-height: auto`
+     * refuses to shrink below its content, so an `overflow-y: auto` item never scrolls — it grows and
+     * pushes the panel past the max-height it was given. */
     .mdy-multiselect-overlay__grid {
         display: flex;
         flex-wrap: wrap;
         gap: var(--mdy-chip-gap);
         padding: var(--mdy-multiselect-padding);
         overflow-y: auto;
-        max-height: 100%;
+        flex: 1 1 auto;
+        min-height: 0;
         scrollbar-width: thin;
     }
 
