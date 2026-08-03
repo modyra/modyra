@@ -221,18 +221,24 @@ export function dismissOnOutsidePointer(
     const e = event as PointerEvent;
     policy.pointerdown(e.target, { pointerId: e.pointerId ?? 0, isPrimary: e.isPrimary ?? true, button: e.button ?? 0 });
   };
+  const onUp = (event: Event): void => {
+    const e = event as PointerEvent;
+    policy.pointerup(e.target, e.pointerId ?? undefined);
+  };
   const onClick = (event: Event): void => policy.click(event.target);
   const onCancel = (event: Event): void => policy.pointercancel((event as PointerEvent).pointerId ?? 0);
   // An interaction whose end the page cannot observe is abandoned, not completed.
   const onAbandon = (): void => policy.reset();
 
   document.addEventListener("pointerdown", onDown, true);
+  document.addEventListener("pointerup", onUp, true);
   document.addEventListener("click", onClick, true);
   document.addEventListener("pointercancel", onCancel, true);
   window.addEventListener("blur", onAbandon);
   document.addEventListener("visibilitychange", onAbandon);
   const dispose = (): void => {
     document.removeEventListener("pointerdown", onDown, true);
+    document.removeEventListener("pointerup", onUp, true);
     document.removeEventListener("click", onClick, true);
     document.removeEventListener("pointercancel", onCancel, true);
     window.removeEventListener("blur", onAbandon);

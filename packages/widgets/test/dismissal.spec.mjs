@@ -241,3 +241,60 @@ test("§21.8 — the trigger is inside the branch, so activating it is not an ou
   policy.click("trigger");
   assert.equal(dismissed, 0);
 });
+
+// ─── §4: completion is the pointer's release, and `click` is the tail ────────
+
+test("§4 — a release outside completes the interaction, with no click at all", () => {
+  // WebKit synthesises no mouse events and no `click` for a tap on an element it does not consider
+  // clickable — a page's own background included. Waiting for a click there waits forever, which is
+  // why nothing dismissed on Safari.
+  const o = overlay();
+  o.pointerdown(OUT, PRIMARY);
+  o.pointerup(OUT, PRIMARY.pointerId);
+  assert.equal(o.dismissed, 1);
+});
+
+test("§4 — a release completes only what its own pointer began", () => {
+  const o = overlay();
+  o.pointerdown(OUT, PRIMARY);
+  o.pointerup(OUT, 99);
+  assert.equal(o.dismissed, 0, "a second finger lifting is not the first one's answer");
+  o.pointerup(OUT, PRIMARY.pointerId);
+  assert.equal(o.dismissed, 1);
+});
+
+test("§4 — a release inside the branch completes without dismissing", () => {
+  // Pressed outside, released in the popup. The interaction ended inside, and the rule is about
+  // where it *ends* as much as where it began.
+  const o = overlay();
+  o.pointerdown(OUT, PRIMARY);
+  o.pointerup(IN, PRIMARY.pointerId);
+  assert.equal(o.dismissed, 0);
+  assert.equal(o.phase(), "idle", "and it is resolved, not left armed for a later click");
+});
+
+test("§18 — release and click together still dismiss at most once", () => {
+  // Every engine but WebKit sends both. The release decides and leaves the machine idle; the click
+  // that follows finds nothing to resolve.
+  const o = overlay();
+  o.pointerdown(OUT, PRIMARY);
+  o.pointerup(OUT, PRIMARY.pointerId);
+  o.click(OUT);
+  assert.equal(o.dismissed, 1);
+});
+
+test("§16 — a cancelled gesture is not completed by the release that follows", () => {
+  // The scroll case, and the reason completion could move off `click`: a browser that takes a
+  // gesture over to scroll says so directly, rather than by withholding a click.
+  const o = overlay();
+  o.pointerdown(OUT, PRIMARY);
+  o.pointercancel(PRIMARY.pointerId);
+  o.pointerup(OUT, PRIMARY.pointerId);
+  assert.equal(o.dismissed, 0);
+});
+
+test("§15 — a release with no observed press does not dismiss", () => {
+  const o = overlay();
+  o.pointerup(OUT, PRIMARY.pointerId);
+  assert.equal(o.dismissed, 0);
+});

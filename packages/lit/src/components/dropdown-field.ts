@@ -99,6 +99,10 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
     const e = event as PointerEvent;
     this.dismissal.pointerdown(e.target, { pointerId: e.pointerId ?? 0, isPrimary: e.isPrimary ?? true, button: e.button ?? 0 });
   };
+  private readonly onOutsideUp = (event: Event): void => {
+    const e = event as PointerEvent;
+    this.dismissal.pointerup(e.target, e.pointerId ?? undefined);
+  };
   private readonly onOutsideClick = (event: Event): void => this.dismissal.click(event.target);
   private readonly onOutsideCancel = (event: Event): void =>
     this.dismissal.pointercancel((event as PointerEvent).pointerId ?? 0);
@@ -108,6 +112,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
     super.connectedCallback();
     if (!outsideDismissDeclared()) return;
     document.addEventListener("pointerdown", this.onOutsideDown, true);
+    document.addEventListener("pointerup", this.onOutsideUp, true);
     document.addEventListener("click", this.onOutsideClick, true);
     document.addEventListener("pointercancel", this.onOutsideCancel, true);
     window.addEventListener("blur", this.onOutsideAbandon);
@@ -116,6 +121,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
 
   override disconnectedCallback(): void {
     document.removeEventListener("pointerdown", this.onOutsideDown, true);
+    document.removeEventListener("pointerup", this.onOutsideUp, true);
     document.removeEventListener("click", this.onOutsideClick, true);
     document.removeEventListener("pointercancel", this.onOutsideCancel, true);
     window.removeEventListener("blur", this.onOutsideAbandon);
