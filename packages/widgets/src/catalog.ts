@@ -98,7 +98,7 @@ const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Object.fr
   requiredMarker: ["label"], inlineError: ["label"],
   prefix: ["inputWrapper"], suffix: ["inputWrapper"],
   control: ["dropzone", "inputWrapper", "track"], startControl: ["inputWrapper"], endControl: ["inputWrapper"], separator: ["inputWrapper"],
-  trigger: ["inputWrapper"], toggle: ["inputWrapper"],
+  decrement: ["inputWrapper"], increment: ["inputWrapper"], trigger: ["inputWrapper"], toggle: ["inputWrapper"],
   // The arrow may be drawn inside a button trigger or beside an input one; what the contract
   // requires is that it lives in the wrapper, and containment is transitive.
   arrow: ["inputWrapper", "trigger"], value: ["trigger", "inputWrapper"], placeholder: ["trigger", "inputWrapper"],
@@ -473,7 +473,14 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   email: define("email", ["mdy-renderer", "mdy-renderer--text"], ["root", "label", "requiredMarker", "inputWrapper", "prefix", "control", "suffix", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
   password: define("password", ["mdy-renderer", "mdy-renderer--text"], ["root", "label", "requiredMarker", "inputWrapper", "prefix", "control", "suffix", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
   textarea: define("textarea", ["mdy-renderer", "mdy-renderer--textarea"], ["root", "label", "requiredMarker", "inputWrapper", "control", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
-  number: define("number", ["mdy-renderer", "mdy-renderer--number"], ["root", "label", "requiredMarker", "inputWrapper", "control", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
+  // `increment` and `decrement` are the spin buttons an adapter may draw beside the input. Optional
+  // because the native control already has its own and a renderer that leaves them to the platform
+  // is complete without them — but declared, because one adapter draws them, they wear
+  // `mdy-spin-btn`, and the themes style them. A part that is emitted and painted and named nowhere
+  // is invisible to every audit here, all of which start from what the contract declares.
+  number: define("number", ["mdy-renderer", "mdy-renderer--number"], ["root", "label", "requiredMarker", "inputWrapper", "control", "increment", "decrement", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
+    { classes: { increment: ["mdy-spin-btn", "mdy-spin-btn-up"], decrement: ["mdy-spin-btn", "mdy-spin-btn-down"] },
+      elements: { increment: "button", decrement: "button" } }),
   slider: define("slider", ["mdy-renderer", "mdy-renderer--slider"], ["root", "label", "requiredMarker", "track", "control", "value", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { track: ["mdy-slider-container"], control: ["mdy-slider"], value: ["mdy-slider-value"] } ,
       required: ["value"] }),
