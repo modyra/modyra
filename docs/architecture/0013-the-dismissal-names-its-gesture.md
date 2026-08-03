@@ -58,6 +58,37 @@ produces no `click` at all — the gesture a touch user makes to scroll the page
 Completing on `pointerup` dismisses there; completing on `click` leaves the browser to decide what
 counts as an activation, and the origin check only prevents the false positives it cannot see.
 
+> **Amended 2026-08-03 — completion is the pointer's own release, with `click` as the tail.**
+>
+> The paragraph above is kept because its reasoning is what makes the amendment legible, and because
+> the risk it names is real. What it got wrong is *which signal* protects against that risk.
+>
+> The clause assumed every engine judges an activation and reports it. WebKit does not: it
+> synthesises no mouse events and no `click` for a tap on an element it does not consider clickable,
+> and a page's own background is not one. Measured, tapping an `<h1>` with a list open:
+>
+> | engine | events delivered |
+> | --- | --- |
+> | Chromium | `pointerdown` `touchstart` `pointerup` `touchend` `mousedown` `mouseup` `click` |
+> | WebKit | `pointerdown` `touchstart` `pointerup` `touchend` — and nothing else |
+>
+> So on Safari, desktop and iOS, the pair never completed and **nothing dismissed** — on the engine
+> every iOS browser is required to use.
+>
+> The scroll gesture the original clause protects is still protected, by a signal that is delivered
+> rather than inferred: a browser that takes a gesture over to scroll fires `pointercancel`, which
+> this rule already treats as abandonment. The absence of a click was standing in for that.
+>
+> `pointerup` now completes the interaction, subject to the same origin and pointer-identity rules.
+> `click` stays and normally does nothing — the release has already left the machine idle, and an
+> idle machine dismisses nothing — but it catches an interaction whose release never arrived, so the
+> change does not trade one engine's gap for another's.
+>
+> One behaviour changes beyond the fix, and it is a correction rather than a cost: pressing outside
+> and releasing **inside** the popup no longer dismisses. It used to, because the browser fired the
+> click on a common ancestor outside the branch. The interaction ended inside, so under this ADR's
+> own rule it should never have dismissed.
+
 **Inside means the logical branch**, not the popup element: the invoker, the popup, its descendants,
 portalled content and any child popup. A renderer supplies that predicate — only it knows where its
 portal went — and the rule stays here.
@@ -120,6 +151,17 @@ calls it and none binds its own decision, which is what let the divergence exist
 - `npm run test:contracts` — the capability's shape is in the contract snapshot, and `contract-diff`
   gives it a semver verdict.
 - `npm run test:e2e` — the gesture rules are browser behaviour and are asserted in a browser.
+
+**On three engines, since the 2026-08-03 amendment.** The clause that moved would not have been
+caught on one: `playwright.config.ts` ran Chromium only, where the missing `click` does not exist as
+a phenomenon. `e2e/plain/dismiss.spec.ts:30` and `e2e/touch.spec.ts:36` are the rows that failed on
+WebKit, and `packages/widgets/test/dismissal.spec.mjs` §4 now asserts the release path directly —
+including a release with no click at all, which is the shape WebKit delivers.
+
+The `pointercancel` row remains Chromium-only and says so in the spec: only CDP can make a browser
+send a genuine cancel, and a dispatched event would assert the handler rather than the browser. That
+matters more after this amendment than before it, because `pointercancel` is now the *only* thing
+standing between a scroll and a dismissal.
 
 **The `pointercancel` row is asserted, and this was not certain in advance.** A cancelled pointer is
 the browser taking a gesture over, not an event a script dispatches, so the row was expected to ship

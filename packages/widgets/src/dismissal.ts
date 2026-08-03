@@ -12,11 +12,18 @@
  * inside; a browser fires the resulting `click` on a common ancestor, so any rule reading only the
  * completion target closes a popup the user was working in.
  *
- * **Completion is `click`, not `pointerup`.** A drag that ends on a different element than it began
- * on produces no `click` at all — which is precisely the gesture a touch user makes to scroll the
- * page behind an open popup. Completing on `pointerup` would dismiss there; completing on `click`
- * leaves the browser to decide what counts as an activation, and the origin/end pair only prevents
- * the false positives it cannot see.
+ * **Completion is the pointer's own release.** `pointerup` decides, and `click` is the tail that
+ * catches an interaction whose release never arrived.
+ *
+ * It was `click` alone, on the reasoning that a drag ending elsewhere produces no click — the gesture
+ * a touch user makes to scroll the page behind an open popup — so the browser's own judgement of what
+ * counts as an activation would filter it out. One engine does not supply that judgement: WebKit
+ * synthesises no mouse events and no `click` for a tap on an element it does not consider clickable,
+ * a page's own background included. On Safari the pair never completed and nothing dismissed.
+ *
+ * What actually protects the scroll gesture is `pointercancel`: a browser that takes a gesture over
+ * to scroll says so, and this rule already treats that as abandonment. The absence of a click was
+ * standing in for a signal that is delivered directly.
  *
  * What this deliberately does **not** do:
  *
@@ -75,7 +82,16 @@ export interface MdyLightDismissOptions {
 export interface MdyLightDismiss {
   /** Capture-phase `pointerdown`. Records the origin. */
   readonly pointerdown: (target: unknown, origin: MdyPointerOrigin) => void;
-  /** Capture-phase `click`. Completes the interaction and decides. */
+  /** Capture-phase `pointerup`. Completes the interaction and decides. */
+  readonly pointerup: (target: unknown, pointerId?: number) => void;
+  /**
+   * Capture-phase `click`. Completes the interaction and decides.
+   *
+   * Normally a no-op: the release has already resolved the interaction and left the machine idle, and
+   * an idle machine never dismisses. It stays because a click can arrive where no `pointerup` did —
+   * pointer capture released elsewhere, a synthetic activation — and losing the dismissal there would
+   * trade one engine's gap for another's.
+   */
   readonly click: (target: unknown) => void;
   /** Capture-phase `pointercancel`. The browser took the gesture; nothing is decided. */
   readonly pointercancel: (pointerId: number) => void;
@@ -109,6 +125,22 @@ export function createLightDismiss(options: MdyLightDismissOptions): MdyLightDis
     tracked = null;
   };
 
+  /**
+   * Resolve the interaction in flight, whichever event marks its end.
+   *
+   * Idempotent by construction: it leaves the machine idle, and an idle machine dismisses nothing.
+   * That is what lets `pointerup` and `click` both call it on the engines that send both.
+   */
+  const complete = (target: unknown): void => {
+    const from = phase;
+    toIdle();
+    if (from !== "tracking-outside") return;
+    if (!options.isOpen() || options.isInside(target)) return;
+    phase = "dismissed";
+    options.dismiss();
+    phase = "idle";
+  };
+
   return {
     pointerdown: (target, origin) => {
       // A press always supersedes an interaction still in flight: two presses cannot both be
@@ -121,15 +153,14 @@ export function createLightDismiss(options: MdyLightDismissOptions): MdyLightDis
       phase = options.isInside(target) ? "tracking-inside" : "tracking-outside";
     },
 
-    click: (target) => {
-      const from = phase;
-      toIdle();
-      if (from !== "tracking-outside") return;
-      if (!options.isOpen() || options.isInside(target)) return;
-      phase = "dismissed";
-      options.dismiss();
-      phase = "idle";
+    pointerup: (target, pointerId) => {
+      // Another pointer's release does not complete this interaction — a second finger lifting is
+      // not the first one's answer.
+      if (pointerId !== undefined && tracked !== null && pointerId !== tracked) return;
+      complete(target);
     },
+
+    click: (target) => complete(target),
 
     pointercancel: (pointerId) => {
       if (tracked !== null && pointerId !== tracked) return;

@@ -420,6 +420,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     // Three listeners, not one: the contract dismisses on a *gesture*, and a gesture has two ends.
     // Which ends dismiss is `createOutsidePointerGesture`, never decided here.
     document.addEventListener("pointerdown", this.handleOutsideDown, true);
+    document.addEventListener("pointerup", this.handleOutsideUp, true);
     document.addEventListener("click", this.handleOutsideClick, true);
     document.addEventListener("pointercancel", this.handleOutsideCancel, true);
     window.addEventListener("blur", this.handleOutsideAbandon);
@@ -431,6 +432,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   private teardownGlobalListeners(): void {
     if (typeof window === "undefined") return;
     document.removeEventListener("pointerdown", this.handleOutsideDown, true);
+    document.removeEventListener("pointerup", this.handleOutsideUp, true);
     document.removeEventListener("click", this.handleOutsideClick, true);
     document.removeEventListener("pointercancel", this.handleOutsideCancel, true);
     window.removeEventListener("blur", this.handleOutsideAbandon);
@@ -481,6 +483,10 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
       isPrimary: e.isPrimary ?? true,
       button: e.button ?? 0,
     });
+  };
+  private readonly handleOutsideUp = (event: Event): void => {
+    const e = event as PointerEvent;
+    this.outsideDismissal.pointerup(e.target, e.pointerId ?? undefined);
   };
   private readonly handleOutsideClick = (event: Event): void =>
     this.outsideDismissal.click(event.target);
