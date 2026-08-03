@@ -16,27 +16,25 @@ The shape almost all of them share: **a rule that is declared, correct, and wire
 contract is in better shape than the things that check it, which is why most of these are invisible
 to a green suite.
 
-**Status**, and it is derived from the headings below rather than maintained beside them — this
-paragraph contradicted them once, listing four findings as open that their own sections marked fixed,
-and naming a `C6` that has never existed.
+**Status.** The headings below are the source of truth; this list is a convenience for a reader who
+does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
 - **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I
 - **Partly fixed** — C2 (derived, not painted), E2 (most scripts reachable), F (kind-keyed tables
   narrowed, part-keyed ones key-checked)
-- **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary, now
+- **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
+- **Open** — J1, J2, J3, J4
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
-**One new finding, in the tool that classifies contract changes.** `contract-diff` compared
-capabilities by iterating the *current* ones, so a withdrawn capability was never visited: the single
-change `contract-compatibility.md` calls major was the one its gate could not see. Its keyboard
-comparison also recorded `Object.keys` of an array — the indices `"0"`, `"1"` — so it knew how many
-keys a kind declared and never which. Both fixed, both falsified by mutation.
+The J findings share one shape: **anatomy the contract cannot express, because the thing that needs
+constraining sits one level below the part list.** They are recorded rather than fixed because each
+one is a decision about what a widget *is*, binding on every renderer.
 
-That is the third instance of one lesson this session, after E1 and after a test written *in* this
-work that derived its expectation from the data it was checking: **a check is only as good as the set
-of candidates it considers.**
+One lesson recurs across E1, H and the `contract-diff` capability comparison: **a check is only as
+good as the set of candidates it considers.** A rule that is correct, and a suite whose fixtures
+never reach the branch it guards, are indistinguishable from green.
 
 ---
 
@@ -487,3 +485,91 @@ that leaves them to the platform is complete without them.
 Confirmation the gap closed rather than moved: the three `mdy-spin-btn` classes had been sitting in
 the style audit's off-contract allowlist, and the audit reported them as **stale entries** once the
 parts existed. Removed.
+
+## J1 — `segmented` leaves its `option` element unconstrained — **open**
+
+**Observed.** `packages/widgets/src/catalog.ts`, the `segmented` shape declares
+`elements: { option: "presentation" }`.
+
+A segmented choice can be built two ways, and both are defensible:
+
+- a `<label>` wrapping `<input type="radio">`, the same native pattern `radio` uses;
+- a `<button>` in a toolbar of pressed buttons.
+
+They are not the same control to a screen reader. One is a radio in a radiogroup; the other is a
+toggle button reporting `aria-pressed`. The contract cannot require either without breaking whichever
+adapter chose the other, so it currently requires neither.
+
+Declaring `presentation` is honest — it says the contract has no opinion — but it means no anatomy
+check has ever looked at what a segmented option actually is. A renderer could emit a `<div>` with a
+click handler and conform.
+
+**Not decided.** Picking one is a cross-renderer equivalence decision, not a contract-authoring one:
+it cannot be made without deciding what a segmented control *is*, and that binds every adapter.
+
+## J2 — `multiselect` anatomy depends on its mode, and the contract cannot say so — **open**
+
+**Observed.** `packages/widgets/src/catalog.ts`, the `multiselect` shape declares
+`elements: { option: "presentation" }` for the same reason as J1, but a sharper one.
+
+`option` is genuinely a different element per mode:
+
+- **toggle mode** — a `<button>` carrying a tick;
+- **counter mode** — a `<div>` holding its own `+`/`−` step buttons and a count, which cannot be a
+  `<button>` because it contains buttons.
+
+The contract has no way to express "this part's element depends on that option". Declaring either
+one would assert a shape only half the renderers meet, so `option` is declared unconstrained.
+
+Two things follow, and only the first is recorded elsewhere:
+
+1. `optionCheck` is toggle mode's part and cannot be required, since a counter chip has a count
+   between two steppers and no tick to draw.
+2. Whether a multiselect should be a listbox with `aria-multiselectable` at all, rather than a grid
+   of chips, is undecided. The current answer — a grid — is what every renderer implements, but it
+   is not written down as a decision anywhere, which is what makes it look accidental.
+
+**Not decided.** Either the contract grows conditional anatomy (a part whose element varies by a
+declared option), or multiselect splits into two kinds, or the mode stops being a runtime option.
+
+## J3 — `timepicker` segments hide their real control one level down — **open**
+
+**Observed.** `packages/widgets/src/catalog.ts`, the `timepicker` shape declares
+`elements: { hour: "group", minute: "group" }`.
+
+`hour` and `minute` are the containers the header lays out. Each holds an `<input type="number">`
+with its own aria-label — the element a user actually types into, and the element that carries the
+accessible name. That input is **not a declared part**, so it sits one level below anything the
+contract can see: no anatomy, relation, state or equivalence check reaches it.
+
+Declaring the segments as controls instead would be worse — it would ask every renderer for a
+control at a level where none exists.
+
+**Not decided.** The fix is to name the inner control as a part of its own, not to widen the check
+until the current shape passes. Widening is the failure mode this document exists to catch: a check
+relaxed to fit the code stops being a check.
+
+## J4 — Two contract checks accept an answer from anywhere — **open**
+
+**Observed.** `packages/widgets/src/testing/state-tests.ts` and
+`packages/widgets/src/testing/dom-tests.ts`.
+
+Both are deliberate breadth, and both are recorded here because deliberate breadth and an unnoticed
+hole look identical from a green suite.
+
+**State carriers are not narrowed per kind.** Where a widget exposes a state depends on its anatomy —
+a text field puts it on the input, a radio group on the group, a select on its trigger. Rather than
+guess, `state-tests.ts` accepts the attribute on *any* declared part. The claim it can make is
+therefore only "the widget exposes the state somewhere an assistive technology will meet it", not
+"on the right element". A widget that moved `aria-expanded` from its trigger to its root would still
+pass.
+
+**Popup contents are unchecked.** `dom-tests.ts` declares `popup: undefined` — a popup is a
+positioning container, and its accessible semantics live on what it *contains* (the listbox, the
+grid, the dialog). Constraining the box itself would force a role that says nothing. But nothing yet
+checks the contained thing, so a popup framing the wrong element, or nothing at all, is invisible.
+
+**Not decided.** Narrowing the state carrier to one part per kind requires a per-kind table the
+contract does not have; checking popup contents requires the contract to name what each kind's popup
+frames. Both are the same missing capability — anatomy expressed one level deeper than the current
+part list reaches — which is also J3's shape.
