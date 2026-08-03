@@ -77,6 +77,14 @@ export const MDY_ICONS = {
     content: `<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" ${STROKE}/>`
   },
 
+  KEYBOARD: {
+    viewBox: "0 0 24 24",
+    span: "full",
+    // Keys are zero-length round-capped strokes on two rows, with a wider space bar: the same
+    // vocabulary as ERROR's dot, so every mark in the set thickens at one rate.
+    content: `<rect x="2" y="6" width="20" height="12" rx="2" ${STROKE}/><path d="M6 10h0M10 10h0M14 10h0M18 10h0M6 14h0M9 14h6M18 14h0" ${STROKE}/>`
+  },
+
   // ─── compact: 5–19 ─────────────────────────────────────────────────────────
   SEARCH: {
     viewBox: "0 0 24 24",
