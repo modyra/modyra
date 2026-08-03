@@ -1327,6 +1327,10 @@
         align-items: center;
         gap: 1rem;
         width: 100%;
+        /* A slider is a field, and a field is one height. Its track is 6px, so without this the
+           wrapper collapsed to whatever the padding gave it — 36px beside every other field's 38,
+           which reads as a dent in the column rather than as a different control. */
+        min-height: var(--mdy-input-height);
     }
 
     .mdy-slider {
@@ -1532,7 +1536,11 @@
         align-items: stretch;
         background: transparent;
         padding: 0;
-        height: var(--mdy-segmented-height);
+        /* No height of its own. A segmented control is a field, and a field is one height —
+           `--mdy-segmented-height` said 40px where the field said 36, so a form with one in it had
+           a step in its left edge. `min-height` from `--mdy-input-height` governs; the buttons
+           still stretch to fill it. */
+        min-height: var(--mdy-input-height);
         /* M3: 40px */
         border-radius: var(--mdy-segmented-border-radius);
         /* M3: full = 9999px */
@@ -1727,6 +1735,10 @@
     }
 
     .mdy-chip {
+        /* `--mdy-chip-height` is the chip's height, border included — the same number whichever
+           mode it is in. Left to `content-box`, a bordered counter chip measured 34px beside a
+           toggle chip's 32, from the same token. */
+        box-sizing: border-box;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1846,6 +1858,10 @@
 
     /* Counter chip (multi mode) */
     .mdy-chip--counter {
+        /* The same height as every other chip. Its step buttons take `height: 100%`, so with the
+           chip's height coming from its content instead of the token, a counter chip measured 34px
+           beside a toggle chip's 32 — two heights for one vocabulary. */
+        height: var(--mdy-chip-height);
         gap: 0;
         padding: 0;
         overflow: hidden;
