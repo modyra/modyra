@@ -25,7 +25,10 @@ const packageJsonPath = path.join(distDir, "package.json");
 
 removeIfPresent(path.join(distDir, "node_modules"));
 removeIfPresent(path.join(distDir, "package-lock.json"));
-copyFileSync("README.md", path.join(distDir, "README.md"));
+// The package's own README, not the repository's. Every other package ships its own through
+// `files`; this one publishes from a build directory, so it has to be placed there — and copying the
+// root README put the whole monorepo's front page on the npm listing for a single adapter.
+copyFileSync("packages/angular/README.md", path.join(distDir, "README.md"));
 copyFileSync("LICENSE", path.join(distDir, "LICENSE"));
 deleteSourceMaps(distDir);
 
