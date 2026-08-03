@@ -103,3 +103,7 @@ Not yet included (tracked as follow-up work): a framework example under
 `examples/` (needs a Svelte-aware bundler — `@sveltejs/vite-plugin-svelte`
 — for a real `.svelte` component, a separate decision from the
 runes-vs-stores one above) and the headless-recipes doc section.
+
+## License
+
+MIT © [Lorenzo Muscherà](https://github.com/lorenzomusche)

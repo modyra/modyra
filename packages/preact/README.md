@@ -58,3 +58,7 @@ work unchanged: they only touch the framework-agnostic field handle, never
 a React/Preact API. `packages/preact/test/headless-recipes.test.mjs` is the
 React adapter's suite ported verbatim, proving the claim rather than just
 asserting it.
+
+## License
+
+MIT © [Lorenzo Muscherà](https://github.com/lorenzomusche)

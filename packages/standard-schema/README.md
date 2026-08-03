@@ -95,3 +95,7 @@ readonly form = mdyForm(buildStandardTree(schema, fields), {
   validators: [buildStandardValidator(schema)],
 });
 ```
+
+## License
+
+MIT © [Lorenzo Muscherà](https://github.com/lorenzomusche)
