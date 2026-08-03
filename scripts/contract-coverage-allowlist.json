@@ -813,18 +813,6 @@
       "modyra.css"
     ]
   },
-  "mdy-timepicker-segment-input": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra.css"
-    ]
-  },
   "mdy-timepicker-segment-input--readonly": {
     "kind": "drift",
     "adapters": [

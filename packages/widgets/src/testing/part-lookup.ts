@@ -14,7 +14,7 @@
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
 import type { MdyPartContract } from "../contract.js";
 import { dynamicParts } from "../ssr.js";
-import { MDY_SEMANTIC_ELEMENTS } from "./dom-tests.js";
+import { MDY_SEMANTIC_ELEMENTS, partsSharingClassesWith } from "./dom-tests.js";
 
 /**
  * A kind's parts keyed by name.
@@ -25,24 +25,6 @@ import { MDY_SEMANTIC_ELEMENTS } from "./dom-tests.js";
  */
 const partsOf = (kind: MdyWidgetKind): Readonly<Record<string, MdyPartContract | undefined>> =>
   MDY_WIDGET_CONTRACTS[kind].parts as Readonly<Record<string, MdyPartContract | undefined>>;
-
-/**
- * The parts of `kind` that carry exactly the classes `part` carries, in declared order.
- *
- * Length 1 for almost every part, which is the uninteresting case: the part is alone under its
- * selector and the first match is it.
- */
-function partsSharingClassesWith(kind: MdyWidgetKind, part: string): readonly string[] {
-  const parts = partsOf(kind);
-  const key = (name: string): string => [...(parts[name]?.classes ?? [])].sort().join(" ");
-  const target = key(part);
-  if (target === "") return [part];
-
-  return MDY_WIDGET_CONTRACTS[kind].structure.nodes
-    .filter((node) => key(node.part) === target)
-    .sort((a, b) => a.order - b.order)
-    .map((node) => node.part);
-}
 
 /**
  * Escapes a class name for use in a selector.

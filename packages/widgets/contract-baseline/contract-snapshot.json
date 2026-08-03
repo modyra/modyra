@@ -2894,6 +2894,17 @@
             "focused"
           ]
         },
+        "hourControl": {
+          "element": "input",
+          "parent": "hour",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-segment-input"
+          ],
+          "states": []
+        },
         "minute": {
           "element": "group",
           "parent": "header",
@@ -2908,6 +2919,17 @@
             "active",
             "focused"
           ]
+        },
+        "minuteControl": {
+          "element": "input",
+          "parent": "minute",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-timepicker-segment-input"
+          ],
+          "states": []
         },
         "period": {
           "element": "group",

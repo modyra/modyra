@@ -249,8 +249,10 @@ export function renderTimepickerField(
     applyPart(control, view.parts.trigger);
     toggle.disabled = state.disabled;
     applyPart(dialog, { ...view.parts.dialog, id: overlayControlledId("timepicker", widgetId) ?? undefined });
-    applyPart(hourInput, view.parts.hour);
-    applyPart(minuteInput, view.parts.minute);
+    applyPart(hourSegment, view.parts.hour);
+    applyPart(hourInput, view.parts.hourControl);
+    applyPart(minuteSegment, view.parts.minute);
+    applyPart(minuteInput, view.parts.minuteControl);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));

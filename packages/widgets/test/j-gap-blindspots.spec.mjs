@@ -52,9 +52,10 @@ function shell(kind, rootClasses, { labelFor = `${kind}-control` } = {}) {
   };
 }
 
-// ─── J3: the timepicker's real control is one level below the contract ───────
+// ─── J3: the timepicker's real control is a part of its own ──────────────────
 
-test("J3 — a timepicker segment holding a <div> instead of an input is accepted", () => {
+/** A timepicker shell with two segments, each holding whatever `segmentBox` builds. */
+function timepickerWithSegments(segmentBox) {
   const { root, label, parts, tail } = shell("timepicker", "mdy-renderer mdy-renderer--timepicker");
   const wrapper = el("div", "mdy-input-wrapper");
   const control = el("input", "mdy-timepicker__input", {
@@ -65,29 +66,50 @@ test("J3 — a timepicker segment holding a <div> instead of an input is accepte
   const toggle = el("button", "mdy-timepicker__toggle", { type: "button" });
   wrapper.append(control, toggle);
 
-  // `hour` and `minute` are declared `group`, and the element a user actually types into sits inside
-  // them, undeclared. So a segment containing a <div> where every renderer puts an
-  // <input type="number"> is indistinguishable from one that is right.
   const hour = el("div", "mdy-timepicker-segment mdy-timepicker-segment--hour");
   const minute = el("div", "mdy-timepicker-segment mdy-timepicker-segment--minute");
-  hour.append(el("div", "mdy-timepicker-segment-input"));
-  minute.append(el("div", "mdy-timepicker-segment-input"));
+  const hourControl = segmentBox("Hour");
+  const minuteControl = segmentBox("Minute");
+  hour.append(hourControl);
+  minute.append(minuteControl);
 
   root.append(label, wrapper, hour, minute, ...tail);
+  return {
+    root,
+    issues: inspectWidgetDom(root, "timepicker", {
+      parts: { ...parts, inputWrapper: wrapper, control, toggle, hour, minute, hourControl, minuteControl },
+    }),
+  };
+}
 
-  const issues = inspectWidgetDom(root, "timepicker", {
-    parts: { ...parts, inputWrapper: wrapper, control, toggle, hour, minute },
+test("J3 — a timepicker segment holding a <div> instead of an input is rejected", () => {
+  // The segment is a container and the control inside it is what a user types into. A <div> wearing
+  // the control's class is styled like one and operable by nobody: a class is presentation and tells
+  // a screen reader nothing.
+  const { root, issues } = timepickerWithSegments((label) => el("div", "mdy-timepicker-segment-input", { "aria-label": label }));
+
+  assert.deepEqual(
+    issues.map((issue) => `${issue.code}:${issue.part}`),
+    ["PART_ELEMENT:hourControl", "PART_ELEMENT:minuteControl"],
+    "a <div> in place of the segment's control must fail the element check",
+  );
+
+  const timepickerParts = Object.keys(MDY_WIDGET_CONTRACTS.timepicker.parts);
+  assert.ok(timepickerParts.includes("hourControl"), "the contract reaches the hour's control");
+  assert.ok(timepickerParts.includes("minuteControl"), "the contract reaches the minute's control");
+  root.remove();
+});
+
+test("J3 — the same timepicker with real inputs conforms", () => {
+  // The rule has to be satisfiable by what every renderer already draws, or it is not a rule about
+  // the widget but a rule against it.
+  const { root, issues } = timepickerWithSegments((label) => {
+    const input = el("input", "mdy-timepicker-segment-input", { "aria-label": label });
+    input.type = "number";
+    return input;
   });
 
-  // Plan 38 inverts this: with `hourControl`/`minuteControl` declared, a <div> carrying the class
-  // must fail the `control` element check, because a class is styling and tells a screen reader
-  // nothing.
-  assert.deepEqual(issues, [], "the contract cannot yet see inside hour/minute");
-
-  // And the reason, stated directly: no declared part reaches the inner control.
-  const parts38 = Object.keys(MDY_WIDGET_CONTRACTS.timepicker.parts);
-  assert.ok(!parts38.includes("hourControl"), "plan 38 adds hourControl");
-  assert.ok(!parts38.includes("minuteControl"), "plan 38 adds minuteControl");
+  assert.deepEqual(issues, [], "an <input type=number> in each segment is what the contract asks for");
   root.remove();
 });
 
