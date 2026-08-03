@@ -185,6 +185,35 @@
         /* Material's emphasized curve — a longer, flatter settle than `standard`, and genuinely a
        different curve rather than a fourth spelling of one. */
         --mdy-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+        /* ── Trailing affordances ────────────────────────────────────────────────
+           The controls at a field's inline end: a calendar button, a clock button, a colour
+           swatch, a multiselect's search button, a number's steppers, and the caret that marks a
+           select as openable. Down a form they occupy one column and a user reads them as one row
+           of controls, so they are given one geometry here rather than each theme choosing.
+
+           Measured before these existed, their centres sat 17, 19, 25 and 31 pixels from their
+           field's inline end in boxes of 16, 24, 28 and 44 — a column that visibly wandered.
+
+           `inset` is to the box's outer edge and `target` is the box, so equal boxes at an equal
+           inset put every centre in the same place. `glyph` is the icon inside, and it is the same
+           whatever the box, which is what makes a calendar and a caret read as one family. */
+        --mdy-affordance-glyph: 1rem;
+        --mdy-affordance-inset: 0.25rem;
+        /* The box the affordance occupies in the layout. It must fit *inside* the field: sized to
+           the 44px target, three kinds grew their field to 46px while the rest stayed at 38, which
+           is the height mismatch a user sees down a column of controls. */
+        --mdy-affordance-box: 1.75rem;
+        /* The pointer target, delivered by an overlay rather than by the box, so meeting WCAG 2.5.5
+           costs no layout. An affordance that is `pointer-events: none` takes no overlay: the
+           control behind it is already the target. */
+        --mdy-affordance-target: 2.75rem;
+        /* Two controls stacked inside one field cannot both be 44px: the field is 3.5rem tall and
+           two targets would need 5.5rem. The steppers take WCAG 2.5.8's 24px instead, which is the
+           AA requirement and the level this project ships against; 2.5.5's 44px is AAA. Recorded as
+           an exception rather than left as an oversight — and it is why `target` is not simply
+           applied to every affordance. */
+        --mdy-affordance-target-stacked: 1.5rem;
+
         --mdy-sys-shape-corner-full: 9999px;
 
         /* Elevation */
