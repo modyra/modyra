@@ -10,7 +10,7 @@ import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@mod
 import type { MdyDynamicDaterangeField } from "@modyra/core";
 import { addMonths, buildDateLocale, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { MDY_WIDGET_CONTRACTS, dateRangeDraftTransition, overlayAnchoringFor, projectFieldShellA11y, type MdyDateRangeDraftState, type MdyDateRangeValue , defaultWidgetIdFactory} from "@modyra/widgets";
-import { applyPart, el, setErrors, setText } from "../dom.js";
+import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
@@ -60,6 +60,7 @@ export function renderDaterangeField(
   endInput.setAttribute("aria-label", `${f.label ?? "Range"} — end`);
   endInput.placeholder = "End";
   const toggle = el("button", "mdy-datepicker__toggle") as HTMLButtonElement;
+  setIcon(toggle, "CALENDAR");
   toggle.type = "button";
   toggle.setAttribute("aria-label", "Open the calendar");
   toggle.setAttribute("aria-haspopup", "dialog");
@@ -73,12 +74,12 @@ export function renderDaterangeField(
   const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   prevButton.type = "button";
   prevButton.setAttribute("aria-label", "Previous month");
-  setText(prevButton, "‹");
+  setIcon(prevButton, "CHEVRON_LEFT");
   const monthLabel = el("span", "mdy-datepicker__header-label");
   const nextButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   nextButton.type = "button";
   nextButton.setAttribute("aria-label", "Next month");
-  setText(nextButton, "›");
+  setIcon(nextButton, "CHEVRON_RIGHT");
   header.append(prevButton, monthLabel, nextButton);
   const grid = buildCalendarGrid("daterange");
   const actions = el("div", "mdy-datepicker__actions") as HTMLDivElement;

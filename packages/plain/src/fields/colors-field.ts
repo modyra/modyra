@@ -8,7 +8,7 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
 import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, overlayAnchoringFor, projectFieldShellA11y, type MdyColorValueIntent , defaultWidgetIdFactory} from "@modyra/widgets";
-import { applyPart, el, setErrors } from "../dom.js";
+import { applyPart, el, setErrors, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, setOverlayOpen, trackOverlay } from "../overlay.js";
 
@@ -65,6 +65,7 @@ export function renderColorsField(
   // The themes draw the caret on `.mdy-select__arrow`, which is where the contract nests it
   // inside this toggle — an empty button would have no size at all.
   const toggleArrow = el("span", "mdy-select__arrow");
+  setIcon(toggleArrow, "CHEVRON_DOWN");
   toggleArrow.setAttribute("aria-hidden", "true");
   toggle.append(toggleArrow);
 

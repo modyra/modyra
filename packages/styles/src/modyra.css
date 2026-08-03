@@ -362,6 +362,21 @@
 @layer mdy.base {
 
     /*
+     * One icon size, wherever an icon appears in a field.
+     *
+     * Written per affordance it was written five times, and the two spellings I missed rendered at
+     * 28px — the size of their box — beside a calendar at 16. An icon's size is a property of the
+     * set, not of the control that happens to hold it.
+     *
+     * A control that genuinely needs a different size says so after this rule and says why.
+     */
+    .mdy-renderer svg {
+        width: var(--mdy-affordance-glyph);
+        height: var(--mdy-affordance-glyph);
+        flex-shrink: 0;
+    }
+
+    /*
      * The pointer target, and only the pointer target.
      *
      * WCAG 2.5.5 asks for 44x44. Giving the affordance that box makes it drive the field's height —
@@ -431,12 +446,6 @@
         color: var(--mdy-on-error);
     }
 
-    .mdy-spin-btn svg {
-        display: block;
-        width: var(--mdy-affordance-glyph);
-        height: var(--mdy-affordance-glyph);
-        pointer-events: none;
-    }
 
     /* Stile coerente per input[type=number]: nasconde le freccette native */
     input[type="number"]::-webkit-inner-spin-button,
@@ -1716,14 +1725,6 @@
         cursor: not-allowed;
     }
 
-    .mdy-multiselect__search-btn svg {
-        width: var(--mdy-affordance-glyph);
-        height: var(--mdy-affordance-glyph);
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 2;
-        stroke-linecap: round;
-    }
 
     .mdy-multiselect__options {
         display: flex;
@@ -1895,14 +1896,6 @@
         cursor: not-allowed;
     }
 
-    .mdy-chip__btn svg {
-        width: 0.75rem;
-        height: 0.75rem;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 2;
-        stroke-linecap: round;
-    }
 
     .mdy-chip__count {
         font-size: 0.6875rem;
@@ -2076,11 +2069,6 @@
         justify-content: center;
     }
 
-    .mdy-select__arrow svg {
-        display: block;
-        width: 100%;
-        height: 100%;
-    }
 
     /* The list, as a surface. Where it goes is `.mdy-overlay`'s, from the coordinates
      * `anchorOverlay` measured.
@@ -2315,11 +2303,6 @@
         line-height: 0;
     }
 
-    .mdy-datepicker__toggle svg {
-        width: var(--mdy-affordance-glyph);
-        height: var(--mdy-affordance-glyph);
-        display: block;
-    }
 
 
     .mdy-datepicker__toggle:hover:not(:disabled),

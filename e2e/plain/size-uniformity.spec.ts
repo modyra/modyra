@@ -84,3 +84,49 @@ test("the fields that grow, grow for a reason", async ({ page }) => {
     expect(height, `${entry} should exceed a single row`).toBeGreaterThan(40);
   }
 });
+
+test("every icon is one size, and centred in what holds it", async ({ page }) => {
+  // Three mechanisms drew icons here: real SVG, text characters in the reader's font, and nothing
+  // at all with CSS drawing a rotated square. They could not have matched — a character takes the
+  // font's size and baseline, and a CSS square takes its own. Now they are all geometry, and the
+  // size is a property of the set rather than of whichever control happens to hold one.
+  const icons = await page.evaluate(() => {
+    const out: { size: string; offset: string }[] = [];
+    for (const svg of document.querySelectorAll("svg")) {
+      if (!(svg instanceof SVGSVGElement)) continue;
+      const r = svg.getBoundingClientRect();
+      if (r.width === 0) continue;
+      const host = svg.parentElement;
+      if (!(host instanceof HTMLElement)) continue;
+      const h = host.getBoundingClientRect();
+      out.push({
+        size: `${Math.round(r.width)}x${Math.round(r.height)}`,
+        offset: `${Math.round((r.left + r.width / 2) - (h.left + h.width / 2))},` +
+                `${Math.round((r.top + r.height / 2) - (h.top + h.height / 2))}`,
+      });
+    }
+    return out;
+  });
+
+  expect(icons.length, "the demo must render icons to compare").toBeGreaterThan(4);
+  expect([...new Set(icons.map((i) => i.size))], "icon sizes differ").toHaveLength(1);
+  expect([...new Set(icons.map((i) => i.offset))], "icons are not centred").toEqual(["0,0"]);
+});
+
+test("no icon is a text character", async ({ page }) => {
+  // A magnifier, a chevron and a plus were once `⌕`, `‹` and `+` — characters, rendered in the
+  // reader's font at that font's size and baseline, which is why they matched nothing beside them.
+  const glyphs = await page.evaluate(() => {
+    const found: string[] = [];
+    const pictographic = /[\u2190-\u2BFF\u{1F000}-\u{1FAFF}]/u;
+    for (const el of document.querySelectorAll(
+      ".mdy-select__arrow, .mdy-datepicker__toggle, .mdy-timepicker__toggle, " +
+      ".mdy-multiselect__search-btn, .mdy-chip__btn, .mdy-datepicker__nav-btn",
+    )) {
+      const text = (el.textContent ?? "").trim();
+      if (text && pictographic.test(text)) found.push(`${el.className}: ${text}`);
+    }
+    return found;
+  });
+  expect(glyphs, "affordances drawing a character instead of geometry").toEqual([]);
+});

@@ -9,7 +9,7 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
 import { MDY_WIDGET_CONTRACTS, selectKeyboardAction, createSelectController, fieldShellPartIds, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
-import { applyPart, el, setErrors, setText } from "../dom.js";
+import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
@@ -74,6 +74,7 @@ export function renderSelectField(
   // `mdy-select` is what the themes anchor the dropdown against (position: relative).
   const wrapper = el("div", "mdy-select");
   const arrow = el("span", parts.arrow.classes.join(" "));
+  setIcon(arrow, "CHEVRON_DOWN");
   arrow.setAttribute("aria-hidden", "true");
   trigger.append(valueText, placeholderText, arrow);
   // Waiting on its options: the indicator sits on the control, where it is visible without opening
