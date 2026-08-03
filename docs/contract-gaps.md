@@ -32,6 +32,10 @@ The J findings share one shape: **anatomy the contract cannot express, because t
 constraining sits one level below the part list.** They are recorded rather than fixed because each
 one is a decision about what a widget *is*, binding on every renderer.
 
+[The roadmap](../ROADMAP.md) sequences them: J3 and J4 in phase 1, J1 and J2 in phase 3. J1's
+decision is already made — [ADR 0012](architecture/0012-a-choice-is-a-radio-by-role-or-by-tag.md) —
+so what remains there is implementation rather than a question.
+
 They close in a fixed order, and the first step is not a fix. A suite that cannot currently observe a
 violation will not prove a new rule caught it, so the fixtures come first and assert today's wrong
 behaviour. J3 follows, being the one gap that needs no decision — the timepicker's inner control is
