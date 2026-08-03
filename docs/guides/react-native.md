@@ -94,9 +94,9 @@ Two behaviours worth knowing rather than discovering:
 
 ## Bottom line
 
-Nothing in Modyra's own source is Hermes-incompatible — the previous
-"blocked" status was really "tested against the wrong Hermes." Shipping a
+Nothing in Modyra's own source is Hermes-incompatible; a "blocked" result
+here usually means the test ran against the wrong Hermes build. Shipping a
 real RN integration is still open work: a `<TextInput>` binding recipe and an
 actual RN app smoke test (ideally via a StackBlitz-equivalent or Expo
-snack, not verified here). The draft-storage adapter that used to be on this
-list is built and tested — see above.
+snack, not verified here). The draft-storage adapter is built and tested —
+see above.
