@@ -2,26 +2,24 @@
 /**
  * The documentation says things that can be checked, so they are checked.
  *
- * Five failures this repository has actually had, every one of which reads as fine on the page:
+ * The failure modes below all read as fine on the page:
  *
- *   1. **A link to a file that never existed.** Nine at once — seven in the first paragraph of the
- *      seven adapter examples, pointing at a shared page nobody had written. Nothing resolves a
- *      markdown link at build time, so a dead one survives every suite. A link that resolves only
- *      on the author's disk counts too: a git-ignored target is absent from a fresh clone.
- *   2. **A summary contradicting the document it summarises.** `contract-gaps.md` carries a status
- *      list of which findings are open; it drifted from the headings twice, the second time in the
- *      very commit whose message said it had been corrected. It listed four fixed findings as open
- *      and named a section, `C6`, that has never existed.
- *   3. **A page nothing links to.** Eleven of forty-eight, including every decision record.
- *   4. **An upstream README naming its own consumer**, which inverts the dependency direction in
- *      prose while the import graph stays clean.
- *   5. **A published package with no licence on its npm page.** Four of twelve.
- *   6. **A decision record with no Verification or Security section**, which is how a record stops
- *      being reviewable — and one that is not in the index, which is how it stops being read.
+ *   - **A link to a file that does not exist.** Nothing resolves a markdown link at build time, so a
+ *     dead one survives every suite. A link that resolves only on the author's disk counts too: a
+ *     git-ignored target is absent from a fresh clone.
+ *   - **A summary contradicting the document it summarises.** `contract-gaps.md` carries a status
+ *     list of which findings are open. Maintained beside the headings rather than derived from them,
+ *     it drifts — and a summary that can lie is worse than none.
+ *   - **A page nothing links to**, which is how documentation stops being found.
+ *   - **An upstream README naming its own consumer**, which inverts the dependency direction in
+ *     prose while the import graph stays clean.
+ *   - **A published package with no licence on its npm page.**
+ *   - **A decision record with no Verification or Security section**, which is how a record stops
+ *     being reviewable — and one that is not in the index, which is how it stops being read.
  *
- * All five are one shape: prose asserting something about the repository, with nothing to notice
- * when the repository moves. Each is checked mechanically here, and each check is mutation-tested —
- * a check nobody has watched fail is only a claim that it works.
+ * They are one shape: prose asserting something about the repository, with nothing to notice when
+ * the repository moves. Each is checked mechanically here, and each check is mutation-tested — a
+ * check nobody has watched fail is only a claim that it works.
  *
  *   node scripts/audit-docs.mjs           # report
  *   node scripts/audit-docs.mjs --check   # exit 1 on any failure
@@ -126,8 +124,11 @@ function gapStatusMismatches() {
   const summary = source.slice(0, source.indexOf("\n---"));
   const listed = new Map();
   const problems = [];
-  for (const [, label, ids] of summary.matchAll(/\*\*(Fixed|Partly fixed|Closed[^*]*)\*\* — ([^\n]+)/g)) {
-    const status = label.startsWith("Fixed") ? "fixed" : label.startsWith("Partly") ? "partial" : "closed";
+  for (const [, label, ids] of summary.matchAll(/\*\*(Fixed|Partly fixed|Closed[^*]*|Open)\*\* — ([^\n]+)/g)) {
+    const status = label.startsWith("Fixed") ? "fixed"
+      : label.startsWith("Partly") ? "partial"
+      : label.startsWith("Open") ? "open"
+      : "closed";
     for (const [, id] of ids.matchAll(/\b([A-Z]\d*)\b(?=[,\s(]|$)/g)) {
       // A finding named under two statuses is drift on its own, and it hides: the second write wins,
       // so the summary reads as consistent with whichever list happens to come last.
@@ -153,8 +154,7 @@ const gapProblems = gapStatusMismatches();
 // ─── 3. Every page under docs/ is reachable from the index ───────────────────
 
 /**
- * A page nobody links to is a page nobody reads, and it rots without anyone noticing — eleven of the
- * forty-eight here were unreachable at once, including two Studio guides and every decision record.
+ * A page nobody links to is a page nobody reads, and it rots without anyone noticing.
  *
  * Reachability is transitive: the index need not name a page directly, only reach it. That keeps a
  * hub page (the examples' shared scenario, say) a legitimate way to organise a section.
@@ -286,6 +286,57 @@ function adrProblems() {
 
 const adrs = adrProblems();
 
+// ─── 7. Every page under docs/ has a place in the site sidebar ───────────────
+
+/**
+ * The sidebar names its pages one by one, so a page can be published and unreachable.
+ *
+ * Groups are editorial — `guides/` holds concepts, integration notes, comparisons and a maintainer
+ * runbook — so the site cannot autogenerate them from the directory tree. The cost of listing them
+ * is that adding a page to docs/ no longer adds it to the sidebar, and nothing about the built site
+ * looks wrong: the page renders, at its own URL, with no way in.
+ *
+ * A page is covered if the sidebar names its slug, an `autogenerate` directory contains it, or the
+ * sync step hides it deliberately. `SIDEBAR_HIDDEN` is read from the sync script rather than
+ * restated here, so the two cannot disagree.
+ */
+function sidebarCoverage() {
+  const config = join(ROOT, "site/astro.config.mjs");
+  const docs = join(ROOT, "docs");
+  if (!existsSync(config) || !existsSync(docs)) return [];
+
+  const source = readFileSync(config, "utf8");
+  const start = source.indexOf("sidebar: [");
+  if (start === -1) return ["site/astro.config.mjs: no sidebar array — this check cannot see it"];
+  const sidebar = source.slice(start);
+
+  const slugs = new Set([...sidebar.matchAll(/slug:\s*'([^']+)'/g)].map(([, slug]) => slug));
+  const directories = [...sidebar.matchAll(/autogenerate:\s*\{\s*directory:\s*'([^']+)'/g)]
+    .map(([, directory]) => directory);
+
+  const sync = join(ROOT, "scripts/sync-docs-site.mjs");
+  const hidden = new Set(
+    existsSync(sync)
+      ? [...(readFileSync(sync, "utf8").match(/SIDEBAR_HIDDEN = new Set\(\[([^\]]*)\]/)?.[1] ?? "")
+          .matchAll(/'([^']+)'/g)].map(([, path]) => path)
+      : [],
+  );
+
+  const problems = [];
+  for (const file of markdown(docs)) {
+    const rel = relative(docs, file).split("\\").join("/");
+    if (hidden.has(rel)) continue;
+    // docs/README.md is published as `start-here`; every other page keeps its path as its slug.
+    const slug = rel === "README.md" ? "start-here" : rel.replace(/\.md$/, "");
+    if (slugs.has(slug)) continue;
+    if (directories.some((directory) => slug.startsWith(`${directory}/`))) continue;
+    problems.push(`docs/${rel}: published as "${slug}" and named nowhere in the sidebar`);
+  }
+  return problems;
+}
+
+const unlisted = sidebarCoverage();
+
 // ─── Report ──────────────────────────────────────────────────────────────────
 
 console.log("# Documentation checks\n");
@@ -308,8 +359,11 @@ for (const problem of unlicensed) console.log(`  ${problem}`);
 console.log(`\nIncomplete or unindexed decision records: ${adrs.length}`);
 for (const problem of adrs) console.log(`  ${problem}`);
 
+console.log(`\ndocs/ pages missing from the site sidebar: ${unlisted.length}`);
+for (const problem of unlisted) console.log(`  ${problem}`);
+
 if (!check) process.exit(0);
-if (brokenLinks.length || gapProblems.length || orphans.length || inverted.length || unlicensed.length || adrs.length) {
+if (brokenLinks.length || gapProblems.length || orphans.length || inverted.length || unlicensed.length || adrs.length || unlisted.length) {
   console.error("\nDOCUMENTATION CHECKS FAILED");
   process.exit(1);
 }
