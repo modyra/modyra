@@ -327,10 +327,14 @@ export class MdyMultiselectComponent<TValue = string>
     afterNextRender(() => this.overlayInputRef()?.nativeElement.focus(), { injector: this.injector });
   }
 
-  protected override onDocumentClick(event: Event): void {
-    if (!this.hostRef.nativeElement.contains(event.target as Node)) {
-      this.closeOverlay();
-    }
+  /** The chips and the search box sit outside the wrapper, so the whole host is the boundary. */
+  protected override overlayContains(target: Node): boolean {
+    return this.hostRef.nativeElement.contains(target);
+  }
+
+  /** Closing here also clears the search query, which `applyLifecycle` alone does not do. */
+  protected override dismissFromOutside(): void {
+    this.closeOverlay();
   }
 
   private commitMultiselect(intent: Parameters<typeof multiselectValueTransition<TValue>>[1]): void {

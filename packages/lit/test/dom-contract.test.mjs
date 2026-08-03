@@ -196,15 +196,45 @@ for (const [tag, kind, initial, opener] of OVERLAY_ELEMENTS) {
     await element.updateComplete;
     assert.equal(element._open, true, `${tag} did not open`);
 
-    // The dismissal policy *and its event* are the contract's; the element only reports where the
-    // pointer landed. This dispatched `pointerdown` while that was the element's own choice — the
-    // capability names the event now, so the suite asks the contract rather than restating it, and a
-    // renderer that binds something else fails here instead of only in a browser.
+    // The dismissal policy is the contract's; the element only reports where the pointer landed.
+    // `light-dismiss` is an *interaction* — an origin and a completion — so the suite drives both.
+    // A single-event test would pass on a renderer that dismissed on the press alone, which takes
+    // the popup away from a user who was scrolling.
     const declared = MDY_WIDGET_CONTRACTS[kind].capabilities.dismissOnOutsidePointer;
-    assert.notEqual(declared, false, `${tag} declares no outside dismissal`);
-    outside.dispatchEvent(new window.Event(declared.event, { bubbles: true }));
+    assert.equal(declared, "light-dismiss", `${tag} declares no light dismiss`);
+
+    const press = (target, opts = {}) => target.dispatchEvent(
+      Object.assign(new window.Event("pointerdown", { bubbles: true }),
+        { pointerId: 1, isPrimary: true, button: 0, ...opts }),
+    );
+    const fire = (target, type, opts = {}) => target.dispatchEvent(
+      Object.assign(new window.Event(type, { bubbles: true }), opts),
+    );
+
+    // Beginning outside and completing inside is not a dismissal: pressing away and returning.
+    press(outside);
+    fire(element, "click");
     await element.updateComplete;
-    assert.equal(element._open, false, `${tag} stayed open after a pointer outside it`);
+    assert.equal(element._open, true, `${tag} dismissed on an interaction that completed inside it`);
+
+    // Neither is an interaction the browser cancelled to scroll the page.
+    press(outside);
+    fire(outside, "pointercancel", { pointerId: 1 });
+    fire(outside, "click");
+    await element.updateComplete;
+    assert.equal(element._open, true, `${tag} dismissed on a cancelled pointer`);
+
+    // Nor a secondary button: a right-click opens a context menu, it does not dismiss.
+    press(outside, { button: 2 });
+    fire(outside, "click");
+    await element.updateComplete;
+    assert.equal(element._open, true, `${tag} dismissed on a non-primary button`);
+
+    // Origin and completion both outside dismisses.
+    press(outside);
+    fire(outside, "click");
+    await element.updateComplete;
+    assert.equal(element._open, false, `${tag} stayed open after an interaction outside it`);
 
     outside.remove();
     element.remove();

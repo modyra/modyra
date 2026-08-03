@@ -140,10 +140,9 @@ test("J1 — a segmented option that is a bare clickable <div> is accepted", () 
 function buildOpenSelect() {
   const { root, label, parts, tail } = shell("select", "mdy-renderer mdy-renderer--select");
   const wrapper = el("div", "mdy-input-wrapper");
-  // A <button>, as `@modyra/plain` renders it: labelable, so `label[for]` resolves, and able to
-  // contain `placeholder` and `arrow`, which both resolve their parent to `trigger`. An <input>
-  // satisfies the first and not the second. `role="combobox"` is what makes it one, per the same
-  // tag-or-role rule ADR 0012 relies on.
+  // A <button>: labelable, so `label[for]` resolves, and able to contain `placeholder` and `arrow`,
+  // which both resolve their parent to `trigger`. An <input> satisfies the first and not the second.
+  // `role="combobox"` is what makes it one, per the same tag-or-role rule ADR 0012 relies on.
   const trigger = el("button", "mdy-select__trigger", {
     type: "button",
     id: "select-control",
