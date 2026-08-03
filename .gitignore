@@ -35,6 +35,8 @@ packages/angular/dist/
 !.changeset/
 !sdk/java/modyra-contract/.mvn/
 !sdk/java/modyra-contract/.mvn/**
+.github/hooks
+.github/skills
 
 # macOS system files
 .DS_Store
@@ -47,6 +49,7 @@ packages/angular/dist/
 # Claude Code (personal, not for team)
 .claudeignore
 CLAUDE.md
+PRODUCT.md
 claude_podman_night_shift_hardened.sh
 
 # Local AI-assisted development workspace
