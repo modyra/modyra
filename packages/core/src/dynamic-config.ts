@@ -1,4 +1,6 @@
-import { MdySelectOption, ValidatorFn } from "./types.js";
+import { evaluateExpression, expressionPaths, validateExpression, type MdyExpression } from "./expression.js";
+import { MdyFormValidatorFn, MdySelectOption, ValidatorFn } from "./types.js";
+import { array, field, group, type MdyFormSchema } from "./typed-form.js";
 import {
   eachOneOf,
   email,
@@ -7,6 +9,7 @@ import {
   maxLength,
   min,
   minLength,
+  crossField,
   oneOf,
   pattern,
   required,
@@ -515,6 +518,46 @@ const MDY_MAX_LAYOUT_COLUMNS = 12;
 /** Depth cap for nested layout, mirroring the schema's own guard against hostile input. */
 export const MDY_LAYOUT_MAX_DEPTH = 6;
 
+/**
+ * Whether `path` names something a validation may read or attach to.
+ *
+ * Wider than a rule's field reference, and deliberately: a rule fires an effect on one control, so
+ * it names a leaf. A validation is about a *relationship*, and the thing it is about is often a
+ * group or an array — "the basket must not be empty" is a condition on `items`, which is not a leaf
+ * and never appears in the flattened field list. Accepting only leaves rejected exactly the
+ * cross-field rules the slot exists to carry.
+ */
+function validValidationPath(path: unknown, names: ReadonlySet<string>): boolean {
+  if (typeof path !== "string" || path === "") return false;
+  if (names.has(path)) return true;
+  // A container: something in the form lives underneath it.
+  const prefix = `${path}.`;
+  for (const name of names) if (name.startsWith(prefix)) return true;
+  return false;
+}
+
+/**
+ * A cross-field rule that produces an error message.
+ *
+ * Separate from {@link MdyDynamicRule} rather than a fifth `effect` on it, because the two carry
+ * different things: a rule fires an effect on a field it names, while a validation carries a
+ * *message* and needs a tree — "shipping is required when the country is not IT and the total is
+ * over 100" is one condition over three fields, which a flat field/operator/value cannot say.
+ */
+export interface MdyDynamicValidation {
+  /** The condition under which the form is **invalid**. */
+  readonly when: MdyExpression;
+  /** Shown to the user. Required: a validation nobody can read is a field that will not submit for no stated reason. */
+  readonly message: string;
+  /**
+   * Where the error attaches, as a dotted path.
+   *
+   * Omitted, the error is form-level. Naming a target puts it on the field the user has to fix,
+   * which is almost always the better message placement.
+   */
+  readonly target?: string;
+}
+
 /** Contract v2 adds declarative layout and conditions, never executable code. */
 export interface MdyDynamicFormConfigV2 {
   readonly version: 2;
@@ -523,6 +566,13 @@ export interface MdyDynamicFormConfigV2 {
   readonly schema?: MdyDynamicGroupNode;
   readonly layout?: ReadonlyArray<MdyDynamicLayoutNode>;
   readonly rules?: ReadonlyArray<MdyDynamicRule>;
+  /**
+   * Cross-field validation.
+   *
+   * Optional, and absent from every document written before it existed — which is why it is a new
+   * slot rather than a change to an existing one.
+   */
+  readonly validations?: ReadonlyArray<MdyDynamicValidation>;
 }
 
 /**
@@ -561,6 +611,7 @@ export interface MdyDynamicFormParseResult {
   readonly fields: ReadonlyArray<MdyDynamicField>;
   readonly layout: ReadonlyArray<MdyDynamicLayoutNode>;
   readonly rules: ReadonlyArray<MdyDynamicRule>;
+  readonly validations: ReadonlyArray<MdyDynamicValidation>;
   readonly diagnostics: ReadonlyArray<MdyDynamicDiagnostic>;
   readonly acceptedCount: number;
   readonly rejectedCount: number;
@@ -875,7 +926,7 @@ export function parseDynamicForm(
   } finally { diagnosticSink = previousSink; }
 
   const envelope = typeof input === "object" && input !== null && !Array.isArray(input)
-    ? input as { version?: unknown; fields?: unknown; schema?: unknown; layout?: unknown; rules?: unknown }
+    ? input as { version?: unknown; fields?: unknown; schema?: unknown; layout?: unknown; rules?: unknown; validations?: unknown }
     : undefined;
   const version: 1 | 2 | 3 | null = Array.isArray(input) || envelope?.version === 1
     ? 1 : envelope?.version === 2 ? 2 : envelope?.version === 3 ? 3 : null;
@@ -890,6 +941,7 @@ export function parseDynamicForm(
   const names = new Set(fields.map((field) => field.name));
   const layout: MdyDynamicLayoutNode[] = [];
   const rules: MdyDynamicRule[] = [];
+  const validations: MdyDynamicValidation[] = [];
   /** Fields already placed by an accepted layout node — a field belongs in exactly one slot. */
   const placed = new Set<string>();
 
@@ -930,10 +982,43 @@ export function parseDynamicForm(
       }
       rules.push(raw as MdyDynamicRule);
     }
+    if (envelope.validations !== undefined && !Array.isArray(envelope.validations)) {
+      diagnostics.push({ code: "MDY_DYNAMIC_INVALID_VALIDATION", severity: "error", path: "/validations", message: "validations must be an array." });
+    } else for (const [index, raw] of (envelope.validations ?? []).entries()) {
+      const at = `/validations/${index}`;
+      if (typeof raw !== "object" || raw === null) {
+        diagnostics.push({ code: "MDY_DYNAMIC_INVALID_VALIDATION", severity: "error", path: at, message: "validation must be an object." });
+        continue;
+      }
+      const validation = raw as Partial<MdyDynamicValidation>;
+      if (typeof validation.message !== "string" || validation.message.trim() === "") {
+        diagnostics.push({ code: "MDY_DYNAMIC_INVALID_VALIDATION", severity: "error", path: at, message: "validation needs a non-empty message." });
+        continue;
+      }
+      // A target names a field, the same way a rule's does. An unknown one would attach the error to
+      // nothing and the user would never see why the form will not submit.
+      if (validation.target !== undefined && !validValidationPath(validation.target, names)) {
+        diagnostics.push({ code: "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", severity: "error", path: at, message: "validation target references an unknown field." });
+        continue;
+      }
+      const problems = validateExpression(validation.when, `${at}.when`);
+      if (problems.length > 0) {
+        diagnostics.push({ code: "MDY_DYNAMIC_INVALID_VALIDATION", severity: "error", path: at, message: problems.join("; ") });
+        continue;
+      }
+      // Every path the condition reads must exist, for the same reason: a condition asking about a
+      // field that is not in the form is a rule that can never be satisfied, and it fails silently.
+      const unknown = expressionPaths(validation.when as MdyExpression).filter((path) => path !== "" && !validValidationPath(path, names));
+      if (unknown.length > 0) {
+        diagnostics.push({ code: "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", severity: "error", path: at, message: `validation condition references unknown field(s): ${unknown.join(", ")}.` });
+        continue;
+      }
+      validations.push(raw as MdyDynamicValidation);
+    }
   }
 
   const sourceCount = Array.isArray(input) ? input.length : Array.isArray(envelope?.fields) ? envelope.fields.length : fields.length;
-  const rejectedCount = Math.max(0, sourceCount - fields.length) + diagnostics.filter((d) => d.path.startsWith("/layout/") || d.path.startsWith("/rules/")).length;
+  const rejectedCount = Math.max(0, sourceCount - fields.length) + diagnostics.filter((d) => d.path.startsWith("/layout/") || d.path.startsWith("/rules/") || d.path.startsWith("/validations/")).length;
   const strict = options.mode === "strict";
   return {
     ok: version !== null && (!strict || diagnostics.length === 0),
@@ -941,6 +1026,7 @@ export function parseDynamicForm(
     fields: strict && diagnostics.length > 0 ? [] : fields,
     layout: strict && diagnostics.length > 0 ? [] : layout,
     rules: strict && diagnostics.length > 0 ? [] : rules,
+    validations: strict && diagnostics.length > 0 ? [] : validations,
     diagnostics, acceptedCount: fields.length, rejectedCount,
   };
 }
@@ -1030,4 +1116,65 @@ export function buildDynamicFieldValidators(field: MdyDynamicField): {
     };
   }
   return base;
+}
+
+/**
+ * Builds a form schema from the contract's **tree**, keeping its groups and arrays.
+ *
+ * {@link flattenDynamicSchema} answers a different question. It produces one flat list of dotted
+ * names for a renderer that draws a sequence of controls, and in doing so it fixes each array at the
+ * rows its initial value happened to have — which is correct for drawing and wrong for running,
+ * because a row the user adds afterwards has no descriptor.
+ *
+ * Without this, the contract can *describe* a nested form that nothing can *instantiate*, and any
+ * caller needing a live nested form has to read some other model instead. That is a gap in the
+ * contract's runtime support, not a preference about how to build forms.
+ */
+export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSchema {
+  const build = (node: MdyDynamicNode, name: string): unknown => {
+    if (node.node === "field") {
+      const descriptor = { ...node.field, name } as MdyDynamicField;
+      // `marksRequired` is not passed on: a `required()` validator in the list already raises the
+      // field's own `required` signal, so the flag would be a second spelling of the same fact.
+      const { validators } = buildDynamicFieldValidators(descriptor);
+      return field(mdyEmptyValueFor(descriptor) as never, validators as never);
+    }
+    if (node.node === "group") {
+      const children: Record<string, unknown> = {};
+      for (const [key, child] of Object.entries(node.children)) children[key] = build(child, key);
+      return group(children as MdyFormSchema);
+    }
+    // The item descriptor is the template every row is built from, which is what keeps a pushed row
+    // identical to an initial one.
+    const validators: ValidatorFn<readonly unknown[]>[] = [];
+    if (node.minItems !== undefined) validators.push(minLength(node.minItems) as ValidatorFn<readonly unknown[]>);
+    if (node.maxItems !== undefined) validators.push(maxLength(node.maxItems) as ValidatorFn<readonly unknown[]>);
+    return array(build(node.item, name) as never, {
+      ...(node.initialValue !== undefined ? { initial: node.initialValue } : {}),
+      ...(validators.length ? { validators } : {}),
+    });
+  };
+
+  const root: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(schema.children)) root[key] = build(child, key);
+  return root as MdyFormSchema;
+}
+
+/**
+ * Turns a document's `validations` into form-level validator functions.
+ *
+ * Each becomes a {@link crossField} over the paths its condition reads, so it re-runs when any of
+ * them changes; the paths are derived from the expression rather than declared beside it, because a
+ * dependency list maintained by hand is a list that stops matching the condition.
+ *
+ * A `target` narrows where the error lands. Without one the error is form-level, which `crossField`
+ * already expresses as an empty path list.
+ */
+export function buildDynamicValidations(
+  validations: ReadonlyArray<MdyDynamicValidation>,
+): ReadonlyArray<MdyFormValidatorFn<Record<string, unknown>>> {
+  return validations.map((validation) => {
+    const paths = validation.target !== undefined ? [validation.target] : expressionPaths(validation.when);
+    return crossField(paths, (value) => (evaluateExpression(validation.when, value) ? validation.message : null));
+  });
 }

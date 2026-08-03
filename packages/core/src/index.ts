@@ -128,6 +128,7 @@ export type {
 } from "./typed-form.js";
 
 // ─── Dynamic forms (AI/CMS-declared configs) ─────────────────────────────────
+export * from "./expression.js";
 export * from "./dynamic-config.js";
 export * from "./value-contracts.js";
 
