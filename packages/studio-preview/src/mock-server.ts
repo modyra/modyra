@@ -1,9 +1,15 @@
 /**
- * Plan section 11 "server mock: delay/valid-values/error/timeout/network-
- * failure" — Studio's server validators/submit actions are always symbolic
- * stubs (ADR-0005, , : no implementation exists at design time),
- * so the live preview needs something to actually call. This is a preview-
- * session concern, not part of the Studio project model.
+ * A stand-in server, so a form with a server validator can be tried at design time.
+ *
+ * A server validator is symbolic in a project: at design time there is no implementation to call,
+ * only a reference to one the host will supply. The preview needs *something* to answer, and this is
+ * it — delay, a whitelist, a forced error, a timeout, a network failure.
+ *
+ * **Deliberately outside the contract, and it must stay that way.** The compiled contract carries no
+ * server validator because a real exported form receives a real one from its host; a mock in the
+ * schema would be a fake shipping as data. Standing in for an absent host is the preview presenting
+ * its own dynamics — a builder affordance — which is the one category of thing the preview may add
+ * to what the contract says. It is not an exception to the rule that the preview invents nothing.
  */
 import type { MdyAsyncValidationContext, MdyFormError } from "@modyra/core";
 
