@@ -2,16 +2,16 @@
  * What a part can be in.
  *
  * A part's classes say what it *is*; these say what it currently *is doing* — selected, open,
- * disabled, today's date, the start of a range. Until now that half of the vocabulary lived nowhere:
- * each renderer wrote `"mdy-datepicker__cell--selected"` as a string and each theme wrote a rule for
- * it, and the two only agreed because someone remembered. They did not always agree — a theme
- * styling `--focused` where a renderer emits `--active` is a rule that silently matches nothing, and
- * that is a failure no test in this repo could see.
+ * disabled, today's date, the start of a range.
  *
- * So a state is named once, here, and a class is derived from it: `--in-range` is spelled one way
+ * A state is named once, here, and its class is derived from it: `--in-range` is spelled one way
  * because {@link MDY_STATE_MODIFIERS} spells it, and a part may only be put into a state it declares
- * in the catalog. The shape is the one {@link multiselectChipClasses} already proves for the chip —
- * ask the contract what classes this thing carries, and apply the answer.
+ * in the catalog. Without that, a renderer spelling `"mdy-datepicker__cell--selected"` and a theme
+ * writing a rule for it agree only by coincidence — and a theme styling `--focused` where a renderer
+ * emits `--active` is a rule that matches nothing, silently, in a way no test here can see.
+ *
+ * The shape is the one {@link multiselectChipClasses} proves for the chip: ask the contract what
+ * classes this thing carries, and apply the answer.
  */
 
 /**

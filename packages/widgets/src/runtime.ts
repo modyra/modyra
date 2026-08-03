@@ -5,12 +5,10 @@
  * {@link processWidgetCommands}, which drops the commands that need a DOM when there is none —
  * focus, scrolling, announcing — and runs the rest.
  *
- * The header used to say a *controller* consulted the report to avoid emitting such commands. No
- * controller took one, both report functions had no consumer at all, and `processWidgetCommands`
- * relied on its element lookup returning nothing. The claim described behaviour that existed
- * nowhere, which is worse than no claim: it reads as a guarantee. The execution point is the honest
- * place for it — a controller decides what should happen, and whether it *can* happen is a property
- * of the runtime doing it.
+ * The check belongs at the execution point, not in a controller: a controller decides what *should*
+ * happen, and whether it *can* happen is a property of the runtime doing it. A controller that
+ * consulted the report itself would be claiming a guarantee it cannot keep, since nothing stops
+ * another caller reaching {@link processWidgetCommands} directly.
  */
 
 import type { MdyUiCommand } from "./commands.js";

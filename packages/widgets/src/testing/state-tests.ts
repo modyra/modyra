@@ -7,8 +7,8 @@
  *
  * Driving a renderer into a state is the adapter's job: one sets a property, another pushes a
  * signal, a third sets an attribute, and no shared helper can do all three honestly. What is shared is
- * the *judgement* — every adapter drives its own control and then hands the DOM here. Task 16's
- * cross-renderer equivalence is meant to be built on exactly this split.
+ * the *judgement* — every adapter drives its own control and then hands the DOM here. Cross-renderer
+ * equivalence rests on that split: same judgement, different drivers.
  */
 import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
 import {
@@ -82,8 +82,9 @@ export function inspectWidgetState(
     // its semantics — a composite exposes `aria-expanded` on its trigger, not on a wrapper div.
     // Where a widget exposes its state depends on its anatomy: a text field puts it on the input, a
     // radio group on the group, a select on its trigger. Rather than guess, accept any declared
-    // part — the contract's claim at this stage is that the widget exposes the state *somewhere*
-    // an assistive technology will meet it. Narrowing that to one part per kind is task 08's job.
+    // part — the claim this check can make is that the widget exposes the state *somewhere* an
+    // assistive technology will meet it, not that it is on the right element. Narrowing it to one
+    // part per kind needs a per-kind table the contract does not have.
     const carriers = [
       control,
       root,

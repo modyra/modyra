@@ -23,8 +23,7 @@ export interface MdyOptionFieldA11yOptions {
    * the list until the field is touched has errors long before it shows them, and deriving this
    * from `errors.length` makes `aria-describedby` name an element that is not in the document.
    *
-   * Defaults to "there are errors", which is correct for a renderer that always shows them — and is
-   * what every caller got before this existed.
+   * Defaults to "there are errors", which is correct for a renderer that always shows them.
    */
   readonly errorsVisible?: boolean;
 }
@@ -125,10 +124,10 @@ export function projectOptionFieldA11y<TValue>(
       id: errorId,
       classes: [MDY_FIELD_SHELL_CLASSES.errors],
       attributes: {
-        // A live region and nothing more. This used to carry `role="alert"` as well, which replaced
-        // the list semantics of the <ul> it sits on — axe reports every <li> inside such a list as an
-        // orphaned list item, and a screen reader sees the same thing. `aria-live` already announces
-        // the list when it appears, so the role added nothing and cost the structure.
+        // A live region and nothing more. `role="alert"` here would override the list semantics of
+        // the <ul> it sits on: axe reports every <li> inside such a list as an orphaned list item, and
+        // a screen reader sees the same thing. `aria-live` announces the list when it appears, so the
+        // role would cost the structure and add nothing.
         "aria-live": "polite",
       },
     },

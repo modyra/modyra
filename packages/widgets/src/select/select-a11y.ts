@@ -123,9 +123,9 @@ function buildTriggerClasses(
   invalid: boolean,
   loading: boolean,
 ): readonly string[] {
-  // The trigger's own declared states, and only those. Each of these used to be paired with a
-  // `mdy-control--*` twin — `--open`, `--disabled`, `--invalid` — and no theme styled a single one
-  // of them, so the trigger carried three classes that painted nothing.
+  // The trigger's own declared states, and only those. A parallel `mdy-control--*` spelling of the
+  // same states is not emitted here: no theme styles one, so it would put classes on the trigger
+  // that paint nothing.
   const classes = [...SELECT.parts.trigger.classes];
   if (open) classes.push("mdy-select__trigger--open");
   if (disabled) classes.push("mdy-select__trigger--disabled");

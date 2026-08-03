@@ -390,12 +390,12 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
 /**
  * The semantic every part answers to, declared rather than defaulted.
  *
- * This used to end in `return "group"`, so a part nobody had classified silently admitted any
- * element at all — 121 of 237 nodes were `group` because the question had never been asked. A name
- * missing from here now throws: the contract does not get to have no opinion by accident.
+ * A name missing from here throws rather than falling back to `group`: the contract does not get to
+ * have no opinion by accident. A default would let an unclassified part silently admit any element
+ * at all, and the absence of an answer is indistinguishable from a deliberate one.
  *
- * `group` still appears, and means the same as it always did — a container the contract does not
- * constrain further. The difference is that it is now an answer rather than the absence of one.
+ * `group` still appears, and means a container the contract does not constrain further — an answer,
+ * not the absence of one.
  */
 const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Object.freeze({
   root: "root", label: "label",
@@ -510,10 +510,9 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
     { classes: { group: ["mdy-segmented"], option: ["mdy-segmented__button"], optionCheck: ["mdy-segmented__check"], optionText: ["mdy-segmented__text"] },
       // Left unconstrained, and that is a finding rather than a preference. A choice may be a
       // <label> around an <input type=radio>, the same native pattern as radio, or a <button>.
-      // Both are defensible — a radiogroup, or a toolbar of pressed buttons —
-      // but they are not the same control to a screen reader, and the contract cannot require one
-      // without breaking the other today. Task 16 (renderer equivalence) decides which; until it
-      // does, declaring "either" honestly beats asserting a shape only one adapter meets.
+      // Both are defensible — a radiogroup, or a toolbar of pressed buttons — but they are not the
+      // same control to a screen reader, and requiring either would break whichever adapter chose
+      // the other. Declaring "either" honestly beats asserting a shape only one adapter meets.
       elements: { option: "presentation" },
       roles: { group: "radiogroup" } ,
       states: { option: ["selected"] } ,
@@ -528,10 +527,10 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], listbox: ["open"], option: ["selected", "active", "hidden"], popup: POPUP_PLACEMENT_STATES } ,
       presentation: ["mdy-select", "mdy-select__option-label"] ,
       required: ["arrow", "placeholder"] }),
-  // What the control shows for the current selection comes before the affordance that changes it:
-  // the chips, or the placeholder standing in for them while nothing is chosen, then the header with
-  // its search button. The order used to fall out of the sequence these names were written in, which
-  // is not a decision — it put the placeholder after the search affordance, which no renderer does.
+  // Part order is the reading order, so it is decided here rather than inherited from the sequence
+  // these names happen to be written in. What the control shows for the current selection comes
+  // before the affordance that changes it: the chips, or the placeholder standing in for them while
+  // nothing is chosen, then the header with its search button.
   // The option chips use the shared chip vocabulary — `mdy-chip` with a check, a label and, in
   // counter mode, the two step buttons and a count. That vocabulary is the contract, which is what
   // makes an option look the same whichever renderer drew it.
@@ -546,9 +545,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // a <button> in toggle mode, a <div> carrying its own +/- step buttons in counter mode. The
       // contract has no way to say "this part's element depends on that option", so `option` is
       // declared unconstrained rather than asserting the half of it that a single-mode fixture
-      // happens to show — which is what it did until the demo, in counter mode, said otherwise.
-      // Expressing per-mode anatomy is task 15's problem. Whether a multi-select should instead be
-      // a listbox with aria-multiselectable is task 08's.
+      // happens to show. A counter chip contains buttons, so it cannot itself be one.
       elements: { option: "presentation", listbox: "group" },
       states: { option: ["selected"], chip: ["selected", "removable"], popup: POPUP_PLACEMENT_STATES },
       classes: { inputWrapper: ["mdy-multiselect"], header: ["mdy-multiselect__header"], searchButton: ["mdy-multiselect__search-btn"], options: ["mdy-multiselect__options"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], listbox: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
@@ -581,9 +578,9 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // is currently editing — hangs off that shared base and is one rule in a theme, not two.
       states: { hour: ["active", "focused"], minute: ["active", "focused"], period: ["compact"], dialNumber: ["selected", "inner"], action: ["confirm"], popup: POPUP_PLACEMENT_STATES },
       // The hour and minute *segments* are the containers the header lays out; each holds its own
-      // <input type=number> with an aria-label. Declaring them inputs asked a renderer for a control
-      // that is one level down and not a declared part at all — a gap task 08 should close by naming
-      // the inner control, not one this batch papers over by widening the check.
+      // <input type=number> with an aria-label. Declaring the segments as controls would ask a
+      // renderer for a control at a level where none exists: the real input is one step further
+      // down and is not a declared part, so nothing in the contract can reach it.
       elements: { hour: "group", minute: "group", dialog: "dialog" },
       // The element the popup frames and the relation names: it carries `role="dialog"` and the
       // modal semantics, which the positioning container does not.
