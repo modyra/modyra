@@ -30,8 +30,8 @@ concrete recipe each adapter follows.
 **`@modyra/widgets` — headless widget controllers, framework-free:**
 
 Field/boolean/option field controllers and a select controller (listbox
-navigation, active descendant, search-to-select) — state machines that
-used to live only inside the Angular components, now shared by every
+navigation, active descendant, search-to-select) — state machines held
+once here rather than inside each adapter's components, and shared by every
 adapter that binds `@modyra/widgets` (React, Vue, Solid, Preact, Svelte
 all do; see [headless recipes](headless-recipes.md) for shadcn/Radix/
 Kobalte prop-mappers over them).
