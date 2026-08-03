@@ -36,7 +36,7 @@ for (const [file, controller] of Object.entries(CONTROLLERS)) {
   if (!read(file).includes(controller)) failures.push(`${file} does not consume ${controller}`);
 }
 
-// The generic vocabulary the contract used to emit must not come back through the renderer.
+// The generic vocabulary is not part of the contract, and must not reappear through the renderer.
 for (const [file, source] of Object.entries({ "field-shell.ts": shell, "dom.ts": read("dom.ts") })) {
   for (const legacy of ["mdy-description", "mdy-error\"", "mdy-renderer--radio\""]) {
     if (source.includes(legacy)) failures.push(`${file} emits the non-canonical class ${legacy.replace(/"/g, "")}`);

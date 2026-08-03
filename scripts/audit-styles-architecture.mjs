@@ -93,10 +93,10 @@ for (const name of THEMES) {
 /**
  * A field's height is stated once, for what a control *is*.
  *
- * The foundation used to give `min-height: var(--mdy-input-height)` to a list of input types —
- * text, number, date, email — so a password box, a select's trigger and a picker's input each stood
- * a dozen pixels shorter than the field beside them. An enumeration cannot be right: it is only ever
- * as complete as the day it was written.
+ * Giving `min-height: var(--mdy-input-height)` to a list of input types — text, number, date,
+ * email — leaves a password box, a select's trigger and a picker's input a dozen pixels shorter
+ * than the field beside them. An enumeration cannot be right here: it is only ever as complete as
+ * the day it was written.
  */
 function checkFieldHeight(css) {
   const found = [];
@@ -113,19 +113,14 @@ function checkFieldHeight(css) {
 /**
  * The foundation loads the token tier it depends on.
  *
- * This rule used to be the opposite: every `--mdy-sys-*` and `--mdy-comp-*` use needed a literal
- * fallback, because `modyra-base.css` was a separate file a theme might not load, and an unresolved
- * `var()` drops the whole declaration — which is how the switch rendered 0x0, invisible, in two of
- * the shipped themes, and how the chips lost their border and their corners.
+ * The alternative — a literal fallback on every `--mdy-sys-*` and `--mdy-comp-*` use, in case a
+ * theme does not load `modyra-base.css` — is worse than it looks. An unresolved `var()` drops the
+ * whole declaration, so the fallbacks are load-bearing; but each one is a copy of a value
+ * `modyra-base.css` already owns, and a literal cannot follow a chosen brand colour. A page picking
+ * a green primary gets indigo out of the fallback.
  *
- * The foundation imports the tier now, so it is never absent, and the 147 fallbacks were 147 copies
- * of values `modyra-base.css` already owned. Copies are what made them harmful rather than merely
- * redundant: a literal cannot follow a chosen brand colour, so a page picking a green primary kept
- * getting indigo out of the fallback. Removing them was verified inert — 2016 computed token
- * readings across four themes, zero differences.
- *
- * What has to hold instead is the import itself, which is what this now checks. Themes are still
- * free to load the tier or not; nothing here assumes on their behalf.
+ * So the import is what has to hold, and it is what this checks. Themes remain free to load the
+ * tier or not; nothing here assumes on their behalf.
  */
 function checkTokenTierIsLoaded(css) {
   if (/@import\s+["']\.\/modyra-base\.css["']/.test(css)) return [];

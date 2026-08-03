@@ -125,8 +125,7 @@ function stripComments(source) {
  * Only string literals are considered, and only whole tokens within them, because that is where a
  * class is written — in a `class="…"`, a `classList.add`, a `classMap` key or a selector passed to
  * `querySelector`. Scanning the raw text instead would count an import path
- * (`./mdy-required.directive`), a template-literal key (`mdy-vd-${n}`) and a tag name in a comment,
- * all of which it did before this filter existed.
+ * (`./mdy-required.directive`), a template-literal key (`mdy-vd-${n}`) and a tag name in a comment.
  *
  * Element names are excluded separately: an Angular `selector:` and a Lit `@customElement` name look
  * exactly like classes and are not.
