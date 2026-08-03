@@ -104,7 +104,7 @@ export class MdyHistoryManager {
     if (!reactivityRunsEffects(this._rx)) {
       if (MDY_DEV) this._warn(
         "enableHistory() needs an effect-capable reactivity " +
-        "(with the Angular adapter: construct it with an Injector).",
+        "— see your reactivity adapter for how to provide one.",
       );
       return;
     }

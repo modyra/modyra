@@ -217,7 +217,7 @@ export class MdyDraftManager {
     if (!reactivityRunsEffects(this._rx)) {
       if (MDY_DEV) this._warn(
         "enableDraft() needs an effect-capable reactivity " +
-        "(with the Angular adapter: construct it with an Injector).",
+        "— see your reactivity adapter for how to provide one.",
       );
       return;
     }
