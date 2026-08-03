@@ -417,11 +417,22 @@ export class MdySelectComponent<TValue = string>
     this.closeOverlay();
   }
 
+  /**
+   * Focus leaving the widget closes it — `capabilities.dismissOnFocusOutside`.
+   *
+   * It never outranks a pointer. A drag that began inside the popup moves focus out of it on the
+   * way, and closing there would reinstate, through the focus path, exactly the dismissal
+   * `dismissOnOutsidePointer` refuses. `touched` still marks: the user has been here either way.
+   */
   protected onBlur(event: FocusEvent): void {
     const next = event.relatedTarget as Node | null;
-    if (next && !this.wrapperRef()?.nativeElement.contains(next)) {
-      this.selectAdapter.dispatch({ type: "blur" });
+    if (next && this.wrapperRef()?.nativeElement.contains(next)) return;
+    if (!MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnFocusOutside) return;
+    if (this.interactionFromInside()) {
+      this.markAsTouched();
+      return;
     }
+    this.selectAdapter.dispatch({ type: "blur" });
   }
 
   protected onKeydown(event: KeyboardEvent): void {

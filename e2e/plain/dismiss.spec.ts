@@ -35,6 +35,34 @@ test("a tap outside dismisses the list", async ({ page }) => {
   await expectOpen(page, false);
 });
 
+test("a drag begun inside the popup and released outside keeps it open", async ({ page }) => {
+  await page.locator(TRIGGER).first().tap();
+  await expectOpen(page, true);
+
+  // The pointer rule refuses this: the interaction began inside.
+  //
+  // **This does not exercise the focus precedence**, and measurement says why: an option calls
+  // `preventDefault` on `mousedown` to keep focus in the search box, so no `focusout` fires anywhere
+  // in this sequence — observed as `pointerdown:option, pointerup:…, click:BODY` with
+  // `document.activeElement` never leaving `.mdy-select__search`. Removing the precedence gate leaves
+  // this test green.
+  //
+  // The gate is asserted directly instead, in `packages/widgets/test/dismissal.spec.mjs` §13. It
+  // becomes load-bearing here the day that `preventDefault` goes.
+  const popup = await page.locator(".mdy-select__dropdown").first().boundingBox();
+  const heading = await page.locator("h1").first().boundingBox();
+  expect(popup).not.toBeNull();
+  expect(heading).not.toBeNull();
+  if (!popup || !heading) return;
+
+  await page.mouse.move(popup.x + popup.width / 2, popup.y + popup.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(heading.x + 5, heading.y + 5, { steps: 10 });
+  await page.mouse.up();
+
+  await expectOpen(page, true);
+});
+
 test("a drag that starts outside still closes it — through focus, not the pointer", async ({ page }) => {
   await page.locator(TRIGGER).first().tap();
   await expectOpen(page, true);
