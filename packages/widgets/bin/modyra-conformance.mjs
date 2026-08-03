@@ -1,7 +1,8 @@
+#!/usr/bin/env node
 /**
- * Runs the conformance suite against a renderer this repository did not write.
+ * Runs the conformance suite against a renderer this package did not write.
  *
- *   node scripts/conformance-cli.mjs <adapter.config.mjs>
+ *   npx modyra-conformance <adapter.config.mjs>
  *
  * Milestone G's fifth proof is a public conformance kit. Everything it runs already exists in
  * `@modyra/widgets/testing`; this only packages it behind one entry point, so an implementer can
@@ -16,8 +17,8 @@
  *   export async function mount(kind) { … }               // returns an MdyStateFixture
  *
  * The config owns its own environment. A renderer needs a DOM and only its author knows how theirs
- * is set up, so the config installs one before exporting `mount` — the shipped examples in
- * `packages/plain` and `packages/lit` do exactly that and are the reference.
+ * is set up, so the config installs one before exporting `mount`. This repository's own two
+ * conformance configs are the reference.
  *
  * ## What this cannot answer
  *
@@ -29,20 +30,39 @@
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
-const root = resolve(new URL("..", import.meta.url).pathname);
+// This file ships inside the package, so the kit is a sibling of it rather than a path from a
+// repository root that an installed copy does not have.
+const packageRoot = resolve(new URL("..", import.meta.url).pathname);
 const configPath = process.argv[2];
 
 if (!configPath) {
-  console.error("usage: node scripts/conformance-cli.mjs <adapter.config.mjs>");
+  console.error("usage: modyra-conformance <adapter.config.mjs>");
   process.exit(2);
 }
 
 const {
   MDY_CANONICAL_AT_REST, canonicalWidgetSnapshot, collectStateMatrix, compareToCanonical,
   idsUnder, inspectCoexistence, inspectUnmount, inspectWidgetDom,
-} = await import(pathToFileURL(resolve(root, "packages/widgets/dist/testing/index.js")).href);
+} = await import(pathToFileURL(resolve(packageRoot, "dist/testing/index.js")).href);
 
-const config = await import(pathToFileURL(resolve(process.cwd(), configPath)).href);
+// Loaded with its own diagnosis. A config that throws on import is the normal first experience of
+// this tool — a missing DOM, a path that does not exist, a renderer that fails to construct — and a
+// raw stack trace from inside `import()` says nothing about which of those happened.
+let config;
+try {
+  config = await import(pathToFileURL(resolve(process.cwd(), configPath)).href);
+} catch (error) {
+  const reason = error instanceof Error ? error.message : String(error);
+  console.error(`Could not load ${configPath}\n  ${reason}`);
+  if (/Cannot find (module|package)/.test(reason)) {
+    console.error(
+      "\nIf that names a package rather than your config, the config imported something that is not"
+      + "\ninstalled here. It runs in your project, so its dependencies have to be yours.",
+    );
+  }
+  process.exit(2);
+}
+
 const { name = configPath, kinds, mount } = config;
 
 if (!Array.isArray(kinds) || typeof mount !== "function") {

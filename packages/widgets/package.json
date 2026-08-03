@@ -3,7 +3,7 @@
   "version": "0.5.0",
   "description": "Headless widget controllers and universal interaction/accessibility contract for Modyra.",
   "license": "MIT",
-  "author": "Lorenzo Muscherà",
+  "author": "Lorenzo Muscher\u00e0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/modyra/modyra.git",
@@ -51,6 +51,7 @@
   },
   "files": [
     "dist",
+    "bin",
     "README.md"
   ],
   "scripts": {
@@ -63,5 +64,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "bin": {
+    "modyra-conformance": "./bin/modyra-conformance.mjs"
   }
 }
