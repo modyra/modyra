@@ -812,15 +812,18 @@
         min-width: 0;
     }
 
-    /* Tighten padding when decorators are present */
+    /* Tighten padding when decorators are present.
+       Logical, because the sibling selectors are not: DOM order does not change under `dir=rtl`, so
+       `.mdy-input-prefix+input` still matches, and a physical `padding-left` would then tighten the
+       side the *suffix* is now on. */
     .mdy-input-prefix+input,
     .mdy-input-prefix+textarea {
-        padding-left: 0.25rem;
+        padding-inline-start: 0.25rem;
     }
 
     input:has(+ .mdy-input-suffix),
     textarea:has(+ .mdy-input-suffix) {
-        padding-right: 0.25rem;
+        padding-inline-end: 0.25rem;
     }
 
     .mdy-input-prefix,
@@ -846,14 +849,17 @@
         color: var(--mdy-input-focus-color);
     }
 
+    /* The outer side is roomy and the inner side is tight, so these are inline-relative: swapped
+       under `dir=rtl` the roomy side would face the input and the field would look padded on the
+       wrong edge. */
     .mdy-input-prefix {
-        padding-left: 0.75rem;
-        padding-right: 0.25rem;
+        padding-inline-start: 0.75rem;
+        padding-inline-end: 0.25rem;
     }
 
     .mdy-input-suffix {
-        padding-right: 0.75rem;
-        padding-left: 0.25rem;
+        padding-inline-end: 0.75rem;
+        padding-inline-start: 0.25rem;
     }
 
     /* If the decorator is in a textarea wrapper, add top padding */

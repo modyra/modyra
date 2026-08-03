@@ -770,19 +770,26 @@ The discriminator ADR 0013 actually wants is *movement*: a tap has none, a scrol
 was standing in for that, and one engine does not supply it. Resolving this amends ADR 0013 and is
 tracked separately.
 
-### A regression the routine suite cannot see — every engine
+### A regression the routine suite could not see — every engine — **fixed**
 
-`e2e/rtl.spec.ts` fails on **Chromium too**, and did so before the engines were added — verified by
-running the unmodified config:
+`e2e/rtl.spec.ts` failed on **Chromium too**, and had done so before the engines were added —
+verified by running the unmodified config. `.mdy-input-prefix` and `.mdy-input-suffix` set
+`padding-left`/`padding-right` where the roomy side is the *outer* one, so under `dir="rtl"` the
+suffix sat 8px inside where it belonged, in all four packaged themes. Now logical. All sixteen
+families mirror on three engines.
 
-```
-RTL › suffix mirrors under dir=rtl          suffix stopped mirroring
-every family mirrors under modyra.css       (and modern, material, ios)
-```
+It is the same defect as `.mdy-input-wrapper__inliner`, one level out, missed by the sweep that fixed
+that one — which is the argument for the fixture existing rather than for a wider grep.
 
-`npm test` does not run Playwright, so the browser suite has been red with nothing routine saying so.
-That is the finding, more than the mirroring itself: a suite outside the default command is a suite
-nobody is watching.
+**The part that is not fixed:** `npm test` does not run Playwright. `test:e2e` exists and is not in
+it, so the browser suite was red with nothing routine saying so. That is the larger finding — a suite
+outside the default command is a suite nobody is watching — and it belongs with the release gates.
+
+WebKit needs a 2.5px mirroring tolerance where the other two hold 1.5px. Measured rather than
+assumed: `daterange` lands exactly 2.0px out in three themes and **passes** under `modyra-material`,
+the one that removes the inputs' borders — a 1px border on each of two inputs rounds one way in LTR
+and the other in RTL. Per-engine, not global: reverting the suffix to physical padding still fails on
+WebKit at 2.5px, so the widened tolerance does not blind the check.
 
 ### Engine differences in the themes — Firefox
 
