@@ -187,7 +187,7 @@ for (const [tag, kind, initial, opener] of OVERLAY_ELEMENTS) {
     const element = await mount(tag, (el) => {
       el.field = form.f.value;
       el.label = "Field";
-      if (kind === "select" || kind === "multiselect") el.options = [option];
+      if (kind === "select" || kind === "multiselect") { el.options = [option]; el.searchable = true; }
     });
     const outside = document.createElement("button");
     document.body.append(outside);
@@ -235,7 +235,7 @@ for (const [tag, kind, initial, opener] of OVERLAY_ELEMENTS) {
     const element = await mount(tag, (el) => {
       el.field = form.f.value;
       el.label = "Label";
-      if (kind === "select" || kind === "multiselect") el.options = [option];
+      if (kind === "select" || kind === "multiselect") { el.options = [option]; el.searchable = true; }
     });
 
     element.querySelector(opener).click();

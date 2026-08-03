@@ -100,7 +100,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
     }
   }
 
-  protected override renderControl(): unknown {
+  protected override renderControl(_handle: MdyFieldHandle<T>): unknown {
     return nothing;
   }
 

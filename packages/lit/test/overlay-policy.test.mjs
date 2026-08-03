@@ -106,7 +106,9 @@ for (const [tag, initial, opener] of OVERLAY_ELEMENTS) {
     const element = await mount(tag, (el) => {
       el.field = form.f.value;
       el.label = "Field";
-      if (tag === "mdy-select-field") el.options = [{ value: "x", label: "X" }];
+      // Searchable, because the native chooser a plain select renders has no popup to hand to the
+      // top layer — that mode is the platform's own picker and this policy does not apply to it.
+      if (tag === "mdy-select-field") { el.options = [{ value: "x", label: "X" }]; el.searchable = true; }
     });
 
     element.querySelector(opener).click();
