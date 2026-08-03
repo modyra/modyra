@@ -32,6 +32,14 @@ The J findings share one shape: **anatomy the contract cannot express, because t
 constraining sits one level below the part list.** They are recorded rather than fixed because each
 one is a decision about what a widget *is*, binding on every renderer.
 
+They close in a fixed order, and the first step is not a fix. A suite that cannot currently observe a
+violation will not prove a new rule caught it, so the fixtures come first and assert today's wrong
+behaviour. J3 follows, being the one gap that needs no decision — the timepicker's inner control is
+already drawn by every renderer and only needs naming. J1 and J2 each need an architecture decision
+record before any contract change, because each settles what a widget *is* for every renderer at
+once. J2 comes last on purpose: it is the only one requiring conditional anatomy, and designing that
+machinery before the others are closed would be designing it without evidence.
+
 One lesson recurs across E1, H and the `contract-diff` capability comparison: **a check is only as
 good as the set of candidates it considers.** A rule that is correct, and a suite whose fixtures
 never reach the branch it guards, are indistinguishable from green.
