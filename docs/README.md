@@ -18,7 +18,15 @@ Use this index to find the conceptual guides, integration notes and reference ma
 - [DevTools](guides/devtools.md)
 - [Dynamic form configuration](guides/ai-generated-forms.md)
 
-## Framework integrations
+## Rendering and integrations
+
+Start with [the shared checkout scenario](examples/checkout-scenario.md) — one form, many bindings,
+so a difference between two pages is a difference between two adapters and not between two authors.
+
+- [The scenario itself](examples/checkout-scenario.md)
+- [Plain](examples/plain.md) — the framework-free renderer, and what it does not cover
+
+Then the seven framework bindings, all implementing that scenario:
 
 - [Angular](examples/angular.md)
 - [React](examples/react.md)
@@ -28,10 +36,8 @@ Use this index to find the conceptual guides, integration notes and reference ma
 - [Preact](examples/preact.md)
 - [Svelte](examples/svelte.md)
 
-All seven implement [the same checkout scenario](examples/checkout-scenario.md), so a difference
-between two pages is a difference between two adapters. UI coverage, SSR behavior and ecosystem
-integration differ by adapter; consult the package README and [reactivity capability
-matrix](reactivity-capability-matrix.md) for details.
+UI coverage, SSR behavior and ecosystem integration differ by adapter; consult the package README
+and [reactivity capability matrix](reactivity-capability-matrix.md) for details.
 
 ## The widget contract
 
