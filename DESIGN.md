@@ -123,6 +123,24 @@ on selection instead — leaving the caret pointing up at a closed list.
 clicks an option should not be given a keyboard ring; the browser has already computed that, and bare
 `:focus` overrides it.
 
+## Colour
+
+**Text on a filled surface is light while light is readable.** Not "whichever has the higher contrast
+ratio" — the ratio's luminance formula weights blue at a fourteenth of green, so it prefers dark text
+on a saturated colour where a reader plainly prefers light. Choosing by ratio alone put black on a
+saturated blue in every theme.
+
+The bound is a floor, not a metric swap: light while it clears **3.5:1**, the higher ratio below
+that. `MDY_ON_COLOR_FLOOR` in `@modyra/core/color-utils` is the number, and
+[ADR 0015](docs/architecture/0015-light-text-while-it-is-readable.md) is why — including the cost,
+which is that this sits below AA for normal text on purpose.
+
+**A stylesheet cannot check what it computed.** It has the colour in OKLCH and a ratio wants sRGB
+luminance, so every `on-` colour a theme derives live is an estimate of the rule rather than the
+rule. Where a palette can be generated ahead of time, `color-utils` applies it exactly.
+
+---
+
 ---
 
 ## How a visual change is reviewed

@@ -21,7 +21,7 @@ calendar — so four names joined four existing lists:
 
 Each was measured in both rendering adapters first: every one is drawn by Plain and by Lit today, so
 no renderer needs new markup. `multiselect.listbox` is required to be **present**, not to be a
-listbox — what role a chip grid should carry is the mode question ADR 0015 settles.
+listbox — what role a chip grid should carry is the mode question ADR 0016 settles.
 
 **Migration:** an adapter whose open popup omits its kind's part above now reports `PART_MISSING`.
 The fix is to render it, which is what the popup is for.

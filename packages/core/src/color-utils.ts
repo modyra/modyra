@@ -32,8 +32,8 @@
  * `#ba1a1a` for every source, because its hue, chroma and tone are all absolute, where Modyra's
  * error keeps the red hue but takes its weight from the brand.
  *
- * The `on-` colours differ in kind rather than degree: `onColorFor` measures contrast against black
- * and against white and keeps the winner, while M3 declares that on-primary *is* tone 100 and
+ * The `on-` colours differ in kind rather than degree: `onColorFor` prefers light text and measures
+ * how far that preference may run, while M3 declares that on-primary *is* tone 100 and
  * on-primary-container *is* tone 10 and never computes a ratio. Predictable versus adaptive; the
  * comment on `deriveHctPalette` says what each buys.
  *
@@ -86,16 +86,18 @@ export interface MdyPaletteModel {
    * How `modyra-base.css` decides whether an `on-` colour is black or white — **not** how this
    * module decides it.
    *
-   * Where black overtakes white has one clean answer in *luminance*: 0.1791, always. A stylesheet
-   * cannot get there, because it holds the colour in OKLCH while WCAG wants sRGB luminance, which
-   * weights green at 0.72 and blue at 0.07 — a blue and a green of identical OKLCH lightness are
-   * nowhere near equally bright. So the stylesheet estimates luminance as
-   * `l³ · (1 + chromaWeight · c · cos(h − hueOffset))`: exact for a grey, fitted for the rest.
+   * The rule is "light text while it clears {@link MDY_ON_COLOR_FLOOR}", and the floor is what makes
+   * it expressible in a stylesheet at all: a fixed ratio against white is a fixed *luminance*, and
+   * the perceptual preference never binds above it. So one threshold carries the whole rule.
    *
-   * Against 8640 sampled colours that estimate picks the wrong side 142 times and gives up at most
-   * 1.09 ratio points. `derivePalette` does not use it — it measures both candidates, which is
-   * exact — but the constants live here so the two implementations can be compared, and are: the
-   * stylesheet is parsed and checked against these numbers in the test.
+   * A stylesheet still cannot measure luminance — it holds the colour in OKLCH — so it estimates:
+   * `l³ · (1 + chromaWeight · c · cos(h − hueOffset))`, exact for a grey and fitted for the rest.
+   * The estimate disagrees with the rule on 1.4% of 6000 sampled colours, landing at worst 3.32:1
+   * rather than the floor.
+   *
+   * `derivePalette` does not use any of it — it measures ratios directly — but the constants live
+   * here so the two implementations can be compared, and are: the stylesheet is parsed and checked
+   * against these numbers in the test.
    */
   readonly contrastProxy: {
     readonly threshold: number;
@@ -119,7 +121,7 @@ export const MDY_PALETTE_MODELS: Readonly<Record<string, MdyPaletteModel>> = Obj
     secondary: Object.freeze({ h: 30, c: 1.05, l: 1.03 }),
     tertiary: Object.freeze({ h: 90, c: 0.85, l: 1.15 }),
     error: Object.freeze({ h: 28, c: 0.82, l: 0.83 }),
-    contrastProxy: Object.freeze({ threshold: 0.1791, chromaWeight: 0.85, hueOffset: 179 }),
+    contrastProxy: Object.freeze({ threshold: 0.25, chromaWeight: 0.85, hueOffset: 179 }),
     onChroma: 0.08,
   }),
   /** One hue throughout: the accents separate by weight alone. Safe for any brand colour. */
@@ -127,7 +129,7 @@ export const MDY_PALETTE_MODELS: Readonly<Record<string, MdyPaletteModel>> = Obj
     secondary: Object.freeze({ h: 0, c: 0.7, l: 1.08 }),
     tertiary: Object.freeze({ h: 0, c: 0.45, l: 1.2 }),
     error: Object.freeze({ h: 28, c: 0.82, l: 0.83 }),
-    contrastProxy: Object.freeze({ threshold: 0.1791, chromaWeight: 0.85, hueOffset: 179 }),
+    contrastProxy: Object.freeze({ threshold: 0.25, chromaWeight: 0.85, hueOffset: 179 }),
     onChroma: 0.08,
   }),
   /**
@@ -140,7 +142,7 @@ export const MDY_PALETTE_MODELS: Readonly<Record<string, MdyPaletteModel>> = Obj
     secondary: Object.freeze({ h: 0, c: 1.05, l: 0.52, minC: 0.1 }),
     tertiary: Object.freeze({ h: 0, c: 0.28, l: 1.3, minC: 0.025 }),
     error: Object.freeze({ h: 28, c: 0.82, l: 0.83 }),
-    contrastProxy: Object.freeze({ threshold: 0.1791, chromaWeight: 0.85, hueOffset: 179 }),
+    contrastProxy: Object.freeze({ threshold: 0.25, chromaWeight: 0.85, hueOffset: 179 }),
     onChroma: 0.08,
   }),
   /** The tertiary sits opposite the primary; the secondary stays close to it. */
@@ -148,7 +150,7 @@ export const MDY_PALETTE_MODELS: Readonly<Record<string, MdyPaletteModel>> = Obj
     secondary: Object.freeze({ h: 15, c: 1.0, l: 1.05 }),
     tertiary: Object.freeze({ h: 180, c: 0.9, l: 1.1 }),
     error: Object.freeze({ h: 28, c: 0.82, l: 0.83 }),
-    contrastProxy: Object.freeze({ threshold: 0.1791, chromaWeight: 0.85, hueOffset: 179 }),
+    contrastProxy: Object.freeze({ threshold: 0.25, chromaWeight: 0.85, hueOffset: 179 }),
     onChroma: 0.08,
   }),
   /** Three hues evenly around the wheel. */
@@ -156,7 +158,7 @@ export const MDY_PALETTE_MODELS: Readonly<Record<string, MdyPaletteModel>> = Obj
     secondary: Object.freeze({ h: 240, c: 0.95, l: 1.05 }),
     tertiary: Object.freeze({ h: 120, c: 0.9, l: 1.1 }),
     error: Object.freeze({ h: 28, c: 0.82, l: 0.83 }),
-    contrastProxy: Object.freeze({ threshold: 0.1791, chromaWeight: 0.85, hueOffset: 179 }),
+    contrastProxy: Object.freeze({ threshold: 0.25, chromaWeight: 0.85, hueOffset: 179 }),
     onChroma: 0.08,
   }),
 });
@@ -271,6 +273,22 @@ export function contrastRatio(a: string, b: string): number {
   return (light + 0.05) / (dark + 0.05);
 }
 
+/**
+ * The lowest contrast ratio an `on-` colour may have when it is chosen for readability.
+ *
+ * Light text on a saturated colour reads better than the contrast ratio says it does: the ratio's
+ * luminance formula weights the blue channel at a fourteenth of green, so it rates dark text on such
+ * a colour far higher than a reader does. Choosing by ratio alone puts dark text on a saturated mid
+ * tone; choosing by perception alone puts a third of a derived palette under what an audit accepts.
+ *
+ * So light text is preferred, and this is how far that preference may go. Below it the ratio decides
+ * again, which is why no `on-` colour can fall through to something unreadable.
+ *
+ * The stylesheet's threshold is this number expressed as a luminance, and the two must move
+ * together — 3.5:1 against white is a luminance of 0.25.
+ */
+export const MDY_ON_COLOR_FLOOR = 3.5;
+
 // ── Derivation ───────────────────────────────────────────────────────────────
 
 /** A palette derived from one colour. */
@@ -309,14 +327,13 @@ const derive = (
 /**
  * The `on-` colour for a background: black or white, carrying a trace of the background's own hue.
  *
- * The same step the stylesheet takes with `clamp(0, (pivot - l) * 100, 1)`, which is how CSS gets a
- * conditional it does not have. Above the pivot the lightness resolves to 0, below it to 1.
+ * Light while it clears {@link MDY_ON_COLOR_FLOOR}, and the higher contrast ratio below that. The
+ * stylesheet reaches the same rule as a luminance threshold, being unable to compute a ratio at all.
  *
  * **Decided on the painted colour, not the requested one.** A rotated hue at full chroma frequently
- * lands outside sRGB, and clipping it back moves its lightness — a tertiary asked for at 0.551 was
- * painted at 0.579, so judging the request handed it white when the thing on screen wanted black
- * (4.09:1 where black gives 5.05:1). The round-trip through hex is what makes the decision about
- * the colour a user will actually see.
+ * lands outside sRGB, and clipping it back moves its lightness, so judging the request can hand a
+ * colour the text its painted form does not want. The round-trip through hex is what makes the
+ * decision about the colour a user will actually see.
  */
 const onColorFor = (paintedHex: string, model: MdyPaletteModel): string => {
   const painted = hexToOklch(paintedHex);
@@ -325,12 +342,15 @@ const onColorFor = (paintedHex: string, model: MdyPaletteModel): string => {
     oklchToHex({ l, c: painted.c * model.onChroma, h: painted.h });
   const light = candidate(1);
   const dark = candidate(0);
-  // Measured, not approximated. A single lightness pivot cannot be right for every hue — solving
-  // for where black overtakes white puts the crossover anywhere between 0.508 and 0.590 depending
-  // on hue and chroma, so a constant picks the worse side for colours sitting in that band, and in
-  // that band the whole margin is about 0.3 of a ratio point. Here there is no reason to guess:
-  // compute both and keep the better. `contrastProxy` carries what the stylesheet does instead,
-  // for comparison — it has no way to compute a luminance.
+  // Light first, while it clears the floor. Keeping whichever ratio is higher sounds like the
+  // careful answer and is not: on a saturated mid tone the ratio prefers dark text where a reader
+  // prefers light, and it does so consistently rather than marginally. `MDY_ON_COLOR_FLOOR` is how
+  // far that preference is allowed to run before the ratio decides again.
+  //
+  // Measured either way, never estimated. The stylesheet reaches the same rule through a luminance
+  // threshold because it cannot compute a ratio at all; this is the form that can, and the two are
+  // two implementations of one policy.
+  if (contrastRatio(paintedHex, light) >= MDY_ON_COLOR_FLOOR) return light;
   return contrastRatio(paintedHex, light) >= contrastRatio(paintedHex, dark) ? light : dark;
 };
 

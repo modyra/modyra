@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
+  MDY_ON_COLOR_FLOOR,
   MDY_PALETTE_MODELS,
   contrastRatio,
   deriveHctPalette,
@@ -167,7 +168,10 @@ test("tonal remains deterministic, valid and readable over a broad sRGB sample",
     assert.deepEqual(palette, derivePalette(seed, MDY_PALETTE_MODELS.tonal));
     for (const role of ["primary", "secondary", "tertiary", "error"]) assert.ok(parseHex(palette[role]));
     for (const [bg, fg] of [["primary", "onPrimary"], ["secondary", "onSecondary"], ["tertiary", "onTertiary"], ["error", "onError"]]) {
-      assert.ok(contrastRatio(palette[bg], palette[fg]) >= 4.5, `${seed}: ${fg} on ${bg}`);
+      assert.ok(
+        contrastRatio(palette[bg], palette[fg]) >= MDY_ON_COLOR_FLOOR,
+        `${seed}: ${fg} on ${bg}`,
+      );
     }
     if (hexToOklch(seed).l > 0.2) assert.notEqual(palette.secondary, palette.tertiary);
     checked++;
@@ -185,7 +189,11 @@ test("contrast ratio matches the WCAG anchors", () => {
 
 test("every on- colour is readable against the colour it is named for", () => {
   // The property the old palette did not have: `on-primary` was 95% white whatever the primary was,
-  // so a light brand colour meant white text on a light background. AA for body text is 4.5:1.
+  // so a light brand colour meant white text on a light background.
+  //
+  // The floor is below AA on purpose, and `MDY_ON_COLOR_FLOOR` carries the reason: maximising the
+  // ratio picks dark text on a saturated mid tone, where a reader wants light. What is asserted is
+  // that nothing falls through — never that AA is reached, which this rule knowingly gives up.
   for (const [name, model] of Object.entries(MDY_PALETTE_MODELS)) {
     for (const primary of PRIMARIES) {
       const p = derivePalette(primary, model);
@@ -197,7 +205,7 @@ test("every on- colour is readable against the colour it is named for", () => {
       ]) {
         const ratio = contrastRatio(p[bg], p[fg]);
         assert.ok(
-          ratio >= 4.5,
+          ratio >= MDY_ON_COLOR_FLOOR,
           `${name}/${primary}: ${fg} on ${bg} is ${ratio.toFixed(2)}:1 (${p[fg]} on ${p[bg]})`,
         );
       }
@@ -205,11 +213,11 @@ test("every on- colour is readable against the colour it is named for", () => {
   }
 });
 
-test("an on- colour is always the better of black and white, never merely the plausible one", () => {
-  // The property that makes AA reachable at all. Colours whose lightness sits in the 0.508–0.590
-  // band where the crossover lives have only ~4.6:1 available whichever way they go, so picking the
-  // worse side puts them under AA — which is what a constant pivot did to five pairs in this very
-  // sample before the choice was measured.
+test("an on- colour is light while light is readable, and the better ratio below that", () => {
+  // The rule, asserted as a rule rather than as its consequence. Keeping whichever ratio is higher
+  // is the obvious reading and the wrong one: on a saturated mid tone the ratio prefers dark text
+  // where a reader prefers light, consistently rather than marginally, so the choice is made in one
+  // direction and bounded by a floor instead.
   for (const [name, model] of Object.entries(MDY_PALETTE_MODELS)) {
     for (const primary of PRIMARIES) {
       const p = derivePalette(primary, model);
@@ -220,16 +228,40 @@ test("an on- colour is always the better of black and white, never merely the pl
         ["error", "onError"],
       ]) {
         const chosen = contrastRatio(p[bg], p[fg]);
-        const best = Math.max(contrastRatio(p[bg], "#ffffff"), contrastRatio(p[bg], "#000000"));
-        // The tint costs a little, so the chosen colour trails pure black/white slightly; what it
-        // must never do is land on the wrong side, which shows up as a gap far larger than the tint.
-        assert.ok(
-          chosen >= best - 0.25,
-          `${name}/${primary}: ${fg} gives ${chosen.toFixed(2)}:1 where ${best.toFixed(2)}:1 was available`,
-        );
+        const lightAvailable = contrastRatio(p[bg], "#ffffff");
+        const darkAvailable = contrastRatio(p[bg], "#000000");
+        const isLight = relativeLuminance(p[fg]) > relativeLuminance(p[bg]);
+        const where = `${name}/${primary}: ${fg} on ${bg}`;
+
+        if (lightAvailable >= MDY_ON_COLOR_FLOOR) {
+          // The tint costs a little, so the chosen colour trails pure white slightly; what it must
+          // not do is give up the direction.
+          assert.ok(isLight, `${where} should be light — white gives ${lightAvailable.toFixed(2)}:1`);
+        } else {
+          // Below the floor the ratio decides, and it must have picked the higher of the two.
+          const better = lightAvailable >= darkAvailable;
+          assert.equal(isLight, better, `${where} did not take the better ratio below the floor`);
+        }
+        assert.ok(chosen >= MDY_ON_COLOR_FLOOR - 0.25, `${where} is ${chosen.toFixed(2)}:1`);
       }
     }
   }
+});
+
+test("a saturated mid blue takes light text, which the ratio alone would refuse", () => {
+  // The case that produced the rule. Measured: white gives 3.68:1 here and black 5.71:1, so the
+  // higher ratio is dark — and dark text on this colour is what a reader sees as the worse of the
+  // two. The floor is what lets the choice go the other way without falling through.
+  const p = derivePalette("#3B82F6", MDY_PALETTE_MODELS.brand);
+  assert.ok(
+    relativeLuminance(p.onPrimary) > relativeLuminance(p.primary),
+    `onPrimary ${p.onPrimary} on ${p.primary} should be the light candidate`,
+  );
+  assert.ok(contrastRatio(p.primary, p.onPrimary) >= MDY_ON_COLOR_FLOOR);
+  assert.ok(
+    contrastRatio(p.primary, "#000000") > contrastRatio(p.primary, "#ffffff"),
+    "if this stops being true the case no longer demonstrates anything",
+  );
 });
 
 test("the stylesheet and this module hold the same numbers", () => {
@@ -288,6 +320,25 @@ test("the stylesheet and this module hold the same numbers", () => {
   assert.equal(numberIn(root, "error-c"), brand.error.c);
   assert.equal(numberIn(root, "error-l"), brand.error.l);
   assert.equal(numberIn(root, "contrast-threshold"), brand.contrastProxy.threshold);
+
+  // And the threshold is bound to the policy rather than being a third copy of a number. A contrast
+  // ratio of `MDY_ON_COLOR_FLOOR` against white is exactly this luminance, which is why one
+  // threshold can carry a rule stated as a ratio.
+  assert.equal(
+    brand.contrastProxy.threshold,
+    Number((1.05 / MDY_ON_COLOR_FLOOR - 0.05).toFixed(4)),
+    "the stylesheet threshold is no longer the floor expressed as a luminance",
+  );
+
+  // The tier that cannot run the correction works in lightness, so its pivot cannot be derived from
+  // the threshold — it is fitted. What is checked is that it exists and still sits above the
+  // threshold's grey equivalent, since a lightness pivot below it would flip colours the corrected
+  // form keeps dark.
+  const pivot = numberIn(root, "lightness-pivot");
+  assert.ok(
+    pivot > Math.cbrt(brand.contrastProxy.threshold) - 0.05 && pivot < 0.8,
+    `--mdy-palette-lightness-pivot ${pivot} is outside the band the fit can live in`,
+  );
   assert.equal(numberIn(root, "luma-chroma-weight"), brand.contrastProxy.chromaWeight);
   assert.equal(numberIn(root, "luma-hue-offset"), brand.contrastProxy.hueOffset);
   assert.equal(numberIn(root, "on-chroma"), brand.onChroma);

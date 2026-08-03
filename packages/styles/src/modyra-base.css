@@ -548,25 +548,31 @@
 
         /* Where an `on-` colour flips from white to black.
 
-       Solving for where the WCAG ratio against black overtakes the ratio against white gives one
-       clean answer in *luminance*: 0.1791, always. The difficulty is that CSS has the colour in
-       OKLCH and WCAG wants sRGB luminance, which weights green at 0.72 and blue at 0.07 — so a blue
-       and a green of identical OKLCH lightness are nowhere near equally bright, and a lightness
-       threshold cannot stand in for a luminance one. Compared against 1080 sampled colours, a
-       constant lightness pivot picks the wrong side 38 times.
+       **Light text is preferred, down to a contrast floor.** Maximising the contrast *ratio* is not
+       the same as choosing the more readable colour: the ratio's luminance formula weights the blue
+       channel at a fourteenth of green, so it rates dark text on a saturated colour far higher than
+       a reader does. A perceptual metric disagrees with it on a third of a derived palette, and
+       always in the same direction. Neither metric is free to follow alone — one is what an audit
+       measures, the other is what a person sees — so the rule takes the perceptual choice and holds
+       it above a ratio the audit still accepts.
 
-       So luminance is approximated instead: `l³` is exact for a grey, and the hue and chroma
-       correction is fitted — `Y ≈ l³ · (1 + 0.85·c·cos(h − 179°))`, which gets it wrong 16 times out
-       of 1080, all on colours within 0.0075 luminance of the crossover, where the two choices are
-       worth the same anyway. */
-        --mdy-palette-contrast-threshold: 0.1791;
+       The floor is what makes this one number. A ratio of 3.5:1 against white *is* a luminance of
+       0.25, and the perceptual crossover sits above that, so the floor is always the binding
+       constraint and the whole rule reduces to a luminance threshold. Checked against 1296 sampled
+       colours, the threshold reproduces the full rule exactly.
+
+       What is left is reaching that luminance from OKLCH, which is an estimate: `l³` is exact for a
+       grey and the hue and chroma correction is fitted. It disagrees with the rule on 1.4% of 6000
+       sampled colours, worst case landing at 3.32:1 rather than the floor. */
+        --mdy-palette-contrast-threshold: 0.25;
         --mdy-palette-luma-chroma-weight: 0.85;
         --mdy-palette-luma-hue-offset: 179;
-        /* The same crossover expressed in lightness, for the tier that cannot run the correction:
-       `l³ = 0.1791` is exact for a grey, so the pivot is its cube root. It picks the worse of black
-       and white 38 times in 1080 against the corrected form's 16 — a fraction of a ratio point on
-       colours near the crossover, never the difference between readable and not. */
-        --mdy-palette-lightness-pivot: 0.5636;
+        /* The same flip for the tier that cannot run the correction, expressed in lightness because
+       that is all it has. Fitted rather than derived — the cube root of the threshold is the answer
+       for a grey and not for anything else. It disagrees with the rule on 4.6% of the same sample,
+       worst case 3.11:1: a colour near the flip, where the two candidates are worth nearly the same,
+       never the difference between readable and not. */
+        --mdy-palette-lightness-pivot: 0.63;
         /* How much of the background's chroma its `on-` colour keeps, so text reads as tinted rather
        than clinical. It costs up to 0.15 of a contrast ratio point. */
         --mdy-palette-on-chroma: 0.08;
