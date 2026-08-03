@@ -804,27 +804,39 @@ sees unreadable text rather than a wrong gradient.
 `demo.spec.ts:162` and `:390` failed in the full run and passed in isolation. Flaky, not an engine
 difference — recorded so the next reader does not chase them.
 
-### Playwright's WebKit is not Safari, and the difference has already cost a defect
+### What WebKit found that no suite was looking for
 
-Two Safari defects were reported from a real browser during this work, and **neither reproduces in
-the WebKit the suite runs**:
+Three defects came from someone opening the demo in WebKit and looking at it. Every one is
+reproducible in the engine the suite now runs, and **none of them is a test that failed** — they are
+in places no assertion reaches.
 
 - **The multiselect popover collapsed** to its search box with nothing under it.
-  `.mdy-multiselect-overlay__grid` sized itself with `max-height: 100%` against a parent whose height
-  is indefinite — undefined territory, which Safari resolves to zero and both Playwright engines
-  resolve to `none`. Fixed with `flex: 1 1 auto; min-height: 0`.
-- **Colours render differently**, reported on the datepicker's day circles. Not reproduced: every
-  cell state in the default theme computes byte-identical in Playwright's WebKit and Chromium, to
-  serialisation precision. Open, and it needs numbers from a real Safari.
+  `.mdy-multiselect-overlay__grid` sized itself with `max-height: 100%` against a parent that states
+  a `max-height` and no `height`. A percentage against an indefinite containing block is undefined
+  territory: Blink resolves it to `none`, WebKit to zero. Fixed with `flex: 1 1 auto; min-height: 0`.
+- **The multiselect's `+` and `−` buttons were empty.** `.mdy-renderer svg` gives every icon one
+  size, and a portalled popup is not a descendant of any `.mdy-renderer`. Nothing sized the icons
+  inside it, so an `<svg>` carrying only a `viewBox` fell to each engine's default for a replaced
+  element with no intrinsic size: 32×32 in Blink, **0×0** in WebKit. `.mdy-popup` and
+  `.mdy-overlay-panel` are now named beside `.mdy-renderer`.
+- **Colours reported as rendering differently**, on the datepicker's day circles. **Not reproduced.**
+  Every cell state in the default theme computes byte-identical between the two engines, to
+  serialisation precision — the day circle is `2px solid var(--mdy-sys-color-primary)`, a plain token
+  with nothing in its path to diverge. Open.
 
-The lesson is the one this finding keeps teaching one level down. Adding two engines removed the
-single-engine assumption; it did not remove the *single-build* assumption. Playwright's WebKit is a
-different embedding from Safari, and a green three-engine run is not a claim about Safari.
+The two that were real share a shape, and it is not an engine's fault: **a percentage or a default
+resolved against something indefinite.** Neither construct is correct on its own terms in any
+engine — one engine was simply the one that charged for it.
 
 The adjacent suspect for the colour report, already measured failing elsewhere: `--mdy-on-*` derives
 through `oklch(from … pow() … cos() …)` relative-colour syntax. That is the newest colour maths in
-the tree, and it is exactly what makes Firefox resolve twenty `on-*` pairs below the contrast floor
-above. A derivation that already breaks on one engine is where to look when a second reports colour.
+the tree, and it is what makes Firefox resolve twenty `on-*` pairs below the contrast floor above. A
+derivation that already breaks on one engine is where to look when a second reports colour.
+
+**What this says about the suite**, which is the part worth carrying: three defects in the rendered
+result, none of them caught by a green nine-project run. The browser suites assert behaviour and
+geometry; nothing asserts that a widget *looks the same on two engines*. That is what plan 49's
+screenshot baselines are for, and this finding is the argument for them.
 
 ### Tests that asserted Chromium rather than the contract — resolved
 
