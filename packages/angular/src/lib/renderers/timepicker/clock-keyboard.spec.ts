@@ -5,10 +5,10 @@ import { MdyFormComponent } from "../../form/mdy-form.component";
 import { MdyTimepickerComponent } from "./timepicker-renderer.component";
 
 /**
- * The clock face is a control, and until now it was not one: it listened for `mousedown` and
- * `touchstart` and nothing else, so every number on it was reachable only by dragging a hand around
- * a circle. These assert the two halves of the fix — that the arrows turn the hand, and that a
- * time keeps its own formalism on the face as well as in its value.
+ * The clock face is a control, not a pointer surface. Listening for `mousedown` and `touchstart`
+ * alone would leave every number on it reachable only by dragging a hand around a circle. These
+ * assert the two halves of that: the arrows turn the hand, and a time keeps its own formalism on
+ * the face as well as in its value.
  */
 @Component({
   standalone: true,

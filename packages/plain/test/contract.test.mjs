@@ -54,7 +54,7 @@ test("the shell emits the canonical class vocabulary, not adapter equivalents", 
   for (const className of ["mdy-label", "mdy-label__required", "mdy-input-wrapper", "mdy-input-wrapper__inliner", "mdy-supporting-text", "mdy-control__errors"]) {
     assert.ok(root.querySelector(`.${className}`), `expected ${className}`);
   }
-  // The generic names the contract used to emit are gone, not merely shadowed.
+  // The generic names are absent, not merely shadowed by the specific ones asserted above.
   assert.equal(root.querySelector(".mdy-description"), null);
   assert.equal(root.querySelector(".mdy-error"), null);
 

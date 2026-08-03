@@ -191,7 +191,7 @@ test("dark mode derives too, instead of reverting to the reference colours", asy
   expect(hex(green.secondary!), "dark mode: secondary must follow the primary").not.toBe(
     hex(indigo.secondary!),
   );
-  // Violet is what it used to fall back to, whatever the brand was.
+  // Violet is the fallback a secondary lands on when it stops following the brand.
   expect(hex(green.secondary!)).not.toBe("#a855f7");
   await page.emulateMedia({ colorScheme: null });
 });

@@ -614,10 +614,10 @@ test("a section occupying a column may be placed; one at the top of the layout m
 });
 
 test("the shared v3 fixture parses here, as it does in the Rust and Java SDKs", async () => {
-  // One document, three implementations. Studio emits v3 the moment a layout places a slot per
-  // breakpoint, and both SDKs used to refuse such a document outright — Rust on the version alone,
-  // Java by falling through every branch of its envelope check. This fixture is what stops the
-  // three drifting again: `sdk/rust/.../tests/contract.rs` and `MdyDynamicFormParserTest` read it.
+  // One document, three implementations. A v3 envelope is what a layout placing a slot per
+  // breakpoint produces, and it is the shape an SDK is most likely to refuse — on the version
+  // alone, or by falling through every branch of its envelope check. This fixture is what stops the
+  // three drifting: `sdk/rust/.../tests/contract.rs` and `MdyDynamicFormParserTest` read it too.
   const { parseDynamicForm } = await import("../dist/dynamic-config.js");
   const { readFileSync } = await import("node:fs");
   const raw = JSON.parse(

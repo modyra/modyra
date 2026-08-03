@@ -91,9 +91,9 @@ fn rejects_shared_duplicate_layout_reference_fixture() {
 
 #[test]
 fn accepts_shared_v3_placement_fixture() {
-    // The same document the TS and Java parsers accept. Studio emits v3 the moment a layout places
-    // a slot per breakpoint, so a form authored responsively used to export to something this SDK
-    // refused outright — `expected contract version 2`, before a single field was read.
+    // The same document the TS and Java parsers accept. A v3 envelope is what a layout placing a
+    // slot per breakpoint produces, so a responsively authored form is the case a version check can
+    // refuse outright — `expected contract version 2`, before a single field is read.
     let json = include_str!("../../../../spec/fixtures/dynamic-form/v3/placement.json");
     let result = parse_v2(json, ValidationMode::Strict).unwrap();
     assert!(result.valid, "{:?}", result.diagnostics);
@@ -103,7 +103,7 @@ fn accepts_shared_v3_placement_fixture() {
     use modyra_contract::{LayoutChild, LayoutNode};
     match &form.layout[0] {
         LayoutNode::Columns { columns, at, .. } => {
-            // v2's track counts survive the round trip; they used to be dropped silently.
+            // v2's track counts survive the round trip rather than being dropped silently.
             assert_eq!(at.as_ref().expect("row at").get("sm").copied(), Some(2));
             assert!(matches!(&columns[0][0], LayoutChild::Field(name) if name == "first"));
             match &columns[1][0] {

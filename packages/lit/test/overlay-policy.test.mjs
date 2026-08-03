@@ -71,8 +71,8 @@ test("opening decides afresh, and holds nothing from the last time it was open",
 });
 
 test("the state carries the whole decision, which is what makes holding it possible", () => {
-  // Position and alignment alone cannot be handed back: the height is the part that used to be
-  // re-measured, and it is the part that was going missing.
+  // Position and alignment alone cannot be handed back. The height is the part a caller would have
+  // to re-measure, so a decision that omits it is a decision that cannot be held.
   const { decision } = computeOverlayPanelState(anchorAt(200), { minSpace: 180 });
   assert.equal(typeof decision?.maxHeight, "number");
   assert.equal(decision?.placement, "below");

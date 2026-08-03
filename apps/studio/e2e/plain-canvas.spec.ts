@@ -501,8 +501,8 @@ test("a repeater draws where it was declared, not at the end of the form", async
   await page.locator('[data-template="text"]').click();
 
   // The canvas is the arrangement, so a repeater declared between two fields draws between them.
-  // Both containers used to be appended to the host, which put every array last whatever the model
-  // said, and left an array's row shape sitting beside it instead of inside it.
+  // Appending containers to the host instead would put every array last whatever the model said,
+  // and leave an array's row shape beside it rather than inside it.
   const shape = await page.locator('.plain-canvas-form').evaluate((form) => {
     const out: string[] = [];
     const walk = (el: Element, depth: number): void => {

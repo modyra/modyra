@@ -18,15 +18,11 @@ import { CATALOG_KINDS, CatalogHost, partsOf } from "./catalog-host.spec";
  * Angular's remaining divergences from the contract, recorded rather than waived. The expectation
  * below matches this map exactly, so a new one fails the suite and a fixed one cannot linger.
  *
- * The thirteen `ARIA_DANGLING_REF:root` rows are gone (plan 28).
- *
- * They appeared the moment every control in the catalogue host became `mdyRequired` — before that
- * no field could have an error, so nothing pointed anywhere and nothing could dangle. Not an
- * artefact: thirteen renderers guarded the reference with `hasErrors()` and rendered the list it
- * named with `!inlineErrors && touched() && hasErrors()`, so an invalid untouched field described
- * itself by an element that did not exist. One predicate, `describedById`, now answers both.
- *
- * What remains below is unchanged, and none of it is an ARIA reference.
+ * No `ARIA_DANGLING_REF:root` rows: every declared reference resolves to a rendered element. The
+ * shape that produces them is a reference guarded by `hasErrors()` while the list it names is
+ * rendered under `!inlineErrors && touched() && hasErrors()` — an invalid untouched field then
+ * describes itself by an element that does not exist. One predicate, `describedById`, answers both,
+ * which is what keeps the two conditions from drifting apart.
  */
 
 

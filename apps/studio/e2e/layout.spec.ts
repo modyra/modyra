@@ -230,8 +230,8 @@ test("the breakpoint selector previews the size and authors only that size", asy
 });
 
 test("the size selector is on the canvas, not behind the toolbar", async ({ page }) => {
-  // It used to live inside the floating toolbar, which is collapsed by default and floats over the
-  // canvas — so choosing a size meant opening a FAB first, every time.
+  // Inside the floating toolbar it would sit behind a FAB that is collapsed by default, so choosing
+  // a size would mean opening the toolbar first, every time.
   await closeDock(page);
   await expect(page.locator('[data-dock-panel]')).toBeHidden();
 

@@ -39,13 +39,11 @@ const { KINDS, emptyFor, mount, valueFor } = await import("./support/state-fixtu
  *   `aria-describedby` either, so their error lists were rendered, styled, and announced to nobody.
  *   `projectFieldShellA11y` is the shared half of `projectFieldA11y` for exactly this case.
  *
- * The last three rows were never renderer defects. `required` did not reject a kind's own empty
- * value when that value was not a string, so an unchecked required checkbox, an off required toggle
- * and a required range with both ends unset all reported themselves valid — the renderer was telling
- * the truth about a state the form never entered. Three adapters ledgered them identically, which is
- * what made it a validation finding. Closed by plan 26: `required` now treats `false` and an empty
- * range as empty, and a *partial* range is rejected by `completeRange` whether or not the field is
- * required.
+ * Empty, and the reason it stays that way: a divergence that every adapter shows identically is a
+ * validation finding, not a renderer one. An unchecked required checkbox, an off required toggle and
+ * a required range with both ends unset are all cases where the renderer tells the truth about a
+ * state the form never enters. `required` treats `false` and an empty range as empty, and a
+ * *partial* range is rejected by `completeRange` whether or not the field is required.
  */
 const KNOWN_DIVERGENCES = {};
 

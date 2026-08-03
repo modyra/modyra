@@ -28,9 +28,9 @@ class SelectHost {
 }
 
 describe("MdySelectComponent", () => {
-  // Regression: the widget adapter used to read value()/fieldState() in the
-  // constructor, before the name/[field] inputs are set — every select
-  // crashed at construction with "Control needs a name attribute…".
+  // The widget adapter must not read value()/fieldState() in the constructor: the name/[field]
+  // inputs are not set yet, and every select then fails at construction with
+  // "Control needs a name attribute…".
   it("constructs before inputs are resolved and syncs afterwards", () => {
     const fixture = TestBed.createComponent(SelectHost);
     expect(() => fixture.detectChanges()).not.toThrow();

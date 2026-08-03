@@ -1,10 +1,10 @@
 /**
  * The focus handover contract.
  *
- * Every case here is one that has actually shipped in this repo: an overlay closing onto `<body>`,
- * a restore aimed at an element that had already been removed, a search box opening without focus.
- * They all look identical from the outside — nothing throws, every attribute is right, and the user
- * is standing at the top of the page.
+ * Each case is a way focus can be lost silently: an overlay closing onto `<body>`, a restore aimed
+ * at an element that has already been removed, a search box opening without focus. They look
+ * identical from the outside — nothing throws, every attribute is right, and the user is standing
+ * at the top of the page.
  */
 import assert from "node:assert/strict";
 import test from "node:test";

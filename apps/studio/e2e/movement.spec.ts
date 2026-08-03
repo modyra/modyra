@@ -98,8 +98,8 @@ test("the keyboard moves a node into a repeater's row shape", async ({ page }) =
   });
   expect(await depths()).toEqual(["0:array", "1:group", "0:field"]);
 
-  // ArrowRight moves into the previous sibling. A repeater is a container as much as a group is —
-  // moving into one means moving into the shape of its rows, which it refused to do.
+  // ArrowRight moves into the previous sibling. A repeater is a container as much as a group is, so
+  // moving into one means moving into the shape of its rows.
   await page.locator('.outline .tree [data-node]').last().focus();
   await page.keyboard.press(" ");
   await page.keyboard.press("ArrowRight");

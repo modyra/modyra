@@ -63,11 +63,9 @@ export const ABSENT = {
   // are counter mode's.
   multiselect: ["chips", "chip", "placeholder", "optionCount", "optionStep", "loading", "empty"],
   datepicker: ["actions"],
-  // This used to read "no dial: this renderer types the time rather than drawing a clock face".
-  // It does draw one — `timepicker-field.ts` builds the clock from the contract's own classes — and
-  // the entry outlived the renderer that justified it. Nothing noticed, because `absentParts` was a
-  // silencer: naming a part switched its checks off rather than asserting it was gone. Task 06
-  // closed that, and this was the first thing it found.
+  // Nothing absent: `timepicker-field.ts` builds the clock from the contract's own classes, dial
+  // included. Naming a part here asserts it is gone rather than switching its checks off, so an
+  // entry that outlives the renderer justifying it fails instead of passing quietly.
   timepicker: [],
   daterange: [],
   colors: [],

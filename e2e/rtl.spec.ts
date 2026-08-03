@@ -60,25 +60,20 @@ const NOT_YET_MIRRORED: Record<string, string> = {};
 
 
 /**
- * Measured, and it corrected the guess this ledger was first written from.
+ * Empty, and measured rather than predicted.
  *
- * The entries were predicted from the static count: 73 physical direction-sensitive declarations
- * against 22 logical ones, so the families carrying the most physical CSS were expected to be the
- * broken ones. **Toggle, daterange and segmented all mirror correctly** — and segmented carries 18
- * physical declarations, the largest single family in the sheet.
+ * Counting physical direction-sensitive declarations does not identify what breaks under `dir=rtl`.
+ * Toggle, daterange and segmented all mirror correctly, and segmented carries 18 physical
+ * declarations — the largest single family in the sheet.
  *
  * The reason is that flex and grid containers reverse their own main axis under `dir=rtl`, so a
  * `margin-left` on a flex child is re-ordered by the layout whatever it is called. A physical
  * property is only a bug when it positions something *against* the flow — an absolute offset, a
- * translate, a float. Counting declarations finds the first kind and the second equally.
+ * translate, a float — and counting declarations finds both kinds equally.
  *
- * So the plan's §10 batching order, which was drawn from that same reasoning, is not the order the
- * work is actually in.
- *
- * `select` was the one measured failure, and it fits the rule exactly: its arrow is *absolutely*
- * positioned, so the flow cannot re-order it the way it re-orders a flex child — it stays on
- * whichever physical edge was named. `right: 0.75rem` became `inset-inline-end`, and the ledger is
- * empty for the six families measured here.
+ * `select` is the case that fits the rule: its arrow is *absolutely* positioned, so the flow cannot
+ * re-order it the way it re-orders a flex child, and it stays on whichever physical edge was named.
+ * `inset-inline-end` rather than `right` is what keeps it mirrored.
  */
 
 /**

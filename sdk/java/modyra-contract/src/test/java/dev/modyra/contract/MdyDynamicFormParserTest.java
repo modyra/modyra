@@ -309,9 +309,9 @@ class MdyDynamicFormParserTest {
 
   @Test
   void acceptsSharedV3PlacementFixture() throws IOException {
-    // The same document the TS and Rust parsers accept. Studio emits v3 the moment a layout
-    // places a slot per breakpoint, and this parser used to fall through every branch of
-    // parse() for it and return a failed result before reading a single field.
+    // The same document the TS and Rust parsers accept. A v3 envelope is what a layout placing a
+    // slot per breakpoint produces, and it is the shape parse() is most likely to reject by falling
+    // through every branch and failing before it reads a single field.
     String json = readV3Fixture("placement.json");
     MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
 
