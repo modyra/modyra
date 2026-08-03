@@ -35,6 +35,8 @@ packages/angular/dist/
 !.changeset/
 !sdk/java/modyra-contract/.mvn/
 !sdk/java/modyra-contract/.mvn/**
+.github/hooks
+.github/skills
 
 # macOS system files
 .DS_Store
@@ -45,6 +47,7 @@ packages/angular/dist/
 .ralph/
 
 the project instructions
+PRODUCT.md
 
 # Local AI-assisted development workspace
 .modyra/
