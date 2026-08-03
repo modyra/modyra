@@ -176,9 +176,16 @@ test("view exposes trigger/dialog/hour/minute ARIA contract", () => {
   const view = controller.view();
   assert.strictEqual(view.parts.trigger.attributes.role, "combobox");
   assert.strictEqual(view.parts.dialog.attributes.role, "dialog");
-  assert.strictEqual(view.parts.hour.attributes.role, "spinbutton");
-  assert.strictEqual(view.parts.hour.attributes["aria-valuenow"], 2);
-  assert.strictEqual(view.parts.minute.attributes["aria-valuenow"], 30);
+
+  // The spinbutton is the control inside the segment, not the segment: the value and the name are
+  // reachable only on the element a user operates.
+  assert.strictEqual(view.parts.hourControl.attributes.role, "spinbutton");
+  assert.strictEqual(view.parts.hourControl.attributes["aria-valuenow"], 2);
+  assert.strictEqual(view.parts.minuteControl.attributes["aria-valuenow"], 30);
+
+  // And the segment carries neither — it is the container the state is painted on.
+  assert.deepStrictEqual(view.parts.hour.attributes, {});
+  assert.deepStrictEqual(view.parts.minute.attributes, {});
 });
 
 test("setValue updates the committed value and re-seeds the draft", () => {

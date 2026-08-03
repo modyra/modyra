@@ -412,8 +412,12 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
 const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Object.freeze({
   root: "root", label: "label",
   // Controls and the things that operate them.
-  control: "input", startControl: "input", endControl: "input", search: "input", hour: "input",
-  minute: "input", hexInput: "input", nativePicker: "input",
+  control: "input", startControl: "input", endControl: "input", search: "input",
+  // A timepicker's `hour` and `minute` are the segments the header lays out — containers. The
+  // element a user types into is the control inside each, named separately so the contract reaches
+  // it: a segment holding a `<div>` where the input belongs is a widget nothing can operate.
+  hour: "group", minute: "group", hourControl: "input", minuteControl: "input",
+  hexInput: "input", nativePicker: "input",
   // The trigger is the widget's control surface, not a plain button: it carries `role="combobox"`,
   // and a native `<select>` satisfies it too.
   trigger: "input",
@@ -584,20 +588,17 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // face: a renderer that drew its own dial would be a different widget wearing the same classes,
   // and the foundation places a number from the `--index` it is given, not from where a renderer
   // decided to put it.
-  timepicker: define("timepicker", ["mdy-renderer", "mdy-renderer--timepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialog", "container", "content", "header", "hour", "minute", "period", "clock", "dialFace", "dialHand", "dialNumber", "modeToggle", "actions", "action", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
-    { parents: { dialog: "popup", header: "content", clock: "content", dialFace: "clock", dialHand: "dialFace", dialNumber: "dialFace", content: "container", actions: "container", modeToggle: "actions", action: "actions" },
+  timepicker: define("timepicker", ["mdy-renderer", "mdy-renderer--timepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialog", "container", "content", "header", "hour", "hourControl", "minute", "minuteControl", "period", "clock", "dialFace", "dialHand", "dialNumber", "modeToggle", "actions", "action", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
+    { parents: { dialog: "popup", header: "content", clock: "content", dialFace: "clock", dialHand: "dialFace", dialNumber: "dialFace", content: "container", actions: "container", modeToggle: "actions", action: "actions", hourControl: "hour", minuteControl: "minute" },
       // `hour` and `minute` share `mdy-timepicker-segment`, so `active` — which of the two the dial
       // is currently editing — hangs off that shared base and is one rule in a theme, not two.
       states: { hour: ["active", "focused"], minute: ["active", "focused"], period: ["compact"], dialNumber: ["selected", "inner"], action: ["confirm"], popup: POPUP_PLACEMENT_STATES },
-      // The hour and minute *segments* are the containers the header lays out; each holds its own
-      // <input type=number> with an aria-label. Declaring the segments as controls would ask a
-      // renderer for a control at a level where none exists: the real input is one step further
-      // down and is not a declared part, so nothing in the contract can reach it.
-      elements: { hour: "group", minute: "group", dialog: "dialog" },
-      // The element the popup frames and the relation names: it carries `role="dialog"` and the
-      // modal semantics, which the positioning container does not.
-      classes: { control: ["mdy-timepicker__input"], toggle: ["mdy-timepicker__toggle"], popup: ["mdy-timepicker__popup", MDY_POPUP_CLASS], dialog: ["mdy-timepicker__dialog"], container: ["mdy-timepicker-container"], content: ["mdy-timepicker-content"], header: ["mdy-timepicker-header"], hour: ["mdy-timepicker-segment", "mdy-timepicker-segment--hour"], minute: ["mdy-timepicker-segment", "mdy-timepicker-segment--minute"], period: ["mdy-timepicker-period-toggle"], clock: ["mdy-timepicker-dial"], dialFace: ["mdy-timepicker-dial__face"], dialHand: ["mdy-timepicker-dial__hand"], dialNumber: ["mdy-timepicker-dial__number"], modeToggle: ["mdy-timepicker-mode-toggle"], actions: ["mdy-timepicker-actions"], action: ["mdy-timepicker-action-btn"] } ,
-      presentation: ["mdy-timepicker", "mdy-timepicker--dial", "mdy-timepicker__icon", "mdy-timepicker-dial-variant", "mdy-timepicker-fields", "mdy-timepicker-period-btn", "mdy-timepicker-period-btn--selected", "mdy-timepicker-segment-input", "mdy-timepicker-segment-input--readonly", "mdy-timepicker-separator", "mdy-timepicker-spacer", "mdy-timepicker-segment-label"] ,
+      // The state lives on the segment and the semantics on the control inside it. `--active` is
+      // which of the two the dial is editing, and it is painted on the container; the input carries
+      // the accessible name and takes the typing. Moving either onto the other breaks the half that
+      // is not moved.
+      classes: { control: ["mdy-timepicker__input"], toggle: ["mdy-timepicker__toggle"], popup: ["mdy-timepicker__popup", MDY_POPUP_CLASS], dialog: ["mdy-timepicker__dialog"], container: ["mdy-timepicker-container"], content: ["mdy-timepicker-content"], header: ["mdy-timepicker-header"], hour: ["mdy-timepicker-segment", "mdy-timepicker-segment--hour"], hourControl: ["mdy-timepicker-segment-input"], minute: ["mdy-timepicker-segment", "mdy-timepicker-segment--minute"], minuteControl: ["mdy-timepicker-segment-input"], period: ["mdy-timepicker-period-toggle"], clock: ["mdy-timepicker-dial"], dialFace: ["mdy-timepicker-dial__face"], dialHand: ["mdy-timepicker-dial__hand"], dialNumber: ["mdy-timepicker-dial__number"], modeToggle: ["mdy-timepicker-mode-toggle"], actions: ["mdy-timepicker-actions"], action: ["mdy-timepicker-action-btn"] } ,
+      presentation: ["mdy-timepicker", "mdy-timepicker--dial", "mdy-timepicker__icon", "mdy-timepicker-dial-variant", "mdy-timepicker-fields", "mdy-timepicker-period-btn", "mdy-timepicker-period-btn--selected", "mdy-timepicker-segment-input--readonly", "mdy-timepicker-separator", "mdy-timepicker-spacer", "mdy-timepicker-segment-label"] ,
       required: ["toggle"] }),
   file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"] },

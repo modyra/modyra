@@ -53,7 +53,9 @@ export function projectTimepickerFieldA11y(
   readonly trigger: MdyPartContract;
   readonly dialog: MdyPartContract;
   readonly hour: MdyPartContract;
+  readonly hourControl: MdyPartContract;
   readonly minute: MdyPartContract;
+  readonly minuteControl: MdyPartContract;
   readonly description: MdyPartContract;
   readonly error: MdyPartContract;
 } {
@@ -98,9 +100,17 @@ export function projectTimepickerFieldA11y(
       classes: [...MDY_WIDGET_CONTRACTS.timepicker.parts.dialog.classes],
       attributes: { role: "dialog", "aria-labelledby": labelId, "aria-modal": "true" },
     },
+    // The segment is the container the header lays out, and it is what carries the state: `active`
+    // is which of the two the dial is editing, `focused` which one has the caret. The value, the
+    // name and the spinbutton semantics belong to the control inside it — a segment that took them
+    // would announce a number nobody can reach.
     hour: {
-      id: hourId,
       classes: partClasses("timepicker", "hour", { focused: state.focusedField === "hour" }),
+      attributes: {},
+    },
+    hourControl: {
+      id: hourId,
+      classes: [...MDY_WIDGET_CONTRACTS.timepicker.parts.hourControl.classes],
       attributes: {
         role: "spinbutton",
         "aria-label": "Hour",
@@ -110,8 +120,12 @@ export function projectTimepickerFieldA11y(
       },
     },
     minute: {
-      id: minuteId,
       classes: partClasses("timepicker", "minute", { focused: state.focusedField === "minute" }),
+      attributes: {},
+    },
+    minuteControl: {
+      id: minuteId,
+      classes: [...MDY_WIDGET_CONTRACTS.timepicker.parts.minuteControl.classes],
       attributes: {
         role: "spinbutton",
         "aria-label": "Minute",

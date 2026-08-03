@@ -157,6 +157,27 @@ export const MDY_SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly str
   image: { tags: ["img", "svg"], roles: ["img"] },
 });
 
+/**
+ * The parts of `kind` that carry exactly the classes `part` carries, in declared order.
+ *
+ * Length 1 for almost every part, which is the uninteresting case: the part is alone under its
+ * selector and the first match is it. Where it is longer, the anatomy's order is the only thing
+ * that tells the members apart, and every resolver must read it the same way — two derivations of
+ * "which of these is which" would disagree the moment one of them was tightened.
+ */
+export function partsSharingClassesWith(kind: MdyWidgetKind, part: string): readonly string[] {
+  const definition = MDY_WIDGET_CONTRACTS[kind];
+  const parts = definition.parts as Readonly<Record<string, MdyPartContract | undefined>>;
+  const key = (name: string): string => [...(parts[name]?.classes ?? [])].sort().join(" ");
+  const target = key(part);
+  if (target === "") return [part];
+
+  return definition.structure.nodes
+    .filter((node) => key(node.part) === target)
+    .sort((a, b) => a.order - b.order)
+    .map((node) => node.part);
+}
+
 /** An `input[type=button]` is a button; a bare `input` is a control. Tags alone cannot say so. */
 function satisfiesSemanticElement(element: Element, semantic: string): boolean {
   const allowed = MDY_SEMANTIC_ELEMENTS[semantic];
@@ -339,7 +360,19 @@ export function inspectWidgetDom(
     const selector = (contract?.classes ?? []).map((className) => `.${CSS_ESCAPE(className)}`).join("");
     if (!selector) continue;
     const found = searchScope.flatMap((container) => Array.from(container.querySelectorAll(selector)));
-    if (found.length > 0) resolved.set(node.part, found);
+    if (found.length === 0) continue;
+
+    // A kind may declare two parts with identical classes — a date range's two controls, a
+    // timepicker's two segment inputs. No selector separates them, so taking every match would
+    // report each part twice and call a correct widget ambiguous. What separates them is already in
+    // the anatomy: their declared position among the parts that share their classes.
+    const sharing = partsSharingClassesWith(kind, node.part);
+    if (sharing.length > 1) {
+      const element = found[sharing.indexOf(node.part)];
+      if (element) resolved.set(node.part, [element]);
+      continue;
+    }
+    resolved.set(node.part, found);
   }
 
   /** Whether any ancestor of `part` was also declared absent. Containment is transitive. */

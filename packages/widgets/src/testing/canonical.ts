@@ -560,7 +560,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     timepicker: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "control", "toggle"]),
-      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "dialog", "container", "content", "header", "hour", "minute", "period", "clock", "dialFace", "dialHand", "dialNumber", "modeToggle", "actions", "action", "inlineError", "errors", "errorItem"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "dialog", "container", "content", "header", "hour", "hourControl", "minute", "minuteControl", "period", "clock", "dialFace", "dialHand", "dialNumber", "modeToggle", "actions", "action", "inlineError", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "control" },
         { from: "control", attribute: "aria-controls", to: null },
