@@ -19,12 +19,12 @@ to a green suite.
 **Status.** The headings below are the source of truth; this list is a convenience for a reader who
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J3
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J3, J4a
 - **Partly fixed** — C2 (derived, not painted), E2 (most scripts reachable), F (kind-keyed tables
   narrowed, part-keyed ones key-checked)
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — J1, J2, J4, K
+- **Open** — J1, J2, J4b, K
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -580,22 +580,62 @@ the renderer's projection puts `role="spinbutton"` on whatever element it is giv
 [ADR 0012](architecture/0012-a-choice-is-a-radio-by-role-or-by-tag.md). Removing the role as well
 produces `PART_ELEMENT:hourControl` against the real renderer, which is the check biting.
 
-## J4 — Two contract checks accept an answer from anywhere — **open**
+## J4a — A state satisfies from any part, not the one responsible for it — **fixed**
 
-**Observed.** `packages/widgets/src/testing/state-tests.ts` and
-`packages/widgets/src/testing/dom-tests.ts`.
+**Observed.** `packages/widgets/src/testing/state-tests.ts`.
 
-Both are deliberate breadth, and both are recorded here because deliberate breadth and an unnoticed
-hole look identical from a green suite.
+Where a widget exposes a state depends on its anatomy — a text field puts it on the input, a radio
+group on the group, a select on its trigger. Rather than guess, `state-tests.ts` accepted the
+attribute on *any* declared part. The claim it could make was therefore only "the widget exposes the
+state somewhere an assistive technology will meet it", not "on the right element". A widget that
+moved `aria-expanded` from its trigger to its root still passed.
 
-**State carriers are not narrowed per kind.** Where a widget exposes a state depends on its anatomy —
-a text field puts it on the input, a radio group on the group, a select on its trigger. Rather than
-guess, `state-tests.ts` accepts the attribute on *any* declared part. The claim it can make is
-therefore only "the widget exposes the state somewhere an assistive technology will meet it", not
-"on the right element". A widget that moved `aria-expanded` from its trigger to its root would still
-pass.
+**Fixed** by `ARIA_STATE_CARRIERS` in `packages/widgets/src/widget-states.ts`, read through the
+exported `stateCarriers(kind, state)`. `open` is **not** in the table: its carrier is the part that
+opens the overlay, which the contract already names as `MDY_POPUP_OPENERS[kind].opener`, and
+restating it would be a second derivation of one fact. The other three states are declared, because
+nothing existing answers for them — the catalogue's per-part `states:` is a *class* vocabulary
+(which element a theme paints `--disabled` on), and it names `inputWrapper` where `aria-disabled`
+goes on the control, `option` where it goes on the group, and nothing at all for `invalid` in
+sixteen kinds of seventeen. That was measured before the table was written, and it is why derivation
+was rejected.
 
-**A popup may legally frame nothing.** `dom-tests.ts` declares `popup: undefined` — a popup is a
+The check asserts **presence on every declared carrier**. Extras are still tolerated — see the
+remaining half below.
+
+### Three defects the narrowing exposed
+
+Every one of these was a renderer announcing a state where nothing listens, invisible while any part
+would do:
+
+- **Lit's multiselect** never set `aria-disabled` on its `searchButton`. The button is the opener,
+  the label names it, and it was the one element that did not say the field was unavailable.
+- **Angular's multiselect** had the same hole, with the attribute on the options group instead —
+  a container the user never lands on.
+- **`colors` had no correct carrier to name.** The first table said `control` *and* `hexInput`.
+  Angular's `control` is the native `<input type="color">`, which is deliberately `aria-hidden`: a
+  swatch with no readable text, kept for what a form post and an autofill see. Requiring ARIA on an
+  element removed from the accessibility tree is not a contract, and Plain's own source already said
+  which element is the real one — *"the hex field is the one a user types into, so it is the control
+  the state is about"*. The carrier is `hexInput` alone.
+
+The first two were fixed in the same change, because a red conformance run cannot be committed. That
+is a deviation from this plan's scope, which reserved renderer attribute placement for a finding
+rather than a fix; the fix is one attribute per renderer and is recorded here rather than only in the
+commit.
+
+### What is still not constrained
+
+**Extras are unconstrained.** The check asks whether the carrier announces the state; it does not ask
+whether anything *else* does. Plain's multiselect also puts `aria-disabled` on `option` and
+`listbox`, Lit's on `inputWrapper`, and both pass. `inspectUnsupportedStateAria` already rejects ARIA
+for a state a kind does not declare, so the uncovered case is narrow: a supported state announced in
+more places than the anatomy makes responsible. Whether that is noise or redundancy is a question
+about assistive-technology behaviour, not about the contract, and it is left open deliberately.
+
+## J4b — A popup may legally frame nothing — **open**
+
+**Observed.** `packages/widgets/src/testing/dom-tests.ts` declares `popup: undefined` — a popup is a
 positioning container, and its accessible semantics live on what it *contains* (the listbox, the
 grid, the dialog). Constraining the box itself would force a role that says nothing.
 
@@ -618,10 +658,9 @@ special popup rule — which is the shape a fix should follow rather than invent
 An earlier statement of this finding claimed containment was unchecked. That was wrong, and the
 fixture written to demonstrate it failed instead of passing, which is how it was caught.
 
-**Not decided.** Narrowing the state carrier to one part per kind requires a per-kind table the
-contract does not have; checking popup contents requires the contract to name what each kind's popup
-frames. Both are the same missing capability — anatomy expressed one level deeper than the current
-part list reaches — which is also J3's shape.
+**Not decided.** Checking popup contents requires the contract to name what each kind's popup frames.
+That is the same missing capability J3 and J4a both turned out to need — anatomy expressed one level
+deeper than the part list reaches — so the shape of the answer is known even where the answer is not.
 
 ## K — the accessibility projections have no classification path — **open**
 
@@ -637,6 +676,13 @@ for the only surface it can see.
 
 The change shipped as `major` on the author's reading rather than the tool's, which is the outcome
 the project instructions § *Standing authority* asks for when the two disagree. It is not a repeatable one.
+
+**It recurred immediately, and not on a projection.** Closing J4a added `stateCarriers` to the
+package root and left the catalogue untouched, so the differ reported `patch` for a change that adds
+public surface. The finding is therefore wider than its heading: *anything exported from the root
+that is not catalogue anatomy is invisible to classification* — the projections, this function, and
+whatever is added next. Two instances in one day is the argument for fixing it before 1.0 rather
+than adjudicating each one by hand.
 
 **Not decided.** A projection returns attribute maps whose values depend on state, so the snapshot
 cannot be the returned object; it would have to be the shape — which parts exist, and which attribute

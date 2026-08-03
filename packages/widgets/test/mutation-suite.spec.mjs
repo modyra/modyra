@@ -5,8 +5,10 @@
  * distinguish a gate from a rubber stamp. Each mutation below takes a conforming fixture, breaks
  * exactly one thing, and asserts the inspector says so *and says where*.
  *
- * The fourteen mutations are the acceptance checklist from the technical review, not a starting
- * point: they are numbered here as they are numbered there.
+ * Mutations 1–15 are the acceptance checklist from the technical review, numbered here as they are
+ * numbered there. 16–18 break what a widget *announces* rather than how it is shaped, and are judged
+ * by the state inspector; a mutation earns its place here by being one a renderer could plausibly
+ * ship, not by being one the inspector happens to catch.
  *
  * `EXPECTED_UNCAUGHT` is the ratchet. A mutation listed there is a known false green — the
  * inspector cannot see it yet — and the suite stays green so it can run on every build from today.
@@ -17,7 +19,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
-import { inspectWidgetDom } from "../dist/testing/index.js";
+import { inspectWidgetDom, inspectWidgetState } from "../dist/testing/index.js";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>");
 const document = dom.window.document;
@@ -125,7 +127,19 @@ function selectField({ id = `s${(fixtureSeq += 1)}`, optionCount = 3 } = {}) {
   };
 }
 
-/* ── The fourteen mutations, as data ──────────────────────────────────────────
+/**
+ * A date range that is genuinely disabled: both controls announce it, and every native control
+ * outside the popup carries the attribute that makes it true rather than merely claimed.
+ */
+function disabledDateRange() {
+  const fx = dateRange();
+  for (const part of ["startControl", "endControl", "toggle"]) fx.parts[part].setAttribute("disabled", "");
+  fx.parts.startControl.setAttribute("aria-disabled", "true");
+  fx.parts.endControl.setAttribute("aria-disabled", "true");
+  return fx;
+}
+
+/* ── The mutations, as data ───────────────────────────────────────────────────
  * Each `mutate` breaks exactly one thing and returns what to inspect. Returning a
  * new `parts`/`kind` lets a mutation change what the adapter *claims*, which is how
  * several of these hide from an inspector that trusts the caller's part map. */
@@ -293,6 +307,35 @@ const MUTATIONS = [
       };
     },
   },
+  {
+    n: 16, id: "state-aria-on-root", title: "state announced on the root instead of its carrier",
+    build: selectField, state: "open",
+    mutate: (fx) => {
+      // The widget still says `aria-expanded` — just nowhere a screen reader listening to the
+      // combobox will hear it. Saying it somewhere is not saying it.
+      fx.parts.trigger.removeAttribute("aria-expanded");
+      fx.root.setAttribute("aria-expanded", "true");
+      return { root: fx.root, kind: "select", state: "open", options: { parts: fx.parts, control: fx.parts.trigger } };
+    },
+  },
+  {
+    n: 17, id: "state-aria-on-one-of-two-carriers", title: "a two-ended widget announcing the state at one end",
+    build: disabledDateRange, state: "disabled",
+    mutate: (fx) => {
+      // Half a range is not a range: the end date stays announceable while the field claims to be
+      // unavailable, which is the shape a per-widget "somewhere" check cannot see.
+      fx.parts.endControl.removeAttribute("aria-disabled");
+      return { root: fx.root, kind: "daterange", state: "disabled", options: { parts: fx.parts } };
+    },
+  },
+  {
+    n: 18, id: "state-aria-wrong-value", title: "the carrier announcing the opposite of the state",
+    build: selectField, state: "open",
+    mutate: (fx) => {
+      fx.parts.trigger.setAttribute("aria-expanded", "false");
+      return { root: fx.root, kind: "select", state: "open", options: { parts: fx.parts, control: fx.parts.trigger } };
+    },
+  },
 ];
 
 /**
@@ -313,7 +356,12 @@ function runAll() {
     const fx = mutation.build();
     let issues;
     try {
-      issues = inspectWidgetDom(...(({ root, kind, options }) => [root, kind, options])(mutation.mutate(fx)));
+      const { root, kind, state, options } = mutation.mutate(fx);
+      // A mutation that names a state is about what the widget *announces*, not how it is shaped,
+      // so it is judged by the state inspector. Both report the same way: a code and a message.
+      issues = state
+        ? inspectWidgetState(root, kind, state, options)
+        : inspectWidgetDom(root, kind, options);
     } catch (error) {
       issues = [{ code: "THREW", part: "?", message: String(error && error.message) }];
     }
@@ -334,6 +382,24 @@ test("every unmutated fixture conforms", () => {
     assert.deepEqual(issues, [], `${name} should conform, got ${JSON.stringify(issues)}`);
     clearMounted();
   }
+});
+
+test("every unmutated fixture is in the state its mutation breaks", () => {
+  // Without this, a state mutation could be caught for a defect the fixture already had, and the
+  // suite would report a gate it does not have.
+  const open = selectField();
+  assert.deepEqual(
+    inspectWidgetState(open.root, "select", "open", { parts: open.parts, control: open.parts.trigger }),
+    [],
+  );
+  clearMounted();
+
+  const disabled = disabledDateRange();
+  assert.deepEqual(
+    inspectWidgetState(disabled.root, "daterange", "disabled", { parts: disabled.parts }),
+    [],
+  );
+  clearMounted();
 });
 
 test("the mutation table", () => {
@@ -361,11 +427,21 @@ for (const mutation of MUTATIONS) {
         `${label} was accepted. If this is deliberate, add "${mutation.id}" to EXPECTED_UNCAUGHT ` +
           `with a reason — but a mutation that stops being caught is normally a regression.`,
       );
-      // "Something is wrong" is not locatable. Every issue must name a rule and a part.
+      // "Something is wrong" is not locatable. Every issue must name a rule and the place it broke:
+      // a part for an anatomy issue, and for a state issue the part named inside the message, since
+      // a state issue is about a kind × state pair rather than about one part of the anatomy.
       for (const issue of issues) {
         assert.ok(issue.code, `${label}: issue has no code — ${JSON.stringify(issue)}`);
-        assert.ok(issue.part, `${label}: issue has no part — ${JSON.stringify(issue)}`);
         assert.ok(issue.message, `${label}: issue has no message — ${JSON.stringify(issue)}`);
+        if (mutation.state) {
+          assert.equal(issue.state, mutation.state, `${label}: issue names the wrong state`);
+          assert.match(
+            issue.message, /\bon [a-zA-Z]+/,
+            `${label}: a state issue must name the carrier — ${issue.message}`,
+          );
+        } else {
+          assert.ok(issue.part, `${label}: issue has no part — ${JSON.stringify(issue)}`);
+        }
       }
     } else {
       assert.equal(
