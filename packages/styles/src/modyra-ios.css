@@ -823,7 +823,18 @@
         border-radius: var(--mdy-corner-large);
         pointer-events: none;
         z-index: 0;
-        transition: left var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
+        /*
+         * The slide is a transform, not a moving `left`.
+         *
+         * `left` is a layout property: animating it relaid out this pill on every frame of a
+         * selection change, which is the one motion in this control a user sees constantly.
+         *
+         * The percentages are equivalent, and that is worth stating because they are measured
+         * against different boxes. `left` resolves against the track; `translateX` resolves against
+         * the pill's own width — and the pill is exactly one segment wide, so one segment of travel
+         * is `translateX(100%)`. Segment N sits at `(N - 1) * 100%`.
+         */
+        transition: transform var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
         background: var(--mdy-ios-bg);
         box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
     }
@@ -833,35 +844,35 @@
     }
 
     .mdy-segmented:has(> .mdy-segmented__button:nth-child(1).mdy-segmented__button--selected)::before {
-        left: 3px;
+        transform: translateX(0);
     }
 
     .mdy-segmented:has(> .mdy-segmented__button:nth-child(2).mdy-segmented__button--selected)::before {
-        left: calc(3px + 1 * (100% - 6px) / var(--mdy-segments-count, 3));
+        transform: translateX(100%);
     }
 
     .mdy-segmented:has(> .mdy-segmented__button:nth-child(3).mdy-segmented__button--selected)::before {
-        left: calc(3px + 2 * (100% - 6px) / var(--mdy-segments-count, 3));
+        transform: translateX(200%);
     }
 
     .mdy-segmented:has(> .mdy-segmented__button:nth-child(4).mdy-segmented__button--selected)::before {
-        left: calc(3px + 3 * (100% - 6px) / var(--mdy-segments-count, 3));
+        transform: translateX(300%);
     }
 
     .mdy-segmented:has(> .mdy-segmented__button:nth-child(5).mdy-segmented__button--selected)::before {
-        left: calc(3px + 4 * (100% - 6px) / var(--mdy-segments-count, 3));
+        transform: translateX(400%);
     }
 
     .mdy-segmented:has(> .mdy-segmented__button:nth-child(6).mdy-segmented__button--selected)::before {
-        left: calc(3px + 5 * (100% - 6px) / var(--mdy-segments-count, 3));
+        transform: translateX(500%);
     }
 
     .mdy-segmented:has(> .mdy-segmented__button:nth-child(7).mdy-segmented__button--selected)::before {
-        left: calc(3px + 6 * (100% - 6px) / var(--mdy-segments-count, 3));
+        transform: translateX(600%);
     }
 
     .mdy-segmented:has(> .mdy-segmented__button:nth-child(8).mdy-segmented__button--selected)::before {
-        left: calc(3px + 7 * (100% - 6px) / var(--mdy-segments-count, 3));
+        transform: translateX(700%);
     }
 
     .mdy-segmented__button {

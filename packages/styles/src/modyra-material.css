@@ -929,21 +929,18 @@
     }
 
     /*
-     * The floating label's rise, and only there.
+     * The inliner's padding does not animate, and does not need to.
      *
-     * `padding-top` is a layout property: animating it relays out this element and its children on
-     * every frame. It is scoped to `.mdy-floating-label` because that is the only variant whose
-     * padding ever changes — unscoped, every Material field paid for a transition that could not
-     * fire.
+     * What the eye follows when a label rises is the label, and that is a `transform` transition on
+     * `.mdy-label` itself, switched by `.mdy-label--filled`. The inliner's `padding-top` is a
+     * different thing: it is set once, from `--mdy-fl-pad-top`, and only on a floating-label colours
+     * field. Every input to that value — `--mdy-fl-active-y`, `--mdy-fl-label-height`,
+     * `--mdy-fl-gap-mid` — is a constant of the density, not of the field's state, so the property
+     * holds one value for the life of the field.
      *
-     * The remaining cost is real and not fixed here: the variant that *does* animate still animates
-     * a layout property. Moving it to a transform means the space is reserved rather than grown,
-     * which is a change to how the floating label computes its geometry across four themes and is
-     * verified by eye, not by a test. That is its own batch.
+     * A transition on it therefore bought no motion a user has ever seen, and asked the browser to
+     * be ready to relayout this element and its children on a property that does not move.
      */
-    .mdy-floating-label .mdy-input-wrapper__inliner {
-        transition: padding-top var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
-    }
 
     .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-input-wrapper__inliner {
         padding-top: var(--mdy-fl-pad-top);
