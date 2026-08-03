@@ -169,9 +169,9 @@
         pointer-events: none;
     }
 
-    /* The default theme's arrow is a box for an <svg> the Angular and Lit renderers supply. A
-       renderer without an icon set leaves the element empty, and `:empty` is exactly that case —
-       the caret is then drawn from a rotated corner, for any adapter, without naming one. */
+    /* The default theme's arrow is a box for an <svg> the renderer supplies. A renderer without an
+       icon set leaves the element empty, and `:empty` is exactly that case — the caret is then
+       drawn from a rotated corner, for any renderer, without naming one. */
     .mdy-select__arrow:empty::after {
         content: "";
         width: 0.5rem;

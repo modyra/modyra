@@ -7,12 +7,11 @@
  * mdy-input-wrapper, …) get the shipped look, and no Studio rule is overridden by it.
  *
  * The theme is modyra-modern.css, not modyra.css. modyra.css resolves every value through a
- * `--mdy-sys-*` primitive that only modyra-base.css declares — loaded alone it applied its
- * structure (flex, a 56px min-height) with no colour at all, which is what forced the
- * `.plain-canvas-form .mdy-input-wrapper` stopgaps studio.css used to carry. It also styles the
- * control with `border: none !important`, and `!important` inside a layer beats unlayered CSS,
- * so those stopgaps could not have reinstated a control's frame anyway. modyra-modern.css is
- * self-contained and uses no `!important`, so the precedence story above actually holds.
+ * `--mdy-sys-*` primitive that only modyra-base.css declares, so loaded alone it applies its
+ * structure (flex, a 56px min-height) with no colour at all. It also styles the control with
+ * `border: none !important`, and `!important` inside a layer beats unlayered CSS, so no Studio
+ * rule could reinstate a control's frame over it. modyra-modern.css is self-contained and uses no
+ * `!important`, so the precedence story above holds.
  */
 import { readFileSync, writeFileSync, mkdirSync, cpSync } from "node:fs";
 import { fileURLToPath } from "node:url";
