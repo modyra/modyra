@@ -46,10 +46,10 @@ export interface OverlayPanelState {
 /**
  * What this controller is told, in its own words.
  *
- * It no longer extends the anchoring options: the contract calls the same two things `preferred` and
- * `pointerX`, and this file has always called them `preferredPosition` and `clickX`. Naming them
- * here and translating at the one call site is honest about the difference; inheriting and renaming
- * would leave two half-matching vocabularies in the same type.
+ * Declared standalone rather than extending the anchoring options: the contract calls two of these
+ * `preferred` and `pointerX`, and this controller calls them `preferredPosition` and `clickX`.
+ * Naming them here and translating at the one call site is honest about the difference; inheriting
+ * and renaming would leave two half-matching vocabularies in the same type.
  */
 interface OverlayStateConfig {
   /** Smallest usable space before the popup flips to the other side or goes modal. */

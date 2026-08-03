@@ -4,9 +4,9 @@
  * Angular UI primitives and built-in renderers for modyra forms.
  * This entry point intentionally excludes headless adapter contracts.
  *
- * NOTE: this secondary entrypoint re-exports from @modyra/angular
- * intentionally. ng-packagr secondary builds enforce rootDir boundaries,
- * so direct imports from ../../src/... are not viable here.
+ * This secondary entrypoint re-exports from @modyra/angular rather than
+ * reaching into ../../src/...: ng-packagr secondary builds enforce rootDir
+ * boundaries, so a direct import across them does not build.
  */
 
 // Form containers

@@ -344,8 +344,9 @@ export class MdySelectComponent<TValue = string>
   /**
    * Where the popup ended up, both halves from the contract.
    *
-   * The edge used to be a hardcoded `[class.mdy-select__dropdown--right]` here — the catalog's own
-   * spelling, written out by hand, which is how it stayed correct and unauditable at the same time.
+   * Both halves are asked for rather than spelled. Writing `mdy-select__dropdown--right` by hand
+   * would duplicate the catalog's own spelling — correct and unauditable at the same time, since
+   * nothing then connects the class to the contract that declares it.
    */
   protected readonly placementClass = computed(() => [
     popupPlacementClass("select", this.position()),

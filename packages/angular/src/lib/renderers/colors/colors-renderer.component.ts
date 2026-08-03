@@ -66,17 +66,14 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             ></div>
           </button>
           <!--
-            The native colour input was *inside* the button above: an invisible type=color
-            stretched over it, aria-hidden, tabindex -1, with a click handler that opened this
-            renderer's own popup and called preventDefault so the OS picker never appeared. A
-            focusable control inside a focusable control is nested-interactive, and serious - the
-            button beneath it already carried the same handler, the same disabled state and the
-            accessible name, so what the input added was the defect.
+            The native colour input sits outside the button, never inside it. A focusable control
+            stretched over another focusable control is nested-interactive: the button already
+            carries the handler, the disabled state and the accessible name, so an invisible
+            type=color on top of it adds a defect and nothing else.
 
-            It is kept, outside the button, because it is what a form post and an autofill see: the
-            picker itself is this renderer's popup, and the HEX field beside it is the control a
-            user types into. The foundation stops it taking a pointer, so it is no longer the
-            invisible click surface it used to be.
+            It is kept because it is what a form post and an autofill see. The picker itself is this
+            renderer's popup and the HEX field beside it is the control a user types into, so the
+            foundation stops this input taking a pointer.
           -->
           <input
             [id]="fieldId"

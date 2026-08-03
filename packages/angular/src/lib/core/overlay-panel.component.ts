@@ -93,9 +93,9 @@ export class MdyOverlayPanelComponent {
    * The catalog's placement and alignment states for this popup, or nothing where it sits in the
    * ordinary place and hangs from the ordinary edge.
    *
-   * The edge used to be `mdy-overlay-panel--right`, spelled here rather than asked for — a third
-   * name for a class the catalog already declares on every popup, and one no stylesheet matches.
-   * Both halves of the decision now come from the same place the placement does.
+   * Both halves come from the catalog. Spelling the edge here as `mdy-overlay-panel--right` would
+   * mint a third name for a class the catalog already declares on every popup — and one no
+   * stylesheet matches, so it would paint nothing while looking correct.
    */
   protected readonly placementClass = computed(() => {
     const kind = this.kind();

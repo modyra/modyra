@@ -111,8 +111,8 @@ export interface MdyPaletteModel {
  *
  * `brand` is the default and the one every theme gets unless it says otherwise. Its offsets are
  * round numbers — +30° and +90° — deliberately close to, but not identical with, the +24°/+96° the
- * stock palette measured at before this existed. The stock colours therefore shift slightly, and
- * that shift is a decision rather than a regression.
+ * stock palette measures at. The resulting slight shift in the stock colours is a decision, not a
+ * regression: a round number that can be reasoned about beats a measurement nobody can derive.
  */
 export const MDY_PALETTE_MODELS: Readonly<Record<string, MdyPaletteModel>> = Object.freeze({
   brand: Object.freeze({
