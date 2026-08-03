@@ -2,18 +2,24 @@
 /**
  * The documentation says things that can be checked, so they are checked.
  *
- * Two failures this repository has actually had, both of which read as fine:
+ * Five failures this repository has actually had, every one of which reads as fine on the page:
  *
- *   1. **A link to a file that never existed.** Nine of them at once — seven in the first paragraph
- *      of the seven adapter examples, pointing at a shared page nobody had written. A markdown link
- *      is not resolved by anything at build time, so a dead one survives every suite.
+ *   1. **A link to a file that never existed.** Nine at once — seven in the first paragraph of the
+ *      seven adapter examples, pointing at a shared page nobody had written. Nothing resolves a
+ *      markdown link at build time, so a dead one survives every suite. A link that resolves only
+ *      on the author's disk counts too: a git-ignored target is absent from a fresh clone.
  *   2. **A summary contradicting the document it summarises.** `contract-gaps.md` carries a status
  *      list of which findings are open; it drifted from the headings twice, the second time in the
  *      very commit whose message said it had been corrected. It listed four fixed findings as open
  *      and named a section, `C6`, that has never existed.
+ *   3. **A page nothing links to.** Eleven of forty-eight, including every decision record.
+ *   4. **An upstream README naming its own consumer**, which inverts the dependency direction in
+ *      prose while the import graph stays clean.
+ *   5. **A published package with no licence on its npm page.** Four of twelve.
  *
- * Both are the same shape: prose asserting something about the repository, with nothing to notice
- * when the repository moves. This checks the two mechanically.
+ * All five are one shape: prose asserting something about the repository, with nothing to notice
+ * when the repository moves. Each is checked mechanically here, and each check is mutation-tested —
+ * a check nobody has watched fail is only a claim that it works.
  *
  *   node scripts/audit-docs.mjs           # report
  *   node scripts/audit-docs.mjs --check   # exit 1 on any failure
@@ -179,6 +185,64 @@ function orphanedPages() {
 
 const orphans = orphanedPages();
 
+// ─── 4. An upstream package does not name its dependents ─────────────────────
+
+/**
+ * `@modyra/core` and `@modyra/widgets` are consumed by the adapters; they do not know them.
+ *
+ * The import graph is already checked. Prose is not, and a README naming a dependent inverts the
+ * responsibility just as surely — it tells a reader the contract is defined by one of its consumers,
+ * and it goes stale the moment the set of consumers changes.
+ *
+ * Naming a *framework* stays legitimate: "Angular Signals" as an example of fine-grained reactivity
+ * describes the landscape, not a dependency. Only the `@modyra/…` package names are the inversion.
+ */
+function dependentsNamedUpstream() {
+  const upstream = ["core", "widgets"];
+  const found = [];
+  for (const name of upstream) {
+    const file = join(ROOT, `packages/${name}/README.md`);
+    if (!existsSync(file)) continue;
+    readFileSync(file, "utf8").split("\n").forEach((line, index) => {
+      for (const [, dependent] of line.matchAll(/@modyra\/([a-z-]+)/g)) {
+        if (!upstream.includes(dependent)) {
+          found.push(`packages/${name}/README.md:${index + 1} names @modyra/${dependent}, which consumes it`);
+        }
+      }
+    });
+  }
+  return found;
+}
+
+const inverted = dependentsNamedUpstream();
+
+// ─── 5. Every published package states its licence ───────────────────────────
+
+/**
+ * A package README is its npm listing, read by people deciding whether they may use it. Four of the
+ * twelve published packages had no licence section at all — the repository is MIT, but nothing on
+ * the page said so.
+ *
+ * Private workspace packages are exempt: they are never rendered anywhere.
+ */
+function packagesMissingLicence() {
+  const missing = [];
+  for (const dir of readdirSync(join(ROOT, "packages"))) {
+    const manifest = join(ROOT, "packages", dir, "package.json");
+    if (!existsSync(manifest)) continue;
+    if (JSON.parse(readFileSync(manifest, "utf8")).private) continue;
+
+    const readme = join(ROOT, "packages", dir, "README.md");
+    if (!existsSync(readme)) missing.push(`packages/${dir} is published with no README`);
+    else if (!/^## License$/m.test(readFileSync(readme, "utf8"))) {
+      missing.push(`packages/${dir}/README.md has no "## License" section`);
+    }
+  }
+  return missing;
+}
+
+const unlicensed = packagesMissingLicence();
+
 // ─── Report ──────────────────────────────────────────────────────────────────
 
 console.log("# Documentation checks\n");
@@ -192,8 +256,14 @@ for (const problem of gapProblems) console.log(`  ${problem}`);
 console.log(`\ndocs/ pages unreachable from docs/README.md: ${orphans.length}`);
 for (const page of orphans) console.log(`  ${page}`);
 
+console.log(`\nUpstream READMEs naming a dependent: ${inverted.length}`);
+for (const problem of inverted) console.log(`  ${problem}`);
+
+console.log(`\nPublished packages without a licence section: ${unlicensed.length}`);
+for (const problem of unlicensed) console.log(`  ${problem}`);
+
 if (!check) process.exit(0);
-if (brokenLinks.length || gapProblems.length || orphans.length) {
+if (brokenLinks.length || gapProblems.length || orphans.length || inverted.length || unlicensed.length) {
   console.error("\nDOCUMENTATION CHECKS FAILED");
   process.exit(1);
 }
