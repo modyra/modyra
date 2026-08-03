@@ -36,6 +36,11 @@ const CONTROL_ROLES = new Set([
  * This is what a screen reader is handed, and it is read through CDP rather than by asserting on
  * each control in turn: a per-control loop with retries takes longer than the test timeout on a page
  * with twenty fields, which is a harness limit reported as a renderer defect.
+ *
+ * **Chromium only.** No other engine exposes a computed accessibility tree to an automation client,
+ * and a name computed by JavaScript would be this repository's opinion of the algorithm rather than
+ * a browser's. Where a spec's other half is engine-independent it keeps running everywhere; only the
+ * tree assertions stop.
  */
 async function accessibilityTree(page: import("@playwright/test").Page) {
   const cdp = await page.context().newCDPSession(page);
@@ -44,7 +49,9 @@ async function accessibilityTree(page: import("@playwright/test").Page) {
   return nodes.filter((node) => !node.ignored && CONTROL_ROLES.has(node.role?.value as string));
 }
 
-test("every operable control has an accessible name", async ({ page }) => {
+test("every operable control has an accessible name", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "the computed accessibility tree is only readable in Chromium");
+
   // A name can come from a label element, a `labelledby` reference or the control's own content, and
   // only the computed value says whether any of them arrived. A control with none is announced as
   // its role alone — "edit", "button" — which says what it is and nothing about what it is for.
@@ -57,7 +64,7 @@ test("every operable control has an accessible name", async ({ page }) => {
   expect(unnamed).toEqual([]);
 });
 
-test("a control that claims a description has one", async ({ page }) => {
+test("a control that claims a description has one", async ({ page, browserName }) => {
   // Two halves of one question. `aria-describedby` naming an element that exists is what the
   // attribute audits check; whether that element contributes any text is what decides if anything is
   // announced, and a reference to a missing or empty element computes to no description at all.
@@ -81,6 +88,10 @@ test("a control that claims a description has one", async ({ page }) => {
         && (element.textContent ?? "").trim()
         && document.querySelector(`[aria-describedby~="${element.id}"]`)).length);
   if (describing === 0) test.skip(true, "nothing on this page describes a control yet");
+
+  // The dangling-reference half above is the DOM's own business and runs on every engine. Only the
+  // question "did it reach the tree" needs a tree to read.
+  test.skip(browserName !== "chromium", "the computed accessibility tree is only readable in Chromium");
 
   const controls = await accessibilityTree(page);
   const described = controls.filter((node) => (node.description?.value ?? "").trim());
