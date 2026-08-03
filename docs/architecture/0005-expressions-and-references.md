@@ -78,6 +78,19 @@ interprets it directly. That is two implementations of one semantics, so
 comparison's boundary, not only either side of it — and requires them to agree. A divergence means a
 generated form would validate differently from the one the designer previewed.
 
+## Verification
+
+- `packages/studio-codegen/test/expression-compiler.test.mjs` — every operator, compiled to source.
+- `packages/studio-contract/test/expression.test.mjs` — the id-to-path boundary, and core's
+  interpreter held against `studio-codegen`'s compiler on each comparison's boundary value.
+- `packages/core/test/expression.test.mjs` — the operator set as the public contract carries it.
+
+## Security and privacy
+
+The operand set excludes code strings and closures by construction, which is the point of the
+decision rather than a side effect. See [ADR 0007](0007-expressions-are-data.md) for the full threat
+model and the residual `matches` exposure.
+
 ## Rejection-test answers
 
 - **Java addable without canvas model change?** Yes — `StudioExpression`

@@ -39,6 +39,24 @@ code shapes.
 - Adding a wholly new output shape (e.g. a future "form JSON schema" export)
   only requires a new `Project -> X` mapping function, no canvas change.
 
+## Verification
+
+- `packages/studio-contract/test/compile.test.mjs` — the checkout project compiles to a contract that
+  **strict-parses with the real core parser**, which is the actual guarantee: the compiler is not
+  trusted about its own output.
+- `npm run test:studio` — round-trip is exercised as project JSON to project JSON only.
+- `scripts/audit-package-independence.mjs` — the editor never reaches a target implementation.
+
+Unguarded: nothing checks that `targets` holds only options and never model data. It is a shape
+convention, and a target could smuggle model data through it without failing anything.
+
+## Security and privacy
+
+A project file is untrusted input — it is saved, shared and imported. It is parsed as data and never
+executed, and Studio never reverse-engineers a project from arbitrary source, which keeps a whole
+class of "import this file" attack out of scope. Compiled contracts inherit the guarantees of
+[ADR 0007](0007-expressions-are-data.md).
+
 ## Rejection-test answers (plan section 2)
 
 - **Java addable without canvas model change?** Yes — Java consumes

@@ -41,6 +41,21 @@ reference that points at it.
   (diagnostic, not silent corruption) — tracked as a diagnostics requirement
   (plan section 9, "broken reference").
 
+## Verification
+
+- `packages/studio-model/test/` — a rename or move changes the derived path and leaves every
+  `NodeRef` intact; sibling-name uniqueness and reserved names are rejected at the command boundary.
+- `packages/studio-contract/test/expression.test.mjs` — ids do not survive export: a compiled
+  condition contains paths, and a reference to a deleted node throws rather than compiling to a
+  plausible path.
+
+## Security and privacy
+
+Path derivation must be unambiguous, which is why sibling names are unique and reserved names are
+rejected: a duplicate name would make a path resolve to a field the author did not mean, and a
+reserved one (`__proto__` and its relatives) is a prototype-pollution vector when a path is used to
+write into an object. Both are refused at the command boundary rather than at read time.
+
 ## Rejection-test answers
 
 - **Java addable without canvas model change?** Yes — IDs and derived paths

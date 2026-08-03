@@ -55,6 +55,22 @@ would mean forking or branching the canvas — which R5/R12 explicitly forbid.
   change proposed through ADR 0001/0002, not a special case bolted onto the
   target API.
 
+## Verification
+
+- `npm run test:studio` — each target's conformance fixture, including the stub signatures every
+  `ImplementationRef` in `mode: "stub"` obliges it to emit.
+- `scripts/audit-package-independence.mjs` — no target package is imported eagerly by editor code,
+  and the forbidden dependency edges are enforced against the real import graph rather than asserted
+  in prose.
+
+## Security and privacy
+
+Generated code is written through a structured IR and printed, never assembled from ad hoc string
+templates. That is a correctness decision first and an injection decision second: a project-supplied
+label, name or pattern reaching a template by concatenation is how attacker-authored content becomes
+attacker-authored source in someone's build. Targets load lazily, so untrusted target code is not
+executed until a user chooses that target.
+
 ## Rejection-test answers
 
 - **Java addable without canvas model change?** Yes — this ADR's entire
