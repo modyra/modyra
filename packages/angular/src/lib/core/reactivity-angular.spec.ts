@@ -4,14 +4,12 @@ import { MdyDiagnostic, MdyUnsupportedCapabilityError } from "@modyra/core";
 import { angularReactivity } from "./reactivity-angular";
 
 /**
- * Milestone 4 (piano-modyra-reactivity-adapter-api.md §9): no dedicated
- * coverage existed for this adapter before this batch (CodeGraph flagged it
- * "no covering tests found"). Covers the hardening this milestone adds:
- * declared capabilities, a typed error instead of a silent no-op effect, and
- * real equality propagation — plus the pre-existing signal/computed/effect
- * behavior the shared `runReactivityContract` suite checks for other
- * adapters (not reusable here as-is: it's written against Node's
- * `node:test`, while this package's whole suite runs under Jest).
+ * The Angular reactivity adapter's own coverage: declared capabilities, a typed error rather than a
+ * silent no-op effect, and real equality propagation — plus the signal/computed/effect behaviour
+ * the shared `runReactivityContract` suite checks for other adapters.
+ *
+ * That shared suite is not reused here: it is written against Node's `node:test`, while this
+ * package's whole suite runs under Jest.
  */
 describe("angularReactivity", () => {
   describe("with an Injector", () => {

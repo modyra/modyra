@@ -81,10 +81,10 @@ test("a lock keeps the corner but re-measures the height", () => {
 });
 
 /* ── The policy itself ────────────────────────────────────────────────────────────────────────
- * `stabilizeOverlayPlacement` is what every adapter's popup does on scroll, and until now it was
- * only ever reached through `anchorOverlay`'s `current:` door. The tests below call it directly,
- * because the three facts its docstring claims — the shape is held, `fits` is not, and a modal is
- * not un-modalled — are each a separate branch and none of them was asserted.
+ * `stabilizeOverlayPlacement` is what every adapter's popup does on scroll. The tests below call it
+ * directly rather than through `anchorOverlay`'s `current:` door, because the three facts its
+ * docstring claims — the shape is held, `fits` is not, and a modal is not un-modalled — are each a
+ * separate branch, and reaching it indirectly exercises only one of them.
  */
 
 /** The same control the anchoring tests use, as the geometry the policy is given. */

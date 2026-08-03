@@ -93,10 +93,10 @@ test("a read-only multiselect still refuses to be written, and says so correctly
 /**
  * The declared behaviour is checked against the engine that implements it.
  *
- * `MDY_WIDGET_STATE_CONTRACTS` now says what `disabled` and `readonly` mean for the *form* —
- * submitted, validated, reachable — and not only what they mean for the DOM. A declaration nothing
- * compares against is a comment with a type on it, and the whole reason this batch exists is that
- * Modyra rendered the difference between these two states for months while behaving identically.
+ * `MDY_WIDGET_STATE_CONTRACTS` says what `disabled` and `readonly` mean for the *form* — submitted,
+ * validated, reachable — and not only what they mean for the DOM. A declaration nothing compares
+ * against is a comment with a type on it: the two states can render differently while behaving
+ * identically, and nothing notices.
  *
  * So the contract is the source of truth here and the engine is the thing under test. If someone
  * changes either, this fails.

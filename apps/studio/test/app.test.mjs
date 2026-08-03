@@ -16,9 +16,8 @@ test("build emits a separate code-generation worker bundle", () => {
   assert.ok(files.includes("codegen-worker.js"), "missing dist/codegen-worker.js");
   const main = readFileSync(new URL("studio.js", dist), "utf8");
   const worker = readFileSync(new URL("codegen-worker.js", dist), "utf8");
-  // typescript (the one dependency this batch adds) must only ever load in the worker bundle —
-  // if the main entry pulled it in too, the whole point of the split (small main bundle,
-  // heavy compiler off the main thread) would be defeated.
+  // typescript must only ever load in the worker bundle. If the main entry pulled it in too, the
+  // split would buy nothing: the point is a small main bundle with the compiler off the main thread.
   assert.doesNotMatch(main, /createLanguageService|getPreEmitDiagnostics|ts\.transpileModule/);
   assert.match(worker, /transpileModule/);
   assert.match(main, /new Worker\(/, "main.ts should construct the codegen Worker");

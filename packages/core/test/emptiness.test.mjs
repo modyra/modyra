@@ -1,11 +1,10 @@
 /**
  * What counts as empty, and what counts as incomplete.
  *
- * These are two different questions and they used to be one. `required` only understood strings,
- * arrays and nullish values, so every kind whose empty value is another shape escaped it: an
- * unchecked required checkbox and a required range with both ends unset both reported themselves
- * **valid**. Every adapter ledgered that independently in their state matrices, which
- * is what identified it as a validation defect rather than a rendering one.
+ * These are two different questions. A `required` that understands only strings, arrays and nullish
+ * values lets every kind whose empty value is another shape escape it: an unchecked required
+ * checkbox and a required range with both ends unset both report themselves **valid**. That is a
+ * validation defect, not a rendering one — every adapter shows it identically.
  *
  * Nothing rejected a *half-set* range at all, and that is not the same defect. A range is one value
  * with two halves; half of one names no interval, so it is wrong whether or not the field is
@@ -101,8 +100,8 @@ test("a required daterange rejects empty and half-set for different reasons", ()
 
 /* ── What a kind holds when it holds nothing ────────────────────────────────────
  * The empty value is the other half of the same question: `required` can only reject what it is
- * given, so a kind whose empty value is a *usable* one is a kind `required` cannot police. This
- * table used to live in a renderer, where it answered only for the forms that renderer built.
+ * given, so a kind whose empty value is a *usable* one is a kind `required` cannot police. The table
+ * belongs in the engine: held by a renderer, it would answer only for the forms that renderer built.
  */
 test("every kind has an empty value, and it is not a value the user might mean", () => {
   const emptyFor = (kind, extra = {}) => mdyEmptyValueFor({ name: "f", kind, ...extra });

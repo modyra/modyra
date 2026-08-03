@@ -302,11 +302,6 @@ const MUTATIONS = [
 const EXPECTED_UNCAUGHT = new Set([
   // Empty. Every one of the fifteen is caught, each by a rule that names the part it broke.
   //
-  // Closed 2026-07-31 by task 06: 14 (ABSENT_PART_PRESENT), 11 (PART_CARDINALITY).
-  // Closed 2026-07-31 by task 07: 2 (PART_CLASS_MISSING, once the shell parts declared their
-  // classes), 5 and 9 (ARIA_FOREIGN_REF / PART_NOT_OWNED), 6 (ID_DUPLICATE), 7 (the reference walk
-  // learned `for`), 10 (ARIA_STATE_NOT_APPLIED).
-  //
   // Keep it empty. A mutation that stops being caught is a regression, and the assertion below
   // will say so.
 ]);
