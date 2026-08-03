@@ -2,7 +2,7 @@
 
 Headless widget controllers and the universal interaction/accessibility
 contract shared by every [Modyra](https://github.com/modyra/modyra)
-renderer (Angular components, Lit elements, your own design system).
+renderer — framework components, custom elements, or your own design system.
 
 Zero dependencies, framework-agnostic, DOM-free: controllers operate on
 state and emit **commands**; renderers translate commands into DOM changes.
@@ -111,11 +111,17 @@ checker data.**
 
 ## Why it exists
 
-Every Modyra adapter renders the same controls. Encoding keyboard
-navigation, focus management, ARIA wiring and overlay behavior **once** —
-in a framework-free layer — is what keeps the Angular and Lit catalogs (and
-any third-party renderer) behaviorally identical, verified by the theme
-class parity check and the conformance kit.
+Every renderer draws the same controls. Encoding keyboard navigation, focus
+management, ARIA wiring and overlay behavior **once**, in a framework-free
+layer, is what makes two renderers behaviorally identical rather than
+coincidentally similar — and it is what the conformance kit and the theme
+class parity check verify.
+
+This package is the authoritative UI contract: controller state, intents,
+parts, commands, typed structural anatomy and accessibility projection. The
+anatomy is metadata, **not a virtual DOM** — it says what a part is and where
+it sits, never how to create it. A renderer implements the contract; it does
+not copy another renderer.
 
 ## Usage
 
@@ -129,23 +135,19 @@ import { runCommandExecutionTests } from "@modyra/widgets/testing";
 ```
 
 See the [UI toolkit guide](https://github.com/modyra/modyra/blob/main/docs/guides/ui-toolkit.md)
-for the renderer-side contract (theme classes, parts, CSS tokens) and the
-[Angular renderers](https://github.com/modyra/modyra/tree/main/packages/angular/src/lib/renderers)
-for a complete implementation.
+for the renderer-side contract: theme classes, parts and CSS tokens.
+
+## Verifying a renderer against it
+
+```bash
+npm run test:widget-contract   # the committed semantic baseline
+npx modyra-conformance <config>  # a renderer's own DOM, states and equivalence
+```
+
+The baseline is a golden surface: a deliberate semantic change requires
+regenerating and reviewing it explicitly, so a silent one fails instead of
+being absorbed.
 
 ## License
 
 MIT © [Lorenzo Muscherà](https://github.com/lorenzomusche)
-
-
-## Framework-agnostic UI contract
-
-`@modyra/widgets` is the authoritative UI contract for Modyra presenters. Contract version 1 adds typed structural anatomy alongside controller state, intents, parts, commands and accessibility projection. The anatomy is metadata, not a virtual DOM. Angular is recorded as the protected golden semantic surface while its existing UI is migrated to consume this contract. Lit and Plain must subsequently implement the same contract rather than copying Angular internals.
-
-The committed Angular baseline is verified with:
-
-```bash
-npm run test:widget-contract
-```
-
-A deliberate Angular semantic UI change requires regenerating and reviewing the baseline explicitly.

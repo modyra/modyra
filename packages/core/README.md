@@ -102,9 +102,10 @@ import { createForm, vanillaReactivity } from "@modyra/core";
 const form = createForm(schema); // reactivity defaults to vanillaReactivity()
 ```
 
-Framework adapters (`@modyra/angular`, `@modyra/react`, `@modyra/vue`,
-`@modyra/lit`) pass their own implementation so form state participates
-natively in the host's change detection.
+A framework adapter passes its own implementation, so form state
+participates natively in the host's change detection. Which adapters exist,
+and how completely each implements the contract, is published in the
+[reactivity capability matrix](https://github.com/modyra/modyra/blob/main/docs/reactivity-capability-matrix.md).
 
 ## Security notes
 
