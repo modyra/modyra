@@ -1652,7 +1652,7 @@
         "listbox": {
           "element": "listbox",
           "parent": "popup",
-          "optional": true,
+          "optional": false,
           "repeated": false,
           "role": "listbox",
           "classes": [
@@ -2017,7 +2017,7 @@
         "listbox": {
           "element": "group",
           "parent": "popup",
-          "optional": true,
+          "optional": false,
           "repeated": false,
           "role": null,
           "classes": [
@@ -2849,7 +2849,7 @@
         "container": {
           "element": "group",
           "parent": "popup",
-          "optional": true,
+          "optional": false,
           "repeated": false,
           "role": null,
           "classes": [
@@ -3420,7 +3420,7 @@
         "presets": {
           "element": "listbox",
           "parent": "popup",
-          "optional": true,
+          "optional": false,
           "repeated": false,
           "role": "listbox",
           "classes": [

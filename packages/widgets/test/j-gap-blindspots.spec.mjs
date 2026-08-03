@@ -240,34 +240,106 @@ test("J4a — a carrier is declared for every kind and state that carries ARIA",
 
 // ─── J4b: a popup may legally frame nothing ──────────────────────────────────
 
-test("J4b — four of six overlay kinds may render an empty popup and conform", () => {
-  // Containment is *not* the gap: `PART_NOT_CONTAINED` already rejects a part that renders outside
-  // its declared parent, listbox-inside-popup included. What is missing is **presence** — no part
-  // inside these popups is required, so a popup framing nothing violates nothing.
+test("J4b — every overlay kind requires its popup to frame something", () => {
+  // Containment was never the gap: `PART_NOT_CONTAINED` already rejects a part that renders outside
+  // its declared parent, listbox-inside-popup included. What was missing is **presence** — no part
+  // inside four of these popups was required, so a popup framing nothing violated nothing.
   //
   // Asserted against the contract rather than against hand-built DOM, because the property is a
-  // fact about the catalogue: an instance would only be one witness to it.
+  // fact about the catalogue: an instance would only be one witness to it. The mechanism is the
+  // ordinary `required` list, which `datepicker` already used for its calendar — not a second
+  // popup-contents vocabulary saying the same thing in different words.
   const emptyPopupIsLegal = [];
+  const frames = {};
   for (const [kind, definition] of Object.entries(MDY_WIDGET_CONTRACTS)) {
     if (!definition.capabilities.overlay) continue;
     const inPopup = definition.structure.nodes.filter((node) => node.parent === "popup");
     if (inPopup.every((node) => node.optional)) emptyPopupIsLegal.push(kind);
+    frames[kind] = inPopup.filter((node) => !node.optional).map((node) => node.part);
   }
 
-  // Plan 42 inverts this: each overlay kind declares the semantic root its popup must contain, and
-  // this list shrinks to empty.
+  assert.deepEqual(emptyPopupIsLegal, [], "no overlay kind may frame nothing");
+  assert.deepEqual(frames, {
+    select: ["listbox"],
+    multiselect: ["listbox"],
+    datepicker: ["calendar"],
+    daterange: ["calendar"],
+    timepicker: ["container"],
+    colors: ["presets"],
+  });
+});
+
+/**
+ * What the inspector said about the popup's contents, and nothing else.
+ *
+ * Breaking the list also breaks what refers to it — the trigger's `aria-controls` dangles the moment
+ * there is no list to point at — and those consequences are real findings that belong to other
+ * rules. Each negative below is about one of them, so each reads only its own.
+ */
+function codesFor(issues, ...parts) {
+  return issues.filter((issue) => parts.includes(issue.part)).map((issue) => `${issue.code}:${issue.part}`);
+}
+
+/** An open select whose popup content is built by the caller, so each negative breaks one thing. */
+function openSelectWithPopup(fill) {
+  const { root, parts } = buildOpenSelect();
+  parts.listbox.remove();
+  const built = fill();
+  if (built) parts.popup.append(built);
+  const next = { ...parts };
+  delete next.option;
+  if (built) next.listbox = built;
+  else delete next.listbox;
+  const issues = inspectWidgetDom(root, "select", { parts: next, open: true });
+  root.remove();
+  return { issues };
+}
+
+test("J4b — a popup framing nothing is rejected", () => {
+  const { issues } = openSelectWithPopup(() => null);
   assert.deepEqual(
-    emptyPopupIsLegal.sort(),
-    ["colors", "multiselect", "select", "timepicker"],
-    "these four declare no required part inside their popup",
+    codesFor(issues, "listbox"),
+    ["PART_MISSING:listbox"],
+    "an open select whose popup holds no list has nothing to choose from",
   );
+});
 
-  // The two that are already covered, and by an ordinary required part rather than a popup rule —
-  // which is the shape plan 42 should follow rather than invent.
-  for (const kind of ["datepicker", "daterange"]) {
-    const calendar = MDY_WIDGET_CONTRACTS[kind].structure.nodes
-      .find((node) => node.part === "calendar");
-    assert.equal(calendar.parent, "popup");
-    assert.equal(calendar.optional, false, `${kind} already requires its popup to hold a calendar`);
-  }
+test("J4b — a popup framing the right class with the wrong role is rejected", () => {
+  const { issues } = openSelectWithPopup(() => el("div", "mdy-select__list", { role: "menu" }));
+  assert.deepEqual(
+    codesFor(issues, "listbox"),
+    ["PART_ROLE:listbox", "PART_ELEMENT:listbox", "NAME_MISSING:listbox"],
+    "a menu is not a listbox, and the options inside it are announced as commands",
+  );
+});
+
+test("J4b — a portalled popup still conforms", () => {
+  // The way a containment rule usually goes wrong. A popup rendered into the document root escapes
+  // its field's subtree legitimately — `portal.ts` exists for exactly that — so a check that looked
+  // for the popup *under* the root would report every portalled renderer as broken while the
+  // renderers were right.
+  const { root, parts } = buildOpenSelect();
+  document.body.append(parts.popup);
+
+  assert.deepEqual(inspectWidgetDom(root, "select", { parts, open: true }), []);
+  parts.popup.remove();
+  root.remove();
+});
+
+test("J4b — the list rendered outside the popup it belongs to is rejected", () => {
+  // The one a `querySelector` from the widget root gets wrong: the element exists, carries the right
+  // class and the right role, and is nowhere near the box the user is looking at.
+  const { root, parts } = buildOpenSelect();
+  root.append(parts.listbox);
+  const issues = inspectWidgetDom(root, "select", { parts, open: true });
+  root.remove();
+
+  assert.deepEqual(
+    codesFor(issues, "listbox", "option"),
+    // Only the list is reported. The options moved with it and are still inside their own declared
+    // parent, which is the rule working: containment is a statement about a part and its parent,
+    // and reporting the whole subtree would name every element for one displacement.
+    ["PART_NOT_CONTAINED:listbox"],
+    "presence is not enough — the popup has to be what frames it",
+  );
 });

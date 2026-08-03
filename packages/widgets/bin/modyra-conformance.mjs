@@ -45,6 +45,8 @@ const {
   idsUnder, inspectCoexistence, inspectUnmount, inspectWidgetDom,
 } = await import(pathToFileURL(resolve(packageRoot, "dist/testing/index.js")).href);
 
+const { MDY_WIDGET_CONTRACTS } = await import(pathToFileURL(resolve(packageRoot, "dist/index.js")).href);
+
 // Loaded with its own diagnosis. A config that throws on import is the normal first experience of
 // this tool — a missing DOM, a path that does not exist, a renderer that fails to construct — and a
 // raw stack trace from inside `import()` says nothing about which of those happened.
@@ -97,6 +99,35 @@ const record = (title, findings, note) => sections.push({ title, findings, note 
     fixture.dispose();
   }
   record("DOM anatomy and relationships", findings);
+}
+
+// ── DOM anatomy while open ────────────────────────────────────────────────────────────────
+{
+  // A resting widget renders no popup, so every part the contract requires *inside* one is skipped
+  // above — which is correct at rest and silent everywhere else. Without this pass, "the popup must
+  // frame a list" is a rule no renderer is ever asked about.
+  const findings = [];
+  const opened = [];
+  for (const kind of kinds) {
+    if (!MDY_WIDGET_CONTRACTS[kind]?.capabilities.overlay) continue;
+    const fixture = await mount(kind);
+    await fixture.settle?.();
+    if (fixture.drive?.("open") === false) {
+      fixture.dispose();
+      continue;
+    }
+    await fixture.settle?.();
+    opened.push(kind);
+    for (const issue of inspectWidgetDom(fixture.root, kind, { parts: fixture.parts(), open: true })) {
+      findings.push(`${kind}.${issue.part ?? "-"}: ${issue.code} ${issue.message ?? ""}`.trim());
+    }
+    fixture.dispose();
+  }
+  record(
+    "DOM anatomy while open",
+    findings,
+    opened.length ? `${opened.length} overlay kind(s) driven open` : "no overlay kind could be driven open",
+  );
 }
 
 // ── State matrix ──────────────────────────────────────────────────────────────────────────

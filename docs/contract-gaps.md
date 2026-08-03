@@ -19,12 +19,12 @@ to a green suite.
 **Status.** The headings below are the source of truth; this list is a convenience for a reader who
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J3, J4a
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J3, J4a, J4b
 - **Partly fixed** — C2 (derived, not painted), E2 (most scripts reachable), F (kind-keyed tables
   narrowed, part-keyed ones key-checked)
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — J1, J2, J4b, K
+- **Open** — J1, J2, K
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -633,7 +633,7 @@ for a state a kind does not declare, so the uncovered case is narrow: a supporte
 more places than the anatomy makes responsible. Whether that is noise or redundancy is a question
 about assistive-technology behaviour, not about the contract, and it is left open deliberately.
 
-## J4b — A popup may legally frame nothing — **open**
+## J4b — A popup may legally frame nothing — **fixed**
 
 **Observed.** `packages/widgets/src/testing/dom-tests.ts` declares `popup: undefined` — a popup is a
 positioning container, and its accessible semantics live on what it *contains* (the listbox, the
@@ -658,9 +658,48 @@ special popup rule — which is the shape a fix should follow rather than invent
 An earlier statement of this finding claimed containment was unchecked. That was wrong, and the
 fixture written to demonstrate it failed instead of passing, which is how it was caught.
 
-**Not decided.** Checking popup contents requires the contract to name what each kind's popup frames.
-That is the same missing capability J3 and J4a both turned out to need — anatomy expressed one level
-deeper than the part list reaches — so the shape of the answer is known even where the answer is not.
+**Fixed**, and with no new vocabulary. `required` already said "this part must be there", and
+`overlayOnlyParts` already gated it to an open widget — the mechanism `datepicker` used for its
+calendar. Four names were added to four `required` lists:
+
+| kind | now requires | measured in |
+| --- | --- | --- |
+| `select` | `listbox` | Plain `ul[role=listbox]`, Lit `ul[role=listbox]` |
+| `multiselect` | `listbox` | Plain `div[role=group]`, Lit `div[role=group]` |
+| `timepicker` | `container` | Plain `div`, Lit `div[role=dialog]` |
+| `colors` | `presets` | Plain `div[role=listbox]`, Lit `div[role=listbox]` |
+
+Multiselect's `listbox` is required to be *present*, not to be a listbox: what role a chip grid
+should carry is the mode question ADR 0014 settles, and presence does not pre-empt it.
+
+### The rule was enforced against nothing
+
+The larger defect, found while checking the fix rather than while writing it: the conformance CLI
+inspected every widget **at rest only**. A part required inside a popup is skipped at rest — a closed
+picker renders no popup — so all four new requirements would have been unenforced against every
+renderer, and the run would have stayed green either way.
+
+`modyra-conformance.mjs` now has a second anatomy pass that drives each overlay kind open and
+inspects it there. Six kinds per renderer. Emptying Plain's select popup makes it fail with
+`PART_MISSING: listbox`; before this pass, the same mutation was invisible.
+
+### `timepicker.dialog` is a part nobody draws
+
+`dialog` is declared inside `popup` with the `dialog` semantic and the class
+`mdy-timepicker__dialog`, allowlisted `unreviewed` by the style audit. Plain applies the part to the
+popup element itself, so one element is both; Lit puts `role="dialog"` on `container` and never emits
+the class. No renderer draws the element the contract describes, and the two put the dialog role in
+two different places.
+
+Requiring it would have required markup neither renderer has, so `container` is what the popup must
+frame and this stays open — a smaller, separate question than J4b: **where does a timepicker's dialog
+role belong?**
+
+### Still untested: a genuinely portalled popup
+
+A portalled popup conforms — asserted directly, since a naive containment check would report every
+one of them as broken. But under jsdom both renderers keep the popup inside the field root, so the
+conformance run never exercises the portalled path. That needs the browser suites.
 
 ## K — the accessibility projections have no classification path — **open**
 
