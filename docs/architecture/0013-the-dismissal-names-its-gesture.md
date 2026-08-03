@@ -33,31 +33,52 @@ contract does not name.
 
 ## Decision
 
-Dismissal by pointer is defined by a **gesture**, not by one event. The popup dismisses only when
-both ends of the gesture land outside it.
+Dismissal is defined by an **interaction**, not by one event. An interaction has an origin and a
+completion, and both decide.
 
 ```ts
-dismissOnOutsidePointer: false | { readonly mode: "pointer-pair" }
+dismissOnOutsidePointer: false | "light-dismiss"
 ```
 
-| pointerdown | second event | outcome |
+> An overlay closes when a primary interaction that **began** outside its logical branch is
+> **completed** outside that branch. An interaction that began inside never dismisses, however far
+> outside it ends.
+
+| origin | completion | outcome |
 | --- | --- | --- |
-| inside | pointerup outside | keep open |
-| outside | pointerup outside | **dismiss** |
-| outside | pointerup inside | keep open |
-| inside | pointerup inside | keep open |
-| outside | `pointercancel` | keep open |
+| inside | `click` anywhere | keep open |
+| outside | `click` inside | keep open |
+| outside | `click` outside | **dismiss** |
+| either | `pointercancel` | keep open |
+| none observed | `click` outside | keep open |
 | — | `Escape` | **dismiss** |
 
-`pointercancel` keeps the popup open because a cancelled pointer means the browser took the gesture
-over for scrolling. That is the case that produced the original divergence: a touch user dragging to
-scroll the page, starting outside an open popup, was not trying to dismiss anything.
+**Completion is `click`, not `pointerup`.** A drag ending on a different element than it began on
+produces no `click` at all — the gesture a touch user makes to scroll the page behind an open popup.
+Completing on `pointerup` dismisses there; completing on `click` leaves the browser to decide what
+counts as an activation, and the origin check only prevents the false positives it cannot see.
+
+**Inside means the logical branch**, not the popup element: the invoker, the popup, its descendants,
+portalled content and any child popup. A renderer supplies that predicate — only it knows where its
+portal went — and the rule stays here.
+
+Three further invariants, because each is a way to dismiss something the user did not ask to close:
+
+- **Primary pointer, primary button only.** A right-click opens a context menu; closing the popup
+  underneath it is not the request. A second finger's `pointerup` does not complete the first
+  finger's interaction, so events are paired by `pointerId`.
+- **`pointercancel` never dismisses**, and cancels only the interaction it belongs to.
+- **A `click` with no observed interaction never dismisses.** A keyboard activation or a programmatic
+  `.click()` has no pointer behind it, and a capability naming a pointer must not be satisfied by one.
+
+An interaction is abandoned, not completed, on `blur`, on the document being hidden, and on unmount.
 
 `Escape` already behaves this way in both keyboard paths (`packages/widgets/src/behavior.ts:282` and
 `:338`). It is stated here so the rule reads complete, not because it changes.
 
-One implementation of this rule lives in `@modyra/widgets` and every renderer calls it. Renderers do
-not bind their own pointer listeners, which is what let the divergence exist.
+One implementation lives in `@modyra/widgets` as `createLightDismiss`, with the state machine
+explicit — `idle`, `tracking-inside`, `tracking-outside`, `cancelled`, `dismissed`. Every renderer
+calls it and none binds its own decision, which is what let the divergence exist.
 
 ## Consequences
 
@@ -100,10 +121,30 @@ not bind their own pointer listeners, which is what let the divergence exist.
   gives it a semver verdict.
 - `npm run test:e2e` — the gesture rules are browser behaviour and are asserted in a browser.
 
-**Recorded incompleteness.** The `pointercancel` row may not be assertable: synthesising a genuinely
-cancelled pointer in Playwright is not obviously possible, and a scroll-driven cancel is a browser
-decision rather than a scriptable event. If it cannot be asserted, that row ships held by reasoning
-rather than by test, and this section says so rather than the suite implying coverage it lacks.
+**The `pointercancel` row is asserted, and this was not certain in advance.** A cancelled pointer is
+the browser taking a gesture over, not an event a script dispatches, so the row was expected to ship
+held by reasoning. It does not: CDP's `Input.dispatchTouchEvent` with `type: "touchCancel"` makes the
+browser emit a real `pointercancel`, verified by observing the sequence before relying on it.
+`e2e/plain/dismiss.spec.ts` uses it.
+
+That assertion aims the gesture *inside* the popup rather than outside. Pressing outside also moves
+focus, and the `focusout` path below would close the popup for a reason unrelated to the pointer —
+so aiming outside would have measured the wrong thing and passed.
+
+**Recorded incompleteness, and now a defect rather than a gap.** `@modyra/plain`'s select still
+closes on `focusout` (`packages/plain/src/fields/select-field.ts:139-140`), a dismissal path this
+decision does not name. That is worse than an omission: a rule refusing to dismiss while a second
+path closes the popup anyway is a rule that only appears to be in control.
+
+The precedence this decision requires — a `focusout` may not close while an interaction that began
+**inside** the branch is still in flight — is **not yet implemented**, and the case is not yet
+asserted. Any dismissal on focus leaving belongs to a separate capability
+(`dismissOnFocusOutside`), not to this one. `e2e/plain/dismiss.spec.ts` asserts the current
+behaviour as it is, so the gap stays visible rather than being papered over.
+
+**Not covered by this decision, and each needing its own record:** nested popups and the order they
+dismiss in; a `reason` on every close so one interaction cannot produce two transitions; the full
+per-device acceptance matrix.
 
 ## Security and privacy
 
