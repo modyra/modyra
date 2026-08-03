@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { MDY_ON_COLOR_FLOOR as FLOOR } from "../packages/core/dist/color-utils.js";
 
 /**
  * The palette follows its primary, and every `on-` colour is readable against the colour it names.
@@ -17,22 +18,20 @@ import { expect, test } from "@playwright/test";
 /**
  * How the engine derives an `on-` colour, and what that costs.
  *
- * The stylesheet has two forms of the same step, because a colour channel may or may not admit
- * `pow()` and `cos()`. Both pick black or white by a pivot; only one can correct that pivot for hue
- * and chroma. Asserted against the capability rather than a browser name, so an engine that gains
- * the maths is held to the better floor the day it ships.
+ * The rule is light text while it clears a floor, and the stylesheet states it as a threshold on an
+ * estimated luminance. There are two estimates, because a colour channel may or may not admit the
+ * maths that corrects the estimate for hue and chroma — so the same rule is reached with two
+ * accuracies. Asserted against the capability rather than a browser name, so an engine that gains
+ * the maths is held to the better figure the day it ships.
  *
- * Both numbers are measured, not chosen to pass. Against the models and primaries below, the worst
- * pair the corrected form produces is 4.35:1 and the pivot's is 4.09:1; the worst the corrected form
- * gives away against the better candidate is 0.4 of a ratio point, and the pivot 0.96 — two colours
- * sitting near the crossover, where a pivot with no chroma term cannot tell which side is better.
+ * Both numbers are measured, not chosen to pass. The estimate is what slips, never the rule: the
+ * corrected form disagrees with the exact policy on 1.4% of a 6000-colour sweep and the uncorrected
+ * one on 4.6%, landing at worst 3.32:1 and 3.11:1 against a floor of 3.5:1.
  *
- * Both stay legible. Neither reaches AA's 4.5:1, which is what `@modyra/core/color-utils` is for: it
- * measures both candidates instead of estimating, and is exact for anyone generating a palette ahead
- * of time rather than deriving it live.
+ * The floor is deliberately below AA — `MDY_ON_COLOR_FLOOR` in `@modyra/core/color-utils` carries
+ * the reason, and that module is where the rule is applied exactly rather than estimated.
  */
-const legibleFloor = (correctedPivot: boolean): number => (correctedPivot ? 4.3 : 4.0);
-const choiceMargin = (correctedPivot: boolean): number => (correctedPivot ? 0.4 : 1.0);
+const legibleFloor = (correctedPivot: boolean): number => (correctedPivot ? 3.3 : 2.8);
 
 const MODELS = ["brand", "monochrome", "complementary", "triadic"] as const;
 // Saturated, dark, very light, and a red — the light one is what the previous fixed
@@ -124,23 +123,20 @@ test("the palette follows the colour it is derived from", async ({ page }) => {
   }
 });
 
-test("every on- colour is readable, and close to the best available", async ({ page }) => {
-  // Two bars, because the stylesheet is an approximation and the module is not.
+test("every on- colour is readable, and chosen in the right direction", async ({ page }) => {
+  // Two bars, because the stylesheet estimates the rule and the module applies it.
   //
-  // A stylesheet cannot compute a WCAG luminance: it has the colour in OKLCH and the ratio wants
-  // sRGB, so `modyra-base.css` estimates luminance as `l³ · (1 + 0.85·c·cos(h − 179°))`. Against
-  // 8640 sampled colours that estimate picks the wrong side of the crossover 142 times, giving up
-  // at most 1.09 ratio points. `@modyra/core/color-utils` measures both candidates instead and is
-  // exact — its own test asserts a flat 4.5:1, which is the guarantee for anyone generating a theme
-  // ahead of time rather than deriving it live.
+  // A stylesheet cannot compute a contrast ratio: it holds the colour in OKLCH and the ratio wants
+  // sRGB luminance, so `modyra-base.css` estimates that luminance and compares it against a
+  // threshold. `@modyra/core/color-utils` measures the ratios directly, and the floor it names is
+  // where both of them get the rule from.
   //
-  // So what is asserted here is the quality of the approximation: never far from the best colour
-  // available, and never below a floor that stays legible.
+  // So what is asserted here is the quality of the estimate — never below a floor that stays
+  // legible, and never on the wrong side of the choice.
   await page.goto("/");
   const correctedPivot = await page.evaluate(() =>
     CSS.supports("color", "oklch(from white calc(pow(l, 3)) c h)"));
   const floor = legibleFloor(correctedPivot);
-  const margin = choiceMargin(correctedPivot);
   const tooLow: string[] = [];
   const badlyChosen: string[] = [];
   for (const model of MODELS) {
@@ -150,11 +146,26 @@ test("every on- colour is readable, and close to the best available", async ({ p
         const bg = p[role]!;
         const on = p[`on-${role}`]!;
         const ratio = contrast(bg, on);
-        const best = Math.max(contrast(bg, [255, 255, 255]), contrast(bg, [0, 0, 0]));
+        const light = contrast(bg, [255, 255, 255]);
+        const dark = contrast(bg, [0, 0, 0]);
         const label = `${model}/${primary}: on-${role} ${hex(on)} on ${hex(bg)}`;
         if (ratio < floor) tooLow.push(`${label} = ${ratio.toFixed(2)}:1`);
-        if (ratio < best - margin) {
-          badlyChosen.push(`${label} = ${ratio.toFixed(2)}:1 where ${best.toFixed(2)}:1 was there`);
+
+        // Not "did it take the higher ratio" — that is the rule this palette deliberately does not
+        // follow, and asserting it would fail every pair the policy exists to fix. What is checked
+        // is the direction: light wherever light is readable, and the better of the two below that.
+        //
+        // Only on the tier that can compute the correction. The other reaches the same rule through
+        // lightness alone, which cannot separate two colours of equal lightness and unequal
+        // brightness — disagreeing there is the tier working as defined, and the floor above is what
+        // bounds the cost. Asserting exact direction on it would be asserting it is the other tier.
+        const isLight = luminance(on) > luminance(bg);
+        const shouldBeLight = light >= FLOOR ? true : light >= dark;
+        if (correctedPivot && isLight !== shouldBeLight) {
+          badlyChosen.push(
+            `${label} = ${ratio.toFixed(2)}:1, ${isLight ? "light" : "dark"} where ` +
+              `${shouldBeLight ? "light" : "dark"} was the rule (white ${light.toFixed(2)}:1, black ${dark.toFixed(2)}:1)`,
+          );
         }
       }
     }

@@ -20,11 +20,12 @@ to a green suite.
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
 - **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J3, J4a, J4b
-- **Partly fixed** — C2, E2, F, L — derived but not painted; most scripts reachable; kind-keyed
-  tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open
+- **Partly fixed** — C2, E2, F, L, M — derived but not painted; most scripts reachable; kind-keyed
+  tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
+  the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — J1, J2, K, M
+- **Open** — J1, J2, K
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -670,7 +671,7 @@ calendar. Four names were added to four `required` lists:
 | `colors` | `presets` | Plain `div[role=listbox]`, Lit `div[role=listbox]` |
 
 Multiselect's `listbox` is required to be *present*, not to be a listbox: what role a chip grid
-should carry is the mode question ADR 0015 settles, and presence does not pre-empt it.
+should carry is the mode question ADR 0016 settles, and presence does not pre-empt it.
 
 ### The rule was enforced against nothing
 
@@ -849,38 +850,40 @@ Six failures were the harness. `newCDPSession` is Chromium-only, and three specs
   name computed in JavaScript would be this repository's opinion of the algorithm. The dangling-
   reference half of that spec is DOM-only and still runs everywhere; only the tree assertions stop.
 
-## M — a readable text colour is estimated, never measured — **open**
+## M — a readable text colour is estimated, never measured — **partly fixed**
 
-**Observed.** `packages/styles/src/modyra-base.css`, and the reason it surfaced here: twenty `on-*`
-pairs fell below the contrast floor on one engine, and the fix only moved the estimate.
+**Observed.** `packages/styles/src/modyra-base.css`. Filed when twenty `on-*` pairs fell below the
+contrast floor on one engine; reopened when a selected date rendered black on a saturated blue and
+the estimate turned out to be faithful to a metric that was itself wrong.
 
-A stylesheet cannot compute a WCAG contrast ratio. It has the colour in OKLCH; the ratio wants sRGB
-luminance, which weights green at 0.72 and blue at 0.07 — so two colours of identical OKLCH lightness
-are nowhere near equally bright. Every form the stylesheet can take is therefore an estimate of the
-one question that matters: **is black or white more readable on this background?**
+**Fixed: the metric.** The derivation maximised the WCAG 2 contrast ratio, whose luminance formula
+weights blue at a fourteenth of green and therefore rates dark text on saturated colour far above
+what a reader experiences. [ADR 0015](architecture/0015-light-text-while-it-is-readable.md) replaces
+it: **light text while light clears a floor, the higher ratio below that.** The same defect was in
+`onColorFor` in `@modyra/core/color-utils`, which is exact rather than estimated — so precomputing
+the palette would not have fixed it, and both implementations changed.
 
-Three tiers ship, and each is worse than the one above it:
+**Still open: the estimate, and where it runs.**
 
-| tier | condition | worst pair | gives away |
+A stylesheet cannot compute a contrast ratio — it holds the colour in OKLCH and the ratio wants sRGB
+luminance — so it compares an *estimated* luminance against a threshold. Two tiers, two accuracies:
+
+| tier | condition | disagrees with the rule | worst pair |
 | --- | --- | --- | --- |
-| chroma-corrected pivot | `pow()`/`cos()` in a colour channel | 4.35:1 | 0.40 |
-| lightness pivot | relative colour only | 4.09:1 | 0.96 |
-| fixed mix | no relative colour | **1.10:1** | unbounded |
+| chroma-corrected | `pow()`/`cos()` in a colour channel | 1.4% of 6000 | 3.32:1 |
+| lightness pivot | relative colour only | 4.6% of 6000 | 3.11:1 |
+| fixed mix | no relative colour | — | unbounded |
 
-The third is not a fallback, it is a failure with a colour attached: `color-mix(primary, white 95%)`
-is 95% white whatever the background is, so on a light background it is white text on white. It
-predates the other two and remains what an engine without relative colour gets.
+The third remains what an engine without relative colour gets, and it is not a fallback: a fixed mix
+toward white is 95% white whatever the background is.
 
-**Nothing here reaches AA.** 4.5:1 is the requirement for normal text and no tier meets it, because
-none of them can measure what they are approximating.
+Two residuals sit under the estimate itself. **Gamut clipping**: the stylesheet decides on the colour
+it was asked for, the browser paints it clipped into sRGB, and clipping moves lightness —
+`color-utils` round-trips through hex before deciding and CSS has no equivalent. **No chroma term**
+on the lower tier, which cannot separate two colours of equal lightness and unequal brightness.
 
-**The exact computation already exists and is not what the themes use.** `onColorFor` in
-`@modyra/core/color-utils` builds both candidates, measures `contrastRatio` against each, and keeps
-the better — no pivot, no estimate, no hue correction to fit. Its own tests assert a flat 4.5:1.
-
-**Not decided.** The gap is not arithmetic, it is *when* the arithmetic runs. Live derivation in CSS
-buys a palette that follows a primary the host sets at runtime, and pays for it with an estimate that
-cannot reach AA and degrades twice on the way down. Generating the palette ahead of time with
-`color-utils` — a build step, or a theme emitted per brand colour — is exact and gives that up. A 1.0
-that ships accessible colour has to choose, and the current answer is the one nobody chose: whichever
-tier the engine happens to land in.
+**Not decided.** The gap is now *when* the arithmetic runs, not what it computes. Live derivation
+buys a primary the host sets at runtime with no JavaScript on the page — the reason the OKLCH model
+exists in this shape — and pays for it with an estimate and three tiers. Generating the palette ahead
+of time with `color-utils` is exact and gives that up. ADR 0015 holds either way, since the metric is
+the same; what changes is whether anything still approximates it.

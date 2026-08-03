@@ -30,6 +30,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 | [0012](0012-a-choice-is-a-radio-by-role-or-by-tag.md) | A choice is a radio, by tag or by role | All three renderers already chose `radiogroup`; the open question was whether the tag is required |
 | [0013](0013-the-dismissal-names-its-gesture.md) | The dismissal names its gesture | One event cannot express where a gesture began *and* ended, which is what the dismissal rule turns on |
 | [0014](0014-the-contract-names-the-responsible-element.md) | The contract names the responsible element | Naming the region and not the element inside it let three widgets conform that nobody could operate |
+| [0015](0015-light-text-while-it-is-readable.md) | Light text while it is readable | The contrast ratio and a reader disagree about saturated colour, and the ratio was winning |
 
 ## Security-relevant records
 
