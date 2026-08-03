@@ -424,7 +424,7 @@
         position: absolute;
         top: 50%;
         left: 0.625rem;
-        width: 2.5rem;
+        width: var(--mdy-affordance-box);
         height: 2.5rem;
         background: var(--mdy-input-focus-color);
         border-radius: 50%;
@@ -1029,11 +1029,11 @@
            percentage height on a flex item whose parent has no *specified* height resolves to
            nothing — measured, this button was 44x0 in this theme and could not be clicked at all,
            by a user or by a test. Stretch is what fills the row; a percentage only claims to. */
-        width: 2.5rem;
+        width: var(--mdy-affordance-box);
         /* Logical: this pulls the toggle back over the field's inline-end padding so it sits flush
            with the edge. Written as `margin-right` it kept pulling leftwards under `dir=rtl`, where
            the toggle is at the left — so it opened a gap at one end and overhung the other. */
-        margin-inline-end: -0.75rem;
+        margin-inline-end: 0;
     }
 
     .mdy-renderer.mdy-floating-label.mdy-renderer--colors .mdy-colors__toggle-area {

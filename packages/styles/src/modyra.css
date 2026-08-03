@@ -361,13 +361,46 @@
  * ═══════════════════════════════════════════════════════════════════════════ */
 @layer mdy.base {
 
+    /*
+     * The pointer target, and only the pointer target.
+     *
+     * WCAG 2.5.5 asks for 44x44. Giving the affordance that box makes it drive the field's height —
+     * measured, three kinds grew to 46px while the rest stayed at 38 — so the target is an overlay
+     * instead: centred on the control, outside the flow, affecting nothing it sits in.
+     *
+     * The select caret is absent deliberately. It is `pointer-events: none` and the trigger behind
+     * it is already the target, so an overlay there would only steal the press.
+     *
+     * The steppers are absent too: two controls stacked inside one 3.5rem field cannot both be
+     * 44px. They take WCAG 2.5.8's 24px, which is the AA level this project ships against.
+     */
+    .mdy-datepicker__toggle,
+    .mdy-timepicker__toggle,
+    .mdy-colors__toggle-area,
+    .mdy-multiselect__search-btn {
+        position: relative;
+    }
+
+    .mdy-datepicker__toggle::after,
+    .mdy-timepicker__toggle::after,
+    .mdy-colors__toggle-area::after,
+    .mdy-multiselect__search-btn::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: var(--mdy-affordance-target);
+        height: var(--mdy-affordance-target);
+        transform: translate(-50%, -50%);
+    }
+
     /* ─── Custom Number Spin Buttons ─────────────────────────────────────────── */
     .mdy-spin-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: var(--mdy-spin-btn-size);
-        height: 1.25em;
+        width: var(--mdy-affordance-target-stacked);
+        height: var(--mdy-affordance-target-stacked);
         border-radius: var(--mdy-spin-btn-border-radius);
         color: var(--mdy-input-icon-color);
         background: transparent;
@@ -400,8 +433,8 @@
 
     .mdy-spin-btn svg {
         display: block;
-        width: 1em;
-        height: 1em;
+        width: var(--mdy-affordance-glyph);
+        height: var(--mdy-affordance-glyph);
         pointer-events: none;
     }
 
@@ -467,7 +500,7 @@
            where the affixes sit — and written physically that 8px difference stayed on the left
            under `dir=rtl`, pushing everything at the inline end 8px inside where it belongs. */
         padding-block: 0;
-        padding-inline: 0.75rem 0.25rem;
+        padding-inline: 0.75rem var(--mdy-affordance-inset);
         box-sizing: border-box;
     }
 
@@ -544,18 +577,19 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        align-self: stretch;
-        min-width: 2.75rem;
-        height: auto;
+        align-self: center;
+        width: var(--mdy-affordance-box);
+        height: var(--mdy-affordance-box);
+        min-width: var(--mdy-affordance-box);
         flex-shrink: 0;
         /* Logical: this button sits at the inline end of the field, so its tighter padding, its
            pull-in margin and its rounded corners all belong to that edge. Written physically they
            stayed on the right under `dir=rtl`, leaving the toggle rounded away from the field it
            is attached to. */
         padding-block: 0;
-        padding-inline: 0.5rem 0.75rem;
+        padding-inline: 0;
         margin-block: 0;
-        margin-inline: 0 -0.25rem;
+        margin-inline: 0;
         border-start-start-radius: 0;
         border-end-start-radius: 0;
         border-start-end-radius: var(--mdy-input-border-radius);
@@ -781,6 +815,14 @@
     }
 
     .mdy-input-prefix,
+    /* A suffix holding a control is holding a trailing affordance, and leaves the same gap the
+       inliner does — otherwise the affordance in it sits 8px further in than every other field's,
+       which is what put the colour swatch out of the column. A suffix holding text keeps its own
+       roomier padding: text needs breathing space, a 44px control does not. */
+    .mdy-input-suffix:has(> button) {
+        padding-inline-end: var(--mdy-affordance-inset);
+    }
+
     .mdy-input-suffix {
         color: var(--mdy-input-icon-color);
         flex-shrink: 0;
@@ -961,10 +1003,18 @@
         /* Logical, not `right`. This one is absolutely positioned, so the flow cannot re-order it
            the way it re-orders a flex child — it stays where it is told, on whichever physical edge
            was named. Under `dir=rtl` that put the arrow on the wrong side of the trigger. */
-        inset-inline-end: 0.75rem;
+        inset-inline-end: 0;
         top: 0;
         bottom: 0;
         margin: auto 0;
+        /* The same box every other affordance occupies, so one inset puts every centre in the same
+           place. It takes no pointer — the trigger behind it is the target — so the box costs the
+           user nothing and buys the column its alignment. */
+        width: var(--mdy-affordance-box);
+        height: var(--mdy-affordance-box);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         pointer-events: none;
         z-index: 2;
         display: flex;
@@ -1638,8 +1688,8 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 1.5rem;
-        height: 1.5rem;
+        width: var(--mdy-affordance-box);
+        height: var(--mdy-affordance-box);
         border: none;
         background: transparent;
         cursor: pointer;
@@ -1659,8 +1709,8 @@
     }
 
     .mdy-multiselect__search-btn svg {
-        width: 1rem;
-        height: 1rem;
+        width: var(--mdy-affordance-glyph);
+        height: var(--mdy-affordance-glyph);
         fill: none;
         stroke: currentColor;
         stroke-width: 2;
@@ -1997,8 +2047,11 @@
 
     .mdy-select__arrow {
         margin-inline-start: 0.5rem;
-        width: 1rem;
-        height: 1rem;
+        width: var(--mdy-affordance-box);
+        height: var(--mdy-affordance-box);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         color: var(--mdy-select-arrow-color);
         transition: transform var(--mdy-sys-motion-duration-slow);
         flex-shrink: 0;
@@ -2241,14 +2294,14 @@
         border-radius: 50%;
         transition: background-color var(--mdy-sys-motion-duration-slow), color var(--mdy-sys-motion-duration-slow);
         padding: 0;
-        width: 32px;
-        height: 32px;
+        width: var(--mdy-affordance-box);
+        height: var(--mdy-affordance-box);
         line-height: 0;
     }
 
     .mdy-datepicker__toggle svg {
-        width: 24px;
-        height: 24px;
+        width: var(--mdy-affordance-glyph);
+        height: var(--mdy-affordance-glyph);
         display: block;
     }
 
@@ -2274,8 +2327,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
-        height: 32px;
+        width: var(--mdy-affordance-box);
+        height: var(--mdy-affordance-box);
         padding: 0;
         border: none;
         border-radius: 50%;

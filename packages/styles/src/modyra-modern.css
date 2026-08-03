@@ -164,7 +164,7 @@
 
     .mdy-select > .mdy-select__arrow {
         position: absolute;
-        inset-inline-end: 0.75rem;
+        inset-inline-end: 0;
         margin-left: 0;
         pointer-events: none;
     }
@@ -174,8 +174,10 @@
        drawn from a rotated corner, for any renderer, without naming one. */
     .mdy-select__arrow:empty::after {
         content: "";
-        width: 0.5rem;
-        height: 0.5rem;
+        /* A rotated square stands on its diagonal, so its side is the glyph over √2 — that is what
+           makes the drawn caret the same size as the SVG one a renderer with icons supplies. */
+        width: calc(var(--mdy-affordance-glyph) / 1.414);
+        height: calc(var(--mdy-affordance-glyph) / 1.414);
         border-right: 1.5px solid currentcolor;
         border-bottom: 1.5px solid currentcolor;
         transform: translateY(-25%) rotate(45deg);
@@ -217,7 +219,7 @@
     /* The colours toggle holds the same caret; it is a flex item in the suffix, so it needs its
        own height rather than inheriting one from an icon it does not have. */
     .mdy-colors__toggle-area {
-        min-height: var(--mdy-input-height);
+        min-height: var(--mdy-affordance-box);
     }
 
     .mdy-colors__toggle-area .mdy-select__arrow {
@@ -246,8 +248,8 @@
     .mdy-input-wrapper .mdy-datepicker__toggle,
     .mdy-input-wrapper .mdy-timepicker__toggle {
         flex: 0 0 auto;
-        width: 1.75rem;
-        height: 1.75rem;
+        width: var(--mdy-affordance-box);
+        height: var(--mdy-affordance-box);
         padding: 0;
         border: 0;
         border-radius: var(--mdy-sys-shape-corner-full);

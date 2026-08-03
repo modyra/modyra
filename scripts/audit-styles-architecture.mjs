@@ -160,6 +160,39 @@ function checkMotion(css, name) {
   return found.map((defect) => `${name}: ${defect}`);
 }
 
+/**
+ * A trailing affordance takes its geometry from the tokens, not from a number of its own.
+ *
+ * The controls at a field's inline end — a calendar button, a clock button, a colour swatch, a
+ * search button, the steppers, the select caret — are read as one column down a form. Measured
+ * before the tokens existed, their centres sat 17, 19, 25 and 31 pixels from their field's inline
+ * end in boxes of 16, 24, 28 and 44: every rule reasonable alone, the column visibly wandering.
+ *
+ * Each literal here is how that happened, one well-meant number at a time.
+ */
+const AFFORDANCE_SELECTOR = /(select__arrow|datepicker__toggle|timepicker__toggle|colors__toggle-area|multiselect__search-btn|spin-btn)\b/;
+const AFFORDANCE_SIZE = /(?:^|;)\s*(width|height|min-width|min-height|inset-inline-end)\s*:\s*([^;]+)/g;
+
+function checkAffordanceGeometry(css, name) {
+  const found = [];
+  for (const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const [, selector, body] = rule;
+    if (!AFFORDANCE_SELECTOR.test(selector)) continue;
+    // The glyph inside is sized by its own token; the box and the inset by theirs.
+    for (const declaration of body.matchAll(AFFORDANCE_SIZE)) {
+      const [, property, value] = declaration;
+      if (/var\(--mdy-affordance-/.test(value)) continue;
+      // `0`, `100%` and `auto` claim no size of their own.
+      if (/^\s*(0|auto|100%|inherit|unset)\s*$/.test(value)) continue;
+      found.push(
+        `${name}: ${selector.trim().split("\n").pop().trim().slice(0, 48)} sets ${property}: ${value.trim()} ` +
+        "on a trailing affordance; the geometry is named by --mdy-affordance-*",
+      );
+    }
+  }
+  return found;
+}
+
 const BRAND_FONTS = /"(Satoshi|Outfit|Inter|Roboto|SF Pro[^"]*|Helvetica Neue)"/g;
 for (const name of FOUNDATION) {
   const css = strip(read(name));
@@ -175,13 +208,16 @@ for (const name of FOUNDATION) {
   for (const defect of checkFieldHeight(css)) defects.push(`${name}: ${defect}`);
   for (const defect of checkTokenTierIsLoaded(css)) defects.push(`${name}: ${defect}`);
   for (const defect of checkMotion(css, name)) defects.push(defect);
+  for (const defect of checkAffordanceGeometry(css, name)) defects.push(defect);
   for (const debt of DEBT) if (debt.matches(name, css)) debtSeen.add(debt.id);
 }
 
 // Motion is checked in the themes too. Everything else in this audit is about what a *foundation*
 // may assume; a duration is about whether the same control moves the same way wherever it is drawn.
 for (const name of THEMES) {
-  for (const defect of checkMotion(strip(read(name)), name)) defects.push(defect);
+  const css = strip(read(name));
+  for (const defect of checkMotion(css, name)) defects.push(defect);
+  for (const defect of checkAffordanceGeometry(css, name)) defects.push(defect);
 }
 
 const stale = DEBT.filter((debt) => !debtSeen.has(debt.id));
