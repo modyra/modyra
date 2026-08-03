@@ -1,7 +1,7 @@
 import { type MdyFieldHandle } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
-import { mdyIcon } from "../base.js";
+import { MdyFieldElement, mdyIcon } from "../base.js";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 import {
@@ -206,9 +206,44 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     this.selectAdapter?.dispatch({ type: "search", query: value });
   }
 
+  /**
+   * The native chooser, for a select that is not searchable.
+   *
+   * A custom combobox with no search field gives a keyboard user arrows and nothing else: no way to
+   * type towards an option, which the authoring practices call typeahead and which a list of fifty
+   * options needs. Building an incremental-search buffer is one answer; using the control that
+   * already has one — along with the platform's keyboard model and the mobile picker — is the other,
+   * and it is what the framework adapter with the same choice already does.
+   *
+   * `searchable` is the switch, and it defaults to false, so this is also the default path.
+   */
+  protected override renderControl(handle: MdyFieldHandle<unknown | null>): unknown {
+    const selected = this.options.findIndex((option) => option.value === handle.value());
+    return html`<select
+      id=${this.fieldId}
+      .selectedIndex=${selected}
+      ?disabled=${handle.disabled()}
+      aria-invalid=${this.showErrors(handle) ? "true" : "false"}
+      @change=${(event: Event) => {
+        const index = (event.target as HTMLSelectElement).selectedIndex;
+        const option = this.options[index];
+        if (!option) return;
+        handle.set(option.value);
+        handle.markAsDirty();
+        handle.markAsTouched();
+      }}
+      @blur=${() => handle.markAsTouched()}
+    >
+      ${this.options.map((option) => html`<option .value=${String(option.value)}>${option.label}</option>`)}
+    </select>`;
+  }
+
   override render(): unknown {
     const handle = this.field;
     if (!handle || !this.selectAdapter) return super.render();
+    // Not searchable: the base shell wraps `renderControl`, which is the native chooser above. None
+    // of the overlay machinery below is reachable in that mode, and none of it should run.
+    if (!this.searchable) return MdyFieldElement.prototype.render.call(this);
     // Which description is on screen is this element's decision — it renders one or the other — so
     // it has to tell the projection before reading the trigger back out of it. `aria-describedby`
     // must name an element that exists.

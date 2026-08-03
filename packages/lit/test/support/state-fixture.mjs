@@ -172,6 +172,10 @@ export async function mount(kind, { validators: withValidators = true } = {}) {
     if (kind === "radio" || kind === "segmented" || kind === "select" || kind === "multiselect") {
       el.options = [option];
     }
+    // Without `searchable` a select renders the native chooser, which has no trigger and no popup —
+    // deliberately, so a non-searchable list gets the platform's typeahead. Its overlay contract
+    // cannot be driven at all in that mode, so the suites that check one ask for the custom combobox.
+    if (kind === "select" || kind === "multiselect") el.searchable = true;
   });
 
   return {
