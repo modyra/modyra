@@ -10,7 +10,7 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
 import { MDY_WIDGET_CONTRACTS, multiselectOverlayAction, createMultiselectFieldController, multiselectChipClasses, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
-import { applyPart, el, setErrors, setText } from "../dom.js";
+import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
@@ -38,13 +38,13 @@ export function renderMultiselectField(
   const searchButton = el("button", parts.searchButton.classes.join(" ")) as HTMLButtonElement;
   searchButton.type = "button";
   searchButton.setAttribute("aria-label", "Search the options");
-  setText(searchButton, "⌕");
+  setIcon(searchButton, "SEARCH");
   // Waiting on its options: the indicator goes on the search button, which is the control here, so
   // the field says it is loading without being opened.
   if (f.loading) {
     const loading = el("span", parts.loading.classes.join(" "));
     loading.setAttribute("role", "status");
-    setText(searchButton, "");
+    searchButton.replaceChildren();
     searchButton.appendChild(loading);
   }
   header.appendChild(searchButton);
@@ -72,10 +72,10 @@ export function renderMultiselectField(
     if (mode === "multi") {
       const chip = el("div", classes);
       chip.title = option.label;
-      const step = (sign: "−" | "+", intent: "decrement" | "increment", describe: string): HTMLButtonElement => {
+      const step = (icon: "MINUS" | "PLUS", intent: "decrement" | "increment", describe: string): HTMLButtonElement => {
         const button = el("button", parts.optionStep.classes.join(" ")) as HTMLButtonElement;
         button.type = "button";
-        setText(button, sign);
+        setIcon(button, icon);
         button.setAttribute("aria-label", `${describe} ${option.label}`);
         button.addEventListener("click", (event) => {
           event.stopPropagation();
@@ -84,7 +84,7 @@ export function renderMultiselectField(
         return button;
       };
       const count = el("span", parts.optionCount.classes.join(" ")) as HTMLSpanElement;
-      chip.append(step("−", "decrement", "Decrease"), label, count, step("+", "increment", "Increase"));
+      chip.append(step("MINUS", "decrement", "Decrease"), label, count, step("PLUS", "increment", "Increase"));
       return { chip, count };
     }
 

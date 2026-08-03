@@ -36,6 +36,7 @@ export function renderTimepickerField(
   control.type = "text";
   if (f.placeholder) control.placeholder = f.placeholder;
   const toggle = el("button", "mdy-timepicker__toggle") as HTMLButtonElement;
+  setIcon(toggle, "CLOCK");
   toggle.type = "button";
   toggle.setAttribute("aria-label", "Open the clock");
   // `mdy-timepicker__popup` is the class the themes position and frame; the controller only
