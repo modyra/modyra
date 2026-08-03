@@ -182,8 +182,6 @@
         --mdy-sys-motion-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
         /* Entering the screen — quick to arrive, slow to settle. */
         --mdy-sys-motion-easing-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
-        /* Overshoots, for a control that should feel physical: a switch, a chip. */
-        --mdy-sys-motion-easing-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
         /* Material's emphasized curve — a longer, flatter settle than `standard`, and genuinely a
        different curve rather than a fourth spelling of one. */
         --mdy-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
