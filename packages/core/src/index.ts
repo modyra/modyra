@@ -132,8 +132,8 @@ export * from "./expression.js";
 export * from "./dynamic-config.js";
 export * from "./value-contracts.js";
 
-// NOTE: satellite utilities (date/time, i18n, icons, keyboard, overlay
-// positioning, serialize, devtools, options-utils) are intentionally NOT
-// re-exported here — import them from their subpath entries
-// (@modyra/core/datetime, /localization, /ui, /serialize, /devtools, ...)
-// so the main entry bundles only the form engine. See ROADMAP phase J.
+// Satellite utilities (date/time, i18n, icons, keyboard, overlay positioning,
+// serialize, devtools, options-utils) are deliberately absent from this entry.
+// They live behind their own subpaths (@modyra/core/datetime, /localization,
+// /ui, /serialize, /devtools, ...) so the main entry bundles only the form
+// engine.

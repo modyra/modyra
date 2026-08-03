@@ -5,9 +5,9 @@
  * typed form model, declarative adapter, core form contracts and DI tokens.
  * No renderer components and no theme assets.
  *
- * NOTE: this secondary entrypoint re-exports from @modyra/angular
- * intentionally. ng-packagr secondary builds enforce rootDir boundaries,
- * so direct imports from ../../src/... are not viable here.
+ * This secondary entrypoint re-exports from @modyra/angular rather than
+ * reaching into ../../src/...: ng-packagr secondary builds enforce rootDir
+ * boundaries, so a direct import across them does not build.
  */
 
 // Typed form (mdyForm)
