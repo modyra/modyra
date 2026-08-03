@@ -369,8 +369,18 @@
      * set, not of the control that happens to hold it.
      *
      * A control that genuinely needs a different size says so after this rule and says why.
+     *
+     * **The popup is named separately because it is not a descendant.** A portalled popup renders at
+     * the document root, outside every `.mdy-renderer`, so this rule could not reach the icons inside
+     * it and nothing else sized them. An `<svg>` carrying only a `viewBox` then falls to each
+     * engine's default for a replaced element with no intrinsic size, and they disagree: Blink gives
+     * it the space its flex line offers, WebKit gives it zero. The multiselect's `+` and `−` buttons
+     * were empty on WebKit for exactly that reason — a control a user cannot see is one they cannot
+     * press.
      */
-    .mdy-renderer svg {
+    .mdy-renderer svg,
+    .mdy-popup svg,
+    .mdy-overlay-panel svg {
         width: var(--mdy-affordance-glyph);
         height: var(--mdy-affordance-glyph);
         flex-shrink: 0;
