@@ -674,6 +674,30 @@
           "classes": [],
           "states": []
         },
+        "increment": {
+          "element": "button",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-spin-btn",
+            "mdy-spin-btn-up"
+          ],
+          "states": []
+        },
+        "decrement": {
+          "element": "button",
+          "parent": "inputWrapper",
+          "optional": true,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-spin-btn",
+            "mdy-spin-btn-down"
+          ],
+          "states": []
+        },
         "inlineError": {
           "element": "image",
           "parent": "label",
