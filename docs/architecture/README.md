@@ -29,6 +29,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 | [0011](0011-a-capability-names-its-event.md) | A capability names its event | A boolean answers *whether* and leaves *how* to each renderer, which is a specification by accident — **superseded by 0013** |
 | [0012](0012-a-choice-is-a-radio-by-role-or-by-tag.md) | A choice is a radio, by tag or by role | All three renderers already chose `radiogroup`; the open question was whether the tag is required |
 | [0013](0013-the-dismissal-names-its-gesture.md) | The dismissal names its gesture | One event cannot express where a gesture began *and* ended, which is what the dismissal rule turns on |
+| [0014](0014-the-contract-names-the-responsible-element.md) | The contract names the responsible element | Naming the region and not the element inside it let three widgets conform that nobody could operate |
 
 ## Security-relevant records
 
