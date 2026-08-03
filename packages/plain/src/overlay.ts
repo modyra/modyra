@@ -178,15 +178,27 @@ function asNode(value: unknown): Node | null {
     : null;
 }
 
+/**
+ * The teardown, with the one question a field may need to ask of the interaction in flight.
+ *
+ * Callable so the five fields that only tear down are unaffected; only the select consults the
+ * precedence rule, and only it reads `interactionFromInside`.
+ */
+export interface MdyOverlayDismissal {
+  (): void;
+  /** True while an interaction begun inside the branch is unresolved. Focus must not close then. */
+  interactionFromInside(): boolean;
+}
+
 export function dismissOnOutsidePointer(
   parts: ReadonlyArray<Element | null | undefined>,
   isOpen: () => boolean,
   close: () => void,
-): () => void {
-  // Every overlay kind declares the same gesture; asking any of them is asking the contract.
+): MdyOverlayDismissal {
+  // Every overlay kind declares the same interaction; asking any of them is asking the contract.
   const declared = MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnOutsidePointer;
   // Nothing declared: no listeners, and a teardown that has nothing to undo.
-  if (declared === false) return noop;
+  if (declared === false) return Object.assign(noop, { interactionFromInside: () => false });
 
   const policy = createLightDismiss({
     isOpen,
@@ -219,7 +231,7 @@ export function dismissOnOutsidePointer(
   document.addEventListener("pointercancel", onCancel, true);
   window.addEventListener("blur", onAbandon);
   document.addEventListener("visibilitychange", onAbandon);
-  return () => {
+  const dispose = (): void => {
     document.removeEventListener("pointerdown", onDown, true);
     document.removeEventListener("click", onClick, true);
     document.removeEventListener("pointercancel", onCancel, true);
@@ -227,4 +239,5 @@ export function dismissOnOutsidePointer(
     document.removeEventListener("visibilitychange", onAbandon);
     policy.reset();
   };
+  return Object.assign(dispose, { interactionFromInside: policy.interactionFromInside });
 }

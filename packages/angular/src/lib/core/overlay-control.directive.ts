@@ -505,8 +505,18 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     return Boolean(el?.contains(target));
   }
 
-  /** Runs when a gesture completes entirely outside. Overridden where closing needs more than the lifecycle. */
+  /** Runs when an interaction completes entirely outside. Overridden where closing needs more than the lifecycle. */
   protected dismissFromOutside(): void {
     this.applyLifecycle({ type: "outside", outside: true });
+  }
+
+  /**
+   * Whether an interaction that began inside the branch is still unresolved.
+   *
+   * The precedence between the two dismissal paths: while this is true, focus leaving must not
+   * close. A subclass's blur handler consults it rather than deciding for itself.
+   */
+  protected interactionFromInside(): boolean {
+    return this.outsideDismissal.interactionFromInside();
   }
 }

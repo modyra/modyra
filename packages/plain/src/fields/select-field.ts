@@ -130,10 +130,20 @@ export function renderSelectField(
 
   trigger.addEventListener("click", () => dispatch(controller.state().open ? { type: "close", restoreFocus: true } : { type: "open", source: "pointer" }));
   // Blur means "focus left the widget", not "focus left this element": opening moves focus into
-  // the search field, and treating that as a blur closed the popup as soon as it opened.
+  // the search field, and treating that as a blur closes the popup as soon as it opens.
+  //
+  // `dismissOnFocusOutside` is what closes it, and it never outranks a pointer. A drag that began
+  // inside the popup moves focus out of it on the way, and closing there would reinstate — through
+  // the focus path — exactly the dismissal `dismissOnOutsidePointer` refuses. `touched` still marks:
+  // the user has been here either way.
   const onFocusOut = (event: FocusEvent): void => {
     const next = event.relatedTarget as Node | null;
     if (next !== null && typeof next.nodeType === "number" && (wrapper.contains(next) || popup.contains(next))) return;
+    if (!MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnFocusOutside) return;
+    if (undismiss.interactionFromInside()) {
+      handle.markAsTouched();
+      return;
+    }
     dispatch({ type: "blur" });
   };
   trigger.addEventListener("focusout", onFocusOut);

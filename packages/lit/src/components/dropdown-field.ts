@@ -1,6 +1,6 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import { createLightDismiss, listboxNavigationIndex, overlayLifecycleTransition } from "@modyra/widgets";
+import { createLightDismiss, listboxNavigationIndex, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition } from "@modyra/widgets";
 import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
 import { outsideDismissDeclared } from "../widget-runtime/overlay-host.js";
@@ -51,8 +51,9 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
   }
 
   /**
-   * A gesture completing outside the element dismisses it — `capabilities.dismissOnOutsidePointer`,
-   * whose rule `createOutsidePointerGesture` holds, so this is not a second choice made here.
+   * An interaction completing outside the element dismisses it —
+   * `capabilities.dismissOnOutsidePointer`, whose rule `createLightDismiss` holds, so this is not a
+   * second choice made here.
    */
   private readonly dismissal = createLightDismiss({
     isOpen: () => this._open,
@@ -73,6 +74,26 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
       if (transition.effect === "teardown") this.close(handle);
     },
   });
+
+  /**
+   * Focus leaving the element closes it — `capabilities.dismissOnFocusOutside`.
+   *
+   * `relatedTarget` containment rather than a timer: a delay is a guess about how long a click takes
+   * to land, and it races whatever the pointer does meanwhile. It also never outranks a pointer — a
+   * drag begun inside the popup moves focus out on the way, and closing there would reinstate the
+   * dismissal `dismissOnOutsidePointer` refuses.
+   */
+  protected onFocusOut(event: FocusEvent, handle: MdyFieldHandle<T>): void {
+    const next = event.relatedTarget as Node | null;
+    if (next !== null && typeof next === "object"
+      && typeof (next as { nodeType?: unknown }).nodeType === "number" && this.contains(next)) return;
+    if (!MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnFocusOutside) return;
+    if (this.dismissal.interactionFromInside()) {
+      handle.markAsTouched();
+      return;
+    }
+    this.close(handle);
+  }
 
   private readonly onOutsideDown = (event: Event): void => {
     const e = event as PointerEvent;
@@ -159,7 +180,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
           ?disabled=${handle.disabled()}
           @click=${() => this.toggleOpen(handle)}
           @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
-          @blur=${() => setTimeout(() => this.close(handle), 120)}
+          @focusout=${(e: FocusEvent) => this.onFocusOut(e, handle)}
         >
           ${text
             ? html`<span class="mdy-select__value">${text}</span>`
