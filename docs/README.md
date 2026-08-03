@@ -28,7 +28,16 @@ Use this index to find the conceptual guides, integration notes and reference ma
 - [Preact](examples/preact.md)
 - [Svelte](examples/svelte.md)
 
-The examples use a shared checkout scenario so adapter syntax and lifecycle behavior can be compared. UI coverage, SSR behavior and ecosystem integration differ by adapter; consult the package README and [reactivity capability matrix](reactivity-capability-matrix.md) for details.
+All seven implement [the same checkout scenario](examples/checkout-scenario.md), so a difference
+between two pages is a difference between two adapters. UI coverage, SSR behavior and ecosystem
+integration differ by adapter; consult the package README and [reactivity capability
+matrix](reactivity-capability-matrix.md) for details.
+
+## The widget contract
+
+- [UI toolkit](guides/ui-toolkit.md): the rendered catalogue and what a renderer owes it
+- [Contract compatibility](contract-compatibility.md): what a change to the contract costs, and which changes are breaking
+- [Contract gaps](contract-gaps.md): the known open defects, each with the evidence behind it
 
 ## Architecture and integration
 
@@ -39,12 +48,25 @@ The examples use a shared checkout scenario so adapter syntax and lifecycle beha
 - [React Native compatibility notes](guides/react-native.md)
 - [Reactivity capability matrix](reactivity-capability-matrix.md)
 
+### Decision records
+
+Why Studio is built the way it is. Each records the alternatives that were rejected and why, so a
+change that revisits one starts from the original reasoning rather than from scratch.
+
+- [0001 — Project and contract model](architecture/0001-project-and-contract-model.md)
+- [0002 — Ids and paths](architecture/0002-ids-and-paths.md)
+- [0003 — Command engine](architecture/0003-command-engine.md)
+- [0004 — Target plugin API](architecture/0004-target-plugin-api.md)
+- [0005 — Expressions and references](architecture/0005-expressions-and-references.md)
+
 ## Studio
 
 - [Overview](studio/overview.md)
 - [Getting started](studio/getting-started.md)
 - [Project format](studio/project-format.md)
 - [Validation](studio/validators.md)
+- [Live canvas](studio/live-canvas.md)
+- [Drag and drop](studio/drag-and-drop.md)
 - [Code generation](studio/target-generation.md)
 - [Accessibility](studio/accessibility.md)
 - [Security](studio/security.md)
@@ -61,7 +83,7 @@ Comparisons are dated snapshots. Re-run their associated scripts and review the 
 
 ## Project information
 
-- [Project background](project-background.md)
+- [Project background](project-background.md) — who Modyra is for, what it refuses to do, and the principles that decide arguments
 - [Contributing](../CONTRIBUTING.md)
 - [Security policy](../SECURITY.md)
 - [Roadmap](../ROADMAP.md)

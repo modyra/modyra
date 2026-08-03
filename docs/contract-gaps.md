@@ -16,9 +16,17 @@ The shape almost all of them share: **a rule that is declared, correct, and wire
 contract is in better shape than the things that check it, which is why most of these are invisible
 to a green suite.
 
-**Status.** A1, A3, B1, B2, B3, C1, C3, C5, D, E1, E2, G1, G3, G4 and H are fixed; C2 and F are
-partly fixed. **Open**: A2, C2's unpainted classes, C4, C6, E3, F's part-keyed tables, G2 — none
-urgent, each with its reason recorded.
+**Status**, and it is derived from the headings below rather than maintained beside them — this
+paragraph contradicted them once, listing four findings as open that their own sections marked fixed,
+and naming a `C6` that has never existed.
+
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I
+- **Partly fixed** — C2 (derived, not painted), E2 (most scripts reachable), F (kind-keyed tables
+  narrowed, part-keyed ones key-checked)
+- **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary, now
+  documented)
+
+Nothing here is urgent, and every entry carries the reason it is where it is.
 
 **One new finding, in the tool that classifies contract changes.** `contract-diff` compared
 capabilities by iterating the *current* ones, so a withdrawn capability was never visited: the single
