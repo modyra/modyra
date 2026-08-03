@@ -217,6 +217,10 @@ interface MdyWidgetShape {
    *
    * What goes here is measured, not assumed: a part all three renderers emit in the resting state.
    * A part some of them omit stays optional, and the reason belongs next to it.
+   *
+   * A part that only exists inside an overlay is required **of an open widget**: a closed picker
+   * renders no popup, so nothing inside one can be demanded at rest. `overlayOnlyParts` decides
+   * which those are, so naming one here is a statement about what an open popup must frame.
    */
   readonly required?: readonly string[];
 }
@@ -542,7 +546,10 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       roles: { listbox: "listbox", option: "option" } ,
       states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], listbox: ["open"], option: ["selected", "active", "hidden"], popup: POPUP_PLACEMENT_STATES } ,
       presentation: ["mdy-select", "mdy-select__option-label"] ,
-      required: ["arrow", "placeholder"] }),
+      // `listbox` is what the popup is for. A positioning box framing nothing is a coherent-looking
+      // widget with nothing in it to choose from, and `empty` is a message *inside* the list rather
+      // than a substitute for it.
+      required: ["arrow", "placeholder", "listbox"] }),
   // Part order is the reading order, so it is decided here rather than inherited from the sequence
   // these names happen to be written in. What the control shows for the current selection comes
   // before the affordance that changes it: the chips, or the placeholder standing in for them while
@@ -571,7 +578,10 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // `optionCheck` is toggle mode's: a counter chip has a count between two steppers and no tick
       // to draw, so requiring it would ask every counter-mode renderer for an element that means
       // nothing there.
-      required: ["header", "option", "optionLabel", "options", "searchButton"] }),
+      // `listbox` is required to be *there*, not to be a listbox: what role a chip grid should carry
+      // is the mode question, and this says only that the popup frames the chooser rather than
+      // nothing.
+      required: ["header", "option", "optionLabel", "options", "searchButton", "listbox"] }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { control: ["mdy-datepicker__input"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] },
       roles: { grid: "grid", row: "row", weekdays: "row", weekday: "columnheader", gridcell: "gridcell" } ,
@@ -599,7 +609,11 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // is not moved.
       classes: { control: ["mdy-timepicker__input"], toggle: ["mdy-timepicker__toggle"], popup: ["mdy-timepicker__popup", MDY_POPUP_CLASS], dialog: ["mdy-timepicker__dialog"], container: ["mdy-timepicker-container"], content: ["mdy-timepicker-content"], header: ["mdy-timepicker-header"], hour: ["mdy-timepicker-segment", "mdy-timepicker-segment--hour"], hourControl: ["mdy-timepicker-segment-input"], minute: ["mdy-timepicker-segment", "mdy-timepicker-segment--minute"], minuteControl: ["mdy-timepicker-segment-input"], period: ["mdy-timepicker-period-toggle"], clock: ["mdy-timepicker-dial"], dialFace: ["mdy-timepicker-dial__face"], dialHand: ["mdy-timepicker-dial__hand"], dialNumber: ["mdy-timepicker-dial__number"], modeToggle: ["mdy-timepicker-mode-toggle"], actions: ["mdy-timepicker-actions"], action: ["mdy-timepicker-action-btn"] } ,
       presentation: ["mdy-timepicker", "mdy-timepicker--dial", "mdy-timepicker__icon", "mdy-timepicker-dial-variant", "mdy-timepicker-fields", "mdy-timepicker-period-btn", "mdy-timepicker-period-btn--selected", "mdy-timepicker-segment-input--readonly", "mdy-timepicker-separator", "mdy-timepicker-spacer", "mdy-timepicker-segment-label"] ,
-      required: ["toggle"] }),
+      // `container`, not `dialog`: the popup must frame the thing that holds the clock, and that is
+      // the element both renderers build. Where the `dialog` role itself belongs is not settled —
+      // one renderer puts it on the popup, the other on this container — so requiring the `dialog`
+      // part would require an element neither of them draws.
+      required: ["toggle", "container"] }),
   file: define("file", ["mdy-renderer", "mdy-renderer--file"], ["root", "label", "requiredMarker", "dropzone", "control", "content", "fileList", "fileItem", "clear", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { dropzone: ["mdy-file-container"], control: ["mdy-file-input"], content: ["mdy-file-content"], fileList: ["mdy-file-list"], fileItem: ["mdy-file-item"], clear: ["mdy-file-clear"] },
       states: { dropzone: ["dragover"] } ,
@@ -620,7 +634,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       states: { swatch: ["active"], popup: POPUP_PLACEMENT_STATES },
       classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,
       presentation: ["mdy-colors", "mdy-colors__dropdown-header", "mdy-select__arrow"] ,
-      required: ["hexInput", "nativePicker", "preview", "toggle"] }),
+      required: ["hexInput", "nativePicker", "preview", "toggle", "presets"] }),
 });
 
 /**
