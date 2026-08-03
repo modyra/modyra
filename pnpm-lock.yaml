@@ -364,6 +364,9 @@ importers:
       '@modyra/core':
         specifier: workspace:*
         version: link:../core
+      '@modyra/studio-contract':
+        specifier: workspace:*
+        version: link:../studio-contract
       '@modyra/studio-model':
         specifier: workspace:*
         version: link:../studio-model

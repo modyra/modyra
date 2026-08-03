@@ -204,14 +204,16 @@ test("checkout's real items-length form validator renders in the Form validators
   assert.match(markup, /createOrder/);
 });
 
-test("the Diagnostics tab badge reflects checkout's real 2 warnings (form + server validator, both unmappable), 0 errors", () => {
+test("the Diagnostics tab badge reflects checkout's one real warning (the server validator), 0 errors", () => {
   const host = createHost();
   mountStudio(host, createCheckoutProject());
 
   const badge = host.querySelector('[data-inspector-tab="diagnostics"] .badge');
   assert.ok(badge, "expected the Diagnostics tab badge in the markup");
-  assert.equal(badge.textContent, "2");
-  assert.doesNotMatch(badge.className, /badge-error/); // 2 warnings, 0 errors -> not the error-colored badge
+  // One, not two: the cross-field validator now compiles into the contract's `validations` slot, so
+  // the only thing still unmappable is the server validator.
+  assert.equal(badge.textContent, "1");
+  assert.doesNotMatch(badge.className, /badge-error/); // warnings only -> not the error-colored badge
 
   // The coupon's server validator is the one diagnostic with a concrete nodeId -> the live field is marked.
   assert.ok(host.querySelector('.plain-canvas-field[data-node="nd_coupon"].has-diagnostic'));
