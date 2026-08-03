@@ -37,6 +37,16 @@ For the project motivation and development approach, see [Project background](do
 
 ## Ground rules
 
+- **Every architectural or security decision is an ADR.** Modyra is
+  production- and security-grade: a decision recorded only in a commit
+  message, a changeset or a code comment is not recorded. Write it in
+  [`docs/architecture/`](docs/architecture/README.md) using
+  [the template](docs/architecture/TEMPLATE.md) — including the check that
+  fails if it is violated, and its security impact. `npm run test:docs`
+  enforces the required sections, contiguous numbering, and that the record
+  is indexed. Retire a decision by superseding it, never by editing it into
+  agreement with the present. A changeset describes a release; a change that
+  takes a decision needs both.
 - **Every change ships complete**: code + tests + docs (`docs/guides/`) +
   demo usage where visible. A fixed bug gets a regression test that cites
   the issue it closes.

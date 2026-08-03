@@ -16,6 +16,8 @@
  *   4. **An upstream README naming its own consumer**, which inverts the dependency direction in
  *      prose while the import graph stays clean.
  *   5. **A published package with no licence on its npm page.** Four of twelve.
+ *   6. **A decision record with no Verification or Security section**, which is how a record stops
+ *      being reviewable — and one that is not in the index, which is how it stops being read.
  *
  * All five are one shape: prose asserting something about the repository, with nothing to notice
  * when the repository moves. Each is checked mechanically here, and each check is mutation-tested —
@@ -242,6 +244,48 @@ function packagesMissingLicence() {
 
 const unlicensed = packagesMissingLicence();
 
+// ─── 6. Every decision record is complete and indexed ────────────────────────
+
+/**
+ * Architectural and security decisions live in `docs/architecture/`, and a record that omits why it
+ * costs, how it is checked, or what it exposes is not one.
+ *
+ * `Verification` and `Security and privacy` are required precisely because they are the sections a
+ * hurried record drops — and they are the two a reviewer needs. "No security impact" is a finding and
+ * takes one line; an absent section is indistinguishable from not having thought about it.
+ */
+function adrProblems() {
+  const dir = join(ROOT, "docs/architecture");
+  if (!existsSync(dir)) return [];
+
+  const required = ["## Context", "## Decision", "## Consequences", "## Verification", "## Security and privacy"];
+  const records = readdirSync(dir).filter((name) => /^\d{4}-.*\.md$/.test(name)).sort();
+  const index = existsSync(join(dir, "README.md")) ? readFileSync(join(dir, "README.md"), "utf8") : "";
+  const problems = [];
+
+  if (records.length === 0) return problems;
+  if (index === "") problems.push("docs/architecture/README.md is missing — the records have no index");
+
+  records.forEach((name, position) => {
+    const source = readFileSync(join(dir, name), "utf8");
+
+    // Contiguous from 0001: a gap means a record was deleted rather than superseded, and superseding
+    // is the only honest way to retire a decision.
+    const expected = String(position + 1).padStart(4, "0");
+    if (!name.startsWith(expected)) problems.push(`${name}: expected number ${expected} — records must be contiguous from 0001`);
+
+    if (!/^Status:/m.test(source)) problems.push(`${name}: no "Status:" line`);
+    for (const heading of required) {
+      if (!source.includes(`\n${heading}\n`)) problems.push(`${name}: missing "${heading}"`);
+    }
+    if (!index.includes(name)) problems.push(`${name}: not listed in docs/architecture/README.md`);
+  });
+
+  return problems;
+}
+
+const adrs = adrProblems();
+
 // ─── Report ──────────────────────────────────────────────────────────────────
 
 console.log("# Documentation checks\n");
@@ -261,8 +305,11 @@ for (const problem of inverted) console.log(`  ${problem}`);
 console.log(`\nPublished packages without a licence section: ${unlicensed.length}`);
 for (const problem of unlicensed) console.log(`  ${problem}`);
 
+console.log(`\nIncomplete or unindexed decision records: ${adrs.length}`);
+for (const problem of adrs) console.log(`  ${problem}`);
+
 if (!check) process.exit(0);
-if (brokenLinks.length || gapProblems.length || orphans.length || inverted.length || unlicensed.length) {
+if (brokenLinks.length || gapProblems.length || orphans.length || inverted.length || unlicensed.length || adrs.length) {
   console.error("\nDOCUMENTATION CHECKS FAILED");
   process.exit(1);
 }
