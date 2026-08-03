@@ -83,6 +83,14 @@ export interface MdyLightDismiss {
   readonly reset: () => void;
   /** The current phase, for tests and for a renderer that wants to reflect it. */
   readonly phase: () => MdyDismissalPhase;
+  /**
+   * Whether an interaction that began **inside** the branch is still unresolved.
+   *
+   * The precedence rule between the two dismissal paths: while this is true, focus leaving the
+   * branch must not close the overlay. A drag out of a popup moves focus out of it, and closing on
+   * that would reinstate — through the focus path — exactly the dismissal the pointer rule refuses.
+   */
+  readonly interactionFromInside: () => boolean;
 }
 
 /**
@@ -132,5 +140,6 @@ export function createLightDismiss(options: MdyLightDismissOptions): MdyLightDis
 
     reset: toIdle,
     phase: () => phase,
+    interactionFromInside: () => phase === "tracking-inside",
   };
 }
