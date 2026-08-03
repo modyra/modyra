@@ -926,6 +926,22 @@
         height: 100%;
         padding: 0 1rem;
         box-sizing: border-box;
+    }
+
+    /*
+     * The floating label's rise, and only there.
+     *
+     * `padding-top` is a layout property: animating it relays out this element and its children on
+     * every frame. It is scoped to `.mdy-floating-label` because that is the only variant whose
+     * padding ever changes — unscoped, every Material field paid for a transition that could not
+     * fire.
+     *
+     * The remaining cost is real and not fixed here: the variant that *does* animate still animates
+     * a layout property. Moving it to a transform means the space is reserved rather than grown,
+     * which is a change to how the floating label computes its geometry across four themes and is
+     * verified by eye, not by a test. That is its own batch.
+     */
+    .mdy-floating-label .mdy-input-wrapper__inliner {
         transition: padding-top var(--mdy-sys-motion-duration-slow, 0.2s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
     }
 
