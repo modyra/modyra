@@ -131,16 +131,20 @@ That assertion aims the gesture *inside* the popup rather than outside. Pressing
 focus, and the `focusout` path below would close the popup for a reason unrelated to the pointer —
 so aiming outside would have measured the wrong thing and passed.
 
-**Recorded incompleteness, and now a defect rather than a gap.** `@modyra/plain`'s select still
-closes on `focusout` (`packages/plain/src/fields/select-field.ts:139-140`), a dismissal path this
-decision does not name. That is worse than an omission: a rule refusing to dismiss while a second
-path closes the popup anyway is a rule that only appears to be in control.
+**The focus path is now named and subordinated.** `dismissOnFocusOutside` declares that focus leaving
+the logical branch closes an overlay — which is what makes Tab out of a popup close it — and the
+precedence is explicit: while an interaction that began **inside** the branch is unresolved, focus
+decides nothing. All three renderers consult `interactionFromInside()` rather than each deciding.
 
-The precedence this decision requires — a `focusout` may not close while an interaction that began
-**inside** the branch is still in flight — is **not yet implemented**, and the case is not yet
-asserted. Any dismissal on focus leaving belongs to a separate capability
-(`dismissOnFocusOutside`), not to this one. `e2e/plain/dismiss.spec.ts` asserts the current
-behaviour as it is, so the gap stays visible rather than being papered over.
+**The precedence gate is asserted at the rule, not in a browser, and the reason is measured.** In
+`@modyra/plain`'s select an inside-origin drag never produces a `focusout` at all: an option calls
+`preventDefault` on `mousedown` to keep focus in the search box, so `document.activeElement` never
+leaves it. Observed sequence: `pointerdown:option`, `pointerup:…`, `click:BODY`, no focus event.
+Removing the gate leaves the browser assertion green — so the gate is defensive code this renderer
+cannot currently exercise, and saying so is worth more than a test that appears to cover it.
+`packages/widgets/test/dismissal.spec.mjs` §13 asserts the rule directly. The gate becomes
+load-bearing in Plain the day that `preventDefault` goes, and it may already be reachable in Lit,
+whose focus handling had no containment guard before this work.
 
 **Not covered by this decision, and each needing its own record:** nested popups and the order they
 dismiss in; a `reason` on every close so one interaction cannot produce two transitions; the full

@@ -154,7 +154,8 @@
       ],
       "capabilities": {
         "overlay": false,
-        "dismissOnOutsidePointer": false
+        "dismissOnOutsidePointer": false,
+        "dismissOnFocusOutside": false
       },
       "keyboard": []
     },
@@ -311,7 +312,8 @@
       ],
       "capabilities": {
         "overlay": false,
-        "dismissOnOutsidePointer": false
+        "dismissOnOutsidePointer": false,
+        "dismissOnFocusOutside": false
       },
       "keyboard": []
     },
@@ -468,7 +470,8 @@
       ],
       "capabilities": {
         "overlay": false,
-        "dismissOnOutsidePointer": false
+        "dismissOnOutsidePointer": false,
+        "dismissOnFocusOutside": false
       },
       "keyboard": []
     },
@@ -603,7 +606,8 @@
       ],
       "capabilities": {
         "overlay": false,
-        "dismissOnOutsidePointer": false
+        "dismissOnOutsidePointer": false,
+        "dismissOnFocusOutside": false
       },
       "keyboard": []
     },
@@ -762,7 +766,8 @@
       ],
       "capabilities": {
         "overlay": false,
-        "dismissOnOutsidePointer": false
+        "dismissOnOutsidePointer": false,
+        "dismissOnFocusOutside": false
       },
       "keyboard": [
         "ArrowDown:step",
@@ -910,7 +915,8 @@
       ],
       "capabilities": {
         "overlay": false,
-        "dismissOnOutsidePointer": false
+        "dismissOnOutsidePointer": false,
+        "dismissOnFocusOutside": false
       },
       "keyboard": [
         "ArrowDown:step",
@@ -1040,7 +1046,8 @@
       ],
       "capabilities": {
         "overlay": false,
-        "dismissOnOutsidePointer": false
+        "dismissOnOutsidePointer": false,
+        "dismissOnFocusOutside": false
       },
       "keyboard": [
         "Space:toggle"
@@ -1188,7 +1195,8 @@
       ],
       "capabilities": {
         "overlay": false,
-        "dismissOnOutsidePointer": false
+        "dismissOnOutsidePointer": false,
+        "dismissOnFocusOutside": false
       },
       "keyboard": [
         "Space:toggle"
@@ -1339,7 +1347,8 @@
       ],
       "capabilities": {
         "overlay": false,
-        "dismissOnOutsidePointer": false
+        "dismissOnOutsidePointer": false,
+        "dismissOnFocusOutside": false
       },
       "keyboard": [
         "ArrowDown:move",
@@ -1492,7 +1501,8 @@
       ],
       "capabilities": {
         "overlay": false,
-        "dismissOnOutsidePointer": false
+        "dismissOnOutsidePointer": false,
+        "dismissOnFocusOutside": false
       },
       "keyboard": [
         "ArrowDown:move",
@@ -1761,6 +1771,7 @@
       "capabilities": {
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
+        "dismissOnFocusOutside": true,
         "anchoring": {
           "matchAnchorWidth": true,
           "minSpace": 180,
@@ -2109,6 +2120,7 @@
       "capabilities": {
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
+        "dismissOnFocusOutside": true,
         "anchoring": {
           "matchAnchorWidth": true,
           "minSpace": 180,
@@ -2395,6 +2407,7 @@
       "capabilities": {
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
+        "dismissOnFocusOutside": true,
         "anchoring": {
           "matchAnchorWidth": false,
           "minSpace": 240,
@@ -2705,6 +2718,7 @@
       "capabilities": {
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
+        "dismissOnFocusOutside": true,
         "anchoring": {
           "matchAnchorWidth": false,
           "minSpace": 240,
@@ -3062,6 +3076,7 @@
       "capabilities": {
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
+        "dismissOnFocusOutside": true,
         "anchoring": {
           "matchAnchorWidth": false,
           "minSpace": 240,
@@ -3246,7 +3261,8 @@
       ],
       "capabilities": {
         "overlay": false,
-        "dismissOnOutsidePointer": false
+        "dismissOnOutsidePointer": false,
+        "dismissOnFocusOutside": false
       },
       "keyboard": []
     },
@@ -3475,6 +3491,7 @@
       "capabilities": {
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
+        "dismissOnFocusOutside": true,
         "anchoring": {
           "matchAnchorWidth": false,
           "minSpace": 120,

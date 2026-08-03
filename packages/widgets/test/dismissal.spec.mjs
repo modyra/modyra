@@ -199,6 +199,36 @@ test("§21.7 — a cancelled interaction does not dismiss", () => {
   assert.equal(o.dismissed, 0);
 });
 
+// ─── §13/§24: focus must not outrank a pointer ───────────────────────────────
+
+test("§13 — an interaction begun inside suppresses focus dismissal until it resolves", () => {
+  const o = overlay();
+  assert.equal(o.interactionFromInside(), false, "nothing in flight");
+
+  o.pointerdown(IN, PRIMARY);
+  assert.equal(o.interactionFromInside(), true, "focus must not close now");
+
+  // §24's critical sequence: the drag continues outside, focus leaves, and the release is outside.
+  o.click(OUT);
+  assert.equal(o.dismissed, 0, "began inside, so it never dismisses");
+  assert.equal(o.interactionFromInside(), false, "resolved — focus may decide again");
+});
+
+test("§13 — an interaction begun outside does not suppress focus dismissal", () => {
+  // Focus leaving is a different question. Only an *inside* origin has a claim on the popup.
+  const o = overlay();
+  o.pointerdown(OUT, PRIMARY);
+  assert.equal(o.interactionFromInside(), false);
+});
+
+test("§13 — a cancelled inside interaction releases the suppression", () => {
+  const o = overlay();
+  o.pointerdown(IN, PRIMARY);
+  assert.equal(o.interactionFromInside(), true);
+  o.pointercancel(PRIMARY.pointerId);
+  assert.equal(o.interactionFromInside(), false, "cancelled, so focus is free to decide");
+});
+
 test("§21.8 — the trigger is inside the branch, so activating it is not an outside interaction", () => {
   // The renderer's `isInside` is what carries this; the rule only has to honour it.
   let dismissed = 0;

@@ -33,18 +33,31 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
      * meaningfully be false: a popup a click elsewhere cannot dismiss is a real design, and this is
      * where it would be declared.
      *
-     * It names a **gesture**, not an event. No single event can express the rule: `pointerdown`
-     * fires on press, before the gesture's end is known, and `click` says nothing about a drag that
-     * began *inside* the popup and ended outside — which is what selecting text in a popup is.
+     * It names an **interaction**, not an event. No single event can express the rule: `pointerdown`
+     * fires on press, before the interaction's end is known, and `click` says nothing about a drag
+     * that began *inside* the popup and ended outside — which is what selecting text in a popup is.
      *
-     * `"pointer-pair"` dismisses only when press and release both land outside, and never on
-     * `pointercancel`, which is the browser taking the gesture over to scroll. The rule itself lives
-     * in {@link createOutsidePointerGesture}, so a renderer consumes it rather than restating it.
+     * `"light-dismiss"` closes only when a primary interaction both begins and completes outside the
+     * logical branch. The rule lives in {@link createLightDismiss}, so a renderer consumes it rather
+     * than restating it.
      *
-     * The shape stays a union rather than a boolean: a popup that a gesture elsewhere cannot dismiss
-     * is a real design, and a second gesture model would be declared here beside this one.
+     * The shape stays a union rather than a boolean: a popup an interaction elsewhere cannot dismiss
+     * is a real design, and a second dismissal model would be declared here beside this one.
      */
     readonly dismissOnOutsidePointer: MdyOutsideDismiss;
+    /**
+     * Focus leaving the widget's logical branch closes it.
+     *
+     * Declared separately because it is a **different question** with a different answer, and
+     * conflating the two is how a popup came to close through a path the pointer rule had just
+     * refused. This one is what makes Tab out of an open popup close it.
+     *
+     * Two things it is not. It is never a substitute for an outside interaction: an interaction that
+     * began inside the branch and dragged out moves focus out too, and closing on that would
+     * reinstate the dismissal `dismissOnOutsidePointer` exists to prevent. And it never outranks a
+     * pointer — while an interaction begun inside is unresolved, focus decides nothing.
+     */
+    readonly dismissOnFocusOutside: boolean;
     /**
      * How this widget's popup attaches, for `anchorOverlay`. A list belongs under its control and
      * as wide as it; a calendar is sized by its own content. Naming it here is what stops three
@@ -384,7 +397,7 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
     siblingCount.set(parent, order + 1);
     return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional: !(REQUIRED_PARTS.has(name) || shape.required?.includes(name)), repeated: REPEATED_PARTS.has(name) });
   });
-  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
+  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, dismissOnFocusOutside: overlay, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
 /**
  * The semantic every part answers to, declared rather than defaulted.
