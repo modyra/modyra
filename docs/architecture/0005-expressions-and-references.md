@@ -1,6 +1,7 @@
 # ADR 0005: Expressions & references
 
-Status: Accepted (P0)
+Status: Accepted (P0). Amended — the operator set now also exists in `@modyra/core` as
+`MdyExpression`, addressed by path; see [Amendment](#amendment-the-tree-is-also-a-core-type).
 
 ## Context
 
@@ -47,6 +48,35 @@ user-supplied code/`eval` in the canvas, which breaks R11.
 - Diagnostics must detect a `NodeRef` whose `nodeId` no longer exists
   ("broken reference", plan section 9) — expressions are exactly where such
   dangling references would surface.
+
+## Amendment: the tree is also a core type
+
+The same operator set now exists in `@modyra/core` as `MdyExpression`, and the contract carries it in
+a `validations` slot. Nothing above is withdrawn; this records what changed and why.
+
+**Why.** A cross-field validator could be authored and previewed but not exported: the contract's
+`rules` express visibility and enablement over a flat predicate, with nowhere to put a message. So a
+designer could watch a rule work and ship a contract without it. Giving the contract the tree closes
+that, and it is a relocation rather than an invention — this ADR already calls the tree "portable,
+target-neutral", which is precisely what a public schema needs.
+
+**The one real difference: ids become paths.** `StudioExpression` addresses a field by `NodeRef`,
+which survives a rename and is meaningless outside Studio. `MdyExpression` addresses it by the dotted
+path it occupies in the form value — `{ path: "shipping.city" }` — because that is what a form can
+actually read, and because putting a Studio concept in a public schema would export an editor's
+internals to every renderer and generated target.
+
+Both remain true at once, and the boundary between them is one function:
+`toContractExpression(expr, pathByNode)` in `@modyra/studio-contract`. Studio keeps authoring ids;
+the compiler resolves them. A reference to a deleted node throws rather than compiling to a plausible
+path, because a condition that silently never fires is worse than a refused compile — which is the
+same reasoning as the broken-reference diagnostic above, applied at the export boundary.
+
+**Two implementations, held together by a test.** `studio-codegen` prints the tree as source and core
+interprets it directly. That is two implementations of one semantics, so
+`packages/studio-contract/test/expression.test.mjs` runs both over the same inputs — on each
+comparison's boundary, not only either side of it — and requires them to agree. A divergence means a
+generated form would validate differently from the one the designer previewed.
 
 ## Rejection-test answers
 
