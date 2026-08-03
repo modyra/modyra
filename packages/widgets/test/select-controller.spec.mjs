@@ -83,6 +83,25 @@ test("blur marks touched and closes", () => {
   assert.ok(commands.some((c) => c.type === "mark-touched"));
 });
 
+test("blur does not pull focus back to the trigger", () => {
+  // Focus has already gone where the user sent it. Restoring it here takes it off whatever they
+  // just tabbed or clicked onto, and the trigger regaining `:focus` a tick after the arrow starts
+  // rotating back is what makes the close look like it stuttered.
+  const { controller } = setup();
+  controller.dispatch({ type: "open", source: "keyboard" });
+  const commands = controller.dispatch({ type: "blur" });
+  assert.ok(commands.some((c) => c.type === "close-overlay"));
+  assert.ok(!commands.some((c) => c.type === "restore-focus"), "blur must not restore focus");
+});
+
+test("Escape still restores focus — the user is still in the widget", () => {
+  // The contrast that makes the rule above legible: Escape has nowhere else to send focus.
+  const { controller } = setup();
+  controller.dispatch({ type: "open", source: "keyboard" });
+  const commands = controller.dispatch({ type: "close", restoreFocus: true });
+  assert.deepStrictEqual(commands.map((c) => c.type), ["close-overlay", "restore-focus"]);
+});
+
 test("search filters options and activates first match", () => {
   const { controller } = setup();
   const commands = controller.dispatch({ type: "search", query: "ber" });

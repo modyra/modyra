@@ -262,7 +262,11 @@ export function createSelectController<TValue>(
       }
       case "blur": {
         touched.set(true);
-        close(true, commands);
+        // Closes without restoring focus. Focus has already gone where the user sent it — a Tab, a
+        // click on another control — and pulling it back to the trigger takes it off whatever they
+        // just reached for. Escape is the opposite case and restores deliberately: there the user
+        // is still in the widget and has nowhere else to be.
+        close(false, commands);
         commands.push({ type: "mark-touched" });
         break;
       }
