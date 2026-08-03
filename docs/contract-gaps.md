@@ -24,7 +24,7 @@ does not want to scroll, and `npm run test:docs` fails if the two disagree.
   narrowed, part-keyed ones key-checked)
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — J1, J2, J4
+- **Open** — J1, J2, J4, K
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -622,3 +622,25 @@ fixture written to demonstrate it failed instead of passing, which is how it was
 contract does not have; checking popup contents requires the contract to name what each kind's popup
 frames. Both are the same missing capability — anatomy expressed one level deeper than the current
 part list reaches — which is also J3's shape.
+
+## K — the accessibility projections have no classification path — **open**
+
+**Observed.** `scripts/contract-diff.mjs` snapshots the catalogue: parts, where they hang, what they
+are, what refers to what. The `project*A11y` functions are exported from the package root and are
+what a renderer actually applies to its elements — and nothing compares them against anything.
+
+Closing J3 moved `role="spinbutton"`, `aria-label` and `aria-valuenow` off
+`projectTimepickerFieldA11y`'s `hour` part and onto a new `hourControl`. For a consumer applying
+`parts.hour` to its input that is a silent loss of the control's role and value: the attributes moved
+rather than disappearing, so TypeScript reports nothing and the differ reported `minor` — correctly,
+for the only surface it can see.
+
+The change shipped as `major` on the author's reading rather than the tool's, which is the outcome
+`CLAUDE.md` § *Standing authority* asks for when the two disagree. It is not a repeatable one.
+
+**Not decided.** A projection returns attribute maps whose values depend on state, so the snapshot
+cannot be the returned object; it would have to be the shape — which parts exist, and which attribute
+names each carries. Whether that is worth freezing before 1.0, or whether the honest answer is that
+these helpers are not part of the promise and should stop being exported from the root, is the
+question. The second reading is cheaper and narrows the 1.0 surface, which is the direction
+`ROADMAP.md` is already pointing.
