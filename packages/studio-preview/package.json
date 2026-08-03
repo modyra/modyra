@@ -19,7 +19,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/studio-model": "workspace:*",
-    "@modyra/core": "workspace:*"
+    "@modyra/core": "workspace:*",
+    "@modyra/studio-contract": "workspace:*",
+    "@modyra/studio-model": "workspace:*"
   }
 }

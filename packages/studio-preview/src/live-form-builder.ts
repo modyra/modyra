@@ -1,25 +1,23 @@
 /**
- * Plan section 11 "Preview reads model/Contract, not generated source" —
- * builds a REAL, running @modyra/core form directly from a Studio project:
- * actual `field()`/`group()`/`array()`/`createForm()` calls against actual
- * imported validator functions, never a reimplementation and never text
- * generation (that is studio-codegen's job, for a different output).
+ * A real, running `@modyra/core` form, built from the contract a project compiles to.
+ *
+ * Actual `field()`/`group()`/`array()`/`createForm()` calls against actual imported validator
+ * functions — never a reimplementation, and never text generation, which is a different output for
+ * a different purpose.
+ *
+ * There is deliberately **one** way to get here. Building from the project model as well would give
+ * the preview a second, privileged path, and the two would drift: the preview would show forms the
+ * export cannot express.
  */
 import {
   array,
+  buildDynamicFormSchema,
+  buildDynamicValidations,
   createForm,
-  crossField,
-  email,
-  eachOneOf,
+  evaluateExpression,
   field,
   group,
-  max,
-  maxLength,
-  min,
-  minLength,
-  oneOf,
-  pattern,
-  required,
+  parseDynamicForm,
   serverValidator,
   type MdyDraftStorage,
   type MdyFormSchema,
@@ -29,108 +27,18 @@ import {
 } from "@modyra/core";
 import {
   buildIndexes,
-  type ArrayNode,
   type FieldNode,
-  type GroupNode,
   type MdyStudioProject,
-  type StudioArrayValidator,
   type StudioDiagnostic,
-  type StudioFieldValidator,
   type StudioIndexes,
   type StudioSchemaNode,
 } from "@modyra/studio-model";
-import { evaluateExpression } from "./expression-evaluator.js";
+import { compileToContract, toContractExpression } from "@modyra/studio-contract";
 import { createMockAsyncValidator, type MockServerConfig } from "./mock-server.js";
 
 export interface LiveFormResult {
   form: MdyTypedForm<MdyFormSchema> | null;
   diagnostics: StudioDiagnostic[];
-}
-
-function mapFieldValidator(v: StudioFieldValidator, node: FieldNode, diagnostics: StudioDiagnostic[]): ValidatorFn<never> | null {
-  switch (v.kind) {
-    case "required":
-      return required(v.message) as ValidatorFn<never>;
-    case "email":
-      return email(v.message) as ValidatorFn<never>;
-    case "min":
-      return typeof v.value === "number" ? (min(v.value, v.message) as ValidatorFn<never>) : null;
-    case "max":
-      return typeof v.value === "number" ? (max(v.value, v.message) as ValidatorFn<never>) : null;
-    case "minLength":
-      return typeof v.value === "number" ? (minLength(v.value, v.message) as ValidatorFn<never>) : null;
-    case "maxLength":
-      return typeof v.value === "number" ? (maxLength(v.value, v.message) as ValidatorFn<never>) : null;
-    case "pattern":
-      return typeof v.pattern === "string" ? (pattern(new RegExp(v.pattern), v.message) as ValidatorFn<never>) : null;
-    case "oneOf":
-      return Array.isArray(v.value) ? (oneOf(v.value, v.message) as ValidatorFn<never>) : null;
-    case "eachOneOf":
-      return Array.isArray(v.value) ? (eachOneOf(v.value, v.message) as ValidatorFn<never>) : null;
-    case "customRef":
-      diagnostics.push({
-        code: "PREVIEW_CUSTOM_VALIDATOR_STUB",
-        severity: "info",
-        message: `Custom validator on "${node.name}" has no live implementation in preview — treated as always-valid`,
-        nodeId: node.id,
-        validatorId: v.id,
-      });
-      return null;
-    default:
-      diagnostics.push({ code: "UNSUPPORTED_VALIDATOR", severity: "warning", message: `Validator kind "${v.kind}" is not supported by preview and was omitted`, nodeId: node.id, validatorId: v.id });
-      return null;
-  }
-}
-
-function mapArrayValidator(v: StudioArrayValidator, node: ArrayNode, diagnostics: StudioDiagnostic[]): ValidatorFn<never> | null {
-  if (v.kind === "min" && typeof v.value === "number") return minLength(v.value, v.message) as ValidatorFn<never>;
-  if (v.kind === "max" && typeof v.value === "number") return maxLength(v.value, v.message) as ValidatorFn<never>;
-  diagnostics.push({ code: "UNSUPPORTED_VALIDATOR", severity: "warning", message: `Array validator kind "${v.kind}" is not supported by preview and was omitted`, nodeId: node.id, validatorId: v.id });
-  return null;
-}
-
-function mapField(node: FieldNode, idx: StudioIndexes, diagnostics: StudioDiagnostic[], mockConfigByImplId: Record<string, MockServerConfig>) {
-  const validators = node.validators
-    .map((v) => mapFieldValidator(v, node, diagnostics))
-    .filter((v): v is ValidatorFn<never> => v !== null);
-
-  if (!node.serverValidator) return field(node.initialValue as never, validators);
-
-  const sv = node.serverValidator;
-  const dependsOn = sv.dependencies.map((d) => idx.pathByNode.get(d.nodeId) ?? d.nodeId);
-  const when = sv.skipWhen
-    ? (value: unknown) => !evaluateExpression(sv.skipWhen!, value, (id) => (id === node.id ? "" : id))
-    : undefined;
-  return field(
-    node.initialValue as never,
-    validators,
-    serverValidator(createMockAsyncValidator(mockConfigByImplId[sv.implementationRef] ?? {}), {
-      debounceMs: sv.debounceMs,
-      timeoutMs: sv.timeoutMs,
-      dependsOn,
-      when,
-    }) as never,
-  );
-}
-
-function mapGroup(node: GroupNode, idx: StudioIndexes, diagnostics: StudioDiagnostic[], mockConfigByImplId: Record<string, MockServerConfig>) {
-  const children: Record<string, unknown> = {};
-  for (const child of node.children) children[child.name] = mapNode(child, idx, diagnostics, mockConfigByImplId);
-  return group(children as MdyFormSchema);
-}
-
-function mapArray(node: ArrayNode, idx: StudioIndexes, diagnostics: StudioDiagnostic[], mockConfigByImplId: Record<string, MockServerConfig>) {
-  const item = mapNode(node.item, idx, diagnostics, mockConfigByImplId);
-  const validators = node.validators
-    .map((v) => mapArrayValidator(v, node, diagnostics))
-    .filter((v): v is ValidatorFn<never> => v !== null);
-  return array(item as never, { initial: node.initialRows, validators: validators as ValidatorFn<readonly unknown[]>[] });
-}
-
-function mapNode(node: StudioSchemaNode, idx: StudioIndexes, diagnostics: StudioDiagnostic[], mockConfigByImplId: Record<string, MockServerConfig>): unknown {
-  if (node.node === "field") return mapField(node, idx, diagnostics, mockConfigByImplId);
-  if (node.node === "group") return mapGroup(node, idx, diagnostics, mockConfigByImplId);
-  return mapArray(node, idx, diagnostics, mockConfigByImplId);
 }
 
 export interface BuildLiveFormOptions {
@@ -142,25 +50,131 @@ export interface BuildLiveFormOptions {
   readonly reactivity?: MdyReactivity;
 }
 
-/** Builds a real, running form from `project`. */
+/**
+ * Every field node in the project, by the path it occupies in the form value.
+ *
+ * Used to find the nodes the *contract* cannot describe — a server validator is a target-generation
+ * concern, so the compiled contract has no place to put one — and reattach them to the form the
+ * contract built.
+ */
+function fieldNodesByPath(node: StudioSchemaNode, idx: StudioIndexes, into: Map<string, FieldNode>): void {
+  if (node.node === "field") {
+    const path = idx.pathByNode.get(node.id);
+    if (path !== undefined) into.set(path, node);
+    return;
+  }
+  if (node.node === "group") {
+    for (const child of node.children) fieldNodesByPath(child, idx, into);
+    return;
+  }
+  fieldNodesByPath(node.item, idx, into);
+}
+
+/**
+ * Puts the preview's mock server validators back onto the schema the contract produced.
+ *
+ * This is the one thing the preview adds that the contract does not carry, and it is deliberate: a
+ * real exported form receives a real server validator from its host, so there is nothing for the
+ * schema to hold. Standing in for that host is the preview presenting its own dynamics — a builder
+ * affordance — rather than the preview inventing form semantics.
+ */
+function withMockServerValidators(
+  schema: Record<string, unknown>,
+  path: string,
+  nodesByPath: ReadonlyMap<string, FieldNode>,
+  idx: StudioIndexes,
+  mockConfigByImplId: Record<string, MockServerConfig>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, descriptor] of Object.entries(schema)) {
+    const here = path ? `${path}.${key}` : key;
+    const record = descriptor as { kind?: string; children?: Record<string, unknown>; initial?: unknown; validators?: unknown };
+
+    if (record.kind === "group" && record.children) {
+      out[key] = group(withMockServerValidators(record.children, here, nodesByPath, idx, mockConfigByImplId) as MdyFormSchema);
+      continue;
+    }
+    // An array's rows are all built from its item descriptor, so the descriptor is where a row's
+    // server validator has to go — patching a row would leave every later row without one.
+    if (record.kind === "array") {
+      const arrayDescriptor = descriptor as { item: unknown; initial?: ReadonlyArray<unknown>; validators?: ReadonlyArray<ValidatorFn<readonly unknown[]>> };
+      const patched = withMockServerValidators({ item: arrayDescriptor.item }, here, nodesByPath, idx, mockConfigByImplId);
+      out[key] = array(patched.item as never, {
+        ...(arrayDescriptor.initial !== undefined ? { initial: arrayDescriptor.initial } : {}),
+        ...(arrayDescriptor.validators ? { validators: arrayDescriptor.validators } : {}),
+      });
+      continue;
+    }
+
+    const node = nodesByPath.get(here);
+    if (record.kind !== "field" || !node?.serverValidator) {
+      out[key] = descriptor;
+      continue;
+    }
+
+    const sv = node.serverValidator;
+    // `skipWhen` is evaluated against the field's *own* value, so a reference to this node reads the
+    // whole of it — path `""`. Any other reference is as meaningless here as it was before, and
+    // resolves to undefined rather than throwing.
+    const selfScoped = new Map(idx.pathByNode);
+    selfScoped.set(node.id, "");
+    const skipWhen = sv.skipWhen ? toContractExpression(sv.skipWhen, selfScoped) : undefined;
+
+    out[key] = field(
+      record.initial as never,
+      (record.validators ?? []) as never,
+      serverValidator(createMockAsyncValidator(mockConfigByImplId[sv.implementationRef] ?? {}), {
+        debounceMs: sv.debounceMs,
+        timeoutMs: sv.timeoutMs,
+        dependsOn: sv.dependencies.map((d) => idx.pathByNode.get(d.nodeId) ?? d.nodeId),
+        ...(skipWhen ? { when: (value: unknown) => !evaluateExpression(skipWhen, value) } : {}),
+      }),
+    );
+  }
+  return out;
+}
+
+/**
+ * Builds a real, running form from `project`, **through the contract it would export**.
+ *
+ * The route is `project → compileToContract → parseDynamicForm → form`, and it is the point of this
+ * function rather than an implementation detail. Reading the project model directly — which this did
+ * — gave the preview a privileged path: it could build forms the export could not express, so a
+ * designer could watch a rule work and then ship a contract without it.
+ *
+ * The consequence is deliberate: **a project that does not compile does not preview.** Previewing
+ * work in progress is a legitimate thing to want, but not at the price of the preview and the export
+ * disagreeing about what the form is; the compiler's diagnostics come back with the result so the
+ * builder can say precisely what is blocking it.
+ */
 export function buildLiveForm(project: MdyStudioProject, options: BuildLiveFormOptions = {}): LiveFormResult {
   const { mockConfigByImplId = {}, draftStorage, reactivity } = options;
-  const diagnostics: StudioDiagnostic[] = [];
-  if (project.schema.node !== "group") {
-    diagnostics.push({ code: "INVALID_ROOT", severity: "error", message: "Project schema root must be a group", nodeId: project.schema.id });
+
+  const { contract, diagnostics } = compileToContract(project);
+  if (!contract || !contract.schema) return { form: null, diagnostics };
+
+  // The contract compiler already strict-parses what it returns, so this cannot normally fail. It is
+  // read rather than assumed because `validations` has to come from somewhere, and taking it from
+  // the parser is what keeps the preview's cross-field rules the exported ones.
+  const parsed = parseDynamicForm(contract, { mode: "strict" });
+  if (!parsed.ok) {
+    for (const d of parsed.diagnostics) {
+      diagnostics.push({ code: d.code, severity: d.severity, message: d.message, propertyPath: d.path });
+    }
     return { form: null, diagnostics };
   }
 
   const idx = buildIndexes(project);
-  const schema: Record<string, unknown> = {};
-  for (const child of project.schema.children) schema[child.name] = mapNode(child, idx, diagnostics, mockConfigByImplId);
+  const nodesByPath = new Map<string, FieldNode>();
+  fieldNodesByPath(project.schema, idx, nodesByPath);
 
-  const validators = project.formValidators.map((fv) => {
-    const pathOf = (id: string): string => idx.pathByNode.get(id) ?? id;
-    const targetRefs = fv.errorTarget ? [fv.errorTarget] : fv.dependencies;
-    const paths = targetRefs.map((r) => pathOf(r.nodeId)).filter((p) => p !== "");
-    return crossField(paths, (value) => (evaluateExpression(fv.condition, value, pathOf) ? null : fv.message));
-  });
+  const schema = withMockServerValidators(
+    buildDynamicFormSchema(contract.schema) as Record<string, unknown>,
+    "",
+    nodesByPath,
+    idx,
+    mockConfigByImplId,
+  );
 
   const draft = project.behaviors.draft
     ? {
@@ -170,6 +184,11 @@ export function buildLiveForm(project: MdyStudioProject, options: BuildLiveFormO
       }
     : undefined;
 
-  const form = createForm(schema as MdyFormSchema, { validators, draft, history: true, reactivity });
+  const form = createForm(schema as MdyFormSchema, {
+    validators: buildDynamicValidations(parsed.validations),
+    draft,
+    history: true,
+    reactivity,
+  });
   return { form, diagnostics };
 }
