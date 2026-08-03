@@ -42,18 +42,16 @@ test("a tap outside dismisses it", async ({ page }) => {
   await expectOpen(page, false);
 });
 
-test("a drag that starts outside does not dismiss, because no click completes", async ({ page }) => {
+test("a drag that starts outside does not dismiss until it completes", async ({ page }) => {
   await page.locator(TRIGGER).first().tap();
   await expectOpen(page, true);
 
-  // The same gesture the framework-free renderer is measured against in `e2e/plain/dismiss.spec.ts`:
-  // press outside, move away, never complete a click on that target. This adapter dismisses on
-  // `click`, so it does not act — and the two renderers observably differ on a gesture a touch user
-  // makes to scroll the page.
+  // The gesture a touch user makes to scroll: press outside, move away, do not release yet.
+  // `capabilities.dismissOnOutsidePointer` is `{ mode: "pointer-pair" }`, so nothing is decided
+  // until the gesture ends — a rule naming `pointerdown` would have taken the popup away here.
   //
-  // Pinned rather than fixed. Which of the two is right is a product decision: dismissing on press
-  // is more responsive and closes on an accidental brush, dismissing on click keeps the popup
-  // through a scroll and needs a second gesture to close.
+  // Every renderer answers this the same way now; the same sequence is measured on the
+  // framework-free renderer in `e2e/plain/dismiss.spec.ts`.
   const heading = await page.locator("h1").first().boundingBox();
   expect(heading).not.toBeNull();
   if (!heading) return;

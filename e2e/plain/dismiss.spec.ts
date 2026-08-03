@@ -1,19 +1,17 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Which pointer gesture dismisses an overlay, measured on the framework-free renderer.
+ * The dismissal gesture, measured in a browser on the framework-free renderer.
  *
- * `dismissOnOutsidePointer` is declared for every overlay kind and the contract does not say which
- * event delivers it. The renderers do not agree: this one and the custom-element renderer listen on
- * `pointerdown`, the Angular one on `click`. Both dismiss a plain tap, so the difference was
- * recorded as timing rather than function — but `pointerdown` fires on press and `click` only on a
- * completed press-and-release over the same target, and those come apart in two ordinary gestures:
+ * `capabilities.dismissOnOutsidePointer` declares `{ mode: "pointer-pair" }`: an overlay dismisses
+ * only when press *and* release both land outside it. ADR 0013 states the table; these assert it
+ * where it actually happens, because the rule is about real pointer sequences and a unit test
+ * dispatches whichever ones it was written to dispatch.
  *
- *   - a drag that begins outside the popup and ends elsewhere fires no `click` at all;
- *   - a press outside that returns inside before releasing fires its `click` on the popup.
+ * The two rows that a single-event rule cannot express, and that this file exists for:
  *
- * A touch user scrolling the page starts exactly the first of those. This file settles what this
- * renderer actually does, which needed a browser for the other renderer's demo and now has one.
+ *   - a drag beginning outside and ending inside — pressing away and thinking better of it;
+ *   - a drag beginning inside and ending outside — selecting text in a popup.
  */
 
 test.use({ hasTouch: true });
@@ -51,24 +49,70 @@ test("a drag that starts outside still closes it — through focus, not the poin
   await page.mouse.down();
   await page.mouse.move(heading.x + 5, heading.y + 240, { steps: 8 });
 
-  // **Still closes — and the reason is the finding.** The pointer path no longer fires: the contract
-  // names `click` and this renderer binds it, so a drag that never completes one dismisses nothing.
-  // What closes the popup is a *second* path the contract does not name — the widget's own
-  // `focusout`, because pressing on the heading takes focus out of it.
+  // **Still closes, and not by the gesture.** The gesture has not completed — there is no
+  // `pointerup` yet — so `pointer-pair` has decided nothing. What closes the popup is a *second*
+  // path the contract does not name: the widget's own `focusout`, because pressing on the heading
+  // takes focus out of it.
   //
-  // Naming the pointer event was necessary and is not sufficient. Asserted as it behaves rather than
-  // as the contract now reads, so the gap is visible instead of papered over.
+  // ADR 0013 carries this forward from ADR 0011 as an open incompleteness. Asserted as it behaves
+  // rather than as the contract reads, so the gap stays visible instead of being papered over.
   await expectOpen(page, false);
   await page.mouse.up();
 });
 
-test("a completed click outside dismisses — the path the contract names", async ({ page }) => {
+test("a completed gesture outside dismisses — the row the contract names", async ({ page }) => {
   await page.locator(TRIGGER).first().tap();
   await expectOpen(page, true);
 
-  // The declared gesture, isolated from the focus path by being a real click: press and release on
-  // the same target. Both renderers must agree here, and that is what `dismissOnOutsidePointer`
-  // having an event means.
+  // Press and release both outside. Isolated from the focus path by being a real click on one
+  // target, so what is measured is the gesture and not the focus move that accompanies it.
   await page.locator("h1").first().click();
   await expectOpen(page, false);
+});
+
+test("a cancelled pointer does not dismiss", async ({ page }) => {
+  await page.locator(TRIGGER).first().tap();
+  await expectOpen(page, true);
+
+  // A genuine `pointercancel`, not a dispatched one: CDP's `touchCancel` is what the browser itself
+  // sends when it takes a gesture over to scroll, which is the case ADR 0013 protects. A synthetic
+  // event would prove the handler and not the browser.
+  //
+  // Aimed at the popup rather than outside it, deliberately: pressing outside also moves focus, and
+  // this renderer's unnamed `focusout` path would close the popup for a reason that has nothing to
+  // do with the pointer — which is the interference ADR 0013 records as still open.
+  const popup = await page.locator(".mdy-select__dropdown").first().boundingBox();
+  expect(popup).not.toBeNull();
+  if (!popup) return;
+
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: popup.x + popup.width / 2, y: popup.y + popup.height / 2 }],
+  });
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] });
+
+  await expectOpen(page, true);
+});
+
+test("a gesture that begins inside and ends outside keeps the list open", async ({ page }) => {
+  await page.locator(TRIGGER).first().tap();
+  await expectOpen(page, true);
+
+  // Selecting text in a popup and releasing past its edge. `click` fires on the common ancestor,
+  // so an event-named rule dismisses here; the pair does not, because one end was inside.
+  // Not scoped to the widget: this renderer portals its popup out of the field, which is why
+  // `portalRootFor` exists. Document scope is the only place it is reliably found.
+  const popup = await page.locator(".mdy-select__dropdown").first().boundingBox();
+  const heading = await page.locator("h1").first().boundingBox();
+  expect(popup).not.toBeNull();
+  expect(heading).not.toBeNull();
+  if (!popup || !heading) return;
+
+  await page.mouse.move(popup.x + popup.width / 2, popup.y + popup.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(heading.x + 5, heading.y + 5, { steps: 8 });
+  await page.mouse.up();
+
+  await expectOpen(page, true);
 });

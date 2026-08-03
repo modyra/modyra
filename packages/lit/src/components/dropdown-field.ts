@@ -1,9 +1,9 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import { listboxNavigationIndex, overlayLifecycleTransition } from "@modyra/widgets";
+import { createLightDismiss, listboxNavigationIndex, overlayLifecycleTransition } from "@modyra/widgets";
 import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
-import { outsideDismissEvent } from "../widget-runtime/overlay-host.js";
+import { outsideDismissDeclared } from "../widget-runtime/overlay-host.js";
 
 // ─── Dropdown select / multiselect ───────────────────────────────────────────
 
@@ -50,27 +50,56 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
     this.applyLifecycle(handle, { type: "close" });
   }
 
-  /** A pointer outside the element dismisses it — `capabilities.dismissOnOutsidePointer`, whose
-   * declared event `outsideDismissEvent()` reads, so this is not a second choice made here. */
-  private readonly onDocumentOutside = (event: Event): void => {
-    const handle = this.field;
-    if (!handle || !this._open) return;
-    const target = event.target as Node | null;
-    const inside = target !== null && typeof target.nodeType === "number" && this.contains(target);
-    // The policy decides whether this pointer dismisses; the closing itself goes through `close()`,
-    // which a subclass overrides to close its controller too. Flipping `_open` here directly left
-    // the select's controller open, and the next update read the flag back from it.
-    const transition = overlayLifecycleTransition({ open: this._open }, { type: "outside", outside: !inside });
-    if (transition.effect === "teardown") this.close(handle);
+  /**
+   * A gesture completing outside the element dismisses it — `capabilities.dismissOnOutsidePointer`,
+   * whose rule `createOutsidePointerGesture` holds, so this is not a second choice made here.
+   */
+  private readonly dismissal = createLightDismiss({
+    isOpen: () => this._open,
+    isInside: (target: unknown) => {
+      const node = target as Node | null;
+      return node !== null && typeof node === "object"
+        && typeof (node as { nodeType?: unknown }).nodeType === "number"
+        && this.contains(node);
+    },
+    dismiss: () => {
+      const handle = this.field;
+      if (!handle) return;
+      // The policy decides whether this interaction dismisses; the closing itself goes through
+      // `close()`, which a subclass overrides to close its controller too. Flipping `_open` here
+      // directly leaves the select's controller open, and the next update reads the flag back
+      // from it.
+      const transition = overlayLifecycleTransition({ open: this._open }, { type: "outside", outside: true });
+      if (transition.effect === "teardown") this.close(handle);
+    },
+  });
+
+  private readonly onOutsideDown = (event: Event): void => {
+    const e = event as PointerEvent;
+    this.dismissal.pointerdown(e.target, { pointerId: e.pointerId ?? 0, isPrimary: e.isPrimary ?? true, button: e.button ?? 0 });
   };
+  private readonly onOutsideClick = (event: Event): void => this.dismissal.click(event.target);
+  private readonly onOutsideCancel = (event: Event): void =>
+    this.dismissal.pointercancel((event as PointerEvent).pointerId ?? 0);
+  private readonly onOutsideAbandon = (): void => this.dismissal.reset();
 
   override connectedCallback(): void {
     super.connectedCallback();
-    document.addEventListener(outsideDismissEvent(), this.onDocumentOutside, true);
+    if (!outsideDismissDeclared()) return;
+    document.addEventListener("pointerdown", this.onOutsideDown, true);
+    document.addEventListener("click", this.onOutsideClick, true);
+    document.addEventListener("pointercancel", this.onOutsideCancel, true);
+    window.addEventListener("blur", this.onOutsideAbandon);
+    document.addEventListener("visibilitychange", this.onOutsideAbandon);
   }
 
   override disconnectedCallback(): void {
-    document.removeEventListener(outsideDismissEvent(), this.onDocumentOutside, true);
+    document.removeEventListener("pointerdown", this.onOutsideDown, true);
+    document.removeEventListener("click", this.onOutsideClick, true);
+    document.removeEventListener("pointercancel", this.onOutsideCancel, true);
+    window.removeEventListener("blur", this.onOutsideAbandon);
+    document.removeEventListener("visibilitychange", this.onOutsideAbandon);
+    this.dismissal.reset();
     super.disconnectedCallback();
   }
 

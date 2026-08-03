@@ -10,6 +10,7 @@ import {
 import {
   anchorOverlay,
   createFocusCustodian,
+  createLightDismiss,
   portalRootFor,
   overlayAnchoringFor,
   overlayLifecycleTransition,
@@ -416,15 +417,26 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
 
   private setupGlobalListeners(): void {
     if (typeof window === "undefined") return;
-    document.addEventListener("click", this.handleDocumentClick);
+    // Three listeners, not one: the contract dismisses on a *gesture*, and a gesture has two ends.
+    // Which ends dismiss is `createOutsidePointerGesture`, never decided here.
+    document.addEventListener("pointerdown", this.handleOutsideDown, true);
+    document.addEventListener("click", this.handleOutsideClick, true);
+    document.addEventListener("pointercancel", this.handleOutsideCancel, true);
+    window.addEventListener("blur", this.handleOutsideAbandon);
+    document.addEventListener("visibilitychange", this.handleOutsideAbandon);
     document.addEventListener("keydown", this.handleDocumentKeydown);
   }
 
   /** Removes all document/window listeners registered while open. */
   private teardownGlobalListeners(): void {
     if (typeof window === "undefined") return;
-    document.removeEventListener("click", this.handleDocumentClick);
+    document.removeEventListener("pointerdown", this.handleOutsideDown, true);
+    document.removeEventListener("click", this.handleOutsideClick, true);
+    document.removeEventListener("pointercancel", this.handleOutsideCancel, true);
+    window.removeEventListener("blur", this.handleOutsideAbandon);
+    document.removeEventListener("visibilitychange", this.handleOutsideAbandon);
     document.removeEventListener("keydown", this.handleDocumentKeydown);
+    this.outsideDismissal.reset();
     window.removeEventListener("scroll", this.handleScroll, true);
     window.removeEventListener("resize", this.handleResize);
     if (this.scrollFrameId !== null) {
@@ -449,9 +461,32 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    */
   protected onBeforeOpen(): void { /* no-op by default — subclasses override */ }
 
-  /** Bound handler registered on document only while the overlay is open (B31). */
-  private readonly handleDocumentClick = (event: Event): void =>
-    this.onDocumentClick(event);
+  /**
+   * The contract's dismissal gesture, held once in `@modyra/widgets`.
+   *
+   * Registered on document only while the overlay is open. Naming an event here — as a single
+   * `click` listener does — is a renderer deciding a rule the contract states, which is how the
+   * same gesture came to mean different things in different adapters.
+   */
+  private readonly outsideDismissal = createLightDismiss({
+    isOpen: () => this.open(),
+    isInside: (target: unknown) => target instanceof Node && this.overlayContains(target),
+    dismiss: () => this.dismissFromOutside(),
+  });
+
+  private readonly handleOutsideDown = (event: Event): void => {
+    const e = event as PointerEvent;
+    this.outsideDismissal.pointerdown(e.target, {
+      pointerId: e.pointerId ?? 0,
+      isPrimary: e.isPrimary ?? true,
+      button: e.button ?? 0,
+    });
+  };
+  private readonly handleOutsideClick = (event: Event): void =>
+    this.outsideDismissal.click(event.target);
+  private readonly handleOutsideCancel = (event: Event): void =>
+    this.outsideDismissal.pointercancel((event as PointerEvent).pointerId ?? 0);
+  private readonly handleOutsideAbandon = (): void => this.outsideDismissal.reset();
 
   /** Escape closes the open overlay regardless of where focus is (R19). */
   private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {
@@ -459,14 +494,19 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   };
 
   /**
-   * Handler for document clicks while the overlay is open.
-   * Closes the overlay if the click is outside the wrapper element.
+   * What counts as "inside" for the dismissal gesture.
+   *
+   * The wrapper by default. A renderer whose overlay content lives outside the wrapper — a
+   * projected panel, a portalled popup — widens this rather than binding its own listener, so the
+   * gesture rule stays in one place and only the boundary differs.
    */
-  protected onDocumentClick(event: Event): void {
+  protected overlayContains(target: Node): boolean {
     const el = this.wrapperRef()?.nativeElement;
-    this.applyLifecycle({
-      type: "outside",
-      outside: Boolean(el && !el.contains(event.target as Node)),
-    });
+    return Boolean(el?.contains(target));
+  }
+
+  /** Runs when a gesture completes entirely outside. Overridden where closing needs more than the lifecycle. */
+  protected dismissFromOutside(): void {
+    this.applyLifecycle({ type: "outside", outside: true });
   }
 }

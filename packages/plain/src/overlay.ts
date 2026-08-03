@@ -5,7 +5,7 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import { anchorOverlay, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind } from "@modyra/widgets";
+import { anchorOverlay, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind } from "@modyra/widgets";
 
 export interface OverlayPlacementOptions {
   /** Smallest usable space before the popup flips or overlays. */
@@ -159,18 +159,19 @@ export function trackOverlay(
 }
 
 /**
- * Dismisses an overlay when a pointer acts outside it.
+ * Dismisses an overlay when a gesture completes outside it.
  *
- * **Which** event that is comes from `capabilities.dismissOnOutsidePointer`, not from here. It used
- * to be `pointerdown` in this renderer and `click` in another, and the two come apart on the gesture
- * a touch user makes to scroll: a drag beginning outside an open popup fires the first and never the
- * second, so the same gesture dismissed here and did not there. Reading the event from the contract
- * is what stops that being a per-renderer choice again.
+ * **Which gesture** comes from `capabilities.dismissOnOutsidePointer` and the rule itself from
+ * `createOutsidePointerGesture`, both in `@modyra/widgets`. Neither lives here: a renderer that
+ * decided when a pointer dismisses would be writing a specification, and three renderers each
+ * writing one is how the same gesture came to mean different things.
  *
- * The decision itself is `overlayLifecycleTransition`, so "outside" never means something different
- * per renderer either; this only reports where the pointer landed and runs the teardown the policy
- * asks for.
+ * This file supplies only the two things a renderer actually knows — which nodes count as inside,
+ * and how to tear down — and binds the listeners.
  */
+/** A teardown for the case where nothing was bound. */
+const noop = (): void => undefined;
+
 function asNode(value: unknown): Node | null {
   return value !== null && typeof value === "object" && typeof (value as { nodeType?: unknown }).nodeType === "number"
     ? (value as Node)
@@ -182,19 +183,48 @@ export function dismissOnOutsidePointer(
   isOpen: () => boolean,
   close: () => void,
 ): () => void {
-  const onOutside = (event: Event): void => {
-    if (!isOpen()) return;
-    // Duck-typed rather than `instanceof Node`: the constructor is not a global in every host
-    // this renderer runs in (a jsdom harness without it, an SSR shim), and a missed check would
-    // silently stop dismissing.
-    const target = asNode(event.target);
-    const inside = target !== null && parts.some((part) => part?.contains(target));
-    const transition = overlayLifecycleTransition({ open: true }, { type: "outside", outside: !inside });
-    if (transition.effect === "teardown") close();
-  };
-  // Every overlay kind declares the same event; asking any of them is asking the contract.
+  // Every overlay kind declares the same gesture; asking any of them is asking the contract.
   const declared = MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnOutsidePointer;
-  const eventName = declared === false ? "click" : declared.event;
-  document.addEventListener(eventName, onOutside, true);
-  return () => document.removeEventListener(eventName, onOutside, true);
+  // Nothing declared: no listeners, and a teardown that has nothing to undo.
+  if (declared === false) return noop;
+
+  const policy = createLightDismiss({
+    isOpen,
+    // Duck-typed rather than `instanceof Node`: the constructor is not a global in every host this
+    // renderer runs in (a jsdom harness without it, an SSR shim), and a missed check would silently
+    // stop dismissing. `parts` carries the whole logical branch — trigger, popup and any portalled
+    // content — because only this renderer knows where its portal went.
+    isInside: (target: unknown) => {
+      const node = asNode(target);
+      return node !== null && parts.some((part) => part?.contains(node));
+    },
+    dismiss: () => {
+      // The policy still decides; this only reports that the interaction completed outside.
+      const transition = overlayLifecycleTransition({ open: true }, { type: "outside", outside: true });
+      if (transition.effect === "teardown") close();
+    },
+  });
+
+  const onDown = (event: Event): void => {
+    const e = event as PointerEvent;
+    policy.pointerdown(e.target, { pointerId: e.pointerId ?? 0, isPrimary: e.isPrimary ?? true, button: e.button ?? 0 });
+  };
+  const onClick = (event: Event): void => policy.click(event.target);
+  const onCancel = (event: Event): void => policy.pointercancel((event as PointerEvent).pointerId ?? 0);
+  // An interaction whose end the page cannot observe is abandoned, not completed.
+  const onAbandon = (): void => policy.reset();
+
+  document.addEventListener("pointerdown", onDown, true);
+  document.addEventListener("click", onClick, true);
+  document.addEventListener("pointercancel", onCancel, true);
+  window.addEventListener("blur", onAbandon);
+  document.addEventListener("visibilitychange", onAbandon);
+  return () => {
+    document.removeEventListener("pointerdown", onDown, true);
+    document.removeEventListener("click", onClick, true);
+    document.removeEventListener("pointercancel", onCancel, true);
+    window.removeEventListener("blur", onAbandon);
+    document.removeEventListener("visibilitychange", onAbandon);
+    policy.reset();
+  };
 }

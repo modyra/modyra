@@ -698,7 +698,15 @@ test("a pointer outside an open overlay dismisses it, in every widget that owns 
   // something else fails here rather than only in a browser.
   const { MDY_WIDGET_CONTRACTS } = await import("../../widgets/dist/index.js");
   const dismissal = MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnOutsidePointer;
-  const away = () => outside.dispatchEvent(new window.Event(dismissal.event, { bubbles: true }));
+  assert.equal(dismissal, "light-dismiss");
+  // `light-dismiss` is an interaction with an origin and a completion, so both are driven. A single
+  // event would pass on a renderer that dismissed on the press alone — the behaviour this stops.
+  const fire = (target, type, opts = {}) => target.dispatchEvent(
+    Object.assign(new window.Event(type, { bubbles: true }), opts),
+  );
+  const press = (target, opts = {}) =>
+    fire(target, "pointerdown", { pointerId: 1, isPrimary: true, button: 0, ...opts });
+  const away = () => { press(outside); fire(outside, "click"); };
 
   const openers = [
     // Resolved through aria-controls: several suites portal a select popup into this same body.
@@ -713,9 +721,23 @@ test("a pointer outside an open overlay dismisses it, in every widget that owns 
     host.querySelector(opener).dispatchEvent(new Event("click"));
     await reactivity.flush();
     assert.equal(popupOf().hidden, false, `${opener} did not open`);
+
+    // An interaction the browser cancelled to scroll is not a dismissal.
+    press(outside);
+    fire(outside, "pointercancel", { pointerId: 1 });
+    fire(outside, "click");
+    await reactivity.flush();
+    assert.equal(popupOf().hidden, false, `${opener} dismissed on a cancelled pointer`);
+
+    // Neither is a secondary button.
+    press(outside, { button: 2 });
+    fire(outside, "click");
+    await reactivity.flush();
+    assert.equal(popupOf().hidden, false, `${opener} dismissed on a non-primary button`);
+
     away();
     await reactivity.flush();
-    assert.equal(popupOf().hidden, true, `${opener} stayed open after a click outside`);
+    assert.equal(popupOf().hidden, true, `${opener} stayed open after an interaction outside`);
   }
 
   outside.remove();
