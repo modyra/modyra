@@ -5,7 +5,7 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import { anchorOverlay, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind } from "@modyra/widgets";
+import { anchorOverlay, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind } from "@modyra/widgets";
 
 export interface OverlayPlacementOptions {
   /** Smallest usable space before the popup flips or overlays. */
@@ -159,10 +159,17 @@ export function trackOverlay(
 }
 
 /**
- * Dismisses an overlay when a pointer goes down outside it — the default the contract declares
- * through `capabilities.dismissOnOutsidePointer`. The decision itself is
- * `overlayLifecycleTransition`, so "outside" never means something different per renderer; this
- * only reports where the pointer landed and runs the teardown the policy asks for.
+ * Dismisses an overlay when a pointer acts outside it.
+ *
+ * **Which** event that is comes from `capabilities.dismissOnOutsidePointer`, not from here. It used
+ * to be `pointerdown` in this renderer and `click` in another, and the two come apart on the gesture
+ * a touch user makes to scroll: a drag beginning outside an open popup fires the first and never the
+ * second, so the same gesture dismissed here and did not there. Reading the event from the contract
+ * is what stops that being a per-renderer choice again.
+ *
+ * The decision itself is `overlayLifecycleTransition`, so "outside" never means something different
+ * per renderer either; this only reports where the pointer landed and runs the teardown the policy
+ * asks for.
  */
 function asNode(value: unknown): Node | null {
   return value !== null && typeof value === "object" && typeof (value as { nodeType?: unknown }).nodeType === "number"
@@ -175,7 +182,7 @@ export function dismissOnOutsidePointer(
   isOpen: () => boolean,
   close: () => void,
 ): () => void {
-  const onPointerDown = (event: Event): void => {
+  const onOutside = (event: Event): void => {
     if (!isOpen()) return;
     // Duck-typed rather than `instanceof Node`: the constructor is not a global in every host
     // this renderer runs in (a jsdom harness without it, an SSR shim), and a missed check would
@@ -185,6 +192,9 @@ export function dismissOnOutsidePointer(
     const transition = overlayLifecycleTransition({ open: true }, { type: "outside", outside: !inside });
     if (transition.effect === "teardown") close();
   };
-  document.addEventListener("pointerdown", onPointerDown, true);
-  return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  // Every overlay kind declares the same event; asking any of them is asking the contract.
+  const declared = MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnOutsidePointer;
+  const eventName = declared === false ? "click" : declared.event;
+  document.addEventListener(eventName, onOutside, true);
+  return () => document.removeEventListener(eventName, onOutside, true);
 }

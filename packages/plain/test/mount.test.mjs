@@ -693,7 +693,12 @@ test("a pointer outside an open overlay dismisses it, in every widget that owns 
 
   const outside = document.createElement("button");
   document.body.append(outside);
-  const away = () => outside.dispatchEvent(new window.Event("pointerdown", { bubbles: true }));
+  // The event the contract names, not one this suite picks. It dispatched `pointerdown` while that
+  // was this renderer's own choice; the capability carries the event now, so a renderer that binds
+  // something else fails here rather than only in a browser.
+  const { MDY_WIDGET_CONTRACTS } = await import("../../widgets/dist/index.js");
+  const dismissal = MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnOutsidePointer;
+  const away = () => outside.dispatchEvent(new window.Event(dismissal.event, { bubbles: true }));
 
   const openers = [
     // Resolved through aria-controls: several suites portal a select popup into this same body.

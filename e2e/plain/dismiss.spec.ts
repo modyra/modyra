@@ -37,7 +37,7 @@ test("a tap outside dismisses the list", async ({ page }) => {
   await expectOpen(page, false);
 });
 
-test("a drag that starts outside dismisses on press, before any click", async ({ page }) => {
+test("a drag that starts outside still closes it — through focus, not the pointer", async ({ page }) => {
   await page.locator(TRIGGER).first().tap();
   await expectOpen(page, true);
 
@@ -51,7 +51,24 @@ test("a drag that starts outside dismisses on press, before any click", async ({
   await page.mouse.down();
   await page.mouse.move(heading.x + 5, heading.y + 240, { steps: 8 });
 
-  // Asserted before the release, which is the whole point: this renderer acts on the press.
+  // **Still closes — and the reason is the finding.** The pointer path no longer fires: the contract
+  // names `click` and this renderer binds it, so a drag that never completes one dismisses nothing.
+  // What closes the popup is a *second* path the contract does not name — the widget's own
+  // `focusout`, because pressing on the heading takes focus out of it.
+  //
+  // Naming the pointer event was necessary and is not sufficient. Asserted as it behaves rather than
+  // as the contract now reads, so the gap is visible instead of papered over.
   await expectOpen(page, false);
   await page.mouse.up();
+});
+
+test("a completed click outside dismisses — the path the contract names", async ({ page }) => {
+  await page.locator(TRIGGER).first().tap();
+  await expectOpen(page, true);
+
+  // The declared gesture, isolated from the focus path by being a real click: press and release on
+  // the same target. Both renderers must agree here, and that is what `dismissOnOutsidePointer`
+  // having an event means.
+  await page.locator("h1").first().click();
+  await expectOpen(page, false);
 });

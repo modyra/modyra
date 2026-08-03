@@ -164,9 +164,13 @@ test("Escape does nothing to a closed overlay", () => {
 test("an outside pointer dismisses exactly the kinds that declare it", () => {
   for (const kind of OVERLAY_KINDS) {
     const declared = transitionsFrom(kind, "open").some((t) => t.trigger.type === "outside");
+    // The capability carries the event now, so "does it dismiss" is its presence rather than its
+    // value. Compared as a boolean on purpose: a kind that declares the transition and no capability
+    // — or the reverse — is the disagreement this asserts, and the event itself is checked where a
+    // renderer binds it.
     assert.equal(
       declared,
-      MDY_WIDGET_CONTRACTS[kind].capabilities.dismissOnOutsidePointer,
+      MDY_WIDGET_CONTRACTS[kind].capabilities.dismissOnOutsidePointer !== false,
       `${kind}: outside-dismissal disagrees with the capability`,
     );
     if (!declared) continue;

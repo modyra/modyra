@@ -3,6 +3,7 @@ import { type MdyFieldHandle } from "@modyra/core";
 import { listboxNavigationIndex, overlayLifecycleTransition } from "@modyra/widgets";
 import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
+import { outsideDismissEvent } from "../widget-runtime/overlay-host.js";
 
 // ─── Dropdown select / multiselect ───────────────────────────────────────────
 
@@ -49,8 +50,9 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
     this.applyLifecycle(handle, { type: "close" });
   }
 
-  /** A pointer outside the element dismisses it — `capabilities.dismissOnOutsidePointer`. */
-  private readonly onDocumentPointerDown = (event: Event): void => {
+  /** A pointer outside the element dismisses it — `capabilities.dismissOnOutsidePointer`, whose
+   * declared event `outsideDismissEvent()` reads, so this is not a second choice made here. */
+  private readonly onDocumentOutside = (event: Event): void => {
     const handle = this.field;
     if (!handle || !this._open) return;
     const target = event.target as Node | null;
@@ -64,11 +66,11 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
 
   override connectedCallback(): void {
     super.connectedCallback();
-    document.addEventListener("pointerdown", this.onDocumentPointerDown, true);
+    document.addEventListener(outsideDismissEvent(), this.onDocumentOutside, true);
   }
 
   override disconnectedCallback(): void {
-    document.removeEventListener("pointerdown", this.onDocumentPointerDown, true);
+    document.removeEventListener(outsideDismissEvent(), this.onDocumentOutside, true);
     super.disconnectedCallback();
   }
 

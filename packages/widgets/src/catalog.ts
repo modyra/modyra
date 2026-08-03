@@ -32,11 +32,20 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
      * meaningfully be false: a popup a click elsewhere cannot dismiss is a real design, and this is
      * where it would be declared.
      *
-     * It does **not** say which event delivers the dismissal, and that gap is measured rather than
-     * theoretical — the renderers do not agree, and a drag beginning outside an open popup fires
-     * one binding and not the other. Naming the event is the next thing this capability needs.
+     * It names the **event**, because leaving that open let three adapters each pick one and the
+     * choice is observable: `pointerdown` fires on press, `click` only on a completed press-and-
+     * release over the same target. A drag beginning outside an open popup — the gesture a touch
+     * user makes to scroll — fires the first and never the second, so the same gesture dismissed on
+     * two renderers and not on the third.
+     *
+     * `"click"` is the answer: a drag that begins outside is not necessarily a dismissal, and a user
+     * may press, think better of it, and return. Dismissing on the press takes the popup away from
+     * someone who had not decided to close it.
+     *
+     * The shape can express either answer rather than recording the one chosen — a capability that
+     * can only say what is currently true is the kind this catalogue has already had to withdraw.
      */
-    readonly dismissOnOutsidePointer: boolean;
+    readonly dismissOnOutsidePointer: false | { readonly event: "pointerdown" | "click" };
     /**
      * How this widget's popup attaches, for `anchorOverlay`. A list belongs under its control and
      * as wide as it; a calendar is sized by its own content. Naming it here is what stops three
@@ -376,7 +385,7 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
     siblingCount.set(parent, order + 1);
     return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional: !(REQUIRED_PARTS.has(name) || shape.required?.includes(name)), repeated: REPEATED_PARTS.has(name) });
   });
-  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
+  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? Object.freeze({ event: "click" as const }) : false, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
 /**
  * The semantic every part answers to, declared rather than defaulted.
