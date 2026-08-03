@@ -46,6 +46,19 @@ pointer gesture to already be expressible as a discrete, describable action.
   carry enough affected data in the command payload to invert exactly — this
   is a P2 design constraint, not deferred to later.
 
+## Verification
+
+- `packages/studio-editor/test/commands.test.mjs` — each command's `apply` is pure, its `inverse`
+  restores the prior project, and invalid placements are refused by `validate` before `apply` runs.
+- `npm run test:studio` — undo/redo across grouped mutations, and index consistency after each.
+
+## Security and privacy
+
+`validate` is a trust boundary for the editor's own inputs: cycles, wrong parent/child kinds, depth
+limits, duplicate sibling names and reserved names are rejected before any mutation. The depth cap
+mirrors the schema parser's own guard against hostile input — an unbounded nesting is a stack
+exhaustion in every consumer that walks the tree.
+
 ## Rejection-test answers
 
 - **Java addable without canvas model change?** Yes — commands operate on

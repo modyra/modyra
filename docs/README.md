@@ -50,14 +50,12 @@ matrix](reactivity-capability-matrix.md) for details.
 
 ### Decision records
 
-Why Studio is built the way it is. Each records the alternatives that were rejected and why, so a
-change that revisits one starts from the original reasoning rather than from scratch.
-
-- [0001 — Project and contract model](architecture/0001-project-and-contract-model.md)
-- [0002 — Ids and paths](architecture/0002-ids-and-paths.md)
-- [0003 — Command engine](architecture/0003-command-engine.md)
-- [0004 — Target plugin API](architecture/0004-target-plugin-api.md)
-- [0005 — Expressions and references](architecture/0005-expressions-and-references.md)
+**[Architecture decision records](architecture/README.md)** — why Modyra is built the way it is.
+Every architectural and security decision is recorded there, each with the alternatives that lost,
+the check that fails if the decision is violated, and what it exposes. Start with
+[0007](architecture/0007-expressions-are-data.md), [0009](architecture/0009-client-validation-is-defence-in-depth.md)
+and [0010](architecture/0010-every-claim-has-an-executable-check.md) for a security review, and use
+[the template](architecture/TEMPLATE.md) to add one.
 
 ## Studio
 

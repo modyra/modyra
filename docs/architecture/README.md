@@ -1,0 +1,45 @@
+# Architecture decision records
+
+Why Modyra is built the way it is. Each record states the pressure that forced a decision, what was
+decided, what it costs, the alternatives that lost and why, and the check that fails if the decision
+is violated.
+
+**Every architectural or security decision belongs here.** A decision recorded only in a commit
+message, a changeset, or a coordination file under `.modyra/` is a decision the next reader will
+relitigate from scratch — and `.modyra/` is git-ignored, so it is not a durable record at all.
+
+Use [TEMPLATE.md](TEMPLATE.md). A record is not complete without **Verification** and **Security and
+privacy**; where either is genuinely empty, say so explicitly rather than omitting the section — an
+absent section reads as an oversight, and "no security impact" is a finding.
+
+## The records
+
+| | | |
+| --- | --- | --- |
+| [0001](0001-project-and-contract-model.md) | Project and contract model | What a Studio project is, and how it relates to the contract it compiles to |
+| [0002](0002-ids-and-paths.md) | Ids and paths | Stable node ids for editing, dotted paths for reading — and where each belongs |
+| [0003](0003-command-engine.md) | Command engine | Every edit is a command, which is what makes undo, redo and grouping possible |
+| [0004](0004-target-plugin-api.md) | Target plugin API | How a code-generation target is added without changing the model |
+| [0005](0005-expressions-and-references.md) | Expressions and references | The portable operator set, and why a reference is an id rather than an accessor |
+| [0006](0006-one-ui-contract.md) | One UI contract, many consumers | `@modyra/widgets` is the UI contract; renderers consume it and never redefine it |
+| [0007](0007-expressions-are-data.md) | Expressions are data, never code | No `eval` on a document that arrives over a network. The security decision of the dynamic contract |
+| [0008](0008-the-preview-has-no-privileged-path.md) | The preview has no privileged path | What a designer watches is what a designer exports |
+| [0009](0009-client-validation-is-defence-in-depth.md) | Client validation is defence in depth | The trust boundary, stated plainly: the server is the authority |
+| [0010](0010-every-claim-has-an-executable-check.md) | Every claim has an executable check | Ratchets, gates, and why a check nobody has watched fail is only a claim |
+| [0011](0011-a-capability-names-its-event.md) | A capability names its event | A boolean answers *whether* and leaves *how* to each renderer, which is a specification by accident |
+
+## Security-relevant records
+
+Start here for a security review: [0007](0007-expressions-are-data.md) (untrusted documents are never
+executed), [0009](0009-client-validation-is-defence-in-depth.md) (the trust boundary and the draft
+storage exposure), [0010](0010-every-claim-has-an-executable-check.md) (which of those properties are
+held by a test rather than by prose).
+
+## Changing a record
+
+A decision that no longer holds is **superseded**, not edited into agreement with the present. Write
+the new record, and set the old one's status to `Superseded by [ADR NNNN]`. The reasoning that was
+correct under the old constraints is what makes the new decision legible.
+
+A decision that still holds but has grown may be **amended in place**, with the amendment marked as
+such — [0005](0005-expressions-and-references.md) carries one.
