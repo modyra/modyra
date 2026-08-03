@@ -25,9 +25,9 @@ function walk(dir) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) walk(full);
-    // `.html` alongside `.ts`: a renderer that keeps its markup in a `templateUrl` used to be
-    // invisible here, so the clock's whole ARIA surface was unguarded. The baseline records each
-    // file under its own path, so the extension says which kind of file a future diff grew.
+    // `.html` alongside `.ts`: a renderer that keeps its markup in a `templateUrl` is invisible to
+    // a `.ts`-only walk, which would leave its whole ARIA surface unguarded. The baseline records
+    // each file under its own path, so the extension says which kind of file a diff grew.
     else if ((entry.endsWith(".ts") && !entry.endsWith(".spec.ts")) || entry.endsWith(".html")) files.push(full);
   }
 }

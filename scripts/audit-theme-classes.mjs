@@ -26,8 +26,8 @@ const STYLES_DIR = join(ROOT, "packages/styles/src");
 
 // Known Angular→Lit parity gaps: type-a defects listed here are reported as
 // "pending" instead of failing --check, so the contract stays enforceable
-// for new regressions while the Lit renderers catch up. Stale entries
-// (no longer defects) are flagged so the list only ever shrinks.
+// for new regressions while the Lit renderers catch up. An entry that has
+// stopped being a defect is flagged as stale, so the list only ever shrinks.
 const ALLOWLIST_PATH = join(ROOT, "scripts/theme-parity-allowlist.json");
 
 function loadParityAllowlist() {
