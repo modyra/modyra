@@ -12,9 +12,16 @@ test("checkout compiles to a strict-valid Contract v2, with its unmappable piece
   assert.equal(contract.version, 2);
   assert.equal(contract.schema.node, "group");
 
-  // The form validator (items.length >= 1) and the coupon's server validator have no
-  // Contract v2 equivalent — must be reported, not silently dropped from the output.
-  assert.ok(diagnostics.some((d) => d.code === "UNSUPPORTED_FEATURE" && d.validatorId === "val_items_min_one"));
+  // The form validator (items.length >= 1) is carried, not dropped: the contract gained a
+  // `validations` slot precisely so a cross-field rule with a message has somewhere to go.
+  assert.ok(!diagnostics.some((d) => d.validatorId === "val_items_min_one"), "no longer unsupported");
+  assert.equal(contract.validations?.length, 1);
+  assert.equal(contract.validations[0].message, createCheckoutProject().formValidators[0].message);
+  // Node ids do not survive the boundary; the condition is stated in paths a form can read.
+  assert.equal(JSON.stringify(contract.validations[0].when).includes("nodeId"), false);
+
+  // The coupon's server validator still has no Contract v2 equivalent — a target-generation concern,
+  // not schema data — and must be reported rather than silently dropped.
   assert.ok(diagnostics.some((d) => d.code === "UNSUPPORTED_FEATURE" && d.validatorId === "val_coupon_server"));
 
   // No error-severity diagnostics — checkout is a valid, compilable project.

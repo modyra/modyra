@@ -6,10 +6,12 @@
  * "looks right" per this package's own assumptions (ADR
  *.
  *
+ * Cross-field validators compile to the contract's `validations` slot, which carries a condition
+ * and a message; Studio's node ids become dotted paths at that boundary, since nothing outside
+ * Studio can resolve an id.
+ *
  * Deliberately unmappable, reported as diagnostics rather than silently
- * dropped or force-fit: form/cross-field validators (Contract v2's `rules`
- * are visibility/enable effects, not validation-with-a-message — a
- * different concept), server validators (no Contract v2 equivalent at
+ * dropped or force-fit: server validators (no Contract v2 equivalent at
  * all — that's a target-generation concern, not schema data), and the
  * oneOf/eachOneOf/customRef field-validator kinds (no `MdyDynamicValidators`
  * slot for them; for select/multiselect Contract already auto-derives an
@@ -42,8 +44,11 @@ import {
   type MdyDynamicLayoutSlot,
   type MdyDynamicNode,
   type MdyDynamicSection,
+  type MdyDynamicValidation,
   type MdyDynamicValidators,
 } from "@modyra/core/dynamic-config";
+import type { MdyExpression } from "@modyra/core";
+import { toContractExpression } from "./expression.js";
 // Type-only: the catalog constrains what this may map to, and nothing of it survives compilation,
 // so this package still ships with no runtime dependency beyond core and the studio model.
 import type { MdyWidgetKind } from "@modyra/widgets";
@@ -432,15 +437,41 @@ export function compileToContract(project: MdyStudioProject): CompileResult {
     return { contract: null, diagnostics };
   }
 
+  // Cross-field validators compile to the contract's `validations`, which carries a condition and a
+  // message. The only thing that has to change is how a field is named: Studio's node ids become
+  // paths, so the condition means the same thing to a reader that has never heard of Studio.
+  const idx = buildIndexes(normalized);
+  const validations: MdyDynamicValidation[] = [];
   for (const v of normalized.formValidators) {
-    diagnostics.push({
-      code: "UNSUPPORTED_FEATURE",
-      severity: "warning",
-      message: `Form validator "${v.id}" (${v.kind}) has no Contract v2 equivalent (Contract v2's "rules" are visibility/enable effects, not validation-with-a-message) and was omitted`,
-      validatorId: v.id,
-      // errorTarget, when set, is the most useful "where does this show up" node for a UI to point at.
-      ...(v.errorTarget ? { nodeId: v.errorTarget.nodeId } : {}),
-    });
+    let when: MdyExpression;
+    try {
+      when = toContractExpression(v.condition, idx.pathByNode);
+    } catch (error) {
+      diagnostics.push({
+        code: "UNRESOLVED_REFERENCE",
+        severity: "error",
+        message: `Form validator "${v.id}" refers to a field that is not in the schema: ${(error as Error).message}`,
+        validatorId: v.id,
+      });
+      continue;
+    }
+    // The two say the opposite thing. A Studio validator's `condition` is the rule that must
+    // *hold*; the contract's `when` is the condition under which the form is *invalid*. Emitting one
+    // as the other inverts every cross-field rule in the form, so the negation is explicit here.
+    when = { op: "not", operands: [when] };
+
+    const target = v.errorTarget ? idx.pathByNode.get(v.errorTarget.nodeId) : undefined;
+    if (v.errorTarget && target === undefined) {
+      diagnostics.push({
+        code: "UNRESOLVED_REFERENCE",
+        severity: "error",
+        message: `Form validator "${v.id}" targets a field that is not in the schema`,
+        validatorId: v.id,
+        nodeId: v.errorTarget.nodeId,
+      });
+      continue;
+    }
+    validations.push({ when, message: v.message, ...(target ? { target } : {}) });
   }
 
   const schema = mapGroupNode(normalized.schema, diagnostics);
@@ -462,13 +493,14 @@ export function compileToContract(project: MdyStudioProject): CompileResult {
     id: normalized.id,
     schema,
     ...(layout.length ? { layout } : {}),
+    ...(validations.length ? { validations } : {}),
   };
   const parsed = parseDynamicForm(candidate, { mode: "strict" });
 
   // Layout is arrangement over the schema. If only the layout is unacceptable, ship the form
   // without it and say so — a decoration problem must never cost the user their whole form.
   if (!parsed.ok && layout.length && parsed.diagnostics.every((d) => d.path.startsWith("/layout"))) {
-    const withoutLayout: MdyDynamicFormConfigV2 = { version: 2, id: normalized.id, schema };
+    const withoutLayout: MdyDynamicFormConfigV2 = { version: 2, id: normalized.id, schema, ...(validations.length ? { validations } : {}) };
     const retry = parseDynamicForm(withoutLayout, { mode: "strict" });
     if (retry.ok) {
       diagnostics.push({
