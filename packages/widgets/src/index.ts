@@ -118,6 +118,8 @@ export type { MdyTimeEntry, MdyTimeField, MdyTimeFieldBounds, MdyTimeRejection }
 export { createFocusCustodian } from "./focus.js";
 export { portalRootFor } from "./portal.js";
 export { createLightDismiss, isPrimaryInteraction } from "./dismissal.js";
+export { affordanceClasses, kindsWithAffordances, trailingAffordances } from "./affordance.js";
+export type { MdyAffordance, MdyAffordanceRole } from "./affordance.js";
 export { createTypeahead, isTypeaheadCharacter, typeaheadMatch, MDY_TYPEAHEAD_IDLE_MS } from "./typeahead.js";
 export type { MdyTypeahead, MdyTypeaheadOptions } from "./typeahead.js";
 export type { MdyDismissalPhase, MdyLightDismiss, MdyLightDismissOptions, MdyOutsideDismiss, MdyPointerOrigin } from "./dismissal.js";

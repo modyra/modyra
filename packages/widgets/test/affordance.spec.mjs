@@ -1,0 +1,94 @@
+/**
+ * The trailing affordance set is derived, and derives the right thing.
+ *
+ * The value of deriving it is that it cannot go stale: a kind that gains a button gains an
+ * affordance without anyone remembering to add it here. The risk is the mirror image — a derivation
+ * that quietly sweeps in something that is not one. Both are checked.
+ */
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import {
+  MDY_WIDGET_CONTRACTS,
+  affordanceClasses,
+  kindsWithAffordances,
+  trailingAffordances,
+} from "../dist/index.js";
+
+const partsOf = (kind) => trailingAffordances(kind).map((a) => a.part).sort();
+
+test("each kind's affordances are the ones at its trailing edge", () => {
+  assert.deepEqual(partsOf("select"), ["arrow"]);
+  assert.deepEqual(partsOf("datepicker"), ["toggle"]);
+  assert.deepEqual(partsOf("daterange"), ["toggle"]);
+  assert.deepEqual(partsOf("timepicker"), ["toggle"]);
+  assert.deepEqual(partsOf("colors"), ["toggle"]);
+  assert.deepEqual(partsOf("multiselect"), ["searchButton"]);
+  assert.deepEqual(partsOf("number"), ["decrement", "increment"]);
+});
+
+test("a field with nothing at its edge has none", () => {
+  for (const kind of ["text", "email", "password", "textarea", "checkbox", "toggle", "radio"]) {
+    assert.deepEqual(trailingAffordances(kind), [], kind);
+  }
+});
+
+test("the caret is the only decorative one", () => {
+  // It is `pointer-events: none`; the trigger behind it is the target. Everything else is pressed.
+  const indicators = kindsWithAffordances().flatMap((kind) =>
+    trailingAffordances(kind).filter((a) => a.role === "indicator").map((a) => `${kind}.${a.part}`),
+  );
+  assert.deepEqual(indicators, ["select.arrow"]);
+});
+
+test("a button that is not at the trailing edge is not swept in", () => {
+  // The derivation's real risk. Each of these is a `button` the catalogue declares somewhere else —
+  // inside a popup, inside a chip, inside a dropzone — and none belongs to the column down the
+  // field's edge.
+  const swept = [];
+  for (const kind of kindsWithAffordances()) {
+    for (const { part } of trailingAffordances(kind)) {
+      if (["action", "modeToggle", "optionStep", "chip", "clear"].includes(part)) {
+        swept.push(`${kind}.${part}`);
+      }
+    }
+  }
+  assert.deepEqual(swept, []);
+});
+
+test("the pickers' typeable control is not an affordance", () => {
+  // datepicker and timepicker declare `control` as the popup's opener: the input carries
+  // `role="combobox"` and opens the popup. It is the field, not an ornament beside it, and a
+  // derivation keyed on "the opener" alone would have taken it.
+  for (const kind of ["datepicker", "timepicker"]) {
+    assert.ok(!partsOf(kind).includes("control"), `${kind} must not treat its input as an affordance`);
+  }
+});
+
+test("the class list a theme selects on comes from the catalogue", () => {
+  const control = affordanceClasses("control");
+  const indicator = affordanceClasses("indicator");
+
+  assert.deepEqual(indicator, ["mdy-select__arrow"]);
+  for (const expected of [
+    "mdy-datepicker__toggle", "mdy-timepicker__toggle",
+    "mdy-colors__toggle-area", "mdy-multiselect__search-btn",
+  ]) {
+    assert.ok(control.includes(expected), `missing ${expected}`);
+  }
+  // No overlap: a class cannot be both pressed and decorative.
+  assert.deepEqual(control.filter((c) => indicator.includes(c)), []);
+});
+
+test("every derived class is one the catalogue actually declares", () => {
+  // A class list that names something no part carries is the stale-key defect this repo has already
+  // had, in a table that matched nothing on every widget build.
+  const declared = new Set();
+  for (const definition of Object.values(MDY_WIDGET_CONTRACTS)) {
+    for (const part of Object.values(definition.parts)) {
+      for (const cls of part.classes ?? []) declared.add(cls);
+    }
+  }
+  for (const cls of affordanceClasses()) {
+    assert.ok(declared.has(cls), `${cls} is not declared by any part`);
+  }
+});
