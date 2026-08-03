@@ -177,9 +177,9 @@ const OVERLAY_ELEMENTS = [
 for (const [tag, kind, initial, opener] of OVERLAY_ELEMENTS) {
   test(`<${tag}> dismisses its overlay on a pointer outside it`, async () => {
     const { MDY_WIDGET_CONTRACTS } = await import("../../widgets/dist/index.js");
-    assert.equal(
+    assert.notEqual(
       MDY_WIDGET_CONTRACTS[kind].capabilities.dismissOnOutsidePointer,
-      true,
+      false,
       `${kind} must declare the dismissal capability`,
     );
 
@@ -196,8 +196,13 @@ for (const [tag, kind, initial, opener] of OVERLAY_ELEMENTS) {
     await element.updateComplete;
     assert.equal(element._open, true, `${tag} did not open`);
 
-    // The dismissal policy is the contract's; the element only reports where the pointer landed.
-    outside.dispatchEvent(new window.Event("pointerdown", { bubbles: true }));
+    // The dismissal policy *and its event* are the contract's; the element only reports where the
+    // pointer landed. This dispatched `pointerdown` while that was the element's own choice — the
+    // capability names the event now, so the suite asks the contract rather than restating it, and a
+    // renderer that binds something else fails here instead of only in a browser.
+    const declared = MDY_WIDGET_CONTRACTS[kind].capabilities.dismissOnOutsidePointer;
+    assert.notEqual(declared, false, `${tag} declares no outside dismissal`);
+    outside.dispatchEvent(new window.Event(declared.event, { bubbles: true }));
     await element.updateComplete;
     assert.equal(element._open, false, `${tag} stayed open after a pointer outside it`);
 

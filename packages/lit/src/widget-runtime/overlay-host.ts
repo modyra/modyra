@@ -5,7 +5,7 @@
  * focus is restored — is `overlayLifecycleTransition` in `@modyra/widgets`. These helpers only
  * carry the element's `_open` flag in and out of it, so no element re-decides the policy locally.
  */
-import { overlayLifecycleTransition, type MdyOverlayLifecycleIntent } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, type MdyOverlayLifecycleIntent } from "@modyra/widgets";
 
 export interface OverlayHost {
   /** Current open state; assigning it triggers the element's own update. */
@@ -21,14 +21,27 @@ export function applyOverlayIntent(host: OverlayHost, intent: MdyOverlayLifecycl
 }
 
 /**
- * Dismisses the host's overlay when a pointer goes down outside it — the default every widget with
+ * Which event dismisses an overlay from outside it, as the contract declares.
+ *
+ * Not a per-renderer choice. This package bound `pointerdown` and another adapter bound `click`, and
+ * the two come apart on the gesture a touch user makes to scroll: a drag beginning outside an open
+ * popup fires the first and never the second, so the same gesture dismissed here and did not there.
+ * Every overlay kind declares the same event, so asking any of them is asking the contract.
+ */
+export function outsideDismissEvent(): "pointerdown" | "click" {
+  const declared = MDY_WIDGET_CONTRACTS.select.capabilities.dismissOnOutsidePointer;
+  return declared === false ? "click" : declared.event;
+}
+
+/**
+ * Dismisses the host's overlay when a pointer acts outside it — the default every widget with
  * `capabilities.dismissOnOutsidePointer` declares. Returns the teardown.
  */
 export function bindOutsidePointer(
   host: OverlayHost,
   onClose: () => void,
 ): () => void {
-  const onPointerDown = (event: Event): void => {
+  const onOutside = (event: Event): void => {
     if (!host._open) return;
     // Duck-typed: `Node` is not a global in every host this package runs in.
     const target = event.target as Node | null;
@@ -36,6 +49,7 @@ export function bindOutsidePointer(
     const transition = applyOverlayIntent(host, { type: "outside", outside: !inside });
     if (transition.effect === "teardown") onClose();
   };
-  document.addEventListener("pointerdown", onPointerDown, true);
-  return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  const eventName = outsideDismissEvent();
+  document.addEventListener(eventName, onOutside, true);
+  return () => document.removeEventListener(eventName, onOutside, true);
 }
