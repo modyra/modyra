@@ -118,6 +118,8 @@ export type { MdyTimeEntry, MdyTimeField, MdyTimeFieldBounds, MdyTimeRejection }
 export { createFocusCustodian } from "./focus.js";
 export { portalRootFor } from "./portal.js";
 export { createLightDismiss, isPrimaryInteraction } from "./dismissal.js";
+export { createTypeahead, isTypeaheadCharacter, typeaheadMatch, MDY_TYPEAHEAD_IDLE_MS } from "./typeahead.js";
+export type { MdyTypeahead, MdyTypeaheadOptions } from "./typeahead.js";
 export type { MdyDismissalPhase, MdyLightDismiss, MdyLightDismissOptions, MdyOutsideDismiss, MdyPointerOrigin } from "./dismissal.js";
 export type { MdyFocusCustodian } from "./focus.js";
 export { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayAlignment, decideOverlayPlacement, MDY_OVERLAY_VIEWPORT_MARGIN, fileSelectionTransition, clearFileSelection, listboxNavigationIndex, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, overlayLifecycleTransition, selectKeyboardAction, shouldCloseMultiselectOverlay, stabilizeOverlayPlacement, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "./behavior.js";
