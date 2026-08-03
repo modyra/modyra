@@ -63,6 +63,7 @@ export {
   MDY_WIDGET_STATE_CONTRACTS,
   MDY_WIDGET_STATE_SUPPORT,
   overlayOnlyParts,
+  stateCarriers,
   widgetStateMatrixSize,
   widgetSupportsState,
 } from "./widget-states.js";

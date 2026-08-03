@@ -13,6 +13,7 @@
 import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
 import {
   MDY_WIDGET_STATE_CONTRACTS,
+  stateCarriers,
   widgetSupportsState,
   type MdyWidgetState,
 } from "../widget-states.js";
@@ -78,31 +79,36 @@ export function inspectWidgetState(
 
   if (contract.aria) {
     const { attribute, value } = contract.aria;
-    // The state may be exposed on the control or on the root, depending on where the widget puts
-    // its semantics — a composite exposes `aria-expanded` on its trigger, not on a wrapper div.
-    // Where a widget exposes its state depends on its anatomy: a text field puts it on the input, a
-    // radio group on the group, a select on its trigger. Rather than guess, accept any declared
-    // part — the claim this check can make is that the widget exposes the state *somewhere* an
-    // assistive technology will meet it, not that it is on the right element. Narrowing it to one
-    // part per kind needs a per-kind table the contract does not have.
-    const carriers = [
-      control,
-      root,
-      ...Object.keys(options.parts ?? {}).flatMap((part) => partElements(options.parts, part)),
-    ].filter((element): element is Element => Boolean(element));
-    const found = carriers.map((element) => element.getAttribute(attribute)).filter((v) => v !== null);
-    if (found.length === 0) {
-      issues.push({
-        code: "STATE_ARIA_MISSING",
-        state,
-        message: `${state} must be exposed as ${attribute}="${value}"; the attribute is absent`,
-      });
-    } else if (!found.includes(value)) {
-      issues.push({
-        code: "STATE_ARIA_WRONG",
-        state,
-        message: `${state} must be ${attribute}="${value}", found ${found.map((v) => JSON.stringify(v)).join(", ")}`,
-      });
+    // Which element carries the state is the claim, not merely that some element does. The contract
+    // names the carrier per kind — the opener for `open`, the operable part for the rest — so a
+    // widget that exposes `aria-expanded` on its root while its trigger says nothing fails here
+    // rather than passing for having said it somewhere.
+    const parts = stateCarriers(kind, state);
+    for (const part of parts) {
+      const elements = partElements(options.parts, part).length > 0
+        ? partElements(options.parts, part)
+        // A caller that named the control but not the part it materializes is describing the same
+        // element under the anatomy's name for it.
+        : part === "control" && control ? [control] : [];
+      // Not rendered is not this check's finding: `inspectWidgetDom` decides whether a part the
+      // contract requires may be missing, and asserting an attribute on an element nobody drew
+      // would report the same defect twice under a worse name.
+      if (elements.length === 0) continue;
+
+      const found = elements.map((element) => element.getAttribute(attribute)).filter((v) => v !== null);
+      if (found.length === 0) {
+        issues.push({
+          code: "STATE_ARIA_MISSING",
+          state,
+          message: `${state} must be exposed as ${attribute}="${value}" on ${part}; the attribute is absent there`,
+        });
+      } else if (!found.includes(value)) {
+        issues.push({
+          code: "STATE_ARIA_WRONG",
+          state,
+          message: `${state} must be ${attribute}="${value}" on ${part}, found ${found.map((v) => JSON.stringify(v)).join(", ")}`,
+        });
+      }
     }
   }
 

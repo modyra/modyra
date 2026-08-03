@@ -9,7 +9,7 @@
  * Declared from the contract's point of view, deliberately not by reading what any renderer emits:
  * a specification written from the implementation only ever ratifies it.
  */
-import { type MdyWidgetKind } from "./catalog.js";
+import { MDY_POPUP_OPENERS, type MdyWidgetKind, type MdyWidgetPart } from "./catalog.js";
 import { dynamicParts } from "./ssr.js";
 
 /** Every state any widget may declare. */
@@ -78,6 +78,72 @@ export const MDY_WIDGET_STATE_CONTRACTS: Readonly<Record<MdyWidgetState, MdyWidg
     selected: {},
     loading: { requiresParts: ["loading"] },
   });
+
+/**
+ * The parts that must expose each ARIA state, per kind.
+ *
+ * "Somewhere on the widget" is not where an assistive technology looks. `aria-expanded` belongs on
+ * the element a user operates to open the thing; a select that moved it to its root would announce
+ * a collapsed combobox while showing an open list, and a check that accepts any declared part
+ * cannot tell the two apart.
+ *
+ * **`open` is not in this table.** Its carrier is the part that opens the overlay, and the contract
+ * already names that: `MDY_POPUP_OPENERS[kind].opener`. Restating it here would be a second
+ * derivation of one fact, free to drift from the first.
+ *
+ * The other three are declared because nothing existing answers for them. The catalogue's per-part
+ * `states:` is a *class* vocabulary — which element a theme paints `--disabled` on — and it names
+ * `inputWrapper` where `aria-disabled` goes on the control, `option` where it goes on the group, and
+ * nothing at all for `invalid` in sixteen kinds of seventeen.
+ *
+ * A set rather than a single part, because a range genuinely has two: an endpoint at each end, and
+ * either one alone announces half a field. Silence is not "anywhere" — a kind absent from a state's
+ * row exposes it nowhere, and the check says so.
+ */
+const ARIA_STATE_CARRIERS: { readonly [K in MdyWidgetKind]: Partial<Record<"invalid" | "disabled" | "readonly", readonly MdyWidgetPart<K>[]>> } = Object.freeze({
+  text: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
+  email: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
+  password: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
+  textarea: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
+  number: { invalid: ["control"], disabled: ["control"], readonly: ["control"] },
+  slider: { invalid: ["control"], disabled: ["control"] },
+  checkbox: { invalid: ["control"], disabled: ["control"] },
+  toggle: { invalid: ["control"], disabled: ["control"] },
+  // A radio group and a segmented control have no single labelable element: the group is what is
+  // named, and the group is what is invalid or unavailable.
+  radio: { invalid: ["group"], disabled: ["group"] },
+  segmented: { invalid: ["group"], disabled: ["group"] },
+  select: { invalid: ["trigger"], disabled: ["trigger"] },
+  multiselect: { invalid: ["searchButton"], disabled: ["searchButton"] },
+  datepicker: { invalid: ["control"], disabled: ["control"] },
+  daterange: { invalid: ["startControl", "endControl"], disabled: ["startControl", "endControl"] },
+  timepicker: { invalid: ["control"], disabled: ["control"] },
+  file: { invalid: ["control"], disabled: ["control"] },
+  // Not `control`: the native colour input is a swatch with no readable text, kept for what a form
+  // post and an autofill see. The hex field is what the label names and what a user types into, so
+  // it is the element the state is about — a renderer is free to hide the swatch from the
+  // accessibility tree entirely, and one does.
+  colors: { invalid: ["hexInput"], disabled: ["hexInput"] },
+});
+
+/**
+ * The parts `kind` must expose `state` on, or empty where the state carries no ARIA.
+ *
+ * Empty is an answer with two meanings the caller must keep apart: a state with no ARIA at all
+ * (`focused`, `selected`) and a state this kind does not support. `widgetSupportsState` settles the
+ * second before this is asked.
+ *
+ * Returns part *names*: the table above is what is typed against each kind's anatomy, so a name that
+ * is not a part of the kind it is declared under is a compile error there, where it is written.
+ */
+export function stateCarriers(kind: MdyWidgetKind, state: MdyWidgetState): readonly string[] {
+  if (state === "open") {
+    const opener = MDY_POPUP_OPENERS[kind as keyof typeof MDY_POPUP_OPENERS];
+    return opener ? [opener.opener] : [];
+  }
+  const row = ARIA_STATE_CARRIERS[kind] as Partial<Record<MdyWidgetState, readonly string[]>>;
+  return row[state] ?? [];
+}
 
 /**
  * Which states each kind supports.

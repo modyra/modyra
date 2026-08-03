@@ -18,7 +18,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import { inspectWidgetDom, inspectWidgetState } from "../dist/testing/index.js";
-import { MDY_WIDGET_CONTRACTS } from "../dist/index.js";
+import {
+  MDY_WIDGET_CONTRACTS,
+  MDY_WIDGET_KINDS,
+  MDY_WIDGET_STATE_CONTRACTS,
+  stateCarriers,
+  widgetSupportsState,
+} from "../dist/index.js";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>");
 const document = dom.window.document;
@@ -199,21 +205,37 @@ test("the select fixture these two build on is genuinely conformant", () => {
   root.remove();
 });
 
-test("J4a — aria-expanded on the root instead of the trigger is accepted", () => {
+test("J4a — aria-expanded on the root instead of the trigger is rejected", () => {
   const { root, trigger, parts } = buildOpenSelect();
 
   // The trigger is what a screen reader announces, and it is made to say nothing. The root says it
-  // instead, where no assistive technology is listening.
+  // instead, where no assistive technology is listening. Saying it somewhere is not saying it.
   trigger.removeAttribute("aria-expanded");
   root.setAttribute("aria-expanded", "true");
 
   const issues = inspectWidgetState(root, "select", "open", { parts, control: trigger });
 
-  // Plan 41 inverts this: `open` names `trigger` as its carrier, and present-elsewhere-but-absent-
-  // there becomes a failure rather than a pass.
-  assert.deepEqual(issues, [], "any declared part may satisfy the state today");
-  assert.equal(trigger.getAttribute("aria-expanded"), null, "the responsible part says nothing");
+  assert.deepEqual(
+    issues.map((issue) => issue.code),
+    ["STATE_ARIA_MISSING"],
+    "the state must be absent from its carrier, not from the widget",
+  );
+  assert.match(issues[0].message, /on trigger/, "and the failure names the part responsible");
   root.remove();
+});
+
+test("J4a — a carrier is declared for every kind and state that carries ARIA", () => {
+  // A table with no candidate to reject is the failure mode this plan is most at risk of: every
+  // kind × ARIA state must name a carrier, or the check silently passes for having nothing to look
+  // at. `open` derives from the opener the contract already declares.
+  const missing = [];
+  for (const kind of MDY_WIDGET_KINDS) {
+    for (const [state, contract] of Object.entries(MDY_WIDGET_STATE_CONTRACTS)) {
+      if (!contract.aria || !widgetSupportsState(kind, state)) continue;
+      if (stateCarriers(kind, state).length === 0) missing.push(`${kind}.${state}`);
+    }
+  }
+  assert.deepEqual(missing, [], "every ARIA state a kind supports names the part that carries it");
 });
 
 // ─── J4b: a popup may legally frame nothing ──────────────────────────────────

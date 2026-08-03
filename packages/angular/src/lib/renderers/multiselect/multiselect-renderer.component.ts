@@ -77,6 +77,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             (keydown)="onOverlayKeydown($event)"
             [attr.aria-label]="i18n.searchOptionsLabel"
             [attr.aria-invalid]="hasErrors()"
+            [attr.aria-disabled]="effectiveAriaDisabled()"
             [attr.aria-describedby]="describedById(fieldId)"
           >
             @if (effectiveLoading()) {
