@@ -62,7 +62,7 @@ The fix is a value comparison against `SHELL_CLASS_FALLBACK[name]`. Any correcti
 the second group still throwing — `mdy-multiselect` is the chip grid, and giving it
 `mdy-multiselect--disabled` would mint a class no theme has styled.
 
-## A2 — Seven kinds cannot express `disabled` or `error` on their wrapper
+## A2 — Seven kinds cannot express `disabled` or `error` on their wrapper — **fixed**
 
 **Observed.**
 
@@ -87,6 +87,16 @@ The defect is that the contract's class vocabulary and the themes' attribute sel
 independent mechanisms for one idea, and `widgetStateClasses` — which the style audit compares the
 CSS against — can only see the first. Half the expression of "this field is unusable" is outside
 what the contract can check.
+
+**Resolved.** `MDY_STATE_EXPRESSION` declares per kind whether the state is shown by a **class** on
+the wrapper or reached **structurally** from the native control, and the style audit checks the
+declared one — so the mechanism the class comparison could not see is now checked rather than
+invisible. Adding state classes to those seven was rejected: it would mint seven nothing paints and
+contradict `statesFor`'s narrowing.
+
+Declaring the mechanism found a defect the finding had not: **`file` used neither.** Twelve declared
+classes and no theme rule anywhere touching `:disabled` or `aria-invalid`, so a disabled file field
+looked exactly like a usable one in all four themes. Fixed structurally, like its siblings.
 
 ## A3 — `MDY_FIELD_STATE_CLASSES` restated the shell states in a second vocabulary — **fixed**
 
@@ -199,7 +209,7 @@ reported a browser from a bare Node process. Nothing consumed it then either, wh
 caught it. **Open decision**: either thread capabilities into the controllers, or say what the
 report actually is. The doc comment and the code state different contracts and only one can stay.
 
-## C4 — `staticParts` and `isFullyServerRenderable` have no consumer
+## C4 — `staticParts` and `isFullyServerRenderable` have no consumer — **closed as deliberate**
 
 **Observed.** Declared, self-consistent, proved against the catalogue, and consumed by nothing but
 their own spec. The same criticism the SSR batch made of the capability report.
@@ -208,6 +218,15 @@ their own spec. The same criticism the SSR batch made of the capability report.
 whether a renderer builds its overlay eagerly or lazily, which is what produced the measured
 divergence in the conformance manifests — Plain eager on all six overlay kinds, Lit lazy on all six.
 Two of the three symbols are unconsumed, not three.
+
+**Closed without wiring one.** They answer "what would a server emit", and the server half of the
+roadmap was scoped out by an explicit decision — so no code here has that question. The reason is now
+stated beside the export rather than left looking unfinished. Adding a consumer to make the number
+look better would be a consumer that exists to be counted.
+
+Narrowed from three symbols to two: `dynamicParts` **is** consumed, by
+`scripts/support/observe-renderer.mjs`, which uses it to decide eager versus lazy overlays for the
+conformance manifests.
 
 ## C5 — The accessible-name half of the relations contract was not exported — **fixed**
 
@@ -226,13 +245,23 @@ any of them is branching on a constant. `MDY_DISABLED_BLOCKS_TRANSITIONS = true`
 `dismissOnOutsidePointer` names its own exception — a popup a click elsewhere cannot dismiss would
 have to be declared as one — which the derivation makes unexpressible.
 
-It is also **underspecified where it does apply**, and that has already produced a divergence: the
-contract does not say which event delivers the dismissal. Plain and Lit listen on `pointerdown`,
+It was also **underspecified where it does apply**, and that had already produced a divergence: the
+contract did not say which event delivers the dismissal. Plain and Lit listened on `pointerdown`,
 Angular on `click`. A drag that starts outside an open popup fires `pointerdown` and never `click`,
-so Plain and Lit dismiss on scroll-start and Angular does not. A capability that says *whether* but
-not *how* leaves the renderers to agree by luck.
+so the same gesture dismissed on two renderers and not the third. A capability that says *whether*
+but not *how* leaves the renderers to agree by luck.
 
-**Withdrawing a capability is a major change.** See `contract-compatibility.md`.
+**That half is now closed too.** `dismissOnOutsidePointer` is
+`false | { event: "pointerdown" | "click" }` and the answer is `click`; Plain and Lit read the event
+from the capability instead of naming one. The shape can express either answer rather than recording
+the one chosen.
+
+And naming the event proved **necessary but not sufficient**: with the pointer path correctly
+declining to fire, Plain's select still closes on that drag — through `focusout`, a **second
+dismissal path the contract does not name**. That is the open remainder of this finding.
+
+**Withdrawing a capability is a major change**, and so was reshaping this one: `boolean` became a
+union, so `=== true` no longer type-checks. See `contract-compatibility.md`.
 
 ## E1 — The style audit could not see a class the contract declares and nobody paints — **fixed**
 
@@ -281,7 +310,7 @@ That is how the style-coverage audit came to be red without anyone noticing: it 
 | `test:perf`, `test:bundle`, `test:core-bundle`, `test:form-scale`, `test:angular-renderer-budget` | budgets and benchmarks, not correctness gates |
 | `test:themes`, `test:styles-architecture` | pass today; left out as a styles concern rather than a contract one — an open question, not a decision |
 
-## E3 — Conformance covers three adapters
+## E3 — Conformance covers three adapters — **documented, not a defect**
 
 **Observed.** `dom-contract`, `state-matrix` and `equivalence` suites exist for **plain**, **lit**
 and **angular**. `react`, `vue`, `solid`, `preact` and `svelte` have a widgets test and a reactivity
@@ -289,6 +318,15 @@ test, and no contract conformance.
 
 Consistent with the stated adapter priority, so this is a scope boundary rather than a defect — but
 it is a boundary a consumer of those five packages cannot currently read anywhere.
+
+**Closed as a documented boundary.** The five headless adapters do not lack fixtures — they
+**render nothing**: no component, no element registry, no mount. A conformance fixture for them would
+assert the absence of parts.
+
+What was actually wrong was the README telling a consumer that *"other adapters share the same
+conformance suite"*. The boundary is now stated in the project status note, the package table, all
+five package READMEs, and `conformance-manifest.mjs`, which distinguishes "renders, checked
+elsewhere" from "renders nothing, so there are no kinds to report".
 
 ## F — Contract tables keyed by bare `string` — **partly fixed**
 
@@ -337,10 +375,19 @@ on the typeable element. For the *transition* it is wrong, because a press on a 
 user reaching for the caret, not for a switch. The two uses should be separated rather than the
 declaration changed — changing it would move the ARIA relation off the element the pattern requires.
 
-## G2 — `ArrowUp` does not open a closed overlay
+## G2 — `ArrowUp` did not open a closed overlay — **fixed**
 
 **Possible.** `ArrowDown` opens; `ArrowUp` is declared by neither the table nor the policy, and APG's
 combobox pattern specifies both. The two paths agree, so this is a gap rather than a disagreement.
+
+**Resolved.** Declared on all six overlay kinds in `MDY_WIDGET_KEYBOARD` *and* in
+`selectKeyboardAction`, because the `Tab` defect was one path fixed and not the other, twice.
+
+The open question — whether opening upwards should also move to the last option — answered itself:
+`listboxNavigationIndex` already returns the **last** option for `ArrowUp` from nothing-active and
+the **first** for `ArrowDown`. Opening with nothing active and letting the next arrow resolve gives
+the specified behaviour, so declaring a move on the opening press would restate one layer up what
+already holds one layer down.
 
 ## G3 — `Space` was the Tab defect again — **fixed**
 
@@ -389,7 +436,7 @@ description it actually computed. `e2e/screen-reader.spec.ts` now does.
 **This is E1's shape a third time**, and the sharpest statement of it: a rule that is correct, and a
 suite whose fixtures never reach the branch the rule guards, are indistinguishable from green.
 
-## I — The number field's spin buttons are styled, emitted, and declared nowhere
+## I — The number field's spin buttons were styled, emitted, and declared nowhere — **fixed**
 
 **Observed.** Found by a guard added for a different reason.
 
@@ -424,3 +471,11 @@ one direction the contract cannot see, because every audit starts from what the 
 
 Whichever is chosen, the current state — styled by the theme, named by no contract, present in one
 renderer — is the one answer that is not defensible.
+
+**Resolved.** `number` declares `increment` and `decrement` as **optional** parts with `button`
+semantics and those classes — optional because the native control has its own spinners and a renderer
+that leaves them to the platform is complete without them.
+
+Confirmation the gap closed rather than moved: the three `mdy-spin-btn` classes had been sitting in
+the style audit's off-contract allowlist, and the audit reported them as **stale entries** once the
+parts existed. Removed.
