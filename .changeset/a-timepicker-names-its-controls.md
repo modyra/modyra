@@ -32,3 +32,5 @@ Two resolver defects surfaced with it. `inspectWidgetDom`'s fallback lookup matc
 alone, so two parts sharing a selector each resolved to both elements — `daterange`'s `startControl`
 and `endControl` had the same hole. Both resolvers now read one rule, declared order among the parts
 that share a selector.
+
+The decision behind this is [ADR 0014](https://github.com/modyra/modyra/blob/main/docs/architecture/0014-the-contract-names-the-responsible-element.md): the contract names the element responsible for something, not the region containing it.

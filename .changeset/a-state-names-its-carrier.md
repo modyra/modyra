@@ -33,3 +33,5 @@ public surface outside the catalogue has no classification path.
 
 A downstream renderer that passed conformance may now fail it. That is the point of the change, and
 it is a verdict rather than an API break: nothing a consumer wrote needs editing to compile.
+
+The decision behind this is [ADR 0014](https://github.com/modyra/modyra/blob/main/docs/architecture/0014-the-contract-names-the-responsible-element.md): the contract names the element responsible for something, not the region containing it.

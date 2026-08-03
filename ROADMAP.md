@@ -36,7 +36,7 @@ on. A version number over all of it would be a promise about the parts least rea
 
 ---
 
-## Phase 1 — the contract can describe its own anatomy
+## Phase 1 — the contract can describe its own anatomy — **complete, 2026-08-03**
 
 Four gaps are recorded in [contract gaps](docs/contract-gaps.md) as **J1–J4**. They share one shape:
 the thing needing constraint sits one level below the part list, so the contract cannot reach it.
@@ -58,6 +58,27 @@ classified each change rather than the author asserting it.
 
 **Not in this phase:** J1 and J2. J1's decision exists but its implementation shares the
 state-carrier mechanism with J4a. J2 needs the evidence the others produce.
+
+### Outcome
+
+All three read `fixed`. The three turned out to be one decision made three times, recorded as
+[ADR 0014](docs/architecture/0014-the-contract-names-the-responsible-element.md): **the contract names
+the element responsible for something, not the region containing it.**
+
+| gap | change | `contract:diff` |
+| --- | --- | --- |
+| J3 | `hourControl` / `minuteControl`; `projectTimepickerFieldA11y` returns four parts where it returned two | major |
+| J4a | `stateCarriers(kind, state)`; `open` derives from `MDY_POPUP_OPENERS` | patch — shipped `minor`, see finding **K** |
+| J4b | four `required` entries; every overlay popup must frame something | major |
+
+Three renderer defects surfaced, each a state announced where nothing listens: Lit and Angular never
+marked the multiselect opener `aria-disabled`, and `colors` had no correct carrier to name — its
+`control` is an `aria-hidden` native colour input in one renderer, so the carrier is `hexInput`.
+
+**The finding worth carrying forward:** J4b's four requirements were enforced against *nothing*. The
+conformance CLI inspected widgets at rest only, where every part inside a popup is skipped by design,
+so all four would have shipped green and unchecked. `modyra-conformance` now drives each overlay kind
+open and inspects it there. Ask what run fails if a new rule is wrong, and check that that run exists.
 
 ---
 

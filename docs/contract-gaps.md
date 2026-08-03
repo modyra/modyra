@@ -29,20 +29,20 @@ does not want to scroll, and `npm run test:docs` fails if the two disagree.
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
 The J findings share one shape: **anatomy the contract cannot express, because the thing that needs
-constraining sits one level below the part list.** They are recorded rather than fixed because each
-one is a decision about what a widget *is*, binding on every renderer.
+constraining sits one level below the part list.** Each is a decision about what a widget *is*,
+binding on every renderer, which is why each needed a record before a change.
 
-[The roadmap](../ROADMAP.md) sequences them: J3 and J4 in phase 1, J1 and J2 in phase 3. J1's
-decision is already made — [ADR 0012](architecture/0012-a-choice-is-a-radio-by-role-or-by-tag.md) —
-so what remains there is implementation rather than a question.
+J3, J4a and J4b are closed, and the decision they turned out to share is
+[ADR 0014](architecture/0014-the-contract-names-the-responsible-element.md): the contract names the
+element responsible for something, not the region that contains it. J1's decision is likewise already
+made — [ADR 0012](architecture/0012-a-choice-is-a-radio-by-role-or-by-tag.md) — so what remains there
+is implementation rather than a question. J2 is last on purpose: it is the only one requiring
+conditional anatomy, and designing that machinery before the others closed would have been designing
+it without evidence.
 
-They close in a fixed order, and the first step is not a fix. A suite that cannot currently observe a
-violation will not prove a new rule caught it, so the fixtures come first and assert today's wrong
-behaviour. J3 follows, being the one gap that needs no decision — the timepicker's inner control is
-already drawn by every renderer and only needs naming. J1 and J2 each need an architecture decision
-record before any contract change, because each settles what a widget *is* for every renderer at
-once. J2 comes last on purpose: it is the only one requiring conditional anatomy, and designing that
-machinery before the others are closed would be designing it without evidence.
+The step that made the closures believable was not a fix. A suite that cannot observe a violation
+will not prove a new rule caught it, so every finding got a fixture first, asserting the wrong
+behaviour it was still exhibiting; each was inverted in the commit that closed its gap.
 
 One lesson recurs across E1, H and the `contract-diff` capability comparison: **a check is only as
 good as the set of candidates it considers.** A rule that is correct, and a suite whose fixtures
@@ -670,7 +670,7 @@ calendar. Four names were added to four `required` lists:
 | `colors` | `presets` | Plain `div[role=listbox]`, Lit `div[role=listbox]` |
 
 Multiselect's `listbox` is required to be *present*, not to be a listbox: what role a chip grid
-should carry is the mode question ADR 0014 settles, and presence does not pre-empt it.
+should carry is the mode question ADR 0015 settles, and presence does not pre-empt it.
 
 ### The rule was enforced against nothing
 
