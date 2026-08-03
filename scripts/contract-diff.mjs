@@ -184,6 +184,24 @@ for (const kind of Object.keys(current.kinds).filter((k) => baseline.kinds[k])) 
   // Over the union of both sides. Iterating the *current* capabilities alone could never see one
   // that had been withdrawn — it is not there to iterate — which is the change the compatibility
   // table calls major and the only one this comparison exists to catch.
+  /**
+   * Whether a capability's new value takes away something its old value promised.
+   *
+   * Three shapes of the same loss: the capability is gone, it has become falsy, or it is still an
+   * object and no longer answers a question it used to. Only the first two were checked, so a
+   * reshaped capability — the kind a consumer destructures — classified as minor.
+   */
+  const withdrawsInformation = (before, value) => {
+    if (before === undefined || before === false) return false;
+    if (value === undefined || value === false) return true;
+    if (typeof before !== "object" || before === null) return false;
+    // An object answered questions by key. A value that is not an object answers none of them, so
+    // every one of them is withdrawn — `{ event }` becoming a string takes `.event` with it just as
+    // surely as deleting the property would.
+    if (typeof value !== "object" || value === null) return true;
+    return Object.keys(before).some((key) => !(key in value));
+  };
+
   const capabilityNames = new Set([
     ...Object.keys(now.capabilities ?? {}),
     ...Object.keys(was.capabilities ?? {}),
@@ -192,9 +210,12 @@ for (const kind of Object.keys(current.kinds).filter((k) => baseline.kinds[k])) 
     const value = now.capabilities?.[capability];
     const before = was.capabilities?.[capability];
     if (JSON.stringify(before) !== JSON.stringify(value)) {
-      // Withdrawing a capability breaks a consumer relying on it; granting one cannot.
-      const withdrawn = before !== undefined && (value === undefined || (before === true && value === false));
-      record(withdrawn ? "major" : "minor", kind, `capability ${capability}: ${JSON.stringify(before) ?? "none"} → ${JSON.stringify(value)}`);
+      // Withdrawing a capability breaks a consumer relying on it; granting one cannot. Withdrawal
+      // is not only the capability disappearing: a capability that keeps its name and loses a
+      // property withdraws that property, and `caps.x.event` stops resolving exactly as
+      // `caps.x === true` stopped holding when the boolean became a union.
+      record(withdrawsInformation(before, value) ? "major" : "minor", kind,
+        `capability ${capability}: ${JSON.stringify(before) ?? "none"} → ${JSON.stringify(value)}`);
     }
   }
 

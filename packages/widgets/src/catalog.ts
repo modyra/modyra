@@ -1,5 +1,6 @@
 import { MDY_CHIP_CLASSES } from "./chip.js";
 import type { MdyPartContract } from "./contract.js";
+import type { MdyOutsideDismiss } from "./dismissal.js";
 import type { MdyStateName } from "./state.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_SHELL_PART_STATES } from "./structure.js";
 import type { MdyWidgetSemanticElement, MdyWidgetStructure } from "./structure.js";
@@ -32,20 +33,18 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
      * meaningfully be false: a popup a click elsewhere cannot dismiss is a real design, and this is
      * where it would be declared.
      *
-     * It names the **event**, because leaving that open let three adapters each pick one and the
-     * choice is observable: `pointerdown` fires on press, `click` only on a completed press-and-
-     * release over the same target. A drag beginning outside an open popup — the gesture a touch
-     * user makes to scroll — fires the first and never the second, so the same gesture dismissed on
-     * two renderers and not on the third.
+     * It names a **gesture**, not an event. No single event can express the rule: `pointerdown`
+     * fires on press, before the gesture's end is known, and `click` says nothing about a drag that
+     * began *inside* the popup and ended outside — which is what selecting text in a popup is.
      *
-     * `"click"` is the answer: a drag that begins outside is not necessarily a dismissal, and a user
-     * may press, think better of it, and return. Dismissing on the press takes the popup away from
-     * someone who had not decided to close it.
+     * `"pointer-pair"` dismisses only when press and release both land outside, and never on
+     * `pointercancel`, which is the browser taking the gesture over to scroll. The rule itself lives
+     * in {@link createOutsidePointerGesture}, so a renderer consumes it rather than restating it.
      *
-     * The shape can express either answer rather than recording the one chosen — a capability that
-     * can only say what is currently true is the kind this catalogue has already had to withdraw.
+     * The shape stays a union rather than a boolean: a popup that a gesture elsewhere cannot dismiss
+     * is a real design, and a second gesture model would be declared here beside this one.
      */
-    readonly dismissOnOutsidePointer: false | { readonly event: "pointerdown" | "click" };
+    readonly dismissOnOutsidePointer: MdyOutsideDismiss;
     /**
      * How this widget's popup attaches, for `anchorOverlay`. A list belongs under its control and
      * as wide as it; a calendar is sized by its own content. Naming it here is what stops three
@@ -385,7 +384,7 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
     siblingCount.set(parent, order + 1);
     return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional: !(REQUIRED_PARTS.has(name) || shape.required?.includes(name)), repeated: REPEATED_PARTS.has(name) });
   });
-  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? Object.freeze({ event: "click" as const }) : false, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
+  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
 /**
  * The semantic every part answers to, declared rather than defaulted.
