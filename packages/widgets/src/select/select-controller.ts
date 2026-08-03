@@ -227,9 +227,9 @@ export function createSelectController<TValue>(
       case "move": {
         // A closed list has nothing to move through, and opening here would be a second way to open
         // beside the keyboard policy — which already answers `ArrowDown` on a collapsed combobox
-        // with `open`. Two paths to one behaviour means neither can be changed on its own: removing
-        // the policy's rule left this one still opening, so the suite stayed green on a contract
-        // that no longer said it.
+        // with `open`. Two paths to one behaviour means neither can be changed on its own — remove
+        // the policy's rule and this one still opens, leaving the suite green on a contract that no
+        // longer says so.
         if (!open()) break;
         const next = selectNextActiveKey(
           intent.target,

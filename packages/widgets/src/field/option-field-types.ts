@@ -28,7 +28,7 @@ export interface MdyOptionFieldControllerOptions<TValue> {
    * list until the field is touched says so, and `aria-describedby` then names the supporting text
    * while the list is absent rather than an element that is not there.
    *
-   * Defaults to "there are errors", which is what every caller got before this existed.
+   * Defaults to "there are errors", which is correct for a renderer that always shows them.
    */
   readonly errorsVisible?: (state: MdyOptionFieldState<TValue>) => boolean;
 }

@@ -2,7 +2,7 @@
  * Where a widget put its overlay, when it did not put it inside itself.
  *
  * A portalled popup is the one part legitimately outside its field's root, so it cannot be found by
- * containment. Two wrong ways to look for it, both of which have shipped in this repo:
+ * containment. Two ways to look for it that do not work:
  *
  * - **By class, across the document.** Returns whichever field rendered first, so a page with two
  *   selects reports one of them twice and the other never.

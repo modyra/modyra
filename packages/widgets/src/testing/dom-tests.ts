@@ -110,8 +110,8 @@ function classesOf(element: Element): readonly string[] {
 /**
  * What each semantic element in the catalog admits. A part may satisfy its element by tag or by an
  * explicit role — a `div role="textbox"` is a control, and refusing it would forbid every composite
- * widget — but it may not satisfy it by carrying the right class and nothing else, which is what
- * the contract allowed until now.
+ * widget — but it may not satisfy it by carrying the right class and nothing else. A class is
+ * styling; it tells an assistive technology nothing.
  *
  * `undefined` means the catalog declares no semantics for that element: a wrapper, a run of text.
  * Those are listed rather than defaulted, so an element name nobody thought about fails loudly
@@ -142,7 +142,8 @@ export const MDY_SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly str
   // A popup is a positioning container. Its accessible semantics live on what it *contains* — the
   // listbox, the grid, the dialog — so constraining the box itself would only force a role that
   // says nothing. Declared unconstrained rather than left to fall through, so the omission is a
-  // decision on the record. A real check on what a popup contains belongs with task 08.
+  // decision on the record. Nothing yet checks the contained element, so a popup framing the wrong
+  // thing — or nothing — is invisible here.
   popup: undefined,
   grid: { tags: ["table"], roles: ["grid", "rowgroup", "presentation", "none"] },
   gridcell: { tags: ["td", "th"], roles: ["gridcell", "button"] },
@@ -599,10 +600,10 @@ export function inspectWidgetDom(
     }
   }
 
-  // The declared opener must be the element carrying the relation. Task 07 proved that whatever
-  // holds `aria-controls` points at this widget's own popup; this says *which part* is supposed to
-  // hold it, so a widget cannot satisfy the relation from some other element that happens to have
-  // one — and a widget that declares an opener and never wires it up is now visible.
+  // The declared opener must be the element carrying the relation. Checking that whatever holds
+  // `aria-controls` points at this widget's own popup is not enough on its own: this says *which
+  // part* is supposed to hold it, so a widget cannot satisfy the relation from some other element
+  // that happens to have one, and one that declares an opener and never wires it up fails here.
   const openerPart = MDY_POPUP_OPENERS[kind]?.opener;
   if (definition.capabilities.overlay && openerPart && (resolved.get("popup") ?? []).length > 0) {
     const openers = resolved.get(openerPart) ?? [];

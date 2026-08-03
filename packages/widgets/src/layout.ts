@@ -88,7 +88,7 @@ export interface MdyLayoutSlotPlacement {
  * than a shortcut: `grid-column` and `display` are properties of a grid item, and the column *is* the
  * grid item — a wrapper inside the cell could not move itself into a different track however it was
  * styled. A column holding several slots takes the first placement it is given, so a row built one
- * slot per column — which is every row Studio authors — behaves exactly as written.
+ * slot per column — the ordinary case — behaves exactly as written.
  *
  * Sizes cascade the way the track count already does: what a size does not say, it inherits from the
  * next smaller one. Only the sizes actually authored are emitted, so a slot that says nothing adds
