@@ -41,7 +41,7 @@
     "docs:conformance-manifest": "npm run build:plain && tsc -p packages/lit/tsconfig.json && node scripts/conformance-manifest.mjs",
     "test:conformance-manifest": "node scripts/conformance-manifest.mjs --check",
     "test:harness-exceptions": "node scripts/audit-harness-exceptions.mjs --check",
-    "test:conformance": "npm run build:plain && tsc -p packages/lit/tsconfig.json && node scripts/conformance-cli.mjs packages/plain/conformance.config.mjs && node scripts/conformance-cli.mjs packages/lit/conformance.config.mjs",
+    "test:conformance": "npm run build:plain && tsc -p packages/lit/tsconfig.json && node packages/widgets/bin/modyra-conformance.mjs packages/plain/conformance.config.mjs && node packages/widgets/bin/modyra-conformance.mjs packages/lit/conformance.config.mjs",
     "contract:diff": "npm run build:packages && node scripts/contract-diff.mjs",
     "contract:snapshot": "npm run build:packages && node scripts/contract-diff.mjs --write",
     "test:contract-snapshot": "node scripts/contract-diff.mjs --check",

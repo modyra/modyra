@@ -55,6 +55,31 @@ conformance fixtures and testing kit.
 Out of scope: a general DOM AST, a custom virtual DOM, node/portal/teleport
 management, any direct DOM access from controllers.
 
+## Checking your own renderer
+
+```bash
+npx modyra-conformance ./my-adapter.config.mjs
+```
+
+The suites this repository runs against its own renderers, behind one entry point. Your config says
+which kinds you draw and how to mount one, and owns its environment — a renderer needs a DOM and only
+you know how yours is set up:
+
+```js
+export const name  = "@acme/renderer";
+export const kinds = ["text", "select"];
+export async function mount(kind) { /* → an MdyStateFixture */ }
+
+// Optional.
+export const absentParts = { select: ["empty"] };   // what a kind legitimately does not render at rest
+export const mountScoped = (kind, scope) => { … };  // two instances that must not share ids
+```
+
+It reports DOM anatomy and relations, the state matrix, renderer equivalence at rest, lifecycle, and
+multi-instance isolation. **Keyboard behaviour and an accessibility audit are reported as not run**,
+with the reason: focus, native key defaults and computed accessible names are not answerable outside
+a real browser, and a green there would mean nothing.
+
 ## Contract data and checker data
 
 Two kinds of export live here, and the difference decides whether *you* should
