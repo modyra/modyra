@@ -172,6 +172,28 @@ These examples demonstrate API compatibility. They do not imply identical UI, SS
 
 Only install the adapter for the framework in your application. Framework packages are optional peers of their respective adapters.
 
+## Build a renderer, and prove the contract is implementable
+
+The widget contract claims a renderer can be built from the published specification alone. Every
+renderer in this repository was written by people who also wrote the contract, so none of them tests
+that claim — the specification could be incomplete in exactly the places its authors already know.
+
+If you build one, the suite that judges it is published:
+
+```bash
+npx modyra-conformance path/to/your.config.mjs
+```
+
+The config says which widget kinds you render and how to mount one; `packages/plain/conformance.config.mjs`
+is the reference to copy. The suite checks anatomy, ARIA relations, states and keyboard behaviour
+against [the contract](docs/guides/ui-toolkit.md) — the same checks `@modyra/plain` and `@modyra/lit`
+pass today.
+
+**What counts:** a renderer for any framework, or none, that passes without changes to the contract
+or to the suite. **What we want to hear about even more:** where the specification was ambiguous,
+underspecified, or wrong. A question you had to answer by reading this repository's source is a
+defect in the contract, and worth an issue whether or not you finish the renderer.
+
 ## Security notes
 
 Draft persistence uses `localStorage` by default. It is origin-wide, stored as plain text and may survive logout. Exclude passwords, tokens, payment data and other sensitive fields, or provide a custom storage implementation. See the [security guide](docs/guides/security.md).
