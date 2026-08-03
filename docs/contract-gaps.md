@@ -572,10 +572,28 @@ therefore only "the widget exposes the state somewhere an assistive technology w
 "on the right element". A widget that moved `aria-expanded` from its trigger to its root would still
 pass.
 
-**Popup contents are unchecked.** `dom-tests.ts` declares `popup: undefined` — a popup is a
+**A popup may legally frame nothing.** `dom-tests.ts` declares `popup: undefined` — a popup is a
 positioning container, and its accessible semantics live on what it *contains* (the listbox, the
-grid, the dialog). Constraining the box itself would force a role that says nothing. But nothing yet
-checks the contained thing, so a popup framing the wrong element, or nothing at all, is invisible.
+grid, the dialog). Constraining the box itself would force a role that says nothing.
+
+Containment itself **is** checked: `PART_NOT_CONTAINED` rejects a part rendered outside its declared
+parent, `listbox`-inside-`popup` included. What is missing is *presence*. Four of the six overlay
+kinds declare no **required** part inside their popup, so an empty popup violates nothing:
+
+| kind | parts inside the popup | required |
+| --- | --- | --- |
+| `select` | `search`, `listbox`, `empty` | — |
+| `multiselect` | `search`, `listbox`, `empty` | — |
+| `timepicker` | `dialog`, `container` | — |
+| `colors` | `presets` | — |
+| `datepicker` | `calendar`, `actions` | `calendar` |
+| `daterange` | `calendar`, `actions` | `calendar` |
+
+`datepicker` and `daterange` are already covered, and by an ordinary required part rather than a
+special popup rule — which is the shape a fix should follow rather than invent.
+
+An earlier statement of this finding claimed containment was unchecked. That was wrong, and the
+fixture written to demonstrate it failed instead of passing, which is how it was caught.
 
 **Not decided.** Narrowing the state carrier to one part per kind requires a per-kind table the
 contract does not have; checking popup contents requires the contract to name what each kind's popup
