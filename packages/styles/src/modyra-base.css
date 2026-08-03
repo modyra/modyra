@@ -599,8 +599,8 @@
            ×100 a colour landing within 0.01 of the pivot resolves *inside* the clamp — a secondary
            measured at lightness 0.5559 against a pivot of 0.56 produced 0.409, a mid grey, which is
            the single worst text colour available. ×10000 narrows that band to 0.0001.
-           `--mdy-sys-color-on-primary` used to be `color-mix(primary, cloud 95%)` — 95% white
-           whatever the primary was, which on a light brand colour is white text on a light
+           A fixed mix such as `color-mix(primary, cloud 95%)` cannot do this: it is 95% white
+           whatever the primary is, which on a light brand colour is white text on a light
            background. Each of these reads the colour it is named for, and because all four are
            declared on the same element, they resolve against whatever that colour computed to
            there — including in dark mode below. */

@@ -2016,11 +2016,10 @@
     /* The list, as a surface. Where it goes is `.mdy-overlay`'s, from the coordinates
      * `anchorOverlay` measured.
      *
-     * This used to be a second copy of the popup primitive: `absolute` with `top: 100%` while
-     * closed, then a sibling rule re-reading every `--mdy-overlay-*` property to switch it to
-     * `fixed` while open. Both said what `.mdy-overlay` already says, for one widget, and the
-     * second one is why the class went unnoticed as missing on Angular's popup — the duplicate was
-     * quietly doing the primitive's job. */
+     * Surface only: no positioning here. A per-widget copy of the popup primitive — `absolute` with
+     * `top: 100%` while closed, a sibling rule re-reading every `--mdy-overlay-*` property to switch
+     * to `fixed` while open — would say what `.mdy-overlay` already says, and would keep working if
+     * a renderer omitted the primitive's class, hiding the omission. */
     .mdy-select__dropdown {
         background: var(--mdy-select-dropdown-bg);
         border: var(--mdy-select-dropdown-border);
@@ -2029,19 +2028,18 @@
         overflow: hidden;
     }
 
-    /* `.mdy-select__overlay-backdrop` was styled here and emitted by nobody. Every adapter draws one
-       backdrop, `mdy-overlay-backdrop`, from the overlay panel — a per-widget backdrop has not
-       existed since the panel took the job. */
+    /* There is no per-widget backdrop. Every adapter draws one backdrop, `mdy-overlay-backdrop`,
+       from the overlay panel. */
 
     /* A modal list: what it is, not where it is.
      *
-     * The centring used to be spelled here — `fixed`, `top: 50%`, `left: 50%` and the translate —
-     * and `anchorOverlay` writes exactly that through `--mdy-overlay-top/left/transform` when it
-     * gives up on both sides. The `width` here was already dead: the primitive's
-     * `width: var(--mdy-overlay-width)` carries the decided width and outranked it.
+     * The centring is not spelled here. `anchorOverlay` writes `fixed`, `top: 50%`, `left: 50%` and
+     * the translate through `--mdy-overlay-top/left/transform` when it gives up on both sides, and
+     * the primitive's `width: var(--mdy-overlay-width)` carries the decided width — a `width` here
+     * would be outranked by it.
      *
      * A list that has stopped chasing its control scrolls as a column, and that is this rule's
-     * whole remaining job. */
+     * whole job. */
     .mdy-select__dropdown--overlay {
         max-height: min(70vh, 24rem);
         display: flex;
@@ -2260,9 +2258,9 @@
         background-color: var(--mdy-sys-color-surface-container-highest);
     }
 
-    /* Trigger geometry for the pickers. It lived only in the Angular renderer's component styles,
-       so a Lit- or Plain-rendered timepicker got the popup but not the control that opens it. The
-       contract names the same parts for all three, so the rules belong here. */
+    /* Trigger geometry for the pickers. The contract names these parts for every renderer, so the
+       rules belong in the shared theme: held in one renderer's own component styles, a picker drawn
+       by any other would get the popup but not the control that opens it. */
     .mdy-timepicker__input {
         flex: 1;
         /* Width comes from the flex line, not from the input's intrinsic size, which would
@@ -3346,11 +3344,11 @@
 
     /* The palette, as a surface and nothing else.
      *
-     * This used to be a second implementation of the popup primitive, for one widget, over in
-     * `mdy.base`: it positioned itself (`absolute`, `top: 100%`), showed and hid itself
-     * (`display: none`, and `.mdy-colors--open … { display: block }`), and re-derived placement in
-     * `--above` and `--overlay` — the two class names `popupPlacementClass` already produces from
-     * the catalog. Both themes copied that shape, which is the debt the styles audit reported.
+     * Surface only. A per-widget implementation of the popup primitive in `mdy.base` — positioning
+     * itself (`absolute`, `top: 100%`), showing and hiding itself (`display: none`, and
+     * `.mdy-colors--open … { display: block }`), re-deriving placement in `--above` and `--overlay` —
+     * would restate the two class names `popupPlacementClass` already produces from the catalog, and
+     * every theme would have to copy that shape.
      *
      * `.mdy-popup` does all of it, for every popup in the catalog, from the coordinates
      * `anchorOverlay` measured. What is left is what makes a palette look like a palette — and it

@@ -205,8 +205,7 @@ body {
   grid-template-columns: 210px minmax(0, 1fr) minmax(280px, 320px);
 }
 
-/* The outline: navigation and keyboard reordering, in the gutter that used to be
-   empty space beside the form card. */
+/* The outline: navigation and keyboard reordering, in the gutter beside the form card. */
 .outline {
   min-width: 0;
   min-height: 0;
@@ -583,14 +582,13 @@ body {
   gap: 4px 12px;
   align-items: start;
 }
-/* The canvas used to re-state `grid-template-columns` here, resolving the authored size itself,
-   because the foundation's breakpoints were viewport queries and the canvas is a frame inside a
-   wider window. They are container queries now and the frame's width is the form's width, so the
-   foundation answers correctly on its own — and this rule, which outranked it, is gone. */
-/* Spacing only, for the same reason as the row above it. `display` used to be restated here as
-   `grid`, which beat the foundation's own `display: var(--mdy-layout-column-display, flex)` — so a
-   column hidden at a breakpoint published `none` and went on being displayed. A stacking column is a
-   stacking column whether it is flex or grid; the one that decides is the foundation's. */
+/* The canvas does not re-state `grid-template-columns`. The foundation's breakpoints are container
+   queries and the frame's width is the form's width, so it resolves the authored size correctly on
+   its own; a rule here would outrank it. */
+/* Spacing only, for the same reason as the row above it. `display` is not restated: it would beat
+   the foundation's own `display: var(--mdy-layout-column-display, flex)`, so a column hidden at a
+   breakpoint would publish `none` and go on being displayed. A stacking column is a stacking column
+   whether it is flex or grid; the one that decides is the foundation's. */
 .preview-fields .mdy-layout-column,
 .plain-canvas-form .mdy-layout-column {
   min-width: 0;
@@ -1392,12 +1390,11 @@ body {
   background: var(--studio-chrome-bg);
   color: var(--studio-chrome-text);
 }
-/* The wrapper frame, its error/disabled states and the control reset used to live here,
-   compensating for a theme that shipped structure without colour. @modyra/styles' modern
-   theme owns all of it now (packages/styles/src/modyra-modern.css), for Preview and the
-   Astro embed too rather than only for this canvas. */
-/* Textarea sizing and the checkbox/switch controls come from the theme now. Radio inputs
-   still do not — the option renderers are the next batch — so they keep their reset here. */
+/* The wrapper frame, its error/disabled states and the control reset belong to the modern theme
+   (`@modyra/styles`, packages/styles/src/modyra-modern.css), which covers Preview and the Astro
+   embed as well as this canvas. Restating them here would cover only the canvas. */
+/* Textarea sizing and the checkbox/switch controls come from that theme. Radio inputs do not yet,
+   so they keep their reset here. */
 .plain-canvas-form input[type="radio"] {
   width: auto;
   justify-self: start;

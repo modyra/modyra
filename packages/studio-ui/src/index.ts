@@ -1116,10 +1116,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   /**
    * Nearest sibling in `direction` that can hold a column, either already arranged or not.
    *
-   * A container counts. It used to be skipped, on the reasoning that the Contract's layout addresses
-   * leaves and a group has none of its own — but the compiler wraps a container slot in a section, so
-   * a group occupies one column the same way a field does. Skipping it meant the one thing you could
-   * never put beside a control was a group, which is the arrangement a form most often wants.
+   * A container counts. The Contract's layout addresses leaves and a group has none of its own, but
+   * the compiler wraps a container slot in a section, so a group occupies one column the same way a
+   * field does. Skipping it would make a group the one thing that could never be put beside a
+   * control — which is the arrangement a form most often wants.
    */
   function nearestRowSibling(
     siblings: readonly string[],
@@ -1745,10 +1745,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     /**
      * Puts a container where the model says it belongs: inside its parent, among its siblings.
      *
-     * Both containers used to be appended to the host — an array unconditionally, a group whenever
-     * it had no rendered descendant to sit before. So a repeater declared between two fields drew
-     * itself after both of them, and one nested in a group drew itself outside it. Neither is a
-     * styling problem: the arrangement on screen simply was not the arrangement in the project.
+     * Appending to the host instead — an array unconditionally, a group whenever it has no rendered
+     * descendant to sit before — draws a repeater declared between two fields after both of them,
+     * and one nested in a group outside it. That is not a styling problem: the arrangement on screen
+     * would not be the arrangement in the project.
      */
     const placeContainer = (nodeId: string, element: HTMLElement): void => {
       const parentId = idx.parentById.get(nodeId);
@@ -2125,7 +2125,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       const inRow = layoutNodeFor(nodeId)?.kind === "columns";
       // Groups own their children's DOM position (studio-ui re-nests them into a fieldset) and
       // layout owns the position of what it places. Offering both for one field would put two
-      // owners on the same node, so column rows are for root-level fields in this batch.
+      // owners on the same node, so column rows are offered only for root-level fields.
       const canColumn = idx.parentById.get(nodeId) === project.schema.id;
       const columnsButton = iconButton(
         "\u25a5",
@@ -2138,8 +2138,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       if (!canColumn && !inRow) columnsButton.title = "Column rows apply to fields at the form root";
 
       // Horizontal movement, offered only where there is a row to move within. Alt+\u2190/\u2192 does the
-      // same thing from the keyboard; a row's order used to be the schema's order, so moving a
-      // field sideways meant reordering the form itself.
+      // same thing from the keyboard. A row carries its own column order, so moving a field
+      // sideways rearranges the row rather than reordering the form itself.
       const row = inRow ? (layoutNodeFor(nodeId) as StudioLayoutNode & { kind: "columns" }) : null;
       const columnIndex = row
         ? row.columns.findIndex((column) => column.some((child) => "nodeId" in child && child.nodeId === nodeId))
@@ -2253,9 +2253,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       );
       root.prepend(head);
       // The two edges of the field itself. Before/after say "above" and "below"; a form is also
-      // wide, and until now nothing could be dropped *beside* anything — a row could only be asked
-      // for by a button that picked the partner for you. Inert until a drag starts, so they never
-      // sit between the pointer and the control.
+      // wide, so these are what let something be dropped *beside* a field rather than only into a
+      // row a button picked the partner for. Inert until a drag starts, so they never sit between
+      // the pointer and the control.
       root.append(sideZone("left", nodeId), sideZone("right", nodeId));
       root.before(dropPoint("before", nodeId), insertionPoint("before", nodeId));
       if (index === fields.length - 1) {
@@ -2409,9 +2409,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   /**
    * The strip above the canvas: which size the form is being laid out for.
    *
-   * This used to live inside the floating toolbar, behind a collapsed FAB. Choosing a size is a
-   * constant action while arranging a form — and the canvas below is *showing* that size — so it
-   * belongs where it can be seen and reached without opening anything.
+   * Choosing a size is a constant action while arranging a form, and the canvas below is *showing*
+   * that size, so it sits in the open rather than inside the floating toolbar: reachable without
+   * opening anything.
    */
   function canvasBarMarkup(): string {
     const width = BREAKPOINT_WIDTHS[breakpoint];

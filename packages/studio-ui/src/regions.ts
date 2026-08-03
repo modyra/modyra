@@ -1,11 +1,11 @@
 /**
  * Incremental render primitives for the Studio shell.
  *
- * The shell used to be rebuilt whole (`host.innerHTML = …`) on every state
- * change, which reset every scroll container, tore down the live form canvas
- * and re-attached every listener. A {@link Region} owns one persistent
- * container and only touches the DOM when its markup actually changed, so
- * untouched parts of the UI keep their nodes, listeners, scroll and focus.
+ * Rebuilding the shell whole (`host.innerHTML = …`) on every state change
+ * resets every scroll container, tears down the live form canvas and
+ * re-attaches every listener. A {@link Region} owns one persistent container
+ * and only touches the DOM when its markup actually changed, so untouched
+ * parts of the UI keep their nodes, listeners, scroll and focus.
  */
 
 /** A persistent container whose contents are rewritten only when the markup differs from last time. */

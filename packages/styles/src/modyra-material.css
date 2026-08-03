@@ -1029,11 +1029,10 @@
         box-sizing: border-box;
     }
 
-    /* Surface only. This theme used to place the palette itself — `absolute` with `top: 100%`, then
-       `fixed` with the overlay coordinates once open, plus its own `--above` and `--overlay`
-       placement rules — because the Angular renderer's palette was the one popup in the catalog not
-       wearing `mdy-popup`, so the foundation could not place it. It wears it now, and a theme that
-       positions a popup is a theme deciding whether the popup works. */
+    /* Surface only. The palette wears `mdy-popup`, so the foundation places it like every other
+       popup in the catalog. A theme that positioned it here instead — `absolute` with `top: 100%`,
+       `fixed` with the overlay coordinates once open, its own `--above` and `--overlay` rules —
+       would be a theme deciding whether the popup works. */
     .mdy-colors__dropdown {
         background: var(--mdy-surface-container-high);
         border: none;

@@ -39,11 +39,11 @@
     .mdy-renderer.mdy-floating-label .mdy-input-suffix {
         padding-top: 0;
         align-items: center;
-        /* Always centered in the container for standard 56px inputs */
+        /* Centred in the container, which is the right place for a standard 56px input. */
         display: flex;
     }
 
-    /* For textareas, icons must align at the top with the first line of text, not center in the huge box! */
+    /* A textarea is tall, so its icons align to the first line of text rather than to the box. */
     .mdy-renderer.mdy-floating-label.mdy-renderer--textarea .mdy-input-prefix,
     .mdy-renderer.mdy-floating-label.mdy-renderer--textarea .mdy-input-suffix {
         align-items: flex-start;
@@ -65,11 +65,9 @@
         padding-left: var(--mdy-fl-input-padding-with-prefix) !important;
     }
 
-    /* 
- * NOTE: The --mdy-label-left-offset in presence of a prefix is NO LONGER computed heuristically here in CSS.
- * It is now Perfectly calculated by MdyBaseControl via ResizeObserver measuring the EXACT rendered width
- * of the prefix, eliminating all layout bugs related to icon sizes.
- */
+    /* `--mdy-label-left-offset` is set by the renderer, not derived here. A CSS heuristic cannot
+     * know a prefix's rendered width — it varies with the icon set and the font — so the renderer
+     * measures the prefix and publishes the value. */
 
     /* Material's face for the label. Position and motion are the foundation's. */
     .mdy-renderer.mdy-floating-label .mdy-label {
