@@ -222,7 +222,7 @@ export const composeFirst = <T>(
  * `paths` array to attribute the error to the form itself (`path: null`).
  *
  * ```ts
- * const form = mdyForm(schema, {
+ * const form = createForm(schema, {
  *   validators: [
  *     crossField(["password", "confirm"], v =>
  *       v.password === v.confirm ? null : "Passwords do not match"),
