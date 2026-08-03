@@ -12,7 +12,7 @@ import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@mod
 import type { MdyDynamicDateField } from "@modyra/core";
 import { MDY_WIDGET_CONTRACTS, acceptTimeField, createTimepickerFieldController, stepTimeField, timeFieldBounds, overlayAnchoringFor, timepickerDialNumbers, timepickerSelectedDialValue, type MdyElementLookup, overlayControlledId } from "@modyra/widgets";
 import { hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/time-utils";
-import { applyPart, el, setErrors, setText } from "../dom.js";
+import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
@@ -278,7 +278,9 @@ export function renderTimepickerField(
     dialogContainer.classList.toggle("mdy-timepicker--dial", onDial);
     clock.hidden = !onDial;
     modeToggle.setAttribute("aria-label", onDial ? "Enter the time" : "Pick on the clock");
-    setText(modeToggle, onDial ? "⌨" : "🕐");
+    // Geometry, not a character: an emoji renders in the reader's emoji font, at its size and its
+    // colours, matching nothing around it and changing shape between platforms.
+    setIcon(modeToggle, onDial ? "KEYBOARD" : "CLOCK");
 
     const field = state.focusedField;
     hourSegment.classList.toggle("mdy-timepicker-segment--active", field === "hour");

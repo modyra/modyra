@@ -10,11 +10,40 @@
 // sites keep their import. It was always framework-agnostic; keeping it in Plain is what let the
 // other two adapters drift, because only Plain was applying the projection's whole attribute map.
 export { applyPart } from "@modyra/widgets";
+import { MDY_ICONS, type MdyIconName } from "@modyra/core/icons";
 
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
   if (className) node.className = className;
   return node;
+}
+
+/**
+ * The icon a name stands for, as real SVG geometry.
+ *
+ * Icons are geometry, never a character. A pictographic character renders in the reader's emoji
+ * font, at that font's size and baseline, in colours the theme does not choose and cannot restyle —
+ * so it matches nothing around it and changes shape between platforms.
+ *
+ * The geometry is `MDY_ICONS`, shared with every other renderer, so a clock drawn here and a clock
+ * drawn by another adapter are the same clock.
+ */
+export function mdyIcon(name: MdyIconName, className?: string): SVGSVGElement {
+  const icon = MDY_ICONS[name];
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", icon.viewBox);
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  if (className) svg.setAttribute("class", className);
+  // The registry holds markup, and it is the package's own constant rather than anything a caller
+  // supplies — there is no untrusted string on this path.
+  svg.innerHTML = icon.content;
+  return svg;
+}
+
+/** Replaces a node's contents with one icon, leaving the node itself alone. */
+export function setIcon(node: HTMLElement, name: MdyIconName, className?: string): void {
+  node.replaceChildren(mdyIcon(name, className));
 }
 
 /** Sets text content only when it actually changed, to avoid unnecessary reflow/selection loss. */
