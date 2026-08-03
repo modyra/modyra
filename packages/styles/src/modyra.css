@@ -371,12 +371,10 @@
      * A control that genuinely needs a different size says so after this rule and says why.
      *
      * **The popup is named separately because it is not a descendant.** A portalled popup renders at
-     * the document root, outside every `.mdy-renderer`, so this rule could not reach the icons inside
-     * it and nothing else sized them. An `<svg>` carrying only a `viewBox` then falls to each
-     * engine's default for a replaced element with no intrinsic size, and they disagree: Blink gives
-     * it the space its flex line offers, WebKit gives it zero. The multiselect's `+` and `−` buttons
-     * were empty on WebKit for exactly that reason — a control a user cannot see is one they cannot
-     * press.
+     * the document root, outside every `.mdy-renderer`, so a rule scoped to the renderer does not
+     * reach the icons inside it. An `<svg>` with only a `viewBox` has no intrinsic size, and the size
+     * a replaced element takes without one is not specified — so an icon nothing sizes is an icon
+     * whose size is undefined, and a control drawn at no size is one nobody can press.
      */
     .mdy-renderer svg,
     .mdy-popup svg,
@@ -384,6 +382,19 @@
         width: var(--mdy-affordance-glyph);
         height: var(--mdy-affordance-glyph);
         flex-shrink: 0;
+    }
+
+    /*
+     * A button's font size comes from the user agent, not from its parent, and user-agent defaults
+     * are not part of any specification. Anything a control sizes from its own font is therefore
+     * unspecified until the size is stated here.
+     *
+     * `:where()` carries no specificity, which is the point: this supplies the default a button
+     * should have had and loses to every rule that states a size deliberately. Named with a class
+     * instead, it would outrank them all.
+     */
+    :where(.mdy-renderer, .mdy-popup, .mdy-overlay-panel) button {
+        font-size: inherit;
     }
 
     /*
@@ -1900,6 +1911,9 @@
         color: inherit;
         cursor: pointer;
         font-family: inherit;
+        /* Stated beside the family, because a button inherits neither. The step icons are sized
+           from this font, so leaving it to the user agent leaves their size unspecified. */
+        font-size: inherit;
         padding: 0;
         transition: background var(--mdy-sys-motion-duration-base);
     }
@@ -1986,9 +2000,8 @@
     /* The scrolling half of the panel: the search box keeps its own height, the chips take the rest.
      *
      * Expressed as flex, not as `max-height: 100%`. The panel states a `max-height` and no `height`,
-     * so its height is *indefinite*, and a percentage against an indefinite containing block is
-     * undefined territory: one engine resolves it to `none`, another to zero, and on the second the
-     * panel collapses to the search box with nothing under it.
+     * so its height is *indefinite*, and a percentage resolved against an indefinite containing block
+     * has no defined answer — the panel's contents are then free to collapse.
      *
      * `min-height: 0` is the half that is easy to leave out. A flex item's default `min-height: auto`
      * refuses to shrink below its content, so an `overflow-y: auto` item never scrolls — it grows and
