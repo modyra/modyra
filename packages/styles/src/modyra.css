@@ -96,7 +96,17 @@
         --mdy-input-height: var(--mdy-comp-field-container-height);
         /* 56px */
         --mdy-input-bg: var(--mdy-comp-field-container-color);
-        --mdy-input-bg-hover: color-mix(in srgb, var(--mdy-input-bg), var(--mdy-on-surface) 8%);
+        /* The tint a field carries while it is hovered or focused, as a veil laid over whatever it
+           is already painted, rather than as a new colour mixed from the one underneath.
+
+           Mixing produced the same appearance and composed three levels deep: the field's own colour
+           and the text colour are each derived from a primary a host may set at runtime, so a fourth
+           mix over them is a colour no declaration states and no author can read off the sheet. A
+           flat veil is one value, legible where it is written, and independent of how deep the
+           derivation beneath it goes.
+
+           It is also the only form of this that every engine survives painting. */
+        --mdy-state-veil: rgb(0 0 0 / 0.06);
         --mdy-input-border-radius: var(--mdy-comp-field-container-shape);
         /* 4px */
         --mdy-input-color: var(--mdy-comp-field-input-text-color);
@@ -339,6 +349,10 @@
 
     @media (prefers-color-scheme: dark) {
         :root {
+            /* A darkening veil over a dark field is invisible. The state has to lighten here, which
+               is why this is a value per scheme rather than one opacity applied to a derived
+               colour. */
+            --mdy-state-veil: rgb(255 255 255 / 0.08);
             --mdy-overlay-backdrop-bg: rgba(0, 0, 0, 0.6);
             --mdy-shadow-depth-1: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 4px 1px rgba(0, 0, 0, 0.3);
             --mdy-shadow-depth-2: 0 1px 3px rgba(0, 0, 0, 0.5), 0 2px 8px 2px rgba(0, 0, 0, 0.3);
@@ -796,11 +810,11 @@
     }
 
     .mdy-input-wrapper:hover:not(:focus-within) {
-        background-color: var(--mdy-input-bg-hover);
+        background-image: linear-gradient(var(--mdy-state-veil), var(--mdy-state-veil));
     }
 
     .mdy-input-wrapper:focus-within {
-        background-color: var(--mdy-input-bg-hover);
+        background-image: linear-gradient(var(--mdy-state-veil), var(--mdy-state-veil));
         box-shadow: inset 0 -2px 0 0 var(--mdy-input-focus-color);
     }
 
@@ -963,7 +977,7 @@
     .mdy-renderer input:hover:not(:focus):not(:disabled),
     .mdy-renderer textarea:hover:not(:focus):not(:disabled),
     .mdy-renderer select:hover:not(:focus):not(:disabled) {
-        background-color: var(--mdy-input-bg-hover);
+        background-image: linear-gradient(var(--mdy-state-veil), var(--mdy-state-veil));
     }
 
     .mdy-renderer input::placeholder,
@@ -978,7 +992,7 @@
     .mdy-renderer input:focus,
     .mdy-renderer textarea:focus,
     .mdy-renderer select:focus {
-        background-color: var(--mdy-input-bg-hover);
+        background-image: linear-gradient(var(--mdy-state-veil), var(--mdy-state-veil));
         box-shadow: var(--mdy-input-focus-shadow);
     }
 

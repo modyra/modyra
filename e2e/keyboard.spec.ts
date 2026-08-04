@@ -133,9 +133,13 @@ test.describe("multiselect", () => {
     await expectMultiOpen(page, true);
   });
 
-  test("ArrowUp does not open a closed list", async ({ page }) => {
-    await page.keyboard.press("ArrowUp");
+  // Either vertical arrow opens it. `MDY_WIDGET_KEYBOARD` declares both and the single-select
+  // combobox answers both; opening on one of them made the same widget behave two ways depending on
+  // which key the user reached for, and disagreed with the table describing it.
+  test("ArrowUp opens a closed list too", async ({ page }) => {
     await expectMultiOpen(page, false);
+    await page.keyboard.press("ArrowUp");
+    await expectMultiOpen(page, true);
   });
 
   test("Escape closes and leaves focus inside the widget", async ({ page }) => {

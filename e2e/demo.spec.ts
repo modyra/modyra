@@ -183,13 +183,6 @@ test("an overlay is positioned once, by the box that draws it", async ({ page })
 });
 
 test("the colour palette is placed by the contract, in every theme", async ({ page, browserName }) => {
-  // WebKit crashes the page on this row's pointer act. It was attributed to finding N and is not
-  // that: N was paint reaching an element with no visible surface, and removing it freed the
-  // keyboard row it also held while leaving this one unchanged. Recorded separately as finding O,
-  // which is an interaction with a visible, legitimately painted element and has no fix in hand.
-  // Quarantined by name rather than by making the whole suite permissive: one row nobody can run is
-  // a known gap, a suite that cannot fail is an unknown one.
-  test.fixme(browserName === "webkit", "WebKit crashes the page on this widget — finding O");
   // And on Firefox this row passes alone and fails under the full nine-project run. The theme-swap
   // race that explained its neighbours was fixed and this one survived it, so the cause is not
   // isolated and saying so is worth more than a guess. Quarantined rather than left to redden a
@@ -415,13 +408,6 @@ test("a slider's track fills up to its handle, in every theme", async ({ page })
  * scope wrong and the shadow silently disappears, which no unit test would notice.
  */
 test("chip, segment and slider show what they are doing, in every theme", async ({ page, browserName }) => {
-  // WebKit crashes the page on this row's pointer act. It was attributed to finding N and is not
-  // that: N was paint reaching an element with no visible surface, and removing it freed the
-  // keyboard row it also held while leaving this one unchanged. Recorded separately as finding O,
-  // which is an interaction with a visible, legitimately painted element and has no fix in hand.
-  // Quarantined by name rather than by making the whole suite permissive: one row nobody can run is
-  // a known gap, a suite that cannot fail is an unknown one.
-  test.fixme(browserName === "webkit", "WebKit crashes the page on this widget — finding O");
   // And on Firefox this row passes alone and fails under the full nine-project run. The theme-swap
   // race that explained its neighbours was fixed and this one survived it, so the cause is not
   // isolated and saying so is worth more than a guess. Quarantined rather than left to redden a
