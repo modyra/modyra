@@ -26,11 +26,6 @@ jobs:
       - name: Build packages
         run: pnpm run build:packages
 
-      # The libraries are compiled by TypeScript 7 and the Angular toolchain is not: what ships is
-      # only safe while the two compilers emit the same artifacts, so that is checked every push.
-      - name: TypeScript 7 emit matches the primary compiler
-        run: pnpm run test:typescript7
-
       - name: Core tests
         run: pnpm run test:core
 
@@ -48,6 +43,17 @@ jobs:
 
       - name: Studio and framework-free renderer tests
         run: pnpm run test:studio
+
+      # The libraries are compiled by TypeScript 7 and the Angular toolchain is not: what ships is
+      # only safe while the two compilers emit the same artifacts, so that is checked every push.
+      #
+      # **After Studio, and that ordering is load-bearing.** The comparison compiles all twenty-one
+      # projects, and the studio packages import each other by package name — so they need each
+      # other's `dist`, which only `build:studio` produces. Run earlier it fails on nine projects
+      # with `TS2307: Cannot find module '@modyra/studio-model'`, which says nothing about either
+      # compiler.
+      - name: TypeScript 7 emit matches the primary compiler
+        run: pnpm run test:typescript7
 
       - name: Build Angular library
         run: pnpm run build:angular

@@ -138,10 +138,16 @@ export interface MdyReactiveScope {
 }
 
 export interface MdyReactivity {
-  /** Optional until every adapter is migrated (piano Milestone 4-5). */
-  readonly id?: symbol;
-  /** e.g. "vanilla", "vue", "solid", "angular". Optional during migration. */
-  readonly kind?: string;
+  /**
+   * Which reactivity this is, by identity rather than by name.
+   *
+   * Two adapters can both call themselves `"react"`; only the symbol says whether they are the same
+   * one. The headless adapters share vanilla's symbol deliberately — they *are* vanilla underneath,
+   * and pretending otherwise would make an identity check report a difference that does not exist.
+   */
+  readonly id: symbol;
+  /** e.g. `"vanilla"`, `"vue"`, `"solid"`, `"angular"`. What it calls itself, for diagnostics. */
+  readonly kind: string;
   /**
    * What this reactivity can actually do. Required: the engine asks it before using a feature, and
    * an adapter that answered nothing left the engine guessing.
