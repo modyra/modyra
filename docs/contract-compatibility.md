@@ -66,6 +66,54 @@ moves to one version together: a minor on the engine releases the contract as a 
 the contract's own package is named, and demanding a second changeset would add one that changes no
 version.
 
+## What you are owed
+
+Classification says what a change costs. This says what you are promised, which is the part a version
+number is actually claiming.
+
+**Nothing in `@modyra/core` or `@modyra/widgets` is removed or changed in a breaking way outside a
+major release.** That is the whole of 1.0's promise, and everything below is how it is kept honestly
+rather than by never changing anything.
+
+### A deprecation is an announcement, not a removal
+
+Something on its way out is marked and keeps working:
+
+```ts
+/** @deprecated since 1.2 — use `stateCarriers` instead. */
+```
+
+Both halves are required and both are checked by `scripts/audit-deprecations.mjs`:
+
+- **`since <version>`**, because a deprecation with no date cannot be aged out — it becomes permanent
+  furniture that nobody is sure is still needed.
+- **a replacement**, because a deprecation without one is not a migration path, it is a warning that
+  something you depend on is going away and no statement of what to do about it. If there is genuinely
+  nothing to move to, that is a removal being announced early and should say so in those words.
+
+### How long it lives
+
+**Until the next major, and never less than one minor release.** A consumer who upgrades minor
+versions promptly always gets at least one release in which the old and the new both work, and one
+that names the replacement in its changeset.
+
+The floor matters more than the ceiling. Deprecating and removing within the same cycle is a breaking
+change wearing a deprecation's clothes, and a policy that only says "until the next major" permits it
+whenever a major happens to be near.
+
+### What a removal owes you
+
+A major that removes something carries, in its changeset: what went, what replaces it, and the
+mechanical edit. "Removed `foo`" is a note; "replace `foo(a, b)` with `bar({ a, b })`" is a migration.
+
+### Where this is weaker than it looks
+
+- **The window is enforced by review, not by a check.** The audit sees that a marker is well formed,
+  not that a removal waited. Ageing markers out would need release history the repository does not
+  currently read.
+- **It covers the two 1.0 packages.** The adapters and Studio version independently and make their
+  own promises; this page is not one of them.
+
 ## What is not covered
 
 - **Renderer conformance is a separate question.** Each renderer's

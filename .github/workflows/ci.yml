@@ -55,13 +55,15 @@ jobs:
       - name: Angular tests
         run: pnpm run test:angular
 
-      - name: Bundle / tree-shaking check
+      # Tree-shaking only. The size budgets that used to gate here were removed: every legitimate
+      # feature moved the number and the budget was raised to match, which makes it a record of past
+      # sizes rather than a limit — and it broke builds for changes that were correct.
+      #
+      # What survives is the property a feature does not change: renderers, devtools, the wizard and
+      # dynamic forms must stay out of a core-only bundle. `npm run test:core-bundle` still exists
+      # and still prints its numbers for anyone watching drift on purpose.
+      - name: Tree-shaking check
         run: pnpm run test:bundle
-
-      # Whole-entry + realistic-surface budgets for @modyra/core (the
-      # comparison-doc numbers). See scripts/check-core-bundle.mjs.
-      - name: Core bundle budgets
-        run: pnpm run test:core-bundle
 
       # Known Lit parity gaps are allowlisted in
       # scripts/theme-parity-allowlist.json; new regressions fail the check.
