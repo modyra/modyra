@@ -31,7 +31,8 @@ absent section reads as an oversight, and "no security impact" is a finding.
 | [0013](0013-the-dismissal-names-its-gesture.md) | The dismissal names its gesture | One event cannot express where a gesture began *and* ended, which is what the dismissal rule turns on |
 | [0014](0014-the-contract-names-the-responsible-element.md) | The contract names the responsible element | Naming the region and not the element inside it let three widgets conform that nobody could operate |
 | [0015](0015-light-text-while-it-is-readable.md) | Light text while it is readable | The contrast ratio and a reader disagree about saturated colour, and the ratio was winning |
-| [0016](0016-a-multiselect-is-one-kind-and-the-mode-is-not-the-contracts.md) | A multiselect is one kind, and its mode is not the contract's | Two shapes of one widget, and the cheapest place to say so is the catalogue rather than the config |
+| [0016](0016-a-multiselect-is-one-kind-and-the-mode-is-not-the-contracts.md) | A multiselect is one kind, and its mode is not the contract's | Decided on a premise that was false — the mode was already contract data — **superseded by 0017** |
+| [0017](0017-a-varianted-kind-names-its-anatomy-per-configuration.md) | A varianted kind names its anatomy per configuration | A disjunction says something is operable; ADR 0014 asks which element, and only a variant can answer |
 
 ## Security-relevant records
 

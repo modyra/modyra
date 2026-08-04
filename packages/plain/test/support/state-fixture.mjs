@@ -93,7 +93,7 @@ export function emptyFor(kind) {
  * empty is already failing, and a renderer free to show that immediately (the contract permits it)
  * would make "at rest" and "invalid" the same observation.
  */
-export function mount(kind, { validators = true } = {}) {
+export function mount(kind, { validators = true, variant } = {}) {
   const host = document.createElement("div");
   document.body.append(host);
   const fieldFor = (extra) => ({
@@ -102,6 +102,9 @@ export function mount(kind, { validators = true } = {}) {
     // be green because the state is unreachable rather than because the renderer is right.
     ...(validators ? { validators: kind === "slider" ? { required: true, min: 1 } : { required: true } } : {}),
     ...(NEEDS_OPTIONS.has(kind) ? { options: OPTIONS } : {}),
+    // A kind whose anatomy depends on configuration is mounted per variant, or the suite reports
+    // full coverage having rendered one of them. The variant name *is* the config value.
+    ...(variant ? { mode: variant } : {}),
     ...extra,
   });
   let mounted = mountMdyForm(host, [fieldFor({})], { submitLabel: null });

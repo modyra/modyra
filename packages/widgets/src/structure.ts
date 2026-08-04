@@ -7,7 +7,7 @@ export const MDY_WIDGET_CONTRACT_VERSION = 1 as const;
 /** Semantic element categories that presenters can map to their native rendering API. */
 export type MdyWidgetSemanticElement =
   | "root" | "label" | "input" | "button" | "group" | "status"
-  | "listbox" | "option" | "radio" | "dialog" | "grid" | "gridcell"
+  | "listbox" | "option" | "radio" | "dialog" | "grid" | "gridcell" | "container"
   | "presentation" | "popup" | "text" | "affordance" | "columnheader" | "image";
 
 /** One node in a widget's framework-independent structural anatomy. */

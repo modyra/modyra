@@ -1,4 +1,5 @@
 import { MDY_CHIP_CLASSES } from "./chip.js";
+import type { MdyMultiselectMode } from "@modyra/core";
 import type { MdyPartContract } from "./contract.js";
 import type { MdyOutsideDismiss } from "./dismissal.js";
 import type { MdyStateName } from "./state.js";
@@ -8,6 +9,22 @@ import type { MdyWidgetSemanticElement, MdyWidgetStructure } from "./structure.j
 export const MDY_WIDGET_KINDS = ["text", "email", "password", "textarea", "number", "slider", "checkbox", "toggle", "radio", "segmented", "select", "multiselect", "datepicker", "daterange", "timepicker", "file", "colors"] as const;
 export type MdyWidgetKind = (typeof MDY_WIDGET_KINDS)[number];
 
+/**
+ * Every configuration a varianted kind may be in, across the whole catalogue.
+ *
+ * An alias of the config's own union rather than a list of its own: the variant key *is* the value a
+ * form document carries, so there is one place these words are defined and no way for the two to
+ * disagree. Closed, so a name nothing describes cannot be asked for — a widget checked against an
+ * anatomy that does not exist is the gap variants were added to close.
+ *
+ * **The mechanism is general; this union is not, and that is deliberate.** Any kind may declare
+ * variants, but today the only axis that varies anatomy is a multiselect's mode, so that is the only
+ * vocabulary admitted. A second kind varying on something else widens this union — and that is the
+ * moment to ask whether the two axes belong in one type or whether a kind should key its variants by
+ * its own, not a question to answer while one case is all there is.
+ */
+export type MdyWidgetVariant = MdyMultiselectMode;
+
 export interface MdyWidgetDefinition<TPart extends string = string> {
   readonly kind: MdyWidgetKind;
   readonly rootClasses: readonly string[];
@@ -15,6 +32,16 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
   readonly structure: MdyWidgetStructure<TPart | "root">;
   /** Classes this kind's renderers may carry that are not parts. See `MdyWidgetShape.presentation`. */
   readonly presentationClasses: readonly string[];
+  /**
+   * Anatomy that depends on configuration, keyed by the config value that decides it.
+   *
+   * Empty for every kind whose anatomy is the same however it is configured, which is all but one.
+   * See `MdyWidgetShape.variants` for what a variant may say and why that is deliberately narrow.
+   */
+  readonly variants: Readonly<Partial<Record<MdyWidgetVariant, {
+    readonly elements: Readonly<Record<string, MdyWidgetSemanticElement>>;
+    readonly required: readonly string[];
+  }>>>;
   readonly capabilities: {
     /**
      * Whether this kind owns an overlay.
@@ -177,9 +204,9 @@ const SHELL_CLASS_FALLBACK: Readonly<Record<string, readonly string[]>> = Object
 });
 
 /** Per-widget deviations from the shared tables: where a part hangs, and the class it carries. */
-interface MdyWidgetShape {
-  readonly parents?: Readonly<Record<string, string>>;
-  readonly classes?: Readonly<Record<string, readonly string[]>>;
+interface MdyWidgetShape<TPart extends string = string> {
+  readonly parents?: Readonly<Partial<Record<TPart, TPart>>>;
+  readonly classes?: Readonly<Partial<Record<TPart, readonly string[]>>>;
   /**
    * The ARIA role a part must carry, where the contract requires one.
    *
@@ -195,7 +222,7 @@ interface MdyWidgetShape {
    * `label` *part* there is the text inside it — declaring it a `<label>` would ask a renderer for
    * a label inside a label, which is not valid HTML and not what any of them emit.
    */
-  readonly elements?: Readonly<Record<string, MdyWidgetSemanticElement>>;
+  readonly elements?: Readonly<Partial<Record<TPart, MdyWidgetSemanticElement>>>;
   /**
    * Classes a renderer of this kind may carry that are not parts.
    *
@@ -207,6 +234,25 @@ interface MdyWidgetShape {
    * which is the one thing this contract sets out not to do.
    */
   readonly presentation?: readonly string[];
+  /**
+   * Anatomy that depends on how the kind is configured, keyed by the value that decides it.
+   *
+   * One kind whose parts genuinely differ between configurations, rather than two kinds or a part
+   * left unconstrained because no single answer fits. `multiselect` is the case: a toggle option
+   * *is* the control and a counter option *contains* two, so naming one element for both would be
+   * naming the wrong one half the time — and naming neither is what left the kind uncheckable.
+   *
+   * The key is the value the public config already carries, never a vocabulary invented here. A
+   * variant that has to teach a consumer a new word is a variant that belongs in the config first.
+   *
+   * What a variant may say is deliberately small: which elements its parts are, and which of them
+   * it requires. Anything wider — different parents, different relations — would be a second
+   * catalogue rather than a qualification of this one.
+   */
+  readonly variants?: Readonly<Partial<Record<MdyWidgetVariant, {
+    readonly elements?: Readonly<Partial<Record<TPart, MdyWidgetSemanticElement>>>;
+    readonly required?: readonly TPart[];
+  }>>>;
   /**
    * Parts this kind must render at rest, over and above the ones every field has.
    *
@@ -222,7 +268,7 @@ interface MdyWidgetShape {
    * renders no popup, so nothing inside one can be demanded at rest. `overlayOnlyParts` decides
    * which those are, so naming one here is a statement about what an open popup must frame.
    */
-  readonly required?: readonly string[];
+  readonly required?: readonly TPart[];
 }
 
 /**
@@ -382,7 +428,15 @@ const ANCHORING: Readonly<Partial<Record<MdyWidgetKind, { matchAnchorWidth: bool
   colors: { matchAnchorWidth: false, minSpace: 120, minWidth: 280, alignment: "right" },
 });
 
-function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: readonly string[], partNames: readonly TPart[], overlay: boolean, shape: MdyWidgetShape = {}): MdyWidgetDefinition<TPart> {
+/**
+ * `NoInfer` on the shape, and it is load-bearing rather than tidy.
+ *
+ * The part names come from `partNames` and nowhere else. Without this the shape is a second
+ * inference site, so a part named only there — a typo, a rename half-applied — widens `TPart` to
+ * include it and compiles. The declaration would then be checked against itself: exactly the class
+ * of stale key this catalogue has already shipped twice.
+ */
+function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: readonly string[], partNames: readonly TPart[], overlay: boolean, shape: MdyWidgetShape<NoInfer<TPart>> = {}): MdyWidgetDefinition<TPart> {
   const partMap = Object.fromEntries(partNames.map((name) => [
     name,
     // A widget's own states replace the shell's rather than adding to them, so a part that means
@@ -390,6 +444,12 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
     // silently given states it cannot be in.
     part(name === "root" ? rootClasses : shape.classes?.[name] ?? SHELL_CLASS_FALLBACK[name] ?? [], {}, statesFor(name, shape), roleFor(kind, name, shape)),
   ])) as Record<TPart, MdyPartContract>;
+  const variants = Object.freeze(Object.fromEntries(
+    Object.entries(shape.variants ?? {}).map(([name, variant]) => [name, Object.freeze({
+      elements: Object.freeze({ ...(variant.elements ?? {}) }),
+      required: Object.freeze([...(variant.required ?? [])]),
+    })]),
+  ));
   const declared = new Set<string>(partNames);
   const siblingCount = new Map<string, number>();
   const nodes = partNames.map((name) => {
@@ -401,7 +461,7 @@ function define<const TPart extends string>(kind: MdyWidgetKind, rootClasses: re
     siblingCount.set(parent, order + 1);
     return Object.freeze({ part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart, order, optional: !(REQUIRED_PARTS.has(name) || shape.required?.includes(name)), repeated: REPEATED_PARTS.has(name) });
   });
-  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, dismissOnFocusOutside: overlay, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
+  return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]), parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), variants, capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, dismissOnFocusOutside: overlay, ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
 /**
  * The semantic every part answers to, declared rather than defaulted.
@@ -582,6 +642,14 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // `listbox` is required to be *there*, not to be a listbox: what role a chip grid should carry
       // is the mode question, and this says only that the popup frames the chooser rather than
       // nothing.
+      // Keyed by `mode` on the field config, which already carries these two words. The option is a
+      // different element in each: in `single` it *is* the control a user activates, in `multi` it
+      // is the container the two steppers sit in — and a container that is itself a button would be
+      // a button inside a button, which is neither valid nor what any renderer emits.
+      variants: {
+        single: { elements: { option: "button" }, required: ["optionCheck"] },
+        multi: { elements: { option: "container" }, required: ["optionStep", "optionCount"] },
+      } ,
       required: ["header", "option", "optionLabel", "options", "searchButton", "listbox"] }),
   datepicker: define("datepicker", ["mdy-renderer", "mdy-renderer--datepicker"], ["root", "label", "requiredMarker", "inputWrapper", "control", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { control: ["mdy-datepicker__input"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], actions: ["mdy-datepicker__actions"] },

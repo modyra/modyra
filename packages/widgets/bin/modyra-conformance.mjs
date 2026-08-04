@@ -98,7 +98,33 @@ const record = (title, findings, note) => sections.push({ title, findings, note 
     }
     fixture.dispose();
   }
-  record("DOM anatomy and relationships", findings);
+
+  // A kind whose anatomy depends on configuration is inspected once per variant, against that
+  // variant's own anatomy. Without this the run reports full coverage having rendered one of them,
+  // and the half that differs — which is the half the variants exist for — is never checked.
+  let variantRuns = 0;
+  for (const [kind, names] of Object.entries(config.variants ?? {})) {
+    if (!kinds.includes(kind)) continue;
+    for (const variant of names) {
+      const fixture = await mount(kind, { variant });
+      await fixture.settle?.();
+      variantRuns += 1;
+      // What a renderer does not draw at rest is stated per kind, and a variant can contradict it:
+      // the steppers are absent in a toggle chip and required in a counter one. The variant wins,
+      // because it is the more specific statement about the same instance.
+      const required = new Set(MDY_WIDGET_CONTRACTS[kind]?.variants?.[variant]?.required ?? []);
+      const absentParts = (config.absentParts?.[kind] ?? []).filter((part) => !required.has(part));
+      for (const issue of inspectWidgetDom(fixture.root, kind, { parts: fixture.parts(), absentParts, variant })) {
+        findings.push(`${kind}[${variant}].${issue.part ?? "-"}: ${issue.code} ${issue.message ?? ""}`.trim());
+      }
+      fixture.dispose();
+    }
+  }
+  record(
+    "DOM anatomy and relationships",
+    findings,
+    variantRuns ? `${kinds.length} kind(s), plus ${variantRuns} configured variant(s)` : undefined,
+  );
 }
 
 // ── DOM anatomy while open ────────────────────────────────────────────────────────────────

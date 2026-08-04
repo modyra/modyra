@@ -202,6 +202,135 @@ test("J1 — the contract names both halves of a choice", () => {
   assert.equal(control.optional, false);
 });
 
+// ─── J2: a multiselect's anatomy follows the mode it was configured as ───────
+
+/**
+ * A multiselect, closed, whose single chip is whatever `chip` builds.
+ *
+ * Closed on purpose: everything inside the popup is required only of an open widget, so a resting
+ * fixture keeps the subject to the chip. `absentParts` is how a renderer says the popup is not drawn.
+ */
+function multiselectWithChip(chip, variant) {
+  const { root, label, parts, tail } = shell("multiselect", "mdy-renderer mdy-renderer--multiselect", { labelFor: "multiselect-control" });
+  const wrapper = el("div", "mdy-multiselect");
+  const header = el("div", "mdy-multiselect__header");
+  const searchButton = el("button", "mdy-multiselect__search-btn", {
+    id: "multiselect-control", type: "button", "aria-describedby": "multiselect-errors",
+  });
+  header.append(searchButton);
+  wrapper.append(header);
+
+  const options = el("div", "mdy-multiselect__options", { role: "group", "aria-label": "Chosen" });
+  const optionWrapper = el("div", "mdy-chip-wrapper");
+  const built = chip();
+  optionWrapper.append(built.option);
+  options.append(optionWrapper);
+
+  root.append(label, wrapper, options, ...tail);
+  const named = {
+    ...parts, inputWrapper: wrapper, header, searchButton, options, optionWrapper,
+    option: built.option, optionLabel: built.optionLabel,
+    ...(built.optionCheck ? { optionCheck: built.optionCheck } : {}),
+    ...(built.optionStep ? { optionStep: built.optionStep } : {}),
+    ...(built.optionCount ? { optionCount: built.optionCount } : {}),
+  };
+  const issues = inspectWidgetDom(root, "multiselect", {
+    parts: named,
+    variant,
+    absentParts: ["popup", "listbox", "search", "empty"],
+  });
+  root.remove();
+  return issues;
+}
+
+/** Toggle mode: the option *is* the control, and it carries a tick. */
+function toggleChip() {
+  const option = el("button", "mdy-chip", { type: "button" });
+  const optionCheck = el("span", "mdy-chip__check");
+  const optionLabel = el("span", "mdy-chip__label");
+  option.append(optionCheck, optionLabel);
+  return { option, optionCheck, optionLabel };
+}
+
+/** Counter mode: the option *contains* the controls, and a button may not contain a button. */
+function counterChip() {
+  const option = el("div", "mdy-chip mdy-chip--counter");
+  const optionStep = el("button", "mdy-chip__btn", { type: "button", "aria-label": "Decrease" });
+  const optionLabel = el("span", "mdy-chip__label");
+  const optionCount = el("span", "mdy-chip__count");
+  option.append(optionStep, optionLabel, optionCount);
+  return { option, optionStep, optionLabel, optionCount };
+}
+
+test("J2 — each mode conforms to its own anatomy", () => {
+  // The rule has to be satisfiable by what the renderers already draw, in both modes, or it is a
+  // rule against the widget rather than about it.
+  assert.deepEqual(multiselectWithChip(toggleChip, "single"), []);
+  assert.deepEqual(multiselectWithChip(counterChip, "multi"), []);
+});
+
+test("J2 — a toggle option that is not a control is rejected", () => {
+  // What the kind accepted before the variants existed: a chip a pointer can click and a screen
+  // reader announces as nothing.
+  const issues = multiselectWithChip(() => {
+    const option = el("div", "mdy-chip");
+    const optionCheck = el("span", "mdy-chip__check");
+    const optionLabel = el("span", "mdy-chip__label");
+    option.append(optionCheck, optionLabel);
+    return { option, optionCheck, optionLabel };
+  }, "single");
+
+  assert.deepEqual(issues.map((i) => `${i.code}:${i.part}`), ["PART_ELEMENT:option"]);
+  assert.match(issues[0].message, /must be a button/);
+});
+
+test("J2 — a counter option missing its steppers is rejected", () => {
+  const issues = multiselectWithChip(() => {
+    const option = el("div", "mdy-chip mdy-chip--counter");
+    const optionLabel = el("span", "mdy-chip__label");
+    const optionCount = el("span", "mdy-chip__count");
+    option.append(optionLabel, optionCount);
+    return { option, optionLabel, optionCount };
+  }, "multi");
+
+  assert.deepEqual(issues.map((i) => `${i.code}:${i.part}`), ["PART_MISSING:optionStep"]);
+});
+
+test("J2 — a counter option that is itself a button is rejected", () => {
+  // A button holding two buttons is neither valid HTML nor what any renderer emits, and it is the
+  // shape a single unconditional element declaration would have forced on one of the two modes.
+  const issues = multiselectWithChip(() => {
+    const option = el("button", "mdy-chip mdy-chip--counter", { type: "button" });
+    const optionStep = el("button", "mdy-chip__btn", { type: "button", "aria-label": "Decrease" });
+    const optionLabel = el("span", "mdy-chip__label");
+    const optionCount = el("span", "mdy-chip__count");
+    option.append(optionStep, optionLabel, optionCount);
+    return { option, optionStep, optionLabel, optionCount };
+  }, "multi");
+
+  assert.deepEqual(issues.map((i) => `${i.code}:${i.part}`), ["PART_ELEMENT:option"]);
+});
+
+test("J2 — the modes are checked against different anatomy, not the same one twice", () => {
+  // The failure this whole approach is most at risk of: two variants that happen to agree, so every
+  // fixture passes and nothing was ever mode-specific. Read from the catalogue rather than inferred.
+  const { single, multi } = MDY_WIDGET_CONTRACTS.multiselect.variants;
+  assert.notDeepEqual(single.elements, multi.elements);
+  assert.notDeepEqual(single.required, multi.required);
+  assert.equal(single.elements.option, "button");
+  assert.equal(multi.elements.option, "container");
+
+  // And a toggle chip judged as a counter must fail, which is what proves the variant is doing the
+  // deciding rather than the markup happening to satisfy both.
+  const crossed = multiselectWithChip(toggleChip, "multi");
+  assert.ok(crossed.length > 0, "a toggle chip is not a conformant counter chip");
+});
+
+test("J2 — a variant the kind does not declare is a caller error", () => {
+  const issues = multiselectWithChip(toggleChip, "counter");
+  assert.ok(issues.some((i) => /declares no variant named counter/.test(i.message)));
+});
+
 // ─── J4a: a state satisfies from any part, not the responsible one ───────────
 
 /**

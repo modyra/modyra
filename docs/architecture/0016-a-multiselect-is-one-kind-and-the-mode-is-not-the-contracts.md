@@ -1,6 +1,10 @@
 # ADR 0016: A multiselect is one kind, and its mode is not the contract's
 
-Status: Accepted
+Status: Superseded by [ADR 0017](0017-a-varianted-kind-names-its-anatomy-per-configuration.md)
+
+> Its central premise was false: `mode` was already in the Dynamic Form Contract, in
+> `dynamic-config.ts` and spelled `"single" | "multi"`. Everything below follows from that error,
+> and it is kept because the reasoning it applied to the other options is what makes 0017 legible.
 
 ## Context
 

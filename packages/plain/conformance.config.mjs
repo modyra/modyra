@@ -25,6 +25,15 @@ export const mount = fixture.mount;
 /** What each kind legitimately does not render at rest -- the suite's own list, not a second one. */
 export const absentParts = contractParts.ABSENT;
 
+/**
+ * Kinds whose anatomy depends on configuration, and the values this renderer supports.
+ *
+ * Declared because a suite that mounts one variant reports full coverage having rendered half the
+ * widget — the same shape as the gap the variants exist to close. The names are the config's own.
+ */
+export const variants = { multiselect: ["single", "multi"] };
+
+
 const { mountMdyForm } = await import("./dist/index.js");
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 const NEEDS_OPTIONS = new Set(["radio", "segmented", "select", "multiselect"]);

@@ -131,7 +131,7 @@ export function partsOf(root, kind) {
  * empty is already failing, and a renderer free to show that immediately (the contract permits it)
  * would make "at rest" and "invalid" the same observation.
  */
-export async function mount(kind, { validators: withValidators = true } = {}) {
+export async function mount(kind, { validators: withValidators = true, variant } = {}) {
   const tag = TAG_FOR.get(kind);
   // A slider is never empty, so `required` alone can never fail on one and its `invalid` row would
   // be green because the state is unreachable rather than because the renderer is right.
@@ -148,6 +148,9 @@ export async function mount(kind, { validators: withValidators = true } = {}) {
     // deliberately, so a non-searchable list gets the platform's typeahead. Its overlay contract
     // cannot be driven at all in that mode, so the suites that check one ask for the custom combobox.
     if (kind === "select" || kind === "multiselect") el.searchable = true;
+    // A kind whose anatomy depends on configuration is mounted per variant; the variant name is the
+    // property's own value, so nothing here translates between two vocabularies.
+    if (variant && kind === "multiselect") el.mode = variant;
   });
 
   return {

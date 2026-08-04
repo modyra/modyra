@@ -5,7 +5,7 @@
  * that what it actually rendered matches it. It takes real elements, so any adapter — in a test
  * harness, in jsdom, in a browser — is held to the same gate.
  */
-import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind, type MdyWidgetVariant } from "../catalog.js";
 import { MDY_LABELABLE_TAGS, MDY_WIDGET_RELATIONS, partsRequiringName } from "../relations.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_STATE_MODIFIERS } from "../state.js";
@@ -85,6 +85,17 @@ export interface MdyDomContractOptions {
    * a caller that has not said which state it is inspecting is not held to the open one.
    */
   readonly open?: boolean;
+  /**
+   * Which configured variant this instance is, for a kind whose anatomy depends on one.
+   *
+   * Left out, a varianted kind is checked only against the anatomy its variants agree on — which is
+   * honest but weak, and is what an inspector that knows nothing about the configuration can say.
+   * Naming it is what makes the differing half checkable.
+   *
+   * Closed: the catalogue declares which configurations exist, so a name nothing describes is a
+   * compile error rather than a widget checked against an anatomy that is not there.
+   */
+  readonly variant?: MdyWidgetVariant;
 }
 
 const ARIA_BOOLEAN_STATES = new Set([
@@ -136,6 +147,10 @@ export const MDY_SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly str
   // A choice in a radiogroup. Native or by role, as everywhere else — the tag check below refuses an
   // `<input>` that is any other type, so this does not admit every input in the catalogue.
   radio: { tags: ["input"], roles: ["radio"] },
+  // Holds controls and is not one. `presentation` cannot say this — it admits everything, which is
+  // the point of it — and the distinction matters wherever a part's children are buttons: a button
+  // inside a button is invalid, and nothing else in this table refuses it.
+  container: { tags: ["div", "span", "li", "p", "section"], roles: ["presentation", "none", "group"] },
   dialog: { tags: ["dialog"], roles: ["dialog", "alertdialog"] },
   // The thing a pointer uses to reach a value the widget owns. A `<label>` wrapping a hidden native
   // input and a `<button>` beside one are both correct, and the second avoids nesting a focusable
@@ -325,6 +340,18 @@ export function inspectWidgetDom(
   // A widget that owns an overlay may materialize it in a portal — the contract describes the
   // anatomy, not where the browser keeps the node — so the popup subtree is exempt from the
   // containment and ordering checks when it is rendered outside the root.
+  // Named by the caller, because only the caller knows how the instance was configured. An unknown
+  // name is a caller error worth failing on rather than a silent fall back to the shared anatomy —
+  // a typo'd variant would otherwise report a widget as conformant against half a contract.
+  const variant = options.variant === undefined ? undefined : definition.variants[options.variant];
+  if (options.variant !== undefined && !variant) {
+    issues.push({
+      code: "PART_MISSING",
+      part: "root",
+      message: `${kind} declares no variant named ${options.variant}`,
+    });
+  }
+
   const portalled = new Set<string>();
   if (definition.capabilities.overlay) {
     const parentOf = new Map(definition.structure.nodes.map((node) => [node.part as string, node.parent as string | undefined]));
@@ -432,7 +459,9 @@ export function inspectWidgetDom(
       // at rest would make every closed picker non-conforming; never demanding it means a part the
       // contract calls mandatory is one nothing checks.
       const onlyWhileOpen = overlayOnlyParts(kind).includes(node.part);
-      if (!node.optional && (!onlyWhileOpen || options.open === true)) {
+      // Required by the kind, or by the variant it was configured as.
+      const required = !node.optional || (variant?.required.includes(node.part) ?? false);
+      if (required && (!onlyWhileOpen || options.open === true)) {
         issues.push({ code: "PART_MISSING", part: node.part, message: `required part ${node.part} was not rendered` });
       }
       continue;
@@ -486,11 +515,14 @@ export function inspectWidgetDom(
     }
 
     for (const element of elements) {
-      if (!satisfiesSemanticElement(element, node.element as string)) {
+      // A varianted kind states its element per configuration; the shared declaration is what the
+      // variants agree on, which for a part that genuinely differs is nothing useful.
+      const expectedElement = variant?.elements[node.part] ?? (node.element as string);
+      if (!satisfiesSemanticElement(element, expectedElement)) {
         issues.push({
           code: "PART_ELEMENT",
           part: node.part,
-          message: `${node.part} must be a ${node.element}, got <${element.tagName.toLowerCase()}>` +
+          message: `${node.part} must be a ${expectedElement}, got <${element.tagName.toLowerCase()}>` +
             `${element.getAttribute("role") ? ` role="${element.getAttribute("role")}"` : ""}`,
         });
       }

@@ -305,6 +305,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
           type="button"
           class=${MDY_CHIP_CLASSES.step}
           ?disabled=${count === 0}
+          aria-label=${`Decrease ${option.label}`}
           @click=${() => this.decrement(handle, option.value)}
         >
           ${mdyIcon("MINUS", "")}
@@ -314,6 +315,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         <button
           type="button"
           class=${MDY_CHIP_CLASSES.step}
+          aria-label=${`Increase ${option.label}`}
           @click=${() => this.increment(handle, option.value)}
         >
           ${mdyIcon("PLUS", "")}
