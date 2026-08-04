@@ -42,6 +42,7 @@ fn serializes_recursive_schema_without_null_optionals() {
                         max: None,
                         step: None,
                         options: None,
+                        searchable: None,
                         mode: None,
                     },
                 },

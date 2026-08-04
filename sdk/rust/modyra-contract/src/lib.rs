@@ -64,6 +64,13 @@ pub struct Field {
     pub step: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<Vec<OptionItem>>,
+    /// Select and multiselect only: whether the list filters as the user types.
+    ///
+    /// Decides which of two interaction models the widget is — a listbox whose trigger keeps focus,
+    /// or a combobox whose search input takes it — so a document that loses it describes a
+    /// different control than the one it was written for.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub searchable: Option<bool>,
     /// Multiselect only: `"single"` is a toggle set, `"multi"` a bag whose chip counts repeats.
     ///
     /// Carried because the widget contract declares a different anatomy per mode. A field that
