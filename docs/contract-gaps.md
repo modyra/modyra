@@ -19,13 +19,13 @@ to a green suite.
 **Status.** The headings below are the source of truth; this list is a convenience for a reader who
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J3, J4a, J4b
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b
 - **Partly fixed** — C2, E2, F, L, M — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
   the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — J2, K, N
+- **Open** — K, N
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -560,7 +560,7 @@ The consequence is not theoretical: a keyboard user reaching any radio in that d
 loses the page. `e2e/keyboard.spec.ts` skips the row there with this finding named, rather than
 working around it.
 
-## J2 — `multiselect` anatomy depends on its mode, and the contract cannot say so — **open**
+## J2 — `multiselect` anatomy depends on its mode, and the contract cannot say so — **fixed**
 
 **Observed.** `packages/widgets/src/catalog.ts`, the `multiselect` shape declares
 `elements: { option: "presentation" }` for the same reason as J1, but a sharper one.
@@ -597,8 +597,17 @@ mode-specific, so two kinds would duplicate 22 to separate 3. And `mode` is a pu
 Lit element and a signal on the Angular component, so "fixed at construction" is unenforceable
 without first adding the concept the ADR declines to add.
 
-**Still open, and it is the half that matters now: nothing enforces it.** Plan 44 builds the checks.
-Until then J2's defect stands exactly as described above.
+**Fixed.** [ADR 0017](architecture/0017-a-varianted-kind-names-its-anatomy-per-configuration.md)
+supersedes 0016, which decided this on a premise that turned out to be false — `mode` was already in
+the Dynamic Form Contract, in `dynamic-config.ts`, spelled `"single" | "multi"`. With that corrected,
+the anatomy is declared **per variant**: in `single` the option *is* the control, in `multi` it
+contains them. Both named, which is what ADR 0014 asks and what the disjunction 0016 chose could not
+give.
+
+**The rule was nearly enforced against nothing, again.** No conformance fixture mounted counter mode,
+so both adapters reported CONFORMANT having rendered one of the two shapes — J2's own defect one
+level up. The anatomy pass now mounts each declared variant; removing a stepper from Plain's counter
+chip fails it, naming `multiselect[multi]`, and that same mutation was invisible before.
 
 **One defect the decision already found.** `@modyra/lit`'s steppers are icon-only buttons with no
 accessible name — a chip whose two controls announce nothing. Plain names them "Decrease ⟨label⟩" and

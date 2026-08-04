@@ -40,3 +40,11 @@ export const absentParts = Object.fromEntries(
  * ids, and this renderer cannot produce two that do.
  */
 export const mountScoped = (kind) => mount(kind);
+
+/**
+ * Kinds whose anatomy depends on configuration, and the values this renderer supports.
+ *
+ * Declared because a suite that mounts one variant reports full coverage having rendered half the
+ * widget — the same shape as the gap the variants exist to close. The names are the config's own.
+ */
+export const variants = { multiselect: ["single", "multi"] };

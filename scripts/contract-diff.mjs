@@ -66,6 +66,16 @@ function snapshot() {
         from: relation.from, attribute: relation.attribute, to: [...relation.to],
       })),
       capabilities: definition.capabilities,
+      // Anatomy that depends on configuration. Recorded per variant and sorted, because a variant
+      // is a promise about a configured instance: gaining one widens what the kind admits, losing
+      // one withdraws a shape a consumer may be rendering, and changing what one requires is the
+      // same class of change as changing a kind's own required list.
+      variants: Object.fromEntries(
+        Object.entries(definition.variants ?? {}).map(([variant, shape]) => [variant, {
+          elements: { ...shape.elements },
+          required: [...shape.required].sort(),
+        }]),
+      ),
       // The bindings themselves, not `Object.keys` of the array — that recorded "0", "1", "2", so the
       // diff compared how *many* keys a kind declared and never which. Renaming Escape to Enter was
       // invisible; declaring Tab reported "key declared: 8".
@@ -224,6 +234,30 @@ for (const kind of Object.keys(current.kinds).filter((k) => baseline.kinds[k])) 
   }
   for (const added of now.keyboard.filter((k) => !was.keyboard.includes(k))) {
     record("minor", kind, `key declared: ${added}`);
+  }
+
+  // Variants, over the union of both sides — a withdrawn one is not there to iterate on the current
+  // side, and withdrawing a shape a consumer may be rendering is the loss this comparison is for.
+  const wasVariants = was.variants ?? {};
+  const nowVariants = now.variants ?? {};
+  for (const variant of new Set([...Object.keys(wasVariants), ...Object.keys(nowVariants)])) {
+    const before = wasVariants[variant];
+    const after = nowVariants[variant];
+    if (before && !after) { record("major", kind, `variant withdrawn: ${variant}`); continue; }
+    if (!before && after) { record("minor", kind, `variant declared: ${variant}`); continue; }
+    for (const part of new Set([...(before.required ?? []), ...(after.required ?? [])])) {
+      const wasRequired = (before.required ?? []).includes(part);
+      const nowRequired = (after.required ?? []).includes(part);
+      // Requiring more of a configured instance is the same class of change as requiring more of a
+      // kind: an adapter that did not draw it stops conforming.
+      if (!wasRequired && nowRequired) record("major", kind, `variant ${variant} now requires ${part}`);
+      if (wasRequired && !nowRequired) record("minor", kind, `variant ${variant} no longer requires ${part}`);
+    }
+    for (const part of new Set([...Object.keys(before.elements ?? {}), ...Object.keys(after.elements ?? {})])) {
+      const from = before.elements?.[part];
+      const to = after.elements?.[part];
+      if (from !== to) record("major", kind, `variant ${variant} element changed: ${part} ${from ?? "—"} → ${to ?? "—"}`);
+    }
   }
 }
 

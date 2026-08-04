@@ -76,6 +76,16 @@ export interface MdyDynamicBooleanField extends MdyDynamicFieldBase {
 }
 
 /**
+ * How a multiselect chooses: the two shapes it has, and the only two it will have.
+ *
+ * A closed union rather than a string, because this name is the key the widget contract's variant
+ * anatomy is declared under. Left open, a consumer could name a mode nothing describes and get a
+ * widget checked against no anatomy at all — which is the gap the variants were added to close,
+ * reintroduced through the front door.
+ */
+export type MdyMultiselectMode = "single" | "multi";
+
+/**
  * Option-based kinds. The declared options are also a whitelist:
  * {@link buildDynamicFieldValidators} automatically constrains the field
  * value to them (`oneOf` / `eachOneOf`), so a value outside the list —
@@ -88,7 +98,7 @@ export interface MdyDynamicOptionsField extends MdyDynamicFieldBase {
    * Multiselect only. `"single"` (the default) is a toggle set: an option is either chosen or not.
    * `"multi"` is a bag: the same option can be taken several times and the chip counts them.
    */
-  readonly mode?: "single" | "multi";
+  readonly mode?: MdyMultiselectMode;
   /**
    * The options are being fetched. Select and multiselect show it on the control, so a field waiting
    * on its list says so without being opened.
