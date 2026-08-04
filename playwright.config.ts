@@ -50,6 +50,27 @@ export default defineConfig({
   timeout: 30_000,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
+  /**
+   * What a screenshot is allowed to differ by, and what it is not allowed to depend on.
+   *
+   * `animations: "disabled"` is not a nicety. A transform sampled mid-flight measures the animation
+   * rather than the layout, which was demonstrated here before any baseline existed: three icons
+   * compared unequal between engines and became equal the moment animation was stopped.
+   *
+   * The tolerance is deliberately small. A threshold generous enough to absorb flake is generous
+   * enough to absorb a regression, so the answer to a flapping baseline is to find the input that
+   * moves — a font still loading, an unpinned clock — never to widen this.
+   */
+  expect: {
+    toHaveScreenshot: {
+      animations: "disabled",
+      caret: "hide",
+      scale: "css",
+      maxDiffPixelRatio: 0,
+    },
+  },
+  /** Fixed, because a screenshot of a responsive layout is a screenshot of a viewport. */
+  use: { viewport: { width: 1280, height: 900 } },
   projects: RENDERERS.flatMap((renderer) =>
     ENGINES.map((engine) => ({
       name: `${renderer.name}${engine.suffix}`,
