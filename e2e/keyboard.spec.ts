@@ -35,6 +35,10 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(TRIGGER).first()).toBeVisible();
   await page.locator(TRIGGER).first().focus();
+  // Asserted, not assumed. A key pressed with focus elsewhere reaches nothing, and every test below
+  // then passes by asserting that nothing happened — which is how a test that contradicted the
+  // contract outright still went green about half the time.
+  await expect(page.locator(TRIGGER).first()).toBeFocused();
 });
 
 test("ArrowDown opens a closed list", async ({ page }) => {
@@ -43,10 +47,14 @@ test("ArrowDown opens a closed list", async ({ page }) => {
   await expectOpen(page, true);
 });
 
-test("ArrowUp does not open a closed list", async ({ page }) => {
-  // The asymmetry is deliberate: down reaches for the list, up has nothing above the trigger.
-  await page.keyboard.press("ArrowUp");
+test("ArrowUp opens a closed list, the same as ArrowDown", async ({ page }) => {
+  // Both directions reach for the list. This test used to assert the opposite, describing an
+  // asymmetry the contract removed — `MDY_WIDGET_KEYBOARD` answers `ArrowUp@closed` with `open`, and
+  // has since finding G2 closed. The test was not updated, and stayed green whenever the focus it
+  // depends on failed to take.
   await expectOpen(page, false);
+  await page.keyboard.press("ArrowUp");
+  await expectOpen(page, true);
 });
 
 test("Enter opens a closed list, and Escape closes it again", async ({ page }) => {
