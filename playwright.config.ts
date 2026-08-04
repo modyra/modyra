@@ -85,6 +85,12 @@ export default defineConfig({
     command,
     url: `http://localhost:${port}`,
     reuseExistingServer: !process.env.CI,
-    timeout: 15_000,
+    // How long a server may take to answer before Playwright gives up on the whole run.
+    //
+    // 15s is generous on a warm machine with the examples already built, and not on a cold runner
+    // starting three servers at once — where exceeding it aborts every project, which reads as the
+    // suite failing rather than as a server being slow. The limit exists to catch a server that will
+    // never come up, and two minutes still catches that.
+    timeout: process.env.CI ? 120_000 : 15_000,
   })),
 });
