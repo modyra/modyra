@@ -19,14 +19,13 @@ to a green suite.
 **Status.** The headings below are the source of truth; this list is a convenience for a reader who
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, N
-- **Partly fixed** — C2, E2, F, K, L, M, P — derived but not painted; most scripts reachable; kind-keyed
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, N, P
+- **Partly fixed** — C2, E2, F, K, L, M — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
-  the colour metric decided and its estimate still approximate; the conformance verdict no longer
-  overstates its coverage while two of its sections still have nothing running them
+  the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — O
+- **Open** — O, Q
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -1173,7 +1172,7 @@ next `evaluate` hang instead of throwing, so every step after the act needs its 
 hovering alone is fatal, this is about painting; if it needs the open popup, it is about what the
 popup composites over, and the palette's filter is the next thing to look at.
 
-## P — the conformance kit called a partial run conformance — **partly fixed**
+## P — the conformance kit called a partial run conformance — **fixed**
 
 **Observed.** `packages/widgets/bin/modyra-conformance.mjs`, the CLI `@modyra/widgets` publishes for
 a consumer to verify their own renderer against the contract.
@@ -1234,5 +1233,60 @@ Two things the config had to measure rather than copy, and each was wrong on the
   divergent, because it had invented `""` where `MDY_CANONICAL_EMPTY` says `null`. Only the filled
   side is declared locally now.
 
-**Still open: nothing runs the two browser sections.** Keyboard behaviour and the accessibility audit
-are unestablished for all three adapters through the kit, and a consumer has no browser mode at all.
+**Fixed: the kit has a browser mode.** A config may export `openBrowserSession(kind)` — four methods,
+`press`, `focusOpener`, `evaluate`, `close` — and both sections then run. `npm run
+test:conformance-browser` does it for the framework-free renderer, and a run reports **8 of 8
+sections**.
+
+The assertions stay in the kit and are evaluated in the page; the config supplies only the transport.
+That is what keeps `@modyra/widgets` free of a browser dependency, lets an implementer drive it with
+whatever they already test with, and — the reason that matters here — stops each renderer answering a
+question of its own choosing, which is the failure the kit exists to prevent.
+
+**What the accessibility section establishes**: 130 operable elements, every one with a name the
+platform computes. Not a claim about an axe pass, which is a wider question and is not run.
+
+**What the keyboard section deliberately does not assert.** `move` was asserted first and produced
+false findings rather than defects: "the active option moved" is not one thing — an overlay drives a
+list with `aria-activedescendant`, a segmented control moves real focus between radios — and a key
+pressed at the end of a list legitimately moves nothing. The contract pins neither. `commit` and
+`clear` change a value the state matrix already reads. 46 bindings are reported as not asserted
+rather than counted as passing.
+
+## Q — declared keys the pickers do not answer — **open**
+
+**Observed**, by the browser section above, and confirmed by hand on the element that owns the keys.
+
+`MDY_WIDGET_KEYBOARD` declares for the overlay kinds:
+
+```js
+{ key: "ArrowDown", when: "closed", intent: "open" }
+{ key: "Tab", when: "open", intent: "cancel", restoresFocus: false }
+```
+
+Measured on `@modyra/plain`, focus on the toggle:
+
+| key | declared | observed |
+| --- | --- | --- |
+| `Enter` when closed | opens | **opens** |
+| `ArrowDown` when closed | opens | stays closed |
+| `ArrowUp` when closed | opens | stays closed |
+| `Tab` when open | closes | stays open |
+
+`Enter` working is what makes the other rows a finding rather than a broken harness: the binding path
+is wired, and these two are missing from it. 14 findings across `datepicker`, `daterange`,
+`timepicker` and `multiselect`.
+
+**Not fixed, and it needs a decision rather than a patch.** Two readings, and the evidence does not
+settle which:
+
+- **The renderers are wrong.** The contract has said this for as long as it has existed, and B1
+  already recorded `Tab` as declared in one keyboard path and absent from the other — this is the
+  same declaration failing at the renderer instead of at the second code path.
+- **The contract over-declares.** Arrow keys opening a *button*-triggered picker is not a pattern
+  every widget guide asks for, and a contract nobody implements is a contract that should be
+  narrowed rather than a defect three renderers share.
+
+Fixing one renderer to match the contract while the others do not is the worst of both, so this is
+recorded rather than patched. **The evidence to gather next** is what the other two renderers do:
+the finding says "the pickers", and it has only been measured on one of them.

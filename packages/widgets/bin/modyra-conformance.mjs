@@ -20,12 +20,27 @@
  * is set up, so the config installs one before exporting `mount`. This repository's own two
  * conformance configs are the reference.
  *
- * ## What this cannot answer
+ * ## The two sections that need a browser
  *
- * Keyboard behaviour and an accessibility audit need a real browser: focus, native key defaults and
- * computed accessible names are not simulable, and asserting them here would produce a green that
- * means nothing. Both are **reported as not run**, with the reason, rather than omitted — an
- * implementer has to know the suite did not cover them.
+ * Keyboard behaviour and an accessibility audit cannot be answered in Node: focus, native key
+ * defaults and computed accessible names are not simulable, and asserting them here would produce a
+ * green that means nothing. They are **reported as not run**, with the reason, rather than omitted.
+ *
+ * A config that can reach a browser runs them, by exporting one more function:
+ *
+ *   export async function openBrowserSession(kind) {
+ *     return {
+ *       press(key),          // a real key press, where focus currently is
+ *       focusOpener(),       // focus the widget's opener; false if it has none
+ *       evaluate(source),    // run a function's source in the page, return JSON
+ *       close(),
+ *     };
+ *   }
+ *
+ * The assertions are this kit's and are evaluated in the page; the config supplies only the
+ * transport. That is deliberate — this package takes no browser dependency, an implementer drives it
+ * with whatever they already run their own tests with, and the *rules* stay in one place rather than
+ * being re-derived per renderer, which is the failure the kit exists to prevent.
  */
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
@@ -45,7 +60,7 @@ const {
   idsUnder, inspectCoexistence, inspectUnmount, inspectWidgetDom,
 } = await import(pathToFileURL(resolve(packageRoot, "dist/testing/index.js")).href);
 
-const { MDY_WIDGET_CONTRACTS } = await import(pathToFileURL(resolve(packageRoot, "dist/index.js")).href);
+const { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } = await import(pathToFileURL(resolve(packageRoot, "dist/index.js")).href);
 
 // Loaded with its own diagnosis. A config that throws on import is the normal first experience of
 // this tool — a missing DOM, a path that does not exist, a renderer that fails to construct — and a
@@ -245,9 +260,212 @@ if (typeof config.mountScoped === "function") {
   );
 }
 
-// ── What a Node harness cannot answer ─────────────────────────────────────────────────────
-record("Keyboard behaviour", null, "not run — real key presses, focus and native defaults need a browser");
-record("Accessibility audit", null, "not run — computed accessible names and an axe pass need a browser");
+// ── What the kit evaluates in the page ─────────────────────────────────────────────────────
+//
+// Serialized to the session as source, so the transport only has to be able to run a function in the
+// page and return JSON. Nothing here reaches for a driver's own API.
+
+const OPEN_THE_WIDGET = `(root) => {
+  const opener = root.querySelector(
+    ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
+    + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn",
+  );
+  if (!opener) return false;
+  opener.click();
+  return true;
+}`;
+
+const READ_STATE = `(root) => {
+  const expanded = root.querySelector("[aria-expanded]");
+  const active = root.querySelector("[aria-activedescendant]");
+  return {
+    open: expanded?.getAttribute("aria-expanded") === "true",
+    activeOption: active?.getAttribute("aria-activedescendant") ?? null,
+    focusInsideWidget: !!(document.activeElement && root.contains(document.activeElement)),
+  };
+}`;
+
+/**
+ * Operable elements, and which of them announce nothing.
+ *
+ * The name is computed the way the platform computes it, in the order the accname specification
+ * uses, rather than guessed from one attribute. An element hidden from the accessibility tree is
+ * skipped: it is not announced because it is not there, which is a different statement.
+ */
+const READ_NAMELESS_CONTROLS = `(root) => {
+  const OPERABLE = "button, input, select, textarea, a[href], [role=option], [role=button], [tabindex]:not([tabindex='-1'])";
+  const missing = [];
+  let total = 0;
+  for (const element of root.querySelectorAll(OPERABLE)) {
+    if (element.closest("[aria-hidden=true]") || element.hidden) continue;
+    total += 1;
+    const labelled = element.getAttribute("aria-labelledby");
+    const fromIds = labelled
+      ? labelled.split(/\\s+/).map((id) => document.getElementById(id)?.textContent?.trim() ?? "").join(" ").trim()
+      : "";
+    const explicit = element.getAttribute("aria-label")?.trim() ?? "";
+    const associated = element.id
+      ? (document.querySelector('label[for="' + CSS.escape(element.id) + '"]')?.textContent?.trim() ?? "")
+      : "";
+    const wrapping = element.closest("label")?.textContent?.trim() ?? "";
+    const own = element.tagName === "INPUT" || element.tagName === "SELECT" || element.tagName === "TEXTAREA"
+      ? ""
+      : (element.textContent?.trim() ?? "");
+    const title = element.getAttribute("title")?.trim() ?? "";
+    const name = fromIds || explicit || associated || wrapping || own || title;
+    if (!name) {
+      const where = element.className ? "." + String(element.className).split(/\\s+/)[0] : element.tagName.toLowerCase();
+      missing.push(where);
+    }
+  }
+  return { total, missing: [...new Set(missing)] };
+}`;
+
+// ── What needs a real browser ─────────────────────────────────────────────────────────────
+//
+// Focus, native key defaults and accessible-name computation are not simulable, so these two ran
+// nowhere and the verdict said so. Saying so is not covering them: they are what a keyboard user and
+// a screen-reader user depend on, which makes them the worst pair to leave unestablished.
+//
+// A config may supply a browser session, and then they run. The *rules* stay here — every assertion
+// below is this kit's, evaluated in the page — and the config supplies only the transport, so this
+// package gains no dependency and a consumer drives it with whatever they already have.
+if (typeof config.openBrowserSession === "function") {
+  const keyboard = await checkKeyboard(config.openBrowserSession);
+  record("Keyboard behaviour", keyboard.findings, keyboard.note);
+  const names = await checkAccessibleNames(config.openBrowserSession);
+  record("Accessibility audit", names.findings, names.note);
+} else {
+  const how = "not run — no `openBrowserSession` in the config; see the kit's docs for its four methods";
+  record("Keyboard behaviour", null, how);
+  record("Accessibility audit", null, how);
+}
+
+/**
+ * A key the contract declares, pressed for real, with the declared effect asserted.
+ *
+ * Only `open` and `cancel` are asserted, and the narrowness is the point.
+ *
+ * `commit` and `clear` change a value, which the state matrix already covers in a harness that can
+ * read one. `move` was asserted here and produced false findings rather than defects: what "the
+ * active option moved" looks like is not one thing — an overlay drives a list with
+ * `aria-activedescendant` while a segmented control moves real focus between radios — and a key
+ * pressed at the end of a list legitimately moves nothing. The contract does not pin either, so a
+ * single check of it reports the renderer for not matching a guess. It is counted as unasserted
+ * rather than quietly passed.
+ *
+ * A binding whose precondition cannot be reached is reported as unreachable rather than passed. A
+ * key that could not be delivered is not a key the widget ignored.
+ */
+async function checkKeyboard(openSession) {
+  const findings = [];
+  let asserted = 0;
+  let unreachable = 0;
+
+  for (const kind of kinds) {
+    const bindings = (MDY_WIDGET_KEYBOARD[kind] ?? []).filter(
+      (binding) => binding.intent === "open" || binding.intent === "cancel",
+    );
+    if (bindings.length === 0) continue;
+
+    for (const binding of bindings) {
+      const session = await openSession(kind);
+      try {
+        // The precondition is part of the binding: a key declared `when: "open"` says nothing about
+        // a closed widget, and pressing it on one asserts the wrong question.
+        if (binding.when === "open" && !(await session.evaluate(OPEN_THE_WIDGET))) {
+          unreachable += 1;
+          continue;
+        }
+        if (!(await session.focusOpener())) {
+          unreachable += 1;
+          continue;
+        }
+
+        const before = await session.evaluate(READ_STATE);
+        if (!before) {
+          unreachable += 1;
+          continue;
+        }
+        await session.press(binding.key);
+        const after = await session.evaluate(READ_STATE);
+
+        asserted += 1;
+        const describe = `${kind} ${JSON.stringify(binding.key)} when ${binding.when} (${binding.intent})`;
+
+        if (binding.intent === "open" && !after.open) {
+          findings.push(`${describe}: the widget did not open`);
+        }
+        if (binding.intent === "cancel" && after.open) {
+          findings.push(`${describe}: the widget did not close`);
+        }
+        // Restoring focus is declared per binding, and a widget that closes while leaving focus
+        // nowhere has stranded the user who pressed the key.
+        if (binding.intent === "cancel" && binding.restoresFocus && !after.focusInsideWidget) {
+          findings.push(`${describe}: focus was not restored to the widget`);
+        }
+      } finally {
+        await session.close();
+      }
+    }
+  }
+
+  const unasserted = kinds.reduce(
+    (total, kind) => total + (MDY_WIDGET_KEYBOARD[kind] ?? []).filter(
+      (binding) => binding.intent !== "open" && binding.intent !== "cancel",
+    ).length,
+    0,
+  );
+  return {
+    findings,
+    note: `${asserted} open/cancel binding(s) pressed, ${unreachable} unreachable`
+      + `, ${unasserted} binding(s) not asserted here (commit, clear and move)`,
+  };
+}
+
+/**
+ * Every operable element carries a name a screen reader can announce.
+ *
+ * The browser computes it, which is the point: an icon-only button with a `title`, a label
+ * associated by `for`, and `aria-labelledby` pointing at three elements all produce names no static
+ * check can predict, and a widget that announces nothing is a widget only a pointer can use.
+ */
+async function checkAccessibleNames(openSession) {
+  const findings = [];
+  let asserted = 0;
+  let absent = 0;
+
+  for (const kind of kinds) {
+    const session = await openSession(kind);
+    try {
+      // Opened where it opens: the options, the calendar cells and the clock face are the elements
+      // most likely to be nameless, and they do not exist while the widget is shut.
+      await session.evaluate(OPEN_THE_WIDGET);
+      const nameless = await session.evaluate(READ_NAMELESS_CONTROLS);
+      // A session that cannot reach this kind reports nothing rather than nothing wrong.
+      if (!nameless) {
+        absent += 1;
+        continue;
+      }
+      asserted += nameless.total;
+      for (const control of nameless.missing) {
+        findings.push(`${kind}: ${control} has no accessible name`);
+      }
+    } finally {
+      await session.close();
+    }
+  }
+
+  return {
+    findings,
+    note: `${asserted} operable element(s) checked for a name`
+      + (absent ? `, ${absent} kind(s) not reachable in the session` : ""),
+  };
+}
+
+// Whatever the browser sections started, closed before the report: a run that never exits reads as
+// a hung suite rather than a passing one.
+if (typeof config.disposeBrowser === "function") await config.disposeBrowser();
 
 // ── Report ────────────────────────────────────────────────────────────────────────────────
 console.log(`\nModyra conformance — ${name}\n${"─".repeat(40)}`);

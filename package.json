@@ -43,6 +43,7 @@
     "test:harness-exceptions": "node scripts/audit-harness-exceptions.mjs --check",
     "test:conformance": "npm run build:plain && node scripts/tsc7.mjs packages/lit/tsconfig.json && node packages/widgets/bin/modyra-conformance.mjs packages/plain/conformance.config.mjs && node packages/widgets/bin/modyra-conformance.mjs packages/lit/conformance.config.mjs && npm run test:conformance-angular",
     "test:conformance-angular": "node packages/widgets/bin/modyra-conformance.mjs packages/angular/conformance.config.mjs",
+    "test:conformance-browser": "npm run build:examples -- plain && node packages/widgets/bin/modyra-conformance.mjs packages/plain/conformance.browser.config.mjs",
     "contract:diff": "npm run build:packages && node scripts/contract-diff.mjs",
     "contract:snapshot": "npm run build:packages && node scripts/contract-diff.mjs --write",
     "test:contract-snapshot": "node scripts/contract-diff.mjs --check",
