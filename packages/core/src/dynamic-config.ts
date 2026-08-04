@@ -100,6 +100,23 @@ export interface MdyDynamicOptionsField extends MdyDynamicFieldBase {
    */
   readonly mode?: MdyMultiselectMode;
   /**
+   * Select and multiselect only. Whether the list filters as the user types.
+   *
+   * It decides which of two interaction models the widget is, and they are genuinely different
+   * controls to anyone not using a pointer:
+   *
+   * - **`false` (the default) is a listbox.** Focus stays on the trigger, typing accumulates into a
+   *   typeahead buffer that jumps to the first matching option, and no filter box is drawn.
+   * - **`true` is a combobox.** Focus moves into the search input on open and typing filters the
+   *   list.
+   *
+   * Both drive the list with `aria-activedescendant` rather than moving focus into it.
+   *
+   * Contract data rather than a renderer input, because a renderer that cannot read it cannot honour
+   * it — which is exactly how three adapters ended up with three behaviours for one widget.
+   */
+  readonly searchable?: boolean;
+  /**
    * The options are being fetched. Select and multiselect show it on the control, so a field waiting
    * on its list says so without being opened.
    *

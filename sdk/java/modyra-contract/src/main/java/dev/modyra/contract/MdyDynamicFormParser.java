@@ -331,7 +331,7 @@ public final class MdyDynamicFormParser {
       return new MdyDynamicBooleanField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators());
     }
     if (field instanceof MdyDynamicOptionsField f) {
-      return new MdyDynamicOptionsField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators(), f.options(), f.mode());
+      return new MdyDynamicOptionsField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators(), f.options(), f.mode(), f.searchable());
     }
     if (field instanceof MdyDynamicDateField f) {
       return new MdyDynamicDateField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators());

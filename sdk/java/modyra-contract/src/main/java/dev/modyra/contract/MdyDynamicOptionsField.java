@@ -24,6 +24,12 @@ public record MdyDynamicOptionsField(
      * repeats. Carried because the widget contract declares a different anatomy per mode, so a
      * document that loses it describes a different widget than the one it was written for.
      */
-    String mode
+    String mode,
+    /**
+     * Select and multiselect only. Whether the list filters as the user types, which decides
+     * whether the widget is a listbox keeping focus on its trigger or a combobox taking it into a
+     * search input.
+     */
+    Boolean searchable
 ) implements MdyDynamicField {
 }
