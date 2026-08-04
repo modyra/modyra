@@ -137,7 +137,10 @@ function rewriteLinks(content, fileDocsRelDir) {
 // path; a change here is a presentation decision only, so it lives in the site
 // generator rather than as Starlight-specific frontmatter in the portable
 // markdown source.
-const SIDEBAR_HIDDEN = new Set(['guides/release-admin-trusted-publishing.md']);
+const SIDEBAR_HIDDEN = new Set([
+  'guides/release-admin-trusted-publishing.md',
+  'guides/typescript-7.md',
+]);
 
 rmSync(targetDir, { recursive: true, force: true });
 mkdirSync(targetDir, { recursive: true });

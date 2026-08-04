@@ -17,6 +17,7 @@ module.exports = defineConfig([
       "**/bundle-test/**",
       "packages/styles/src/*.html",
       "**/stackblitz/**",
+      "benchmarks/*.html",
     ],
   },
   {

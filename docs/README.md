@@ -93,5 +93,6 @@ Comparisons are dated snapshots. Re-run their associated scripts and review the 
 - [Roadmap](../ROADMAP.md)
 - [Changelog](../CHANGELOG.md)
 - [Release administration](guides/release-admin-trusted-publishing.md)
+- [TypeScript 7 and the primary compiler](guides/typescript-7.md)
 
 Documentation under `docs/` is the source for the published site. Package READMEs remain self-contained because they are also rendered by npm.
