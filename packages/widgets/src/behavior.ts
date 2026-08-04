@@ -349,9 +349,14 @@ export function multiselectOverlayAction(input: {
   };
   const target = moves[key];
   if (target) {
-    // A closed list has nothing to move through. `ArrowDown` reaches for the options and opens it;
-    // the others have nothing above or beyond a collapsed control to reach.
-    if (!open) return key === "ArrowDown" ? { type: "open" } : null;
+    // A closed list has nothing to move through, so a vertical arrow reaches for the options and
+    // opens it — either one. `MDY_WIDGET_KEYBOARD` declares both, and a single-select combobox
+    // answers both; a policy that opened on one of them made the same widget behave two ways
+    // depending on which key a user happened to press, and disagreed with the table describing it.
+    //
+    // `Home` and `End` still do nothing here: they mean "the first" and "the last" of a list that is
+    // not on screen, and opening on them would be inventing an intent the contract does not declare.
+    if (!open) return key === "ArrowDown" || key === "ArrowUp" ? { type: "open" } : null;
     return { type: "move", target };
   }
   // Tab closes and lets focus go where it was headed. A list left open follows the user to the next

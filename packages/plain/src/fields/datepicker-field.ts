@@ -108,6 +108,21 @@ export function renderDatepickerField(
     }
   });
 
+  // Escape dismisses from wherever the user is. The grid handles it too, as one of the keys the
+  // calendar navigates with, but this overlay does not take focus when it opens — so a user who
+  // opened it from the toggle and pressed Escape was holding a dialog that answered nothing. It is
+  // the one key an overlay must always answer, which is what makes reaching it from the toggle part
+  // of the behaviour rather than a convenience.
+  const onEscape = (event: KeyboardEvent): void => {
+    if (!controller.state().open) return;
+    if (event.key === "Escape") dispatch({ type: "close", restoreFocus: true });
+    // Tab is already carrying focus somewhere; pulling it back would trap the user in the control
+    // they were leaving.
+    else if (event.key === "Tab") dispatch({ type: "close", restoreFocus: false });
+  };
+  wrapper.addEventListener("keydown", onEscape);
+  popup.addEventListener("keydown", onEscape);
+
   const undismiss = dismissOnOutsidePointer(
     [wrapper],
     () => controller.state().open,

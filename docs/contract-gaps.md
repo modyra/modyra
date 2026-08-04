@@ -19,13 +19,13 @@ to a green suite.
 **Status.** The headings below are the source of truth; this list is a convenience for a reader who
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, N, P
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, N, P, Q
 - **Partly fixed** — C2, E2, F, K, L, M — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
   the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — O, Q
+- **Open** — O
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -1253,7 +1253,7 @@ pressed at the end of a list legitimately moves nothing. The contract pins neith
 `clear` change a value the state matrix already reads. 46 bindings are reported as not asserted
 rather than counted as passing.
 
-## Q — declared keys the pickers do not answer — **open**
+## Q — declared keys the pickers do not answer — **fixed**
 
 **Observed**, by the browser section above, and confirmed by hand on the element that owns the keys.
 
@@ -1277,16 +1277,33 @@ Measured on `@modyra/plain`, focus on the toggle:
 is wired, and these two are missing from it. 14 findings across `datepicker`, `daterange`,
 `timepicker` and `multiselect`.
 
-**Not fixed, and it needs a decision rather than a patch.** Two readings, and the evidence does not
-settle which:
+**It was two findings wearing one shape, and the split is what resolved it.**
 
-- **The renderers are wrong.** The contract has said this for as long as it has existed, and B1
-  already recorded `Tab` as declared in one keyboard path and absent from the other — this is the
-  same declaration failing at the renderer instead of at the second code path.
-- **The contract over-declares.** Arrow keys opening a *button*-triggered picker is not a pattern
-  every widget guide asks for, and a contract nobody implements is a contract that should be
-  narrowed rather than a defect three renderers share.
+**Real defects, fixed.** Two rows were asymmetric — one kind failing where its siblings passed — and
+that asymmetry is what identified them as defects rather than as a contract problem:
 
-Fixing one renderer to match the contract while the others do not is the worst of both, so this is
-recorded rather than patched. **The evidence to gather next** is what the other two renderers do:
-the finding says "the pickers", and it has only been measured on one of them.
+- **`datepicker` did not close on Escape**, while `daterange` and `timepicker` did. Its grid handled
+  the key, but the overlay does not take focus when it opens, so a user who opened the calendar from
+  the toggle was holding a dialog that answered nothing. It is the one key every overlay must answer.
+- **`multiselect` opened on `ArrowDown` but not `ArrowUp`**, from a deliberate `null` in the shared
+  policy while the table declared both — B1's shape exactly, a declarative table and an imperative
+  policy disagreeing inside one package. The single-select combobox answers both. Fixed in the shared
+  policy, so it is fixed for every renderer at once.
+
+**A contract error, narrowed.** The remaining eight were uniform across all four dialog-style
+overlays, and uniformity is the opposite evidence: the combobox opening keys were declared for kinds
+that hold no options. Three renderers omitted them independently and none consults `keyBindingFor`
+for a picker at all. [ADR 0021](architecture/0021-a-dialog-overlay-is-not-a-combobox.md) records the
+decision and its cost; `contract:diff` classifies the withdrawal as major.
+
+**And four renderer gaps closed on the way.** `Tab` while open now dismisses in all four pickers,
+which is what the contract has always declared and none of them did — a panel left floating over a
+field the user has tabbed away from is the Escape defect a moment later.
+
+`npm run test:conformance-browser` reports **CONFORMANT, 8 of 8 sections**, where the first run of
+the same command reported 14 findings.
+
+**Still only measured on one renderer.** The fixes to the shared policy and the contract reach all
+three; the four `Tab` handlers and the Escape handler are `@modyra/plain`'s. Whether the other two
+dismiss on Tab is unmeasured, and the way to measure it is a browser transport for each — the same
+work this finding's fix already did once.
