@@ -35,6 +35,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 | [0017](0017-a-varianted-kind-names-its-anatomy-per-configuration.md) | A varianted kind names its anatomy per configuration | A disjunction says something is operable; ADR 0014 asks which element, and only a variant can answer |
 | [0018](0018-a-select-declares-whether-it-filters.md) | A select declares whether it filters | One widget, three behaviours and one of them broken, because the distinction was not contract data |
 | [0019](0019-typescript-7-compiles-the-libraries.md) | TypeScript 7 compiles the libraries | Two consumers pin the compiler and the rest of the repository was waiting for them |
+| [0020](0020-a-hidden-native-control-is-never-painted.md) | A hidden native control is never painted | Paint on a clipped pixel is invisible to review and to screenshots, and one engine ended the page over it |
 
 ## Security-relevant records
 

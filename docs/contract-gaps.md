@@ -19,13 +19,13 @@ to a green suite.
 **Status.** The headings below are the source of truth; this list is a convenience for a reader who
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, N
 - **Partly fixed** — C2, E2, F, K, L, M — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
   the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — N
+- **Open** — O
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -543,7 +543,7 @@ to remember to apply.
 `optionControl`, a part it did not have. It did not: that is `radio`'s list, and segmented required
 only parts it declared. The plan repeated the claim and it was wrong in both places.
 
-## N — WebKit ends the page when a visually hidden native input is reached — **open**
+## N — WebKit ends the page when a visually hidden native input is reached — **fixed**
 
 **Observed.** WebKit, the Angular demo. Calling `focus()` on a visually hidden `<input type="radio">`
 ends the page — from the driver and from inside the page alike, in under a second.
@@ -591,8 +591,72 @@ worth writing down: `@import`ed rules are reached through `CSSImportRule.styleSh
 `.cssRules`, and `deleteRule` on a rule inside an imported sheet appears to be refused — the walk
 reported zero removals where roughly a thousand rules matched.
 
-**Next step**, for whoever picks this up: serve `modyra-modern.css` as a copy with its `@import`s
-inlined, so rules can be deleted, and bisect against Angular's radio markup specifically.
+### The rule, found by bisecting an inlined copy
+
+Serving the sheet with its `@import`s inlined made the rules deletable, and the search converged on
+one declaration:
+
+```css
+.mdy-renderer input:focus, .mdy-renderer select:focus, .mdy-renderer textarea:focus {
+    background-color: var(--mdy-input-bg-hover);
+    box-shadow: var(--mdy-input-focus-shadow);
+}
+```
+
+Deleting only that rule survives; keeping only that rule dies. Necessary and sufficient, which is
+what makes it a cause rather than a correlate.
+
+**A contiguous bisect answered this wrongly first, and confidently.** It named a different rule
+entirely. Confirming in both directions is what caught it: the named rule turned out to be neither
+necessary nor sufficient, because the search assumes that removing more can only help, and a
+property built from a *combination* of rules does not obey that. The re-run tested each candidate
+for necessity **and** sufficiency separately, which is the form the answer above is stated in.
+
+### What is actually fatal
+
+Restoring the two properties one at a time separates them, and the surviving suspect was not the one
+named above in prose:
+
+| restored on the focused hidden radio | result |
+| --- | --- |
+| `box-shadow` alone | survives |
+| **`background-color` alone** | **page ends** |
+| a flat hex background | survives |
+| a single-level `color-mix()` background | survives |
+| the token's value, on a normally sized input | survives |
+| the token's value, with `appearance: none` | page ends |
+
+So the fatal combination is a **nested `color-mix()` painted as the background of a focused native
+control clipped to one pixel**. Not the shadow, not the hiding technique, not the native appearance.
+
+**The nesting is emergent, not written.** No stylesheet in the repository contains a nested
+`color-mix()`; `--mdy-input-bg-hover` mixes two custom properties that are themselves mixes, so what
+is finally painted has a shape no declaration states. That is why reading the sheet could not find
+this and why only one theme was fatal — a theme whose tokens resolve to flat colours produces a flat
+background from the same rule.
+
+### Fixed
+
+A visually hidden native control carries state and focus, never paint. The six duplicated copies of
+the hiding pattern are now one rule that clears `background-color` and `box-shadow` along with the
+geometry, so the field rules cannot reach through to an element with no visible surface.
+
+The rule stands on its own merits: painting a colour on a clipped pixel is invisible by
+construction, so the declaration was doing nothing for anybody before it started ending pages.
+
+`e2e/shared/hidden-controls.spec.ts` asserts it across all nine renderer/engine projects. It is a
+*rule* test rather than a crash test, and the mutation shows why that distinction matters: with the
+fix reverted, WebKit fails at the focus call and Chromium fails on the painted value. An engine that
+merely tolerates the paint still reports the violation.
+
+`e2e/keyboard.spec.ts`'s segmented row is un-quarantined and passes on all nine projects. It was
+skipped for exactly this cause and is the independent confirmation that the cause was the right one.
+
+**The two `demo.spec.ts` rows are not.** They were quarantined naming this finding, and lifting them
+shows the attribution was wrong: they still crash WebKit, unchanged, on `click` and `hover` of
+*visible* elements that this rule does not and should not cover. They are finding O below. Separating
+them is the point — a fixed finding that still carries two failing rows is a finding nobody can trust
+as fixed.
 
 ## J2 — `multiselect` anatomy depends on its mode, and the contract cannot say so — **fixed**
 
@@ -1015,3 +1079,42 @@ buys a primary the host sets at runtime with no JavaScript on the page — the r
 exists in this shape — and pays for it with an estimate and three tiers. Generating the palette ahead
 of time with `color-utils` is exact and gives that up. ADR 0015 holds either way, since the metric is
 the same; what changes is whether anything still approximates it.
+
+## O — WebKit ends the page on a pointer path through two demo widgets — **open**
+
+**Observed.** WebKit, the Angular demo, unchanged by the fix for N.
+
+| row | the act that crashes |
+| --- | --- |
+| `e2e/demo.spec.ts:185` | `click` of `.mdy-colors__toggle-area` |
+| `e2e/demo.spec.ts:415` | `hover` of `.mdy-segmented__button` |
+
+Playwright reports `Page crashed` at the action, not an assertion failure and not a timeout, which is
+the same signature finding N had.
+
+**These two rows were quarantined as instances of N, and that attribution was wrong.** Lifting them
+after N was fixed is what established it: N's rule freed the keyboard row it also held, and left
+these two exactly as they were.
+
+The distinction is what makes them a separate finding. N was paint arriving at an element with no
+visible surface — nobody's intent, and correct to remove. These are ordinary pointer interactions
+with **visible, legitimately painted** elements: a suffix button and a segment label. Whatever is
+fatal here is something the stylesheet is *supposed* to be doing, so the fix cannot be "stop doing
+it" and no rule from N transfers.
+
+**Not root-caused.** One attempt is worth recording so it is not repeated: driving the crash outside
+the suite by swapping `#mdy-theme-link`'s `href` produced uniform 30s timeouts on every theme and
+every action, including ones that work. That is a broken harness rather than a reproduction — the
+demo does not swap themes that way — and its output says nothing about the defect. A probe whose
+control case also fails has measured nothing.
+
+**Next step**: reproduce inside the real theme loop rather than beside it, then apply N's method,
+which is what worked there: bisect the sheet, and confirm each candidate for necessity **and**
+sufficiency separately. N's first bisect named the wrong rule with full confidence because it assumed
+a single cause, and only the two-direction check exposed it.
+
+Worth carrying over as a hypothesis, not a conclusion: N's fatal ingredient was a **nested
+`color-mix()`, produced by variable substitution rather than written anywhere**, painted during an
+interactive state. Both acts here are interactive states on themed surfaces. It is a lead because it
+is cheap to test, and it is only a lead — N's own clipped-element condition plainly does not hold for
+these two.
