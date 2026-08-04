@@ -19,8 +19,8 @@ to a green suite.
 **Status.** The headings below are the source of truth; this list is a convenience for a reader who
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, N, P, Q
-- **Partly fixed** — C2, E2, F, K, L, M — derived but not painted; most scripts reachable; kind-keyed
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, K, N, P, Q
+- **Partly fixed** — C2, E2, F, L, M — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
   the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
@@ -872,7 +872,7 @@ A portalled popup conforms — asserted directly, since a naive containment chec
 one of them as broken. But under jsdom both renderers keep the popup inside the field root, so the
 conformance run never exercises the portalled path. That needs the browser suites.
 
-## K — public surface outside the catalogue had no classification path — **mostly fixed**
+## K — public surface outside the catalogue had no classification path — **fixed**
 
 **Observed.** `scripts/contract-diff.mjs` snapshots the catalogue: parts, where they hang, what they
 are, what refers to what. The `project*A11y` functions are exported from the package root and are
@@ -942,12 +942,37 @@ declarations — which would make the audit depend on the resolution behaviour i
 from outside. The false positives are cheap and visible; the false negatives that alternative would
 buy are neither.
 
-**Not decided.** A projection returns attribute maps whose values depend on state, so the snapshot
-cannot be the returned object; it would have to be the shape — which parts exist, and which attribute
-names each carries. Whether that is worth freezing before 1.0, or whether the honest answer is that
-these helpers are not part of the promise and should stop being exported from the root, is the
-question. The second reading is cheaper and narrows the 1.0 surface, which is the direction
-`ROADMAP.md` is already pointing.
+**Decided, and against the reading this entry suggested.** "These helpers are not part of the promise
+and should stop being exported from the root" does not survive checking who imports them: all three
+adapters do, across package boundaries, and so does a Studio target. An adapter is an external
+consumer whatever the repository layout says, which makes the projections public by necessity rather
+than by oversight. Withdrawing them would break every renderer to narrow a surface they are the
+mechanism of.
+
+So they are snapshotted instead, and the declarations already carried what was needed. Each
+projection returns an **inline type literal naming the parts it hands back**:
+
+```ts
+): {
+  readonly root: MdyPartContract;
+  readonly label: MdyPartContract;
+  readonly input: MdyPartContract;
+  readonly description: MdyPartContract;
+  readonly error: MdyPartContract;
+} {
+```
+
+The audit now records exported **function signatures** — each parameter by position and name, and the
+return type — so withdrawing a part from a projection, reordering two parameters, or changing what a
+renderer receives is classified rather than reported as `patch`. 310 shapes became 544. Falsified:
+dropping `description` from `projectFieldA11y` reports `major`, naming the part.
+
+**The other half — which attribute *names* each part carries — is runtime data, and is already
+asserted from the other side.** `inspectWidgetState` reads the rendered DOM and checks each state's
+ARIA attribute on the element `ARIA_STATE_CARRIERS` names, and `inspectWidgetDom` checks roles, tags
+and classes. That is the stronger check of the two: what a renderer *applied* is what a user meets,
+where what a projection *returned* is one layer short of it. Recording the returned maps as well
+would be a second statement of the same fact, which is the failure this document opens by naming.
 
 ## L — every browser claim was Chromium's — **partly fixed**
 

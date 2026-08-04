@@ -127,6 +127,25 @@ function parseMembers(entries) {
   return parsed;
 }
 
+/**
+ * A function's public shape: each parameter, and what it returns.
+ *
+ * Recorded as written text for the same reason members are — see `membersOf`. A parameter is keyed by
+ * its position as well as its name, because renaming a parameter breaks nobody while reordering two
+ * of the same type breaks every caller silently, and keying by name alone cannot tell those apart.
+ */
+function signatureOf(node) {
+  const entries = node.parameters.map((parameter, index) => {
+    const name = parameter.name?.getText?.() ?? `arg${index}`;
+    const optional = parameter.questionToken || parameter.initializer ? "?" : "";
+    const type = parameter.type?.getText?.().replace(/\s+/g, " ").trim() ?? "(inferred)";
+    return `(${index}) ${name}${optional}: ${type}`;
+  });
+  const returns = node.type?.getText?.().replace(/\s+/g, " ").trim() ?? "(inferred)";
+  entries.push(`-> returns: ${returns}`);
+  return entries;
+}
+
 const surface = {};
 for (const entry of ENTRIES) {
   const file = resolve(ROOT, entry);
@@ -149,6 +168,12 @@ for (const entry of ENTRIES) {
       // coverage. Anything that is not a union of literals is recorded as present but opaque, so
       // its disappearance is still caught while its contents make no claim.
       surface[node.name.text] = unionMembersOf(node.type);
+    } else if (exported && ts.isFunctionDeclaration(node) && node.name) {
+      // A function is public surface too, and the projections made that concrete: each returns an
+      // inline type literal naming which parts it hands back, so "which parts does this projection
+      // return" was a fact the declarations already carried and nothing read. Withdrawing one, or
+      // changing what a renderer receives, classified as patch.
+      surface[node.name.text] = signatureOf(node);
     }
     ts.forEachChild(node, visit);
   };
