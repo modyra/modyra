@@ -26,6 +26,11 @@ jobs:
       - name: Build packages
         run: pnpm run build:packages
 
+      # The libraries are compiled by TypeScript 7 and the Angular toolchain is not: what ships is
+      # only safe while the two compilers emit the same artifacts, so that is checked every push.
+      - name: TypeScript 7 emit matches the primary compiler
+        run: pnpm run test:typescript7
+
       - name: Core tests
         run: pnpm run test:core
 

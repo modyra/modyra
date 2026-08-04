@@ -1,0 +1,195 @@
+{
+  "measuredAt": "2026-08-04T15:11:33.117Z",
+  "commit": "b10a5b1",
+  "runs": 5,
+  "statistic": "median",
+  "compilers": {
+    "primary": "5.9.3",
+    "native": "7.0.2"
+  },
+  "machine": {
+    "cpu": "Apple M2 Pro",
+    "cores": 10,
+    "memoryGB": 32,
+    "architecture": "arm64",
+    "os": "macOS 26.5.1",
+    "kernel": "25.5.0",
+    "node": "v24.16.0",
+    "pnpm": "11.2.2"
+  },
+  "totals": {
+    "primary": 10565,
+    "native": 2572,
+    "speedup": 4.11
+  },
+  "projects": [
+    {
+      "project": "core",
+      "primary": 762,
+      "native": 138,
+      "primaryBest": 735,
+      "nativeBest": 135,
+      "speedup": 5.52
+    },
+    {
+      "project": "lit",
+      "primary": 746,
+      "native": 154,
+      "primaryBest": 716,
+      "nativeBest": 146,
+      "speedup": 4.84
+    },
+    {
+      "project": "plain",
+      "primary": 704,
+      "native": 155,
+      "primaryBest": 685,
+      "nativeBest": 149,
+      "speedup": 4.54
+    },
+    {
+      "project": "preact",
+      "primary": 472,
+      "native": 119,
+      "primaryBest": 464,
+      "nativeBest": 117,
+      "speedup": 3.97
+    },
+    {
+      "project": "react",
+      "primary": 552,
+      "native": 120,
+      "primaryBest": 528,
+      "nativeBest": 119,
+      "speedup": 4.6
+    },
+    {
+      "project": "solid",
+      "primary": 510,
+      "native": 115,
+      "primaryBest": 498,
+      "nativeBest": 111,
+      "speedup": 4.43
+    },
+    {
+      "project": "standard-schema",
+      "primary": 407,
+      "native": 107,
+      "primaryBest": 402,
+      "nativeBest": 106,
+      "speedup": 3.8
+    },
+    {
+      "project": "studio-codegen",
+      "primary": 347,
+      "native": 92,
+      "primaryBest": 337,
+      "nativeBest": 88,
+      "speedup": 3.77
+    },
+    {
+      "project": "studio-contract",
+      "primary": 416,
+      "native": 100,
+      "primaryBest": 402,
+      "nativeBest": 98,
+      "speedup": 4.16
+    },
+    {
+      "project": "studio-editor",
+      "primary": 369,
+      "native": 93,
+      "primaryBest": 360,
+      "nativeBest": 90,
+      "speedup": 3.97
+    },
+    {
+      "project": "studio-model",
+      "primary": 403,
+      "native": 105,
+      "primaryBest": 399,
+      "nativeBest": 101,
+      "speedup": 3.84
+    },
+    {
+      "project": "studio-preview",
+      "primary": 406,
+      "native": 106,
+      "primaryBest": 392,
+      "nativeBest": 102,
+      "speedup": 3.83
+    },
+    {
+      "project": "studio-target-angular",
+      "primary": 274,
+      "native": 85,
+      "primaryBest": 263,
+      "nativeBest": 83,
+      "speedup": 3.22
+    },
+    {
+      "project": "studio-target-core",
+      "primary": 273,
+      "native": 87,
+      "primaryBest": 272,
+      "nativeBest": 85,
+      "speedup": 3.14
+    },
+    {
+      "project": "studio-target-json",
+      "primary": 283,
+      "native": 89,
+      "primaryBest": 278,
+      "nativeBest": 82,
+      "speedup": 3.18
+    },
+    {
+      "project": "studio-target-react",
+      "primary": 280,
+      "native": 89,
+      "primaryBest": 272,
+      "nativeBest": 87,
+      "speedup": 3.15
+    },
+    {
+      "project": "studio-ui",
+      "primary": 735,
+      "native": 171,
+      "primaryBest": 729,
+      "nativeBest": 150,
+      "speedup": 4.3
+    },
+    {
+      "project": "svelte",
+      "primary": 476,
+      "native": 120,
+      "primaryBest": 466,
+      "nativeBest": 110,
+      "speedup": 3.97
+    },
+    {
+      "project": "vue",
+      "primary": 475,
+      "native": 118,
+      "primaryBest": 474,
+      "nativeBest": 114,
+      "speedup": 4.03
+    },
+    {
+      "project": "widgets",
+      "primary": 975,
+      "native": 214,
+      "primaryBest": 963,
+      "nativeBest": 208,
+      "speedup": 4.56
+    },
+    {
+      "project": "zod",
+      "primary": 700,
+      "native": 195,
+      "primaryBest": 664,
+      "nativeBest": 184,
+      "speedup": 3.59
+    }
+  ]
+}

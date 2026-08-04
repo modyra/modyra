@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TypeScript 5.9.3 vs 7.0.2 — Modyra compile times</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface: #fcfcfb;
+    --surface-raised: #ffffff;
+    --border: #e3e2dd;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #6f6e6a;
+    --series-primary: #2a78d6;
+    --series-native: #eb6834;
+    --grid: #eceae4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface: #1a1a19;
+      --surface-raised: #232322;
+      --border: #35342f;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #97968d;
+      --series-primary: #3987e5;
+      --series-native: #d95926;
+      --grid: #2c2b27;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface: #1a1a19;
+    --surface-raised: #232322;
+    --border: #35342f;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #97968d;
+    --series-primary: #3987e5;
+    --series-native: #d95926;
+    --grid: #2c2b27;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 3rem 1.5rem 5rem;
+    background: var(--surface);
+    color: var(--text-primary);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 62rem; margin: 0 auto; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .5rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.15rem; margin: 3rem 0 .35rem; letter-spacing: -.01em; }
+  p { color: var(--text-secondary); margin: .35rem 0 0; max-width: 46rem; }
+  .lede { font-size: 1.05rem; }
+
+  .hero { display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 0 0; }
+  .stat {
+    flex: 1 1 12rem; padding: 1.1rem 1.25rem;
+    background: var(--surface-raised); border: 1px solid var(--border); border-radius: 12px;
+  }
+  .stat .value { font-size: 2rem; font-weight: 620; letter-spacing: -.03em; display: block; }
+  .stat .label { color: var(--text-muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .07em; }
+  .stat .note { color: var(--text-secondary); font-size: .9rem; }
+
+  .legend { display: flex; gap: 1.25rem; margin: 1.5rem 0 .5rem; font-size: .9rem; color: var(--text-secondary); }
+  .legend span { display: inline-flex; align-items: center; gap: .45rem; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .swatch.primary { background: var(--series-primary); }
+  .swatch.native { background: var(--series-native); }
+
+  .figure { overflow-x: auto; margin-top: .75rem; }
+  svg { display: block; width: 100%; min-width: 40rem; height: auto; }
+  .grid { stroke: var(--grid); stroke-width: 1; }
+  .tick { fill: var(--text-muted); font-size: 11px; text-anchor: middle; }
+  .row-label { fill: var(--text-secondary); font-size: 13px; text-anchor: end; }
+  .row-value { fill: var(--text-muted); font-size: 12px; }
+  .bar-primary { fill: var(--series-primary); }
+  .bar-native { fill: var(--series-native); }
+  .row-hit { fill: transparent; }
+  .row:hover .row-hit { fill: color-mix(in oklab, var(--text-primary) 5%, transparent); }
+
+  table { border-collapse: collapse; width: 100%; margin-top: .75rem; font-size: .93rem; }
+  caption { text-align: left; color: var(--text-muted); font-size: .85rem; padding-bottom: .5rem; }
+  th, td { text-align: left; padding: .5rem .75rem; border-bottom: 1px solid var(--border); }
+  td { font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+  thead th { color: var(--text-muted); font-weight: 560; font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; }
+  tbody th { font-weight: 500; color: var(--text-primary); }
+  .numeric { text-align: right; }
+  footer { margin-top: 3.5rem; color: var(--text-muted); font-size: .85rem; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>TypeScript 5.9.3 vs 7.0.2</h1>
+  <p class="lede">Every Modyra project that owns a <code>tsconfig.json</code>, compiled by both
+  compilers from the same sources into a temporary directory. Median of 5 runs each.</p>
+
+  <div class="hero">
+    <div class="stat">
+      <span class="label">TypeScript 5.9.3</span>
+      <span class="value">10.6s</span>
+      <span class="note">all 21 projects</span>
+    </div>
+    <div class="stat">
+      <span class="label">TypeScript 7.0.2</span>
+      <span class="value">2.6s</span>
+      <span class="note">8.0s less</span>
+    </div>
+    <div class="stat">
+      <span class="label">Speed-up</span>
+      <span class="value">4.11×</span>
+      <span class="note">whole workspace</span>
+    </div>
+  </div>
+
+  <h2>Compile time per project</h2>
+  <p>Milliseconds, lower is better. Projects ordered by their TypeScript 5.9.3
+  time; the number at the right of each pair is that project's speed-up.</p>
+  <div class="legend">
+    <span><i class="swatch primary"></i> TypeScript 5.9.3</span>
+    <span><i class="swatch native"></i> TypeScript 7.0.2</span>
+  </div>
+  <div class="figure"><svg viewBox="0 0 900 832" role="img" aria-label="Compile time per project, TypeScript 5.9.3 against 7.0.2, milliseconds, lower is better">
+    <line x1="168" y1="24" x2="168" y2="824" class="grid" />
+      <text x="168" y="16" class="tick">0</text>
+<line x1="328" y1="24" x2="328" y2="824" class="grid" />
+      <text x="328" y="16" class="tick">244</text>
+<line x1="488" y1="24" x2="488" y2="824" class="grid" />
+      <text x="488" y="16" class="tick">488</text>
+<line x1="648" y1="24" x2="648" y2="824" class="grid" />
+      <text x="648" y="16" class="tick">731</text>
+<line x1="808" y1="24" x2="808" y2="824" class="grid" />
+      <text x="808" y="16" class="tick">975</text>
+    <g class="row">
+      <title>widgets: TypeScript 5.9.3 975 ms, TypeScript 7.0.2 214 ms</title>
+      <rect x="0" y="24" width="900" height="36" class="row-hit" />
+      <text x="156" y="43" class="row-label">widgets</text>
+      <rect x="168" y="30" width="640" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="45" width="140.47179487179488" height="13" rx="4" class="bar-native" />
+      <text x="818" y="47" class="row-value">4.56×</text>
+    </g>
+<g class="row">
+      <title>core: TypeScript 5.9.3 762 ms, TypeScript 7.0.2 138 ms</title>
+      <rect x="0" y="62" width="900" height="36" class="row-hit" />
+      <text x="156" y="81" class="row-label">core</text>
+      <rect x="168" y="68" width="500.18461538461537" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="83" width="90.58461538461538" height="13" rx="4" class="bar-native" />
+      <text x="678.1846153846154" y="85" class="row-value">5.52×</text>
+    </g>
+<g class="row">
+      <title>lit: TypeScript 5.9.3 746 ms, TypeScript 7.0.2 154 ms</title>
+      <rect x="0" y="100" width="900" height="36" class="row-hit" />
+      <text x="156" y="119" class="row-label">lit</text>
+      <rect x="168" y="106" width="489.68205128205125" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="121" width="101.0871794871795" height="13" rx="4" class="bar-native" />
+      <text x="667.6820512820512" y="123" class="row-value">4.84×</text>
+    </g>
+<g class="row">
+      <title>studio-ui: TypeScript 5.9.3 735 ms, TypeScript 7.0.2 171 ms</title>
+      <rect x="0" y="138" width="900" height="36" class="row-hit" />
+      <text x="156" y="157" class="row-label">studio-ui</text>
+      <rect x="168" y="144" width="482.46153846153845" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="159" width="112.24615384615385" height="13" rx="4" class="bar-native" />
+      <text x="660.4615384615385" y="161" class="row-value">4.3×</text>
+    </g>
+<g class="row">
+      <title>plain: TypeScript 5.9.3 704 ms, TypeScript 7.0.2 155 ms</title>
+      <rect x="0" y="176" width="900" height="36" class="row-hit" />
+      <text x="156" y="195" class="row-label">plain</text>
+      <rect x="168" y="182" width="462.1128205128206" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="197" width="101.74358974358974" height="13" rx="4" class="bar-native" />
+      <text x="640.1128205128206" y="199" class="row-value">4.54×</text>
+    </g>
+<g class="row">
+      <title>zod: TypeScript 5.9.3 700 ms, TypeScript 7.0.2 195 ms</title>
+      <rect x="0" y="214" width="900" height="36" class="row-hit" />
+      <text x="156" y="233" class="row-label">zod</text>
+      <rect x="168" y="220" width="459.4871794871795" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="235" width="128" height="13" rx="4" class="bar-native" />
+      <text x="637.4871794871794" y="237" class="row-value">3.59×</text>
+    </g>
+<g class="row">
+      <title>react: TypeScript 5.9.3 552 ms, TypeScript 7.0.2 120 ms</title>
+      <rect x="0" y="252" width="900" height="36" class="row-hit" />
+      <text x="156" y="271" class="row-label">react</text>
+      <rect x="168" y="258" width="362.3384615384615" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="273" width="78.76923076923077" height="13" rx="4" class="bar-native" />
+      <text x="540.3384615384615" y="275" class="row-value">4.6×</text>
+    </g>
+<g class="row">
+      <title>solid: TypeScript 5.9.3 510 ms, TypeScript 7.0.2 115 ms</title>
+      <rect x="0" y="290" width="900" height="36" class="row-hit" />
+      <text x="156" y="309" class="row-label">solid</text>
+      <rect x="168" y="296" width="334.7692307692308" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="311" width="75.48717948717949" height="13" rx="4" class="bar-native" />
+      <text x="512.7692307692307" y="313" class="row-value">4.43×</text>
+    </g>
+<g class="row">
+      <title>svelte: TypeScript 5.9.3 476 ms, TypeScript 7.0.2 120 ms</title>
+      <rect x="0" y="328" width="900" height="36" class="row-hit" />
+      <text x="156" y="347" class="row-label">svelte</text>
+      <rect x="168" y="334" width="312.451282051282" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="349" width="78.76923076923077" height="13" rx="4" class="bar-native" />
+      <text x="490.451282051282" y="351" class="row-value">3.97×</text>
+    </g>
+<g class="row">
+      <title>vue: TypeScript 5.9.3 475 ms, TypeScript 7.0.2 118 ms</title>
+      <rect x="0" y="366" width="900" height="36" class="row-hit" />
+      <text x="156" y="385" class="row-label">vue</text>
+      <rect x="168" y="372" width="311.79487179487177" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="387" width="77.45641025641025" height="13" rx="4" class="bar-native" />
+      <text x="489.79487179487177" y="389" class="row-value">4.03×</text>
+    </g>
+<g class="row">
+      <title>preact: TypeScript 5.9.3 472 ms, TypeScript 7.0.2 119 ms</title>
+      <rect x="0" y="404" width="900" height="36" class="row-hit" />
+      <text x="156" y="423" class="row-label">preact</text>
+      <rect x="168" y="410" width="309.825641025641" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="425" width="78.1128205128205" height="13" rx="4" class="bar-native" />
+      <text x="487.825641025641" y="427" class="row-value">3.97×</text>
+    </g>
+<g class="row">
+      <title>studio-contract: TypeScript 5.9.3 416 ms, TypeScript 7.0.2 100 ms</title>
+      <rect x="0" y="442" width="900" height="36" class="row-hit" />
+      <text x="156" y="461" class="row-label">studio-contract</text>
+      <rect x="168" y="448" width="273.06666666666666" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="463" width="65.64102564102564" height="13" rx="4" class="bar-native" />
+      <text x="451.06666666666666" y="465" class="row-value">4.16×</text>
+    </g>
+<g class="row">
+      <title>standard-schema: TypeScript 5.9.3 407 ms, TypeScript 7.0.2 107 ms</title>
+      <rect x="0" y="480" width="900" height="36" class="row-hit" />
+      <text x="156" y="499" class="row-label">standard-schema</text>
+      <rect x="168" y="486" width="267.1589743589744" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="501" width="70.23589743589744" height="13" rx="4" class="bar-native" />
+      <text x="445.1589743589744" y="503" class="row-value">3.8×</text>
+    </g>
+<g class="row">
+      <title>studio-preview: TypeScript 5.9.3 406 ms, TypeScript 7.0.2 106 ms</title>
+      <rect x="0" y="518" width="900" height="36" class="row-hit" />
+      <text x="156" y="537" class="row-label">studio-preview</text>
+      <rect x="168" y="524" width="266.5025641025641" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="539" width="69.57948717948719" height="13" rx="4" class="bar-native" />
+      <text x="444.5025641025641" y="541" class="row-value">3.83×</text>
+    </g>
+<g class="row">
+      <title>studio-model: TypeScript 5.9.3 403 ms, TypeScript 7.0.2 105 ms</title>
+      <rect x="0" y="556" width="900" height="36" class="row-hit" />
+      <text x="156" y="575" class="row-label">studio-model</text>
+      <rect x="168" y="562" width="264.5333333333333" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="577" width="68.92307692307693" height="13" rx="4" class="bar-native" />
+      <text x="442.5333333333333" y="579" class="row-value">3.84×</text>
+    </g>
+<g class="row">
+      <title>studio-editor: TypeScript 5.9.3 369 ms, TypeScript 7.0.2 93 ms</title>
+      <rect x="0" y="594" width="900" height="36" class="row-hit" />
+      <text x="156" y="613" class="row-label">studio-editor</text>
+      <rect x="168" y="600" width="242.2153846153846" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="615" width="61.04615384615385" height="13" rx="4" class="bar-native" />
+      <text x="420.2153846153846" y="617" class="row-value">3.97×</text>
+    </g>
+<g class="row">
+      <title>studio-codegen: TypeScript 5.9.3 347 ms, TypeScript 7.0.2 92 ms</title>
+      <rect x="0" y="632" width="900" height="36" class="row-hit" />
+      <text x="156" y="651" class="row-label">studio-codegen</text>
+      <rect x="168" y="638" width="227.77435897435896" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="653" width="60.38974358974359" height="13" rx="4" class="bar-native" />
+      <text x="405.77435897435896" y="655" class="row-value">3.77×</text>
+    </g>
+<g class="row">
+      <title>studio-target-json: TypeScript 5.9.3 283 ms, TypeScript 7.0.2 89 ms</title>
+      <rect x="0" y="670" width="900" height="36" class="row-hit" />
+      <text x="156" y="689" class="row-label">studio-target-json</text>
+      <rect x="168" y="676" width="185.76410256410256" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="691" width="58.420512820512826" height="13" rx="4" class="bar-native" />
+      <text x="363.7641025641026" y="693" class="row-value">3.18×</text>
+    </g>
+<g class="row">
+      <title>studio-target-react: TypeScript 5.9.3 280 ms, TypeScript 7.0.2 89 ms</title>
+      <rect x="0" y="708" width="900" height="36" class="row-hit" />
+      <text x="156" y="727" class="row-label">studio-target-react</text>
+      <rect x="168" y="714" width="183.79487179487177" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="729" width="58.420512820512826" height="13" rx="4" class="bar-native" />
+      <text x="361.79487179487177" y="731" class="row-value">3.15×</text>
+    </g>
+<g class="row">
+      <title>studio-target-angular: TypeScript 5.9.3 274 ms, TypeScript 7.0.2 85 ms</title>
+      <rect x="0" y="746" width="900" height="36" class="row-hit" />
+      <text x="156" y="765" class="row-label">studio-target-angular</text>
+      <rect x="168" y="752" width="179.85641025641027" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="767" width="55.794871794871796" height="13" rx="4" class="bar-native" />
+      <text x="357.8564102564103" y="769" class="row-value">3.22×</text>
+    </g>
+<g class="row">
+      <title>studio-target-core: TypeScript 5.9.3 273 ms, TypeScript 7.0.2 87 ms</title>
+      <rect x="0" y="784" width="900" height="36" class="row-hit" />
+      <text x="156" y="803" class="row-label">studio-target-core</text>
+      <rect x="168" y="790" width="179.20000000000002" height="13" rx="4" class="bar-primary" />
+      <rect x="168" y="805" width="57.107692307692304" height="13" rx="4" class="bar-native" />
+      <text x="357.20000000000005" y="807" class="row-value">3.14×</text>
+    </g>
+  </svg></div>
+
+  <h2>The machine</h2>
+  <p>A compile time means nothing without the machine that produced it.</p>
+  <table>
+    <tbody><tr><th scope="row">Processor</th><td>Apple M2 Pro — 10 cores</td></tr>
+<tr><th scope="row">Memory</th><td>32 GB</td></tr>
+<tr><th scope="row">Architecture</th><td>arm64</td></tr>
+<tr><th scope="row">Operating system</th><td>macOS 26.5.1</td></tr>
+<tr><th scope="row">Kernel</th><td>25.5.0</td></tr>
+<tr><th scope="row">Node</th><td>v24.16.0</td></tr>
+<tr><th scope="row">pnpm</th><td>11.2.2</td></tr></tbody>
+  </table>
+
+  <h2>The measurements</h2>
+  <table>
+    <caption>Median of 5 runs per project per compiler, in milliseconds.</caption>
+    <thead>
+      <tr><th scope="col">Project</th><th scope="col">5.9.3</th><th scope="col">7.0.2</th><th scope="col">Speed-up</th></tr>
+    </thead>
+    <tbody><tr>
+        <th scope="row">widgets</th>
+        <td>975</td>
+        <td>214</td>
+        <td>4.56×</td>
+      </tr>
+<tr>
+        <th scope="row">core</th>
+        <td>762</td>
+        <td>138</td>
+        <td>5.52×</td>
+      </tr>
+<tr>
+        <th scope="row">lit</th>
+        <td>746</td>
+        <td>154</td>
+        <td>4.84×</td>
+      </tr>
+<tr>
+        <th scope="row">studio-ui</th>
+        <td>735</td>
+        <td>171</td>
+        <td>4.3×</td>
+      </tr>
+<tr>
+        <th scope="row">plain</th>
+        <td>704</td>
+        <td>155</td>
+        <td>4.54×</td>
+      </tr>
+<tr>
+        <th scope="row">zod</th>
+        <td>700</td>
+        <td>195</td>
+        <td>3.59×</td>
+      </tr>
+<tr>
+        <th scope="row">react</th>
+        <td>552</td>
+        <td>120</td>
+        <td>4.6×</td>
+      </tr>
+<tr>
+        <th scope="row">solid</th>
+        <td>510</td>
+        <td>115</td>
+        <td>4.43×</td>
+      </tr>
+<tr>
+        <th scope="row">svelte</th>
+        <td>476</td>
+        <td>120</td>
+        <td>3.97×</td>
+      </tr>
+<tr>
+        <th scope="row">vue</th>
+        <td>475</td>
+        <td>118</td>
+        <td>4.03×</td>
+      </tr>
+<tr>
+        <th scope="row">preact</th>
+        <td>472</td>
+        <td>119</td>
+        <td>3.97×</td>
+      </tr>
+<tr>
+        <th scope="row">studio-contract</th>
+        <td>416</td>
+        <td>100</td>
+        <td>4.16×</td>
+      </tr>
+<tr>
+        <th scope="row">standard-schema</th>
+        <td>407</td>
+        <td>107</td>
+        <td>3.8×</td>
+      </tr>
+<tr>
+        <th scope="row">studio-preview</th>
+        <td>406</td>
+        <td>106</td>
+        <td>3.83×</td>
+      </tr>
+<tr>
+        <th scope="row">studio-model</th>
+        <td>403</td>
+        <td>105</td>
+        <td>3.84×</td>
+      </tr>
+<tr>
+        <th scope="row">studio-editor</th>
+        <td>369</td>
+        <td>93</td>
+        <td>3.97×</td>
+      </tr>
+<tr>
+        <th scope="row">studio-codegen</th>
+        <td>347</td>
+        <td>92</td>
+        <td>3.77×</td>
+      </tr>
+<tr>
+        <th scope="row">studio-target-json</th>
+        <td>283</td>
+        <td>89</td>
+        <td>3.18×</td>
+      </tr>
+<tr>
+        <th scope="row">studio-target-react</th>
+        <td>280</td>
+        <td>89</td>
+        <td>3.15×</td>
+      </tr>
+<tr>
+        <th scope="row">studio-target-angular</th>
+        <td>274</td>
+        <td>85</td>
+        <td>3.22×</td>
+      </tr>
+<tr>
+        <th scope="row">studio-target-core</th>
+        <td>273</td>
+        <td>87</td>
+        <td>3.14×</td>
+      </tr></tbody>
+  </table>
+
+  <h2>Method</h2>
+  <p>Each project is compiled 5 times with each compiler, alternating between them, and
+  reported by median so a cold file cache on the first run does not decide the result. Both compilers
+  write to a temporary directory, never to <code>dist</code>, and read the same workspace
+  declarations. The Angular package is absent: it is compiled by ng-packagr, whose peer range stops
+  below TypeScript 7.</p>
+  <p>Regenerate with <code>npm run benchmark:typescript</code>. The raw numbers are in
+  <code>benchmarks/typescript-compilers.json</code>.</p>
+
+  <footer>
+    Measured 2026-08-04T15:11:33.117Z at commit <code>b10a5b1</code>.
+    Equivalence of the two emits is checked separately by <code>npm run test:typescript7</code>.
+  </footer>
+</main>
+</body>
+</html>
