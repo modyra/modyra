@@ -1,5 +1,27 @@
 # @modyra/studio-preview
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [0a23bfd]
+- Updated dependencies [e8b586a]
+- Updated dependencies [76f4e7e]
+- Updated dependencies [27c1222]
+- Updated dependencies [7bafd3d]
+- Updated dependencies [3bb85a6]
+- Updated dependencies [186cbad]
+- Updated dependencies [3068258]
+- Updated dependencies [0d3fa5f]
+- Updated dependencies [08cb845]
+- Updated dependencies [8e67cfe]
+- Updated dependencies [75d2553]
+- Updated dependencies
+- Updated dependencies [342f396]
+- Updated dependencies [1a99bbb]
+  - @modyra/core@1.0.0
+  - @modyra/studio-contract@0.5.1
+
 ## 0.5.0
 
 ### Patch Changes

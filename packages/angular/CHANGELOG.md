@@ -1,5 +1,452 @@
 # @modyra/angular
 
+## 0.6.0
+
+### Minor Changes
+
+- 5db335c: A segmented choice is a radio, and the contract names it.
+
+  `segmented` declared `elements: { option: "presentation" }`, so nothing constrained what a choice
+  is: a `<div>` with a click handler conformed, and a screen reader user got a page of unlabelled text
+  where a chooser should be. That was finding **J1**.
+
+  The anatomy now names both halves, exactly as `radio` always has — `option` is the labelled
+  container, `optionControl` is the radio inside it, and both are required:
+
+  ```ts
+  elements: { option: "label", optionControl: "radio" }
+  ```
+
+  `radio` is a new semantic element, satisfied by `<input type="radio">` or by an explicit
+  `role="radio"`. An `<input>` of any other type does not satisfy it.
+
+  **`@modyra/lit` and `@modyra/angular` change markup.** A segmented option was a
+  `<button role="radio">`; it is now a `<label>` around its own `<input type="radio">`, the pattern
+  `@modyra/plain` already used. Arrow keys, the roving tab stop and form participation come from the
+  platform instead of being reimplemented, and a theme reaches the selected and disabled states from
+  the control rather than from a class the renderer has to remember to apply.
+
+  **Migration:** an adapter emitting a button-with-a-role now reports `PART_ELEMENT: option` and
+  `PART_MISSING: optionControl`. Styling that assumed a `<button>` needs the same follow-through the
+  shipped themes got — `:disabled` on the segment never matches, because the segment is a label and
+  the state belongs to the control inside it.
+
+  [ADR 0012](https://github.com/modyra/modyra/blob/main/docs/architecture/0012-a-choice-is-a-radio-by-role-or-by-tag.md)
+  decided the rule and predicted no renderer would change. It is amended in place: that prediction read
+  a summary of the code rather than the code, and Plain's `option` was never the radio.
+
+  **Pre-1.0 versioning.** `@modyra/plain`, `@modyra/lit` and `@modyra/angular` are on 0.x and make no stability promise yet, so a breaking change to them is a minor bump — that is what 0.x means. The change below is breaking; the version number is not claiming otherwise.
+
+- 31cbcdb: Focus leaving an overlay names itself, and never outranks a pointer.
+
+  New capability `dismissOnFocusOutside: boolean`, true wherever there is a popup. It declares what
+  already happened — Tab out of an open popup closes it — and separates it from
+  `dismissOnOutsidePointer`, which is a different question with a different answer.
+
+  Conflating the two was a real defect: all three renderers could close a popup that the pointer rule
+  had just refused to close. An interaction begun inside the popup and dragged out moves focus out on
+  the way, and closing on that reinstates, through the focus path, exactly the dismissal light dismiss
+  exists to prevent. The precedence is now explicit — while an interaction begun inside is unresolved,
+  focus decides nothing — and all three renderers consult one rule instead of each deciding.
+
+  `@modyra/lit` also loses a `setTimeout(…, 120)` on blur, replaced by the `relatedTarget` containment
+  check the other two renderers already used. A delay is a guess about how long a click takes to land,
+  and it raced whatever the pointer did meanwhile.
+
+  `touched` still marks when focus leaves, including where the close is suppressed. Being touched is
+  not a dismissal.
+
+- b10a5b1: One select, one interaction model per renderer.
+
+  [ADR 0018](https://github.com/modyra/modyra/blob/main/docs/architecture/0018-a-select-declares-whether-it-filters.md)
+  names two models and `searchable` selects between them. This is the half the renderers owe.
+
+  **`@modyra/plain` — breaking.** It appended a filter box to every select, so a three-option list got a
+  search nobody asked for and focus landed in it rather than on the list. Now only a `searchable`
+  select has one. A non-searchable select keeps focus on its trigger and jumps as you type.
+
+  **`@modyra/lit`.** Typing on a searchable select's trigger dispatched one character at a time into a
+  controller that _replaces_ the query, so `mar` searched `m`, then `a`, then `r` and a typeahead could
+  never match a word. It now accumulates. Its non-searchable select is a native `<select>` and always
+  had the platform's typeahead — which is why the defect hid in the model most selects do not use.
+
+  **`@modyra/angular`.** Its non-searchable select had no typeahead at all: a printable key reached a
+  keyboard policy with no rule for one and did nothing. It now jumps.
+
+  **`@modyra/widgets` gains an `activate` intent** — make one option the active one without choosing
+  it. `move` could not express it, taking a direction where a typeahead knows the destination.
+
+  **A WebKit defect fixed on the way.** Not every engine focuses a `<button>` when it is clicked, so a
+  list opened by pointer left focus on the document and every keystroke after went nowhere. The
+  listbox model says focus _stays_ on the trigger; the renderer now makes that true rather than
+  assuming it.
+
+  Asserted with real keystrokes per renderer and per engine, not only against the shared buffer — three
+  adapters implementing one behaviour is what produced three behaviours, and testing only the rule
+  would reproduce it exactly.
+
+  **Pre-1.0 versioning.** `@modyra/plain`, `@modyra/lit` and `@modyra/angular` are on 0.x and make no stability promise yet, so a breaking change to them is a minor bump — that is what 0.x means. The change below is breaking; the version number is not claiming otherwise.
+
+- bc91571: Light dismiss: an overlay closes on an outside _interaction_, not an outside event.
+
+  `capabilities.dismissOnOutsidePointer` changes from `{ event: "pointerdown" | "click" }` to
+  `false | "light-dismiss"`. A consumer reading `.event` no longer compiles.
+
+  An interaction has an origin and a completion, and both decide:
+
+  > An overlay closes when a primary interaction that **began** outside its logical branch is
+  > **completed** outside that branch. An interaction that began inside never dismisses, however far
+  > outside it ends.
+
+  That asymmetry is the point. Selecting text in a popup and releasing past its edge is a drag from
+  inside, and the browser fires the resulting `click` on a common ancestor — so any rule reading only
+  the completion target closes a popup the user was working in.
+
+  Completion is `click`, not `pointerup`: a drag ending on a different element than it began on
+  produces no `click` at all, which is exactly the gesture a touch user makes to scroll the page
+  behind an open popup.
+
+  Also normative, and newly enforced:
+
+  - only a primary pointer on the primary button dismisses — a right-click opens a context menu, it
+    does not close the popup underneath it;
+  - `pointercancel` never dismisses, and only cancels the interaction it belongs to;
+  - a `click` with no observed pointer interaction — a keyboard activation, a programmatic `.click()` —
+    does not satisfy a capability that names a pointer;
+  - "inside" is the **logical branch**: invoker, popup, descendants and portalled content;
+  - an interaction is abandoned on `blur`, on the document being hidden, and on unmount.
+
+  The rule lives once in `@modyra/widgets` as `createLightDismiss`, with an explicit state machine. All
+  three rendering adapters call it, so a renderer can no longer decide when a pointer dismisses.
+  `Escape` is unchanged.
+
+  Recorded as [ADR 0013](../docs/architecture/0013-the-dismissal-names-its-gesture.md), which
+  supersedes ADR 0011.
+
+  Also fixed here: `contract-diff` classified this as `minor`. It treated withdrawal as a capability
+  disappearing or becoming `false`, and did not see a capability that keeps its name and stops
+  answering a question it used to — whether by losing a key or by ceasing to be an object at all.
+
+  **Pre-1.0 versioning.** `@modyra/plain`, `@modyra/lit` and `@modyra/angular` are on 0.x and make no stability promise yet, so a breaking change to them is a minor bump — that is what 0.x means. The change below is breaking; the version number is not claiming otherwise.
+
+### Patch Changes
+
+- 1c672d4: A colour field is described on the element it is named on, and Angular's radio group is described at
+  all.
+
+  **The contract disagreed with itself about `colors`.** `LABEL_FOR` pointed the label at `hexInput`
+  and `DESCRIBED_BY_CARRIER` hung the description off `control` — the native picker, which two
+  renderers make unfocusable. One kind, two elements each claimed as the accessible control, so a
+  field's name and its description sat on different things. `DESCRIBED_BY_CARRIER` now names
+  `hexInput`, and the canonical snapshot counts `hexInput` among the elements a state can be expressed
+  on.
+
+  This was found by a renderer being marked wrong when it was right: Angular exposed the description
+  and the validity on the hex input the user types in, and the expectation — reading `control` — called
+  that nothing at all. Two of three renderers agreeing is not the same as two of three being correct.
+
+  The equivalence suite no longer restates the carrier either; it reads the relation from the contract.
+  A table beside a table is the shape of the defect this milestone keeps finding: two spellings that
+  agree today and diverge the moment one moves.
+
+  **Angular's radio group carried no `aria-describedby` and no `aria-invalid`.** The group is a
+  `radiogroup` with a name and nothing else, so an error was rendered, styled, and announced to no
+  assistive technology. It now binds the shared projection, as the segmented group already did.
+
+  Each `<input type="radio">` bound that same projection, so the error text was also attached to every
+  option — announced once per choice. The contract declares the relation from the group; the options no
+  longer restate it.
+
+  **Angular's multiselect described itself from the options container**, which the user never lands on,
+  rather than from the search button its label names. Moved.
+
+- a3c4580: A tap outside dismisses on Safari.
+
+  The light-dismiss gesture completed on `click`, deliberately — a drag ending elsewhere produces no
+  click, which is the gesture a touch user makes to scroll the page behind an open popup, so the
+  browser's own judgement of an activation filtered it out.
+
+  One engine does not supply that judgement. WebKit synthesises no mouse events and no `click` for a
+  tap on an element it does not consider clickable, and a page's own background is not one:
+
+  | engine   | events delivered for a tap on `<h1>`                                            |
+  | -------- | ------------------------------------------------------------------------------- |
+  | Chromium | `pointerdown` `touchstart` `pointerup` `touchend` `mousedown` `mouseup` `click` |
+  | WebKit   | `pointerdown` `touchstart` `pointerup` `touchend` — and nothing else            |
+
+  So on Safari, desktop and iOS, the pair never completed and an open popup stayed open. Nothing in a
+  Chromium-only suite could see it.
+
+  `MdyLightDismiss` gains `pointerup(target, pointerId?)`, which completes the interaction under the
+  same origin and pointer-identity rules. `click` stays and normally does nothing — the release has
+  already left the machine idle — but catches an interaction whose release never arrived. The scroll
+  gesture is still protected, by `pointercancel`: a browser that takes a gesture over to scroll says so
+  directly, and the absence of a click was standing in for that signal.
+
+  **One behaviour changes beyond the fix**, and it is a correction: pressing outside and releasing
+  _inside_ the popup no longer dismisses. It used to, because the click landed on a common ancestor
+  outside the branch — but the interaction ended inside, which ADR 0013's own rule says must not
+  dismiss.
+
+  **Migration:** a renderer that wires the policy itself must add a capture-phase `pointerup` listener
+  beside its `click` one. The three rendering adapters do this already.
+
+  [ADR 0013](https://github.com/modyra/modyra/blob/main/docs/architecture/0013-the-dismissal-names-its-gesture.md)
+  is amended in place, with the original reasoning kept — the risk it named is real, and what it got
+  wrong is which signal guards against it.
+
+  **Classification.** `contract:diff` reports `patch`: the catalogue is untouched and the differ sees
+  nothing else. This ships as `minor` for the added method — the same blind spot recorded as finding K.
+
+- c1b9b10: A state is checked on the part responsible for it.
+
+  `inspectWidgetState` accepted a state's ARIA attribute on **any** declared part. The claim it could
+  make was therefore "the widget exposes the state somewhere", not "on the right element" — and a
+  select that moved `aria-expanded` from its trigger to its root passed.
+
+  `stateCarriers(kind, state)` now names the part or parts a kind must announce a state on, and the
+  check asserts presence on each of them. `open` is derived from `MDY_POPUP_OPENERS[kind].opener`,
+  which the contract already declared; `invalid`, `disabled` and `readonly` are declared in a new
+  per-kind table, because nothing existing answered for them — the catalogue's per-part `states:` is a
+  class vocabulary, and it names `inputWrapper` where `aria-disabled` goes on the control.
+
+  Extras are still tolerated: the check asks whether the carrier announces the state, not whether
+  anything else does.
+
+  **Three renderer defects surfaced immediately**, each one a state announced where nothing listens:
+
+  - `@modyra/lit` and `@modyra/angular` never set `aria-disabled` on the multiselect's search button —
+    the opener, and the element the label names. Angular had it on the options group instead.
+  - `colors` had no correct carrier to name. Angular's `control` is the native `<input type="color">`,
+    deliberately `aria-hidden`; the carrier is `hexInput`, the field a user types into.
+
+  **Classification.** `contract:diff` reports `patch`: the catalogue anatomy is untouched, and the
+  differ snapshots the catalogue only. This ships as `minor` because `stateCarriers` is a new root
+  export. The disagreement is the same blind spot recorded as finding K in `docs/contract-gaps.md` —
+  public surface outside the catalogue has no classification path.
+
+  A downstream renderer that passed conformance may now fail it. That is the point of the change, and
+  it is a verdict rather than an API break: nothing a consumer wrote needs editing to compile.
+
+  The decision behind this is [ADR 0014](https://github.com/modyra/modyra/blob/main/docs/architecture/0014-the-contract-names-the-responsible-element.md): the contract names the element responsible for something, not the region containing it.
+
+- 2ac6b1e: `anchorOverlay` takes the writing direction, so a popup hangs from an inline edge.
+
+  `overlayAnchoringFor(kind)` states which edge of the control a popup attaches to — the end where the
+  trigger sits, the arrow, the calendar button. That is an **inline** idea, and it was being applied
+  physically: in a right-to-left field every popup still hung from the right, which is the wrong end of
+  the control.
+
+  The declared alignment now mirrors under `direction: "rtl"`, and all three renderers pass the
+  direction they are actually laid out in, read from the element rather than assumed.
+
+  **Only the declared edge mirrors, deliberately.** How much room remains before the window's right
+  edge, and where the user's pointer landed, are facts about the screen; they do not flip, and a popup
+  that mirrored them would place itself off the side of the viewport. A test holds that line — a wide
+  popup on a control near the right edge stays on screen in either direction.
+
+  This is one change in the contract rather than three in the renderers, which is what the shared
+  anchoring is for.
+
+- 6e25a0d: Every clock enforces the range the contract states, not just Plain's.
+
+  Both renderers accepted a typed `25` or `61` through their own arithmetic and neither offered arrow
+  stepping, so an impossible time was corrected somewhere downstream with nothing on screen to say the
+  entry had been wrong.
+
+  Both now consume `acceptTimeField` / `stepTimeField` / `timeFieldBounds`: an out-of-range segment
+  carries `aria-invalid` and the range it expected, arrow keys wrap at both ends (12 → 1, 59 → 0), a
+  step rescues a segment that is already out of range, and each box advertises its own `min`/`max`.
+  Clearing a box is not an error — it is being cleared, not asserted.
+
+  The three renderers now answer this the same way, with the ranges stated once. Each adapter's tests
+  assert the _wiring_ rather than the arithmetic, since a contract nothing consumes is the failure this
+  repo has recorded three times.
+
+- f4e593a: Focus is borrowed, not taken: `createFocusCustodian` makes the handover a contract.
+
+  Moving focus is easy and losing it is silent. A widget opens an overlay, focus goes in, the overlay
+  closes — and if nothing takes focus at that moment the user is standing on `<body>`, at the top of
+  the document, with no way back to the field they were in. Nothing throws and every attribute is
+  still correct.
+
+  Five of the seven focus behaviours audited across the three renderers were wrong, each in a
+  different file, each needing its own repair. That is a missing contract, not six careless renderers.
+
+  Two halves, both enforced:
+
+  - **Focus is recorded before it is moved**, so there is always somewhere to hand it back to.
+  - **A move that is not taken did not happen.** `focus()` on a detached, hidden or inert element does
+    nothing and reports nothing, so every candidate is verified against `activeElement` afterwards and
+    a candidate that did not take it falls through. The chain is the caller's preference, then
+    whoever held focus before, then the widget itself; focus goes nowhere only when the widget has
+    left the document.
+
+  **`@modyra/angular`'s `select`, `datepicker` and `daterange` stranded the keyboard on dismissal**, and
+  now do not. Two earlier attempts failed on a wrong premise worth recording: the overlay renders its
+  panel _inside_ the wrapper rather than portalling it, so "is focus still inside this widget" answered
+  _yes_ for precisely the case that strands people. The panel is what disappears, so the panel is what
+  is asked about — before containment, not after.
+
+  `portalRootFor` moves from `@modyra/widgets/testing` to the package root, since the runtime needs it
+  too; the testing entry re-exports it rather than keeping a second copy.
+
+- 480c514: Supporting text is identified, so a screen reader can announce it.
+
+  No element in the Angular package carried the `<fieldId>__description` id. All fifteen renderers
+  emitted `<div class="mdy-supporting-text">` with no `id` at all, and two failures followed from that
+  one cause:
+
+  - **radio, slider, file and segmented** bind the shared projection, which names
+    `<fieldId>__description` in `aria-describedby`. That id existed nowhere, so the reference
+    **dangled** — the control claimed a description and the browser computed none.
+  - **The other eleven** use a helper that only ever names the error list. Their supporting text was
+    rendered, styled, and **announced to nobody**.
+
+  The second is the failure `projectFieldShellA11y` already warns about for error lists — _"without
+  `aria-describedby` the error list is rendered, styled, and announced to nobody"_ — reached from the
+  description side instead.
+
+  `descriptionId` now answers for the supporting-text element and every renderer binds it as `[id]`;
+  `describedById` names the error list where there is one and the supporting text otherwise, so a
+  control with neither still describes itself by nothing rather than by an id no element holds.
+
+  Measured on the demo, before and after: **0 → 36** controls whose computed accessible description is
+  non-empty, and **4 → 0** dangling `aria-describedby` references. Text like "Only PDF files are
+  accepted" and "1 = Poor, 10 = Excellent" reached no assistive technology before this.
+
+  Every existing check was green because they all stop at the attribute: they ask whether
+  `aria-describedby` is present and whether it resolves in their own fixture, and those fixtures render
+  errors. Nothing asked the browser what description it actually computed. `e2e/screen-reader.spec.ts`
+  now does.
+
+- 81e1e39: Fixes `handle.readonly is not a function`, thrown on the first render of any text field bound to a
+  typed form.
+
+  `@modyra/angular` declared its own `MdyFieldHandle` interface, written out member by member beside
+  the engine's. When the engine's handle gained `interactivity` and `readonly` — the two halves of what
+  a user may do — the copy did not. `_buildHandle` built a handle satisfying the copy, TypeScript
+  agreed, and the first widget controller to read `handle.readonly()` threw at runtime.
+
+  The type is now derived from the engine's rather than restated: the signal members re-branded as
+  Angular signals, the imperative half passed through unchanged. `markAsTouched(): void` is
+  structurally a zero-argument accessor, so a blanket mapping would have rewritten it as
+  `Signal<void>` — the commands are excluded by name.
+
+  The same mistake cannot be silent again: removing either member now fails the build rather than the
+  browser. A regression test asserts both are callable on a handle from `mdyForm()`.
+
+  Also in this change: the canonical snapshot used by the renderer-equivalence suite reads each state
+  from its most universal signal instead of from a class. `disabled` was read from a wrapper modifier
+  that only some kinds carry — a checkbox, a toggle and a file field are natively disabled and carry no
+  class at all — so half the catalogue reported no state. It now reads the native and ARIA attributes,
+  and all seventeen kinds report alike.
+
+- 84ae084: The multiselect's keyboard contract, held to the same rules as the select's.
+
+  `multiselectOverlayAction` had the same two gaps and the same consumption problem:
+
+  - **`ArrowDown` on a closed list opens it** — it returned `move`, an action on options nobody can see.
+  - **`Tab` closes and yields focus**, with `restoreFocus: false`.
+  - **`@modyra/plain` answered only `Escape`.** No opening, no Tab, no navigation: a list opened with a
+    pointer could not be left from the keyboard by any other key. It now dispatches the contract's
+    action.
+  - **`@modyra/angular` bound its key handler to the overlay's input only**, so a _closed_ list had no
+    keyboard handler at all and could not be opened without a pointer. Found by pressing the key in a
+    browser. It also restored focus on every close, ignoring the action's own `restoreFocus`, which
+    pulled a tabbing user back into the field they were leaving.
+
+  **Recorded, not fixed**: Plain does not dispatch `move` or `select`. Its controller has no active
+  option to move — the intents are `toggle`, `increment` and `decrement` over chips, with no cursor —
+  so arrow-key navigation needs that cursor first, which is a controller change and its own batch.
+  Opening, dismissing and yielding focus map exactly and are wired now.
+
+- bfeb371: The select's keyboard contract is complete, consumed, and proven by real key presses.
+
+  `selectKeyboardAction` was missing two of the behaviours the contract itself describes, and one
+  renderer of three was using it at all.
+
+  - **`ArrowDown` on a closed list opens it.** It returned `move`, an action on options nobody can see.
+  - **`Tab` closes the list and lets focus carry on**, with `restoreFocus: false` — a list left open
+    follows the user to the next field, and focus pulled back traps them in the one they just left.
+    `restoreFocus` is no longer typed as always-`true`, because Escape and Tab want opposite answers.
+  - **`@modyra/plain` consumed none of it**, handling keys with a switch of its own that disagreed with
+    the contract on exactly those two keys. It now dispatches the contract's action.
+  - **`@modyra/angular` cancelled `Tab`'s native meaning**, so focus stayed inside a panel being torn
+    down and the overlay's focus rescue pulled the user back into the field they were leaving. Found by
+    pressing the key in a browser, which is the only place that question can be asked.
+  - Angular also opened the list on a `move` it could not perform — a renderer covering for the policy,
+    which is the pattern this milestone exists to remove. Gone.
+
+  Six behaviours now run against a real browser: what opens, what does not, where focus goes when the
+  list opens, where it goes on Escape, and where it goes on Tab. The policy stays a pure function with
+  its own unit test; the browser proves that pressing the key does what the policy says.
+
+- Updated dependencies [04d150e]
+- Updated dependencies [5db335c]
+- Updated dependencies [1c672d4]
+- Updated dependencies [e3f27b3]
+- Updated dependencies [0a23bfd]
+- Updated dependencies [e8b586a]
+- Updated dependencies [9ec6b65]
+- Updated dependencies [76f4e7e]
+- Updated dependencies [2d2398b]
+- Updated dependencies [4de3620]
+- Updated dependencies [b213813]
+- Updated dependencies [c1584ad]
+- Updated dependencies [b0d9252]
+- Updated dependencies [27c1222]
+- Updated dependencies [a3c4580]
+- Updated dependencies [7bafd3d]
+- Updated dependencies [3bb85a6]
+- Updated dependencies [76e119e]
+- Updated dependencies [c1b9b10]
+- Updated dependencies [569128a]
+- Updated dependencies [49c28c9]
+- Updated dependencies [35d6094]
+- Updated dependencies [186cbad]
+- Updated dependencies [ee8198d]
+- Updated dependencies [eb224f8]
+- Updated dependencies [0f85077]
+- Updated dependencies [d6e8855]
+- Updated dependencies [ca0eebc]
+- Updated dependencies [2ac6b1e]
+- Updated dependencies [44d0e03]
+- Updated dependencies [3068258]
+- Updated dependencies [0f09b34]
+- Updated dependencies [0d3fa5f]
+- Updated dependencies [08cb845]
+- Updated dependencies [8e67cfe]
+- Updated dependencies [f4e593a]
+- Updated dependencies [31cbcdb]
+- Updated dependencies [75d2553]
+- Updated dependencies
+- Updated dependencies [5c8784c]
+- Updated dependencies [6e434ab]
+- Updated dependencies [5dbdf1a]
+- Updated dependencies [b10a5b1]
+- Updated dependencies [8d7a621]
+- Updated dependencies [c7c6adf]
+- Updated dependencies [f4b41af]
+- Updated dependencies [afef217]
+- Updated dependencies [635529b]
+- Updated dependencies [bc91571]
+- Updated dependencies [8bdc82b]
+- Updated dependencies [81e1e39]
+- Updated dependencies [e4aa213]
+- Updated dependencies [7091a93]
+- Updated dependencies [342f396]
+- Updated dependencies [84ae084]
+- Updated dependencies [50a654b]
+- Updated dependencies [1a99bbb]
+- Updated dependencies [bfeb371]
+- Updated dependencies [816ca68]
+- Updated dependencies [9a8a747]
+- Updated dependencies [6d1e0cd]
+- Updated dependencies [bdde472]
+  - @modyra/widgets@1.0.0
+  - @modyra/core@1.0.0
+
 ## 0.5.0
 
 ### Minor Changes

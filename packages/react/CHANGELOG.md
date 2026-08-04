@@ -1,5 +1,102 @@
 # @modyra/react
 
+## 0.5.1
+
+### Patch Changes
+
+- 08cb845: Every adapter's conformance suite runs the reactivity that package actually exports.
+
+  `@modyra/preact`, `@modyra/react`, `@modyra/svelte` and `@modyra/lit` each ship a named
+  `*Reactivity()` — core's graph re-tagged with their own `kind`, which the capability matrix
+  introspects. **Every one of their conformance files ran `vanillaReactivity()` instead.** The export
+  consumers import was covered by nothing, and a re-tag is a spread: the one shape that silently drops
+  a member.
+
+  It does now, plus a check that the re-tag still carries every member. Removing `createScope` from
+  one of them fails eleven tests; before this it failed none.
+
+  The backward-compatibility shim `core/test/reactivity-contract.mjs` is **gone**. It existed to adapt
+  the old `runReactivityContract(name, factory)` signature for "every adapter package's own
+  `test/reactivity.test.mjs`", and no adapter uses that signature any more. It also hardcoded
+  `destroy: () => {}` and an immediate flush, so nothing tested through it was ever asked to tear down
+  or to flush.
+
+- 342f396: These packages are now compiled by TypeScript 7.
+
+  Nothing about the published API changes, and that is checked rather than asserted: both compilers
+  emit all twenty-one projects and the results are compared file by file. Across 464 files the only
+  difference is the order in which the members of a string-literal union are printed in
+  `catalog.d.ts` — the same type either way. The contract snapshot is unmoved, and the Angular package
+  still builds through its own TypeScript 5.9 toolchain from these declarations.
+
+  The Angular package and Studio's embedded compiler stay on TypeScript 5.9, which their peer ranges
+  and its package exports require.
+
+- Updated dependencies [04d150e]
+- Updated dependencies [5db335c]
+- Updated dependencies [1c672d4]
+- Updated dependencies [e3f27b3]
+- Updated dependencies [0a23bfd]
+- Updated dependencies [e8b586a]
+- Updated dependencies [9ec6b65]
+- Updated dependencies [76f4e7e]
+- Updated dependencies [2d2398b]
+- Updated dependencies [4de3620]
+- Updated dependencies [b213813]
+- Updated dependencies [c1584ad]
+- Updated dependencies [b0d9252]
+- Updated dependencies [27c1222]
+- Updated dependencies [a3c4580]
+- Updated dependencies [7bafd3d]
+- Updated dependencies [3bb85a6]
+- Updated dependencies [76e119e]
+- Updated dependencies [c1b9b10]
+- Updated dependencies [569128a]
+- Updated dependencies [49c28c9]
+- Updated dependencies [35d6094]
+- Updated dependencies [186cbad]
+- Updated dependencies [ee8198d]
+- Updated dependencies [eb224f8]
+- Updated dependencies [0f85077]
+- Updated dependencies [d6e8855]
+- Updated dependencies [ca0eebc]
+- Updated dependencies [2ac6b1e]
+- Updated dependencies [44d0e03]
+- Updated dependencies [3068258]
+- Updated dependencies [0f09b34]
+- Updated dependencies [0d3fa5f]
+- Updated dependencies [08cb845]
+- Updated dependencies [8e67cfe]
+- Updated dependencies [f4e593a]
+- Updated dependencies [31cbcdb]
+- Updated dependencies [75d2553]
+- Updated dependencies
+- Updated dependencies [5c8784c]
+- Updated dependencies [6e434ab]
+- Updated dependencies [5dbdf1a]
+- Updated dependencies [b10a5b1]
+- Updated dependencies [8d7a621]
+- Updated dependencies [c7c6adf]
+- Updated dependencies [f4b41af]
+- Updated dependencies [afef217]
+- Updated dependencies [635529b]
+- Updated dependencies [bc91571]
+- Updated dependencies [8bdc82b]
+- Updated dependencies [81e1e39]
+- Updated dependencies [e4aa213]
+- Updated dependencies [7091a93]
+- Updated dependencies [342f396]
+- Updated dependencies [84ae084]
+- Updated dependencies [50a654b]
+- Updated dependencies [1a99bbb]
+- Updated dependencies [bfeb371]
+- Updated dependencies [816ca68]
+- Updated dependencies [9a8a747]
+- Updated dependencies [6d1e0cd]
+- Updated dependencies [bdde472]
+  - @modyra/widgets@1.0.0
+  - @modyra/core@1.0.0
+
 ## 0.5.0
 
 ### Patch Changes

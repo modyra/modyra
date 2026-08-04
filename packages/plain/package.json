@@ -1,6 +1,6 @@
 {
   "name": "@modyra/plain",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Zero-dependency vanilla JS/HTML5 form renderer for the Modyra form engine — given a container element and a Dynamic Form Contract, renders real interactive DOM wired to @modyra/widgets' headless controllers.",
   "keywords": [
     "vanilla",
@@ -39,8 +39,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "0.5.0",
-    "@modyra/widgets": "0.5.0"
+    "@modyra/core": "1.0.0",
+    "@modyra/widgets": "1.0.0"
   },
   "publishConfig": {
     "access": "public"

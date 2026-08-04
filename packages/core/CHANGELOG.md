@@ -1,5 +1,367 @@
 # @modyra/core
 
+## 1.0.0
+
+### Major Changes
+
+- 27c1222: A reactivity says what it is.
+
+  `MdyReactivity.id` and `.kind` were optional, marked "optional until every adapter is migrated". Every
+  adapter has been migrated for some time: `vanilla`, `vue`, `react`, `solid`, `preact`, `svelte` and
+  `angular` all declare both, measured by calling each factory and reading the fields.
+
+  They are required now. 1.0 should not freeze an interface that describes a migration which is over —
+  an optional field every implementation supplies is a field consumers must still write a branch for.
+
+  - **`id`** identifies a reactivity by symbol rather than by name. Two adapters can both call
+    themselves `"react"`; only the symbol says whether they are the same one. The headless adapters
+    share vanilla's symbol deliberately — they _are_ vanilla underneath.
+  - **`kind`** is what it calls itself, for diagnostics.
+
+  **Migration:** an implementation of `MdyReactivity` written outside this repository must add both.
+  Every adapter shipped here already has them, so nothing changes for anyone consuming one.
+
+  **Classification.** `contract:diff` reports `patch` — it snapshots the widget catalogue and cannot
+  see the reactivity interface. Shipped as `major`: a required field added to an interface consumers
+  implement is exactly the asymmetry `docs/contract-compatibility.md` calls major.
+
+- Modyra 1.0.
+
+  **What 1.0 covers is two packages, and that is the whole of it.** `@modyra/core` — the form engine and
+  the Dynamic Form Contract, zero dependencies — and `@modyra/widgets`, the widget contract, which
+  depends only on core. The perimeter is checked rather than claimed:
+  `scripts/audit-package-independence.mjs` passes, core declares no dependencies at all, and widgets
+  declares exactly one.
+
+  Studio, the Rust and Java SDKs, the five headless adapters and the three rendering adapters ship
+  independently and stay on 0.x. The renderers reach 1.0 after the contract does, not with it — a
+  version number over all of it would be a promise about the parts least ready to make one.
+
+  **What you are promised** is in `docs/contract-compatibility.md`: nothing is removed or changed
+  breakingly outside a major, a deprecation keeps working until the next major and never less than one
+  minor, and both halves of a deprecation — `since` and a replacement — are enforced by a check.
+
+  **What holds it up.** Every claim here has a check that has been watched to fail:
+
+  - the widget catalogue is snapshotted and every change classified;
+  - **205 exported shapes** are snapshotted too, so a type change is classified rather than invisible;
+  - what the tarballs actually contain is installed into a clean consumer, imported, type-checked and
+    run — all 26 entry points, with a baseline so a withdrawn one is a diff;
+  - two renderers are conformance-checked against the contract, in every configured variant;
+  - the browser suites run on three engines and block, with screenshot baselines per renderer, engine
+    and theme.
+
+  **Known and open**, because a 1.0 that hides its defects is worth less than one that names them:
+  WebKit ends the page when a visually hidden native input is reached, which affects the radio and
+  colours widgets there. It is recorded as finding **N** in `docs/contract-gaps.md`, and the rows that
+  cannot run are quarantined by name rather than by making a suite permissive.
+
+### Minor Changes
+
+- 0a23bfd: The conformance suite checks that a declared equality capability is actually honoured.
+
+  `capabilities.signalEquality` and `capabilities.computedEquality` are declared by every adapter and
+  were verified by nothing. The one check that mentioned them asserted they are **booleans** — not that
+  a `true` means anything. An adapter that accepts `options.equal` and drops it on the floor passed:
+  the shape is right, the types are right, and the option is silently ignored.
+
+  That is the "accepted but unhonoured option" the adapter contract was written to prevent, and the Vue
+  adapter's own source flags it as the risk it deliberately avoided. Nothing was checking.
+
+  Two capability-gated tests now do: a comparator that calls every value equal must suppress the write
+  and must notify nothing. Every adapter passes — the suite had simply never asked. Removing the
+  comparator from an adapter's `signal()` fails the new check and nothing else.
+
+  Solid also moves onto the conformance suite directly, with a harness whose scope owns the effects the
+  suite creates and is genuinely destroyed. That is 2 of 6 adapters off the compatibility shim.
+
+- e8b586a: A date field can name its own locale.
+
+  `MdyDynamicDateField` and `MdyDynamicDaterangeField` gain `locale`, `firstDayOfWeek`, `minDate` and
+  `maxDate`. Until now the contract had no locale surface at all: `mountMdyForm` could not pass one,
+  every renderer fell back to `navigator.language`, and Plain's `renderDatepickerField` carried an
+  `options` parameter its own mount path could never populate — reachable only by a host calling the
+  renderer directly.
+
+  `navigator.language` is the _visitor's_ preference, not the form's. A booking form for an Italian
+  office should show an Italian calendar to a visitor whose browser is in English, and only the form
+  knows that.
+
+  ```ts
+  mountMdyForm(host, [
+    { name: "when", kind: "datepicker", label: "When", locale: "it-IT" },
+  ]);
+  // L M M G V S D, in an en-US browser
+  ```
+
+  All four are optional and unset behaves exactly as before, so no existing form changes.
+
+  `parseDynamicFields` validates them, because these arrive from config files rather than from typed
+  code. The locale check is the one that matters: a malformed tag does not degrade — `Intl` throws a
+  `RangeError` — so a config carrying `"en_US"` would have taken the form down at mount rather than
+  rendering an approximate calendar. `firstDayOfWeek` must be an integer from 0 to 6, the dates must
+  be real ISO dates (`2026-02-30` is rejected), and `minDate` may not follow `maxDate`.
+
+  A field failing any of these is dropped with a development warning, the same way a `number` field
+  with `min` above `max` already was.
+
+- 76f4e7e: Cross-field validation is expressible in the Dynamic Form Contract, and a contract's tree can be built into a running form.
+
+  Two additions, both filling gaps that forced callers to work around the contract rather than through it.
+
+  **`validations`** — a new optional slot on `MdyDynamicFormConfigV2`, carrying `{ when, message, target? }`.
+  `rules` could only show, hide, enable and disable, and its predicate is flat: one field, one operator,
+  one value. A rule that _invalidates_ has a message and needs a tree, so "shipping is required when the
+  country is not IT and the total is over 100" had nowhere to go. `when` is an `MdyExpression`, a
+  portable predicate over the form value with twelve enumerated operators, addressed by path — no
+  `eval`, no `new Function`, and `matches` takes its pattern only from a literal so a form's own data
+  cannot choose the regular expression. Malformed expressions are reported by `parseDynamicForm`
+  alongside calendar options and number bounds, never thrown at runtime. `buildDynamicValidations`
+  turns them into ordinary `crossField` validators, deriving each one's dependencies from the condition
+  so the two cannot disagree.
+
+  **`buildDynamicFormSchema`** — builds a form from the contract's schema _tree_, keeping its groups and
+  arrays. `flattenDynamicSchema` answers a different question: it produces one flat list of dotted names
+  for a renderer drawing a sequence of controls, and in doing so fixes each array at however many rows
+  its initial value happened to have. That is correct for drawing and wrong for running — a row the user
+  adds afterwards has no descriptor. Until now the contract could _describe_ a nested form that nothing
+  could _instantiate_, so anything needing a live nested form had to read some other model instead.
+
+  Both are additive. A document that declares no `validations` parses exactly as before.
+
+- 7bafd3d: The reactivity conformance suite checks that a destroyed scope stops the effects it owns.
+
+  `@modyra/core/testing` already asked whether a scope fires its cleanups and cascades to its children.
+  Neither question reaches the guarantee a scope exists for: **that what was created inside it stops.**
+  An adapter whose scope registers nothing passes both of the old checks and leaks every effect a form
+  ever made.
+
+  Every adapter in the repo passes the new check — the suite had simply never asked. It fails when the
+  ownership registration is removed from an adapter, which is the point.
+
+  Vue now runs the conformance suite directly rather than through
+  `core/test/reactivity-contract.mjs`. That shim hardcodes `destroy: () => {}` and a flush that
+  resolves immediately, so an adapter tested through it is never asked to tear anything down and never
+  asked to flush anything real. Vue's harness supplies a scope that owns every effect the suite makes
+  and Vue's own `nextTick`.
+
+  Worth knowing for anyone writing an adapter harness: `options.scope` is the ownership channel.
+  `scope.run()` enters the reactive context and does not, on its own, transfer ownership.
+
+- 3bb85a6: A select declares whether it filters.
+
+  `searchable?: boolean` joins the option-based field config, defaulting to `false`. It selects one of
+  two interaction models, and they are different controls to anyone not using a pointer:
+
+  - **`false` is a listbox** — no filter box, focus stays on the trigger, typing accumulates into a
+    typeahead that jumps to the first matching option.
+  - **`true` is a combobox** — focus moves into the search input on open, typing filters.
+
+  Both drive the list with `aria-activedescendant` rather than moving focus into it.
+
+  It is contract data rather than a renderer input because the alternative is what exists today: it was
+  a component input in two adapters, absent from the third and from the document format, so one widget
+  had three behaviours and one of them matched a single character of any typeahead. A renderer cannot
+  honour a distinction it has no way to read.
+
+  Both SDKs carry it, for the reason `mode` did: a document that loses it describes a different
+  control.
+
+  [ADR 0018](https://github.com/modyra/modyra/blob/main/docs/architecture/0018-a-select-declares-whether-it-filters.md)
+  records the two models and what each renderer owes them.
+
+  **Classification.** `contract:diff` reports `patch`: it snapshots the widget catalogue, and this is a
+  field on the _form_ contract, which it cannot see at all. Shipped as `minor` for an additive optional
+  field — the same blind spot as finding **K**, in a part of the surface that finding had not yet
+  reached.
+
+- 186cbad: A kind whose anatomy depends on its configuration declares it.
+
+  `multiselect` renders a choice two ways: in `single` mode an option is a `<button>` with a tick, in
+  `multi` it is a container holding a count between two step buttons. No single element declaration
+  fits both, so `option` was declared `presentation` and nothing checked it in either mode. That was
+  finding **J2**.
+
+  The catalogue now declares **variants**, keyed by the `mode` the field config already carries:
+
+  ```ts
+  variants: {
+    single: { elements: { option: "button"    }, required: ["optionCheck"] },
+    multi:  { elements: { option: "container" }, required: ["optionStep", "optionCount"] },
+  }
+  ```
+
+  In `single` the option _is_ the control; in `multi` it contains them. Both named, which is what
+  [ADR 0014](https://github.com/modyra/modyra/blob/main/docs/architecture/0014-the-contract-names-the-responsible-element.md)
+  requires and what saying "one of these is operable" cannot give.
+
+  **Closed, and defined once.** `MdyWidgetVariant` is an alias of `MdyMultiselectMode` — newly named in
+  `@modyra/core`, the same union `mode` already used — so the variant key _is_ the value a document
+  carries. An invented name is a compile error, with a runtime guard behind it for callers without
+  types.
+
+  **`container`** is a new semantic element: a part that holds controls and is not one. `presentation`
+  admits everything by design, so it could not refuse a `<button>` holding a `<button>`.
+
+  **`MdyWidgetShape` is generic over its parts.** `required: ["notAPart"]` no longer compiles — which
+  needed `NoInfer` on the shape parameter, because otherwise the shape is a second inference site and a
+  name appearing only there widens the part union to include it.
+
+  **For adapters:** declare which variants you support and the conformance kit mounts each. Declaring
+  none is checked exactly as before, so this is additive for the sixteen kinds that have no variants.
+  `contract-diff` now snapshots and compares variants, so declaring or withdrawing one is classified.
+
+  `@modyra/lit`'s counter steppers gain accessible names — they were icon-only buttons announcing
+  nothing, a defect the rule found the moment it existed.
+
+- 0d3fa5f: `@modyra/core/async-draft-storage` — drafts on a Promise-based store.
+
+  `MdyDraftStorage` is synchronous by design: a field writes a draft while the user types, and there
+  is nothing useful to hand a caller that cannot wait. React Native's standard storage is
+  Promise-based, so the two never met. The React Native guide documented the workaround — hydrate a
+  `Map`, read and write it synchronously, flush in the background — and said it was "not built, not
+  tested here". This is that adapter, built and tested; the guide now links to it.
+
+  ```ts
+  const storage = createHydratedDraftStorage({
+    backend: AsyncStorage,
+    keys: ["checkout-draft"],
+  });
+  await storage.ready;
+  ```
+
+  No new dependency: the backend is an argument, so anything with `getItem`/`setItem`/`removeItem`
+  returning promises works — AsyncStorage, an IndexedDB wrapper, or a test double.
+
+  Two semantics the shape does not make obvious, both chosen deliberately and both covered by a test
+  that fails when they are reversed:
+
+  - **A read before hydration finishes returns `null`** — "no draft", never a stale or partial one. A
+    synchronous read cannot block, and restoring the wrong draft is worse than restoring none. `ready`
+    exists so a caller can wait before restoring, and a write that lands during hydration wins over
+    what the store held: the user is allowed to be faster than the disk.
+  - **A failed flush is never thrown into the form and never loses the draft.** The value stays in the
+    cache, so the user keeps typing and the next write retries it. `onError` reports it; without one
+    the failure is silent, which is the bargain the default `localStorage` storage already makes with
+    quota errors.
+
+- 75d2553: Text on a filled surface is light while light is readable.
+
+  An `on-` colour was whichever of black and white had the higher WCAG 2 contrast ratio. That ratio's
+  luminance formula weights blue at a fourteenth of green, so it rates dark text on a saturated colour
+  far above what a reader experiences — and it put black text on a saturated blue in every theme.
+
+  Measured, and consistent rather than marginal:
+
+  | background | ratio, white | ratio, black | ratio picks | perceptual metric picks |
+  | ---------- | ------------ | ------------ | ----------- | ----------------------- |
+  | `#3B82F6`  | 3.68:1       | 5.71:1       | black       | white                   |
+  | `#7067FF`  | 4.14:1       | 5.07:1       | black       | white                   |
+
+  Across 112 pairs of a derived palette the two disagree on 37, always in that direction.
+
+  **The rule is now: light while light clears a floor, the higher ratio below that.** The floor is
+  `MDY_ON_COLOR_FLOOR`, newly exported from `@modyra/core/color-utils` — the one addition to the public
+  surface. Following the perceptual metric without a bound was rejected on measurement: it puts 36 of
+  those 112 pairs under AA, the worst at 2.96:1.
+
+  `onColorFor` had the same defect. It is exact rather than estimated, and it returned black for
+  `#3B82F6` too, because it was maximising the same ratio — so precomputing a palette would not have
+  avoided this.
+
+  **The floor is below AA for normal text, deliberately**, and above the 3:1 that AA asks of large text
+  and UI components. [ADR 0015](https://github.com/modyra/modyra/blob/main/docs/architecture/0015-light-text-while-it-is-readable.md)
+  states the cost and what to do about it under a strict audit.
+
+  **Migration:** a host that sets its own `on-` colours sees no change. One deriving them sees light
+  text where it saw dark on saturated mid tones — including `--mdy-sys-color-on-primary`, which the
+  datepicker's selected day and every filled control read.
+
+### Patch Changes
+
+- 3068258: `@modyra/core` no longer names an adapter in its dev warnings.
+
+  Three warnings — `enableHistory()`, `enableDraft()` and async validators — told the reader to
+  "construct it with an Injector" "with the Angular adapter". A package naming its own dependent
+  inverts the dependency direction in prose while the import graph stays clean, and the advice was
+  wrong for every other adapter.
+
+  They now point at whichever reactivity adapter the caller is using. Dev-only (`MDY_DEV`), so nothing
+  ships differently in production.
+
+- 08cb845: Every adapter's conformance suite runs the reactivity that package actually exports.
+
+  `@modyra/preact`, `@modyra/react`, `@modyra/svelte` and `@modyra/lit` each ship a named
+  `*Reactivity()` — core's graph re-tagged with their own `kind`, which the capability matrix
+  introspects. **Every one of their conformance files ran `vanillaReactivity()` instead.** The export
+  consumers import was covered by nothing, and a re-tag is a spread: the one shape that silently drops
+  a member.
+
+  It does now, plus a check that the re-tag still carries every member. Removing `createScope` from
+  one of them fails eleven tests; before this it failed none.
+
+  The backward-compatibility shim `core/test/reactivity-contract.mjs` is **gone**. It existed to adapt
+  the old `runReactivityContract(name, factory)` signature for "every adapter package's own
+  `test/reactivity.test.mjs`", and no adapter uses that signature any more. It also hardcoded
+  `destroy: () => {}` and an immediate flush, so nothing tested through it was ever asked to tear down
+  or to flush.
+
+- 8e67cfe: Every exported shape in the 1.0 packages is classified.
+
+  `contract-diff` snapshots the widget _catalogue_ — parts, relations, states, capabilities — and had
+  never seen a TypeScript type. So every public interface was outside classification, and it showed:
+  four changes in recent memory reported `patch` because the differ had nothing to compare, including
+  a projection's shape and a required field added to an interface four adapters implement.
+
+  `npm run test:type-surface` records **205 exported shapes** from the _emitted_ declarations, with
+  member names and optionality, and classifies a change the way `docs/contract-compatibility.md` says:
+
+  - optional → required, or a member removed: **major**
+  - a new optional member, or a newly exported shape: **minor**
+
+  Accept an intended change with `npm run type-surface:accept`.
+
+  This is what freezes `MdyFormError`, `MdyDynamicDiagnostic` and the parse result: not by forbidding
+  change, but by making a change to any of them a reviewable diff with a level attached.
+
+  **What it still cannot see** is member _types_ — that `payload` exists and is optional, not that it
+  is `unknown`. A widening is invisible, and saying so is better than implying otherwise.
+
+- 342f396: These packages are now compiled by TypeScript 7.
+
+  Nothing about the published API changes, and that is checked rather than asserted: both compilers
+  emit all twenty-one projects and the results are compared file by file. Across 464 files the only
+  difference is the order in which the members of a string-literal union are printed in
+  `catalog.d.ts` — the same type either way. The contract snapshot is unmoved, and the Angular package
+  still builds through its own TypeScript 5.9 toolchain from these declarations.
+
+  The Angular package and Studio's embedded compiler stay on TypeScript 5.9, which their peer ranges
+  and its package exports require.
+
+- 1a99bbb: The SDKs carry the multiselect mode, and say what they ignore.
+
+  `mode` has been in the Dynamic Form Contract all along, and neither SDK modelled it. Java's
+  `MdyDynamicOptionsField` had no such component and `@JsonIgnoreProperties(ignoreUnknown = true)` on
+  top; Rust's `Field` had no such member. So a server that parsed a form and re-emitted it **silently
+  turned a counter multiselect into a toggle one** — and now that the widget contract picks an anatomy
+  by that value, the re-emitted document describes a different widget than the one it was written as.
+
+  Both SDKs now carry it, and both are tested by round trip rather than by inspection.
+
+  **`@JsonIgnoreProperties(ignoreUnknown = true)` is gone from all five field records.** An SDK that
+  reports success on a document it did not understand is the same silence one level up. The policy is
+  now stated once in the parser instead of five times on the records, and unknown properties are
+  **reported** as `MDY_DYNAMIC_UNKNOWN_PROPERTY` diagnostics rather than dropped — lenient enough that
+  a document written against a later contract still parses, honest enough that nothing disappears
+  without a word.
+
+  Rust also validates the value: an unrecognised mode is `MDY_DYNAMIC_UNKNOWN_MODE`, and a mode on a
+  kind that has none is `MDY_DYNAMIC_UNEXPECTED_MODE`. A mode nothing describes is worse than none,
+  because the widget contract would check the field against no anatomy at all.
+
+  The five headless adapters are unaffected: they render no markup, so no anatomy depends on the mode
+  there.
+
 ## 0.5.0
 
 ### Minor Changes
