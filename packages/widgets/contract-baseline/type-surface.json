@@ -1,37 +1,37 @@
 {
   "AsyncValidatorEntry": [
-    "debounceMs",
-    "dependsOn",
-    "fns",
-    "timeoutMs",
-    "when"
+    "debounceMs: number",
+    "dependsOn: ReadonlyArray<string>",
+    "fns: ReadonlyArray<MdyAsyncValidatorFn<unknown>>",
+    "timeoutMs: number",
+    "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
   ],
   "CalendarCell": [
-    "date",
-    "inMonth",
-    "iso"
+    "date: CalendarDate",
+    "inMonth: boolean",
+    "iso: string"
   ],
   "CalendarDate": [
-    "day",
-    "month",
-    "year"
+    "day: number",
+    "month: number",
+    "year: number"
   ],
   "FieldRecord": [
-    "asyncErrors",
-    "asyncRunId",
-    "asyncRunner",
-    "asyncValidators",
-    "disabled",
-    "pending",
-    "readonly",
-    "requiredKeys",
-    "state",
-    "validators"
+    "asyncErrors: MdyWritableSignal<ReadonlyArray<MdyFieldError>>",
+    "asyncRunId: number",
+    "asyncRunner: MdyEffectRef | null",
+    "asyncValidators: MdyWritableSignal<ReadonlyMap<string, AsyncValidatorEntry>>",
+    "disabled: MdyWritableSignal<MdySignal<boolean>>",
+    "pending: MdyWritableSignal<boolean>",
+    "readonly: MdyWritableSignal<MdySignal<boolean>>",
+    "requiredKeys: MdyWritableSignal<ReadonlySet<string>>",
+    "state: MdyFieldState<unknown>",
+    "validators: MdyWritableSignal<ReadonlyMap<string, ReadonlyArray<ValidatorFn<unknown>>>>"
   ],
   "Hct": [
-    "c",
-    "h",
-    "t"
+    "c: number",
+    "h: number",
+    "t: number"
   ],
   "MdyAccessibleNameSource": [
     "\"label\"",
@@ -39,135 +39,135 @@
     "\"native\""
   ],
   "MdyAffordance": [
-    "part",
-    "role"
+    "part: string",
+    "role: MdyAffordanceRole"
   ],
   "MdyAffordanceRole": [
     "\"control\"",
     "\"indicator\""
   ],
   "MdyAnchorRect": [
-    "bottom",
-    "left",
-    "right",
-    "top",
-    "width"
+    "bottom: number",
+    "left: number",
+    "right: number",
+    "top: number",
+    "width: number"
   ],
   "MdyAnnouncer": [
-    "announce"
+    "announce: void"
   ],
   "MdyAnyArrayDescriptor": [
-    "initial",
-    "item",
-    "kind",
-    "validators"
+    "initial: ReadonlyArray<unknown>",
+    "item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor",
+    "kind: \"array\"",
+    "validators: ReadonlyArray<ValidatorFn<never>>"
   ],
   "MdyAnyFieldDescriptor": [
-    "asyncDebounceMs",
-    "asyncDependsOn",
-    "asyncTimeoutMs",
-    "asyncValidators",
-    "asyncWhen",
-    "initial",
-    "kind",
-    "sanitize",
-    "validators"
+    "asyncDebounceMs: number",
+    "asyncDependsOn: ReadonlyArray<string>",
+    "asyncTimeoutMs: number",
+    "asyncValidators: ReadonlyArray<MdyAsyncValidatorFn<never>>",
+    "asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null",
+    "initial: unknown",
+    "kind: \"field\"",
+    "sanitize: MdySanitizer | null",
+    "validators: ReadonlyArray<ValidatorFn<never>>"
   ],
   "MdyAnyGroupDescriptor": [
-    "children",
-    "kind"
+    "children: MdyFormSchema",
+    "kind: \"group\""
   ],
   "MdyArrayDescriptor": [
-    "initial",
-    "item",
-    "kind",
-    "validators"
+    "initial: ReadonlyArray<unknown>",
+    "item: TItem",
+    "kind: \"array\"",
+    "validators: ReadonlyArray<ValidatorFn<readonly unknown[]>>"
   ],
   "MdyArrayHandle": [
-    "at",
-    "errors",
-    "insert",
-    "length",
-    "move",
-    "path",
-    "push",
-    "remove",
-    "rows",
-    "setAll",
-    "valid"
+    "at: TItemHandle | null",
+    "errors: MdySignal<ReadonlyArray<MdyFieldError>>",
+    "insert: void",
+    "length: MdySignal<number>",
+    "move: void",
+    "path: string",
+    "push: void",
+    "remove: void",
+    "rows: MdySignal<ReadonlyArray<TItemHandle>>",
+    "setAll: void",
+    "valid: MdySignal<boolean>"
   ],
   "MdyArrayItemValue": [
     "(opaque)"
   ],
   "MdyArrayManagerDeps": [
-    "engine",
-    "item",
-    "path",
-    "rx"
+    "engine: MdyFormEngine",
+    "item: MdyAnyGroupDescriptor | MdyAnyFieldDescriptor",
+    "path: string",
+    "rx: MdyReactivity"
   ],
   "MdyAsyncDraftStorage": [
-    "flushed",
-    "ready"
+    "flushed: Promise<void>",
+    "ready: Promise<void>"
   ],
   "MdyAsyncDraftStorageOptions": [
-    "backend",
-    "keys",
-    "onError?"
+    "backend: MdyAsyncKeyValueStore",
+    "keys: readonly string[]",
+    "onError?: (key: string, error: unknown) => void"
   ],
   "MdyAsyncKeyValueStore": [
-    "getItem",
-    "removeItem",
-    "setItem"
+    "getItem: Promise<string | null>",
+    "removeItem: Promise<void>",
+    "setItem: Promise<void>"
   ],
   "MdyAsyncRunnerHost": [
-    "fieldPath",
-    "fieldState",
-    "formValue"
+    "fieldPath: string",
+    "fieldState: MdyFieldState<unknown> | null",
+    "formValue: Record<string, unknown>"
   ],
   "MdyAsyncValidationContext": [
-    "form",
-    "path",
-    "signal"
+    "form: { /** Whole flat form value (dotted keys). */ value(): Record<string, unknown>; /** Current value of any field by dotted path; undefined if the field doesn't exist yet. */ fieldValue(path: string): unknown; }",
+    "path: string",
+    "signal: AbortSignal"
   ],
   "MdyAsyncValidatorFn": [
     "(opaque)"
   ],
   "MdyAsyncValidatorOptions": [
-    "debounceMs?",
-    "dependsOn?",
-    "timeoutMs?",
-    "when?"
+    "debounceMs?: number",
+    "dependsOn?: ReadonlyArray<string>",
+    "timeoutMs?: number",
+    "when?: (value: unknown, formValue: Record<string, unknown>) => boolean"
   ],
   "MdyBatchingCapability": [
-    "batch"
+    "batch: T"
   ],
   "MdyBooleanFieldA11yOptions": [
-    "variant",
-    "widgetId"
+    "variant: MdyBooleanFieldVariant",
+    "widgetId: string"
   ],
   "MdyBooleanFieldController": [
-    "setChecked",
-    "setReadonly"
+    "setChecked: void",
+    "setReadonly: void"
   ],
   "MdyBooleanFieldControllerOptions": [
-    "handle",
-    "readonly?",
-    "variant?",
-    "widgetId"
+    "handle: MdyFieldHandle<boolean>",
+    "readonly?: boolean",
+    "variant?: MdyBooleanFieldVariant",
+    "widgetId: string"
   ],
   "MdyBooleanFieldIntent": [
     "(opaque)"
   ],
   "MdyBooleanFieldState": [
-    "checked",
-    "dirty",
-    "disabled",
-    "interactivity",
-    "invalid",
-    "pending",
-    "readonly",
-    "required",
-    "touched"
+    "checked: boolean",
+    "dirty: boolean",
+    "disabled: boolean",
+    "interactivity: MdyInteractivity",
+    "invalid: boolean",
+    "pending: boolean",
+    "readonly: boolean",
+    "required: boolean",
+    "touched: boolean"
   ],
   "MdyBooleanFieldVariant": [
     "\"checkbox\"",
@@ -181,24 +181,24 @@
     "\"it\""
   ],
   "MdyCalendarIssue": [
-    "code",
-    "detail"
+    "code: MdyCalendarIssueCode",
+    "detail: string"
   ],
   "MdyCalendarIssueCode": [
     "(opaque)"
   ],
   "MdyCanonicalExpectation": [
-    "focusOwner?",
-    "optional",
-    "overlay",
-    "parts",
-    "relationships",
-    "state?",
-    "value?"
+    "focusOwner?: string | null",
+    "optional: readonly string[]",
+    "overlay: MdyCanonicalOverlay",
+    "parts: readonly string[]",
+    "relationships: readonly MdyCanonicalRelationship[]",
+    "state?: readonly string[]",
+    "value?: unknown"
   ],
   "MdyCanonicalOptions": [
-    "portalRoots?",
-    "value?"
+    "portalRoots?: readonly Element[]",
+    "value?: unknown"
   ],
   "MdyCanonicalOverlay": [
     "\"absent\"",
@@ -206,38 +206,38 @@
     "\"open\""
   ],
   "MdyCanonicalPart": [
-    "count",
-    "element",
-    "part",
-    "role"
+    "count: number",
+    "element: string",
+    "part: string",
+    "role: string | null"
   ],
   "MdyCanonicalRelationship": [
-    "attribute",
-    "from",
-    "to"
+    "attribute: string",
+    "from: string",
+    "to: string | null"
   ],
   "MdyCanonicalSnapshot": [
-    "focusOwner",
-    "kind",
-    "overlay",
-    "parts",
-    "relationships",
-    "state",
-    "value"
+    "focusOwner: string | null",
+    "kind: string",
+    "overlay: MdyCanonicalOverlay",
+    "parts: readonly MdyCanonicalPart[]",
+    "relationships: readonly MdyCanonicalRelationship[]",
+    "state: readonly string[]",
+    "value: unknown"
   ],
   "MdyCatalogWidgetIntent": [
     "(opaque)"
   ],
   "MdyCatalogWidgetState": [
-    "activePart",
-    "disabled",
-    "open"
+    "activePart: string | null",
+    "disabled: boolean",
+    "open: boolean"
   ],
   "MdyChipAppearance": [
-    "mode?",
-    "removable?",
-    "role?",
-    "selected?"
+    "mode?: MdyChipMode",
+    "removable?: boolean",
+    "role?: MdyChipRole",
+    "selected?: boolean"
   ],
   "MdyChipMode": [
     "\"multi\"",
@@ -254,132 +254,132 @@
     "(opaque)"
   ],
   "MdyColorValueTransition": [
-    "close",
-    "touched",
-    "value"
+    "close: boolean",
+    "touched: boolean",
+    "value: string | undefined"
   ],
   "MdyComputedOptions": [
-    "debugName?",
-    "equal?"
+    "debugName?: string",
+    "equal?: MdyEqualityFn<T>"
   ],
   "MdyControlOption": [
-    "disabled?",
-    "label",
-    "value"
+    "disabled?: boolean",
+    "label: string",
+    "value: TValue"
   ],
   "MdyCoreFormOptions": [
-    "autoActivate?",
-    "draft?",
-    "history?",
-    "reactivity?",
-    "security?",
-    "submitMode?",
-    "validators?"
+    "autoActivate?: boolean",
+    "draft?: string | MdyDraftOptions",
+    "history?: boolean | { readonly maxEntries?: number; readonly debounceMs?: number; }",
+    "reactivity?: MdyReactivity",
+    "security?: MdySecurityPolicy",
+    "submitMode?: MdySubmitMode",
+    "validators?: ReadonlyArray<MdyFormValidatorFn<TValue>>"
   ],
   "MdyDateDraftIntent": [
     "(opaque)"
   ],
   "MdyDateDraftState": [
-    "committed",
-    "draft",
-    "open"
+    "committed: string | null",
+    "draft: string | null",
+    "open: boolean"
   ],
   "MdyDateDraftTransition": [
-    "commit",
-    "restoreFocus",
-    "state"
+    "commit: string | null | undefined",
+    "restoreFocus: boolean",
+    "state: MdyDateDraftState"
   ],
   "MdyDateLocale": [
-    "dayNamesNarrow",
-    "dayNamesShort",
-    "firstDayOfWeek",
-    "locale",
-    "monthNamesLong",
-    "monthNamesShort"
+    "dayNamesNarrow: readonly string[]",
+    "dayNamesShort: readonly string[]",
+    "firstDayOfWeek: number",
+    "locale: string",
+    "monthNamesLong: readonly string[]",
+    "monthNamesShort: readonly string[]"
   ],
   "MdyDateRange": [
-    "end",
-    "start"
+    "end: string | null",
+    "start: string | null"
   ],
   "MdyDateRangeDraftIntent": [
     "(opaque)"
   ],
   "MdyDateRangeDraftState": [
-    "committed",
-    "draft",
-    "open"
+    "committed: MdyDateRangeValue",
+    "draft: MdyDateRangeValue",
+    "open: boolean"
   ],
   "MdyDateRangeDraftTransition": [
-    "commit",
-    "restoreFocus",
-    "state"
+    "commit: MdyDateRangeValue | undefined",
+    "restoreFocus: boolean",
+    "state: MdyDateRangeDraftState"
   ],
   "MdyDateRangeValue": [
-    "end",
-    "start"
+    "end: string | null",
+    "start: string | null"
   ],
   "MdyDateValueIntent": [
     "(opaque)"
   ],
   "MdyDatepickerFieldA11yOptions": [
-    "widgetId"
+    "widgetId: string"
   ],
   "MdyDatepickerFieldCell": [
-    "day",
-    "disabled",
-    "focused",
-    "inMonth",
-    "iso",
-    "selected"
+    "day: number",
+    "disabled: boolean",
+    "focused: boolean",
+    "inMonth: boolean",
+    "iso: string",
+    "selected: boolean"
   ],
   "MdyDatepickerFieldController": [
-    "setReadonly",
-    "setValue"
+    "setReadonly: void",
+    "setValue: void"
   ],
   "MdyDatepickerFieldControllerOptions": [
-    "firstDayOfWeek?",
-    "handle",
-    "maxDate?",
-    "minDate?",
-    "readonly?",
-    "widgetId"
+    "firstDayOfWeek?: number",
+    "handle: MdyFieldHandle<string | null>",
+    "maxDate?: string | null",
+    "minDate?: string | null",
+    "readonly?: boolean",
+    "widgetId: string"
   ],
   "MdyDatepickerFieldIntent": [
     "(opaque)"
   ],
   "MdyDatepickerFieldState": [
-    "cells",
-    "dirty",
-    "disabled",
-    "focusedDate",
-    "interactivity",
-    "invalid",
-    "open",
-    "pending",
-    "readonly",
-    "required",
-    "selectedDate",
-    "touched",
-    "viewMonth",
-    "viewYear"
+    "cells: ReadonlyArray<MdyDatepickerFieldCell>",
+    "dirty: boolean",
+    "disabled: boolean",
+    "focusedDate: string",
+    "interactivity: MdyInteractivity",
+    "invalid: boolean",
+    "open: boolean",
+    "pending: boolean",
+    "readonly: boolean",
+    "required: boolean",
+    "selectedDate: string | null",
+    "touched: boolean",
+    "viewMonth: number",
+    "viewYear: number"
   ],
   "MdyDerivedPalette": [
-    "error",
-    "onError",
-    "onPrimary",
-    "onSecondary",
-    "onTertiary",
-    "primary",
-    "secondary",
-    "tertiary"
+    "error: string",
+    "onError: string",
+    "onPrimary: string",
+    "onSecondary: string",
+    "onTertiary: string",
+    "primary: string",
+    "secondary: string",
+    "tertiary: string"
   ],
   "MdyDiagnostic": [
-    "adapter?",
-    "cause?",
-    "code",
-    "feature?",
-    "message",
-    "severity"
+    "adapter?: string | undefined",
+    "cause?: unknown",
+    "code: string",
+    "feature?: string | undefined",
+    "message: string",
+    "severity: MdyDiagnosticSeverity"
   ],
   "MdyDiagnosticSeverity": [
     "\"error\"",
@@ -387,7 +387,7 @@
     "\"warning\""
   ],
   "MdyDiagnostics": [
-    "report"
+    "report: void"
   ],
   "MdyDismissalPhase": [
     "\"cancelled\"",
@@ -397,9 +397,9 @@
     "\"tracking-outside\""
   ],
   "MdyDomContractIssue": [
-    "code",
-    "message",
-    "part"
+    "code: MdyDomContractIssueCode",
+    "message: string",
+    "part: string"
   ],
   "MdyDomContractIssueCode": [
     "\"ABSENT_PART_NOT_OPTIONAL\"",
@@ -428,40 +428,40 @@
     "\"STRUCTURE\""
   ],
   "MdyDomContractOptions": [
-    "absentParts?",
-    "adapterPrefix?",
-    "counts?",
-    "open?",
-    "parts?",
-    "strictClasses?",
-    "variant?"
+    "absentParts?: readonly string[]",
+    "adapterPrefix?: string",
+    "counts?: Readonly<Record<string, number>>",
+    "open?: boolean",
+    "parts?: MdyDomPartMap",
+    "strictClasses?: boolean",
+    "variant?: MdyWidgetVariant"
   ],
   "MdyDomPartMap": [
     "(opaque)"
   ],
   "MdyDraftOptions": [
-    "debounceMs?",
-    "exclude?",
-    "key",
-    "storage?",
-    "ttlMs?",
-    "version?"
+    "debounceMs?: number",
+    "exclude?: readonly string[]",
+    "key: string",
+    "storage?: MdyDraftStorage",
+    "ttlMs?: number",
+    "version?: number"
   ],
   "MdyDraftStorage": [
-    "read",
-    "remove",
-    "write"
+    "read: string | null",
+    "remove: void",
+    "write: void"
   ],
   "MdyDynamicArrayNode": [
-    "initialValue?",
-    "item",
-    "label?",
-    "maxItems?",
-    "minItems?",
-    "node"
+    "initialValue?: ReadonlyArray<unknown>",
+    "item: MdyDynamicFieldNode | MdyDynamicGroupNode",
+    "label?: string",
+    "maxItems?: number",
+    "minItems?: number",
+    "node: \"array\""
   ],
   "MdyDynamicBooleanField": [
-    "kind"
+    "kind: \"checkbox\" | \"toggle\""
   ],
   "MdyDynamicBreakpoint": [
     "\"base\"",
@@ -470,79 +470,79 @@
     "\"sm\""
   ],
   "MdyDynamicCalendarOptions": [
-    "firstDayOfWeek?",
-    "locale?",
-    "maxDate?",
-    "minDate?"
+    "firstDayOfWeek?: number",
+    "locale?: string",
+    "maxDate?: string",
+    "minDate?: string"
   ],
   "MdyDynamicColorsField": [
-    "kind",
-    "presets?"
+    "kind: \"colors\"",
+    "presets?: ReadonlyArray<string>"
   ],
   "MdyDynamicColumns": [
-    "at?",
-    "columns",
-    "id",
-    "kind"
+    "at?: Partial<Readonly<Record<MdyDynamicBreakpoint, number>>>",
+    "columns: ReadonlyArray<ReadonlyArray<MdyDynamicLayoutChild>>",
+    "id: string",
+    "kind: \"columns\""
   ],
   "MdyDynamicDateField": [
-    "kind"
+    "kind: \"datepicker\" | \"timepicker\""
   ],
   "MdyDynamicDaterangeField": [
-    "kind"
+    "kind: \"daterange\""
   ],
   "MdyDynamicDiagnostic": [
-    "code",
-    "message",
-    "path",
-    "severity"
+    "code: string",
+    "message: string",
+    "path: string",
+    "severity: \"warning\" | \"error\""
   ],
   "MdyDynamicField": [
     "(opaque)"
   ],
   "MdyDynamicFieldNode": [
-    "field",
-    "node"
+    "field: Omit<MdyDynamicField, \"name\">",
+    "node: \"field\""
   ],
   "MdyDynamicFileField": [
-    "accept?",
-    "kind",
-    "multiple?"
+    "accept?: string",
+    "kind: \"file\"",
+    "multiple?: boolean"
   ],
   "MdyDynamicFormConfig": [
-    "fields",
-    "version"
+    "fields: ReadonlyArray<MdyDynamicField>",
+    "version: 1"
   ],
   "MdyDynamicFormConfigV2": [
-    "fields?",
-    "id?",
-    "layout?",
-    "rules?",
-    "schema?",
-    "validations?",
-    "version"
+    "fields?: ReadonlyArray<MdyDynamicField>",
+    "id?: string",
+    "layout?: ReadonlyArray<MdyDynamicLayoutNode>",
+    "rules?: ReadonlyArray<MdyDynamicRule>",
+    "schema?: MdyDynamicGroupNode",
+    "validations?: ReadonlyArray<MdyDynamicValidation>",
+    "version: 2"
   ],
   "MdyDynamicFormConfigV3": [
-    "version"
+    "version: 3"
   ],
   "MdyDynamicFormDocument": [
     "(opaque)"
   ],
   "MdyDynamicFormParseResult": [
-    "acceptedCount",
-    "diagnostics",
-    "fields",
-    "layout",
-    "ok",
-    "rejectedCount",
-    "rules",
-    "validations",
-    "version"
+    "acceptedCount: number",
+    "diagnostics: ReadonlyArray<MdyDynamicDiagnostic>",
+    "fields: ReadonlyArray<MdyDynamicField>",
+    "layout: ReadonlyArray<MdyDynamicLayoutNode>",
+    "ok: boolean",
+    "rejectedCount: number",
+    "rules: ReadonlyArray<MdyDynamicRule>",
+    "validations: ReadonlyArray<MdyDynamicValidation>",
+    "version: 1 | 2 | 3 | null"
   ],
   "MdyDynamicGroupNode": [
-    "children",
-    "label?",
-    "node"
+    "children: Readonly<Record<string, MdyDynamicNode>>",
+    "label?: string",
+    "node: \"group\""
   ],
   "MdyDynamicLayoutChild": [
     "(opaque)"
@@ -551,33 +551,33 @@
     "(opaque)"
   ],
   "MdyDynamicLayoutSlot": [
-    "at?",
-    "ref"
+    "at?: Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>>",
+    "ref: string"
   ],
   "MdyDynamicNode": [
     "(opaque)"
   ],
   "MdyDynamicNumberField": [
-    "kind",
-    "max?",
-    "min?",
-    "step?"
+    "kind: \"number\" | \"slider\"",
+    "max?: number",
+    "min?: number",
+    "step?: number"
   ],
   "MdyDynamicOptionsField": [
-    "kind",
-    "loading?",
-    "mode?",
-    "options",
-    "searchable?"
+    "kind: \"select\" | \"radio\" | \"multiselect\" | \"segmented\"",
+    "loading?: boolean",
+    "mode?: MdyMultiselectMode",
+    "options: ReadonlyArray<MdySelectOption<unknown>>",
+    "searchable?: boolean"
   ],
   "MdyDynamicParseMode": [
     "\"lenient\"",
     "\"strict\""
   ],
   "MdyDynamicRule": [
-    "effect",
-    "target",
-    "when"
+    "effect: \"visible\" | \"hidden\" | \"enabled\" | \"disabled\"",
+    "target: string",
+    "when: { readonly field: string; readonly operator: MdyDynamicRuleOperator; readonly value?: unknown; }"
   ],
   "MdyDynamicRuleOperator": [
     "\"equals\"",
@@ -592,56 +592,56 @@
     "\"notIn\""
   ],
   "MdyDynamicSection": [
-    "at?",
-    "children",
-    "id",
-    "kind",
-    "label?"
+    "at?: Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>>",
+    "children: ReadonlyArray<MdyDynamicLayoutChild>",
+    "id: string",
+    "kind: \"section\"",
+    "label?: string"
   ],
   "MdyDynamicSlotPlacement": [
-    "column?",
-    "hidden?"
+    "column?: number",
+    "hidden?: boolean"
   ],
   "MdyDynamicTextField": [
-    "kind"
+    "kind: \"text\" | \"textarea\" | \"email\" | \"password\""
   ],
   "MdyDynamicValidation": [
-    "message",
-    "target?",
-    "when"
+    "message: string",
+    "target?: string",
+    "when: MdyExpression"
   ],
   "MdyDynamicValidators": [
-    "email?",
-    "max?",
-    "maxLength?",
-    "min?",
-    "minLength?",
-    "pattern?",
-    "required?"
+    "email?: boolean",
+    "max?: number",
+    "maxLength?: number",
+    "min?: number",
+    "minLength?: number",
+    "pattern?: string",
+    "required?: boolean"
   ],
   "MdyEffectOptions": [
-    "debugName?",
-    "onError?",
-    "scope?"
+    "debugName?: string",
+    "onError?: (error: unknown) => void",
+    "scope?: MdyReactiveScope"
   ],
   "MdyEffectRef": [
-    "destroy",
-    "destroyed?"
+    "destroy: void",
+    "destroyed?: boolean"
   ],
   "MdyElementLookup": [
     "(opaque)"
   ],
   "MdyElementTarget": [
-    "key?",
-    "part"
+    "key?: string",
+    "part: string"
   ],
   "MdyEqualityFn": [
     "(opaque)"
   ],
   "MdyExpression": [
-    "op",
-    "operand?",
-    "operands?"
+    "op: MdyExpressionOp",
+    "operand?: MdyOperand",
+    "operands?: readonly MdyOperand[]"
   ],
   "MdyExpressionOp": [
     "\"and\"",
@@ -658,54 +658,54 @@
     "\"or\""
   ],
   "MdyFieldA11yOptions": [
-    "autocomplete?",
-    "inputMode?",
-    "inputType?",
-    "widgetId"
+    "autocomplete?: string",
+    "inputMode?: string",
+    "inputType?: string",
+    "widgetId: string"
   ],
   "MdyFieldController": [
-    "setReadonly",
-    "setValue"
+    "setReadonly: void",
+    "setValue: void"
   ],
   "MdyFieldControllerOptions": [
-    "autocomplete?",
-    "handle",
-    "inputMode?",
-    "inputType?",
-    "readonly?",
-    "widgetId"
+    "autocomplete?: string",
+    "handle: MdyFieldHandle<TValue>",
+    "inputMode?: string",
+    "inputType?: string",
+    "readonly?: boolean",
+    "widgetId: string"
   ],
   "MdyFieldDescriptor": [
-    "asyncDebounceMs",
-    "asyncDependsOn",
-    "asyncTimeoutMs",
-    "asyncValidators",
-    "asyncWhen",
-    "initial",
-    "kind",
-    "sanitize",
-    "validators"
+    "asyncDebounceMs: number",
+    "asyncDependsOn: ReadonlyArray<string>",
+    "asyncTimeoutMs: number",
+    "asyncValidators: ReadonlyArray<MdyAsyncValidatorFn<TValue>>",
+    "asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null",
+    "initial: TValue",
+    "kind: \"field\"",
+    "sanitize: MdySanitizer | null",
+    "validators: ReadonlyArray<ValidatorFn<TValue>>"
   ],
   "MdyFieldError": [
-    "kind",
-    "message",
-    "payload?"
+    "kind: string",
+    "message: string",
+    "payload?: unknown"
   ],
   "MdyFieldHandle": [
-    "dirty",
-    "disabled",
-    "errors",
-    "interactivity",
-    "markAsDirty",
-    "markAsTouched",
-    "path",
-    "pending",
-    "readonly",
-    "required",
-    "set",
-    "touched",
-    "valid",
-    "value"
+    "dirty: MdySignal<boolean>",
+    "disabled: MdySignal<boolean>",
+    "errors: MdySignal<ReadonlyArray<MdyFieldError>>",
+    "interactivity: MdySignal<MdyInteractivity>",
+    "markAsDirty: void",
+    "markAsTouched: void",
+    "path: string",
+    "pending: MdySignal<boolean>",
+    "readonly: MdySignal<boolean>",
+    "required: MdySignal<boolean>",
+    "set: void",
+    "touched: MdySignal<boolean>",
+    "valid: MdySignal<boolean>",
+    "value: MdySignal<TValue>"
   ],
   "MdyFieldHandleTree": [
     "(opaque)"
@@ -714,25 +714,25 @@
     "(opaque)"
   ],
   "MdyFieldOptions": [
-    "asyncDebounceMs?",
-    "asyncDependsOn?",
-    "asyncTimeoutMs?",
-    "asyncValidators?",
-    "asyncWhen?",
-    "sanitize?"
+    "asyncDebounceMs?: number",
+    "asyncDependsOn?: ReadonlyArray<string>",
+    "asyncTimeoutMs?: number",
+    "asyncValidators?: ReadonlyArray<MdyAsyncValidatorFn<TValue>>",
+    "asyncWhen?: (value: TValue, formValue: Record<string, unknown>) => boolean",
+    "sanitize?: MdySanitizer"
   ],
   "MdyFieldRef": [
     "(opaque)"
   ],
   "MdyFieldShellA11yOptions": [
-    "controlId?",
-    "descriptionVisible?",
-    "errorsVisible?",
-    "widgetId"
+    "controlId?: string",
+    "descriptionVisible?: boolean",
+    "errorsVisible?: boolean",
+    "widgetId: string"
   ],
   "MdyFieldShellFlags": [
-    "disabled",
-    "required"
+    "disabled: boolean",
+    "required: boolean"
   ],
   "MdyFieldShellPart": [
     "\"control\"",
@@ -748,96 +748,96 @@
     "\"supportingText\""
   ],
   "MdyFieldState": [
-    "dirty",
-    "disabled",
-    "interactivity",
-    "invalid",
-    "pending",
-    "readonly",
-    "required",
-    "touched",
-    "value"
+    "dirty: boolean",
+    "disabled: boolean",
+    "interactivity: MdyInteractivity",
+    "invalid: boolean",
+    "pending: boolean",
+    "readonly: boolean",
+    "required: boolean",
+    "touched: boolean",
+    "value: TValue"
   ],
   "MdyFileCandidate": [
-    "name",
-    "size",
-    "type"
+    "name: string",
+    "size: number",
+    "type: string"
   ],
   "MdyFileSelectionOptions": [
-    "accept?",
-    "maxFileSize?",
-    "maxFiles?",
-    "multiple"
+    "accept?: string",
+    "maxFileSize?: number",
+    "maxFiles?: number",
+    "multiple: boolean"
   ],
   "MdyFileSelectionTransition": [
-    "accepted",
-    "rejected",
-    "touched",
-    "value"
+    "accepted: readonly TFile[]",
+    "rejected: readonly TFile[]",
+    "touched: boolean",
+    "value: TFile | readonly TFile[] | null | undefined"
   ],
   "MdyFlushCapability": [
-    "flush"
+    "flush: void | Promise<void>"
   ],
   "MdyFocusCustodian": [
-    "release",
-    "remember",
-    "restore"
+    "release: void",
+    "remember: void",
+    "restore: HTMLElement | null"
   ],
   "MdyFormAdapter": [
-    "buildSubmitEvent",
-    "errorsFor",
-    "getField",
-    "getValue",
-    "markAllTouched",
-    "patchValue",
-    "reset",
-    "setValue",
-    "state",
-    "submit",
-    "submitValue",
-    "value"
+    "buildSubmitEvent: MdyFormSubmitEvent<T, TSubmit>",
+    "errorsFor: MdySignal<ReadonlyArray<MdyFormError>>",
+    "getField: MdyFieldRef<T[K]> | null",
+    "getValue: T",
+    "markAllTouched: void",
+    "patchValue: void",
+    "reset: void",
+    "setValue: void",
+    "state: MdyFormState",
+    "submit: Promise<void>",
+    "submitValue: TSubmit",
+    "value: MdySignal<T>"
   ],
   "MdyFormEngineOptions": [
-    "autoActivate?",
-    "devWarnings?",
-    "security?"
+    "autoActivate?: boolean",
+    "devWarnings?: boolean",
+    "security?: MdySecurityPolicy"
   ],
   "MdyFormError": [
-    "kind",
-    "message",
-    "path",
-    "payload?"
+    "kind: string",
+    "message: string",
+    "path: string | null",
+    "payload?: unknown"
   ],
   "MdyFormPatch": [
     "(opaque)"
   ],
   "MdyFormRegistry": [
-    "addValidators",
-    "claimField",
-    "removeField",
-    "removeValidators",
-    "setDisabled",
-    "setInitialValue",
-    "setReadonly",
-    "setSanitizer",
-    "upsertAsyncValidators",
-    "upsertValidators"
+    "addValidators: void",
+    "claimField: void",
+    "removeField: void",
+    "removeValidators: void",
+    "setDisabled: void",
+    "setInitialValue: void",
+    "setReadonly: void",
+    "setSanitizer: void",
+    "upsertAsyncValidators: void",
+    "upsertValidators: void"
   ],
   "MdyFormSchema": [
     "(opaque)"
   ],
   "MdyFormState": [
-    "canSubmit",
-    "lastSubmitErrors",
-    "pending",
-    "submitCount",
-    "submitting",
-    "valid"
+    "canSubmit: MdySignal<boolean>",
+    "lastSubmitErrors: MdySignal<ReadonlyArray<MdyFormError>>",
+    "pending: MdySignal<boolean>",
+    "submitCount: MdySignal<number>",
+    "submitting: MdySignal<boolean>",
+    "valid: MdySignal<boolean>"
   ],
   "MdyFormSubmitEvent": [
-    "errors",
-    "valid",
-    "value"
+    "errors: ReadonlyArray<MdyFormError>",
+    "valid: boolean",
+    "value: TSubmit"
   ],
   "MdyFormValidatorFn": [
     "(opaque)"
@@ -846,60 +846,60 @@
     "(opaque)"
   ],
   "MdyGroupDescriptor": [
-    "children",
-    "kind"
+    "children: TChildren",
+    "kind: \"group\""
   ],
   "MdyHctPaletteModel": [
-    "error",
-    "neutral",
-    "neutralVariant",
-    "primary",
-    "secondary",
-    "tertiary",
-    "tones"
+    "error: { readonly hue: number; readonly chroma: number; }",
+    "neutral: { readonly hueShift: number; readonly chroma: number; }",
+    "neutralVariant: { readonly hueShift: number; readonly chroma: number; }",
+    "primary: { readonly hueShift: number; readonly chroma: number; readonly atLeastSource: boolean; }",
+    "secondary: { readonly hueShift: number; readonly chroma: number; }",
+    "tertiary: { readonly hueShift: number; readonly chroma: number; }",
+    "tones: { readonly role: number; readonly on: number; readonly container: number; readonly onContainer: number; }"
   ],
   "MdyI18nMessages": [
-    "colorHexLabel",
-    "colorPresetsHeader",
-    "datepickerCancel",
-    "datepickerChangeView",
-    "datepickerChooseDate",
-    "datepickerConfirm",
-    "datepickerNextMonth",
-    "datepickerPreviousMonth",
-    "datepickerSelectFallback",
-    "datepickerToggleLabel",
-    "daterangeChooseRange",
-    "daterangeEndLabel",
-    "daterangePickEndHint",
-    "daterangePickStartHint",
-    "daterangeSelectFallback",
-    "daterangeStartLabel",
-    "decrease",
-    "fileClearSelection",
-    "fileNoneSelected",
-    "fileSelect",
-    "fileSelectMultiple",
-    "increase",
-    "loading",
-    "noResults",
-    "overlayClosed",
-    "overlayOpened",
-    "searchOptionsLabel",
-    "searchPlaceholder",
-    "selectColorPrefix",
-    "selectCreateOption",
-    "timepickerCancel",
-    "timepickerConfirm",
-    "timepickerHourLabel",
-    "timepickerMinuteLabel",
-    "timepickerOpenLabel",
-    "timepickerSwitchToDial",
-    "timepickerSwitchToInput",
-    "wizardFinish",
-    "wizardNext",
-    "wizardPrevious",
-    "wizardStepStatus"
+    "colorHexLabel: string",
+    "colorPresetsHeader: string",
+    "datepickerCancel: string",
+    "datepickerChangeView: (current: string) => string",
+    "datepickerChooseDate: string",
+    "datepickerConfirm: string",
+    "datepickerNextMonth: string",
+    "datepickerPreviousMonth: string",
+    "datepickerSelectFallback: string",
+    "datepickerToggleLabel: string",
+    "daterangeChooseRange: string",
+    "daterangeEndLabel: string",
+    "daterangePickEndHint: string",
+    "daterangePickStartHint: string",
+    "daterangeSelectFallback: string",
+    "daterangeStartLabel: string",
+    "decrease: string",
+    "fileClearSelection: string",
+    "fileNoneSelected: string",
+    "fileSelect: string",
+    "fileSelectMultiple: string",
+    "increase: string",
+    "loading: string",
+    "noResults: string",
+    "overlayClosed: string",
+    "overlayOpened: string",
+    "searchOptionsLabel: string",
+    "searchPlaceholder: string",
+    "selectColorPrefix: string",
+    "selectCreateOption: (query: string) => string",
+    "timepickerCancel: string",
+    "timepickerConfirm: string",
+    "timepickerHourLabel: string",
+    "timepickerMinuteLabel: string",
+    "timepickerOpenLabel: string",
+    "timepickerSwitchToDial: string",
+    "timepickerSwitchToInput: string",
+    "wizardFinish: string",
+    "wizardNext: string",
+    "wizardPrevious: string",
+    "wizardStepStatus: (current: number, total: number) => string"
   ],
   "MdyIconName": [
     "(opaque)"
@@ -916,10 +916,10 @@
     "(opaque)"
   ],
   "MdyKeyBinding": [
-    "intent",
-    "key",
-    "restoresFocus?",
-    "when?"
+    "intent: \"move\" | \"step\" | \"toggle\" | \"open\" | \"commit\" | \"cancel\"",
+    "key: string",
+    "restoresFocus?: boolean",
+    "when?: MdyOverlayPhase"
   ],
   "MdyLayoutBreakpoint": [
     "(opaque)"
@@ -931,12 +931,12 @@
     "(opaque)"
   ],
   "MdyLayoutSlotPlacement": [
-    "column?",
-    "hidden?"
+    "column?: number",
+    "hidden?: boolean"
   ],
   "MdyLifecycleIssue": [
-    "code",
-    "detail"
+    "code: MdyLifecycleIssueCode",
+    "detail: string"
   ],
   "MdyLifecycleIssueCode": [
     "(opaque)"
@@ -945,52 +945,52 @@
     "(opaque)"
   ],
   "MdyLightDismiss": [
-    "click",
-    "interactionFromInside",
-    "phase",
-    "pointercancel",
-    "pointerdown",
-    "pointerup",
-    "reset"
+    "click: (target: unknown) => void",
+    "interactionFromInside: () => boolean",
+    "phase: () => MdyDismissalPhase",
+    "pointercancel: (pointerId: number) => void",
+    "pointerdown: (target: unknown, origin: MdyPointerOrigin) => void",
+    "pointerup: (target: unknown, pointerId?: number) => void",
+    "reset: () => void"
   ],
   "MdyLightDismissOptions": [
-    "dismiss",
-    "isInside",
-    "isOpen"
+    "dismiss: () => void",
+    "isInside: (target: unknown) => boolean",
+    "isOpen: () => boolean"
   ],
   "MdyMultiselectFieldA11yOptions": [
-    "widgetId"
+    "widgetId: string"
   ],
   "MdyMultiselectFieldController": [
-    "filteredOptions",
-    "setReadonly",
-    "setValue"
+    "filteredOptions: MdySignal<readonly MdySelectOption<TValue>[]>",
+    "setReadonly: void",
+    "setValue: void"
   ],
   "MdyMultiselectFieldControllerOptions": [
-    "handle",
-    "keyFor?",
-    "mode?",
-    "options",
-    "readonly?",
-    "widgetId"
+    "handle: MdyFieldHandle<ReadonlyArray<TValue>>",
+    "keyFor?: (option: MdySelectOption<TValue>) => string",
+    "mode?: MdyMultiselectMode",
+    "options: readonly MdySelectOption<TValue>[]",
+    "readonly?: boolean",
+    "widgetId: string"
   ],
   "MdyMultiselectFieldIntent": [
     "(opaque)"
   ],
   "MdyMultiselectFieldState": [
-    "counts",
-    "dirty",
-    "disabled",
-    "interactivity",
-    "invalid",
-    "open",
-    "pending",
-    "query",
-    "readonly",
-    "required",
-    "selectedKeys",
-    "selectedValues",
-    "touched"
+    "counts: ReadonlyMap<string, number>",
+    "dirty: boolean",
+    "disabled: boolean",
+    "interactivity: MdyInteractivity",
+    "invalid: boolean",
+    "open: boolean",
+    "pending: boolean",
+    "query: string",
+    "readonly: boolean",
+    "required: boolean",
+    "selectedKeys: ReadonlySet<string>",
+    "selectedValues: ReadonlyArray<TValue>",
+    "touched: boolean"
   ],
   "MdyMultiselectMode": [
     "\"multi\"",
@@ -1003,11 +1003,11 @@
     "(opaque)"
   ],
   "MdyObserveCapability": [
-    "observe"
+    "observe: MdyEffectRef"
   ],
   "MdyObserveOptions": [
-    "equal?",
-    "timing?"
+    "equal?: MdyEqualityFn<T>",
+    "timing?: \"sync\" | \"runtime\""
   ],
   "MdyOnCleanup": [
     "(opaque)"
@@ -1016,38 +1016,38 @@
     "(opaque)"
   ],
   "MdyOptionFieldA11yOptions": [
-    "errorsVisible?",
-    "optionCount",
-    "variant",
-    "widgetId"
+    "errorsVisible?: boolean",
+    "optionCount: number",
+    "variant: MdyOptionFieldVariant",
+    "widgetId: string"
   ],
   "MdyOptionFieldController": [
-    "setReadonly",
-    "setValue"
+    "setReadonly: void",
+    "setValue: void"
   ],
   "MdyOptionFieldControllerOptions": [
-    "errorsVisible?",
-    "handle",
-    "keyFor?",
-    "options",
-    "readonly?",
-    "variant?",
-    "widgetId"
+    "errorsVisible?: (state: MdyOptionFieldState<TValue>) => boolean",
+    "handle: MdyFieldHandle<TValue | null>",
+    "keyFor?: (option: MdySelectOption<TValue>) => string",
+    "options: readonly MdySelectOption<TValue>[]",
+    "readonly?: boolean",
+    "variant?: MdyOptionFieldVariant",
+    "widgetId: string"
   ],
   "MdyOptionFieldIntent": [
     "(opaque)"
   ],
   "MdyOptionFieldState": [
-    "dirty",
-    "disabled",
-    "interactivity",
-    "invalid",
-    "pending",
-    "readonly",
-    "required",
-    "selectedKey",
-    "selectedValue",
-    "touched"
+    "dirty: boolean",
+    "disabled: boolean",
+    "interactivity: MdyInteractivity",
+    "invalid: boolean",
+    "pending: boolean",
+    "readonly: boolean",
+    "required: boolean",
+    "selectedKey: string | null",
+    "selectedValue: TValue | null",
+    "touched: boolean"
   ],
   "MdyOptionFieldVariant": [
     "\"radio\"",
@@ -1067,74 +1067,74 @@
     "(opaque)"
   ],
   "MdyOverlayAnchorOptions": [
-    "alignment?",
-    "contentHeight?",
-    "contentWidth?",
-    "current?",
-    "direction?",
-    "gap?",
-    "kind?",
-    "lock?",
-    "matchAnchorWidth?",
-    "minSpace?",
-    "minWidth?",
-    "pointerX?",
-    "preferred?"
+    "alignment?: \"left\" | \"right\"",
+    "contentHeight?: number",
+    "contentWidth?: number",
+    "current?: MdyOverlayDecision | null",
+    "direction?: \"ltr\" | \"rtl\"",
+    "gap?: number",
+    "kind?: MdyPopupWidgetKind",
+    "lock?: { readonly placement: MdyOverlayDecision[\"placement\"]; readonly alignment: MdyOverlayDecision[\"alignment\"]; } | null",
+    "matchAnchorWidth?: boolean",
+    "minSpace?: number",
+    "minWidth?: number",
+    "pointerX?: number",
+    "preferred?: \"above\" | \"below\""
   ],
   "MdyOverlayAnchoring": [
-    "decision",
-    "placement",
-    "properties"
+    "decision: MdyOverlayDecision",
+    "placement: MdyOverlayDecision[\"placement\"]",
+    "properties: Readonly<Record<string, string>>"
   ],
   "MdyOverlayCoords": [
-    "bottom?",
-    "left?",
-    "maxHeight?",
-    "maxWidth?",
-    "placement?",
-    "right?",
-    "top?",
-    "width?"
+    "bottom?: number | undefined",
+    "left?: number | undefined",
+    "maxHeight?: number | undefined",
+    "maxWidth?: number | undefined",
+    "placement?: MdyOverlayPlacement | undefined",
+    "right?: number | undefined",
+    "top?: number | undefined",
+    "width?: number | undefined"
   ],
   "MdyOverlayDecision": [
-    "alignment",
-    "fits",
-    "maxHeight",
-    "placement",
-    "width"
+    "alignment: \"left\" | \"right\"",
+    "fits: boolean",
+    "maxHeight: number",
+    "placement: \"above\" | \"below\" | \"overlay\"",
+    "width: number"
   ],
   "MdyOverlayGeometry": [
-    "anchorBottom",
-    "anchorLeft",
-    "anchorRight",
-    "anchorTop",
-    "anchorWidth",
-    "desiredHeight?",
-    "desiredWidth?",
-    "minSpace",
-    "minWidth",
-    "pointerX?",
-    "preferred",
-    "preferredAlignment?",
-    "viewportHeight",
-    "viewportWidth"
+    "anchorBottom: number",
+    "anchorLeft: number",
+    "anchorRight: number",
+    "anchorTop: number",
+    "anchorWidth: number",
+    "desiredHeight?: number",
+    "desiredWidth?: number",
+    "minSpace: number",
+    "minWidth: number",
+    "pointerX?: number",
+    "preferred: \"above\" | \"below\"",
+    "preferredAlignment?: \"left\" | \"right\"",
+    "viewportHeight: number",
+    "viewportWidth: number"
   ],
   "MdyOverlayLifecycleIntent": [
     "(opaque)"
   ],
   "MdyOverlayLifecycleState": [
-    "open"
+    "open: boolean"
   ],
   "MdyOverlayLifecycleTransition": [
-    "announce",
-    "effect",
-    "restoreFocus",
-    "state"
+    "announce: \"opened\" | \"closed\" | null",
+    "effect: \"none\" | \"setup\" | \"teardown\"",
+    "restoreFocus: boolean",
+    "state: MdyOverlayLifecycleState"
   ],
   "MdyOverlayOpenerA11yOptions": [
-    "controlsRendered?",
-    "open",
-    "widgetId"
+    "controlsRendered?: boolean",
+    "open: boolean",
+    "widgetId: string"
   ],
   "MdyOverlayPhase": [
     "\"closed\"",
@@ -1144,39 +1144,39 @@
     "(opaque)"
   ],
   "MdyOverlayPlacementResult": [
-    "alignment",
-    "coords",
-    "position"
+    "alignment: MdyOverlayAlignment",
+    "coords: MdyOverlayCoords",
+    "position: MdyOverlayPlacement"
   ],
   "MdyOverlayProperty": [
     "(opaque)"
   ],
   "MdyPaletteModel": [
-    "contrastProxy",
-    "error",
-    "onChroma",
-    "secondary",
-    "tertiary"
+    "contrastProxy: { readonly threshold: number; readonly chromaWeight: number; readonly hueOffset: number; }",
+    "error: { readonly h: number; readonly c: number; readonly l: number; }",
+    "onChroma: number",
+    "secondary: MdyPaletteRelation",
+    "tertiary: MdyPaletteRelation"
   ],
   "MdyPaletteModelName": [
     "(opaque)"
   ],
   "MdyPaletteRelation": [
-    "c",
-    "h",
-    "l",
-    "minC?"
+    "c: number",
+    "h: number",
+    "l: number",
+    "minC?: number"
   ],
   "MdyPartContract": [
-    "attributes",
-    "classes",
-    "id?",
-    "role?",
-    "states?",
-    "style?"
+    "attributes: Readonly<Record<string, string | number | boolean | null | undefined>>",
+    "classes: readonly string[]",
+    "id?: string",
+    "role?: string",
+    "states?: readonly MdyStateName[]",
+    "style?: Readonly<Record<string, string>>"
   ],
   "MdyPartLookupOptions": [
-    "portalRoots?"
+    "portalRoots?: readonly ParentNode[]"
   ],
   "MdyPartMap": [
     "(opaque)"
@@ -1185,68 +1185,68 @@
     "(opaque)"
   ],
   "MdyPathRef": [
-    "path"
+    "path: string"
   ],
   "MdyPerceptualPaletteModel": [
-    "dark",
-    "errorHue",
-    "light"
+    "dark: { readonly primary: MdyPerceptualRelation; readonly secondary: MdyPerceptualRelation; readonly tertiary: MdyPerceptualRelation; readonly error: MdyPerceptualRelation; }",
+    "errorHue: number",
+    "light: { readonly primary: MdyPerceptualRelation; readonly secondary: MdyPerceptualRelation; readonly tertiary: MdyPerceptualRelation; readonly error: MdyPerceptualRelation; }"
   ],
   "MdyPerceptualPaletteModelName": [
     "(opaque)"
   ],
   "MdyPerceptualRelation": [
-    "l",
-    "minDeltaE",
-    "salience"
+    "l: number",
+    "minDeltaE: number",
+    "salience: number"
   ],
   "MdyPointerOrigin": [
-    "button",
-    "isPrimary",
-    "pointerId"
+    "button: number",
+    "isPrimary: boolean",
+    "pointerId: number"
   ],
   "MdyPopupOpener": [
-    "controls",
-    "opener",
-    "role?",
-    "typeable?"
+    "controls: string",
+    "opener: string",
+    "role?: string",
+    "typeable?: boolean"
   ],
   "MdyPopupWidgetKind": [
     "(opaque)"
   ],
   "MdyReactiveScope": [
-    "destroy",
-    "destroyed",
-    "id",
-    "onCleanup",
-    "run"
+    "destroy: void",
+    "destroyed: boolean",
+    "id: symbol",
+    "onCleanup: void",
+    "run: T"
   ],
   "MdyReactivity": [
-    "capabilities",
-    "computed",
-    "createScope?",
-    "effect",
-    "id",
-    "kind",
-    "signal",
-    "untracked"
+    "capabilities: MdyReactivityCapabilities",
+    "computed: MdySignal<T>",
+    "createScope?: MdyReactiveScope",
+    "effect: MdyEffectRef",
+    "id: symbol",
+    "kind: string",
+    "signal: MdyWritableSignal<T>",
+    "untracked: T"
   ],
   "MdyReactivityCapabilities": [
-    "batching",
-    "computedEquality",
-    "deterministicFlush",
-    "directObservation",
-    "effectOwnership",
-    "effects",
-    "graphInspection",
-    "serverSnapshots",
-    "signalEquality",
-    "writableComputed"
+    "batching: boolean",
+    "computedEquality: boolean",
+    "deterministicFlush: boolean",
+    "directObservation: boolean",
+    "effectOwnership: boolean",
+    "effects: boolean",
+    "graphInspection: boolean",
+    "serverSnapshots: boolean",
+    "signalEquality: boolean",
+    "writableComputed: boolean"
   ],
   "MdyReactivityTestHarness": [
-    "destroy",
-    "flushIfSupported",
-    "reactivity"
+    "destroy: void",
+    "flushIfSupported: Promise<void>",
+    "reactivity: MdyReactivity"
   ],
   "MdyRelationAttribute": [
     "\"aria-activedescendant\"",
@@ -1256,13 +1256,13 @@
     "\"for\""
   ],
   "MdyResolvedTheme": [
-    "dark",
-    "light",
-    "metrics",
-    "model",
-    "name",
-    "seed",
-    "selector"
+    "dark: Readonly<Record<string, string>>",
+    "light: Readonly<Record<string, string>>",
+    "metrics: { readonly light: Readonly<Record<string, number>>; readonly dark: Readonly<Record<string, number>>; }",
+    "model: MdyPerceptualPaletteModelName",
+    "name: string",
+    "seed: string",
+    "selector: string"
   ],
   "MdySanitizeProfile": [
     "\"off\"",
@@ -1273,23 +1273,23 @@
     "(opaque)"
   ],
   "MdySchemaPaths": [
-    "arrayPaths",
-    "groupPaths",
-    "leafPaths"
+    "arrayPaths: ReadonlySet<string>",
+    "groupPaths: ReadonlySet<string>",
+    "leafPaths: readonly string[]"
   ],
   "MdyScopeOptions": [
-    "debugName?",
-    "parent?"
+    "debugName?: string",
+    "parent?: MdyReactiveScope"
   ],
   "MdySecurityPolicy": [
-    "maxValueLength?",
-    "onViolation?",
-    "sanitize?"
+    "maxValueLength?: number",
+    "onViolation?: (violation: MdySecurityViolation) => void",
+    "sanitize?: MdySanitizer"
   ],
   "MdySecurityViolation": [
-    "detail",
-    "kind",
-    "path"
+    "detail: string",
+    "kind: MdySecurityViolationKind",
+    "path: string"
   ],
   "MdySecurityViolationKind": [
     "\"draft-shape\"",
@@ -1298,47 +1298,47 @@
     "\"sanitized\""
   ],
   "MdySelectA11yOptions": [
-    "activeKey",
-    "descriptionVisible?",
-    "disabled",
-    "errorsVisible?",
-    "idFactory",
-    "invalid",
-    "loading",
-    "open",
-    "popupRendered?",
-    "readonly",
-    "selectedKey",
-    "visibleKeys",
-    "widgetId"
+    "activeKey: string | null",
+    "descriptionVisible?: boolean",
+    "disabled: boolean",
+    "errorsVisible?: boolean",
+    "idFactory: typeof defaultWidgetIdFactory",
+    "invalid: boolean",
+    "loading: boolean",
+    "open: boolean",
+    "popupRendered?: boolean",
+    "readonly: boolean",
+    "selectedKey: string | null",
+    "visibleKeys: readonly string[]",
+    "widgetId: string"
   ],
   "MdySelectA11yProjection": [
-    "listbox",
-    "option",
-    "search",
-    "trigger"
+    "listbox: MdyPartContract",
+    "option: (key: string) => MdyPartContract",
+    "search: MdyPartContract",
+    "trigger: MdyPartContract"
   ],
   "MdySelectController": [
-    "setDescribedBy",
-    "setDisabled",
-    "setInvalid",
-    "setLoading",
-    "setOpen",
-    "setOptions",
-    "setPopupRendered",
-    "setReadonly",
-    "setValue"
+    "setDescribedBy: void",
+    "setDisabled: void",
+    "setInvalid: void",
+    "setLoading: void",
+    "setOpen: void",
+    "setOptions: void",
+    "setPopupRendered: void",
+    "setReadonly: void",
+    "setValue: void"
   ],
   "MdySelectControllerOptions": [
-    "disabled?",
-    "invalid?",
-    "keyFor?",
-    "loading?",
-    "onChange?",
-    "options",
-    "readonly?",
-    "value?",
-    "widgetId"
+    "disabled?: boolean",
+    "invalid?: boolean",
+    "keyFor?: (option: MdySelectOption<TValue>) => string",
+    "loading?: boolean",
+    "onChange?: (value: TValue | null) => void",
+    "options: readonly MdySelectOption<TValue>[]",
+    "readonly?: boolean",
+    "value?: TValue | null",
+    "widgetId: string"
   ],
   "MdySelectIntent": [
     "(opaque)"
@@ -1356,60 +1356,60 @@
     "(opaque)"
   ],
   "MdySelectReconciliationState": [
-    "parkedValue",
-    "value"
+    "parkedValue: TValue | null",
+    "value: TValue | null"
   ],
   "MdySelectState": [
-    "activeKey",
-    "dirty",
-    "disabled",
-    "invalid",
-    "loading",
-    "open",
-    "query",
-    "readonly",
-    "selectedKey",
-    "selectedValue",
-    "touched"
+    "activeKey: string | null",
+    "dirty: boolean",
+    "disabled: boolean",
+    "invalid: boolean",
+    "loading: boolean",
+    "open: boolean",
+    "query: string",
+    "readonly: boolean",
+    "selectedKey: string | null",
+    "selectedValue: TValue | null",
+    "touched: boolean"
   ],
   "MdySelectTransitionFixture": [
-    "expect",
-    "given",
-    "intent",
-    "name"
+    "expect: { readonly open: boolean; readonly selectedKey: string | null; readonly activeKey: string | null; readonly commandTypes: readonly string[]; }",
+    "given: { readonly open: boolean; readonly selectedKey: string | null; readonly activeKey: string | null; readonly query: string; }",
+    "intent: MdySelectIntent",
+    "name: string"
   ],
   "MdyServerValidatorOptions": [
-    "debounceMs?",
-    "dependsOn?",
-    "timeoutMs?",
-    "when?"
+    "debounceMs?: number",
+    "dependsOn?: ReadonlyArray<string>",
+    "timeoutMs?: number",
+    "when?: (value: TValue, formValue: Record<string, unknown>) => boolean"
   ],
   "MdySignal": [],
   "MdySignalOptions": [
-    "debugName?",
-    "equal?"
+    "debugName?: string",
+    "equal?: MdyEqualityFn<T>"
   ],
   "MdySnapshotOptions": [
-    "sensitive?"
+    "sensitive?: (path: string) => boolean | undefined"
   ],
   "MdyStateFixture": [
-    "control?",
-    "dispose",
-    "drive",
-    "parts",
-    "press?",
-    "root",
-    "settle",
-    "value?"
+    "control?: Element | null",
+    "dispose: void",
+    "drive: boolean | Promise<boolean>",
+    "parts: MdyDomPartMap",
+    "press?: boolean",
+    "root: Element",
+    "settle: Promise<void> | void",
+    "value?: unknown"
   ],
   "MdyStateInspectOptions": [
-    "control?",
-    "parts?"
+    "control?: Element | null",
+    "parts?: MdyDomPartMap"
   ],
   "MdyStateIssue": [
-    "code",
-    "message",
-    "state"
+    "code: MdyStateIssueCode",
+    "message: string",
+    "state: MdyWidgetState"
   ],
   "MdyStateIssueCode": [
     "\"STATE_ARIA_MISSING\"",
@@ -1421,31 +1421,31 @@
     "\"STATE_PART_PRESENT\""
   ],
   "MdyStateMatrixOptions": [
-    "kinds",
-    "mount"
+    "kinds: readonly MdyWidgetKind[]",
+    "mount: MdyStateFixture | Promise<MdyStateFixture>"
   ],
   "MdyStateMatrixResult": [
-    "asserted",
-    "expected",
-    "observed",
-    "report",
-    "rows",
-    "undrivable",
-    "unsupportedAria"
+    "asserted: number",
+    "expected: number",
+    "observed: Readonly<Record<string, readonly string[]>>",
+    "report: string",
+    "rows: readonly MdyStateMatrixRow[]",
+    "undrivable: readonly string[]",
+    "unsupportedAria: readonly string[]"
   ],
   "MdyStateMatrixRow": [
-    "codes",
-    "kind",
-    "messages",
-    "state"
+    "codes: readonly string[]",
+    "kind: MdyWidgetKind",
+    "messages: readonly string[]",
+    "state: MdyWidgetState"
   ],
   "MdyStateName": [
     "(opaque)"
   ],
   "MdyStructureContractIssue": [
-    "code",
-    "message",
-    "part"
+    "code: \"DUPLICATE_PART\" | \"DUPLICATE_ORDER\" | \"MISSING_PARENT\" | \"ROOT_HAS_PARENT\"",
+    "message: string",
+    "part: string"
   ],
   "MdySubmitMode": [
     "\"always\"",
@@ -1456,10 +1456,10 @@
     "(opaque)"
   ],
   "MdyThemeDefinition": [
-    "model?",
-    "name",
-    "seed",
-    "selector?"
+    "model?: MdyPerceptualPaletteModelName",
+    "name: string",
+    "seed: string",
+    "selector?: string"
   ],
   "MdyThemeMode": [
     "\"dark\"",
@@ -1472,14 +1472,14 @@
     "(opaque)"
   ],
   "MdyTimeDraftState": [
-    "committed",
-    "draft",
-    "open"
+    "committed: string | null",
+    "draft: string",
+    "open: boolean"
   ],
   "MdyTimeDraftTransition": [
-    "commit",
-    "restoreFocus",
-    "state"
+    "commit: string | null | undefined",
+    "restoreFocus: boolean",
+    "state: MdyTimeDraftState"
   ],
   "MdyTimeEntry": [
     "(opaque)"
@@ -1489,8 +1489,8 @@
     "\"minute\""
   ],
   "MdyTimeFieldBounds": [
-    "max",
-    "min"
+    "max: number",
+    "min: number"
   ],
   "MdyTimeFormat": [
     "'12h'",
@@ -1501,46 +1501,46 @@
     "\"out-of-range\""
   ],
   "MdyTimepickerDialKeyResult": [
-    "field",
-    "value"
+    "field: \"hour\" | \"minute\"",
+    "value: number"
   ],
   "MdyTimepickerDialNumber": [
-    "index",
-    "label",
-    "ring",
-    "value"
+    "index: number",
+    "label: string",
+    "ring: \"outer\" | \"inner\"",
+    "value: number"
   ],
   "MdyTimepickerFieldA11yOptions": [
-    "widgetId"
+    "widgetId: string"
   ],
   "MdyTimepickerFieldController": [
-    "setReadonly",
-    "setValue"
+    "setReadonly: void",
+    "setValue: void"
   ],
   "MdyTimepickerFieldControllerOptions": [
-    "format?",
-    "handle",
-    "readonly?",
-    "widgetId"
+    "format?: MdyTimeFormat",
+    "handle: MdyFieldHandle<string | null>",
+    "readonly?: boolean",
+    "widgetId: string"
   ],
   "MdyTimepickerFieldIntent": [
     "(opaque)"
   ],
   "MdyTimepickerFieldState": [
-    "dirty",
-    "disabled",
-    "draft",
-    "focusedField",
-    "format",
-    "interactivity",
-    "invalid",
-    "open",
-    "pending",
-    "readonly",
-    "required",
-    "touched",
-    "value",
-    "viewMode"
+    "dirty: boolean",
+    "disabled: boolean",
+    "draft: ParsedTime",
+    "focusedField: \"hour\" | \"minute\"",
+    "format: MdyTimeFormat",
+    "interactivity: MdyInteractivity",
+    "invalid: boolean",
+    "open: boolean",
+    "pending: boolean",
+    "readonly: boolean",
+    "required: boolean",
+    "touched: boolean",
+    "value: string | null",
+    "viewMode: MdyTimepickerViewMode"
   ],
   "MdyTimepickerViewMode": [
     "\"dial\"",
@@ -1550,48 +1550,48 @@
     "(opaque)"
   ],
   "MdyTypeahead": [
-    "clear",
-    "push",
-    "query"
+    "clear: () => void",
+    "push: (character: string) => string",
+    "query: () => string"
   ],
   "MdyTypeaheadOptions": [
-    "idleMs?",
-    "now?"
+    "idleMs?: number",
+    "now?: () => number"
   ],
   "MdyTypedFormBaseOptions": [
-    "autoActivate?",
-    "draft?",
-    "history?",
-    "security?",
-    "validators?"
+    "autoActivate?: boolean",
+    "draft?: string | MdyDraftOptions",
+    "history?: boolean | { readonly maxEntries?: number; readonly debounceMs?: number; }",
+    "security?: MdySecurityPolicy",
+    "validators?: ReadonlyArray<MdyFormValidatorFn<TValue>>"
   ],
   "MdyTypedWidgetViewContract": [
-    "parts"
+    "parts: Readonly<Record<TPart, MdyPartContract>>"
   ],
   "MdyUiCommand": [
     "(opaque)"
   ],
   "MdyUnmountObservation": [
-    "document",
-    "elementsBeforeMount",
-    "idsWhileMounted",
-    "pokeAfterDispose?"
+    "document: Document",
+    "elementsBeforeMount: number",
+    "idsWhileMounted: ReadonlySet<string>",
+    "pokeAfterDispose?: () => void"
   ],
   "MdyValueCommit": [
     "\"confirm\"",
     "\"live\""
   ],
   "MdyValueContract": [
-    "commit",
-    "nullable",
-    "shape"
+    "commit: MdyValueCommit",
+    "nullable: boolean",
+    "shape: MdyValueShape"
   ],
   "MdyValueKind": [
     "(opaque)"
   ],
   "MdyValueSecurityResult": [
-    "actions",
-    "value"
+    "actions: ReadonlyArray<{ readonly kind: \"sanitized\" | \"max-length\"; readonly detail: string; }>",
+    "value: unknown"
   ],
   "MdyValueShape": [
     "\"boolean\"",
@@ -1603,73 +1603,73 @@
     "\"string\""
   ],
   "MdyValueWidgetController": [
-    "setDisabled",
-    "setInvalid",
-    "setReadonly",
-    "setValue"
+    "setDisabled: void",
+    "setInvalid: void",
+    "setReadonly: void",
+    "setValue: void"
   ],
   "MdyValueWidgetControllerOptions": [
-    "disabled?",
-    "invalid?",
-    "kind",
-    "onChange?",
-    "readonly?",
-    "value"
+    "disabled?: boolean",
+    "invalid?: boolean",
+    "kind: MdyWidgetKind",
+    "onChange?: (value: T) => void",
+    "readonly?: boolean",
+    "value: T"
   ],
   "MdyValueWidgetIntent": [
     "(opaque)"
   ],
   "MdyValueWidgetState": [
-    "dirty",
-    "disabled",
-    "invalid",
-    "readonly",
-    "touched",
-    "value"
+    "dirty: boolean",
+    "disabled: boolean",
+    "invalid: boolean",
+    "readonly: boolean",
+    "touched: boolean",
+    "value: T"
   ],
   "MdyViewportSize": [
-    "height",
-    "width"
+    "height: number",
+    "width: number"
   ],
   "MdyWiden": [
     "(opaque)"
   ],
   "MdyWidgetCommandContext": [
-    "announce",
-    "capabilities?",
-    "handlers",
-    "lookup",
-    "scheduleFocus",
-    "scheduleScroll"
+    "announce: void",
+    "capabilities?: MdyWidgetRuntimeCapabilities",
+    "handlers: MdyWidgetCommandHandlers",
+    "lookup: MdyElementLookup",
+    "scheduleFocus: void",
+    "scheduleScroll: void"
   ],
   "MdyWidgetCommandExecutor": [
-    "destroy",
-    "execute"
+    "destroy: void",
+    "execute: void | Promise<void>"
   ],
   "MdyWidgetCommandHandlers": [
-    "onChange?",
-    "onDirty?",
-    "onTouched?",
-    "setOpen"
+    "onChange?: void",
+    "onDirty?: void",
+    "onTouched?: void",
+    "setOpen: void"
   ],
   "MdyWidgetController": [
-    "destroy",
-    "dispatch",
-    "state",
-    "view"
+    "destroy: void",
+    "dispatch: readonly MdyUiCommand[]",
+    "state: MdySignal<TState>",
+    "view: MdySignal<MdyWidgetViewContract>"
   ],
   "MdyWidgetDefinition": [
-    "capabilities",
-    "kind",
-    "parts",
-    "presentationClasses",
-    "rootClasses",
-    "structure",
-    "variants"
+    "capabilities: { /** * Whether this kind owns an overlay. * * The only one of these that ever varied. `keyboard` and `focus` were declared beside it and * were `true` on all seventeen kinds — every widget here is operable from the keyboard and can * hold focus, so as *per-kind flags* they said nothing, and a consumer branching on one was * branching on a constant. They are gone rather than left as decoration: a declared capability * that cannot be false is a promise with no content. */ readonly overlay: boolean; /** * A pointer outside the overlay dismisses it. * * Exactly `overlay` on every kind today, and kept because it is the one of the four that can * meaningfully be false: a popup a click elsewhere cannot dismiss is a real design, and this is * where it would be declared. * * It names an **interaction**, not an event. No single event can express the rule: `pointerdown` * fires on press, before the interaction's end is known, and `click` says nothing about a drag * that began *inside* the popup and ended outside — which is what selecting text in a popup is. * * `\"light-dismiss\"` closes only when a primary interaction both begins and completes outside the * logical branch. The rule lives in {@link createLightDismiss}, so a renderer consumes it rather * than restating it. * * The shape stays a union rather than a boolean: a popup an interaction elsewhere cannot dismiss * is a real design, and a second dismissal model would be declared here beside this one. */ readonly dismissOnOutsidePointer: MdyOutsideDismiss; /** * Focus leaving the widget's logical branch closes it. * * Declared separately because it is a **different question** with a different answer, and * conflating the two is how a popup came to close through a path the pointer rule had just * refused. This one is what makes Tab out of an open popup close it. * * Two things it is not. It is never a substitute for an outside interaction: an interaction that * began inside the branch and dragged out moves focus out too, and closing on that would * reinstate the dismissal `dismissOnOutsidePointer` exists to prevent. And it never outranks a * pointer — while an interaction begun inside is unresolved, focus decides nothing. */ readonly dismissOnFocusOutside: boolean; /** * How this widget's popup attaches, for `anchorOverlay`. A list belongs under its control and * as wide as it; a calendar is sized by its own content. Naming it here is what stops three * renderers from each choosing a width for the same widget. */ readonly anchoring?: { readonly matchAnchorWidth: boolean; readonly minSpace: number; readonly minWidth?: number; /** * The edge of the control the popup hangs from. Every widget here puts its trigger — the * arrow, the calendar button, the swatch — at the end of the control, so its popup opens from * that end and stays there: which corner a calendar opens from is a property of the widget, * not of where its field happens to sit on the page or where inside it you clicked. The * viewport can still overrule it when the content would not fit that side. */ readonly alignment?: \"left\" | \"right\"; }; }",
+    "kind: MdyWidgetKind",
+    "parts: Readonly<Record<TPart, MdyPartContract>>",
+    "presentationClasses: readonly string[]",
+    "rootClasses: readonly string[]",
+    "structure: MdyWidgetStructure<TPart | \"root\">",
+    "variants: Readonly<Partial<Record<MdyWidgetVariant, { readonly elements: Readonly<Record<string, MdyWidgetSemanticElement>>; readonly required: readonly string[]; }>>>"
   ],
   "MdyWidgetIdFactory": [
-    "item",
-    "part"
+    "item: string",
+    "part: string"
   ],
   "MdyWidgetKeyIntent": [
     "(opaque)"
@@ -1681,16 +1681,16 @@
     "(opaque)"
   ],
   "MdyWidgetRelation": [
-    "attribute",
-    "from",
-    "to"
+    "attribute: MdyRelationAttribute",
+    "from: string",
+    "to: readonly string[]"
   ],
   "MdyWidgetRuntimeCapabilities": [
-    "dom",
-    "hydrated",
-    "pointerEvents",
-    "popover",
-    "resizeObserver"
+    "dom: boolean",
+    "hydrated: boolean",
+    "pointerEvents: boolean",
+    "popover: boolean",
+    "resizeObserver: boolean"
   ],
   "MdyWidgetSemanticElement": [
     "\"affordance\"",
@@ -1717,52 +1717,52 @@
     "(opaque)"
   ],
   "MdyWidgetStateContract": [
-    "aria?",
-    "behaviour?",
-    "forbidsParts?",
-    "nativeAttribute?",
-    "requiresParts?"
+    "aria?: { readonly attribute: string; readonly value: string; }",
+    "behaviour?: { /** Whether a field in this state is included in what a submit sends. */ readonly submitted: boolean; /** Whether a field in this state is validated. */ readonly validated: boolean; /** Whether the user can still reach the control: focus it, select its text, copy it. */ readonly reachable: boolean; }",
+    "forbidsParts?: readonly string[]",
+    "nativeAttribute?: string",
+    "requiresParts?: readonly string[]"
   ],
   "MdyWidgetStructure": [
-    "kind",
-    "nodes"
+    "kind: string",
+    "nodes: readonly MdyWidgetStructureNode<TPart>[]"
   ],
   "MdyWidgetStructureNode": [
-    "element",
-    "optional?",
-    "order",
-    "parent?",
-    "part",
-    "repeated?"
+    "element: MdyWidgetSemanticElement",
+    "optional?: boolean",
+    "order: number",
+    "parent?: TPart",
+    "part: TPart",
+    "repeated?: boolean"
   ],
   "MdyWidgetTransition": [
-    "from",
-    "restoresFocus?",
-    "to",
-    "trigger"
+    "from: MdyOverlayPhase",
+    "restoresFocus?: boolean",
+    "to: MdyOverlayPhase",
+    "trigger: MdyTransitionTrigger"
   ],
   "MdyWidgetVariant": [
     "(opaque)"
   ],
   "MdyWidgetViewContract": [
-    "parts",
-    "root",
-    "structure?"
+    "parts: Readonly<Record<TPart, MdyPartContract>>",
+    "root: MdyPartContract",
+    "structure?: MdyWidgetStructure<TPart | \"root\">"
   ],
   "MdyWritableSignal": [
-    "asReadonly",
-    "set",
-    "update"
+    "asReadonly: MdySignal<T>",
+    "set: void",
+    "update: void"
   ],
   "Oklch": [
-    "c",
-    "h",
-    "l"
+    "c: number",
+    "h: number",
+    "l: number"
   ],
   "ParsedTime": [
-    "hour",
-    "minute",
-    "period"
+    "hour: number",
+    "minute: number",
+    "period: 'AM' | 'PM'"
   ],
   "ValidatorFn": [
     "(opaque)"
