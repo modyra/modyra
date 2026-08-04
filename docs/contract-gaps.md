@@ -585,6 +585,29 @@ Two things follow, and only the first is recorded elsewhere:
 **Not decided.** Either the contract grows conditional anatomy (a part whose element varies by a
 declared option), or multiselect splits into two kinds, or the mode stops being a runtime option.
 
+
+**Decided** by [ADR 0016](architecture/0016-a-multiselect-is-one-kind-and-the-mode-is-not-the-contracts.md):
+one kind, and the mode stays out of the contract. An `option` must be **operable** — either it is a
+button, or it contains at least one `optionStep` — which both modes satisfy and a clickable `<div>`
+does not. No public surface is added: not a kind, not a config field, not a discriminant.
+
+Three measurements decided it. The mode is absent from `@modyra/core`'s field config entirely, so a
+discriminant would have to *enter* the document format two SDKs carry. Of 25 parts only three are
+mode-specific, so two kinds would duplicate 22 to separate 3. And `mode` is a public property on the
+Lit element and a signal on the Angular component, so "fixed at construction" is unenforceable
+without first adding the concept the ADR declines to add.
+
+**Still open, and it is the half that matters now: nothing enforces it.** Plan 44 builds the checks.
+Until then J2's defect stands exactly as described above.
+
+**One defect the decision already found.** `@modyra/lit`'s steppers are icon-only buttons with no
+accessible name — a chip whose two controls announce nothing. Plain names them "Decrease ⟨label⟩" and
+"Increase ⟨label⟩"; Angular uses its i18n strings.
+
+**The listbox-versus-grid question is deferred explicitly**, not forgotten: whether a multiselect
+should be a listbox with `aria-multiselectable` rather than a grid of chips is a question about what
+the widget *is*, independent of how many modes it has. Plan 42 left the popup contents loose for it.
+
 ## J3 — `timepicker` segments hide their real control one level down — **fixed**
 
 **Observed.** `hour` and `minute` were declared `group`: the containers the header lays out. Each
