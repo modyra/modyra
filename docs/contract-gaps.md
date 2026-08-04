@@ -543,7 +543,7 @@ to remember to apply.
 `optionControl`, a part it did not have. It did not: that is `radio`'s list, and segmented required
 only parts it declared. The plan repeated the claim and it was wrong in both places.
 
-## N — focusing a hidden native radio ends the page on one engine — **open**
+## N — WebKit ends the page when a visually hidden native input is reached — **open**
 
 **Observed.** WebKit, the Angular demo. Calling `focus()` on a visually hidden `<input type="radio">`
 ends the page — from the driver and from inside the page alike, in under a second.
@@ -559,6 +559,19 @@ hiding technique on its own, and what else the demo contributes is unknown.
 The consequence is not theoretical: a keyboard user reaching any radio in that demo on that engine
 loses the page. `e2e/keyboard.spec.ts` skips the row there with this finding named, rather than
 working around it.
+
+**It is wider than radios.** `e2e/demo.spec.ts:185` and `:405` hang on WebKit at
+`locator.click()` of the colours field's toggle — Playwright logs "performing click action" and never
+returns, the 30s signature of a page that stopped answering. The colours field also holds a
+visually hidden native input (`<input type="color" aria-hidden tabindex="-1">`), which is what these
+two widgets have in common and what the working ones do not.
+
+That makes the finding "a hidden native input" rather than "a hidden native radio", and it means the
+demo has two more rows that cannot run on that engine. Both are quarantined naming this finding.
+
+**What is still unknown** is why it needs the demo: a minimal page hiding a radio four different
+ways focuses cleanly every time. Something the demo contributes is part of the cause, and it has not
+been isolated.
 
 ## J2 — `multiselect` anatomy depends on its mode, and the contract cannot say so — **fixed**
 

@@ -68,18 +68,32 @@ jobs:
       - name: Theme class parity
         run: pnpm run test:themes
 
-      # Browser smoke test (Playwright + Chromium): non-blocking while it
-      # stabilizes — flip continue-on-error to false after a few green weeks.
+      # Blocking. It was advisory "while it stabilizes", and the two things keeping it unstable were
+      # both defects rather than noise: a test asserting the opposite of the contract, which passed
+      # whenever its focus precondition silently failed, and three theme swaps waiting a fixed 450ms
+      # instead of the stylesheet's load event — fine alone, not under nine parallel projects.
+      #
+      # What cannot run is quarantined by name in the specs themselves. A permissive suite hides the
+      # difference between a known gap and an unknown one.
       - name: Browser smoke test
         run: |
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium firefox webkit
           pnpm run test:e2e
-        continue-on-error: true
+
+      # What a consumer actually receives: the tarballs, installed into a project that has never seen
+      # this repository, with every declared entry point imported and type-checked. Blocking from the
+      # day it lands — it is green, and a packaging break is invisible everywhere else.
+      - name: Published tarballs
+        run: pnpm run test:tarballs
 
       # DOM weight per field and post-unmount leaks for forms of 100/500/1000 fields. Budgets and
       # their reasoning live in packages/plain/metrics/form-scale-budget.json; only exact figures
-      # are gated, never the jsdom timings the run also prints. Non-blocking until the numbers have
-      # held across a few runs on CI hardware — flip continue-on-error to false then.
+      # are gated, never the jsdom timings the run also prints.
+      #
+      # **Still advisory, and now with a reason rather than a date.** The figures it gates are counts
+      # rather than timings, so hardware is not the variable — what has not been established is
+      # whether they hold on a runner at all, and nothing here has ever observed one. Flipping it
+      # blind would gate merges on a number this repository has never seen produced.
       - name: Form scale budgets
         run: pnpm run test:form-scale
         continue-on-error: true
