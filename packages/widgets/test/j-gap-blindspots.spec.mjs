@@ -119,9 +119,10 @@ test("J3 — the same timepicker with real inputs conforms", () => {
   root.remove();
 });
 
-// ─── J1: segmented admits anything as a choice ───────────────────────────────
+// ─── J1: a choice is a radio, and the contract says which element is one ─────
 
-test("J1 — a segmented option that is a bare clickable <div> is accepted", () => {
+/** A segmented shell whose single choice is whatever `choice` builds. */
+function segmentedWithChoice(choice) {
   // No `for`: a radiogroup has no single labelable control, so the group names the label instead.
   const { root, label, parts, tail } = shell(
     "segmented", "mdy-renderer mdy-renderer--segmented", { labelFor: null },
@@ -131,28 +132,74 @@ test("J1 — a segmented option that is a bare clickable <div> is accepted", () 
     "aria-labelledby": "segmented-label",
     "aria-describedby": "segmented-errors",
   });
-
-  // No role, no native radio, nothing announceable — a choice only a pointer can make.
-  const option = el("div", "mdy-segmented__button");
-  const optionText = el("span", "mdy-segmented__text");
+  const { option, optionControl } = choice();
   const optionCheck = el("span", "mdy-segmented__check");
-  option.append(optionCheck, optionText);
+  const optionText = el("span", "mdy-segmented__text");
+  option.append(...(optionControl ? [optionControl] : []), optionCheck, optionText);
   group.append(option);
   root.append(label, group, ...tail);
 
-  const issues = inspectWidgetDom(root, "segmented", {
-    parts: { ...parts, group, option, optionText, optionCheck },
+  const named = { ...parts, group, option, optionCheck, optionText };
+  if (optionControl) named.optionControl = optionControl;
+  const issues = inspectWidgetDom(root, "segmented", { parts: named });
+  root.remove();
+  return issues;
+}
+
+test("J1 — a segmented option that is a bare clickable <div> is rejected", () => {
+  // No role, no native radio, nothing announceable — a choice only a pointer can make, which is
+  // precisely what this kind used to accept.
+  const issues = segmentedWithChoice(() => ({
+    option: el("div", "mdy-segmented__button"),
+    optionControl: null,
+  }));
+
+  assert.deepEqual(
+    issues.map((issue) => `${issue.code}:${issue.part}`),
+    ["PART_ELEMENT:option", "PART_MISSING:optionControl"],
+    "the container is not a label and there is no radio inside it",
+  );
+});
+
+test("J1 — the native pattern conforms", () => {
+  // A `<label>` around its own `<input type=radio>`: the accessible spelling of a choice, and what
+  // the `radio` kind has always declared. A rule that rejected it would be a rule against the
+  // control rather than about it.
+  const issues = segmentedWithChoice(() => {
+    const control = el("input", "mdy-segmented__control");
+    control.type = "radio";
+    return { option: el("label", "mdy-segmented__button"), optionControl: control };
   });
 
-  // Plan 40 inverts this, under ADR 0012: an option is a radio, satisfied by the native tag or by
-  // `role="radio"` — and by neither here.
-  assert.deepEqual(issues, [], "`option` is declared `presentation`, so nothing constrains it");
+  assert.deepEqual(issues, []);
+});
 
-  // And the reason, read from the contract rather than inferred from the pass.
-  const optionNode = MDY_WIDGET_CONTRACTS.segmented.structure.nodes
-    .find((node) => node.part === "option");
-  assert.equal(optionNode.element, "presentation", "plan 40 makes this `radio`");
-  root.remove();
+test("J1 — a container holding an input that is not a radio is rejected", () => {
+  // The check that keeps `radio` from meaning "any input". Without the type guard every text field
+  // in the catalogue would satisfy it.
+  const issues = segmentedWithChoice(() => {
+    const control = el("input", "mdy-segmented__control");
+    control.type = "text";
+    return { option: el("label", "mdy-segmented__button"), optionControl: control };
+  });
+
+  assert.deepEqual(
+    issues.map((issue) => `${issue.code}:${issue.part}`),
+    ["PART_ELEMENT:optionControl"],
+  );
+});
+
+test("J1 — the contract names both halves of a choice", () => {
+  // Read from the catalogue rather than inferred from a pass: the container and the control are
+  // separate parts, and both are required.
+  const nodes = MDY_WIDGET_CONTRACTS.segmented.structure.nodes;
+  const option = nodes.find((node) => node.part === "option");
+  const control = nodes.find((node) => node.part === "optionControl");
+  assert.equal(option.element, "label");
+  assert.equal(control.element, "radio");
+  assert.equal(control.parent, "option");
+  assert.equal(option.optional, false);
+  assert.equal(control.optional, false);
 });
 
 // ─── J4a: a state satisfies from any part, not the responsible one ───────────

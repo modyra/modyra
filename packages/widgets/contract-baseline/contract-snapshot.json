@@ -1414,7 +1414,7 @@
           "states": []
         },
         "option": {
-          "element": "presentation",
+          "element": "label",
           "parent": "group",
           "optional": false,
           "repeated": true,
@@ -1425,6 +1425,17 @@
           "states": [
             "selected"
           ]
+        },
+        "optionControl": {
+          "element": "radio",
+          "parent": "option",
+          "optional": false,
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-segmented__control"
+          ],
+          "states": []
         },
         "optionCheck": {
           "element": "presentation",

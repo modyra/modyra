@@ -512,7 +512,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
       focusOwner: null,
     }),
     segmented: Object.freeze({
-      parts: Object.freeze(["root", "label", "group", "option", "optionCheck", "optionText"]),
+      parts: Object.freeze(["root", "label", "group", "option", "optionControl", "optionCheck", "optionText"]),
       optional: Object.freeze(["supportingText", "requiredMarker", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "group", attribute: "aria-labelledby", to: "label" },

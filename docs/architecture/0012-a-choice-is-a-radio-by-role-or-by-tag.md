@@ -54,6 +54,26 @@ the group, a roving tabindex means the group is one tab stop, and Space or Enter
 
 - No renderer changes. The contract constrains toward what all three already do, so this classifies
   **minor** and ships without a migration note.
+
+  > **Amended 2026-08-04 — this was wrong, and the decision above survives it.**
+  >
+  > The table in *Context* reads the renderers correctly and this line reads the table wrongly. Plain
+  > emits `<input type="radio">` with a label, but the part the catalogue calls `option` is the
+  > **label**, not the input. Only Lit and Angular put the radio-ness on the option itself.
+  >
+  > So "a choice is a radio" could not be applied to `option` without making Plain non-conformant.
+  > What changed instead is that the anatomy names both halves — `option` is the labelled container,
+  > `optionControl` is the radio inside it — which is what `radio` had always declared and what
+  > [ADR 0014](0014-the-contract-names-the-responsible-element.md) requires generally.
+  >
+  > Lit and Angular moved to the native pattern rather than Plain moving away from it. That is a
+  > **major** change with a migration note, not the minor one this line predicted, and it buys
+  > something the role-based spelling could not: arrow keys, the roving tab stop and form
+  > participation come from the platform, and a theme reaches the selected and disabled states
+  > structurally instead of through a class a renderer must remember to apply.
+  >
+  > The lesson is narrower than the decision: a consequence asserted from a summary of the code is
+  > not evidence, however carefully the summary was written.
 - The contract can now reject a semantically empty implementation of a choice — which is what J1 was.
 - Native radio behaviour is **not** guaranteed. A renderer using `role="radio"` owns arrow-key
   navigation, the roving tabindex and form participation itself, and the contract's keyboard rules

@@ -249,6 +249,7 @@
     "mdy-segmented__button--last",
     "mdy-segmented__button--selected",
     "mdy-segmented__check",
+    "mdy-segmented__control",
     "mdy-segmented__text",
     "mdy-select",
     "mdy-select__arrow",
@@ -979,6 +980,7 @@
         "mdy-segmented__button--last",
         "mdy-segmented__button--selected",
         "mdy-segmented__check",
+        "mdy-segmented__control",
         "mdy-segmented__text",
         "mdy-supporting-text"
       ],

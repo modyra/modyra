@@ -62,22 +62,28 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
             index === last ? "mdy-segmented__button--last" : "",
             selected ? "mdy-segmented__button--selected" : "",
           ].join(" ");
-          return html`<button
-            type="button"
-            class=${classes}
-            role="radio"
-            aria-checked=${optionAttrs?.["aria-checked"] ?? (selected ? "true" : "false")}
-            ?disabled=${handle.disabled() || option.disabled === true}
-            @click=${() => {
-              if (this.fieldController) {
-                this.fieldController.dispatch({ type: "select", optionKey: key });
-              } else {
-                handle.set(option.value);
-                handle.markAsDirty();
-                handle.markAsTouched();
-              }
-            }}
-          >
+          // A label around its own radio, not a button carrying the role. The choice is then a real
+          // radio: it takes the group's arrow keys, its roving tab stop and its form participation
+          // from the platform rather than reimplementing them, and a theme can paint the selected
+          // state from `:checked` instead of a class the renderer has to remember to apply.
+          return html`<label class=${classes}>
+            <input
+              type="radio"
+              class="${this.partClass("optionControl")}"
+              name=${this.fieldId}
+              .checked=${selected}
+              aria-checked=${optionAttrs?.["aria-checked"] ?? (selected ? "true" : "false")}
+              ?disabled=${handle.disabled() || option.disabled === true}
+              @change=${() => {
+                if (this.fieldController) {
+                  this.fieldController.dispatch({ type: "select", optionKey: key });
+                } else {
+                  handle.set(option.value);
+                  handle.markAsDirty();
+                  handle.markAsTouched();
+                }
+              }}
+            />
             <span
               class="${this.partClass("optionCheck")}"
               style="visibility:${selected ? "visible" : "hidden"}"
@@ -86,7 +92,7 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
               ${mdyIcon("CHECKMARK", "")}
             </span>
             <span class="${this.partClass("optionText")}" data-text=${option.label}>${option.label}</span>
-          </button>`;
+          </label>`;
         })}
       </div>
       ${this.renderSupportingText()}

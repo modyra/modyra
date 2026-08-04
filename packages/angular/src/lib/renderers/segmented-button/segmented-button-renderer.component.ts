@@ -44,21 +44,31 @@ import { MdySelectOption } from "../../core/types";
       (keydown)="onKeydown($event)"
     >
       @for (opt of options(); track opt.value; let first = $first; let last = $last; let i = $index) {
-        <button
-          type="button"
+        <!--
+          A label around its own radio, not a button carrying the role. The choice is then a real
+          radio: arrow keys, the roving tab stop and form participation come from the platform
+          rather than being reimplemented, and a theme paints the selected state from the control's
+          own checked state instead of a class the renderer has to remember to apply.
+        -->
+        <label
           class="mdy-segmented__button"
           [class.mdy-segmented__button--first]="first"
           [class.mdy-segmented__button--last]="last"
           [class.mdy-segmented__button--selected]="value() === opt.value"
-          [disabled]="isDisabled()"
-          [attr.data-seg-index]="i"
-          (click)="onSelect(opt.value)"
-          (blur)="markAsTouched()"
-          role="radio"
-          [attr.aria-checked]="value() === opt.value"
-          [attr.aria-disabled]="isDisabled()"
-          [attr.tabindex]="tabIndexFor(i)"
         >
+          <input
+            type="radio"
+            class="mdy-segmented__control"
+            [name]="fieldId"
+            [checked]="value() === opt.value"
+            [disabled]="isDisabled()"
+            [attr.data-seg-index]="i"
+            (change)="onSelect(opt.value)"
+            (blur)="markAsTouched()"
+            [attr.aria-checked]="value() === opt.value"
+            [attr.aria-disabled]="isDisabled()"
+            [attr.tabindex]="tabIndexFor(i)"
+          />
           <mdy-icon
             name="CHECKMARK"
             class="mdy-segmented__check"
@@ -66,7 +76,7 @@ import { MdySelectOption } from "../../core/types";
             [attr.aria-hidden]="value() !== opt.value"
           />
           <span class="mdy-segmented__text" [attr.data-text]="opt.label">{{ opt.label }}</span>
-        </button>
+        </label>
       }
     </div>
 
