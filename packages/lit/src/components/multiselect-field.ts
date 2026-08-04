@@ -1,6 +1,6 @@
 import { mdyPart } from "../mdy-part.js";
 import { overlayControlledId } from "@modyra/widgets";
-import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
+import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
 import { MDY_CHIP_CLASSES, multiselectChipClasses } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
@@ -22,7 +22,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
   };
   declare searchable: boolean;
   declare loading: boolean;
-  declare mode: "single" | "multi";
+  declare mode: MdyMultiselectMode;
   declare filterFn?: (value: unknown) => boolean;
   declare optionTemplate?: unknown;
   declare _query: string;
