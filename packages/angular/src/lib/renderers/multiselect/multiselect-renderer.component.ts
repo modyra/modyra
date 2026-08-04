@@ -13,6 +13,7 @@ import {
   viewChild,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
+import type { MdyMultiselectMode } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
   multiselectOverlayAction,
@@ -241,7 +242,7 @@ export class MdyMultiselectComponent<TValue = string>
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.multiselect;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
-  readonly mode = input<"single" | "multi">("single");
+  readonly mode = input<MdyMultiselectMode>("single");
 
   readonly filterFn = input<((value: TValue) => boolean) | undefined>(undefined);
 

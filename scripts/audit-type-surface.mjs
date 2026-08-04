@@ -93,6 +93,9 @@ function unionMembersOf(type) {
   // A union narrowed to one member stops being a union node. Recording it as a single literal keeps
   // the last step of a narrowing readable as what it is, rather than as the alias going opaque.
   if (ts.isLiteralTypeNode(type)) return [type.literal.getText?.() ?? String(type.literal.text)];
+  // An alias of one named type records what it points at. `(opaque)` would say only that the alias
+  // still exists, and re-pointing it at something else is the change most worth seeing.
+  if (ts.isTypeReferenceNode(type)) return [`-> ${type.typeName.getText?.() ?? "(unnamed)"}`];
   if (!ts.isUnionTypeNode(type)) return ["(opaque)"];
   const members = [];
   for (const member of type.types) {

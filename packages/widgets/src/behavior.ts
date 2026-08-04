@@ -1,4 +1,5 @@
 import { angleToHour, angleToMinute, buildTimeString, parseTime, type MdyTimeFormat } from "@modyra/core/time-utils";
+import type { MdyMultiselectMode } from "@modyra/core";
 import type { MdyUiCommand } from "./commands.js";
 import type { MdyWidgetKind } from "./catalog.js";
 import { isDateInRange, parseIsoDate } from "@modyra/core/date-utils";
@@ -362,7 +363,7 @@ export function multiselectOverlayAction(input: {
 
 /** Single-mode closes only when no unselected result remains after the commit. */
 export function shouldCloseMultiselectOverlay(
-  mode: "single" | "multi",
+  mode: MdyMultiselectMode,
   remainingResultCount: number,
 ): boolean {
   return mode === "single" && remainingResultCount === 0;

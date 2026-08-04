@@ -240,8 +240,7 @@
     "selected?: boolean"
   ],
   "MdyChipMode": [
-    "\"multi\"",
-    "\"single\""
+    "-> MdyMultiselectMode"
   ],
   "MdyChipPart": [
     "(opaque)"
@@ -437,7 +436,7 @@
     "variant?: MdyWidgetVariant"
   ],
   "MdyDomPartMap": [
-    "(opaque)"
+    "-> Readonly"
   ],
   "MdyDraftOptions": [
     "debounceMs?: number",
@@ -824,7 +823,7 @@
     "upsertValidators: void"
   ],
   "MdyFormSchema": [
-    "(opaque)"
+    "-> Readonly"
   ],
   "MdyFormState": [
     "canSubmit: MdySignal<boolean>",
@@ -925,7 +924,7 @@
     "(opaque)"
   ],
   "MdyLayoutColumnCounts": [
-    "(opaque)"
+    "-> Partial"
   ],
   "MdyLayoutPart": [
     "(opaque)"
@@ -1179,10 +1178,10 @@
     "portalRoots?: readonly ParentNode[]"
   ],
   "MdyPartMap": [
-    "(opaque)"
+    "-> Readonly"
   ],
   "MdyPartState": [
-    "(opaque)"
+    "-> Partial"
   ],
   "MdyPathRef": [
     "path: string"
@@ -1353,7 +1352,7 @@
     "\"previous\""
   ],
   "MdySelectOption": [
-    "(opaque)"
+    "-> MdyControlOption"
   ],
   "MdySelectReconciliationState": [
     "parkedValue: TValue | null",
@@ -1742,7 +1741,7 @@
     "trigger: MdyTransitionTrigger"
   ],
   "MdyWidgetVariant": [
-    "(opaque)"
+    "-> MdyMultiselectMode"
   ],
   "MdyWidgetViewContract": [
     "parts: Readonly<Record<TPart, MdyPartContract>>",

@@ -12,6 +12,8 @@
  * from the widget's mode and the option's state, and every renderer applies the answer.
  */
 
+import type { MdyMultiselectMode } from "@modyra/core";
+
 import { stateClass } from "./state.js";
 
 /** Canonical class vocabulary for the chip primitive. */
@@ -40,8 +42,14 @@ export const MDY_CHIP_CLASSES = Object.freeze({
 
 export type MdyChipPart = keyof typeof MDY_CHIP_CLASSES;
 
-/** How a multiselect treats its options: taken or not, or taken a number of times. */
-export type MdyChipMode = "single" | "multi";
+/**
+ * How a multiselect treats its options: taken or not, or taken a number of times.
+ *
+ * The mode is a field of the Dynamic Form Contract, so the name that owns it lives in `@modyra/core`
+ * and everything else refers to it. A chip's appearance follows the value a document carries; a
+ * second declaration of the same two strings is a place for the two to disagree.
+ */
+export type MdyChipMode = MdyMultiselectMode;
 
 /** Where a chip appears: offered among the options, or standing for a value already taken. */
 export type MdyChipRole = "option" | "value";
