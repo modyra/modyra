@@ -928,9 +928,19 @@ The removal that exposed this was still unclassified when it was made, and shipp
 instruction rather than on a differ's verdict. That ordering is the finding, not a footnote — the
 guard exists now because something got through, which is the third time in this entry.
 
-**What is still open, and it is the original half:** member *types*. The snapshot records that
-`MdyFormError.payload` exists and is optional, not that it is `unknown` — so a widening or narrowing
-is invisible. And a projection returns attribute maps whose values depend on state, which is why it
+**The original half — member *types* — is now recorded.** The snapshot used to say that
+`MdyFormError.payload` exists and is optional, not that it is `unknown`, so a widening or narrowing
+passed as `patch`. Each member is now `name?: type`, and optionality and type are reported as
+separate facts because a member that both became required and changed type is two losses. Falsified
+rather than assumed: widening `MdyDynamicOptionsField.searchable` from `boolean` to
+`boolean | "auto"` reports it as `major`, naming both spellings.
+
+**What that check cannot do, stated so it is not assumed away:** it compares the *written* text of a
+type, not a resolved one. Renaming an alias without changing its meaning reports as a change, and two
+spellings of one type are two entries. Resolving them needs a type checker over the emitted
+declarations — which would make the audit depend on the resolution behaviour it exists to observe
+from outside. The false positives are cheap and visible; the false negatives that alternative would
+buy are neither.
 
 **Not decided.** A projection returns attribute maps whose values depend on state, so the snapshot
 cannot be the returned object; it would have to be the shape — which parts exist, and which attribute

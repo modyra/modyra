@@ -58,7 +58,19 @@ const ENTRIES = PACKAGE_DIRS.flatMap((dir) => {
   return declarationFiles(full).map((file) => relative(ROOT, file));
 });
 
-/** Every member a consumer can read off a type, with whether they may omit it. */
+/**
+ * Every member a consumer can read off a type: its name, whether they may omit it, and the type it
+ * is declared with.
+ *
+ * The type is recorded as its written text with whitespace collapsed, not as a resolved type. That
+ * is a deliberate limit and it cuts both ways: renaming an alias without changing what it means
+ * reports as a change, and two spellings of one type are two entries. The alternative is a full type
+ * checker over the emitted declarations, which resolves both — and would make this audit depend on
+ * the resolution behaviour it exists to observe from outside.
+ *
+ * A member with no annotation records `(inferred)`. Recording nothing there would make a member that
+ * loses its annotation look unchanged.
+ */
 function membersOf(node) {
   const members = [];
   for (const member of node.members ?? []) {
@@ -66,7 +78,8 @@ function membersOf(node) {
       ? member.name.text
       : member.name?.getText?.();
     if (!name) continue;
-    members.push(`${name}${member.questionToken ? "?" : ""}`);
+    const type = member.type?.getText?.().replace(/\s+/g, " ").trim() ?? "(inferred)";
+    members.push(`${name}${member.questionToken ? "?" : ""}: ${type}`);
   }
   return members.sort();
 }
@@ -87,6 +100,28 @@ function unionMembersOf(type) {
     members.push(member.literal.getText?.() ?? String(member.literal.text));
   }
   return members.sort();
+}
+
+/**
+ * A recorded entry back into name, optionality and declared type.
+ *
+ * Entries come in two shapes, because two kinds of thing are recorded: `name?: type` for a member of
+ * an interface or type literal, and a bare literal such as `"single"` for a member of a union. The
+ * second has no declared type of its own, which is what `null` means here — not "unknown".
+ */
+function parseMembers(entries) {
+  const parsed = new Map();
+  for (const entry of entries) {
+    const split = entry.indexOf(": ");
+    if (split === -1) {
+      parsed.set(entry, { optional: false, type: null });
+      continue;
+    }
+    const head = entry.slice(0, split);
+    const optional = head.endsWith("?");
+    parsed.set(optional ? head.slice(0, -1) : head, { optional, type: entry.slice(split + 2) });
+  }
+  return parsed;
 }
 
 const surface = {};
@@ -139,21 +174,29 @@ for (const name of Object.keys(baseline)) {
     changes.push(["major", `${name} is no longer exported`]);
     continue;
   }
-  const was = new Set(baseline[name]);
-  const now = new Set(current[name]);
-  for (const member of baseline[name]) {
-    if (now.has(member)) continue;
-    // An optional member that became required, and a member that disappeared, are different losses.
-    const base = member.replace(/\?$/, "");
-    if (now.has(base)) changes.push(["major", `${name}.${base} is now required`]);
-    else if (now.has(`${base}?`)) changes.push(["minor", `${name}.${base} is now optional`]);
-    else changes.push(["major", `${name}.${base} was removed`]);
+  const was = parseMembers(baseline[name]);
+  const now = parseMembers(current[name]);
+
+  for (const [member, before] of was) {
+    const after = now.get(member);
+    if (!after) {
+      changes.push(["major", `${name}.${member} was removed`]);
+      continue;
+    }
+    // Optionality and type are separate losses and are reported separately: a member that both
+    // became required and changed type is two facts, and collapsing them hides one.
+    if (before.optional && !after.optional) changes.push(["major", `${name}.${member} is now required`]);
+    if (!before.optional && after.optional) changes.push(["minor", `${name}.${member} is now optional`]);
+    if (before.type !== after.type) {
+      changes.push(["major", `${name}.${member} is now \`${after.type}\`, was \`${before.type}\``]);
+    }
   }
-  for (const member of current[name]) {
+  for (const [member, after] of now) {
     if (was.has(member)) continue;
-    const base = member.replace(/\?$/, "");
-    if (was.has(base) || was.has(`${base}?`)) continue;
-    changes.push([member.endsWith("?") ? "minor" : "major", `${name}.${base} was added${member.endsWith("?") ? " (optional)" : " (required)"}`]);
+    changes.push([
+      after.optional ? "minor" : "major",
+      `${name}.${member} was added${after.optional ? " (optional)" : " (required)"}`,
+    ]);
   }
 }
 for (const name of Object.keys(current)) {
