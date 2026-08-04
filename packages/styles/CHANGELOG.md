@@ -1,5 +1,295 @@
 # @modyra/styles
 
+## 0.6.0
+
+### Minor Changes
+
+- ebc9014: `--mdy-comp-field-*`: a field's tokens stop being Material's.
+
+  The foundation described what a field looks like in Material's vocabulary — `container-height`,
+  `active-indicator-color` and thirteen more, all spelled `--mdy-comp-filled-text-field-*`. _Filled_ is
+  one of Material's two field variants, so a theme that is not Material still had to say "filled text
+  field" to change a border radius. `@modyra/styles/foundation.css` is a published entry point, which
+  made that vocabulary part of the contract a consumer theme reads.
+
+  Fifteen neutral tokens now carry the same values, and the foundation reads those instead. The Modern
+  theme, which had to override three Material-named tokens to restyle its fields, now names none.
+
+  **The old names keep working and are deprecated.** Each neutral token reads its Material predecessor
+  first and falls back to the same value:
+
+  ```css
+  --mdy-comp-field-container-height: var(
+    --mdy-comp-filled-text-field-container-height,
+    56px
+  );
+  ```
+
+  so a theme that still sets the old name is picked up, and a theme that sets the new one overrides the
+  declaration outright. Neither spelling is lost while both exist. The aliases are removed no earlier
+  than the next minor, and not in this change.
+
+  Nothing renders differently: every declared value is unchanged, and the only difference in what the
+  foundation reads is those eight names. `--mdy-comp-filled-text-field-*` is still declared, so a
+  consumer setting it sees the same result as before.
+
+  This closes the last place the foundation encoded a _variant_ of one design system. Other component
+  families still carry Material's component names — `--mdy-comp-switch-*`, `--mdy-comp-filter-chip-*`
+  and others — but those name a widget rather than a Material variant of one, which is a different
+  question and a different batch.
+
+- ba9d206: The segmented control's checkmark settles instead of overshooting, and the motion vocabulary drops
+  to three curves.
+
+  `--mdy-sys-motion-easing-spring` is **removed**. Its curve —
+  `cubic-bezier(0.175, 0.885, 0.32, 1.275)` — carried the check past full size and back on every
+  selection. A 250ms confirmation reads better arriving and settling than bouncing, and the token had
+  exactly two consumers, both the same `mdy-segmented-check-pop` animation.
+
+  Both now use `--mdy-sys-motion-easing-decelerate`, which already existed for precisely this —
+  "entering the screen, quick to arrive, slow to settle". No new curve was minted: the vocabulary is
+  smaller, not merely different.
+
+  **If you override `--mdy-sys-motion-easing-spring`**, that override no longer applies. Nothing else
+  read it, so there is no other effect. Override `--mdy-sys-motion-easing-decelerate` to change how the
+  check arrives.
+
+### Patch Changes
+
+- 5db335c: A segmented choice is a radio, and the contract names it.
+
+  `segmented` declared `elements: { option: "presentation" }`, so nothing constrained what a choice
+  is: a `<div>` with a click handler conformed, and a screen reader user got a page of unlabelled text
+  where a chooser should be. That was finding **J1**.
+
+  The anatomy now names both halves, exactly as `radio` always has — `option` is the labelled
+  container, `optionControl` is the radio inside it, and both are required:
+
+  ```ts
+  elements: { option: "label", optionControl: "radio" }
+  ```
+
+  `radio` is a new semantic element, satisfied by `<input type="radio">` or by an explicit
+  `role="radio"`. An `<input>` of any other type does not satisfy it.
+
+  **`@modyra/lit` and `@modyra/angular` change markup.** A segmented option was a
+  `<button role="radio">`; it is now a `<label>` around its own `<input type="radio">`, the pattern
+  `@modyra/plain` already used. Arrow keys, the roving tab stop and form participation come from the
+  platform instead of being reimplemented, and a theme reaches the selected and disabled states from
+  the control rather than from a class the renderer has to remember to apply.
+
+  **Migration:** an adapter emitting a button-with-a-role now reports `PART_ELEMENT: option` and
+  `PART_MISSING: optionControl`. Styling that assumed a `<button>` needs the same follow-through the
+  shipped themes got — `:disabled` on the segment never matches, because the segment is a label and
+  the state belongs to the control inside it.
+
+  [ADR 0012](https://github.com/modyra/modyra/blob/main/docs/architecture/0012-a-choice-is-a-radio-by-role-or-by-tag.md)
+  decided the rule and predicted no renderer would change. It is amended in place: that prediction read
+  a summary of the code rather than the code, and Plain's `option` was never the radio.
+
+  **Pre-1.0 versioning.** `@modyra/plain`, `@modyra/lit` and `@modyra/angular` are on 0.x and make no stability promise yet, so a breaking change to them is a minor bump — that is what 0.x means. The change below is breaking; the version number is not claiming otherwise.
+
+- ed2b5c1: A field's inner padding follows the writing direction.
+
+  `.mdy-input-wrapper__inliner` set `padding: 0 0.25rem 0 0.75rem` — more room where the text starts
+  than where the affixes sit, which is right, written physically, which is not. Under `dir="rtl"` the
+  8px difference stayed on the left, so everything at the field's inline end — the colour picker's
+  toggle, and anything else living there — sat 8px inside where it belonged.
+
+  Measured rather than eyeballed: the RTL fixture put the colour toggle 189px from the inline start in
+  LTR and 181px in RTL. **All sixteen measured families now mirror**, and the fixture's ledger is empty.
+
+  The floating-label variant's `padding-left` is logical for the same reason.
+
+- b020a7b: The multiselect popover shows its contents in Safari.
+
+  `.mdy-multiselect-overlay__grid` sized itself with `max-height: 100%`. Its parent states a
+  `max-height` and no `height`, so the parent's height is **indefinite**, and a percentage against an
+  indefinite containing block is undefined territory: one engine resolves it to `none`, another to
+  zero. On Safari the grid collapsed and the panel showed the search box with nothing under it —
+  exactly as if the panel had no minimum height.
+
+  Expressed as flex instead: `flex: 1 1 auto` takes the space the search box does not, and
+  `min-height: 0` is what lets it actually scroll — a flex item's default `min-height: auto` refuses
+  to shrink below its content, so an `overflow-y: auto` item grows past the max-height it was given
+  rather than scrolling inside it.
+
+  A side effect worth naming: an _empty_ popover now hugs its content instead of stretching to the
+  height the placement policy allowed it. That is the same rule doing its job, not a second change.
+
+  Reported from real Safari. Playwright's WebKit does not reproduce it — it resolves the percentage
+  the way Chromium does — so nothing in the browser suite would have caught this, on any of the three
+  engines it now runs.
+
+- f107368: The readable text colour degrades instead of failing.
+
+  `--mdy-sys-color-on-*` derives black-or-white from the background with a `clamp()` step, inside a
+  feature query for relative colour syntax. The step needs more than that: it needs `pow()` and `cos()`
+  **inside a colour channel**, which is a narrower capability. An engine with one and not the other
+  parsed the declarations, failed them and dropped them — and what caught them was a fixed
+  `color-mix(primary, white 95%)`, which is 95% white whatever the background is. Measured at 1.10:1
+  on a light primary: white text on a light background.
+
+  Three tiers now, each guarded by what it actually uses:
+
+  | tier                   | needs                               | worst pair measured |
+  | ---------------------- | ----------------------------------- | ------------------- |
+  | chroma-corrected pivot | `pow()`/`cos()` in a colour channel | 4.35:1              |
+  | lightness pivot        | relative colour syntax              | 4.09:1              |
+  | fixed mix              | nothing                             | unchanged           |
+
+  The middle tier is new and is what stops the fall. It takes the same `clamp()` step over a plain
+  lightness pivot — the cube root of the luminance crossover, exact for a grey — and every engine with
+  relative colour computes it identically. It picks the worse of black and white 38 times in 1080
+  against the corrected form's 16, which costs a fraction of a ratio point rather than legibility.
+
+  `e2e/palette.spec.ts` now holds each tier to its own measured floor, chosen by `CSS.supports` rather
+  than by browser name, so an engine that gains the maths is held to the better floor the day it ships.
+
+  **This is a repair, not a solution.** No tier reaches AA's 4.5:1, because a stylesheet cannot measure
+  what it is approximating: it has the colour in OKLCH and the ratio wants sRGB luminance. The exact
+  computation exists — `onColorFor` in `@modyra/core/color-utils` measures both candidates and keeps
+  the better — and the themes do not use it. Recorded as finding **M** in `docs/contract-gaps.md`.
+
+- b067cdc: A visual change is a diff.
+
+  Geometry was measured everywhere — heights, insets, angles, icon sizes all had assertions — and
+  nothing answered _did this change something it should not have_. That question went to a person every
+  time a stylesheet was edited.
+
+  Screenshot baselines now answer it: two renderers × three engines × four themes, a full page and six
+  widgets each, 168 images committed. A failure names the widget and the theme.
+
+  **The tolerance is zero pixels**, and that is measured rather than strict for its own sake. With
+  animations disabled and the clock pinned, repeated runs are pixel-identical — so zero costs nothing
+  in flake and gives the most discrimination available.
+
+  It had to be. At a 0.2% tolerance the first version of this suite **passed with every icon 2px
+  larger**: it looked like coverage and was not. The mutation was verified to reach the browser before
+  that result was believed, which is the only reason it was caught rather than shipped.
+
+- 57a0daf: A prefix and a suffix pad along the writing direction.
+
+  The same defect as `.mdy-input-wrapper__inliner`, one level out and missed by the sweep that fixed
+  it. `.mdy-input-prefix` and `.mdy-input-suffix` set `padding-left: 0.75rem; padding-right: 0.25rem`
+  and its mirror — roomy on the outer edge, tight against the input, which is right, written
+  physically, which is not. Under `dir="rtl"` the 8px stayed where it was, so the suffix sat 8px inside
+  where it belonged in all four packaged themes.
+
+  The two sibling rules that tighten the input beside an affix are logical now for a subtler reason:
+  DOM order does not change under `dir="rtl"`, so `.mdy-input-prefix+input` still matches — and a
+  physical `padding-left` there tightened the side the _suffix_ had moved to.
+
+  Measured, not eyeballed. `e2e/rtl.spec.ts` read the suffix at 222px from the inline start in LTR and
+  214px in RTL; all sixteen families now mirror on Chromium, Firefox and WebKit.
+
+  This had been red since before the engines were added, on Chromium too. `npm test` does not run
+  Playwright, so nothing routine was saying so — recorded as finding **L** in `docs/contract-gaps.md`.
+
+- 643ac13: An icon has a size wherever it is drawn.
+
+  Two rules were scoped to `.mdy-renderer`, and a portalled popup is not a descendant of one — it
+  renders at the document root. So nothing sized what was inside a popup, and an `<svg>` carrying only
+  a `viewBox` has no intrinsic size: the size a replaced element takes without one is not specified.
+  `.mdy-popup` and `.mdy-overlay-panel` are now named beside `.mdy-renderer`.
+
+  The second half is the same shape one level down. A button inherits neither its font family nor its
+  font size, and a user-agent default is not part of any specification — so every control that sizes
+  something from its own font was unspecified until the size was stated. Eight of the nine controls in
+  this sheet that reset the family already reset the size; the reset is now stated once for all of
+  them, at zero specificity so it loses to any button that names a size deliberately.
+
+  Measured across the demo, every icon on the page: sizes were unequal between rendering engines
+  before, and identical after.
+
+- 75d2553: Text on a filled surface is light while light is readable.
+
+  An `on-` colour was whichever of black and white had the higher WCAG 2 contrast ratio. That ratio's
+  luminance formula weights blue at a fourteenth of green, so it rates dark text on a saturated colour
+  far above what a reader experiences — and it put black text on a saturated blue in every theme.
+
+  Measured, and consistent rather than marginal:
+
+  | background | ratio, white | ratio, black | ratio picks | perceptual metric picks |
+  | ---------- | ------------ | ------------ | ----------- | ----------------------- |
+  | `#3B82F6`  | 3.68:1       | 5.71:1       | black       | white                   |
+  | `#7067FF`  | 4.14:1       | 5.07:1       | black       | white                   |
+
+  Across 112 pairs of a derived palette the two disagree on 37, always in that direction.
+
+  **The rule is now: light while light clears a floor, the higher ratio below that.** The floor is
+  `MDY_ON_COLOR_FLOOR`, newly exported from `@modyra/core/color-utils` — the one addition to the public
+  surface. Following the perceptual metric without a bound was rejected on measurement: it puts 36 of
+  those 112 pairs under AA, the worst at 2.96:1.
+
+  `onColorFor` had the same defect. It is exact rather than estimated, and it returned black for
+  `#3B82F6` too, because it was maximising the same ratio — so precomputing a palette would not have
+  avoided this.
+
+  **The floor is below AA for normal text, deliberately**, and above the 3:1 that AA asks of large text
+  and UI components. [ADR 0015](https://github.com/modyra/modyra/blob/main/docs/architecture/0015-light-text-while-it-is-readable.md)
+  states the cost and what to do about it under a strict audit.
+
+  **Migration:** a host that sets its own `on-` colours sees no change. One deriving them sees light
+  text where it saw dark on saturated mid tones — including `--mdy-sys-color-on-primary`, which the
+  datepicker's selected day and every filled control read.
+
+- 34c5fd6: The Material theme declares its own secondary and tertiary, from Material's own arithmetic.
+
+  Zinc's chroma measures 0.0059. Modyra's OKLCH palette _scales_ the seed's chroma, and scaling almost
+  nothing leaves almost nothing: the derived secondary came out `#1b191c`, and the container a selected
+  chip paints from measured **1.00:1 against `surface-container-highest`** — one value apart in one
+  channel, so the selected state was invisible on that surface. Segmented buttons paint from the same
+  token.
+
+  Material 3 _assigns_ chroma rather than scaling it — secondary is chroma 16 whatever the seed — which
+  is why an M3 palette looks like an M3 palette however neutral its source. A Material theme should
+  take Material's answer, so these are `deriveHctPalette("#18181b")` from `@modyra/core/color-utils`:
+  Google's own algorithm, already in this repo, rather than a colour someone picked. A test asserts
+  they still equal what that function returns, so they cannot drift from the algorithm they cite.
+
+  This is the escape hatch working as designed — the same one this theme already used to force its own
+  red — not a change to the derivation, which is unchanged for every other theme.
+
+  **What it does not fix**: the chip goes from 1.00:1 to 1.15:1 and gains an identifiable tint, but
+  neither value meets WCAG 1.4.11's 3:1 for non-text contrast. The container tone is an 80% white mix
+  whatever the seed, so that is a question about container tones rather than about the accent, and it
+  is left open rather than quietly folded in here.
+
+- c783668: Material's colour toggle pulls along the flow, not to the right.
+
+  `margin-right: -0.75rem` pulls the toggle back over the field's inline-end padding so it sits flush
+  with the edge. Written physically it kept pulling leftwards under `dir="rtl"`, where that toggle is
+  on the left — opening a gap at one end and overhanging the other.
+
+  Found by measuring, not by reading: the RTL fixture now runs every family against **all four
+  packaged themes**, and this was the one case where the default theme mirrored and a theme did not.
+  "Geometry is theme-independent" was an assumption, and it was wrong exactly once.
+
+- c7c6adf: A field says it is unusable in one vocabulary, and the audit can read both halves.
+
+  `MDY_FIELD_STATE_CLASSES` names `mdy-input-wrapper--disabled`, which is true of ten kinds and false
+  of seven: `checkbox`, `toggle`, `slider`, `radio`, `segmented`, `multiselect` and `file` have their
+  own wrapper class, so the themes reach those states **structurally** instead —
+  `.mdy-checkbox__control:disabled + .mdy-checkbox__indicator`, `.mdy-slider:disabled`. Both mechanisms
+  are legitimate. Only the first was checkable, so for seven of seventeen kinds half the expression of
+  "this field is unusable" sat outside everything this repository audits.
+
+  `MDY_STATE_EXPRESSION` declares which mechanism each kind uses, and the style audit checks the
+  declared one. Giving those seven wrappers state classes instead would have been wrong twice over: it
+  mints seven classes no theme paints, and it contradicts `statesFor`'s rule that a part redeclaring
+  its class does not inherit the shell's states — narrowed one batch earlier, and verified here to
+  still throw.
+
+  **It found a defect on the first honest run.** `file` reaches its states by neither mechanism: twelve
+  declared classes and **no theme rule anywhere** touching `:disabled` or `aria-invalid`. A disabled
+  file field looked exactly like a usable one, and an invalid one exactly like a valid one, in all four
+  themes. The dropzone now dims when its input is disabled and takes the error border when it is
+  invalid — reached structurally, the way its six siblings already are.
+
+  The declaration states what a kind is **expected** to do, not what the themes were found doing. That
+  distinction is the reason the gap surfaced instead of being written down as intended.
+
 ## 0.5.0
 
 ### Minor Changes

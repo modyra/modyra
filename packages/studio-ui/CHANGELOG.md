@@ -1,5 +1,45 @@
 # @modyra/studio-ui
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [ff37d78]
+- Updated dependencies [5db335c]
+- Updated dependencies [ed2b5c1]
+- Updated dependencies [e8b586a]
+- Updated dependencies [ebc9014]
+- Updated dependencies [b020a7b]
+- Updated dependencies [a3c4580]
+- Updated dependencies [f107368]
+- Updated dependencies [35d6094]
+- Updated dependencies [b067cdc]
+- Updated dependencies [57a0daf]
+- Updated dependencies [643ac13]
+- Updated dependencies [ca0eebc]
+- Updated dependencies [2ac6b1e]
+- Updated dependencies [31cbcdb]
+- Updated dependencies [75d2553]
+- Updated dependencies [34c5fd6]
+- Updated dependencies [c783668]
+- Updated dependencies [ba9d206]
+- Updated dependencies [5dbdf1a]
+- Updated dependencies [b10a5b1]
+- Updated dependencies [c7c6adf]
+- Updated dependencies [b558322]
+- Updated dependencies [bc91571]
+- Updated dependencies [e4aa213]
+- Updated dependencies [342f396]
+- Updated dependencies [84ae084]
+- Updated dependencies [3367ced]
+- Updated dependencies [bfeb371]
+- Updated dependencies [bdde472]
+  - @modyra/plain@0.6.0
+  - @modyra/styles@0.6.0
+  - @modyra/studio-contract@0.5.1
+  - @modyra/studio-preview@0.5.1
+  - @modyra/studio-target-json@0.5.1
+
 ## 0.5.0
 
 ### Minor Changes

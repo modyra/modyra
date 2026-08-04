@@ -1,5 +1,25 @@
 # @modyra/studio-app
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [5db335c]
+- Updated dependencies [ed2b5c1]
+- Updated dependencies [ebc9014]
+- Updated dependencies [b020a7b]
+- Updated dependencies [f107368]
+- Updated dependencies [b067cdc]
+- Updated dependencies [57a0daf]
+- Updated dependencies [643ac13]
+- Updated dependencies [75d2553]
+- Updated dependencies [34c5fd6]
+- Updated dependencies [c783668]
+- Updated dependencies [ba9d206]
+- Updated dependencies [c7c6adf]
+  - @modyra/styles@0.6.0
+  - @modyra/studio-ui@0.5.1
+
 ## 0.5.0
 
 ### Patch Changes

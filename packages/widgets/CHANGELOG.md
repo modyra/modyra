@@ -1,5 +1,1259 @@
 # @modyra/widgets
 
+## 1.0.0
+
+### Major Changes
+
+- 04d150e: `capabilities.keyboard` and `capabilities.focus` are withdrawn, and the report that survives means something.
+
+  Both were `true` on all seventeen kinds. As per-kind flags they said nothing — a consumer branching
+  on one was branching on a constant — and `dismissOnOutsidePointer` was exactly `overlay` beside them.
+  A declared capability that cannot be false is a promise with no content, and leaving it as decoration
+  invites someone to write the branch. Nothing in this repository read either one.
+
+  `overlay` and `dismissOnOutsidePointer` stay. The second is kept deliberately even though it never
+  varies: a popup a click elsewhere cannot dismiss is a real design, and this is where it would be
+  declared. What it still does not say is **which event** delivers the dismissal, and that gap is
+  measured rather than theoretical — the renderers disagree, and a drag beginning outside an open popup
+  fires one binding and not the other.
+
+  **Two defects in the tool that classifies these changes, found by making one.**
+
+  `contract-diff` compared capabilities by iterating the _current_ ones, so a capability that had been
+  removed was never visited — the one change `docs/contract-compatibility.md` calls major was the one
+  change the gate could not see. It now compares the union of both sides. And the keyboard comparison
+  recorded `Object.keys` of an array, so it held the _indices_ `"0"`, `"1"`, `"2"`: it could tell that a
+  kind's key count had changed and never which key, and declaring `Tab` was reported as
+  `key declared: 8`. It now records each binding as `key@phase:intent`.
+
+  The snapshot format changes with it, which is why every kind reports its keyboard afresh once.
+
+- 5db335c: A segmented choice is a radio, and the contract names it.
+
+  `segmented` declared `elements: { option: "presentation" }`, so nothing constrained what a choice
+  is: a `<div>` with a click handler conformed, and a screen reader user got a page of unlabelled text
+  where a chooser should be. That was finding **J1**.
+
+  The anatomy now names both halves, exactly as `radio` always has — `option` is the labelled
+  container, `optionControl` is the radio inside it, and both are required:
+
+  ```ts
+  elements: { option: "label", optionControl: "radio" }
+  ```
+
+  `radio` is a new semantic element, satisfied by `<input type="radio">` or by an explicit
+  `role="radio"`. An `<input>` of any other type does not satisfy it.
+
+  **`@modyra/lit` and `@modyra/angular` change markup.** A segmented option was a
+  `<button role="radio">`; it is now a `<label>` around its own `<input type="radio">`, the pattern
+  `@modyra/plain` already used. Arrow keys, the roving tab stop and form participation come from the
+  platform instead of being reimplemented, and a theme reaches the selected and disabled states from
+  the control rather than from a class the renderer has to remember to apply.
+
+  **Migration:** an adapter emitting a button-with-a-role now reports `PART_ELEMENT: option` and
+  `PART_MISSING: optionControl`. Styling that assumed a `<button>` needs the same follow-through the
+  shipped themes got — `:disabled` on the segment never matches, because the segment is a label and
+  the state belongs to the control inside it.
+
+  [ADR 0012](https://github.com/modyra/modyra/blob/main/docs/architecture/0012-a-choice-is-a-radio-by-role-or-by-tag.md)
+  decided the rule and predicted no renderer would change. It is amended in place: that prediction read
+  a summary of the code rather than the code, and Plain's `option` was never the radio.
+
+  **Pre-1.0 versioning.** `@modyra/plain`, `@modyra/lit` and `@modyra/angular` are on 0.x and make no stability promise yet, so a breaking change to them is a minor bump — that is what 0.x means. The change below is breaking; the version number is not claiming otherwise.
+
+- c1584ad: A popup must frame something.
+
+  Four of the six overlay kinds declared no required part inside their popup, so an open widget could
+  render a positioning box with nothing in it and conform. `aria-expanded="true"` beside an empty popup
+  was a coherent-looking, broken widget.
+
+  No new declaration was added for this. `required` already said "this part must be there" and
+  `overlayOnlyParts` already scoped it to an open widget — the mechanism `datepicker` used for its
+  calendar — so four names joined four existing lists:
+
+  | kind          | now requires |
+  | ------------- | ------------ |
+  | `select`      | `listbox`    |
+  | `multiselect` | `listbox`    |
+  | `timepicker`  | `container`  |
+  | `colors`      | `presets`    |
+
+  Each was measured in both rendering adapters first: every one is drawn by Plain and by Lit today, so
+  no renderer needs new markup. `multiselect.listbox` is required to be **present**, not to be a
+  listbox — what role a chip grid should carry is the mode question ADR 0016 settles.
+
+  **Migration:** an adapter whose open popup omits its kind's part above now reports `PART_MISSING`.
+  The fix is to render it, which is what the popup is for.
+
+  **The conformance CLI gained a second anatomy pass.** It inspected every widget at rest only, and a
+  part required inside a popup is skipped at rest — so all four requirements would have been enforced
+  against nothing. `modyra-conformance` now drives each overlay kind open and inspects it there, six
+  kinds per adapter. An adapter passing the previous version can fail this one for a defect that was
+  always there.
+
+  `timepicker.dialog` stays optional and is now recorded as a defect: no adapter draws the element the
+  contract describes. Plain applies the part to the popup itself, Lit puts `role="dialog"` on
+  `container`. Where that role belongs is a separate question, open in `docs/contract-gaps.md`.
+
+  The decision behind this is [ADR 0014](https://github.com/modyra/modyra/blob/main/docs/architecture/0014-the-contract-names-the-responsible-element.md): the contract names the element responsible for something, not the region containing it.
+
+- 35d6094: A timepicker segment names the control inside it.
+
+  `hour` and `minute` are the containers the header lays out. Each holds the `<input type="number">` a
+  user types into, and that input was not a declared part — so no anatomy, relation, state or
+  equivalence check reached it. A segment holding a bare `<div>` conformed.
+
+  `hourControl` and `minuteControl` are now optional parts with the `input` semantic, parented to their
+  segment and carrying `mdy-timepicker-segment-input`. The catalogue change alone is **minor**: they
+  describe elements every renderer already drew.
+
+  **The breaking half is `projectTimepickerFieldA11y`.** Its `hour` and `minute` parts carried
+  `role="spinbutton"`, `aria-label` and `aria-valuenow` — control semantics on a container — and a
+  renderer applying them to its input ended up with two elements claiming to be `hour`. The projection
+  now returns four parts where it returned two:
+
+  | part                           | apply to                | carries                                                                       |
+  | ------------------------------ | ----------------------- | ----------------------------------------------------------------------------- |
+  | `hour`, `minute`               | the segment container   | its classes and the `focused` state                                           |
+  | `hourControl`, `minuteControl` | the `<input>` inside it | the id, the control class, `role="spinbutton"`, `aria-label`, `aria-valuenow` |
+
+  **Migration:** a renderer that applied `parts.hour` to its hour input should apply
+  `parts.hourControl` there instead, and `parts.hour` to the segment around it. Same for the minute.
+  Applying only the old two leaves the input with no role and no accessible value, and TypeScript will
+  not report it — the attributes moved rather than disappearing.
+
+  Two resolver defects surfaced with it. `inspectWidgetDom`'s fallback lookup matched parts on classes
+  alone, so two parts sharing a selector each resolved to both elements — `daterange`'s `startControl`
+  and `endControl` had the same hole. Both resolvers now read one rule, declared order among the parts
+  that share a selector.
+
+  The decision behind this is [ADR 0014](https://github.com/modyra/modyra/blob/main/docs/architecture/0014-the-contract-names-the-responsible-element.md): the contract names the element responsible for something, not the region containing it.
+
+- Modyra 1.0.
+
+  **What 1.0 covers is two packages, and that is the whole of it.** `@modyra/core` — the form engine and
+  the Dynamic Form Contract, zero dependencies — and `@modyra/widgets`, the widget contract, which
+  depends only on core. The perimeter is checked rather than claimed:
+  `scripts/audit-package-independence.mjs` passes, core declares no dependencies at all, and widgets
+  declares exactly one.
+
+  Studio, the Rust and Java SDKs, the five headless adapters and the three rendering adapters ship
+  independently and stay on 0.x. The renderers reach 1.0 after the contract does, not with it — a
+  version number over all of it would be a promise about the parts least ready to make one.
+
+  **What you are promised** is in `docs/contract-compatibility.md`: nothing is removed or changed
+  breakingly outside a major, a deprecation keeps working until the next major and never less than one
+  minor, and both halves of a deprecation — `since` and a replacement — are enforced by a check.
+
+  **What holds it up.** Every claim here has a check that has been watched to fail:
+
+  - the widget catalogue is snapshotted and every change classified;
+  - **205 exported shapes** are snapshotted too, so a type change is classified rather than invisible;
+  - what the tarballs actually contain is installed into a clean consumer, imported, type-checked and
+    run — all 26 entry points, with a baseline so a withdrawn one is a diff;
+  - two renderers are conformance-checked against the contract, in every configured variant;
+  - the browser suites run on three engines and block, with screenshot baselines per renderer, engine
+    and theme.
+
+  **Known and open**, because a 1.0 that hides its defects is worth less than one that names them:
+  WebKit ends the page when a visually hidden native input is reached, which affects the radio and
+  colours widgets there. It is recorded as finding **N** in `docs/contract-gaps.md`, and the rows that
+  cannot run are quarantined by name rather than by making a suite permissive.
+
+- 5dbdf1a: The dismissal names its event, and it is `click`.
+
+  `dismissOnOutsidePointer` said an overlay is dismissed by a pointer outside it and never said
+  **which event**. Three adapters each picked one: `@modyra/plain` and `@modyra/lit` bound
+  `pointerdown`, `@modyra/angular` bound `click`. The choice is observable — `pointerdown` fires on
+  press, `click` only on a completed press-and-release over the same target — so a drag beginning
+  outside an open popup dismissed on two renderers and not on the third.
+
+  ```ts
+  dismissOnOutsidePointer: false | { event: "pointerdown" | "click" };
+  ```
+
+  **`click`**, decided by the owner: a drag that begins outside is not necessarily a dismissal, and a
+  user may press, think better of it, and return. `@modyra/plain` and `@modyra/lit` now read the event
+  from the capability instead of naming one, so it cannot become a per-renderer choice again.
+
+  **Major**, not the minor this was planned as. The shape is additive in what it can express, but
+  `boolean` became a union: `caps.dismissOnOutsidePointer === true` no longer holds and no longer
+  type-checks. The previous capability change in this release was withdrawn as major for the same
+  reason, and being inconsistent about it would make the classification a matter of who wrote the
+  changeset.
+
+  **What this does not fix, and the tests now say so.** Naming the pointer event was necessary and is
+  not sufficient. `@modyra/plain`'s select also closes on `focusout` when focus leaves the widget, so a
+  drag that presses outside still dismisses it — through a second path the contract does not name.
+  `e2e/plain/dismiss.spec.ts` asserts the declared path in isolation (a completed click) and records
+  the focus path as it behaves, rather than asserting the contract as it now reads.
+
+- bc91571: Light dismiss: an overlay closes on an outside _interaction_, not an outside event.
+
+  `capabilities.dismissOnOutsidePointer` changes from `{ event: "pointerdown" | "click" }` to
+  `false | "light-dismiss"`. A consumer reading `.event` no longer compiles.
+
+  An interaction has an origin and a completion, and both decide:
+
+  > An overlay closes when a primary interaction that **began** outside its logical branch is
+  > **completed** outside that branch. An interaction that began inside never dismisses, however far
+  > outside it ends.
+
+  That asymmetry is the point. Selecting text in a popup and releasing past its edge is a drag from
+  inside, and the browser fires the resulting `click` on a common ancestor — so any rule reading only
+  the completion target closes a popup the user was working in.
+
+  Completion is `click`, not `pointerup`: a drag ending on a different element than it began on
+  produces no `click` at all, which is exactly the gesture a touch user makes to scroll the page
+  behind an open popup.
+
+  Also normative, and newly enforced:
+
+  - only a primary pointer on the primary button dismisses — a right-click opens a context menu, it
+    does not close the popup underneath it;
+  - `pointercancel` never dismisses, and only cancels the interaction it belongs to;
+  - a `click` with no observed pointer interaction — a keyboard activation, a programmatic `.click()` —
+    does not satisfy a capability that names a pointer;
+  - "inside" is the **logical branch**: invoker, popup, descendants and portalled content;
+  - an interaction is abandoned on `blur`, on the document being hidden, and on unmount.
+
+  The rule lives once in `@modyra/widgets` as `createLightDismiss`, with an explicit state machine. All
+  three rendering adapters call it, so a renderer can no longer decide when a pointer dismisses.
+  `Escape` is unchanged.
+
+  Recorded as [ADR 0013](../docs/architecture/0013-the-dismissal-names-its-gesture.md), which
+  supersedes ADR 0011.
+
+  Also fixed here: `contract-diff` classified this as `minor`. It treated withdrawal as a capability
+  disappearing or becoming `false`, and did not see a capability that keeps its name and stops
+  answering a question it used to — whether by losing a key or by ceasing to be an object at all.
+
+  **Pre-1.0 versioning.** `@modyra/plain`, `@modyra/lit` and `@modyra/angular` are on 0.x and make no stability promise yet, so a breaking change to them is a minor bump — that is what 0.x means. The change below is breaking; the version number is not claiming otherwise.
+
+### Minor Changes
+
+- e3f27b3: `npx modyra-conformance` — the conformance kit runs outside this repository.
+
+  The suites that check Modyra's own renderers were reachable only by cloning it. They are now a `bin`
+  on this package, so an implementer can check a renderer against the contract without reading four
+  test files to work out how.
+
+  ```bash
+  npx modyra-conformance ./my-adapter.config.mjs
+  ```
+
+  A config exports `{ name, kinds, mount }` — optionally `absentParts` and `mountScoped` — and owns its
+  own environment, because a renderer needs a DOM and only its author knows how theirs is set up.
+
+  Reported: DOM anatomy and relations, the state matrix, renderer equivalence at rest, lifecycle, and
+  multi-instance isolation. **Keyboard behaviour and the accessibility audit are reported as not run**,
+  with the reason, rather than omitted — neither is answerable outside a real browser, and an
+  implementer has to know what was not covered.
+
+  Nothing new is checked: every suite already existed and both of this repository's Node-drivable
+  renderers report CONFORMANT through it. What changes is who can run them.
+
+- 9ec6b65: `@modyra/widgets/testing` states what a form owes when it unmounts.
+
+  `MDY_LIFECYCLE_TRANSITIONS` names the nine transitions a form goes through; `inspectUnmount` and
+  `inspectCoexistence` judge the conditions that only a teardown can violate — DOM left in the
+  document, ids that still resolve, an effect that still runs after disposal, and ids shared by two
+  live instances. The document is checked whole rather than under the host, so an overlay that was
+  portalled out counts.
+
+  Listeners and timers are not observable — no DOM implementation exposes a listener registry — so
+  `REACTIVE_EFFECT_SURVIVED_UNMOUNT` observes the consequence a stray subscription would have instead
+  of its registration. The substitution is stated rather than implied.
+
+  The conditions are meant to run over a loop: a renderer that leaks one node per mount is clean on a
+  single teardown and ruins a page that lives for an hour.
+
+- 2d2398b: A radio group describes itself by an element that exists.
+
+  `projectOptionFieldA11y` chose its `aria-describedby` target from `errors.length` — whether errors
+  _exist_ — rather than from whether the error list was _rendered_. A renderer that defers its list
+  until the field is touched has errors long before it shows them, so a required, untouched radio
+  group pointed at an error list that was not in the document.
+
+  The field shell already solved this: `projectFieldShellA11y` takes an `errorsVisible` flag and its
+  comment says why — _"deriving this from `errors.length` would make `aria-describedby` name an
+  element that is not in the document."_ The option projection never got the same treatment.
+
+  `MdyOptionFieldA11yOptions.errorsVisible` now answers it, defaulting to "there are errors" so no
+  existing caller changes. Because this projection sits **behind** the controller — unlike the shell's,
+  which renderers call directly — `createOptionFieldController` takes
+  `errorsVisible?: (state) => boolean` and passes it through; a renderer cannot answer for itself
+  otherwise.
+
+  `@modyra/lit`'s radio and segmented elements now declare what their templates actually do
+  (`touched && invalid`). Measured before and after on the state fixture: `aria-describedby` went from
+  naming a missing `…__errors` to naming the supporting text that is really there.
+
+  Found by `scripts/conformance-cli.mjs`, which crosses the state fixture's mounting with the DOM
+  contract's checking — a combination no existing suite makes. Lit's own DOM suite mounts without
+  validators, so the required-and-untouched state it needs was never reached.
+
+- 4de3620: A shell part that restates the shell's own class keeps the shell's states.
+
+  A widget that gives a part a class of its own has made it a different part, and it does not inherit
+  the shell's states: a multiselect's `inputWrapper` is `mdy-multiselect`, the grid of chips, and
+  handing it `mdy-input-wrapper`'s states would mint `mdy-multiselect--disabled` — a class no theme
+  styles and no renderer emits. That rule is right and stays.
+
+  The test for it was wrong. It asked whether a kind _named_ a class, not whether the class _differed_,
+  so a kind that restated the shell's own spelling was treated as having replaced it. `checkbox`
+  declares `label: ["mdy-label"]` because its label sits inside the wrapper rather than above it — the
+  same class, the same element a floating label rises on — and lost `filled` and `hasError` for saying
+  so. `partClasses("checkbox", "label", { filled: true })` threw, while the identical call on `text`
+  returned `mdy-label mdy-label--filled`.
+
+  Three parts get their states back: `checkbox.label` (`filled`, `hasError`), `checkbox.requiredMarker`
+  and `toggle.requiredMarker` (`filled`). The parts that really are their widget's own —
+  `checkbox.inputWrapper`, `toggle.inputWrapper`, `toggle.label`, `multiselect.inputWrapper` — still
+  carry no shell states, and a call reaching for one still throws.
+
+- b0d9252: A popup can say which edge it hangs from, and a range calendar can say where it is.
+
+  Every popup declares `right` alongside `above` and `overlay`, and nothing derived it. So the adapters
+  each spelled an edge class themselves — `mdy-overlay-panel--right`, a name no stylesheet has ever
+  matched, on a wrapper that is `display: contents` and lays nothing out. That is the same failure
+  `popupPlacementClass` was written to end for `--above`, surviving in the one case it did not cover.
+  New `popupAlignmentClass(kind, alignment)` answers it, `left` being the ordinary case that carries no
+  class exactly as `below` does.
+
+  **`popupPlacementClass` was wrong for the range picker, and had been all along.** It looked for the
+  first class shaped like a modifier of the popup's base, and a popup may already carry one: the range
+  picker's resting classes are `["mdy-datepicker__popup", "mdy-popup", "mdy-datepicker__popup--range"]`.
+  So every placement it was ever asked about returned `--range` — a variant marker that says nothing
+  about where the popup is — and `mdy-datepicker__popup--above` was emitted by nothing. Both functions
+  now return the class the state _added_, which is the question that was meant to be asked.
+
+  The select gains the `--above` rule its anatomy has always wanted. Its popup is `search`, then
+  `listbox`, exactly like the multiselect's, and the multiselect has flipped its column when opening
+  upwards for as long as the class has existed — so the search box stays beside the control the user is
+  typing in rather than across the whole list. The select declared the state and no rule answered it.
+
+- a3c4580: A tap outside dismisses on Safari.
+
+  The light-dismiss gesture completed on `click`, deliberately — a drag ending elsewhere produces no
+  click, which is the gesture a touch user makes to scroll the page behind an open popup, so the
+  browser's own judgement of an activation filtered it out.
+
+  One engine does not supply that judgement. WebKit synthesises no mouse events and no `click` for a
+  tap on an element it does not consider clickable, and a page's own background is not one:
+
+  | engine   | events delivered for a tap on `<h1>`                                            |
+  | -------- | ------------------------------------------------------------------------------- |
+  | Chromium | `pointerdown` `touchstart` `pointerup` `touchend` `mousedown` `mouseup` `click` |
+  | WebKit   | `pointerdown` `touchstart` `pointerup` `touchend` — and nothing else            |
+
+  So on Safari, desktop and iOS, the pair never completed and an open popup stayed open. Nothing in a
+  Chromium-only suite could see it.
+
+  `MdyLightDismiss` gains `pointerup(target, pointerId?)`, which completes the interaction under the
+  same origin and pointer-identity rules. `click` stays and normally does nothing — the release has
+  already left the machine idle — but catches an interaction whose release never arrived. The scroll
+  gesture is still protected, by `pointercancel`: a browser that takes a gesture over to scroll says so
+  directly, and the absence of a click was standing in for that signal.
+
+  **One behaviour changes beyond the fix**, and it is a correction: pressing outside and releasing
+  _inside_ the popup no longer dismisses. It used to, because the click landed on a common ancestor
+  outside the branch — but the interaction ended inside, which ADR 0013's own rule says must not
+  dismiss.
+
+  **Migration:** a renderer that wires the policy itself must add a capture-phase `pointerup` listener
+  beside its `click` one. The three rendering adapters do this already.
+
+  [ADR 0013](https://github.com/modyra/modyra/blob/main/docs/architecture/0013-the-dismissal-names-its-gesture.md)
+  is amended in place, with the original reasoning kept — the risk it named is real, and what it got
+  wrong is which signal guards against it.
+
+  **Classification.** `contract:diff` reports `patch`: the catalogue is untouched and the differ sees
+  nothing else. This ships as `minor` for the added method — the same blind spot recorded as finding K.
+
+- c1b9b10: A state is checked on the part responsible for it.
+
+  `inspectWidgetState` accepted a state's ARIA attribute on **any** declared part. The claim it could
+  make was therefore "the widget exposes the state somewhere", not "on the right element" — and a
+  select that moved `aria-expanded` from its trigger to its root passed.
+
+  `stateCarriers(kind, state)` now names the part or parts a kind must announce a state on, and the
+  check asserts presence on each of them. `open` is derived from `MDY_POPUP_OPENERS[kind].opener`,
+  which the contract already declared; `invalid`, `disabled` and `readonly` are declared in a new
+  per-kind table, because nothing existing answered for them — the catalogue's per-part `states:` is a
+  class vocabulary, and it names `inputWrapper` where `aria-disabled` goes on the control.
+
+  Extras are still tolerated: the check asks whether the carrier announces the state, not whether
+  anything else does.
+
+  **Three renderer defects surfaced immediately**, each one a state announced where nothing listens:
+
+  - `@modyra/lit` and `@modyra/angular` never set `aria-disabled` on the multiselect's search button —
+    the opener, and the element the label names. Angular had it on the options group instead.
+  - `colors` had no correct carrier to name. Angular's `control` is the native `<input type="color">`,
+    deliberately `aria-hidden`; the carrier is `hexInput`, the field a user types into.
+
+  **Classification.** `contract:diff` reports `patch`: the catalogue anatomy is untouched, and the
+  differ snapshots the catalogue only. This ships as `minor` because `stateCarriers` is a new root
+  export. The disagreement is the same blind spot recorded as finding K in `docs/contract-gaps.md` —
+  public surface outside the catalogue has no classification path.
+
+  A downstream renderer that passed conformance may now fail it. That is the point of the change, and
+  it is a verdict rather than an API break: nothing a consumer wrote needs editing to compile.
+
+  The decision behind this is [ADR 0014](https://github.com/modyra/modyra/blob/main/docs/architecture/0014-the-contract-names-the-responsible-element.md): the contract names the element responsible for something, not the region containing it.
+
+- 49c28c9: `timeFieldBounds`, `acceptTimeField` and `stepTimeField`: a time field's range becomes contract.
+
+  An hour runs 1–12 with a period beside it and 0–23 without; a minute is 0–59 on either clock. Those
+  ranges lived as literals inside the transitions, where the hour's two variants are easy to keep
+  straight and **the minute's 0–59 is easy to lose** — it reads like the hour's neighbour and is not.
+
+  The contract states two behaviours, deliberately different, because the user means different things
+  by them:
+
+  - **Stepping wraps.** An arrow key or a spinner is sequential: 12 + 1 is 1, 0 − 1 is 23, and a
+    minute rolls 59 → 0. Someone holding the up arrow is scanning a range, not asserting a value, and
+    stopping dead at the end answers the wrong question. A step also brings an already-invalid value
+    back inside the range, because stepping is how a user _leaves_ a bad value.
+  - **Typing is judged.** A typed `25` or `61` is a claim about a specific time. `acceptTimeField`
+    returns a rejection carrying _why_ — `out-of-range` or `not-a-number` — and the range it was judged
+    against, so a renderer can mark the field invalid and say what it expected. Previously the answer
+    was `null`, which a caller cannot tell from "nothing happened": an out-of-range entry was dropped
+    in silence, leaving a field that looked accepted holding a value it never took.
+
+  Also stated rather than assumed: an empty box is not a request for midnight. `Number("")` is `0`,
+  which is a valid hour on a 24-hour clock, so the shape is checked before the value.
+
+  `timeClockTransition` now reads these bounds instead of carrying its own copies.
+
+- 186cbad: A kind whose anatomy depends on its configuration declares it.
+
+  `multiselect` renders a choice two ways: in `single` mode an option is a `<button>` with a tick, in
+  `multi` it is a container holding a count between two step buttons. No single element declaration
+  fits both, so `option` was declared `presentation` and nothing checked it in either mode. That was
+  finding **J2**.
+
+  The catalogue now declares **variants**, keyed by the `mode` the field config already carries:
+
+  ```ts
+  variants: {
+    single: { elements: { option: "button"    }, required: ["optionCheck"] },
+    multi:  { elements: { option: "container" }, required: ["optionStep", "optionCount"] },
+  }
+  ```
+
+  In `single` the option _is_ the control; in `multi` it contains them. Both named, which is what
+  [ADR 0014](https://github.com/modyra/modyra/blob/main/docs/architecture/0014-the-contract-names-the-responsible-element.md)
+  requires and what saying "one of these is operable" cannot give.
+
+  **Closed, and defined once.** `MdyWidgetVariant` is an alias of `MdyMultiselectMode` — newly named in
+  `@modyra/core`, the same union `mode` already used — so the variant key _is_ the value a document
+  carries. An invented name is a compile error, with a runtime guard behind it for callers without
+  types.
+
+  **`container`** is a new semantic element: a part that holds controls and is not one. `presentation`
+  admits everything by design, so it could not refuse a `<button>` holding a `<button>`.
+
+  **`MdyWidgetShape` is generic over its parts.** `required: ["notAPart"]` no longer compiles — which
+  needed `NoInfer` on the shape parameter, because otherwise the shape is a second inference site and a
+  name appearing only there widens the part union to include it.
+
+  **For adapters:** declare which variants you support and the conformance kit mounts each. Declaring
+  none is checked exactly as before, so this is additive for the sixteen kinds that have no variants.
+  `contract-diff` now snapshots and compares variants, so declaring or withdrawing one is classified.
+
+  `@modyra/lit`'s counter steppers gain accessible names — they were icon-only buttons announcing
+  nothing, a defect the rule found the moment it existed.
+
+- ee8198d: A Lit calendar starts its week where the user's locale starts it.
+
+  `mdy-datepicker-field` and `mdy-daterange-field` set `firstDayOfWeek = 1` in their constructors, so
+  every calendar began on Monday regardless of locale. Angular takes it from `MDY_DATE_LOCALE` and
+  Plain from `buildDateLocale`; Lit was the only renderer holding a constant. Measured under
+  `en-US`, with the same schema and the same fixture:
+
+  ```text
+  @modyra/plain   S M T W T F S     (correct for en-US)
+  @modyra/lit     M T W T F S S
+  ```
+
+  Nothing about the Lit calendar was malformed — the parts were present, the ARIA correct, the grid a
+  grid. Only the order was wrong, and only against a locale nobody had run it in, which is why the
+  conformance and equivalence suites were green.
+
+  `first-day-of-week` still overrides, and is now the way to ask for a fixed first day. Unset follows
+  the locale. A host that was relying on the Monday default in a Sunday-first locale, and wants it
+  kept, should set the attribute explicitly.
+
+  `@modyra/widgets/testing` gains `inspectCalendarWeekStart` and `expectedWeekdayOrder`, so the rule
+  is stated once for every renderer rather than three times. The expectation is derived from `Intl`,
+  not from a renderer's own helper, so a renderer cannot satisfy it by agreeing with itself.
+
+  The suites now drive **two locales with opposite week starts**. One locale proves nothing: a
+  renderer with the week start hardcoded is correct in exactly the locale whose value it hardcoded,
+  and a suite that only ever runs there is measuring its own environment rather than the renderer.
+
+- 0f85077: Either arrow opens a closed combobox.
+
+  `ArrowDown` on a collapsed overlay opened it; `ArrowUp` was declared by neither the keyboard table
+  nor the policy, so it did nothing on all six overlay kinds. The authoring practices specify both.
+
+  Unlike the `Tab` and `Space` gaps before it, **the two paths already agreed** — `widgetKeyIntent`
+  and `selectKeyboardAction` were both silent — so no user was getting different behaviour from
+  different renderers. This was a gap in the specification rather than a disagreement inside it, which
+  is why it waited: the open question was whether opening upwards should also move to the last option,
+  as the authoring practices have it.
+
+  It should, and it already does, one layer down. `listboxNavigationIndex` answers `ArrowUp` from
+  nothing-active with the **last** option and `ArrowDown` with the **first**. So opening with nothing
+  active and letting the next arrow resolve gives exactly the specified behaviour, and declaring a
+  move on the opening press would restate that where it can drift from it.
+
+  Both paths changed together and both are asserted, because the `Tab` defect was one path fixed and
+  not the other, twice.
+
+- d6e8855: An opener controls something that exists, and a part inside an absent parent may be absent.
+
+  Two halves of one assumption: the contract, and the suite that checks it, both took an eagerly
+  mounted popup for granted. A renderer that builds its overlay on demand could not report its resting
+  state honestly.
+
+  **`aria-controls` named a listbox that was not there.** `projectOverlayOpenerA11y` emitted the id
+  unconditionally, so a lazily-mounted popup left the trigger pointing at nothing while closed — a
+  dangling reference assistive technology cannot follow, and one no amount of correct `aria-expanded`
+  makes up for. `controlsRendered` now answers it, defaulting to `true`, which is what every caller
+  assumed before. It threads through `projectSelectA11y` (`popupRendered`) and
+  `createSelectController` (`setPopupRendered`), because that projection sits behind the controller and
+  a renderer cannot answer for itself otherwise. `@modyra/lit`'s select declares it; the eagerly
+  mounted renderers are unchanged.
+
+  **A mandatory part inside an optional one could not be declared absent.** `datepicker.calendar` is
+  `optional: false` with parent `popup` at `optional: true` — a required child of an optional
+  container. `inspectWidgetDom` rejected `calendar` in `absentParts` even when `popup` was absent too,
+  so a lazy renderer had no way to describe its closed state. Absence is now _entailed_ when an
+  ancestor is absent, rather than treated as a claim. The contract is unchanged: `calendar` is still
+  required whenever the popup is there.
+
+  Found by `scripts/conformance-cli.mjs` running against `@modyra/lit`, which reports **CONFORMANT**
+  with both fixes and four findings without them.
+
+- ca0eebc: An opener that is a text field is not a switch.
+
+  `MDY_POPUP_OPENERS` names the element that carries the overlay relation, and for the combobox kinds
+  that is correctly the typeable control — the pattern puts `aria-expanded` nowhere else. The same
+  declaration was then read as "the element that toggles the overlay", and those are not the same job.
+  So the contract stated that a pointer press on a date picker's own text input closes its calendar:
+  the user reaches for the caret and the field is taken away.
+
+  One renderer implemented it literally and one did not. `@modyra/plain` bound the toggle to the
+  control as well as to the button; Angular bound only the button. The same click did different things
+  depending on who drew the widget, and the contract endorsed the worse of the two.
+
+  `MdyPopupOpener` gains `typeable`, declared for `datepicker` and `timepicker`. Two rules follow from
+  it:
+
+  - the opener still **opens** on every kind, and only closes where it is not typed into — the toggle
+    button beside the field is the switch;
+  - **`Space` opens** the kinds whose opener is a button, and is left alone on the others, because in a
+    text field the space bar is a space character and a widget that opened its calendar instead could
+    not accept "12 March". The keyboard policy has opened on Space for as long as it has existed while
+    the declared bindings claimed the key for nothing — the same disagreement `Tab` had, and it needed
+    the opener to be able to say what it is before it could be settled.
+
+  `@modyra/plain` no longer closes a date or time picker when the user clicks into its input.
+
+- 2ac6b1e: `anchorOverlay` takes the writing direction, so a popup hangs from an inline edge.
+
+  `overlayAnchoringFor(kind)` states which edge of the control a popup attaches to — the end where the
+  trigger sits, the arrow, the calendar button. That is an **inline** idea, and it was being applied
+  physically: in a right-to-left field every popup still hung from the right, which is the wrong end of
+  the control.
+
+  The declared alignment now mirrors under `direction: "rtl"`, and all three renderers pass the
+  direction they are actually laid out in, read from the element rather than assumed.
+
+  **Only the declared edge mirrors, deliberately.** How much room remains before the window's right
+  edge, and where the user's pointer landed, are facts about the screen; they do not flip, and a popup
+  that mirrored them would place itself off the side of the viewport. A test holds that line — a wide
+  popup on a control near the right edge stays on screen in either direction.
+
+  This is one change in the contract rather than three in the renderers, which is what the shared
+  anchoring is for.
+
+- 44d0e03: `overlayStyleProperties` carries the whole placement decision.
+
+  `anchorOverlay` writes eight `--mdy-overlay-*` properties. `overlayStyleProperties` — the projection
+  for a host that carries coordinates around instead of the property map — wrote five. It had no
+  `transform`, no `max-height` and no `width`, so every host on that path completed the decision by
+  hand, and they did not complete it the same way: Angular stated `80vh` for a modal placement where
+  the policy computes 70% of the viewport. The same popup, having given up on its anchor, was a
+  different size depending on which renderer drew it.
+
+  `MdyOverlayCoords` gains `maxHeight` and `placement`. The placement is what makes the modal case
+  expressible at all — centring on the viewport is a percentage offset and a translation rather than
+  the measured insets every other placement uses, so without it there was nothing for a host to
+  serialise and each one invented the centring itself.
+
+  A contract test now holds the two projections to each other across `below`, `above`, `overlay` and a
+  content-sized popup. It found a second disagreement on its first run: an unused inset is `auto` in
+  `anchorOverlay` and was `unset` here, which leaves `var()` invalid at computed-value time and lets a
+  stylesheet fallback answer instead. Both now say `auto`, the value the themes have always been read.
+
+  Angular's overlay panel no longer states any of it, and its `maxHeight` input — which the height now
+  reaches through the coordinates — is gone along with the six bindings that fed it.
+
+- 0f09b34: `MDY_CANONICAL_DISABLED` and `MDY_CANONICAL_OPEN` complete the static half of renderer equivalence.
+
+  Four states are now compared across three renderers — at rest, invalid, disabled, open — with one
+  recorded divergence between them.
+
+  `disabled` is rest plus one state and deliberately nothing else: a field that is disabled _and_
+  required _and_ empty is two states at once, and a renderer getting either wrong would be reported the
+  same way. `open` promotes `popup` from optional to required — a renderer may mount an overlay eagerly
+  or build it on demand while closed, but showing none while open is not a free choice — and flips the
+  opener's `aria-controls` from naming nothing to naming what the contract says it controls.
+
+  **`focusOwner` can now be left unconstrained**, and is, for the kinds where two renderers make
+  different defensible choices. A combobox may keep focus on its opener and drive the list with
+  `aria-activedescendant`, or move focus into a search field; a timepicker may open on its dial or on
+  its inputs, having a `modeToggle` precisely because both are modes. Freezing one of those would buy
+  agreement by forbidding a legitimate implementation. It stays asserted where the contract does decide:
+  a calendar takes focus into its grid, because a grid the keyboard cannot reach is a grid only a mouse
+  can use.
+
+  **The fixtures' portal scan is gone.** Each adapter's fixture looked for a portalled overlay by
+  scanning the document for something dropdown-shaped, and passing that result — even empty — overrode
+  the snapshot's own lookup, which finds the overlay through the relation that names it. Closed, this
+  cost nothing and hid itself; open, it reported the popup absent and the opener's reference dangling
+  on both listbox kinds. The naive scan was the method rejected when the snapshot was first written,
+  reintroduced beside it.
+
+  Recorded, not fixed: opening a `daterange` in `@modyra/plain` leaves focus where it was, while its
+  own datepicker moves it into the calendar and so do the other two renderers.
+
+- f4e593a: Focus is borrowed, not taken: `createFocusCustodian` makes the handover a contract.
+
+  Moving focus is easy and losing it is silent. A widget opens an overlay, focus goes in, the overlay
+  closes — and if nothing takes focus at that moment the user is standing on `<body>`, at the top of
+  the document, with no way back to the field they were in. Nothing throws and every attribute is
+  still correct.
+
+  Five of the seven focus behaviours audited across the three renderers were wrong, each in a
+  different file, each needing its own repair. That is a missing contract, not six careless renderers.
+
+  Two halves, both enforced:
+
+  - **Focus is recorded before it is moved**, so there is always somewhere to hand it back to.
+  - **A move that is not taken did not happen.** `focus()` on a detached, hidden or inert element does
+    nothing and reports nothing, so every candidate is verified against `activeElement` afterwards and
+    a candidate that did not take it falls through. The chain is the caller's preference, then
+    whoever held focus before, then the widget itself; focus goes nowhere only when the widget has
+    left the document.
+
+  **`@modyra/angular`'s `select`, `datepicker` and `daterange` stranded the keyboard on dismissal**, and
+  now do not. Two earlier attempts failed on a wrong premise worth recording: the overlay renders its
+  panel _inside_ the wrapper rather than portalling it, so "is focus still inside this widget" answered
+  _yes_ for precisely the case that strands people. The panel is what disappears, so the panel is what
+  is asked about — before containment, not after.
+
+  `portalRootFor` moves from `@modyra/widgets/testing` to the package root, since the runtime needs it
+  too; the testing entry re-exports it rather than keeping a second copy.
+
+- 31cbcdb: Focus leaving an overlay names itself, and never outranks a pointer.
+
+  New capability `dismissOnFocusOutside: boolean`, true wherever there is a popup. It declares what
+  already happened — Tab out of an open popup closes it — and separates it from
+  `dismissOnOutsidePointer`, which is a different question with a different answer.
+
+  Conflating the two was a real defect: all three renderers could close a popup that the pointer rule
+  had just refused to close. An interaction begun inside the popup and dragged out moves focus out on
+  the way, and closing on that reinstates, through the focus path, exactly the dismissal light dismiss
+  exists to prevent. The precedence is now explicit — while an interaction begun inside is unresolved,
+  focus decides nothing — and all three renderers consult one rule instead of each deciding.
+
+  `@modyra/lit` also loses a `setTimeout(…, 120)` on blur, replaced by the `relatedTarget` containment
+  check the other two renderers already used. A delay is a guess about how long a click takes to land,
+  and it raced whatever the pointer did meanwhile.
+
+  `touched` still marks when focus leaves, including where the close is suppressed. Being touched is
+  not a dismissal.
+
+- b10a5b1: One select, one interaction model per renderer.
+
+  [ADR 0018](https://github.com/modyra/modyra/blob/main/docs/architecture/0018-a-select-declares-whether-it-filters.md)
+  names two models and `searchable` selects between them. This is the half the renderers owe.
+
+  **`@modyra/plain` — breaking.** It appended a filter box to every select, so a three-option list got a
+  search nobody asked for and focus landed in it rather than on the list. Now only a `searchable`
+  select has one. A non-searchable select keeps focus on its trigger and jumps as you type.
+
+  **`@modyra/lit`.** Typing on a searchable select's trigger dispatched one character at a time into a
+  controller that _replaces_ the query, so `mar` searched `m`, then `a`, then `r` and a typeahead could
+  never match a word. It now accumulates. Its non-searchable select is a native `<select>` and always
+  had the platform's typeahead — which is why the defect hid in the model most selects do not use.
+
+  **`@modyra/angular`.** Its non-searchable select had no typeahead at all: a printable key reached a
+  keyboard policy with no rule for one and did nothing. It now jumps.
+
+  **`@modyra/widgets` gains an `activate` intent** — make one option the active one without choosing
+  it. `move` could not express it, taking a direction where a typeahead knows the destination.
+
+  **A WebKit defect fixed on the way.** Not every engine focuses a `<button>` when it is clicked, so a
+  list opened by pointer left focus on the document and every keystroke after went nowhere. The
+  listbox model says focus _stays_ on the trigger; the renderer now makes that true rather than
+  assuming it.
+
+  Asserted with real keystrokes per renderer and per engine, not only against the shared buffer — three
+  adapters implementing one behaviour is what produced three behaviours, and testing only the rule
+  would reproduce it exactly.
+
+  **Pre-1.0 versioning.** `@modyra/plain`, `@modyra/lit` and `@modyra/angular` are on 0.x and make no stability promise yet, so a breaking change to them is a minor bump — that is what 0.x means. The change below is breaking; the version number is not claiming otherwise.
+
+- 8d7a621: The shell's state classes are derived, and the accessible-name rules are reachable.
+
+  `MDY_FIELD_STATE_CLASSES` restated what `MDY_FIELD_SHELL_CLASSES`, the shell's part states and
+  `MDY_STATE_MODIFIERS` already held — and restated it in a _second vocabulary_: `labelStates` said
+  `"has-error"`, the modifier, where the shell states say `"hasError"`, the state. Two tables for one
+  fact drift the moment one of them is edited, and they drift silently, because a theme rule keyed to
+  the spelling nobody updated simply stops matching. Every member is now derived from the one table
+  that already declared it, and the shell's states moved to `structure.ts` beside the shell's classes,
+  where the name of a part and what it may be doing are one fact rather than two.
+
+  The derived values are identical to the literals they replace, with one exception worth stating:
+  `fieldStates` is now `["open", "touched"]` rather than `["touched", "open"]`, because that is the
+  order the catalogue has always declared and the order its test asserts. It affects the order two
+  class names appear in on the field root, and nothing else.
+
+  `MDY_SEMANTICS_REQUIRING_NAME`, `partsRequiringName` and `MdyAccessibleNameSource` are now exported.
+  They said how a part comes by the name a screen reader announces — a listbox, a dialog or a grid with
+  no name is announced as an unlabelled container — and were reachable only from inside the package, so
+  an adapter writing its own checks could not consult the rule it was being held to.
+
+  `MDY_POPUP_OPENERS` and the relation tables are keyed by `MdyWidgetKind` instead of `string`. A
+  misspelled or stale kind was silently ignored, and `relationsFor` guards each lookup, so a wrong key
+  **dropped the relation** rather than failing — a field whose errors reach no assistive technology,
+  which is the exact failure declaring the relations was meant to make catchable. Narrowing the key
+  immediately found `projectOverlayOpenerA11y` and `overlayControlledId` taking a bare `string`; both
+  now take a kind.
+
+- c7c6adf: A field says it is unusable in one vocabulary, and the audit can read both halves.
+
+  `MDY_FIELD_STATE_CLASSES` names `mdy-input-wrapper--disabled`, which is true of ten kinds and false
+  of seven: `checkbox`, `toggle`, `slider`, `radio`, `segmented`, `multiselect` and `file` have their
+  own wrapper class, so the themes reach those states **structurally** instead —
+  `.mdy-checkbox__control:disabled + .mdy-checkbox__indicator`, `.mdy-slider:disabled`. Both mechanisms
+  are legitimate. Only the first was checkable, so for seven of seventeen kinds half the expression of
+  "this field is unusable" sat outside everything this repository audits.
+
+  `MDY_STATE_EXPRESSION` declares which mechanism each kind uses, and the style audit checks the
+  declared one. Giving those seven wrappers state classes instead would have been wrong twice over: it
+  mints seven classes no theme paints, and it contradicts `statesFor`'s rule that a part redeclaring
+  its class does not inherit the shell's states — narrowed one batch earlier, and verified here to
+  still throw.
+
+  **It found a defect on the first honest run.** `file` reaches its states by neither mechanism: twelve
+  declared classes and **no theme rule anywhere** touching `:disabled` or `aria-invalid`. A disabled
+  file field looked exactly like a usable one, and an invalid one exactly like a valid one, in all four
+  themes. The dropzone now dims when its input is disabled and takes the error border when it is
+  invalid — reached structurally, the way its six siblings already are.
+
+  The declaration states what a kind is **expected** to do, not what the themes were found doing. That
+  distinction is the reason the gap surfaced instead of being written down as intended.
+
+- f4b41af: `MDY_CANONICAL_FILLED_OBSERVATION` and the reset comparison complete Milestone C's ten.
+
+  **Programmatic update** — a value the form put there rather than one the user typed. It is the same
+  widget as at rest with something in it, and across the whole catalogue the only anatomical
+  difference either renderer showed is the select's: a filled select shows its value, so the
+  placeholder that stands in for one becomes optional. No state is reflected — putting a value in a
+  field is not the user touching it, and a renderer that marked it touched would show validation for
+  an interaction that never happened.
+
+  **Reset** — a widget given a value and returned to the one it started with must look exactly as it
+  did before it was ever touched. This is the one comparison that cannot be made from a single
+  observation, because it is about two of them being the same: a renderer leaving a class, an
+  attribute or a stale display value behind passes every other check, since the state it is left in is
+  _legal_, just not the one it started in. Making the select's placeholder never come back once
+  hidden — the classic stale-display bug — fails it and nothing else.
+
+  `MdyCanonicalExpectation.value` can now be absent, meaning the contract cannot name it. Used for
+  exactly one case: a file field's filled value is a `File`, and two files with the same bytes are
+  still different values, so each fixture makes its own.
+
+  **All three renderers pass all six observations with empty ledgers** — at rest, invalid, disabled,
+  open, filled, reset — plus the open-then-Escape sequence.
+
+- afef217: `Tab` is declared, and opening a list has one owner again.
+
+  `MDY_WIDGET_KEYBOARD` never declared `Tab`, so `keyBindingFor` and `widgetKeyIntent` both answered
+  `null` for it — while `selectKeyboardAction` and its multiselect counterpart closed on it. Two
+  contract paths to one key, disagreeing: a renderer built from the declared bindings left a popup
+  floating over a form the user had already tabbed out of, and one that called the policy did not.
+
+  `Tab` now closes on all six overlay kinds. `MdyKeyBinding` gains `restoresFocus`, because the two
+  dismissals genuinely differ and the difference cannot be inferred from the intent: Escape means _put
+  me back where I was_ and returns focus to the opener, while Tab is already carrying focus to the next
+  control and pulling it back would trap the user in the field they just left. Escape keeps
+  `restoresFocus: true`; only Tab is `false`.
+
+  **Opening on `ArrowDown` had two implementations.** The keyboard policy answers a collapsed combobox
+  with `open`, and `createSelectController` _also_ opened whenever it received a `move` while closed —
+  an intent the policy never sends. Either could be removed with the widget still behaving, which is
+  what made the pair invisible: the suite stayed green on a rule the contract had stopped stating. The
+  controller now treats a `move` on a closed list as the no-op the policy already says it is, and
+  opening belongs to the policy alone.
+
+- 635529b: `compareToCanonical` compares the state, the value and the focus owner, not only the shape.
+
+  The snapshot has always collected seven fields and the comparison read three of them. A renderer
+  that announced a resting field as invalid, held a value no other renderer held, or parked focus
+  somewhere on mount produced a canonical observation that differed from every other renderer's and
+  passed. `MdyCanonicalExpectation` now declares all four dimensions and each reports in the
+  contract's words — `state is [touched], expected []`, `value is "value", expected ""`,
+  `focus rests on control, expected nothing`.
+
+  `MDY_CANONICAL_EMPTY` is new: the value each kind holds before anyone has given it one, in one table
+  every adapter's fixture reads. Milestone C compares renderers given _the same initial state_, and
+  three fixtures each deciding for themselves is three different questions — a number field started at
+  `0` is filled and valid where one started at `null` is empty and required-failing. Not derivable
+  from `MDY_VALUE_CONTRACTS`, which says a kind's shape and whether it is nullable: `null` and `[]`
+  are both legal for a multiselect and only one of them is what an untouched field holds.
+
+  Two things this found, both by renderers disagreeing rather than by reading them:
+
+  - **A required field is not a resting field.** Every kind announced itself `invalid` on mount, on all
+    three renderers, before the user arrived — the fixture made every field required and empty, which
+    is already failing. The contract leaves the error list's visibility to the renderer, so this is a
+    policy and not a violation, but it makes "at rest" and "invalid" the same observation. The
+    at-rest expectation is now measured against a field no validator has judged.
+  - **Two renderers seeded a text field `""` and one seeded it `null`.** The declarative Angular
+    adapter starts every field at `null` whatever the kind. The fixture now states the initial value
+    instead of inheriting a per-adapter default, which makes the comparison honest and leaves the
+    defaults themselves as a separate question.
+
+- 7091a93: `MDY_CANONICAL_INVALID` declares what every renderer must produce for a field the user left invalid.
+
+  The invalid state had been _measured_ once, by hand, on two renderers, and the two defects it found
+  were fixed and shipped. Nothing asserted it afterwards, so nothing stopped it regressing and Angular
+  was never measured at all. This is the assertion that should have carried that work: seventeen kinds,
+  three renderers, one expectation.
+
+  Derived from the resting expectation rather than restated — the invalid state _is_ the resting one
+  plus what invalidity adds, and a second hand-written table would drift from the first the moment a
+  part moved. Three things change:
+
+  - `errors` and `errorItem` stop being optional. At rest a renderer may or may not materialise an
+    empty list and both conform; once there is an error to show, showing none is not a free choice.
+  - `aria-describedby` becomes normative and must reach the error list. At rest it may name an empty
+    description box or nothing at all, depending on the renderer.
+  - The field reflects `invalid` and `touched`.
+
+  **Fourteen of seventeen kinds now produce the same observation on all three renderers.** The six
+  remaining divergences are recorded in each adapter's ledger, asserted both ways so that a new one
+  fails and a stale one does too. Every one is a real defect rather than a permitted difference,
+  because the other renderers do the thing:
+
+  - Angular's `radio`, `multiselect` and `colors` carry no `aria-describedby` in the one state where
+    there is something to describe — the error is rendered, styled, and announced to nobody. `radio`
+    and `colors` never expose `aria-invalid` either.
+  - Lit's `multiselect` never exposes `aria-invalid`. Its error list is on screen and its reference
+    reaches it, which is what hid this: only reading the state itself finds the gap.
+  - Plain's `datepicker` and `timepicker` never reflect `touched`, so the root carries no
+    `mdy-renderer--touched` and the wrapper no error modifier — treatments three themes key off.
+
+- 84ae084: The multiselect's keyboard contract, held to the same rules as the select's.
+
+  `multiselectOverlayAction` had the same two gaps and the same consumption problem:
+
+  - **`ArrowDown` on a closed list opens it** — it returned `move`, an action on options nobody can see.
+  - **`Tab` closes and yields focus**, with `restoreFocus: false`.
+  - **`@modyra/plain` answered only `Escape`.** No opening, no Tab, no navigation: a list opened with a
+    pointer could not be left from the keyboard by any other key. It now dispatches the contract's
+    action.
+  - **`@modyra/angular` bound its key handler to the overlay's input only**, so a _closed_ list had no
+    keyboard handler at all and could not be opened without a pointer. Found by pressing the key in a
+    browser. It also restored focus on every close, ignoring the action's own `restoreFocus`, which
+    pulled a tabbing user back into the field they were leaving.
+
+  **Recorded, not fixed**: Plain does not dispatch `move` or `select`. Its controller has no active
+  option to move — the intents are `toggle`, `increment` and `decrement` over chips, with no cursor —
+  so arrow-key navigation needs that cursor first, which is a controller change and its own batch.
+  Opening, dismissing and yielding focus map exactly and are wired now.
+
+- 50a654b: The same gesture, executed by every renderer: open an overlay, dismiss it from the keyboard.
+
+  `MDY_CANONICAL_AFTER_ESCAPE` is the first expectation about what a widget _does_ rather than what it
+  looks like in a state it was put into, and `MdyStateFixture` gains `press` so the sequence can be
+  expressed once and run by all three adapters. It replaces a hand-written Escape test that each
+  adapter kept its own copy of — three tests that agreed on the transition and each asserted only that
+  `aria-expanded` became false.
+
+  That is why five kinds could strand the keyboard and stay green. Dismissing an overlay left focus on
+  the document body, dropping the user at the top of the page with no way back to the field they were
+  in: Lit's `multiselect` and `colors`, Angular's `select`, `datepicker` and `daterange`.
+
+  **Lit's two are fixed here.** Focus returns to the opener, and deliberately only on keyboard
+  dismissal — folding it into `close` would yank focus away from wherever the user clicked when the
+  overlay closes because they clicked outside it.
+
+  Angular's three are recorded, not fixed: they close through the shared overlay panel, whose `close`
+  output is also emitted for a backdrop click, so separating keyboard dismissal from pointer dismissal
+  is its own change.
+
+  **The contract says focus returns _into the widget_, not to a named part.** Both renderers put a
+  dismissed daterange back in its start field rather than on the toggle that opened it, which is a
+  defensible design; landing on the document body never is. `state` is left unconstrained after this
+  gesture for the same reason — whether opening a picker and abandoning it counts as having touched the
+  field decides when validation errors appear, the renderers disagree uniformly rather than by
+  accident, and that is a product decision this contract does not get to make by recording whichever
+  renderer was measured first.
+
+- bfeb371: The select's keyboard contract is complete, consumed, and proven by real key presses.
+
+  `selectKeyboardAction` was missing two of the behaviours the contract itself describes, and one
+  renderer of three was using it at all.
+
+  - **`ArrowDown` on a closed list opens it.** It returned `move`, an action on options nobody can see.
+  - **`Tab` closes the list and lets focus carry on**, with `restoreFocus: false` — a list left open
+    follows the user to the next field, and focus pulled back traps them in the one they just left.
+    `restoreFocus` is no longer typed as always-`true`, because Escape and Tab want opposite answers.
+  - **`@modyra/plain` consumed none of it**, handling keys with a switch of its own that disagreed with
+    the contract on exactly those two keys. It now dispatches the contract's action.
+  - **`@modyra/angular` cancelled `Tab`'s native meaning**, so focus stayed inside a panel being torn
+    down and the overlay's focus rescue pulled the user back into the field they were leaving. Found by
+    pressing the key in a browser, which is the only place that question can be asked.
+  - Angular also opened the list on a `move` it could not perform — a renderer covering for the policy,
+    which is the pattern this milestone exists to remove. Gone.
+
+  Six behaviours now run against a real browser: what opens, what does not, where focus goes when the
+  list opens, where it goes on Escape, and where it goes on Tab. The policy stays a pure function with
+  its own unit test; the browser proves that pressing the key does what the policy says.
+
+- 816ca68: The number field's spin buttons are part of the contract.
+
+  `@modyra/angular` renders spin buttons beside a number input. They wear `mdy-spin-btn` and
+  `mdy-spin-btn-up`/`--down`, `modyra.css` styles them with four custom properties — and the widget
+  contract declared no part for either. So no anatomy, relation, state or equivalence check had ever
+  looked at them, and none could: every audit here starts from what the contract declares.
+
+  That is the inverse of the shape the contract-gap audit kept finding. Everything else there is
+  _declared and wired to nothing_; this was **emitted and painted and declared by nothing**, which is
+  the direction an audit rooted in the contract is blind to.
+
+  `number` now declares `increment` and `decrement` as **optional** parts with `button` semantics and
+  those classes. Optional because the native control has its own spinners and a renderer that leaves
+  them to the platform is complete without them — declared, so the ones that are drawn are checked.
+
+  Confirmation the gap closed rather than moved: the three classes were sitting in the style audit's
+  off-contract allowlist, and the audit now reports them as stale entries because they are contract
+  classes. Removed.
+
+  Found by a key check added for an unrelated reason: `PARENT_CANDIDATES` was keyed by `decrement` and
+  `increment`, parts no kind declared. The table had been anticipating them since before they existed.
+
+- 9a8a747: `MDY_FIELD_STATE_CLASSES` names the classes that are really on screen.
+
+  It declared `mdy-field--invalid`, `mdy-control--open` and eight more like them. **No theme styled a
+  single one, and no renderer emitted them** — one renderer's source already carried a comment saying
+  so and quietly emitting `mdy-renderer--touched` instead. A renderer built from the contract alone
+  would have produced classes nothing paints, which is the one failure mode a shared class vocabulary
+  exists to prevent.
+
+  Measured and corrected to what three renderers emit and three or four themes style:
+
+  | declared before          | styled by | now                                                                |
+  | ------------------------ | --------- | ------------------------------------------------------------------ |
+  | `mdy-field` + 7 states   | 0 themes  | `mdy-renderer` + `touched`, `open`                                 |
+  | `mdy-control` + 3 states | 0 themes  | `mdy-input-wrapper` + `disabled`, `error`                          |
+  | —                        | 3 themes  | `mdy-label` + `filled`, `has-error` — added, it was never declared |
+
+  Four projections built the dead names, two of them as hand-written literals. The select's trigger
+  also carried `mdy-control--open`, `--disabled` and `--invalid` alongside its own
+  `mdy-select__trigger--*` modifiers; none of the six is styled, and only the trigger's own are
+  declared, so the twins are gone.
+
+  **Breaking.** A theme or renderer selecting on `mdy-field--*` or `mdy-control--*` matched nothing
+  before and matches nothing now, but the contract no longer tells anyone to emit them. Read the state
+  from `mdy-renderer--touched`, `mdy-input-wrapper--error` and `mdy-label--has-error`. A boolean's
+  checked state has no class at all: the themes style `:checked` on the input, which is where it lives.
+
+- bdde472: The runtime report probes the environment, and the anatomy says what a server can emit.
+
+  `browserRuntimeCapabilities()` hardcoded `dom: true` and `hydrated: true`. Called in a Node process
+  with no `document`, no `window` and no `HTMLElement`, it reported a browser. A controller consults
+  the report precisely to decide whether a command can be executed — the module's own header gives
+  "focus commands during SSR" as the example — so the one function that answers _where am I_ could
+  not tell a server from a browser. `ssrRuntimeCapabilities` was exported and consumed by nothing, so
+  no test could have caught it.
+
+  It now probes every dimension, and with no DOM returns `ssrRuntimeCapabilities` exactly. `hydrated`
+  is the one dimension no global can answer — a browser that has parsed server markup but not yet
+  attached to it is indistinguishable from one that has — so it follows `dom` and a renderer that
+  knows it is still hydrating passes `browserRuntimeCapabilities({ hydrated: false })`.
+
+  New: `staticParts(kind)`, `dynamicParts(kind)` and `isFullyServerRenderable(kind)`. A widget's
+  anatomy divides into the closed control, which is markup a server can emit and which every kind
+  has, and the overlay — the popup and everything under it. The split is **derived** from the popup
+  subtree rather than restated as a second table, because a hand-maintained copy would drift the
+  moment a kind gained a part, and it would drift silently.
+
+  This is a statement about anatomy, not a rendering strategy: a renderer that mounts its popup
+  eagerly emits the dynamic parts while closed, one that mounts lazily emits them on open, and both
+  are conformant. The split is what makes that choice expressible.
+
+  Proved by a suite that runs in a process with no DOM, and which asserts the absence of one first —
+  every other suite in the package runs beside one that installs jsdom, and a DOM leaking in would
+  make every assertion pass without meaning anything.
+
+### Patch Changes
+
+- 1c672d4: A colour field is described on the element it is named on, and Angular's radio group is described at
+  all.
+
+  **The contract disagreed with itself about `colors`.** `LABEL_FOR` pointed the label at `hexInput`
+  and `DESCRIBED_BY_CARRIER` hung the description off `control` — the native picker, which two
+  renderers make unfocusable. One kind, two elements each claimed as the accessible control, so a
+  field's name and its description sat on different things. `DESCRIBED_BY_CARRIER` now names
+  `hexInput`, and the canonical snapshot counts `hexInput` among the elements a state can be expressed
+  on.
+
+  This was found by a renderer being marked wrong when it was right: Angular exposed the description
+  and the validity on the hex input the user types in, and the expectation — reading `control` — called
+  that nothing at all. Two of three renderers agreeing is not the same as two of three being correct.
+
+  The equivalence suite no longer restates the carrier either; it reads the relation from the contract.
+  A table beside a table is the shape of the defect this milestone keeps finding: two spellings that
+  agree today and diverge the moment one moves.
+
+  **Angular's radio group carried no `aria-describedby` and no `aria-invalid`.** The group is a
+  `radiogroup` with a name and nothing else, so an error was rendered, styled, and announced to no
+  assistive technology. It now binds the shared projection, as the segmented group already did.
+
+  Each `<input type="radio">` bound that same projection, so the error text was also attached to every
+  option — announced once per choice. The contract declares the relation from the group; the options no
+  longer restate it.
+
+  **Angular's multiselect described itself from the options container**, which the user never lands on,
+  rather than from the search button its label names. Moved.
+
+- b213813: The theme class-contract audit stops reading module paths as class names.
+
+  Its whole-file scan matched every `mdy-*` token in a source file, which includes the specifier in
+  `import { mdyPart } from "../mdy-part.js"`. Binding a part contract in a Lit component therefore
+  looked like emitting a `mdy-part` class — on thirteen kinds at once, as soon as enough components
+  consumed the directive. Module specifiers are now stripped before the scan, alongside comments.
+
+  The count of theme classes emitted by neither renderer is unchanged at 2477, so nothing was
+  suppressed along with it; an invented class in a real template is still reported.
+
+- 76e119e: A select that closes on blur lets go of the focus.
+
+  `blur` closed with `restoreFocus: true`, so leaving an open select pulled focus back to its own
+  trigger — off whatever the user had just clicked or tabbed onto. The pointer path in the same
+  renderer closed with `restoreFocus: false`, so the two disagreed and which one ran decided where
+  focus ended up.
+
+  The arrow followed from the same event: it carries the `open` state and animates its rotation, and a
+  trigger regaining `:focus` a tick after the rotation starts is what made the close look like it
+  stuttered.
+
+  `Escape` still restores focus, and deliberately: there the user is still in the widget and has
+  nowhere else to be. `touched` is unchanged.
+
+  The colour field never had this: it is the one overlay field with no focus path at all, so it has a
+  single dismissal rule and nothing to disagree with.
+
+- 569128a: A contract table cannot be keyed by a part that does not exist.
+
+  `PARENT_CANDIDATES`, `SHELL_CLASS_FALLBACK` and `MDY_SHELL_PART_STATES` are keyed by part name and
+  are **deliberately partial** — most parts need no parent hint, are not shell parts, and carry no
+  shell states, so a lookup that misses is an answer rather than a mistake. That rules out the
+  `PART_SEMANTICS` treatment (throw on a miss), and typing them to a union is no better: the union
+  would have to be derived from the catalogue these tables help build, and a type derived from the
+  data it validates checks nothing.
+
+  What was left to get wrong is the other direction — a **key naming a part that does not exist**. It
+  goes on being looked up, never matches, and silently contributes nothing: the parent hint stops
+  applying, the shell class stops being inherited, and the widget still renders, slightly differently,
+  forever. The keys are now checked once at load, and a stale one throws.
+
+  It found two immediately. `PARENT_CANDIDATES` was keyed by `decrement` and `increment`, which no kind
+  declares — removed here. Why they were written is recorded as finding I in `docs/contract-gaps.md`
+  and is not resolved by removing them: `@modyra/angular` does render spin buttons, they wear
+  `mdy-spin-btn`, the themes style them, and the contract declares no part for either. That is the
+  inverse of every other finding in that document — emitted and styled and declared by nothing, rather
+  than declared and wired to nothing — and it needs a decision rather than a patch.
+
+- eb224f8: Closing an overlay is no longer a validation event.
+
+  A user who opened a picker, changed their mind and dismissed it was marked as having _touched_ the
+  field, so a required field they never filled began showing "This field is required" — for deciding
+  nothing. Six kinds did it: `select`, `multiselect`, `datepicker`, `daterange`, `timepicker` and
+  `colors`, through the shared dropdown lifecycle and again in each kind's own close path.
+
+  The other two renderers already left the field alone, which is how this surfaced: the first action
+  sequence compared across renderers showed one of them reporting `touched` after open-then-Escape and
+  the others not. A uniform per-renderer difference rather than a per-kind bug, so it was a decision
+  rather than a defect — now taken, and the canonical expectation after a dismissed overlay asserts the
+  resting state rather than declining to say.
+
+  `markAsTouched` stays where a field is genuinely left: the blur handlers, and the select adapter's
+  own `onTouched`.
+
+- 8e67cfe: Every exported shape in the 1.0 packages is classified.
+
+  `contract-diff` snapshots the widget _catalogue_ — parts, relations, states, capabilities — and had
+  never seen a TypeScript type. So every public interface was outside classification, and it showed:
+  four changes in recent memory reported `patch` because the differ had nothing to compare, including
+  a projection's shape and a required field added to an interface four adapters implement.
+
+  `npm run test:type-surface` records **205 exported shapes** from the _emitted_ declarations, with
+  member names and optionality, and classifies a change the way `docs/contract-compatibility.md` says:
+
+  - optional → required, or a member removed: **major**
+  - a new optional member, or a newly exported shape: **minor**
+
+  Accept an intended change with `npm run type-surface:accept`.
+
+  This is what freezes `MdyFormError`, `MdyDynamicDiagnostic` and the parse result: not by forbidding
+  change, but by making a change to any of them a reviewable diff with a level attached.
+
+  **What it still cannot see** is member _types_ — that `payload` exists and is optional, not that it
+  is `unknown`. A widening is invisible, and saying so is better than implying otherwise.
+
+- 5c8784c: One derivation of the overlay subtree, and stepping can always leave a bad value.
+
+  `overlayOnlyParts` and `dynamicParts` answered the same question — which parts exist only alongside
+  an open overlay — by two different walks. One rooted on the part _named_ `popup`, the other on the
+  part whose _element is_ `popup`. They agreed on all seventeen kinds because every popup-element part
+  happens to sit inside the one called `popup`, which is agreement by luck rather than by construction:
+  a kind whose calendar or dial sat elsewhere would have split them, and nothing would have said so.
+  `overlayOnlyParts` now delegates. The surviving derivation is the one with the fixed-point walk and
+  the test that runs it over child-first and reversed anatomies.
+
+  `stepTimeField` no longer produces `NaN`. A field holding nothing readable — an empty box coerced to
+  a number, a parse that failed — made the arithmetic non-finite, and the caller stored the result, so
+  the value became unreachable by the very key meant to change it. Stepping is documented as how a user
+  _leaves_ a bad value, so it must not be the one operation that preserves it. A non-finite current now
+  enters the range from the end the user is moving away from: up from nothing is the first hour, down
+  from nothing is the last. Entering at `min + delta` instead would have put the first press on the
+  second value and left the first unreachable from the keyboard.
+
+  A property test now asserts that no combination of current and delta — `NaN`, both infinities,
+  negatives, values past the end — can produce anything outside the declared range.
+
+- 6e434ab: `MdyStateFixture` gains two optional members: `value()` and `portalRoots()`.
+
+  A fixture is mounted to be asked a question about a widget in a state, and there are two such
+  questions — whether this renderer is right, and whether three renderers agree. The state matrix asks
+  the first from the DOM; a canonical observation asks the second and needs the value the form holds
+  rather than the one a renderer chose to display, plus any element outside the subtree that may hold
+  the widget's overlay.
+
+  Both are optional, so `collectStateMatrix` and every fixture already written are unaffected.
+
+  The three in-repo adapters now mount both suites through one fixture each. Two fixtures per adapter
+  is two claims about the same widget that drift, and only one of them is checked: the state matrix's
+  driver already knew that a daterange's empty value is an object and a slider's is its minimum, while
+  the equivalence suite's mount knew neither and could not drive a state at all.
+
+- 8bdc82b: The file field's keyboard, and the one question a browser test can only record.
+
+  Three behaviours are now asserted in a real browser: the browse affordance is reachable from the
+  keyboard, it is a real `<button>` rather than a styled `div` — the difference a screen reader and the
+  Enter key both notice — and the tab order is measured rather than assumed.
+
+  Opening the picker ends in a native OS dialog Playwright cannot see, so "Enter opens the file
+  chooser" is deliberately **not** asserted. A green there would mean nothing.
+
+  **Measured and recorded, not decided**: both the hidden `input[type="file"]` and the browse button
+  are tab stops, so a keyboard user meets one affordance twice — once announced as "choose file", once
+  as "Browse". The input is visually hidden by the clip technique, which keeps it focusable on purpose,
+  and the button forwards clicks to it. Which element should own the affordance is a genuine design
+  question with two defensible answers — the contract's `label[for]` names the input, but the button is
+  the one a sighted keyboard user can see themselves land on — so the test pins the current state and
+  says so, rather than settling it in passing.
+
+- 81e1e39: Fixes `handle.readonly is not a function`, thrown on the first render of any text field bound to a
+  typed form.
+
+  `@modyra/angular` declared its own `MdyFieldHandle` interface, written out member by member beside
+  the engine's. When the engine's handle gained `interactivity` and `readonly` — the two halves of what
+  a user may do — the copy did not. `_buildHandle` built a handle satisfying the copy, TypeScript
+  agreed, and the first widget controller to read `handle.readonly()` threw at runtime.
+
+  The type is now derived from the engine's rather than restated: the signal members re-branded as
+  Angular signals, the imperative half passed through unchanged. `markAsTouched(): void` is
+  structurally a zero-argument accessor, so a blanket mapping would have rewritten it as
+  `Signal<void>` — the commands are excluded by name.
+
+  The same mistake cannot be silent again: removing either member now fails the build rather than the
+  browser. A regression test asserts both are callable on a handle from `mdyForm()`.
+
+  Also in this change: the canonical snapshot used by the renderer-equivalence suite reads each state
+  from its most universal signal instead of from a class. `disabled` was read from a wrapper modifier
+  that only some kinds carry — a checkbox, a toggle and a file field are natively disabled and carry no
+  class at all — so half the catalogue reported no state. It now reads the native and ARIA attributes,
+  and all seventeen kinds report alike.
+
+- e4aa213: Two defects the invalid state exposed, both found by comparing renderers rather than by reading them.
+
+  **An error list nothing pointed at.** Five field projections spelled the error list's id
+  `${widgetId}__error` while the shell — and the catalogue, where the part is named `errors` — spells
+  it `${widgetId}__errors`. One letter. Wherever the two halves of a reference came from different
+  sources, `aria-describedby` named an id that did not exist: a radio group's errors reached no
+  assistive technology at all, in the one state where that is the whole point. All five now use the
+  part's name.
+
+  **Two kinds that never said they were touched.** `select` and `radio`/`segmented` never called the
+  field shell's `syncState`, so their roots carried no `mdy-renderer--touched` and their wrappers no
+  error modifier — the treatments three themes key off. Every other kind in that renderer either called
+  it or set the class directly.
+
+  With both fixed, the invalid state now produces the same canonical observation on both renderers
+  across the kinds measured: the error list present, `aria-describedby` resolving to it, and the root
+  reflecting `touched`.
+
+- 342f396: These packages are now compiled by TypeScript 7.
+
+  Nothing about the published API changes, and that is checked rather than asserted: both compilers
+  emit all twenty-one projects and the results are compared file by file. Across 464 files the only
+  difference is the order in which the members of a string-literal union are printed in
+  `catalog.d.ts` — the same type either way. The contract snapshot is unmoved, and the Angular package
+  still builds through its own TypeScript 5.9 toolchain from these declarations.
+
+  The Angular package and Studio's embedded compiler stay on TypeScript 5.9, which their peer ranges
+  and its package exports require.
+
+- 6d1e0cd: The datepicker, date range and segmented control are proven from the keyboard.
+
+  Six more behaviours run against a real browser: each calendar opens from a key press, dismisses
+  without stranding focus, and moves through its grid with the arrows; the segmented control's
+  `role="radiogroup"` is held to meaning something — the arrows must actually move the selection.
+
+  **All three passed on first contact**, which is the point of writing the tests: their keyboard
+  policies already lived in the contract (`calendarKeyboardTarget`, `optionNavigationIndex`) rather
+  than in a renderer's handler, so there was nothing to fix — only something to prove. Removing the
+  segmented control's navigation now fails a test; before this, nothing asked.
+
+- Updated dependencies [0a23bfd]
+- Updated dependencies [e8b586a]
+- Updated dependencies [76f4e7e]
+- Updated dependencies [27c1222]
+- Updated dependencies [7bafd3d]
+- Updated dependencies [3bb85a6]
+- Updated dependencies [186cbad]
+- Updated dependencies [3068258]
+- Updated dependencies [0d3fa5f]
+- Updated dependencies [08cb845]
+- Updated dependencies [8e67cfe]
+- Updated dependencies [75d2553]
+- Updated dependencies
+- Updated dependencies [342f396]
+- Updated dependencies [1a99bbb]
+  - @modyra/core@1.0.0
+
 ## 0.5.0
 
 ### Minor Changes
