@@ -133,6 +133,9 @@ export const MDY_SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly str
   button: { tags: ["button"], roles: ["button", "switch"] },
   listbox: { tags: ["select"], roles: ["listbox", "grid"] },
   option: { tags: ["option"], roles: ["option", "gridcell"] },
+  // A choice in a radiogroup. Native or by role, as everywhere else — the tag check below refuses an
+  // `<input>` that is any other type, so this does not admit every input in the catalogue.
+  radio: { tags: ["input"], roles: ["radio"] },
   dialog: { tags: ["dialog"], roles: ["dialog", "alertdialog"] },
   // The thing a pointer uses to reach a value the widget owns. A `<label>` wrapping a hidden native
   // input and a `<button>` beside one are both correct, and the second avoids nesting a focusable
@@ -192,6 +195,7 @@ function satisfiesSemanticElement(element: Element, semantic: string): boolean {
   if (semantic === "input" && tag === "input") {
     return !["button", "submit", "reset", "image"].includes(element.getAttribute("type") ?? "");
   }
+  if (semantic === "radio" && tag === "input") return element.getAttribute("type") === "radio";
   return allowed.tags.includes(tag);
 }
 

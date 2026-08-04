@@ -49,6 +49,11 @@ export const WIDGETS = [
   "timepicker",
   "colors",
   "number",
+  // Both choosers, because their anatomy changed once already: a segmented option became a label
+  // around its own radio, and only the full-page shot noticed. A kind whose markup has moved is a
+  // kind whose next move should be named.
+  "segmented",
+  "radio-group",
 ] as const;
 
 /**

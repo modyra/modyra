@@ -192,6 +192,7 @@
         "requiredMarker",
         "group",
         "option",
+        "optionControl",
         "optionCheck",
         "optionText",
         "supportingText",

@@ -25,8 +25,8 @@ export function renderOptionField(
   // Both variants are one radio group semantically, but each names its parts its own way in the
   // contract; picking the definition per variant keeps every class in the catalog.
   const parts = f.kind === "segmented"
-    ? { group: MDY_WIDGET_CONTRACTS.segmented.parts.group, option: MDY_WIDGET_CONTRACTS.segmented.parts.option, control: MDY_WIDGET_CONTRACTS.segmented.parts.optionCheck, text: MDY_WIDGET_CONTRACTS.segmented.parts.optionText }
-    : { group: MDY_WIDGET_CONTRACTS.radio.parts.group, option: MDY_WIDGET_CONTRACTS.radio.parts.option, control: MDY_WIDGET_CONTRACTS.radio.parts.optionControl, text: MDY_WIDGET_CONTRACTS.radio.parts.optionLabel };
+    ? { group: MDY_WIDGET_CONTRACTS.segmented.parts.group, option: MDY_WIDGET_CONTRACTS.segmented.parts.option, radio: MDY_WIDGET_CONTRACTS.segmented.parts.optionControl, control: MDY_WIDGET_CONTRACTS.segmented.parts.optionCheck, text: MDY_WIDGET_CONTRACTS.segmented.parts.optionText }
+    : { group: MDY_WIDGET_CONTRACTS.radio.parts.group, option: MDY_WIDGET_CONTRACTS.radio.parts.option, radio: undefined, control: MDY_WIDGET_CONTRACTS.radio.parts.optionControl, text: MDY_WIDGET_CONTRACTS.radio.parts.optionLabel };
   const shell = buildFieldShell(f.label, f.kind);
   const group = el("div") as HTMLDivElement;
   group.className = parts.group.classes.join(" ");
@@ -38,6 +38,9 @@ export function renderOptionField(
     input.type = "radio";
     input.name = widgetId;
     input.value = key;
+    // The choice itself, named by the contract where the kind declares it. `radio` reaches its
+    // native input through the label instead, so there is nothing to name there.
+    if (parts.radio) input.className = parts.radio.classes.join(" ");
     row.appendChild(input);
     // The drawn control is its own element — the radio's circle, the segment's checkmark — exactly
     // as every renderer emits it. Putting that class on the native input instead made

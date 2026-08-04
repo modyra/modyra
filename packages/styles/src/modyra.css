@@ -1621,6 +1621,22 @@
     }
 
 
+    /* The choice itself: present to the platform and to a form post, drawn by the segment around it.
+       Hidden the way every other native control in this sheet is hidden — off the screen rather than
+       `display: none`, which would take it out of the accessibility tree and out of the tab order
+       along with it. */
+    .mdy-segmented__control {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
     .mdy-segmented__button:first-child {
         border-left: none;
     }
@@ -1633,18 +1649,27 @@
         font-weight: 600;
     }
 
-    .mdy-segmented__button:hover:not(.mdy-segmented__button--selected):not(:disabled) {
+    /* Reached through the control, because the segment is the label and a label is never disabled.
+       The state belongs to the choice; the segment only shows it. */
+    .mdy-segmented__button:hover:not(.mdy-segmented__button--selected):not(:has(.mdy-segmented__control:disabled)) {
         background: var(--mdy-segmented-btn-bg-hover);
         color: var(--mdy-segmented-btn-color-hover);
     }
 
-    .mdy-segmented__button--selected:hover:not(:disabled) {
+    .mdy-segmented__button--selected:hover:not(:has(.mdy-segmented__control:disabled)) {
         background: var(--mdy-segmented-btn-bg-selected-hover);
     }
 
-    .mdy-segmented__button:disabled {
+    .mdy-segmented__button:has(.mdy-segmented__control:disabled) {
         opacity: 0.38;
         cursor: not-allowed;
+    }
+
+    /* The ring follows the focus, and the focus is on the control inside. Without this the segment a
+       keyboard user has arrowed to shows nothing at all. */
+    .mdy-segmented__button:has(.mdy-segmented__control:focus-visible) {
+        outline: 2px solid var(--mdy-sys-color-primary);
+        outline-offset: -2px;
     }
 
     /* Reserve bold-width space so selecting a segment doesn't shift layout */

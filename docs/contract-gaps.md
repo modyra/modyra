@@ -19,13 +19,13 @@ to a green suite.
 **Status.** The headings below are the source of truth; this list is a convenience for a reader who
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J3, J4a, J4b
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J3, J4a, J4b
 - **Partly fixed** — C2, E2, F, L, M — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
   the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — J1, J2, K
+- **Open** — J2, K, N
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -499,7 +499,7 @@ Confirmation the gap closed rather than moved: the three `mdy-spin-btn` classes 
 the style audit's off-contract allowlist, and the audit reported them as **stale entries** once the
 parts existed. Removed.
 
-## J1 — `segmented` leaves its `option` element unconstrained — **open**
+## J1 — `segmented` leaves its `option` element unconstrained — **fixed**
 
 **Observed.** `packages/widgets/src/catalog.ts`, the `segmented` shape declares
 `elements: { option: "presentation" }`.
@@ -519,6 +519,46 @@ click handler and conform.
 
 **Not decided.** Picking one is a cross-renderer equivalence decision, not a contract-authoring one:
 it cannot be made without deciding what a segmented control *is*, and that binds every adapter.
+
+**Fixed**, and not the way [ADR 0012](architecture/0012-a-choice-is-a-radio-by-role-or-by-tag.md)
+expected. Its decision — a choice is a radio, by tag or by role — was sound; its claim that no
+renderer would change was not, and the measurement is what found that:
+
+| renderer | element carrying the `option` part | a radio? |
+| --- | --- | --- |
+| Plain | `<label>` wrapping `<input type="radio">` | no — the radio is its child |
+| Lit, Angular | `<button role="radio">` | yes |
+
+Applying the ADR literally would have made Plain non-conformant, so the anatomy names both halves
+instead, exactly as `radio` always has and as
+[ADR 0014](architecture/0014-the-contract-names-the-responsible-element.md) requires: `option` is the
+labelled container, `optionControl` is the radio inside it, and both are required. Lit and Angular
+moved to the native pattern rather than Plain moving away from it — which also lets a theme reach
+`:checked`, `:disabled` and `:focus-visible` structurally instead of through a class a renderer has
+to remember to apply.
+
+`contract:diff`: **major**, two entries — a new required part and an element change.
+
+**A stale claim corrected while here.** This finding recorded that segmented's `required` named
+`optionControl`, a part it did not have. It did not: that is `radio`'s list, and segmented required
+only parts it declared. The plan repeated the claim and it was wrong in both places.
+
+## N — focusing a hidden native radio ends the page on one engine — **open**
+
+**Observed.** WebKit, the Angular demo. Calling `focus()` on a visually hidden `<input type="radio">`
+ends the page — from the driver and from inside the page alike, in under a second.
+
+**Not caused by the anatomy change that found it**, and that was checked rather than assumed: the
+untouched `radio` kind crashes identically, and did so before a segmented option was a radio at all.
+It surfaced only because a keyboard test that used to focus a `<button>` now focuses a radio.
+
+**Not reproduced in isolation.** A minimal page hiding a radio the same four ways — `clip`,
+`clip-path`, zero opacity, and not hidden at all — focuses cleanly every time. So it is not the
+hiding technique on its own, and what else the demo contributes is unknown.
+
+The consequence is not theoretical: a keyboard user reaching any radio in that demo on that engine
+loses the page. `e2e/keyboard.spec.ts` skips the row there with this finding named, rather than
+working around it.
 
 ## J2 — `multiselect` anatomy depends on its mode, and the contract cannot say so — **open**
 

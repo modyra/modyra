@@ -526,18 +526,19 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       roles: { group: "radiogroup" } ,
       states: { group: ["horizontal"], option: ["disabled"] } ,
       required: ["option", "optionControl", "optionLabel"] }),
-  segmented: define("segmented", ["mdy-renderer", "mdy-renderer--segmented"], ["root", "label", "requiredMarker", "group", "option", "optionCheck", "optionText", "supportingText", "errors", "errorItem"] as const, false,
-    { classes: { group: ["mdy-segmented"], option: ["mdy-segmented__button"], optionCheck: ["mdy-segmented__check"], optionText: ["mdy-segmented__text"] },
-      // Left unconstrained, and that is a finding rather than a preference. A choice may be a
-      // <label> around an <input type=radio>, the same native pattern as radio, or a <button>.
-      // Both are defensible — a radiogroup, or a toolbar of pressed buttons — but they are not the
-      // same control to a screen reader, and requiring either would break whichever adapter chose
-      // the other. Declaring "either" honestly beats asserting a shape only one adapter meets.
-      elements: { option: "presentation" },
+  segmented: define("segmented", ["mdy-renderer", "mdy-renderer--segmented"], ["root", "label", "requiredMarker", "group", "option", "optionControl", "optionCheck", "optionText", "supportingText", "errors", "errorItem"] as const, false,
+    { classes: { group: ["mdy-segmented"], option: ["mdy-segmented__button"], optionControl: ["mdy-segmented__control"], optionCheck: ["mdy-segmented__check"], optionText: ["mdy-segmented__text"] },
+      // The same anatomy as `radio`, because it is the same control: a choice in a radiogroup. What
+      // differs is how a theme paints it, which is not a matter for the contract.
+      //
+      // `option` is the labelled container and `optionControl` is the radio inside it. Naming both
+      // is what lets the rule bite — a container alone can be anything, and a choice a pointer can
+      // make but a screen reader cannot announce is what this kind used to permit.
+      elements: { option: "label", optionControl: "radio" },
       roles: { group: "radiogroup" } ,
       states: { option: ["selected"] } ,
       presentation: ["mdy-segmented__button--first", "mdy-segmented__button--last"] ,
-      required: ["option", "optionCheck", "optionText"] }),
+      required: ["option", "optionControl", "optionCheck", "optionText"] }),
   select: define("select", ["mdy-renderer", "mdy-renderer--select"], ["root", "label", "requiredMarker", "inputWrapper", "trigger", "value", "placeholder", "arrow", "popup", "search", "listbox", "option", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { trigger: ["mdy-select__trigger"], value: ["mdy-select__value"], placeholder: ["mdy-select__placeholder"], arrow: ["mdy-select__arrow"], popup: ["mdy-select__dropdown", MDY_POPUP_CLASS], search: ["mdy-select__search"], listbox: ["mdy-select__list"], option: ["mdy-select__option"], loading: ["mdy-select__loader"], empty: ["mdy-select__empty"] },
       // `selected` is the value; `active` is where the keyboard is. They are genuinely different —
