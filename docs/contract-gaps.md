@@ -19,13 +19,13 @@ to a green suite.
 **Status.** The headings below are the source of truth; this list is a convenience for a reader who
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, K, N, P, Q
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, K, N, O, P, Q
 - **Partly fixed** — C2, E2, F, L, M — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
   the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — O
+- **Open** — none
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -1131,7 +1131,7 @@ exists in this shape — and pays for it with an estimate and three tiers. Gener
 of time with `color-utils` is exact and gives that up. ADR 0015 holds either way, since the metric is
 the same; what changes is whether anything still approximates it.
 
-## O — WebKit ends the page when a field wrapper is painted on the base theme — **open**
+## O — WebKit ends the page when a field wrapper is painted on the base theme — **fixed**
 
 **Observed.** WebKit, the Angular demo. Two `demo.spec.ts` rows crash the page — `Page crashed` at
 the action, not an assertion failure and not a timeout.
@@ -1165,37 +1165,46 @@ The rule:
 
 Necessary confirmed by deleting it alone, sufficient confirmed by deleting all 298 others.
 
-### The value is irrelevant, and that is the finding
+### The value is the finding, and the first reading of it was wrong
 
-N's fatal ingredient was a specific value: a flat colour survived and a nested `color-mix()` did not.
-Here **every value crashes** — a flat hex, a single-level mix, the nested mix written out literally,
-and the rule with its pseudo-classes stripped down to a bare class selector. There is no malformed
-value to blame.
+Reduced to one rule, **every** background value crashed — a flat hex, a single mix, the nested mix
+written out. That was recorded here as evidence that the value could not be the cause, and it was
+measured against a sheet cut down to that one rule. Repeated against the **shipped** sheet it
+reverses:
 
-So a background on a normally sized, visible element is fatal here, while in N the same token on a
-normally sized input survived and only the clipped one crashed. Those two results cannot both be
-explained by the value, and they are both directly measured.
+| on the real sheet | result |
+| --- | --- |
+| untouched | page ends |
+| that rule's value overridden with a flat colour | survives |
+| `--mdy-input-bg-hover` flattened globally | survives |
 
-**The likeliest reading is that neither is a value defect.** If what is actually being hit is a
-threshold in the engine's paint path, then a per-rule "necessary and sufficient" result describes a
-tipping point in one particular page rather than a cause, and would move if the page around it moved.
-That reading is **Possible**, not demonstrated — it is offered because it is the one hypothesis that
-accommodates both measurements, and because acting on the narrower story is what would waste the next
-session.
+A page painted from one rule is not the page the defect occurs on. The reduction was the right way to
+*locate* the rule and the wrong thing to generalise a cause from, and the conclusion drawn from it —
+that this was probably a paint-path threshold rather than a value — was wrong.
 
-This is why [ADR 0020](architecture/0020-a-hidden-native-control-is-never-painted.md) carries an
-amendment. Its rule stands on its own terms and its verification is untouched; the causal story in
-its context section is narrower than the evidence now supports.
+**So N and O are one defect.** A **nested `color-mix()` painted during an interactive state** ends
+the page. N's instance was on a control clipped to a pixel, O's on a visible field wrapper; the
+element was never the variable.
 
-**Not fixed, and no fix is obvious.** Unlike N, the rule here is one the stylesheet is supposed to
-have: a visible field wrapper showing hover. Removing it removes a real affordance, so the fix is not
-"stop painting" and nothing from N transfers.
+### Fixed
 
-**Next step**: determine whether the crash needs the popup to open at all, by painting the wrapper on
-hover without clicking the toggle. That probe hung rather than answering — a crashed page makes the
-next `evaluate` hang instead of throwing, so every step after the act needs its own timeout. If
-hovering alone is fatal, this is about painting; if it needs the open popup, it is about what the
-popup composites over, and the palette's filter is the next thing to look at.
+`--mdy-input-bg-hover` is gone, and the hover and focus tints are a **state veil** — a flat
+`--mdy-state-veil` laid over whatever the field is already painted, one value per colour scheme,
+rather than a fourth colour mixed from three derived ones.
+
+The veil is the better rule independently of the crash. The field's colour and the text colour are
+each derived from a primary a host may set at runtime, so mixing over them produced a colour no
+declaration states and no author can read off the sheet. A veil is legible where it is written and
+does not care how deep the derivation beneath it goes.
+
+Verified on all four themes; the two `demo.spec.ts` rows quarantined under this finding are
+un-quarantined and pass on WebKit. The 216 zero-tolerance screenshot baselines are unchanged, which
+is expected rather than reassuring — they capture widgets at rest, and this is a hover and focus
+state.
+
+**What is not fixed is the engine defect.** A future rule painting an emergent nested `color-mix()`
+in an interactive state would end the page again, and nothing here prevents that. Both findings
+removed the composition rather than the trigger, which is the part that was ours to get wrong.
 
 ## P — the conformance kit called a partial run conformance — **fixed**
 
