@@ -1096,41 +1096,68 @@ exists in this shape — and pays for it with an estimate and three tiers. Gener
 of time with `color-utils` is exact and gives that up. ADR 0015 holds either way, since the metric is
 the same; what changes is whether anything still approximates it.
 
-## O — WebKit ends the page on a pointer path through two demo widgets — **open**
+## O — WebKit ends the page when a field wrapper is painted on the base theme — **open**
 
-**Observed.** WebKit, the Angular demo, unchanged by the fix for N.
+**Observed.** WebKit, the Angular demo. Two `demo.spec.ts` rows crash the page — `Page crashed` at
+the action, not an assertion failure and not a timeout.
 
-| row | the act that crashes |
+These were quarantined as instances of N, and the attribution was wrong. Lifting them after N was
+fixed is what established it: N's rule freed the keyboard row it also held and left these two exactly
+as they were.
+
+### Reduced to one rule
+
+Reproducing it took three failed harnesses, and the reasons are worth more than the failures. A probe
+that swapped the theme without expanding the demo's collapsed `<details>` timed out on every action
+including ones that work, which is a broken harness rather than a reproduction. `force: true` then
+reported "outside of the viewport", and raw mouse coordinates at the default theme survived. What the
+suite does and none of those did: expand the accordion, then swap the theme, then click.
+
+With that, the reduction is short:
+
+| question | answer |
 | --- | --- |
-| `e2e/demo.spec.ts:185` | `click` of `.mdy-colors__toggle-area` |
-| `e2e/demo.spec.ts:415` | `hover` of `.mdy-segmented__button` |
+| which theme? | **`modyra` only.** `modyra-modern`, `modyra-material` and `modyra-ios` all survive the same click |
+| CSS or script? | **CSS.** Disabling every sheet survives; disabling only the theme's sheet survives |
+| which rules? | two are necessary — the `mdy.tokens` `:root` block that maps `--mdy-*` onto `--mdy-sys-color-*`, and one component rule |
+| sufficient? | **yes**, that one component rule alone, with the tokens, crashes it |
 
-Playwright reports `Page crashed` at the action, not an assertion failure and not a timeout, which is
-the same signature finding N had.
+The rule:
 
-**These two rows were quarantined as instances of N, and that attribution was wrong.** Lifting them
-after N was fixed is what established it: N's rule freed the keyboard row it also held, and left
-these two exactly as they were.
+```css
+.mdy-input-wrapper:hover:not(:focus-within) { background-color: var(--mdy-input-bg-hover); }
+```
 
-The distinction is what makes them a separate finding. N was paint arriving at an element with no
-visible surface — nobody's intent, and correct to remove. These are ordinary pointer interactions
-with **visible, legitimately painted** elements: a suffix button and a segment label. Whatever is
-fatal here is something the stylesheet is *supposed* to be doing, so the fix cannot be "stop doing
-it" and no rule from N transfers.
+Necessary confirmed by deleting it alone, sufficient confirmed by deleting all 298 others.
 
-**Not root-caused.** One attempt is worth recording so it is not repeated: driving the crash outside
-the suite by swapping `#mdy-theme-link`'s `href` produced uniform 30s timeouts on every theme and
-every action, including ones that work. That is a broken harness rather than a reproduction — the
-demo does not swap themes that way — and its output says nothing about the defect. A probe whose
-control case also fails has measured nothing.
+### The value is irrelevant, and that is the finding
 
-**Next step**: reproduce inside the real theme loop rather than beside it, then apply N's method,
-which is what worked there: bisect the sheet, and confirm each candidate for necessity **and**
-sufficiency separately. N's first bisect named the wrong rule with full confidence because it assumed
-a single cause, and only the two-direction check exposed it.
+N's fatal ingredient was a specific value: a flat colour survived and a nested `color-mix()` did not.
+Here **every value crashes** — a flat hex, a single-level mix, the nested mix written out literally,
+and the rule with its pseudo-classes stripped down to a bare class selector. There is no malformed
+value to blame.
 
-Worth carrying over as a hypothesis, not a conclusion: N's fatal ingredient was a **nested
-`color-mix()`, produced by variable substitution rather than written anywhere**, painted during an
-interactive state. Both acts here are interactive states on themed surfaces. It is a lead because it
-is cheap to test, and it is only a lead — N's own clipped-element condition plainly does not hold for
-these two.
+So a background on a normally sized, visible element is fatal here, while in N the same token on a
+normally sized input survived and only the clipped one crashed. Those two results cannot both be
+explained by the value, and they are both directly measured.
+
+**The likeliest reading is that neither is a value defect.** If what is actually being hit is a
+threshold in the engine's paint path, then a per-rule "necessary and sufficient" result describes a
+tipping point in one particular page rather than a cause, and would move if the page around it moved.
+That reading is **Possible**, not demonstrated — it is offered because it is the one hypothesis that
+accommodates both measurements, and because acting on the narrower story is what would waste the next
+session.
+
+This is why [ADR 0020](architecture/0020-a-hidden-native-control-is-never-painted.md) carries an
+amendment. Its rule stands on its own terms and its verification is untouched; the causal story in
+its context section is narrower than the evidence now supports.
+
+**Not fixed, and no fix is obvious.** Unlike N, the rule here is one the stylesheet is supposed to
+have: a visible field wrapper showing hover. Removing it removes a real affordance, so the fix is not
+"stop painting" and nothing from N transfers.
+
+**Next step**: determine whether the crash needs the popup to open at all, by painting the wrapper on
+hover without clicking the toggle. That probe hung rather than answering — a crashed page makes the
+next `evaluate` hang instead of throwing, so every step after the act needs its own timeout. If
+hovering alone is fatal, this is about painting; if it needs the open popup, it is about what the
+popup composites over, and the palette's filter is the next thing to look at.
