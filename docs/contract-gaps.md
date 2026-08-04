@@ -912,6 +912,22 @@ required on `MdyReactivity`.
 shapes and missed `MdyFormError` entirely, which is declared in `types.d.ts` and only re-exported. It
 now walks every emitted declaration: 205.
 
+**A third blind spot, found the same way the second was — by a change slipping through it.** Removing
+the exported alias `MdyMultiselectFieldMode` classified as `patch` under both `contract:diff` and the
+type-surface audit, because the audit read interfaces and type *literal* aliases only. Every union
+alias was therefore outside classification, including `MdyWidgetKind`, `MdyWidgetPart` and
+`MdyWidgetSemanticElement` — the unions a renderer switches on and both SDKs enumerate, where
+withdrawing one member is as breaking as removing an interface member.
+
+It now records the literal members of a union alias, and `(opaque)` for an alias that is not one, so
+the alias disappearing still fails while its contents make no claim they cannot support. 205 shapes
+became 310. Falsified rather than assumed: narrowing `MdyMultiselectMode` to a single member reports
+`MdyMultiselectMode."multi" was removed [major]`.
+
+The removal that exposed this was still unclassified when it was made, and shipped on an explicit
+instruction rather than on a differ's verdict. That ordering is the finding, not a footnote — the
+guard exists now because something got through, which is the third time in this entry.
+
 **What is still open, and it is the original half:** member *types*. The snapshot records that
 `MdyFormError.payload` exists and is optional, not that it is `unknown` — so a widening or narrowing
 is invisible. And a projection returns attribute maps whose values depend on state, which is why it

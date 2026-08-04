@@ -83,7 +83,6 @@ export type {
 export type {
   MdyMultiselectFieldControllerOptions,
   MdyMultiselectFieldIntent,
-  MdyMultiselectFieldMode,
   MdyMultiselectFieldState,
 } from "./multiselect-field-types.js";
 
