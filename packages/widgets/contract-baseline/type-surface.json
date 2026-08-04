@@ -1,0 +1,1321 @@
+{
+  "AsyncValidatorEntry": [
+    "debounceMs",
+    "dependsOn",
+    "fns",
+    "timeoutMs",
+    "when"
+  ],
+  "CalendarCell": [
+    "date",
+    "inMonth",
+    "iso"
+  ],
+  "CalendarDate": [
+    "day",
+    "month",
+    "year"
+  ],
+  "FieldRecord": [
+    "asyncErrors",
+    "asyncRunId",
+    "asyncRunner",
+    "asyncValidators",
+    "disabled",
+    "pending",
+    "readonly",
+    "requiredKeys",
+    "state",
+    "validators"
+  ],
+  "Hct": [
+    "c",
+    "h",
+    "t"
+  ],
+  "MdyAffordance": [
+    "part",
+    "role"
+  ],
+  "MdyAnchorRect": [
+    "bottom",
+    "left",
+    "right",
+    "top",
+    "width"
+  ],
+  "MdyAnnouncer": [
+    "announce"
+  ],
+  "MdyAnyArrayDescriptor": [
+    "initial",
+    "item",
+    "kind",
+    "validators"
+  ],
+  "MdyAnyFieldDescriptor": [
+    "asyncDebounceMs",
+    "asyncDependsOn",
+    "asyncTimeoutMs",
+    "asyncValidators",
+    "asyncWhen",
+    "initial",
+    "kind",
+    "sanitize",
+    "validators"
+  ],
+  "MdyAnyGroupDescriptor": [
+    "children",
+    "kind"
+  ],
+  "MdyArrayDescriptor": [
+    "initial",
+    "item",
+    "kind",
+    "validators"
+  ],
+  "MdyArrayHandle": [
+    "at",
+    "errors",
+    "insert",
+    "length",
+    "move",
+    "path",
+    "push",
+    "remove",
+    "rows",
+    "setAll",
+    "valid"
+  ],
+  "MdyArrayManagerDeps": [
+    "engine",
+    "item",
+    "path",
+    "rx"
+  ],
+  "MdyAsyncDraftStorage": [
+    "flushed",
+    "ready"
+  ],
+  "MdyAsyncDraftStorageOptions": [
+    "backend",
+    "keys",
+    "onError?"
+  ],
+  "MdyAsyncKeyValueStore": [
+    "getItem",
+    "removeItem",
+    "setItem"
+  ],
+  "MdyAsyncRunnerHost": [
+    "fieldPath",
+    "fieldState",
+    "formValue"
+  ],
+  "MdyAsyncValidationContext": [
+    "form",
+    "path",
+    "signal"
+  ],
+  "MdyAsyncValidatorOptions": [
+    "debounceMs?",
+    "dependsOn?",
+    "timeoutMs?",
+    "when?"
+  ],
+  "MdyBatchingCapability": [
+    "batch"
+  ],
+  "MdyBooleanFieldA11yOptions": [
+    "variant",
+    "widgetId"
+  ],
+  "MdyBooleanFieldController": [
+    "setChecked",
+    "setReadonly"
+  ],
+  "MdyBooleanFieldControllerOptions": [
+    "handle",
+    "readonly?",
+    "variant?",
+    "widgetId"
+  ],
+  "MdyBooleanFieldState": [
+    "checked",
+    "dirty",
+    "disabled",
+    "interactivity",
+    "invalid",
+    "pending",
+    "readonly",
+    "required",
+    "touched"
+  ],
+  "MdyCalendarIssue": [
+    "code",
+    "detail"
+  ],
+  "MdyCanonicalExpectation": [
+    "focusOwner?",
+    "optional",
+    "overlay",
+    "parts",
+    "relationships",
+    "state?",
+    "value?"
+  ],
+  "MdyCanonicalOptions": [
+    "portalRoots?",
+    "value?"
+  ],
+  "MdyCanonicalPart": [
+    "count",
+    "element",
+    "part",
+    "role"
+  ],
+  "MdyCanonicalRelationship": [
+    "attribute",
+    "from",
+    "to"
+  ],
+  "MdyCanonicalSnapshot": [
+    "focusOwner",
+    "kind",
+    "overlay",
+    "parts",
+    "relationships",
+    "state",
+    "value"
+  ],
+  "MdyCatalogWidgetState": [
+    "activePart",
+    "disabled",
+    "open"
+  ],
+  "MdyChipAppearance": [
+    "mode?",
+    "removable?",
+    "role?",
+    "selected?"
+  ],
+  "MdyColorValueTransition": [
+    "close",
+    "touched",
+    "value"
+  ],
+  "MdyComputedOptions": [
+    "debugName?",
+    "equal?"
+  ],
+  "MdyControlOption": [
+    "disabled?",
+    "label",
+    "value"
+  ],
+  "MdyCoreFormOptions": [
+    "autoActivate?",
+    "draft?",
+    "history?",
+    "reactivity?",
+    "security?",
+    "submitMode?",
+    "validators?"
+  ],
+  "MdyDateDraftState": [
+    "committed",
+    "draft",
+    "open"
+  ],
+  "MdyDateDraftTransition": [
+    "commit",
+    "restoreFocus",
+    "state"
+  ],
+  "MdyDateLocale": [
+    "dayNamesNarrow",
+    "dayNamesShort",
+    "firstDayOfWeek",
+    "locale",
+    "monthNamesLong",
+    "monthNamesShort"
+  ],
+  "MdyDateRange": [
+    "end",
+    "start"
+  ],
+  "MdyDateRangeDraftState": [
+    "committed",
+    "draft",
+    "open"
+  ],
+  "MdyDateRangeDraftTransition": [
+    "commit",
+    "restoreFocus",
+    "state"
+  ],
+  "MdyDateRangeValue": [
+    "end",
+    "start"
+  ],
+  "MdyDatepickerFieldA11yOptions": [
+    "widgetId"
+  ],
+  "MdyDatepickerFieldCell": [
+    "day",
+    "disabled",
+    "focused",
+    "inMonth",
+    "iso",
+    "selected"
+  ],
+  "MdyDatepickerFieldController": [
+    "setReadonly",
+    "setValue"
+  ],
+  "MdyDatepickerFieldControllerOptions": [
+    "firstDayOfWeek?",
+    "handle",
+    "maxDate?",
+    "minDate?",
+    "readonly?",
+    "widgetId"
+  ],
+  "MdyDatepickerFieldState": [
+    "cells",
+    "dirty",
+    "disabled",
+    "focusedDate",
+    "interactivity",
+    "invalid",
+    "open",
+    "pending",
+    "readonly",
+    "required",
+    "selectedDate",
+    "touched",
+    "viewMonth",
+    "viewYear"
+  ],
+  "MdyDerivedPalette": [
+    "error",
+    "onError",
+    "onPrimary",
+    "onSecondary",
+    "onTertiary",
+    "primary",
+    "secondary",
+    "tertiary"
+  ],
+  "MdyDiagnostic": [
+    "adapter?",
+    "cause?",
+    "code",
+    "feature?",
+    "message",
+    "severity"
+  ],
+  "MdyDiagnostics": [
+    "report"
+  ],
+  "MdyDomContractIssue": [
+    "code",
+    "message",
+    "part"
+  ],
+  "MdyDomContractOptions": [
+    "absentParts?",
+    "adapterPrefix?",
+    "counts?",
+    "open?",
+    "parts?",
+    "strictClasses?",
+    "variant?"
+  ],
+  "MdyDraftOptions": [
+    "debounceMs?",
+    "exclude?",
+    "key",
+    "storage?",
+    "ttlMs?",
+    "version?"
+  ],
+  "MdyDraftStorage": [
+    "read",
+    "remove",
+    "write"
+  ],
+  "MdyDynamicArrayNode": [
+    "initialValue?",
+    "item",
+    "label?",
+    "maxItems?",
+    "minItems?",
+    "node"
+  ],
+  "MdyDynamicBooleanField": [
+    "kind"
+  ],
+  "MdyDynamicCalendarOptions": [
+    "firstDayOfWeek?",
+    "locale?",
+    "maxDate?",
+    "minDate?"
+  ],
+  "MdyDynamicColorsField": [
+    "kind",
+    "presets?"
+  ],
+  "MdyDynamicColumns": [
+    "at?",
+    "columns",
+    "id",
+    "kind"
+  ],
+  "MdyDynamicDateField": [
+    "kind"
+  ],
+  "MdyDynamicDaterangeField": [
+    "kind"
+  ],
+  "MdyDynamicDiagnostic": [
+    "code",
+    "message",
+    "path",
+    "severity"
+  ],
+  "MdyDynamicFieldNode": [
+    "field",
+    "node"
+  ],
+  "MdyDynamicFileField": [
+    "accept?",
+    "kind",
+    "multiple?"
+  ],
+  "MdyDynamicFormConfig": [
+    "fields",
+    "version"
+  ],
+  "MdyDynamicFormConfigV2": [
+    "fields?",
+    "id?",
+    "layout?",
+    "rules?",
+    "schema?",
+    "validations?",
+    "version"
+  ],
+  "MdyDynamicFormConfigV3": [
+    "version"
+  ],
+  "MdyDynamicFormParseResult": [
+    "acceptedCount",
+    "diagnostics",
+    "fields",
+    "layout",
+    "ok",
+    "rejectedCount",
+    "rules",
+    "validations",
+    "version"
+  ],
+  "MdyDynamicGroupNode": [
+    "children",
+    "label?",
+    "node"
+  ],
+  "MdyDynamicLayoutSlot": [
+    "at?",
+    "ref"
+  ],
+  "MdyDynamicNumberField": [
+    "kind",
+    "max?",
+    "min?",
+    "step?"
+  ],
+  "MdyDynamicOptionsField": [
+    "kind",
+    "loading?",
+    "mode?",
+    "options",
+    "searchable?"
+  ],
+  "MdyDynamicRule": [
+    "effect",
+    "target",
+    "when"
+  ],
+  "MdyDynamicSection": [
+    "at?",
+    "children",
+    "id",
+    "kind",
+    "label?"
+  ],
+  "MdyDynamicSlotPlacement": [
+    "column?",
+    "hidden?"
+  ],
+  "MdyDynamicTextField": [
+    "kind"
+  ],
+  "MdyDynamicValidation": [
+    "message",
+    "target?",
+    "when"
+  ],
+  "MdyDynamicValidators": [
+    "email?",
+    "max?",
+    "maxLength?",
+    "min?",
+    "minLength?",
+    "pattern?",
+    "required?"
+  ],
+  "MdyEffectOptions": [
+    "debugName?",
+    "onError?",
+    "scope?"
+  ],
+  "MdyEffectRef": [
+    "destroy",
+    "destroyed?"
+  ],
+  "MdyElementTarget": [
+    "key?",
+    "part"
+  ],
+  "MdyExpression": [
+    "op",
+    "operand?",
+    "operands?"
+  ],
+  "MdyFieldA11yOptions": [
+    "autocomplete?",
+    "inputMode?",
+    "inputType?",
+    "widgetId"
+  ],
+  "MdyFieldController": [
+    "setReadonly",
+    "setValue"
+  ],
+  "MdyFieldControllerOptions": [
+    "autocomplete?",
+    "handle",
+    "inputMode?",
+    "inputType?",
+    "readonly?",
+    "widgetId"
+  ],
+  "MdyFieldDescriptor": [
+    "asyncDebounceMs",
+    "asyncDependsOn",
+    "asyncTimeoutMs",
+    "asyncValidators",
+    "asyncWhen",
+    "initial",
+    "kind",
+    "sanitize",
+    "validators"
+  ],
+  "MdyFieldError": [
+    "kind",
+    "message",
+    "payload?"
+  ],
+  "MdyFieldHandle": [
+    "dirty",
+    "disabled",
+    "errors",
+    "interactivity",
+    "markAsDirty",
+    "markAsTouched",
+    "path",
+    "pending",
+    "readonly",
+    "required",
+    "set",
+    "touched",
+    "valid",
+    "value"
+  ],
+  "MdyFieldOptions": [
+    "asyncDebounceMs?",
+    "asyncDependsOn?",
+    "asyncTimeoutMs?",
+    "asyncValidators?",
+    "asyncWhen?",
+    "sanitize?"
+  ],
+  "MdyFieldShellA11yOptions": [
+    "controlId?",
+    "descriptionVisible?",
+    "errorsVisible?",
+    "widgetId"
+  ],
+  "MdyFieldShellFlags": [
+    "disabled",
+    "required"
+  ],
+  "MdyFieldState": [
+    "dirty",
+    "disabled",
+    "interactivity",
+    "invalid",
+    "pending",
+    "readonly",
+    "required",
+    "touched",
+    "value"
+  ],
+  "MdyFileCandidate": [
+    "name",
+    "size",
+    "type"
+  ],
+  "MdyFileSelectionOptions": [
+    "accept?",
+    "maxFileSize?",
+    "maxFiles?",
+    "multiple"
+  ],
+  "MdyFileSelectionTransition": [
+    "accepted",
+    "rejected",
+    "touched",
+    "value"
+  ],
+  "MdyFlushCapability": [
+    "flush"
+  ],
+  "MdyFocusCustodian": [
+    "release",
+    "remember",
+    "restore"
+  ],
+  "MdyFormAdapter": [
+    "buildSubmitEvent",
+    "errorsFor",
+    "getField",
+    "getValue",
+    "markAllTouched",
+    "patchValue",
+    "reset",
+    "setValue",
+    "state",
+    "submit",
+    "submitValue",
+    "value"
+  ],
+  "MdyFormEngineOptions": [
+    "autoActivate?",
+    "devWarnings?",
+    "security?"
+  ],
+  "MdyFormError": [
+    "kind",
+    "message",
+    "path",
+    "payload?"
+  ],
+  "MdyFormRegistry": [
+    "addValidators",
+    "claimField",
+    "removeField",
+    "removeValidators",
+    "setDisabled",
+    "setInitialValue",
+    "setReadonly",
+    "setSanitizer",
+    "upsertAsyncValidators",
+    "upsertValidators"
+  ],
+  "MdyFormState": [
+    "canSubmit",
+    "lastSubmitErrors",
+    "pending",
+    "submitCount",
+    "submitting",
+    "valid"
+  ],
+  "MdyFormSubmitEvent": [
+    "errors",
+    "valid",
+    "value"
+  ],
+  "MdyGroupDescriptor": [
+    "children",
+    "kind"
+  ],
+  "MdyHctPaletteModel": [
+    "error",
+    "neutral",
+    "neutralVariant",
+    "primary",
+    "secondary",
+    "tertiary",
+    "tones"
+  ],
+  "MdyI18nMessages": [
+    "colorHexLabel",
+    "colorPresetsHeader",
+    "datepickerCancel",
+    "datepickerChangeView",
+    "datepickerChooseDate",
+    "datepickerConfirm",
+    "datepickerNextMonth",
+    "datepickerPreviousMonth",
+    "datepickerSelectFallback",
+    "datepickerToggleLabel",
+    "daterangeChooseRange",
+    "daterangeEndLabel",
+    "daterangePickEndHint",
+    "daterangePickStartHint",
+    "daterangeSelectFallback",
+    "daterangeStartLabel",
+    "decrease",
+    "fileClearSelection",
+    "fileNoneSelected",
+    "fileSelect",
+    "fileSelectMultiple",
+    "increase",
+    "loading",
+    "noResults",
+    "overlayClosed",
+    "overlayOpened",
+    "searchOptionsLabel",
+    "searchPlaceholder",
+    "selectColorPrefix",
+    "selectCreateOption",
+    "timepickerCancel",
+    "timepickerConfirm",
+    "timepickerHourLabel",
+    "timepickerMinuteLabel",
+    "timepickerOpenLabel",
+    "timepickerSwitchToDial",
+    "timepickerSwitchToInput",
+    "wizardFinish",
+    "wizardNext",
+    "wizardPrevious",
+    "wizardStepStatus"
+  ],
+  "MdyKeyBinding": [
+    "intent",
+    "key",
+    "restoresFocus?",
+    "when?"
+  ],
+  "MdyLayoutSlotPlacement": [
+    "column?",
+    "hidden?"
+  ],
+  "MdyLifecycleIssue": [
+    "code",
+    "detail"
+  ],
+  "MdyLightDismiss": [
+    "click",
+    "interactionFromInside",
+    "phase",
+    "pointercancel",
+    "pointerdown",
+    "pointerup",
+    "reset"
+  ],
+  "MdyLightDismissOptions": [
+    "dismiss",
+    "isInside",
+    "isOpen"
+  ],
+  "MdyMultiselectFieldA11yOptions": [
+    "widgetId"
+  ],
+  "MdyMultiselectFieldController": [
+    "filteredOptions",
+    "setReadonly",
+    "setValue"
+  ],
+  "MdyMultiselectFieldControllerOptions": [
+    "handle",
+    "keyFor?",
+    "mode?",
+    "options",
+    "readonly?",
+    "widgetId"
+  ],
+  "MdyMultiselectFieldState": [
+    "counts",
+    "dirty",
+    "disabled",
+    "interactivity",
+    "invalid",
+    "open",
+    "pending",
+    "query",
+    "readonly",
+    "required",
+    "selectedKeys",
+    "selectedValues",
+    "touched"
+  ],
+  "MdyObserveCapability": [
+    "observe"
+  ],
+  "MdyObserveOptions": [
+    "equal?",
+    "timing?"
+  ],
+  "MdyOptionFieldA11yOptions": [
+    "errorsVisible?",
+    "optionCount",
+    "variant",
+    "widgetId"
+  ],
+  "MdyOptionFieldController": [
+    "setReadonly",
+    "setValue"
+  ],
+  "MdyOptionFieldControllerOptions": [
+    "errorsVisible?",
+    "handle",
+    "keyFor?",
+    "options",
+    "readonly?",
+    "variant?",
+    "widgetId"
+  ],
+  "MdyOptionFieldState": [
+    "dirty",
+    "disabled",
+    "interactivity",
+    "invalid",
+    "pending",
+    "readonly",
+    "required",
+    "selectedKey",
+    "selectedValue",
+    "touched"
+  ],
+  "MdyOverlayAnchorOptions": [
+    "alignment?",
+    "contentHeight?",
+    "contentWidth?",
+    "current?",
+    "direction?",
+    "gap?",
+    "kind?",
+    "lock?",
+    "matchAnchorWidth?",
+    "minSpace?",
+    "minWidth?",
+    "pointerX?",
+    "preferred?"
+  ],
+  "MdyOverlayAnchoring": [
+    "decision",
+    "placement",
+    "properties"
+  ],
+  "MdyOverlayCoords": [
+    "bottom?",
+    "left?",
+    "maxHeight?",
+    "maxWidth?",
+    "placement?",
+    "right?",
+    "top?",
+    "width?"
+  ],
+  "MdyOverlayDecision": [
+    "alignment",
+    "fits",
+    "maxHeight",
+    "placement",
+    "width"
+  ],
+  "MdyOverlayGeometry": [
+    "anchorBottom",
+    "anchorLeft",
+    "anchorRight",
+    "anchorTop",
+    "anchorWidth",
+    "desiredHeight?",
+    "desiredWidth?",
+    "minSpace",
+    "minWidth",
+    "pointerX?",
+    "preferred",
+    "preferredAlignment?",
+    "viewportHeight",
+    "viewportWidth"
+  ],
+  "MdyOverlayLifecycleState": [
+    "open"
+  ],
+  "MdyOverlayLifecycleTransition": [
+    "announce",
+    "effect",
+    "restoreFocus",
+    "state"
+  ],
+  "MdyOverlayOpenerA11yOptions": [
+    "controlsRendered?",
+    "open",
+    "widgetId"
+  ],
+  "MdyOverlayPlacementResult": [
+    "alignment",
+    "coords",
+    "position"
+  ],
+  "MdyPaletteModel": [
+    "contrastProxy",
+    "error",
+    "onChroma",
+    "secondary",
+    "tertiary"
+  ],
+  "MdyPaletteRelation": [
+    "c",
+    "h",
+    "l",
+    "minC?"
+  ],
+  "MdyPartContract": [
+    "attributes",
+    "classes",
+    "id?",
+    "role?",
+    "states?",
+    "style?"
+  ],
+  "MdyPartLookupOptions": [
+    "portalRoots?"
+  ],
+  "MdyPathRef": [
+    "path"
+  ],
+  "MdyPerceptualPaletteModel": [
+    "dark",
+    "errorHue",
+    "light"
+  ],
+  "MdyPerceptualRelation": [
+    "l",
+    "minDeltaE",
+    "salience"
+  ],
+  "MdyPointerOrigin": [
+    "button",
+    "isPrimary",
+    "pointerId"
+  ],
+  "MdyPopupOpener": [
+    "controls",
+    "opener",
+    "role?",
+    "typeable?"
+  ],
+  "MdyReactiveScope": [
+    "destroy",
+    "destroyed",
+    "id",
+    "onCleanup",
+    "run"
+  ],
+  "MdyReactivity": [
+    "capabilities",
+    "computed",
+    "createScope?",
+    "effect",
+    "id",
+    "kind",
+    "signal",
+    "untracked"
+  ],
+  "MdyReactivityCapabilities": [
+    "batching",
+    "computedEquality",
+    "deterministicFlush",
+    "directObservation",
+    "effectOwnership",
+    "effects",
+    "graphInspection",
+    "serverSnapshots",
+    "signalEquality",
+    "writableComputed"
+  ],
+  "MdyReactivityTestHarness": [
+    "destroy",
+    "flushIfSupported",
+    "reactivity"
+  ],
+  "MdyResolvedTheme": [
+    "dark",
+    "light",
+    "metrics",
+    "model",
+    "name",
+    "seed",
+    "selector"
+  ],
+  "MdySchemaPaths": [
+    "arrayPaths",
+    "groupPaths",
+    "leafPaths"
+  ],
+  "MdyScopeOptions": [
+    "debugName?",
+    "parent?"
+  ],
+  "MdySecurityPolicy": [
+    "maxValueLength?",
+    "onViolation?",
+    "sanitize?"
+  ],
+  "MdySecurityViolation": [
+    "detail",
+    "kind",
+    "path"
+  ],
+  "MdySelectA11yOptions": [
+    "activeKey",
+    "descriptionVisible?",
+    "disabled",
+    "errorsVisible?",
+    "idFactory",
+    "invalid",
+    "loading",
+    "open",
+    "popupRendered?",
+    "readonly",
+    "selectedKey",
+    "visibleKeys",
+    "widgetId"
+  ],
+  "MdySelectA11yProjection": [
+    "listbox",
+    "option",
+    "search",
+    "trigger"
+  ],
+  "MdySelectController": [
+    "setDescribedBy",
+    "setDisabled",
+    "setInvalid",
+    "setLoading",
+    "setOpen",
+    "setOptions",
+    "setPopupRendered",
+    "setReadonly",
+    "setValue"
+  ],
+  "MdySelectControllerOptions": [
+    "disabled?",
+    "invalid?",
+    "keyFor?",
+    "loading?",
+    "onChange?",
+    "options",
+    "readonly?",
+    "value?",
+    "widgetId"
+  ],
+  "MdySelectReconciliationState": [
+    "parkedValue",
+    "value"
+  ],
+  "MdySelectState": [
+    "activeKey",
+    "dirty",
+    "disabled",
+    "invalid",
+    "loading",
+    "open",
+    "query",
+    "readonly",
+    "selectedKey",
+    "selectedValue",
+    "touched"
+  ],
+  "MdySelectTransitionFixture": [
+    "expect",
+    "given",
+    "intent",
+    "name"
+  ],
+  "MdyServerValidatorOptions": [
+    "debounceMs?",
+    "dependsOn?",
+    "timeoutMs?",
+    "when?"
+  ],
+  "MdySignal": [],
+  "MdySignalOptions": [
+    "debugName?",
+    "equal?"
+  ],
+  "MdySnapshotOptions": [
+    "sensitive?"
+  ],
+  "MdyStateFixture": [
+    "control?",
+    "dispose",
+    "drive",
+    "parts",
+    "press?",
+    "root",
+    "settle",
+    "value?"
+  ],
+  "MdyStateInspectOptions": [
+    "control?",
+    "parts?"
+  ],
+  "MdyStateIssue": [
+    "code",
+    "message",
+    "state"
+  ],
+  "MdyStateMatrixOptions": [
+    "kinds",
+    "mount"
+  ],
+  "MdyStateMatrixResult": [
+    "asserted",
+    "expected",
+    "observed",
+    "report",
+    "rows",
+    "undrivable",
+    "unsupportedAria"
+  ],
+  "MdyStateMatrixRow": [
+    "codes",
+    "kind",
+    "messages",
+    "state"
+  ],
+  "MdyStructureContractIssue": [
+    "code",
+    "message",
+    "part"
+  ],
+  "MdyThemeDefinition": [
+    "model?",
+    "name",
+    "seed",
+    "selector?"
+  ],
+  "MdyTimeDraftState": [
+    "committed",
+    "draft",
+    "open"
+  ],
+  "MdyTimeDraftTransition": [
+    "commit",
+    "restoreFocus",
+    "state"
+  ],
+  "MdyTimeFieldBounds": [
+    "max",
+    "min"
+  ],
+  "MdyTimepickerDialKeyResult": [
+    "field",
+    "value"
+  ],
+  "MdyTimepickerDialNumber": [
+    "index",
+    "label",
+    "ring",
+    "value"
+  ],
+  "MdyTimepickerFieldA11yOptions": [
+    "widgetId"
+  ],
+  "MdyTimepickerFieldController": [
+    "setReadonly",
+    "setValue"
+  ],
+  "MdyTimepickerFieldControllerOptions": [
+    "format?",
+    "handle",
+    "readonly?",
+    "widgetId"
+  ],
+  "MdyTimepickerFieldState": [
+    "dirty",
+    "disabled",
+    "draft",
+    "focusedField",
+    "format",
+    "interactivity",
+    "invalid",
+    "open",
+    "pending",
+    "readonly",
+    "required",
+    "touched",
+    "value",
+    "viewMode"
+  ],
+  "MdyTypeahead": [
+    "clear",
+    "push",
+    "query"
+  ],
+  "MdyTypeaheadOptions": [
+    "idleMs?",
+    "now?"
+  ],
+  "MdyTypedFormBaseOptions": [
+    "autoActivate?",
+    "draft?",
+    "history?",
+    "security?",
+    "validators?"
+  ],
+  "MdyTypedWidgetViewContract": [
+    "parts"
+  ],
+  "MdyUnmountObservation": [
+    "document",
+    "elementsBeforeMount",
+    "idsWhileMounted",
+    "pokeAfterDispose?"
+  ],
+  "MdyValueContract": [
+    "commit",
+    "nullable",
+    "shape"
+  ],
+  "MdyValueSecurityResult": [
+    "actions",
+    "value"
+  ],
+  "MdyValueWidgetController": [
+    "setDisabled",
+    "setInvalid",
+    "setReadonly",
+    "setValue"
+  ],
+  "MdyValueWidgetControllerOptions": [
+    "disabled?",
+    "invalid?",
+    "kind",
+    "onChange?",
+    "readonly?",
+    "value"
+  ],
+  "MdyValueWidgetState": [
+    "dirty",
+    "disabled",
+    "invalid",
+    "readonly",
+    "touched",
+    "value"
+  ],
+  "MdyViewportSize": [
+    "height",
+    "width"
+  ],
+  "MdyWidgetCommandContext": [
+    "announce",
+    "capabilities?",
+    "handlers",
+    "lookup",
+    "scheduleFocus",
+    "scheduleScroll"
+  ],
+  "MdyWidgetCommandExecutor": [
+    "destroy",
+    "execute"
+  ],
+  "MdyWidgetCommandHandlers": [
+    "onChange?",
+    "onDirty?",
+    "onTouched?",
+    "setOpen"
+  ],
+  "MdyWidgetController": [
+    "destroy",
+    "dispatch",
+    "state",
+    "view"
+  ],
+  "MdyWidgetDefinition": [
+    "capabilities",
+    "kind",
+    "parts",
+    "presentationClasses",
+    "rootClasses",
+    "structure",
+    "variants"
+  ],
+  "MdyWidgetIdFactory": [
+    "item",
+    "part"
+  ],
+  "MdyWidgetRelation": [
+    "attribute",
+    "from",
+    "to"
+  ],
+  "MdyWidgetRuntimeCapabilities": [
+    "dom",
+    "hydrated",
+    "pointerEvents",
+    "popover",
+    "resizeObserver"
+  ],
+  "MdyWidgetStateContract": [
+    "aria?",
+    "behaviour?",
+    "forbidsParts?",
+    "nativeAttribute?",
+    "requiresParts?"
+  ],
+  "MdyWidgetStructure": [
+    "kind",
+    "nodes"
+  ],
+  "MdyWidgetStructureNode": [
+    "element",
+    "optional?",
+    "order",
+    "parent?",
+    "part",
+    "repeated?"
+  ],
+  "MdyWidgetTransition": [
+    "from",
+    "restoresFocus?",
+    "to",
+    "trigger"
+  ],
+  "MdyWidgetViewContract": [
+    "parts",
+    "root",
+    "structure?"
+  ],
+  "MdyWritableSignal": [
+    "asReadonly",
+    "set",
+    "update"
+  ],
+  "Oklch": [
+    "c",
+    "h",
+    "l"
+  ],
+  "ParsedTime": [
+    "hour",
+    "minute",
+    "period"
+  ]
+}
