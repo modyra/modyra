@@ -1211,4 +1211,22 @@ that is not shipped to them.
 
 **Also open: `@modyra/angular` has no conformance config.** Only `packages/plain` and `packages/lit`
 have one, so the adapter with the largest surface and the most divergences found to date is the one
-the kit never runs. Every conformance claim in this repository is a claim about the other two.
+the kit never runs.
+
+**It is not unchecked, and the first version of this paragraph said it was.** Angular's own jest
+suites call the same `inspectWidgetDom` from `@modyra/widgets/testing`, against the same
+`MDY_WIDGET_CONTRACTS` — `dom-contract.spec.ts`, `state-matrix.spec.ts` and `equivalence.spec.ts` are
+the kit's sections driven by a different runner. The claim that every conformance statement here is
+about the other two adapters was wrong, and is corrected rather than quietly dropped: it was written
+from the absence of a config file without checking what else ran.
+
+**What is actually open is the drift between two drivers of one contract**, which is the shape this
+document keeps recording. Measured: `dom-contract.spec.ts` calls `inspectWidgetDom` with no `variant`
+option and the word never appears in the file, so Angular's multiselect is checked against its
+unvarianted anatomy and its **counter mode is never mounted**. That is precisely the blind spot
+[ADR 0017](architecture/0017-a-varianted-kind-names-its-anatomy-per-configuration.md) closed for the
+kit, whose anatomy pass mounts each declared variant — and its verification section claims the
+property generally, where it holds only for the two adapters the kit runs.
+
+Adding a config for Angular would close both at once, which is the argument for doing it that way
+rather than adding a variant loop to one more parallel driver.
