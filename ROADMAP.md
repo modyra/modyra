@@ -131,7 +131,7 @@ each one discriminates before believing it.
 
 ---
 
-## Phase 3 — the remaining two gaps
+## Phase 3 — the remaining two gaps — **complete, 2026-08-04**
 
 - **J1 — segmented semantics.** Decided in
   [ADR 0012](docs/architecture/0012-a-choice-is-a-radio-by-role-or-by-tag.md): a choice is a radio,
@@ -148,6 +148,37 @@ each one discriminates before believing it.
 
 **The trap to avoid:** J2 is the only gap that needs conditional anatomy. Designing a general
 condition language for one widget is the failure mode this phase is sequenced last to prevent.
+
+### Outcome
+
+Both closed, and `docs/contract-gaps.md` has no open J finding left.
+
+**J1** — a segmented choice is a radio. The contract names both halves, `option` the labelled
+container and `optionControl` the radio inside it, as `radio` always had. Lit and Angular moved to the
+native pattern rather than Plain moving away from it; themes now reach selected and disabled from the
+control instead of a class a renderer must remember to apply. `contract:diff`: **major**.
+
+**J2** — a multiselect's anatomy follows its mode, declared as **variants** keyed by the `mode` the
+field config already carried. In `single` the option *is* the control; in `multi` it contains them.
+Both named, which [ADR 0014](docs/architecture/0014-the-contract-names-the-responsible-element.md)
+requires and a disjunction cannot give.
+
+**Two ADRs were written and one superseded the other within the day.** ADR 0016 decided J2 on the
+premise that `mode` was absent from the Dynamic Form Contract; it was not, and had not been for
+releases. [ADR 0017](docs/architecture/0017-a-varianted-kind-names-its-anatomy-per-configuration.md)
+supersedes it. 0016 is kept: the reasoning it applied to the other options is what makes 0017
+legible.
+
+**The recurring failure appeared twice more, and both times the check was the thing missing rather
+than the rule.** ADR 0012 predicted no renderer would change and was wrong — it read a summary of the
+code rather than the code. And no conformance fixture mounted counter mode, so both adapters reported
+CONFORMANT having rendered one of a multiselect's two shapes. Ask what run fails if the new rule is
+wrong, and check that that run exists.
+
+**J2 was not closed until the SDKs carried the mode.** Neither did: a server parsing a form and
+re-emitting it silently turned a counter multiselect into a toggle one. Both now carry it, and
+`@JsonIgnoreProperties(ignoreUnknown = true)` is gone from the Java records — an SDK reporting
+success on a document it did not understand is the same silence.
 
 ---
 
