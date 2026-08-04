@@ -141,11 +141,29 @@ rule. Where a palette can be generated ahead of time, `color-utils` applies it e
 
 ---
 
----
-
 ## How a visual change is reviewed
 
 By diff, not by opinion. Screenshot baselines per renderer and theme make an unintended change a
 failing test; the rules above make a *new* decision answerable without a round-trip.
+
+```sh
+npx playwright test e2e/plain/visual.spec.ts e2e/lit/visual.spec.ts     # against the baselines
+npx playwright test e2e/plain/visual.spec.ts --update-snapshots         # accept an intended change
+```
+
+**A baseline update is the reviewable artefact, not a chore before the commit.** Re-recording is how
+an intended change is accepted, and it is also how an unintended one disappears — so a diff that
+updates baselines and does not say which widget changed and why is the thing review exists to catch.
+The test names carry both: `select renders as it did under modyra-ios` names the widget and the
+theme, so a re-record has nothing vague to hide behind.
+
+The tolerance is **zero pixels**, because repeated runs are pixel-identical once animations are
+disabled and the clock is pinned. That is not strictness for its own sake: at a 0.2% tolerance,
+growing every icon by 2px passed every baseline. A suite that cannot fail is not coverage. If a
+baseline starts flapping, find the input that moves — a font still loading, an unpinned date — rather
+than widening the number.
+
+Baselines are per engine and per platform, and they compare a renderer to *itself*. Nothing here
+claims two engines look alike.
 
 If a change is visual and none of these rules covers it, that is a gap in this file. Extend it.
