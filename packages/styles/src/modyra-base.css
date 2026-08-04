@@ -37,22 +37,6 @@
     }
 
     :root {
-        /* Date Picker — Range & Popup (additional tokens for full mapping) */
-        --mdy-comp-date-picker-popup-padding: 1.25rem;
-        --mdy-comp-date-picker-popup-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.18);
-        --mdy-comp-date-picker-cell-size: 2.5rem;
-        --mdy-comp-date-picker-cell-border-radius: 50%;
-        --mdy-comp-date-picker-cell-font-size: 0.875rem;
-        --mdy-comp-date-picker-hover-bg: var(--mdy-sys-color-surface-container-highest);
-        --mdy-comp-date-picker-selected-bg: var(--mdy-sys-color-primary);
-        --mdy-comp-date-picker-selected-color: var(--mdy-sys-color-on-primary);
-        --mdy-comp-date-picker-in-range-bg: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 75%);
-        --mdy-comp-date-picker-endpoint-bg: var(--mdy-sys-color-primary);
-        --mdy-comp-date-picker-endpoint-color: var(--mdy-sys-color-on-primary);
-        --mdy-comp-date-picker-disabled-opacity: 0.25;
-        --mdy-comp-date-picker-outside-opacity: 0.5;
-        --mdy-comp-date-picker-header-gap: 0.5rem;
-        --mdy-comp-date-picker-nav-btn-size: 2rem;
         /* Color System — Light Theme */
         --mdy-sys-color-primary: var(--mdy-ref-color-indigo);
         --mdy-sys-color-on-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 95%);
@@ -216,6 +200,32 @@
 
         --mdy-sys-shape-corner-full: 9999px;
 
+        /* ─── Elevation ──────────────────────────────────────────────────────────
+           Three levels, and every raised surface takes one of them.
+
+           A shadow is two layers because a real one is: a short, dense contact shadow that says the
+           surface has an edge, and a long, soft cast that says how far it is off the page. One layer
+           alone reads as either a sticker or a smudge.
+
+           **The colour is the surface's, not black.** `--mdy-sys-color-shadow` is the primary
+           carried nearly to night, so a shadow on a tinted page belongs to that page. Pure black on
+           a coloured surface greys it, which is the difference between depth and dirt.
+
+           Levels are meanings, not sizes: **1** is a thing lying on the page — a track, a swatch.
+           **2** is a panel the page opened — every dropdown, palette and picker, which is one rank
+           and therefore one shadow. **3** is a surface over the whole page. A component that wants
+           a level nobody else has is a component making a claim about its own importance, and four
+           overlays of the same rank once carried four different recipes on exactly that reasoning. */
+        --mdy-sys-elevation-shadow-1:
+            0 1px 1px -0.5px color-mix(in srgb, var(--mdy-sys-color-shadow) 22%, transparent),
+            0 2px 4px -1px color-mix(in srgb, var(--mdy-sys-color-shadow) 14%, transparent);
+        --mdy-sys-elevation-shadow-2:
+            0 1px 2px -0.5px color-mix(in srgb, var(--mdy-sys-color-shadow) 24%, transparent),
+            0 6px 16px -4px color-mix(in srgb, var(--mdy-sys-color-shadow) 18%, transparent);
+        --mdy-sys-elevation-shadow-3:
+            0 2px 4px -1px color-mix(in srgb, var(--mdy-sys-color-shadow) 26%, transparent),
+            0 16px 40px -12px color-mix(in srgb, var(--mdy-sys-color-shadow) 24%, transparent);
+
         /* Elevation */
         --mdy-sys-elevation-level0: 0px;
         --mdy-sys-elevation-level1: 1px;
@@ -223,6 +233,20 @@
         --mdy-sys-elevation-level3: 6px;
         --mdy-sys-elevation-level4: 8px;
         --mdy-sys-elevation-level5: 12px;
+
+        /* ─── The state veil ─────────────────────────────────────────────────────
+           The tint a control carries while it is hovered or focused, as a veil laid over whatever
+           it is already painted rather than as a new colour mixed from the one underneath.
+
+           A veil is one legible value. Mixing produced the same appearance and composed three
+           levels deep — the control's colour and the text colour are each derived from a primary a
+           host may set at runtime — so what was finally painted had a shape no declaration stated.
+
+           It is a *token*, not a rule, because a theme's answer to "how does a control show state"
+           is not always the surface. A bordered control says it with its border and sets this to
+           `transparent`; a filled one says it here. Both are opting into the same channel model
+           rather than fighting each other's declarations. */
+        --mdy-sys-state-veil: rgb(0 0 0 / 0.06);
 
         /* State Layer Opacity */
         --mdy-sys-state-hover-opacity: 0.08;
@@ -263,10 +287,14 @@
         /* Popup/Modal */
         --mdy-comp-date-picker-popup-padding: 1.25rem;
         --mdy-comp-date-picker-popup-radius: var(--mdy-comp-date-picker-modal-container-shape);
-        --mdy-comp-date-picker-popup-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.18);
+        --mdy-comp-date-picker-popup-shadow: var(--mdy-sys-elevation-shadow-2);
         --mdy-comp-date-picker-popup-bg: var(--mdy-comp-date-picker-modal-container-color);
         /* Range */
-        --mdy-comp-date-picker-in-range-bg: color-mix(in srgb, var(--mdy-sys-color-primary), #fff 75%);
+        /* The band between two endpoints is a surface carrying the primary lightly, which is what
+           `primary-container` is — derived per scheme. Mixing toward `#fff` produced that in light
+           and a pale lavender band across a near-black calendar in dark, because a literal white
+           has no scheme to follow. */
+        --mdy-comp-date-picker-in-range-bg: var(--mdy-sys-color-primary-container);
         --mdy-comp-date-picker-endpoint-bg: var(--mdy-sys-color-primary);
         --mdy-comp-date-picker-endpoint-color: var(--mdy-sys-color-on-primary);
         /* Input */
@@ -318,15 +346,33 @@
             --mdy-sys-color-inverse-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 60%);
             --mdy-sys-color-inverse-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 60%);
             --mdy-sys-color-inverse-primary: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 40%);
+            /* A darkening veil over a dark control is invisible; the state has to lighten here. That
+               is why this is a value per scheme rather than one opacity applied to a derived
+               colour — an opacity cannot know which direction is "more". */
+            --mdy-sys-state-veil: rgb(255 255 255 / 0.08);
+
+            /* A shadow on a dark page has almost no room below it to darken, so the same opacities
+               vanish. The cast is carried further and deepened; the contact layer stays short,
+               because it is what keeps a panel from looking painted on. */
+            --mdy-sys-elevation-shadow-1:
+                0 1px 1px -0.5px color-mix(in srgb, var(--mdy-sys-color-shadow) 55%, transparent),
+                0 2px 5px -1px color-mix(in srgb, var(--mdy-sys-color-shadow) 40%, transparent);
+            --mdy-sys-elevation-shadow-2:
+                0 1px 2px -0.5px color-mix(in srgb, var(--mdy-sys-color-shadow) 60%, transparent),
+                0 8px 20px -4px color-mix(in srgb, var(--mdy-sys-color-shadow) 48%, transparent);
+            --mdy-sys-elevation-shadow-3:
+                0 2px 4px -1px color-mix(in srgb, var(--mdy-sys-color-shadow) 65%, transparent),
+                0 20px 48px -12px color-mix(in srgb, var(--mdy-sys-color-shadow) 60%, transparent);
         }
     }
 
     /*
- * Component tokens (partial, add more as needed)
- * Example: Text Fields, Checkbox, Date Picker, etc.
- *
- * For brevity, only a subset is included here. Extend as needed from the gist.
- */
+     * Component tier (--mdy-comp-*): the per-control values a theme retunes.
+     *
+     * Each defaults to a semantic token, so a control is themed by changing the system rather than
+     * by restating the control. A value here that resolves to a literal is a value the system has
+     * no name for yet.
+     */
 
     :root {
         /* Text Fields */
@@ -473,7 +519,9 @@
         --mdy-comp-color-picker-swatch-height: 1.25rem;
         --mdy-comp-color-picker-swatch-radius: var(--mdy-sys-shape-corner-full);
         --mdy-comp-color-picker-dropdown-radius: var(--mdy-sys-shape-corner-medium);
-        --mdy-comp-color-picker-dropdown-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.3);
+        /* A palette is a panel the page opened, exactly like a dropdown. It carried its own
+           recipe — the same two layers as the select's, written in the opposite order. */
+        --mdy-comp-color-picker-dropdown-shadow: var(--mdy-sys-elevation-shadow-2);
 
         /* Date Picker (Docked & Modal) */
         --mdy-comp-date-picker-docked-container-color: var(--mdy-sys-color-surface-container-high);

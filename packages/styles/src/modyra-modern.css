@@ -44,6 +44,15 @@
         --mdy-comp-field-container-shape: var(--mdy-sys-shape-corner-small);
         --mdy-comp-field-container-color: var(--mdy-sys-color-surface-container-lowest);
 
+        /* This theme says "hovered" and "focused" with the border, so it does not also say it with
+           the surface. A filled control has only the surface to speak with; a bordered one has an
+           edge, and using both makes a single state read as two events at different strengths.
+
+           Declared here rather than fought downstream: the foundation lays the veil as a background
+           *image*, which a theme's `background-color` cannot displace — so overriding the colour
+           looks like it works, and quietly paints both. */
+        --mdy-sys-state-veil: transparent;
+
         /* Cells scale with the control: a 2.5rem cell under a 2.25rem field reads as a
            calendar borrowed from a larger form. */
         --mdy-comp-date-picker-cell-size: 2rem;
@@ -127,15 +136,16 @@
         background-color: var(--mdy-surface-container-lowest);
     }
 
+    /* Hover and focus move the edge, and nothing else: the surface is already the one this theme
+       wants in every state, so restating it here would only be defending it from a tint that is
+       now declined at the token above. */
     .mdy-input-wrapper:hover:not(:focus-within) {
         border-color: var(--mdy-outline-variant);
-        background-color: var(--mdy-surface-container-lowest);
     }
 
     .mdy-input-wrapper:focus-within {
         border-color: var(--mdy-input-focus-color);
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--mdy-input-focus-color) 30%, transparent);
-        background-color: var(--mdy-surface-container-lowest);
     }
 
     .mdy-input-wrapper--error {
@@ -521,7 +531,11 @@
     border-radius: 0.625rem;
     background: var(--mdy-surface-container-lowest);
     color: var(--mdy-on-surface);
-    box-shadow: 0 18px 48px rgb(0 0 0 / 24%);
+    /* The one rank every popup shares. This carried `0 18px 48px` in pure black — a fifth recipe,
+       and the loudest: unlayered, it outranked the ramp and put this theme's panels visibly higher
+       above the page than its own 36px fields ever suggested. Being unlayered is deliberate and
+       stays; the height it claimed was not. */
+    box-shadow: var(--mdy-shadow-depth-2);
     font-family: var(--mdy-modern-font-family);
     list-style: none;
 }
