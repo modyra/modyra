@@ -197,8 +197,11 @@ export function renderTimepickerField(
   // Escape is the same intent as Cancel, from wherever the user is: the picker edits a draft, and
   // dismissing it has to discard that draft rather than leave it half-applied. Bound on both the
   // control and the popup because this overlay does not take focus when it opens.
+  // Escape cancels and Tab lets go: an overlay whose focus has moved on to the next field is a
+  // panel floating over a control the user has already left. Both dismiss, and they differ in where
+  // focus lands — Escape hands it back to the opener, Tab leaves it where the key was taking it.
   const onEscape = (event: KeyboardEvent) => {
-    if (event.key === "Escape") dispatch({ type: "cancel" });
+    if (event.key === "Escape" || event.key === "Tab") dispatch({ type: "cancel" });
   };
   wrapper.addEventListener("keydown", onEscape);
   dialog.addEventListener("keydown", onEscape);

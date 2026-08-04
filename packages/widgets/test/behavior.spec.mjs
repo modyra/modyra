@@ -164,12 +164,18 @@ test("overlay lifecycle owns open, toggle, outside, escape, destroy and restorat
  * choosing — but a closed list has nothing to move through in either, and Tab means the same thing
  * in both.
  */
-test("multiselect keyboard policy opens on ArrowDown and yields on Tab", () => {
+test("multiselect keyboard policy opens on either vertical arrow and yields on Tab", () => {
   const at = (over) => multiselectOverlayAction({ key: "x", open: true, query: "", activeKey: null, ...over });
 
   assert.deepEqual(at({ key: "ArrowDown", open: false }), { type: "open" }, "a closed list opens");
-  assert.equal(at({ key: "ArrowUp", open: false }), null, "and only downwards");
+  // Either vertical arrow. `MDY_WIDGET_KEYBOARD` declares both and the single-select combobox
+  // answers both; opening on one of them made the same widget behave two ways depending on which
+  // key the user happened to reach for, and disagreed with the table that describes it.
+  assert.deepEqual(at({ key: "ArrowUp", open: false }), { type: "open" }, "upwards too");
+  // Not the ends. `Home` and `End` mean the first and the last of a list that is not on screen, and
+  // opening on them would invent an intent the contract does not declare.
   assert.equal(at({ key: "Home", open: false }), null);
+  assert.equal(at({ key: "End", open: false }), null);
   assert.deepEqual(at({ key: "ArrowDown" }), { type: "move", target: "next" }, "open, it moves");
 
   assert.deepEqual(at({ key: "Tab" }), { type: "close", restoreFocus: false }, "Tab yields focus");

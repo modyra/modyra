@@ -125,8 +125,14 @@ export function renderColorsField(
   // Escape closes and hands focus back, from wherever the user is. This overlay does not take focus
   // when it opens, so listening on the popup alone left the palette impossible to dismiss by
   // keyboard from the control that opened it.
+  // Escape cancels and Tab lets go: an overlay whose focus has moved on to the next field is a
+  // panel floating over a control the user has already left. Both dismiss, and they differ in where
+  // focus lands — Escape hands it back to the opener, Tab leaves it where the key was taking it.
   const onEscape = (event: KeyboardEvent) => {
     if (event.key === "Escape") { open.set(false); toggle.focus(); }
+    // Tab is already carrying focus somewhere; pulling it back to the opener would trap the user in
+    // the control they were leaving.
+    else if (event.key === "Tab") open.set(false);
   };
   popup.addEventListener("keydown", onEscape);
   wrapper.addEventListener("keydown", onEscape);
