@@ -1144,7 +1144,24 @@
     }
 
 
-    .mdy-checkbox input[type="checkbox"] {
+    /* ─── Visually hidden native controls ─────────────────────────────────────────
+       A control whose appearance is drawn by a sibling indicator — a checkbox's box, a radio's
+       circle, a toggle's track, a segment, a file field's button — keeps the native input for the
+       platform: the accessibility tree, the tab order, the form post, the keyboard model. It is
+       moved off the screen rather than given `display: none`, which would remove all four.
+
+       Such a control carries state and focus. It never carries paint. It occupies a single clipped
+       pixel, so a background or a shadow on it cannot be seen by anyone, and the focus ring a user
+       does see belongs to the indicator that is actually drawn. The paint properties are therefore
+       cleared here rather than merely left unset: the field rules above match any input inside a
+       renderer, and would otherwise reach through to an element that has no visible surface to
+       paint. */
+    .mdy-checkbox input[type="checkbox"],
+    .mdy-toggle input[type="checkbox"],
+    .mdy-radio-item input[type="radio"],
+    input[type="radio"].mdy-segmented__control,
+    .mdy-segmented__button input[type="radio"],
+    input[type="file"].mdy-file-input {
         position: absolute;
         width: 1px;
         height: 1px;
@@ -1154,6 +1171,8 @@
         clip: rect(0, 0, 0, 0);
         white-space: nowrap;
         border: 0;
+        background-color: transparent;
+        box-shadow: none;
     }
 
     /* ─── Toggle (switch) ─────────────────────────────────────────────────────── */
@@ -1163,18 +1182,6 @@
         align-items: center;
         gap: var(--mdy-toggle-gap);
         cursor: pointer;
-    }
-
-    .mdy-toggle input[type="checkbox"] {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
     }
 
     .mdy-toggle__track {
@@ -1284,18 +1291,6 @@
         user-select: none;
         -webkit-user-select: none;
         gap: 0.5rem;
-    }
-
-    .mdy-radio-item input[type="radio"] {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
     }
 
     /* Outer Circle */
@@ -1474,18 +1469,6 @@
         border-color: var(--mdy-error-color);
     }
 
-    .mdy-file-input {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-    }
-
     .mdy-file-content {
         display: flex;
         flex-direction: column;
@@ -1621,22 +1604,6 @@
     }
 
 
-    /* The choice itself: present to the platform and to a form post, drawn by the segment around it.
-       Hidden the way every other native control in this sheet is hidden — off the screen rather than
-       `display: none`, which would take it out of the accessibility tree and out of the tab order
-       along with it. */
-    .mdy-segmented__control {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-    }
-
     .mdy-segmented__button:first-child {
         border-left: none;
     }
@@ -1673,21 +1640,6 @@
     }
 
     /* Reserve bold-width space so selecting a segment doesn't shift layout */
-    /* A renderer may back each segment with a native radio instead of a button; the input carries
-       the state, the segment carries the appearance, so it is hidden the same way every other
-       native control in this stylesheet is. */
-    .mdy-segmented__button input[type="radio"] {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-    }
-
     .mdy-segmented__text {
         display: inline-flex;
         flex-direction: column;

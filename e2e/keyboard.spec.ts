@@ -281,13 +281,7 @@ test.describe("segmented", () => {
    * different one, which reports a working widget as broken. Letting the browser tell us which host
    * holds focus removes the guess.
    */
-  test("the arrows move the selection", async ({ page, browserName }) => {
-    // WebKit ends the page when a visually hidden native radio is given focus on this demo. It is
-    // not this widget's doing: the same call on the untouched `radio` kind ends it identically, and
-    // did so before a segmented option was a radio at all. Recorded as a finding rather than worked
-    // around, because a keyboard user reaching a radio is not an exotic path.
-    test.skip(browserName === "webkit", "focusing a hidden native radio ends the page — finding N");
-
+  test("the arrows move the selection", async ({ page }) => {
     await page.goto("/");
     // The segment is the label; the thing that takes focus is the radio inside it. Focusing the
     // label instead is not a smaller version of the same act — a label is not focusable, and asking

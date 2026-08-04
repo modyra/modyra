@@ -123,6 +123,17 @@ on selection instead — leaving the caret pointing up at a closed list.
 clicks an option should not be given a keyboard ring; the browser has already computed that, and bare
 `:focus` overrides it.
 
+**A visually hidden native control carries state and focus, never paint.** Several widgets keep a
+real `<input>` for the platform — the accessibility tree, the tab order, the form post, the keyboard
+model — and let a sibling draw the appearance. The input is clipped to a pixel rather than removed,
+because `display: none` takes all four away with it.
+
+Nothing about it is visible, so nothing may paint it, and a rule that matches every input inside a
+renderer must be prevented from reaching it. Such a declaration cannot be judged by looking: a
+background on a clipped pixel renders identically whether it is right or wrong, so it survives review
+and screenshots alike. It is asserted in a browser instead —
+`e2e/shared/hidden-controls.spec.ts`, on every renderer and engine.
+
 ## Colour
 
 **Text on a filled surface is light while light is readable.** Not "whichever has the higher contrast
