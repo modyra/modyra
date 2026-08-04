@@ -1,0 +1,32 @@
+{
+  "@modyra/core": [
+    ".",
+    "./async-draft-storage",
+    "./color-utils",
+    "./date-locale",
+    "./date-utils",
+    "./datetime",
+    "./devtools",
+    "./dynamic-config",
+    "./form",
+    "./i18n",
+    "./icons",
+    "./keyboard",
+    "./localization",
+    "./options-utils",
+    "./serialize",
+    "./testing",
+    "./theme-compiler",
+    "./time-utils",
+    "./ui",
+    "./validation"
+  ],
+  "@modyra/widgets": [
+    ".",
+    "./commands",
+    "./contract",
+    "./ids",
+    "./runtime",
+    "./testing"
+  ]
+}
