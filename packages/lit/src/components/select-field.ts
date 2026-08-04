@@ -2,6 +2,7 @@ import { type MdyFieldHandle } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { MdyFieldElement, mdyIcon } from "../base.js";
+import { createTypeahead, isTypeaheadCharacter } from "@modyra/widgets";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 import {
@@ -16,6 +17,13 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     allowCreate: { type: Boolean, attribute: "allow-create" },
   };
   declare searchable: boolean;
+  /**
+   * The typeahead, held per element rather than per keystroke.
+   *
+   * A buffer that is rebuilt each key is not a buffer: this is what accumulates `mar` from three
+   * events, and what its idle timeout expires when the user stops.
+   */
+  private readonly typeahead = createTypeahead();
   declare loading: boolean;
   /** When true, searchable selects show a "Create …" row for unknown queries. */
   declare allowCreate: boolean;
@@ -188,15 +196,13 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         }
         break;
       default:
-        if (
-          this.searchable &&
-          e.key.length === 1 &&
-          !e.ctrlKey &&
-          !e.metaKey &&
-          !e.altKey
-        ) {
-          this.selectAdapter?.dispatch({ type: "search", query: e.key });
-        }
+        // Only the combobox reaches here: a select that does not filter renders the native chooser,
+        // which brings the platform's own typeahead and never builds this keyboard path.
+        if (!isTypeaheadCharacter(e.key, e)) break;
+        // The query is the whole buffer rather than the last key. The controller *replaces* what it
+        // is given, so dispatching one character searched for one character and a typeahead could
+        // never match a word — typing `mar` searched `m`, then `a`, then `r`.
+        this.selectAdapter?.dispatch({ type: "search", query: this.typeahead.push(e.key) });
         break;
     }
   }

@@ -47,5 +47,13 @@ export type MdySelectIntent =
   | { readonly type: "move"; readonly target: "next" | "previous" | "first" | "last" }
   | { readonly type: "select"; readonly optionKey: string }
   | { readonly type: "search"; readonly query: string }
+  /**
+   * Make one option the active one, without choosing it.
+   *
+   * What a typeahead does in a list that does not filter: the reading position moves and the value
+   * does not, so a user can type past an option they did not mean. `move` cannot express it — it
+   * takes a direction, and a typeahead knows the destination.
+   */
+  | { readonly type: "activate"; readonly optionKey: string }
   | { readonly type: "blur" }
   | { readonly type: "focus" };

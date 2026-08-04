@@ -8,7 +8,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, selectKeyboardAction, createSelectController, fieldShellPartIds, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, selectKeyboardAction, typeaheadMatch, createSelectController, fieldShellPartIds, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -24,6 +24,10 @@ export function renderSelectField(
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("select");
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
+  // The two interaction models the contract declares: a listbox that jumps as you type, or a
+  // combobox that filters. Unset is a listbox, which is what a select without a stated opinion is.
+  const searchable = (f as { readonly searchable?: boolean }).searchable === true;
+  const typeahead = createTypeahead();
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
 
   const controller = createSelectController<unknown>(
@@ -61,7 +65,9 @@ export function renderSelectField(
   search.autocomplete = "off";
   search.placeholder = "Search…";
   const listbox = el("ul", parts.listbox.classes.join(" ")) as HTMLUListElement;
-  popup.append(search, listbox);
+  // A filter box only where the field asked for one: drawn unconditionally, a five-option select got
+  // a search nobody wanted and focus landed in it rather than on the list.
+  popup.append(...(searchable ? [search] : []), listbox);
   const optionEls = new Map<string, HTMLLIElement>();
   for (const option of options) {
     const key = keyFor(option);
@@ -160,6 +166,16 @@ export function renderSelectField(
    */
   const onKeydown = (event: KeyboardEvent): void => {
     const state = controller.state();
+    // A listbox jumps rather than filters. Handled before the keyboard policy, which has no rule for
+    // a printable character and would otherwise let it fall through to nothing.
+    if (!searchable && state.open && isTypeaheadCharacter(event.key, event)) {
+      const match = typeaheadMatch(options, typeahead.push(event.key));
+      if (match) {
+        event.preventDefault();
+        dispatch({ type: "activate", optionKey: keyFor(match) });
+      }
+      return;
+    }
     const action = selectKeyboardAction({
       key: event.key,
       open: state.open,
@@ -221,7 +237,13 @@ export function renderSelectField(
     arrow.classList.toggle("mdy-select__arrow--open", state.open);
     if (state.open) {
       positionOverlay(popup, shell.wrapper, anchoring);
-      queueMicrotask(() => search.focus());
+      // A combobox takes focus into its input; a listbox keeps it on the trigger and drives the list
+      // with `aria-activedescendant`, which this renderer already projects.
+      //
+      // "Keeps" has to be made true rather than assumed: not every engine focuses a button when it
+      // is clicked, so a list opened by pointer could leave focus on the document and every
+      // subsequent keystroke went nowhere. Focusing here costs nothing where focus is already there.
+      queueMicrotask(() => (searchable ? search : trigger).focus());
     } else {
       // The next opening decides its own side and height rather than inheriting this one's.
       releaseOverlayPlacement(popup);

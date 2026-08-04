@@ -17,7 +17,7 @@ import {
   viewChild,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
-import { MDY_WIDGET_CONTRACTS, popupAlignmentClass, popupPlacementClass, reconcileSelectValue, selectKeyboardAction, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, popupAlignmentClass, popupPlacementClass, reconcileSelectValue, selectKeyboardAction, typeaheadMatch, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -435,7 +435,27 @@ export class MdySelectComponent<TValue = string>
     this.selectAdapter.dispatch({ type: "blur" });
   }
 
+  /**
+   * The typeahead, held per component rather than per keystroke.
+   *
+   * A buffer rebuilt each key is not a buffer: this is what accumulates a word across events, and
+   * what its idle timeout expires when the user stops.
+   */
+  private readonly typeahead = createTypeahead();
+
   protected onKeydown(event: KeyboardEvent): void {
+    // A listbox jumps rather than filters. Handled before the keyboard policy, which has no rule for
+    // a printable character and would otherwise let it fall through to nothing — which is what left
+    // this renderer's non-searchable select silent to a typing user.
+    if (!this.searchable() && this.open() && isTypeaheadCharacter(event.key, event)) {
+      const match = typeaheadMatch(this.options(), this.typeahead.push(event.key));
+      if (match) {
+        event.preventDefault();
+        this.selectAdapter.dispatch({ type: "activate", optionKey: String(match.value) });
+      }
+      return;
+    }
+
     const action = selectKeyboardAction({
       key: event.key,
       open: this.open(),

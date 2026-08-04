@@ -120,7 +120,8 @@ test("select: clicking the trigger opens the listbox, clicking an option commits
   assert.equal(selectWrapper.contains(popup), false, "the popup is portalled out of the field");
   assert.equal(popup.hidden, false);
   // Filtering happens in the popup's own field, not over the trigger's text.
-  assert.ok(popup.querySelector(".mdy-select__search"));
+  // A listbox has no filter box. The combobox model is asserted by the searchable test below.
+  assert.equal(popup.querySelector(".mdy-select__search"), null);
 
   const franceOption = [...listbox.querySelectorAll("li")].find((li) => li.textContent === "France");
   franceOption.dispatchEvent(new Event("click"));
@@ -648,7 +649,8 @@ test("filtering hides the options that do not match, in the select and the multi
   const host = document.createElement("div");
   document.body.append(host);
   const { reactivity, dispose } = mountMdyForm(host, [
-    { name: "country", kind: "select", label: "Country", options: [{ value: "it", label: "Italy" }, { value: "fr", label: "France" }, { value: "de", label: "Germany" }] },
+    // Filtering is the combobox model, and the contract now says which model a select is.
+    { name: "country", kind: "select", label: "Country", searchable: true, options: [{ value: "it", label: "Italy" }, { value: "fr", label: "France" }, { value: "de", label: "Germany" }] },
     { name: "palette", kind: "multiselect", label: "Palette", options: [{ value: "indigo", label: "Indigo" }, { value: "cloud", label: "Cloud" }] },
   ], { submitLabel: null });
 
