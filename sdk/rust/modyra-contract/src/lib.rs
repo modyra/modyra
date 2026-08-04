@@ -64,6 +64,13 @@ pub struct Field {
     pub step: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<Vec<OptionItem>>,
+    /// Multiselect only: `"single"` is a toggle set, `"multi"` a bag whose chip counts repeats.
+    ///
+    /// Carried because the widget contract declares a different anatomy per mode. A field that
+    /// round-trips through here without it describes a different widget than the one it was written
+    /// as — the same silent loss an unknown-property-tolerant parser makes everywhere else.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<String>,
 }
 
 /// The sizes a layout is authored against, mirroring `MDY_LAYOUT_BREAKPOINTS`.
@@ -298,6 +305,8 @@ const KINDS: &[&str] = &[
     "timepicker",
 ];
 const EFFECTS: &[&str] = &["visible", "hidden", "enabled", "disabled"];
+/// The two shapes a multiselect has, mirroring `MdyMultiselectMode`.
+const MODES: &[&str] = &["single", "multi"];
 const OPERATORS: &[&str] = &[
     "equals",
     "notEquals",
@@ -353,6 +362,23 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
                 &format!("{path}/kind"),
                 "unknown field kind",
             ));
+        }
+        // A mode nothing describes is worse than none: the widget contract picks an anatomy by this
+        // value, so an unrecognised one leaves the field checked against no anatomy at all.
+        if let Some(mode) = field.mode.as_deref() {
+            if !MODES.contains(&mode) {
+                d.push(diag(
+                    "MDY_DYNAMIC_UNKNOWN_MODE",
+                    &format!("{path}/mode"),
+                    "unknown multiselect mode",
+                ));
+            } else if field.kind != "multiselect" {
+                d.push(diag(
+                    "MDY_DYNAMIC_UNEXPECTED_MODE",
+                    &format!("{path}/mode"),
+                    "mode is meaningful only on multiselect",
+                ));
+            }
         }
         if matches!(
             field.kind.as_str(),

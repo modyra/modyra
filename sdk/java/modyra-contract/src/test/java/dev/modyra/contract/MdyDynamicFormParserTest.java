@@ -349,4 +349,33 @@ class MdyDynamicFormParserTest {
     String v4 = "{\"version\":4,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"}]}";
     assertFalse(parser.parse(v4, MdyDynamicFormParser.Mode.STRICT).ok());
   }
+
+  /**
+   * A mode survives the parse, and what this SDK does not understand is said out loud.
+   *
+   * Both halves guard the same silence. A multiselect parsed without its mode re-serialises as a
+   * different widget, because the widget contract picks an anatomy by that value; and a property
+   * dropped without a word is a document this SDK reported success on and did not understand.
+   */
+  @Test
+  void carriesTheMultiselectModeAndReportsWhatItIgnored() {
+    String json = "{\"version\":2,\"fields\":[{"
+        + "\"name\":\"tags\",\"kind\":\"multiselect\",\"mode\":\"multi\","
+        + "\"options\":[{\"value\":\"a\",\"label\":\"A\"}]}]}";
+
+    MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(result.ok(), "a declared mode is not a parse error");
+    MdyDynamicOptionsField field = (MdyDynamicOptionsField) result.fields().get(0);
+    assertEquals("multi", field.mode(), "the mode must survive the parse");
+
+    String unknown = "{\"version\":2,\"fields\":[{"
+        + "\"name\":\"tags\",\"kind\":\"multiselect\",\"somethingNew\":true,"
+        + "\"options\":[{\"value\":\"a\",\"label\":\"A\"}]}]}";
+
+    MdyDynamicFormParseResult reported = parser.parse(unknown, MdyDynamicFormParser.Mode.LENIENT);
+    assertTrue(
+        reported.diagnostics().stream().anyMatch((d) -> "MDY_DYNAMIC_UNKNOWN_PROPERTY".equals(d.code())),
+        "an ignored property must be reported, never dropped in silence");
+  }
+
 }

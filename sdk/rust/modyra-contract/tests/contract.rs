@@ -42,6 +42,7 @@ fn serializes_recursive_schema_without_null_optionals() {
                         max: None,
                         step: None,
                         options: None,
+                        mode: None,
                     },
                 },
             )]),
@@ -154,4 +155,54 @@ fn refuses_placement_where_no_column_can_honour_it() {
     let v4 = r#"{"version":4,"fields":[{"name":"a","kind":"text"}]}"#;
     let result = parse_v2(v4, ValidationMode::Strict).unwrap();
     assert!(result.diagnostics.iter().any(|d| d.code == "MDY_DYNAMIC_UNSUPPORTED_VERSION"));
+}
+
+/// A mode survives a round trip, and an unknown one is reported rather than carried.
+///
+/// The failure this guards is silent: a field parsed without `mode` re-serialises as a different
+/// widget than the one that was written, because the widget contract picks its anatomy by that
+/// value. Nothing in this SDK noticed until the anatomy started depending on it.
+#[test]
+fn multiselect_mode_survives_a_round_trip() {
+    let json = r#"{
+        "version": 2,
+        "fields": [{
+            "name": "tags",
+            "kind": "multiselect",
+            "mode": "multi",
+            "options": [{"value": "a", "label": "A"}]
+        }]
+    }"#;
+
+    let result = parse_v2(json, ValidationMode::Lenient).expect("parses");
+    let form = result.form.expect("a form");
+    assert_eq!(form.fields[0].mode.as_deref(), Some("multi"));
+
+    let round_tripped = serde_json::to_string(&form).expect("serialises");
+    assert!(
+        round_tripped.contains("\"mode\":\"multi\""),
+        "the mode must survive re-serialisation, got {round_tripped}"
+    );
+    assert!(
+        result.diagnostics.iter().all(|d| d.code != "MDY_DYNAMIC_UNKNOWN_MODE"),
+        "a declared mode is not an unknown one"
+    );
+}
+
+#[test]
+fn an_unrecognised_mode_is_reported() {
+    let json = r#"{
+        "version": 2,
+        "fields": [{
+            "name": "tags",
+            "kind": "multiselect",
+            "mode": "counter",
+            "options": [{"value": "a", "label": "A"}]
+        }]
+    }"#;
+    let result = parse_v2(json, ValidationMode::Lenient).expect("parses");
+    assert!(
+        result.diagnostics.iter().any(|d| d.code == "MDY_DYNAMIC_UNKNOWN_MODE"),
+        "a mode the contract does not describe leaves the field checked against no anatomy"
+    );
 }

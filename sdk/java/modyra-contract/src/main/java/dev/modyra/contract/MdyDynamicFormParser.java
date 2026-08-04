@@ -1,6 +1,7 @@
 package dev.modyra.contract;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -44,7 +45,37 @@ public final class MdyDynamicFormParser {
   private static final int SCHEMA_MAX_NODES = 500;
   private static final int SCHEMA_MAX_ARRAY_ROWS = 100;
 
-  private final ObjectMapper mapper = new ObjectMapper();
+  /**
+   * Unknown properties are reported, never silently dropped.
+   *
+   * The records used to carry {@code @JsonIgnoreProperties(ignoreUnknown = true)} each, which made
+   * a document this SDK did not understand parse cleanly and re-serialise as something else — a
+   * multiselect losing its mode stops being the widget it was written as. Failing outright would
+   * trade that for the opposite problem, refusing every document written against a later contract.
+   *
+   * So the mapper stays lenient and the parser says what it ignored, in the diagnostics vocabulary
+   * the rest of this class already speaks.
+   */
+  private final ObjectMapper mapper = new ObjectMapper()
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+  /**
+   * What this SDK did not understand about a field, so the caller can see it rather than discover it
+   * when a re-serialised document behaves differently from the one that was read.
+   */
+  private static List<String> unknownProperties(JsonNode item) {
+    if (item == null || !item.isObject()) return List.of();
+    List<String> unknown = new ArrayList<>();
+    item.fieldNames().forEachRemaining((name) -> {
+      if (!KNOWN_FIELD_PROPERTIES.contains(name)) unknown.add(name);
+    });
+    return unknown;
+  }
+
+  /** Property names a field of this kind declares, for the report above. */
+  private static final Set<String> KNOWN_FIELD_PROPERTIES = Set.of(
+      "name", "kind", "label", "placeholder", "initialValue", "validators", "options", "mode",
+      "min", "max", "step", "rows", "multiple", "accept", "searchable", "loading");
 
   public MdyDynamicFormParseResult parse(String json, Mode mode) {
     JsonNode root;
@@ -161,6 +192,11 @@ public final class MdyDynamicFormParser {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_DUPLICATE_NAME", MdyDynamicDiagnostic.WARNING, path,
             "Dropped duplicate dynamic field name \"" + name + "\"."));
         continue;
+      }
+
+      for (String unknown : unknownProperties(item)) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_PROPERTY", MdyDynamicDiagnostic.WARNING, path,
+            "Ignored unknown property \"" + unknown + "\" on dynamic field \"" + name + "\"."));
       }
 
       MdyDynamicField field;
@@ -295,7 +331,7 @@ public final class MdyDynamicFormParser {
       return new MdyDynamicBooleanField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators());
     }
     if (field instanceof MdyDynamicOptionsField f) {
-      return new MdyDynamicOptionsField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators(), f.options());
+      return new MdyDynamicOptionsField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators(), f.options(), f.mode());
     }
     if (field instanceof MdyDynamicDateField f) {
       return new MdyDynamicDateField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators());
