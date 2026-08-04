@@ -64,7 +64,7 @@
     "plain-preview:dev": "npm run build:plain && node apps/plain-preview/build.mjs && node apps/plain-preview/server.mjs",
     "test:widget-contract": "node scripts/audit-angular-widget-contract.mjs --check && node scripts/audit-widget-contract-completeness.mjs && npm run build:core && node scripts/tsc7.mjs packages/widgets/tsconfig.json && node --test packages/widgets/test/*.spec.mjs",
     "test:plain-contract": "npm run build:plain && node scripts/audit-plain-full-catalog.mjs && node scripts/audit-plain-widget-contract.mjs",
-    "test:contracts": "node scripts/audit-package-independence.mjs && npm run test:widget-contract && npm run test:plain-contract && npm run test:plain && npm run test:layout-contract && npm run test:contract-coverage && npm run test:conformance-manifest && npm run test:contract-snapshot && npm run test:harness-exceptions && npm run test:deprecations && npm run test:docs && npm run test:conformance && node scripts/audit-patch3-readiness.mjs --require-ready",
+    "test:contracts": "node scripts/audit-package-independence.mjs && npm run test:widget-contract && npm run test:plain-contract && npm run test:plain && npm run test:layout-contract && npm run test:contract-coverage && npm run test:conformance-manifest && npm run test:contract-snapshot && npm run test:type-surface && npm run test:harness-exceptions && npm run test:deprecations && npm run test:docs && npm run test:conformance && node scripts/audit-patch3-readiness.mjs --require-ready",
     "test:docs": "node scripts/audit-docs.mjs --check",
     "test:layout-contract": "node scripts/audit-layout-contract.mjs --check",
     "test:styles-architecture": "node scripts/audit-styles-architecture.mjs --check",
@@ -72,7 +72,9 @@
     "test:typescript7": "node scripts/test-typescript-7.mjs",
     "benchmark:typescript": "node scripts/benchmark-typescript.mjs",
     "test:tarballs": "node scripts/audit-published-tarballs.mjs",
-    "test:deprecations": "node scripts/audit-deprecations.mjs"
+    "test:deprecations": "node scripts/audit-deprecations.mjs",
+    "test:type-surface": "node scripts/audit-type-surface.mjs",
+    "type-surface:accept": "node scripts/audit-type-surface.mjs --write"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^21.2.19",

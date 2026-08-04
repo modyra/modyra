@@ -77,7 +77,7 @@
         "MDY_WIDGET_CONTRACTS.segmented",
         "widgetHasRootClass",
         "role=\"radiogroup\"",
-        "role=\"radio\"",
+        "type=\"radio\"",
         "aria-checked",
         "mdy-error-list"
       ]

@@ -20,12 +20,12 @@ to a green suite.
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
 - **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b
-- **Partly fixed** — C2, E2, F, L, M — derived but not painted; most scripts reachable; kind-keyed
+- **Partly fixed** — C2, E2, F, K, L, M — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
   the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — K, N
+- **Open** — N
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -787,7 +787,7 @@ A portalled popup conforms — asserted directly, since a naive containment chec
 one of them as broken. But under jsdom both renderers keep the popup inside the field root, so the
 conformance run never exercises the portalled path. That needs the browser suites.
 
-## K — the accessibility projections have no classification path — **open**
+## K — public surface outside the catalogue had no classification path — **mostly fixed**
 
 **Observed.** `scripts/contract-diff.mjs` snapshots the catalogue: parts, where they hang, what they
 are, what refers to what. The `project*A11y` functions are exported from the package root and are
@@ -808,6 +808,28 @@ public surface. The finding is therefore wider than its heading: *anything expor
 that is not catalogue anatomy is invisible to classification* — the projections, this function, and
 whatever is added next. Two instances in one day is the argument for fixing it before 1.0 rather
 than adjudicating each one by hand.
+
+**Mostly fixed.** Three checks now cover what the catalogue differ cannot see:
+
+| what was invisible | what sees it now |
+| --- | --- |
+| every exported interface and type alias in the 1.0 packages | `npm run test:type-surface` — 205 shapes, member names and optionality, read from the *emitted* declarations |
+| which entry points a package publishes | the entry-point baseline in `audit-published-tarballs.mjs` |
+| a kind's configured variants | `contract-diff` learned to snapshot and compare them |
+
+The type-surface check classifies the way `contract-compatibility.md` says: optional → required and
+removal are **major**, a new optional member is **minor**. Falsified all three ways on `MdyFormError`
+before it was trusted, and it would have caught the four instances this finding recorded — the
+projection shape, the added root export, `searchable` on the form contract, and `id`/`kind` becoming
+required on `MdyReactivity`.
+
+**Its first version covered a fraction of what it claimed.** Reading the entry `.d.ts` files found 38
+shapes and missed `MdyFormError` entirely, which is declared in `types.d.ts` and only re-exported. It
+now walks every emitted declaration: 205.
+
+**What is still open, and it is the original half:** member *types*. The snapshot records that
+`MdyFormError.payload` exists and is optional, not that it is `unknown` — so a widening or narrowing
+is invisible. And a projection returns attribute maps whose values depend on state, which is why it
 
 **Not decided.** A projection returns attribute maps whose values depend on state, so the snapshot
 cannot be the returned object; it would have to be the shape — which parts exist, and which attribute
