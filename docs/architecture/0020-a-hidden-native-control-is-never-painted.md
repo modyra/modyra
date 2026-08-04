@@ -1,6 +1,6 @@
 # ADR 0020: A hidden native control is never painted
 
-Status: Accepted
+Status: Accepted — amended, see [Amendment](#amendment-the-cause-is-narrower-here-than-the-evidence-supports)
 
 ## Context
 
@@ -38,6 +38,30 @@ control clipped to one pixel**.
 token mixes two custom properties that are themselves mixes, so what is finally painted has a shape
 no declaration states — which is why one theme was fatal and the others were not, and why grep found
 nothing. A rule about what may be painted cannot be checked by reading the thing that paints it.
+
+## Amendment: the cause is narrower here than the evidence supports
+
+Added after this record was accepted, when a second crash — finding O in `docs/contract-gaps.md` —
+was reduced by the same method and did not fit the story above.
+
+O reduces to a single sufficient rule that paints a background on a **visible, normally sized** field
+wrapper. There, **every value crashes**: a flat colour, a single-level mix, the nested mix written out
+literally. The table above measured the opposite on the clipped control — a flat colour survived and
+only the nested mix was fatal.
+
+Both results are directly measured and neither is explained by the other. The reading that
+accommodates both is that this is **not a value defect at all** but a threshold in the engine's paint
+path, in which case a "necessary and sufficient" rule describes a tipping point in one page rather
+than a cause. That is **Possible**, not demonstrated.
+
+**What this changes here: the context, not the decision.** Do not read the table above as saying that
+a nested `color-mix()` is what is dangerous, or that clipping is what makes it so. What is established
+is that removing paint from elements that cannot show it removed the crash on the path it covers, and
+that the keyboard row skipped for that cause now passes on every engine.
+
+**The rule stands without any of it.** Painting a colour on a clipped pixel is invisible by
+construction, so the decision would be the same on an engine that merely wasted a composite — which
+is the ground it was argued on, and why this is an amendment rather than a supersession.
 
 ## Decision
 
