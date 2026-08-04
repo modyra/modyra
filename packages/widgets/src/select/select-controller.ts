@@ -241,6 +241,15 @@ export function createSelectController<TValue>(
         }
         break;
       }
+      case "activate": {
+        // Only over what is navigable: activating a filtered-out option would point
+        // `aria-activedescendant` at an element that is not in the list.
+        if (!open()) break;
+        if (navigableKeys(query()).includes(intent.optionKey)) {
+          setActive(intent.optionKey, commands);
+        }
+        break;
+      }
       case "select": {
         selectKey(intent.optionKey, commands);
         close(true, commands);
