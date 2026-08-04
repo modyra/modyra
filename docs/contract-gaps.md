@@ -1209,24 +1209,30 @@ exist and cover the repository's own renderers, but the kit a consumer runs has 
 consumer has no way to establish the two sections at all — the message tells them to run something
 that is not shipped to them.
 
-**Also open: `@modyra/angular` has no conformance config.** Only `packages/plain` and `packages/lit`
-have one, so the adapter with the largest surface and the most divergences found to date is the one
-the kit never runs.
+**Fixed: `@modyra/angular` has a conformance config.** All three adapters now run through one
+driver, and `test:conformance` runs all three.
 
-**It is not unchecked, and the first version of this paragraph said it was.** Angular's own jest
-suites call the same `inspectWidgetDom` from `@modyra/widgets/testing`, against the same
-`MDY_WIDGET_CONTRACTS` — `dom-contract.spec.ts`, `state-matrix.spec.ts` and `equivalence.spec.ts` are
-the kit's sections driven by a different runner. The claim that every conformance statement here is
-about the other two adapters was wrong, and is corrected rather than quietly dropped: it was written
-from the absence of a config file without checking what else ran.
+**The claim this paragraph first made was wrong**, and the correction is the useful part. Angular was
+never unchecked: its own jest suites call the same `inspectWidgetDom` against the same
+`MDY_WIDGET_CONTRACTS`. What was open was **drift between two drivers of one contract** —
+`dom-contract.spec.ts` calls `inspectWidgetDom` with no `variant` and never names one, so
+multiselect's counter mode was mounted nowhere in this package.
 
-**What is actually open is the drift between two drivers of one contract**, which is the shape this
-document keeps recording. Measured: `dom-contract.spec.ts` calls `inspectWidgetDom` with no `variant`
-option and the word never appears in the file, so Angular's multiselect is checked against its
-unvarianted anatomy and its **counter mode is never mounted**. That is precisely the blind spot
-[ADR 0017](architecture/0017-a-varianted-kind-names-its-anatomy-per-configuration.md) closed for the
-kit, whose anatomy pass mounts each declared variant — and its verification section claims the
-property generally, where it holds only for the two adapters the kit runs.
+Running the kit closes that by construction: the anatomy pass mounts each declared variant, so the
+question is answered by the contract rather than by whichever suite happened to be written. Falsified
+rather than assumed — adding a part to the `multi` variant's `required` list fails the Angular run
+with `multiselect[multi].loading: PART_MISSING`, which nothing in this package could have reported
+before.
 
-Adding a config for Angular would close both at once, which is the argument for doing it that way
-rather than adding a variant loop to one more parallel driver.
+Two things the config had to measure rather than copy, and each was wrong on the first attempt:
+
+- **Angular builds its overlays eagerly.** Declaring the overlay parts absent — which the lazy
+  renderer legitimately does — failed 48 checks, each the suite refusing a claim the DOM
+  contradicted. `absentParts` is empty, which is the strongest statement available: every part is
+  checked at rest.
+- **Empty values belong to the contract.** A hand-written table of them reported five kinds as
+  divergent, because it had invented `""` where `MDY_CANONICAL_EMPTY` says `null`. Only the filled
+  side is declared locally now.
+
+**Still open: nothing runs the two browser sections.** Keyboard behaviour and the accessibility audit
+are unestablished for all three adapters through the kit, and a consumer has no browser mode at all.
