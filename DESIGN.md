@@ -107,6 +107,12 @@ genuinely needs reserved space rather than movement, say so in the rule.
 **A transition on a property that never changes is not motion.** Check the property actually varies
 by state before animating it.
 
+**One rule takes the reserved-space exception**, and it is named here so the exception stays one. A
+centred chip keeps its label optically still while the tick takes one side, by growing the spacer in
+front of it — so the spacer's `width` is the mechanism, not a shortcut around a transform. A
+transform moves a spacer without reserving anything, which is the single thing a spacer is for. The
+cost is a relayout per frame per chip while a selection settles.
+
 *Enforced by* `scripts/audit-styles-architecture.mjs` — a literal curve or duration outside the token
 tier fails, as does animating without ever reading `prefers-reduced-motion`.
 
@@ -123,6 +129,18 @@ on selection instead — leaving the caret pointing up at a closed list.
 clicks an option should not be given a keyboard ring; the browser has already computed that, and bare
 `:focus` overrides it.
 
+**Hover and focus are one channel per theme, chosen by the control's shape.** A filled control has
+only its surface to speak with and tints it — `--mdy-sys-state-veil`, a flat veil laid over whatever
+the control already carries, one value per colour scheme. A bordered control has an edge and says it
+there, and sets the veil to `transparent`. Saying it both ways makes one state read as two events at
+different strengths.
+
+The veil is a **token**, so a theme declines the channel rather than fighting it. The foundation lays
+it as a background *image*, which a theme's `background-color` cannot displace — so a theme that
+overrode the colour looked like it had opted out and quietly painted both. A channel a theme cannot
+cleanly decline is a channel the theme will restate at higher specificity, which is how a stylesheet
+becomes an argument.
+
 **A visually hidden native control carries state and focus, never paint.** Several widgets keep a
 real `<input>` for the platform — the accessibility tree, the tab order, the form post, the keyboard
 model — and let a sibling draw the appearance. The input is clipped to a pixel rather than removed,
@@ -133,6 +151,39 @@ renderer must be prevented from reaching it. Such a declaration cannot be judged
 background on a clipped pixel renders identically whether it is right or wrong, so it survives review
 and screenshots alike. It is asserted in a browser instead —
 `e2e/shared/hidden-controls.spec.ts`, on every renderer and engine.
+
+## Elevation
+
+**Three levels, and every raised surface takes one of them.** They are meanings, not sizes:
+
+| level | what sits there |
+| --- | --- |
+| `--mdy-sys-elevation-shadow-1` | a thing lying on the page — a toggle's handle, a swatch |
+| `--mdy-sys-elevation-shadow-2` | a panel the page opened — **every** dropdown, calendar, clock and palette |
+| `--mdy-sys-elevation-shadow-3` | a surface over the whole page |
+
+**One rank is one level.** A select's list, a calendar and a colour palette differ in what they hold,
+not in what holds them, so they sit at the same height. Four of them once carried four different
+recipes — one of them the same two layers as another written in the opposite order, one an unrelated
+`0 8px 32px`, one a literal buried in a `var()` fallback chain where which shadow won depended on
+which of two other tokens happened to be defined.
+
+**A shadow is two layers**, because a real one is: a short dense contact shadow that says the surface
+has an edge, and a long soft cast that says how far it is off the page. One layer alone reads as a
+sticker or as a smudge.
+
+**Its colour is the surface's, never black.** `--mdy-sys-color-shadow` is the primary carried nearly
+to night, so a shadow on a tinted page belongs to that page. Pure black over a coloured surface greys
+it, which is the difference between depth and dirt.
+
+**Dark carries its own ramp.** A shadow on a dark page has almost no room below it to darken, so the
+same opacities vanish; the cast is carried further and deepened while the contact layer stays short.
+
+**Level 3 currently has no consumer**, and that is stated rather than left to be discovered: the
+modal placement is written at runtime through `--mdy-overlay-transform` and has no class to hang a
+level on. A surface that earns level 3 needs that hook first.
+
+---
 
 ## Colour
 
