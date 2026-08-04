@@ -6,10 +6,8 @@
  * in the array or not — and `"multi"` is a bag, where taking an already-taken option appends another
  * entry and the chip shows how many.
  */
-import type { MdyInteractivity } from "@modyra/core";
+import type { MdyInteractivity, MdyMultiselectMode } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
-
-export type MdyMultiselectFieldMode = "single" | "multi";
 
 export interface MdyMultiselectFieldControllerOptions<TValue> {
   /** Stable identity for the widget instance. */
@@ -21,7 +19,7 @@ export interface MdyMultiselectFieldControllerOptions<TValue> {
   /** Maps an option to a stable string key. Defaults to `String(option.value)`. */
   readonly keyFor?: (option: MdySelectOption<TValue>) => string;
   /** Toggle-set (default) or counter/bag selection semantics. */
-  readonly mode?: MdyMultiselectFieldMode;
+  readonly mode?: MdyMultiselectMode;
   /** Whether the widget is visually/programmatically readonly. */
   readonly readonly?: boolean;
 }

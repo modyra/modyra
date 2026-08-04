@@ -33,9 +33,18 @@
     "h",
     "t"
   ],
+  "MdyAccessibleNameSource": [
+    "\"label\"",
+    "\"labelledby\"",
+    "\"native\""
+  ],
   "MdyAffordance": [
     "part",
     "role"
+  ],
+  "MdyAffordanceRole": [
+    "\"control\"",
+    "\"indicator\""
   ],
   "MdyAnchorRect": [
     "bottom",
@@ -87,6 +96,9 @@
     "setAll",
     "valid"
   ],
+  "MdyArrayItemValue": [
+    "(opaque)"
+  ],
   "MdyArrayManagerDeps": [
     "engine",
     "item",
@@ -117,6 +129,9 @@
     "path",
     "signal"
   ],
+  "MdyAsyncValidatorFn": [
+    "(opaque)"
+  ],
   "MdyAsyncValidatorOptions": [
     "debounceMs?",
     "dependsOn?",
@@ -140,6 +155,9 @@
     "variant?",
     "widgetId"
   ],
+  "MdyBooleanFieldIntent": [
+    "(opaque)"
+  ],
   "MdyBooleanFieldState": [
     "checked",
     "dirty",
@@ -151,9 +169,23 @@
     "required",
     "touched"
   ],
+  "MdyBooleanFieldVariant": [
+    "\"checkbox\"",
+    "\"switch\""
+  ],
+  "MdyBuiltInLocale": [
+    "\"de\"",
+    "\"en\"",
+    "\"es\"",
+    "\"fr\"",
+    "\"it\""
+  ],
   "MdyCalendarIssue": [
     "code",
     "detail"
+  ],
+  "MdyCalendarIssueCode": [
+    "(opaque)"
   ],
   "MdyCanonicalExpectation": [
     "focusOwner?",
@@ -167,6 +199,11 @@
   "MdyCanonicalOptions": [
     "portalRoots?",
     "value?"
+  ],
+  "MdyCanonicalOverlay": [
+    "\"absent\"",
+    "\"closed\"",
+    "\"open\""
   ],
   "MdyCanonicalPart": [
     "count",
@@ -188,6 +225,9 @@
     "state",
     "value"
   ],
+  "MdyCatalogWidgetIntent": [
+    "(opaque)"
+  ],
   "MdyCatalogWidgetState": [
     "activePart",
     "disabled",
@@ -198,6 +238,20 @@
     "removable?",
     "role?",
     "selected?"
+  ],
+  "MdyChipMode": [
+    "\"multi\"",
+    "\"single\""
+  ],
+  "MdyChipPart": [
+    "(opaque)"
+  ],
+  "MdyChipRole": [
+    "\"option\"",
+    "\"value\""
+  ],
+  "MdyColorValueIntent": [
+    "(opaque)"
   ],
   "MdyColorValueTransition": [
     "close",
@@ -222,6 +276,9 @@
     "submitMode?",
     "validators?"
   ],
+  "MdyDateDraftIntent": [
+    "(opaque)"
+  ],
   "MdyDateDraftState": [
     "committed",
     "draft",
@@ -244,6 +301,9 @@
     "end",
     "start"
   ],
+  "MdyDateRangeDraftIntent": [
+    "(opaque)"
+  ],
   "MdyDateRangeDraftState": [
     "committed",
     "draft",
@@ -257,6 +317,9 @@
   "MdyDateRangeValue": [
     "end",
     "start"
+  ],
+  "MdyDateValueIntent": [
+    "(opaque)"
   ],
   "MdyDatepickerFieldA11yOptions": [
     "widgetId"
@@ -280,6 +343,9 @@
     "minDate?",
     "readonly?",
     "widgetId"
+  ],
+  "MdyDatepickerFieldIntent": [
+    "(opaque)"
   ],
   "MdyDatepickerFieldState": [
     "cells",
@@ -315,13 +381,51 @@
     "message",
     "severity"
   ],
+  "MdyDiagnosticSeverity": [
+    "\"error\"",
+    "\"info\"",
+    "\"warning\""
+  ],
   "MdyDiagnostics": [
     "report"
+  ],
+  "MdyDismissalPhase": [
+    "\"cancelled\"",
+    "\"dismissed\"",
+    "\"idle\"",
+    "\"tracking-inside\"",
+    "\"tracking-outside\""
   ],
   "MdyDomContractIssue": [
     "code",
     "message",
     "part"
+  ],
+  "MdyDomContractIssueCode": [
+    "\"ABSENT_PART_NOT_OPTIONAL\"",
+    "\"ABSENT_PART_PRESENT\"",
+    "\"ARIA_AMBIGUOUS_REF\"",
+    "\"ARIA_DANGLING_REF\"",
+    "\"ARIA_FOREIGN_REF\"",
+    "\"ARIA_NON_STRING_STATE\"",
+    "\"ARIA_STATE_INCOHERENT\"",
+    "\"ARIA_STATE_NOT_APPLIED\"",
+    "\"ID_DUPLICATE\"",
+    "\"INVENTED_CLASS\"",
+    "\"NAME_MISSING\"",
+    "\"PART_CARDINALITY\"",
+    "\"PART_CLASS_MISSING\"",
+    "\"PART_ELEMENT\"",
+    "\"PART_MISSING\"",
+    "\"PART_NOT_CONTAINED\"",
+    "\"PART_NOT_OWNED\"",
+    "\"PART_ORDER\"",
+    "\"PART_ROLE\"",
+    "\"RELATION_MISSING\"",
+    "\"RELATION_NOT_LABELABLE\"",
+    "\"RELATION_WRONG_TARGET\"",
+    "\"ROOT_CLASS_MISSING\"",
+    "\"STRUCTURE\""
   ],
   "MdyDomContractOptions": [
     "absentParts?",
@@ -331,6 +435,9 @@
     "parts?",
     "strictClasses?",
     "variant?"
+  ],
+  "MdyDomPartMap": [
+    "(opaque)"
   ],
   "MdyDraftOptions": [
     "debounceMs?",
@@ -355,6 +462,12 @@
   ],
   "MdyDynamicBooleanField": [
     "kind"
+  ],
+  "MdyDynamicBreakpoint": [
+    "\"base\"",
+    "\"lg\"",
+    "\"md\"",
+    "\"sm\""
   ],
   "MdyDynamicCalendarOptions": [
     "firstDayOfWeek?",
@@ -384,6 +497,9 @@
     "path",
     "severity"
   ],
+  "MdyDynamicField": [
+    "(opaque)"
+  ],
   "MdyDynamicFieldNode": [
     "field",
     "node"
@@ -409,6 +525,9 @@
   "MdyDynamicFormConfigV3": [
     "version"
   ],
+  "MdyDynamicFormDocument": [
+    "(opaque)"
+  ],
   "MdyDynamicFormParseResult": [
     "acceptedCount",
     "diagnostics",
@@ -425,9 +544,18 @@
     "label?",
     "node"
   ],
+  "MdyDynamicLayoutChild": [
+    "(opaque)"
+  ],
+  "MdyDynamicLayoutNode": [
+    "(opaque)"
+  ],
   "MdyDynamicLayoutSlot": [
     "at?",
     "ref"
+  ],
+  "MdyDynamicNode": [
+    "(opaque)"
   ],
   "MdyDynamicNumberField": [
     "kind",
@@ -442,10 +570,26 @@
     "options",
     "searchable?"
   ],
+  "MdyDynamicParseMode": [
+    "\"lenient\"",
+    "\"strict\""
+  ],
   "MdyDynamicRule": [
     "effect",
     "target",
     "when"
+  ],
+  "MdyDynamicRuleOperator": [
+    "\"equals\"",
+    "\"greaterThan\"",
+    "\"greaterThanOrEqual\"",
+    "\"in\"",
+    "\"isEmpty\"",
+    "\"isNotEmpty\"",
+    "\"lessThan\"",
+    "\"lessThanOrEqual\"",
+    "\"notEquals\"",
+    "\"notIn\""
   ],
   "MdyDynamicSection": [
     "at?",
@@ -484,14 +628,34 @@
     "destroy",
     "destroyed?"
   ],
+  "MdyElementLookup": [
+    "(opaque)"
+  ],
   "MdyElementTarget": [
     "key?",
     "part"
+  ],
+  "MdyEqualityFn": [
+    "(opaque)"
   ],
   "MdyExpression": [
     "op",
     "operand?",
     "operands?"
+  ],
+  "MdyExpressionOp": [
+    "\"and\"",
+    "\"equals\"",
+    "\"greaterThan\"",
+    "\"isEmpty\"",
+    "\"isNotEmpty\"",
+    "\"lengthAtLeast\"",
+    "\"lengthAtMost\"",
+    "\"lessThan\"",
+    "\"matches\"",
+    "\"not\"",
+    "\"notEquals\"",
+    "\"or\""
   ],
   "MdyFieldA11yOptions": [
     "autocomplete?",
@@ -543,6 +707,12 @@
     "valid",
     "value"
   ],
+  "MdyFieldHandleTree": [
+    "(opaque)"
+  ],
+  "MdyFieldIntent": [
+    "(opaque)"
+  ],
   "MdyFieldOptions": [
     "asyncDebounceMs?",
     "asyncDependsOn?",
@@ -550,6 +720,9 @@
     "asyncValidators?",
     "asyncWhen?",
     "sanitize?"
+  ],
+  "MdyFieldRef": [
+    "(opaque)"
   ],
   "MdyFieldShellA11yOptions": [
     "controlId?",
@@ -560,6 +733,19 @@
   "MdyFieldShellFlags": [
     "disabled",
     "required"
+  ],
+  "MdyFieldShellPart": [
+    "\"control\"",
+    "\"errorItem\"",
+    "\"errors\"",
+    "\"inlineError\"",
+    "\"inputWrapper\"",
+    "\"label\"",
+    "\"prefix\"",
+    "\"requiredMarker\"",
+    "\"root\"",
+    "\"suffix\"",
+    "\"supportingText\""
   ],
   "MdyFieldState": [
     "dirty",
@@ -622,6 +808,9 @@
     "path",
     "payload?"
   ],
+  "MdyFormPatch": [
+    "(opaque)"
+  ],
   "MdyFormRegistry": [
     "addValidators",
     "claimField",
@@ -633,6 +822,9 @@
     "setSanitizer",
     "upsertAsyncValidators",
     "upsertValidators"
+  ],
+  "MdyFormSchema": [
+    "(opaque)"
   ],
   "MdyFormState": [
     "canSubmit",
@@ -646,6 +838,12 @@
     "errors",
     "valid",
     "value"
+  ],
+  "MdyFormValidatorFn": [
+    "(opaque)"
+  ],
+  "MdyFormValue": [
+    "(opaque)"
   ],
   "MdyGroupDescriptor": [
     "children",
@@ -703,11 +901,34 @@
     "wizardPrevious",
     "wizardStepStatus"
   ],
+  "MdyIconName": [
+    "(opaque)"
+  ],
+  "MdyIconSpan": [
+    "(opaque)"
+  ],
+  "MdyInteractivity": [
+    "\"disabled\"",
+    "\"enabled\"",
+    "\"readonly\""
+  ],
+  "MdyItemHandleTree": [
+    "(opaque)"
+  ],
   "MdyKeyBinding": [
     "intent",
     "key",
     "restoresFocus?",
     "when?"
+  ],
+  "MdyLayoutBreakpoint": [
+    "(opaque)"
+  ],
+  "MdyLayoutColumnCounts": [
+    "(opaque)"
+  ],
+  "MdyLayoutPart": [
+    "(opaque)"
   ],
   "MdyLayoutSlotPlacement": [
     "column?",
@@ -716,6 +937,12 @@
   "MdyLifecycleIssue": [
     "code",
     "detail"
+  ],
+  "MdyLifecycleIssueCode": [
+    "(opaque)"
+  ],
+  "MdyLifecycleTransition": [
+    "(opaque)"
   ],
   "MdyLightDismiss": [
     "click",
@@ -747,6 +974,9 @@
     "readonly?",
     "widgetId"
   ],
+  "MdyMultiselectFieldIntent": [
+    "(opaque)"
+  ],
   "MdyMultiselectFieldState": [
     "counts",
     "dirty",
@@ -762,12 +992,28 @@
     "selectedValues",
     "touched"
   ],
+  "MdyMultiselectMode": [
+    "\"multi\"",
+    "\"single\""
+  ],
+  "MdyMultiselectOverlayAction": [
+    "(opaque)"
+  ],
+  "MdyMultiselectValueIntent": [
+    "(opaque)"
+  ],
   "MdyObserveCapability": [
     "observe"
   ],
   "MdyObserveOptions": [
     "equal?",
     "timing?"
+  ],
+  "MdyOnCleanup": [
+    "(opaque)"
+  ],
+  "MdyOperand": [
+    "(opaque)"
   ],
   "MdyOptionFieldA11yOptions": [
     "errorsVisible?",
@@ -788,6 +1034,9 @@
     "variant?",
     "widgetId"
   ],
+  "MdyOptionFieldIntent": [
+    "(opaque)"
+  ],
   "MdyOptionFieldState": [
     "dirty",
     "disabled",
@@ -799,6 +1048,23 @@
     "selectedKey",
     "selectedValue",
     "touched"
+  ],
+  "MdyOptionFieldVariant": [
+    "\"radio\"",
+    "\"segmented\""
+  ],
+  "MdyOptionNavigationTarget": [
+    "\"first\"",
+    "\"last\"",
+    "\"next\"",
+    "\"previous\""
+  ],
+  "MdyOutsideDismiss": [
+    "\"light-dismiss\"",
+    "false"
+  ],
+  "MdyOverlayAlignment": [
+    "(opaque)"
   ],
   "MdyOverlayAnchorOptions": [
     "alignment?",
@@ -853,6 +1119,9 @@
     "viewportHeight",
     "viewportWidth"
   ],
+  "MdyOverlayLifecycleIntent": [
+    "(opaque)"
+  ],
   "MdyOverlayLifecycleState": [
     "open"
   ],
@@ -867,10 +1136,20 @@
     "open",
     "widgetId"
   ],
+  "MdyOverlayPhase": [
+    "\"closed\"",
+    "\"open\""
+  ],
+  "MdyOverlayPlacement": [
+    "(opaque)"
+  ],
   "MdyOverlayPlacementResult": [
     "alignment",
     "coords",
     "position"
+  ],
+  "MdyOverlayProperty": [
+    "(opaque)"
   ],
   "MdyPaletteModel": [
     "contrastProxy",
@@ -878,6 +1157,9 @@
     "onChroma",
     "secondary",
     "tertiary"
+  ],
+  "MdyPaletteModelName": [
+    "(opaque)"
   ],
   "MdyPaletteRelation": [
     "c",
@@ -896,6 +1178,12 @@
   "MdyPartLookupOptions": [
     "portalRoots?"
   ],
+  "MdyPartMap": [
+    "(opaque)"
+  ],
+  "MdyPartState": [
+    "(opaque)"
+  ],
   "MdyPathRef": [
     "path"
   ],
@@ -903,6 +1191,9 @@
     "dark",
     "errorHue",
     "light"
+  ],
+  "MdyPerceptualPaletteModelName": [
+    "(opaque)"
   ],
   "MdyPerceptualRelation": [
     "l",
@@ -919,6 +1210,9 @@
     "opener",
     "role?",
     "typeable?"
+  ],
+  "MdyPopupWidgetKind": [
+    "(opaque)"
   ],
   "MdyReactiveScope": [
     "destroy",
@@ -954,6 +1248,13 @@
     "flushIfSupported",
     "reactivity"
   ],
+  "MdyRelationAttribute": [
+    "\"aria-activedescendant\"",
+    "\"aria-controls\"",
+    "\"aria-describedby\"",
+    "\"aria-labelledby\"",
+    "\"for\""
+  ],
   "MdyResolvedTheme": [
     "dark",
     "light",
@@ -962,6 +1263,14 @@
     "name",
     "seed",
     "selector"
+  ],
+  "MdySanitizeProfile": [
+    "\"off\"",
+    "\"strict\"",
+    "\"text\""
+  ],
+  "MdySanitizer": [
+    "(opaque)"
   ],
   "MdySchemaPaths": [
     "arrayPaths",
@@ -981,6 +1290,12 @@
     "detail",
     "kind",
     "path"
+  ],
+  "MdySecurityViolationKind": [
+    "\"draft-shape\"",
+    "\"error-path\"",
+    "\"max-length\"",
+    "\"sanitized\""
   ],
   "MdySelectA11yOptions": [
     "activeKey",
@@ -1024,6 +1339,21 @@
     "readonly?",
     "value?",
     "widgetId"
+  ],
+  "MdySelectIntent": [
+    "(opaque)"
+  ],
+  "MdySelectKeyboardAction": [
+    "(opaque)"
+  ],
+  "MdySelectMoveTarget": [
+    "\"first\"",
+    "\"last\"",
+    "\"next\"",
+    "\"previous\""
+  ],
+  "MdySelectOption": [
+    "(opaque)"
   ],
   "MdySelectReconciliationState": [
     "parkedValue",
@@ -1081,6 +1411,15 @@
     "message",
     "state"
   ],
+  "MdyStateIssueCode": [
+    "\"STATE_ARIA_MISSING\"",
+    "\"STATE_ARIA_UNSUPPORTED\"",
+    "\"STATE_ARIA_WRONG\"",
+    "\"STATE_NOT_APPLIED\"",
+    "\"STATE_NOT_SUPPORTED\"",
+    "\"STATE_PART_MISSING\"",
+    "\"STATE_PART_PRESENT\""
+  ],
   "MdyStateMatrixOptions": [
     "kinds",
     "mount"
@@ -1100,16 +1439,37 @@
     "messages",
     "state"
   ],
+  "MdyStateName": [
+    "(opaque)"
+  ],
   "MdyStructureContractIssue": [
     "code",
     "message",
     "part"
+  ],
+  "MdySubmitMode": [
+    "\"always\"",
+    "\"manual\"",
+    "\"valid-only\""
+  ],
+  "MdySubmittedValue": [
+    "(opaque)"
   ],
   "MdyThemeDefinition": [
     "model?",
     "name",
     "seed",
     "selector?"
+  ],
+  "MdyThemeMode": [
+    "\"dark\"",
+    "\"light\""
+  ],
+  "MdyTimeClockIntent": [
+    "(opaque)"
+  ],
+  "MdyTimeDraftIntent": [
+    "(opaque)"
   ],
   "MdyTimeDraftState": [
     "committed",
@@ -1121,9 +1481,24 @@
     "restoreFocus",
     "state"
   ],
+  "MdyTimeEntry": [
+    "(opaque)"
+  ],
+  "MdyTimeField": [
+    "\"hour\"",
+    "\"minute\""
+  ],
   "MdyTimeFieldBounds": [
     "max",
     "min"
+  ],
+  "MdyTimeFormat": [
+    "'12h'",
+    "'24h'"
+  ],
+  "MdyTimeRejection": [
+    "\"not-a-number\"",
+    "\"out-of-range\""
   ],
   "MdyTimepickerDialKeyResult": [
     "field",
@@ -1148,6 +1523,9 @@
     "readonly?",
     "widgetId"
   ],
+  "MdyTimepickerFieldIntent": [
+    "(opaque)"
+  ],
   "MdyTimepickerFieldState": [
     "dirty",
     "disabled",
@@ -1163,6 +1541,13 @@
     "touched",
     "value",
     "viewMode"
+  ],
+  "MdyTimepickerViewMode": [
+    "\"dial\"",
+    "\"input\""
+  ],
+  "MdyTransitionTrigger": [
+    "(opaque)"
   ],
   "MdyTypeahead": [
     "clear",
@@ -1183,20 +1568,39 @@
   "MdyTypedWidgetViewContract": [
     "parts"
   ],
+  "MdyUiCommand": [
+    "(opaque)"
+  ],
   "MdyUnmountObservation": [
     "document",
     "elementsBeforeMount",
     "idsWhileMounted",
     "pokeAfterDispose?"
   ],
+  "MdyValueCommit": [
+    "\"confirm\"",
+    "\"live\""
+  ],
   "MdyValueContract": [
     "commit",
     "nullable",
     "shape"
   ],
+  "MdyValueKind": [
+    "(opaque)"
+  ],
   "MdyValueSecurityResult": [
     "actions",
     "value"
+  ],
+  "MdyValueShape": [
+    "\"boolean\"",
+    "\"dateRange\"",
+    "\"file[]\"",
+    "\"number\"",
+    "\"option\"",
+    "\"option[]\"",
+    "\"string\""
   ],
   "MdyValueWidgetController": [
     "setDisabled",
@@ -1212,6 +1616,9 @@
     "readonly?",
     "value"
   ],
+  "MdyValueWidgetIntent": [
+    "(opaque)"
+  ],
   "MdyValueWidgetState": [
     "dirty",
     "disabled",
@@ -1223,6 +1630,9 @@
   "MdyViewportSize": [
     "height",
     "width"
+  ],
+  "MdyWiden": [
+    "(opaque)"
   ],
   "MdyWidgetCommandContext": [
     "announce",
@@ -1261,6 +1671,15 @@
     "item",
     "part"
   ],
+  "MdyWidgetKeyIntent": [
+    "(opaque)"
+  ],
+  "MdyWidgetKind": [
+    "(opaque)"
+  ],
+  "MdyWidgetPart": [
+    "(opaque)"
+  ],
   "MdyWidgetRelation": [
     "attribute",
     "from",
@@ -1272,6 +1691,30 @@
     "pointerEvents",
     "popover",
     "resizeObserver"
+  ],
+  "MdyWidgetSemanticElement": [
+    "\"affordance\"",
+    "\"button\"",
+    "\"columnheader\"",
+    "\"container\"",
+    "\"dialog\"",
+    "\"grid\"",
+    "\"gridcell\"",
+    "\"group\"",
+    "\"image\"",
+    "\"input\"",
+    "\"label\"",
+    "\"listbox\"",
+    "\"option\"",
+    "\"popup\"",
+    "\"presentation\"",
+    "\"radio\"",
+    "\"root\"",
+    "\"status\"",
+    "\"text\""
+  ],
+  "MdyWidgetState": [
+    "(opaque)"
   ],
   "MdyWidgetStateContract": [
     "aria?",
@@ -1298,6 +1741,9 @@
     "to",
     "trigger"
   ],
+  "MdyWidgetVariant": [
+    "(opaque)"
+  ],
   "MdyWidgetViewContract": [
     "parts",
     "root",
@@ -1317,5 +1763,8 @@
     "hour",
     "minute",
     "period"
+  ],
+  "ValidatorFn": [
+    "(opaque)"
   ]
 }

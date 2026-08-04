@@ -71,6 +71,24 @@ function membersOf(node) {
   return members.sort();
 }
 
+/**
+ * The literal members of a union alias, sorted. A union that is not made of literals — a union of
+ * object types, or an alias of another type entirely — records `["(opaque)"]`: enough for the alias
+ * being withdrawn to fail, and no claim about what is inside it.
+ */
+function unionMembersOf(type) {
+  // A union narrowed to one member stops being a union node. Recording it as a single literal keeps
+  // the last step of a narrowing readable as what it is, rather than as the alias going opaque.
+  if (ts.isLiteralTypeNode(type)) return [type.literal.getText?.() ?? String(type.literal.text)];
+  if (!ts.isUnionTypeNode(type)) return ["(opaque)"];
+  const members = [];
+  for (const member of type.types) {
+    if (!ts.isLiteralTypeNode(member)) return ["(opaque)"];
+    members.push(member.literal.getText?.() ?? String(member.literal.text));
+  }
+  return members.sort();
+}
+
 const surface = {};
 for (const entry of ENTRIES) {
   const file = resolve(ROOT, entry);
@@ -85,6 +103,14 @@ for (const entry of ENTRIES) {
       surface[node.name.text] = membersOf(node);
     } else if (exported && ts.isTypeAliasDeclaration(node) && ts.isTypeLiteralNode(node.type)) {
       surface[node.name.text] = membersOf(node.type);
+    } else if (exported && ts.isTypeAliasDeclaration(node)) {
+      // A union of literals is a public surface a consumer switches on, and withdrawing one of its
+      // members — or the alias itself — is exactly as breaking as removing an interface member.
+      // Reading only interfaces and type literals left every such union outside classification,
+      // which is finding K's shape one level down: the audit reported a number that looked like
+      // coverage. Anything that is not a union of literals is recorded as present but opaque, so
+      // its disappearance is still caught while its contents make no claim.
+      surface[node.name.text] = unionMembersOf(node.type);
     }
     ts.forEachChild(node, visit);
   };
