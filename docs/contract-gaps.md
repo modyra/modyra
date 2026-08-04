@@ -569,9 +569,30 @@ two widgets have in common and what the working ones do not.
 That makes the finding "a hidden native input" rather than "a hidden native radio", and it means the
 demo has two more rows that cannot run on that engine. Both are quarantined naming this finding.
 
-**What is still unknown** is why it needs the demo: a minimal page hiding a radio four different
-ways focuses cleanly every time. Something the demo contributes is part of the cause, and it has not
-been isolated.
+### Bisected, 2026-08-04
+
+Five measurements narrow it a long way, and none of them reaches a root cause.
+
+| question | answer |
+| --- | --- |
+| which widgets? | **checkbox and radio only.** `toggle`, `segmented`, `colors` and `select` all survive being focused — including `segmented`, which is now a hidden native radio too |
+| which renderer? | **Angular only.** The same focus call on `@modyra/plain`'s radio survives, with the same classes and the same theme |
+| CSS or script? | **CSS.** Disabling every stylesheet and then focusing survives; untouched, the page ends |
+| which stylesheet? | **`modyra-modern.css`.** Enabled alone it is fatal; each of the other nine sheets alone is harmless |
+| reproducible standalone? | **No.** A minimal page hiding a radio four ways, with and without `:has(…):hover`, focuses cleanly every time |
+
+The two dying kinds are also the only two whose rules use a `:has(…):hover` compound, which is the
+obvious suspect and is **not sufficient on its own** — a minimal page with exactly that construct
+survives, and `segmented` carries thirteen `:has()` rules without dying.
+
+So the cause needs `modyra-modern.css` *and* Angular's markup together, and what each contributes is
+not yet separated. An attempt to bisect by deleting rules from the live sheets failed for a reason
+worth writing down: `@import`ed rules are reached through `CSSImportRule.styleSheet`, not
+`.cssRules`, and `deleteRule` on a rule inside an imported sheet appears to be refused — the walk
+reported zero removals where roughly a thousand rules matched.
+
+**Next step**, for whoever picks this up: serve `modyra-modern.css` as a copy with its `@import`s
+inlined, so rules can be deleted, and bisect against Angular's radio markup specifically.
 
 ## J2 — `multiselect` anatomy depends on its mode, and the contract cannot say so — **fixed**
 
