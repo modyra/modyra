@@ -82,7 +82,7 @@ open and inspects it there. Ask what run fails if a new rule is wrong, and check
 
 ---
 
-## Phase 2 — one engine is not evidence
+## Phase 2 — one engine is not evidence — **complete, 2026-08-04**
 
 `playwright.config.ts` runs `browserName: "chromium"`. Every browser-verified claim in this
 repository — overlay placement, focus restoration, the dismissal gesture, the affordance column —
@@ -102,6 +102,32 @@ are the three most likely, and the dismissal policy depends on all three.
 **This phase may need to move first.** If Firefox or WebKit disagree about pointer or focus
 behaviour, part of what Phase 1 verifies is single-engine. Phase 1 leads only because its two gaps
 are anatomy rather than engine behaviour.
+
+### Outcome
+
+Nine Playwright projects — three renderers by three engines — and screenshot baselines for two of
+them. `docs/contract-gaps.md` § **L** carries what the other engines said.
+
+**Both predictions were wrong.** `:has()` and `:focus-visible` were named as the first casualties and
+neither failed anywhere. What did fail was not in the plan:
+
+| defect | engine |
+| --- | --- |
+| no `click` for a tap on a non-clickable element, so nothing dismissed | WebKit |
+| prefix and suffix used physical padding, so RTL did not mirror | **all three**, since before this phase |
+| a portalled popup's icons had no size rule, and buttons no font size | WebKit drew them at zero |
+| `max-height: 100%` against an indefinite parent collapsed a popover | WebKit |
+| the `on-*` step needed maths its feature query did not test | Firefox |
+
+**Three of those were found by a person opening the demo and looking**, not by any assertion, and
+they survived a green nine-project run. That is the argument phase 2 actually produced: the suites
+assert behaviour and geometry, and nothing asserted what a widget *looks like*. Baselines now do,
+per renderer and engine — and they compare a renderer to itself, so looking is still what finds a
+cross-engine difference.
+
+**The lesson to carry:** the first baseline suite passed with every icon 2px larger, at a tolerance
+that sounded tight. A check that cannot fail is worse than no check, because it is trusted. Prove
+each one discriminates before believing it.
 
 ---
 
