@@ -20,9 +20,10 @@ to a green suite.
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
 - **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, N
-- **Partly fixed** — C2, E2, F, K, L, M — derived but not painted; most scripts reachable; kind-keyed
+- **Partly fixed** — C2, E2, F, K, L, M, P — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
-  the colour metric decided and its estimate still approximate
+  the colour metric decided and its estimate still approximate; the conformance verdict no longer
+  overstates its coverage while two of its sections still have nothing running them
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
 - **Open** — O
@@ -1171,3 +1172,43 @@ hover without clicking the toggle. That probe hung rather than answering — a c
 next `evaluate` hang instead of throwing, so every step after the act needs its own timeout. If
 hovering alone is fatal, this is about painting; if it needs the open popup, it is about what the
 popup composites over, and the palette's filter is the next thing to look at.
+
+## P — the conformance kit called a partial run conformance — **partly fixed**
+
+**Observed.** `packages/widgets/bin/modyra-conformance.mjs`, the CLI `@modyra/widgets` publishes for
+a consumer to verify their own renderer against the contract.
+
+Two of its eight sections are hardcoded never to run:
+
+```js
+record("Keyboard behaviour", null, "not run — real key presses, focus and native defaults need a browser");
+record("Accessibility audit", null, "not run — computed accessible names and an axe pass need a browser");
+```
+
+The reason is sound — a Node harness cannot press a key or compute an accessible name — but the
+verdict did not carry it. The run printed `CONFORMANT` and exited `0`, with the coverage reduced to a
+parenthetical: `2 section(s) need a browser`. A consumer wiring the exit code into CI got a green
+that establishes six sections and names all eight.
+
+This is the shape recorded across E1, H, J4a and J4b — a check that reports success over candidates
+it never considered — arrived at from the other side. Here the check is honest about each section and
+dishonest only in the one line most readers stop at, and it is the line that ships.
+
+**The two unreachable sections are not an arbitrary pair.** They are keyboard behaviour and
+accessibility: what a user who does not point at what they want depends on, and where a renderer
+diverges without anyone seeing it. That is not a coincidence — they are unreachable *because* they
+need a real browser, which is the same property that makes them hard to get right.
+
+**Fixed, in the verdict.** A run with unexecuted sections now reports `CONFORMANT WHERE CHECKED`,
+counts what it ran, names what it did not, and says the exit code does not cover it. The exit code
+itself is unchanged: it still reports whether the sections that ran found anything, which is what it
+has always meant and what a consumer's CI depends on.
+
+**Still open: nothing runs those two sections.** Naming a gap is not closing it. The browser suites
+exist and cover the repository's own renderers, but the kit a consumer runs has no browser mode, so a
+consumer has no way to establish the two sections at all — the message tells them to run something
+that is not shipped to them.
+
+**Also open: `@modyra/angular` has no conformance config.** Only `packages/plain` and `packages/lit`
+have one, so the adapter with the largest surface and the most divergences found to date is the one
+the kit never runs. Every conformance claim in this repository is a claim about the other two.

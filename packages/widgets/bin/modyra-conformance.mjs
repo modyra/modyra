@@ -267,8 +267,24 @@ for (const { title, findings, note } of sections) {
   if (findings.length > 10) console.log(`      … ${findings.length - 10} more`);
 }
 
+// A run that did not execute two of its sections has not established conformance, and a verdict that
+// says otherwise is the failure this kit exists to prevent, one level up: a consumer wiring the exit
+// code into CI reads an unqualified word and a zero. The verdict names its own coverage instead, and
+// the two sections it cannot reach are the ones a keyboard user and a screen-reader user depend on —
+// precisely where a renderer is most likely to diverge unnoticed.
+const skipped = sections.filter((section) => section.findings === null);
+const ran = sections.length - skipped.length;
+const verdict = failed > 0
+  ? `NOT CONFORMANT — ${failed} finding(s)`
+  : skipped.length === 0
+    ? "CONFORMANT"
+    : "CONFORMANT WHERE CHECKED";
+
 console.log(
-  `\n${failed === 0 ? "CONFORMANT" : `NOT CONFORMANT — ${failed} finding(s)`}`
-  + `  ·  ${kinds.length} kind(s)  ·  2 section(s) need a browser\n`,
+  `\n${verdict}  ·  ${kinds.length} kind(s)  ·  ${ran} of ${sections.length} section(s) run\n`
+  + (skipped.length === 0
+    ? ""
+    : `  Not established: ${skipped.map((section) => section.title).join(", ")}.\n`
+      + "  Run the browser suites for these; this exit code does not cover them.\n"),
 );
 process.exit(failed === 0 ? 0 : 1);
