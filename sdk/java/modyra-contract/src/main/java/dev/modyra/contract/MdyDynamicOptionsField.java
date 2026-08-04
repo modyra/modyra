@@ -1,6 +1,5 @@
 package dev.modyra.contract;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 
@@ -11,7 +10,6 @@ import java.util.List;
  * (see {@link MdyDynamicFormParser} for the structural check that options
  * is present and non-empty).
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record MdyDynamicOptionsField(
     String name,
@@ -20,6 +18,12 @@ public record MdyDynamicOptionsField(
     String placeholder,
     Object initialValue,
     MdyDynamicValidators validators,
-    List<MdySelectOption> options
+    List<MdySelectOption> options,
+    /**
+     * Multiselect only. {@code "single"} is a toggle set, {@code "multi"} a bag whose chip counts
+     * repeats. Carried because the widget contract declares a different anatomy per mode, so a
+     * document that loses it describes a different widget than the one it was written for.
+     */
+    String mode
 ) implements MdyDynamicField {
 }

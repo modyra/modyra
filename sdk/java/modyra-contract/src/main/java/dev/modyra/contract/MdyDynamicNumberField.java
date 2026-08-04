@@ -1,10 +1,8 @@
 package dev.modyra.contract;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /** Numeric kinds: number, slider. Mirrors {@code MdyDynamicNumberField}. */
-@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record MdyDynamicNumberField(
     String name,
