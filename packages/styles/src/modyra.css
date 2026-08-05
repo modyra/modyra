@@ -123,6 +123,14 @@
         /* ── Label & Helper Text ────────────────────────────────────────────────── */
         --mdy-label-font-size: var(--mdy-sys-typescale-body-large-size);
         --mdy-label-font-weight: var(--mdy-sys-typescale-label-large-weight);
+        /* The label had a size and a weight and no leading, so its height was the host page's
+           `line-height` applied to the theme's font size. A host at 1.5 and a 13px label gives
+           19.5px — every field, and therefore every control in the column, half a pixel tall.
+
+           Leading in px, from the typescale, like the input, helper and error already take. A ratio
+           cannot be relied on to land on the grid: it multiplies a size the theme chose by a number
+           the host chose, and only some of those products are whole. */
+        --mdy-label-line-height: var(--mdy-sys-typescale-label-large-line-height);
         --mdy-helper-font-size: var(--mdy-sys-typescale-body-small-size);
         /* 12px */
         --mdy-helper-line-height: var(--mdy-sys-typescale-body-small-line-height);
@@ -923,6 +931,7 @@
         display: block;
         font-weight: var(--mdy-label-font-weight);
         font-size: var(--mdy-label-font-size);
+        line-height: var(--mdy-label-line-height);
         color: var(--mdy-on-surface-variant);
         margin-bottom: 0;
     }

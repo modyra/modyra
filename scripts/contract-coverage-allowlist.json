@@ -19,7 +19,6 @@
     "mdy-renderer--file": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--number": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--select": "a root kind marker, not a treatment: the themes reach a select through the parts it declares (.mdy-select__trigger, __arrow, __dropdown), which is where a select's look actually lives. The one rule that used it scoped a caret rotation to focus, which is a state the arrow already declares -- removing it left the marker unused rather than unpainted by oversight.",
-    "mdy-renderer--slider": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--text": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--timepicker": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--toggle": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",

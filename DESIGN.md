@@ -79,6 +79,16 @@ said 36, and its explicit height beat the `min-height` sitting beside it.
 **Two kinds legitimately grow**, and only two: `textarea` (multi-line) and `radio-group` (as tall as
 it has options). Both are asserted as growing, so "taller" cannot spread to a kind with no claim.
 
+**Leading is stated in pixels, never as a ratio.** A ratio multiplies a size the theme chose by a
+number the *host* chose, and only some of those products are whole. The label carried a size and a
+weight and no leading, so its height was the host page's `line-height` applied to the theme's font
+size: at 1.5 against a 13px label that is 19.5px, which made every field — and so every control in
+the column — half a pixel tall in every theme. Nothing sat on the pixel grid.
+
+Every text role takes its leading from the typescale, in px, as the input, helper and error already
+did. A role with a size token and no leading token is the defect; the host fills the gap and the
+system never sees it.
+
 **A chip is one height in both modes.** `--mdy-chip-height` means the height *including border* —
 left to `content-box`, one token measured 34px in counter mode and 32 in toggle.
 
