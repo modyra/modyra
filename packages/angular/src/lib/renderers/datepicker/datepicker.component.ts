@@ -113,7 +113,7 @@ import { MdyCalendarComponent } from "./calendar.component";
         [coords]="coords()"
         [hasBackdrop]="variant() === 'modal' || position() === 'overlay'"
         [widthMode]="'auto-content'"
-        [panelClass]="'mdy-datepicker__popup mdy-popup mdy-popup--surface'"
+        [panelClass]="popupClass"
         [kind]="'datepicker'"
         (close)="closeOverlay()"
       >
@@ -155,6 +155,9 @@ import { MdyCalendarComponent } from "./calendar.component";
   `,
 })
 export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
+  /* The popup wears what the catalogue says it wears. Restated in the template, a class added
+     to the contract reached the renderers that derive and stopped at this one. */
+  protected readonly popupClass = MDY_WIDGET_CONTRACTS.datepicker.parts.popup.classes.join(" ");
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
   protected override readonly overlayKind = "datepicker" as const;
 

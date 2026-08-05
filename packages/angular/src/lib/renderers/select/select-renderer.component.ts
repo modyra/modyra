@@ -17,6 +17,7 @@ import {
   viewChild,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
+import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
 import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, popupAlignmentClass, popupPlacementClass, reconcileSelectValue, selectKeyboardAction, typeaheadMatch, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -135,7 +136,7 @@ import { MdyDropdownBase } from "../dropdown-base";
         >
           <div
             mdyGlass
-            class="mdy-select__dropdown mdy-popup mdy-popup--surface mdy-overlay"
+            [class]="popupClass"
             [ngClass]="placementClass()"
           >
             @if (searchable()) {
@@ -257,6 +258,9 @@ import { MdyDropdownBase } from "../dropdown-base";
 export class MdySelectComponent<TValue = string>
   extends MdyDropdownBase<TValue | null, TValue>
   implements MdyOptionsControl<TValue> {
+  /* The popup wears what the catalogue says it wears. Restated in the template, a class added
+     to the contract reached the renderers that derive and stopped at this one. */
+  protected readonly popupClass = MDY_WIDGET_CONTRACTS.select.parts.popup.classes.join(" ") + " " + MDY_OVERLAY_PORTAL_CLASS;
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
   protected override readonly overlayKind = "select" as const;
 

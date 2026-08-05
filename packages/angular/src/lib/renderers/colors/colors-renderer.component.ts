@@ -8,6 +8,7 @@ import {
   input,
 } from "@angular/core";
 
+import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
 import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -131,7 +132,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
         (close)="closeOverlay()"
       >
         <div
-          class="mdy-colors__dropdown mdy-popup mdy-popup--surface mdy-overlay"
+          [class]="popupClass"
           [id]="popupId()"
           [ngClass]="placementClass()"
         >
@@ -168,6 +169,9 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
   `
 })
 export class MdyColorsComponent extends MdyOverlayControl<string> {
+  /* The popup wears what the catalogue says it wears. Restated in the template, a class added
+     to the contract reached the renderers that derive and stopped at this one. */
+  protected readonly popupClass = MDY_WIDGET_CONTRACTS.colors.parts.popup.classes.join(" ") + " " + MDY_OVERLAY_PORTAL_CLASS;
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
   protected override readonly overlayKind = "colors" as const;
 

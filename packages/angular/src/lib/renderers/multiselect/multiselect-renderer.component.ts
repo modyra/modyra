@@ -162,7 +162,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       [coords]="coords()"
       [hasBackdrop]="position() === 'overlay'"
       [widthMode]="'match-anchor'"
-      [panelClass]="'mdy-multiselect-overlay__panel mdy-multiselect__dropdown mdy-popup mdy-popup--surface'"
+      [panelClass]="popupClass"
       [panelId]="popupId()"
       [kind]="'multiselect'"
       (close)="closeOverlay()"
@@ -237,6 +237,9 @@ import { MdyDropdownBase } from "../dropdown-base";
 export class MdyMultiselectComponent<TValue = string>
   extends MdyDropdownBase<ReadonlyArray<TValue>, TValue>
   implements MdyOptionsControl<TValue> {
+  /* The popup wears what the catalogue says it wears. Restated in the template, a class added
+     to the contract reached the renderers that derive and stopped at this one. */
+  protected readonly popupClass = MDY_WIDGET_CONTRACTS.multiselect.parts.popup.classes.join(" ");
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
   protected override readonly overlayKind = "multiselect" as const;
 
