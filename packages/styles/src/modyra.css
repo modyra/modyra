@@ -390,16 +390,23 @@
     }
 
     /*
-     * A button's font size comes from the user agent, not from its parent, and user-agent defaults
-     * are not part of any specification. Anything a control sizes from its own font is therefore
-     * unspecified until the size is stated here.
+     * A button's font size and colour come from the user agent, not from its parent, and user-agent
+     * defaults are not part of any specification. Anything a control sizes from its own font is
+     * therefore unspecified until the size is stated here.
      *
-     * `:where()` carries no specificity, which is the point: this supplies the default a button
-     * should have had and loses to every rule that states a size deliberately. Named with a class
+     * Colour is the same omission with a sharper edge: the user agent sets `color: buttontext`, so a
+     * button is the one element in a themed subtree that does *not* inherit the text colour around
+     * it. A host slotting a plain `<button>` into a field — a prefix, a suffix, an affordance of its
+     * own — gets black on whatever the theme painted, which in a dark scheme is black on a dark
+     * surface. Measured at 1.10:1 before this line existed.
+     *
+     * `:where()` carries no specificity, which is the point: this supplies the defaults a button
+     * should have had and loses to every rule that states one deliberately. Named with a class
      * instead, it would outrank them all.
      */
     :where(.mdy-renderer, .mdy-popup, .mdy-overlay-panel) button {
         font-size: inherit;
+        color: inherit;
     }
 
     /*
@@ -467,9 +474,13 @@
         color: var(--mdy-input-focus-color);
     }
 
+    /* Pressed, the stepper fills with the accent and takes the accent's own text colour. It took
+       `--mdy-on-error` — the colour that belongs over an error surface, on a surface that is not
+       one. It read as white against most seeds and as unreadable against the rest, for the same
+       reason a pinned colour always does: it was never derived from what it sits on. */
     .mdy-spin-btn:active {
-        background: var(--mdy-input-focus-color);
-        color: var(--mdy-on-error);
+        background: var(--mdy-primary);
+        color: var(--mdy-on-primary);
     }
 
 
@@ -1487,7 +1498,10 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.5rem 1.5rem;
-        background: var(--mdy-input-focus-color);
+        /* One pair. The background was the *focus indicator's* colour and the text the primary's —
+           two roles a theme may set independently, so they were a readable pair only while nobody
+           separated them. A filled accent control takes the accent and the colour derived for it. */
+        background: var(--mdy-primary);
         color: var(--mdy-on-primary);
         border: none;
         border-radius: var(--mdy-button-radius);

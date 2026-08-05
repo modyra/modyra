@@ -197,6 +197,20 @@ that. `MDY_ON_COLOR_FLOOR` in `@modyra/core/color-utils` is the number, and
 [ADR 0015](docs/architecture/0015-light-text-while-it-is-readable.md) is why — including the cost,
 which is that this sits below AA for normal text on purpose.
 
+**A theme states its design system's model, and derives every role from it.** Material is tonal — a
+role is a tone on a palette at an assigned chroma — and iOS is paired, naming the label colour that
+goes with each system colour. A literal written at the site that paints it is half a pair: a host
+replacing the accent replaces one half, and the other keeps whatever it was. Every one of them is a
+variable, so a design system is retuned in numbers rather than rewritten in rules.
+
+**Where a design system's own pairing sits below the floor, the system wins and the exception is
+named.** White on Apple's system blue is 4.02:1; it is in the HIG and it stays. A theme that darkened
+it to reach 4.5:1 would stop being iOS, which is the worse defect. `e2e/palette.spec.ts` lists such
+allowances per theme and asserts them in both directions, so one that stops applying fails too.
+
+**Muted text is reading text.** Labels, placeholders, supporting text and weekday headers hold 4.5:1
+like anything else — "secondary" is their weight in the hierarchy, not the standard they answer to.
+
 **A stylesheet cannot check what it computed.** It has the colour in OKLCH and a ratio wants sRGB
 luminance, so every `on-` colour a theme derives live is an estimate of the rule rather than the
 rule. Where a palette can be generated ahead of time, `color-utils` applies it exactly.

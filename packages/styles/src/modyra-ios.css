@@ -36,6 +36,14 @@
     :root {
         /* Accent / semantic system colors — iOS light mode */
         --mdy-ios-blue: #007AFF;
+        /* The label colour Apple pairs with system blue. HIG names the pair, so this theme names it
+           too rather than writing `#ffffff` at each of the four places that sit on the accent.
+           A host that supplies its own accent supplies both halves and every one of them follows.
+
+           It is 4.02:1 against Apple's own blue, below the 4.5:1 this project holds elsewhere. That
+           is the platform's choice and this theme exists to be faithful to it — recorded, not
+           silently corrected, because a theme that quietly stops looking like iOS is not a theme. */
+        --mdy-ios-on-blue: #FFFFFF;
         --mdy-ios-red: #FF3B30;
         --mdy-ios-green: #34C759;
         --mdy-ios-gray: #8E8E93;
@@ -170,7 +178,7 @@
         --mdy-chip-bg: var(--mdy-ios-fill);
         --mdy-chip-color: var(--mdy-ios-label);
         --mdy-chip-selected-bg: var(--mdy-ios-blue);
-        --mdy-chip-selected-color: #ffffff;
+        --mdy-chip-selected-color: var(--mdy-ios-on-blue);
         --mdy-chip-selected-border: 1px solid transparent;
         --mdy-chip-max-width: 11rem;
         --mdy-chip-transition: var(--mdy-sys-motion-duration-base, 0.15s) var(--mdy-sys-motion-easing-standard, cubic-bezier(0.4, 0, 0.2, 1));
@@ -178,7 +186,7 @@
         --mdy-chip-hover-border: transparent;
         --mdy-chip-hover-color: var(--mdy-ios-label);
         --mdy-chip-selected-hover-bg: color-mix(in srgb, var(--mdy-ios-blue), black 12%);
-        --mdy-chip-selected-hover-color: #fff;
+        --mdy-chip-selected-hover-color: var(--mdy-ios-on-blue);
 
         /* ── Select / dropdown — floating glass sheet ───────────────────── */
         --mdy-select-dropdown-bg: var(--mdy-ios-glass-bg-fallback);
@@ -207,7 +215,7 @@
            Declared at the `sys` tier so the palette maths in modyra-base.css derives from iOS blue
            rather than from a primary this theme never chose. `--mdy-primary` bridges from it. */
         --mdy-sys-color-primary: var(--mdy-ios-blue);
-        --mdy-on-primary: #ffffff;
+        --mdy-on-primary: var(--mdy-ios-on-blue);
         --mdy-base-bg: var(--mdy-ios-secondary-bg);
         --mdy-surface: var(--mdy-ios-bg);
         --mdy-surface-container: var(--mdy-ios-gray6);
@@ -226,7 +234,7 @@
         --mdy-datepicker-cell-font-size: 1rem;
         --mdy-datepicker-today-ring: 1.5px solid var(--mdy-ios-blue);
         --mdy-datepicker-selected-bg: var(--mdy-ios-blue);
-        --mdy-datepicker-selected-color: #ffffff;
+        --mdy-datepicker-selected-color: var(--mdy-ios-on-blue);
         --mdy-datepicker-hover-bg: var(--mdy-ios-fill);
         --mdy-datepicker-outside-opacity: 0.3;
         --mdy-datepicker-disabled-opacity: 0.25;
@@ -940,7 +948,7 @@
      * ═══════════════════════════════════════════════════════════════════ */
     .mdy-button {
         background: var(--mdy-ios-blue);
-        color: #ffffff;
+        color: var(--mdy-ios-on-blue);
         border-radius: var(--mdy-corner-full);
         height: 2.75rem;
         padding: 0 1.5rem;
