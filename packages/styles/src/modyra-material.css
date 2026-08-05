@@ -78,6 +78,43 @@
            an 80% white mix either way; that is a separate question about container tones, not about
            the seed. */
         --mdy-sys-color-primary: #18181b;
+
+        /* ─── The M3 tonal model ───────────────────────────────────────────────
+           Material derives every colour role as a **tone on a tonal palette**, where a palette is
+           the source hue at an *assigned* chroma and a tone is perceptual lightness. Assigned, not
+           scaled, is the whole of it: scaling a near-neutral source leaves a near-neutral palette,
+           and an M3 palette looks like one however neutral its source. Chroma values are M3's own,
+           carried in `MDY_HCT_PALETTE_MODEL` in `@modyra/core/color-utils`.
+
+           Everything below is a number to retune. Change a tone and that role moves, on every seed;
+           change a chroma and that palette's saturation moves without touching its lightness. */
+        --mdy-md-chroma-primary: 0.12;
+        --mdy-md-chroma-secondary: 0.04;
+        --mdy-md-chroma-tertiary: 0.06;
+        --mdy-md-chroma-neutral: 0.01;
+        --mdy-md-chroma-neutral-variant: 0.02;
+        --mdy-md-hue-shift-tertiary: 60;
+
+        /* Accent roles, light scheme. `on-primary` is tone 100 because `primary` is tone 40 — the
+           pair only holds together, which is why the seed is normalised to a tone rather than used
+           raw. Used raw, a light brand colour kept M3's white and measured 1.85:1. */
+        --mdy-md-tone-primary: 40;
+        --mdy-md-tone-on-primary: 100;
+        --mdy-md-tone-primary-container: 90;
+        --mdy-md-tone-on-primary-container: 10;
+        --mdy-md-tone-secondary: 40;
+        --mdy-md-tone-tertiary: 40;
+
+        /* Error keeps its own hue: an error that went green because the brand did is not an error.
+           M3 fixes it at hue 25, chroma 84 in HCT. */
+        --mdy-md-hue-error: 27;
+        --mdy-md-chroma-error: 0.19;
+        --mdy-md-tone-error: 45;
+        --mdy-md-tone-on-error: 100;
+
+        /* The pre-derivation fallback, for an engine without relative colour: the values
+           `deriveHctPalette("#18181b")` returns, so what such an engine renders is still M3's
+           arithmetic rather than a colour someone picked. */
         --mdy-sys-color-error: #dc2626;
         --mdy-sys-color-secondary: #5b5d72;
         --mdy-sys-color-tertiary: #77536d;
@@ -93,6 +130,31 @@
         --mdy-surface-container-high: color-mix(in srgb, var(--mdy-primary), white 90%);
         --mdy-surface-container-highest: color-mix(in srgb, var(--mdy-primary), white 88%);
         --mdy-surface-container-highest-hover: color-mix(in srgb, var(--mdy-primary), white 82%);
+
+        /* ─── M3 tonal palette ─────────────────────────────────────────────────
+           Material defines a role as a **tone on a tonal palette**, and a tone is perceptual
+           lightness: surface is neutral-98 whatever the seed, and the ramp keeps its spacing because
+           the spacing *is* the specification. The mixes above are the same ramp written as "how much
+           white", which is the right answer for one seed and a different ramp for every other — a
+           gold seed collapses all six steps into a lightness span of 0.018 where M3 asks for 0.10,
+           so the surface hierarchy disappears rather than merely losing contrast.
+
+           These are the numbers to retune. Each is an M3 tone; change one and that step moves, on
+           every seed, without disturbing its neighbours. */
+        --mdy-md-neutral-chroma: 0.01;
+        --mdy-md-neutral-variant-chroma: 0.02;
+        --mdy-md-tone-surface: 98;
+        --mdy-md-tone-container-lowest: 100;
+        --mdy-md-tone-container-low: 96;
+        --mdy-md-tone-container: 94;
+        --mdy-md-tone-container-high: 92;
+        --mdy-md-tone-container-highest: 90;
+        --mdy-md-tone-container-highest-hover: 86;
+        --mdy-md-tone-on-surface: 10;
+        --mdy-md-tone-on-surface-variant: 30;
+    }
+
+    :root {
 
         --mdy-primary-container: var(--mdy-surface-container-highest);
         --mdy-on-primary-container: color-mix(in srgb, var(--mdy-primary), black 80%);
@@ -1083,7 +1145,20 @@
 
     @media (prefers-color-scheme: dark) {
         :root {
-            /* In dark mode, surface/container roles invert: dark bg, light text */
+            /* In dark mode, surface/container roles invert: dark bg, light text.
+               The mixes below are the fallback; the tones override them where relative colour
+               exists, exactly as in the light scheme. M3's dark tones are not the light ones
+               subtracted from 100 — the ramp is compressed at the bottom on purpose. */
+            --mdy-md-tone-surface: 6;
+            --mdy-md-tone-container-lowest: 4;
+            --mdy-md-tone-container-low: 10;
+            --mdy-md-tone-container: 12;
+            --mdy-md-tone-container-high: 17;
+            --mdy-md-tone-container-highest: 22;
+            --mdy-md-tone-container-highest-hover: 28;
+            --mdy-md-tone-on-surface: 90;
+            --mdy-md-tone-on-surface-variant: 80;
+
             --mdy-surface: color-mix(in srgb, var(--mdy-primary), black 40%);
             --mdy-surface-container-lowest: color-mix(in srgb, var(--mdy-primary), black 55%);
             --mdy-surface-container-low: color-mix(in srgb, var(--mdy-primary), black 50%);
@@ -1119,6 +1194,41 @@
         .mdy-timepicker-container {
             animation-duration: 0.01ms !important;
             transition-duration: 0.01ms !important;
+        }
+    }
+
+    /* The tonal derivation, last in the layer.
+
+       Placed after every fallback it replaces, in both schemes: declared earlier, the dark block's
+       own mixes came later in the cascade and won, so the dark scheme kept the ramp the tones were
+       written to replace.
+
+       Relative colour syntax is what makes a tone expressible at all; Relative colour syntax is what makes a tone expressible at all; without it
+       the mixes above still apply, so an engine that lacks it keeps exactly the palette it renders
+       today rather than losing the theme. */
+    @supports (color: oklch(from white l c h)) {
+        :root {
+            /* Accent palettes: the source hue at M3's assigned chroma, read at the role's tone. */
+            /* The seed itself is never rewritten — it is what a host sets and what every role is
+               read from. What components paint is `--mdy-primary`, which is the seed at tone 40. */
+            --mdy-primary: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-primary) / 100) var(--mdy-md-chroma-primary) h);
+            --mdy-on-primary: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-on-primary) / 100) var(--mdy-md-chroma-primary) h);
+            --mdy-primary-container: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-primary-container) / 100) var(--mdy-md-chroma-primary) h);
+            --mdy-on-primary-container: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-on-primary-container) / 100) var(--mdy-md-chroma-primary) h);
+            --mdy-secondary: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-secondary) / 100) var(--mdy-md-chroma-secondary) h);
+            --mdy-tertiary: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-tertiary) / 100) var(--mdy-md-chroma-tertiary) calc(h + var(--mdy-md-hue-shift-tertiary)));
+            --mdy-error: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-error) / 100) var(--mdy-md-chroma-error) var(--mdy-md-hue-error));
+            --mdy-on-error: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-on-error) / 100) var(--mdy-md-chroma-error) var(--mdy-md-hue-error));
+
+            --mdy-surface: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-surface) / 100) var(--mdy-md-neutral-chroma) h);
+            --mdy-surface-container-lowest: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-container-lowest) / 100) var(--mdy-md-neutral-chroma) h);
+            --mdy-surface-container-low: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-container-low) / 100) var(--mdy-md-neutral-chroma) h);
+            --mdy-surface-container: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-container) / 100) var(--mdy-md-neutral-chroma) h);
+            --mdy-surface-container-high: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-container-high) / 100) var(--mdy-md-neutral-chroma) h);
+            --mdy-surface-container-highest: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-container-highest) / 100) var(--mdy-md-neutral-chroma) h);
+            --mdy-surface-container-highest-hover: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-container-highest-hover) / 100) var(--mdy-md-neutral-chroma) h);
+            --mdy-on-surface: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-on-surface) / 100) var(--mdy-md-neutral-chroma) h);
+            --mdy-on-surface-variant: oklch(from var(--mdy-sys-color-primary) calc(var(--mdy-md-tone-on-surface-variant) / 100) var(--mdy-md-neutral-variant-chroma) h);
         }
     }
 

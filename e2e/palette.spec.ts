@@ -230,3 +230,149 @@ test("dark mode derives too, instead of reverting to the reference colours", asy
   expect(hex(green.secondary!)).not.toBe("#a855f7");
   await page.emulateMedia({ colorScheme: null });
 });
+
+/**
+ * What a reader actually meets: every element that owns text, against the surface behind it.
+ *
+ * The tests above check the *tokens* — that a derived `on-` colour is readable against the colour it
+ * names. That is a different question from whether the page is readable, and the gap between them is
+ * where the defects lived: a theme pinning `--mdy-on-primary` to a literal, a control taking its
+ * background from one role and its text from another, a surface ramp that only worked for the seed
+ * it was written against. Each of those leaves every token correct and the page unreadable.
+ *
+ * Two things about the measurement, both learned by getting them wrong:
+ *
+ * `rgb()` channels are 0–255 and `color(srgb …)` channels are 0–1. Reading both on one scale reports
+ * perfectly readable text as `1:1`, and about forty pairs came back that way before it was fixed.
+ *
+ * An element with no opaque ancestor has no measurable background. Assuming white there invents a
+ * failure for every light-on-transparent label in the dark scheme. It is skipped and counted, and the
+ * count is asserted, because a walk that silently skips everything passes.
+ */
+const CONTRAST_THEMES = ["modyra", "modyra-modern", "modyra-material", "modyra-ios"] as const;
+
+/**
+ * Where a design system's own pairing sits below the floor, and is kept anyway.
+ *
+ * A theme exists to be faithful to the system it names. Apple pairs white with system blue — it is
+ * in the HIG, it is what every iOS control does, and it measures 4.02:1 in light and 3.65:1 in dark.
+ * A theme that quietly darkened it to reach 4.5:1 would stop being iOS, which is a worse failure
+ * than the one it fixes.
+ *
+ * Listed per theme rather than waived globally, and asserted in both directions below: a new pair
+ * fails here, and so does an entry left behind after the theme stops producing it.
+ */
+const SYSTEM_PAIRINGS: Partial<Record<(typeof CONTRAST_THEMES)[number], readonly string[]>> = {
+  "modyra-ios": ["mdy-chip__label", "mdy-chip__count", "mdy-button"],
+};
+
+test("every rendered text colour clears AA against the surface behind it", async ({ page }) => {
+  const failures: string[] = [];
+  const seenAllowed = new Set<string>();
+  let asserted = 0;
+
+  for (const scheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    for (const theme of CONTRAST_THEMES) {
+      await page.goto("/");
+      await page.waitForSelector("mdy-control-colors", { state: "attached", timeout: 15_000 });
+      await page.locator(".playground-accordion > summary").first().click();
+      await page.waitForTimeout(250);
+      await page.evaluate(async (name) => {
+        const link = document.getElementById("mdy-theme-link") as HTMLLinkElement | null;
+        const href = `styles/${name}.css`;
+        if (!link || link.getAttribute("href") === href) return;
+        await new Promise<void>((resolve) => {
+          link.addEventListener("load", () => resolve(), { once: true });
+          link.addEventListener("error", () => resolve(), { once: true });
+          link.setAttribute("href", href);
+        });
+      }, theme);
+      await page.waitForTimeout(300);
+
+      const result = await page.evaluate(() => {
+        const channel = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+        const luminance = (p: number[]) => 0.2126 * channel(p[0] / 255) + 0.7152 * channel(p[1] / 255) + 0.0722 * channel(p[2] / 255);
+        const parse = (value: string): number[] | null => {
+          const numbers = value.match(/[0-9.]+/g);
+          if (!numbers) return null;
+          if (/^\s*rgba?\(/.test(value)) return numbers.slice(0, 3).map(Number);
+          // `color(srgb …)` is 0–1 where `rgb()` is 0–255; one scale for both reports readable text as 1:1.
+          if (/^\s*color\(\s*srgb\b/.test(value)) return numbers.slice(0, 3).map((n) => Number(n) * 255);
+          return null;
+        };
+        const alphaOf = (value: string) => {
+          const numbers = value.match(/[0-9.]+/g);
+          return numbers && numbers.length > 3 ? Number(numbers[3]) : 1;
+        };
+        const ratio = (a: number[], b: number[]) => {
+          const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+          return (hi + 0.05) / (lo + 0.05);
+        };
+        const behind = (el: Element): number[] | null => {
+          let node: Element | null = el;
+          while (node && node !== document.documentElement) {
+            const bg = getComputedStyle(node).backgroundColor;
+            if (alphaOf(bg) > 0.85) { const p = parse(bg); if (p) return p; }
+            node = node.parentElement;
+          }
+          const body = getComputedStyle(document.body).backgroundColor;
+          return alphaOf(body) > 0.85 ? parse(body) : null;
+        };
+
+        const failed: string[] = [];
+        let checked = 0;
+        let skipped = 0;
+        document.querySelectorAll(".mdy-renderer *").forEach((el) => {
+          const owned = Array.prototype.filter.call(
+            el.childNodes,
+            (n: ChildNode) => n.nodeType === 3 && (n.textContent ?? "").trim(),
+          ) as ChildNode[];
+          if (!owned.length) return;
+          const style = getComputedStyle(el);
+          if (style.visibility === "hidden" || style.display === "none" || Number(style.opacity) < 0.15) return;
+          const box = el.getBoundingClientRect();
+          if (box.width < 2 || box.height < 2) return;
+          const fg = parse(style.color);
+          if (!fg) return;
+          const bg = behind(el);
+          if (!bg) { skipped += 1; return; }
+          checked += 1;
+          const size = parseFloat(style.fontSize);
+          const large = size >= 24 || (size >= 18.66 && parseInt(style.fontWeight, 10) >= 700);
+          const value = ratio(fg, bg);
+          if (value >= (large ? 3 : 4.5)) return;
+          const names = String((el as HTMLElement).className || "").split(/\s+/).filter((c) => c.startsWith("mdy-"));
+          failed.push(`${names[0] ?? el.tagName.toLowerCase()}|${value.toFixed(2)}`);
+        });
+        return { failed: Array.from(new Set(failed)), checked, skipped };
+      });
+
+      asserted += result.checked;
+      const allowed = new Set(SYSTEM_PAIRINGS[theme] ?? []);
+      for (const row of result.failed) {
+        const [part, value] = row.split("|");
+        if (allowed.has(part)) { seenAllowed.add(`${theme}:${part}`); continue; }
+        failures.push(`${scheme} · ${theme} · ${part} — ${value}:1`);
+      }
+    }
+  }
+
+  // A walk that matched nothing passes without asserting anything, which is the failure this whole
+  // suite exists to prevent one level up.
+  //
+  // The floor is 60 rather than "every visible string" because most text on this page sits on
+  // transparent ancestry all the way to a body that paints nothing, and this walk skips what it
+  // cannot measure instead of assuming a white page. What it does reach is the population that
+  // matters here: text on a *painted* surface, which is where a pinned `on-` colour, a crossed
+  // pair and a seed-only ramp all show up. Every defect this test was written from is in it.
+  expect(asserted, `no text was measured — the walk is stale (measured ${asserted})`).toBeGreaterThan(60);
+  expect(failures, `text below the AA floor:\n${failures.join("\n")}`).toEqual([]);
+
+  // The other direction: an allowance that no longer describes anything is a waiver outliving the
+  // thing it waived, and it silences the next real defect on that part.
+  const stale = Object.entries(SYSTEM_PAIRINGS).flatMap(([theme, parts]) =>
+    (parts ?? []).filter((part) => !seenAllowed.has(`${theme}:${part}`)).map((part) => `${theme}:${part}`),
+  );
+  expect(stale, `these design-system allowances no longer apply and should be removed:\n${stale.join("\n")}`).toEqual([]);
+});

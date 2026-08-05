@@ -25,7 +25,7 @@ does not want to scroll, and `npm run test:docs` fails if the two disagree.
   the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — none
+- **Open** — R
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -1341,3 +1341,25 @@ the same command reported 14 findings.
 three; the four `Tab` handlers and the Escape handler are `@modyra/plain`'s. Whether the other two
 dismiss on Tab is unmeasured, and the way to measure it is a browser transport for each — the same
 work this finding's fix already did once.
+
+## R — a design system's own pairing sits below AA — **open, deliberately**
+
+**Observed.** `@modyra/styles`, the iOS theme. White on Apple's system blue measures **4.02:1** in
+light and **3.65:1** in dark, against a 4.5:1 floor for body text.
+
+It is not a defect in the derivation and it is not a literal left behind. It is the pairing Apple
+specifies: white label on system blue, in the HIG, on every iOS control. The theme now states it as
+`--mdy-ios-on-blue` rather than writing `#ffffff` at each of five sites, so a host replacing the
+accent replaces both halves — but the value itself is Apple's.
+
+**Kept on purpose**, and the reasoning is the same one that made this a finding rather than a fix: a
+theme exists to be faithful to the system it names, and one that quietly darkened this to reach the
+floor would ship an iOS theme Apple does not ship. That is a worse failure than the number.
+
+[ADR 0022](architecture/0022-a-theme-expresses-its-own-colour-model.md) records the decision.
+`e2e/palette.spec.ts` carries it as a named per-theme allowance and asserts it **in both directions**,
+so an allowance that stops describing anything fails too — a waiver outliving what it waived is how
+the next real defect on that part gets silenced.
+
+**What would close it**: a host overriding `--mdy-ios-on-blue`, or Apple changing the pairing. Neither
+is this project's to decide, which is why this stays open rather than being closed as won't-fix.

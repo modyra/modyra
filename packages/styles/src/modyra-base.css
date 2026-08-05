@@ -57,7 +57,19 @@
         --mdy-sys-color-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 96%);
         --mdy-sys-color-on-surface: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-night) 80%);
         --mdy-sys-color-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-cloud), var(--mdy-ref-color-slate) 18%) 80%);
-        --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 45%) 60%);
+        /* The muted tier: labels, placeholders, supporting text, weekday headers. All of it is text
+           a user reads, so it holds 4.5:1 like any other — "secondary" describes its weight in the
+           hierarchy, not the standard it answers to.
+
+           At 60% it cleared the floor for dark and cool seeds and missed it for warm and light ones:
+           a gold seed measured 3.58:1 against the field surface it is read on. The slate share is
+           unchanged at 45%, because that is what keeps this colour tinted rather than grey; only how
+           far it is carried toward that mixture moved. Swept over ten seeds against the darkest
+           field surface, 75% is the lightest value that clears every one, worst case 4.51:1.
+
+           The dark scheme's counterpart is declared separately and was swept the same way: it
+           already clears at 5.35:1, so it is left alone. */
+        --mdy-sys-color-on-surface-variant: color-mix(in srgb, var(--mdy-sys-color-primary), color-mix(in srgb, var(--mdy-ref-color-night), var(--mdy-ref-color-slate) 45%) 75%);
         --mdy-sys-color-surface-container-lowest: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 100%);
         --mdy-sys-color-surface-container-low: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 96%);
         --mdy-sys-color-surface-container: color-mix(in srgb, var(--mdy-sys-color-primary), var(--mdy-ref-color-cloud) 92%);
