@@ -34,18 +34,43 @@
      * TOKENS — iOS System Colors (raw palette, single source of truth)
      * ═══════════════════════════════════════════════════════════════════ */
     :root {
-        /* Accent / semantic system colors — iOS light mode */
+        /* ═══════════════════════════════════════════════════════════════════
+         * THE SYSTEM PALETTE — iOS 27, light
+         *
+         * Named as Apple names them, and complete rather than as-needed. A theme that carries three
+         * of thirteen accents cannot express a destructive action in orange or a selected state in
+         * indigo without someone inventing a hex at the site that needs it, which is how a theme
+         * stops being the system it claims to be.
+         *
+         * The vocabulary follows the iOS and iPadOS 27 design kit's own collections — Colors, Grays,
+         * Labels, Fills, Backgrounds, Separators — so a value can be checked against the source it
+         * came from rather than against memory.
+         * ═══════════════════════════════════════════════════════════════════ */
+
+        /* ── Colors ─────────────────────────────────────────────────────────── */
+        --mdy-ios-red: #FF3B30;
+        --mdy-ios-orange: #FF9500;
+        --mdy-ios-yellow: #FFCC00;
+        --mdy-ios-green: #34C759;
+        --mdy-ios-mint: #00C7BE;
+        --mdy-ios-teal: #30B0C7;
+        --mdy-ios-cyan: #32ADE6;
         --mdy-ios-blue: #007AFF;
+        --mdy-ios-indigo: #5856D6;
+        --mdy-ios-purple: #AF52DE;
+        --mdy-ios-pink: #FF2D55;
+        --mdy-ios-brown: #A2845E;
+
         /* The label colour Apple pairs with system blue. HIG names the pair, so this theme names it
-           too rather than writing `#ffffff` at each of the four places that sit on the accent.
-           A host that supplies its own accent supplies both halves and every one of them follows.
+           too rather than writing `#ffffff` at each of the places that sit on the accent. A host that
+           supplies its own accent supplies both halves and every one of them follows.
 
            It is 4.02:1 against Apple's own blue, below the 4.5:1 this project holds elsewhere. That
            is the platform's choice and this theme exists to be faithful to it — recorded, not
            silently corrected, because a theme that quietly stops looking like iOS is not a theme. */
         --mdy-ios-on-blue: #FFFFFF;
-        --mdy-ios-red: #FF3B30;
-        --mdy-ios-green: #34C759;
+
+        /* ── Grays ──────────────────────────────────────────────────────────── */
         --mdy-ios-gray: #8E8E93;
         --mdy-ios-gray2: #AEAEB2;
         --mdy-ios-gray3: #C7C7CC;
@@ -53,23 +78,61 @@
         --mdy-ios-gray5: #E5E5EA;
         --mdy-ios-gray6: #F2F2F7;
 
-        /* Label colors */
+        /* ── Labels ─────────────────────────────────────────────────────────
+           Four levels, and the fourth is why this list is not three: iOS 27 moved the stepper's idle
+           fill from quaternary to tertiary, which is a distinction a theme carrying three levels
+           cannot even state. The alphas are Apple's; the base tint is not neutral grey but the
+           slightly warm 60/60/67 that keeps label text from reading blue against a white sheet. */
         --mdy-ios-label: #000000;
         --mdy-ios-secondary-label: rgba(60, 60, 67, 0.60);
         --mdy-ios-tertiary-label: rgba(60, 60, 67, 0.30);
-        --mdy-ios-placeholder: rgba(60, 60, 67, 0.30);
+        --mdy-ios-quaternary-label: rgba(60, 60, 67, 0.18);
+        --mdy-ios-placeholder: var(--mdy-ios-tertiary-label);
 
-        /* Backgrounds */
+        /* ── Backgrounds ────────────────────────────────────────────────────
+           Two families. The plain one backs content that fills the screen; the *grouped* one backs
+           inset lists — a Settings-style form — where the page is the darker surface and each row
+           group is the lighter one. A form is the grouped case, which is why `--mdy-ios-grouped-bg`
+           exists and is not an alias of the plain one. */
         --mdy-ios-bg: #FFFFFF;
         --mdy-ios-secondary-bg: #F2F2F7;
+        --mdy-ios-tertiary-bg: #FFFFFF;
+        --mdy-ios-grouped-bg: #F2F2F7;
+        --mdy-ios-secondary-grouped-bg: #FFFFFF;
+        --mdy-ios-tertiary-grouped-bg: #F2F2F7;
 
-        /* Fills — flat, opaque-looking system fill used INSIDE content
-       (text fields, segmented track, search bars). Never blurred. */
-        --mdy-ios-fill: rgba(118, 118, 128, 0.12);
-        --mdy-ios-fill-strong: rgba(118, 118, 128, 0.20);
-
-        /* Separator */
+        /* ── Separators ─────────────────────────────────────────────────────
+           The translucent one lets the surface beneath tint it and is what a list uses between rows.
+           The opaque one is for where something must not show through — a border over a blurred
+           material, where a translucent hairline doubles the blur behind it. */
         --mdy-ios-separator: rgba(60, 60, 67, 0.29);
+        --mdy-ios-opaque-separator: #C6C6C8;
+
+        /* In light there is no elevated tier — a sheet and the page behind it use the same surfaces,
+           and separation comes from the shadow. Declared anyway so a rule can read it in either
+           scheme without asking which one it is in. */
+        --mdy-ios-elevated-bg: var(--mdy-ios-bg);
+        --mdy-ios-secondary-elevated-bg: var(--mdy-ios-secondary-bg);
+        --mdy-ios-tertiary-elevated-bg: var(--mdy-ios-tertiary-bg);
+
+        /* ── Fills ──────────────────────────────────────────────────────────
+           Four levels, used INSIDE content — text fields, segmented tracks, search bars — and never
+           blurred: a fill sits *in* the page, a material sits *over* it, and using one for the other
+           is the single most common way an interface stops looking like iOS.
+
+           The two this theme carried were named by strength and were the tertiary and system levels
+           wearing other names, so a rule asking for "the weaker one" got whichever of two happened
+           to exist. Named by level, the iOS 27 stepper change — idle fill from quaternary to
+           tertiary — is a value this theme can now state. */
+        --mdy-ios-system-fill: rgba(120, 120, 128, 0.20);
+        --mdy-ios-secondary-fill: rgba(120, 120, 128, 0.16);
+        --mdy-ios-tertiary-fill: rgba(118, 118, 128, 0.12);
+        --mdy-ios-quaternary-fill: rgba(116, 116, 128, 0.08);
+
+        /* The names the rest of this theme was written against, kept so it keeps working, and now
+           pointing at the level each of them actually was. */
+        --mdy-ios-fill: var(--mdy-ios-tertiary-fill);
+        --mdy-ios-fill-strong: var(--mdy-ios-system-fill);
 
         /* Glass material — ONLY for floating overlay chrome (popovers,
        sheets, dropdowns, context menus). Recipe transcribed from the Apple
@@ -104,12 +167,45 @@
         --mdy-font-weight-medium: 510;
         --mdy-font-weight-semibold: 590;
         --mdy-label-font-weight: var(--mdy-font-weight-regular);
+
+        /* Each of this theme's roles is one of Apple's text styles, named as such. A field's label is
+           Subheadline, its value is Body, its error is Caption 1 — which is the mapping a native form
+           uses, and stating it that way is what keeps the three in proportion when one of them moves. */
         --mdy-label-font-size: 0.9375rem;
-        /* 15pt */
-        --mdy-ios-tracking-body: -0.43px;
-        /* 17px body/value text */
-        --mdy-ios-tracking-footnote: -0.08px;
-        /* 13.3px footnote/segmented label */
+        --mdy-ios-tracking-body: var(--mdy-ios-text-body-tracking);
+        --mdy-ios-tracking-footnote: var(--mdy-ios-text-footnote-tracking);
+        --mdy-ios-tracking-subheadline: var(--mdy-ios-text-subheadline-tracking);
+        --mdy-ios-tracking-caption: var(--mdy-ios-text-caption1-tracking);
+
+        /* ── Text styles ────────────────────────────────────────────────────
+           The eleven Apple ships, as size / leading / weight / tracking. Type is where an interface
+           is recognised before any colour is: iOS body is 17pt on 22 with negative tracking, and a
+           16/24 web default beside it reads as a web form wearing iOS colours.
+
+           Tracking is in px at the style's own size, which is how the design kit states it — it does
+           not scale with a user's text size, and expressing it in em would make it do so. */
+        --mdy-ios-text-large-title: 2.125rem/2.5625rem;
+        --mdy-ios-text-large-title-tracking: 0.37px;
+        --mdy-ios-text-title1: 1.75rem/2.125rem;
+        --mdy-ios-text-title1-tracking: 0.36px;
+        --mdy-ios-text-title2: 1.375rem/1.75rem;
+        --mdy-ios-text-title2-tracking: -0.26px;
+        --mdy-ios-text-title3: 1.25rem/1.5625rem;
+        --mdy-ios-text-title3-tracking: -0.45px;
+        --mdy-ios-text-headline: 1.0625rem/1.375rem;
+        --mdy-ios-text-headline-tracking: -0.43px;
+        --mdy-ios-text-body: 1.0625rem/1.375rem;
+        --mdy-ios-text-body-tracking: -0.43px;
+        --mdy-ios-text-callout: 1rem/1.3125rem;
+        --mdy-ios-text-callout-tracking: -0.31px;
+        --mdy-ios-text-subheadline: 0.9375rem/1.25rem;
+        --mdy-ios-text-subheadline-tracking: -0.23px;
+        --mdy-ios-text-footnote: 0.8125rem/1.125rem;
+        --mdy-ios-text-footnote-tracking: -0.08px;
+        --mdy-ios-text-caption1: 0.75rem/1rem;
+        --mdy-ios-text-caption1-tracking: 0px;
+        --mdy-ios-text-caption2: 0.6875rem/0.8125rem;
+        --mdy-ios-text-caption2-tracking: 0.07px;
 
         /* ── Text fields — 44pt min hit target, flat fill, 10pt corner ──── */
         --mdy-input-padding: 0.6875rem 0.875rem;
@@ -128,8 +224,10 @@
 
         /* ── Errors ──────────────────────────────────────────────────── */
         --mdy-error-color: var(--mdy-ios-red);
+        /* Caption 1: 12pt on 16, no tracking. It was 0.75rem on a 1.33 ratio, which is the same size
+           reached by a different route and a leading that drifts with the size. */
         --mdy-error-font-size: 0.75rem;
-        --mdy-error-line-height: 1.33;
+        --mdy-error-line-height: 1.3333;
         --mdy-error-focus-shadow: 0 0 0 3.5px rgba(255, 59, 48, 0.2);
 
         /* ── Checkbox — iOS "Reminders"-style circular check ───────────── */
@@ -144,7 +242,13 @@
         /* ── Toggle — exact node geometry from Toggles/StateIdle*: 64×28pt
        track, 38×24pt PILL-shaped thumb (iOS 27's thumb is a capsule, not a
        circle), 2px inset all around. Off-track fill is a translucent gray,
-       not the previous flat gray5. ──────────────────────────────────── */
+       not the previous flat gray5.
+
+       These are the kit's, not the HIG page's. They were briefly replaced with the long-standing
+       51×31 and a 27pt circular knob, on the reasoning that the switch has not changed since iOS 7 —
+       which is true of the published guidance and not of this kit. Searching the file finds a 38×24
+       pair and no 51×31, so the measurement stands and the substitution did not. Where the two
+       disagree, the kit is the source this theme is written against. ──── */
         --mdy-toggle-width: 4rem;
         /* 64px */
         --mdy-toggle-height: 1.75rem;
@@ -263,9 +367,25 @@
      * ═══════════════════════════════════════════════════════════════════ */
     @media (prefers-color-scheme: dark) {
         :root {
-            --mdy-ios-blue: #0A84FF;
+            /* Dark is not light inverted. Every accent is its own value — Apple lifts each one so it
+               keeps its identity against black, and `red` moving 3B30 -> 453A is not a tint of the
+               light value but a different colour chosen for a different background. */
             --mdy-ios-red: #FF453A;
+            --mdy-ios-orange: #FF9F0A;
+            --mdy-ios-yellow: #FFD60A;
             --mdy-ios-green: #30D158;
+            --mdy-ios-mint: #63E6E2;
+            --mdy-ios-teal: #40C8E0;
+            --mdy-ios-cyan: #64D2FF;
+            --mdy-ios-blue: #0A84FF;
+            --mdy-ios-indigo: #5E5CE6;
+            --mdy-ios-purple: #BF5AF2;
+            --mdy-ios-pink: #FF375F;
+            --mdy-ios-brown: #AC8E68;
+
+            /* The grays reverse order: gray stays, and 2 through 6 walk toward black instead of
+               toward white, so a rule written against "gray5" keeps meaning the same *step* in the
+               ramp rather than the same lightness. */
             --mdy-ios-gray: #8E8E93;
             --mdy-ios-gray2: #636366;
             --mdy-ios-gray3: #48484A;
@@ -276,14 +396,37 @@
             --mdy-ios-label: #FFFFFF;
             --mdy-ios-secondary-label: rgba(235, 235, 245, 0.60);
             --mdy-ios-tertiary-label: rgba(235, 235, 245, 0.30);
-            --mdy-ios-placeholder: rgba(235, 235, 245, 0.30);
+            --mdy-ios-quaternary-label: rgba(235, 235, 245, 0.16);
+            --mdy-ios-placeholder: var(--mdy-ios-tertiary-label);
 
+            /* ── Backgrounds, base ──────────────────────────────────────────
+               The *base* tier: what a full-screen surface uses when nothing is presented over it. */
             --mdy-ios-bg: #000000;
             --mdy-ios-secondary-bg: #1C1C1E;
+            --mdy-ios-tertiary-bg: #2C2C2E;
+            --mdy-ios-grouped-bg: #000000;
+            --mdy-ios-secondary-grouped-bg: #1C1C1E;
+            --mdy-ios-tertiary-grouped-bg: #2C2C2E;
 
-            --mdy-ios-fill: rgba(120, 120, 128, 0.24);
-            --mdy-ios-fill-strong: rgba(120, 120, 128, 0.36);
-            --mdy-ios-separator: rgba(84, 84, 88, 0.60);
+            /* ── Backgrounds, elevated ──────────────────────────────────────
+               The tier iOS switches to inside anything presented over the screen — a sheet, a
+               popover, a modal. In light it is the same set; in dark every step lifts once, which is
+               how a sheet reads as *above* the page when there is no shadow to say so on black.
+
+               A theme with no elevated tier gives a sheet the base surface and then has nothing left
+               to separate the two, which is why a dark iOS modal in a web port usually looks flat.
+               Opt in by setting `data-mdy-ios-elevated` on the presented subtree. */
+            --mdy-ios-elevated-bg: #1C1C1E;
+            --mdy-ios-secondary-elevated-bg: #2C2C2E;
+            --mdy-ios-tertiary-elevated-bg: #3A3A3C;
+
+            --mdy-ios-system-fill: rgba(120, 120, 128, 0.36);
+            --mdy-ios-secondary-fill: rgba(120, 120, 128, 0.32);
+            --mdy-ios-tertiary-fill: rgba(118, 118, 128, 0.24);
+            --mdy-ios-quaternary-fill: rgba(118, 118, 128, 0.18);
+
+            --mdy-ios-separator: rgba(84, 84, 88, 0.65);
+            --mdy-ios-opaque-separator: #38383A;
 
             --mdy-ios-glass-tint: rgba(28, 28, 30, 0.68);
             --mdy-ios-glass-edge: rgba(0, 0, 0, 0.55);
@@ -319,7 +462,10 @@
         font-family: var(--mdy-ios-font);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        letter-spacing: -0.022em;
+        /* Body tracking, in px at Body's own size. It was `-0.022em`, which is -0.37px at 17pt and a
+           different tracking on every element that inherited it at another size — the one thing
+           Apple's tables never do, since each style carries its own value. */
+        letter-spacing: var(--mdy-ios-text-body-tracking);
     }
 
     /* ═══════════════════════════════════════════════════════════════════
@@ -398,9 +544,10 @@
         filter: var(--mdy-calendar-icon-filter, none);
     }
 
+    /* A field's label is Subheadline. */
     .mdy-renderer label {
         color: var(--mdy-on-surface);
-        letter-spacing: -0.01em;
+        letter-spacing: var(--mdy-ios-text-subheadline-tracking);
     }
 
     /* ── Custom select trigger — transparent, wrapper provides the fill ─── */
@@ -618,7 +765,7 @@
     .mdy-control__inline-errors-tooltip {
         border-radius: 12px;
         font-size: 0.8125rem;
-        letter-spacing: -0.01em;
+        letter-spacing: var(--mdy-ios-text-footnote-tracking);
     }
 
     .mdy-renderer:not(.mdy-inline-errors)::after {
@@ -626,7 +773,7 @@
     }
 
     .mdy-control__error {
-        letter-spacing: -0.01em;
+        letter-spacing: var(--mdy-ios-text-caption1-tracking);
         padding-top: 0.25rem;
     }
 
@@ -708,9 +855,11 @@
         font-weight: var(--mdy-font-weight-medium);
     }
 
+    /* A calendar's month title is Headline: semibold Body, which is the style a native picker uses
+       for it and the reason it reads as a title without changing size. */
     .mdy-datepicker__title {
         color: var(--mdy-on-surface);
-        letter-spacing: -0.01em;
+        letter-spacing: var(--mdy-ios-text-headline-tracking);
         font-weight: var(--mdy-font-weight-semibold);
     }
 
@@ -929,9 +1078,41 @@
     /* ═══════════════════════════════════════════════════════════════════
      * SLIDER
      * ═══════════════════════════════════════════════════════════════════ */
-    /* The lifted handle iOS draws, said once rather than once per vendor pseudo-element. */
+    /* A slider is a 4pt track and a lifted white knob, and nothing else — no container, no box.
+       This theme set only the shadow and inherited the rest, so the control arrived as a thick tinted
+       bar inside a filled rectangle with an accent-coloured handle: three departures from the one
+       control iOS draws most plainly.
+
+       The knob is white in both schemes. It is not a surface colour and does not follow the theme —
+       on iOS the handle reads as a physical object above the track, and tinting it removes the only
+       cue that says so. */
     .mdy-slider-container {
-        --mdy-slider-thumb-shadow: 0 3px 8px rgba(0, 0, 0, 0.20), 0 0 1px rgba(0, 0, 0, 0.1);
+        --mdy-slider-track-height: 4px;
+        --mdy-slider-thumb-size: 28px;
+        --mdy-slider-thumb-color: #FFFFFF;
+        --mdy-slider-thumb-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16);
+        --mdy-slider-active-color: var(--mdy-ios-blue);
+        --mdy-slider-inactive-color: var(--mdy-ios-tertiary-fill);
+        --mdy-slider-value-color: var(--mdy-ios-secondary-label);
+
+    }
+
+    /* The field shell's fill belongs to controls that are typed into. A slider is not one, and iOS
+       never puts it in a box — the track *is* the control. */
+    .mdy-renderer--slider .mdy-input-wrapper {
+        background: none;
+        box-shadow: none;
+    }
+
+    /* The track is painted as a background on the input, and the input is as tall as the handle so
+       the handle has somewhere to be. Left full-bleed that paints a 28px bar; iOS draws 4px. Bounding
+       the paint rather than the element keeps the hit target the handle's size — which is the whole
+       reason the element is that tall. */
+    .mdy-renderer--slider .mdy-slider {
+        background-size: 100% var(--mdy-slider-track-height);
+        background-position: center;
+        background-repeat: no-repeat;
+        border-radius: var(--mdy-corner-full);
     }
 
     /* ═══════════════════════════════════════════════════════════════════
@@ -954,7 +1135,7 @@
         padding: 0 1.5rem;
         font-size: 0.9375rem;
         font-weight: var(--mdy-font-weight-semibold);
-        letter-spacing: -0.01em;
+        letter-spacing: var(--mdy-ios-text-body-tracking);
         box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
         transition: opacity var(--mdy-sys-motion-duration-base, 0.15s) ease, box-shadow var(--mdy-sys-motion-duration-base, 0.15s) ease, transform var(--mdy-sys-motion-duration-fast, 0.1s) ease;
     }
