@@ -162,7 +162,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       [coords]="coords()"
       [hasBackdrop]="position() === 'overlay'"
       [widthMode]="'match-anchor'"
-      [panelClass]="'mdy-multiselect-overlay__panel mdy-multiselect__dropdown mdy-popup'"
+      [panelClass]="'mdy-multiselect-overlay__panel mdy-multiselect__dropdown mdy-popup mdy-popup--surface'"
       [panelId]="popupId()"
       [kind]="'multiselect'"
       (close)="closeOverlay()"

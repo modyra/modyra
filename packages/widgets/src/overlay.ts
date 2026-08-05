@@ -162,6 +162,15 @@ export interface MdyOverlayAnchorOptions {
   /** Distance between the anchor and the popup. */
   readonly gap?: number;
   /**
+   * Whether this popup's content scrolls. Defaults to `true`, which is the behaviour every caller
+   * had before it existed.
+   *
+   * `false` says the content has a size it must be shown at, so a side that cannot hold it is not a
+   * placement — it centres instead of clamping. `overlayAnchoringFor` supplies it from the kind's
+   * `capabilities.overlayScrolls`, so a renderer gets it without asking.
+   */
+  readonly scrolls?: boolean;
+  /**
    * The popup's own height, measured by the host — `scrollHeight` is exactly this, since it reports
    * the content's full height whatever `max-height` is currently clamping it to.
    *
@@ -238,6 +247,7 @@ export function overlayAnchoringFor(kind: MdyWidgetKind): MdyOverlayAnchorOption
     kind: kind as MdyPopupWidgetKind,
     matchAnchorWidth: anchoring.matchAnchorWidth,
     minSpace: anchoring.minSpace,
+    scrolls: MDY_WIDGET_CONTRACTS[kind].capabilities.overlayScrolls,
     ...(anchoring.minWidth !== undefined ? { minWidth: anchoring.minWidth } : {}),
     ...(anchoring.alignment !== undefined ? { alignment: anchoring.alignment } : {}),
   };
@@ -316,6 +326,7 @@ export function anchorOverlay(
     anchorRight: anchor.right,
     anchorWidth: anchor.width,
     minSpace: options.minSpace ?? 180,
+    scrolls: options.scrolls ?? true,
     minWidth: options.minWidth ?? 160,
     preferred: options.preferred ?? ("below" as const),
     ...(options.pointerX !== undefined ? { pointerX: options.pointerX } : {}),
@@ -377,7 +388,16 @@ export function anchorOverlay(
     properties[prop.left] = "50%";
     properties[prop.right] = "auto";
     properties[prop.transform] = "translate(-50%, -50%)";
-    properties[prop.maxHeight] = px(Math.round(viewport.height * 0.7));
+    // 70% of the viewport leaves the page visible around a modal, which is right for content that
+    // scrolls: a long list is meant to be clamped and the framing is what says "this is over the
+    // page". Content that does not scroll has no use for the framing — clamping it produces the
+    // scrollable stub the promotion to modal exists to avoid, one step further in. It gets the
+    // viewport less the margin it must not touch.
+    properties[prop.maxHeight] = px(
+      geometry.scrolls === false
+        ? Math.max(0, viewport.height - margin * 2)
+        : Math.round(viewport.height * 0.7),
+    );
     properties[prop.maxWidth] = px(spannable);
     if (options.matchAnchorWidth) properties[prop.width] = px(decision.width);
     return { decision, properties, placement: decision.placement };

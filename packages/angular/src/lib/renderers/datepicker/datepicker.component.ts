@@ -113,7 +113,7 @@ import { MdyCalendarComponent } from "./calendar.component";
         [coords]="coords()"
         [hasBackdrop]="variant() === 'modal' || position() === 'overlay'"
         [widthMode]="'auto-content'"
-        [panelClass]="'mdy-datepicker__popup mdy-popup'"
+        [panelClass]="'mdy-datepicker__popup mdy-popup mdy-popup--surface'"
         [kind]="'datepicker'"
         (close)="closeOverlay()"
       >

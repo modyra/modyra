@@ -30,9 +30,10 @@ test("a state is spelled once, and the spelling is kebab-case", () => {
 });
 
 test("a state hangs off the part's own class, not off whatever else it carries", () => {
-  // A datepicker popup carries `mdy-popup` too, but `--above` belongs to the datepicker's popup.
+  // A datepicker popup carries `mdy-popup` and `mdy-popup--surface` too, but `--above` belongs to
+  // the datepicker's own popup class: the state modifies the part, not everything the part wears.
   assert.deepEqual(partClasses("datepicker", "popup", { above: true }), [
-    "mdy-datepicker__popup", "mdy-popup", "mdy-datepicker__popup--above",
+    "mdy-datepicker__popup", "mdy-popup", "mdy-popup--surface", "mdy-datepicker__popup--above",
   ]);
   assert.equal(stateClass("mdy-select__option", "selected"), "mdy-select__option--selected");
 });

@@ -5,6 +5,7 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
+import { trackAnchoredOverlay } from "@modyra/widgets";
 import { anchorOverlay, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind } from "@modyra/widgets";
 
 export interface OverlayPlacementOptions {
@@ -147,15 +148,9 @@ export function trackOverlay(
   isOpen: () => boolean,
   options: OverlayPlacementOptions = {},
 ): () => void {
-  const reposition = (): void => {
-    if (isOpen()) positionOverlay(popup, anchor, options);
-  };
-  window.addEventListener("resize", reposition);
-  window.addEventListener("scroll", reposition, true);
-  return () => {
-    window.removeEventListener("resize", reposition);
-    window.removeEventListener("scroll", reposition, true);
-  };
+  // The listening is `@modyra/widgets`', because passive and frame-coalesced is what it has to be
+  // and that was written three times here and in the other two renderers, differently each time.
+  return trackAnchoredOverlay(() => positionOverlay(popup, anchor, options), isOpen);
 }
 
 /**

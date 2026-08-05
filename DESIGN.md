@@ -162,6 +162,26 @@ background on a clipped pixel renders identically whether it is right or wrong, 
 and screenshots alike. It is asserted in a browser instead —
 `e2e/shared/hidden-controls.spec.ts`, on every renderer and engine.
 
+## Overlays
+
+**The primitive positions; a separate class paints.** `.mdy-popup` owns where a popup is, how it is
+clipped and how it opens. `.mdy-popup--surface` owns what it looks like. They were one class, and a
+container that paints is a wrapper around the thing it was meant to present — a material applied to
+the content then sits on an opaque panel rather than on the page, which is a translucent effect with
+nothing to be translucent against.
+
+**A material belongs to the element it is a material *of*.** Never to a wrapper around it. A theme
+whose popup is its content neutralises the surface class and leaves the coordinates alone.
+
+**The radius lives on both.** On the primitive it is what `overflow` clips to and what a material's
+specular layer inherits; on the surface it is appearance.
+
+**A popup that cannot be shown whole is centred, not clamped** — when its kind declares
+`capabilities.overlayScrolls: false`. The test is the whole box on both axes: no side holds its
+height, or no edge holds its width. A list may be clamped, because that is what scrolling is.
+
+---
+
 ## Elevation
 
 **Three levels, and every raised surface takes one of them.** They are meanings, not sizes:

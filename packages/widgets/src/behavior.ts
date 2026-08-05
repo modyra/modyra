@@ -32,6 +32,8 @@ export interface MdyOverlayGeometry {
   readonly anchorRight: number;
   readonly anchorWidth: number;
   readonly minSpace: number;
+  /** Whether the content scrolls. `false` means a side that cannot hold it is not a placement. */
+  readonly scrolls?: boolean;
   readonly minWidth: number;
   readonly preferred: "above" | "below";
   readonly pointerX?: number;
@@ -102,10 +104,35 @@ export function decideOverlayPlacement(input: MdyOverlayGeometry): MdyOverlayDec
   // it least. Without a measurement this cannot be known, so the rule above stands.
   if (desired !== undefined && placement !== "overlay" && roomOn(placement) < desired) {
     placement = above > below ? "above" : "below";
-    if (roomOn(placement) < input.minSpace) placement = "overlay";
+    // Content that does not scroll has one size, so a side that cannot hold it is not a placement at
+    // all — it centres rather than being clamped into a scrollable stub of itself. Content that does
+    // scroll takes the roomier side and scrolls there, which is what a long list is for; it only
+    // centres when neither side is worth using.
+    if (input.scrolls === false ? roomOn(placement) < desired : roomOn(placement) < input.minSpace) {
+      placement = "overlay";
+    }
   }
 
-  const alignment = decideOverlayAlignment(input);
+  let alignment = decideOverlayAlignment(input);
+
+  /* Promotion is about the whole box, not its height.
+   *
+   * A popup that does not scroll must be shown entire, and "entire" has two axes: a calendar that
+   * fits below its field and still runs off the right edge is as unusable as one that is clipped
+   * short. The rule is therefore *no placement holds it completely* — neither side vertically, or
+   * neither edge horizontally — rather than the vertical test alone, which would leave a popup
+   * docked and clamped on the axis nobody checked.
+   *
+   * Scrolling content is untouched: a list is allowed to be clamped, which is what scrolling is. */
+  if (input.scrolls === false && placement !== "overlay" && input.desiredWidth !== undefined) {
+    const fromLeft = input.viewportWidth - input.anchorLeft - MDY_OVERLAY_VIEWPORT_MARGIN;
+    const fromRight = input.anchorRight - MDY_OVERLAY_VIEWPORT_MARGIN;
+    if (Math.max(fromLeft, fromRight) < input.desiredWidth) {
+      placement = "overlay";
+      alignment = decideOverlayAlignment(input);
+    }
+  }
+
   const modalHeight = Math.round(input.viewportHeight * 0.7);
   const maxHeight = placement === "overlay"
     ? modalHeight
