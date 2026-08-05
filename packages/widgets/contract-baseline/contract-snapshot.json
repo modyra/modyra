@@ -155,7 +155,8 @@
       "capabilities": {
         "overlay": false,
         "dismissOnOutsidePointer": false,
-        "dismissOnFocusOutside": false
+        "dismissOnFocusOutside": false,
+        "overlayScrolls": false
       },
       "variants": {},
       "keyboard": []
@@ -314,7 +315,8 @@
       "capabilities": {
         "overlay": false,
         "dismissOnOutsidePointer": false,
-        "dismissOnFocusOutside": false
+        "dismissOnFocusOutside": false,
+        "overlayScrolls": false
       },
       "variants": {},
       "keyboard": []
@@ -473,7 +475,8 @@
       "capabilities": {
         "overlay": false,
         "dismissOnOutsidePointer": false,
-        "dismissOnFocusOutside": false
+        "dismissOnFocusOutside": false,
+        "overlayScrolls": false
       },
       "variants": {},
       "keyboard": []
@@ -610,7 +613,8 @@
       "capabilities": {
         "overlay": false,
         "dismissOnOutsidePointer": false,
-        "dismissOnFocusOutside": false
+        "dismissOnFocusOutside": false,
+        "overlayScrolls": false
       },
       "variants": {},
       "keyboard": []
@@ -771,7 +775,8 @@
       "capabilities": {
         "overlay": false,
         "dismissOnOutsidePointer": false,
-        "dismissOnFocusOutside": false
+        "dismissOnFocusOutside": false,
+        "overlayScrolls": false
       },
       "variants": {},
       "keyboard": [
@@ -921,7 +926,8 @@
       "capabilities": {
         "overlay": false,
         "dismissOnOutsidePointer": false,
-        "dismissOnFocusOutside": false
+        "dismissOnFocusOutside": false,
+        "overlayScrolls": false
       },
       "variants": {},
       "keyboard": [
@@ -1053,7 +1059,8 @@
       "capabilities": {
         "overlay": false,
         "dismissOnOutsidePointer": false,
-        "dismissOnFocusOutside": false
+        "dismissOnFocusOutside": false,
+        "overlayScrolls": false
       },
       "variants": {},
       "keyboard": [
@@ -1203,7 +1210,8 @@
       "capabilities": {
         "overlay": false,
         "dismissOnOutsidePointer": false,
-        "dismissOnFocusOutside": false
+        "dismissOnFocusOutside": false,
+        "overlayScrolls": false
       },
       "variants": {},
       "keyboard": [
@@ -1356,7 +1364,8 @@
       "capabilities": {
         "overlay": false,
         "dismissOnOutsidePointer": false,
-        "dismissOnFocusOutside": false
+        "dismissOnFocusOutside": false,
+        "overlayScrolls": false
       },
       "variants": {},
       "keyboard": [
@@ -1522,7 +1531,8 @@
       "capabilities": {
         "overlay": false,
         "dismissOnOutsidePointer": false,
-        "dismissOnFocusOutside": false
+        "dismissOnFocusOutside": false,
+        "overlayScrolls": false
       },
       "variants": {},
       "keyboard": [
@@ -1651,6 +1661,7 @@
           "role": null,
           "classes": [
             "mdy-popup",
+            "mdy-popup--surface",
             "mdy-select__dropdown"
           ],
           "states": [
@@ -1793,6 +1804,7 @@
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
         "dismissOnFocusOutside": true,
+        "overlayScrolls": true,
         "anchoring": {
           "matchAnchorWidth": true,
           "minSpace": 180,
@@ -2017,7 +2029,8 @@
           "classes": [
             "mdy-multiselect-overlay__panel",
             "mdy-multiselect__dropdown",
-            "mdy-popup"
+            "mdy-popup",
+            "mdy-popup--surface"
           ],
           "states": [
             "above",
@@ -2143,6 +2156,7 @@
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
         "dismissOnFocusOutside": true,
+        "overlayScrolls": true,
         "anchoring": {
           "matchAnchorWidth": true,
           "minSpace": 180,
@@ -2271,7 +2285,8 @@
           "role": null,
           "classes": [
             "mdy-datepicker__popup",
-            "mdy-popup"
+            "mdy-popup",
+            "mdy-popup--surface"
           ],
           "states": [
             "above",
@@ -2449,6 +2464,7 @@
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
         "dismissOnFocusOutside": true,
+        "overlayScrolls": false,
         "anchoring": {
           "matchAnchorWidth": false,
           "minSpace": 240,
@@ -2581,7 +2597,8 @@
           "classes": [
             "mdy-datepicker__popup",
             "mdy-datepicker__popup--range",
-            "mdy-popup"
+            "mdy-popup",
+            "mdy-popup--surface"
           ],
           "states": [
             "above",
@@ -2759,6 +2776,7 @@
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
         "dismissOnFocusOutside": true,
+        "overlayScrolls": false,
         "anchoring": {
           "matchAnchorWidth": false,
           "minSpace": 240,
@@ -2866,6 +2884,7 @@
           "role": null,
           "classes": [
             "mdy-popup",
+            "mdy-popup--surface",
             "mdy-timepicker__popup"
           ],
           "states": [
@@ -3138,6 +3157,7 @@
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
         "dismissOnFocusOutside": true,
+        "overlayScrolls": false,
         "anchoring": {
           "matchAnchorWidth": false,
           "minSpace": 240,
@@ -3322,7 +3342,8 @@
       "capabilities": {
         "overlay": false,
         "dismissOnOutsidePointer": false,
-        "dismissOnFocusOutside": false
+        "dismissOnFocusOutside": false,
+        "overlayScrolls": false
       },
       "variants": {},
       "keyboard": []
@@ -3448,7 +3469,8 @@
           "role": null,
           "classes": [
             "mdy-colors__dropdown",
-            "mdy-popup"
+            "mdy-popup",
+            "mdy-popup--surface"
           ],
           "states": [
             "above",
@@ -3553,6 +3575,7 @@
         "overlay": true,
         "dismissOnOutsidePointer": "light-dismiss",
         "dismissOnFocusOutside": true,
+        "overlayScrolls": false,
         "anchoring": {
           "matchAnchorWidth": false,
           "minSpace": 120,

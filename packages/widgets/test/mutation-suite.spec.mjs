@@ -78,7 +78,7 @@ function dateRange({ id = `d${(fixtureSeq += 1)}` } = {}) {
   const endControl = el("input", "mdy-datepicker__input mdy-daterange__input", { id: `${id}-end` });
   const toggle = el("button", "mdy-datepicker__toggle", { "aria-controls": `${id}-popup`, "aria-expanded": "true" });
   wrapper.append(startControl, separator, endControl, toggle);
-  const popup = el("div", "mdy-datepicker__popup mdy-popup mdy-datepicker__popup--range", { id: `${id}-popup`, role: "dialog" });
+  const popup = el("div", "mdy-datepicker__popup mdy-popup mdy-popup--surface mdy-datepicker__popup--range", { id: `${id}-popup`, role: "dialog" });
   const calendar = el("div", "mdy-datepicker__calendar", { role: "group" });
   const grid = el("div", "mdy-datepicker__grid", { role: "grid", "aria-label": "Choose a date" });
   const row = el("div", "mdy-datepicker__row", { role: "row" });
@@ -110,7 +110,7 @@ function selectField({ id = `s${(fixtureSeq += 1)}`, optionCount = 3 } = {}) {
   const arrow = el("span", "mdy-select__arrow");
   trigger.append(value, placeholder, arrow);
   wrapper.append(trigger);
-  const popup = el("div", "mdy-select__dropdown mdy-popup", { id: `${id}-popup`, role: "dialog" });
+  const popup = el("div", "mdy-select__dropdown mdy-popup mdy-popup--surface", { id: `${id}-popup`, role: "dialog" });
   const listbox = el("div", "mdy-select__list", { role: "listbox", "aria-label": "Options" });
   const options = [];
   for (let i = 0; i < optionCount; i++) {

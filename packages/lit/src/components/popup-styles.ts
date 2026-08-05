@@ -247,8 +247,10 @@ export class MdyLitOverlayController {
       if (this.active && this.content === null) this.refresh(true);
     });
     if (!wasActive) {
-      window.addEventListener("scroll", this.onScroll, true);
-      window.addEventListener("resize", this.onResize);
+      // Passive: this follows a scroll, it never cancels one, and a listener the engine must wait on
+      // before committing the frame is a listener that blocks the scroll it is following.
+      window.addEventListener("scroll", this.onScroll, { capture: true, passive: true });
+      window.addEventListener("resize", this.onResize, { passive: true });
     }
   }
 
@@ -267,7 +269,7 @@ export class MdyLitOverlayController {
       cancelAnimationFrame(this.scrollRaf);
       this.scrollRaf = 0;
     }
-    window.removeEventListener("scroll", this.onScroll, true);
+    window.removeEventListener("scroll", this.onScroll, { capture: true } as EventListenerOptions);
     window.removeEventListener("resize", this.onResize);
   }
 

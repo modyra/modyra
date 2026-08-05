@@ -135,7 +135,7 @@ import { MdyDropdownBase } from "../dropdown-base";
         >
           <div
             mdyGlass
-            class="mdy-select__dropdown mdy-popup mdy-overlay"
+            class="mdy-select__dropdown mdy-popup mdy-popup--surface mdy-overlay"
             [ngClass]="placementClass()"
           >
             @if (searchable()) {

@@ -38,3 +38,49 @@ export function setOverlayOpen(popup: HTMLElement, open: boolean): void {
     // Nothing to do: the attribute and `hidden` already carry the state.
   }
 }
+
+/**
+ * Keeps a popup on its anchor while the page moves under it.
+ *
+ * Scroll and resize are the two ways an anchor's viewport position changes without the widget doing
+ * anything, so a popup that does not listen for them drifts off its control.
+ *
+ * Two properties, and each was a defect before this existed in one place:
+ *
+ * **Passive.** A non-passive `scroll` listener tells the engine the handler may cancel the scroll, so
+ * it cannot commit the frame until the handler returns — a listener that follows a scroll ends up
+ * blocking it. Nothing here calls `preventDefault`.
+ *
+ * **One reposition per frame.** Scroll events fire far more often than frames, and each reposition
+ * measures layout and then writes it. Left uncoalesced that is a read-write cycle several times per
+ * frame, which is both the cost and the visible judder: the popup lands on a position the page has
+ * already left. `requestAnimationFrame` collapses a burst into the single placement that will
+ * actually be painted.
+ *
+ * Capture, because the scroll that moves an anchor is often on an ancestor pane rather than the
+ * window, and a scroll event does not bubble from an element.
+ *
+ * It was written three times — once per renderer — and the three disagreed: one passed `passive`,
+ * two did not, and none coalesced. A behaviour every adapter needs is one this package owes them.
+ */
+export function trackAnchoredOverlay(
+  reposition: () => void,
+  isOpen: () => boolean,
+): () => void {
+  let frame = 0;
+  const schedule = (): void => {
+    if (!isOpen() || frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      if (isOpen()) reposition();
+    });
+  };
+  window.addEventListener("resize", schedule, { passive: true });
+  window.addEventListener("scroll", schedule, { capture: true, passive: true });
+  return () => {
+    if (frame) cancelAnimationFrame(frame);
+    frame = 0;
+    window.removeEventListener("resize", schedule);
+    window.removeEventListener("scroll", schedule, { capture: true } as EventListenerOptions);
+  };
+}

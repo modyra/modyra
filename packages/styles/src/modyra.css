@@ -3405,21 +3405,12 @@
         /* A scroll gesture that reaches the end of a popup must not scroll the page behind it. */
         overscroll-behavior: contain;
         isolation: isolate;
-        /* The container is one thing across the whole catalog — a select's list, a calendar and a
-           palette differ in what they hold, not in what holds it. Surface, not palette: every
-           value resolves through the active theme's semantic tokens, so a popup is never a
-           hardcoded light panel floating over a dark theme. */
-        background: var(--mdy-overlay-surface-color, var(--mdy-surface-container-lowest));
-        color: var(--mdy-overlay-content-color, var(--mdy-on-surface));
-        border: var(--mdy-overlay-outline-width, 1px) solid
-            var(--mdy-overlay-outline-color, var(--mdy-outline-variant));
+        /* The radius stays here as well as on the surface, because it is two things at once: what the
+           corner *looks* like, and what `overflow` clips content to. A popup that scrolls its content
+           past a rounded corner squares it off, and the material's specular layer reads
+           `border-radius: inherit` — both need the shape on the element that positions and clips. */
         border-radius: var(--mdy-overlay-shape, var(--mdy-sys-shape-corner-medium));
-        /* Level 2, because the container is one thing: a select's list, a calendar and a palette
-           are all a panel the page opened, and they sit at the same height above it. This default
-           held level 3 while each popup's own token held level 2, so which height a surface had
-           depended on whether its widget also wrote a shadow. */
-        box-shadow: var(--mdy-overlay-shadow, var(--mdy-shadow-depth-2));
-        padding: var(--mdy-overlay-padding, 0.375rem);
+
         /* One open and close for every popup in the catalog, whatever opened it.
            The three renderers show a popup three different ways — Plain clears `hidden`, Angular
            calls `showPopover()`, Lit renders the subtree — and each was appearing instantly except
@@ -3436,6 +3427,32 @@
             opacity var(--mdy-sys-motion-duration-fast) var(--mdy-sys-motion-easing-decelerate),
             display var(--mdy-sys-motion-duration-fast) allow-discrete,
             overlay var(--mdy-sys-motion-duration-fast) allow-discrete;
+    }
+
+    /* ─── The popup's surface ────────────────────────────────────────────────────
+     * What a popup *looks* like, carried apart from where it is.
+     *
+     * The rule above positions and clips; this one paints. They were a single rule, and a container
+     * that paints is a wrapper around the thing it was meant to present — a material applied to the
+     * content then sits on an opaque panel rather than on the page, which is a translucent effect
+     * with nothing to be translucent against.
+     *
+     * Every popup carries this class from the contract, so nothing changes by not asking for it. A
+     * theme whose popup *is* its content — glass, or a picker that draws its own card — neutralises
+     * this one class and leaves the coordinates alone.
+     *
+     * Surface, not palette: every value resolves through the active theme's semantic tokens, so a
+     * popup is never a hardcoded light panel floating over a dark theme.
+     */
+    .mdy-popup--surface {
+        background: var(--mdy-overlay-surface-color, var(--mdy-surface-container-lowest));
+        color: var(--mdy-overlay-content-color, var(--mdy-on-surface));
+        border: var(--mdy-overlay-outline-width, 1px) solid
+            var(--mdy-overlay-outline-color, var(--mdy-outline-variant));
+        /* Level 2: a select's list, a calendar and a palette are all a panel the page opened, and
+           they sit at the same height above it. */
+        box-shadow: var(--mdy-overlay-shadow, var(--mdy-shadow-depth-2));
+        padding: var(--mdy-overlay-padding, 0.375rem);
     }
 
     /* A popup in the top layer.

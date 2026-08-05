@@ -359,7 +359,7 @@ function buildOpenSelect() {
   const placeholder = el("span", "mdy-select__placeholder");
   trigger.append(placeholder, arrow);
   wrapper.append(trigger);
-  const popup = el("div", "mdy-select__dropdown mdy-popup");
+  const popup = el("div", "mdy-select__dropdown mdy-popup mdy-popup--surface");
   const listbox = el("ul", "mdy-select__list", {
     role: "listbox", id: "select-listbox", "aria-label": "Options",
   });

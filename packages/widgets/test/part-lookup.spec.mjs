@@ -67,8 +67,8 @@ test("a portalled part is reached through the relation, not by scanning", () => 
   const first = html(`<div class="mdy-input-wrapper"><input class="mdy-datepicker__input" aria-controls="g1" /></div>`);
   const second = html(`<div class="mdy-input-wrapper"><input class="mdy-datepicker__input" aria-controls="g2" /></div>`);
   const popups = html(
-    `<div class="mdy-datepicker__popup mdy-popup"><div class="mdy-datepicker__grid" id="g1"></div><div class="mdy-datepicker__actions">A1</div></div>`
-    + `<div class="mdy-datepicker__popup mdy-popup"><div class="mdy-datepicker__grid" id="g2"></div><div class="mdy-datepicker__actions">A2</div></div>`,
+    `<div class="mdy-datepicker__popup mdy-popup mdy-popup--surface"><div class="mdy-datepicker__grid" id="g1"></div><div class="mdy-datepicker__actions">A1</div></div>`
+    + `<div class="mdy-datepicker__popup mdy-popup mdy-popup--surface"><div class="mdy-datepicker__grid" id="g2"></div><div class="mdy-datepicker__actions">A2</div></div>`,
   );
 
   const found = findPartElement(first, "datepicker", "actions", { portalRoots: [document.body] });
@@ -85,7 +85,7 @@ test("a closed widget's portalled part is absent, not another's", () => {
   // No `aria-controls`, so nothing identifies a popup — and a popup belonging to someone else is
   // still on the page.
   const closed = html(`<div class="mdy-input-wrapper"><input class="mdy-datepicker__input" /></div>`);
-  const strays = html(`<div class="mdy-datepicker__popup mdy-popup"><div class="mdy-datepicker__grid" id="gx"></div><div class="mdy-datepicker__actions">A</div></div>`);
+  const strays = html(`<div class="mdy-datepicker__popup mdy-popup mdy-popup--surface"><div class="mdy-datepicker__grid" id="gx"></div><div class="mdy-datepicker__actions">A</div></div>`);
   assert.equal(findPartElement(closed, "datepicker", "actions", { portalRoots: [document.body] }), null);
   closed.remove(); strays.remove();
 });

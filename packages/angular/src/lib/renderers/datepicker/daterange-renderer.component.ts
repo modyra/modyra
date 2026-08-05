@@ -135,7 +135,7 @@ import { inputText, isoDateText } from "../renderer-projection";
         [coords]="coords()"
         [hasBackdrop]="variant() === 'modal' || position() === 'overlay'"
         [widthMode]="'auto-content'"
-        [panelClass]="'mdy-datepicker__popup mdy-popup mdy-datepicker__popup--range'"
+        [panelClass]="'mdy-datepicker__popup mdy-popup mdy-popup--surface mdy-datepicker__popup--range'"
         [kind]="'daterange'"
         (close)="closeOverlay()"
       >

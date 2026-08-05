@@ -355,12 +355,17 @@ test("the anchoring an adapter reads is the anchoring the catalog declares, and 
     kind: "datepicker",
     matchAnchorWidth: false,
     minSpace: 240,
+    // A calendar has one size: a side that cannot hold it is not a placement, so it centres rather
+    // than being clamped into something you scroll a month in.
+    scrolls: false,
     alignment: "right",
   });
   assert.deepEqual(overlayAnchoringFor("select"), {
     kind: "select",
     matchAnchorWidth: true,
     minSpace: 180,
+    // A list is meant to scroll, so it docks on the roomier side and clamps there.
+    scrolls: true,
     minWidth: 160,
     alignment: "right",
   });
