@@ -135,7 +135,7 @@ import { inputText, isoDateText } from "../renderer-projection";
         [coords]="coords()"
         [hasBackdrop]="variant() === 'modal' || position() === 'overlay'"
         [widthMode]="'auto-content'"
-        [panelClass]="'mdy-datepicker__popup mdy-popup mdy-popup--surface mdy-datepicker__popup--range'"
+        [panelClass]="popupClass"
         [kind]="'daterange'"
         (close)="closeOverlay()"
       >
@@ -178,6 +178,9 @@ import { inputText, isoDateText } from "../renderer-projection";
   `,
 })
 export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange | null> {
+  /* The popup wears what the catalogue says it wears. Restated in the template, a class added
+     to the contract reached the renderers that derive and stopped at this one. */
+  protected readonly popupClass = MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ");
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
   protected override readonly overlayKind = "daterange" as const;
 

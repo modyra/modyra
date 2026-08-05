@@ -120,7 +120,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
         [hasBackdrop]="position() === 'overlay'"
         [dialogLabel]="i18n.timepickerOpenLabel"
         [widthMode]="'auto-content'"
-        [panelClass]="'mdy-timepicker__popup mdy-popup'"
+        [panelClass]="popupClass"
         [panelId]="popupId()"
         [kind]="'timepicker'"
         (close)="closeOverlay()"
@@ -148,6 +148,9 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
   `,
 })
 export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
+  /* The popup wears what the catalogue says it wears. Restated in the template, a class added
+     to the contract reached the renderers that derive and stopped at this one. */
+  protected readonly popupClass = MDY_WIDGET_CONTRACTS.timepicker.parts.popup.classes.join(" ");
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
   protected override readonly overlayKind = "timepicker" as const;
 
