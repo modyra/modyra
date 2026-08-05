@@ -2884,7 +2884,6 @@
           "role": null,
           "classes": [
             "mdy-popup",
-            "mdy-popup--surface",
             "mdy-timepicker__popup"
           ],
           "states": [

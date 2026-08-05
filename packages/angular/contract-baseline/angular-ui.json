@@ -1216,7 +1216,6 @@
         "mdy-overlay-panel",
         "mdy-part",
         "mdy-popup",
-        "mdy-popup--surface",
         "mdy-renderer",
         "mdy-renderer--timepicker",
         "mdy-renderer--touched",

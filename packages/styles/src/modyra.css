@@ -2425,7 +2425,13 @@
    in .mdy-timepicker-container (SCSS). The shell must be transparent so it
    does not leak a white background behind the container's 28px rounded corners,
    and overflow:visible preserves the container's box-shadow. */
-    .mdy-timepicker__popup {
+    .mdy-timepicker__popup,
+    /* Named with both classes, and the extra one is the fix. `.mdy-popup` gives every popup
+       `overflow: auto` and is declared later at equal specificity, so the visible overflow this kind
+       needs lost the tie — which put a scroll context and its scrollbar around a dial that already
+       has one, and clipped the container's shadow. Two classes outrank one, so the exception holds
+       wherever either rule moves to. */
+    .mdy-popup.mdy-timepicker__popup {
         background: transparent;
         border: none;
         padding: 0;
