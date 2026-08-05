@@ -120,7 +120,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
         [hasBackdrop]="position() === 'overlay'"
         [dialogLabel]="i18n.timepickerOpenLabel"
         [widthMode]="'auto-content'"
-        [panelClass]="'mdy-timepicker__popup mdy-popup mdy-popup--surface'"
+        [panelClass]="'mdy-timepicker__popup mdy-popup'"
         [panelId]="popupId()"
         [kind]="'timepicker'"
         (close)="closeOverlay()"

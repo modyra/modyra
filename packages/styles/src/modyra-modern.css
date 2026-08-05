@@ -291,17 +291,15 @@
     /* The calendar grid, its cells, the month nav and the popup frame are already component
        CSS driven by --mdy-comp-date-picker-* tokens. Only the density is retuned here — the
        56px-tall control's 2.5rem cell is out of scale with a 2.25rem one. */
-    /* plain's time popup holds two number inputs and three buttons rather than the themed
-       dial, so it needs the surface the dial's own container would otherwise provide. */
+    /* The time popup is not dressed here, and the comment this replaces says why it once was: the
+       framework-free renderer "holds two number inputs and three buttons rather than the themed
+       dial, so it needs the surface the dial's own container would otherwise provide". It renders
+       the dial and its container now, so the surface arrived twice — a bordered box inside a
+       bordered box, which is the wrapper this layer exists to avoid rather than add. */
     .mdy-timepicker__popup {
         display: flex;
         align-items: center;
         gap: 0.375rem;
-        padding: 0.5rem;
-        border: 1px solid var(--mdy-outline-subtle);
-        border-radius: var(--mdy-input-border-radius);
-        background: var(--mdy-surface-container-lowest);
-        box-shadow: var(--mdy-comp-date-picker-popup-shadow);
     }
 
     .mdy-timepicker__popup input,
@@ -525,7 +523,11 @@
     font-family: var(--mdy-modern-font-family);
 }
 
-.mdy-popup {
+/* What a popup *looks* like belongs to the surface, not to the popup: `.mdy-popup` positions and
+   clips, and a theme that paints it is the wrapper the split exists to remove. Unlayered, this rule
+   also outranked the foundation's own surface, so the split reached everything except the theme most
+   people see. */
+.mdy-popup--surface {
     padding: 0.375rem;
     border: 1px solid var(--mdy-outline-variant);
     border-radius: 0.625rem;
@@ -536,8 +538,13 @@
        above the page than its own 36px fields ever suggested. Being unlayered is deliberate and
        stays; the height it claimed was not. */
     box-shadow: var(--mdy-shadow-depth-2);
-    font-family: var(--mdy-modern-font-family);
     list-style: none;
+}
+
+/* The face is the popup's, not the surface's: a theme that neutralises the surface to present its
+   own content must not lose the typeface with it. */
+.mdy-popup {
+    font-family: var(--mdy-modern-font-family);
 }
 
 /* A list wants tight padding; a palette wants room around its swatch grid. The foundation says so
