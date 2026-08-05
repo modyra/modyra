@@ -134,25 +134,42 @@
         --mdy-ios-fill: var(--mdy-ios-tertiary-fill);
         --mdy-ios-fill-strong: var(--mdy-ios-system-fill);
 
-        /* Glass material — ONLY for floating overlay chrome (popovers,
-       sheets, dropdowns, context menus). Recipe transcribed from the Apple
-       "Liquid Glass" material spec (Fill+Shadow + Glass Effect layers):
-       translucent tint + real backdrop blur/saturate (Figma fakes the blur;
-       CSS doesn't have to) + a pair of 1.25px hairline edge lines (not a
-       full border) + thin top/bottom "lens" bands + one soft outer shadow. */
-        --mdy-ios-glass-tint: rgba(255, 255, 255, 0.62);
+        /* ── Liquid Glass ───────────────────────────────────────────────────
+           The kit builds this material out of four named layers — Blur, Tint, Specular Light,
+           Shadow — and the tint itself carries a *Plus D* and a *Plus L* component. Those names are
+           blend modes: the tint and the highlight **add** light to what is behind them rather than
+           painting over it, which is the whole difference between glass and frosted plastic. A
+           highlight painted as flat white is the same white on a dark wallpaper and a light one; one
+           that adds is bright over dark and blows out to white over light, exactly as glass does.
+
+           Reserved for floating chrome — popovers, sheets, dropdowns, menus. A material sits *over*
+           content; a fill sits *in* it, and using one for the other is the fastest way to stop
+           looking like iOS. Real fields use `--mdy-ios-*-fill`.
+
+           Only for floating overlay chrome (popovers, sheets, dropdowns, context menus). */
+
+        /* 1 — Blur. The backdrop, not a fill: the saturate is what keeps colour alive through it. */
         --mdy-ios-glass-blur: blur(20px) saturate(180%);
+
+        /* 2 — Tint, in the kit's two parts. Plus-lighter lifts, plus-darker settles; together they
+           are what stops a translucent panel reading as a grey wash over whatever it covers. */
+        --mdy-ios-glass-tint: rgba(255, 255, 255, 0.62);
+        --mdy-ios-glass-tint-plus-light: rgba(255, 255, 255, 0.28);
+        --mdy-ios-glass-tint-plus-dark: rgba(0, 0, 0, 0.05);
+
+        /* 3 — Specular light. The bright line where the panel's edge catches the light, strongest at
+           the top and fading before the bottom, plus the faint returning gleam along the lower edge.
+           Applied additively, so it is a highlight rather than a painted stripe. */
+        --mdy-ios-glass-specular: rgba(255, 255, 255, 0.65);
+        --mdy-ios-glass-specular-return: rgba(255, 255, 255, 0.22);
+
+        /* 4 — Edge and shadow. The hairline is drawn as a ring rather than a border so it costs no
+           layout, and the cast is the panel's own — a floating material is not on the elevation ramp
+           the opaque surfaces share. */
         --mdy-ios-glass-edge: rgba(219, 219, 219, 0.9);
-        --mdy-ios-glass-lens-dark: rgba(40, 40, 40, 0.30);
-        --mdy-ios-glass-lens-light: rgba(255, 255, 255, 0.55);
         --mdy-ios-glass-border: none;
         --mdy-ios-glass-shadow:
-            1.25px 0 0 -0.75px var(--mdy-ios-glass-edge),
-            -1.25px 0 0 -0.75px var(--mdy-ios-glass-edge),
             0 0 0 0.5px var(--mdy-ios-glass-edge),
-            inset 0 40px 10px -40px var(--mdy-ios-glass-lens-dark),
-            inset 0 -40px 10px -40px var(--mdy-ios-glass-lens-dark),
-            inset 0 40px 30px -40px var(--mdy-ios-glass-lens-light),
             0 8px 48px rgba(0, 0, 0, 0.25);
         /* Solid fallback for browsers without backdrop-filter support */
         --mdy-ios-glass-bg-fallback: #F7F7FA;
@@ -612,6 +629,49 @@
             background: var(--mdy-ios-glass-tint);
             backdrop-filter: var(--mdy-ios-glass-blur);
             -webkit-backdrop-filter: var(--mdy-ios-glass-blur);
+        }
+
+        /* Specular light, as its own layer over the blur.
+           `inherit` on the radius rather than a repeated value: a highlight that does not follow the
+           panel's corner is a straight line crossing a curve, and it is the corner where a glass
+           edge is most obviously glass. `pointer-events: none` because a highlight is not a target. */
+        .mdy-select__dropdown::after,
+        .mdy-multiselect-overlay__panel::after,
+        .mdy-datepicker__popup::after,
+        .mdy-colors__dropdown::after,
+        .mdy-timepicker-container::after {
+            /* No `position: relative` on the panel to contain this: a popup is already positioned
+               by the overlay primitive, and re-declaring it here replaced `fixed` with `relative` —
+               which took the popup off the viewport coordinates the anchoring measured in. */
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            background:
+                linear-gradient(to bottom,
+                    var(--mdy-ios-glass-specular) 0,
+                    transparent 1.5px),
+                linear-gradient(to top,
+                    var(--mdy-ios-glass-specular-return) 0,
+                    transparent 1px),
+                linear-gradient(to bottom,
+                    var(--mdy-ios-glass-tint-plus-light) 0,
+                    transparent 40%);
+        }
+    }
+
+    /* The layer *adds* light where the engine can do it. Without this it is an ordinary overlay and
+       still reads correctly — the highlight is simply painted rather than accumulated — so the
+       blend is an enhancement and never a requirement. */
+    @supports (mix-blend-mode: plus-lighter) {
+
+        .mdy-select__dropdown::after,
+        .mdy-multiselect-overlay__panel::after,
+        .mdy-datepicker__popup::after,
+        .mdy-colors__dropdown::after,
+        .mdy-timepicker-container::after {
+            mix-blend-mode: plus-lighter;
         }
     }
 
