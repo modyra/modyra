@@ -526,7 +526,10 @@
     .mdy-renderer select {
         color: var(--mdy-input-color);
         border-radius: var(--mdy-input-border-radius);
-        font-weight: var(--mdy-font-weight-medium);
+        /* Field content is body text, and body text on this platform is regular. Medium here also
+           made the same role render at two weights, since a control whose value is not an `input`
+           — a select's trigger, a picker's button — never received it. */
+        font-weight: var(--mdy-font-weight-regular);
         letter-spacing: var(--mdy-ios-tracking-body);
     }
 
@@ -997,20 +1000,125 @@
     }
 
     /* ═══════════════════════════════════════════════════════════════════
-     * RADIO — circular dot
+     * RADIO — an inset grouped list, selected by a trailing checkmark.
+     *
+     * Single choice on this platform is a list row, not a control: the row
+     * is the target, and the state is a tick on its trailing edge. There is
+     * no circle to draw. The circle part still carries it, so every part
+     * the contract declares stays in the tree and only its appearance is
+     * the theme's business.
+     *
+     * A horizontal group is a row of choices rather than a list, and keeps
+     * the circle it needs to distinguish them.
      * ═══════════════════════════════════════════════════════════════════ */
-    .mdy-radio-circle {
+    /* The list carries its own surface, so the field fill behind it would draw a second container
+       around the same rows, and the field's asymmetric text inset would inset the list with it. */
+    .mdy-renderer--radio-group .mdy-input-wrapper {
+        background: transparent;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .mdy-renderer--radio-group .mdy-input-wrapper__inliner {
+        padding-inline: 0;
+    }
+
+    .mdy-radio-group:not(.mdy-radio-group--horizontal) {
+        gap: 0;
+        background: var(--mdy-ios-secondary-grouped-bg);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .mdy-radio-group:not(.mdy-radio-group--horizontal) .mdy-radio-item {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        min-height: 44px;
+        padding-inline: 16px;
+        color: var(--mdy-ios-label);
+    }
+
+    .mdy-radio-group:not(.mdy-radio-group--horizontal) .mdy-radio-item:active {
+        background: var(--mdy-ios-fill);
+    }
+
+    /* The hairline starts where the text starts, not at the container edge. That inset is what
+       reads the rows as one group; a full-bleed rule reads them as stacked tiles. */
+    .mdy-radio-group:not(.mdy-radio-group--horizontal) .mdy-radio-item+.mdy-radio-item::before {
+        content: '';
+        position: absolute;
+        inset-inline: 16px 0;
+        top: 0;
+        height: 0.5px;
+        background: var(--mdy-ios-separator);
+    }
+
+    .mdy-radio-group:not(.mdy-radio-group--horizontal) .mdy-radio-circle {
+        order: 2;
+        margin-inline-start: auto;
+        width: 0.875rem;
+        height: 1.375rem;
+        border: none;
+        border-radius: 0;
+        background: none;
+        box-shadow: none;
+    }
+
+    /* The tick is two borders of a rotated box: one shape, no icon, and it scales from nothing the
+       way the dot it replaces did, so the row's selection still animates. */
+    .mdy-radio-group:not(.mdy-radio-group--horizontal) .mdy-radio-circle::after {
+        width: 0.4375rem;
+        height: 0.75rem;
+        background: none;
+        border: 2px solid var(--mdy-ios-blue);
+        border-top: none;
+        border-inline-start: none;
+        border-radius: 1px;
+        transform: translate(-50%, -60%) rotate(45deg) scale(0);
+    }
+
+    .mdy-radio-group:not(.mdy-radio-group--horizontal) input[type="radio"]:checked+.mdy-radio-circle {
+        background: none;
+        border-color: transparent;
+    }
+
+    .mdy-radio-group:not(.mdy-radio-group--horizontal) input[type="radio"]:checked+.mdy-radio-circle::after {
+        transform: translate(-50%, -60%) rotate(45deg) scale(1);
+    }
+
+    /* Focus rings the row, because the row is what the key press acts on. An outline around a tick
+       that is not drawn yet marks nothing. */
+    .mdy-radio-group:not(.mdy-radio-group--horizontal) input[type="radio"]:focus-visible+.mdy-radio-circle {
+        outline: none;
+    }
+
+    .mdy-radio-group:not(.mdy-radio-group--horizontal) .mdy-radio-item:has(input:focus-visible) {
+        outline: 3.5px solid rgba(0, 122, 255, 0.4);
+        outline-offset: -3.5px;
+    }
+
+    .mdy-radio-group--horizontal .mdy-radio-circle {
         border: 2px solid var(--mdy-ios-gray3);
     }
 
-    .mdy-radio-item input[type="radio"]:checked+.mdy-radio-circle {
+    .mdy-radio-group--horizontal input[type="radio"]:checked+.mdy-radio-circle {
         border-color: var(--mdy-ios-blue);
         background: var(--mdy-ios-blue);
     }
 
-    .mdy-radio-item input[type="radio"]:focus-visible+.mdy-radio-circle {
+    .mdy-radio-group--horizontal input[type="radio"]:focus-visible+.mdy-radio-circle {
         outline: 3.5px solid rgba(0, 122, 255, 0.4);
         outline-offset: 2px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+     * CHECKBOX — the row text is content, not a field caption.
+     * A label naming a field below it is secondary; a label naming the
+     * thing the box turns on is the primary label colour and size.
+     * ═══════════════════════════════════════════════════════════════════ */
+    .mdy-renderer--checkbox .mdy-label {
+        color: var(--mdy-ios-label);
     }
 
     /* ═══════════════════════════════════════════════════════════════════

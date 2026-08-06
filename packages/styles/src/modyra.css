@@ -1300,6 +1300,9 @@
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
+        /* Same reason as `.mdy-select`: the group is the control, and it occupies the whole field
+           rather than as much of it as its longest option needs. */
+        width: 100%;
     }
 
     .mdy-radio-group--horizontal {
@@ -2057,6 +2060,11 @@
 
     .mdy-select {
         position: relative;
+        /* A control fills the field it is placed in. The inliner lays its children out along the
+           inline axis, so a control that does not say this is sized by its own text and the field's
+           fill becomes empty space beside it — the trailing affordance lands next to the value
+           instead of on the field's edge. */
+        width: 100%;
     }
 
     .mdy-select__trigger {
