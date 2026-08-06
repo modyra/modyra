@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://modyra.dev/schemas/dynamic-form-v2.schema.json",
-  "title": "Modyra Dynamic Form Contract v2",
-  "description": "Shape of a v2 document: v3's vocabulary without a placement slot or a section's per-size placement, both of which the parser refuses below v3. A document this schema accepts may still be rejected by the parser: JSON Schema cannot express a cross-reference, so a layout slot naming a field that does not exist, a duplicate field name, or a validation reading an undeclared path all pass here and fail there. Run scripts/audit-contract-schema.mjs for what each side is responsible for.",
+  "$id": "https://modyra.dev/schemas/dynamic-form-v3.schema.json",
+  "title": "Modyra Dynamic Form Contract v3",
+  "description": "Shape of a v3 document. A document this schema accepts may still be rejected by the parser: JSON Schema cannot express a cross-reference, so a layout slot naming a field that does not exist, a duplicate field name, or a validation reading an undeclared path all pass here and fail there. Run scripts/audit-contract-schema.mjs for what each side is responsible for.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -10,7 +10,7 @@
   ],
   "properties": {
     "version": {
-      "const": 2
+      "const": 3
     },
     "id": {
       "type": "string",
@@ -52,6 +52,42 @@
         "md",
         "lg"
       ]
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "column": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "hidden": {
+          "type": "boolean"
+        }
+      }
+    },
+    "placementAt": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "$ref": "#/$defs/breakpoint"
+      },
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/placement"
+        },
+        "sm": {
+          "$ref": "#/$defs/placement"
+        },
+        "md": {
+          "$ref": "#/$defs/placement"
+        },
+        "lg": {
+          "$ref": "#/$defs/placement"
+        }
+      }
     },
     "trackCountAt": {
       "type": "object",
@@ -225,10 +261,29 @@
         }
       ]
     },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref"
+      ],
+      "properties": {
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at": {
+          "$ref": "#/$defs/placementAt"
+        }
+      }
+    },
     "layoutChild": {
       "oneOf": [
         {
           "type": "string"
+        },
+        {
+          "$ref": "#/$defs/slot"
         },
         {
           "$ref": "#/$defs/layout"
@@ -254,6 +309,9 @@
             },
             "label": {
               "type": "string"
+            },
+            "at": {
+              "$ref": "#/$defs/placementAt"
             },
             "children": {
               "type": "array",

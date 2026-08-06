@@ -224,9 +224,24 @@ it into an API registry: any diagnostic makes `ok` false and returns no
 renderable fields. `parseDynamicFields()` remains backward compatible and
 accepts v1, v2, and the legacy bare field array.
 
-The machine-readable schema is `spec/dynamic-form-v2.schema.json`. Rust
-services can use the matching `sdk/rust/modyra-contract` crate; TypeScript
-and Rust run against the same conformance fixtures.
+The machine-readable schema is `spec/dynamic-form-v3.schema.json`, with
+`spec/dynamic-form-v2.schema.json` for documents that stay on v2. Point a
+document's `$schema` at one and an editor underlines a malformed field as it
+is written, with no extension installed. Rust services can use the matching
+`sdk/rust/modyra-contract` crate; TypeScript and Rust run against the same
+conformance fixtures.
+
+The schema checks shape, and that is all it can check. A cross-reference is
+invisible to JSON Schema: a layout slot naming a field that does not exist, a
+second field with a name already taken, a validation reading a path nothing
+declares — every one of those passes the schema and fails
+`parseDynamicForm`. Treat a green schema as "well-formed", never as "valid",
+and keep the parser in the path. `npm run test:contract-schema` holds the
+schema to the kinds and slots the parser accepts, so the two stay describable
+as one document.
+
+For contracts written as TypeScript literals rather than JSON,
+`@modyra/eslint-plugin` reports the same parser diagnostics in the editor.
 
 ### Rust business object to Angular renderer
 
