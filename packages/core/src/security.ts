@@ -44,7 +44,9 @@ export type MdySecurityViolationKind =
   /** A restored draft entry was dropped: its shape doesn't match the field. */
   | "draft-shape"
   /** A server error was dropped: its path is unsafe (prototype pollution). */
-  | "error-path";
+  | "error-path"
+  /** A custom sanitizer threw an exception. */
+  | "sanitizer-error";
 
 /** A single interception, reported through `MdySecurityPolicy.onViolation`. */
 export interface MdySecurityViolation {
@@ -86,7 +88,7 @@ export interface MdyValueSecurityResult {
   readonly value: unknown;
   /** What was done to the value — empty when it passed through unchanged. */
   readonly actions: ReadonlyArray<{
-    readonly kind: "sanitized" | "max-length";
+    readonly kind: "sanitized" | "max-length" | "sanitizer-error";
     readonly detail: string;
   }>;
 }
@@ -169,18 +171,29 @@ export function applyValueSecurity(
 ): MdyValueSecurityResult {
   const { sanitizer, maxValueLength } = options;
   const actions: Array<{
-    kind: "sanitized" | "max-length";
+    kind: "sanitized" | "max-length" | "sanitizer-error";
     detail: string;
   }> = [];
   let out = value;
 
   if (typeof sanitizer === "function") {
-    out = sanitizer(out);
-    if (!Object.is(out, value)) {
+    try {
+      out = sanitizer(out);
+      if (!Object.is(out, value)) {
+        actions.push({
+          kind: "sanitized",
+          detail: "Custom sanitizer modified the value.",
+        });
+      }
+    } catch (e: unknown) {
+      // Custom sanitizer threw: report the error but keep the original value
+      // so the form doesn't crash. The violation hook can route this to
+      // telemetry/logging (see form-engine._report for the same pattern).
       actions.push({
-        kind: "sanitized",
-        detail: "Custom sanitizer modified the value.",
+        kind: "sanitizer-error",
+        detail: `Custom sanitizer threw: ${e instanceof Error ? e.message : String(e)}`,
       });
+      // out remains unchanged (value is preserved)
     }
   } else if (sanitizer !== "off") {
     const mapped = mapStringsDeep(
