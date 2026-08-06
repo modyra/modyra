@@ -254,6 +254,15 @@ importers:
 
   packages/core: {}
 
+  packages/eslint-plugin:
+    dependencies:
+      '@modyra/core':
+        specifier: 1.0.0
+        version: link:../core
+      eslint:
+        specifier: '>=9'
+        version: 10.7.0(jiti@2.7.0)
+
   packages/lit:
     dependencies:
       '@modyra/core':

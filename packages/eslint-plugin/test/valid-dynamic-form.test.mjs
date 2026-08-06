@@ -1,0 +1,160 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { Linter } from "eslint";
+import tseslint from "typescript-eslint";
+import { parseDynamicForm } from "@modyra/core/dynamic-config";
+import plugin from "../dist/index.js";
+
+/**
+ * Every expectation here is the parser's own answer, obtained by calling it. Nothing in this file
+ * states what a valid contract is, for the same reason the rule does not: a test that carried its
+ * own list would pass while the rule and the parser disagreed. See ADR 0024.
+ */
+
+const CORPUS = fileURLToPath(new URL("../../../spec/fixtures/dynamic-form", import.meta.url));
+const SRC = fileURLToPath(new URL("../src", import.meta.url));
+
+const linter = new Linter();
+
+const lint = (code, parser) =>
+  linter.verify(code, {
+    ...(parser ? { languageOptions: { parser } } : {}),
+    plugins: { modyra: plugin },
+    rules: { "modyra/valid-dynamic-form": "error" },
+  });
+
+/** The rule puts the diagnostic code at the end of every message. */
+const codesOf = (messages) =>
+  messages.map((message) => {
+    const match = /\(([A-Z_0-9]+)\)$/.exec(message.message);
+    assert.ok(match, `message carries no code: ${message.message}`);
+    return match[1];
+  });
+
+const fixtures = readdirSync(CORPUS).flatMap((version) =>
+  readdirSync(join(CORPUS, version)).map((file) => ({
+    name: `${version}/${file}`,
+    document: JSON.parse(readFileSync(join(CORPUS, version, file), "utf8")),
+  })),
+);
+
+test("the corpus has fixtures on both sides of the verdict", () => {
+  const withDiagnostics = fixtures.filter((f) => parseDynamicForm(f.document).diagnostics.length > 0);
+  assert.ok(fixtures.length >= 5, `expected a corpus, found ${fixtures.length} fixtures`);
+  assert.ok(
+    withDiagnostics.length > 0,
+    "every fixture parses clean, so a rule that reported nothing at all would pass this suite",
+  );
+});
+
+for (const { name, document } of fixtures) {
+  test(`reports exactly what the parser reports: ${name}`, () => {
+    const expected = parseDynamicForm(document).diagnostics;
+    // JSON is a subset of JavaScript expression syntax, so the document round-trips into source
+    // without being described a second time.
+    const messages = lint(`const form = ${JSON.stringify(document, null, 2)};`);
+
+    assert.deepEqual(codesOf(messages), expected.map((d) => d.code));
+  });
+}
+
+/**
+ * The corpus is shared with the Rust and Java parsers and exercises layout and rule references. The
+ * mistakes a consumer makes most often are in the fields themselves, and no fixture carries one, so
+ * they are stated here as documents — never as expected codes, which still come from the parser.
+ */
+const FIELD_LEVEL = {
+  "a kind the catalogue does not have": { version: 2, fields: [{ name: "a", kind: "nope" }] },
+  "a choice with no options": { version: 2, fields: [{ name: "a", kind: "select" }] },
+  "two fields with one name": {
+    version: 2,
+    fields: [{ name: "a", kind: "text" }, { name: "a", kind: "text" }],
+  },
+  "a name that is a path": { version: 2, fields: [{ name: "a.b", kind: "text" }] },
+};
+
+for (const [description, document] of Object.entries(FIELD_LEVEL)) {
+  test(`reports exactly what the parser reports: ${description}`, () => {
+    const expected = parseDynamicForm(document).diagnostics;
+    assert.ok(expected.length > 0, "the parser stopped objecting to this document");
+
+    const messages = lint(`const form = ${JSON.stringify(document, null, 2)};`);
+    assert.deepEqual(codesOf(messages), expected.map((d) => d.code));
+  });
+}
+
+test("a field-level finding underlines the fields property, which is as precise as the path is", () => {
+  // The parser stamps every field diagnostic `/fields` rather than `/fields/1`, so this is the
+  // limit of what the rule can position. Sharpening it is a change to the parser, not to the rule.
+  const document = FIELD_LEVEL["a choice with no options"];
+  assert.deepEqual(
+    parseDynamicForm(document).diagnostics.map((d) => d.path),
+    ["/fields"],
+  );
+
+  const [message] = lint(`const form = ${JSON.stringify(document, null, 2)};`);
+  assert.equal(message.line, 3, "expected the finding on the `fields` property");
+});
+
+test("an indexed path underlines the element it names, not the document", () => {
+  const document = JSON.parse(readFileSync(join(CORPUS, "v2", "invalid-reference.json"), "utf8"));
+  const diagnostics = parseDynamicForm(document).diagnostics;
+  assert.ok(diagnostics.length >= 2, "fixture no longer carries two findings at distinct paths");
+
+  const messages = lint(`const form = ${JSON.stringify(document, null, 2)};`);
+  const positions = new Set(messages.map((m) => `${m.line}:${m.column}`));
+
+  assert.equal(positions.size, messages.length, "two findings at different paths landed on one node");
+  for (const message of messages) {
+    assert.ok(message.line > 1, "a finding was reported on the whole statement rather than inside it");
+  }
+});
+
+test("says nothing about a document it can only partly see", () => {
+  const partial = `
+    const extra = [{ name: "vat", kind: "text" }];
+    const form = {
+      version: 2,
+      fields: [...extra, { name: "vat", kind: "text" }],
+      layout: [{ kind: "slot", field: "nope" }],
+    };
+  `;
+  assert.deepEqual(lint(partial), [], "reported a finding about syntax it could not read");
+});
+
+test("says nothing about an object that is not a form document", () => {
+  assert.deepEqual(lint(`const config = { version: 2, timeout: 30 };`), []);
+  assert.deepEqual(lint(`const config = { fields: [{ name: "" }] };`), []);
+});
+
+test("names no diagnostic code of its own", () => {
+  // The decision in ADR 0024 is that the rule holds no notion of validity. Comparing the rule's
+  // findings against the parser's cannot show that: if the rule carried a copy of the codes and the
+  // parser renamed one, both sides of every assertion here would move together and stay green. What
+  // does show it is the absence: a rule that reports a code it never mentions cannot be holding a
+  // list of them.
+  const sources = readdirSync(SRC, { recursive: true })
+    .filter((entry) => typeof entry === "string" && entry.endsWith(".ts"))
+    .map((entry) => ({ entry, text: readFileSync(join(SRC, entry), "utf8") }));
+
+  assert.ok(sources.length >= 3, "expected to be reading the rule's own source");
+  for (const { entry, text } of sources) {
+    assert.ok(
+      !text.includes("MDY_DYNAMIC"),
+      `${entry} names a diagnostic code; the parser is the only place that decides them`,
+    );
+  }
+});
+
+test("reads the same document through the TypeScript parser", () => {
+  const document = JSON.parse(readFileSync(join(CORPUS, "v2", "invalid-reference.json"), "utf8"));
+  const expected = parseDynamicForm(document).diagnostics;
+
+  const source = `const form = ${JSON.stringify(document, null, 2)} satisfies unknown;`;
+  const messages = lint(source, tseslint.parser);
+
+  assert.deepEqual(codesOf(messages), expected.map((d) => d.code));
+});

@@ -39,13 +39,15 @@ absent section reads as an oversight, and "no security impact" is a finding.
 | [0021](0021-a-dialog-overlay-is-not-a-combobox.md) | A dialog overlay is not a combobox | The combobox opening keys were declared for four kinds that hold no options, and no renderer implemented them |
 | [0022](0022-a-theme-expresses-its-own-colour-model.md) | A theme expresses its own colour model | Two themes could not state their own design system, so a brand colour produced white text at 1.85:1 |
 | [0023](0023-a-popup-is-positioned-not-dressed.md) | A popup is positioned, not dressed | A container that paints is a wrapper around the thing it was meant to present |
+| [0024](0024-an-author-time-check-calls-the-parser.md) | An author-time check calls the parser | The contract already knows what is wrong with a document; an editor check that says so again is a second answer that drifts |
 
 ## Security-relevant records
 
 Start here for a security review: [0007](0007-expressions-are-data.md) (untrusted documents are never
 executed), [0009](0009-client-validation-is-defence-in-depth.md) (the trust boundary and the draft
 storage exposure), [0010](0010-every-claim-has-an-executable-check.md) (which of those properties are
-held by a test rather than by prose).
+held by a test rather than by prose), [0024](0024-an-author-time-check-calls-the-parser.md) (the same
+refusal to execute a document, at the editor boundary).
 
 ## Changing a record
 
