@@ -388,6 +388,28 @@ test("parseDynamicForm validates v2 layout and rules in strict/lenient modes", a
   assert.equal(bad.diagnostics[0].code, "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE");
 });
 
+test("a collected diagnostic is not also written to the console", async () => {
+  const { parseDynamicForm } = await import("../dist/dynamic-config.js");
+  const spoken = [];
+  const warn = console.warn;
+  console.warn = (...args) => spoken.push(args.join(" "));
+
+  try {
+    const collected = parseDynamicForm({
+      version: 2,
+      fields: [{ name: "plan", kind: "select" }],
+    });
+    assert.equal(collected.diagnostics.length, 1, "the finding still reaches the caller");
+    assert.deepEqual(spoken, [], "the same finding was duplicated onto the console");
+
+    // Without a sink the console is the only channel the finding has, so it keeps it.
+    parseDynamicFields([{ name: "plan", kind: "select" }]);
+    assert.equal(spoken.length, 1, "a caller collecting nothing was left with nothing");
+  } finally {
+    console.warn = warn;
+  }
+});
+
 test("Contract v2 layout nests: a columns row inside a section", async () => {
   const { parseDynamicForm } = await import("../dist/dynamic-config.js");
   const fields = [

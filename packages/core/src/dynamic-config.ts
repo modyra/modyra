@@ -774,7 +774,14 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
 let diagnosticSink: ((message: string) => void) | undefined;
 
 function warnDev(message: string): void {
-  diagnosticSink?.(message);
+  // A caller holding a sink is collecting these into a result it is about to read, so writing to the
+  // console as well duplicates every finding into a channel it did not ask for — and a tool that
+  // parses a document per keystroke turns that into a stream. With no sink the console is the only
+  // way the finding reaches anyone, which is why it stays the fallback rather than an option.
+  if (diagnosticSink) {
+    diagnosticSink(message);
+    return;
+  }
   console.warn(`[modyra] ${message}`);
 }
 
