@@ -25,7 +25,8 @@
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { MDY_DYNAMIC_FIELD_KINDS } from "../packages/core/dist/dynamic-config.js";
+import Ajv from "ajv/dist/2020.js";
+import { MDY_DYNAMIC_FIELD_KINDS, parseDynamicForm } from "../packages/core/dist/dynamic-config.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const CORPUS = join(ROOT, "spec/fixtures/dynamic-form");
@@ -85,6 +86,17 @@ for (const { path, version } of SCHEMAS) {
 const byVersion = new Map(SCHEMAS.map(({ path, version }) => [version, readJson(path)]));
 let fixtureCount = 0;
 
+/**
+ * One compiled validator per schema. `strict: false` because the schemas are written for editors
+ * first: a `description` beside a `$ref` is what a reader hovers, and ajv's strict mode rejects
+ * spellings that every editor accepts.
+ */
+const ajv = new Ajv({ strict: false, allErrors: true });
+const validators = new Map([...byVersion.values()].map((schema) => [schema, ajv.compile(schema)]));
+
+/** Fixtures the schema passes and the parser refuses — the boundary, not a defect. */
+const boundary = [];
+
 for (const version of readdirSync(CORPUS)) {
   const schema = byVersion.get(Number(version.replace("v", "")));
   if (!schema) {
@@ -103,42 +115,25 @@ for (const version of readdirSync(CORPUS)) {
       }
     }
 
-    const declared = kindsOf(schema);
-    const used = new Set();
-    const walk = (value) => {
-      if (Array.isArray(value)) return value.forEach(walk);
-      if (value === null || typeof value !== "object") return;
-      if (typeof value.kind === "string" && typeof value.name === "string") used.add(value.kind);
-      Object.values(value).forEach(walk);
-    };
-    walk(document);
+    // The two verdicts, each from the thing entitled to give it.
+    const validate = validators.get(schema);
+    const schemaAccepts = validate(document);
+    const parserFindings = parseDynamicForm(document).diagnostics;
 
-    for (const kind of used) {
-      if (!declared.includes(kind)) findings.push(`${where}: uses kind "${kind}", which its schema does not list`);
+    if (parserFindings.length === 0 && !schemaAccepts) {
+      // The schema is describing a document the parser renders. This is the direction that has been
+      // wrong every time: three of the v2 schema's defects presented exactly here.
+      const why = (validate.errors ?? [])
+        .map((error) => `${error.instancePath || "/"} ${error.message}`)
+        .slice(0, 3)
+        .join("; ");
+      findings.push(`${where}: the parser accepts it and its schema rejects it — ${why}`);
     }
 
-    // A layout child is a name, a slot, or a whole nested node. Asking the fixtures which of those
-    // they use, rather than asserting a list here, keeps the audit from being a second description
-    // of the layout: the corpus says what a real document contains and the schema has to admit it.
-    const childShapes = new Set();
-    const walkLayout = (nodes) => {
-      for (const node of nodes ?? []) {
-        if (node === null || typeof node !== "object") continue;
-        const children = node.kind === "columns" ? (node.columns ?? []).flat() : (node.children ?? []);
-        for (const child of children) {
-          childShapes.add(typeof child === "string" ? "string" : "object");
-          if (child !== null && typeof child === "object") walkLayout([child]);
-        }
-      }
-    };
-    walkLayout(document.layout);
-
-    const admits = schema.$defs?.layout?.oneOf?.some((variant) => {
-      const items = variant.properties?.children?.items ?? variant.properties?.columns?.items?.items;
-      return items !== undefined && items.type !== "string";
-    });
-    if (childShapes.has("object") && !admits) {
-      findings.push(`${where}: places a slot or a nested node in a layout, which its schema admits only as a name`);
+    if (parserFindings.length > 0 && schemaAccepts) {
+      // Expected, and worth printing rather than passing over: it is the boundary the schema cannot
+      // cross, and seeing it named is what stops a green schema being read as a valid document.
+      boundary.push(`${where}: ${parserFindings.map((d) => d.code).join(", ")}`);
     }
   }
 }
@@ -150,7 +145,14 @@ console.log(`Kinds the parser accepts: ${MDY_DYNAMIC_FIELD_KINDS.length}`);
 console.log(`Document slots read from the type: ${documentSlots().join(", ")}\n`);
 
 console.log("Cross-reference findings are the parser's, not the schema's: a slot naming an absent");
-console.log("field, a duplicate name and a validation on an undeclared path pass any JSON Schema.\n");
+console.log("field, a duplicate name and a validation on an undeclared path pass any JSON Schema.");
+if (boundary.length === 0) {
+  console.log("No fixture exercises that boundary, so nothing here demonstrates it.\n");
+} else {
+  console.log(`Schema accepts, parser refuses — ${boundary.length} fixture(s):\n`);
+  for (const entry of boundary) console.log(`  · ${entry}`);
+  console.log();
+}
 
 if (findings.length === 0) {
   console.log("CONTRACT SCHEMA CLEAN");
