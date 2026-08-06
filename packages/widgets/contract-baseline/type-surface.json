@@ -1296,7 +1296,8 @@
     "\"draft-shape\"",
     "\"error-path\"",
     "\"max-length\"",
-    "\"sanitized\""
+    "\"sanitized\"",
+    "\"sanitizer-error\""
   ],
   "MdySelectA11yOptions": [
     "activeKey: string | null",
@@ -1591,7 +1592,7 @@
     "(opaque)"
   ],
   "MdyValueSecurityResult": [
-    "actions: ReadonlyArray<{ readonly kind: \"sanitized\" | \"max-length\"; readonly detail: string; }>",
+    "actions: ReadonlyArray<{ readonly kind: \"sanitized\" | \"max-length\" | \"sanitizer-error\"; readonly detail: string; }>",
     "value: unknown"
   ],
   "MdyValueShape": [
