@@ -1,0 +1,45 @@
+{
+  "name": "@modyra/vscode",
+  "displayName": "Modyra",
+  "description": "Reads a Modyra form contract while you write it: the widget's anatomy on hover, a layout slot's field on go-to-definition, and the contract schema on any file that declares one.",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "publisher": "modyra",
+  "type": "module",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "main": "./dist/extension.cjs",
+  "activationEvents": [
+    "onLanguage:json",
+    "onLanguage:jsonc"
+  ],
+  "contributes": {
+    "jsonValidation": [
+      {
+        "fileMatch": [
+          "*.form.json",
+          "*.contract.json",
+          "**/contracts/*.json"
+        ],
+        "url": "https://modyra.dev/schemas/dynamic-form-v3.schema.json"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node build.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@modyra/widgets": "1.0.0",
+    "jsonc-parser": "^3.3.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0"
+  }
+}
