@@ -78,7 +78,9 @@
     "test:contract-schema": "npm run build:core && node scripts/audit-contract-schema.mjs --check",
     "test:eslint-plugin": "npm run build:core && node scripts/tsc7.mjs packages/eslint-plugin/tsconfig.json && node --test packages/eslint-plugin/test/*.test.mjs",
     "test:type-surface": "node scripts/audit-type-surface.mjs",
-    "type-surface:accept": "node scripts/audit-type-surface.mjs --write"
+    "type-surface:accept": "node scripts/audit-type-surface.mjs --write",
+    "build:vscode": "npm run build:packages && node scripts/tsc7.mjs apps/vscode/tsconfig.json && node apps/vscode/build.mjs",
+    "test:vscode": "npm run build:vscode && node --test apps/vscode/test/*.test.mjs"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^21.2.19",

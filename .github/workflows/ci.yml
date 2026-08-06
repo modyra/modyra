@@ -44,6 +44,12 @@ jobs:
       - name: Studio and framework-free renderer tests
         run: pnpm run test:studio
 
+      # The editor extension's bundle is checked here rather than only built: it is CommonJS around
+      # ES-module dependencies, and a dependency shipping a UMD build leaves a `require` that fails
+      # on the first document opened rather than at load.
+      - name: Editor extension tests
+        run: pnpm run test:vscode
+
       # The libraries are compiled by TypeScript 7 and the Angular toolchain is not: what ships is
       # only safe while the two compilers emit the same artifacts, so that is checked every push.
       #

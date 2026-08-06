@@ -13,7 +13,7 @@
  */
 
 /** A syntax node, read structurally: ESLint ships no node types and only these members are used. */
-export type EsNode = { readonly type: string } & { readonly [key: string]: unknown };
+export type EsNode = { readonly type: string } & Readonly<Record<string, unknown>>;
 
 /** Returned in place of a value the syntax does not state. */
 export const UNKNOWN: unique symbol = Symbol("modyra.unknown");
