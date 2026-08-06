@@ -107,6 +107,7 @@
     "@modyra/zod": "workspace:*",
     "@playwright/test": "^1.61.1",
     "@types/jest": "^30.0.0",
+    "ajv": "^8.20.0",
     "angular-eslint": "21.4.0",
     "axe-core": "^4.12.1",
     "cssnano": "^7.1.9",
