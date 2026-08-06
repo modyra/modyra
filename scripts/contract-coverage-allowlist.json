@@ -13,7 +13,6 @@
     "mdy-multiselect__dropdown": "the popup also carries mdy-multiselect-overlay__panel, which is the class the themes paint",
     "mdy-multiselect__dropdown--overlay": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-multiselect__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
-    "mdy-renderer--checkbox": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--datepicker": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--daterange": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",
     "mdy-renderer--file": "root variant hook: emitted via rootClasses for consumers to style; the foundation paints the shared mdy-renderer",

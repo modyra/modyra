@@ -64,6 +64,11 @@ one 3.5rem field cannot both be 44px; this is an exception with a reason, not an
 target. Everything else is pressed, and the set is derived from the catalogue by
 `trailingAffordances()` rather than listed.
 
+**A control fills the field it sits in.** The affordance column only exists if the control reaches
+the field's inline end. A control sized by its own text leaves the field's fill as empty space beside
+it, and the affordance lands next to the value instead of on the edge — the alignment reads as broken
+even though every affordance token is correct.
+
 *Enforced by* `e2e/plain/affordance-alignment.spec.ts` — one inset, one vertical centre, the 44px
 target measured on the overlay. *And by* `scripts/audit-styles-architecture.mjs`, which fails a
 literal size or inset on an affordance.
@@ -161,6 +166,13 @@ renderer must be prevented from reaching it. Such a declaration cannot be judged
 background on a clipped pixel renders identically whether it is right or wrong, so it survives review
 and screenshots alike. It is asserted in a browser instead —
 `e2e/shared/hidden-controls.spec.ts`, on every renderer and engine.
+
+**A theme may move a state onto a different part, never remove the part.** Where a platform has no
+equivalent of the shape the foundation draws — single choice expressed as a list row and a trailing
+checkmark, rather than as a group of circles — the part that would have drawn the control carries the
+state instead: it keeps its place in the tree, its selector and its ARIA, and only its appearance
+changes. This is what lets a theme restyle a control down to its anatomy while the conformance
+checks, which assert that every declared part is present, keep passing unchanged.
 
 ## Overlays
 
