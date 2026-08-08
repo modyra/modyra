@@ -32,8 +32,11 @@ jobs:
       - name: Install browsers
         run: npx playwright install --with-deps chromium firefox webkit
 
+      # The Angular demo copies its stylesheets from packages/styles/dist, which only build:packages
+      # produces, so the packages come first.
       - name: Build the demos the suite serves
         run: |
+          pnpm run build:packages
           pnpm run build:demo
           pnpm run build:examples
 
