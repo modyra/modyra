@@ -13,13 +13,13 @@ This runbook is for npm/package admins and repository admins who manage release 
 Verify these files before setting publishers on npmjs.com:
 
 1. `.github/workflows/release.yml`
-   - the publish step runs `pnpm run release` (not `release:stage`, which is a local dry run)
+   - the publish step runs `pnpm run release` (not `release:rehearse`, which is a local dry run)
    - workflow permissions include `id-token: write`
    - no `NODE_AUTH_TOKEN` / `NPM_TOKEN` in publish env
    - npm is upgraded to ≥ 11.5 in the job; the OIDC exchange does not exist in older CLIs
 2. `package.json`
    - includes `version: changeset version && pnpm install --lockfile-only`
-   - includes `release` and `release:stage` scripts
+   - includes `release` and `release:rehearse` scripts
 3. `.changeset/config.json`
    - `baseBranch` is `main`
    - `fixed` is empty: each package moves by its own changesets
@@ -38,7 +38,7 @@ Repeat for each publishable package — the list `scripts/publish-workspace.mjs`
    - Repository: `modyra`
    - Workflow filename: `release.yml`
    - Environment name: leave empty unless your workflow uses GitHub Environments
-   - Allowed action: `publish`
+   - Allowed action: `npm stage publish`
 5. Save.
 
 Notes:
@@ -68,8 +68,16 @@ This repo is Changesets-driven:
 4. The workflow runs the full gate, then `pnpm run release`, which executes:
    - `node scripts/publish-workspace.mjs`
    - `node scripts/publish-angular.mjs`
-5. Packages are published, each at the version its own `package.json` declares, with `--provenance`.
-6. Nothing further is needed to make the release public.
+5. Each package is **staged** at the version its own `package.json` declares, with `--provenance`.
+6. A maintainer makes the staged versions public with proof of presence:
+
+```bash
+npm stage list
+npm stage view <stage-id>
+npm stage approve <stage-id>
+```
+
+Until that step the registry still serves the previous version.
 
 Why manual PR creation: organization policy disables GitHub Actions PR creation/approval with `GITHUB_TOKEN`.
 
@@ -78,8 +86,8 @@ Why manual PR creation: organization policy disables GitHub Actions PR creation/
 Run these checks after the first release:
 
 1. The release job succeeds without npm token secrets.
-2. Each package's npm version matches its `package.json` in the tagged commit.
-3. Package metadata shows a provenance attestation.
+2. `npm stage list` holds every package at the version its `package.json` declares in the tagged commit; after approval, `npm view` agrees.
+3. Package metadata shows a provenance attestation once approved.
 
 Useful checks:
 
@@ -89,7 +97,7 @@ npm view @modyra/angular version
 npm view @modyra/core --json | grep -i attestation
 ```
 
-A green job is already evidence of publication: both publishers poll the registry after publishing and fail when a package does not appear at its expected version.
+A green job is evidence of staging, not of publication: both publishers read the staging area back and fail when a package they staged is not in it. What makes a version public is the approval step.
 
 ## Step 4: Harden security after first success
 
@@ -103,7 +111,7 @@ After confirming OIDC trusted publishing works:
 
 If publish fails with ENEEDAUTH or OIDC-related auth errors:
 
-1. Re-check trusted publisher fields for exact match (`modyra`, `release.yml`, action `publish`).
+1. Re-check trusted publisher fields for exact match (`modyra`, `release.yml`, action `npm stage publish`). A publisher that permits only the staged action answers a direct `npm publish` with `403 OIDC permission denied`.
 2. Confirm release is running in `.github/workflows/release.yml` (not via a different caller workflow).
 3. Confirm workflow still has `permissions: id-token: write`.
 4. Confirm runner is GitHub-hosted and npm is ≥ 11.5.
