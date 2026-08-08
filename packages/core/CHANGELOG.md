@@ -1,5 +1,41 @@
 # @modyra/core
 
+## 2.0.0
+
+### Major Changes
+
+- 2037ba5: Fix two latent bugs found during security audit:
+
+  1. **Custom sanitizer exception handling**: Custom sanitizers that throw exceptions now fail gracefully instead of crashing the form. Errors are reported through the violation telemetry hook and the original value is preserved.
+
+  2. **Array manager field cleanup**: Orphaned array row fields that accumulated during undo/redo cycles are now properly cleaned up. The reconciliation effect now detects and removes rows that have disappeared from the value but were still registered in the engine, preventing memory leaks.
+
+  Behaviour is unchanged for normal operations, but the **type surface is not**: reporting the new
+  failure added `"sanitizer-error"` to `MdySecurityViolationKind`, which is a closed union in a return
+  position — `MdyValueSecurityResult.actions[].kind` — and is also what `MdySecurityPolicy.onViolation`
+  receives. A consumer that switches exhaustively over either, with an `assertNever` default, stops
+  compiling. `npm run test:type-surface` classifies it major, and that is what it is.
+
+  Migration: handle `"sanitizer-error"` alongside `"sanitized"` and `"max-length"`. It reports that a
+  custom sanitizer threw; the original value was preserved, so treating it like `"sanitized"` is wrong
+  — nothing was stripped.
+
+### Patch Changes
+
+- 3161bad: A collected diagnostic is no longer also written to the console.
+
+  `parseDynamicForm` installs a sink and returns every finding in
+  `result.diagnostics`, which is the channel its callers read. It was also writing each one to
+  `console.warn`, so a caller that asked for the findings got them twice — once where it looked and
+  once where it did not. A tool parsing a document per keystroke turned that into a stream.
+
+  `warnDev` now writes to the console only when nothing is collecting. `parseDynamicFields` installs no
+  sink and is unchanged: there the console is the only channel a dropped field has, which is what the
+  dev-mode warnings in the guides describe.
+
+  Migration: a caller relying on `parseDynamicForm` to log is reading `result.diagnostics` instead —
+  each entry carries `code`, `severity`, `path` and `message`, which is more than the console line had.
+
 ## 1.0.0
 
 ### Major Changes

@@ -1,5 +1,279 @@
 # @modyra/styles
 
+## 0.7.0
+
+### Minor Changes
+
+- fa6d81e: A control fills the field it sits in, and iOS states single choice the way the platform does.
+
+  `.mdy-select` and `.mdy-radio-group` were sized by their own content, so in every theme the field's
+  fill extended past the control and the trailing affordance sat beside the value instead of on the
+  field's edge. Both now occupy the field, which is what the affordance column has always assumed.
+
+  Under the iOS theme, a vertical radio group is now an inset grouped list — one surface, 44pt rows,
+  hairline separators inset to the text, and an accent checkmark on the selected row's trailing edge.
+  The circle part remains in the tree and carries the checkmark; a horizontal group keeps its circles.
+  The checkbox's row text takes the primary label colour rather than the field-caption colour, and
+  field text is regular weight throughout, matching the value of a control that is not an `input`.
+
+  Migration: a host that styled `.mdy-radio-circle` under the iOS theme expecting a circle now styles
+  the checkmark. A host that relied on `.mdy-select` or `.mdy-radio-group` being content-width should
+  constrain the field instead.
+
+- c1ddb7c: A popup is positioned, not dressed.
+
+  `.mdy-popup` positioned a popup **and** painted it. A container that paints is a wrapper around the
+  thing it was meant to present: a material applied to the content sits on an opaque panel rather than
+  on the page, which is a translucent effect with nothing to be translucent against.
+
+  The primitive now keeps position, insets, clipping and the open/close transition. **`mdy-popup--surface`**
+  takes background, border, elevation and padding, and the catalogue emits both on every `popup` part —
+  so nothing changes by default, and a theme whose popup _is_ its content neutralises one class without
+  touching the coordinates. The radius stays on both: on the primitive it is what `overflow` clips to.
+
+  **`capabilities.overlayScrolls`** — `true` for `select` and `multiselect`, `false` for the four
+  pickers. A popup whose content does not scroll and which **no placement holds entirely** — neither
+  side vertically, neither edge horizontally — now centres instead of being clamped. A 256px clock face
+  with 200px below it was called a fit, docked, and turned into something you scroll a clock in; it is
+  centred and whole. A modal placement of non-scrolling content gets the viewport rather than 70% of
+  it, since that framing reintroduces the same stub one step in.
+
+  **`trackAnchoredOverlay`** follows the page in one place, `{ capture: true, passive: true }` and
+  coalesced to one reposition per frame. The framework-free renderer repositioned synchronously on every
+  scroll event, non-passive and uncoalesced — a measure-and-write far more often than frames, which is
+  both the cost and the judder.
+
+  Migration: a host that styled `.mdy-popup` expecting a surface should style `.mdy-popup--surface`. A
+  renderer that hardcodes popup classes rather than deriving them from the contract must add the new
+  one — Angular did, in six templates.
+
+- 14bdd6a: A theme states its design system's colour model, and derives every role from it.
+
+  Setting a brand colour is what this product is for, and two themes did not survive it. Measured over
+  four themes and two schemes, every element that owns text against the surface behind it:
+
+  |                                               | before      | after              |
+  | --------------------------------------------- | ----------- | ------------------ |
+  | Material, white on a gold brand primary       | **1.85:1**  | derived, clears AA |
+  | Material dark, field text on a gold container | 2.98–3.29:1 | clears AA          |
+  | every theme, labels and supporting text       | 3.87–4.24:1 | ≥ 4.5:1            |
+
+  **Material is tonal now.** A role is a tone on a tonal palette at an assigned chroma — M3's own model
+  — rather than a `color-mix` toward white, which is the same ramp for one seed and a different ramp
+  for every other. On a gold seed the six surface steps had collapsed into a lightness span of 0.018
+  where M3 specifies 0.10: the surface hierarchy disappeared, and contrast was the symptom. Every tone
+  and chroma is a variable (`--mdy-md-tone-*`, `--mdy-md-chroma-*`).
+
+  The seed is never rewritten. `--mdy-sys-color-primary` stays exactly what a host sets; `--mdy-primary`
+  is that seed at tone 40, which is why M3's white-on-primary holds again. **Material's palette changes
+  for every seed but its own** — for a light brand colour the primary becomes a dark tone of that hue,
+  which is surprising and is what Material Design 3 does.
+
+  **iOS names its pairs.** `--mdy-ios-on-blue` is the label colour Apple pairs with system blue, read by
+  the five sites that sit on the accent instead of `#ffffff` written at each. A host supplying its own
+  accent supplies both halves.
+
+  White on system blue is 4.02:1 and **stays** — it is in the HIG, and a theme that darkened it to reach
+  4.5:1 would stop being iOS. It is a named allowance in `e2e/palette.spec.ts`, asserted in both
+  directions so an allowance that stops applying also fails.
+
+  **Muted text holds AA.** `--mdy-sys-color-on-surface-variant` paints labels, placeholders, supporting
+  text and weekday headers — reading text — and cleared the floor only for dark and cool seeds. Swept
+  over ten seeds and carried to the lightest value that clears 4.5:1 for all of them.
+
+  Also fixed: `.mdy-button` and the number stepper took a background from one role and text from
+  another; a `<button>` in a themed subtree now inherits colour, since user agents set `buttontext` and
+  a host slotting a plain button into a field got black on the theme's surface, measured at 1.10:1.
+
+  Migration: a host that pinned `--mdy-on-primary` keeps working. One relying on Material's or iOS's
+  literal white sees the derived colour. Material's surface and accent roles move for any seed other
+  than its own.
+
+- 2c6ff57: A field's hover and focus tint is a state veil, not a fourth colour mixed from three derived ones.
+
+  `--mdy-input-bg-hover` is **removed**. It mixed the field's background with the text colour, and both
+  of those are themselves mixed from a primary a host may set at runtime — so what was finally painted
+  composed three levels deep and had a shape no declaration stated. A host that overrode it should
+  override `--mdy-state-veil` instead:
+
+  ```css
+  :root {
+    --mdy-state-veil: rgb(0 0 0 / 0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --mdy-state-veil: rgb(255 255 255 / 0.08);
+    }
+  }
+  ```
+
+  The veil is laid over whatever the field is already painted, so it is one legible value per colour
+  scheme instead of a colour that depends on how deep the derivation beneath it goes. The appearance is
+  materially the same; the screenshot baselines, which capture widgets at rest, are unchanged.
+
+  It also fixes a crash. In WebKit, painting that nested value during hover or focus **ended the page** —
+  contract gap O, and the same cause as gap N one element over. Two `demo.spec.ts` rows quarantined
+  against it are un-quarantined and pass.
+
+- 7ecaef6: The iOS theme speaks the full HIG vocabulary.
+
+  It carried three of Apple's thirteen accents, two of four fill levels, three of four label levels, two
+  of six backgrounds, one of two separators and two loose tracking values. A theme that cannot name a
+  colour cannot use it, so anything outside that set arrived as a hex written at the site that needed
+  it — which is how a theme stops being the system it is named after.
+
+  The vocabulary now follows the iOS and iPadOS 27 design kit's own collections:
+
+  - **Colors** — all twelve accents, light and dark, each its own value rather than a tint of the other.
+  - **Fills** — `system`, `secondary`, `tertiary`, `quaternary`. The two it had were the tertiary and
+    system levels under names that described strength instead of level, so a rule asking for "the
+    weaker one" got whichever existed. iOS 27's stepper change — idle fill from quaternary to tertiary
+    — is now a value this theme can state.
+  - **Labels** — four levels including quaternary.
+  - **Backgrounds** — plain and _grouped_ families, plus the **elevated** tier dark mode uses inside
+    anything presented over the screen. Without it a sheet took the base surface and had nothing left
+    to separate it from the page, which is why dark iOS modals in web ports look flat.
+  - **Separators** — translucent and opaque.
+  - **Text styles** — the eleven Apple ships, as size / leading / tracking. Every `letter-spacing` in
+    the theme is now one of them; they were `em` values, which scale with the font and so became a
+    different tracking on every element that inherited them — the one thing Apple's tables never do.
+
+  **The slider is a slider again.** It set only a shadow and inherited the rest, arriving as a thick
+  tinted bar inside a filled rectangle with an accent-coloured handle. It is now a 4pt track, blue to
+  the left of the knob, and a 28pt white knob with a shadow, with no box: the knob stays white in both
+  schemes because on iOS it reads as an object above the track, and tinting it removes the only cue
+  that says so.
+
+- e5f45bb: One elevation ramp, and a state channel a theme can decline.
+
+  **Elevation.** Four overlays of the same rank wore four different shadows: `--mdy-shadow-depth-2`,
+  the same two layers written in the opposite order, an unrelated `0 8px 32px`, and a literal buried in
+  a `var()` fallback chain where which shadow won depended on which of two other tokens happened to be
+  defined. A fifth — `0 18px 48px` in pure black, unlayered, so it outranked all of them — put the
+  modern theme's panels visibly higher above the page than its own 36px fields ever suggested.
+
+  There is now one ramp, `--mdy-sys-elevation-shadow-1|2|3`, in the token tier and per colour scheme.
+  Levels are meanings: 1 is a thing lying on the page, 2 is a panel the page opened — every dropdown,
+  calendar, clock and palette — and 3 is a surface over the whole page.
+
+  Shadows are tinted with `--mdy-sys-color-shadow`, which the system already derived and nothing read.
+  A shadow on a tinted page now belongs to that page; pure black over a coloured surface greys it.
+
+  **The state veil is a token.** `--mdy-sys-state-veil` is the tint a control carries while hovered or
+  focused. A filled control has only its surface to speak with and tints it; a bordered one says it
+  with its edge and sets the veil to `transparent`. The foundation lays the veil as a background
+  _image_, which a theme's `background-color` cannot displace — so a theme that overrode the colour
+  looked like it had opted out and quietly painted both, which is what the modern theme was doing.
+
+  **Also fixed:** `--mdy-comp-date-picker-in-range-bg` mixed toward a literal `#fff`, producing a pale
+  lavender band across a near-black calendar in dark mode; it is `primary-container`, which is derived
+  per scheme. Sixteen date-picker tokens were declared twice in one file — the second block won, and
+  five of the first block's names were read by nothing. Migration: a host that set
+  `--mdy-comp-date-picker-hover-bg`, `-selected-bg`, `-selected-color`, `-disabled-opacity` or
+  `-outside-opacity` was already setting a token no rule consulted; the live names carry a `cell-`
+  prefix.
+
+  Nothing moved in the 216 zero-tolerance screenshot baselines: every change here is a hover, focus or
+  open state, and the baselines capture widgets at rest.
+
+### Patch Changes
+
+- aeca6f4: A visually hidden native control is never painted.
+
+  Checkbox, radio, toggle, segmented and file keep a real `<input>` for the accessibility tree, the tab
+  order, the form post and the keyboard model, clipped to a single pixel while a sibling draws the
+  appearance. The general field rules reached those inputs and gave them a focus background and shadow
+  — invisible by construction on a clipped pixel, and in WebKit fatal: focusing a checkbox or a radio
+  under `modyra-modern` ended the page, so a keyboard user lost the document on reaching one.
+
+  The six duplicated copies of the hiding pattern are now one rule that clears `background-color` and
+  `box-shadow` along with the geometry.
+
+  No migration. Nothing visible changes — the affected elements had no visible surface, and the
+  screenshot baselines are unmoved. A host that copied the hiding pattern into its own stylesheet
+  rather than using the shipped one should clear both properties there too.
+
+- 0f45da0: The field label has its own leading, so a form sits on the pixel grid.
+
+  `.mdy-label` carried a size token and a weight token and no line-height, so its height was whatever
+  the host page's `line-height` produced against the theme's font size. At a common `1.5` against a
+  13px label that is 19.5px — which made **every control in the column a half-pixel tall, in every
+  theme**. Measured across the catalogue: 81.5, 133.5, 105.5, 39.5, 113.5, 180.5. Nothing sat on the
+  grid, so every edge below a label rendered soft.
+
+  The label now takes its leading from the typescale in px, as the input, helper and error already did.
+  The same controls measure 82, 134, 106, 40, 114, 181.
+
+  A ratio cannot be relied on here: it multiplies a size the theme chose by a number the host chose, and
+  only some of those products are whole. A text role with a size token and no leading token is a gap the
+  host fills silently.
+
+  Baselines re-recorded: every widget moves by half a pixel.
+
+- 1a4d6f2: Liquid Glass is built as the material's own layers.
+
+  The iOS kit composes it out of four named layers — **Blur**, **Tint**, **Specular Light**, **Shadow** —
+  and the tint carries a _Plus D_ and a _Plus L_ component. Those names are blend modes: the tint and
+  the highlight **add** light to what is behind them rather than painting over it, which is the whole
+  difference between glass and frosted plastic. A highlight painted as flat white is the same white on
+  a dark wallpaper and on a light one; one that adds is bright over dark and blows out over light,
+  which is what glass does.
+
+  It was one seven-part `box-shadow` — three hairlines, three inset "lens" bands and a cast — doing all
+  four jobs at once, which is why the highlight could not follow the panel's corner and never varied
+  with what it covered.
+
+  Now: the blur is the backdrop, the tint is the surface, and the specular light is a real layer that
+  follows the panel's radius and blends with `plus-lighter` where the engine supports it. Where it does
+  not, the highlight is painted rather than accumulated and the material still reads correctly — the
+  blend is an enhancement, never a requirement.
+
+- 81171c9: A theme is one request.
+
+  The source is composed — a theme imports the token file and the foundation, the foundation imports
+  the structural sheet — and that shape was shipped as written. A browser cannot discover an `@import`
+  until it has downloaded and parsed the file containing it, so linking a theme was three serial round
+  trips before the first rule applied, every one of them blocking render.
+
+  Each published entry point now carries its whole graph inlined. Measured on the modern theme over a
+  150 ms link at 1.6 Mbps, gzipped, three runs each:
+
+  |        | time to a styled page |
+  | ------ | --------------------- |
+  | before | 701 ms                |
+  | after  | **415 ms**            |
+
+  The source files are unchanged and still composed; this is a property of what is published. Only the
+  entry points named in `exports` are flattened — the internal sheets stay small, because flattening a
+  file nobody links to costs its full size and buys nothing.
+
+  The cost is the package: 29 kB to 111 kB, since five themes each carry the foundation. That is a
+  one-time cached install against 286 ms on every first paint for every end user.
+
+  No API change: the same import specifiers resolve to the same names.
+
+- eb267c1: The popup surface split reaches the themes, and the time popup stops being wrapped twice.
+
+  Splitting `.mdy-popup` into position and surface stopped at the foundation. **Modern painted
+  `.mdy-popup` itself, unlayered**, so the theme most people see still dressed the primitive and
+  outranked the surface it was supposed to move to. It paints `.mdy-popup--surface` now, and keeps the
+  typeface on the popup so a theme that declines the surface does not lose its face with it.
+
+  **The time popup carried a card inside a card.** The foundation already said its shell must be
+  transparent — "visual chrome lives entirely in `.mdy-timepicker-container`" — and Modern overrode it
+  on a reason that had expired: _"plain's time popup holds two number inputs and three buttons rather
+  than the themed dial"_. It renders the dial and its container now, so the surface arrived twice: a
+  bordered box around a bordered box. The timepicker's popup no longer carries the surface class at
+  all, because that kind declares a `container` and the container is the card.
+
+  **And the shell had a scrollbar it was told not to have.** `.mdy-popup { overflow: auto }` is declared
+  after `.mdy-timepicker__popup { overflow: visible }` at equal specificity, so the primitive won the
+  tie — putting a scroll context and its scrollbar around a dial that already has one, and clipping the
+  container's shadow. The exception now names both classes, so it holds wherever either rule moves.
+
+  Measured after: the shell paints nothing, sizes exactly to its container, and its scroll height equals
+  its height.
+
 ## 0.6.0
 
 ### Minor Changes

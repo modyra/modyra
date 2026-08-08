@@ -1,5 +1,127 @@
 # @modyra/plain
 
+## 0.6.1
+
+### Patch Changes
+
+- c76dfc9: A dialog overlay is not a combobox, and the pickers answer the keys they always declared.
+
+  **Contract change.** `MDY_WIDGET_KEYBOARD` gave every overlay kind the combobox opening keys:
+
+  ```ts
+  { key: "ArrowDown", when: "closed", intent: "open" }
+  { key: "ArrowUp",   when: "closed", intent: "open" }
+  ```
+
+  Four of those kinds hold no options. A calendar, a date range, a clock face and a colour palette are
+  dialogs a button opens; the rule's own justification is about arriving on the first or last _option_,
+  and there is none to arrive in. A kind now gets those two keys if the catalogue says it declares a
+  `listbox` part — `select` and `multiselect` do, the pickers do not.
+
+  Eight bindings are withdrawn, which `contract:diff` classifies as major. **No renderer implemented
+  them**, so nothing changes for a user and no adapter needs updating; a consumer building a picker
+  from the table stops being asked for two keys the three reference renderers had all declined to
+  write. [ADR 0021](https://github.com/modyra/modyra/blob/main/docs/architecture/0021-a-dialog-overlay-is-not-a-combobox.md)
+  records it.
+
+  **Fixes**, found by pressing the declared keys in a real browser for the first time:
+
+  - `multiselect` opened on `ArrowDown` but not `ArrowUp`, from a deliberate `null` in the shared
+    keyboard policy while the table declared both. It opens on either now — in the policy, so for every
+    renderer at once.
+  - `@modyra/plain`'s `datepicker` did not close on `Escape` while its two siblings did. Its calendar
+    grid handled the key, but the overlay does not take focus when it opens, so a user who opened it
+    from the toggle was holding a dialog that answered nothing.
+  - All four of `@modyra/plain`'s pickers now dismiss on `Tab`, which the contract has always declared
+    and none of them did. A panel left floating over a field the user has tabbed away from is the same
+    defect a moment later.
+
+- c1ddb7c: A popup is positioned, not dressed.
+
+  `.mdy-popup` positioned a popup **and** painted it. A container that paints is a wrapper around the
+  thing it was meant to present: a material applied to the content sits on an opaque panel rather than
+  on the page, which is a translucent effect with nothing to be translucent against.
+
+  The primitive now keeps position, insets, clipping and the open/close transition. **`mdy-popup--surface`**
+  takes background, border, elevation and padding, and the catalogue emits both on every `popup` part —
+  so nothing changes by default, and a theme whose popup _is_ its content neutralises one class without
+  touching the coordinates. The radius stays on both: on the primitive it is what `overflow` clips to.
+
+  **`capabilities.overlayScrolls`** — `true` for `select` and `multiselect`, `false` for the four
+  pickers. A popup whose content does not scroll and which **no placement holds entirely** — neither
+  side vertically, neither edge horizontally — now centres instead of being clamped. A 256px clock face
+  with 200px below it was called a fit, docked, and turned into something you scroll a clock in; it is
+  centred and whole. A modal placement of non-scrolling content gets the viewport rather than 70% of
+  it, since that framing reintroduces the same stub one step in.
+
+  **`trackAnchoredOverlay`** follows the page in one place, `{ capture: true, passive: true }` and
+  coalesced to one reposition per frame. The framework-free renderer repositioned synchronously on every
+  scroll event, non-passive and uncoalesced — a measure-and-write far more often than frames, which is
+  both the cost and the judder.
+
+  Migration: a host that styled `.mdy-popup` expecting a surface should style `.mdy-popup--surface`. A
+  renderer that hardcodes popup classes rather than deriving them from the contract must add the new
+  one — Angular did, in six templates.
+
+- 4e9a4bc: The conformance kit can run its two browser sections.
+
+  Keyboard behaviour and the accessibility audit could not be answered in Node — focus, native key
+  defaults and computed accessible names are not simulable — so they ran nowhere, for anyone. A config
+  may now export one more function:
+
+  ```js
+  export async function openBrowserSession(kind) {
+    return { press(key), focusOpener(), evaluate(source), close() };
+  }
+  ```
+
+  and both sections run: **8 of 8 sections**.
+
+  The assertions stay in the kit and are evaluated in the page; the config supplies only the transport.
+  `@modyra/widgets` therefore takes no browser dependency, an implementer drives it with whatever they
+  already test with, and the rules stay in one place instead of being re-derived per renderer — which
+  is the failure the kit exists to prevent.
+
+  `@modyra/plain` ships a reference transport, `conformance.browser.config.mjs`, backed by Playwright
+  and the built example. Run it with `npm run test:conformance-browser`.
+
+  What the sections claim is bounded on purpose. The accessibility section checks that every operable
+  element has a name the platform computes; it is not an axe pass. The keyboard section asserts `open`
+  and `cancel` only — `move` is reported as unasserted, because what "the active option moved" looks
+  like is not one thing and the contract pins neither form of it.
+
+  It found real divergences on its first run, recorded as contract gap Q.
+
+- a5658fb: One declaration of the multiselect mode union, referred to everywhere else.
+
+  `"single" | "multi"` was written out in five places besides the one that owns it: an exported alias
+  in `@modyra/widgets` (`MdyChipMode`), a parameter in its behaviour module, a Lit property, a Plain
+  parameter, and an Angular signal input. Each was free to drift from the value a form document
+  actually carries.
+
+  `MdyMultiselectMode` in `@modyra/core` is that value — the mode is a field of the Dynamic Form
+  Contract, which both SDKs carry. Every other site now refers to it.
+
+  `MdyChipMode` stays exported and keeps its meaning; it is now an alias rather than a second
+  declaration, so nothing needs changing at a call site.
+
+  Also: the type-surface audit records what a single-target alias points at, rather than recording it
+  as opaque. Re-pointing an alias is the change most worth seeing, and it was invisible — including for
+  `MdyWidgetVariant`, which the baseline held as `(opaque)`.
+
+- Updated dependencies [c76dfc9]
+- Updated dependencies [c1ddb7c]
+- Updated dependencies [2037ba5]
+- Updated dependencies [4e9a4bc]
+- Updated dependencies [3e9e1fb]
+- Updated dependencies [a5658fb]
+- Updated dependencies [7fb3ebf]
+- Updated dependencies [eb267c1]
+- Updated dependencies [dce1918]
+- Updated dependencies [3161bad]
+  - @modyra/widgets@2.0.0
+  - @modyra/core@2.0.0
+
 ## 0.6.0
 
 ### Minor Changes
