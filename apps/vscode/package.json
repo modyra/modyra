@@ -1,5 +1,5 @@
 {
-  "name": "@modyra/vscode",
+  "name": "modyra",
   "displayName": "Modyra",
   "description": "Reads a Modyra form contract while you write it: the widget's anatomy on hover, a layout slot's field on go-to-definition, and the contract schema on any file that declares one.",
   "version": "0.1.0",
@@ -33,7 +33,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node build.mjs",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "package": "npx --yes @vscode/vsce package --no-dependencies"
   },
   "dependencies": {
     "@modyra/widgets": "1.0.0",
@@ -41,5 +42,22 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.90.0"
-  }
+  },
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modyra/modyra.git",
+    "directory": "apps/vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/modyra/modyra/issues"
+  },
+  "homepage": "https://github.com/modyra/modyra#readme",
+  "keywords": [
+    "modyra",
+    "forms",
+    "json",
+    "dynamic-form",
+    "contract"
+  ]
 }
