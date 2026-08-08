@@ -1,5 +1,12 @@
 # @modyra/studio-ui
 
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [20f90ef]
+  - @modyra/styles@0.7.1
+
 ## 0.5.2
 
 ### Patch Changes
