@@ -27,10 +27,10 @@
   },
   "homepage": "https://github.com/modyra/modyra#readme",
   "peerDependencies": {
-    "@angular/core": ">=21.0.0",
-    "@angular/common": ">=21.0.0",
-    "@angular/platform-browser": ">=21.0.0",
-    "@angular/forms": ">=21.0.0",
+    "@angular/core": ">=21.2.19",
+    "@angular/common": ">=21.2.19",
+    "@angular/platform-browser": ">=21.2.19",
+    "@angular/forms": ">=21.2.19",
     "@modyra/zod": ">=0.1.0",
     "zod": ">=3.25.0"
   },
