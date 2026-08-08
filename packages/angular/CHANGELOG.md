@@ -1,5 +1,124 @@
 # @modyra/angular
 
+## 0.6.1
+
+### Patch Changes
+
+- c1ddb7c: A popup is positioned, not dressed.
+
+  `.mdy-popup` positioned a popup **and** painted it. A container that paints is a wrapper around the
+  thing it was meant to present: a material applied to the content sits on an opaque panel rather than
+  on the page, which is a translucent effect with nothing to be translucent against.
+
+  The primitive now keeps position, insets, clipping and the open/close transition. **`mdy-popup--surface`**
+  takes background, border, elevation and padding, and the catalogue emits both on every `popup` part —
+  so nothing changes by default, and a theme whose popup _is_ its content neutralises one class without
+  touching the coordinates. The radius stays on both: on the primitive it is what `overflow` clips to.
+
+  **`capabilities.overlayScrolls`** — `true` for `select` and `multiselect`, `false` for the four
+  pickers. A popup whose content does not scroll and which **no placement holds entirely** — neither
+  side vertically, neither edge horizontally — now centres instead of being clamped. A 256px clock face
+  with 200px below it was called a fit, docked, and turned into something you scroll a clock in; it is
+  centred and whole. A modal placement of non-scrolling content gets the viewport rather than 70% of
+  it, since that framing reintroduces the same stub one step in.
+
+  **`trackAnchoredOverlay`** follows the page in one place, `{ capture: true, passive: true }` and
+  coalesced to one reposition per frame. The framework-free renderer repositioned synchronously on every
+  scroll event, non-passive and uncoalesced — a measure-and-write far more often than frames, which is
+  both the cost and the judder.
+
+  Migration: a host that styled `.mdy-popup` expecting a surface should style `.mdy-popup--surface`. A
+  renderer that hardcodes popup classes rather than deriving them from the contract must add the new
+  one — Angular did, in six templates.
+
+- 02c4234: Angular derives its popup classes from the contract instead of restating them.
+
+  Six templates carried the class list as a literal — `'mdy-datepicker__popup mdy-popup …'` — so a class
+  added to the catalogue reached the renderers that derive and stopped at this one. That is how the
+  popup-surface split passed conformance for two adapters and failed for the third until every template
+  was edited by hand.
+
+  Each component now reads `MDY_WIDGET_CONTRACTS.<kind>.parts.popup.classes`. Falsified rather than
+  assumed: adding a class to the catalogue and rebuilding leaves Angular conformant with no template
+  change, which is exactly the case that failed before.
+
+  One consequence worth stating: the static Angular UI audit scrapes templates for class literals, so
+  those classes leave its baseline — 31 entries. What it was guarding against is drift between Angular
+  and the contract, and derived classes cannot drift. Conformance still verifies them, by mounting the
+  component and inspecting the DOM, which is the stronger check of the two.
+
+- 9144ce1: `@modyra/angular` ships a conformance config, so all three renderers answer to one driver.
+
+  The adapter was already checked against the widget contract by its own suites — same
+  `inspectWidgetDom`, same `MDY_WIDGET_CONTRACTS`. What it was not checked by is the kit, and the
+  difference is what each covers: the jest suite calls `inspectWidgetDom` with no variant, so
+  multiselect's counter mode was mounted nowhere in this package. The kit's anatomy pass mounts every
+  declared variant, which makes coverage a property of the contract rather than of whichever suite was
+  written.
+
+  Run it with `npm run test:conformance`, which now runs all three.
+
+  ```
+  CONFORMANT WHERE CHECKED  ·  17 kind(s)  ·  6 of 8 section(s) run
+  ```
+
+  Two things the config measures rather than assumes, because the first attempt got both wrong: this
+  renderer builds its overlays eagerly, so nothing is declared absent at rest; and the empty value of
+  each kind comes from `MDY_CANONICAL_EMPTY` rather than from a table here, which had invented `""`
+  where the contract says `null`.
+
+- a5658fb: One declaration of the multiselect mode union, referred to everywhere else.
+
+  `"single" | "multi"` was written out in five places besides the one that owns it: an exported alias
+  in `@modyra/widgets` (`MdyChipMode`), a parameter in its behaviour module, a Lit property, a Plain
+  parameter, and an Angular signal input. Each was free to drift from the value a form document
+  actually carries.
+
+  `MdyMultiselectMode` in `@modyra/core` is that value — the mode is a field of the Dynamic Form
+  Contract, which both SDKs carry. Every other site now refers to it.
+
+  `MdyChipMode` stays exported and keeps its meaning; it is now an alias rather than a second
+  declaration, so nothing needs changing at a call site.
+
+  Also: the type-surface audit records what a single-target alias points at, rather than recording it
+  as opaque. Re-pointing an alias is the change most worth seeing, and it was invisible — including for
+  `MdyWidgetVariant`, which the baseline held as `(opaque)`.
+
+- eb267c1: The popup surface split reaches the themes, and the time popup stops being wrapped twice.
+
+  Splitting `.mdy-popup` into position and surface stopped at the foundation. **Modern painted
+  `.mdy-popup` itself, unlayered**, so the theme most people see still dressed the primitive and
+  outranked the surface it was supposed to move to. It paints `.mdy-popup--surface` now, and keeps the
+  typeface on the popup so a theme that declines the surface does not lose its face with it.
+
+  **The time popup carried a card inside a card.** The foundation already said its shell must be
+  transparent — "visual chrome lives entirely in `.mdy-timepicker-container`" — and Modern overrode it
+  on a reason that had expired: _"plain's time popup holds two number inputs and three buttons rather
+  than the themed dial"_. It renders the dial and its container now, so the surface arrived twice: a
+  bordered box around a bordered box. The timepicker's popup no longer carries the surface class at
+  all, because that kind declares a `container` and the container is the card.
+
+  **And the shell had a scrollbar it was told not to have.** `.mdy-popup { overflow: auto }` is declared
+  after `.mdy-timepicker__popup { overflow: visible }` at equal specificity, so the primitive won the
+  tie — putting a scroll context and its scrollbar around a dial that already has one, and clipping the
+  container's shadow. The exception now names both classes, so it holds wherever either rule moves.
+
+  Measured after: the shell paints nothing, sizes exactly to its container, and its scroll height equals
+  its height.
+
+- Updated dependencies [c76dfc9]
+- Updated dependencies [c1ddb7c]
+- Updated dependencies [2037ba5]
+- Updated dependencies [4e9a4bc]
+- Updated dependencies [3e9e1fb]
+- Updated dependencies [a5658fb]
+- Updated dependencies [7fb3ebf]
+- Updated dependencies [eb267c1]
+- Updated dependencies [dce1918]
+- Updated dependencies [3161bad]
+  - @modyra/widgets@2.0.0
+  - @modyra/core@2.0.0
+
 ## 0.6.0
 
 ### Minor Changes

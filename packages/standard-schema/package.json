@@ -1,6 +1,6 @@
 {
   "name": "@modyra/standard-schema",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Framework-agnostic Standard Schema adapter for the Modyra form engine — works with Zod, Valibot, ArkType and any Standard Schema v1 library.",
   "keywords": [
     "standard-schema",
@@ -40,7 +40,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "1.0.0"
+    "@modyra/core": "2.0.0"
   },
   "devDependencies": {
     "valibot": "^1.4.2",

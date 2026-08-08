@@ -1,5 +1,66 @@
 # @modyra/lit
 
+## 0.6.1
+
+### Patch Changes
+
+- c1ddb7c: A popup is positioned, not dressed.
+
+  `.mdy-popup` positioned a popup **and** painted it. A container that paints is a wrapper around the
+  thing it was meant to present: a material applied to the content sits on an opaque panel rather than
+  on the page, which is a translucent effect with nothing to be translucent against.
+
+  The primitive now keeps position, insets, clipping and the open/close transition. **`mdy-popup--surface`**
+  takes background, border, elevation and padding, and the catalogue emits both on every `popup` part —
+  so nothing changes by default, and a theme whose popup _is_ its content neutralises one class without
+  touching the coordinates. The radius stays on both: on the primitive it is what `overflow` clips to.
+
+  **`capabilities.overlayScrolls`** — `true` for `select` and `multiselect`, `false` for the four
+  pickers. A popup whose content does not scroll and which **no placement holds entirely** — neither
+  side vertically, neither edge horizontally — now centres instead of being clamped. A 256px clock face
+  with 200px below it was called a fit, docked, and turned into something you scroll a clock in; it is
+  centred and whole. A modal placement of non-scrolling content gets the viewport rather than 70% of
+  it, since that framing reintroduces the same stub one step in.
+
+  **`trackAnchoredOverlay`** follows the page in one place, `{ capture: true, passive: true }` and
+  coalesced to one reposition per frame. The framework-free renderer repositioned synchronously on every
+  scroll event, non-passive and uncoalesced — a measure-and-write far more often than frames, which is
+  both the cost and the judder.
+
+  Migration: a host that styled `.mdy-popup` expecting a surface should style `.mdy-popup--surface`. A
+  renderer that hardcodes popup classes rather than deriving them from the contract must add the new
+  one — Angular did, in six templates.
+
+- a5658fb: One declaration of the multiselect mode union, referred to everywhere else.
+
+  `"single" | "multi"` was written out in five places besides the one that owns it: an exported alias
+  in `@modyra/widgets` (`MdyChipMode`), a parameter in its behaviour module, a Lit property, a Plain
+  parameter, and an Angular signal input. Each was free to drift from the value a form document
+  actually carries.
+
+  `MdyMultiselectMode` in `@modyra/core` is that value — the mode is a field of the Dynamic Form
+  Contract, which both SDKs carry. Every other site now refers to it.
+
+  `MdyChipMode` stays exported and keeps its meaning; it is now an alias rather than a second
+  declaration, so nothing needs changing at a call site.
+
+  Also: the type-surface audit records what a single-target alias points at, rather than recording it
+  as opaque. Re-pointing an alias is the change most worth seeing, and it was invisible — including for
+  `MdyWidgetVariant`, which the baseline held as `(opaque)`.
+
+- Updated dependencies [c76dfc9]
+- Updated dependencies [c1ddb7c]
+- Updated dependencies [2037ba5]
+- Updated dependencies [4e9a4bc]
+- Updated dependencies [3e9e1fb]
+- Updated dependencies [a5658fb]
+- Updated dependencies [7fb3ebf]
+- Updated dependencies [eb267c1]
+- Updated dependencies [dce1918]
+- Updated dependencies [3161bad]
+  - @modyra/widgets@2.0.0
+  - @modyra/core@2.0.0
+
 ## 0.6.0
 
 ### Minor Changes
