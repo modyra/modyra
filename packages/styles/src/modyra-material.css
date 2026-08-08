@@ -131,6 +131,12 @@
         --mdy-surface-container-highest: color-mix(in srgb, var(--mdy-primary), white 88%);
         --mdy-surface-container-highest-hover: color-mix(in srgb, var(--mdy-primary), white 82%);
 
+        /* A filled field wears Material's own surface, not the palette's brand-tinted one.
+           Left to the default, the field's container comes from `--mdy-sys-color-*` while the text on
+           it comes from Material's ramp: in dark that pairs on-surface-variant with a brand mix at
+           3.80:1, because the two ramps were never meant to be read against each other. */
+        --mdy-comp-field-container-color: var(--mdy-surface-container-highest);
+
         /* ─── M3 tonal palette ─────────────────────────────────────────────────
            Material defines a role as a **tone on a tonal palette**, and a tone is perceptual
            lightness: surface is neutral-98 whatever the seed, and the ramp keeps its spacing because
@@ -565,8 +571,11 @@
         background: var(--mdy-surface-container-high);
     }
 
+    /* A filled button is one pair: `--mdy-primary` under `--mdy-on-primary`, which is derived for it.
+       Painted with the field's focus indicator instead, the background comes from one role and the
+       label from another — on a light brand that is white on light amber, 1.70:1. */
     .mdy-button {
-        background: var(--mdy-input-focus-color);
+        background: var(--mdy-primary);
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     }
 
