@@ -24,4 +24,6 @@ export const configs = {
 
 export const { meta, rules } = plugin;
 
-export default { ...plugin, configs };
+// Spelled out rather than spread: a spread's declaration emit orders its members by whatever the
+// compiler resolved first, and the two compilers this repository builds with disagree.
+export default { meta: plugin.meta, rules: plugin.rules, configs };
