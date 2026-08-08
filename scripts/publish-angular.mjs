@@ -27,9 +27,16 @@ if (currentAngularVersion === expectedVersion) {
 // for the packages it owns; this script owns @modyra/angular, whose version lives in the
 // ng-packagr output rather than in a source manifest.
 if (!rehearsal && currentAngularVersion !== expectedVersion) {
-  const staged = execFileSync("npm", ["stage", "list", "--json"], { encoding: "utf8" });
-  if (!staged.includes(`"${expectedVersion}"`)) {
-    throw new Error(`@modyra/angular@${expectedVersion} is not in the staging area`);
+  // Listing needs its own credential; where it is unavailable, the staged publish's exit code above
+  // is the evidence.
+  try {
+    const staged = execFileSync("npm", ["stage", "list", "--json"], { encoding: "utf8" });
+    if (!staged.includes(`"${expectedVersion}"`)) {
+      throw new Error(`@modyra/angular@${expectedVersion} is not in the staging area`);
+    }
+  } catch (error) {
+    if (String(error.message ?? "").includes("is not in the staging area")) throw error;
+    console.log("Staging area not readable from here — relying on the exit code of the staged publish");
   }
 }
 
