@@ -88,7 +88,8 @@ For the project motivation and development approach, see [Project background](do
 ## Release process
 
 Releases run in CI (`.github/workflows/release.yml`) via
-[changesets](https://github.com/changesets/changesets):
+[changesets](https://github.com/changesets/changesets). The reasoning behind
+the shape below is [ADR 0025](docs/architecture/0025-a-tag-publishes-and-nothing-else-does.md).
 
 1. Every feature PR adds a changeset (see above).
 2. A maintainer creates/updates the **"Version Packages"** PR (for example
@@ -96,35 +97,45 @@ Releases run in CI (`.github/workflows/release.yml`) via
    the release commit (`vX.Y.Z`), then pushes with
    `npm run release:integrate:push`.
    Equivalent manual flow remains valid: `pnpm changeset version` +
-   lockfile/changelog update + commit + tag. All `@modyra/*` remain
-   fixed-versioned together.
+   lockfile/changelog update + commit + tag. Versions are **independent**
+   per package: each `@modyra/*` moves by what its own changesets say, and
+   the tag carries `@modyra/core`'s version.
 3. `release.yml` triggers only on a pushed `v*` tag (not on every push to
    `main`), so ordinary commits never start a publish attempt — pushing
    the version-bump commit's tag (step 2's `release:integrate:push`) is
    what starts it: full gate (build, all test suites, bundle/tree-shaking
-   check, theme parity, `pnpm audit --prod`), then `npm run release:stage`
-   stages every `@modyra/*` package with
-   `--provenance` (sigstore attestations link each tarball to the exact
-   commit and workflow run).
+   check, theme parity, `pnpm audit --prod`), then `npm run release`
+   publishes every publishable `@modyra/*` package with `--provenance`
+   (sigstore attestations link each tarball to the exact commit and
+   workflow run).
 4. Release candidates precede majors.
-5. A maintainer approves the staged publish with 2FA (`npm stage approve`
-   or npmjs.com UI) to make the release public.
+5. `npm run release:stage` is the local rehearsal — `npm publish --dry-run`
+   for every package. It packs tarballs and contacts no registry, so a green
+   rehearsal says the artifacts build, not that a release would authenticate.
 
 ### One-time npm setup (repo admins)
 
-- Configure **trusted publishing** for every `@modyra/*` package:
-  npmjs.com → package settings → GitHub Actions publisher.
+- Configure **trusted publishing** for every publishable `@modyra/*` package:
+  npmjs.com → package settings → GitHub Actions publisher. The workflow
+  authenticates with its OIDC token; no publish token is stored in GitHub
+  secrets.
 - Trusted publisher fields must match exactly:
   GitHub org/user, repository `modyra`, workflow filename `release.yml`,
-  allowed action `npm stage publish`.
+  allowed action `publish`.
 - Use GitHub-hosted runners only (self-hosted runners are not supported by
   npm trusted publishing).
-- After the first successful staged release, remove `NPM_TOKEN` from GitHub
-  secrets and set package publishing access to disallow token-based publish.
+- A package npm has never seen has no settings page and therefore no
+  publisher: its first version is published once by an authenticated
+  maintainer (`npm publish --access public`), and configured immediately
+  after.
 - Full admin checklist and troubleshooting:
   `docs/guides/release-admin-trusted-publishing.md`.
 - Provenance requires publishing from this exact workflow; local
   `npm publish` is intentionally not the path.
 - `scripts/publish-workspace.mjs` and `scripts/publish-angular.mjs` skip
-  already-published versions and fail on version mismatches, so a partial
-  publish can simply be re-run.
+  already-published versions and fail when a package does not reach the
+  version its own `package.json` declares, so a partial publish can simply
+  be re-run.
+- `publish-workspace.mjs` refuses to start when its list is not exactly the
+  non-`private` packages under `packages/` (minus `@modyra/angular`, which
+  is published from its `ng-packagr` output).

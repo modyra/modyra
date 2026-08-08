@@ -33,11 +33,13 @@ jobs:
           cache: pnpm
           registry-url: "https://registry.npmjs.org"
 
-      - name: Upgrade npm for staged publishing
+      # Trusted publishing exchanges the workflow's OIDC token for a short-lived
+      # registry credential; npm gained that exchange in 11.5, and the runner's
+      # bundled npm is older.
+      - name: Upgrade npm for trusted publishing
         run: |
           npm i -g npm@12.0.1
           npm --version
-          npm help stage >/dev/null
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -81,7 +83,12 @@ jobs:
       # Org policy currently blocks GitHub Actions from creating PRs with
       # GITHUB_TOKEN. Versioning remains changesets-driven, but the version
       # bump PR is created/merged by maintainers.
-      - name: Publish staged release from committed versions
-        run: pnpm run release:stage
+      #
+      # This is the only path that publishes. The registry credential is minted
+      # from the job's OIDC token against the trusted publisher each package
+      # declares on npm, so no token lives in repository secrets; `release:stage`
+      # is a local rehearsal (`npm publish --dry-run`) and never reaches npm.
+      - name: Publish from committed versions
+        run: pnpm run release
         env:
           NPM_CONFIG_PROVENANCE: true
