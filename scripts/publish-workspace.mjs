@@ -193,13 +193,16 @@ async function waitForPublishedVersion(packageName, expectedVersion) {
 
 async function publishPackage(packageName, cwd, args, expectedVersion) {
   try {
-    execFileSync("npm", args, {
+    const result = execFileSync("npm", args, {
       cwd,
-      stdio: "inherit",
+      stdio: ["inherit", "inherit", "pipe"],
+      encoding: "utf8",
     });
+    if (result) process.stderr.write(result);
   } catch (error) {
-    const message = String(error.stderr ?? error.message ?? "");
-    if (/already staged|409/i.test(message)) {
+    const message = String(error.stderr ?? "") + String(error.message ?? "");
+    if (error.stderr) process.stderr.write(String(error.stderr));
+    if (/Cannot stage previously published version|already staged/i.test(message)) {
       console.log(`Skipping ${packageName}@${expectedVersion} (already in the staging area)`);
       return;
     }
