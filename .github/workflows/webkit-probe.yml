@@ -1,0 +1,40 @@
+name: WebKit probe
+on:
+  workflow_dispatch: {}
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: npm i playwright@1.61.1
+      - run: npx playwright install --with-deps webkit
+      - run: |
+          node -e '
+          (async () => {
+            const { webkit, chromium } = require("playwright");
+            for (const [name, type] of [["webkit", webkit], ["chromium", chromium]]) {
+              let browser;
+              try { browser = await type.launch(); } catch { console.log(name, "unavailable"); continue; }
+              const page = await browser.newPage();
+              await page.setContent("<div id=x style=\"color: rgb(10, 20, 30)\">hi</div>");
+              const result = await page.evaluate(() => {
+                const el = document.getElementById("x");
+                el.style.background = "color-mix(in srgb, currentColor, transparent 88%)";
+                const currentColorMix = getComputedStyle(el).backgroundColor;
+                el.style.background = "color-mix(in srgb, red, transparent 50%)";
+                const plainMix = getComputedStyle(el).backgroundColor;
+                return {
+                  supportsPlainMix: CSS.supports("background", "color-mix(in srgb, red, transparent 50%)"),
+                  supportsCurrentColorMix: CSS.supports("background", "color-mix(in srgb, currentColor, transparent 88%)"),
+                  currentColorMix,
+                  plainMix,
+                };
+              });
+              console.log(name, JSON.stringify(result));
+              await browser.close();
+            }
+          })();
+          '
