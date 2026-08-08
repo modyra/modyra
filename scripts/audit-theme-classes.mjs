@@ -141,6 +141,13 @@ function extractAngularClasses(ts, filePath, kind) {
   while ((m = contractRe.exec(ts)) !== null) {
     fromContract.push(...(definition?.parts[m[1]]?.classes ?? []));
   }
+  // The same binding, named through the catalog rather than through the component's own
+  // `widgetContract` field. A renderer that reaches a part this way emits its classes just as
+  // literally, and reading only the first spelling reports the difference as a Lit-only class.
+  const catalogRe = /MDY_WIDGET_CONTRACTS\.([A-Za-z0-9_]+)\.parts\.([A-Za-z0-9_]+)\.classes/g;
+  while ((m = catalogRe.exec(ts)) !== null) {
+    fromContract.push(...(MDY_WIDGET_CONTRACTS[m[1]]?.parts[m[2]]?.classes ?? []));
+  }
   // Same for a popup's placement: the renderer names it through the catalog, so the class is on the
   // element at runtime without ever appearing as a literal here. Two spellings reach the same call —
   // the renderer computing it itself, and the renderer handing its kind to `<mdy-overlay-panel>`,
