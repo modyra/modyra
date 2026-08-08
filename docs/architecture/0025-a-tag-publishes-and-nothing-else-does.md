@@ -1,6 +1,6 @@
 # ADR 0025: A tag publishes, and nothing else does
 
-Status: Accepted
+Status: Accepted — amended 2026-08-08, see **Amendment: the tag stages**
 
 ## Context
 
@@ -11,10 +11,10 @@ every consumer while the working tree moved four minor versions and one major ah
 Two mechanisms produced that silence.
 
 The publish step ran `release:stage`. That name was chosen for npm's staged publishing — upload now,
-approve with 2FA, make public in a second step — and the CLI has no such command. What `--stage`
-reduces to in `scripts/publish-workspace.mjs` is `npm publish --dry-run`: a rehearsal that packs a
-tarball, prints it, and contacts no registry. It exits 0. A workflow whose only publishing step is a
-rehearsal is green precisely because it published nothing.
+approve with proof of presence, make public in a second step — but what `--stage` reduced to in
+`scripts/publish-workspace.mjs` was `npm publish --dry-run`: a rehearsal that packs a tarball, prints
+it, and contacts no registry. It exits 0. A workflow whose only publishing step is a rehearsal is
+green precisely because it published nothing.
 
 The second is that a rehearsal never authenticates, so nothing forced the credential question to be
 answered. There is no `NPM_TOKEN` in repository secrets and there never was one that worked. The
@@ -30,9 +30,9 @@ would have failed a real release on the first attempt. None could fail a rehears
 
 ## Decision
 
-**A pushed `v*` tag is the only thing that publishes.** `.github/workflows/release.yml` runs
-`pnpm run release`, which publishes for real. `release:stage` remains a local rehearsal and is named
-as one; it is not what any pipeline runs.
+**A pushed `v*` tag is the only thing that reaches the registry.** `.github/workflows/release.yml`
+runs `pnpm run release`, which stages for real (see the amendment below). `release:rehearse` is the
+local dry run and is named as one; it is not what any pipeline runs.
 
 **The registry credential is minted per run from the workflow's OIDC token.** Every publishable
 `@modyra/*` package declares a trusted publisher on npm naming this repository and `release.yml`.
@@ -75,9 +75,9 @@ rejected: a long-lived write credential to twenty-odd public packages, readable 
 change that can be merged, and it does not expire when a maintainer leaves. OIDC's credential lasts
 one job.
 
-**Staged publishing with 2FA approval**, as `CONTRIBUTING.md` and the admin runbook described it
-until this record. It is a good design and `npm stage` is not a command; the documentation described
-a feature the CLI does not have, which is how the rehearsal survived unnoticed.
+**Publishing outright, with no approval step.** Fewer moving parts, and it puts the whole release in
+the hands of whatever can trigger the workflow. Staging keeps a human between a green pipeline and a
+version the world can install, at the cost of a release that is not finished when the job is.
 
 **Publishing from a maintainer's machine.** Provenance attestations require the tarball to be built
 by the workflow that claims it, so a local `npm publish` produces an artifact no consumer can trace
@@ -116,3 +116,27 @@ and tag-triggered releases are what stand behind that; a self-hosted runner woul
 why releases run on GitHub-hosted runners only.
 
 No user data is involved at any point.
+
+## Amendment: the tag stages, a maintainer publishes
+
+**2026-08-08.** The record above was written from a reading of npm 11.13, where `npm stage` does not
+exist, and concluded that staged publishing was a documented feature the CLI never had. That is
+wrong: npm 12 has `npm stage publish`, `npm stage list`, `npm stage view`, `npm stage approve` and
+`npm stage reject`, and the release job already upgrades to npm 12. The trusted publishers on these
+packages permit the staged action, so a direct `npm publish` is refused with
+`403 OIDC permission denied` — which is exactly how the error reads when the publisher and the
+command disagree.
+
+What the tag does is therefore **stage**: `scripts/publish-workspace.mjs` and
+`scripts/publish-angular.mjs` run `npm stage publish --provenance`, and read the staging area back to
+prove every package arrived. What makes a version public is a maintainer running `npm stage approve`
+with proof of presence.
+
+The rest of this record stands. The credential is still minted per run from OIDC, no token is stored,
+versions are still independent, and the failure this record exists to end — a green run that
+published nothing — is still impossible, because the run now fails when the staging area does not
+hold what it staged.
+
+What changes is the cost: a release is not finished when the job is green. Between staging and
+approval the registry serves the previous version, and a release left unapproved is invisible to
+every consumer while looking done from the repository's side.

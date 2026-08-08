@@ -84,11 +84,12 @@ jobs:
       # GITHUB_TOKEN. Versioning remains changesets-driven, but the version
       # bump PR is created/merged by maintainers.
       #
-      # This is the only path that publishes. The registry credential is minted
+      # This is the only path that reaches the registry. The credential is minted
       # from the job's OIDC token against the trusted publisher each package
-      # declares on npm, so no token lives in repository secrets; `release:stage`
-      # is a local rehearsal (`npm publish --dry-run`) and never reaches npm.
-      - name: Publish from committed versions
+      # declares on npm, which permits `npm stage publish`: the tarball and its
+      # provenance are uploaded here, and a maintainer makes them public with
+      # proof of presence. `release:rehearse` is the local dry run.
+      - name: Stage the release from committed versions
         run: pnpm run release
         env:
           NPM_CONFIG_PROVENANCE: true

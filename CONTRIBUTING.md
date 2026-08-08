@@ -105,11 +105,14 @@ the shape below is [ADR 0025](docs/architecture/0025-a-tag-publishes-and-nothing
    the version-bump commit's tag (step 2's `release:integrate:push`) is
    what starts it: full gate (build, all test suites, bundle/tree-shaking
    check, theme parity, `pnpm audit --prod`), then `npm run release`
-   publishes every publishable `@modyra/*` package with `--provenance`
+   **stages** every publishable `@modyra/*` package with `--provenance`
    (sigstore attestations link each tarball to the exact commit and
    workflow run).
-4. Release candidates precede majors.
-5. `npm run release:stage` is the local rehearsal — `npm publish --dry-run`
+4. A maintainer makes the staged versions public with proof of presence —
+   `npm stage list`, then `npm stage approve <id>`, or the npmjs.com UI.
+   Nothing is on the registry until that step.
+5. Release candidates precede majors.
+6. `npm run release:rehearse` is the local dry run — `npm publish --dry-run`
    for every package. It packs tarballs and contacts no registry, so a green
    rehearsal says the artifacts build, not that a release would authenticate.
 
@@ -121,7 +124,7 @@ the shape below is [ADR 0025](docs/architecture/0025-a-tag-publishes-and-nothing
   secrets.
 - Trusted publisher fields must match exactly:
   GitHub org/user, repository `modyra`, workflow filename `release.yml`,
-  allowed action `publish`.
+  allowed action `npm stage publish`.
 - Use GitHub-hosted runners only (self-hosted runners are not supported by
   npm trusted publishing).
 - A package npm has never seen has no settings page and therefore no
