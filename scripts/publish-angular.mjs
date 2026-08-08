@@ -21,31 +21,21 @@ if (currentAngularVersion === expectedVersion) {
   await publishAngular(publishArgs, expectedVersion);
 }
 
-const packages = [
-  "@modyra/core",
-  "@modyra/widgets",
-  "@modyra/zod",
-  "@modyra/standard-schema",
-  "@modyra/vue",
-  "@modyra/react",
-  "@modyra/lit",
-  "@modyra/styles",
-  "@modyra/angular",
-];
-
+// Every workspace package carries its own version, so the invariant is per package:
+// each one reaches the version its manifest declares. publish-workspace.mjs asserts that
+// for the packages it owns; this script owns @modyra/angular, whose version lives in the
+// ng-packagr output rather than in a source manifest.
 if (!stageMode) {
-  for (const packageName of packages) {
-    const publishedVersion = await waitForPublishedVersion(packageName, expectedVersion);
-    if (publishedVersion !== expectedVersion) {
-      throw new Error(
-        `${packageName} published as ${publishedVersion}, expected ${expectedVersion}`,
-      );
-    }
+  const publishedVersion = await waitForPublishedVersion("@modyra/angular", expectedVersion);
+  if (publishedVersion !== expectedVersion) {
+    throw new Error(
+      `@modyra/angular published as ${publishedVersion ?? "missing"}, expected ${expectedVersion}`,
+    );
   }
 }
 
 console.log(
-  `Angular ${stageMode ? "staged" : "published"} and all packages resolve to ${expectedVersion}`,
+  `Angular ${stageMode ? "staged" : "published"} at ${expectedVersion}`,
 );
 
 async function readPublishedVersion(packageName) {
