@@ -345,14 +345,24 @@ test("every rendered text colour clears AA against the surface behind it", async
           const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
           return (hi + 0.05) / (lo + 0.05);
         };
+        // The surface a failure names, kept beside its numbers: a ratio without the pair that
+        // produced it says a colour is wrong without saying which two.
+        let bgSource = "";
         const behind = (el: Element): number[] | null => {
           let node: Element | null = el;
           while (node && node !== document.documentElement) {
             const bg = getComputedStyle(node).backgroundColor;
-            if (alphaOf(bg) > 0.85) { const p = parse(bg); if (p) return p; }
+            if (alphaOf(bg) > 0.85) {
+              const p = parse(bg);
+              if (p) {
+                bgSource = `${bg} (${String((node as HTMLElement).className || node.tagName).slice(0, 30)})`;
+                return p;
+              }
+            }
             node = node.parentElement;
           }
           const body = getComputedStyle(document.body).backgroundColor;
+          bgSource = `${body} (body)`;
           return alphaOf(body) > 0.85 ? parse(body) : null;
         };
 
@@ -379,7 +389,12 @@ test("every rendered text colour clears AA against the surface behind it", async
           const value = ratio(fg, bg);
           if (value >= (large ? 3 : 4.5)) return;
           const names = String((el as HTMLElement).className || "").split(/\s+/).filter((c) => c.startsWith("mdy-"));
-          failed.push(`${names[0] ?? el.tagName.toLowerCase()}|${value.toFixed(2)}`);
+          const label = (el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 24);
+          failed.push(
+            `${names[0] ?? el.tagName.toLowerCase()}|${value.toFixed(2)}|` +
+              `<${el.tagName.toLowerCase()} class="${String((el as HTMLElement).className || "").slice(0, 40)}"> ` +
+              `"${label}" colour ${style.color} on ${bgSource}`,
+          );
         });
         return { failed: Array.from(new Set(failed)), checked, skipped };
       });
@@ -388,9 +403,9 @@ test("every rendered text colour clears AA against the surface behind it", async
       perTheme.push({ scheme, theme, checked: result.checked, skipped: result.skipped });
       const allowed = new Set(SYSTEM_PAIRINGS[theme] ?? []);
       for (const row of result.failed) {
-        const [part, value] = row.split("|");
-        if (allowed.has(part)) { seenAllowed.add(`${theme}:${part}`); continue; }
-        failures.push(`${scheme} · ${theme} · ${part} — ${value}:1`);
+        const [part, value, detail] = row.split("|");
+        if (allowed.has(part!)) { seenAllowed.add(`${theme}:${part}`); continue; }
+        failures.push(`${scheme} · ${theme} · ${part} — ${value}:1 — ${detail}`);
       }
     }
   }

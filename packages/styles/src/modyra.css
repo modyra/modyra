@@ -262,7 +262,7 @@
            Measured on an unselected chip in all four themes, the hover moved the rendered colour by
            exactly 0 — white over white. A hover state that only exists in one of the two states the
            control has is the kind of thing a token stops you from writing. */
-        --mdy-chip-btn-hover-bg: color-mix(in srgb, currentColor, transparent 88%);
+        --mdy-chip-btn-hover-opacity: 0.12;
         --mdy-chip-max-width: 11rem;
         --mdy-chip-transition: var(--mdy-sys-motion-duration-base) var(--mdy-sys-motion-easing-standard);
 
@@ -1917,6 +1917,7 @@
     }
 
     .mdy-chip__btn {
+        position: relative;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1934,8 +1935,18 @@
         transition: background var(--mdy-sys-motion-duration-base);
     }
 
-    .mdy-chip__btn:hover:not(:disabled) {
-        background: var(--mdy-chip-btn-hover-bg);
+    /* The tint is `currentColor` at low opacity on a layer of its own, so it darkens a light chip and
+       lightens a dark one without the colour having to be computed. Mixed into a background value
+       instead, an engine that resolves `currentColor` inside `color-mix()` as transparent paints no
+       hover at all — the affordance disappears rather than degrading. */
+    .mdy-chip__btn:hover:not(:disabled)::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: currentColor;
+        opacity: var(--mdy-chip-btn-hover-opacity);
+        border-radius: inherit;
+        pointer-events: none;
     }
 
     .mdy-chip__btn:disabled {

@@ -416,21 +416,32 @@ test("chip, segment and slider show what they are doing, in every theme", async 
   // Chromium reports `color-mix()` results as `color(srgb r g b / a)` with channels in 0–1, and
   // everything else as `rgb()` in 0–255. Reading one as the other is how a visible hover measures
   // as invisible.
-  const rgba = (value: string): [number, number, number, number] => {
-    const n = (value.match(/[\d.]+/g) ?? []).map(Number);
-    const scale = value.startsWith("color(") ? 255 : 1;
-    return [n[0]! * scale, n[1]! * scale, n[2]! * scale, n.length > 3 ? n[3]! : 1];
-  };
+  const rgba = async (value: string): Promise<[number, number, number, number]> =>
+    page.evaluate((colour) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+      ctx.fillStyle = colour;
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+      return [r!, g!, b!, a! / 255] as [number, number, number, number];
+    }, value);
   // How far the hover moves the pixel that ends up on screen. Both the backdrop and the hover can
   // be translucent — iOS tints its segmented bar and its hover with the same fill — so each is
   // composited over the page in turn. Treating the backdrop as opaque makes "the same colour twice"
   // measure as no change, when what it really does is deepen.
   const over = (top: [number, number, number, number], base: [number, number, number]) =>
     [0, 1, 2].map((i) => top[i]! * top[3]! + base[i]! * (1 - top[3]!)) as [number, number, number];
-  const shift = (backdrop: string, hover: string): number => {
-    const page: [number, number, number] = [255, 255, 255];
-    const behind = over(rgba(backdrop), page);
-    const withHover = over(rgba(hover), behind);
+  const composite = async (colour: string, opacity: number): Promise<string> => {
+    const [r, g, b, a] = await rgba(colour);
+    return `rgba(${r}, ${g}, ${b}, ${a * opacity})`;
+  };
+  const shift = async (backdrop: string, hover: string): Promise<number> => {
+    const sheet: [number, number, number] = [255, 255, 255];
+    const behind = over(await rgba(backdrop), sheet);
+    const withHover = over(await rgba(hover), behind);
     return Math.max(...[0, 1, 2].map((i) => Math.abs(withHover[i]! - behind[i]!)));
   };
 
@@ -458,11 +469,17 @@ test("chip, segment and slider show what they are doing, in every theme", async 
       });
       await btn.hover();
       await page.waitForTimeout(150);
-      const hovered = await btn.evaluate((el) => getComputedStyle(el).backgroundColor);
+      // The tint is a layer over the button, so what paints is `::after`'s colour at its opacity —
+      // the button's own background stays transparent whether the hover is there or not.
+      const tint = await btn.evaluate((el) => {
+        const layer = getComputedStyle(el, "::after");
+        return { colour: layer.backgroundColor, opacity: Number(layer.opacity) || 0 };
+      });
+      const hovered = await composite(tint.colour, tint.opacity);
       expect(
-        shift(backdrop, hovered),
+        await shift(backdrop, hovered),
         `${theme}: hovering a ${which} chip's stepper must be visible against the chip ` +
-          `(backdrop ${backdrop}, hovered ${hovered})`,
+          `(backdrop ${backdrop}, tint ${tint.colour} at ${tint.opacity})`,
       ).toBeGreaterThan(8);
       await page.mouse.move(0, 0);
       await page.waitForTimeout(100);
@@ -480,9 +497,9 @@ test("chip, segment and slider show what they are doing, in every theme", async 
       await segment.hover();
       await page.waitForTimeout(150);
       const hovered = await segment.evaluate((el) => getComputedStyle(el).backgroundColor);
-      expect(rgba(hovered)[3], `${theme}: segmented hover must not be fully transparent`).toBeGreaterThan(0);
+      expect((await rgba(hovered))[3], `${theme}: segmented hover must not be fully transparent`).toBeGreaterThan(0);
       expect(
-        shift(backdrop.endsWith("0)") ? "rgb(255, 255, 255)" : backdrop, hovered),
+        await shift(backdrop.endsWith("0)") ? "rgb(255, 255, 255)" : backdrop, hovered),
         `${theme}: hovering an unselected segment must be visible`,
       ).toBeGreaterThan(2);
       await page.mouse.move(0, 0);
