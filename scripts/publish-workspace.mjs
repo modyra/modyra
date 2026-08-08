@@ -28,6 +28,7 @@ assertListCoversEveryPublishablePackage();
 // re-run after a partial failure is the normal repair.
 const staged = rehearsal ? new Set() : await readStagedVersions();
 const publishedAlready = new Set();
+const needsBootstrap = [];
 
 for (const pkg of packages) {
   const expectedVersion = readPackageVersion(`${pkg.dir}/package.json`);
@@ -38,8 +39,17 @@ for (const pkg of packages) {
     continue;
   }
 
-  if (!rehearsal && staged.has(`${pkg.name}@${expectedVersion}`)) {
+  if (!rehearsal && staged?.has(`${pkg.name}@${expectedVersion}`)) {
     console.log(`Skipping ${pkg.name}@${expectedVersion} (already staged)`);
+    continue;
+  }
+
+  // A name npm has never seen has no settings page, so it can carry no trusted publisher, so the
+  // workflow's identity authenticates against nothing: the registry answers 401. The first version
+  // of a package is published by an authenticated maintainer; every later one comes from here.
+  if (!rehearsal && publishedVersion === null) {
+    console.log(`Skipping ${pkg.name}@${expectedVersion} (never published — needs a first publication by a maintainer)`);
+    needsBootstrap.push(`${pkg.name}@${expectedVersion}`);
     continue;
   }
 
@@ -58,17 +68,33 @@ for (const pkg of packages) {
 
 if (!rehearsal) {
   const nowStaged = await readStagedVersions();
-  const missing = packages
-    .map((pkg) => `${pkg.name}@${readPackageVersion(`${pkg.dir}/package.json`)}`)
-    .filter((spec) => !nowStaged.has(spec) && !publishedAlready.has(spec));
-  if (missing.length > 0) {
-    throw new Error(`Staged nothing for: ${missing.join(", ")}`);
+  if (nowStaged === null) {
+    // Reading the staging area needs a credential of its own, and the one this job holds is minted
+    // per publish. Without it the exit codes above are the evidence: `npm stage publish` fails loudly.
+    console.log("Staging area not readable from here — relying on the exit code of each staged publish");
+  } else {
+    const missing = packages
+      .map((pkg) => `${pkg.name}@${readPackageVersion(`${pkg.dir}/package.json`)}`)
+      .filter(
+        (spec) => !nowStaged.has(spec) && !publishedAlready.has(spec) && !needsBootstrap.includes(spec),
+      );
+    if (missing.length > 0) {
+      throw new Error(`Staged nothing for: ${missing.join(", ")}`);
+    }
   }
 }
 
 console.log(
   `Workspace packages ${rehearsal ? "rehearsed" : "staged"} coherently`,
 );
+
+if (needsBootstrap.length > 0) {
+  console.log(
+    `\nAwaiting a first publication by a maintainer: ${needsBootstrap.join(", ")}\n` +
+      "  npm login && npm publish --access public   # from the package directory\n" +
+      "then configure its trusted publisher so later versions come from this workflow.",
+  );
+}
 
 // A hand-written list silently stops covering the workspace the moment a package is added or
 // its `private` flag changes, and the release stays green while a package never ships. The
@@ -112,10 +138,10 @@ async function readStagedVersions() {
   try {
     output = execFileSync("npm", ["stage", "list", "--json"], { encoding: "utf8" });
   } catch (error) {
-    // An empty staging area, or a registry that answers nothing useful: neither is a reason to
-    // refuse to stage. What matters is the check after staging, which reads it again.
+    // Listing needs its own credential, which a workflow that authenticates per publish does not
+    // hold. Not knowing what is staged is not a reason to refuse to stage.
     console.log(`Could not read the staging area: ${String(error.message ?? error).split("\n")[0]}`);
-    return new Set();
+    return null;
   }
   try {
     const entries = JSON.parse(output);
@@ -173,6 +199,10 @@ async function publishPackage(packageName, cwd, args, expectedVersion) {
     });
   } catch (error) {
     const message = String(error.stderr ?? error.message ?? "");
+    if (/already staged|409/i.test(message)) {
+      console.log(`Skipping ${packageName}@${expectedVersion} (already in the staging area)`);
+      return;
+    }
     if (message.includes("You cannot publish over the previously published versions")) {
       const publishedVersion = await waitForPublishedVersion(packageName, expectedVersion);
       if (publishedVersion === expectedVersion) {
