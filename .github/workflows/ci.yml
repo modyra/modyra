@@ -35,6 +35,13 @@ jobs:
       - name: Widget tests
         run: pnpm run test:widgets
 
+      # **Before the contract gates, and that ordering is load-bearing.** `test:conformance-angular`
+      # drives the built library through `packages/angular/conformance.config.mjs`, which imports
+      # `dist/fesm2022/modyra-angular.mjs`. Run after the gates it fails to load the config at all,
+      # and the run says the config is broken rather than that nothing had built it yet.
+      - name: Build Angular library
+        run: pnpm run build:angular
+
       # One gate for the UI contract: the golden Angular surface, the completeness evidence,
       # the widgets suite, the framework-free renderer's catalog and DOM conformance, and the
       # per-renderer readiness audit.
@@ -60,9 +67,6 @@ jobs:
       # compiler.
       - name: TypeScript 7 emit matches the primary compiler
         run: pnpm run test:typescript7
-
-      - name: Build Angular library
-        run: pnpm run build:angular
 
       - name: Angular tests
         run: pnpm run test:angular
