@@ -130,7 +130,7 @@ import type { DesignSystemConfig } from "./design-system-section.component";
             mdyRequired
             mdyEmail
           >
-            <button *mdySuffix type="button" (click)="0" style="background:none; border:none; cursor:pointer;">📧</button>
+            <button *mdySuffix type="button" (click)="0" style="background:none; border:none; cursor:pointer; color: var(--mdy-on-surface);">📧</button>
             <div *mdySupportingText>We'll never share your email</div>
           </mdy-control-text>
 
