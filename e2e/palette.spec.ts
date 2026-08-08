@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { MDY_ON_COLOR_FLOOR as FLOOR } from "../packages/core/dist/color-utils.js";
 
 /**
@@ -255,21 +255,45 @@ const CONTRAST_THEMES = ["modyra", "modyra-modern", "modyra-material", "modyra-i
  * Where a design system's own pairing sits below the floor, and is kept anyway.
  *
  * A theme exists to be faithful to the system it names. Apple pairs white with system blue — it is
- * in the HIG, it is what every iOS control does, and it measures 4.02:1 in light and 3.65:1 in dark.
- * A theme that quietly darkened it to reach 4.5:1 would stop being iOS, which is a worse failure
+ * in the HIG, it is what every iOS control does, and its button sits below 4.5:1 because of it. A
+ * theme that quietly darkened it to reach the floor would stop being iOS, which is a worse failure
  * than the one it fixes.
+ *
+ * The chip's label and count are not here: read through the engine rather than through a parser that
+ * knew two colour notations, they clear the floor, and the staleness check below is what says so.
  *
  * Listed per theme rather than waived globally, and asserted in both directions below: a new pair
  * fails here, and so does an entry left behind after the theme stops producing it.
  */
 const SYSTEM_PAIRINGS: Partial<Record<(typeof CONTRAST_THEMES)[number], readonly string[]>> = {
-  "modyra-ios": ["mdy-chip__label", "mdy-chip__count", "mdy-button"],
+  "modyra-ios": ["mdy-button"],
 };
+
+/**
+ * Waits until the rendered population stops growing.
+ *
+ * The playground renders into the accordion as it opens, and a swapped stylesheet repaints after it
+ * loads. A fixed pause measures whatever happened to be painted when it elapsed, which on a slower
+ * engine is a fraction of the page — and a walk over a fraction of the page asserts nothing while
+ * passing.
+ */
+async function settled(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () => {
+      const count = document.querySelectorAll(".mdy-renderer *").length;
+      const previous = (window as unknown as { __mdyPopulation?: number }).__mdyPopulation;
+      (window as unknown as { __mdyPopulation?: number }).__mdyPopulation = count;
+      return count > 40 && count === previous;
+    },
+    null,
+    { timeout: 15_000, polling: 200 },
+  );
+}
 
 test("every rendered text colour clears AA against the surface behind it", async ({ page }) => {
   const failures: string[] = [];
   const seenAllowed = new Set<string>();
-  const measurement: string[] = [];
+  const perTheme: { scheme: string; theme: string; checked: number; skipped: number }[] = [];
   let asserted = 0;
 
   for (const scheme of ["light", "dark"] as const) {
@@ -278,7 +302,7 @@ test("every rendered text colour clears AA against the surface behind it", async
       await page.goto("/");
       await page.waitForSelector("mdy-control-colors", { state: "attached", timeout: 15_000 });
       await page.locator(".playground-accordion > summary").first().click();
-      await page.waitForTimeout(250);
+      await settled(page);
       await page.evaluate(async (name) => {
         const link = document.getElementById("mdy-theme-link") as HTMLLinkElement | null;
         const href = `styles/${name}.css`;
@@ -289,23 +313,34 @@ test("every rendered text colour clears AA against the surface behind it", async
           link.setAttribute("href", href);
         });
       }, theme);
-      await page.waitForTimeout(300);
+      await settled(page);
 
       const result = await page.evaluate(() => {
         const channel = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
         const luminance = (p: number[]) => 0.2126 * channel(p[0] / 255) + 0.7152 * channel(p[1] / 255) + 0.0722 * channel(p[2] / 255);
-        const parse = (value: string): number[] | null => {
-          const numbers = value.match(/[0-9.]+/g);
-          if (!numbers) return null;
-          if (/^\s*rgba?\(/.test(value)) return numbers.slice(0, 3).map(Number);
-          // `color(srgb …)` is 0–1 where `rgb()` is 0–255; one scale for both reports readable text as 1:1.
-          if (/^\s*color\(\s*srgb\b/.test(value)) return numbers.slice(0, 3).map((n) => Number(n) * 255);
-          return null;
+        // The engine converts the colour, rather than this walk parsing the notation it happens to
+        // have serialised. A computed background is whatever the engine chose to print — `rgb()`,
+        // `color(srgb …)`, or `oklch()` for a theme that derives its ramp with relative colour syntax
+        // — and a walk that reads two of those spellings reports every surface in the third as
+        // unmeasurable, which is silence dressed as a pass. Canvas takes any colour the engine
+        // supports and hands back sRGB bytes.
+        const canvas = document.createElement("canvas");
+        canvas.width = 1;
+        canvas.height = 1;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+        const REJECTED = "#010203";
+        const colour = (value: string): { rgb: number[]; alpha: number } | null => {
+          ctx.fillStyle = REJECTED;
+          ctx.fillStyle = value;
+          // fillStyle keeps its previous value when handed something it cannot parse.
+          if (ctx.fillStyle === REJECTED && value.replace(/\s/g, "").toLowerCase() !== REJECTED) return null;
+          ctx.clearRect(0, 0, 1, 1);
+          ctx.fillRect(0, 0, 1, 1);
+          const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+          return { rgb: [r!, g!, b!], alpha: a! / 255 };
         };
-        const alphaOf = (value: string) => {
-          const numbers = value.match(/[0-9.]+/g);
-          return numbers && numbers.length > 3 ? Number(numbers[3]) : 1;
-        };
+        const parse = (value: string): number[] | null => colour(value)?.rgb ?? null;
+        const alphaOf = (value: string) => colour(value)?.alpha ?? 1;
         const ratio = (a: number[], b: number[]) => {
           const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
           return (hi + 0.05) / (lo + 0.05);
@@ -350,7 +385,7 @@ test("every rendered text colour clears AA against the surface behind it", async
       });
 
       asserted += result.checked;
-      measurement.push(`${scheme}/${theme}: ${result.checked} measured, ${result.skipped} unmeasurable`);
+      perTheme.push({ scheme, theme, checked: result.checked, skipped: result.skipped });
       const allowed = new Set(SYSTEM_PAIRINGS[theme] ?? []);
       for (const row of result.failed) {
         const [part, value] = row.split("|");
@@ -368,10 +403,18 @@ test("every rendered text colour clears AA against the surface behind it", async
   // cannot measure instead of assuming a white page. What it does reach is the population that
   // matters here: text on a *painted* surface, which is where a pinned `on-` colour, a crossed
   // pair and a seed-only ramp all show up. Every defect this test was written from is in it.
-  expect(
-    asserted,
-    `no text was measured — the walk is stale (measured ${asserted})\n${measurement.join("\n")}`,
-  ).toBeGreaterThan(60);
+  const report = perTheme
+    .map((row) => `${row.scheme}/${row.theme}: ${row.checked} measured, ${row.skipped} unmeasurable`)
+    .join("\n");
+
+  // A theme that measured nothing is the failure this guard exists for, and it is per theme rather
+  // than in the total: a page that never finished rendering one theme hides inside a total the other
+  // three carry. How much each theme reaches is engine-dependent — the walk skips text it cannot
+  // place on a painted surface, and how much that is differs by how each engine reports a computed
+  // background — so the total is a coarse backstop and the per-theme floor is the real check.
+  const blind = perTheme.filter((row) => row.checked === 0);
+  expect(blind.map((row) => `${row.scheme}/${row.theme}`), `a theme measured no text at all\n${report}`).toEqual([]);
+  expect(asserted, `the walk is stale (measured ${asserted})\n${report}`).toBeGreaterThan(40);
   expect(failures, `text below the AA floor:\n${failures.join("\n")}`).toEqual([]);
 
   // The other direction: an allowance that no longer describes anything is a waiver outliving the
