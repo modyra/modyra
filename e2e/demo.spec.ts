@@ -461,7 +461,8 @@ test("chip, segment and slider show what they are doing, in every theme", async 
       const hovered = await btn.evaluate((el) => getComputedStyle(el).backgroundColor);
       expect(
         shift(backdrop, hovered),
-        `${theme}: hovering a ${which} chip's stepper must be visible against the chip`,
+        `${theme}: hovering a ${which} chip's stepper must be visible against the chip ` +
+          `(backdrop ${backdrop}, hovered ${hovered})`,
       ).toBeGreaterThan(8);
       await page.mouse.move(0, 0);
       await page.waitForTimeout(100);

@@ -269,6 +269,7 @@ const SYSTEM_PAIRINGS: Partial<Record<(typeof CONTRAST_THEMES)[number], readonly
 test("every rendered text colour clears AA against the surface behind it", async ({ page }) => {
   const failures: string[] = [];
   const seenAllowed = new Set<string>();
+  const measurement: string[] = [];
   let asserted = 0;
 
   for (const scheme of ["light", "dark"] as const) {
@@ -349,6 +350,7 @@ test("every rendered text colour clears AA against the surface behind it", async
       });
 
       asserted += result.checked;
+      measurement.push(`${scheme}/${theme}: ${result.checked} measured, ${result.skipped} unmeasurable`);
       const allowed = new Set(SYSTEM_PAIRINGS[theme] ?? []);
       for (const row of result.failed) {
         const [part, value] = row.split("|");
@@ -366,7 +368,10 @@ test("every rendered text colour clears AA against the surface behind it", async
   // cannot measure instead of assuming a white page. What it does reach is the population that
   // matters here: text on a *painted* surface, which is where a pinned `on-` colour, a crossed
   // pair and a seed-only ramp all show up. Every defect this test was written from is in it.
-  expect(asserted, `no text was measured — the walk is stale (measured ${asserted})`).toBeGreaterThan(60);
+  expect(
+    asserted,
+    `no text was measured — the walk is stale (measured ${asserted})\n${measurement.join("\n")}`,
+  ).toBeGreaterThan(60);
   expect(failures, `text below the AA floor:\n${failures.join("\n")}`).toEqual([]);
 
   // The other direction: an allowance that no longer describes anything is a waiver outliving the
