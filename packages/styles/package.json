@@ -1,6 +1,6 @@
 {
     "name": "@modyra/styles",
-    "version": "0.7.0",
+    "version": "0.7.1",
     "description": "Framework-agnostic style themes for modyra components.",
     "license": "MIT",
     "author": "Lorenzo Muscherà",
