@@ -1,0 +1,51 @@
+name: Visual baselines
+
+# Screenshot baselines are per platform: Playwright writes `<name>-<platform>.png`, and a run on
+# Linux cannot read one recorded on macOS. The suite runs on ubuntu, so the baselines it compares
+# against have to be recorded there too — this workflow records them and hands them back as an
+# artifact to commit.
+#
+# Run it when a deliberate visual change makes the committed baselines wrong. It never commits:
+# a baseline enters the repository through a reviewed diff, which is the whole point of committing
+# screenshots in the first place.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Build the demos the suite serves
+        run: |
+          pnpm run build:demo
+          pnpm run build:examples
+
+      # Non-visual specs may fail here and that is not this workflow's business: it records
+      # baselines. The suite's own verdict is CI's.
+      - name: Record baselines
+        continue-on-error: true
+        run: npx playwright test --update-snapshots
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-baselines
+          path: e2e/**/*-snapshots/**
+          if-no-files-found: error
