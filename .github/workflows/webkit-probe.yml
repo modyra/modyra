@@ -9,10 +9,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm i playwright@1.61.1
-      - run: npx playwright install --with-deps webkit
+      - run: mkdir -p /tmp/probe && cd /tmp/probe && npm init -y && npm i playwright@1.61.1
+      - run: cd /tmp/probe && npx playwright install --with-deps webkit chromium
       - run: |
-          node -e '
+          cd /tmp/probe && node -e '
           (async () => {
             const { webkit, chromium } = require("playwright");
             for (const [name, type] of [["webkit", webkit], ["chromium", chromium]]) {
