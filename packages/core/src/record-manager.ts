@@ -110,6 +110,18 @@ export class MdyRecordManager {
         const key = this._keyOf(name);
         if (key.length > 0) this.upsert(key);
       },
+      // A whole-value write says which rows there are, so one it does not mention is one the user
+      // removed before it was written — restoring it would undo their deletion.
+      onReplace: (paths) => {
+        const present = new Set<string>();
+        for (const path of paths) {
+          const key = this._keyOf(path);
+          if (key.length > 0) present.add(key);
+        }
+        for (const key of [...this._declared]) {
+          if (!present.has(key)) this.remove(key);
+        }
+      },
     });
 
     // A phantom field at the record's own path, so record-level validator errors reach

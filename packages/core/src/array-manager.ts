@@ -57,18 +57,31 @@ export interface MdyArrayManagerDeps {
  * Owns one array node: registers/removes row fields on the engine so the
  * structure follows the value, and implements push/insert/remove/move/setAll.
  */
+/** Refuses a nested collection anywhere in the row, when the form is built. */
+function assertRowShape(node: MdyRowNode): void {
+  assertNotNestedCollection(node);
+  if (node.kind === "group") {
+    for (const child of Object.values(node.children)) {
+      assertRowShape(child as MdyRowNode);
+    }
+  }
+}
+
 export class MdyArrayManager {
   private readonly _deps: MdyArrayManagerDeps;
   private readonly _initial: ReadonlyArray<unknown>;
   private readonly _rowCountSig: MdyWritableSignal<number>;
   private readonly _reconcile: MdyEffectRef | null;
   /** Track the last known indices for cleanup detection. */
-  private _lastPresentIndices: Set<number> = new Set();
+  private _lastPresentIndices = new Set<number>();
 
   /** Current number of registered rows. */
   readonly rowCount: MdySignal<number>;
 
   constructor(deps: MdyArrayManagerDeps, initial: ReadonlyArray<unknown>) {
+    // Checked here rather than when a row first arrives: a schema that cannot work should fail where
+    // it was written, not on the first `push` in front of a user.
+    assertRowShape(deps.item);
     this._deps = deps;
     this._initial = initial;
     this._rowCountSig = deps.rx.signal(0);

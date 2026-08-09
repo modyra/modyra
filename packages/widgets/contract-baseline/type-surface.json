@@ -1199,7 +1199,8 @@
   ],
   "MdyPathGate": [
     "isOpen: boolean",
-    "onRefusedWrite?: void"
+    "onRefusedWrite?: void",
+    "onReplace?: void"
   ],
   "MdyPathRef": [
     "path: string"
@@ -1272,7 +1273,7 @@
     "validators: ReadonlyArray<ValidatorFn<Readonly<Record<string, unknown>>>>"
   ],
   "MdyRecordHandle": [
-    "cell: MdyFieldHandle<unknown>",
+    "cell: MdyFieldHandle<TCell>",
     "errors: MdySignal<ReadonlyArray<MdyFieldError>>",
     "has: boolean",
     "keys: MdySignal<ReadonlyArray<string>>",

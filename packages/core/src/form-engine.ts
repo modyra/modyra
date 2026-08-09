@@ -160,6 +160,14 @@ export interface MdyFormEngineOptions {
 export interface MdyPathGate {
   isOpen(path: string): boolean;
   onRefusedWrite?(path: string, value: unknown): void;
+  /**
+   * A whole-value write landed: these are every path it carried below this prefix.
+   *
+   * `setValue` means *this is the value now*, so a collection prunes what the write does not
+   * mention. Without it a restored draft brings back a row the user deleted before saving it —
+   * the deletion is expressible as an absence, and an absence has to be read as one.
+   */
+  onReplace?(paths: ReadonlySet<string>): void;
 }
 
 export class MdyFormEngine
@@ -278,7 +286,7 @@ export class MdyFormEngine
     this._draftManager = new MdyDraftManager({
       rx: _rx,
       getValue: () => this.value(),
-      patchValue: (value) => this.patchValue(value),
+      patchValue: (value) => this.restoreValue(value),
       hasDraft,
       warn: (message) => this._warn(message),
       filterRestoredEntry: (key, value) => this._draftEntryAllowed(key, value),
@@ -741,6 +749,32 @@ export class MdyFormEngine
         rec.state.value.set(null);
       }
     });
+    // Told last, so a row this write declared is already there to be kept.
+    this._tellGatesTheWholeValue(value);
+  }
+
+  /**
+   * Writes a stored snapshot back.
+   *
+   * A patch, because a draft deliberately omits what it must not persist and nulling those would
+   * erase them — but the collections are told the whole shape, so a row the user removed before the
+   * snapshot was written stays removed instead of coming back.
+   */
+  restoreValue(value: Record<string, unknown>): void {
+    this.patchValue(value);
+    this._tellGatesTheWholeValue(value);
+  }
+
+  /** Hands each collection the paths a whole-value write carried below it. */
+  private _tellGatesTheWholeValue(value: Record<string, unknown>): void {
+    for (const [prefix, gate] of this._gates) {
+      if (!gate.onReplace) continue;
+      const under = new Set<string>();
+      for (const name of Object.keys(value)) {
+        if (name.startsWith(`${prefix}.`)) under.add(name);
+      }
+      gate.onReplace(under);
+    }
   }
 
   reset(): void {

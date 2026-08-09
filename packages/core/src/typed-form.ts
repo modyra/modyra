@@ -263,8 +263,12 @@ export interface MdyRecordHandle<TItemHandle, TItemValue> {
   /**
    * One control of one row. `path` addresses a leaf inside the row and is omitted when rows are
    * leaves themselves. Stable per `key`/`path` pair.
+   *
+   * The value type is `unknown` unless stated, because the part is a string chosen at runtime — that
+   * is the point of this call. Where the part is known at compile time, `row(key)` gives the typed
+   * tree instead, and a binding that needs a typed handle should prefer it.
    */
-  cell(key: string, path?: string): MdyFieldHandle<unknown>;
+  cell<TCell = unknown>(key: string, path?: string): MdyFieldHandle<TCell>;
   /** Declares the row, or rewrites the value of one already declared. */
   upsert(key: string, value?: TItemValue): void;
   remove(key: string): void;
@@ -1017,7 +1021,7 @@ export abstract class MdyTypedFormBase<
       valid: rx.computed(() => errors().length === 0),
       has: (key: string) => manager.has(key),
       row,
-      cell: (key: string, leaf?: string) => {
+      cell: (<TCell,>(key: string, leaf?: string): MdyFieldHandle<TCell> => {
         // Checked against the row's schema, which is static: a mistyped part addresses nothing and
         // would otherwise render a control that stays empty for ever without saying why. The key is
         // not checked here — a row that does not exist yet is the ordinary case.
@@ -1032,8 +1036,10 @@ export abstract class MdyTypedFormBase<
             `This row offers: ${offered.join(", ")}.`,
           );
         }
-        return this.cellHandle(leaf === undefined ? `${path}.${key}` : `${path}.${key}.${leaf}`);
-      },
+        return this.cellHandle(
+          leaf === undefined ? `${path}.${key}` : `${path}.${key}.${leaf}`,
+        ) as MdyFieldHandle<TCell>;
+      }) as MdyRecordHandle<unknown, unknown>["cell"],
       upsert: (key: string, value?: unknown) => manager.upsert(key, value),
       remove: (key: string) => manager.remove(key),
       setAll: (values: Readonly<Record<string, unknown>>) => manager.setAll(values),
