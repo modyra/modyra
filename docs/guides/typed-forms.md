@@ -335,6 +335,13 @@ A document declares the shape of a row and the rows it starts with. Which
 rows exist afterwards stays the application's word — a document describes a
 form, not a session.
 
+### Seeing it work
+
+`npm run demo:record-table` serves a table rendered **by column**, with rows
+that enter and leave edit mode, a sort, and a provisional key that becomes a
+real one. `e2e/record-table/` asserts what it is there to show: sorting,
+closing every editor and unmounting cells change no value and no verdict.
+
 ## Draft autosave
 
 ```ts
