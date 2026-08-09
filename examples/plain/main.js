@@ -2,7 +2,8 @@
 // explicit light/dark/auto mode, and the live contract verdict for what is on screen.
 import { MDY_PALETTE_MODELS } from "@modyra/core/color-utils";
 import { compileMdyTheme, serializeMdyThemeCss } from "@modyra/core/theme-compiler";
-import { mountMdyForm } from "@modyra/plain";
+import { createForm, field as mdyField, group as mdyGroup, record as mdyRecord } from "@modyra/core";
+import { mountMdyForm, renderField } from "@modyra/plain";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { inspectWidgetDom, portalRootFor } from "@modyra/widgets/testing";
 
@@ -410,3 +411,160 @@ mounted.reactivity.effect(() => {
 });
 
 formHost.addEventListener("click", () => queueMicrotask(report), true);
+
+
+// ─── Rows keyed by data ───────────────────────────────────────────────────────
+//
+// The arrangement an indexed collection cannot serve: a table renders by column, so the two
+// controls of one row are mounted in different places and at different moments, and they come and
+// go as rows enter and leave edit mode. None of that decides what the form holds — a row exists
+// because it was declared.
+
+const rowsHost = document.querySelector("[data-rows]");
+const rowsState = document.querySelector("[data-rows-state]");
+
+if (rowsHost && rowsState) {
+  const lines = createForm({
+    lines: mdyRecord(
+      mdyGroup({
+        item: mdyField("", [(value) => (value ? [] : ["Required"])]),
+        qty: mdyField(1, [(value) => (Number(value) >= 1 ? [] : ["At least 1"])]),
+      }),
+    ),
+  });
+
+  // The rows a server would have sent: its ids, serialised, plus one the user started here.
+  lines.f.lines.setAll({
+    12: { item: "Espresso", qty: 2 },
+    34: { item: "Cornetto", qty: 1 },
+    "tmp:1": { item: "", qty: 1 },
+  });
+
+  const editing = new Set(["tmp:1"]);
+  let descending = false;
+  let mountedCells = [];
+
+  const cellDescriptor = (key, part) =>
+    part === "item"
+      ? { name: `rows-item-${key}`, kind: "text", label: "" }
+      : { name: `rows-qty-${key}`, kind: "number", label: "" };
+
+  const button = (label, onClick, primary = false) => {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.textContent = label;
+    if (primary) el.className = "primary";
+    el.addEventListener("click", onClick);
+    return el;
+  };
+
+  const renderRows = () => {
+    for (const dispose of mountedCells) dispose();
+    mountedCells = [];
+
+    const keys = [...lines.f.lines.keys()].sort((a, b) =>
+      descending ? b.localeCompare(a) : a.localeCompare(b),
+    );
+
+    const table = document.createElement("table");
+    table.className = "keyed-rows";
+    table.innerHTML =
+      "<thead><tr><th>Key</th><th>Item</th><th>Qty</th><th></th></tr></thead><tbody></tbody>";
+    const body = table.querySelector("tbody");
+
+    for (const key of keys) {
+      const row = document.createElement("tr");
+      if (editing.has(key)) row.classList.add("editing");
+
+      const keyCell = document.createElement("td");
+      keyCell.className = "read";
+      keyCell.textContent = key;
+      row.append(keyCell);
+
+      // One cell per column: this loop is the whole point — a column knows a key and a part, and
+      // never whether the row is declared. `cell()` answers either way.
+      for (const part of ["item", "qty"]) {
+        const cell = document.createElement("td");
+        if (editing.has(key)) {
+          mountedCells.push(
+            renderField(cell, cellDescriptor(key, part), lines.f.lines.cell(key, part)),
+          );
+        } else {
+          cell.className = "read";
+          cell.textContent = String(lines.f.lines.cell(key, part).value() ?? "");
+        }
+        row.append(cell);
+      }
+
+      const actions = document.createElement("td");
+      actions.className = "keyed-rows-actions";
+      actions.append(
+        button(editing.has(key) ? "Done" : "Edit", () => {
+          if (editing.has(key)) editing.delete(key);
+          else editing.add(key);
+          renderRows();
+        }),
+      );
+      if (key.startsWith("tmp:")) {
+        // What a save does when the server answers with the real id: the row keeps its value and
+        // what the user did to it, under its new name.
+        actions.append(
+          button(
+            "Save",
+            () => {
+              const assigned = String(Math.floor(Math.random() * 900) + 100);
+              lines.f.lines.rename(key, assigned);
+              editing.delete(key);
+              editing.add(assigned);
+              renderRows();
+            },
+            true,
+          ),
+        );
+      }
+      actions.append(
+        button("Remove", () => {
+          lines.f.lines.remove(key);
+          editing.delete(key);
+          renderRows();
+        }),
+      );
+      row.append(actions);
+      body.append(row);
+    }
+
+    const controls = document.createElement("div");
+    controls.className = "keyed-rows-actions";
+    controls.append(
+      button(descending ? "Sort ascending" : "Sort descending", () => {
+        descending = !descending;
+        renderRows();
+      }),
+      button("Add row", () => {
+        lines.f.lines.upsert(`tmp:${Date.now()}`, { item: "", qty: 1 });
+        renderRows();
+      }),
+      button("Close every editor", () => {
+        editing.clear();
+        renderRows();
+      }),
+    );
+
+    rowsHost.replaceChildren(table, controls);
+    reportRows();
+  };
+
+  const reportRows = () => {
+    rowsState.textContent = [
+      `rows valid: ${lines.state.valid()}`,
+      `declared: ${[...lines.f.lines.keys()].join(", ") || "(none)"}`,
+      `editors mounted: ${editing.size}`,
+      "",
+      JSON.stringify(lines.value().lines, null, 2),
+    ].join("\n");
+  };
+
+  // The verdict follows the data, so typing in a cell updates it without a re-render.
+  setInterval(reportRows, 250);
+  renderRows();
+}
