@@ -94,7 +94,8 @@ export type {
   MdyDraftOptions,
   MdyDraftStorage,
   MdyFormEngineOptions,
-  MdyFormRegistry
+  MdyFormRegistry,
+  MdyPathGate
 } from "./form-engine.js";
 
 export {

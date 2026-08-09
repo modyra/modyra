@@ -93,10 +93,15 @@ separate decision, taken separately.
   cycle. A validity that quietly followed the rendering would pass the first and fail the second.
 - `npm run test:core`, `test:adapters`, `test:widgets`, `test:angular`, `test:contracts`.
 
-Unguarded: drafts and history restore a flat value straight into the engine, so a record's rows are
-not declared by that path. A restored draft currently comes back with its rows absent rather than
-half-formed — the gate refuses the paths — which is safe but not yet right, and is the next batch's
-first item.
+A value written straight into the engine — a restored draft, an undo crossing the moment a row was
+added — is offered to the collection through `onRefusedWrite`, and declares the row. That is the
+second half of the rule rather than an exception to it: a control mounting is a rendering event, a
+value arriving is the owner's own data coming back, and refusing it would drop the user's work in the
+name of protecting it.
+
+Unguarded: undoing *across* a structural change restores every row's values but does not prune a row
+added after the snapshot — the same wart field arrays carry, documented in the typed-forms guide.
+The row keeps its fields with restored values rather than disappearing.
 
 ## Security and privacy
 
