@@ -225,9 +225,10 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
       }
       const ref = this.adapter.getField(n);
       if (!ref) {
-        throw new Error(
-          `[modyra] Field "${n}" not found in form adapter`,
-        );
+        // A path inside a keyed collection whose row has not been declared. The control renders
+        // empty and binds when the row arrives; it must not be the thing that brings it into being,
+        // which is why the adapter answers null rather than creating a field on the way past.
+        return this._detached();
       }
       return ref() as MdyFieldState<TValue>;
     },
