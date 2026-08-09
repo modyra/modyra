@@ -56,7 +56,15 @@ class SignupApp extends LitElement {
         serverValidator(
           async (value, { signal }) =>
             (await isUsernameTaken(value, signal)) ? "Username is already taken" : null,
-          { debounceMs: 300, timeoutMs: 2000 },
+          {
+            debounceMs: 300,
+            timeoutMs: 2000,
+            // Nothing to ask a server about a name that is too short to be one: `minLength(3)` has
+            // already refused it. Without this the check runs on the empty initial value, and the
+            // page carries a "checking…" line for the first third of a second — a layout that exists
+            // only while nobody has typed anything.
+            when: (value) => String(value ?? "").length >= 3,
+          },
         ),
       ),
       name: field("", [required(), minLength(2)]),
