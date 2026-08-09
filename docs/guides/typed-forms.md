@@ -341,6 +341,11 @@ should not erase a table.
 Record-level validators run against the whole collection, like array-level
 ones.
 
+`getChanges()` reports **changed values, not structure** — for records as for
+arrays. Removing a row that the schema seeded leaves nothing in the change
+set, because the fields it compared are gone. Read `keys()` against what you
+started from when a removal is itself something you need to send.
+
 In development, the collection reports the calls that could not do anything:
 a `cell()` path the row does not have, a `rename` onto a key already taken, a
 patch whose row value is not an object. `devWarnings: false` silences them

@@ -515,6 +515,10 @@ test("patching a group row with something that is not an object is reported, not
 
   assert.deepEqual(form.value().rows.k, { nome: "kept", qta: 2 }, "the row is untouched");
   assert.match(said.join("\n"), /patch on "rows\.k" ignored/);
+
+  const alsoSaid = captureWarnings(() => form.f.rows.patch(undefined));
+  assert.deepEqual(form.value().rows.k, { nome: "kept", qta: 2 }, "and so is the whole collection");
+  assert.match(alsoSaid.join("\n"), /patch on "rows" ignored/);
 });
 
 test("rename says why it did nothing", () => {
