@@ -26,6 +26,53 @@
     <title>Modyra × plain</title>
 
     <style>
+      [data-rows-section] {
+        margin-top: 2.5rem;
+        border-top: 1px solid var(--mdy-outline-variant);
+        padding-top: 1.5rem;
+      }
+      [data-rows-section] h2 {
+        font-size: 1rem;
+        margin: 0 0 0.5rem;
+      }
+      .rows-lead {
+        color: var(--mdy-on-surface-variant);
+        font-size: 0.875rem;
+        margin: 0 0 1rem;
+        max-width: 46rem;
+      }
+      table.keyed-rows {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      table.keyed-rows th {
+        text-align: left;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--mdy-on-surface-variant);
+        padding: 0 0.75rem 0.5rem;
+      }
+      table.keyed-rows td {
+        padding: 0.25rem 0.75rem;
+        vertical-align: top;
+        border-top: 1px solid var(--mdy-outline-variant);
+      }
+      table.keyed-rows td.read {
+        padding-top: 0.9rem;
+      }
+      table.keyed-rows tr.editing {
+        background: var(--mdy-surface-container-low);
+      }
+      .keyed-rows-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+      }
+      .keyed-rows-state, [data-rows-state] {
+        font-size: 0.8125rem;
+      }
+
       body {
         margin: 0;
         padding: 2rem;
@@ -151,6 +198,18 @@
       <div>
         <div id="conformance"></div>
         <div data-form></div>
+
+        <section data-rows-section>
+          <h2>Rows keyed by data</h2>
+          <p class="rows-lead">
+            A table rendered <strong>by column</strong>: each column mounts one cell of each row, so
+            the two controls of a row are created in different places and at different times. Rows
+            enter and leave edit mode, the table sorts, and a provisional key becomes a real one —
+            none of it touches a value or the verdict below.
+          </p>
+          <div data-rows></div>
+          <pre class="keyed-rows-state" data-rows-state></pre>
+        </section>
       </div>
 
       <pre data-state></pre>

@@ -34,7 +34,6 @@
     "demo:vue": "npm run build:examples && node scripts/serve-example.mjs vue 4302",
     "demo:lit": "npm run build:examples && node scripts/serve-example.mjs lit 4303",
     "demo:plain": "npm run build:examples && node scripts/serve-example.mjs plain 4307",
-    "demo:record-table": "npm run build:examples && node scripts/serve-example.mjs plain-record-table 4308",
     "demo:preact": "npm run build:examples && node scripts/serve-example.mjs preact 4304",
     "demo:solid": "npm run build:examples && node scripts/serve-example.mjs solid 4305",
     "demo:svelte": "npm run build:examples && node scripts/serve-example.mjs svelte 4306",

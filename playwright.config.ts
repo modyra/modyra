@@ -19,22 +19,15 @@ import { defineConfig } from "@playwright/test";
 const RENDERERS = [
   {
     name: "angular", port: 4173, command: "node scripts/serve-static.mjs dist/demo/browser 4173",
-    match: { testIgnore: ["plain/**", "lit/**", "record-table/**"] },
+    match: { testIgnore: ["plain/**", "lit/**"] },
   },
   {
     name: "plain", port: 4307, command: "node scripts/serve-example.mjs plain 4307",
-    match: { testMatch: ["plain/**/*.spec.ts", "shared/**/*.spec.ts"] },
+    match: { testMatch: ["plain/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts"] },
   },
   {
     name: "lit", port: 4303, command: "node scripts/serve-example.mjs lit 4303",
-    match: { testMatch: ["lit/**/*.spec.ts", "shared/**/*.spec.ts"] },
-  },
-  // A table rendered by column over a keyed collection. Its specs are behavioural: what is asserted
-  // is that re-rendering, sorting and unmounting change nothing about the data, which a screenshot
-  // cannot say.
-  {
-    name: "record-table", port: 4308, command: "node scripts/serve-example.mjs plain-record-table 4308",
-    match: { testMatch: ["record-table/**/*.spec.ts"] },
+    match: { testMatch: ["lit/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts"] },
   },
 ] as const;
 

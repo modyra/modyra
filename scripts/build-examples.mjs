@@ -23,8 +23,6 @@ const targets = [
   // The framework-free renderer needs no transform at all — it is the plain-DOM baseline every
   // other adapter is measured against.
   { name: "plain", entry: "examples/plain/main.js" },
-  // A table rendered by column, over a record() — the arrangement an indexed collection cannot serve.
-  { name: "plain-record-table", entry: "examples/plain-record-table/main.js" },
   // Preact's automatic JSX runtime is esbuild's react transform pointed at
   // a different import source — no Babel plugin needed.
   { name: "preact", entry: "examples/preact/main.jsx", jsxImportSource: "preact" },

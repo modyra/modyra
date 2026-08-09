@@ -9,8 +9,10 @@ import {
   crossField,
   email,
   field,
+  group,
   MdyFormController,
   minLength,
+  record,
   required,
   serverValidator,
 } from "@modyra/lit/adapter";
@@ -211,7 +213,128 @@ class SignupApp extends LitElement {
           <mdy-file-field label="Attachments" multiple
             .field=${this.gallery.f.attachments}></mdy-file-field>
         </form>
+
+        <h2>Rows keyed by data</h2>
+        <p>
+          A table rendered <strong>by column</strong>: each column draws one cell of each row, so the
+          two controls of a row are created apart. Sorting, closing an editor and removing a row
+          change nothing a value depends on.
+        </p>
+        <keyed-rows></keyed-rows>
       </main>`;
   }
 }
 customElements.define("signup-app", SignupApp);
+
+/**
+ * The arrangement `record()` exists for, in Lit.
+ *
+ * Each column below iterates the rows and renders one cell of each, so a row's controls are created
+ * in different template positions and at different times. What the form holds does not follow any of
+ * that: a row exists because `upsert` declared it.
+ */
+class KeyedRows extends LitElement {
+  static properties = { editing: { state: true }, descending: { state: true } };
+
+  rows = createLitForm({
+    lines: record(
+      group({
+        item: field("", [required()]),
+        qty: field(1, [(value) => (Number(value) >= 1 ? [] : ["At least 1"])]),
+      }),
+    ),
+  });
+
+  constructor() {
+    super();
+    this.editing = new Set(["tmp:1"]);
+    this.descending = false;
+    this.rows.f.lines.setAll({
+      12: { item: "Espresso", qty: 2 },
+      34: { item: "Cornetto", qty: 1 },
+      "tmp:1": { item: "", qty: 1 },
+    });
+    // The value and the verdict are read in `render`, so the controller keeps them fresh without
+    // this component knowing which cell changed.
+    this._tracker = new MdyFormController(this, [this.rows.f.lines.keys, this.rows.value]);
+  }
+
+  createRenderRoot() { return this; }
+
+  #keys() {
+    return [...this.rows.f.lines.keys()].sort((a, b) =>
+      this.descending ? b.localeCompare(a) : a.localeCompare(b),
+    );
+  }
+
+  #toggle(key) {
+    const next = new Set(this.editing);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    this.editing = next;
+  }
+
+  #save(key) {
+    const assigned = String(Math.floor(Math.random() * 900) + 100);
+    this.rows.f.lines.rename(key, assigned);
+    const next = new Set(this.editing);
+    next.delete(key);
+    next.add(assigned);
+    this.editing = next;
+  }
+
+  #remove(key) {
+    this.rows.f.lines.remove(key);
+    const next = new Set(this.editing);
+    next.delete(key);
+    this.editing = next;
+  }
+
+  render() {
+    const keys = this.#keys();
+    return html`
+      <table class="keyed-rows">
+        <thead>
+          <tr><th>Key</th><th>Item</th><th>Qty</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${keys.map((key) => html`
+            <tr class=${this.editing.has(key) ? "editing" : nothing}>
+              <td>${key}</td>
+              <td>
+                ${this.editing.has(key)
+        ? html`<mdy-text-field .field=${this.rows.f.lines.cell(key, "item")}></mdy-text-field>`
+        : html`${this.rows.f.lines.cell(key, "item").value() ?? ""}`}
+              </td>
+              <td>
+                ${this.editing.has(key)
+        ? html`<mdy-number-field .field=${this.rows.f.lines.cell(key, "qty")}></mdy-number-field>`
+        : html`${this.rows.f.lines.cell(key, "qty").value() ?? ""}`}
+              </td>
+              <td>
+                <button type="button" @click=${() => this.#toggle(key)}>
+                  ${this.editing.has(key) ? "Done" : "Edit"}
+                </button>
+                ${key.startsWith("tmp:")
+        ? html`<button type="button" @click=${() => this.#save(key)}>Save</button>`
+        : nothing}
+                <button type="button" @click=${() => this.#remove(key)}>Remove</button>
+              </td>
+            </tr>`)}
+        </tbody>
+      </table>
+      <div class="keyed-rows-actions">
+        <button type="button" @click=${() => { this.descending = !this.descending; }}>
+          ${this.descending ? "Sort ascending" : "Sort descending"}
+        </button>
+        <button type="button" @click=${() => this.rows.f.lines.upsert(`tmp:${Date.now()}`, { item: "", qty: 1 })}>
+          Add row
+        </button>
+        <button type="button" @click=${() => { this.editing = new Set(); }}>Close every editor</button>
+      </div>
+      <pre class="keyed-rows-state">rows valid: ${this.rows.state.valid()}
+declared: ${keys.join(", ") || "(none)"}
+${JSON.stringify(this.rows.value().lines, null, 2)}</pre>`;
+  }
+}
+customElements.define("keyed-rows", KeyedRows);
