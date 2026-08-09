@@ -109,7 +109,16 @@ export class MdyRecordManager {
     this.setAll(initial);
   }
 
+  /**
+   * The set is what answers; the signal is what makes the answer live.
+   *
+   * `_declared` is deliberately a plain set — the gate reads it from the engine's write paths, where
+   * touching a signal would tie an unrelated computation to this collection's shape. That is right
+   * for the gate and wrong for a caller: every other member of the handle re-evaluates when its
+   * answer changes, and one that did not would be read once in a template and never again.
+   */
   has(key: string): boolean {
+    this._keysSig();
     return this._declared.has(key);
   }
 
@@ -188,6 +197,9 @@ export class MdyRecordManager {
 
   /** True when every field of the row passes — a row nobody mounted answers as truly as one on screen. */
   validOf(key: string): boolean {
+    // Read before the early return: an undeclared key reads no field signal, so without this the
+    // answer would be computed once, when it was false, and stay false after the row arrived.
+    this._keysSig();
     if (!this._declared.has(key)) return false;
     return this._leafPaths(`${this._deps.path}.${key}`, this._deps.item).every((path) => {
       const ref = this._deps.engine.peekField(path);

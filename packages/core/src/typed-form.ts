@@ -244,6 +244,9 @@ export interface MdyArrayHandle<TItemHandle, TItemValue> {
  * without knowing whether the row exists yet, and gets a handle that is inert until it does and stays
  * the same object across `upsert`/`remove`/`upsert`. A handle that changed identity would make a
  * binding re-bind and a control re-claim on every structural change.
+ *
+ * Every member reads live, including the two that return a plain value: `has` and `validOf` are
+ * usable inside a computed and re-evaluate when their answer changes, like the signals beside them.
  */
 export interface MdyRecordHandle<TItemHandle, TItemValue> {
   readonly path: string;

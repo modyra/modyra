@@ -300,7 +300,13 @@ while controls are showing it; those controls go back to waiting.
 ```
 
 `row(key)` gives the row's whole handle tree, `keys()` the declared keys in
-declaration order, and `validOf(key)` one row's verdict.
+declaration order, and `validOf(key)` one row's verdict. Everything on the
+handle reads live — `has(key)` and `validOf(key)` included, so a template may
+call them and will see the answer change.
+
+Declaring rows costs what you would expect and no more: 500 rows in one
+`setAll` land in tens of milliseconds, and one more row after that is
+constant time.
 
 ### Keys
 
