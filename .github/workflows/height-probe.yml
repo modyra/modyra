@@ -1,0 +1,50 @@
+name: Height probe
+on:
+  workflow_dispatch: {}
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: npx playwright install --with-deps firefox
+      - run: pnpm run build:packages && pnpm run build:examples
+      - run: |
+          node -e '
+          const { firefox } = require("@playwright/test");
+          (async () => {
+            const { spawn } = require("node:child_process");
+            const server = spawn("node", ["scripts/serve-example.mjs", "lit", "4303"], { stdio: "ignore" });
+            await new Promise((r) => setTimeout(r, 1500));
+            const browser = await firefox.launch();
+            const rows = [];
+            for (let i = 0; i < 10; i++) {
+              const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+              const page = await context.newPage();
+              await page.goto("http://localhost:4303/");
+              await page.waitForSelector("mdy-text-field");
+              await page.evaluate(async () => { await document.fonts.ready; });
+              await page.waitForTimeout(150);
+              const shot = await page.evaluate(() => ({
+                height: document.documentElement.scrollHeight,
+                errors: document.querySelectorAll(".mdy-error, .mdy-inline-error, [class*=error]").length,
+                pending: document.querySelectorAll("[class*=pending], [class*=spinner]").length,
+                fields: document.querySelectorAll(".mdy-renderer").length,
+              }));
+              await page.waitForTimeout(600);
+              const settled = await page.evaluate(() => document.documentElement.scrollHeight);
+              rows.push({ ...shot, settled });
+              await context.close();
+            }
+            console.table(rows);
+            server.kill();
+            await browser.close();
+          })();
+          '
