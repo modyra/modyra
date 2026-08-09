@@ -18,6 +18,7 @@
  * The engine enforces the first two through the gate this manager registers; see
  * `MdyFormEngine.registerPathGate`.
  */
+import { MDY_DEV } from "./dev-flags.js";
 import { MdyFormEngine } from "./form-engine.js";
 import { isSafeFieldPath } from "./path-utils.js";
 import {
@@ -55,6 +56,13 @@ function assertRowShape(node: MdyRowNode): void {
   }
 }
 
+/** Names a rejected argument in a diagnostic without printing a whole payload. */
+function describe(value: unknown): string {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "an array";
+  return `a ${typeof value}`;
+}
+
 /** Owner key for validators this manager registers (schema namespace, as arrays use). */
 const ROW_SCHEMA_KEY = "mdy-schema";
 
@@ -64,6 +72,8 @@ export interface MdyRecordManagerDeps {
   /** Dotted record path, e.g. "rows" or "order.rows". */
   readonly path: string;
   readonly item: MdyRowNode;
+  /** The host's development channel, so `devWarnings: false` silences these too. */
+  readonly warn: (message: string) => void;
 }
 
 export class MdyRecordManager {
@@ -145,9 +155,21 @@ export class MdyRecordManager {
     this._deps.engine.refreshPathGate(this._deps.path);
   }
 
-  /** Declares exactly these keys, removing every other. */
+  /**
+   * Declares exactly these keys, removing every other.
+   *
+   * Handed something that is not an object — the `undefined` a response can carry — it declares
+   * nothing and says so. Emptying the collection stays possible and stays deliberate: `setAll({})`.
+   */
   setAll(values: Readonly<Record<string, unknown>>): void {
-    const wanted = isRecord(values) ? values : {};
+    if (!isRecord(values) || Array.isArray(values)) {
+      this._warn(
+        `setAll on "${this._deps.path}" ignored ${describe(values)}: it takes an object keyed by row ` +
+        "key. Pass {} to empty the collection.",
+      );
+      return;
+    }
+    const wanted = values;
     for (const key of [...this._declared]) {
       if (!(key in wanted)) this.remove(key);
     }
@@ -163,6 +185,13 @@ export class MdyRecordManager {
   patch(values: Readonly<Record<string, unknown>>): void {
     if (!isRecord(values)) return;
     for (const [key, value] of Object.entries(values)) {
+      if (this._deps.item.kind === "group" && !isRecord(value)) {
+        this._warn(
+          `patch on "${this._deps.path}.${key}" ignored ${describe(value)}: this row is a group, so ` +
+          "a patch names its fields — { field: value }.",
+        );
+        continue;
+      }
       if (!this._declared.has(key)) {
         this.upsert(key, value);
         continue;
@@ -179,7 +208,17 @@ export class MdyRecordManager {
    * because the row that key already names would be silently replaced.
    */
   rename(from: string, to: string): void {
-    if (!this._declared.has(from) || this._declared.has(to)) return;
+    if (!this._declared.has(from)) {
+      this._warn(`rename on "${this._deps.path}" ignored: there is no row "${from}" to move.`);
+      return;
+    }
+    if (this._declared.has(to)) {
+      this._warn(
+        `rename on "${this._deps.path}" ignored: "${to}" already names a row, and moving onto it ` +
+        `would replace it. Remove "${to}" first if that is what you mean.`,
+      );
+      return;
+    }
     if (!this._acceptKey(to)) return;
     const value = this._readRow(from);
     const flags = this._readFlags(from);
@@ -217,7 +256,27 @@ export class MdyRecordManager {
     this._releaseGate();
   }
 
+  /**
+   * The leaves a row offers, relative to the row: `["name", "inner.deep"]`, or `[""]` when the rows
+   * are leaves themselves. What `cell()` is allowed to address, and what a diagnostic can suggest.
+   */
+  rowLeaves(): readonly string[] {
+    const prefix = `${this._deps.path}.`;
+    return this._leafPaths(this._deps.path, this._deps.item).map((leaf) =>
+      leaf.startsWith(prefix) ? leaf.slice(prefix.length) : "",
+    );
+  }
+
+  /** True when `path` (relative to a row, `undefined` for a leaf row) addresses one of them. */
+  addresses(path: string | undefined): boolean {
+    return this.rowLeaves().includes(path ?? "");
+  }
+
   // ── Internals ──────────────────────────────────────────────────────────────
+
+  private _warn(message: string): void {
+    if (MDY_DEV) this._deps.warn(message);
+  }
 
   /** The row key a path below this collection belongs to. */
   private _keyOf(path: string): string {
@@ -233,9 +292,9 @@ export class MdyRecordManager {
     if (key.length > 0 && !key.includes(".") && isSafeFieldPath(`${this._deps.path}.${key}`)) {
       return true;
     }
-    console.warn(
-      `[modyra] Ignored record key ${JSON.stringify(key)} on "${this._deps.path}": a key must be ` +
-      "non-empty, must not contain \".\", and must not be a prototype-polluting name.",
+    this._warn(
+      `Ignored record key ${JSON.stringify(key)} on "${this._deps.path}": a key must be non-empty, ` +
+      "must not contain \".\", and must not be a prototype-polluting name.",
     );
     return false;
   }
