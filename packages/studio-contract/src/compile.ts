@@ -200,7 +200,10 @@ export function dynamicFieldForNode(node: FieldNode, name: string): MdyDynamicFi
 
 function mapArrayNode(node: ArrayNode, diagnostics: StudioDiagnostic[]): MdyDynamicNode | null {
   const item = mapNode(node.item, diagnostics);
-  if (!item || item.node === "array") return null; // item is FieldNode | GroupNode by type; array-of-array can't happen
+  // A row is a field or a group. The project's model has no collection inside a row to map, and the
+  // Contract would not accept one either — both collection kinds are refused here rather than only
+  // the one that existed when this was written.
+  if (!item || item.node === "array" || item.node === "record") return null;
 
   for (const v of node.validators) {
     if (v.kind !== "min" && v.kind !== "max") {
