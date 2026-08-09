@@ -3,6 +3,7 @@ import {
   MdyFormEngine,
   MdyFormRegistry,
 } from "./form-engine.js";
+import { MDY_DEV } from "./dev-flags.js";
 import { MdyReactivity, MdySignal, vanillaReactivity } from "./reactivity.js";
 import { registerHandleOwner } from "./reactive-owner.js";
 import { MdyArrayManager } from "./array-manager.js";
@@ -528,8 +529,19 @@ export abstract class MdyTypedFormBase<
   protected readonly _arrays: ReadonlyMap<string, MdyArrayManager>;
   /** One {@link MdyRecordManager} per record node, keyed by dotted path. */
   protected readonly _records: ReadonlyMap<string, MdyRecordManager>;
-  /** Cell handles, kept so `cell(key, path)` answers with the same object every time. */
-  private readonly _cellHandles = new Map<string, MdyFieldHandle<unknown>>();
+  /**
+   * Cell handles, kept so `cell(key, path)` answers with the same object every time.
+   *
+   * Held weakly: identity is a promise to whoever is *using* a handle — a control bound across
+   * `upsert`/`remove`/`upsert` must not be re-bound — and a weak reference keeps exactly that while
+   * letting go of handles for rows nobody is looking at. A table churning provisional keys would
+   * otherwise accumulate one entry per key it ever showed.
+   */
+  private readonly _cellHandles = new Map<string, WeakRef<MdyFieldHandle<unknown>>>();
+  private readonly _cellHandlesSweep = new FinalizationRegistry<string>((path) => {
+    // Only when nothing has replaced it in the meantime.
+    if (this._cellHandles.get(path)?.deref() === undefined) this._cellHandles.delete(path);
+  });
 
   /**
    * Concrete handle tree type is declared by subclasses: this package uses
@@ -573,7 +585,13 @@ export abstract class MdyTypedFormBase<
         records.set(
           path,
           new MdyRecordManager(
-            { rx: adapter.reactivity, engine: adapter, path, item: node.item },
+            {
+              rx: adapter.reactivity,
+              engine: adapter,
+              path,
+              item: node.item,
+              warn: (message) => adapter.warnDev(message),
+            },
             node.initial,
           ),
         );
@@ -997,8 +1015,19 @@ export abstract class MdyTypedFormBase<
       valid: rx.computed(() => errors().length === 0),
       has: (key: string) => manager.has(key),
       row,
-      cell: (key: string, leaf?: string) =>
-        this.cellHandle(leaf === undefined ? `${path}.${key}` : `${path}.${key}.${leaf}`),
+      cell: (key: string, leaf?: string) => {
+        // Checked against the row's schema, which is static: a mistyped part addresses nothing and
+        // would otherwise render a control that stays empty for ever without saying why. The key is
+        // not checked here — a row that does not exist yet is the ordinary case.
+        if (MDY_DEV && !manager.addresses(leaf)) {
+          const offered = manager.rowLeaves().map((l) => (l === "" ? "(no path — rows are leaves)" : l));
+          this._adapter.warnDev(
+            `cell(${JSON.stringify(key)}, ${JSON.stringify(leaf)}) on "${path}" addresses nothing. ` +
+            `This row offers: ${offered.join(", ")}.`,
+          );
+        }
+        return this.cellHandle(leaf === undefined ? `${path}.${key}` : `${path}.${key}.${leaf}`);
+      },
       upsert: (key: string, value?: unknown) => manager.upsert(key, value),
       remove: (key: string) => manager.remove(key),
       setAll: (values: Readonly<Record<string, unknown>>) => manager.setAll(values),
@@ -1032,7 +1061,7 @@ export abstract class MdyTypedFormBase<
    * and a control must not be the thing that brings it into being.
    */
   protected cellHandle(path: string): MdyFieldHandle<unknown> {
-    const existing = this._cellHandles.get(path);
+    const existing = this._cellHandles.get(path)?.deref();
     if (existing) return existing;
     const rx = this._adapter.reactivity;
     const state = (): MdyFieldState<unknown> | null => {
@@ -1060,7 +1089,8 @@ export abstract class MdyTypedFormBase<
       markAsDirty: () => state()?.dirty.set(true),
     };
     registerHandleOwner(handle, rx);
-    this._cellHandles.set(path, handle);
+    this._cellHandles.set(path, new WeakRef(handle));
+    this._cellHandlesSweep.register(handle, path);
     return handle;
   }
 

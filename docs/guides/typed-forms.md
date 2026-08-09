@@ -326,11 +326,25 @@ looks like — and a record is never turned into an array by them.
 form.f.rows.rename("tmp:1", String(saved.id));
 ```
 
-### Several rows at once
+### Rewriting, merging, emptying
 
-`patch({ [key]: partial })` writes rows in one call, leaving the rest alone;
-`setAll(rows)` declares exactly the keys it is given. Record-level validators
-run against the whole collection, like array-level ones.
+`upsert(key, value)` **rewrites** the row: a field the value does not name
+goes back to the initial its schema declares. `patch({ [key]: partial })`
+**merges** into rows that exist, leaving their other fields alone, and writes
+several in one call. What the user did — `touched`, `dirty` — survives both.
+
+`setAll(rows)` declares exactly the keys it is given, and `setAll({})` is how
+you empty a collection deliberately; handed something that is not an object
+it declares nothing and says so, because a stray `undefined` from a response
+should not erase a table.
+
+Record-level validators run against the whole collection, like array-level
+ones.
+
+In development, the collection reports the calls that could not do anything:
+a `cell()` path the row does not have, a `rename` onto a key already taken, a
+patch whose row value is not an object. `devWarnings: false` silences them
+with everything else.
 
 ### In a data-only document
 

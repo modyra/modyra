@@ -376,6 +376,16 @@ export class MdyFormEngine
     }
   }
 
+  /**
+   * The engine's development channel, for the collections it hosts.
+   *
+   * A manager that wrote to the console directly would keep talking after a host set
+   * `devWarnings: false`, which is the one switch a consumer has for this noise.
+   */
+  warnDev(message: string): void {
+    this._warn(message);
+  }
+
   // ── MdyFormRegistry ─────────────────────────────────────────────────────────
 
   /**

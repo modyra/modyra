@@ -1291,7 +1291,8 @@
     "engine: MdyFormEngine",
     "item: MdyRowNode",
     "path: string",
-    "rx: MdyReactivity"
+    "rx: MdyReactivity",
+    "warn: (message: string) => void"
   ],
   "MdyRelationAttribute": [
     "\"aria-activedescendant\"",

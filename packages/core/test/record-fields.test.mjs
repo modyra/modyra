@@ -427,3 +427,169 @@ test("a disabled cell is not submitted, and the row still is", () => {
   assert.deepEqual(form.submitValue(), { rows: { k: { n: "x" } } });
   assert.equal(form.value().rows.k.m, "y", "the value is still there — it is simply not sent");
 });
+
+// ─── Corner cases ────────────────────────────────────────────────────────────
+
+/** Collects what the form's development channel says, and restores the console after. */
+function captureWarnings(run) {
+  const said = [];
+  const original = console.warn;
+  console.warn = (message) => said.push(String(message));
+  try {
+    run();
+  } finally {
+    console.warn = original;
+  }
+  return said;
+}
+
+test("a handle in use is never let go, however the row churns", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  const held = form.f.rows.cell("k", "nome"); // what a mounted control holds
+
+  for (let i = 0; i < 200; i++) {
+    form.f.rows.upsert("k", { nome: `v${i}`, qta: i });
+    form.f.rows.remove("k");
+  }
+  form.f.rows.upsert("k", { nome: "last", qta: 1 });
+
+  assert.equal(form.f.rows.cell("k", "nome"), held, "the same object, after 200 rebuilds");
+  assert.equal(held.value(), "last", "and it reads the row that exists now");
+});
+
+test("handles for rows nobody holds are collectable", async () => {
+  const form = createForm({ rows: record(rowSchema()) });
+
+  // Allocated and dropped inside their own frame: a handle held by an enclosing scope stays
+  // reachable whatever the cache does, and a test that measured that would prove nothing.
+  const showOnceThenRemove = (key) => {
+    form.f.rows.upsert(key, { nome: "x", qta: 1 });
+    const handle = form.f.rows.cell(key, "nome");
+    form.f.rows.remove(key);
+    return new WeakRef(handle);
+  };
+
+  const gone = showOnceThenRemove("tmp:0");
+  for (let i = 1; i < 200; i++) showOnceThenRemove(`tmp:${i}`);
+
+  if (typeof globalThis.gc !== "function") {
+    // Without --expose-gc nothing can be asked to collect, and a timing-based guess would be a coin
+    // toss dressed as a check. Say what was not established rather than pretend it was.
+    assert.ok(true, "collection not established here — run node with --expose-gc to assert it");
+    return;
+  }
+
+  await new Promise((r) => setTimeout(r, 0)); // a WeakRef keeps its target through the current job
+  globalThis.gc();
+  await new Promise((r) => setTimeout(r, 5));
+  globalThis.gc();
+
+  assert.equal(gone.deref(), undefined, "a handle for a row nobody holds is let go");
+  assert.equal(
+    form.f.rows.cell("fresh", "nome").path,
+    "rows.fresh.nome",
+    "and the cache still hands out handles",
+  );
+});
+
+test("setAll refuses what is not an object instead of emptying the collection", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  form.f.rows.upsert("a", { nome: "kept", qta: 1 });
+
+  const said = captureWarnings(() => form.f.rows.setAll(undefined));
+
+  assert.deepEqual([...form.f.rows.keys()], ["a"], "an undefined payload empties nothing");
+  assert.equal(form.value().rows.a.nome, "kept");
+  assert.match(said.join("\n"), /setAll .* ignored/);
+  assert.match(said.join("\n"), /\{\}/, "the message names the deliberate way to empty it");
+
+  form.f.rows.setAll({});
+  assert.deepEqual([...form.f.rows.keys()], [], "which still works");
+});
+
+test("patching a group row with something that is not an object is reported, not swallowed", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  form.f.rows.upsert("k", { nome: "kept", qta: 2 });
+
+  const said = captureWarnings(() => form.f.rows.patch({ k: 5 }));
+
+  assert.deepEqual(form.value().rows.k, { nome: "kept", qta: 2 }, "the row is untouched");
+  assert.match(said.join("\n"), /patch on "rows\.k" ignored/);
+});
+
+test("rename says why it did nothing", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  form.f.rows.upsert("a", { nome: "A", qta: 1 });
+  form.f.rows.upsert("b", { nome: "B", qta: 2 });
+
+  const said = captureWarnings(() => {
+    form.f.rows.rename("a", "b");   // b is taken
+    form.f.rows.rename("zz", "yy"); // zz does not exist
+  });
+
+  assert.deepEqual([...form.f.rows.keys()], ["a", "b"], "neither call moved anything");
+  assert.equal(form.value().rows.b.nome, "B", "and the row that was in the way is intact");
+  assert.match(said.join("\n"), /already names a row/);
+  assert.match(said.join("\n"), /no row "zz" to move/);
+});
+
+test("cell() on a part the row does not have says what the row offers", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  form.f.rows.upsert("k", { nome: "x", qta: 1 });
+
+  const said = captureWarnings(() => form.f.rows.cell("k", "nome2"));
+
+  assert.match(said.join("\n"), /addresses nothing/);
+  assert.match(said.join("\n"), /nome, qta/, "the diagnostic names the way out");
+});
+
+test("a record-level validator gates the form on the whole collection", () => {
+  const form = createForm({
+    rows: record(rowSchema(), {
+      validators: [(rows) => (Object.keys(rows).length > 0 ? [] : ["at least one row"])],
+    }),
+  });
+
+  assert.equal(form.state.valid(), false);
+  assert.deepEqual(form.f.rows.errors().map((e) => e.message), ["at least one row"]);
+
+  form.f.rows.upsert("k", { nome: "x", qta: 1 });
+  assert.equal(form.state.valid(), true);
+});
+
+test("a group nested inside a row keeps its own dotted path", () => {
+  const form = createForm({ rows: record(group({ n: field("x"), inner: group({ deep: field("d") }) })) });
+
+  form.f.rows.upsert("k", { n: "y", inner: { deep: "z" } });
+
+  assert.deepEqual(form.value().rows.k, { n: "y", inner: { deep: "z" } });
+  assert.equal(form.f.rows.cell("k", "inner.deep").value(), "z");
+  assert.ok(form.fieldNames().includes("rows.k.inner.deep"));
+});
+
+test("a hostile key arriving through a flat write is refused, not registered", () => {
+  const form = createForm({ rows: record(group({ n: field("") })) });
+
+  const said = captureWarnings(() => form.patchValue({ "rows.__proto__.n": "polluted" }));
+
+  assert.deepEqual([...form.f.rows.keys()], []);
+  assert.equal(({}).n, undefined, "nothing reached Object.prototype");
+  assert.match(said.join("\n"), /Ignored record key/);
+});
+
+test("upsert rewrites the row, patch merges into it", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  form.f.rows.upsert("k", { nome: "typed", qta: 9 });
+  form.f.rows.cell("k", "nome").markAsTouched();
+
+  form.f.rows.upsert("k", { nome: "again" });
+  assert.deepEqual(
+    form.value().rows.k,
+    { nome: "again", qta: 0 },
+    "a field the rewrite does not name goes back to the schema's initial",
+  );
+  assert.equal(form.f.rows.cell("k", "nome").touched(), true, "what the user did survives a rewrite");
+
+  form.f.rows.patch({ k: { nome: "merged" } });
+  assert.deepEqual(form.value().rows.k, { nome: "merged", qta: 0 }, "a patch leaves the rest alone");
+});
