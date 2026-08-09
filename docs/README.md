@@ -5,8 +5,8 @@ Use this index to find the conceptual guides, integration notes and reference ma
 ## Start here
 
 - [Mental model](guides/mental-model.md): form state, field handles and lifecycle
-- [Typed forms](guides/typed-forms.md): schemas, validation, arrays, drafts and history
-- [Usage modes](guides/usage-modes.md): typed, declarative, headless and data-driven forms
+- [Typed forms](guides/typed-forms.md): schemas, validation, arrays, keyed collections, drafts and history
+- [Usage modes in Angular](guides/usage-modes.md): typed, declarative and headless bindings
 - [Security](guides/security.md): trust boundaries, persistence and server validation
 - [Troubleshooting](guides/troubleshooting.md): pending state, submission and integration issues
 

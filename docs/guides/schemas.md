@@ -62,10 +62,10 @@ re-validation — see [Typed forms](typed-forms.md#async-validation).
 Bind the same building blocks to the framework's reactivity:
 
 ```ts
-import { mdyForm } from "@modyra/angular/adapter";
+import { createForm } from "@modyra/core";
 import { buildStandardTree, buildStandardValidator } from "@modyra/standard-schema";
 
-readonly form = mdyForm(buildStandardTree(schema, fields), {
+const form = createForm(buildStandardTree(schema, fields), {
   validators: [buildStandardValidator(schema)],
 });
 ```

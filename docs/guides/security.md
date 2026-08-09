@@ -32,9 +32,10 @@ const form = createForm(
 );
 ```
 
-The same options exist on `mdyForm()` (Angular), `useForm()` (React),
-`useForm()`/`createForm()` (Vue) and the Lit adapter — the policy lives in
-the shared core.
+The policy lives in the core, so every adapter takes the same options on its
+own constructor — `createForm`, `mdyForm`, `useMdyForm`, `createLitForm`,
+`createVueForm`, `createSolidForm`, `createSvelteForm`. Which one you call
+changes nothing about what is enforced.
 
 ## Sanitization profiles
 
