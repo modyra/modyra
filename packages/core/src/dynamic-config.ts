@@ -939,6 +939,11 @@ function validPlacement(at: unknown, trackCount: number): boolean {
   return true;
 }
 
+/** A node that holds rows. One of these inside another is a shape the contract cannot address. */
+function isCollectionNode(raw: unknown): boolean {
+  return isRecordValue(raw) && (raw["node"] === "array" || raw["node"] === "record");
+}
+
 function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
   const out: MdyDynamicDiagnostic[] = [];
   let count = 0;
@@ -960,6 +965,7 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
     }
     if (raw["node"] === "record") {
       if (!isRecordValue(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path, message: "record requires an item node." });
+      else if (isCollectionNode(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path: `${path}/item`, message: "a row is a field or a group — one collection per node." });
       else visit(raw["item"], `${path}/item`, depth + 1);
       const initial = raw["initialValue"];
       if (initial !== undefined && !isRecordValue(initial)) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path: `${path}/initialValue`, message: "record initialValue must be an object keyed by row key." });
@@ -973,6 +979,7 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
       return;
     }
     if (!isRecordValue(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path, message: "array requires an item node." });
+    else if (isCollectionNode(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path: `${path}/item`, message: "a row is a field or a group — one collection per node." });
     else visit(raw["item"], `${path}/item`, depth + 1);
     if (raw["initialValue"] !== undefined && !Array.isArray(raw["initialValue"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path: `${path}/initialValue`, message: "array initialValue must be an array." });
     if (Array.isArray(raw["initialValue"]) && raw["initialValue"].length > 100) out.push({ code: "MDY_DYNAMIC_SCHEMA_LIMIT", severity: "error", path: `${path}/initialValue`, message: "array initialValue exceeds 100 rows." });

@@ -642,3 +642,204 @@ test("removing a row while its async validator is in flight settles cleanly", as
   assert.equal(form.state.valid(), true, "and cannot report an error against a row that is gone");
   assert.deepEqual(form.fieldNames(), ["rows"], "nothing of the row is left registered");
 });
+
+test("a document nesting one collection inside another is refused where it is written", async () => {
+  const { parseDynamicForm, buildDynamicFormSchema, array } = await import("../dist/index.js");
+
+  const recordInsideArray = {
+    node: "group",
+    children: {
+      rows: {
+        node: "array",
+        item: { node: "record", item: { node: "field", field: { name: "leaf", kind: "text" } } },
+      },
+    },
+  };
+
+  const parsed = parseDynamicForm({ version: 3, schema: recordInsideArray });
+  assert.ok(
+    parsed.diagnostics.some((d) => d.code === "MDY_DYNAMIC_INVALID_ARRAY"),
+    "the parser names the shape it cannot address",
+  );
+
+  // The builder translates; the form is what refuses, and it refuses when it is built rather than
+  // when a row first arrives in front of a user.
+  assert.throws(
+    () => createForm(buildDynamicFormSchema(recordInsideArray)),
+    /Nested collections|one collection per node/,
+  );
+  assert.throws(
+    () => createForm({ rows: array(group({ inner: record(field("")) })) }),
+    /Nested collections|one collection per node/,
+  );
+});
+
+test("an array inside a record row is refused the same way", async () => {
+  const { parseDynamicForm } = await import("../dist/index.js");
+
+  const parsed = parseDynamicForm({
+    version: 3,
+    schema: {
+      node: "group",
+      children: {
+        rows: {
+          node: "record",
+          item: { node: "array", item: { node: "field", field: { name: "leaf", kind: "text" } } },
+        },
+      },
+    },
+  });
+
+  assert.ok(parsed.diagnostics.some((d) => d.code === "MDY_DYNAMIC_INVALID_RECORD"));
+});
+
+test("a draft restores the rows that were there, and not the one the user removed", async () => {
+  const store = new Map();
+  const storage = {
+    read: (key) => (store.has(key) ? store.get(key) : null),
+    write: (key, value) => store.set(key, value),
+    clear: (key) => store.delete(key),
+  };
+  const schema = () => ({
+    rows: record(group({ n: field("") }), { initial: { seed: { n: "s" } } }),
+  });
+
+  const first = createForm(schema(), { draft: { key: "rows-removal", storage, debounceMs: 0 } });
+  first.f.rows.remove("seed");                 // the user deletes the row the schema seeded
+  first.f.rows.upsert("new", { n: "added" }); // and adds one of their own
+  await new Promise((r) => setTimeout(r, 20));
+
+  const restored = createForm(schema(), { draft: { key: "rows-removal", storage, debounceMs: 0 } });
+  await new Promise((r) => setTimeout(r, 20));
+
+  assert.deepEqual([...restored.f.rows.keys()], ["new"], "the deletion is part of what was saved");
+  assert.equal(restored.value().rows.new.n, "added");
+  assert.equal(restored.f.rows.has("seed"), false, "a restore must not undo a removal");
+});
+
+test("undo and redo step a row's value both ways", async () => {
+  const tick = () => new Promise((r) => setTimeout(r, 5));
+  const form = createForm({ rows: record(group({ n: field("") })) }, { history: true });
+  await tick();
+  form.f.rows.upsert("k", { n: "one" });
+  await tick();
+  form.f.rows.cell("k", "n").set("two");
+  await tick();
+
+  form.undo();
+  assert.equal(form.value().rows.k.n, "one");
+  form.redo();
+  assert.equal(form.value().rows.k.n, "two");
+});
+
+test("the form's security policy reaches a row's cells like any other field", () => {
+  const seen = [];
+  const form = createForm(
+    { rows: record(group({ n: field("") })) },
+    { security: { maxValueLength: 4, onViolation: (violation) => seen.push(violation) } },
+  );
+
+  form.f.rows.upsert("k", { n: "far too long" });
+
+  assert.equal(form.value().rows.k.n, "far ", "the cap applies inside a row");
+  assert.deepEqual(seen.map((v) => v.kind), ["max-length"], "and the interception is reported");
+});
+
+test("two columns rendering the same cell share one state", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  form.f.rows.upsert("k", { nome: "one", qta: 1 });
+
+  // What two columns asking for the same part looks like to the engine.
+  form.claimField("rows.k.nome");
+  form.claimField("rows.k.nome");
+  form.f.rows.cell("k", "nome").set("two");
+
+  assert.equal(form.value().rows.k.nome, "two");
+  form.removeField("rows.k.nome");
+  assert.equal(form.value().rows.k.nome, "two", "one column leaving takes nothing with it");
+  form.removeField("rows.k.nome");
+  assert.equal(form.value().rows.k.nome, "two", "and neither does the last: the row owns the value");
+});
+
+test("a rename while a cell is mounted moves the control's binding, not its value", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  form.f.rows.upsert("tmp:1", { nome: "typed", qta: 3 });
+  form.claimField("rows.tmp:1.nome");
+  const beforeCell = form.f.rows.cell("tmp:1", "nome");
+
+  form.f.rows.rename("tmp:1", "88");
+
+  assert.equal(beforeCell.value(), null, "the old key addresses nothing now");
+  assert.equal(form.f.rows.cell("88", "nome").value(), "typed", "and the value moved with the row");
+  assert.equal(
+    form.fieldNames().some((n) => n.startsWith("rows.tmp:1.")),
+    false,
+    "nothing of the old key is left registered",
+  );
+});
+
+test("a large collection is declared once and grows in constant time", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  const rows = Object.fromEntries(
+    Array.from({ length: 500 }, (_, i) => [String(i), { nome: `n${i}`, qta: i }]),
+  );
+
+  form.f.rows.setAll(rows);
+  assert.equal(form.f.rows.keys().length, 500);
+  assert.equal(form.value().rows["499"].nome, "n499", "and the last row is readable");
+
+  form.f.rows.upsert("500", { nome: "one more", qta: 1 });
+  assert.equal(form.f.rows.keys().length, 501);
+
+  // Churn: the collection ends where it started, with nothing left registered.
+  for (let i = 0; i < 500; i++) form.f.rows.remove(String(i));
+  assert.deepEqual([...form.f.rows.keys()], ["500"]);
+  assert.equal(
+    form.fieldNames().filter((n) => n.startsWith("rows.")).length,
+    2,
+    "one row of two cells, and the collection's own path",
+  );
+});
+
+test("reset returns the collection to what the schema declared, and clears interaction", () => {
+  const form = createForm({
+    rows: record(group({ n: field("x") }), { initial: { seed: { n: "s" } } }),
+  });
+  form.f.rows.upsert("added", { n: "y" });
+  form.f.rows.cell("seed", "n").set("edited");
+  form.f.rows.cell("seed", "n").markAsTouched();
+
+  form.reset();
+
+  assert.deepEqual(form.value().rows, { seed: { n: "s" } }, "the rows the schema declared, as declared");
+  assert.equal(form.f.rows.has("added"), false, "a row added at runtime is not part of that");
+  assert.equal(form.f.rows.cell("seed", "n").touched(), false);
+});
+
+test("a record with no declared rows resets to none — like an array with no initial", () => {
+  const form = createForm({ rows: record(group({ n: field("") })) });
+  form.f.rows.upsert("k", { n: "typed" });
+
+  form.reset();
+
+  assert.deepEqual([...form.f.rows.keys()], [], "reset means what the schema said, which was nothing");
+});
+
+test("an invalid row blocks a submit, as an invalid field does", async () => {
+  const form = createForm({
+    rows: record(group({ n: field("", [required()]) })),
+  });
+  form.f.rows.upsert("k", { n: "" });
+
+  let ran = false;
+  await form.submit(async () => {
+    ran = true;
+  });
+  assert.equal(ran, false, "the handler is not reached while a row is invalid");
+
+  form.f.rows.cell("k", "n").set("filled");
+  await form.submit(async () => {
+    ran = true;
+  });
+  assert.equal(ran, true);
+});
