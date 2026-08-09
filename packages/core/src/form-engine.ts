@@ -149,6 +149,19 @@ export interface MdyFormEngineOptions {
  *
  * Fields are created lazily on first `getField()`/`claimField()` call.
  */
+/**
+ * How a collection tells the engine which of its paths exist.
+ *
+ * `isOpen` is asked before anything is created, so a control mounting on a row that was never
+ * declared claims nothing. `onRefusedWrite` is the other half: a *value* arriving for a refused path
+ * is the owner's own data — a restored draft, an undo across the moment a row was added — and it is
+ * offered to the owner rather than dropped.
+ */
+export interface MdyPathGate {
+  isOpen(path: string): boolean;
+  onRefusedWrite?(path: string, value: unknown): void;
+}
+
 export class MdyFormEngine
   implements MdyFormAdapter<Record<string, unknown>>, MdyFormRegistry {
   private readonly _fields = new Map<string, FieldRecord>();
@@ -163,7 +176,7 @@ export class MdyFormEngine
    * A keyed collection owns the set of rows that exist; a control mounting on one of them must not
    * bring it into being, or the data model would follow the rendering. See {@link registerPathGate}.
    */
-  private readonly _gates = new Map<string, (path: string) => boolean>();
+  private readonly _gates = new Map<string, MdyPathGate>();
   /** Claims that arrived for a path its gate refuses, held until the gate admits it. */
   private readonly _pendingClaims = new Map<string, number>();
   /**
@@ -374,8 +387,8 @@ export class MdyFormEngine
    *
    * Returns the disposer that removes the gate.
    */
-  registerPathGate(prefix: string, isOpen: (path: string) => boolean): () => void {
-    this._gates.set(prefix, isOpen);
+  registerPathGate(prefix: string, gate: MdyPathGate): () => void {
+    this._gates.set(prefix, gate);
     return () => {
       this._gates.delete(prefix);
     };
@@ -426,10 +439,27 @@ export class MdyFormEngine
   }
 
   private _gateRefuses(name: string): boolean {
-    for (const [prefix, isOpen] of this._gates) {
-      if (name === prefix || name.startsWith(`${prefix}.`)) return !isOpen(name);
+    for (const [prefix, gate] of this._gates) {
+      if (name === prefix || name.startsWith(`${prefix}.`)) return !gate.isOpen(name);
     }
     return false;
+  }
+
+  /**
+   * Offers a refused path to its owner as a *value*, and reports whether it was taken.
+   *
+   * A control mounting must not bring a row into being; a value arriving is a different act. A draft
+   * being restored, an undo crossing the moment a row was added, a whole-form write: each carries the
+   * owner's own data, and refusing it would silently drop the user's work rather than protect it.
+   */
+  private _offerToGate(name: string, value: unknown): boolean {
+    for (const [prefix, gate] of this._gates) {
+      if (name !== prefix && !name.startsWith(`${prefix}.`)) continue;
+      if (gate.isOpen(name)) return true;
+      gate.onRefusedWrite?.(name, value);
+      return gate.isOpen(name);
+    }
+    return true;
   }
 
   claimField(name: string): void {
@@ -683,6 +713,7 @@ export class MdyFormEngine
 
   patchValue(partial: Partial<Record<string, unknown>>): void {
     for (const [key, val] of Object.entries(partial)) {
+      if (!this._offerToGate(key, val)) continue;
       const rec = this._getOrCreate(key);
       rec.state.value.set(val);
     }
@@ -691,6 +722,7 @@ export class MdyFormEngine
   setValue(value: Record<string, unknown>): void {
     // Replace semantics: fields absent from the new value are reset to null.
     for (const [key, val] of Object.entries(value)) {
+      if (!this._offerToGate(key, val)) continue;
       const rec = this._getOrCreate(key);
       rec.state.value.set(val);
     }

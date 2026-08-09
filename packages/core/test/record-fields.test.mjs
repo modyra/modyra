@@ -232,3 +232,40 @@ test("a collection inside a row is refused with a message, not a broken path", (
     /one collection per node/,
   );
 });
+
+test("a draft restores the rows it was holding", async () => {
+  const store = new Map();
+  const storage = {
+    read: (key) => (store.has(key) ? store.get(key) : null),
+    write: (key, value) => store.set(key, value),
+    clear: (key) => store.delete(key),
+  };
+  const schema = () => ({ rows: record(group({ nome: field(""), qta: field(0) })) });
+
+  const first = createForm(schema(), { draft: { key: "rows-draft", storage, debounceMs: 0 } });
+  first.f.rows.upsert("a3f9", { nome: "Espresso", qta: 2 });
+  await new Promise((r) => setTimeout(r, 10));
+
+  const restored = createForm(schema(), { draft: { key: "rows-draft", storage, debounceMs: 0 } });
+  await new Promise((r) => setTimeout(r, 10));
+
+  assert.deepEqual([...restored.f.rows.keys()], ["a3f9"], "the row came back with the draft");
+  assert.equal(restored.value().rows.a3f9.nome, "Espresso");
+});
+
+test("undo steps a row's value back without losing the row", async () => {
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+  const form = createForm(
+    { rows: record(group({ nome: field(""), qta: field(0) })) },
+    { history: true },
+  );
+  form.f.rows.upsert("a", { nome: "first", qta: 1 });
+  await tick(); // the snapshot history steps back to
+  form.f.rows.cell("a", "nome").set("second");
+  await tick(); // recorded
+
+  form.undo();
+
+  assert.equal(form.f.rows.has("a"), true, "the row is not lost by stepping back");
+  assert.equal(form.value().rows.a.nome, "first");
+});

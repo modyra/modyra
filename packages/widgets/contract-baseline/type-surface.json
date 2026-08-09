@@ -1191,6 +1191,10 @@
   "MdyPartState": [
     "-> Partial"
   ],
+  "MdyPathGate": [
+    "isOpen: boolean",
+    "onRefusedWrite?: void"
+  ],
   "MdyPathRef": [
     "path: string"
   ],

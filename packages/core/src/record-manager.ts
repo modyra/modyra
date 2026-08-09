@@ -88,10 +88,18 @@ export class MdyRecordManager {
     this._keysSig = deps.rx.signal<readonly string[]>([]);
     this.keys = this._keysSig.asReadonly();
 
-    this._releaseGate = deps.engine.registerPathGate(deps.path, (name) => {
-      if (name === deps.path) return true;
-      const key = name.slice(deps.path.length + 1).split(".")[0] ?? "";
-      return this._declared.has(key);
+    this._releaseGate = deps.engine.registerPathGate(deps.path, {
+      isOpen: (name) => {
+        if (name === deps.path) return true;
+        return this._declared.has(this._keyOf(name));
+      },
+      // A value written straight into the engine — a draft coming back, an undo that crosses the
+      // moment a row was added — is this collection's own data returning. Declaring the row here is
+      // what keeps a restore from quietly losing it; a control mounting still declares nothing.
+      onRefusedWrite: (name) => {
+        const key = this._keyOf(name);
+        if (key.length > 0) this.upsert(key);
+      },
     });
 
     // A phantom field at the record's own path, so record-level validator errors reach
@@ -198,6 +206,11 @@ export class MdyRecordManager {
   }
 
   // ── Internals ──────────────────────────────────────────────────────────────
+
+  /** The row key a path below this collection belongs to. */
+  private _keyOf(path: string): string {
+    return path.slice(this._deps.path.length + 1).split(".")[0] ?? "";
+  }
 
   /**
    * A key is a path segment, so it may not carry the separator, and it inherits the path grammar
