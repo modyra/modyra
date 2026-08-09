@@ -319,6 +319,22 @@ form.f.rows.rename("tmp:1", String(saved.id));
 `setAll(rows)` declares exactly the keys it is given. Record-level validators
 run against the whole collection, like array-level ones.
 
+### In a data-only document
+
+The Dynamic Form Contract has the node too, beside `group` and `array`:
+
+```json
+{
+  "node": "record",
+  "item": { "node": "group", "children": { "name": { "node": "field", "field": { "kind": "text" } } } },
+  "initialValue": { "12": { "name": "Espresso" } }
+}
+```
+
+A document declares the shape of a row and the rows it starts with. Which
+rows exist afterwards stays the application's word — a document describes a
+form, not a session.
+
 ## Draft autosave
 
 ```ts

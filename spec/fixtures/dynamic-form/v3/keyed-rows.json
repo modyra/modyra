@@ -1,0 +1,58 @@
+{
+  "version": 3,
+  "id": "keyed-rows",
+  "schema": {
+    "node": "group",
+    "children": {
+      "title": {
+        "node": "field",
+        "field": {
+          "kind": "text",
+          "label": "Order",
+          "name": "leaf"
+        }
+      },
+      "lines": {
+        "node": "record",
+        "label": "Lines",
+        "item": {
+          "node": "group",
+          "children": {
+            "name": {
+              "node": "field",
+              "field": {
+                "kind": "text",
+                "label": "Item",
+                "validators": {
+                  "required": true
+                },
+                "name": "leaf"
+              }
+            },
+            "qty": {
+              "node": "field",
+              "field": {
+                "kind": "number",
+                "label": "Qty",
+                "validators": {
+                  "min": 1
+                },
+                "name": "leaf"
+              }
+            }
+          }
+        },
+        "initialValue": {
+          "12": {
+            "name": "Espresso",
+            "qty": 2
+          },
+          "tmp:1": {
+            "name": "Cornetto",
+            "qty": 1
+          }
+        }
+      }
+    }
+  }
+}
