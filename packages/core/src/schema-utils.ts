@@ -4,6 +4,7 @@ import type {
   MdyAnyArrayDescriptor,
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
+  MdyAnyRecordDescriptor,
   MdyFormPatch,
   MdyFormSchema,
   MdyFormValue,
@@ -15,6 +16,7 @@ export interface MdySchemaPaths {
   readonly leafPaths: readonly string[];
   readonly groupPaths: ReadonlySet<string>;
   readonly arrayPaths: ReadonlySet<string>;
+  readonly recordPaths: ReadonlySet<string>;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -38,6 +40,7 @@ export function walkSchema(
   onField: (path: string, node: MdyAnyFieldDescriptor) => void,
   onGroup?: (path: string) => void,
   onArray?: (path: string, node: MdyAnyArrayDescriptor) => void,
+  onRecord?: (path: string, node: MdyAnyRecordDescriptor) => void,
 ): void {
   for (const [key, node] of Object.entries(nodes)) {
     const path = prefix ? `${prefix}.${key}` : key;
@@ -45,26 +48,30 @@ export function walkSchema(
       onField(path, node);
     } else if (node.kind === "array") {
       onArray?.(path, node);
+    } else if (node.kind === "record") {
+      onRecord?.(path, node);
     } else {
       onGroup?.(path);
-      walkSchema(node.children, path, onField, onGroup, onArray);
+      walkSchema(node.children, path, onField, onGroup, onArray, onRecord);
     }
   }
 }
 
-/** Collects leaf paths, group prefixes and array paths from a schema. */
+/** Collects leaf paths, group prefixes, array paths and record paths from a schema. */
 export function collectSchemaPaths(nodes: MdyFormSchema): MdySchemaPaths {
   const leafPaths: string[] = [];
   const groupPaths = new Set<string>();
   const arrayPaths = new Set<string>();
+  const recordPaths = new Set<string>();
   walkSchema(
     nodes,
     "",
     (path) => leafPaths.push(path),
     (path) => groupPaths.add(path),
     (path) => arrayPaths.add(path),
+    (path) => recordPaths.add(path),
   );
-  return { leafPaths, groupPaths, arrayPaths };
+  return { leafPaths, groupPaths, arrayPaths, recordPaths };
 }
 
 /** Rebuilds the nested value shape from a flat dotted-path record. */
@@ -107,18 +114,28 @@ function isIndexRecord(value: unknown): value is Record<string, unknown> {
  * Converts the index-keyed records `unflatten` produces at array paths
  * (`{ items: { "0": {...}, "1": {...} } }`) into real JS arrays, in index
  * order. Non-array paths, and array paths with no rows, are left as-is.
+ *
+ * A record's keys are data, and an entity id serialised — `"12"`, `"34"` — is the ordinary case
+ * rather than the exotic one. Converting those would hand the caller an array with holes where the
+ * ids are not consecutive, so a record path is a place this conversion stops: its keys are kept, and
+ * nothing below it is a candidate either.
  */
 export function numericKeysToArrays(
   nested: Record<string, unknown>,
   arrayPaths: ReadonlySet<string>,
+  recordPaths: ReadonlySet<string> = new Set(),
 ): Record<string, unknown> {
-  if (arrayPaths.size === 0) return nested;
+  if (arrayPaths.size === 0 && recordPaths.size === 0) return nested;
   const walk = (node: unknown, prefix: string): unknown => {
     if (!isRecord(node)) return node;
     const out: Record<string, unknown> = {};
     for (const [key, v] of Object.entries(node)) {
       const path = prefix ? `${prefix}.${key}` : key;
-      if (arrayPaths.has(path)) {
+      if (recordPaths.has(path)) {
+        // Keys are kept as they are; the collection's own phantom field reads null, and a record is
+        // an object even when it holds no rows.
+        out[key] = isRecord(v) && !Array.isArray(v) ? v : {};
+      } else if (arrayPaths.has(path)) {
         out[key] = isIndexRecord(v)
           ? Object.keys(v)
             .map(Number)
@@ -145,13 +162,14 @@ export function flattenPatch(
   partial: Record<string, unknown>,
   groupPaths: ReadonlySet<string>,
   arrayPaths: ReadonlySet<string> = new Set(),
+  recordPaths: ReadonlySet<string> = new Set(),
 ): Record<string, unknown> {
   const flat: Record<string, unknown> = {};
   const walk = (node: unknown, prefix: string): void => {
     if (!isRecord(node)) return;
     for (const [key, v] of Object.entries(node)) {
       const path = prefix ? `${prefix}.${key}` : key;
-      if (arrayPaths.has(path)) {
+      if (recordPaths.has(path) || arrayPaths.has(path)) {
         flat[path] = v;
       } else if (groupPaths.has(path) && v !== null && isRecord(v)) {
         walk(v, path);
@@ -197,6 +215,11 @@ export function isSchemaValue<S extends MdyFormSchema>(
       if (!child.every((row) => isSchemaItemValue(row, node.item))) return false;
       continue;
     }
+    if (node.kind === "record") {
+      if (!isRecord(child) || Array.isArray(child)) return false;
+      if (!Object.values(child).every((row) => isSchemaItemValue(row, node.item))) return false;
+      continue;
+    }
     if (!isSchemaValue(child, node.children)) return false;
   }
   return true;
@@ -215,6 +238,10 @@ export function isSchemaPatch<S extends MdyFormSchema>(
     if (node.kind === "array") {
       if (!Array.isArray(child)) return false;
       if (!child.every((row) => isSchemaItemValue(row, node.item))) return false;
+      continue;
+    }
+    if (node.kind === "record") {
+      if (!isRecord(child) || Array.isArray(child)) return false;
       continue;
     }
     if (!isSchemaPatch(child, node.children)) return false;
@@ -236,6 +263,15 @@ export function isFieldHandleTree(
       if (typeof entry.push !== "function") return false;
       if (typeof entry.remove !== "function") return false;
       if (typeof (entry.rows as (() => unknown) | undefined) !== "function") return false;
+      continue;
+    }
+    if (node.kind === "record") {
+      if (!isRecord(entry)) return false;
+      if (typeof entry.path !== "string") return false;
+      if (typeof entry.upsert !== "function") return false;
+      if (typeof entry.remove !== "function") return false;
+      if (typeof entry.cell !== "function") return false;
+      if (typeof (entry.keys as (() => unknown) | undefined) !== "function") return false;
       continue;
     }
     if (node.kind === "group") {

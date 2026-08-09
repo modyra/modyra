@@ -25,18 +25,19 @@ import type {
   MdyAnyArrayDescriptor,
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
+  MdyAnyRecordDescriptor,
 } from "./typed-form.js";
 import { isRecord } from "./record-utils.js";
 
-/** A row's own schema node — arrays cannot nest inside an array's item in v1. */
+/** A row's own schema node — a collection cannot nest inside an array's item in v1. */
 type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
 
-function assertNotNestedArray(
-  node: MdyRowNode | { readonly kind: "array" },
+function assertNotNestedCollection(
+  node: MdyRowNode | { readonly kind: "array" | "record" },
 ): asserts node is MdyRowNode {
-  if (node.kind === "array") {
+  if (node.kind === "array" || node.kind === "record") {
     throw new Error(
-      "[modyra] Nested arrays (an array item containing another array) are not supported",
+      `[modyra] Nested collections (an array item containing another ${node.kind}) are not supported`,
     );
   }
 }
@@ -155,10 +156,14 @@ export class MdyArrayManager {
 
   private _registerNode(
     fullPath: string,
-    rowNode: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor | MdyAnyArrayDescriptor,
+    rowNode:
+      | MdyAnyFieldDescriptor
+      | MdyAnyGroupDescriptor
+      | MdyAnyArrayDescriptor
+      | MdyAnyRecordDescriptor,
     value: unknown,
   ): void {
-    assertNotNestedArray(rowNode);
+    assertNotNestedCollection(rowNode);
     const node = rowNode;
     const { engine } = this._deps;
     if (node.kind === "field") {
@@ -194,9 +199,13 @@ export class MdyArrayManager {
 
   private _leafPaths(
     fullPath: string,
-    rowNode: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor | MdyAnyArrayDescriptor,
+    rowNode:
+      | MdyAnyFieldDescriptor
+      | MdyAnyGroupDescriptor
+      | MdyAnyArrayDescriptor
+      | MdyAnyRecordDescriptor,
   ): string[] {
-    assertNotNestedArray(rowNode);
+    assertNotNestedCollection(rowNode);
     if (rowNode.kind === "field") return [fullPath];
     return Object.entries(rowNode.children).flatMap(([key, child]) =>
       this._leafPaths(`${fullPath}.${key}`, child),
@@ -205,9 +214,13 @@ export class MdyArrayManager {
 
   private _readNode(
     fullPath: string,
-    rowNode: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor | MdyAnyArrayDescriptor,
+    rowNode:
+      | MdyAnyFieldDescriptor
+      | MdyAnyGroupDescriptor
+      | MdyAnyArrayDescriptor
+      | MdyAnyRecordDescriptor,
   ): unknown {
-    assertNotNestedArray(rowNode);
+    assertNotNestedCollection(rowNode);
     if (rowNode.kind === "field") {
       const ref = this._deps.engine.getField(fullPath);
       return ref ? ref().value() : null;

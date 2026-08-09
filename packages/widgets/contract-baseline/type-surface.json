@@ -77,6 +77,12 @@
     "children: MdyFormSchema",
     "kind: \"group\""
   ],
+  "MdyAnyRecordDescriptor": [
+    "initial: Readonly<Record<string, unknown>>",
+    "item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor",
+    "kind: \"record\"",
+    "validators: ReadonlyArray<ValidatorFn<never>>"
+  ],
   "MdyArrayDescriptor": [
     "initial: ReadonlyArray<unknown>",
     "item: TItem",
@@ -1249,6 +1255,34 @@
     "flushIfSupported: Promise<void>",
     "reactivity: MdyReactivity"
   ],
+  "MdyRecordDescriptor": [
+    "initial: Readonly<Record<string, unknown>>",
+    "item: TItem",
+    "kind: \"record\"",
+    "validators: ReadonlyArray<ValidatorFn<Readonly<Record<string, unknown>>>>"
+  ],
+  "MdyRecordHandle": [
+    "cell: MdyFieldHandle<unknown>",
+    "errors: MdySignal<ReadonlyArray<MdyFieldError>>",
+    "has: boolean",
+    "keys: MdySignal<ReadonlyArray<string>>",
+    "patch: void",
+    "path: string",
+    "remove: void",
+    "rename: void",
+    "row: TItemHandle",
+    "setAll: void",
+    "upsert: void",
+    "valid: MdySignal<boolean>",
+    "validOf: boolean",
+    "value: MdySignal<Readonly<Record<string, TItemValue>>>"
+  ],
+  "MdyRecordManagerDeps": [
+    "engine: MdyFormEngine",
+    "item: MdyRowNode",
+    "path: string",
+    "rx: MdyReactivity"
+  ],
   "MdyRelationAttribute": [
     "\"aria-activedescendant\"",
     "\"aria-controls\"",
@@ -1276,7 +1310,8 @@
   "MdySchemaPaths": [
     "arrayPaths: ReadonlySet<string>",
     "groupPaths: ReadonlySet<string>",
-    "leafPaths: readonly string[]"
+    "leafPaths: readonly string[]",
+    "recordPaths: ReadonlySet<string>"
   ],
   "MdyScopeOptions": [
     "debugName?: string",
@@ -2186,6 +2221,7 @@
     "(0) partial: Record<string, unknown>",
     "(1) groupPaths: ReadonlySet<string>",
     "(2) arrayPaths?: ReadonlySet<string>",
+    "(3) recordPaths?: ReadonlySet<string>",
     "-> returns: Record<string, unknown>"
   ],
   "focusTrigger": [
@@ -2447,6 +2483,7 @@
   "numericKeysToArrays": [
     "(0) nested: Record<string, unknown>",
     "(1) arrayPaths: ReadonlySet<string>",
+    "(2) recordPaths?: ReadonlySet<string>",
     "-> returns: Record<string, unknown>"
   ],
   "oklchToHex": [
@@ -2656,6 +2693,11 @@
     "(1) options: readonly MdySelectOption<TValue>[]",
     "-> returns: MdySelectReconciliationState<TValue>"
   ],
+  "record": [
+    "(0) item: TItem",
+    "(1) options?: { readonly initial?: Readonly<Record<string, unknown>>; readonly validators?: ReadonlyArray<ValidatorFn<Readonly<Record<string, unknown>>>>; }",
+    "-> returns: MdyRecordDescriptor<TItem>"
+  ],
   "registerHandleOwner": [
     "(0) handle: object",
     "(1) rx: MdyReactivity",
@@ -2859,6 +2901,7 @@
     "(2) onField: (path: string, node: MdyAnyFieldDescriptor) => void",
     "(3) onGroup?: (path: string) => void",
     "(4) onArray?: (path: string, node: MdyAnyArrayDescriptor) => void",
+    "(5) onRecord?: (path: string, node: MdyAnyRecordDescriptor) => void",
     "-> returns: void"
   ],
   "widgetKeyIntent": [

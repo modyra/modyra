@@ -23,6 +23,7 @@
 import {
   createForm,
   MdyAnyArrayDescriptor,
+  MdyAnyRecordDescriptor,
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
   MdyArrayDescriptor,
@@ -272,7 +273,10 @@ function patchInitials(
 ): MdyFormSchema {
   const out: Record<
     string,
-    MdyAnyFieldDescriptor | MdyAnyGroupDescriptor | MdyAnyArrayDescriptor
+    | MdyAnyFieldDescriptor
+    | MdyAnyGroupDescriptor
+    | MdyAnyArrayDescriptor
+    | MdyAnyRecordDescriptor
   > = {};
   for (const [key, node] of Object.entries(fields)) {
     const fallback = defaults[key];
@@ -286,6 +290,13 @@ function patchInitials(
     } else if (node.kind === "array") {
       out[key] =
         fallback !== undefined && Array.isArray(fallback)
+          ? { ...node, initial: fallback }
+          : node;
+    } else if (node.kind === "record") {
+      // A record's rows arrive as an object keyed by the domain's own keys, so an array default
+      // describes something else and is left alone.
+      out[key] =
+        isRecord(fallback) && !Array.isArray(fallback)
           ? { ...node, initial: fallback }
           : node;
     } else {
