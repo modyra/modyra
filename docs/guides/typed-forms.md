@@ -244,6 +244,81 @@ Array-level validators (`{ validators: [minLength(1)] }`) run against the
 whole array value and gate `state.valid` and `form.f.items.errors()`, same
 as `errorsFor("items")`.
 
+## Keyed collections — `record()`
+
+`array()` keys rows by position. `record()` keys them by a value the domain
+owns — an entity id, a provisional key, a slug:
+
+```ts
+const schema = {
+  rows: record(group({ name: field(""), qty: field(0, [min(1)]) })),
+};
+
+form.f.rows.upsert("a3f9", { name: "Espresso", qty: 2 });
+form.f.rows.cell("a3f9", "name").set("Ristretto");
+form.value().rows; // { a3f9: { name: "Ristretto", qty: 2 } }
+```
+
+Reach for it when a position is not a stable name for a row: the collection
+is sorted or filtered by something outside the form, rows carry ids the
+server assigns, or — the case `array()` cannot serve at all — **the controls
+of one row are mounted apart**, as a table rendering column by column does.
+
+### A row exists because it was declared
+
+`upsert` brings a row into being, `remove` ends it. Mounting a control does
+neither, and three properties follow:
+
+- **A control that mounts on an undeclared key claims nothing.** It renders
+  empty and binds when the key arrives. It never brings the row into being,
+  so what is on screen cannot change the data model.
+- **Unmounting a control keeps the value.** The row does not depend on the
+  rendering, so there is nothing to preserve — a cell leaving the DOM is not
+  an edit.
+- **Validity belongs to the declared row.** A form holding an invalid row
+  stays invalid however few of its controls are mounted, so sorting or
+  filtering a table never lights up a disabled submit button.
+
+`remove(key)` is the only way a row's value goes away, and it takes it even
+while controls are showing it; those controls go back to waiting.
+
+### Cells
+
+`cell(key, path)` returns the same handle every time, across `upsert`,
+`remove` and `upsert` again — a renderer holds it and never re-binds:
+
+```html
+<!-- one column, mounting one cell of every row -->
+<mdy-control-text [field]="form.f.rows.cell(row.key, 'name')" />
+```
+
+`row(key)` gives the row's whole handle tree, `keys()` the declared keys in
+declaration order, and `validOf(key)` one row's verdict.
+
+### Keys
+
+A key is one path segment: it may not contain `.`, and prototype-polluting
+names are refused. A rejected key is reported and dropped rather than
+thrown, because keys arrive from outside.
+
+Numeric-looking keys are ordinary — `"12"` is what a serialised entity id
+looks like — and a record is never turned into an array by them.
+
+### Moving a key
+
+`remove` then `upsert` carries the value. `rename(from, to)` also carries
+`touched`, which is what a provisional key becoming a definitive one wants:
+
+```ts
+form.f.rows.rename("tmp:1", String(saved.id));
+```
+
+### Several rows at once
+
+`patch({ [key]: partial })` writes rows in one call, leaving the rest alone;
+`setAll(rows)` declares exactly the keys it is given. Record-level validators
+run against the whole collection, like array-level ones.
+
 ## Draft autosave
 
 ```ts

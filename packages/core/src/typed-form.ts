@@ -6,6 +6,8 @@ import {
 import { MdyReactivity, MdySignal, vanillaReactivity } from "./reactivity.js";
 import { registerHandleOwner } from "./reactive-owner.js";
 import { MdyArrayManager } from "./array-manager.js";
+import { MdyRecordManager } from "./record-manager.js";
+import { isRecord as isRecordValue } from "./record-utils.js";
 import {
   collectSchemaPaths,
   flattenPatch,
@@ -23,6 +25,7 @@ import {
   MdyAsyncValidatorOptions,
   MdyFieldError,
   MdyFieldRef,
+  MdyFieldState,
   MdyFormAdapter,
   MdyFormError,
   MdyFormState,
@@ -93,11 +96,39 @@ export interface MdyAnyArrayDescriptor {
   readonly validators: ReadonlyArray<ValidatorFn<never>>;
 }
 
-/** A form schema: field descriptors and (arbitrarily nested) groups or arrays. */
+/**
+ * Record descriptor produced by {@link record}: a collection whose keys are data.
+ *
+ * Where an array is keyed by position, a record is keyed by a value the domain owns — an entity id,
+ * a provisional key, a slug — so a key is stable under sorting, filtering and re-rendering, and a row
+ * is not addressed by where it happens to sit.
+ *
+ * A row exists because it was declared (`upsert`), never because a control mounted. Controls claim
+ * and release; the set of keys is the record's own. See record-manager.ts for what follows from that.
+ */
+export interface MdyRecordDescriptor<TItem> {
+  readonly kind: "record";
+  /** Row schema: a group descriptor (rows are objects) or a field descriptor (rows are leaves). */
+  readonly item: TItem;
+  readonly initial: Readonly<Record<string, unknown>>;
+  readonly validators: ReadonlyArray<ValidatorFn<Readonly<Record<string, unknown>>>>;
+}
+
+export interface MdyAnyRecordDescriptor {
+  readonly kind: "record";
+  readonly item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
+  readonly initial: Readonly<Record<string, unknown>>;
+  readonly validators: ReadonlyArray<ValidatorFn<never>>;
+}
+
+/** A form schema: field descriptors and (arbitrarily nested) groups, arrays or records. */
 export type MdyFormSchema = Readonly<
   Record<
     string,
-    MdyAnyFieldDescriptor | MdyAnyGroupDescriptor | MdyAnyArrayDescriptor
+    | MdyAnyFieldDescriptor
+    | MdyAnyGroupDescriptor
+    | MdyAnyArrayDescriptor
+    | MdyAnyRecordDescriptor
   >
 >;
 
@@ -118,6 +149,8 @@ export type MdyFormValue<S extends MdyFormSchema> = {
   ? MdyFormValue<C>
   : S[K] extends MdyArrayDescriptor<infer I>
   ? MdyArrayItemValue<I>[]
+  : S[K] extends MdyRecordDescriptor<infer I>
+  ? Record<string, MdyArrayItemValue<I>>
   : never;
 };
 
@@ -145,6 +178,8 @@ export type MdySubmittedValue<S extends MdyFormSchema> = {
   ? MdySubmittedValue<C>
   : S[K] extends MdyArrayDescriptor<infer I>
   ? ReadonlyArray<MdyArrayItemValue<I>>
+  : S[K] extends MdyRecordDescriptor<infer I>
+  ? Readonly<Record<string, MdyArrayItemValue<I>>>
   : never;
 };
 
@@ -156,6 +191,8 @@ export type MdyFormPatch<S extends MdyFormSchema> = {
   ? MdyFormPatch<C>
   : S[K] extends MdyArrayDescriptor<infer I>
   ? ReadonlyArray<MdyArrayItemValue<I>>
+  : S[K] extends MdyRecordDescriptor<infer I>
+  ? Readonly<Record<string, MdyArrayItemValue<I>>>
   : never;
 };
 
@@ -200,6 +237,42 @@ export interface MdyArrayHandle<TItemHandle, TItemValue> {
   at(index: number): TItemHandle | null;
 }
 
+/**
+ * Typed handle for a keyed collection, exposed on `form.f` (`form.f.rows`).
+ *
+ * `cell` is what makes cell-by-cell mounting possible: a renderer asks for one control of one row
+ * without knowing whether the row exists yet, and gets a handle that is inert until it does and stays
+ * the same object across `upsert`/`remove`/`upsert`. A handle that changed identity would make a
+ * binding re-bind and a control re-claim on every structural change.
+ */
+export interface MdyRecordHandle<TItemHandle, TItemValue> {
+  readonly path: string;
+  /** The declared keys, in declaration order. Existence lives here, not in what is mounted. */
+  readonly keys: MdySignal<ReadonlyArray<string>>;
+  readonly value: MdySignal<Readonly<Record<string, TItemValue>>>;
+  readonly errors: MdySignal<ReadonlyArray<MdyFieldError>>;
+  readonly valid: MdySignal<boolean>;
+  /** True while the key is declared. */
+  has(key: string): boolean;
+  /** The row's handle tree. Returned for undeclared keys too, inert until the row is declared. */
+  row(key: string): TItemHandle;
+  /**
+   * One control of one row. `path` addresses a leaf inside the row and is omitted when rows are
+   * leaves themselves. Stable per `key`/`path` pair.
+   */
+  cell(key: string, path?: string): MdyFieldHandle<unknown>;
+  /** Declares the row, or rewrites the value of one already declared. */
+  upsert(key: string, value?: TItemValue): void;
+  remove(key: string): void;
+  /** Declares exactly these keys, removing the rest. */
+  setAll(values: Readonly<Record<string, TItemValue>>): void;
+  /** Several rows in one write — one structural change, not one per row. */
+  patch(values: Readonly<Record<string, unknown>>): void;
+  /** Carries value, validity and touched to the new key. */
+  rename(from: string, to: string): void;
+  validOf(key: string): boolean;
+}
+
 /** The handle tree for a single array item — a field handle or nested group tree. */
 export type MdyItemHandleTree<I> = I extends MdyGroupDescriptor<infer C>
   ? MdyFieldHandleTree<C>
@@ -215,6 +288,8 @@ export type MdyFieldHandleTree<S extends MdyFormSchema> = {
   ? MdyFieldHandleTree<C>
   : S[K] extends MdyArrayDescriptor<infer I>
   ? MdyArrayHandle<MdyItemHandleTree<I>, MdyArrayItemValue<I>>
+  : S[K] extends MdyRecordDescriptor<infer I>
+  ? MdyRecordHandle<MdyItemHandleTree<I>, MdyArrayItemValue<I>>
   : never;
 };
 
@@ -298,6 +373,32 @@ export function array<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescripto
     kind: "array",
     item,
     initial: options?.initial ?? [],
+    validators: options?.validators ?? [],
+  };
+}
+
+/**
+ * Declares a collection keyed by data (`rows.a3f9.name` paths on the engine).
+ *
+ * Unlike {@link array}, structure does **not** follow the value and does not follow what is mounted:
+ * a row exists once `upsert` declares it and stops existing once `remove` does. A control that mounts
+ * on an undeclared key claims nothing and renders empty until the key arrives, which is what lets a
+ * table render column by column — the controls of one row are mounted apart, at different times.
+ *
+ * The consequence worth stating: validity belongs to the declared row. Sorting, filtering or
+ * collapsing rows unmounts controls and changes nothing about whether the form is valid.
+ */
+export function record<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescriptor>(
+  item: TItem,
+  options?: {
+    readonly initial?: Readonly<Record<string, unknown>>;
+    readonly validators?: ReadonlyArray<ValidatorFn<Readonly<Record<string, unknown>>>>;
+  },
+): MdyRecordDescriptor<TItem> {
+  return {
+    kind: "record",
+    item,
+    initial: options?.initial ?? {},
     validators: options?.validators ?? [],
   };
 }
@@ -418,8 +519,14 @@ export abstract class MdyTypedFormBase<
   protected readonly _groupPaths: ReadonlySet<string>;
   /** Array prefixes — used to flatten patches and unflatten values. */
   protected readonly _arrayPaths: ReadonlySet<string>;
+  /** Record prefixes — like arrays for flattening, and never index-converted when unflattening. */
+  protected readonly _recordPaths: ReadonlySet<string>;
   /** One {@link MdyArrayManager} per array node, keyed by dotted path. */
   protected readonly _arrays: ReadonlyMap<string, MdyArrayManager>;
+  /** One {@link MdyRecordManager} per record node, keyed by dotted path. */
+  protected readonly _records: ReadonlyMap<string, MdyRecordManager>;
+  /** Cell handles, kept so `cell(key, path)` answers with the same object every time. */
+  private readonly _cellHandles = new Map<string, MdyFieldHandle<unknown>>();
 
   /**
    * Concrete handle tree type is declared by subclasses: this package uses
@@ -441,8 +548,10 @@ export abstract class MdyTypedFormBase<
     this._leafPaths = paths.leafPaths;
     this._groupPaths = paths.groupPaths;
     this._arrayPaths = paths.arrayPaths;
+    this._recordPaths = paths.recordPaths;
 
     const arrays = new Map<string, MdyArrayManager>();
+    const records = new Map<string, MdyRecordManager>();
     walkSchema(
       schema,
       "",
@@ -457,8 +566,18 @@ export abstract class MdyTypedFormBase<
           ),
         );
       },
+      (path, node) => {
+        records.set(
+          path,
+          new MdyRecordManager(
+            { rx: adapter.reactivity, engine: adapter, path, item: node.item },
+            node.initial,
+          ),
+        );
+      },
     );
     this._arrays = arrays;
+    this._records = records;
 
     this._registerSchema(schema);
 
@@ -584,11 +703,18 @@ export abstract class MdyTypedFormBase<
       const arr = this._pathGet(value, path);
       manager.setAll(Array.isArray(arr) ? arr : []);
     }
+    for (const [path, manager] of this._records) {
+      const rows = this._pathGet(value, path);
+      manager.setAll(isRecordValue(rows) ? rows : {});
+    }
   }
 
   reset(): void {
     this._adapter.reset();
     for (const manager of this._arrays.values()) {
+      manager.resetToInitial();
+    }
+    for (const manager of this._records.values()) {
       manager.resetToInitial();
     }
   }
@@ -692,6 +818,7 @@ export abstract class MdyTypedFormBase<
    */
   destroy(): void {
     for (const manager of this._arrays.values()) manager.destroy();
+    for (const manager of this._records.values()) manager.destroy();
     this._adapter.destroy();
   }
 
@@ -794,6 +921,8 @@ export abstract class MdyTypedFormBase<
         out[key] = this._buildHandle(path);
       } else if (node.kind === "array") {
         out[key] = this._buildArrayHandle(path, node);
+      } else if (node.kind === "record") {
+        out[key] = this._buildRecordHandle(path, node);
       } else {
         out[key] = this._buildHandleTree(node.children, path);
       }
@@ -838,13 +967,111 @@ export abstract class MdyTypedFormBase<
     };
   }
 
+  private _buildRecordHandle(
+    path: string,
+    node: MdyAnyRecordDescriptor,
+  ): MdyRecordHandle<unknown, unknown> {
+    const manager = this._records.get(path);
+    if (!manager) {
+      throw new Error(`[modyra] Record "${path}" was not registered`);
+    }
+    const rx = this._adapter.reactivity;
+    const errors = this._adapter.errorsFor(path);
+    const row = (key: string): unknown =>
+      node.item.kind === "field"
+        ? this.cellHandle(`${path}.${key}`)
+        : this._buildCellTree(node.item.children, `${path}.${key}`);
+    return {
+      path,
+      keys: manager.keys,
+      value: rx.computed(() => {
+        // Read through the engine's value so the signal recomputes when a cell changes, not only
+        // when the key set does.
+        this._adapter.value();
+        return manager.getValues();
+      }),
+      errors,
+      valid: rx.computed(() => errors().length === 0),
+      has: (key: string) => manager.has(key),
+      row,
+      cell: (key: string, leaf?: string) =>
+        this.cellHandle(leaf === undefined ? `${path}.${key}` : `${path}.${key}.${leaf}`),
+      upsert: (key: string, value?: unknown) => manager.upsert(key, value),
+      remove: (key: string) => manager.remove(key),
+      setAll: (values: Readonly<Record<string, unknown>>) => manager.setAll(values),
+      patch: (values: Readonly<Record<string, unknown>>) => manager.patch(values),
+      rename: (from: string, to: string) => manager.rename(from, to),
+      validOf: (key: string) => manager.validOf(key),
+    };
+  }
+
+  /** The handle tree for one row of a record, built from cell handles. */
+  private _buildCellTree(nodes: MdyFormSchema, prefix: string): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(nodes)) {
+      const path = `${prefix}.${key}`;
+      out[key] = child.kind === "group"
+        ? this._buildCellTree(child.children, path)
+        : this.cellHandle(path);
+    }
+    return out;
+  }
+
+  /**
+   * A handle for a path that may not exist yet.
+   *
+   * Every signal reads the field through the engine on each evaluation rather than closing over a
+   * record, so one handle serves the row before it is declared, while it lives, and again after it is
+   * declared a second time. That indirection is the whole point: a renderer holds the handle across
+   * every structural change, and a control never re-binds because the row was rebuilt.
+   *
+   * While the path has no field the handle reads empty and writes nowhere — the row does not exist,
+   * and a control must not be the thing that brings it into being.
+   */
+  protected cellHandle(path: string): MdyFieldHandle<unknown> {
+    const existing = this._cellHandles.get(path);
+    if (existing) return existing;
+    const rx = this._adapter.reactivity;
+    const state = (): MdyFieldState<unknown> | null => {
+      // Depends on *which* fields exist, not only on their values: the row this cell belongs to may
+      // be declared long after the handle was handed out, and a lookup in a plain map would never
+      // tell the computed that its answer changed.
+      this._adapter.fieldNames();
+      const ref = this._adapter.peekField(path);
+      return ref ? ref() : null;
+    };
+    const handle: MdyFieldHandle<unknown> = {
+      path,
+      value: rx.computed(() => state()?.value() ?? null),
+      errors: rx.computed(() => state()?.errors() ?? []),
+      touched: rx.computed(() => state()?.touched() ?? false),
+      dirty: rx.computed(() => state()?.dirty() ?? false),
+      valid: rx.computed(() => state()?.valid() ?? true),
+      pending: rx.computed(() => state()?.pending() ?? false),
+      required: rx.computed(() => state()?.required() ?? false),
+      interactivity: rx.computed(() => state()?.interactivity() ?? "enabled"),
+      disabled: rx.computed(() => state()?.disabled() ?? false),
+      readonly: rx.computed(() => state()?.readonly() ?? false),
+      set: (value: unknown) => state()?.value.set(value),
+      markAsTouched: () => state()?.touched.set(true),
+      markAsDirty: () => state()?.dirty.set(true),
+    };
+    registerHandleOwner(handle, rx);
+    this._cellHandles.set(path, handle);
+    return handle;
+  }
+
   /** Rebuilds the nested value shape from the adapter's flat dotted paths. */
   protected _flatToValue(flat: Record<string, unknown>): MdyFormValue<S> {
-    return numericKeysToArrays(unflatten(flat), this._arrayPaths) as MdyFormValue<S>;
+    return numericKeysToArrays(
+      unflatten(flat), this._arrayPaths, this._recordPaths,
+    ) as MdyFormValue<S>;
   }
 
   protected _flatToPatch(flat: Record<string, unknown>): MdyFormPatch<S> {
-    return numericKeysToArrays(unflatten(flat), this._arrayPaths) as MdyFormPatch<S>;
+    return numericKeysToArrays(
+      unflatten(flat), this._arrayPaths, this._recordPaths,
+    ) as MdyFormPatch<S>;
   }
 
   /** Flattens a (possibly nested) patch object into dotted adapter paths. */
@@ -855,16 +1082,22 @@ export abstract class MdyTypedFormBase<
       partial as Record<string, unknown>,
       this._groupPaths,
       this._arrayPaths,
+      this._recordPaths,
     );
   }
 
-  /** Routes array-path entries to their manager, the rest to the flat adapter. */
+  /** Routes array- and record-path entries to their manager, the rest to the flat adapter. */
   protected _applyFlatWithArrays(flat: Record<string, unknown>): void {
     const plain: Record<string, unknown> = {};
     for (const [key, v] of Object.entries(flat)) {
-      const manager = this._arrays.get(key);
-      if (manager) {
-        manager.setAll(Array.isArray(v) ? v : []);
+      const array = this._arrays.get(key);
+      const record = this._records.get(key);
+      if (array) {
+        array.setAll(Array.isArray(v) ? v : []);
+      } else if (record) {
+        // A patch names the rows it touches and leaves the others alone; replacing the collection is
+        // what `setValue` means, and it goes through `setAll` below.
+        record.patch(isRecordValue(v) ? v : {});
       } else {
         plain[key] = v;
       }
@@ -887,7 +1120,7 @@ export abstract class MdyTypedFormBase<
       (path, node) => {
         if (node.validators.length === 0) return;
         out.push((flat) => {
-          const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths);
+          const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths, this._recordPaths);
           const value = this._pathGet(nested, path);
           const arr = Array.isArray(value) ? value : [];
           // Cast at the storage boundary, like upsertValidators does for
@@ -897,6 +1130,21 @@ export abstract class MdyTypedFormBase<
             (fn as ValidatorFn<unknown[]>)(arr).map((message) => ({
               path,
               kind: "array",
+              message,
+            })),
+          );
+        });
+      },
+      (path, node) => {
+        if (node.validators.length === 0) return;
+        out.push((flat) => {
+          const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths, this._recordPaths);
+          const value = this._pathGet(nested, path);
+          const rows = isRecordValue(value) ? value : {};
+          return node.validators.flatMap((fn) =>
+            (fn as ValidatorFn<Record<string, unknown>>)(rows).map((message) => ({
+              path,
+              kind: "record",
               message,
             })),
           );
@@ -969,7 +1217,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
 
   /** Core validates the unflattened value against the schema shape. */
   protected override _flatToValue(flat: Record<string, unknown>): MdyFormValue<S> {
-    const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths);
+    const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths, this._recordPaths);
     if (isSchemaValue(nested, this._schema)) {
       return nested;
     }
@@ -978,7 +1226,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
 
   /** Core validates the unflattened patch against the schema shape. */
   protected override _flatToPatch(flat: Record<string, unknown>): MdyFormPatch<S> {
-    const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths);
+    const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths, this._recordPaths);
     if (isSchemaPatch(nested, this._schema)) {
       return nested;
     }

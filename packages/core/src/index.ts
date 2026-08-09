@@ -104,11 +104,13 @@ export {
   group,
   MdyTypedForm,
   MdyTypedFormBase,
+  record,
 } from "./typed-form.js";
 export type {
   MdyAnyArrayDescriptor,
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
+  MdyAnyRecordDescriptor,
   MdyArrayDescriptor,
   MdyArrayHandle,
   MdyArrayItemValue,
@@ -123,6 +125,8 @@ export type {
   MdySubmittedValue,
   MdyGroupDescriptor,
   MdyItemHandleTree,
+  MdyRecordDescriptor,
+  MdyRecordHandle,
   MdyTypedFormBaseOptions,
   MdyWiden
 } from "./typed-form.js";

@@ -158,6 +158,21 @@ export class MdyFormEngine
   /** Reference count of controls claiming each field name. */
   private readonly _claims = new Map<string, number>();
   /**
+   * Prefixes whose paths exist only while their owner says so, and the predicate that decides.
+   *
+   * A keyed collection owns the set of rows that exist; a control mounting on one of them must not
+   * bring it into being, or the data model would follow the rendering. See {@link registerPathGate}.
+   */
+  private readonly _gates = new Map<string, (path: string) => boolean>();
+  /** Claims that arrived for a path its gate refuses, held until the gate admits it. */
+  private readonly _pendingClaims = new Map<string, number>();
+  /**
+   * Records handed to callers for refused paths: inert, absent from `_fields` and from
+   * `fieldNames`, so they contribute neither value nor validity. Cached so repeated lookups of the
+   * same refused path answer with the same object.
+   */
+  private readonly _detachedFields = new Map<string, FieldRecord>();
+  /**
    * Cached value record used by the incremental `value` computed. Rebuilt when
    * field names change; otherwise mutated by single-key copy-on-write so a
    * single field update does not re-assemble the whole object.
@@ -350,7 +365,85 @@ export class MdyFormEngine
 
   // ── MdyFormRegistry ─────────────────────────────────────────────────────────
 
+  /**
+   * Declares that paths under `prefix` exist only while `isOpen` says so.
+   *
+   * Written for collections whose keys are data: the owner of the keys decides which rows exist, and
+   * everything else — a control mounting, a value write — asks. A refused path is not created, and a
+   * claim on it waits instead of failing, so a control can mount before the row it belongs to arrives.
+   *
+   * Returns the disposer that removes the gate.
+   */
+  registerPathGate(prefix: string, isOpen: (path: string) => boolean): () => void {
+    this._gates.set(prefix, isOpen);
+    return () => {
+      this._gates.delete(prefix);
+    };
+  }
+
+  /**
+   * Re-reads the gate over `prefix`: claims it now admits are replayed, and fields it now refuses are
+   * destroyed with their claims put back in waiting.
+   *
+   * The owner calls this after changing which keys exist. Removing a row whose controls are still
+   * mounted therefore takes the value with it — deletion is the owner's word, not the renderer's.
+   */
+  refreshPathGate(prefix: string): void {
+    const covers = (name: string): boolean =>
+      name === prefix || name.startsWith(`${prefix}.`);
+
+    for (const [name, count] of [...this._pendingClaims]) {
+      if (!covers(name) || this._gateRefuses(name)) continue;
+      this._pendingClaims.delete(name);
+      this._detachedFields.delete(name);
+      for (let i = 0; i < count; i++) this.claimField(name);
+    }
+
+    for (const [name, count] of [...this._claims]) {
+      if (!covers(name) || !this._gateRefuses(name)) continue;
+      this._claims.delete(name);
+      this._destroyField(name);
+      this._pendingClaims.set(name, count);
+    }
+
+    for (const name of [...this._fields.keys()]) {
+      if (covers(name) && this._gateRefuses(name)) this._destroyField(name);
+    }
+  }
+
+  /** The field record for `name` if it exists — unlike {@link getField}, this creates nothing. */
+  peekField(name: string): MdyFieldRef<unknown> | null {
+    const rec = this._fields.get(name);
+    return rec ? () => rec.state : null;
+  }
+
+  /** True when some collection owns this path, whether or not it currently admits it. */
+  private _gateCovers(name: string): boolean {
+    for (const prefix of this._gates.keys()) {
+      if (name === prefix || name.startsWith(`${prefix}.`)) return true;
+    }
+    return false;
+  }
+
+  private _gateRefuses(name: string): boolean {
+    for (const [prefix, isOpen] of this._gates) {
+      if (name === prefix || name.startsWith(`${prefix}.`)) return !isOpen(name);
+    }
+    return false;
+  }
+
   claimField(name: string): void {
+    if (this._gateRefuses(name)) {
+      const waiting = (this._pendingClaims.get(name) ?? 0) + 1;
+      this._pendingClaims.set(name, waiting);
+      if (MDY_DEV) {
+        this._warn(
+          `Control claimed "${name}" before its row was declared. It stays empty until the key ` +
+          "is declared; declaring it is the collection owner's call, not the control's.",
+        );
+      }
+      return;
+    }
     const count = (this._claims.get(name) ?? 0) + 1;
     this._claims.set(name, count);
     this._getOrCreate(name);
@@ -366,22 +459,36 @@ export class MdyFormEngine
    * is destroyed only when no claiming control remains.
    */
   removeField(name: string): void {
+    const waiting = this._pendingClaims.get(name);
+    if (waiting !== undefined) {
+      if (waiting > 1) this._pendingClaims.set(name, waiting - 1);
+      else this._pendingClaims.delete(name);
+      return;
+    }
     const remaining = (this._claims.get(name) ?? 1) - 1;
     if (remaining > 0) {
       this._claims.set(name, remaining);
       return;
     }
     this._claims.delete(name);
+    // Inside a gated collection the field belongs to the row, not to the controls that happen to be
+    // showing it. Destroying it here would make a value depend on whether anything is on screen,
+    // which is the failure the gate exists to prevent — the owner ends the row, and takes the value.
+    if (this._gateCovers(name)) return;
+    this._destroyField(name);
+  }
+
+  /** Drops the record and everything keyed by its name. */
+  private _destroyField(name: string): void {
     const rec = this._fields.get(name);
-    if (rec) {
-      rec.asyncRunner?.destroy();
-      this._fields.delete(name);
-      this._rx.untracked(() =>
-        this._fieldNames.update(names => names.filter(n => n !== name)),
-      );
-      this._initialValues.delete(name);
-      this._fieldSanitizers.delete(name);
-    }
+    if (!rec) return;
+    rec.asyncRunner?.destroy();
+    this._fields.delete(name);
+    this._rx.untracked(() =>
+      this._fieldNames.update(names => names.filter(n => n !== name)),
+    );
+    this._initialValues.delete(name);
+    this._fieldSanitizers.delete(name);
   }
 
   setInitialValue(name: string, value: unknown): void {
@@ -499,6 +606,9 @@ export class MdyFormEngine
   // ── MdyFormAdapter ──────────────────────────────────────────────────────────
 
   getField(name: string): MdyFieldRef<unknown> | null {
+    // A path its gate refuses has no field to resolve — the row it belongs to has not been declared.
+    // Null rather than an inert record, so a caller that must render something empty says so itself.
+    if (this._gateRefuses(name)) return null;
     const rec = this._getOrCreate(name);
     return () => rec.state;
   }
@@ -514,6 +624,10 @@ export class MdyFormEngine
    * {@link MdyFormEngine.submitValue} is what actually gets sent.
    */
   getValue(): Record<string, unknown> {
+    // Reads the name list as a signal, so a computed built on this value depends on *which* fields
+    // exist and not only on what they hold. Without it, a value read while a collection was empty
+    // stays empty after rows arrive: the map iterated below is not reactive.
+    this._fieldNames();
     return Object.fromEntries(
       Array.from(this._fields.entries()).map(([n, r]) => [n, r.state.value()]),
     );
@@ -837,6 +951,16 @@ export class MdyFormEngine
         `Field "${name}" requested on a destroyed form engine — the record ` +
         "is created detached and no validation effects will run.",
       );
+    }
+    if (this._gateRefuses(name)) {
+      // Detached: writes land somewhere harmless instead of throwing, and the record is absent from
+      // `_fields`, so it weighs on neither the form's value nor its validity.
+      let detached = this._detachedFields.get(name);
+      if (!detached) {
+        detached = this._createFieldRecord(name);
+        this._detachedFields.set(name, detached);
+      }
+      return detached;
     }
     let rec = this._fields.get(name);
     if (!rec) {

@@ -14,6 +14,7 @@ export {
     group,
     MdyTypedForm,
     MdyTypedFormBase,
+    record,
 } from "./typed-form.js";
 export type {
     MdyAnyArrayDescriptor,
@@ -30,8 +31,11 @@ export type {
     MdyFormPatch,
     MdyFormSchema,
     MdyFormValue,
+    MdyAnyRecordDescriptor,
     MdyGroupDescriptor,
     MdyItemHandleTree,
+    MdyRecordDescriptor,
+    MdyRecordHandle,
     MdyTypedFormBaseOptions,
     MdyWiden
 } from "./typed-form.js";
