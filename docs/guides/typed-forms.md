@@ -1,51 +1,56 @@
-# Typed forms — `mdyForm()`
+# Typed forms
 
 Schema-first and fully type-safe: initial values and validators live in
-TypeScript, and `[field]` replaces the stringly `name` attribute — **a typo
-on a field path is a compile error**. Groups nest arbitrarily and map to
-dotted adapter paths (`address.city`).
+TypeScript, and a handle replaces the stringly `name` — **a typo on a field
+path is a compile error**. Groups nest arbitrarily and map to dotted engine
+paths (`address.city`).
+
+The schema and the handles are `@modyra/core`'s. Every adapter builds the same
+model and hands it to its own reactivity, so everything on this page is true
+wherever you are; only the constructor and the way a control is bound differ.
 
 ```ts
-import { field, group, mdyForm } from "@modyra/angular/adapter";
-import {
-  email as mdyEmail,
-  min as mdyMin,
-  required as mdyRequired,
-} from "@modyra/core";
+import { createForm, field, group } from "@modyra/core";
+import { email, min, required } from "@modyra/core";
 
-export class SignupComponent {
-  readonly form = mdyForm({
-    email: field("", [mdyRequired(), mdyEmail()]),
-    age: field<number | null>(null, [mdyMin(18)]),
-    address: group({ city: field("Rome"), zip: field("") }),
-  });
+const form = createForm({
+  email: field("", [required(), email()]),
+  age: field<number | null>(null, [min(18)]),
+  address: group({ city: field("Rome"), zip: field("") }),
+});
 
-  save = async (): Promise<void> => {
-    await this.form.submit(async (value) => {
-      // value: { email: string; age: number | null; address: { city: string; zip: string } }
-      return api.signup(value); // pseudocode — return MdyFormError[] to show server errors
-    });
-  };
-}
-```
+form.f.email.set("ada@example.com");
+form.f.address.city.value(); // "Rome"
+form.value(); // { email: string; age: number | null; address: { city: string; zip: string } }
 
-```html
-<mdy-form [form]="form" (submitted)="onSubmitted($event)">
-  <mdy-control-text [field]="form.f.email" label="Email" />
-  <mdy-control-number [field]="form.f.age" label="Age" />
-  <mdy-control-text [field]="form.f.address.city" label="City" />
-  <button type="submit" [disabled]="!form.state.canSubmit()">Sign up</button>
-</mdy-form>
+await form.submit(async (value) => api.signup(value)); // return MdyFormError[] to show server errors
 ```
 
 Every handle on `form.f` is reactive and typed: `value()`, `errors()`,
 `touched()`, `dirty()`, `valid()`, `pending()`, `required()`, `set(v)`.
-`name`-based controls and validator directives keep working inside the same
-`<mdy-form [form]>` — adoption is incremental.
 
 These contracts are enforced by compile-time tests
 (`typed-form.types.spec.ts` uses `@ts-expect-error` to prove that wrong
 paths, wrong value types and incomplete `setValue()` calls do not compile).
+
+## The same form, in each adapter
+
+| Package | Constructor | Binding a control |
+| :------ | :---------- | :---------------- |
+| `@modyra/core`, `@modyra/plain` | `createForm(schema)` | `renderField(container, descriptor, handle)` |
+| `@modyra/angular` | `mdyForm(schema)` | `<mdy-control-text [field]="form.f.email" />` |
+| `@modyra/react`, `@modyra/preact` | `useMdyForm(() => schema)` | `<MdyTextField field={form.f.email} />` |
+| `@modyra/lit` | `createLitForm(schema)` | `<mdy-text-field .field=${form.f.email}>` |
+| `@modyra/vue` | `createVueForm(schema)` / `useVueForm` | `<MdyTextField :field="form.f.email" />` |
+| `@modyra/solid` | `createSolidForm(schema)` / `useSolidForm` | `<MdyTextField field={form.f.email} />` |
+| `@modyra/svelte` | `createSvelteForm(schema)` | `<MdyTextField field={form.f.email} />` |
+
+Each constructor is `createForm` with that framework's reactivity supplied,
+and each returns the same `form.f` tree. What follows uses `createForm`; read
+it as whichever line of the table you are on.
+
+Where a section is about one adapter's own surface — a template syntax, a
+component — it says so in its heading.
 
 ## Model operations — exact semantics
 
@@ -110,7 +115,7 @@ username: field("", [mdyRequired()], {
 - `ctx.form.value()` / `ctx.form.fieldValue(path)` give read-only access to
   the rest of the form for cross-field server checks.
 - `dependsOn` fields must already exist in the schema — with the typed API
-  this is always true, since `mdyForm()`/`createForm()` register every field
+  this is always true, since `createForm()` registers every field
   upfront.
 - `timeoutMs` bounds how long a field can stay `pending`: past the deadline
   the run is aborted and the field gets a `kind: "async-timeout"` error.
@@ -121,7 +126,7 @@ username: field("", [mdyRequired()], {
 ## Undo / redo
 
 ```ts
-const form = mdyForm(schema, { history: { maxEntries: 100, debounceMs: 300 } });
+const form = createForm(schema, { history: { maxEntries: 100, debounceMs: 300 } });
 form.undo(); // restore previous snapshot
 form.redo(); // re-apply
 form.canUndo(); // reactive — drive toolbar buttons
@@ -191,9 +196,9 @@ passengers, phone numbers. Rows are typed: a typo on a row's field path is a
 compile error, same as everywhere else on `form.f`.
 
 ```ts
-import { array, field, group, minLength, mdyForm, required } from "@modyra/angular/adapter";
+import { array, createForm, field, group, minLength, required } from "@modyra/core";
 
-const form = mdyForm({
+const form = createForm({
   items: array(
     group({ name: field("", [required()]), qty: field<number>(1) }),
     { initial: [{ name: "First", qty: 2 }], validators: [minLength(1)] },
@@ -210,6 +215,8 @@ form.f.items.move(0, 2);
 form.f.items.errors();                 // array-level errors (e.g. minLength)
 form.getValue().items;                 // Array<{ name: string; qty: number }>
 ```
+
+Rendering the rows, in Angular:
 
 ```html
 @for (row of form.f.items.rows(); track $index) {
@@ -345,7 +352,7 @@ closing every editor and unmounting cells change no value and no verdict.
 ## Draft autosave
 
 ```ts
-const form = mdyForm(schema, {
+const form = createForm(schema, {
   draft: {
     key: "signup",
     exclude: ["password"], // never persisted nor restored
@@ -376,10 +383,10 @@ Behavior:
 - `File` values are never persisted (not serializable).
 - On the server (SSR) the default storage is inert.
 
-Declarative shorthand: `[draftKey]="'signup'"` on `<mdy-form>`, or
-`draft: "signup"` in `mdyForm()` options for an all-defaults draft.
+In Angular the same thing has a template shorthand:
+`[draftKey]="'signup'"` on `<mdy-form>`.
 
-## Multi-step wizard
+## Multi-step wizard — Angular
 
 `<mdy-form-wizard>` splits one form into steps with per-step validation,
 progress header and navigation:
@@ -402,17 +409,17 @@ touched), steps stay alive when hidden (values survive navigation), the step
 header allows jumping backwards freely and forwards only across valid steps.
 Combine with `draft:` for long forms that survive a browser crash.
 
-## Zod adapter — `@modyra/angular/zod`
+## From a Zod schema — `@modyra/zod`
 
 One source of truth for types, validators, messages and required flags — the
-same schema your backend/tRPC layer already uses. Ships as a secondary entry
-point with `zod` as an **optional** peer: zero weight if you don't use it.
+same schema your backend already uses. `zod` is an **optional** peer: zero
+weight if you don't use it.
 
 ```ts
-import { mdyFormFromSchema } from "@modyra/angular/zod";
+import { createZodForm } from "@modyra/zod";
 import { z } from "zod";
 
-readonly form = mdyFormFromSchema(
+const form = createZodForm(
   z.object({
     email: z.string().email(),
     age: z.number().min(18).default(18),
@@ -427,7 +434,13 @@ readonly form = mdyFormFromSchema(
 Nested `z.object()`s become groups, `.default()`/`.optional()` seed initial
 values, pieces that reject empty values drive `aria-required`, and
 object-level `refine()`/`superRefine()` issues surface as cross-field errors
-on the path they declare. The result is a regular `MdyTypedForm`.
+on the path they declare. The result is a regular typed form.
+
+The introspection — tree building, piece validators, required detection,
+refinement mapping — is framework-agnostic and lives in `@modyra/zod`. An
+adapter may wrap it to bind the result to its own reactivity:
+`mdyFormFromSchema` from `@modyra/angular/zod` is `createZodForm` on Angular
+signals, and takes the same schema.
 
 Known inference limits: `preprocess`/`transform` (the form works on the
 **input** type; transformed output types are not reflected in handles),

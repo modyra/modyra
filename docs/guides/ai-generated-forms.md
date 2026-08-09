@@ -122,6 +122,19 @@ const llmResponse = JSON.stringify({
 const fields = parseDynamicFields(JSON.parse(llmResponse));
 ```
 
+Rendering it needs no framework:
+
+```ts
+import { mountMdyForm } from "@modyra/plain";
+
+const mounted = mountMdyForm(document.getElementById("host"), fields, {
+  onSubmit: (value) => console.log(value), // partial: a disabled field is not submitted
+});
+// mounted.form is the running @modyra/core form; mounted.dispose() unmounts everything.
+```
+
+and each binding has its own way of drawing the same field list — in Angular:
+
 ```html
 <mdy-dynamic-form [fields]="fields" (submitted)="onSubmitted($event)">
   <button type="submit">Send</button>
@@ -143,21 +156,21 @@ onSubmitted(event: { value: Record<string, unknown> }): void {
 
 ## Notes
 
-- **Angular renders the catalog** (`<mdy-dynamic-form>`) — a component.
-  **React** has `useMdyDynamicForm(fields)`, headless by design like every
-  other hook in `@modyra/react`: it builds the form and wires the
-  same validators (including the automatic `oneOf`/`eachOneOf`
-  anti-tampering whitelist for option-based kinds) via the same
-  `buildDynamicFieldValidators()` Angular's component calls — same value/
-  validation/error semantics, but you render the JSX yourself (pair it
-  with `useMdyField`/`useMdySelect`/`useMdyBooleanField`/`useMdyOptionField`
-  (radio/segmented)/`useMdyMultiselectField`/`useMdyDatepickerField`/
-  `useMdyTimepickerField` from `@modyra/react`, or your own controls). On
-  Vue/Lit, the contract and `parseDynamicFields()` work the
-  same — map each `MdyDynamicField.kind` to your own controls over the
-  headless handles (see [Usage modes](usage-modes.md)). `@modyra/plain`
-  applies `layout`; the React and Angular renderers are still
-  flat-fields-only, and no renderer applies `rules` yet.
+- **The parser is the contract; drawing it is the renderer's part.** Every
+  binding reads the same `MdyDynamicField[]` and wires the same validators
+  through `buildDynamicFieldValidators()` — including the automatic
+  `oneOf`/`eachOneOf` anti-tampering whitelist for option-based kinds — so
+  value, validation and error semantics do not vary by framework.
+- **What differs is how much drawing a binding does for you.** Some ship a
+  component that renders the catalogue from the field list
+  (`<mdy-dynamic-form>`, `mountMdyForm`); others hand you the headless
+  handles and let you render your own controls (`useMdyDynamicForm` in React
+  and Preact, paired with `useMdyField` and its siblings). Mapping each
+  `MdyDynamicField.kind` to your own controls is always available.
+- **`layout` is applied by `@modyra/plain` and `@modyra/angular`.** No
+  renderer applies `rules` yet: the parser validates them and the contract
+  carries them, but visibility and enabled-state are still the host's to
+  apply.
 - CMS/storage use case: same contract, same parser — see
   [UI toolkit — dynamic forms](ui-toolkit.md) for the versioning notes.
 - Keep the schema of *your* domain out of the prompt when possible: a

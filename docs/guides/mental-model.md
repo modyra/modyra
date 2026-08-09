@@ -95,7 +95,10 @@ exact flat value the engine holds. See the
 Everything described above is implemented once, in the framework-agnostic
 `@modyra/core` package (`MdyFormEngine` + `createForm`), written against a
 four-primitive reactive contract (`signal`, `computed`, `effect`,
-`untracked`). The Angular package binds that contract to Angular's native
-signals via `angularReactivity`, so `MdyDeclarativeAdapter` and `mdyForm()`
-are thin Angular-typed wrappers — same objects, same semantics, and the
-whole engine also runs in plain Node on the built-in `vanillaReactivity()`.
+`untracked`).
+
+An adapter supplies those four primitives from its framework's own reactive
+system and re-types the result; it adds no semantics. That is why every
+adapter's constructor is `createForm` underneath, why the same form runs in
+plain Node on the built-in `vanillaReactivity()`, and why a behaviour
+described in these guides is not something you have to check twice.

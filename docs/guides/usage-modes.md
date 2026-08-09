@@ -1,4 +1,9 @@
-# Usage modes
+# Usage modes — Angular
+
+Every adapter builds the same model from the same schema; what differs is how
+a component reaches it. This page is about **Angular**, which offers three
+ways and lets them mix: the other adapters have one each, and the
+[typed forms guide](./typed-forms.md) shows them side by side.
 
 `@modyra/angular` has one Signals engine and three ways to drive it. All
 three share the same adapter, validators, renderers and devtools — you can mix

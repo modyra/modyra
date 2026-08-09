@@ -40,6 +40,26 @@ form.f.items.move(0, 1);
 form.getValue().items[0].qty; // number
 ```
 
+**Collections keyed by data** — rows addressed by an entity id or a
+provisional key rather than by position, so a row survives sorting and
+filtering, and the controls of one row may be mounted apart:
+
+```ts
+import { field, group, record } from "@modyra/core";
+
+const form = createForm({
+  lines: record(group({ name: field(""), qty: field<number>(1, [min(1)]) })),
+});
+
+form.f.lines.upsert("a3f9", { name: "Espresso", qty: 2 });
+form.f.lines.cell("a3f9", "name").set("Ristretto"); // one control of one row
+form.f.lines.rename("tmp:1", "77");                 // keeps value, validity and touched
+form.value().lines;                                 // { a3f9: { name: string; qty: number } }
+```
+
+A row exists because `upsert` declared it, never because something rendered
+it: unmounting a control keeps the value, and validity belongs to the row.
+
 **Server-side async validation, done right** — cancellable, cross-field,
 debounced, with timeout and preconditions:
 
@@ -120,8 +140,8 @@ and how completely each implements the contract, is published in the
 ## Documentation
 
 - [Typed forms guide](https://github.com/modyra/modyra/blob/main/docs/guides/typed-forms.md)
-- [Typed forms guide](https://github.com/modyra/modyra/blob/main/docs/guides/typed-forms.md)
 - [Mental model](https://github.com/modyra/modyra/blob/main/docs/guides/mental-model.md)
+- [Documentation index](https://github.com/modyra/modyra/blob/main/docs/README.md)
 
 ## License
 

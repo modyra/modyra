@@ -1,10 +1,15 @@
 # UI toolkit — renderers, dynamic forms, theming
 
-This is the **Angular UI layer** (`@modyra/angular/ui`): the engine and the
-other three bindings stay UI-free. The renderer catalog is an **ecosystem
-layer** on top of the core: the core never depends on it, and importing one
-control does not pull in the whole catalog (standalone components, standard
+This page is the **Angular UI layer** (`@modyra/angular/ui`). The engine
+stays UI-free, and every renderer — this one included — is an **ecosystem
+layer** on top of it: the core never depends on a renderer, and importing one
+control does not pull in the whole catalogue (standalone components, standard
 tree shaking).
+
+What each renderer must draw is the framework-agnostic widget contract in
+`@modyra/widgets`; see [contract compatibility](../contract-compatibility.md).
+The equivalent pages for the other bindings are linked from the
+[documentation index](../README.md).
 
 ## Component catalog
 

@@ -27,6 +27,7 @@ Modyra separates those concerns:
 - UI packages and headless widgets are optional
 - schema adapters support Zod and Standard Schema
 - the Dynamic Form Contract represents forms as validated data
+- collections are keyed by position or by data, so rows survive sorting and re-rendering
 
 ## Quick start
 
