@@ -24,26 +24,30 @@ jobs:
             const server = spawn("node", ["scripts/serve-example.mjs", "lit", "4303"], { stdio: "ignore" });
             await new Promise((r) => setTimeout(r, 1500));
             const browser = await firefox.launch();
-            const rows = [];
-            for (let i = 0; i < 10; i++) {
-              const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-              const page = await context.newPage();
-              await page.goto("http://localhost:4303/");
-              await page.waitForSelector("mdy-text-field");
-              await page.evaluate(async () => { await document.fonts.ready; });
-              await page.waitForTimeout(150);
-              const shot = await page.evaluate(() => ({
-                height: document.documentElement.scrollHeight,
-                errors: document.querySelectorAll(".mdy-error, .mdy-inline-error, [class*=error]").length,
-                pending: document.querySelectorAll("[class*=pending], [class*=spinner]").length,
-                fields: document.querySelectorAll(".mdy-renderer").length,
-              }));
-              await page.waitForTimeout(600);
-              const settled = await page.evaluate(() => document.documentElement.scrollHeight);
-              rows.push({ ...shot, settled });
-              await context.close();
-            }
-            console.table(rows);
+            const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+            const page = await context.newPage();
+            await page.goto("http://localhost:4303/");
+            await page.waitForSelector("mdy-text-field");
+            await page.evaluate(async () => { await document.fonts.ready; });
+            await page.waitForTimeout(150);
+            const measure = () => page.evaluate(() => {
+              const out = {};
+              document.querySelectorAll("*").forEach((el) => {
+                const key = `${el.tagName.toLowerCase()}.${String(el.className || "").split(/\s+/)[0] || ""}#${el.id || ""}`;
+                const r = el.getBoundingClientRect();
+                out[key] = (out[key] ?? 0) + Math.round(r.height);
+              });
+              return out;
+            });
+            const before = await measure();
+            await page.waitForTimeout(800);
+            const after = await measure();
+            const moved = Object.keys({ ...before, ...after })
+              .map((k) => ({ element: k, before: before[k] ?? 0, after: after[k] ?? 0 }))
+              .filter((row) => row.before !== row.after)
+              .sort((a, b) => Math.abs(b.after - b.before) - Math.abs(a.after - a.before))
+              .slice(0, 12);
+            console.table(moved);
             server.kill();
             await browser.close();
           })();
