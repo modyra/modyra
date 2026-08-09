@@ -8,7 +8,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createForm, field, group, record } from "../dist/index.js";
+import { createForm, field, group, record, vanillaReactivity } from "../dist/index.js";
 
 const required = (message = "required") => {
   const fn = (value) => (value === null || value === "" ? [message] : []);
@@ -335,4 +335,95 @@ test("the typed schema built from a document carries a working record", async ()
   // And the runtime keeps the last word on which rows exist.
   form.f.lines.upsert("tmp:9", { name: "Cornetto", qty: 1 });
   assert.deepEqual([...form.f.lines.keys()].sort(), ["12", "tmp:9"]);
+});
+
+test("has() and validOf() answer inside a computed, like every other member", () => {
+  const rx = vanillaReactivity();
+  const form = createForm({ rows: record(group({ nome: field("", [required()]) })) }, { reactivity: rx });
+
+  const has = rx.computed(() => form.f.rows.has("k"));
+  const inKeys = rx.computed(() => form.f.rows.keys().includes("k"));
+  const valid = rx.computed(() => form.f.rows.validOf("k"));
+
+  assert.equal(has(), false);
+  assert.equal(inKeys(), false);
+
+  form.f.rows.upsert("k", { nome: "filled" });
+
+  assert.equal(has(), true, "has() must move with the key set, as keys() does");
+  assert.equal(inKeys(), true);
+  assert.equal(valid(), true, "a row declared valid reads valid without a second read");
+
+  form.f.rows.remove("k");
+
+  assert.equal(has(), false, "and back again when the row ends");
+  assert.equal(inKeys(), false);
+  assert.equal(valid(), false);
+});
+
+test("a record nested in a group keeps its own paths", () => {
+  const form = createForm({ order: group({ rows: record(group({ n: field("") })) }) });
+
+  form.f.order.rows.upsert("a3f9", { n: "x" });
+
+  assert.deepEqual(form.value(), { order: { rows: { a3f9: { n: "x" } } } });
+  assert.equal(form.f.order.rows.cell("a3f9", "n").value(), "x");
+  assert.ok(form.fieldNames().includes("order.rows.a3f9.n"));
+});
+
+test("two records in one form do not share a key space", () => {
+  const form = createForm({ a: record(field("")), b: record(field("")) });
+
+  form.f.a.upsert("1", "one");
+  form.f.b.upsert("1", "two");
+
+  assert.deepEqual(form.value(), { a: { 1: "one" }, b: { 1: "two" } });
+  form.f.a.remove("1");
+  assert.deepEqual(form.value(), { a: {}, b: { 1: "two" } });
+});
+
+test("form-wide operations reach the cells of a declared row", () => {
+  const form = createForm({ rows: record(group({ n: field("", [required()]) })) });
+  form.f.rows.upsert("k", { n: "" });
+
+  form.markAllTouched();
+  assert.equal(form.f.rows.cell("k", "n").touched(), true);
+
+  form.f.rows.cell("k", "n").set("v");
+  assert.deepEqual(form.getChanges(), { rows: { k: { n: "v" } } });
+  assert.deepEqual(form.submitValue(), { rows: { k: { n: "v" } } });
+});
+
+test("a row carries the sanitizer and the async validator its schema declared", async () => {
+  const form = createForm({
+    rows: record(
+      group({
+        n: field("", [], { sanitize: (v) => String(v).trim() }),
+        code: field("", [], {
+          asyncValidators: [async (v) => (v === "taken" ? ["already used"] : [])],
+          asyncDebounceMs: 0,
+        }),
+      }),
+    ),
+  });
+
+  form.f.rows.upsert("k", { n: "  spaced  ", code: "taken" });
+  await new Promise((r) => setTimeout(r, 60));
+
+  assert.equal(form.value().rows.k.n, "spaced", "the row's sanitizer ran");
+  assert.deepEqual(
+    form.f.rows.cell("k", "code").errors().map((e) => e.message),
+    ["already used"],
+    "the row's async validator ran, on the row's own field",
+  );
+});
+
+test("a disabled cell is not submitted, and the row still is", () => {
+  const form = createForm({ rows: record(group({ n: field("x"), m: field("y") })) });
+  form.f.rows.upsert("k", { n: "x", m: "y" });
+
+  form.setDisabled("rows.k.m", () => true);
+
+  assert.deepEqual(form.submitValue(), { rows: { k: { n: "x" } } });
+  assert.equal(form.value().rows.k.m, "y", "the value is still there — it is simply not sent");
 });
