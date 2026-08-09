@@ -61,6 +61,18 @@
       table.keyed-rows td.read {
         padding-top: 0.9rem;
       }
+      /* The column header names the column; the per-cell label names the row and is for a reader
+         that meets the control on its own. */
+      table.keyed-rows .mdy-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
       table.keyed-rows tr.editing {
         background: var(--mdy-surface-container-low);
       }

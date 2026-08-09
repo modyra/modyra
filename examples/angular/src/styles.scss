@@ -197,3 +197,21 @@ button[type="submit"]:disabled {
 .playground-accordion {
     overflow: hidden;
 }
+/* A table's column header names the column for a sighted reader; each control still carries a label
+   naming its row, hidden visually because meeting it on its own is what a screen reader does. */
+table.keyed-rows .mdy-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+table.keyed-rows { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+table.keyed-rows th { text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; padding: 0 .75rem .5rem; }
+table.keyed-rows td { padding: .25rem .75rem; vertical-align: top; border-top: 1px solid var(--mdy-outline-variant); }
+table.keyed-rows tr.editing { background: var(--mdy-surface-container-low); }
+.keyed-rows-actions { display: flex; gap: .5rem; margin-top: .75rem; }
+.keyed-rows-state { font-size: .8125rem; }

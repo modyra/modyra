@@ -40,7 +40,8 @@ import { required as mdyRequired } from "@modyra/core";
                    chosen at runtime. -->
               <td>
                 @if (editing().has(key)) {
-                  <mdy-control-text [field]="rows.f.lines.row(key).item" label="" />
+                  <mdy-control-text [field]="rows.f.lines.row(key).item"
+                    [label]="'Item, row ' + key" />
                 } @else {
                   {{ rows.f.lines.row(key).item.value() }}
                 }
@@ -48,7 +49,8 @@ import { required as mdyRequired } from "@modyra/core";
 
               <td>
                 @if (editing().has(key)) {
-                  <mdy-control-number [field]="rows.f.lines.row(key).qty" label="" />
+                  <mdy-control-number [field]="rows.f.lines.row(key).qty"
+                    [label]="'Quantity, row ' + key" />
                 } @else {
                   {{ rows.f.lines.row(key).qty.value() }}
                 }
