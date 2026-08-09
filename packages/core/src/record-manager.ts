@@ -183,7 +183,13 @@ export class MdyRecordManager {
    * record comes from whoever owns the keys, which is the one party allowed to say a row exists.
    */
   patch(values: Readonly<Record<string, unknown>>): void {
-    if (!isRecord(values)) return;
+    if (!isRecord(values) || Array.isArray(values)) {
+      this._warn(
+        `patch on "${this._deps.path}" ignored ${describe(values)}: it takes an object keyed by row ` +
+        "key — { key: { field: value } }.",
+      );
+      return;
+    }
     for (const [key, value] of Object.entries(values)) {
       if (this._deps.item.kind === "group" && !isRecord(value)) {
         this._warn(
