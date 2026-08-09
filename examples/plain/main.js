@@ -444,10 +444,13 @@ if (rowsHost && rowsState) {
   let descending = false;
   let mountedCells = [];
 
+  // A cell's label names its column *and* its row: read on its own — which is how a screen reader
+  // reaches it — "Item" would not say which line it belongs to. The column header carries that for
+  // a sighted reader, so the label is hidden visually rather than dropped.
   const cellDescriptor = (key, part) =>
     part === "item"
-      ? { name: `rows-item-${key}`, kind: "text", label: "" }
-      : { name: `rows-qty-${key}`, kind: "number", label: "" };
+      ? { name: `rows-item-${key}`, kind: "text", label: `Item, row ${key}` }
+      : { name: `rows-qty-${key}`, kind: "number", label: `Quantity, row ${key}` };
 
   const button = (label, onClick, primary = false) => {
     const el = document.createElement("button");

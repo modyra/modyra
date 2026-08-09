@@ -303,12 +303,14 @@ class KeyedRows extends LitElement {
               <td>${key}</td>
               <td>
                 ${this.editing.has(key)
-        ? html`<mdy-text-field .field=${this.rows.f.lines.cell(key, "item")}></mdy-text-field>`
+        ? html`<mdy-text-field label=${`Item, row ${key}`}
+            .field=${this.rows.f.lines.cell(key, "item")}></mdy-text-field>`
         : html`${this.rows.f.lines.cell(key, "item").value() ?? ""}`}
               </td>
               <td>
                 ${this.editing.has(key)
-        ? html`<mdy-number-field .field=${this.rows.f.lines.cell(key, "qty")}></mdy-number-field>`
+        ? html`<mdy-number-field label=${`Quantity, row ${key}`}
+            .field=${this.rows.f.lines.cell(key, "qty")}></mdy-number-field>`
         : html`${this.rows.f.lines.cell(key, "qty").value() ?? ""}`}
               </td>
               <td>
