@@ -445,6 +445,39 @@
         }
       }
     },
+    "recordNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "item"
+      ],
+      "properties": {
+        "node": {
+          "const": "record"
+        },
+        "label": {
+          "type": "string"
+        },
+        "item": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/fieldNode"
+            },
+            {
+              "$ref": "#/$defs/groupNode"
+            }
+          ]
+        },
+        "initialValue": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[^.]+$"
+          },
+          "maxProperties": 100
+        }
+      }
+    },
     "node": {
       "oneOf": [
         {
@@ -455,6 +488,9 @@
         },
         {
           "$ref": "#/$defs/arrayNode"
+        },
+        {
+          "$ref": "#/$defs/recordNode"
         }
       ]
     }

@@ -101,3 +101,35 @@ test("removing the row empties the cells still on screen", async () => {
   assert.equal(inputOf(names).value, "", "the control follows the row out of existence");
   assert.deepEqual(form.value().rows, {});
 });
+
+test("a document declaring a keyed collection renders its rows", async () => {
+  const { parseDynamicForm } = await import("@modyra/core");
+  const { mountMdyForm } = await import("../dist/index.js");
+  const document_ = {
+    version: 3,
+    schema: {
+      node: "group",
+      children: {
+        lines: {
+          node: "record",
+          item: {
+            node: "group",
+            children: {
+              name: { node: "field", field: { name: "leaf", kind: "text", label: "Item" } },
+            },
+          },
+          initialValue: { 12: { name: "Espresso" }, "tmp:1": { name: "Cornetto" } },
+        },
+      },
+    },
+  };
+
+  const parsed = parseDynamicForm(document_);
+  assert.deepEqual(parsed.diagnostics, []);
+
+  const host = column();
+  mountMdyForm(host, parsed.fields);
+
+  const values = [...host.querySelectorAll("input")].map((input) => input.value);
+  assert.deepEqual(values.sort(), ["Cornetto", "Espresso"], "both declared rows are on screen");
+});

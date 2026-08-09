@@ -1,6 +1,6 @@
 import { evaluateExpression, expressionPaths, validateExpression, type MdyExpression } from "./expression.js";
 import { MdyFormValidatorFn, MdySelectOption, ValidatorFn } from "./types.js";
-import { array, field, group, type MdyFormSchema } from "./typed-form.js";
+import { array, field, group, record, type MdyFormSchema } from "./typed-form.js";
 import {
   eachOneOf,
   email,
@@ -413,7 +413,24 @@ export interface MdyDynamicArrayNode {
   readonly minItems?: number;
   readonly maxItems?: number;
 }
-export type MdyDynamicNode = MdyDynamicFieldNode | MdyDynamicGroupNode | MdyDynamicArrayNode;
+/**
+ * A collection whose keys are data rather than positions — an entity id, a provisional key, a slug.
+ *
+ * A document declares the shape of a row and, where it has them, the rows it starts with. Which rows
+ * exist afterwards is the application's word: `upsert` and `remove` on the handle. A document cannot
+ * express that, and should not — it describes a form, not a session.
+ */
+export interface MdyDynamicRecordNode {
+  readonly node: "record";
+  readonly label?: string;
+  readonly item: MdyDynamicFieldNode | MdyDynamicGroupNode;
+  readonly initialValue?: Readonly<Record<string, unknown>>;
+}
+export type MdyDynamicNode =
+  | MdyDynamicFieldNode
+  | MdyDynamicGroupNode
+  | MdyDynamicArrayNode
+  | MdyDynamicRecordNode;
 
 /** Flattens a recursive schema to the dotted/indexed paths consumed by the current renderer. */
 export function flattenDynamicSchema(schema: MdyDynamicGroupNode): MdyDynamicField[] {
@@ -432,6 +449,17 @@ export function flattenDynamicSchema(schema: MdyDynamicGroupNode): MdyDynamicFie
       for (const [key, child] of Object.entries(node.children)) {
         if (!isSafeDynamicSegment(key)) continue;
         visit(child, path ? `${path}.${key}` : key, value[key]);
+      }
+      return;
+    }
+    if (node.node === "record") {
+      const declared = isRecordValue(initial)
+        ? initial
+        : isRecordValue(node.initialValue) ? node.initialValue : {};
+      for (const [key, row] of Object.entries(declared)) {
+        // The key is a path segment like any other, and an unsafe one addresses something else.
+        if (!isSafeDynamicSegment(key)) continue;
+        visit(node.item, path ? `${path}.${key}` : key, row);
       }
       return;
     }
@@ -917,7 +945,7 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
   const visit = (raw: unknown, path: string, depth: number): void => {
     count += 1;
     if (depth > 8 || count > 500) { out.push({ code: "MDY_DYNAMIC_SCHEMA_LIMIT", severity: "error", path, message: "schema exceeds depth/node limits." }); return; }
-    if (!isRecordValue(raw) || !["field", "group", "array"].includes(String(raw["node"]))) { out.push({ code: "MDY_DYNAMIC_INVALID_NODE", severity: "error", path, message: "node must be field, group, or array." }); return; }
+    if (!isRecordValue(raw) || !["field", "group", "array", "record"].includes(String(raw["node"]))) { out.push({ code: "MDY_DYNAMIC_INVALID_NODE", severity: "error", path, message: "node must be field, group, array, or record." }); return; }
     if (raw["node"] === "field") {
       if (!isRecordValue(raw["field"])) out.push({ code: "MDY_DYNAMIC_INVALID_FIELD", severity: "error", path: `${path}/field`, message: "field node requires a field object." });
       return;
@@ -927,6 +955,20 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
       for (const [key, child] of Object.entries(raw["children"])) {
         if (!isSafeDynamicSegment(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/children/${key}`, message: "unsafe child name." });
         else visit(child, `${path}/children/${key}`, depth + 1);
+      }
+      return;
+    }
+    if (raw["node"] === "record") {
+      if (!isRecordValue(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path, message: "record requires an item node." });
+      else visit(raw["item"], `${path}/item`, depth + 1);
+      const initial = raw["initialValue"];
+      if (initial !== undefined && !isRecordValue(initial)) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path: `${path}/initialValue`, message: "record initialValue must be an object keyed by row key." });
+      else if (isRecordValue(initial)) {
+        if (Object.keys(initial).length > 100) out.push({ code: "MDY_DYNAMIC_SCHEMA_LIMIT", severity: "error", path: `${path}/initialValue`, message: "record initialValue exceeds 100 rows." });
+        for (const key of Object.keys(initial)) {
+          // A key that cannot be a path segment names a row nothing can address.
+          if (!isSafeDynamicSegment(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/initialValue/${key}`, message: "unsafe row key." });
+        }
       }
       return;
     }
@@ -1177,6 +1219,12 @@ export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSche
       const children: Record<string, unknown> = {};
       for (const [key, child] of Object.entries(node.children)) children[key] = build(child, key);
       return group(children as MdyFormSchema);
+    }
+    if (node.node === "record") {
+      // Same template idea as an array's item: one row shape, whatever key it ends up under.
+      return record(build(node.item, name) as never, {
+        ...(node.initialValue !== undefined ? { initial: node.initialValue } : {}),
+      });
     }
     // The item descriptor is the template every row is built from, which is what keeps a pushed row
     // identical to an initial one.

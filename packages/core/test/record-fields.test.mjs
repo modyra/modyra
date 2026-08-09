@@ -269,3 +269,70 @@ test("undo steps a row's value back without losing the row", async () => {
   assert.equal(form.f.rows.has("a"), true, "the row is not lost by stepping back");
   assert.equal(form.value().rows.a.nome, "first");
 });
+
+test("a document can declare a keyed collection, and it becomes a record", async () => {
+  const { parseDynamicForm } = await import("../dist/index.js");
+  const document = JSON.parse(
+    await (await import("node:fs/promises")).readFile(
+      new URL("../../../spec/fixtures/dynamic-form/v3/keyed-rows.json", import.meta.url),
+      "utf8",
+    ),
+  );
+
+  const parsed = parseDynamicForm(document);
+  assert.deepEqual(parsed.diagnostics, [], "the fixture parses without a complaint");
+
+  const flat = parsed.fields.map((f) => f.name);
+  assert.ok(flat.includes("lines.12.name"), "a row declared by the document is addressable");
+  assert.ok(flat.includes("lines.tmp:1.qty"), "a provisional key is a key like any other");
+});
+
+test("a document's unsafe row key is reported, not rendered", async () => {
+  const { parseDynamicForm } = await import("../dist/index.js");
+  const parsed = parseDynamicForm({
+    version: 3,
+    schema: {
+      node: "group",
+      children: {
+        rows: {
+          node: "record",
+          item: { node: "field", field: { name: "leaf", kind: "text" } },
+          initialValue: { "__proto__": "x", "a.b": "y" },
+        },
+      },
+    },
+  });
+
+  const codes = parsed.diagnostics.map((d) => d.code);
+  assert.ok(codes.includes("MDY_DYNAMIC_UNSAFE_NAME"), "an unaddressable key is a finding");
+  assert.equal(({}).x, undefined);
+});
+
+test("the typed schema built from a document carries a working record", async () => {
+  const { buildDynamicFormSchema } = await import("../dist/index.js");
+  const schema = buildDynamicFormSchema({
+    node: "group",
+    children: {
+      lines: {
+        node: "record",
+        item: {
+          node: "group",
+          children: {
+            name: { node: "field", field: { name: "leaf", kind: "text" } },
+            qty: { node: "field", field: { name: "leaf", kind: "number" } },
+          },
+        },
+        initialValue: { 12: { name: "Espresso", qty: 2 } },
+      },
+    },
+  });
+
+  const form = createForm(schema);
+
+  assert.deepEqual([...form.f.lines.keys()], ["12"], "the document's rows are declared");
+  assert.equal(form.value().lines["12"].name, "Espresso");
+
+  // And the runtime keeps the last word on which rows exist.
+  form.f.lines.upsert("tmp:9", { name: "Cornetto", qty: 1 });
+  assert.deepEqual([...form.f.lines.keys()].sort(), ["12", "tmp:9"]);
+});
