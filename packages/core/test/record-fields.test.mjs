@@ -543,6 +543,22 @@ test("cell() on a part the row does not have says what the row offers", () => {
   assert.match(said.join("\n"), /nome, qta/, "the diagnostic names the way out");
 });
 
+test("a wrong cell part is reported once, not once per render", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+
+  const said = captureWarnings(() => {
+    // What a table does: the same mistaken part, asked for on every row and every render.
+    for (let render = 0; render < 3; render++) {
+      for (const key of ["a", "b", "c"]) form.f.rows.cell(key, "nome2");
+    }
+    form.f.rows.cell("a", "qta2"); // a different mistake still gets its own word
+  });
+
+  assert.equal(said.length, 2, "one diagnostic per distinct mistake, not per call");
+  assert.match(said[0], /"nome2".*addresses nothing/);
+  assert.match(said[1], /"qta2"/);
+});
+
 test("a record-level validator gates the form on the whole collection", () => {
   const form = createForm({
     rows: record(rowSchema(), {
@@ -592,4 +608,33 @@ test("upsert rewrites the row, patch merges into it", () => {
 
   form.f.rows.patch({ k: { nome: "merged" } });
   assert.deepEqual(form.value().rows.k, { nome: "merged", qta: 0 }, "a patch leaves the rest alone");
+});
+
+test("removing a row while its async validator is in flight settles cleanly", async () => {
+  const form = createForm({
+    rows: record(
+      group({
+        n: field("", [], {
+          asyncValidators: [
+            async (value) => {
+              await new Promise((r) => setTimeout(r, 40));
+              return value === "bad" ? ["taken"] : [];
+            },
+          ],
+          asyncDebounceMs: 0,
+        }),
+      }),
+    ),
+  });
+
+  form.f.rows.upsert("k", { n: "bad" });
+  await new Promise((r) => setTimeout(r, 5));
+  assert.equal(form.state.pending(), true, "the row is being checked");
+
+  form.f.rows.remove("k");
+  await new Promise((r) => setTimeout(r, 80));
+
+  assert.equal(form.state.pending(), false, "the run does not outlive the row");
+  assert.equal(form.state.valid(), true, "and cannot report an error against a row that is gone");
+  assert.deepEqual(form.fieldNames(), ["rows"], "nothing of the row is left registered");
 });

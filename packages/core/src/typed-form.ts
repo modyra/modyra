@@ -538,6 +538,8 @@ export abstract class MdyTypedFormBase<
    * otherwise accumulate one entry per key it ever showed.
    */
   private readonly _cellHandles = new Map<string, WeakRef<MdyFieldHandle<unknown>>>();
+  /** Wrong cell parts already reported, so a template repeating a mistake reports it once. */
+  private readonly _reportedCellParts = new Set<string>();
   private readonly _cellHandlesSweep = new FinalizationRegistry<string>((path) => {
     // Only when nothing has replaced it in the meantime.
     if (this._cellHandles.get(path)?.deref() === undefined) this._cellHandles.delete(path);
@@ -1019,7 +1021,11 @@ export abstract class MdyTypedFormBase<
         // Checked against the row's schema, which is static: a mistyped part addresses nothing and
         // would otherwise render a control that stays empty for ever without saying why. The key is
         // not checked here — a row that does not exist yet is the ordinary case.
-        if (MDY_DEV && !manager.addresses(leaf)) {
+        // Reported once per wrong part, not once per call: a template asks for its cells on every
+        // render, so a mistyped part would otherwise turn one mistake into a stream. The part is
+        // what identifies the mistake — the key is not, since every row repeats the same one.
+        if (MDY_DEV && !manager.addresses(leaf) && !this._reportedCellParts.has(`${path}\u0000${leaf}`)) {
+          this._reportedCellParts.add(`${path}\u0000${leaf}`);
           const offered = manager.rowLeaves().map((l) => (l === "" ? "(no path — rows are leaves)" : l));
           this._adapter.warnDev(
             `cell(${JSON.stringify(key)}, ${JSON.stringify(leaf)}) on "${path}" addresses nothing. ` +
