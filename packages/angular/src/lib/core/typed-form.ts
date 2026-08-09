@@ -8,12 +8,14 @@ import {
 } from "@angular/core";
 import {
   array as coreArray,
+  record as coreRecord,
   field as coreField,
   group as coreGroup,
   MdyTypedFormBase,
   type MdyTypedFormBaseOptions,
   type MdySubmittedValue,
   type MdyFieldHandle as CoreFieldHandle,
+  type MdyRecordDescriptor,
 } from "@modyra/core";
 import {
   MdyDeclarativeAdapter,
@@ -101,6 +103,29 @@ export interface MdyArrayHandle<TItemHandle, TItemValue> {
   at(index: number): TItemHandle | null;
 }
 
+/**
+ * Typed handle for a collection keyed by data, exposed on `form.f` (`form.f.rows`).
+ *
+ * The core's shape with this framework's signal type — the members are the core's, and their meaning
+ * is documented there.
+ */
+export interface MdyRecordHandle<TItemHandle, TItemValue> {
+  readonly path: string;
+  readonly keys: Signal<ReadonlyArray<string>>;
+  readonly value: Signal<Readonly<Record<string, TItemValue>>>;
+  readonly errors: Signal<ReadonlyArray<MdyFieldError>>;
+  readonly valid: Signal<boolean>;
+  has(key: string): boolean;
+  row(key: string): TItemHandle;
+  cell<TCell = unknown>(key: string, path?: string): MdyFieldHandle<TCell>;
+  upsert(key: string, value?: TItemValue): void;
+  remove(key: string): void;
+  setAll(values: Readonly<Record<string, TItemValue>>): void;
+  patch(values: Readonly<Record<string, unknown>>): void;
+  rename(from: string, to: string): void;
+  validOf(key: string): boolean;
+}
+
 /** The handle tree for a single array item — a field handle or nested group tree. */
 export type MdyItemHandleTree<I> = I extends MdyGroupDescriptor<infer C>
   ? MdyFieldHandleTree<C>
@@ -116,6 +141,8 @@ export type MdyFieldHandleTree<S extends MdyFormSchema> = {
   ? MdyFieldHandleTree<C>
   : S[K] extends MdyArrayDescriptor<infer I>
   ? MdyArrayHandle<MdyItemHandleTree<I>, MdyArrayItemValue<I>>
+  : S[K] extends MdyRecordDescriptor<infer I>
+  ? MdyRecordHandle<MdyItemHandleTree<I>, MdyArrayItemValue<I>>
   : never;
 };
 
@@ -146,6 +173,17 @@ export function array<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescripto
   },
 ): MdyArrayDescriptor<TItem> {
   return coreArray(item, options);
+}
+
+/** Declares a collection keyed by data (`rows.a3f9.name` paths on the adapter). */
+export function record<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescriptor>(
+  item: TItem,
+  options?: {
+    readonly initial?: Readonly<Record<string, unknown>>;
+    readonly validators?: ReadonlyArray<ValidatorFn<Readonly<Record<string, unknown>>>>;
+  },
+): MdyRecordDescriptor<TItem> {
+  return coreRecord(item, options);
 }
 
 export interface MdyFormOptions<

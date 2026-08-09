@@ -66,7 +66,7 @@ export { MdyDeclarativeAdapter } from "./lib/core/declarative-form-adapter";
 export type { MdyDeclarativeRegistry } from "./lib/core/declarative-form-adapter";
 
 // ─── Typed form (mdyForm) ─────────────────────────────────────────────────────
-export { array, field, group, mdyForm, MdyTypedForm } from "./lib/core/typed-form";
+export { array, field, group, mdyForm, MdyTypedForm, record } from "./lib/core/typed-form";
 export type {
   MdyAnyArrayDescriptor,
   MdyAnyFieldDescriptor,

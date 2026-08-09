@@ -15,6 +15,7 @@ import {
   MdyFieldHandle,
   mdyForm,
   MdyTypedFormLike,
+  record,
 } from "./typed-form";
 
 /** `true` iff `A` and `B` are identical types. */
@@ -173,6 +174,41 @@ describe("typed form — compile-time contracts", () => {
     form.f.items.at(0)?.typo;
 
     expect(form.f.items.path).toBe("items");
+  });
+
+  it("a record's value is keyed by string, and its rows keep their field types", () => {
+    const form = mdyForm({
+      lines: record(group({ item: field(""), qty: field<number>(1) })),
+      notes: record(field("")),
+    });
+
+    // Mutable, like an array's rows: what a form holds is the caller's to read and hand on.
+    assertType<Equal<ReturnType<typeof form.value>["lines"], Record<string, {
+      item: string;
+      qty: number;
+    }>>>();
+    assertType<Equal<ReturnType<typeof form.value>["notes"], Record<string, string>>>();
+
+    // The typed way to reach a cell: the part is known, so its type is too.
+    const item: string = form.f.lines.row("a3f9").item.value();
+    const qty: number = form.f.lines.row("a3f9").qty.value();
+    const note: string = form.f.notes.row("a3f9").value();
+    expect([item, qty, note]).toBeDefined();
+
+    // The dynamic way: `unknown` unless the caller says otherwise, because the part is a runtime
+    // string. Stating the type is the caller's claim, not an inference.
+    const dynamic: unknown = form.f.lines.cell("a3f9", "item").value();
+    const stated: number = form.f.lines.cell<number>("a3f9", "qty").value();
+    expect([dynamic, stated]).toBeDefined();
+
+    // @ts-expect-error — qty is a number field, not a string
+    form.f.lines.row("a3f9").qty.set("two");
+    // @ts-expect-error — "typo" does not exist on the row's handle tree
+    form.f.lines.row("a3f9").typo;
+    // @ts-expect-error — a row is an object of the declared shape, not an array
+    form.f.lines.upsert("a3f9", [1, 2]);
+
+    expect(form.f.lines.path).toBe("lines");
   });
 
   it("MdyTypedFormLike is a structural supertype of every typed form", () => {

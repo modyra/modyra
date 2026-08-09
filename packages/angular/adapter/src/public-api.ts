@@ -16,7 +16,8 @@ export {
     field,
     group,
     mdyForm,
-    MdyTypedForm
+    MdyTypedForm,
+    record
 } from "@modyra/angular";
 export type {
     MdyAnyArrayDescriptor,
