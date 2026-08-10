@@ -11,6 +11,28 @@ What each renderer must draw is the framework-agnostic widget contract in
 The equivalent pages for the other bindings are linked from the
 [documentation index](../README.md).
 
+## Naming a control that has no visible label
+
+A cell in a table, a control in a toolbar: the column header or the icon says what it is to someone
+who can see it, and a screen reader meets the control on its own. `ariaLabel` names it:
+
+```html
+<!-- Angular -->
+<mdy-control-text [field]="rows.f.lines.row(key).item" [ariaLabel]="'Item, row ' + key" />
+
+<!-- Lit -->
+<mdy-text-field aria-label="Item, row 12" .field=${cell}></mdy-text-field>
+```
+
+```ts
+// Framework-free, and in a data-only document
+renderField(container, { name: "item-12", kind: "text", ariaLabel: "Item, row 12" }, cell);
+```
+
+It applies **only while there is no visible label**. A label names the control natively, and a second
+name over the top of it is what makes the spoken name disagree with the written one — the user asks
+for what they can read and the machine is listening for something else.
+
 ## Component catalog
 
 | Selector                  | Component                     | Value type                                                       |
