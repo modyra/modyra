@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from "@angular/common";
-import { ChangeDetectionStrategy, Component, effect, ElementRef, input, viewChild } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, viewChild } from "@angular/core";
 import { MDY_CSS_PROPERTIES, MDY_WIDGET_CONTRACTS, sliderFillRatio } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
@@ -34,10 +34,10 @@ import { inputText } from "../renderer-projection";
         type="range"
         class="mdy-slider"
         [id]="fieldId"
-        [min]="min()"
-        [max]="max()"
+        [min]="effectiveMin()"
+        [max]="effectiveMax()"
         [step]="step()"
-        [value]="value() ?? min()"
+        [value]="value() ?? effectiveMin()"
         [disabled]="isDisabled()"
         (input)="onInput($event)"
         (change)="onChange($event)"
@@ -62,8 +62,19 @@ import { inputText } from "../renderer-projection";
 export class MdySliderComponent extends MdyBaseControl<number> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.slider;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
-  readonly min = input<number>(0);
-  readonly max = input<number>(100);
+  /**
+   * The ends of the track. Left unset they are the field's own rules, and where those say nothing
+   * either, what a bare `<input type="range">` assumes — a slider has to span something to be drawn.
+   */
+  readonly min = input<number | null>(null);
+  readonly max = input<number | null>(null);
+
+  protected readonly effectiveMin = computed(
+    () => this.min() ?? this.fieldState().bounds().min ?? 0,
+  );
+  protected readonly effectiveMax = computed(
+    () => this.max() ?? this.fieldState().bounds().max ?? 100,
+  );
   readonly step = input<number>(1);
   readonly showValue = input<boolean>(true);
 
@@ -75,9 +86,9 @@ export class MdySliderComponent extends MdyBaseControl<number> {
     super();
     effect(() => {
       const el = this.rangeInput()?.nativeElement;
-      const value = this.value() ?? this.min();
-      const min = this.min();
-      const max = this.max();
+      const min = this.effectiveMin();
+      const max = this.effectiveMax();
+      const value = this.value() ?? min;
       if (!el) return;
       el.style.setProperty(
         MDY_CSS_PROPERTIES.control.sliderFill,

@@ -11,7 +11,7 @@ import { ApplicationRef, Injector, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { required } from "@modyra/core";
 import { MdyDeclarativeAdapter } from "./declarative-form-adapter";
-import { field, group, mdyForm } from "./typed-form";
+import { field, group, mdyForm, record } from "./typed-form";
 
 function bench(label: string, fn: () => void): number {
   const start = performance.now();
@@ -167,4 +167,27 @@ describe("core benchmarks", () => {
       expect(adapter.fieldNames()).toHaveLength(0);
     }
   });
+});
+
+/**
+ * Controls mounted before the rows they belong to.
+ *
+ * A control with no field depends on the form's membership signal, so every registration wakes
+ * every control still waiting. That is the price of binding when the row arrives, and it is paid
+ * only in this order — declaring the rows first leaves nothing waiting and costs nothing. The
+ * number is here so a change that makes it quadratic is visible.
+ */
+it("binds cells that were mounted before their rows", () => {
+  const form = mdyForm({ rows: record(group({ name: field("") })) });
+  const keys = Array.from({ length: 300 }, (_, i) => `k${i}`);
+
+  const handles = keys.map((key) => form.f.rows.cell(key, "name"));
+  handles.forEach((handle) => handle.value());
+
+  const started = performance.now();
+  for (const key of keys) form.f.rows.upsert(key, { name: `row ${key}` });
+  handles.forEach((handle) => handle.value());
+  console.log(`[bench] 300 cells declared after mounting: ${(performance.now() - started).toFixed(2)}ms`);
+
+  expect(handles.every((handle) => String(handle.value()).startsWith("row "))).toBe(true);
 });

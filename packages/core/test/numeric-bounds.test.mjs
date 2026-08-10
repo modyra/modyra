@@ -117,3 +117,20 @@ test("bounds live on the state a group's child reports", () => {
 
   assert.deepEqual(boundsOf(form, "order.quantity"), { min: 1, max: 10 });
 });
+
+test("a bound that is not a finite number is not offered", () => {
+  const form = createForm({
+    odd: field(0, [min(Number.NaN), max(Number.POSITIVE_INFINITY)]),
+    sane: field(0, [min(Number.NaN), max(10)]),
+  });
+
+  assert.deepEqual(
+    boundsOf(form, "odd"),
+    { min: null, max: null },
+    "min=\"NaN\" on an input is ignored by the browser and misleading in a diff",
+  );
+  assert.deepEqual(boundsOf(form, "sane"), { min: null, max: 10 }, "the usable half survives");
+
+  // The rule itself still runs — this is about what a control is offered, not about validity.
+  assert.equal(form.getField("odd")().valid(), true);
+});

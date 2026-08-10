@@ -180,3 +180,29 @@ test("the rendered list makes room for a value the options do not contain", asyn
     [{ value: "missing", label: "Unknown: missing" }, ...options],
   );
 });
+
+test("an option value that is an object is matched by identity, never by its text", async () => {
+  const { optionsWithUnrecognizedValue, reconcileSelectValue } = await import("../dist/select/index.js");
+  const espresso = { id: 1, name: "Espresso" };
+  const cornetto = { id: 2, name: "Cornetto" };
+  const options = [{ value: espresso, label: "Espresso" }];
+
+  // Every plain object renders as "[object Object]", so a comparison through text says these two
+  // entities are the same one — and the reconciliation then puts the option's entity in the model,
+  // silently replacing the user's.
+  const held = reconcileSelectValue({ value: cornetto, parkedValue: null }, options);
+  assert.strictEqual(held.value, cornetto, "the model keeps the entity it held");
+
+  const recognized = reconcileSelectValue({ value: espresso, parkedValue: null }, options);
+  assert.strictEqual(recognized.value, espresso, "and the same entity is still recognised");
+
+  assert.strictEqual(
+    optionsWithUnrecognizedValue(options, cornetto).length,
+    2,
+    "an entity the list does not offer is shown, as any unrecognised value is",
+  );
+
+  // The looseness that exists for a reason survives: a value read from JSON arrives as text.
+  const normalized = reconcileSelectValue({ value: "1", parkedValue: null }, [{ value: 1, label: "One" }]);
+  assert.strictEqual(normalized.value, 1);
+});
