@@ -309,6 +309,10 @@ export class MdyFormComponent<
     this._registry.setDisabled(name, disabled);
   }
 
+  setInactive(name: string, inactive: Signal<boolean>): void {
+    this._registry.setInactive(name, inactive);
+  }
+
   setReadonly(name: string, readonly: Signal<boolean>): void {
     this._registry.setReadonly(name, readonly);
   }
