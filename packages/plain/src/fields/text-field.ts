@@ -39,7 +39,7 @@ export function renderTextField(
     reactivity,
   );
 
-  const shell = buildFieldShell(f.label, f.kind, { prefix: f.prefix, suffix: f.suffix });
+  const shell = buildFieldShell(f.label, f.kind, { prefix: f.prefix, suffix: f.suffix }, f.ariaLabel);
   const input = (isTextarea ? el("textarea") : el("input")) as HTMLInputElement | HTMLTextAreaElement;
   if (f.placeholder) input.placeholder = f.placeholder;
   // Written as attributes, which every element type accepts and the IDL properties reflect: plain

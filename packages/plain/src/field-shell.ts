@@ -16,6 +16,10 @@ export interface FieldShell {
   readonly wrapper: HTMLDivElement;
   readonly description: HTMLParagraphElement;
   readonly errorList: HTMLUListElement;
+  /** The name for a control that has no visible label; see {@link insertControl}. */
+  readonly ariaLabel?: string;
+  /** True when the field rendered label text a `for` attribute can point at. */
+  readonly hasVisibleLabel: boolean;
   /** Reflects state the themes key off: touched on the root, disabled/error on the wrapper. */
   syncState(state: { touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean; required?: boolean }): void;
 }
@@ -29,6 +33,7 @@ export function buildFieldShell(
   labelText: string | undefined,
   kind: MdyWidgetKind,
   affixes: FieldShellAffixes = {},
+  ariaLabel?: string,
 ): FieldShell {
   const root = el("div") as HTMLDivElement;
   root.classList.add(...MDY_WIDGET_CONTRACTS[kind].rootClasses);
@@ -62,6 +67,8 @@ export function buildFieldShell(
   root.append(label, wrapper, description, errorList);
 
   return {
+    ariaLabel,
+    hasVisibleLabel: Boolean(labelText),
     root,
     label,
     wrapper,
@@ -78,7 +85,17 @@ export function buildFieldShell(
   };
 }
 
-/** Puts the control inside the input wrapper, where every renderer and every theme expects it. */
+/**
+ * Puts the control inside the input wrapper, where every renderer and every theme expects it.
+ *
+ * This is also where a control with no visible label gets its name. Only there: a visible label
+ * already names the control through `for`, and an `aria-label` over the top of it is what makes the
+ * spoken name disagree with the written one — the user says "Item" and the machine is listening for
+ * something else.
+ */
 export function insertControl(shell: FieldShell, control: HTMLElement): void {
+  if (shell.ariaLabel && !shell.hasVisibleLabel) {
+    control.setAttribute("aria-label", shell.ariaLabel);
+  }
   (shell.wrapper.querySelector(`.${MDY_FIELD_SHELL_CLASSES.control}`) ?? shell.wrapper).appendChild(control);
 }

@@ -30,7 +30,7 @@ export function renderMultiselectField(
   const controller = createMultiselectFieldController({ widgetId: widgetId, handle, options, keyFor, mode }, reactivity);
 
   const parts = MDY_WIDGET_CONTRACTS.multiselect.parts;
-  const shell = buildFieldShell(f.label, "multiselect");
+  const shell = buildFieldShell(f.label, "multiselect", {}, f.ariaLabel);
 
   // ── the field: a header with the search button, and the options as chips ──────────────────
   const control = el("div", parts.inputWrapper.classes.join(" "));

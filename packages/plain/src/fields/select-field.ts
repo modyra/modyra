@@ -47,7 +47,7 @@ export function renderSelectField(
   );
 
   const parts = MDY_WIDGET_CONTRACTS.select.parts;
-  const shell = buildFieldShell(f.label, "select");
+  const shell = buildFieldShell(f.label, "select", {}, f.ariaLabel);
   // The trigger displays the committed value; filtering happens in the field at the top of the
   // popup, which is the canonical select anatomy — typing over the display would hide it.
   const trigger = el("button") as HTMLButtonElement;
