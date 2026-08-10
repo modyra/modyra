@@ -461,5 +461,5 @@ The recipes encode these; keep them when customizing:
   cancellable server checks) using the same handle pattern with Modyra's
   own theme CSS.
 - **Where to put the mappers:** they are plain functions — colocate them
-  with your components (e.g. `src/lib/modyra-props.ts`) and extend them as
-  your design system grows (date pickers, comboboxes, sliders).
+  with your components, in a module of your own next to them, and extend
+  them as your design system grows (date pickers, comboboxes, sliders).

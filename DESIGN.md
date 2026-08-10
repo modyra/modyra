@@ -2,8 +2,8 @@
 
 The decisions a renderer or a theme must not make for itself.
 
-Modyra draws the same form through three renderers and four themes. Anything left to each of them
-diverges — not through carelessness, but because every local choice is defensible alone and only a
+Modyra draws the same form through three renderers — Angular, Lit and the framework-free one — and
+six shipped themes, four of which carry pixel baselines. Anything left to each of them diverges — not through carelessness, but because every local choice is defensible alone and only a
 column of controls shows the mismatch. So the rules below are stated once, and most are enforced by a
 check rather than by review.
 
