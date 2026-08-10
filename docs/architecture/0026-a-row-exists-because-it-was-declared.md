@@ -1,6 +1,6 @@
 # ADR 0026: A row exists because it was declared
 
-Status: Accepted
+Status: Accepted — amended 2026-08-10, see **Amendment: asking again when the row arrives**
 
 ## Context
 
@@ -115,3 +115,42 @@ The gate reduces exposure in one more way: a control can no longer bring a field
 mounting, so a rendered path cannot extend the value a form submits.
 
 No user data is stored or transmitted by any of this.
+
+## Amendment: asking again when the row arrives
+
+**2026-08-10.** A control may mount on a row that has not been declared. This record says what
+happens then — it claims the path, renders empty, and binds when the row arrives — and the framework-
+free and Lit renderers do exactly that. Angular did not: the cell stayed empty forever, and an
+application built on it wrote the behaviour down as a rule to work around.
+
+The cause is in this record's own design. The gate answers from the collection's plain set, on
+purpose: it is consulted on the engine's write paths, where touching a signal would tie an unrelated
+computation to this collection's shape. `getField` consults the gate, so **`getField` is not
+reactive** — a binding that resolves a field once and caches the result never re-asks, and "binds
+when the row arrives" quietly depends on the binding re-asking for its own reasons.
+
+**A binding must not assume membership is static.** `MdyFormAdapter` therefore carries
+`fieldNames`, the signal that already backed the engine's own totals, and a binding that finds no
+field depends on it while it has none. The dependency is taken only on that branch: a bound control
+depends on its own state, not on every registration in the form.
+
+`fieldNames` is **optional** on the contract. An adapter that wraps a value with no notion of
+membership answers every `getField` from the value itself and has nothing to report; a binding reads
+its absence as "membership never changes", which for such an adapter is true. Requiring it would
+have broken every hand-written adapter — measured: it broke one in this repository — for a member
+they cannot meaningfully provide.
+
+### Verification
+
+- `packages/angular/src/lib/control/record-lifecycle.spec.ts`, "binds a cell mounted before its row
+  was declared, once the row arrives": red before the change, green after, with the dev warning about
+  the undeclared claim still printed in both.
+- `node scripts/audit-type-surface.mjs` classifies the addition `minor`; required, it classified
+  `major`, which is the measurement behind the paragraph above.
+- The framework-free and Lit renderers' equivalent cases stay green — they were already correct, and
+  the point of the change is that the three now pass for the same reason.
+
+### Security and privacy
+
+None. A control that re-asks still cannot create a field: `getField` answers null while the gate
+refuses, which is what this record decided and what the amendment leaves untouched.

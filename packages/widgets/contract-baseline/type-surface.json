@@ -797,6 +797,7 @@
   "MdyFormAdapter": [
     "buildSubmitEvent: MdyFormSubmitEvent<T, TSubmit>",
     "errorsFor: MdySignal<ReadonlyArray<MdyFormError>>",
+    "fieldNames?: MdySignal<readonly string[]>",
     "getField: MdyFieldRef<T[K]> | null",
     "getValue: T",
     "markAllTouched: void",

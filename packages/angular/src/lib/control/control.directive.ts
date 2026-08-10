@@ -250,6 +250,13 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         // A path inside a keyed collection whose row has not been declared. The control renders
         // empty and binds when the row arrives; it must not be the thing that brings it into being,
         // which is why the adapter answers null rather than creating a field on the way past.
+        //
+        // Reading `fieldNames` is what makes "when the row arrives" happen: whether the path is
+        // open is answered from the collection's own set, which a gate reads without touching a
+        // signal, so nothing else here would ever re-ask. The dependency is taken only on the
+        // branch that has no field — a bound control depends on its own state and not on every
+        // registration in the form.
+        this.adapter.fieldNames?.();
         return this._detached();
       }
       return ref() as MdyFieldState<TValue>;

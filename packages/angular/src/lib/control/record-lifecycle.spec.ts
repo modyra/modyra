@@ -31,6 +31,27 @@ class HostComponent {
   }
 }
 
+/**
+ * A cell whose row has not been declared yet.
+ *
+ * The order is the caller's to choose: a table may render a column before whatever owns the
+ * collection has declared its keys. The control claims a path the record has not opened, and the
+ * claim is replayed when the row arrives — which requires the binding to re-ask, since whether a
+ * path is open is answered from the collection's set rather than from a signal.
+ */
+@Component({
+  standalone: true,
+  imports: [MdyFormComponent, MdyTextComponent],
+  template: `
+    <mdy-form [form]="form">
+      <mdy-control-text [field]="form.f.rows.cell('late', 'name')" [ariaLabel]="'Name'" />
+    </mdy-form>
+  `,
+})
+class MountedBeforeDeclaredComponent {
+  readonly form = mdyForm({ rows: record(group({ name: field("") })) });
+}
+
 describe("a record across an Angular component's lifecycle", () => {
   it("keeps the row when the cell is unmounted", () => {
     const fixture = TestBed.createComponent(HostComponent);
@@ -70,5 +91,20 @@ describe("a record across an Angular component's lifecycle", () => {
     // Reading a destroyed form's value is out of contract — for a record as for an array — so what
     // is asserted is the teardown itself: nothing of the collection is left registered.
     expect(form.fieldNames().some((name) => name.startsWith("rows."))).toBe(false);
+  });
+
+  it("binds a cell mounted before its row was declared, once the row arrives", () => {
+    const fixture = TestBed.createComponent(MountedBeforeDeclaredComponent);
+    fixture.detectChanges();
+    const form = fixture.componentInstance.form;
+    const input = fixture.nativeElement.querySelector("input") as HTMLInputElement;
+
+    expect(input.value).toBe("");
+    expect(form.value().rows).toEqual({});
+
+    form.f.rows.upsert("late", { name: "arrived" });
+    fixture.detectChanges();
+
+    expect(input.value).toBe("arrived");
   });
 });

@@ -162,6 +162,20 @@ export interface MdyFormAdapter<T extends object, TSubmit = Partial<T>> {
    */
   submitValue(): TSubmit;
   getField<K extends keyof T>(name: K): MdyFieldRef<T[K]> | null;
+  /**
+   * Which fields exist, as a signal.
+   *
+   * Membership changes while a form is alive: a keyed collection declares a row, a section is
+   * destroyed. {@link MdyFormAdapter.getField} answers about the moment it is called, so a caller
+   * that must re-ask when the answer changes — a control bound to a row that has not been declared
+   * yet — has nothing to depend on without this.
+   *
+   * Optional because an adapter is not obliged to have a field list: one that wraps a value with no
+   * notion of membership answers every `getField` from the value itself and has nothing to report.
+   * A binding that reads it treats its absence as "membership never changes", which for such an
+   * adapter is true.
+   */
+  readonly fieldNames?: MdySignal<readonly string[]>;
   errorsFor(path: keyof T | string): MdySignal<ReadonlyArray<MdyFormError>>;
   /**
    * The action receives {@link MdyFormAdapter.submitValue}, so its parameter is `Partial<T>`: a
