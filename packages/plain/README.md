@@ -1,11 +1,11 @@
 # @modyra/plain
 
-A zero-dependency vanilla JS/HTML5 renderer for the [Modyra](https://github.com/modyra/modyra)
-form engine. Given a container element and a flat Dynamic Form Contract
-field list, `mountMdyForm` builds a real, running `@modyra/core` form and
-renders real, interactive DOM for every field — no virtual DOM, no
-template engine, no framework runtime. Only dependencies:
-`@modyra/core` and `@modyra/widgets` (also framework-free).
+A framework-free renderer for the [Modyra](https://github.com/modyra/modyra) form engine. Given a
+container element and a flat Dynamic Form Contract field list, `mountMdyForm` builds a real, running
+`@modyra/core` form and renders real, interactive DOM for every field — no virtual DOM, no template
+engine, no framework runtime.
+
+Its only dependencies are `@modyra/core` and `@modyra/widgets`, both framework-free themselves.
 
 ```bash
 npm install @modyra/plain

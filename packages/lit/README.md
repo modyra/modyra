@@ -42,8 +42,9 @@ re-exported from the adapter entry. A complete checkout example lives in
 
 ## Control catalog
 
-`defineMdyElements()` registers one element per field kind — the same
-coverage as the Angular renderer catalog, in Lit syntax:
+`defineMdyElements()` registers fifteen elements covering all seventeen widget kinds — `email` and
+`password` are `<mdy-text-field>` with a `type`, as they are in the contract. The same coverage as
+the Angular catalogue, in Lit syntax:
 
 `<mdy-text-field>` `<mdy-textarea-field>` `<mdy-number-field>`
 `<mdy-checkbox-field>` `<mdy-toggle-field>` `<mdy-radio-group-field>`
