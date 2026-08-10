@@ -95,14 +95,15 @@ Same microtask-batching caveat as `toStore()` above: a dispatched intent
 - **The full core API** — `field`, `group`, `array`, `serverValidator`,
   `crossField`, drafts, undo/redo… re-exported from `@modyra/core`.
 
-## Scope of this release
+## Scope
 
-This release covers the reactivity bridge and the headless widgets
-bridge — the same two layers `@modyra/vue`/`@modyra/solid` are built on.
-Not yet included (tracked as follow-up work): a framework example under
-`examples/` (needs a Svelte-aware bundler — `@sveltejs/vite-plugin-svelte`
-— for a real `.svelte` component, a separate decision from the
-runes-vs-stores one above) and the headless-recipes doc section.
+This package is the reactivity bridge and the headless widgets bridge — the same two layers
+`@modyra/vue` and `@modyra/solid` are built on. It ships no components; a `.svelte` template and
+your own design system supply the markup.
+
+A runnable example lives in `examples/svelte`, built with real `.svelte` components, and
+[headless recipes](https://github.com/modyra/modyra/blob/main/docs/guides/headless-recipes.md)
+covers pairing the stores with a component library.
 
 ## License
 

@@ -73,9 +73,9 @@ validation, submit errors, drafts) lives in
 
 ## Status
 
-Early (0.x) — stores and hooks are implemented and tested; ready-made
-components are intentionally out of scope (headless: bring your own design
-system). Pin your version and read release notes.
+Below 1.0, so the public surface can change in a minor release — pin your version and read the
+release notes. The stores and hooks are implemented and tested. Ready-made components are
+deliberately out of scope: this adapter is headless, and you bring your own design system.
 
 ## License
 

@@ -61,15 +61,16 @@ const email = useMdyField(form.f.email, { widgetId: "email", inputType: "email" 
 // email.state.value / .invalid / .touched, email.view.parts.input.attributes
 ```
 
-## Scope of this release
+## Scope
 
-This release covers the reactivity bridge and the headless widgets
-bridge — the same two layers `@modyra/vue` and `@modyra/react` are built
-on. Not yet included (tracked as follow-up work): a framework example
-under `examples/` and the headless-recipes doc section (shadcn/Radix-style
-props mappers). Every core primitive — typed fields, arrays, async/server
-validation, drafts, undo/redo — already works today through
-`createSolidForm`/`useSolidForm`.
+This package is the reactivity bridge and the headless widgets bridge — the same two layers
+`@modyra/vue` and `@modyra/react` are built on. It ships no components: Solid's own primitives and
+your design system supply the markup.
+
+Every core primitive — typed fields, arrays, async and server validation, drafts, undo and redo —
+works through `createSolidForm` / `useSolidForm`. A runnable example lives in `examples/solid`, and
+[headless recipes](https://github.com/modyra/modyra/blob/main/docs/guides/headless-recipes.md)
+covers pairing it with Kobalte or shadcn-solid.
 
 ## License
 

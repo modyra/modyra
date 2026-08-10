@@ -43,9 +43,11 @@ form.f.passengers.push({ fullName: "Ada Lovelace", infant: false });
 // .refine(...)   → cross-field validator over the whole typed value
 ```
 
-Works with any Modyra adapter: pass the schema to `createZodForm` (core),
-`mdyFormFromSchema()` (`@modyra/angular/zod`), or the equivalent entry of
-your framework binding.
+Works with any Modyra adapter. `createZodForm` builds the form on the core's own reactivity, which
+is what a headless adapter wants anyway; Angular has a signals-native wrapper over the same
+introspection in `mdyFormFromSchema()` (`@modyra/angular/zod`). For any other framework, take the
+tree and the validator with `buildZodTree` / `buildZodRefinementValidator` and hand them to that
+framework's own form constructor.
 
 ## API
 
