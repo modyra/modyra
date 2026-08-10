@@ -53,7 +53,7 @@
     "docs:build": "npm --prefix site run build",
     "docs:preview": "npm --prefix site run preview",
     "version": "changeset version && pnpm install --lockfile-only",
-    "release:integrate": "pnpm changeset status && pnpm changeset version && pnpm install --lockfile-only && git add -A && VERSION=$(node -p \"require('./packages/core/package.json').version\") && git commit -m \"chore(release): version packages to v$VERSION\" && git tag -a \"v$VERSION\" -m \"v$VERSION\"",
+    "release:integrate": "pnpm changeset status && pnpm changeset version && pnpm install --lockfile-only && git add packages/*/package.json packages/*/CHANGELOG.md .changeset pnpm-lock.yaml && TAGS=$(node scripts/release-tag.mjs) && git commit -m \"chore(release): $(echo $TAGS)\" && for TAG in $TAGS; do git tag -a \"$TAG\" -m \"$TAG\"; done",
     "release:integrate:push": "git push origin HEAD --follow-tags",
     "release": "npm run build:packages && npm run build:angular && node scripts/publish-workspace.mjs && node scripts/publish-angular.mjs",
     "release:rehearse": "npm run build:packages && npm run build:angular && node scripts/publish-workspace.mjs --dry-run && node scripts/publish-angular.mjs --dry-run",
