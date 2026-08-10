@@ -395,6 +395,30 @@ a `cell()` path the row does not have, a `rename` onto a key already taken, a
 patch whose row value is not an object. `devWarnings: false` silences them
 with everything else.
 
+### Reading a collection inside an effect
+
+A signal registers a dependency when it is **read**, and code that only reads it inside a loop over
+the rows reads nothing at all while there are none:
+
+```ts
+// Never re-runs while the collection is empty: nothing was read, so nothing woke it.
+effect(() => {
+  for (const key of editing()) {
+    console.log(form.f.rows.value()[key]);
+  }
+});
+
+// Reads the collection first, so a first row wakes it.
+effect(() => {
+  const rows = form.f.rows.value();
+  for (const key of editing()) console.log(rows[key]);
+});
+```
+
+This is how signals work everywhere, and it bites here in particular because looping over the keys
+is the natural way to write the code — and the empty collection, which is where a table starts, is
+exactly the state that hides it. **Read the collection at the top of the effect.**
+
 ### In a data-only document
 
 The Dynamic Form Contract has the node too, beside `group` and `array`:
