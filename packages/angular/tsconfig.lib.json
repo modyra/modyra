@@ -15,7 +15,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "baseUrl": "."
   },
   "exclude": [
     "src/test.ts",

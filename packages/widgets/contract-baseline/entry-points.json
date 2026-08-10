@@ -28,5 +28,55 @@
     "./ids",
     "./runtime",
     "./testing"
+  ],
+  "@modyra/styles": [
+    "./base.css",
+    "./default.css",
+    "./foundation.css",
+    "./ionic.css",
+    "./ios.css",
+    "./material.css",
+    "./modern.css",
+    "./salience.css"
+  ],
+  "@modyra/zod": [
+    "."
+  ],
+  "@modyra/standard-schema": [
+    "."
+  ],
+  "@modyra/eslint-plugin": [
+    "."
+  ],
+  "@modyra/plain": [
+    "."
+  ],
+  "@modyra/lit": [
+    ".",
+    "./adapter",
+    "./ui"
+  ],
+  "@modyra/react": [
+    "."
+  ],
+  "@modyra/vue": [
+    "."
+  ],
+  "@modyra/solid": [
+    "."
+  ],
+  "@modyra/preact": [
+    "."
+  ],
+  "@modyra/svelte": [
+    "."
+  ],
+  "@modyra/angular": [
+    ".",
+    "./adapter",
+    "./interop",
+    "./package.json",
+    "./ui",
+    "./zod"
   ]
 }
