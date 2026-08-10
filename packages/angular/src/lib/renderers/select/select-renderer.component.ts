@@ -88,10 +88,10 @@ import { MdyDropdownBase } from "../dropdown-base";
             "
             [attr.aria-invalid]="hasErrors()"
             [attr.aria-describedby]="describedById(fieldId)"
+            [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="ariaRequired() || isRequired()"
             [attr.aria-disabled]="effectiveAriaDisabled()"
-            [attr.aria-label]="label() || null"
-            (click)="toggleOverlay($event)"
+                (click)="toggleOverlay($event)"
             (blur)="onBlur($event)"
           >
             @if (selectedOption(); as sel) {
@@ -221,10 +221,10 @@ import { MdyDropdownBase } from "../dropdown-base";
             (blur)="markAsTouched()"
             [attr.aria-invalid]="hasErrors()"
             [attr.aria-describedby]="describedById(fieldId)"
+            [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="ariaRequired() || isRequired()"
             [attr.aria-disabled]="effectiveAriaDisabled()"
-            [attr.aria-label]="label() || null"
-            [style.opacity]="(value() === null || value() === undefined) ? '0.6' : '1'"
+                [style.opacity]="(value() === null || value() === undefined) ? '0.6' : '1'"
           >
             @if (placeholder() || value() === null || value() === undefined) {
               <option value="" disabled [selected]="value() === null || value() === undefined">

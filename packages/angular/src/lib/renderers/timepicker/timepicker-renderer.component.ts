@@ -84,10 +84,10 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           (keydown.arrowdown)="openOverlay($event); $event.preventDefault()"
           [attr.aria-invalid]="hasErrors()"
           [attr.aria-describedby]="describedById(fieldId)"
+          [attr.aria-label]="controlAriaLabel()"
           [attr.aria-required]="ariaRequired() || isRequired()"
           [attr.aria-disabled]="effectiveAriaDisabled()"
-          [attr.aria-label]="label() || null"
-          [attr.aria-haspopup]="'dialog'"
+            [attr.aria-haspopup]="'dialog'"
           autocomplete="off"
         />
         <div class="mdy-input-suffix">

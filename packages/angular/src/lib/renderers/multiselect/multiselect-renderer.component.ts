@@ -80,6 +80,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             [attr.aria-invalid]="hasErrors()"
             [attr.aria-disabled]="effectiveAriaDisabled()"
             [attr.aria-describedby]="describedById(fieldId)"
+            [attr.aria-label]="controlAriaLabel()"
           >
             @if (effectiveLoading()) {
               <mdy-icon name="LOADER" class="mdy-select__loader" style="font-size: 1rem;" />
@@ -97,7 +98,7 @@ import { MdyDropdownBase } from "../dropdown-base";
     <div
       class="mdy-multiselect__options"
       role="group"
-      [attr.aria-label]="label() || null"
+      [attr.aria-label]="controlAriaLabel()"
       [attr.aria-disabled]="effectiveAriaDisabled()"
     >
       @for (opt of filteredOptions(); track opt.value) {

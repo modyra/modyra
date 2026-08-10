@@ -54,9 +54,9 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         (blur)="onBlur()"
         [attr.aria-invalid]="inputAriaInvalid()"
         [attr.aria-describedby]="inputAriaDescribedby()"
+        [attr.aria-label]="controlAriaLabel()"
         [attr.aria-required]="inputAriaRequired()"
         [attr.aria-disabled]="effectiveAriaDisabled()"
-        [attr.aria-label]="label() || null"
       />
       @if (suffix(); as s) {
         <div class="mdy-input-suffix">

@@ -26,9 +26,9 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         (blur)="dispatchValueBlur('checkbox')"
         [attr.aria-invalid]="hasErrors()"
         [attr.aria-describedby]="describedById(fieldId)"
+        [attr.aria-label]="controlAriaLabel()"
         [attr.aria-required]="ariaRequired() || isRequired()"
         [attr.aria-disabled]="effectiveAriaDisabled()"
-        [attr.aria-label]="label() || null"
       />
       <span [class]="widgetContract.parts.indicator.classes.join(' ')" aria-hidden="true"></span>
       <span
