@@ -44,6 +44,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 | [0026](0026-a-row-exists-because-it-was-declared.md) | A row exists because it was declared | A collection keyed by data, where what is mounted must not decide what exists |
 | [0027](0027-a-register-and-its-summary-are-both-checked.md) | A register and its summary are both checked | A maintainer's defect register and the page consumers read, held to the same statuses |
 | [0028](0028-a-status-sentence-names-a-version.md) | A status sentence names a version | One "pre-1.0" line over a workspace whose packages have never shared a maturity |
+| [0029](0029-a-widget-does-not-repair-the-model.md) | A widget does not repair the model | A select erased a value it could not render, and the data that would have let a person fix it went with it |
 
 ## Security-relevant records
 

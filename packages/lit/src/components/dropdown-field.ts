@@ -139,7 +139,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
       return;
     }
     // Navigation is a pure decision the contract owns — a listbox clamps, it does not wrap.
-    const next = listboxNavigationIndex(e.key, this._activeIndex, this.options.length);
+    const next = listboxNavigationIndex(e.key, this._activeIndex, this.listOptions.length);
     if (next !== null) {
       e.preventDefault();
       this._activeIndex = next;
@@ -147,7 +147,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
     }
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      const option = this.options[this._activeIndex];
+      const option = this.listOptions[this._activeIndex];
       if (option) this.pick(handle, option.value);
       if (!this.multiselectable) this.close(handle);
     } else if (e.key === "Escape") {
@@ -200,7 +200,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
                 role="listbox"
                 aria-multiselectable=${this.multiselectable ? "true" : nothing}
               >
-                ${this.options.map((option, index) => {
+                ${this.listOptions.map((option, index) => {
                   const selected = this.isSelected(handle, option.value);
                   const classes = [
                     "mdy-select__option",
