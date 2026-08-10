@@ -186,6 +186,46 @@ function gapStatusMismatches() {
 
 const gapProblems = gapStatusMismatches();
 
+// ─── 2b. A backticked path names a file that exists ─────────────────────────
+
+/**
+ * Prose cites files the link checker never sees.
+ *
+ * A markdown link is checked; `packages/core/src/reactivity.ts` written inline is not, and it is how
+ * documentation cites evidence — the file behind a claim, the test that proves it, the fixture a
+ * decision argues from. When such a file moves or was never shipped, the citation reads exactly as
+ * it did before.
+ *
+ * That is not hypothetical: five decision records supported their Verification sections by pointing
+ * at a worked example that lived under gitignored `.modyra/`, so the evidence behind them was
+ * unreachable from a clone.
+ *
+ * A path resolves if it exists from the repository root or beside the citing page. Two shapes are
+ * deliberately not paths and are skipped: a package subpath specifier (`./lib/version.cjs`), and an
+ * abbreviation naming a file within a package it has already named in prose.
+ */
+const CITED_PATH = /`([A-Za-z0-9._/-]+\.(?:ts|tsx|mjs|cjs|js|json|css|yml|yaml|html|rs|java))`/g;
+
+function missingCitedPaths() {
+  const problems = [];
+  for (const file of markdown(ROOT)) {
+    if (!/\/(docs)\/|README\.md$|CONTRIBUTING\.md$|ROADMAP\.md$/.test(file)) continue;
+    for (const [, cited] of readFileSync(file, "utf8").matchAll(CITED_PATH)) {
+      if (!cited.includes("/")) continue;
+      // A subpath specifier is how a package names its own entry point, not a file on disk.
+      if (cited.startsWith("./") || cited.startsWith("@")) continue;
+      // An abbreviation like `testing/canonical.ts`, resolved by the package the prose just named.
+      if (!cited.includes(".") || cited.split("/").length < 3) continue;
+      if (existsSync(join(ROOT, cited))) continue;
+      if (existsSync(resolve(dirname(file), cited))) continue;
+      problems.push(`${relative(ROOT, file)} cites ${cited}, which does not exist`);
+    }
+  }
+  return problems;
+}
+
+const missingCitations = missingCitedPaths();
+
 // ─── 3. Every page under docs/ is reachable from the index ───────────────────
 
 /**
@@ -381,6 +421,9 @@ for (const link of brokenLinks.slice(0, 20)) console.log(`  ${link}`);
 if (brokenLinks.length > 20) console.log(`  … ${brokenLinks.length - 20} more`);
 
 console.log(`\ncontract-gaps.md summary vs its headings: ${gapProblems.length} mismatch(es)`);
+
+console.log(`\nBackticked paths that do not exist: ${missingCitations.length}`);
+for (const problem of missingCitations.slice(0, 20)) console.log(`  ${problem}`);
 for (const problem of gapProblems) console.log(`  ${problem}`);
 
 console.log(`\ndocs/ pages unreachable from docs/README.md: ${orphans.length}`);
@@ -399,7 +442,7 @@ console.log(`\ndocs/ pages missing from the site sidebar: ${unlisted.length}`);
 for (const problem of unlisted) console.log(`  ${problem}`);
 
 if (!check) process.exit(0);
-if (brokenLinks.length || gapProblems.length || orphans.length || inverted.length || unlicensed.length || adrs.length || unlisted.length) {
+if (brokenLinks.length || gapProblems.length || missingCitations.length || orphans.length || inverted.length || unlicensed.length || adrs.length || unlisted.length) {
   console.error("\nDOCUMENTATION CHECKS FAILED");
   process.exit(1);
 }

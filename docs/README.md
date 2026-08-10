@@ -91,7 +91,8 @@ fails if it is violated, and what it exposes. For a security review, start with
 A local-first visual form builder that edits one project model and compiles it to targets on export.
 
 - [Overview](studio/overview.md) · [Getting started](studio/getting-started.md)
-- [Project format](studio/project-format.md) · [Validation](studio/validators.md)
+- [Project format](studio/project-format.md) · [A worked project](checkout-example.md)
+- [Validation](studio/validators.md)
 - [Live canvas](studio/live-canvas.md) · [Drag and drop](studio/drag-and-drop.md)
 - [Code generation](studio/target-generation.md)
 - [Accessibility](studio/accessibility.md) · [Security](studio/security.md)
