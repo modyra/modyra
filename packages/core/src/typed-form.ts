@@ -5,7 +5,7 @@ import {
 } from "./form-engine.js";
 import { MDY_DEV } from "./dev-flags.js";
 import { MdyReactivity, MdySignal, vanillaReactivity } from "./reactivity.js";
-import { registerHandleOwner } from "./reactive-owner.js";
+import { registerHandleForm, registerHandleOwner } from "./reactive-owner.js";
 import { MdyArrayManager } from "./array-manager.js";
 import { MdyRecordManager } from "./record-manager.js";
 import { isRecord as isRecordValue } from "./record-utils.js";
@@ -1148,6 +1148,7 @@ export abstract class MdyTypedFormBase<
       markAsDirty: () => state()?.dirty.set(true),
     };
     registerHandleOwner(handle, rx);
+    registerHandleForm(handle, this);
     this._cellHandles.set(path, new WeakRef(handle));
     this._cellHandlesSweep.register(handle, path);
     return handle;
@@ -1305,6 +1306,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       markAsDirty: (): void => state.dirty.set(true),
     };
     registerHandleOwner(handle, this._adapter.reactivity);
+    registerHandleForm(handle, this);
     return handle;
   }
 
