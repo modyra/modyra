@@ -17,6 +17,15 @@ import { MDY_VALUE_CONTRACTS, matchesValueShape, type MdyValueKind } from "./val
 export const MDY_MARKS_REQUIRED: unique symbol = Symbol("mdyMarksRequired");
 
 /**
+ * Marker carrying the numeric bound a validator enforces.
+ *
+ * A bound is one fact, and stating it twice — once as a rule, once as an input constraint — is how
+ * the two drift apart. A field's state derives its bounds from the validators it already carries,
+ * so a control can offer the constraint at the keyboard while the rule stays the authority.
+ */
+export const MDY_NUMERIC_BOUND: unique symbol = Symbol("mdyNumericBound");
+
+/**
  * Whether a start/end pair has both endpoints unset.
  *
  * Structural on purpose: `@modyra/core` does not import a widget's value type, and any
@@ -105,8 +114,14 @@ export const completeRange = <T>(
   return endpoints.start === endpoints.end ? [] : [message];
 };
 
-/** Minimum string/array length */
-export const minLength = (min: number, message?: string): ValidatorFn<string | readonly unknown[]> =>
+/**
+ * Minimum string/array length. Empty passes: a field that may hold nothing is an ordinary optional
+ * field, and the type says so — pairing this with `required()` is what makes emptiness fail.
+ */
+export const minLength = (
+  min: number,
+  message?: string,
+): ValidatorFn<string | readonly unknown[] | null> =>
   (value) => {
     const len = value?.length ?? 0;
     return len < min
@@ -114,8 +129,11 @@ export const minLength = (min: number, message?: string): ValidatorFn<string | r
       : [];
   };
 
-/** Maximum string/array length */
-export const maxLength = (max: number, message?: string): ValidatorFn<string | readonly unknown[]> =>
+/** Maximum string/array length. Empty passes, for the reason given on {@link minLength}. */
+export const maxLength = (
+  max: number,
+  message?: string,
+): ValidatorFn<string | readonly unknown[] | null> =>
   (value) => {
     const len = value?.length ?? 0;
     return len > max
@@ -138,22 +156,42 @@ export const pattern = (regex: RegExp, message = 'Invalid format'): ValidatorFn<
     return regex.test(value) ? [] : [message];
   };
 
-/** Numeric minimum */
-export const min = (minimum: number, message?: string): ValidatorFn<number | null> =>
-  (value) => {
+/** Numeric minimum. Empty passes — whether a field may be empty is `required`'s question. */
+export const min = (minimum: number, message?: string): ValidatorFn<number | null> => {
+  const fn = (value: number | null): readonly string[] => {
     if (value === null || value === undefined) return [];
     return value < minimum
       ? [message ?? `Minimum value is ${minimum}`]
       : [];
   };
+  return Object.assign(fn, { [MDY_NUMERIC_BOUND]: { min: minimum } });
+};
 
-/** Numeric maximum */
-export const max = (maximum: number, message?: string): ValidatorFn<number | null> =>
-  (value) => {
+/** Numeric maximum. Empty passes — whether a field may be empty is `required`'s question. */
+export const max = (maximum: number, message?: string): ValidatorFn<number | null> => {
+  const fn = (value: number | null): readonly string[] => {
     if (value === null || value === undefined) return [];
     return value > maximum
       ? [message ?? `Maximum value is ${maximum}`]
       : [];
+  };
+  return Object.assign(fn, { [MDY_NUMERIC_BOUND]: { max: maximum } });
+};
+
+/**
+ * Fail a number that is not a whole number.
+ *
+ * A count, an identifier and a quantity of things are integers, and a field that accepts `1.5` for
+ * one of them reports itself valid and fails somewhere with no field to name — in a parser, a
+ * column, a wire format. Empty passes, as every rule here does that is not `required`.
+ *
+ * For a bounded integer, compose: `compose(integer(), min(0), max(255))` states the range once and
+ * the control reads it back through {@link MdyFieldState.bounds}.
+ */
+export const integer = (message = 'Enter a whole number'): ValidatorFn<number | null> =>
+  (value) => {
+    if (value === null || value === undefined) return [];
+    return Number.isInteger(value) ? [] : [message];
   };
 
 /**

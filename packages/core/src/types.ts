@@ -96,6 +96,18 @@ export interface MdyFormError {
  */
 export type MdyInteractivity = "enabled" | "readonly" | "disabled";
 
+/**
+ * The numeric range a field's own rules already state.
+ *
+ * Derived from its validators rather than declared beside them: a control that offers the
+ * constraint at the keyboard and a rule that rejects the value are two faces of one fact, and only
+ * one of them can be the authority.
+ */
+export interface MdyNumericBounds {
+  readonly min: number | null;
+  readonly max: number | null;
+}
+
 export interface MdyFieldState<TValue> {
   readonly value: MdyWritableSignal<TValue>;
   readonly valid: MdySignal<boolean>;
@@ -112,6 +124,8 @@ export interface MdyFieldState<TValue> {
   readonly readonly: MdySignal<boolean>;
   readonly pending: MdySignal<boolean>;
   readonly required: MdySignal<boolean>;
+  /** The range this field's validators state, for a control to offer at the keyboard. */
+  readonly bounds: MdySignal<MdyNumericBounds>;
   readonly errors: MdySignal<ReadonlyArray<MdyFieldError>>;
 }
 

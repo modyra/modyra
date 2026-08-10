@@ -703,6 +703,7 @@
     "payload?: unknown"
   ],
   "MdyFieldHandle": [
+    "bounds: MdySignal<MdyNumericBounds>",
     "dirty: MdySignal<boolean>",
     "disabled: MdySignal<boolean>",
     "errors: MdySignal<ReadonlyArray<MdyFieldError>>",
@@ -1013,6 +1014,10 @@
   ],
   "MdyMultiselectValueIntent": [
     "(opaque)"
+  ],
+  "MdyNumericBounds": [
+    "max: number | null",
+    "min: number | null"
   ],
   "MdyObserveCapability": [
     "observe: MdyEffectRef"

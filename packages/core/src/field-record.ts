@@ -19,8 +19,10 @@ import type {
   MdyFieldError,
   MdyFieldState,
   MdyInteractivity,
+  MdyNumericBounds,
   ValidatorFn,
 } from "./types.js";
+import { MDY_NUMERIC_BOUND } from "./validators.js";
 
 export interface AsyncValidatorEntry {
   readonly fns: ReadonlyArray<MdyAsyncValidatorFn<unknown>>;
@@ -122,11 +124,30 @@ export function createFieldRecord(
     disabledSignal()() ? "disabled" : readonlySignal()() ? "readonly" : "enabled",
   );
 
+  // The tightest statement wins where two validator sets both bound the field: each was added to
+  // exclude something, and a merge that widened either would admit what one of them refused.
+  const bounds = rx.computed<MdyNumericBounds>(() => {
+    let low: number | null = null;
+    let high: number | null = null;
+    for (const fns of validators().values()) {
+      for (const fn of fns) {
+        const bound = Reflect.get(fn, MDY_NUMERIC_BOUND) as
+          | { min?: number; max?: number }
+          | undefined;
+        if (!bound) continue;
+        if (bound.min !== undefined) low = low === null ? bound.min : Math.max(low, bound.min);
+        if (bound.max !== undefined) high = high === null ? bound.max : Math.min(high, bound.max);
+      }
+    }
+    return { min: low, max: high };
+  });
+
   const state: MdyFieldState<unknown> = {
     value,
     touched,
     dirty,
     required: rx.computed(() => requiredKeys().size > 0),
+    bounds,
     valid: rx.computed(() => errors().length === 0),
     errors,
     interactivity,

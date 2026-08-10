@@ -9,6 +9,9 @@ import { registerHandleOwner } from "./reactive-owner.js";
 import { MdyArrayManager } from "./array-manager.js";
 import { MdyRecordManager } from "./record-manager.js";
 import { isRecord as isRecordValue } from "./record-utils.js";
+
+/** What a handle reports while it has no field: no rule, so no constraint to offer. */
+const NO_BOUNDS: MdyNumericBounds = { min: null, max: null };
 import {
   collectSchemaPaths,
   flattenPatch,
@@ -33,6 +36,7 @@ import {
   MdyFormSubmitEvent,
   MdyFormValidatorFn,
   MdyInteractivity,
+  MdyNumericBounds,
   MdySubmitMode,
   ValidatorFn,
 } from "./types.js";
@@ -213,6 +217,8 @@ export interface MdyFieldHandle<TValue> {
   readonly valid: MdySignal<boolean>;
   readonly pending: MdySignal<boolean>;
   readonly required: MdySignal<boolean>;
+  /** The numeric range this field's validators state, for a control to offer at the keyboard. */
+  readonly bounds: MdySignal<MdyNumericBounds>;
   /** What the user may do, as one value; `disabled` and `readonly` below are its derived halves. */
   readonly interactivity: MdySignal<MdyInteractivity>;
   readonly disabled: MdySignal<boolean>;
@@ -1093,6 +1099,7 @@ export abstract class MdyTypedFormBase<
       valid: rx.computed(() => state()?.valid() ?? true),
       pending: rx.computed(() => state()?.pending() ?? false),
       required: rx.computed(() => state()?.required() ?? false),
+      bounds: rx.computed(() => state()?.bounds() ?? NO_BOUNDS),
       interactivity: rx.computed(() => state()?.interactivity() ?? "enabled"),
       disabled: rx.computed(() => state()?.disabled() ?? false),
       readonly: rx.computed(() => state()?.readonly() ?? false),
@@ -1249,6 +1256,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       valid: state.valid,
       pending: state.pending,
       required: state.required,
+      bounds: state.bounds,
       interactivity: state.interactivity,
       disabled: state.disabled,
       readonly: state.readonly,
