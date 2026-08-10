@@ -176,6 +176,7 @@ export class MdyArrayManager {
       | MdyAnyRecordDescriptor,
     value: unknown,
     rowPath: string,
+    sections: ReadonlyArray<(row: Record<string, unknown>) => boolean> = [],
   ): void {
     assertNotNestedCollection(rowNode);
     const node = rowNode;
@@ -189,17 +190,20 @@ export class MdyArrayManager {
       engine.getField(fullPath);
       const marksRequired = node.validators.some((fn) => hasRequiredMarker(fn));
       engine.upsertValidators(fullPath, ROW_SCHEMA_KEY, node.validators, marksRequired);
-      if (node.when !== null) {
-        const when = node.when;
+      const conditions = node.when !== null
+        ? [...sections, (row: Record<string, unknown>) => node.when!(
+            engine.getField(fullPath)?.().value(), row)]
+        : sections;
+      if (conditions.length > 0) {
         const item = this._deps.item;
         // The row encloses the field, so the row is what its condition reads: a rule written once
         // for the item cannot name an index, and rows move.
         engine.setInactive(
           fullPath,
           this._deps.rx.computed(() => {
-            const ref = engine.getField(fullPath);
             const row = this._readNode(rowPath, item);
-            return !when(ref ? ref().value() : null, isRecord(row) ? row : {});
+            const rowValue = isRecord(row) ? row : {};
+            return !conditions.every((holds) => holds(rowValue));
           }),
         );
       }
@@ -214,8 +218,12 @@ export class MdyArrayManager {
       return;
     }
     const rec = isRecord(value) ? value : {};
+    const nested = node.when !== null
+      ? [...sections, (row: Record<string, unknown>) => node.when!(
+          this._readNode(fullPath, node) as Record<string, unknown>, row)]
+      : sections;
     for (const [key, child] of Object.entries(node.children)) {
-      this._registerNode(`${fullPath}.${key}`, child, rec[key], rowPath);
+      this._registerNode(`${fullPath}.${key}`, child, rec[key], rowPath, nested);
     }
   }
 

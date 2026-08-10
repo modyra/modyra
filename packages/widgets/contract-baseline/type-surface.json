@@ -77,7 +77,8 @@
   ],
   "MdyAnyGroupDescriptor": [
     "children: MdyFormSchema",
-    "kind: \"group\""
+    "kind: \"group\"",
+    "when: ((value: unknown, enclosing: Record<string, unknown>) => boolean) | null"
   ],
   "MdyAnyRecordDescriptor": [
     "initial: Readonly<Record<string, unknown>>",
@@ -865,7 +866,11 @@
   ],
   "MdyGroupDescriptor": [
     "children: TChildren",
-    "kind: \"group\""
+    "kind: \"group\"",
+    "when: ((value: unknown, enclosing: Record<string, unknown>) => boolean) | null"
+  ],
+  "MdyGroupOptions": [
+    "when?: (value: Record<string, unknown>, enclosing: Record<string, unknown>) => boolean"
   ],
   "MdyHctPaletteModel": [
     "error: { readonly hue: number; readonly chroma: number; }",
@@ -1002,6 +1007,7 @@
     "interactivity: MdyInteractivity",
     "invalid: boolean",
     "open: boolean",
+    "options: readonly MdySelectOption<TValue>[]",
     "pending: boolean",
     "query: string",
     "readonly: boolean",
@@ -1426,6 +1432,7 @@
     "invalid: boolean",
     "loading: boolean",
     "open: boolean",
+    "options: readonly MdySelectOption<TValue>[]",
     "query: string",
     "readonly: boolean",
     "selectedKey: string | null",
@@ -2276,6 +2283,7 @@
   ],
   "group": [
     "(0) children: TChildren",
+    "(1) options?: MdyGroupOptions",
     "-> returns: MdyGroupDescriptor<TChildren>"
   ],
   "handleFormOf": [
@@ -2542,7 +2550,11 @@
   "optionsWithUnrecognizedValue": [
     "(0) options: readonly MdySelectOption<TValue>[]",
     "(1) value: TValue | null",
-    "(2) label?: (value: TValue) => string",
+    "-> returns: readonly MdySelectOption<TValue>[]"
+  ],
+  "optionsWithUnrecognizedValues": [
+    "(0) options: readonly MdySelectOption<TValue>[]",
+    "(1) values: readonly TValue[] | null | undefined",
     "-> returns: readonly MdySelectOption<TValue>[]"
   ],
   "orderDates": [
@@ -2937,7 +2949,7 @@
     "(0) nodes: MdyFormSchema",
     "(1) prefix: string",
     "(2) onField: (path: string, node: MdyAnyFieldDescriptor) => void",
-    "(3) onGroup?: (path: string) => void",
+    "(3) onGroup?: (path: string, node: MdyAnyGroupDescriptor) => void",
     "(4) onArray?: (path: string, node: MdyAnyArrayDescriptor) => void",
     "(5) onRecord?: (path: string, node: MdyAnyRecordDescriptor) => void",
     "-> returns: void"

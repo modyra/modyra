@@ -2,7 +2,7 @@ import { mdyPart } from "../mdy-part.js";
 import { overlayControlledId } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
-import { MDY_CHIP_CLASSES, multiselectChipClasses } from "@modyra/widgets";
+import { MDY_CHIP_CLASSES, multiselectChipClasses, optionsWithUnrecognizedValues } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { mdyIcon } from "../base.js";
 import {
@@ -66,15 +66,25 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return this.options.find((o) => o.value === value)?.label ?? String(value);
   }
 
-  private filteredOptions(): ReadonlyArray<MdySelectOption<unknown>> {
-    const opts = this.options;
+  /**
+   * What this element paints: the declared options, plus every held value they do not contain.
+   *
+   * A widget does not erase a value to make itself consistent, and what it will not erase it has to
+   * show — otherwise the form holds something nobody can see, and nobody can take off.
+   */
+  private paintedOptions(handle: MdyFieldHandle<readonly unknown[]>): ReadonlyArray<MdySelectOption<unknown>> {
+    return optionsWithUnrecognizedValues(this.options, handle.value());
+  }
+
+  private filteredOptions(handle: MdyFieldHandle<readonly unknown[]>): ReadonlyArray<MdySelectOption<unknown>> {
+    const opts = this.paintedOptions(handle);
     return this.filterFn ? opts.filter((o) => this.filterFn!(o.value)) : opts;
   }
 
   private searchResults(
     handle: MdyFieldHandle<readonly unknown[]>,
   ): ReadonlyArray<MdySelectOption<unknown>> {
-    let opts = this.filteredOptions();
+    let opts = this.filteredOptions(handle);
     if (this.mode === "single") {
       const selected = this.selectedSet(handle);
       opts = opts.filter((o) => !selected.has(String(o.value)));
@@ -263,7 +273,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         </div>
         <div class="mdy-input-suffix"><slot name="suffix"></slot></div>
       </div>
-      ${this.renderOptionsGrid(handle, this.filteredOptions(), "")}
+      ${this.renderOptionsGrid(handle, this.filteredOptions(handle), "")}
       ${renderOverlayPanel(overlay, this._open, {
         modal: position === "overlay",
         alignment,

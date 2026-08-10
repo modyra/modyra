@@ -216,3 +216,148 @@ test("a row removed while out of play takes its condition with it", () => {
   assert.equal(form.state.valid(), true, "the row is gone, and so is what it was asking for");
   assert.deepEqual(form.value().rows, {});
 });
+
+/**
+ * A whole section that is not in play.
+ *
+ * Repeating one predicate on every leaf of a branch is the work `when` exists to remove, so the
+ * question is asked once for the section — and a field's own condition still has its say.
+ */
+test("a section out of play takes every field under it with it", () => {
+  const form = createForm({
+    kind: field("private"),
+    company: group(
+      { name: field("", [required()]), vat: field("", [required()]) },
+      { when: (_section, form) => form.kind === "company" },
+    ),
+  });
+
+  assert.equal(form.state.valid(), true, "nothing under a closed section is being asked for");
+  assert.equal(form.getField("company.name")().disabled(), true);
+  assert.equal("company" in form.submitValue(), false);
+
+  form.f.kind.set("company");
+  assert.equal(form.state.valid(), false, "now both fields are");
+  assert.equal(form.getField("company.name")().disabled(), false);
+});
+
+test("what was typed in a section survives leaving it and coming back", () => {
+  const form = createForm({
+    kind: field("company"),
+    company: group({ name: field("") }, { when: (_section, form) => form.kind === "company" }),
+  });
+
+  form.f.company.name.set("ACME");
+  form.f.kind.set("private");
+
+  assert.equal(form.getValue().company.name, "ACME", "the editing model keeps it");
+  assert.equal("company" in form.submitValue(), false, "and a submit does not carry it");
+
+  form.f.kind.set("company");
+  assert.deepEqual(form.submitValue().company, { name: "ACME" }, "coming back finds it where it was");
+});
+
+test("a field's condition and its section's are both consulted", () => {
+  const form = createForm({
+    kind: field("company"),
+    wantsInvoice: field(false),
+    company: group(
+      {
+        name: field(""),
+        invoiceEmail: field("", [required()], { when: (_value, form) => form.wantsInvoice === true }),
+      },
+      { when: (_section, form) => form.kind === "company" },
+    ),
+  });
+
+  const emailDisabled = () => form.getField("company.invoiceEmail")().disabled();
+
+  assert.equal(emailDisabled(), true, "the section is open, the field's own condition is not met");
+
+  form.f.wantsInvoice.set(true);
+  assert.equal(emailDisabled(), false, "both agree");
+
+  form.f.kind.set("private");
+  assert.equal(emailDisabled(), true, "the section closes over a field whose own condition holds");
+
+  form.f.wantsInvoice.set(false);
+  form.f.kind.set("company");
+  assert.equal(emailDisabled(), true, "and the section alone is not enough either");
+});
+
+test("a section inside a section is out of play when either is", () => {
+  const form = createForm({
+    a: field(true),
+    b: field(true),
+    outer: group(
+      {
+        inner: group({ leaf: field("", [required()]) }, { when: (_s, form) => form.b === true }),
+      },
+      { when: (_s, form) => form.a === true },
+    ),
+  });
+
+  const leafDisabled = () => form.getField("outer.inner.leaf")().disabled();
+
+  assert.equal(leafDisabled(), false, "both open");
+  form.f.b.set(false);
+  assert.equal(leafDisabled(), true, "the inner one closed");
+  form.f.b.set(true);
+  form.f.a.set(false);
+  assert.equal(leafDisabled(), true, "the outer one closed");
+  form.f.a.set(true);
+  assert.equal(leafDisabled(), false, "and it takes both to be in play again");
+});
+
+test("the section predicate reads its own value", () => {
+  const form = createForm({
+    address: group(
+      { country: field("IT"), state: field("", [required()]) },
+      // A section can decide from what it holds itself, without going up to the form.
+      { when: (section) => section.country === "US" },
+    ),
+  });
+
+  assert.equal(form.state.valid(), true);
+  form.f.address.country.set("US");
+  assert.equal(form.state.valid(), false, "a US address needs a state");
+});
+
+test("a predicate reads the form in the shape the schema declares", () => {
+  const form = createForm({
+    address: group({ country: field("IT") }),
+    shipping: group({
+      // A nested sibling, reached the way the schema spells it — not through a flat path.
+      note: field("", [required()], { when: (_value, form) => form.address.country === "US" }),
+    }),
+  });
+
+  assert.equal(form.state.valid(), true);
+  form.f.address.country.set("US");
+  assert.equal(form.state.valid(), false);
+});
+
+test("a section inside a collection row answers for that row", () => {
+  const form = createForm({
+    rows: record(
+      group({
+        kind: field("simple"),
+        detail: group(
+          { reason: field("", [required()]) },
+          { when: (_section, row) => row.kind === "detailed" },
+        ),
+      }),
+    ),
+  });
+
+  form.f.rows.upsert("a", { kind: "simple", detail: { reason: "" } });
+  assert.equal(form.state.valid(), true, "this row's section is closed");
+
+  form.f.rows.upsert("b", { kind: "detailed", detail: { reason: "" } });
+  assert.equal(form.state.valid(), false, "and this row's is open");
+  assert.equal(form.getField("rows.a.detail.reason")().disabled(), true);
+  assert.equal(form.getField("rows.b.detail.reason")().disabled(), false);
+
+  form.f.rows.cell("b", "detail.reason").set("because");
+  assert.equal(form.state.valid(), true);
+});

@@ -1,8 +1,8 @@
 ---
-"@modyra/core": minor
+"@modyra/core": patch
 "@modyra/widgets": patch
-"@modyra/angular": minor
-"@modyra/lit": minor
+"@modyra/angular": patch
+"@modyra/lit": patch
 "@modyra/plain": patch
 ---
 

@@ -276,19 +276,16 @@ export class MdySelectComponent<TValue = string>
   private readonly parkedValue = signal<TValue | null>(null);
 
   /**
-   * How an out-of-list value is named. By default the value itself — the only honest name for
-   * something the list has no entry for.
-   */
-  readonly unknownOptionLabel = input<((value: TValue) => string) | undefined>(undefined);
-
-  /**
    * What this select renders: its options, plus the value the model holds when the list does not
    * contain it. The value is not erased to make the widget consistent, so it has to be visible —
    * otherwise the control looks empty while the form holds something, and a validation message
    * refers to a value nobody can see.
    */
   protected readonly renderedOptions = computed(() =>
-    optionsWithUnrecognizedValue(this.effectiveOptions(), this.value(), this.unknownOptionLabel()),
+    // The same answer the controller reaches, computed here because the template needs it before
+    // the adapter has been fed this change-detection round. The rule itself lives in the helper,
+    // once, for every renderer of this contract.
+    optionsWithUnrecognizedValue(this.effectiveOptions(), this.value()),
   );
 
   constructor() {

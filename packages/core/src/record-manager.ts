@@ -317,7 +317,7 @@ export class MdyRecordManager {
     return false;
   }
 
-  private _registerNode(fullPath: string, rowNode: MdyRowNode, value: unknown, rowPath: string): void {
+  private _registerNode(fullPath: string, rowNode: MdyRowNode, value: unknown, rowPath: string, sections: ReadonlyArray<(row: Record<string, unknown>) => boolean> = []): void {
     const { engine } = this._deps;
     if (rowNode.kind === "field") {
       const v = value === undefined ? rowNode.initial : value;
@@ -328,8 +328,11 @@ export class MdyRecordManager {
       engine.getField(fullPath);
       const marksRequired = rowNode.validators.some((fn) => hasRequiredMarker(fn));
       engine.upsertValidators(fullPath, ROW_SCHEMA_KEY, rowNode.validators, marksRequired);
-      if (rowNode.when !== null) {
-        const when = rowNode.when;
+      const conditions = rowNode.when !== null
+        ? [...sections, (row: Record<string, unknown>) => rowNode.when!(
+            engine.peekField(fullPath)?.().value(), row)]
+        : sections;
+      if (conditions.length > 0) {
         const item = this._deps.item;
         // The row is what encloses a cell, so the row is what its condition reads. A rule written
         // once for the item cannot name a key, and the whole form value would make it navigate to a
@@ -337,10 +340,11 @@ export class MdyRecordManager {
         engine.setInactive(
           fullPath,
           this._deps.rx.computed(() => {
-            const ref = engine.peekField(fullPath);
-            const value = ref ? ref().value() : null;
             const row = this._readNode(rowPath, item);
-            return !when(value, isRecord(row) ? row : { });
+            const rowValue = isRecord(row) ? row : {};
+            // Out of play if any of them says so: the field's own condition and every section of
+            // the row that encloses it.
+            return !conditions.every((holds) => holds(rowValue));
           }),
         );
       }
@@ -355,9 +359,13 @@ export class MdyRecordManager {
       return;
     }
     const rec = isRecord(value) ? value : {};
+    const nested = rowNode.when !== null
+      ? [...sections, (row: Record<string, unknown>) => rowNode.when!(
+          this._readNode(fullPath, rowNode) as Record<string, unknown>, row)]
+      : sections;
     for (const [key, child] of Object.entries(rowNode.children)) {
       assertRowNode(child);
-      this._registerNode(`${fullPath}.${key}`, child, rec[key], rowPath);
+      this._registerNode(`${fullPath}.${key}`, child, rec[key], rowPath, nested);
     }
   }
 

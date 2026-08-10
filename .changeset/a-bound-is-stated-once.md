@@ -1,8 +1,8 @@
 ---
-"@modyra/core": major
-"@modyra/angular": minor
-"@modyra/lit": minor
-"@modyra/plain": minor
+"@modyra/core": patch
+"@modyra/angular": patch
+"@modyra/lit": patch
+"@modyra/plain": patch
 ---
 
 A numeric bound is stated once, and the control offers what the rule already says.
@@ -26,7 +26,8 @@ A bounded integer composes: `compose(integer(), min(0), max(255))`.
 tolerated empty at runtime; the type refused the `string | null` an optional text field actually
 holds, and forced a cast.
 
-**Breaking**: `MdyFieldHandle` gained a required `bounds` member. Every handle the library produces
+**Breaking, released as a patch**: nothing depends on this library yet, so the version is kept low
+deliberately. `MdyFieldHandle` gained a required `bounds` member. Every handle the library produces
 has one, so reading code is unaffected; code that **constructs a handle by hand** — a test double, a
 custom adapter — must add `bounds: computed(() => ({ min: null, max: null }))`, or the field state's
 own `bounds` where it wraps one.

@@ -10,6 +10,16 @@ import { MdyArrayManager } from "./array-manager.js";
 import { MdyRecordManager } from "./record-manager.js";
 import { isRecord as isRecordValue } from "./record-utils.js";
 
+/** The value at a dotted path inside a nested form value; `{}` where the path names no object. */
+function valueAt(value: Record<string, unknown>, path: string): Record<string, unknown> {
+  let current: unknown = value;
+  for (const segment of path.split(".")) {
+    if (typeof current !== "object" || current === null) return {};
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return isRecordValue(current) ? current : {};
+}
+
 /** What a handle reports while it has no field: no rule, so no constraint to offer. */
 const NO_BOUNDS: MdyNumericBounds = { min: null, max: null };
 import {
@@ -64,6 +74,8 @@ export interface MdyFieldDescriptor<TValue> {
 export interface MdyGroupDescriptor<TChildren extends MdyFormSchema> {
   readonly kind: "group";
   readonly children: TChildren;
+  /** Whether the whole section is in play; null → always. See {@link MdyGroupOptions.when}. */
+  readonly when: ((value: unknown, enclosing: Record<string, unknown>) => boolean) | null;
 }
 
 /**
@@ -86,6 +98,7 @@ export interface MdyAnyFieldDescriptor {
 export interface MdyAnyGroupDescriptor {
   readonly kind: "group";
   readonly children: MdyFormSchema;
+  readonly when: ((value: unknown, enclosing: Record<string, unknown>) => boolean) | null;
 }
 
 /** Array descriptor produced by {@link array}. Rows follow the value — see array-manager.ts. */
@@ -387,10 +400,33 @@ export function field<TValue>(
 }
 
 /** Declares a nested group of fields (`address.city` paths on the engine). */
+export interface MdyGroupOptions {
+  /**
+   * Whether this whole section is in play.
+   *
+   * The same question {@link MdyFieldOptions.when} answers for one field, asked once for a branch:
+   * while it is false **every field under the group is inactive** — not validated, not submitted,
+   * and its value kept. Without it a conditional section means repeating one predicate on every
+   * leaf it contains, which is the work `when` exists to remove.
+   *
+   * A field's own `when` and the sections above it are **all** consulted: the field is in play only
+   * while every one of them says so.
+   *
+   * The predicate receives the group's own value and the value that encloses it — the form, or the
+   * row when the group is the item of a `record()` or an `array()`.
+   */
+  readonly when?: (value: Record<string, unknown>, enclosing: Record<string, unknown>) => boolean;
+}
+
 export function group<TChildren extends MdyFormSchema>(
   children: TChildren,
+  options?: MdyGroupOptions,
 ): MdyGroupDescriptor<TChildren> {
-  return { kind: "group", children };
+  return {
+    kind: "group",
+    children,
+    when: (options?.when as MdyGroupDescriptor<TChildren>["when"]) ?? null,
+  };
 }
 
 /**
@@ -942,6 +978,18 @@ export abstract class MdyTypedFormBase<
   // ── Protected helpers ───────────────────────────────────────────────────────
 
   protected _registerSchema(nodes: MdyFormSchema): void {
+    /**
+     * The condition of every section, by its path.
+     *
+     * A group is visited before the fields under it, so by the time a leaf is registered every
+     * section enclosing it is already here — and a leaf is in play only while its own condition and
+     * all of those agree.
+     */
+    const sectionConditions = new Map<
+      string,
+      (value: unknown, enclosing: Record<string, unknown>) => boolean
+    >();
+
     walkSchema(nodes, "", (path, node) => {
       if (node.sanitize !== null) {
         this._adapter.setSanitizer(path, node.sanitize);
@@ -955,16 +1003,32 @@ export abstract class MdyTypedFormBase<
         node.validators,
         marksRequired,
       );
-      if (node.when !== null) {
-        const when = node.when;
+      // Every condition that has a say over this field: its own, and each section above it.
+      const conditions: Array<[string, (value: unknown, enclosing: Record<string, unknown>) => boolean]> =
+        [];
+      for (const [sectionPath, condition] of sectionConditions) {
+        if (path.startsWith(`${sectionPath}.`)) conditions.push([sectionPath, condition]);
+      }
+      if (node.when !== null) conditions.push([path, node.when]);
+
+      if (conditions.length > 0) {
         // Inactive is what a disabled field already is here — not validated, not submitted, value
         // kept. Registered as its own input to `interactivity` so a control's own `[disabled]`
-        // binding and this rule do not overwrite each other.
+        // binding and this rule do not overwrite each other, and composed here because one field
+        // has one such input: out of play if *any* of them says so.
         this._adapter.setInactive(
           path,
-          this._adapter.reactivity.computed(
-            () => !when(this._adapter.getField(path)?.().value(), this._adapter.getValue()),
-          ),
+          this._adapter.reactivity.computed(() => {
+            // The nested value, not the engine's flat map: a predicate is written against the shape
+            // the schema declares, so `form.address.country` has to be reachable.
+            const formValue = this.getValue() as Record<string, unknown>;
+            return !conditions.every(([at, condition]) =>
+              condition(
+                at === path ? this._adapter.getField(path)?.().value() : valueAt(formValue, at),
+                formValue,
+              ),
+            );
+          }),
         );
       }
       if (node.asyncValidators.length > 0) {
@@ -980,6 +1044,9 @@ export abstract class MdyTypedFormBase<
           },
         );
       }
+    },
+    (groupPath, groupNode) => {
+      if (groupNode.when !== null) sectionConditions.set(groupPath, groupNode.when);
     });
   }
 
