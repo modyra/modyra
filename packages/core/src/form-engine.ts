@@ -106,6 +106,8 @@ export interface MdyFormRegistry<
    */
   setSanitizer(name: string, sanitizer: MdySanitizer): void;
   setDisabled(name: string, disabled: TBooleanSignal): void;
+  /** Declares that a field is only in play while the signal says so. */
+  setInactive(name: string, inactive: TBooleanSignal): void;
   setReadonly(name: string, readonly: TBooleanSignal): void;
   /**
    * Declares that a control instance owns the named field. Claims are
@@ -645,6 +647,17 @@ export class MdyFormEngine
 
   setDisabled(name: string, disabled: MdySignal<boolean>): void {
     this._getOrCreate(name).disabled.set(disabled);
+  }
+
+  /**
+   * Declares that `name` is only in play while `active` says so.
+   *
+   * Separate from {@link MdyFormEngine.setDisabled} because the two have different authors: a
+   * schema states when a field counts, a binding states whether the user may edit it now. One slot
+   * would let whichever spoke last silently cancel the other.
+   */
+  setInactive(name: string, inactive: MdySignal<boolean>): void {
+    this._getOrCreate(name).inactive.set(inactive);
   }
 
   setReadonly(name: string, readonly: MdySignal<boolean>): void {

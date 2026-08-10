@@ -46,8 +46,14 @@ export function renderTextField(
   // renders against a DOM shim in its own tests, so it never reaches for a DOM global like
   // `HTMLInputElement` to narrow with.
   if (f.kind === "number" || f.kind === "slider") {
-    if (f.min !== undefined) input.setAttribute("min", String(f.min));
-    if (f.max !== undefined) input.setAttribute("max", String(f.max));
+    // A field's validators already answer "what may this hold". The config narrows what this
+    // control offers; where it says nothing, the rule is what the keyboard gets, so a bound is
+    // stated once and cannot drift between the two.
+    const bounds = handle.bounds();
+    const low = f.min ?? bounds.min ?? undefined;
+    const high = f.max ?? bounds.max ?? undefined;
+    if (low !== undefined) input.setAttribute("min", String(low));
+    if (high !== undefined) input.setAttribute("max", String(high));
     if (f.step !== undefined) input.setAttribute("step", String(f.step));
   }
   // A slider is not a bare input: the contract gives it a container and a displayed value, and

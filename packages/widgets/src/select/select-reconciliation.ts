@@ -2,12 +2,26 @@ import type { MdySelectOption } from "@modyra/core";
 
 export interface MdySelectReconciliationState<TValue> {
   readonly value: TValue | null;
+  /**
+   * Where a value used to be set aside while its option was missing. Always `null` on the way out:
+   * an unrecognised value now stays in the model, so there is nothing to hold anywhere else.
+   */
   readonly parkedValue: TValue | null;
 }
 
 /**
- * Reconciles a programmatic value against a changing option set without
- * treating option loading/filtering as a user edit.
+ * Reconciles a programmatic value against a changing option set.
+ *
+ * Loading or filtering options is not a user edit, and neither is a value the option set does not
+ * recognise. **The widget does not write to the model to make itself consistent**: a value outside
+ * the list is a value the form holds and the rules can judge — `oneOf()` is how a select says it is
+ * wrong — and erasing it destroys the one thing that would let the user fix it. That matters most
+ * where the value came from outside: an import that carries the name of a category that does not
+ * exist yet is exactly the row a person has to see in order to resolve it.
+ *
+ * What is still repaired is the *representation*: a value that matches an option loosely — `"1"`
+ * against `1`, as a value read from JSON does — is replaced by the option's own value, so the model
+ * holds what the list holds and identity comparisons work.
  */
 export function reconcileSelectValue<TValue>(
   state: MdySelectReconciliationState<TValue>,
@@ -18,15 +32,39 @@ export function reconcileSelectValue<TValue>(
 
   if (state.value !== null) {
     const matched = match(state.value);
-    if (matched) return { value: matched.value, parkedValue: null };
-    return options.length > 0
-      ? { value: null, parkedValue: state.value }
-      : state;
+    return matched
+      ? { value: matched.value, parkedValue: null }
+      : { value: state.value, parkedValue: null };
   }
 
+  // A value parked by an earlier version of this function is still restored when its option
+  // arrives; nothing parks a new one.
   if (state.parkedValue !== null) {
     const matched = match(state.parkedValue);
     if (matched) return { value: matched.value, parkedValue: null };
   }
   return state;
+}
+
+/**
+ * The option list a select renders, with a place for a value the list does not contain.
+ *
+ * A value the model holds and the list cannot show is invisible: the control appears empty, the
+ * user is told nothing, and the only clue is a validation message about a value they cannot see. So
+ * the unrecognised value is rendered as an option of its own, selected, and labelled by `label`
+ * — by default the value itself, which is the only honest thing to call something the list has no
+ * name for.
+ *
+ * Nothing is added while the list is empty: options that have not loaded yet are not a list that
+ * refuses the value, and a placeholder would flash on every load.
+ */
+export function optionsWithUnrecognizedValue<TValue>(
+  options: readonly MdySelectOption<TValue>[],
+  value: TValue | null,
+  label?: (value: TValue) => string,
+): readonly MdySelectOption<TValue>[] {
+  if (value === null || value === undefined || value === "") return options;
+  if (options.length === 0) return options;
+  if (options.some((option) => String(option.value) === String(value))) return options;
+  return [{ value, label: label ? label(value) : String(value) }, ...options];
 }

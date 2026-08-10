@@ -8,7 +8,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, selectKeyboardAction, typeaheadMatch, createSelectController, fieldShellPartIds, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, selectKeyboardAction, typeaheadMatch, createSelectController, fieldShellPartIds, optionsWithUnrecognizedValue, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -23,7 +23,11 @@ export function renderSelectField(
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("select");
-  const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
+  // What this select renders: the declared options, plus the value the field holds when they do not
+  // contain it. The widget does not erase such a value to make itself consistent, so it has to be
+  // visible — a control that looks empty while the form holds something explains nothing.
+  const declared = f.options as ReadonlyArray<MdySelectOption<unknown>>;
+  const options = optionsWithUnrecognizedValue(declared, handle.value());
   // The two interaction models the contract declares: a listbox that jumps as you type, or a
   // combobox that filters. Unset is a listbox, which is what a select without a stated opinion is.
   const searchable = (f as { readonly searchable?: boolean }).searchable === true;

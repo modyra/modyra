@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from "@angular/common";
-import { ChangeDetectionStrategy, Component, input } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, input } from "@angular/core";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -43,8 +43,8 @@ import { inputNumber } from "../renderer-projection";
         [id]="fieldId"
         type="number"
         [step]="step()"
-        [min]="minValue()"
-        [max]="maxValue()"
+        [attr.min]="effectiveMin()"
+        [attr.max]="effectiveMax()"
         [placeholder]="placeholder()"
         [value]="value() ?? ''"
         [disabled]="isDisabled()"
@@ -83,6 +83,20 @@ export class MdyNumberComponent extends MdyBaseControl<number | null> {
   readonly maxValue = input<number | null>(null);
   readonly step = input<number>(1);
   readonly showSpinButtons = input<boolean>(false);
+
+  /**
+   * The range offered at the keyboard, from the field's own rules unless this control overrides it.
+   *
+   * A `min(0)`/`max(255)` in the schema is already the answer to "what may this hold"; making the
+   * author write it again on the control is how the two come to disagree. An explicit binding still
+   * wins — a control may narrow what it offers without changing what the field accepts.
+   */
+  protected readonly effectiveMin = computed(
+    () => this.minValue() ?? this.fieldState().bounds().min,
+  );
+  protected readonly effectiveMax = computed(
+    () => this.maxValue() ?? this.fieldState().bounds().max,
+  );
 
   protected readonly fieldId = `mdy-control-number-${MdyBaseControl.nextId()}`;
 

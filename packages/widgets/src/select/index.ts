@@ -38,5 +38,5 @@ export {
 export type {
   MdySelectTransitionFixture,
 } from "./fixtures/transitions.js";
-export { reconcileSelectValue } from "./select-reconciliation.js";
+export { optionsWithUnrecognizedValue, reconcileSelectValue } from "./select-reconciliation.js";
 export type { MdySelectReconciliationState } from "./select-reconciliation.js";

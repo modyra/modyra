@@ -137,14 +137,46 @@ test("disabled controller ignores interactions", () => {
   assert.strictEqual(controller.state().selectedValue, "paris");
 });
 
-test("option reconciliation normalizes, parks and restores without user semantics", async () => {
+test("option reconciliation repairs the representation and never the model", async () => {
   const { reconcileSelectValue } = await import("../dist/select/index.js");
+
+  // A value that matches an option loosely — as one read from JSON does — takes the option's own
+  // value, so the model holds what the list holds and identity comparisons work.
   const normalized = reconcileSelectValue({ value: "1", parkedValue: null }, [{ value: 1, label: "One" }]);
   assert.deepStrictEqual(normalized, { value: 1, parkedValue: null });
-  const parked = reconcileSelectValue({ value: "missing", parkedValue: null }, [{ value: "one", label: "One" }]);
-  assert.deepStrictEqual(parked, { value: null, parkedValue: "missing" });
+
+  // A value no option matches is kept. It is a value the form holds and the rules can judge;
+  // erasing it destroys the one thing that would let the user fix it.
+  const unrecognized = reconcileSelectValue({ value: "missing", parkedValue: null }, [{ value: "one", label: "One" }]);
+  assert.deepStrictEqual(unrecognized, { value: "missing", parkedValue: null });
+
+  // A value parked by an earlier version is still restored when its option arrives.
   const restored = reconcileSelectValue({ value: null, parkedValue: "missing" }, [{ value: "missing", label: "Loaded" }]);
   assert.deepStrictEqual(restored, { value: "missing", parkedValue: null });
+
+  // Options that have not loaded are not a list that refuses the value.
   const loading = reconcileSelectValue({ value: "pending", parkedValue: null }, []);
   assert.deepStrictEqual(loading, { value: "pending", parkedValue: null });
+});
+
+test("the rendered list makes room for a value the options do not contain", async () => {
+  const { optionsWithUnrecognizedValue } = await import("../dist/select/index.js");
+  const options = [{ value: "one", label: "One" }, { value: "two", label: "Two" }];
+
+  assert.deepStrictEqual(
+    optionsWithUnrecognizedValue(options, "missing"),
+    [{ value: "missing", label: "missing" }, ...options],
+    "labelled by the value itself — the only honest name for what the list cannot name",
+  );
+  assert.deepStrictEqual(optionsWithUnrecognizedValue(options, "one"), options, "a known value adds nothing");
+  assert.deepStrictEqual(optionsWithUnrecognizedValue(options, null), options, "and neither does no value");
+  assert.deepStrictEqual(
+    optionsWithUnrecognizedValue([], "pending"),
+    [],
+    "options that have not loaded would otherwise flash a placeholder on every load",
+  );
+  assert.deepStrictEqual(
+    optionsWithUnrecognizedValue(options, "missing", (value) => `Unknown: ${value}`),
+    [{ value: "missing", label: "Unknown: missing" }, ...options],
+  );
 });

@@ -18,7 +18,7 @@ import {
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
-import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, popupAlignmentClass, popupPlacementClass, reconcileSelectValue, selectKeyboardAction, typeaheadMatch, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, popupAlignmentClass, popupPlacementClass, optionsWithUnrecognizedValue, reconcileSelectValue, selectKeyboardAction, typeaheadMatch, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -231,7 +231,7 @@ import { MdyDropdownBase } from "../dropdown-base";
                 {{ placeholder() || ' ' }}
               </option>
             }
-            @for (opt of effectiveOptions(); track opt.value) {
+            @for (opt of renderedOptions(); track opt.value) {
               <option [value]="opt.value" [selected]="opt.value == value()">
                 {{ opt.label }}
               </option>
@@ -275,6 +275,22 @@ export class MdySelectComponent<TValue = string>
   private selectAdapter!: MdyAngularSelectAdapter<TValue>;
   private readonly parkedValue = signal<TValue | null>(null);
 
+  /**
+   * How an out-of-list value is named. By default the value itself — the only honest name for
+   * something the list has no entry for.
+   */
+  readonly unknownOptionLabel = input<((value: TValue) => string) | undefined>(undefined);
+
+  /**
+   * What this select renders: its options, plus the value the model holds when the list does not
+   * contain it. The value is not erased to make the widget consistent, so it has to be visible —
+   * otherwise the control looks empty while the form holds something, and a validation message
+   * refers to a value nobody can see.
+   */
+  protected readonly renderedOptions = computed(() =>
+    optionsWithUnrecognizedValue(this.effectiveOptions(), this.value(), this.unknownOptionLabel()),
+  );
+
   constructor() {
     super();
 
@@ -307,7 +323,7 @@ export class MdySelectComponent<TValue = string>
     });
 
     effect(() => {
-      this.selectAdapter.setOptions(this.effectiveOptions());
+      this.selectAdapter.setOptions(this.renderedOptions());
       this.selectAdapter.setValue(this.value());
       this.selectAdapter.setDisabled(this.isDisabled());
       this.selectAdapter.setReadonly(this.fieldState().readonly());
@@ -376,7 +392,7 @@ export class MdySelectComponent<TValue = string>
   );
 
   protected readonly filteredOptions = computed(() =>
-    filterOptionsByQuery(this.effectiveOptions(), this.selectAdapter.state().query),
+    filterOptionsByQuery(this.renderedOptions(), this.selectAdapter.state().query),
   );
 
   protected readonly showCreateOption = computed(() => {

@@ -72,6 +72,49 @@ Limits worth knowing:
 - `dirty` is set by user interaction in renderers (and `markAsDirty()`);
   programmatic `set()`/`patch()` does not flip it.
 
+## A field that only counts sometimes — `when`
+
+A schema is static and a form is not. A field belonging to a branch the user did not take is
+declared like every other one, so a `required()` on it makes the form **permanently invalid** — with
+the offending field nowhere on screen to explain why, and the submit button greyed out with no
+message anywhere.
+
+`when` is how the schema says a field only counts under a condition:
+
+```ts
+const form = createForm({
+  kind: field<"simple" | "detailed">("simple"),
+  reason: field("", [required()], {
+    when: (_value, form) => form["kind"] === "detailed",
+  }),
+});
+
+form.state.valid(); // true — nothing is asking for a reason
+form.f.kind.set("detailed");
+form.state.valid(); // false — now it is
+```
+
+While the condition is false the field is **inactive**, which is what a disabled field already means
+here — not a fourth state:
+
+| | Inactive field |
+| :--- | :--- |
+| `interactivity()` | `"disabled"` |
+| Form validity | ignores it |
+| `submitValue()` | omits it |
+| `getValue()` | **keeps** its value — a branch the user leaves and returns to still holds what they typed |
+| The field's own `valid()` | still reports its rules' verdict, exactly as a field disabled by a binding does |
+
+The predicate receives the field's own value and the whole form value, and re-runs when either
+changes, so it must be a pure function of what it is given.
+
+A control's own `[disabled]` binding and the schema's condition are separate inputs: re-enabling a
+control cannot put back in play a field the schema left out, and the schema's condition cannot
+un-disable a control the application disabled.
+
+In a data-only document this already existed and still does — a rule with the `disabled` effect
+targeting a field states the same thing without any code.
+
 ## Async validation
 
 The ergonomic path is `serverValidator()` — you call your own service method,
@@ -351,6 +394,30 @@ In development, the collection reports the calls that could not do anything:
 a `cell()` path the row does not have, a `rename` onto a key already taken, a
 patch whose row value is not an object. `devWarnings: false` silences them
 with everything else.
+
+### Reading a collection inside an effect
+
+A signal registers a dependency when it is **read**, and code that only reads it inside a loop over
+the rows reads nothing at all while there are none:
+
+```ts
+// Never re-runs while the collection is empty: nothing was read, so nothing woke it.
+effect(() => {
+  for (const key of editing()) {
+    console.log(form.f.rows.value()[key]);
+  }
+});
+
+// Reads the collection first, so a first row wakes it.
+effect(() => {
+  const rows = form.f.rows.value();
+  for (const key of editing()) console.log(rows[key]);
+});
+```
+
+This is how signals work everywhere, and it bites here in particular because looping over the keys
+is the natural way to write the code — and the empty collection, which is where a table starts, is
+exactly the state that hides it. **Read the collection at the top of the effect.**
 
 ### In a data-only document
 
