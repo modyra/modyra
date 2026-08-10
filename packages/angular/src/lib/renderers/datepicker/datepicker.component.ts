@@ -83,10 +83,10 @@ import { MdyCalendarComponent } from "./calendar.component";
           [attr.aria-haspopup]="'dialog'"
           [attr.aria-invalid]="hasErrors()"
           [attr.aria-describedby]="describedById(fieldId)"
+          [attr.aria-label]="controlAriaLabel()"
           [attr.aria-required]="ariaRequired() || isRequired()"
           [attr.aria-disabled]="effectiveAriaDisabled()"
-          [attr.aria-label]="label() || null"
-        />
+          />
         <div class="mdy-input-suffix">
            @if (suffix(); as s) {
              <ng-container [ngTemplateOutlet]="s.template" />

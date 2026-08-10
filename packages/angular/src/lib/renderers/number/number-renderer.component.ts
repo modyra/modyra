@@ -54,9 +54,9 @@ import { inputNumber } from "../renderer-projection";
         (blur)="dispatchValueBlur('number')"
         [attr.aria-invalid]="hasErrors()"
         [attr.aria-describedby]="describedById(fieldId)"
+        [attr.aria-label]="controlAriaLabel()"
         [attr.aria-required]="ariaRequired() || isRequired()"
         [attr.aria-disabled]="effectiveAriaDisabled()"
-        [attr.aria-label]="label() || null"
         [mdyNumberSpinButtons]="showSpinButtons()"
       />
       @if (suffix(); as s) {

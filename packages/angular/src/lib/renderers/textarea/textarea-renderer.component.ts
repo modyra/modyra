@@ -45,9 +45,9 @@ import { inputText } from "../renderer-projection";
         (blur)="dispatchValueBlur('textarea')"
         [attr.aria-invalid]="hasErrors()"
         [attr.aria-describedby]="describedById(fieldId)"
+        [attr.aria-label]="controlAriaLabel()"
         [attr.aria-required]="ariaRequired() || isRequired()"
         [attr.aria-disabled]="effectiveAriaDisabled()"
-        [attr.aria-label]="label() || null"
       ></textarea>
       @if (suffix(); as s) {
         <div class="mdy-input-suffix">

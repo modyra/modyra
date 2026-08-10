@@ -142,6 +142,20 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   /** The label text for the form control. */
   public readonly label = input<string>("");
 
+  /**
+   * The control's name when nothing visible carries it — a cell in a table, a control in a toolbar
+   * whose column or icon says what it is to someone who can see it.
+   *
+   * Read only while `label` is empty. A visible label already names the control natively, and a
+   * second name over the top of it is what makes the spoken name disagree with the written one.
+   */
+  public readonly ariaLabel = input<string | null>(null);
+
+  /** The name to put on the control element, or null when a visible label already names it. */
+  protected readonly controlAriaLabel: Signal<string | null> = computed(() =>
+    this.label() ? null : (this.ariaLabel() || null),
+  );
+
   /** Opt-in or opt-out of floating labels on a per-control basis, overriding the form-level directive. */
   public readonly floatingLabel = input<boolean | undefined>(undefined);
 

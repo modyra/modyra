@@ -29,9 +29,9 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
         [attr.aria-checked]="value()"
         [attr.aria-invalid]="hasErrors()"
         [attr.aria-describedby]="describedById(fieldId)"
+        [attr.aria-label]="controlAriaLabel()"
         [attr.aria-required]="ariaRequired() || isRequired()"
         [attr.aria-disabled]="effectiveAriaDisabled()"
-        [attr.aria-label]="label() || null"
       />
       <span class="mdy-toggle__track" aria-hidden="true">
         <span class="mdy-toggle__thumb"></span>
