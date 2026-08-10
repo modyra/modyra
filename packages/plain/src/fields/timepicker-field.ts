@@ -29,7 +29,7 @@ export function renderTimepickerField(
   const anchoring = overlayAnchoringFor("timepicker");
   const controller = createTimepickerFieldController({ widgetId: widgetId, handle, format }, reactivity);
 
-  const shell = buildFieldShell(f.label, "timepicker");
+  const shell = buildFieldShell(f.label, "timepicker", {}, f.ariaLabel);
   // The catalogue's timepicker anatomy: a typeable input plus a toggle button opening the
   // dialog, rather than one button doing both jobs.
   const control = el("input", "mdy-timepicker__input") as HTMLInputElement;

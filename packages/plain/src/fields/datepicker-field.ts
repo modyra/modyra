@@ -28,7 +28,7 @@ export function renderDatepickerField(
   // Month and weekday names, and the first day of the week, come from Intl via `buildDateLocale`.
   const dateLocale = buildDateLocale(options.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language), options.firstDayOfWeek);
 
-  const shell = buildFieldShell(f.label, "datepicker");
+  const shell = buildFieldShell(f.label, "datepicker", {}, f.ariaLabel);
   // The catalogue's datepicker anatomy: a typeable input plus a toggle button that opens the
   // calendar, rather than one button doing both jobs.
   const control = el("input", "mdy-datepicker__input") as HTMLInputElement;

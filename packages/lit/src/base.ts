@@ -99,6 +99,17 @@ export abstract class MdyFieldElement<T> extends LitElement {
     return this;
   }
 
+  /**
+   * After the render commits, because that is when the control exists to be named.
+   *
+   * The host carries `aria-label` as an attribute — that is what an author writes — and it would
+   * name the *element* rather than the control inside it, which is not what a screen reader reads.
+   */
+  protected override updated(changed: Map<string, unknown>): void {
+    super.updated(changed);
+    this.applyControlName();
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.classList.add(...this.rootClasses);
@@ -231,6 +242,31 @@ export abstract class MdyFieldElement<T> extends LitElement {
       },
     ).control;
   }
+
+  /**
+   * Names the control when no visible label does.
+   *
+   * Read from the element's own `aria-label` and moved to the control, because the name belongs to
+   * the thing a user operates. Removed again when a label arrives, so the two never disagree.
+   */
+  protected applyControlName(): void {
+    const named = this._pendingName ?? this.getAttribute("aria-label");
+    if (named !== null) {
+      // Held here rather than on the host: an element that keeps its own name is a second named
+      // thing where the user sees one.
+      this._pendingName = named;
+      this.removeAttribute("aria-label");
+    }
+    const control = this.querySelector<HTMLElement>(
+      "input, select, textarea, [role='combobox'], [role='listbox']",
+    );
+    if (!control) return;
+    if (this._pendingName && !this.label) control.setAttribute("aria-label", this._pendingName);
+    else control.removeAttribute("aria-label");
+  }
+
+  /** The name given through the host's `aria-label`, kept once the attribute is taken off it. */
+  private _pendingName: string | null = null;
 
   /** Id the controllers point `aria-describedby` at when the field has no errors. */
   protected get descriptionId(): string {
