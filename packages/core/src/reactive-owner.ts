@@ -13,6 +13,30 @@ import type { MdyReactivity } from "./reactivity.js";
 
 const HANDLE_OWNERS = new WeakMap<object, MdyReactivity>();
 
+/**
+ * Which form a handle came from.
+ *
+ * A handle names a path, and a path means nothing without the form that holds it: two forms on one
+ * page share every path they have in common. A binding handed a handle must read the field that
+ * handle belongs to, not the one whose element happens to enclose the control — otherwise what the
+ * user types lands in the wrong form, and nothing says so.
+ */
+const HANDLE_FORMS = new WeakMap<object, object>();
+
+/** Internal: called by handle factories right after building a handle. */
+export function registerHandleForm(handle: object, form: object): void {
+  HANDLE_FORMS.set(handle, form);
+}
+
+/**
+ * The form that built `handle`, if known. `undefined` for a hand-built handle or one from a version
+ * that predates this registry — a caller should fall back to the form it already has rather than
+ * treat that as an error.
+ */
+export function handleFormOf(handle: object): object | undefined {
+  return HANDLE_FORMS.get(handle);
+}
+
 /** Internal: called by handle factories right after building a handle. */
 export function registerHandleOwner(handle: object, rx: MdyReactivity): void {
   HANDLE_OWNERS.set(handle, rx);

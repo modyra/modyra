@@ -16,6 +16,7 @@ import {
 import { MDY_DECLARATIVE_REGISTRY, MDY_FLOATING_LABELS, MDY_FORM_ADAPTER, MDY_INLINE_ERRORS } from "../core/tokens";
 import { MdyFieldHandle } from "../core/typed-form";
 import { MdyFieldError, MdyFieldState, MdyFormAdapter } from "../core/types";
+import { handleFormOf } from "@modyra/core";
 import type { MdyInteractivity } from "@modyra/core";
 import {
   createValueWidgetController,
@@ -264,6 +265,19 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     return this._detachedState;
   }
 
+  /**
+   * The form that built the bound handle, when it is one this library made and it is not the form
+   * enclosing this control. `null` for a `name` binding, a hand-built handle, or the ordinary case
+   * of a handle from the enclosing form.
+   */
+  private _formOfHandle(): MdyFormAdapter<Record<string, unknown>> | null {
+    const handle = this.field();
+    if (!handle) return null;
+    const form = handleFormOf(handle as object);
+    if (!form || form === this._adapterOrNull) return null;
+    return form as MdyFormAdapter<Record<string, unknown>>;
+  }
+
   /** Resolved field state — reactive to name/[field] changes. */
   protected readonly fieldState: Signal<MdyFieldState<TValue>> = computed(
     () => {
@@ -273,7 +287,12 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         // neither binding: stay inert, the init effect warns on the latter.
         return this._detached();
       }
-      const ref = this.adapter.getField(n);
+      // A handle knows which form built it, and that is the form to read. `[field]` names a path,
+      // and a path means nothing without its form: two forms on one page share every path they have
+      // in common, so resolving against whichever form encloses the control sends what the user
+      // types into the wrong one, silently. The enclosing form answers only for `name`.
+      const source = this._formOfHandle() ?? this.adapter;
+      const ref = source.getField(n);
       if (!ref) {
         // A path inside a keyed collection whose row has not been declared. The control renders
         // empty and binds when the row arrives; it must not be the thing that brings it into being,
@@ -284,7 +303,7 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         // signal, so nothing else here would ever re-ask. The dependency is taken only on the
         // branch that has no field — a bound control depends on its own state and not on every
         // registration in the form.
-        this.adapter.fieldNames?.();
+        source.fieldNames?.();
         return this._detached();
       }
       return ref() as MdyFieldState<TValue>;
