@@ -212,6 +212,9 @@
         "label": {
           "type": "string"
         },
+        "ariaLabel": {
+          "type": "string"
+        },
         "placeholder": {
           "type": "string"
         },

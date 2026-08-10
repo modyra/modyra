@@ -34,6 +34,15 @@ export interface MdyDynamicValidators {
 interface MdyDynamicFieldBase {
   readonly name: string;
   readonly label?: string;
+  /**
+   * The control's name when nothing visible carries it — a cell in a table, a control in a toolbar
+   * whose column or icon says what it is to someone who can see it.
+   *
+   * Only read when `label` is empty. A visible label already names the control natively, and a
+   * second name over the top of it is what makes a spoken name disagree with a written one — the
+   * user asks for "Item" and the machine is listening for something else.
+   */
+  readonly ariaLabel?: string;
   readonly placeholder?: string;
   readonly initialValue?: unknown;
   readonly validators?: MdyDynamicValidators;
