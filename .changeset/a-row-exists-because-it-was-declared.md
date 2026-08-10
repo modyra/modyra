@@ -1,5 +1,5 @@
 ---
-"@modyra/core": major
+"@modyra/core": minor
 "@modyra/standard-schema": patch
 ---
 
@@ -23,10 +23,14 @@ undeclared key waits and renders empty, unmounting one keeps the value, and vali
 declared row — so sorting or filtering a table cannot turn an invalid row valid. `remove(key)` is the
 only way a row's value goes away. ADR 0026 records why.
 
-**Breaking:** `MdySchemaPaths` gained a required `recordPaths`. Reading the result of
-`collectSchemaPaths` is unaffected; implementing the interface yourself means adding the member
-(`recordPaths: new Set()` preserves today's behaviour). `walkSchema`, `flattenPatch` and
-`numericKeysToArrays` take new optional parameters and are unchanged when omitted.
+
 
 Also fixed, found while building this: `MdyFormEngine.getValue()` did not depend on *which* fields
 exist, so a form value read while a collection was empty stayed empty after rows arrived.
+
+**Breaking only for implementers.** `MdySchemaPaths` gained a required `recordPaths`. Reading the
+result of `collectSchemaPaths` is unaffected; declaring the interface yourself means adding the member
+(`recordPaths: new Set()` preserves today's behaviour). `walkSchema`, `flattenPatch` and
+`numericKeysToArrays` take new optional parameters and are unchanged when omitted. Nothing a consumer
+of `createForm`, `record()` or a handle calls has changed, which is why this is a minor rather than
+the major the type-surface audit reads it as.

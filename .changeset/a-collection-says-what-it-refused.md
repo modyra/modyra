@@ -1,5 +1,5 @@
 ---
-"@modyra/core": major
+"@modyra/core": minor
 ---
 
 A keyed collection reports the calls it could not carry out, and stops holding what nobody is using.
@@ -23,6 +23,6 @@ keeps exactly what a mounted control is holding.
 All of it goes through the host's development channel, so `devWarnings: false` silences these like
 everything else.
 
-**Breaking:** `MdyRecordManagerDeps` gained a required `warn`. It is the seam the typed form uses to
-build a collection; constructing an `MdyRecordManager` by hand means passing one
-(`warn: (message) => engine.warnDev(message)`). `MdyFormEngine.warnDev` is new and public for that.
+**Breaking only for implementers.** `cell()` became generic with `unknown` as its default, so every
+existing call keeps the type it had; a hand-written implementation of `MdyRecordHandle` needs the
+generic signature. `MdyFormEngine.warnDev` is new and public for the same seam.
