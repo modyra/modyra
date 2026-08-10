@@ -1,5 +1,18 @@
 # @modyra/zod
 
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [0b64826]
+- Updated dependencies [ba5f5f9]
+- Updated dependencies [faf3275]
+- Updated dependencies [206b0b3]
+- Updated dependencies [3d8391b]
+- Updated dependencies [495ff44]
+- Updated dependencies [8b88c9f]
+  - @modyra/core@2.1.0
+
 ## 0.5.2
 
 ### Patch Changes
