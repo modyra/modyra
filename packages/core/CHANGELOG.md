@@ -1,5 +1,170 @@
 # @modyra/core
 
+## 2.1.0
+
+### Minor Changes
+
+- 0b64826: A keyed collection reports the calls it could not carry out, and stops holding what nobody is using.
+
+  Four calls used to do nothing and say nothing, which is the shape of a bug that reaches production
+  intact — the code looks right and the data quietly is not what the author believes:
+
+  - **`setAll` handed something that is not an object emptied the collection.** A stray `undefined`
+    from a response erased every row. It now declares nothing and says so; `setAll({})` is still how
+    you empty one deliberately.
+  - **`patch({ key: 5 })` on rows that are groups was ignored**, so a caller believed it had written.
+  - **`rename` onto a taken key, or from a key that does not exist**, was a silent no-op. The data was
+    never at risk; the silence was.
+  - **`cell(key, "typo")`** returned a handle that could never bind. It now names the parts the row
+    actually offers.
+
+  Cell handles are held weakly, so a table churning provisional keys no longer accumulates one handle
+  per key it ever rendered. Identity across `upsert → remove → upsert` is unchanged: a weak reference
+  keeps exactly what a mounted control is holding.
+
+  All of it goes through the host's development channel, so `devWarnings: false` silences these like
+  everything else.
+
+  **Breaking only for implementers.** `cell()` became generic with `unknown` as its default, so every
+  existing call keeps the type it had; a hand-written implementation of `MdyRecordHandle` needs the
+  generic signature. `MdyFormEngine.warnDev` is new and public for the same seam.
+
+- ba5f5f9: A control can be named without a visible label.
+
+  A cell in a table and a control in a toolbar get their meaning from a column header or an icon,
+  which a screen reader never reaches — and until now the only name a control could have was a visible
+  label. Building a table made the gap concrete: every cell announced itself as "edit" and nothing
+  about which line or column it belonged to.
+
+  `ariaLabel` supplies the name, and only while nothing visible carries one:
+
+  ```html
+  <mdy-control-text
+    [field]="rows.f.lines.row(key).item"
+    [ariaLabel]="'Item, row ' + key"
+  />
+  <mdy-text-field aria-label="Item, row 12" .field="${cell}"></mdy-text-field>
+  ```
+
+  ```ts
+  renderField(
+    container,
+    { name: "item-12", kind: "text", ariaLabel: "Item, row 12" },
+    cell
+  );
+  ```
+
+  A visible label already names the control natively, so the two can never disagree — the failure
+  WCAG 2.5.3 is about. The Dynamic Form Contract carries the slot too, so a data-only document can
+  declare it, and both spec schemas describe it.
+
+  Found while doing this: the Angular renderers bound `aria-label` **twice** on the same control, the
+  second copying the visible label. One attribute now has one binding.
+
+- faf3275: The Dynamic Form Contract has a `record` node, beside `group` and `array`.
+
+  ```json
+  {
+    "node": "record",
+    "item": {
+      "node": "group",
+      "children": { "name": { "node": "field", "field": { "kind": "text" } } }
+    },
+    "initialValue": {
+      "12": { "name": "Espresso" },
+      "tmp:1": { "name": "Cornetto" }
+    }
+  }
+  ```
+
+  A document declares a row's shape and the rows it starts with; which rows exist afterwards remains
+  the application's word, because a document describes a form rather than a session. It flattens to the
+  dotted paths every renderer already consumes (`lines.12.name`), so no renderer needed changing, and
+  `buildDynamicFormSchema` turns it into a typed `record()`.
+
+  Row keys are validated as path segments: one that carries a `.` or a prototype-polluting name is
+  reported as `MDY_DYNAMIC_UNSAFE_NAME` and rendered by nothing. `spec/dynamic-form-v2.schema.json` and
+  `spec/dynamic-form-v3.schema.json` describe the node, so an editor reading `$schema` underlines a
+  malformed one.
+
+- 3d8391b: A restored draft no longer brings back a row the user deleted.
+
+  A draft is written as a flat value, and a removed row is expressible there only as an absence — so a
+  restore replayed the values it carried and left the schema's own seeded rows standing. The user
+  deleted a line, came back, and found it again: worse than losing work, because it looks like the form
+  disagreed with them.
+
+  `MdyPathGate` gained an optional `onReplace`, and the engine tells every keyed collection the whole
+  shape a snapshot carried. A row the snapshot does not mention is one that was removed before it was
+  written, so it stays removed; rows the snapshot adds still arrive. `MdyFormEngine.restoreValue` is
+  the call that does both, and drafts use it.
+
+  Also in this change:
+
+  - **A collection inside a collection is refused where it is written.** A document nesting a `record`
+    in an `array` passed the parser and produced a schema that threw on the first row; the parser now
+    reports it, and building the form refuses it rather than waiting for a row to arrive in front of a
+    user.
+  - **`cell()` states its value type**: `cell<number>(key, "qty")`. The default is still `unknown`,
+    because the part is a runtime string — `row(key)` remains the typed way when the part is known,
+    and is what a typed control should be bound to.
+
+  **Breaking only for implementers.** `MdyPathGate` gained an optional `onReplace`, and
+  `MdyRecordManagerDeps` a required `warn` — the seam the typed form uses to build a collection.
+  Constructing an `MdyRecordManager` by hand means passing one
+  (`warn: (message) => engine.warnDev(message)`). Every consumer-facing call is unchanged.
+
+- 8b88c9f: `record()` — a third structural node, for a collection whose keys are data.
+
+  `group()` keys rows at compile time and `array()` keys them by position. `record()` keys them by a
+  value the domain owns, so a row survives sorting and filtering, carries the id the server gave it,
+  and — the case an array cannot serve — lets **the controls of one row be mounted apart**, as a table
+  rendering column by column does.
+
+  ```ts
+  const schema = { rows: record(group({ name: field(""), qty: field(0) })) };
+
+  form.f.rows.upsert("a3f9", { name: "Espresso", qty: 2 });
+  form.f.rows.cell("a3f9", "name").set("Ristretto"); // one control of one row
+  form.value().rows; // { a3f9: { name: "Ristretto", qty: 2 } }
+  ```
+
+  A row exists because `upsert` declared it, never because a control mounted: a control on an
+  undeclared key waits and renders empty, unmounting one keeps the value, and validity belongs to the
+  declared row — so sorting or filtering a table cannot turn an invalid row valid. `remove(key)` is the
+  only way a row's value goes away. ADR 0026 records why.
+
+  Also fixed, found while building this: `MdyFormEngine.getValue()` did not depend on _which_ fields
+  exist, so a form value read while a collection was empty stayed empty after rows arrived.
+
+  **Breaking only for implementers.** `MdySchemaPaths` gained a required `recordPaths`. Reading the
+  result of `collectSchemaPaths` is unaffected; declaring the interface yourself means adding the member
+  (`recordPaths: new Set()` preserves today's behaviour). `walkSchema`, `flattenPatch` and
+  `numericKeysToArrays` take new optional parameters and are unchanged when omitted. Nothing a consumer
+  of `createForm`, `record()` or a handle calls has changed, which is why this is a minor rather than
+  the major the type-surface audit reads it as.
+
+### Patch Changes
+
+- 206b0b3: `has()` and `validOf()` on a record handle answer inside a computed.
+
+  Both read the declared-key set, which is deliberately a plain `Set` — the path gate consults it from
+  the engine's write paths, where touching a signal would tie an unrelated computation to a
+  collection's shape. That is right for the gate and wrong for a caller: a template writing
+  `rows.has(key)` got the answer that was true when it first ran and never another one, and the first
+  read being correct is what made it hard to notice.
+
+  They now read the key signal to depend on it and the set to answer it, so the cost is unchanged and
+  every member of the handle reads live.
+
+- 495ff44: A record's rows survive a draft restore and an undo.
+
+  Drafts and history write a flat value straight into the engine, and the gate that stops a mounting
+  control from declaring a row was refusing those writes too — a restored draft came back with its rows
+  missing. A value arriving for an undeclared path is now offered to the collection that owns it, which
+  declares the row; a control mounting still declares nothing. `MdyPathGate` is exported for adapters
+  that own keyed paths of their own.
+
 ## 2.0.0
 
 ### Major Changes

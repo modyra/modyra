@@ -1,5 +1,63 @@
 # @modyra/lit
 
+## 0.7.0
+
+### Minor Changes
+
+- ba5f5f9: A control can be named without a visible label.
+
+  A cell in a table and a control in a toolbar get their meaning from a column header or an icon,
+  which a screen reader never reaches — and until now the only name a control could have was a visible
+  label. Building a table made the gap concrete: every cell announced itself as "edit" and nothing
+  about which line or column it belonged to.
+
+  `ariaLabel` supplies the name, and only while nothing visible carries one:
+
+  ```html
+  <mdy-control-text
+    [field]="rows.f.lines.row(key).item"
+    [ariaLabel]="'Item, row ' + key"
+  />
+  <mdy-text-field aria-label="Item, row 12" .field="${cell}"></mdy-text-field>
+  ```
+
+  ```ts
+  renderField(
+    container,
+    { name: "item-12", kind: "text", ariaLabel: "Item, row 12" },
+    cell
+  );
+  ```
+
+  A visible label already names the control natively, so the two can never disagree — the failure
+  WCAG 2.5.3 is about. The Dynamic Form Contract carries the slot too, so a data-only document can
+  declare it, and both spec schemas describe it.
+
+  Found while doing this: the Angular renderers bound `aria-label` **twice** on the same control, the
+  second copying the visible label. One attribute now has one binding.
+
+### Patch Changes
+
+- 024af2c: A Lit element that leaves the document and comes back shows the value as it is now.
+
+  While an element is disconnected its subscription is destroyed, so every change in the meantime goes
+  unheard — and on reconnect the controller treated the fresh subscription's first run as the initial
+  one and suppressed the update. The element came back showing what it had when it left.
+
+  Coming back is not arriving: a reconnection now asks for one update, because the markup on screen is
+  stale by definition. Found while exercising keyed collections, but it was never about them — any
+  element reconnected after a change was affected.
+
+- Updated dependencies [0b64826]
+- Updated dependencies [ba5f5f9]
+- Updated dependencies [faf3275]
+- Updated dependencies [206b0b3]
+- Updated dependencies [3d8391b]
+- Updated dependencies [495ff44]
+- Updated dependencies [8b88c9f]
+  - @modyra/core@2.1.0
+  - @modyra/widgets@2.0.1
+
 ## 0.6.1
 
 ### Patch Changes

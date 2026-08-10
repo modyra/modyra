@@ -1,6 +1,6 @@
 {
   "name": "@modyra/studio-target-json",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": true,
   "description": "Modyra Studio: the Contract target scope (plan section 10) — exports project.json (raw StudioProject) and contract.json (compiled Contract v2).",
   "license": "MIT",

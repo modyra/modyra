@@ -1,6 +1,6 @@
 {
   "name": "@modyra/studio-contract",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": true,
   "description": "Modyra Studio: MdyStudioProject -> Dynamic Form Contract v2 compiler, strict-verified against the real @modyra/core parser.",
   "license": "MIT",
