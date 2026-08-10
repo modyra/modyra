@@ -99,20 +99,11 @@ export function renderMultiselectField(
     return { chip };
   }
 
-  /** A grid of option chips: the one in the field, and the one in the popup. */
+  /** A grid of option chips: the one in the field, and the one in the popup. Filled by `syncGrids`. */
   function buildGrid(extraClasses: readonly string[]): { grid: HTMLElement; chips: Map<string, ChipHandle> } {
     const grid = el("div", [...parts.options.classes, ...extraClasses].join(" "));
     grid.setAttribute("role", "group");
-    const chips = new Map<string, ChipHandle>();
-    for (const option of options) {
-      const key = keyFor(option);
-      const handle = buildChip(option, key);
-      const wrapper = el("div", parts.optionWrapper.classes.join(" "));
-      wrapper.appendChild(handle.chip);
-      grid.appendChild(wrapper);
-      chips.set(key, handle);
-    }
-    return { grid, chips };
+    return { grid, chips: new Map<string, ChipHandle>() };
   }
 
   const field = buildGrid([]);
@@ -121,12 +112,47 @@ export function renderMultiselectField(
   popup.append(search, overlay.grid);
 
   /** Every chip standing for an option, in both grids: one option, two elements to keep in step. */
-  const optionEls = new Map<string, readonly ChipHandle[]>(
-    options.map((option) => {
+  const optionEls = new Map<string, readonly ChipHandle[]>();
+
+  /**
+   * Brings both grids in line with the list the controller says it paints.
+   *
+   * That list is not the one this renderer was handed: a held value the options do not contain is
+   * painted as an option of its own, so the person who has to correct it can see it and take it
+   * off. Building the chips once would leave such a value invisible and impossible to remove.
+   */
+  function syncGrids(painted: readonly MdySelectOption<unknown>[]): void {
+    const wanted = new Set<string>();
+    for (const option of painted) {
       const key = keyFor(option);
-      return [key, [field.chips.get(key)!, overlay.chips.get(key)!]];
-    }),
-  );
+      wanted.add(key);
+      if (!optionEls.has(key)) {
+        const handles = [field, overlay].map((target) => {
+          const handle = buildChip(option, key);
+          const wrapper = el("div", parts.optionWrapper.classes.join(" "));
+          wrapper.appendChild(handle.chip);
+          target.grid.appendChild(wrapper);
+          target.chips.set(key, handle);
+          return handle;
+        });
+        optionEls.set(key, handles);
+      }
+      // Appending an element already in a grid moves it, which keeps the order the controller's.
+      for (const target of [field, overlay]) {
+        const chip = target.chips.get(key);
+        if (chip?.chip.parentElement) target.grid.appendChild(chip.chip.parentElement);
+      }
+    }
+    for (const key of [...optionEls.keys()]) {
+      if (wanted.has(key)) continue;
+      for (const target of [field, overlay]) {
+        target.chips.get(key)?.chip.parentElement?.remove();
+        target.chips.delete(key);
+      }
+      optionEls.delete(key);
+    }
+  }
+  syncGrids(controller.state().options);
 
   insertControl(shell, control);
   // The grid sits directly after the control and before the supporting text, which is the order the
@@ -204,6 +230,7 @@ export function renderMultiselectField(
     applyPart(popup, view.parts.popup);
     applyPart(search, view.parts.search);
     applyPart(overlay.grid, view.parts.group);
+    syncGrids(state.options);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
@@ -232,7 +259,7 @@ export function renderMultiselectField(
       if (search.value) search.value = "";
     }
 
-    for (const option of options) {
+    for (const option of state.options) {
       const key = keyFor(option);
       const handles = optionEls.get(key);
       if (!handles) continue;

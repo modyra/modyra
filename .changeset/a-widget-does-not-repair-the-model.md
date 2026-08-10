@@ -1,8 +1,8 @@
 ---
-"@modyra/widgets": minor
-"@modyra/angular": minor
-"@modyra/lit": minor
-"@modyra/plain": minor
+"@modyra/widgets": patch
+"@modyra/angular": patch
+"@modyra/lit": patch
+"@modyra/plain": patch
 ---
 
 A select no longer erases a value its options do not contain.

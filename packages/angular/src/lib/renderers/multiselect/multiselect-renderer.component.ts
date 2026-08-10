@@ -1,4 +1,4 @@
-import { overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+import { optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -262,9 +262,20 @@ export class MdyMultiselectComponent<TValue = string>
     () => projectOverlayOpenerA11y("multiselect", { widgetId: this.fieldId, open: this.open() })!,
   );
 
+  /**
+   * What this control paints: the declared options, plus every held value they do not contain.
+   *
+   * A widget does not erase a value to make itself consistent, so what it will not erase it has to
+   * show — otherwise the form holds something the user cannot see and cannot take off.
+   */
+  protected readonly paintedOptions = computed(() =>
+    optionsWithUnrecognizedValues(this.effectiveOptions(), this.value() ?? []),
+  );
+
   protected readonly filteredOptions = computed(() => {
     const fn = this.filterFn();
-    return fn ? this.effectiveOptions().filter((o) => fn(o.value)) : this.effectiveOptions();
+    const painted = this.paintedOptions();
+    return fn ? painted.filter((o) => fn(o.value)) : painted;
   });
 
   protected readonly searchResults = computed(() => {
@@ -349,7 +360,7 @@ export class MdyMultiselectComponent<TValue = string>
     if (next === current) return;
     this.dispatchValueIntent<ReadonlyArray<TValue>>("multiselect", { type: "input", value: next });
     if (intent.type !== "clear") {
-      const matched = this.effectiveOptions().find((option) => this.optionKey(option.value) === this.optionKey(intent.value));
+      const matched = this.paintedOptions().find((option) => this.optionKey(option.value) === this.optionKey(intent.value));
       if (matched) this.selectionChange.emit(matched);
     }
   }

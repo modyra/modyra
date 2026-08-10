@@ -15,6 +15,7 @@ import { vanillaReactivity } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
 
 import { overlayLifecycleTransition } from "../behavior.js";
+import { optionsWithUnrecognizedValues } from "../select/select-reconciliation.js";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectMultiselectFieldA11y } from "./multiselect-field-a11y.js";
@@ -49,18 +50,29 @@ export function createMultiselectFieldController<TValue>(
     readonly: initialReadonly = false,
   } = options;
 
-  const optionByKey = new Map<string, MdySelectOption<TValue>>();
-  function rebuildIndex(): void {
-    optionByKey.clear();
-    for (const option of allOptions) {
-      optionByKey.set(keyFor(option), option);
-    }
-  }
-  rebuildIndex();
+  /**
+   * What this widget paints: the declared options, plus every held value they do not contain.
+   *
+   * Recomputed from the value, so a value that arrives after the widget was built — a record
+   * loading, a draft coming back — brings its own option with it. Nothing is added while the list
+   * is empty: options that have not loaded are not a list that refuses the value.
+   */
+  const effectiveOptions = reactivity.computed(() =>
+    optionsWithUnrecognizedValues(allOptions, handle.value()),
+  );
 
-  const keysOf = (values: ReadonlyArray<TValue>): string[] =>
+  const indexOf = (options: readonly MdySelectOption<TValue>[]) => {
+    const byKey = new Map<string, MdySelectOption<TValue>>();
+    for (const option of options) byKey.set(keyFor(option), option);
+    return byKey;
+  };
+
+  const keysOf = (
+    values: ReadonlyArray<TValue>,
+    byKey: ReadonlyMap<string, MdySelectOption<TValue>>,
+  ): string[] =>
     values
-      .map((value) => [...optionByKey.entries()].find(([, o]) => o.value === value)?.[0])
+      .map((value) => [...byKey.entries()].find(([, o]) => o.value === value)?.[0])
       .filter((key): key is string => key !== undefined);
 
   const readonly = reactivity.signal(initialReadonly);
@@ -69,10 +81,12 @@ export function createMultiselectFieldController<TValue>(
 
   const state: MdySignal<MdyMultiselectFieldState<TValue>> = reactivity.computed(() => {
     const selectedValues = handle.value();
-    const keys = keysOf(selectedValues);
+    const options = effectiveOptions();
+    const keys = keysOf(selectedValues, indexOf(options));
     const counts = new Map<string, number>();
     for (const key of keys) counts.set(key, (counts.get(key) ?? 0) + 1);
     return {
+      options,
       selectedValues,
       selectedKeys: new Set(keys),
       counts,
@@ -158,7 +172,9 @@ export function createMultiselectFieldController<TValue>(
   }
 
   function withOption(key: string, run: (option: MdySelectOption<TValue>) => readonly MdyUiCommand[]): readonly MdyUiCommand[] {
-    const option = optionByKey.get(key);
+    // The painted list, not the declared one: a chip the user can see is a chip they can act on,
+    // and the one standing for an unrecognised value is the only way to remove that value.
+    const option = indexOf(effectiveOptions()).get(key);
     if (!option || option.disabled) return [];
     const commands = run(option);
     handle.markAsDirty();
@@ -185,7 +201,7 @@ export function createMultiselectFieldController<TValue>(
   }
 
   function decrement(key: string): readonly MdyUiCommand[] {
-    const option = optionByKey.get(key);
+    const option = indexOf(effectiveOptions()).get(key);
     if (!option) return [];
     const values = [...handle.value()];
     const index = values.findIndex((v) => v === option.value);

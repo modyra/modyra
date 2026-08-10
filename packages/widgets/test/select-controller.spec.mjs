@@ -175,9 +175,11 @@ test("the rendered list makes room for a value the options do not contain", asyn
     [],
     "options that have not loaded would otherwise flash a placeholder on every load",
   );
+  // There is no label hook: an application that wants a readable name gives the value an option,
+  // and at that point the value is not unrecognised at all.
   assert.deepStrictEqual(
-    optionsWithUnrecognizedValue(options, "missing", (value) => `Unknown: ${value}`),
-    [{ value: "missing", label: "Unknown: missing" }, ...options],
+    optionsWithUnrecognizedValue([{ value: "missing", label: "Da importare" }, ...options], "missing"),
+    [{ value: "missing", label: "Da importare" }, ...options],
   );
 });
 

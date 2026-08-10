@@ -27,6 +27,14 @@ export interface MdySelectControllerOptions<TValue> {
 
 /** Semantic state of the select widget. */
 export interface MdySelectState<TValue> {
+  /**
+   * The options to paint: the declared list, plus the held value when the list does not contain it.
+   *
+   * A renderer paints this rather than the list it was handed. That is what makes "a widget does
+   * not erase what it cannot show" a property of the contract instead of a habit each renderer has
+   * to remember — and it is what gives the user something to click in order to replace the value.
+   */
+  readonly options: readonly MdySelectOption<TValue>[];
   readonly open: boolean;
   readonly query: string;
   readonly activeKey: string | null;

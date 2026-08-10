@@ -72,7 +72,7 @@ Limits worth knowing:
 - `dirty` is set by user interaction in renderers (and `markAsDirty()`);
   programmatic `set()`/`patch()` does not flip it.
 
-## A field that only counts sometimes — `when`
+## Conditional fields and sections — `when`
 
 A schema is static and a form is not. A field belonging to a branch the user did not take is
 declared like every other one, so a `required()` on it makes the form **permanently invalid** — with
@@ -94,6 +94,27 @@ form.f.kind.set("detailed");
 form.state.valid(); // false — now it is
 ```
 
+### A whole section
+
+Repeating one predicate on every leaf of a branch is exactly the work `when` exists to remove, so a
+section asks the question once:
+
+```ts
+const form = createForm({
+  kind: field<"private" | "company">("private"),
+  company: group(
+    { name: field("", [required()]), vat: field("", [required()]) },
+    { when: (_section, form) => form.kind === "company" },
+  ),
+});
+```
+
+Every field under the group follows it. A field's own `when` and the sections above it are **all**
+consulted — the field is in play only while every one of them says so — and a section inside a
+section obeys both.
+
+### What "inactive" means
+
 While the condition is false the field is **inactive**, which is what a disabled field already means
 here — not a fourth state:
 
@@ -105,9 +126,19 @@ here — not a fourth state:
 | `getValue()` | **keeps** its value — a branch the user leaves and returns to still holds what they typed |
 | The field's own `valid()` | still reports its rules' verdict, exactly as a field disabled by a binding does |
 
-The predicate receives the field's own value and **the value that encloses the field** — the form,
-or the **row** when the field is inside a `record()` or an `array()`. A rule written once for the
-item of a collection cannot name a key or an index, so what it reads is its own row:
+### What the predicate is given
+
+Two arguments: **the value it is about**, and **the value that encloses it**.
+
+| The condition is on | First argument | Second argument |
+| :--- | :--- | :--- |
+| a field | the field's value | the form value |
+| a section (`group`) | the section's value | the form value |
+| a field or section inside a `record()`/`array()` row | its own value | **the row's value** |
+
+The form value is the nested shape the schema declares, so `form.address.country` is how a predicate
+reaches a nested sibling. Inside a collection the enclosing value is the row, because a rule written
+once for the item cannot name a key or an index:
 
 ```ts
 rows: record(group({
@@ -117,8 +148,11 @@ rows: record(group({
 ```
 
 Each row answers for itself: a sibling row's `kind` decides nothing, and a row removed while out of
-play takes what it was asking for with it. The predicate re-runs when what it reads changes, so it
-must be a pure function of what it is given.
+play takes what it was asking for with it.
+
+The predicate re-runs whenever what it reads changes, so it must be a **pure function of its
+arguments** — reading anything else gives a condition that goes stale without saying so. An
+exception thrown inside it propagates, exactly as one thrown by a validator does.
 
 A control's own `[disabled]` binding and the schema's condition are separate inputs: re-enabling a
 control cannot put back in play a field the schema left out, and the schema's condition cannot
@@ -126,6 +160,39 @@ un-disable a control the application disabled.
 
 In a data-only document this already existed and still does — a rule with the `disabled` effect
 targeting a field states the same thing without any code.
+
+## Declaring a constraint once — `bounds`
+
+A numeric range is a rule and an input constraint at the same time. Stated twice — once as a
+validator, once on the control — the two are free to disagree, and nothing checks that they don't:
+
+```ts
+const form = createForm({
+  quantity: field(0, [integer(), min(0), max(255)]),
+});
+
+form.f.quantity.bounds(); // { min: 0, max: 255 }
+```
+
+Every renderer's number and slider controls offer that range at the keyboard without being told it
+again. A control may still **narrow** what it offers — `[minValue]` in Angular, the `min` attribute
+in Lit, `min` in a framework-free field config — which changes what this control asks for, never
+what the field accepts.
+
+Worth knowing:
+
+- Where two rules bound the same field, the **tightest wins**: each was added to exclude something.
+- A bound that is not a finite number is not offered. `min(NaN)` produces no attribute; the rule
+  still runs.
+- `compose(integer(), min(0), max(255))` returns one function, and the bounds inside it are not
+  readable from outside — the field reports nothing rather than something wrong. Pass the validators
+  as a list if you want the control to see them.
+- A slider spans the field's range too, and where neither the rules nor the control say anything it
+  spans what a bare `<input type="range">` assumes.
+
+`integer()` is the rule for a field that holds a count, an identifier or a quantity of things: `1.5`
+used to report itself valid and fail wherever the value was finally parsed, with no field to name.
+An unsigned byte is three rules that compose: `compose(integer(), min(0), max(255))`.
 
 ## Async validation
 

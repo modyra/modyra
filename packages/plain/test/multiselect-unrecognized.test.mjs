@@ -1,12 +1,10 @@
 /**
- * What a multiselect does with a value its options do not contain — today.
+ * A multiselect holding a value its options do not contain.
  *
- * ADR 0029 says a widget does not repair the model, and the multiselect keeps its word on that half:
- * the value stays. It does **not** keep the other half — the value is not shown, so a person sees
- * one chip while the form holds two values, and cannot remove the one they cannot see.
- *
- * These tests pin today's behaviour rather than the behaviour we want. They turn red when the gap is
- * closed, which is exactly when someone should come back and rewrite them.
+ * The rule is the contract's, not this renderer's: what a widget will not erase, it has to show —
+ * and what it shows, the user can take off. An imported tag that no longer exists in the catalogue
+ * is the ordinary way a value gets here, and it is precisely the one a person has to see in order
+ * to resolve it.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -25,29 +23,61 @@ const host = () => {
   return el;
 };
 
-test("the value is kept, as the rule requires", () => {
+const mount = (values, list = options) => {
   const rx = vanillaReactivity();
-  const form = createForm({ tags: field(["food", "imported-tag"]) }, { reactivity: rx });
-
+  const form = createForm({ tags: field(values) }, { reactivity: rx });
   const container = host();
-  renderField(container, { name: "tags", kind: "multiselect", label: "Tags", options }, form.f.tags, rx);
+  renderField(container, { name: "tags", kind: "multiselect", label: "Tags", options: list }, form.f.tags, rx);
+  return { form, container, rx };
+};
+
+const chipTexts = (container) =>
+  [...container.querySelectorAll("[role='group'] button")].map((el) => el.textContent.trim());
+
+test("the value is kept, and it is on screen", () => {
+  const { form, container } = mount(["food", "imported-tag"]);
 
   assert.deepEqual(form.value().tags, ["food", "imported-tag"], "nothing erased it");
-  assert.deepEqual(form.submitValue().tags, ["food", "imported-tag"], "and it is submitted");
+  assert.ok(
+    chipTexts(container).some((text) => text.includes("imported-tag")),
+    "and the person who has to correct it can see it",
+  );
 });
 
-test("TODAY: the value it cannot match is not shown, and cannot be removed", () => {
-  const rx = vanillaReactivity();
-  const form = createForm({ tags: field(["food", "imported-tag"]) }, { reactivity: rx });
+test("the chip standing for it takes it off", async () => {
+  const { form, container, rx } = mount(["food", "imported-tag"]);
 
-  const container = host();
-  renderField(container, { name: "tags", kind: "multiselect", label: "Tags", options }, form.f.tags, rx);
+  const chip = [...container.querySelectorAll("[role='group'] button")].find((el) =>
+    el.textContent.includes("imported-tag"),
+  );
+  chip.dispatchEvent(new window.Event("click", { bubbles: true }));
+  await rx.flush();
 
-  const chips = [...container.querySelectorAll("[role='group'] button")].map((el) => el.textContent.trim());
-  assert.equal(
-    chips.some((text) => text.includes("imported-tag")),
-    false,
-    "the known gap: a chip grid built from the option list has nowhere to put a value the list " +
-    "does not name, so the user sees one chip while the form holds two values",
+  assert.deepEqual(form.value().tags, ["food"], "showing it is what makes it removable");
+});
+
+test("a value the options do contain adds nothing", () => {
+  const { container } = mount(["food"]);
+
+  assert.deepEqual(chipTexts(container).sort(), ["Drinks", "Food"]);
+});
+
+test("options that have not loaded show nothing extra", () => {
+  const { form, container } = mount(["pending"], []);
+
+  assert.deepEqual(chipTexts(container), [], "an empty list is not a list that refuses the value");
+  assert.deepEqual(form.value().tags, ["pending"]);
+});
+
+test("a value arriving after the widget was built brings its own chip", async () => {
+  const { form, container, rx } = mount(["food"]);
+  assert.equal(chipTexts(container).some((t) => t.includes("late-tag")), false);
+
+  form.f.tags.set(["food", "late-tag"]);
+  await rx.flush();
+
+  assert.ok(
+    chipTexts(container).some((text) => text.includes("late-tag")),
+    "a record loading after the form was rendered is the ordinary case",
   );
 });

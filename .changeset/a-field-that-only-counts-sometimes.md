@@ -1,5 +1,5 @@
 ---
-"@modyra/core": major
+"@modyra/core": patch
 ---
 
 `when` — a field the form only asks about under a condition.
@@ -23,7 +23,8 @@ neither can silently cancel the other.
 
 Data-only documents already expressed this with a rule of effect `disabled`, and still do.
 
-**Breaking**, all in surfaces that only the library constructs:
+**Breaking, released as a patch** — nothing depends on this library yet — and all in surfaces
+that only the library constructs:
 
 - `MdyFieldDescriptor`/`MdyAnyFieldDescriptor` gained a required `when` member. Code that builds a
   descriptor literal instead of calling `field()` must add `when: null`.

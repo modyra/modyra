@@ -58,20 +58,24 @@ test("options that have not loaded show nothing extra", async () => {
   assert.equal(form.value().category, "pending");
 });
 
-test("an application can name what the list cannot", async () => {
+test("an application names an out-of-list value by giving it an option", async () => {
   const espresso = { id: 1 };
   const cornetto = { id: 2 };
   const form = createLitForm({ category: field(cornetto) });
 
+  // Left to itself an object value renders as "[object Object]": the honest name, and a useless
+  // one. There is no knob for this — an application that wants a readable name supplies the option,
+  // and at that point the value is not unrecognised at all.
   const element = await mount("mdy-select-field", (el) => {
     el.field = form.f.category;
-    el.options = [{ value: espresso, label: "Espresso" }];
+    el.options = [
+      { value: espresso, label: "Espresso" },
+      { value: cornetto, label: "Cornetto (da importare)" },
+    ];
     el.label = "Category";
-    // Without this an object value renders as "[object Object]", which is the honest name and a
-    // useless one — naming it is the whole reason the hook exists.
-    el.unknownOptionLabel = (value) => `Unknown item #${value.id}`;
   });
 
   const rendered = [...element.querySelectorAll("option")].map((option) => option.textContent);
-  assert.ok(rendered.includes("Unknown item #2"));
+  assert.deepEqual(rendered, ["Espresso", "Cornetto (da importare)"], "no synthetic option was added");
+  assert.strictEqual(form.value().category, cornetto);
 });

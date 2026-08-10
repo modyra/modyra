@@ -135,6 +135,46 @@ function loadFields(raw: unknown): MdyDynamicField[] {
 envelope; unknown envelope versions are rejected wholesale (fail closed),
 while individually malformed fields are dropped item-by-item.
 
+## A value the options do not contain
+
+A select or a multiselect can be handed a value its option list does not name. It happens for
+ordinary reasons: a record refers to something since deleted, an import carries a category that does
+not exist yet, options arrive filtered from a service.
+
+**The widget keeps it and shows it.** It renders as an option of its own, selected, labelled by the
+value — and because it is on screen it can be replaced, or in a multiselect taken off. No renderer
+decides this: the controllers in `@modyra/widgets` compute the list every renderer paints, which is
+what stops three adapters from having three behaviours.
+
+Three consequences worth stating:
+
+- **The model is never rewritten to make the widget consistent.** A widget that erases what it
+  cannot show destroys the one thing that would let a person fix it — see ADR 0029.
+- **What refuses such a value is a rule, not the widget.** Pair the field with `oneOf()` (or
+  `eachOneOf()` for a multiselect) if it must be invalid. A data-only document does this for you:
+  the declared options are also a whitelist.
+- **Nothing is added while the option list is empty.** Options that have not loaded are not a list
+  that refuses the value, so a placeholder does not flash on every load.
+
+A value that matches an option loosely — `"1"` against `1`, as one read from JSON does — is still
+normalised to the option's own value. Values that are objects are matched by **identity**: two
+different entities are never treated as the same choice.
+
+### Giving it a readable name
+
+There is no label hook for this, on purpose. An unrecognised value is named by itself, and an
+application that wants something better supplies the option:
+
+```ts
+options = [
+  { value: importedId, label: `To import: ${importedName}` },
+  ...loadedOptions,
+];
+```
+
+At that point the value is not unrecognised at all, and the same code works in every renderer and in
+a data-only document — which a callback could not.
+
 ## Serializing a form value
 
 ```ts

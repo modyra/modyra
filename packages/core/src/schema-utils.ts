@@ -38,7 +38,7 @@ export function walkSchema(
   nodes: MdyFormSchema,
   prefix: string,
   onField: (path: string, node: MdyAnyFieldDescriptor) => void,
-  onGroup?: (path: string) => void,
+  onGroup?: (path: string, node: MdyAnyGroupDescriptor) => void,
   onArray?: (path: string, node: MdyAnyArrayDescriptor) => void,
   onRecord?: (path: string, node: MdyAnyRecordDescriptor) => void,
 ): void {
@@ -51,7 +51,7 @@ export function walkSchema(
     } else if (node.kind === "record") {
       onRecord?.(path, node);
     } else {
-      onGroup?.(path);
+      onGroup?.(path, node);
       walkSchema(node.children, path, onField, onGroup, onArray, onRecord);
     }
   }

@@ -11,6 +11,7 @@ import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js"
 import { defaultWidgetIdFactory } from "../ids.js";
 import { projectSelectA11y } from "./select-a11y.js";
 import { selectNextActiveKey } from "./select-keyboard.js";
+import { optionsWithUnrecognizedValue } from "./select-reconciliation.js";
 import type { MdySelectOption } from "@modyra/core";
 
 import type {
@@ -58,20 +59,32 @@ export function createSelectController<TValue>(
   } = options;
 
   const idFactory = defaultWidgetIdFactory;
+  /** What the caller declared. */
   const allOptions: MdySelectOption<TValue>[] = [...initialOptions];
+  /**
+   * What is painted: the declared list, plus a held value the list does not contain.
+   *
+   * A signal rather than a variable: the list changes when options are replaced *and* when the
+   * selection moves, and everything drawn from it — the state, the filtered list, the view's parts
+   * — has to be told. It used to be told by accident, because replacing the options cleared the
+   * selection; keeping the selection removed that accident.
+   */
+  const paintedOptions = reactivity.signal<readonly MdySelectOption<TValue>[]>(allOptions);
   const optionByKey = new Map<string, MdySelectOption<TValue>>();
   const valueToKey = new Map<TValue, string>();
 
-  function rebuildOptionIndex(): void {
+  function rebuildOptionIndex(selected: TValue | null): void {
+    const painted = optionsWithUnrecognizedValue(allOptions, selected);
+    paintedOptions.set(painted);
     optionByKey.clear();
     valueToKey.clear();
-    for (const option of allOptions) {
+    for (const option of painted) {
       const key = keyFor(option);
       optionByKey.set(key, option);
       valueToKey.set(option.value, key);
     }
   }
-  rebuildOptionIndex();
+  rebuildOptionIndex(initialValue);
 
   const keyForValue = (value: TValue | null): string | null =>
     value === null ? null : valueToKey.get(value) ?? null;
@@ -80,7 +93,7 @@ export function createSelectController<TValue>(
     key === null ? null : optionByKey.get(key)?.value ?? null;
 
   const filteredOptions = (query: string) =>
-    filterOptionsByQuery(allOptions, query);
+    filterOptionsByQuery(paintedOptions(), query);
 
   const visibleKeys = (query: string): readonly string[] =>
     filteredOptions(query).map(keyFor);
@@ -109,6 +122,7 @@ export function createSelectController<TValue>(
   const popupRendered = reactivity.signal(true);
 
   const state: MdySignal<MdySelectState<TValue>> = reactivity.computed(() => ({
+    options: paintedOptions(),
     open: open(),
     query: query(),
     activeKey: activeKey(),
@@ -289,20 +303,23 @@ export function createSelectController<TValue>(
   }
 
   function setValue(value: TValue | null): void {
+    // The index is rebuilt around the value, so a value the declared options do not contain gets an
+    // option of its own — and therefore a key, a chip and a way for the user to replace it.
+    rebuildOptionIndex(value);
     selectedKey.set(keyForValue(value));
   }
 
   function setOptions(nextOptions: readonly MdySelectOption<TValue>[]): void {
+    const selected = valueForKey(selectedKey());
     allOptions.length = 0;
     for (const option of nextOptions) {
       allOptions.push(option);
     }
-    rebuildOptionIndex();
-    // Re-validate selected value against new options.
-    const currentKey = selectedKey();
-    if (currentKey !== null && !optionByKey.has(currentKey)) {
-      selectedKey.set(null);
-    }
+    // The selection survives the list changing: options arriving, being filtered or being replaced
+    // are not a user edit, and a value the new list does not name keeps an option of its own rather
+    // than being dropped. What refuses such a value is a rule — `oneOf` — not the widget.
+    rebuildOptionIndex(selected);
+    selectedKey.set(keyForValue(selected));
   }
 
   function setOpen(nextOpen: boolean): void {

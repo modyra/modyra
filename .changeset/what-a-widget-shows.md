@@ -1,6 +1,6 @@
 ---
-"@modyra/widgets": minor
-"@modyra/lit": minor
+"@modyra/widgets": patch
+"@modyra/lit": patch
 ---
 
 The select's "name what the list cannot name" hook now exists in Lit as well as Angular.
