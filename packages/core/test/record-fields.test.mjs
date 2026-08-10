@@ -843,3 +843,273 @@ test("an invalid row blocks a submit, as an invalid field does", async () => {
   });
   assert.equal(ran, true);
 });
+
+// ─── Ordering ────────────────────────────────────────────────────────────────
+
+test("a batched mutation ends where its last call left the collection", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+
+  form.mutate(() => {
+    form.f.rows.upsert("k", { nome: "x", qta: 1 });
+    form.f.rows.remove("k");
+  });
+  assert.deepEqual(form.value().rows, {}, "declared and removed inside one batch leaves nothing");
+
+  form.f.rows.upsert("k", { nome: "before", qta: 1 });
+  form.mutate(() => {
+    form.f.rows.remove("k");
+    form.f.rows.upsert("k", { nome: "after", qta: 2 });
+  });
+  assert.deepEqual(form.value().rows.k, { nome: "after", qta: 2 }, "and the other order rebuilds it");
+});
+
+test("a control claimed before the churn follows it to the end", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  const cell = form.f.rows.cell("k", "nome");
+  form.claimField("rows.k.nome");
+
+  form.mutate(() => {
+    form.f.rows.upsert("k", { nome: "declared", qta: 1 });
+    form.f.rows.remove("k");
+    form.f.rows.upsert("k", { nome: "again", qta: 2 });
+  });
+
+  assert.equal(cell.value(), "again", "the handle reads whatever the row ended as");
+  assert.equal(form.value().rows.k.qta, 2);
+});
+
+test("one whole-value write reconciles two collections at once", () => {
+  const form = createForm({ left: record(rowSchema()), right: record(rowSchema()) });
+  form.f.left.setAll({ a: { nome: "1", qta: 1 }, b: { nome: "2", qta: 2 } });
+  form.f.right.setAll({ z: { nome: "9", qta: 9 } });
+
+  form.setValue({
+    left: { a: { nome: "kept", qta: 1 } },
+    right: { z: { nome: "9", qta: 9 }, y: { nome: "new", qta: 0 } },
+  });
+
+  assert.deepEqual([...form.f.left.keys()], ["a"], "the one it shrank");
+  assert.deepEqual([...form.f.right.keys()].sort(), ["y", "z"], "and the one it grew");
+});
+
+test("a flat write declares every row it carries", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+
+  // What a draft restore or an undo looks like from the engine's side.
+  form.patchValue({ "rows.x.nome": "one", "rows.y.nome": "two" });
+
+  assert.deepEqual([...form.f.rows.keys()].sort(), ["x", "y"]);
+  assert.equal(form.value().rows.x.nome, "one");
+});
+
+test("a structural change inside a mutate is one step of history", async () => {
+  const tick = () => new Promise((r) => setTimeout(r, 10));
+  const form = createForm({ rows: record(rowSchema()) }, { history: true });
+  await tick();
+
+  form.mutate(() => {
+    form.f.rows.upsert("k", { nome: "one", qta: 1 });
+    form.f.rows.cell("k", "nome").set("two");
+  });
+  await tick();
+
+  assert.equal(form.value().rows.k.nome, "two");
+  form.undo();
+  assert.deepEqual(form.value().rows, {}, "one step back is before the whole batch, not inside it");
+});
+
+// ─── Beside an array ─────────────────────────────────────────────────────────
+
+test("an array and a record under one group keep their own shapes", async () => {
+  const { array } = await import("../dist/index.js");
+  const form = createForm({
+    order: group({
+      list: array(group({ n: field("") }), { initial: [{ n: "idx0" }] }),
+      rows: record(group({ n: field("") })),
+    }),
+  });
+
+  // Keys that read as indices, next to a collection that really is indexed.
+  form.f.order.rows.setAll({ 0: { n: "keyed0" }, 1: { n: "keyed1" } });
+
+  const value = form.value().order;
+  assert.equal(Array.isArray(value.list), true, "the array is still an array");
+  assert.equal(Array.isArray(value.rows), false, "and the record is still an object");
+  assert.deepEqual(Object.keys(value.rows).sort(), ["0", "1"]);
+});
+
+test("one patch and one setValue reach both collections", async () => {
+  const { array } = await import("../dist/index.js");
+  const form = createForm({
+    list: array(group({ n: field("") }), { initial: [{ n: "row0" }] }),
+    rows: record(group({ n: field("") })),
+  });
+  form.f.rows.upsert("k", { n: "keyed" });
+
+  form.patch({ list: [{ n: "replaced" }], rows: { k: { n: "merged" } } });
+  assert.deepEqual(form.value().list, [{ n: "replaced" }]);
+  assert.equal(form.value().rows.k.n, "merged");
+
+  form.setValue({ list: [{ n: "a" }, { n: "b" }], rows: { x: { n: "c" } } });
+  assert.equal(form.value().list.length, 2);
+  assert.deepEqual([...form.f.rows.keys()], ["x"]);
+});
+
+test("reset returns both collections to what the schema declared", async () => {
+  const { array } = await import("../dist/index.js");
+  const form = createForm({
+    list: array(group({ n: field("") }), { initial: [{ n: "seed" }] }),
+    rows: record(group({ n: field("") }), { initial: { s: { n: "seeded" } } }),
+  });
+  form.f.list.push({ n: "added" });
+  form.f.rows.upsert("extra", { n: "added" });
+
+  form.reset();
+
+  assert.deepEqual(form.value().list, [{ n: "seed" }]);
+  assert.deepEqual([...form.f.rows.keys()], ["s"]);
+});
+
+test("a collection nested in a collection is refused whichever way round", async () => {
+  const { array } = await import("../dist/index.js");
+
+  assert.throws(
+    () => createForm({ list: array(group({ inner: record(field("")) })) }),
+    /Nested collections/,
+  );
+  assert.throws(
+    () => createForm({ rows: record(group({ inner: array(field("")) })) }),
+    /one collection per node/,
+  );
+});
+
+// ─── The document's limits ───────────────────────────────────────────────────
+
+test("a document is held to its limits with records as with anything else", async () => {
+  const { parseDynamicForm } = await import("../dist/index.js");
+  const leaf = () => ({ node: "field", field: { name: "leaf", kind: "text" } });
+
+  let deep = leaf();
+  for (let i = 0; i < 10; i++) {
+    deep = { node: "record", item: { node: "group", children: { inner: deep } } };
+  }
+  const nested = parseDynamicForm({ version: 3, schema: { node: "group", children: { root: deep } } });
+  assert.ok(
+    nested.diagnostics.some((d) => d.code === "MDY_DYNAMIC_SCHEMA_LIMIT"),
+    "past the depth limit the document is refused, not walked for ever",
+  );
+
+  const rows = Object.fromEntries(Array.from({ length: 101 }, (_, i) => [String(i), { n: "x" }]));
+  const tooMany = parseDynamicForm({
+    version: 3,
+    schema: {
+      node: "group",
+      children: {
+        rows: { node: "record", item: { node: "group", children: { n: leaf() } }, initialValue: rows },
+      },
+    },
+  });
+  assert.ok(tooMany.diagnostics.some((d) => d.code === "MDY_DYNAMIC_SCHEMA_LIMIT"));
+});
+
+test("a layout slot and a validation may address a row's leaf", async () => {
+  const { parseDynamicForm, buildDynamicFormSchema, buildDynamicValidations } = await import(
+    "../dist/index.js"
+  );
+  const leaf = () => ({ node: "field", field: { name: "leaf", kind: "text" } });
+  const document_ = {
+    version: 3,
+    schema: {
+      node: "group",
+      children: {
+        rows: {
+          node: "record",
+          item: { node: "group", children: { n: leaf() } },
+          initialValue: { 12: { n: "a" } },
+        },
+      },
+    },
+    layout: [{ kind: "section", id: "s", label: "Rows", children: ["rows.12.n"] }],
+    validations: [
+      {
+        id: "v",
+        message: "the row says bad",
+        path: "rows.12.n",
+        when: { op: "equals", operands: [{ path: "rows.12.n" }, "bad"] },
+      },
+    ],
+  };
+
+  const parsed = parseDynamicForm(document_);
+  assert.deepEqual(parsed.diagnostics, [], "a row's leaf is an address like any other");
+
+  // And the rule the document declared actually runs on the form built from it.
+  const form = createForm(buildDynamicFormSchema(document_.schema), {
+    validators: buildDynamicValidations(document_.validations),
+  });
+  form.f.rows.cell("12", "n").set("bad");
+  assert.equal(form.state.valid(), false);
+  form.f.rows.cell("12", "n").set("fine");
+  assert.equal(form.state.valid(), true);
+});
+
+// ─── What leaves the form ────────────────────────────────────────────────────
+
+test("a rename is structure, so the change set stays quiet — and the next edit does not", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  form.f.rows.upsert("tmp:1", { nome: "typed", qta: 2 });
+
+  form.f.rows.rename("tmp:1", "77");
+  assert.deepEqual(
+    form.getChanges(),
+    {},
+    "changed values, not structure — the same rule removals follow",
+  );
+
+  form.f.rows.cell("77", "nome").set("edited after the rename");
+  assert.deepEqual(form.getChanges(), { rows: { 77: { nome: "edited after the rename" } } });
+});
+
+test("a draft carries five hundred rows there and back", async () => {
+  const store = new Map();
+  const storage = {
+    read: (key) => (store.has(key) ? store.get(key) : null),
+    write: (key, value) => store.set(key, value),
+    clear: (key) => store.delete(key),
+  };
+  const schema = () => ({ rows: record(rowSchema()) });
+  const rows = Object.fromEntries(
+    Array.from({ length: 500 }, (_, i) => [String(i), { nome: `row ${i}`, qta: i }]),
+  );
+
+  const first = createForm(schema(), { draft: { key: "big", storage, debounceMs: 0 } });
+  first.f.rows.setAll(rows);
+  await new Promise((r) => setTimeout(r, 40));
+
+  const restored = createForm(schema(), { draft: { key: "big", storage, debounceMs: 0 } });
+  await new Promise((r) => setTimeout(r, 60));
+
+  assert.equal(restored.f.rows.keys().length, 500);
+  assert.deepEqual(restored.value().rows["499"], { nome: "row 499", qta: 499 });
+});
+
+test("a key is any string a path segment allows, alphabet included", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  const keys = ["città", "日本語", "emoji-🙂", "x".repeat(300)];
+
+  for (const key of keys) form.f.rows.upsert(key, { nome: key.slice(0, 4), qta: 1 });
+
+  assert.equal(form.f.rows.keys().length, keys.length);
+  assert.equal(form.value().rows["日本語"].nome, "日本語");
+  assert.equal(form.f.rows.cell("emoji-🙂", "nome").value(), "emoj");
+});
+
+test("a disabled cell leaves the row in the submit, without itself", () => {
+  const form = createForm({ rows: record(rowSchema()) });
+  form.f.rows.upsert("k", { nome: "sent", qta: 3 });
+
+  form.setDisabled("rows.k.qta", () => true);
+
+  assert.deepEqual(form.submitValue(), { rows: { k: { nome: "sent" } } });
+  assert.equal(form.value().rows.k.qta, 3, "the value is still the form's; it is simply not sent");
+});

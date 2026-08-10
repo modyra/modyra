@@ -47,6 +47,8 @@ export interface MdyControllerHost {
 export class MdyFormController {
     private _ref: { destroy(): void } | null = null;
     private _first = true;
+    /** True once this host has been connected before — a reconnection, not a first mount. */
+    private _reconnecting = false;
 
     constructor(
         private readonly _host: MdyControllerHost,
@@ -62,11 +64,19 @@ export class MdyFormController {
         this._ref = rx.effect(() => {
             for (const signal of this._signals) signal();
             if (this._first) {
+                // The subscription's own first run says nothing new: the host is about to render.
                 this._first = false;
                 return;
             }
             this._host.requestUpdate();
         });
+        if (this._reconnecting) {
+            // Coming back is different from arriving. While the host was detached the effect was
+            // destroyed, so every change since is unheard of — and the markup on screen is whatever
+            // it was when it left. One update is what makes it current again.
+            this._host.requestUpdate();
+        }
+        this._reconnecting = true;
     }
 
     hostDisconnected(): void {
