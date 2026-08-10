@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 
 const {
   createForm, field, group, array, record,
-  required, email, min, minLength,
+  required, email, min, max, minLength, integer, compose,
   serverValidator,
 } = await import("@modyra/core");
 
@@ -189,4 +189,93 @@ test("an async validator reads a sibling through its context", async () => {
   form.f.phone.set("12345");
   await new Promise((r) => setTimeout(r, 60));
   assert.equal(seen, "IT", "ctx.form.fieldValue reads the rest of the form");
+});
+
+test("the conditional field and section the guide shows", () => {
+  const form = createForm({
+    kind: field("simple"),
+    reason: field("", [required()], { when: (_value, form) => form["kind"] === "detailed" }),
+  });
+
+  assert.equal(form.state.valid(), true);
+  form.f.kind.set("detailed");
+  assert.equal(form.state.valid(), false);
+  form.f.reason.set("because");
+  assert.equal(form.state.valid(), true);
+
+  // The table under "What inactive means", line by line.
+  form.f.kind.set("simple");
+  assert.equal(form.f.reason.interactivity(), "disabled");
+  assert.equal(form.f.reason.disabled(), true);
+  assert.equal(form.getValue().reason, "because", "the value is kept");
+  assert.equal("reason" in form.submitValue(), false, "and not submitted");
+  assert.equal(form.state.valid(), true);
+});
+
+test("a whole section, and the composition the guide promises", () => {
+  const form = createForm({
+    kind: field("private"),
+    wantsInvoice: field(false),
+    company: group(
+      {
+        name: field("", [required()]),
+        invoiceEmail: field("", [required()], {
+          when: (_value, form) => form["wantsInvoice"] === true,
+        }),
+      },
+      { when: (_section, form) => form["kind"] === "company" },
+    ),
+  });
+
+  assert.equal(form.state.valid(), true, "a closed section asks for nothing");
+  assert.equal("company" in form.submitValue(), false);
+
+  form.f.kind.set("company");
+  assert.equal(form.getField("company.name")().disabled(), false);
+  assert.equal(
+    form.getField("company.invoiceEmail")().disabled(),
+    true,
+    "the section is open and the field's own condition is not met — both are consulted",
+  );
+
+  form.f.wantsInvoice.set(true);
+  assert.equal(form.getField("company.invoiceEmail")().disabled(), false);
+});
+
+test("a predicate reads the form in the shape the schema declares", () => {
+  const form = createForm({
+    address: group({ country: field("IT") }),
+    shipping: group({
+      note: field("", [required()], { when: (_v, form) => form.address.country === "US" }),
+    }),
+  });
+
+  assert.equal(form.state.valid(), true);
+  form.f.address.country.set("US");
+  assert.equal(form.state.valid(), false);
+});
+
+test("a bound is declared once, and the guide's traps are real", () => {
+  const form = createForm({
+    quantity: field(0, [integer(), min(0), max(255)]),
+    tightest: field(0, [min(0), max(65535), min(1024), max(49151)]),
+    composed: field(0, [compose(integer(), min(0), max(255))]),
+    odd: field(0, [min(Number.NaN)]),
+  });
+
+  assert.deepEqual(form.getField("quantity")().bounds(), { min: 0, max: 255 });
+  assert.deepEqual(
+    form.getField("tightest")().bounds(),
+    { min: 1024, max: 49151 },
+    "where two rules bound the same field, the tightest wins",
+  );
+  assert.deepEqual(
+    form.getField("composed")().bounds(),
+    { min: null, max: null },
+    "compose() returns one function and its bounds are not readable from outside",
+  );
+  assert.deepEqual(form.getField("odd")().bounds(), { min: null, max: null }, "not finite, not offered");
+
+  form.f.quantity.set(1.5);
+  assert.equal(form.getField("quantity")().valid(), false, "integer() still runs");
 });
