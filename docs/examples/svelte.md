@@ -1,9 +1,6 @@
 # Svelte — checkout example
 
-This adapter implements the [shared checkout scenario](checkout-scenario.md): nested groups, a typed array of line
-items, a coupon validated server-side (re-checked when the country
-changes, cancelled while typing), submit with server errors, and a draft
-that survives page refreshes.
+This page shows the [shared checkout scenario](checkout-scenario.md) in Svelte.
 
 ```bash
 npm install @modyra/svelte

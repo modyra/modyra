@@ -1,17 +1,15 @@
 # Typed forms
 
-Schema-first and fully type-safe: initial values and validators live in
-TypeScript, and a handle replaces the stringly `name` — **a typo on a field
-path is a compile error**. Groups nest arbitrarily and map to dotted engine
-paths (`address.city`).
+The form's shape lives in TypeScript, and you reach a field through a handle rather than a string —
+so **a typo on a field path does not compile**. Groups nest as deeply as you like and map to dotted
+paths underneath (`address.city`).
 
-The schema and the handles are `@modyra/core`'s. Every adapter builds the same
-model and hands it to its own reactivity, so everything on this page is true
-wherever you are; only the constructor and the way a control is bound differ.
+Everything on this page is `@modyra/core`, which means it is true in every adapter. Only the
+constructor and the way you bind a control change; [the table below](#the-same-form-in-each-adapter)
+says how.
 
 ```ts
-import { createForm, field, group } from "@modyra/core";
-import { email, min, required } from "@modyra/core";
+import { createForm, email, field, group, min, required } from "@modyra/core";
 
 const form = createForm({
   email: field("", [required(), email()]),
@@ -20,18 +18,21 @@ const form = createForm({
 });
 
 form.f.email.set("ada@example.com");
-form.f.address.city.value(); // "Rome"
-form.value(); // { email: string; age: number | null; address: { city: string; zip: string } }
+form.f.address.city.value();  // "Rome"
+form.getValue();              // { email: string; age: number | null; address: { city: string; zip: string } }
 
-await form.submit(async (value) => api.signup(value)); // return MdyFormError[] to show server errors
+await form.submit(async (value) => api.signup(value));
 ```
 
-Every handle on `form.f` is reactive and typed: `value()`, `errors()`,
-`touched()`, `dirty()`, `valid()`, `pending()`, `required()`, `set(v)`.
+`submit` returns whatever your action returns; hand back an `MdyFormError[]` to show server errors on
+their fields.
 
-These contracts are enforced by compile-time tests
-(`typed-form.types.spec.ts` uses `@ts-expect-error` to prove that wrong
-paths, wrong value types and incomplete `setValue()` calls do not compile).
+Every handle on `form.f` is reactive and typed: `value()`, `errors()`, `touched()`, `dirty()`,
+`valid()`, `pending()`, `required()`, `set(v)`. `form.getValue()` gives the whole nested value;
+`form.value()` is the same thing as a signal, for a template that wants to track it.
+
+The typing is not a claim: a suite of compile-time tests uses `@ts-expect-error` to prove that a
+wrong path, a wrong value type and an incomplete `setValue()` all fail to compile.
 
 ## The same form, in each adapter
 
@@ -79,7 +80,7 @@ the library handles debounce, cancellation, pending, last-wins and timeout:
 ```ts
 import { field, serverValidator } from "@modyra/core";
 
-phone: field("", [mdyRequired()], serverValidator(
+phone: field("", [required()], serverValidator(
   async (phone, ctx) => {
     const country = ctx.form.fieldValue("country"); // read a sibling field
     const res = await api.phoneLookup(phone, country, { signal: ctx.signal }); // cancellable
@@ -99,7 +100,7 @@ The lower-level `asyncValidators`/`asyncDebounceMs` (and their `dependsOn`/
 you'd rather write the validator function directly:
 
 ```ts
-username: field("", [mdyRequired()], {
+username: field("", [required()], {
   asyncValidators: [async (v, ctx) => (await isTaken(v, { signal: ctx.signal })) ? ["Name taken"] : []],
   asyncDebounceMs: 300,
 }),
@@ -228,7 +229,7 @@ Rendering the rows, in Angular:
 `array(field(""))` (a leaf item, not a group) makes `rows()` a list of plain
 `MdyFieldHandle`s instead of nested group handles.
 
-**Structure follows value — rebuild-on-structure-change semantics (v1):**
+**Structure follows value.**
 `push`/`insert`/`remove`/`move`/`setAll`, and any `patch()`/`setValue()`/
 `reset()` that touches the array's path, fully rebuild the array's rows
 (remove every row, re-register the new set) instead of reindexing fields in
@@ -369,10 +370,11 @@ form, not a session.
 
 ### Seeing it work
 
-`npm run demo:record-table` serves a table rendered **by column**, with rows
-that enter and leave edit mode, a sort, and a provisional key that becomes a
-real one. `e2e/record-table/` asserts what it is there to show: sorting,
-closing every editor and unmounting cells change no value and no verdict.
+`npm run demo:plain` (or `demo:angular`, or `demo:lit`) ends with a table rendered **by column**,
+with rows that enter and leave edit mode, a sort, and a provisional key that becomes a real one.
+
+`e2e/record-table/table.spec.ts` asserts the thing it is there to show: sorting the table, closing
+every editor and unmounting cells change no value and no verdict.
 
 ## Draft autosave
 

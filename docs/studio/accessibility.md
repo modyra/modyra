@@ -2,8 +2,9 @@
 
 ## Keyboard parity
 
-Every pointer interaction in Studio has a full keyboard equivalent — this
-is a hard requirement (R9), not an afterthought bolted on afterward. See
+Every pointer interaction in Studio has a full keyboard equivalent. This is a hard requirement, not
+a smaller parallel mode: a canvas you can only operate with a mouse is a canvas some people cannot
+operate. See
 [Drag-and-drop editing](drag-and-drop.md#keyboard-only) for the exact
 pick-up/move/drop sequence (<kbd>Space</kbd>, arrow keys,
 <kbd>Enter</kbd>, <kbd>Escape</kbd>).

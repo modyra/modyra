@@ -1,8 +1,8 @@
 # Compared with Angular Reactive Forms
 
-An honest comparison — Reactive Forms is a good, official API. This library
-exists because Signals allow a different trade-off, not because Reactive
-Forms is "wrong".
+Reactive Forms is a good, official API. Modyra exists because signals allow a different trade-off,
+not because Reactive Forms is wrong — and if you need no more than it offers, it costs you no extra
+dependency.
 
 The side-by-side snippet below is not pseudocode: it's mirrored verbatim in
 [`comparison-reactive-forms.spec.ts`](../../packages/angular/src/lib/core/comparison-reactive-forms.spec.ts),

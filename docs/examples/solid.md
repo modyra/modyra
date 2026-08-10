@@ -1,9 +1,6 @@
 # Solid — checkout example
 
-This adapter implements the [shared checkout scenario](checkout-scenario.md): nested groups, a typed array of line
-items, a coupon validated server-side (re-checked when the country
-changes, cancelled while typing), submit with server errors, and a draft
-that survives page refreshes.
+This page shows the [shared checkout scenario](checkout-scenario.md) in Solid.
 
 ```bash
 npm install @modyra/solid
@@ -20,9 +17,10 @@ and Solid's compiler wraps each such read in its own fine-grained update
 
 ```tsx
 import { useSolidForm, array, crossField, field, group, min, pattern, required, serverValidator } from "@modyra/solid";
+import type { MdyFieldHandle } from "@modyra/core";
 import { OrderApi } from "./order-api";
 
-function TextField(props: { handle: any; label: string }) {
+function TextField(props: { handle: MdyFieldHandle<string>; label: string }) {
   return (
     <label>
       {props.label}
@@ -39,7 +37,7 @@ function TextField(props: { handle: any; label: string }) {
   );
 }
 
-function NumberField(props: { handle: any; label: string }) {
+function NumberField(props: { handle: MdyFieldHandle<number | null>; label: string }) {
   return (
     <label>
       {props.label}
