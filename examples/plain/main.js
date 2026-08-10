@@ -449,8 +449,8 @@ if (rowsHost && rowsState) {
   // a sighted reader, so the label is hidden visually rather than dropped.
   const cellDescriptor = (key, part) =>
     part === "item"
-      ? { name: `rows-item-${key}`, kind: "text", label: `Item, row ${key}` }
-      : { name: `rows-qty-${key}`, kind: "number", label: `Quantity, row ${key}` };
+      ? { name: `rows-item-${key}`, kind: "text", ariaLabel: `Item, row ${key}` }
+      : { name: `rows-qty-${key}`, kind: "number", ariaLabel: `Quantity, row ${key}` };
 
   const button = (label, onClick, primary = false) => {
     const el = document.createElement("button");
