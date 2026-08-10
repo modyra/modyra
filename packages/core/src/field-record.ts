@@ -144,8 +144,14 @@ export function createFieldRecord(
           | { min?: number; max?: number }
           | undefined;
         if (!bound) continue;
-        if (bound.min !== undefined) low = low === null ? bound.min : Math.max(low, bound.min);
-        if (bound.max !== undefined) high = high === null ? bound.max : Math.min(high, bound.max);
+        // A bound that is not a finite number states nothing a control could offer: `min="NaN"` on
+        // an input is ignored by the browser and misleading in a diff. The rule still runs.
+        if (bound.min !== undefined && Number.isFinite(bound.min)) {
+          low = low === null ? bound.min : Math.max(low, bound.min);
+        }
+        if (bound.max !== undefined && Number.isFinite(bound.max)) {
+          high = high === null ? bound.max : Math.min(high, bound.max);
+        }
       }
     }
     return { min: low, max: high };

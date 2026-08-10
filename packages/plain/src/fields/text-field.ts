@@ -45,13 +45,14 @@ export function renderTextField(
   // Written as attributes, which every element type accepts and the IDL properties reflect: plain
   // renders against a DOM shim in its own tests, so it never reaches for a DOM global like
   // `HTMLInputElement` to narrow with.
+  // A field's validators already answer "what may this hold". The config narrows what this control
+  // offers; where it says nothing, the rule is what the keyboard gets, so a bound is stated once and
+  // cannot drift between the two.
+  const ranged = f.kind === "number" || f.kind === "slider" ? f : null;
+  const bounds = handle.bounds();
+  const low = ranged?.min ?? bounds.min ?? undefined;
+  const high = ranged?.max ?? bounds.max ?? undefined;
   if (f.kind === "number" || f.kind === "slider") {
-    // A field's validators already answer "what may this hold". The config narrows what this
-    // control offers; where it says nothing, the rule is what the keyboard gets, so a bound is
-    // stated once and cannot drift between the two.
-    const bounds = handle.bounds();
-    const low = f.min ?? bounds.min ?? undefined;
-    const high = f.max ?? bounds.max ?? undefined;
     if (low !== undefined) input.setAttribute("min", String(low));
     if (high !== undefined) input.setAttribute("max", String(high));
     if (f.step !== undefined) input.setAttribute("step", String(f.step));
@@ -59,10 +60,11 @@ export function renderTextField(
   // A slider is not a bare input: the contract gives it a container and a displayed value, and
   // the themes lay both out. Every class here comes from the catalog, none from this file.
   const slider = f.kind === "slider" ? MDY_WIDGET_CONTRACTS.slider : null;
-  // The same range a bare `<input type="range">` assumes when the field declares neither, so the
-  // painted fill and the handle agree about where the track starts and ends.
-  const sliderMin = f.kind === "slider" ? f.min ?? 0 : 0;
-  const sliderMax = f.kind === "slider" ? f.max ?? 100 : 100;
+  // The same range the attributes carry, so the painted fill and the handle agree about where the
+  // track starts and ends. A slider must span something to be drawn at all, so where neither the
+  // config nor the field's rules say, it is what a bare `<input type="range">` assumes.
+  const sliderMin = f.kind === "slider" ? low ?? 0 : 0;
+  const sliderMax = f.kind === "slider" ? high ?? 100 : 100;
   let sliderValue: HTMLSpanElement | null = null;
   if (slider) {
     const track = el("div") as HTMLDivElement;

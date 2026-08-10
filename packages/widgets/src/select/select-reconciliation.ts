@@ -10,6 +10,23 @@ export interface MdySelectReconciliationState<TValue> {
 }
 
 /**
+ * Whether a value and an option's value are the same choice.
+ *
+ * Loose between primitives, because a value read from JSON arrives as `"1"` where the option holds
+ * `1` and they are the same choice. **Never loose between objects**: `String()` renders every plain
+ * object as `[object Object]`, so a comparison through it says two different entities are the same
+ * one — and the caller then replaces the model's entity with the option's.
+ */
+function sameChoice(value: unknown, optionValue: unknown): boolean {
+  if (Object.is(value, optionValue)) return true;
+  if (value === null || value === undefined || optionValue === null || optionValue === undefined) {
+    return false;
+  }
+  if (typeof value === "object" || typeof optionValue === "object") return false;
+  return String(value) === String(optionValue);
+}
+
+/**
  * Reconciles a programmatic value against a changing option set.
  *
  * Loading or filtering options is not a user edit, and neither is a value the option set does not
@@ -28,7 +45,7 @@ export function reconcileSelectValue<TValue>(
   options: readonly MdySelectOption<TValue>[],
 ): MdySelectReconciliationState<TValue> {
   const match = (value: TValue) =>
-    options.find((option) => String(option.value) === String(value));
+    options.find((option) => sameChoice(value, option.value));
 
   if (state.value !== null) {
     const matched = match(state.value);
@@ -65,6 +82,6 @@ export function optionsWithUnrecognizedValue<TValue>(
 ): readonly MdySelectOption<TValue>[] {
   if (value === null || value === undefined || value === "") return options;
   if (options.length === 0) return options;
-  if (options.some((option) => String(option.value) === String(value))) return options;
+  if (options.some((option) => sameChoice(value, option.value))) return options;
   return [{ value, label: label ? label(value) : String(value) }, ...options];
 }

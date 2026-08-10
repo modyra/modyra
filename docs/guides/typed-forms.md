@@ -105,8 +105,20 @@ here — not a fourth state:
 | `getValue()` | **keeps** its value — a branch the user leaves and returns to still holds what they typed |
 | The field's own `valid()` | still reports its rules' verdict, exactly as a field disabled by a binding does |
 
-The predicate receives the field's own value and the whole form value, and re-runs when either
-changes, so it must be a pure function of what it is given.
+The predicate receives the field's own value and **the value that encloses the field** — the form,
+or the **row** when the field is inside a `record()` or an `array()`. A rule written once for the
+item of a collection cannot name a key or an index, so what it reads is its own row:
+
+```ts
+rows: record(group({
+  kind: field("simple"),
+  reason: field("", [required()], { when: (_value, row) => row.kind === "detailed" }),
+}))
+```
+
+Each row answers for itself: a sibling row's `kind` decides nothing, and a row removed while out of
+play takes what it was asking for with it. The predicate re-runs when what it reads changes, so it
+must be a pure function of what it is given.
 
 A control's own `[disabled]` binding and the schema's condition are separate inputs: re-enabling a
 control cannot put back in play a field the schema left out, and the schema's condition cannot
