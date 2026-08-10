@@ -41,7 +41,7 @@ import { required as mdyRequired } from "@modyra/core";
               <td>
                 @if (editing().has(key)) {
                   <mdy-control-text [field]="rows.f.lines.row(key).item"
-                    [label]="'Item, row ' + key" />
+                    [ariaLabel]="'Item, row ' + key" />
                 } @else {
                   {{ rows.f.lines.row(key).item.value() }}
                 }
@@ -50,7 +50,7 @@ import { required as mdyRequired } from "@modyra/core";
               <td>
                 @if (editing().has(key)) {
                   <mdy-control-number [field]="rows.f.lines.row(key).qty"
-                    [label]="'Quantity, row ' + key" />
+                    [ariaLabel]="'Quantity, row ' + key" />
                 } @else {
                   {{ rows.f.lines.row(key).qty.value() }}
                 }
