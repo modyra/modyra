@@ -1,6 +1,6 @@
 # ADR 0029: A widget does not repair the model
 
-Status: Accepted
+Status: Accepted — amended 2026-08-10, see **Amendment: where the rule is not yet applied**
 
 ## Context
 
@@ -92,3 +92,37 @@ guarded by its tests and by this record, and by nothing else.
 None directly. One property is worth stating: the widget no longer writes a value the user did not
 enter, so a rendered control cannot change what a form submits without a user action or an explicit
 application call. That is strictly less authority than before, not more.
+
+## Amendment: where the rule is not yet applied
+
+**2026-08-10.** The decision above is stated for every widget, and one widget does not yet keep all
+of it.
+
+**The multiselect keeps the value and does not show it.** A value its option list does not contain
+stays in the model and is submitted — the half that matters for data — but it renders no chip, so a
+person sees one chip while the form holds two values and cannot remove what they cannot see. The
+cause is structural rather than an oversight: `createMultiselectFieldController` indexes the selected
+values against the option list and drops the ones that do not match, and the framework-free renderer
+builds its chip grid once from that list. Closing it means changing the controller's index and giving
+three renderers a grid that can grow, which is a change to a widget rather than a repair.
+
+It is pinned rather than left to drift: `packages/plain/test/multiselect-unrecognized.test.mjs`
+asserts today's behaviour — the value kept, the chip absent — and turns red the day the gap is closed,
+which is when those tests should be rewritten to assert the rule instead.
+
+**The single select carries the whole rule**, in all three renderers, including a hook for naming a
+value the list cannot name (`unknownOptionLabel` in Angular and Lit). The framework-free renderer has
+no such hook and is not expected to: its field configuration is data, and a function cannot live in
+a document. There the value names itself.
+
+### Verification
+
+- `packages/plain/test/multiselect-unrecognized.test.mjs` — the gap, pinned in both directions.
+- `optionsWithUnrecognizedValues` exists in `@modyra/widgets` beside the single-value helper, so the
+  work that closes the gap starts from one place rather than three.
+
+### Security and privacy
+
+The unshown value is submitted, which is the point worth stating: a form can send a value the user
+was never shown. It got there from the application or the server rather than from the widget, and no
+widget writes it — but "invisible and submitted" is a property to know about, not to discover.

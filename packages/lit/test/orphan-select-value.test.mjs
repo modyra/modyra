@@ -57,3 +57,21 @@ test("options that have not loaded show nothing extra", async () => {
   assert.equal([...element.querySelectorAll("option")].length, 0);
   assert.equal(form.value().category, "pending");
 });
+
+test("an application can name what the list cannot", async () => {
+  const espresso = { id: 1 };
+  const cornetto = { id: 2 };
+  const form = createLitForm({ category: field(cornetto) });
+
+  const element = await mount("mdy-select-field", (el) => {
+    el.field = form.f.category;
+    el.options = [{ value: espresso, label: "Espresso" }];
+    el.label = "Category";
+    // Without this an object value renders as "[object Object]", which is the honest name and a
+    // useless one — naming it is the whole reason the hook exists.
+    el.unknownOptionLabel = (value) => `Unknown item #${value.id}`;
+  });
+
+  const rendered = [...element.querySelectorAll("option")].map((option) => option.textContent);
+  assert.ok(rendered.includes("Unknown item #2"));
+});

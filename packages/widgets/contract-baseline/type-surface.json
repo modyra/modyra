@@ -2545,6 +2545,12 @@
     "(2) label?: (value: TValue) => string",
     "-> returns: readonly MdySelectOption<TValue>[]"
   ],
+  "optionsWithUnrecognizedValues": [
+    "(0) options: readonly MdySelectOption<TValue>[]",
+    "(1) values: readonly TValue[] | null | undefined",
+    "(2) label?: (value: TValue) => string",
+    "-> returns: readonly MdySelectOption<TValue>[]"
+  ],
   "orderDates": [
     "(0) a: CalendarDate | null",
     "(1) b: CalendarDate | null",

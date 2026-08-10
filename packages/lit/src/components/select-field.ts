@@ -15,6 +15,8 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     searchable: { type: Boolean },
     loading: { type: Boolean },
     allowCreate: { type: Boolean, attribute: "allow-create" },
+    // A function, so it is set as a property and never parsed from an attribute.
+    unknownOptionLabel: { attribute: false },
   };
   declare searchable: boolean;
   /**
@@ -57,12 +59,19 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
   }
 
   /**
+   * How a value the option list does not contain is named. Left unset it is the value itself, which
+   * is the only honest name for something the list has no entry for — and useless when the value is
+   * an object, which is when to set this.
+   */
+  declare unknownOptionLabel?: (value: unknown) => string;
+
+  /**
    * What this element renders: its options, plus the value the field holds when the list does not
    * contain it. The widget does not erase such a value to make itself consistent, so it has to be
    * visible — a control that looks empty while the form holds something tells the user nothing.
    */
   protected renderedOptions(value: unknown): ReadonlyArray<MdySelectOption<unknown>> {
-    return optionsWithUnrecognizedValue(this.options, value);
+    return optionsWithUnrecognizedValue(this.options, value, this.unknownOptionLabel);
   }
 
   protected override get listOptions(): ReadonlyArray<MdySelectOption<unknown>> {
