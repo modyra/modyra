@@ -183,9 +183,10 @@ global brand color change.
 }
 ```
 
-Style entry points: `modyra.css` (everything), or one theme at a time —
-`@modyra/styles/default.css`, `/modern.css`, `/material.css`, `/ios.css`, `/ionic.css`,
-`/salience.css` — over `@modyra/styles/base.css`.
+Style entry points: `modyra.css` (everything), or one theme at a time over
+`@modyra/styles/base.css` — `@modyra/styles/default.css`, `@modyra/styles/modern.css`,
+`@modyra/styles/material.css`, `@modyra/styles/ios.css`, `@modyra/styles/ionic.css`,
+`@modyra/styles/salience.css`.
 
 `salience.css` is generated rather than written: the theme compiler takes a seed colour and solves
 the light and dark token sets independently, so neither is a darkened copy of the other.

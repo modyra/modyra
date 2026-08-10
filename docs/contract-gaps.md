@@ -4,6 +4,12 @@ The widget contract's known open defects, measured 2026-08-02 against the built 
 shipped stylesheets. `contract-compatibility.md` says what a change to the contract costs; this says
 what is currently wrong with it.
 
+**This is the maintainer's register.** It cites file paths, audit output and reproductions, and it
+is long. If you are deciding whether a known defect affects you, read [known
+issues](known-issues.md) instead — it carries the same statuses in a page you can finish. The two
+are checked against each other by `npm run test:docs`; see
+[ADR 0027](architecture/0027-a-register-and-its-summary-are-both-checked.md).
+
 Each finding is classified by the evidence behind it:
 
 | | |

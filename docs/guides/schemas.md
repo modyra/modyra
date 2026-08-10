@@ -57,9 +57,12 @@ in the engine's own async validation (`serverValidator` / field-level
 `asyncValidators`), which adds cancellation, debounce and `dependsOn`
 re-validation — see [Typed forms](typed-forms.md#async-validation).
 
-## On Angular
+## Assembling it yourself
 
-Bind the same building blocks to the framework's reactivity:
+`createStandardForm` is the two pieces below, put together. Reach for them directly when you want
+the tree or the validator on their own — to add your own form-level validators beside the schema's,
+or to hand the tree to a framework's own form constructor (`mdyForm`, `useMdyForm`, `createLitForm`
+…), which take the same shape.
 
 ```ts
 import { createForm } from "@modyra/core";
@@ -69,6 +72,8 @@ const form = createForm(buildStandardTree(schema, fields), {
   validators: [buildStandardValidator(schema)],
 });
 ```
+
+The Zod adapter has the same pair: `buildZodTree` and `buildZodRefinementValidator`.
 
 ## API summary
 

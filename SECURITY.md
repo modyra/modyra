@@ -2,7 +2,15 @@
 
 ## Supported versions
 
-Security fixes land on the latest minor of the current major.
+Modyra's packages version independently, so "supported" is per package.
+
+- **`@modyra/core` and `@modyra/widgets`** — security fixes land on the latest minor of the current
+  major (2.x today). Older majors are not patched.
+- **Every adapter, both SDKs and Studio** — still below 1.0, so fixes land on the latest release
+  only. There is no backport line.
+
+Upgrade to the latest release of the affected package. If that is not possible for you, say so in
+the report and we will discuss what is feasible.
 
 ## Reporting a vulnerability
 
