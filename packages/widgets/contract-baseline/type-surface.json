@@ -2278,6 +2278,10 @@
     "(0) children: TChildren",
     "-> returns: MdyGroupDescriptor<TChildren>"
   ],
+  "handleFormOf": [
+    "(0) handle: object",
+    "-> returns: object | undefined"
+  ],
   "hasRequiredMarker": [
     "(0) fn: ValidatorFn<never>",
     "-> returns: boolean"
@@ -2726,6 +2730,11 @@
     "(0) item: TItem",
     "(1) options?: { readonly initial?: Readonly<Record<string, unknown>>; readonly validators?: ReadonlyArray<ValidatorFn<Readonly<Record<string, unknown>>>>; }",
     "-> returns: MdyRecordDescriptor<TItem>"
+  ],
+  "registerHandleForm": [
+    "(0) handle: object",
+    "(1) form: object",
+    "-> returns: void"
   ],
   "registerHandleOwner": [
     "(0) handle: object",

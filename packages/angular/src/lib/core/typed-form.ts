@@ -8,6 +8,7 @@ import {
 } from "@angular/core";
 import {
   array as coreArray,
+  registerHandleForm,
   record as coreRecord,
   field as coreField,
   group as coreGroup,
@@ -343,7 +344,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       throw new Error(`[modyra] Field "${path}" was not registered`);
     }
     const state = ref();
-    return {
+    const handle: MdyFieldHandle<unknown> = {
       path,
       value: state.value,
       errors: state.errors,
@@ -362,5 +363,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       markAsTouched: (): void => state.touched.set(true),
       markAsDirty: (): void => state.dirty.set(true),
     };
+    registerHandleForm(handle, this);
+    return handle;
   }
 }
