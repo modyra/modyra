@@ -10,6 +10,11 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
     max: { type: Number },
     step: { type: Number },
   };
+  /**
+   * The range offered at the keyboard. Left unset it is the field's own: a `min`/`max` in the
+   * schema already answers "what may this hold", and writing it again here is how the two come to
+   * disagree. Set, it narrows what this control offers without changing what the field accepts.
+   */
   declare min?: number;
   declare max?: number;
   declare step?: number;
@@ -37,8 +42,8 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
     return html`<input
       id=${this.fieldId}
       type="number"
-      min=${this.min ?? nothing}
-      max=${this.max ?? nothing}
+      min=${this.min ?? handle.bounds().min ?? nothing}
+      max=${this.max ?? handle.bounds().max ?? nothing}
       step=${this.step ?? nothing}
       .value=${handle.value() === null ? "" : String(handle.value())}
       ?disabled=${handle.disabled()}

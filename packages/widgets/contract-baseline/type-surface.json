@@ -22,6 +22,7 @@
     "asyncRunner: MdyEffectRef | null",
     "asyncValidators: MdyWritableSignal<ReadonlyMap<string, AsyncValidatorEntry>>",
     "disabled: MdyWritableSignal<MdySignal<boolean>>",
+    "inactive: MdyWritableSignal<MdySignal<boolean>>",
     "pending: MdyWritableSignal<boolean>",
     "readonly: MdyWritableSignal<MdySignal<boolean>>",
     "requiredKeys: MdyWritableSignal<ReadonlySet<string>>",
@@ -71,7 +72,8 @@
     "initial: unknown",
     "kind: \"field\"",
     "sanitize: MdySanitizer | null",
-    "validators: ReadonlyArray<ValidatorFn<never>>"
+    "validators: ReadonlyArray<ValidatorFn<never>>",
+    "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
   ],
   "MdyAnyGroupDescriptor": [
     "children: MdyFormSchema",
@@ -695,7 +697,8 @@
     "initial: TValue",
     "kind: \"field\"",
     "sanitize: MdySanitizer | null",
-    "validators: ReadonlyArray<ValidatorFn<TValue>>"
+    "validators: ReadonlyArray<ValidatorFn<TValue>>",
+    "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
   ],
   "MdyFieldError": [
     "kind: string",
@@ -703,6 +706,7 @@
     "payload?: unknown"
   ],
   "MdyFieldHandle": [
+    "bounds: MdySignal<MdyNumericBounds>",
     "dirty: MdySignal<boolean>",
     "disabled: MdySignal<boolean>",
     "errors: MdySignal<ReadonlyArray<MdyFieldError>>",
@@ -730,7 +734,8 @@
     "asyncTimeoutMs?: number",
     "asyncValidators?: ReadonlyArray<MdyAsyncValidatorFn<TValue>>",
     "asyncWhen?: (value: TValue, formValue: Record<string, unknown>) => boolean",
-    "sanitize?: MdySanitizer"
+    "sanitize?: MdySanitizer",
+    "when?: (value: TValue, formValue: Record<string, unknown>) => boolean"
   ],
   "MdyFieldRef": [
     "(opaque)"
@@ -797,6 +802,7 @@
   "MdyFormAdapter": [
     "buildSubmitEvent: MdyFormSubmitEvent<T, TSubmit>",
     "errorsFor: MdySignal<ReadonlyArray<MdyFormError>>",
+    "fieldNames?: MdySignal<readonly string[]>",
     "getField: MdyFieldRef<T[K]> | null",
     "getValue: T",
     "markAllTouched: void",
@@ -828,6 +834,7 @@
     "removeField: void",
     "removeValidators: void",
     "setDisabled: void",
+    "setInactive: void",
     "setInitialValue: void",
     "setReadonly: void",
     "setSanitizer: void",
@@ -1012,6 +1019,10 @@
   ],
   "MdyMultiselectValueIntent": [
     "(opaque)"
+  ],
+  "MdyNumericBounds": [
+    "max: number | null",
+    "min: number | null"
   ],
   "MdyObserveCapability": [
     "observe: MdyEffectRef"
@@ -2523,6 +2534,12 @@
     "(1) currentIndex: number",
     "(2) optionCount: number",
     "-> returns: number | null"
+  ],
+  "optionsWithUnrecognizedValue": [
+    "(0) options: readonly MdySelectOption<TValue>[]",
+    "(1) value: TValue | null",
+    "(2) label?: (value: TValue) => string",
+    "-> returns: readonly MdySelectOption<TValue>[]"
   ],
   "orderDates": [
     "(0) a: CalendarDate | null",

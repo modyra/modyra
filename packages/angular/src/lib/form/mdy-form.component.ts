@@ -1,4 +1,5 @@
 import {
+  signal,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -10,7 +11,6 @@ import {
   input,
   output,
   Signal,
-  signal,
   untracked,
 } from "@angular/core";
 import {
@@ -35,7 +35,6 @@ import {
 declare const ngDevMode: boolean | undefined;
 
 /** Constant empty field list for adapters without introspection. */
-const NO_FIELD_NAMES: Signal<readonly string[]> = signal([]).asReadonly();
 
 /**
  * True when an explicit `[adapter]` can also act as the declarative registry
@@ -57,11 +56,7 @@ function isDeclarativeRegistry(value: unknown): value is MdyDeclarativeRegistry 
   );
 }
 
-function hasFieldNames<T extends Record<string, unknown>, TSubmit>(
-  adapter: MdyFormAdapter<T, TSubmit>,
-): adapter is MdyFormAdapter<T, TSubmit> & { readonly fieldNames: Signal<readonly string[]> } {
-  return typeof Reflect.get(adapter, "fieldNames") === "function";
-}
+const NO_FIELD_NAMES: Signal<readonly string[]> = signal([]).asReadonly();
 
 /**
  * Host component for a declarative signal-driven form.
@@ -314,6 +309,10 @@ export class MdyFormComponent<
     this._registry.setDisabled(name, disabled);
   }
 
+  setInactive(name: string, inactive: Signal<boolean>): void {
+    this._registry.setInactive(name, inactive);
+  }
+
   setReadonly(name: string, readonly: Signal<boolean>): void {
     this._registry.setReadonly(name, readonly);
   }
@@ -325,12 +324,11 @@ export class MdyFormComponent<
   }
 
   /**
-   * Reactive flat field paths of the active adapter (empty for a custom
-   * `[adapter]` that does not expose them) — used by the devtools.
+   * Reactive flat field paths of the active adapter — used by the devtools. Empty for a custom
+   * `[adapter]` with no notion of membership to report.
    */
   get fieldNames(): Signal<readonly string[]> {
-    const active = this._active;
-    return hasFieldNames(active) ? active.fieldNames : NO_FIELD_NAMES;
+    return (this._active.fieldNames ?? NO_FIELD_NAMES) as Signal<readonly string[]>;
   }
 
   get value(): Signal<T> {

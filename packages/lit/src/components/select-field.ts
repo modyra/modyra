@@ -1,8 +1,8 @@
-import { type MdyFieldHandle } from "@modyra/core";
+import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { createTypeahead, isTypeaheadCharacter } from "@modyra/widgets";
+import { createTypeahead, isTypeaheadCharacter, optionsWithUnrecognizedValue } from "@modyra/widgets";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 import {
@@ -56,6 +56,19 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     this.selectAdapter?.dispatch({ type: "close", restoreFocus: true });
   }
 
+  /**
+   * What this element renders: its options, plus the value the field holds when the list does not
+   * contain it. The widget does not erase such a value to make itself consistent, so it has to be
+   * visible — a control that looks empty while the form holds something tells the user nothing.
+   */
+  protected renderedOptions(value: unknown): ReadonlyArray<MdySelectOption<unknown>> {
+    return optionsWithUnrecognizedValue(this.options, value);
+  }
+
+  protected override get listOptions(): ReadonlyArray<MdySelectOption<unknown>> {
+    return this.renderedOptions(this.field?.value());
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     const handle = this.field;
@@ -65,7 +78,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       this,
       {
         widgetId: this.fieldId,
-        options: this.options,
+        options: this.renderedOptions(handle.value()),
         value: handle.value(),
         disabled: handle.disabled(),
         readonly: false,
@@ -150,7 +163,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
   }
 
   protected override triggerText(handle: MdyFieldHandle<unknown | null>): string {
-    return this.options.find((o) => o.value === handle.value())?.label ?? "";
+    return this.renderedOptions(handle.value()).find((o) => o.value === handle.value())?.label ?? "";
   }
 
   protected override toggleOpen(handle: MdyFieldHandle<unknown | null>): void {
@@ -224,7 +237,8 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
    * `searchable` is the switch, and it defaults to false, so this is also the default path.
    */
   protected override renderControl(handle: MdyFieldHandle<unknown | null>): unknown {
-    const selected = this.options.findIndex((option) => option.value === handle.value());
+    const options = this.renderedOptions(handle.value());
+    const selected = options.findIndex((option) => option.value === handle.value());
     return html`<select
       id=${this.fieldId}
       .selectedIndex=${selected}
@@ -232,7 +246,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       aria-invalid=${this.showErrors(handle) ? "true" : "false"}
       @change=${(event: Event) => {
         const index = (event.target as HTMLSelectElement).selectedIndex;
-        const option = this.options[index];
+        const option = options[index];
         if (!option) return;
         handle.set(option.value);
         handle.markAsDirty();
@@ -240,7 +254,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       }}
       @blur=${() => handle.markAsTouched()}
     >
-      ${this.options.map((option) => html`<option .value=${String(option.value)}>${option.label}</option>`)}
+      ${this.renderedOptions(handle.value()).map((option) => html`<option .value=${String(option.value)}>${option.label}</option>`)}
     </select>`;
   }
 
@@ -266,7 +280,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     const trigger = view.parts.trigger;
     const listbox = view.parts.listbox;
     const text = this.triggerText(handle);
-    const filtered = filterOptionsByQuery(this.options, state.query);
+    const filtered = filterOptionsByQuery(this.renderedOptions(handle.value()), state.query);
     const showBlockErrors = !this.inlineErrors && this.showErrors(handle);
 
     this.syncStateClasses(handle);

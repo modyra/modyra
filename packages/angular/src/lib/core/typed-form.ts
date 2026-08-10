@@ -352,6 +352,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       valid: state.valid,
       pending: state.pending,
       required: state.required,
+      bounds: state.bounds,
       // What the user may do, and its two derived halves. These were missing: the handle satisfied
       // this file's own copy of the type, and threw the moment a widget controller read them.
       interactivity: state.interactivity,

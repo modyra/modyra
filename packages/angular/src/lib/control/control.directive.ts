@@ -173,8 +173,34 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    */
   readonly initialValue = input<unknown>(undefined);
 
-  private readonly adapter: MdyFormAdapter<Record<string, unknown>> =
-    inject<MdyFormAdapter<Record<string, unknown>>>(MDY_FORM_ADAPTER);
+  /**
+   * The form this control writes into.
+   *
+   * Injected optionally so the failure can name the control. Without a form above it, Angular's own
+   * error reports the missing token and nothing else — true, and useless in a template with thirty
+   * controls in it, because the one that is outside is exactly the one it does not name.
+   */
+  private readonly _adapterOrNull = inject<MdyFormAdapter<Record<string, unknown>>>(
+    MDY_FORM_ADAPTER,
+    { optional: true },
+  );
+
+  private get adapter(): MdyFormAdapter<Record<string, unknown>> {
+    if (this._adapterOrNull) return this._adapterOrNull;
+    throw new Error(
+      `[modyra] <${this.hostElement.nativeElement.tagName.toLowerCase()}>` +
+      `${this._nameForError()} is outside a form. ` +
+      "A control writes into the form that encloses it, so it must be a descendant of <mdy-form>; " +
+      "a control rendered into an overlay or a dialog body is outside it unless the form element " +
+      "wraps that too.",
+    );
+  }
+
+  /** What identifies this control in a message, when it has said anything about which field it is. */
+  private _nameForError(): string {
+    const name = untracked(() => this.effectiveName());
+    return name ? ` bound to "${name}"` : "";
+  }
 
   private readonly _declarativeRegistry = inject(MDY_DECLARATIVE_REGISTRY, {
     optional: true,
@@ -226,6 +252,8 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         touched,
         dirty,
         required: off,
+        // No field, so no rule to read a constraint from.
+        bounds: computed(() => ({ min: null, max: null })),
         valid: computed(() => true),
         errors: computed(() => []),
         disabled: off,
@@ -250,6 +278,13 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         // A path inside a keyed collection whose row has not been declared. The control renders
         // empty and binds when the row arrives; it must not be the thing that brings it into being,
         // which is why the adapter answers null rather than creating a field on the way past.
+        //
+        // Reading `fieldNames` is what makes "when the row arrives" happen: whether the path is
+        // open is answered from the collection's own set, which a gate reads without touching a
+        // signal, so nothing else here would ever re-ask. The dependency is taken only on the
+        // branch that has no field — a bound control depends on its own state and not on every
+        // registration in the form.
+        this.adapter.fieldNames?.();
         return this._detached();
       }
       return ref() as MdyFieldState<TValue>;
