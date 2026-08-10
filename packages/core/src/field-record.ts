@@ -57,6 +57,8 @@ export interface FieldRecord {
   /** Keys whose validator sets mark the field as required. */
   readonly requiredKeys: MdyWritableSignal<ReadonlySet<string>>;
   readonly disabled: MdyWritableSignal<MdySignal<boolean>>;
+  /** Whether the schema says this field is out of play; see `MdyFieldOptions.when`. */
+  readonly inactive: MdyWritableSignal<MdySignal<boolean>>;
   readonly readonly: MdyWritableSignal<MdySignal<boolean>>;
   asyncRunId: number;
   asyncRunner: MdyEffectRef | null;
@@ -91,6 +93,7 @@ export function createFieldRecord(
   const requiredKeys = rx.signal<ReadonlySet<string>>(new Set());
   // Dynamic signals provided by bindings, defaulting to false.
   const disabledSignal = rx.signal<MdySignal<boolean>>(() => false);
+  const inactiveSignal = rx.signal<MdySignal<boolean>>(() => false);
   const readonlySignal = rx.signal<MdySignal<boolean>>(() => false);
 
   const validators = rx.signal<
@@ -118,10 +121,16 @@ export function createFieldRecord(
     ];
   });
 
-  // Two bindings feed one state, and `disabled` wins when both are set: it permits strictly less,
-  // and a field the form is not asking about cannot also be a field it is asserting an answer for.
+  // Three inputs feed one state, and `disabled` wins over `readonly`: it permits strictly less, and
+  // a field the form is not asking about cannot also be a field it is asserting an answer for. A
+  // field out of play is disabled for the same reason — the form is not asking it either — which is
+  // what keeps a conditional branch from being a fourth kind of state.
   const interactivity = rx.computed<MdyInteractivity>(() =>
-    disabledSignal()() ? "disabled" : readonlySignal()() ? "readonly" : "enabled",
+    disabledSignal()() || inactiveSignal()()
+      ? "disabled"
+      : readonlySignal()()
+        ? "readonly"
+        : "enabled",
   );
 
   // The tightest statement wins where two validator sets both bound the field: each was added to
@@ -164,6 +173,7 @@ export function createFieldRecord(
     asyncErrors,
     pending,
     requiredKeys,
+    inactive: inactiveSignal,
     disabled: disabledSignal,
     readonly: readonlySignal,
     asyncRunId: 0,

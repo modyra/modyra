@@ -54,6 +54,8 @@ export interface MdyFieldDescriptor<TValue> {
   readonly asyncDependsOn: ReadonlyArray<string>;
   readonly asyncTimeoutMs: number;
   readonly asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
+  /** Whether the field is in play; null → always. See {@link MdyFieldOptions.when}. */
+  readonly when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
   /** Per-field sanitizer override; null → the form-level policy applies. */
   readonly sanitize: MdySanitizer | null;
 }
@@ -77,6 +79,7 @@ export interface MdyAnyFieldDescriptor {
   readonly asyncDependsOn: ReadonlyArray<string>;
   readonly asyncTimeoutMs: number;
   readonly asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
+  readonly when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
   readonly sanitize: MdySanitizer | null;
 }
 
@@ -323,6 +326,22 @@ export interface MdyFieldOptions<TValue> {
   /** Precondition evaluated before pending turns on; false → skip the server call. */
   readonly asyncWhen?: (value: TValue, formValue: Record<string, unknown>) => boolean;
   /**
+   * Whether this field is in play at all.
+   *
+   * A schema is static and a form is not: a field belonging to a branch the user did not take is
+   * declared like every other, and a `required()` on it makes the form permanently invalid — with
+   * the offending field nowhere on screen to explain why. `when` is how the schema says the field
+   * only counts under a condition.
+   *
+   * While it answers false the field is **inactive**, which is what a disabled field already
+   * means here: not validated, not submitted, and its value kept — a branch the user leaves and
+   * comes back to still holds what they typed. It is deliberately not a fourth state.
+   *
+   * The predicate re-runs when the form's value changes, so it must be a pure function of the
+   * arguments it is given.
+   */
+  readonly when?: (value: TValue, formValue: Record<string, unknown>) => boolean;
+  /**
    * Per-field sanitizer override (see `MdySecurityPolicy.sanitize`). Use
    * `"off"` to exempt a field from the form-level policy (e.g. a code
    * editor), or a function for custom allow-listing (e.g. DOMPurify).
@@ -358,6 +377,7 @@ export function field<TValue>(
     asyncDependsOn: options?.asyncDependsOn ?? [],
     asyncTimeoutMs: options?.asyncTimeoutMs ?? 0,
     asyncWhen: (options?.asyncWhen as MdyFieldDescriptor<MdyWiden<TValue>>["asyncWhen"]) ?? null,
+    when: (options?.when as MdyFieldDescriptor<MdyWiden<TValue>>["when"]) ?? null,
     sanitize: options?.sanitize ?? null,
   };
 }
@@ -899,6 +919,10 @@ export abstract class MdyTypedFormBase<
     this._adapter.setDisabled(name, disabled);
   }
 
+  setInactive(name: string, inactive: TBooleanSignal): void {
+    this._adapter.setInactive(name, inactive);
+  }
+
   setReadonly(name: string, readonly: TBooleanSignal): void {
     this._adapter.setReadonly(name, readonly);
   }
@@ -927,6 +951,18 @@ export abstract class MdyTypedFormBase<
         node.validators,
         marksRequired,
       );
+      if (node.when !== null) {
+        const when = node.when;
+        // Inactive is what a disabled field already is here — not validated, not submitted, value
+        // kept. Registered as its own input to `interactivity` so a control's own `[disabled]`
+        // binding and this rule do not overwrite each other.
+        this._adapter.setInactive(
+          path,
+          this._adapter.reactivity.computed(
+            () => !when(this._adapter.getField(path)?.().value(), this._adapter.getValue()),
+          ),
+        );
+      }
       if (node.asyncValidators.length > 0) {
         this._adapter.upsertAsyncValidators(
           path,

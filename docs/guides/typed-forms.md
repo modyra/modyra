@@ -72,6 +72,49 @@ Limits worth knowing:
 - `dirty` is set by user interaction in renderers (and `markAsDirty()`);
   programmatic `set()`/`patch()` does not flip it.
 
+## A field that only counts sometimes — `when`
+
+A schema is static and a form is not. A field belonging to a branch the user did not take is
+declared like every other one, so a `required()` on it makes the form **permanently invalid** — with
+the offending field nowhere on screen to explain why, and the submit button greyed out with no
+message anywhere.
+
+`when` is how the schema says a field only counts under a condition:
+
+```ts
+const form = createForm({
+  kind: field<"simple" | "detailed">("simple"),
+  reason: field("", [required()], {
+    when: (_value, form) => form["kind"] === "detailed",
+  }),
+});
+
+form.state.valid(); // true — nothing is asking for a reason
+form.f.kind.set("detailed");
+form.state.valid(); // false — now it is
+```
+
+While the condition is false the field is **inactive**, which is what a disabled field already means
+here — not a fourth state:
+
+| | Inactive field |
+| :--- | :--- |
+| `interactivity()` | `"disabled"` |
+| Form validity | ignores it |
+| `submitValue()` | omits it |
+| `getValue()` | **keeps** its value — a branch the user leaves and returns to still holds what they typed |
+| The field's own `valid()` | still reports its rules' verdict, exactly as a field disabled by a binding does |
+
+The predicate receives the field's own value and the whole form value, and re-runs when either
+changes, so it must be a pure function of what it is given.
+
+A control's own `[disabled]` binding and the schema's condition are separate inputs: re-enabling a
+control cannot put back in play a field the schema left out, and the schema's condition cannot
+un-disable a control the application disabled.
+
+In a data-only document this already existed and still does — a rule with the `disabled` effect
+targeting a field states the same thing without any code.
+
 ## Async validation
 
 The ergonomic path is `serverValidator()` — you call your own service method,

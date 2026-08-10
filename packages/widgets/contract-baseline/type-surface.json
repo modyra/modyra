@@ -22,6 +22,7 @@
     "asyncRunner: MdyEffectRef | null",
     "asyncValidators: MdyWritableSignal<ReadonlyMap<string, AsyncValidatorEntry>>",
     "disabled: MdyWritableSignal<MdySignal<boolean>>",
+    "inactive: MdyWritableSignal<MdySignal<boolean>>",
     "pending: MdyWritableSignal<boolean>",
     "readonly: MdyWritableSignal<MdySignal<boolean>>",
     "requiredKeys: MdyWritableSignal<ReadonlySet<string>>",
@@ -71,7 +72,8 @@
     "initial: unknown",
     "kind: \"field\"",
     "sanitize: MdySanitizer | null",
-    "validators: ReadonlyArray<ValidatorFn<never>>"
+    "validators: ReadonlyArray<ValidatorFn<never>>",
+    "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
   ],
   "MdyAnyGroupDescriptor": [
     "children: MdyFormSchema",
@@ -695,7 +697,8 @@
     "initial: TValue",
     "kind: \"field\"",
     "sanitize: MdySanitizer | null",
-    "validators: ReadonlyArray<ValidatorFn<TValue>>"
+    "validators: ReadonlyArray<ValidatorFn<TValue>>",
+    "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
   ],
   "MdyFieldError": [
     "kind: string",
@@ -731,7 +734,8 @@
     "asyncTimeoutMs?: number",
     "asyncValidators?: ReadonlyArray<MdyAsyncValidatorFn<TValue>>",
     "asyncWhen?: (value: TValue, formValue: Record<string, unknown>) => boolean",
-    "sanitize?: MdySanitizer"
+    "sanitize?: MdySanitizer",
+    "when?: (value: TValue, formValue: Record<string, unknown>) => boolean"
   ],
   "MdyFieldRef": [
     "(opaque)"
@@ -830,6 +834,7 @@
     "removeField: void",
     "removeValidators: void",
     "setDisabled: void",
+    "setInactive: void",
     "setInitialValue: void",
     "setReadonly: void",
     "setSanitizer: void",
