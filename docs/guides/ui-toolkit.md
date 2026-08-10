@@ -128,7 +128,7 @@ readonly fields: MdyDynamicField[] = [
 ```
 
 The config is a serializable discriminated union (store it in a CMS or
-form-builder backend): 14 field kinds map to the renderer catalog and the
+form-builder backend): 17 field kinds map to the renderer catalog and the
 JSON-safe validator set (`required`, `email`, `min/max`,
 `minLength/maxLength`, `pattern`) maps to the pure validator functions.
 Projected content (like the submit button) lands inside the generated

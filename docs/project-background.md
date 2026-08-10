@@ -52,7 +52,7 @@ These decide arguments. When two of them pull in different directions, the earli
 2. **One contract, many consumers.** `@modyra/widgets` is the complete framework-agnostic UI
    contract. Renderers consume it rather than redefine it; any intentional divergence must be
    explicit, justified and contract-tested.
-3. **State limits beside features.** Pre-1.0 status, adapter coverage differences and security
+3. **State limits beside features.** Version status, adapter coverage differences and security
    caveats are published next to the capability they qualify. Never claim production readiness
    uniformly across adapters; keep comparisons factual and dated.
 4. **Types are the primary interface.** Compile-time checking of field handles, paths and values is
@@ -65,9 +65,13 @@ These decide arguments. When two of them pull in different directions, the earli
 
 Principle 3 applies to this page too.
 
-- **Pre-1.0 and under active development.** The core engine and the Angular integration receive the
-  broadest coverage; other adapters share the conformance suite but differ in UI coverage, SSR
-  behaviour and integration depth.
+- **Two packages carry a stable promise; the rest do not.** `@modyra/core` and `@modyra/widgets`
+  are published at 2.0.0 and versioned under the compatibility policy. Every adapter, the SDKs and
+  Studio version independently and are still below 1.0, so their public surfaces can change in a
+  minor release. Pin versions and read the release notes before upgrading.
+- **Coverage is uneven, deliberately.** Three adapters render and are held to the DOM conformance
+  suite; five are headless and are checked on semantics instead. UI coverage, SSR behaviour and
+  integration depth differ by adapter.
 - **`@modyra/core` carries no framework runtime.** Framework packages stay optional peers.
 - **Draft persistence defaults to `localStorage`** — origin-wide, plain text, and it may survive
   logout. Sensitive fields must be excluded or a custom storage supplied. See
@@ -77,9 +81,9 @@ Principle 3 applies to this page too.
 - Compatibility floors: Node 22+, Angular 21+, React 18+, Vue reactivity 3.4+, Lit 3+, Solid 1.8+,
   Preact 10.19+, Svelte 4+, Zod 3.25+.
 
-Undecided before 1.0, and tracked in [the roadmap](../ROADMAP.md): the deprecation policy for public
-packages; the final error, diagnostic and server-validation result shapes; the Studio project format
-and its migration policy; React Native integration.
+Still undecided, and tracked in [the roadmap](../ROADMAP.md): the deprecation policy for the
+packages that are not yet 1.0; the final error, diagnostic and server-validation result shapes; the
+Studio project format and its migration policy; React Native integration.
 
 There are no customers, testimonials, case studies, adoption numbers, pricing or hosted service, and
 no benchmark result that is not reproducible from a script in this repository. Anything claiming

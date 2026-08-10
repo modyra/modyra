@@ -9,7 +9,7 @@ The reasoning is [ADR 0019](../architecture/0019-typescript-7-compiles-the-libra
 
 | Compiled by | What |
 | --- | --- |
-| `typescript7` — the npm alias for TypeScript 7.0.2 | Every project with a `packages/*/tsconfig.json`: core, widgets, the eight adapters, plain, and the ten Studio packages. This is what ships in the tarballs. |
+| `typescript7` — the npm alias for TypeScript 7.0.2 | Every project with a `packages/*/tsconfig.json`: core, widgets, the eight adapters, and the ten Studio packages. This is what ships in the tarballs. |
 | `typescript` — 5.9.3 | The Angular package, through `ng-packagr` and `jest-preset-angular`, and the compiler API that Studio embeds. |
 
 Two contracts draw that line, and neither is ours to move:

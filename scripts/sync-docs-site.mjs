@@ -112,7 +112,7 @@ function rewriteLinks(content, fileDocsRelDir) {
         const docsRel = repoRel === 'docs' ? '' : repoRel.slice('docs/'.length);
         const isMarkdownPage = !explicitDirectory && /\.md$/i.test(docsRel);
 
-        if (!bang && isMarkdownPage) {
+        if (!bang && isMarkdownPage && !SYNC_EXCLUDED.has(docsRel)) {
           rewritten = `${docsRoute(docsRel)}${query}${hash}`;
         } else {
           // Images, downloads, directories, and non-Markdown assets remain
@@ -142,6 +142,19 @@ const SIDEBAR_HIDDEN = new Set([
   'guides/typescript-7.md',
 ]);
 
+/**
+ * Pages that belong in the repository and not on the site.
+ *
+ * A maintainer's register is written for someone holding the source: it cites file paths, commit
+ * evidence and audit output, and it is long enough that a reader evaluating Modyra never reaches
+ * the end. The site carries a page that summarises it and links here; this set keeps the register
+ * itself out of the published tree so the two do not compete for the same reader.
+ *
+ * A link to an excluded page still resolves — `rewriteLinks` sends it to GitHub, the same way it
+ * treats any target outside `docs/`.
+ */
+const SYNC_EXCLUDED = new Set(['contract-gaps.md']);
+
 rmSync(targetDir, { recursive: true, force: true });
 mkdirSync(targetDir, { recursive: true });
 
@@ -160,6 +173,7 @@ for (const file of walk(docsDir)) {
       : raw;
 
   const rel = relative(docsDir, file).split('\\').join('/');
+  if (SYNC_EXCLUDED.has(rel)) continue;
   const fileDocsRelDir = posix.dirname(rel);
   const rewritten = rewriteLinks(body, fileDocsRelDir);
 

@@ -9,9 +9,15 @@ already gone missing. This says it in the editor, on the line that caused it.
 
 ## Install
 
+This package is not on npm yet. It is built from this repository, so use it through a workspace
+link or a file dependency:
+
 ```sh
-npm install --save-dev @modyra/eslint-plugin
+npm install --save-dev file:../path/to/modyra/packages/eslint-plugin
 ```
+
+The `@modyra/eslint-plugin` name is reserved for it and the install line becomes the usual one when
+it is published.
 
 ## Use
 

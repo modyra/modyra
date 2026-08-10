@@ -72,8 +72,9 @@ Classification says what a change costs. This says what you are promised, which 
 number is actually claiming.
 
 **Nothing in `@modyra/core` or `@modyra/widgets` is removed or changed in a breaking way outside a
-major release.** That is the whole of 1.0's promise, and everything below is how it is kept honestly
-rather than by never changing anything.
+major release.** That is the whole of the promise those two packages make, and everything below is
+how it is kept honestly rather than by never changing anything. Both are at 2.0.0: the promise has
+already been exercised once, and the release notes say what the major carried.
 
 ### A deprecation is an announcement, not a removal
 
@@ -111,8 +112,8 @@ mechanical edit. "Removed `foo`" is a note; "replace `foo(a, b)` with `bar({ a, 
 - **The window is enforced by review, not by a check.** The audit sees that a marker is well formed,
   not that a removal waited. Ageing markers out would need release history the repository does not
   currently read.
-- **It covers the two 1.0 packages.** The adapters and Studio version independently and make their
-  own promises; this page is not one of them.
+- **It covers `@modyra/core` and `@modyra/widgets` only.** The adapters, the SDKs and Studio version
+  independently and are still below 1.0; this page is not a promise about them.
 
 ## What is not covered
 
