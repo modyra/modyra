@@ -1,5 +1,5 @@
 ---
-"@modyra/core": major
+"@modyra/core": minor
 ---
 
 A restored draft no longer brings back a row the user deleted.
@@ -23,3 +23,8 @@ Also in this change:
 - **`cell()` states its value type**: `cell<number>(key, "qty")`. The default is still `unknown`,
   because the part is a runtime string — `row(key)` remains the typed way when the part is known,
   and is what a typed control should be bound to.
+
+**Breaking only for implementers.** `MdyPathGate` gained an optional `onReplace`, and
+`MdyRecordManagerDeps` a required `warn` — the seam the typed form uses to build a collection.
+Constructing an `MdyRecordManager` by hand means passing one
+(`warn: (message) => engine.warnDev(message)`). Every consumer-facing call is unchanged.
