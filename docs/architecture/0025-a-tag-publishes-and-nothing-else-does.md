@@ -1,6 +1,7 @@
 # ADR 0025: A tag publishes, and nothing else does
 
-Status: Accepted — amended 2026-08-08, see **Amendment: the tag stages**
+Status: Accepted — amended 2026-08-08, see **Amendment: the tag stages**; amended 2026-08-10, see
+**Amendment: the tag names what released**
 
 ## Context
 
@@ -140,3 +141,43 @@ hold what it staged.
 What changes is the cost: a release is not finished when the job is green. Between staging and
 approval the registry serves the previous version, and a release left unapproved is invisible to
 every consumer while looking done from the repository's side.
+
+## Amendment: the tag names what released
+
+**2026-08-10.** The consequence above — "the release tag, taken from `@modyra/core`, names the core's
+version" — was a statement about legibility. It was also a defect, and the first adapter-only release
+found it.
+
+`@modyra/core` is not bumped by every release. A fix confined to one adapter versions that adapter and
+nothing else, and a tag read from core's manifest then names a version that already shipped. `git tag`
+refuses to overwrite it, so `release:integrate` stops *after* it has written the version commit: the
+manifests and changelogs are bumped, the changesets are consumed, and nothing is tagged — a working
+tree that believes it released, and a registry that never heard about it. That is the same shape of
+silence this record exists to end, moved one step earlier.
+
+**The tag is derived from what the release actually versioned.** `scripts/release-tag.mjs` reads the
+staged manifests: when `@modyra/core` moved, the tag is `v<core version>` and nothing changes; when it
+did not, every package that moved carries its own `v<package>-<version>`. All forms begin with `v`,
+which is what `release.yml` listens for, and the publishers skip versions already on the registry, so
+the packages that did not move are no-ops.
+
+The cost is that a release is no longer one tag. An adapter-only release produces one tag per bumped
+package, and reading "what shipped" means reading the tags rather than a single number — which is what
+independent versioning already meant, now stated where it is executed.
+
+The same step also staged the release with `git add -A`, which commits whatever else is in the tree
+under a release message. It stages the manifests, changelogs, consumed changesets and the lockfile.
+
+### Verification
+
+- `node scripts/release-tag.mjs <manifests>` over each shape: core and an adapter → `v2.1.0`; the
+  adapter alone → `vangular-0.7.1`; two adapters → one tag each; a private package alone → exit 1,
+  "nothing versioned".
+- `release:integrate` rehearsed in a throwaway clone with a pending adapter changeset: commit
+  `chore(release): vangular-0.7.1`, tag `vangular-0.7.1`, `@modyra/core` untouched at 2.1.0, three
+  files in the release commit.
+
+### Security and privacy
+
+None. The trigger, its permissions and the staging approval are unchanged; only the tag's name is
+computed differently, and `v*` still bounds what can start a release.
