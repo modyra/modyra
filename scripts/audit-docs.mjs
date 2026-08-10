@@ -103,50 +103,85 @@ for (const file of markdown(ROOT)) {
 // ─── 2. The gap document's status list matches its own headings ──────────────
 
 /**
- * Read each finding's status from its heading, then check the summary agrees.
+ * Read each finding's status from its heading, then check every summary of it agrees.
  *
- * The heading is the source of truth because it sits with the evidence; the summary is a convenience
- * for a reader who does not want to scroll, and a convenience that can lie is worse than none.
+ * The heading is the source of truth because it sits with the evidence. Two summaries restate it:
+ * the register's own status list, and `docs/known-issues.md`, the page the site publishes for a
+ * reader who is not holding the source. Both are conveniences, and a convenience that can lie is
+ * worse than none — the public one most of all, because it is the version most people read.
+ *
+ * A finding id may carry a lowercase suffix (`J4a`): the same underlying question split into two
+ * records. Matching only `[A-Z]\d*` skipped those headings entirely while still accepting them in a
+ * summary, so their status was unverifiable in exactly the direction that hides drift.
  */
-function gapStatusMismatches() {
-  const path = join(ROOT, "docs/contract-gaps.md");
-  if (!existsSync(path)) return [];
-  const source = readFileSync(path, "utf8");
+const FINDING_ID = "[A-Z]\\d*[a-z]?";
 
-  const declared = new Map();
-  for (const [, id, rest] of source.matchAll(/^## ([A-Z]\d*) — (.*)$/gm)) {
-    const status = /partly fixed|mostly fixed|derivation fixed/.test(rest) ? "partial"
-      : /closed as deliberate|documented, not a defect/.test(rest) ? "closed"
-      : /\bfixed\b/.test(rest) ? "fixed"
-      : "open";
-    declared.set(id, status);
-  }
+function statusFromHeadingText(rest) {
+  return /partly fixed|mostly fixed|derivation fixed/.test(rest) ? "partial"
+    : /closed as deliberate|documented, not a defect/.test(rest) ? "closed"
+    : /\bfixed\b/.test(rest) ? "fixed"
+    : "open";
+}
 
-  const summary = source.slice(0, source.indexOf("\n---"));
+/** Parse `**Open** — R` style status lists out of a summary. */
+function listedStatuses(summary, label, problems) {
   const listed = new Map();
-  const problems = [];
-  for (const [, label, ids] of summary.matchAll(/\*\*(Fixed|Partly fixed|Closed[^*]*|Open)\*\* — ([^\n]+)/g)) {
-    const status = label.startsWith("Fixed") ? "fixed"
-      : label.startsWith("Partly") ? "partial"
-      : label.startsWith("Open") ? "open"
+  const lists = new RegExp(`\\*\\*(Fixed|Partly fixed|Closed[^*]*|Open)\\*\\* — ([^\\n]+)`, "g");
+  for (const [, heading, ids] of summary.matchAll(lists)) {
+    const status = heading.startsWith("Fixed") ? "fixed"
+      : heading.startsWith("Partly") ? "partial"
+      : heading.startsWith("Open") ? "open"
       : "closed";
-    for (const [, id] of ids.matchAll(/\b([A-Z]\d*)\b(?=[,\s(]|$)/g)) {
+    for (const [, id] of ids.matchAll(new RegExp(`\\b(${FINDING_ID})\\b(?=[,\\s(]|$)`, "g"))) {
       // A finding named under two statuses is drift on its own, and it hides: the second write wins,
       // so the summary reads as consistent with whichever list happens to come last.
       if (listed.has(id) && listed.get(id) !== status) {
-        problems.push(`${id}: the summary lists it as both ${listed.get(id)} and ${status}`);
+        problems.push(`${label}: ${id} is listed as both ${listed.get(id)} and ${status}`);
       }
       listed.set(id, status);
     }
   }
+  return listed;
+}
 
+function compare(declared, listed, label, problems) {
   for (const [id, status] of declared) {
-    if (!listed.has(id)) problems.push(`${id}: heading says ${status}, the summary does not mention it`);
-    else if (listed.get(id) !== status) problems.push(`${id}: heading says ${status}, the summary says ${listed.get(id)}`);
+    if (!listed.has(id)) problems.push(`${label}: heading says ${id} is ${status}, it does not mention it`);
+    else if (listed.get(id) !== status) {
+      problems.push(`${label}: heading says ${id} is ${status}, it says ${listed.get(id)}`);
+    }
   }
   for (const id of listed.keys()) {
-    if (!declared.has(id)) problems.push(`${id}: named in the summary, but there is no such section`);
+    if (!declared.has(id)) problems.push(`${label}: names ${id}, but the register has no such section`);
   }
+}
+
+function gapStatusMismatches() {
+  const problems = [];
+  const path = join(ROOT, "docs/contract-gaps.md");
+  if (!existsSync(path)) return ["docs/contract-gaps.md is missing — the register this check reads is gone"];
+  const source = readFileSync(path, "utf8");
+
+  const declared = new Map();
+  for (const [, id, rest] of source.matchAll(new RegExp(`^## (${FINDING_ID}) — (.*)$`, "gm"))) {
+    declared.set(id, statusFromHeadingText(rest));
+  }
+  if (declared.size === 0) problems.push("docs/contract-gaps.md: no finding headings found — the check reads nothing");
+
+  const summary = source.slice(0, source.indexOf("\n---"));
+  compare(declared, listedStatuses(summary, "contract-gaps.md", problems), "contract-gaps.md", problems);
+
+  // The published page is held to the same statuses. It is not synced to the site's register route —
+  // it *is* what the site publishes — so a drift here is visible to every reader and to no test but
+  // this one.
+  const publicPath = join(ROOT, "docs/known-issues.md");
+  if (!existsSync(publicPath)) {
+    problems.push("docs/known-issues.md is missing — the site has no page summarising the register");
+  } else {
+    const publicSource = readFileSync(publicPath, "utf8");
+    compare(declared, listedStatuses(publicSource, "known-issues.md", problems), "known-issues.md", problems);
+  }
+
   return problems;
 }
 
@@ -298,8 +333,9 @@ const adrs = adrProblems();
  * looks wrong: the page renders, at its own URL, with no way in.
  *
  * A page is covered if the sidebar names its slug, an `autogenerate` directory contains it, or the
- * sync step hides it deliberately. `SIDEBAR_HIDDEN` is read from the sync script rather than
- * restated here, so the two cannot disagree.
+ * sync step keeps it off the site deliberately — hidden from the sidebar but published, or excluded
+ * from the published tree altogether. Both sets are read from the sync script rather than restated
+ * here, so the two cannot disagree.
  */
 function sidebarCoverage() {
   const config = join(ROOT, "site/astro.config.mjs");
@@ -316,12 +352,12 @@ function sidebarCoverage() {
     .map(([, directory]) => directory);
 
   const sync = join(ROOT, "scripts/sync-docs-site.mjs");
-  const hidden = new Set(
-    existsSync(sync)
-      ? [...(readFileSync(sync, "utf8").match(/SIDEBAR_HIDDEN = new Set\(\[([^\]]*)\]/)?.[1] ?? "")
-          .matchAll(/'([^']+)'/g)].map(([, path]) => path)
-      : [],
-  );
+  const syncSource = existsSync(sync) ? readFileSync(sync, "utf8") : "";
+  const namesIn = (constant) => [
+    ...(syncSource.match(new RegExp(`${constant} = new Set\\(\\[([^\\]]*)\\]`))?.[1] ?? "")
+      .matchAll(/'([^']+)'/g),
+  ].map(([, path]) => path);
+  const hidden = new Set([...namesIn("SIDEBAR_HIDDEN"), ...namesIn("SYNC_EXCLUDED")]);
 
   const problems = [];
   for (const file of markdown(docs)) {

@@ -107,8 +107,9 @@ never have produced.
   fields. For AI-generated forms see the
   [AI-generated forms guide](ai-generated-forms.md): a form-level policy
   automatically covers every field the LLM declares.
-- **Secure by default at 1.0:** the default profile is planned to flip to
-  `"text"` in the next major. The changelog will call it out.
+- **The default is `"off"`.** Sanitization is opt-in: nothing is stripped
+  until you ask for it. Making `"text"` the default is on the roadmap and
+  would be a breaking change, announced in the changelog when it lands.
 
 ## Trust model: option whitelisting and anti-tampering
 

@@ -5,31 +5,39 @@
 
 # Modyra
 
-**A typed form engine for TypeScript applications.**
+**Define a form once. Run it in every application that needs it.**
 
-Modyra keeps form state, validation and operations in a framework-independent core. Adapters connect the same form model to Angular, React, Vue, Lit, Solid, Preact and Svelte.
-
-> **Project status:** Modyra is under active development and has not reached 1.0. The core engine and Angular integration currently receive the broadest coverage. The three adapters that render — Angular, Lit and Plain — share the same DOM conformance suite; the five headless ones render nothing and so are checked on semantics rather than markup ([what that means](#what-headless-means-for-conformance)). Adapters also differ in SSR behavior and framework-specific integration depth. Pin versions in production and review release notes before upgrading.
+Modyra keeps form state, validation and operations in a framework-independent core, and describes a
+form as portable data. Write that form in TypeScript, produce it from a Rust or Java service, or
+build it visually in Studio — then render it with Angular, React, Vue, Lit, Solid, Preact, Svelte,
+or with no framework at all.
 
 [![CI](https://github.com/modyra/modyra/actions/workflows/ci.yml/badge.svg)](https://github.com/modyra/modyra/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@modyra/core)](https://www.npmjs.com/package/@modyra/core)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-## Why Modyra
+## The problem
 
-Form behavior often becomes tied to a rendering framework. Validation, asynchronous work, drafts and change tracking then have to be rewritten when the UI changes or when the same rules are needed on a server, in a worker or in a test.
+The same business form gets rebuilt in every application that shows it. The Angular portal has one
+version, the React admin has another, the Java service validates it a third way, and the internal
+builder holds a fourth. Four copies of one process, drifting apart, each with its own bugs.
 
-Modyra separates those concerns:
+Modyra's answer is to separate what a form *is* from how it is *drawn*:
 
-- `@modyra/core` owns typed state, validation and form operations
-- framework adapters connect that state to each framework's reactivity model
-- UI packages and headless widgets are optional
-- schema adapters support Zod and Standard Schema
-- the Dynamic Form Contract represents forms as validated data
-- collections are keyed by position or by data, so rows survive sorting and re-rendering
+- `@modyra/core` owns typed state, validation, drafts, history and submission — no framework
+  runtime, no dependencies;
+- the **Dynamic Form Contract** expresses a form as validated, serializable data that can cross a
+  network, a language boundary or a build;
+- adapters connect the same form model to each framework's own reactivity;
+- `@modyra/widgets` describes how a rendered control behaves and what it exposes to assistive
+  technology, so that behaviour is written once rather than per framework.
 
-## Quick start
+## Two ways to adopt it
+
+Most teams use one. Nothing stops you using both in the same application.
+
+### Write the form in code
 
 ```bash
 npm install @modyra/core
@@ -48,66 +56,59 @@ const form = createForm({
 });
 
 form.f.email.set("person@example.com");
-form.f.email.valid(); // true
-form.getValue().address.city; // string
+form.f.email.valid();          // true
+form.getValue().address.city;  // string — the type survives the nesting
 ```
 
-Validators are factories: use `required()` rather than `required`. Errors are returned as arrays of structured entries. See the [typed forms guide](docs/guides/typed-forms.md) for arrays, asynchronous validation, drafts, history and change tracking.
+Field handles are checked at compile time, including through groups and arrays. Validators are
+factories: write `required()`, not `required`. Errors come back as arrays of structured entries.
 
-## Core capabilities
+Add the adapter for your framework and the same form drives your components. See the [typed forms
+guide](docs/guides/typed-forms.md) for arrays, async validation, drafts, history and change tracking.
 
-- compile-time checked field handles
-- nested groups and typed field arrays
-- synchronous, asynchronous, cross-field and form-level validation
-- cancellation, dependency tracking, debounce and timeout for asynchronous validators
-- draft persistence with field exclusion and expiry
-- undo and redo, grouped mutations and minimal change sets
-- server error mapping and schema validation
-- optional devtools and headless widget controllers
+### Serve the form as data
 
-## Packages
+A service or a visual editor produces the contract; the frontend receives it as untrusted input,
+validates it strictly, and builds the form from it.
 
-| Package | Purpose | Support notes |
-| --- | --- | --- |
-| [`@modyra/core`](packages/core) | Framework-independent form engine | Primary package, no framework runtime |
-| [`@modyra/widgets`](packages/widgets) | Headless interaction and accessibility controllers | Framework-independent |
-| [`@modyra/angular`](packages/angular) | Angular signals adapter and UI catalog | Broadest UI integration |
-| [`@modyra/react`](packages/react) | React adapter using `useSyncExternalStore` | Headless — renders nothing; no DOM conformance |
-| [`@modyra/vue`](packages/vue) | Vue reactivity adapter | Headless — renders nothing; no DOM conformance |
-| [`@modyra/lit`](packages/lit) | Lit adapter and custom elements | UI catalog available |
-| [`@modyra/plain`](packages/plain) | Framework-free renderer | UI catalog, no framework runtime |
-| [`@modyra/solid`](packages/solid) | Solid signals adapter | Headless — renders nothing; no DOM conformance |
-| [`@modyra/preact`](packages/preact) | Preact adapter | Headless — renders nothing; no DOM conformance. See SSR note in its README |
-| [`@modyra/svelte`](packages/svelte) | Svelte store bridge | Headless — renders nothing; no DOM conformance |
-| [`@modyra/zod`](packages/zod) | Zod schema adapter | Optional `zod` peer |
-| [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter | Vendor-neutral |
-| [`@modyra/styles`](packages/styles) | Shared CSS themes | Optional |
+```ts
+import { parseDynamicForm } from "@modyra/core";
 
-Adapter capabilities and known differences are listed in the generated [reactivity capability matrix](docs/reactivity-capability-matrix.md).
+const result = parseDynamicForm(await response.json(), { mode: "strict" });
+if (!result.ok) {
+  // every finding carries a code, a severity and the path that produced it
+  return report(result.diagnostics);
+}
+```
 
-### What "headless" means for conformance
+Strict mode returns no form at all when anything is wrong — a partially valid document is never
+accepted. Lenient mode keeps what parsed and reports the rest, which is what an editor preview
+wants.
 
-Modyra's widget contract describes a rendered control: its parts, the relations between them, the
-classes a theme selects on, and how each part looks in every state. Three suites check an adapter
-against it — DOM anatomy, the state matrix, and renderer equivalence — and a fourth, the conformance
-CLI, runs them together.
+**Three packages build a form from a contract today:** `@modyra/angular` and `@modyra/plain` render
+one directly, and `@modyra/react` builds the form state for markup you supply. The contract can be
+produced from TypeScript, from [Rust](sdk/rust), from [Java](sdk/java), or by
+[Studio](docs/studio/overview.md).
 
-**Those suites apply to the three adapters that render**: `@modyra/angular`, `@modyra/lit` and
-`@modyra/plain`. Angular and Lit ship UI catalogs; Plain is the framework-free renderer.
+Prefer to own the source? Studio also generates ordinary framework code — `createForm`, `mdyForm`
+and `useMdyForm` modules you keep and edit — so the contract runtime is a choice, not a lock.
 
-**`@modyra/react`, `@modyra/vue`, `@modyra/solid`, `@modyra/preact` and `@modyra/svelte` render
-nothing at all** — they bind the form engine to a framework's reactivity and you bring your own
-markup. There is no part for an anatomy check to find and no rendered state for a matrix to compare,
-so those three suites do not apply to them. That is the design, not a gap: what they *do* promise —
-value, validation, error and lifecycle semantics — is checked by their own suites and by the shared
-reactivity capability tests, on every one of the eight packages.
+## What you get
 
-The practical consequence when choosing: with a headless adapter, accessibility and theming are
-yours. `@modyra/widgets` exports the same projections, id policy and class vocabulary the rendering
-adapters use, so your markup can be built from the contract rather than guessed — but nothing checks
-that it was.
+- compile-time checked field handles over nested groups and typed arrays;
+- collections keyed by position or by data, so rows survive sorting and re-rendering;
+- synchronous, asynchronous, cross-field and form-level validation;
+- cancellation, dependency tracking, debounce and timeout for async validators;
+- draft persistence with field exclusion and expiry;
+- undo and redo, grouped mutations, and minimal change sets;
+- server error mapping, and schema validation through Zod or Standard Schema;
+- 17 widget kinds with one shared definition of anatomy, states and keyboard behaviour;
+- optional devtools and shared CSS themes.
 
-## Example: cancellable server validation
+The published form engine measures **13.4 KB gzipped** for a realistic typed form with arrays,
+validation, drafts and undo. Reproduce it with `npm run test:core-bundle`.
+
+## Example: server validation that cancels itself
 
 ```ts
 import { createForm, field, serverValidator } from "@modyra/core";
@@ -131,75 +132,121 @@ const form = createForm({
 });
 ```
 
-A stale request is aborted when the value or one of its dependencies changes. `form.state.pending()` and `form.state.canSubmit()` include asynchronous validation state.
+A request in flight is aborted when the value or one of its dependencies changes, so a stale
+response cannot overwrite a newer one. `form.state.pending()` and `form.state.canSubmit()` account
+for async validation.
 
-## Framework examples
+## Packages
 
-The `examples/` directory contains equivalent applications for the supported adapters. Start with the adapter you use:
+| Package | Purpose | Renders? |
+| --- | --- | --- |
+| [`@modyra/core`](packages/core) | The form engine and the Dynamic Form Contract. No dependencies | — |
+| [`@modyra/widgets`](packages/widgets) | Interaction and accessibility behaviour for the 17 widget kinds | — |
+| [`@modyra/angular`](packages/angular) | Angular signals adapter and UI catalog | Yes |
+| [`@modyra/lit`](packages/lit) | Lit adapter and custom elements | Yes |
+| [`@modyra/plain`](packages/plain) | Framework-free renderer | Yes |
+| [`@modyra/react`](packages/react) | React adapter using `useSyncExternalStore` | No — bring your own markup |
+| [`@modyra/vue`](packages/vue) | Vue reactivity adapter | No |
+| [`@modyra/solid`](packages/solid) | Solid signals adapter | No |
+| [`@modyra/preact`](packages/preact) | Preact adapter | No |
+| [`@modyra/svelte`](packages/svelte) | Svelte store bridge | No |
+| [`@modyra/zod`](packages/zod) | Zod schema adapter | — |
+| [`@modyra/standard-schema`](packages/standard-schema) | Standard Schema adapter | — |
+| [`@modyra/styles`](packages/styles) | Shared CSS themes | — |
 
-- [Angular](docs/examples/angular.md)
-- [React](docs/examples/react.md)
-- [Vue](docs/examples/vue.md)
-- [Lit](docs/examples/lit.md)
-- [Solid](docs/examples/solid.md)
-- [Preact](docs/examples/preact.md)
-- [Svelte](docs/examples/svelte.md)
+Install only the adapter for your framework. Framework packages are optional peers of their
+adapters. Per-adapter differences are listed in the generated [reactivity capability
+matrix](docs/reactivity-capability-matrix.md).
 
-These examples demonstrate API compatibility. They do not imply identical UI, SSR or ecosystem coverage across adapters.
+### What "headless" means for conformance
+
+`@modyra/widgets` defines a rendered control: its parts, how they relate, the classes a theme
+selects on, and how each part looks and behaves in every state. Three suites check a renderer
+against it — DOM anatomy, the state matrix, and renderer equivalence — and the conformance CLI runs
+them together.
+
+**Those suites apply to the three renderers**: Angular, Lit and Plain.
+
+**The other five adapters render nothing.** They bind the form engine to a framework's reactivity
+and you supply the markup, so there is no part for an anatomy check to find. That is the design, not
+a gap: what they do promise — value, validation, error and lifecycle semantics — is checked by their
+own suites and by the shared reactivity tests, on all eight adapters.
+
+What it means when choosing: with a headless adapter, accessibility and theming are yours.
+`@modyra/widgets` exports the same projections, id policy and class vocabulary the renderers use, so
+your markup can be built from the definition rather than guessed — but nothing checks that it was.
+
+## Examples
+
+`examples/` holds the same checkout form implemented for every adapter, so a difference between two
+of them is a difference between two adapters and not between two authors.
+
+[The scenario](docs/examples/checkout-scenario.md) ·
+[Plain](docs/examples/plain.md) ·
+[Angular](docs/examples/angular.md) ·
+[React](docs/examples/react.md) ·
+[Vue](docs/examples/vue.md) ·
+[Lit](docs/examples/lit.md) ·
+[Solid](docs/examples/solid.md) ·
+[Preact](docs/examples/preact.md) ·
+[Svelte](docs/examples/svelte.md)
+
+They demonstrate API compatibility. They do not imply identical UI, SSR behaviour or ecosystem
+coverage across adapters.
 
 ## Documentation
 
-- [Documentation index](docs/README.md)
-- [Mental model](docs/guides/mental-model.md)
-- [Typed forms](docs/guides/typed-forms.md)
-- [Schema adapters](docs/guides/schemas.md)
-- [Server validation](docs/guides/server-validation.md)
-- [Security](docs/guides/security.md)
-- [Studio](docs/studio/overview.md)
-- [Troubleshooting](docs/guides/troubleshooting.md)
+- [Start here](docs/README.md) — the full index
+- [Mental model](docs/guides/mental-model.md) — how the engine thinks
+- [Typed forms](docs/guides/typed-forms.md) — arrays, async validation, drafts, history
+- [Forms as data](docs/guides/ai-generated-forms.md) — the Dynamic Form Contract, and how to trust it
+- [Schema adapters](docs/guides/schemas.md) · [Server validation](docs/guides/server-validation.md)
+- [Security](docs/guides/security.md) · [Troubleshooting](docs/guides/troubleshooting.md)
+- [Studio](docs/studio/overview.md) — build a form visually, export the contract or the code
+
+## Project status
+
+`@modyra/core` and `@modyra/widgets` are at **2.0.0** and versioned under a published
+[compatibility policy](docs/contract-compatibility.md): nothing is removed or changed in a breaking
+way outside a major release.
+
+**Every adapter, both SDKs and Studio version independently and are still below 1.0.** Their public
+surfaces can change in a minor release. Pin versions and read the release notes before upgrading.
+Coverage is uneven by design — see the table above and the [known
+issues](docs/known-issues.md), which are published rather than kept private.
 
 ## Compatibility
 
-- Node 22 or newer for repository development
-- TypeScript strict mode
-- Angular 21 or newer
-- React 18 or newer
-- Vue reactivity 3.4 or newer
-- Lit 3 or newer
-- Solid 1.8 or newer
-- Preact 10.19 or newer
-- Svelte 4 or newer
-- Zod 3.25 or newer when using `@modyra/zod`
+Node 22+ for repository development · TypeScript strict mode · Angular 21+ · React 18+ · Vue
+reactivity 3.4+ · Lit 3+ · Solid 1.8+ · Preact 10.19+ · Svelte 4+ · Zod 3.25+ with `@modyra/zod`.
 
-Only install the adapter for the framework in your application. Framework packages are optional peers of their respective adapters.
-
-## Build a renderer, and prove the contract is implementable
+## Build a renderer, and test the definition
 
 The widget contract claims a renderer can be built from the published specification alone. Every
-renderer in this repository was written by people who also wrote the contract, so none of them tests
-that claim — the specification could be incomplete in exactly the places its authors already know.
+renderer here was written by people who also wrote that specification, so none of them tests the
+claim — it could be incomplete in exactly the places its authors already know.
 
-If you build one, the suite that judges it is published:
+The suite that judges one is published:
 
 ```bash
 npx modyra-conformance path/to/your.config.mjs
 ```
 
-The config says which widget kinds you render and how to mount one; `packages/plain/conformance.config.mjs`
-is the reference to copy. The suite checks anatomy, ARIA relations, states and keyboard behaviour
-against [the contract](docs/guides/ui-toolkit.md) — the same checks `@modyra/plain` and `@modyra/lit`
-pass today.
+The config declares which widget kinds you render and how to mount one;
+`packages/plain/conformance.config.mjs` is the reference to copy. It checks anatomy, ARIA relations,
+states and keyboard behaviour against [the contract](docs/guides/ui-toolkit.md) — the same checks
+Plain and Lit pass today.
 
-**What counts:** a renderer for any framework, or none, that passes without changes to the contract
-or to the suite. **What we want to hear about even more:** where the specification was ambiguous,
-underspecified, or wrong. A question you had to answer by reading this repository's source is a
-defect in the contract, and worth an issue whether or not you finish the renderer.
+More useful than a finished renderer: where the specification was ambiguous, underspecified or
+wrong. A question you had to answer by reading this repository's source is a defect in the
+specification, and worth an issue whether or not you finish.
 
-## Security notes
+## Security
 
-Draft persistence uses `localStorage` by default. It is origin-wide, stored as plain text and may survive logout. Exclude passwords, tokens, payment data and other sensitive fields, or provide a custom storage implementation. See the [security guide](docs/guides/security.md).
-
-Client-side validation is defense in depth. Validate submitted data again on the server.
+Draft persistence uses `localStorage` by default: origin-wide, plain text, and it may survive
+logout. Exclude passwords, tokens and payment data, or supply your own storage. Client-side
+validation is defence in depth — validate submitted data again on the server. See the [security
+guide](docs/guides/security.md).
 
 ## Development
 
@@ -209,7 +256,7 @@ npm run build:packages
 npm test
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for repository conventions and release checks.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions and release checks.
 
 ## License
 

@@ -113,7 +113,7 @@ export default defineConfig({
 					items: [
 						{ label: 'UI toolkit', slug: 'guides/ui-toolkit' },
 						{ label: 'Compatibility', slug: 'contract-compatibility' },
-						{ label: 'Known gaps', slug: 'contract-gaps' },
+						{ label: 'Known issues', slug: 'known-issues' },
 						{ label: 'Reactivity capability matrix', slug: 'reactivity-capability-matrix' },
 					],
 				},

@@ -1,98 +1,113 @@
-# Documentation
+# Start here
 
-Use this index to find the conceptual guides, integration notes and reference material for Modyra.
+Modyra keeps a form's behaviour — state, validation, drafts, history, submission — in a
+framework-independent core, and lets that form travel as data. This index is organised by what you
+are trying to do.
 
-## Start here
+## Pick your path
 
-- [Mental model](guides/mental-model.md): form state, field handles and lifecycle
-- [Typed forms](guides/typed-forms.md): schemas, validation, arrays, keyed collections, drafts and history
-- [Usage modes in Angular](guides/usage-modes.md): typed, declarative and headless bindings
-- [Security](guides/security.md): trust boundaries, persistence and server validation
-- [Troubleshooting](guides/troubleshooting.md): pending state, submission and integration issues
+**I want a typed form in my application.** Read the [mental model](guides/mental-model.md), then
+[typed forms](guides/typed-forms.md), then the [example for your
+framework](examples/checkout-scenario.md).
 
-## Form engine
+**I want my backend to define the form.** Read [forms as data](guides/ai-generated-forms.md) for the
+Dynamic Form Contract and how to parse it safely, then [server validation](guides/server-validation.md).
+The [Rust](https://github.com/modyra/modyra/tree/main/sdk/rust) and
+[Java](https://github.com/modyra/modyra/tree/main/sdk/java) SDKs produce the same contract.
 
-- [Schema adapters](guides/schemas.md)
+**I want to build forms visually and export code.** Start with [Studio](studio/overview.md) and
+[code generation](studio/target-generation.md).
+
+**I am evaluating the risk of adopting this.** Read [project background](project-background.md),
+the [compatibility policy](contract-compatibility.md), the [known issues](known-issues.md) and the
+[comparison with other form libraries](guides/comparison-form-libraries.md).
+
+## Core concepts
+
+- [Mental model](guides/mental-model.md) — form state, field handles, and the lifecycle of a field
+- [Typed forms](guides/typed-forms.md) — schemas, validation, arrays, keyed collections, drafts, history
+- [Usage modes](guides/usage-modes.md) — typed, declarative and headless bindings
+- [Schema adapters](guides/schemas.md) — Zod and Standard Schema
+- [Security](guides/security.md) — trust boundaries, persistence and sanitization
+- [Troubleshooting](guides/troubleshooting.md) — pending state, submission and integration problems
+
+## The form engine
+
 - [Server validation](guides/server-validation.md)
+- [Forms as data](guides/ai-generated-forms.md) — the Dynamic Form Contract
 - [Internationalization](guides/i18n.md)
 - [DevTools](guides/devtools.md)
-- [Dynamic form configuration](guides/ai-generated-forms.md)
 
-## Rendering and integrations
+## Examples
 
-Start with [the shared checkout scenario](examples/checkout-scenario.md) — one form, many bindings,
-so a difference between two pages is a difference between two adapters and not between two authors.
+Every adapter implements [the same checkout form](examples/checkout-scenario.md), so a difference
+between two pages is a difference between two adapters and not between two authors.
 
-- [The scenario itself](examples/checkout-scenario.md)
-- [Plain](examples/plain.md) — the framework-free renderer, and what it does not cover
+- [The scenario](examples/checkout-scenario.md) — read this first
+- [Plain](examples/plain.md) — the framework-free renderer
 
-Then the seven framework bindings, all implementing that scenario:
+Then the seven framework bindings:
 
-- [Angular](examples/angular.md)
-- [React](examples/react.md)
-- [Vue](examples/vue.md)
-- [Lit](examples/lit.md)
-- [Solid](examples/solid.md)
-- [Preact](examples/preact.md)
-- [Svelte](examples/svelte.md)
+- [Angular](examples/angular.md) · [React](examples/react.md) · [Vue](examples/vue.md) ·
+  [Lit](examples/lit.md) · [Solid](examples/solid.md) · [Preact](examples/preact.md) ·
+  [Svelte](examples/svelte.md)
 
-UI coverage, SSR behavior and ecosystem integration differ by adapter; consult the package README
-and [reactivity capability matrix](reactivity-capability-matrix.md) for details.
+UI coverage, SSR behaviour and ecosystem integration differ by adapter. The package README and the
+[reactivity capability matrix](reactivity-capability-matrix.md) have the details.
 
 ## The widget contract
 
-- [UI toolkit](guides/ui-toolkit.md): the rendered catalogue and what a renderer owes it
-- [Contract compatibility](contract-compatibility.md): what a change to the contract costs, and which changes are breaking
-- [Contract gaps](contract-gaps.md): the known open defects, each with the evidence behind it
+One definition of how a control behaves, shared by every renderer.
+
+- [UI toolkit](guides/ui-toolkit.md) — the catalogue, and what a renderer owes it
+- [Contract compatibility](contract-compatibility.md) — what a change costs, and which changes break
+- [Known issues](known-issues.md) — what does not work yet, and who it affects
+- [Reactivity capability matrix](reactivity-capability-matrix.md) — generated, per adapter
 
 ## Architecture and integration
 
 - [Multi-framework architecture](guides/multi-framework.md)
 - [Writing a reactivity adapter](guides/reactivity-adapter-guide.md)
-- [Headless UI recipes](guides/headless-recipes.md)
+- [Headless UI recipes](guides/headless-recipes.md) — pairing an adapter with your own components
 - [Angular Reactive Forms interop](guides/interop.md)
-- [React Native compatibility notes](guides/react-native.md)
-- [Reactivity capability matrix](reactivity-capability-matrix.md)
+- [React Native](guides/react-native.md) — what is verified, and what is not
 
 ### Decision records
 
 **[Architecture decision records](architecture/README.md)** — why Modyra is built the way it is.
-Every architectural and security decision is recorded there, each with the alternatives that lost,
-the check that fails if the decision is violated, and what it exposes. Start with
-[0007](architecture/0007-expressions-are-data.md), [0009](architecture/0009-client-validation-is-defence-in-depth.md)
-and [0010](architecture/0010-every-claim-has-an-executable-check.md) for a security review, and use
-[the template](architecture/TEMPLATE.md) to add one.
+Each one states the pressure that forced the decision, the alternatives that lost, the check that
+fails if it is violated, and what it exposes. For a security review, start with
+[0007](architecture/0007-expressions-are-data.md),
+[0009](architecture/0009-client-validation-is-defence-in-depth.md) and
+[0010](architecture/0010-every-claim-has-an-executable-check.md).
 
 ## Studio
 
-- [Overview](studio/overview.md)
-- [Getting started](studio/getting-started.md)
-- [Project format](studio/project-format.md)
-- [Validation](studio/validators.md)
-- [Live canvas](studio/live-canvas.md)
-- [Drag and drop](studio/drag-and-drop.md)
+A local-first visual form builder that edits one project model and compiles it to targets on export.
+
+- [Overview](studio/overview.md) · [Getting started](studio/getting-started.md)
+- [Project format](studio/project-format.md) · [Validation](studio/validators.md)
+- [Live canvas](studio/live-canvas.md) · [Drag and drop](studio/drag-and-drop.md)
 - [Code generation](studio/target-generation.md)
-- [Accessibility](studio/accessibility.md)
-- [Security](studio/security.md)
+- [Accessibility](studio/accessibility.md) · [Security](studio/security.md)
 - [Plugin authoring](studio/plugin-authoring.md)
 
 ## Comparisons and migration
 
+- [Bundle and feature comparison](guides/comparison-form-libraries.md)
 - [Angular Reactive Forms](guides/comparison-reactive-forms.md)
 - [React Hook Form](guides/comparison-react-hook-form.md)
 - [Formik](guides/comparison-formik.md)
-- [Bundle and feature comparison](guides/comparison-form-libraries.md)
 
-Comparisons are dated snapshots. Re-run their associated scripts and review the methodology before relying on the results.
+Comparisons are dated snapshots. Re-run the scripts they name before quoting the results.
 
 ## Project information
 
-- [Project background](project-background.md) — who Modyra is for, what it refuses to do, and the principles that decide arguments
-- [Contributing](../CONTRIBUTING.md)
-- [Security policy](../SECURITY.md)
-- [Roadmap](../ROADMAP.md)
-- [Changelog](../CHANGELOG.md)
+- [Project background](project-background.md) — who Modyra is for, what it refuses to do
+- [Contributing](../CONTRIBUTING.md) · [Security policy](../SECURITY.md)
+- [Roadmap](../ROADMAP.md) · [Changelog](../CHANGELOG.md)
 - [Release administration](guides/release-admin-trusted-publishing.md)
 - [TypeScript 7 and the primary compiler](guides/typescript-7.md)
 
-Documentation under `docs/` is the source for the published site. Package READMEs remain self-contained because they are also rendered by npm.
+Documentation under `docs/` is the source for the published site. Package READMEs stay
+self-contained because npm renders them too.

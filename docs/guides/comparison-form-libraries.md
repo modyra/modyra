@@ -1,279 +1,215 @@
-# Form library comparison — measured bundle sizes & feature coverage
+# Form library comparison
 
-**Measurement date: 2026-07-21, with the Modyra 0.4.0 rows updated on 2026-07-23.**
+A comparison of bundle weight and built-in features against six other form libraries. It measures
+two things only: bytes, and whether a feature exists. It does not measure API quality, ecosystem
+maturity, support or production adoption — for those, see [where Modyra is
+behind](#where-modyra-is-behind).
 
-This is a dated comparison of selected bundle surfaces and built-in features. It does not measure API quality, ecosystem maturity, support, documentation or production adoption. Re-run the repository scripts before quoting the results.
+Two different measurement dates appear below, and the difference matters:
 
-## 1. Methodology (fully reproducible)
+- **Modyra's own figures** are measured by a script in this repository and were re-run on
+  **2026-08-10** against `@modyra/core@2.0.0`. Reproduce them with `npm run test:core-bundle` and
+  `npm run test:perf`.
+- **Every other library's figures** are a snapshot taken on **2026-07-21** at the versions listed in
+  the methodology. The harness that produced them is not committed here, so they have not been
+  re-measured since.
 
-- Packages installed from npm with `--save-exact`; versions below are the
-  exact ones measured.
-- Every library is bundled **twice**: with **esbuild 0.25** (`--bundle
-  --minify --format=esm`) and with **rollup 4** (`@rollup/plugin-node-resolve`
-  + `commonjs` + `terser`), then `gzip -9`. Both bundlers matter: Vite
-  dev/optimize and many CLIs use esbuild; Vite production builds, Angular
-  and most library authors use rollup/webpack-class tree-shaking. Peer
-  frameworks are external in both (`react`, `vue`, `@angular/*`, `rxjs`,
-  `zone.js`) — you pay for your framework anyway.
-- Two surfaces per library:
-  - **whole entry** — the entire package entry, worst case;
-  - **selected form surface** — only the exports a typical typed form
-    with array fields and validation actually imports.
-- Cross-check: our whole-entry figures land within ~5–10% of
-  [Bundlephobia](https://bundlephobia.com) for every package (e.g.
-  `@angular/forms`: 18.1 KB everywhere), which provides a coarse cross-check for the harness.
-- `@modyra/core` figures were originally cross-checked against the real
-  published registry tarball (`npm install @modyra/core@0.3.0`), agreeing
-  exactly with the workspace build at the time (10.7 KB / 9.4 KB gzip).
-  The 2026-07-22 re-measurement was workspace-only at the time — the
-  reactivity-adapter-api plan hadn't shipped yet. **Update, 2026-07-23:**
-  `@modyra/core@0.4.0` is now published; the registry tarball matches the
-  workspace-measured 14.1 KB / 10.6 KB gzip figures below exactly.
+Because of that gap, this page reports each library's weight and declines to rank them. Re-measure
+everything on the same day before quoting an ordering.
 
-Exact versions measured: react-hook-form **7.82.0** · formik **2.4.9** ·
-@tanstack/react-form **1.33.2** (+ @tanstack/form-core 1.33.2) ·
-final-form **5.0.1** + react-final-form **7.0.1** + final-form-arrays
-**4.0.1** · vee-validate **4.15.1** · zod **4.4.3** · @angular/forms
-**22.0.7** · @modyra/core **0.3.0** at time of writing, re-verified against
-**0.4.0** (published on npm) on 2026-07-23 — figures below match exactly.
+## Methodology
 
-## 2. Measured bundle sizes (min + gzip, both bundlers)
+- Packages installed from npm with `--save-exact`.
+- Bundled with **esbuild** (`--bundle --minify --format=esm`) and, in the 2026-07-21 snapshot, also
+  with **rollup 4** (`@rollup/plugin-node-resolve` + `commonjs` + `terser`), then `gzip -9`. Both
+  matter: Vite's dev and optimize steps use esbuild, while Vite production builds, Angular and most
+  library authors use rollup/webpack-class tree-shaking.
+- Peer frameworks are external in both (`react`, `vue`, `@angular/*`, `rxjs`, `zone.js`) — you pay
+  for your framework regardless.
+- Two surfaces per library: the **whole entry** (everything exported, worst case) and the
+  **realistic surface** (only what a typed form with array fields and validation imports).
+- The 2026-07-21 whole-entry figures landed within 5–10% of [Bundlephobia](https://bundlephobia.com)
+  for every package, which is a coarse check on the harness.
 
-### Selected form surface (what a real typed form with arrays pays)
+Versions in the 2026-07-21 snapshot: react-hook-form **7.82.0** · formik **2.4.9** ·
+@tanstack/react-form **1.33.2** · final-form **5.0.1** + react-final-form **7.0.1** +
+final-form-arrays **4.0.1** · vee-validate **4.15.1** · zod **4.4.3** · @angular/forms **22.0.7**.
+
+## Bundle weight
+
+### Modyra, measured 2026-08-10
+
+`@modyra/core@2.0.0`, esbuild + `gzip -9`, via `npm run test:core-bundle`:
+
+| Surface | Minified | Gzipped |
+| --- | --- | --- |
+| Whole entry | 69.7 KB | **19.8 KB** |
+| Realistic surface | 47.7 KB | **13.4 KB** |
+
+The realistic surface is `createForm`, `field`, `group`, `array`, eight validators,
+`serverValidator` and `oneOf` — and it includes drafts, undo/redo, sanitization, `mutate()`,
+`MdyReactiveScope` and activate/deactivate, which most of the table below does not ship at all.
+
+Both figures have grown since 0.4.0 (10.6 KB realistic, 14.1 KB whole entry). The scope, lifecycle
+and typed-error machinery added since then is always linked, so it lands in every bundle rather than
+tree-shaking away. That is a real cost, not a measurement artifact.
+
+### The other libraries, snapshot of 2026-07-21
+
+Realistic surface:
 
 | Package | esbuild | rollup | Surface imported |
 |---|---|---|---|
-| **@modyra/core** | **10.6 KB** | **10.3 KB** | `createForm, field, group, array, 8 validators, serverValidator, oneOf` — includes drafts, undo/redo, security, `mutate()`, `MdyReactiveScope`, activate/deactivate |
 | final-form + react-final-form + final-form-arrays | 11.0 KB | 10.6 KB | `createForm, arrayMutators, Form, Field` |
 | react-hook-form | 12.5 KB | 11.9 KB | `useForm, useFieldArray, Controller` |
-| vee-validate | 12.7 KB | **33.4 KB** ⚠ | `useForm, useFieldArray, Field, Form, ErrorMessage` |
+| vee-validate | 12.7 KB | 33.4 KB ⚠ | `useForm, useFieldArray, Field, Form, ErrorMessage` |
 | formik | 13.7 KB | 13.2 KB | `Formik, Form, Field, FieldArray, ErrorMessage` |
 | @tanstack/react-form | 17.3 KB | 16.5 KB | `useForm` |
-| @angular/forms | 18.1 KB | 18.1 KB | Framework package; no per-export surface (see note) |
+| @angular/forms | 18.1 KB | 18.1 KB | Framework package; no per-export surface |
 
-⚠ **vee-validate is bundler-sensitive**: rollup keeps its optional
-`@vue/devtools-api` integration (~21 KB gzip of dev-only tooling) while
-esbuild drops it. In a production rollup/webpack build you pay for the
-devtools hook; with esbuild you don't. Neither number is wrong — check
-what your pipeline tree-shakes.
-
-### Whole entry (worst case, everything exported)
+Whole entry:
 
 | Package | esbuild | rollup |
 |---|---|---|
 | react-final-form stack | 10.2 KB | 9.8 KB |
 | react-hook-form | 13.3 KB | 12.7 KB |
-| **@modyra/core** | **14.1 KB** | **13.8 KB** |
 | vee-validate | 13.6 KB | 34.6 KB ⚠ |
 | formik | 14.8 KB | 14.5 KB |
-| @tanstack/react-form | 19.1 KB | 18.1 KB |
 | @angular/forms | 18.1 KB | 18.1 KB |
+| @tanstack/react-form | 19.1 KB | 18.1 KB |
 
-> *@modyra/core re-measured 2026-07-21 after phase J of the
-> [roadmap](../../ROADMAP.md): satellite utilities (i18n, icons, datetime,
-> devtools, overlay positioning) moved to curated subpath entries
-> (`@modyra/core/datetime`, `/ui`, …) — they remain in the package, but the
-> main entry now ships only the form engine. Previous figure: 17.2 KB.*
->
-> *Re-measured again 2026-07-22 after the reactivity-adapter-api plan
->:
-> **whole-entry regressed from 10.7/10.4 KB to 14.1/13.8 KB gzip, losing
-> the #2 spot** to react-hook-form. Real, not a leak — `MdyReactiveScope`,
-> `activate()`/`deactivate()`/`mutate()`, typed error classes and the
-> handle-ownership registry are all always-linked additions the whole-entry
-> "every export" measurement necessarily includes; the realistic surface
-> (what an actual consumer's bundler keeps) only grew 9.4→10.6 KB / 9.1→10.3
-> KB and Modyra still holds #1 there, just by a narrower margin against
-> final-form's 11.0/10.6 KB. Bundle budgets in `scripts/check-bundle.mjs`
-> and `scripts/check-core-bundle.mjs` were raised with the same measured
-> numbers and reasoning. Not treated as a bug to silently work around: the
-> capability/scope/lifecycle contract is the deliverable this session shipped.*
+⚠ **vee-validate is bundler-sensitive.** Rollup keeps its optional `@vue/devtools-api` integration
+(~21 KB gzip of dev-only tooling); esbuild drops it. Neither number is wrong — check what your
+pipeline tree-shakes.
 
-### The schema-validator add-on (applies to every library)
+`@angular/forms` is not directly comparable: an Angular app pays for the framework regardless, and
+it ships no tree-shakeable form surface.
 
-Using zod with *any* of these libraries (Modyra included, via
-`@modyra/zod`) costs zod's weight on top. Measured on zod 4.4.3:
+### The schema validator is usually the bigger line item
+
+Using zod with any of these libraries — Modyra included, via `@modyra/zod` — costs zod's weight on
+top. Measured on zod 4.4.3:
 
 | Scenario | Min+gzip |
-|---|---|
-| esbuild, realistic `z.object` schema | **63.1 KB** |
-| rollup, same realistic schema | **16.7 KB** |
-| rollup, minimal `z.boolean()` | 9.1 KB |
-| zod's own published figure (rollup) | ~5.4 KB [^1^] |
-
-The spread is real and bundler-dependent: zod v4's root entry pulls in all
-~40 locales (198 KB min — 62% of the bundle) and **esbuild does not
-tree-shake them out, rollup does**. If your app builds with esbuild, a
-schema validator can be the single largest line item in this comparison;
-if it builds with rollup/webpack, it shrinks dramatically. `zod/mini`
-helps less than expected under esbuild (57.1 KB gzip measured, same
-locale issue).
-
-### Reading the numbers honestly
-
-- On the **realistic surface** Modyra is the lightest package measured
-  under *both* bundlers (10.6 / 10.3 KB gzip) — and that surface still
-  includes features most competitors don't ship at all (drafts,
-  undo/redo, sanitization). final-form's stack is close (11.0 / 10.6 KB)
-  but covers a fraction of the feature set (§3).
-- On the **whole-entry** metric Modyra (14.1 / 13.8 KB) is fourth —
-  behind react-final-form's stack (10.2 / 9.8 KB), react-hook-form
-  (13.3 / 12.7 KB) and vee-validate's esbuild number (13.6 KB, see the ⚠
-  caveat above) — but still lighter than formik, TanStack Form and
-  `@angular/forms`. This is a real regression from an earlier 10.7/10.4 KB
-  (see the dated note above): the earlier bundle split relocated satellite utilities
-  (i18n, icons, datetime, devtools) to curated subpath entries, then the
-  reactivity-adapter-api work added always-linked scope/lifecycle/error
-  machinery back on top. Not silently absorbed — stated here and in
-  `ROADMAP.md`.
-- `@angular/forms` is not directly comparable: Angular apps pay for the
-  framework regardless; it ships no tree-shakeable form surface.
-- Per-feature byte cost, Modyra is the most efficient package in this
-  table; absolute whole-entry weight, it is not the lightest. Both
-  statements are true; choose which metric matches your bundler's
-  tree-shaking reality.
-- Zero-dependency packages (Modyra, react-hook-form) are **bundler-stable**
-  (≤0.4 KB swing between esbuild and rollup). The two big swings in this
-  table (zod locales, vee-validate devtools) both come from dependency
-  code, not from the form engine itself.
-
-## 3. Feature coverage matrix
-
-✓ built-in · ~ partial / external package / manual · ✗ not available
-
-| Feature | Modyra 0.4 | TanStack Form 1.33 | react-hook-form 7.82 | formik 2.4 | final-form 5.0 | vee-validate 4.15 | Angular Reactive Forms 22 |
-|---|---|---|---|---|---|---|---|
-| Frameworks | 7: Angular, React, Vue, Lit, Solid, Preact, Svelte + vanilla core | 7: React, Preact, Vue, Angular, Solid, Lit, Svelte [^2^] | React (incl. RN) | React (incl. RN) | Agnostic core + official React | Vue | Angular |
-| Typed form API | ✓ descriptor inference | ✓ deep inference (DeepKeys) | ✓ generics + Path types | ~ weaker generics | ~ | ✓ | ✓ (since v14) |
-| Standard Schema / schema-lib validation | ✓ (`@modyra/standard-schema`, `@modyra/zod`) | ✓ built-in [^3^] | ✓ via `@hookform/resolvers` (external) | ~ Yup first-class; zod community | ✗ validate fns only | ✓ zod/yup/valibot resolvers | ✗ validator fns only |
-| Sync validation | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Async validation | ✓ debounce + AbortSignal cancellation + `dependsOn` + timeout | ✓ debounce + AbortSignal [^3^] | ~ async validators; no built-in debounce/cancellation | ~ form-level async validate | ~ | ✓ | ~ AsyncValidators; manual cancellation |
-| Cross-field validation | ✓ | ✓ listeners/linked fields | ~ manual (getValues/trigger) | ~ manual | ~ mutators | ✓ | ~ manual |
-| Dynamic arrays | ✓ push/insert/remove/move/swap | ✓ | ✓ useFieldArray | ✓ FieldArray | ✓ via `final-form-arrays` pkg | ✓ useFieldArray | ✓ FormArray |
-| Draft persistence (autosave/restore) | ✓ TTL, versioning, debounce | ~ "Persistence APIs" on the v1 roadmap (Mar 2025); shipment unverified [^3^] | ✗ (community `useFormPersist`) | ✗ | ✗ | ✗ | ✗ |
-| Undo/redo history | ✓ built-in | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Wizard / multi-step | ✓ per-step validation gating | ✗ manual composition | ✗ manual | ✗ | ✗ | ✗ | ✗ |
-| Submit lifecycle + server errors | ✓ submitting/counts/`errorsFor`/markAllTouched | ✓ + SSR `createServerValidate` [^3^] | ✓ handleSubmit + setError | ✓ + setErrors | ✓ | ✓ + setErrors | ~ manual |
-| Injection-prevention / sanitization | ✓ profiles, length caps, option whitelisting | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Dynamic/JSON-declared forms (AI-ready) | ✓ `parseDynamicFields` + renderer | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Bundled UI components | ✓ Angular renderer catalog (~30 controls) + theme pkg + headless widgets | ✗ headless only | ✗ | ✗ | ✗ | ✗ | ✗ framework directives |
-| i18n | ✓ core module | ✗ | ✗ | ✗ | ✗ | ✗ | framework-level |
-| Devtools | ✓ core, UI-agnostic | ✓ | ✓ `@hookform/devtools` (external) | ✗ | ✗ | ~ Vue devtools | ~ framework |
-| React Native | ~ compiles clean on Hermes, no integration [^6^] | ✓ | ✓ | ✓ | ~ | ✗ | ✗ |
-| Server-side reuse of validation | ✓ engine runs in Node; same schema gates API | ✓ first-class SSR API [^3^] | ~ resolvers run anywhere; no server API | ~ | ~ | ~ | ✗ |
-| On npm at time of writing | **✓ — `@modyra/*@0.4.0`** | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-
-## 4. Where Modyra is behind (read this before adopting)
-
-1. **Maturity and ecosystem.** react-hook-form (~43k GitHub stars in
-   2025 [^4^]), formik and final-form have years of production mileage,
-   Stack Overflow coverage and UI-library integrations (MUI, AntD…).
-   TanStack Form alone reports ~2.5M weekly downloads [^5^]. Modyra is
-   pre-1.0 (`0.4.0`, on npm), with a small community and no third-party
-   integrations.
-2. **Framework breadth.** Tied — Modyra now covers the same 7 frameworks
-   as TanStack Form (Angular, React, Vue, Lit, Solid, Preact, Svelte
-   [^2^]), each with a working example. Ecosystem depth per framework
-   (community integrations, third-party plugins) still favors TanStack.
-3. **Server-side story.** TanStack Form's `createServerValidate` is a
-   first-class SSR feature [^3^]; Modyra's isomorphic pattern (same zod
-   schema client/server) works but is a documented pattern, not a
-   framework-integrated API.
-4. **React Native.** RHF, Formik and TanStack Form ship real RN
-   integrations; Modyra's compiled output is Hermes-compatible (verified,
-   see the [React Native guide](react-native.md)) but there's no
-   `<TextInput>` binding, no AsyncStorage-backed draft adapter, and no
-   example app yet.
-5. **Non-Angular UI.** Modyra's full renderer catalog (~30 controls,
-   theme, dynamic form) ships for Angular only; React/Vue/Lit get the
-   adapter + headless recipes — you bring or compose your own components.
-6. **Pre-stable API.** Modyra is 0.x: breaking changes are possible
-   between minors; Angular Signal Forms (experimental in Angular 21+)
-   may eventually cover the typed/signal space natively.
-
-## 5. Where Modyra is ahead
-
-1. **Batteries in the engine**: draft persistence, undo/redo history,
-   wizard gating and injection-prevention ship *inside* the core — no
-   competitor in this table covers drafts or undo/redo natively.
-2. **Security surface**: sanitization profiles, draft shape validation,
-   option whitelisting (`oneOf`) are unique in this comparison.
-3. **AI-generated forms**: a whitelisted JSON contract
-   (`parseDynamicFields`) designed for LLM output; no equivalent found
-   elsewhere.
-4. **Angular depth**: the most complete signal-based form UI for Angular
-   today (renderer catalog, theme, dynamic forms, wizard) — the framework
-   itself only offers Reactive Forms primitives (Signal Forms is still
-   experimental).
-5. **Async validation control**: debounce + AbortSignal cancellation +
-   `dependsOn` + timeout + `when` as first-class field options (TanStack
-   Form matches debounce+cancellation; others are manual).
-6. **Measured realistic weight**: lightest form surface in this
-   comparison (10.6 KB gzip) despite shipping more features.
-
-## 6. Measured performance (Modyra internals)
-
-**Not a head-to-head.** The numbers below come from Modyra's own
-reproducible benchmark suite (`packages/angular/src/lib/core/benchmarks.spec.ts`,
-run via `npm run test:perf`) — they show Modyra's own cost model, not a
-comparison against react-hook-form/Formik/TanStack Form. A real competitive
-benchmark needs those libraries installed as dependencies to drive an
-equivalent React harness; that is a separate, larger batch (needs approval
-to add the deps) and is not done here. Publishing an honest Modyra-only
-number beats publishing no number, per this project's own rule that a gap
-gets stated, not hidden.
-
-Methodology: wall-clock (`performance.now`) inside Jest/jsdom, zoneless (no
-`zone.js`), Angular's `MdyDeclarativeAdapter`. Numbers vary ±10-20% run to
-run on shared CI hardware — treat them as an order-of-magnitude signal, not
-a precise SLA. Reproduce with `npm run test:perf`.
-
-| Scenario | Measured (2026-07-21) |
 | --- | --- |
-| Create 1,000 validated fields | ~16-28 ms |
-| 1,000× single-field update + read (no cross-field validator) | ~2-3 ms |
-| 1,000× single-field update + read **with** a cross-field validator registered | ~370-390 ms |
-| Full validity recompute, 1,000 invalid fields | ~0.2 ms |
-| Re-validate after 1,000 writes | ~1.4 ms |
-| `getChanges()` over 1,000 fields (500 changed) | ~1-1.7 ms |
-| Record 30 undo/redo snapshots | ~1-1.2 ms |
-| Undo ×30 + redo ×30 | ~0.3 ms |
-| 100× nested `patch()` | ~0.3-0.4 ms |
-| 100× `submit()` (no-op action) | ~2 ms |
-| 50× async validator round-trip | ~66-72 ms |
+| esbuild, realistic `z.object` schema | **63.1 KB** |
+| rollup, same schema | **16.7 KB** |
+| rollup, minimal `z.boolean()` | 9.1 KB |
+| zod's own published figure (rollup) | ~5.4 KB [^1] |
 
-**Where this is honest about a real cost**: a form-level (cross-field)
-validator re-runs on *every* field write, not just the one that changed —
-the ~150× jump between the plain single-field-update row and the
-cross-field-validator row above is that O(fields) recompute, not measurement
-noise (reproduced identically across repeated runs). For most forms this is
-free; for a 1,000-field form with a cross-field validator and rapid
-keystrokes it is the one case worth profiling before shipping. There is no
-current mitigation beyond keeping cross-field validators cheap or scoping
-them to the fields they actually need — noted here rather than left
-undocumented.
+Zod v4's root entry pulls in about 40 locales (198 KB minified, 62% of the bundle). **Rollup
+tree-shakes them out; esbuild does not.** If your app builds with esbuild, the validator can dwarf
+every form library on this page. `zod/mini` helps less than expected under esbuild — 57.1 KB gzip
+measured, same locale issue.
 
-## 7. Cold decision guide
+## Feature coverage
+
+✓ built-in · ~ partial, external package, or manual · ✗ not available
+
+| Feature | Modyra | TanStack Form 1.33 | react-hook-form 7.82 | formik 2.4 | final-form 5.0 | vee-validate 4.15 | Angular Reactive Forms 22 |
+|---|---|---|---|---|---|---|---|
+| Frameworks | 7 adapters (Angular, React, Vue, Lit, Solid, Preact, Svelte) + a framework-free renderer and a vanilla core | 7: React, Preact, Vue, Angular, Solid, Lit, Svelte [^2] | React (incl. RN) | React (incl. RN) | Agnostic core + official React | Vue | Angular |
+| Typed form API | ✓ descriptor inference | ✓ deep inference | ✓ generics + path types | ~ weaker generics | ~ | ✓ | ✓ |
+| Standard Schema / schema validation | ✓ `@modyra/standard-schema`, `@modyra/zod` | ✓ built-in [^3] | ✓ via `@hookform/resolvers` | ~ Yup first-class | ✗ validate functions only | ✓ zod/yup/valibot | ✗ validator functions only |
+| Sync validation | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Async validation | ✓ debounce, `AbortSignal` cancellation, `dependsOn`, timeout | ✓ debounce + `AbortSignal` [^3] | ~ no built-in debounce or cancellation | ~ form-level only | ~ | ✓ | ~ manual cancellation |
+| Cross-field validation | ✓ | ✓ | ~ manual | ~ manual | ~ mutators | ✓ | ~ manual |
+| Dynamic arrays | ✓ push/insert/remove/move/swap | ✓ | ✓ | ✓ | ✓ via a separate package | ✓ | ✓ |
+| Keyed collections | ✓ rows keyed by data, surviving sort and re-render | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Draft persistence | ✓ TTL, versioning, debounce, field exclusion | ~ on the v1 roadmap [^3] | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Undo/redo history | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Wizard / multi-step | ✓ per-step validation gating | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Submit lifecycle + server errors | ✓ | ✓ + SSR validation [^3] | ✓ | ✓ | ✓ | ✓ | ~ manual |
+| Injection prevention | ✓ profiles, length caps, option whitelisting | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Forms declared as data | ✓ Dynamic Form Contract, parsed strictly | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Bundled UI components | ✓ Angular, Lit and framework-free catalogs over 17 widget kinds | ✗ headless only | ✗ | ✗ | ✗ | ✗ | ✗ directives only |
+| i18n | ✓ core module | ✗ | ✗ | ✗ | ✗ | ✗ | framework-level |
+| Devtools | ✓ framework-independent | ✓ | ✓ external package | ✗ | ✗ | ~ Vue devtools | ~ framework |
+| React Native | ~ compiles on Hermes; no binding or example app [^4] | ✓ | ✓ | ✓ | ~ | ✗ | ✗ |
+| Validation reused on the server | ✓ the engine runs in Node | ✓ first-class SSR API [^3] | ~ resolvers run anywhere | ~ | ~ | ~ | ✗ |
+
+## Where Modyra is behind
+
+Read this before adopting.
+
+1. **Maturity and ecosystem.** react-hook-form, formik and final-form have years of production
+   mileage, Stack Overflow coverage and UI-library integrations. Modyra has a small community and no
+   third-party integrations.
+2. **Version stability is uneven.** `@modyra/core` and `@modyra/widgets` are at 2.0.0 and versioned
+   under a [compatibility policy](../contract-compatibility.md). Every adapter is still below 1.0
+   and can change its public surface in a minor release.
+3. **Server-side story.** TanStack Form's server validation is a framework-integrated API [^3].
+   Modyra's equivalent — running the same schema on both sides — works, but it is a documented
+   pattern rather than an API.
+4. **React Native.** Modyra's compiled output is Hermes-compatible ([verified](react-native.md)),
+   but there is no `<TextInput>` binding, no storage-backed draft adapter and no example app.
+5. **UI coverage is not uniform.** Angular, Lit and the framework-free renderer ship catalogs. The
+   other five adapters are headless: you bring your own markup, and accessibility and theming are
+   yours. See [headless recipes](headless-recipes.md).
+6. **Angular Signal Forms** (experimental in Angular 21+) may eventually cover the typed and
+   signal-based space natively.
+
+## Where Modyra is ahead
+
+1. **Behaviour ships in the engine.** Drafts, undo/redo, wizard gating and injection prevention are
+   built in. No other library in this table covers drafts or undo/redo.
+2. **Security surface.** Sanitization profiles, draft shape validation and option whitelisting are
+   unique in this comparison.
+3. **Forms as data.** The [Dynamic Form Contract](ai-generated-forms.md) is a validated,
+   serializable form definition that a server or a visual editor can produce and a frontend parses
+   strictly.
+4. **Async validation control.** Debounce, `AbortSignal` cancellation, `dependsOn`, timeout and
+   `when` are field options rather than something you assemble.
+5. **One contract across renderers.** The 17 widget kinds carry the same anatomy, states and
+   keyboard behaviour in every renderer that implements them, checked by a published conformance
+   suite.
+
+## Performance
+
+**Not a head-to-head.** These are Modyra's own numbers, from its own benchmark suite. Comparing them
+against another library needs that library installed to drive an equivalent harness, which this
+repository does not do.
+
+Wall-clock (`performance.now`) inside jsdom, zoneless. Expect ±10–20% between runs. Reproduce with
+`npm run test:perf`.
+
+| Scenario | Measured 2026-08-10 |
+| --- | --- |
+| Create 1,000 validated fields | 17.9 ms |
+| Create 100 fields | 1.8 ms |
+| 1,000× single-field update and read | 2.0 ms |
+| 1,000× single-field update and read, with a cross-field validator | 329 ms |
+| Full validity recompute, 1,000 invalid fields | 0.2 ms |
+| Re-validate after 1,000 writes | 1.7 ms |
+| `getChanges()` over 1,000 fields, 500 changed | 0.8 ms |
+| Record 30 undo snapshots | 0.7 ms |
+| Undo ×30 and redo ×30 | 0.3 ms |
+| 100× nested `patch()` | 0.3 ms |
+| 100× `submit()` with a no-op action | 1.6 ms |
+| 50× async validator round-trip | 56.9 ms |
+
+**One row deserves attention.** A form-level cross-field validator re-runs on *every* field write,
+not only the field that changed — that is the 160× gap between the two update rows, reproduced
+across runs. For an ordinary form it costs nothing. For a thousand-field form with a cross-field
+validator and fast typing, it is the case to profile before shipping. Keep cross-field validators
+cheap, or scope them to the fields they actually read.
+
+## Choosing
 
 | Your situation | Reasonable choice |
 |---|---|
-| React app, want the safest mainstream pick, RN maybe later | react-hook-form |
-| Multi-framework org, want maximal type inference + SSR validation | TanStack Form |
-| Vue-only app, want maturity | vee-validate (or Modyra's Vue adapter) |
-| Angular app, zero extra deps acceptable | Reactive Forms (watch Signal Forms) |
-| Angular app needing wizard/drafts/undo/UI catalog out of the box | Modyra |
-| Need built-in drafts, undo/redo, sanitization, or AI-declared forms | Modyra (only option in this table) |
-| Existing Formik/Final Form app, works fine | No reason to migrate (both actively published: formik 2.4.9, final-form 5.0.1) |
-| Risk-averse enterprise, long-term support contract mindset | Any of the mature three; Modyra is pre-1.0 |
+| React app, safest mainstream pick, React Native maybe later | react-hook-form |
+| Multi-framework organisation, maximal type inference and SSR validation | TanStack Form |
+| Vue-only app, want maturity | vee-validate, or Modyra's Vue adapter |
+| Angular app, no extra dependencies acceptable | Reactive Forms |
+| Angular app needing a wizard, drafts, undo or a UI catalog | Modyra |
+| Need drafts, undo/redo, sanitization, or forms defined as data | Modyra — the only option in this table |
+| Existing Formik or Final Form app that works | No reason to migrate; both are actively published |
+| Long-term support contract mindset | One of the mature three; Modyra's adapters are still below 1.0 |
 
 ## Sources
 
-[^1^]: Zod 4 release notes — core bundle methodology and Mini: https://zod.dev/v4
-[^2^]: TanStack Form supported frameworks: https://tanstack.com/form/v1/docs/framework
-[^3^]: TanStack Form v1 announcement (Standard Schema, async AbortSignal, SSR, persistence roadmap): https://tanstack.com/blog/announcing-tanstack-form-v1
-[^4^]: TanStack Form vs React Hook Form (stars, comparison 2025): https://blog.logrocket.com/tanstack-form-vs-react-hook-form/
-[^5^]: TanStack Form product page (weekly downloads, stars): https://tanstack.com/form/latest
-[^6^]: Compiled cleanly to Hermes bytecode with the real compiler React Native 0.86.0 depends on (`hermes-compiler@250829098.0.14`) — zero errors. No native-input renderer or example app yet. Full writeup: [React Native guide](react-native.md).
-
-All bundle figures: local esbuild 0.25 / rollup 4 measurements per §1,
-2026-07-21, cross-checked against https://bundlephobia.com (within ~10%).
+[^1]: Zod 4 release notes — bundle methodology: https://zod.dev/v4
+[^2]: TanStack Form supported frameworks: https://tanstack.com/form/v1/docs/framework
+[^3]: TanStack Form v1 announcement — Standard Schema, async `AbortSignal`, SSR, persistence roadmap: https://tanstack.com/blog/announcing-tanstack-form-v1
+[^4]: Compiled to Hermes bytecode with the compiler React Native 0.86 depends on, with zero errors. No native input renderer or example app. Full writeup: [React Native guide](react-native.md).

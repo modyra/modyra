@@ -234,7 +234,7 @@ above).
 
 `@modyra/vue`, `@modyra/react`, `@modyra/solid`, `@modyra/preact`,
 `@modyra/svelte` and `@modyra/lit` are shipped, tested engine bindings
-published on npm at `0.4.0` — reactivity adapter + typed form factory
+published on npm — reactivity adapter + typed form factory
 (+ hooks/controller/composable),
 plus headless field/select controllers via `@modyra/widgets`. They do not
 ship a themed UI component library the way `@modyra/angular`'s renderer
