@@ -18,8 +18,8 @@ export interface FieldShell {
   readonly errorList: HTMLUListElement;
   /** The name for a control that has no visible label; see {@link insertControl}. */
   readonly ariaLabel?: string;
-  /** True when the field rendered label text a `for` attribute can point at. */
-  readonly hasVisibleLabel: boolean;
+  /** The visible label's text, which names the control when no explicit name is given. */
+  readonly labelText?: string;
   /** Reflects state the themes key off: touched on the root, disabled/error on the wrapper. */
   syncState(state: { touched?: boolean; disabled?: boolean; hasError?: boolean; filled?: boolean; required?: boolean }): void;
 }
@@ -68,7 +68,7 @@ export function buildFieldShell(
 
   return {
     ariaLabel,
-    hasVisibleLabel: Boolean(labelText),
+    labelText,
     root,
     label,
     wrapper,
@@ -88,14 +88,14 @@ export function buildFieldShell(
 /**
  * Puts the control inside the input wrapper, where every renderer and every theme expects it.
  *
- * This is also where a control with no visible label gets its name. Only there: a visible label
- * already names the control through `for`, and an `aria-label` over the top of it is what makes the
- * spoken name disagree with the written one — the user says "Item" and the machine is listening for
- * something else.
+ * This is also where the control gets its name: the explicit one when given, the label's own text
+ * otherwise. Naming it here as well as through `for` is redundant on paper and load-bearing in
+ * practice — the label element also holds the required marker, so a name read from its content
+ * carries an asterisk the user's word does not, and anything matching the name exactly then misses
+ * the control the user is asking for.
  */
 export function insertControl(shell: FieldShell, control: HTMLElement): void {
-  if (shell.ariaLabel && !shell.hasVisibleLabel) {
-    control.setAttribute("aria-label", shell.ariaLabel);
-  }
+  const name = shell.ariaLabel || shell.labelText;
+  if (name) control.setAttribute("aria-label", name);
   (shell.wrapper.querySelector(`.${MDY_FIELD_SHELL_CLASSES.control}`) ?? shell.wrapper).appendChild(control);
 }

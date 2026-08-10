@@ -5,16 +5,23 @@ in the browser — drag fields onto a canvas, nest them into groups and
 arrays, wire up validators and server checks from the inspector, try the
 whole thing in a real running preview, then export it to real code.
 
-Everything Studio edits is a single canonical model — an
-`MdyStudioProject` — never generated source. The canvas never touches a
-`.ts` file directly; targets compile the model into one on export. See
+Everything Studio edits is a single canonical model — an `MdyStudioProject` — never generated
+source. The canvas never touches a `.ts` file directly; targets compile the model on export. See
 [Project format](project-format.md) for the model itself.
+
+**Two things can come out of it**, and you can use either or both:
+
+- **a contract** — the portable Dynamic Form Contract, which a service can serve and Angular, Plain
+  or React can build a form from without a rebuild;
+- **source code** — ordinary `createForm`, `mdyForm` or `useMdyForm` modules that you own and edit,
+  for teams that would rather not run a contract at all.
 
 ## What's here
 
 | Document | What it covers |
 | :--- | :--- |
 | [Getting started](getting-started.md) | Launch Studio, build a first form, try the preview, export it |
+| [Live Canvas authoring](live-canvas.md) | The authoring surface, and why every action is a command |
 | [Drag-and-drop editing](drag-and-drop.md) | Pointer drag, the keyboard-only equivalent, undo/redo |
 | [Validators](validators.md) | Field, array, cross-field/form, and server validators |
 | [Target generation](target-generation.md) | The Export tab — JSON, Core, Angular, React targets, conformance |

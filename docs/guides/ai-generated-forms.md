@@ -1,6 +1,7 @@
-# Data-driven forms from generated configuration
+# Forms as data
 
-Modyra can build forms from JSON produced by an LLM, CMS or other external system. Treat that configuration as untrusted input.
+A Modyra form can be a JSON document rather than code — produced by a service, a CMS, a visual
+editor, or a language model. Whatever produced it, treat it as untrusted input.
 
 The supported path is:
 
@@ -172,7 +173,7 @@ onSubmitted(event: { value: Record<string, unknown> }): void {
   carries them, but visibility and enabled-state are still the host's to
   apply.
 - CMS/storage use case: same contract, same parser — see
-  [UI toolkit — dynamic forms](ui-toolkit.md) for the versioning notes.
+  [the UI toolkit](ui-toolkit.md#rendering-from-a-contract) for the versioning notes.
 - Keep the schema of *your* domain out of the prompt when possible: a
   smaller, fixed contract is what makes the output predictable enough to
   validate.
@@ -230,12 +231,42 @@ value to both controls.
 }
 ```
 
+### Contract v3: a slot that moves with the screen
+
+Version 3 adds one thing to v2 and changes nothing else: **where a single child sits, and whether it
+shows, per screen size.** A v2 document is a v3 document with the version number raised.
+
+In v2 a layout child is a field name. In v3 it can also be a slot — the same field, plus placement:
+
+```json
+{
+  "version": 3,
+  "layout": [
+    {
+      "kind": "columns",
+      "id": "address",
+      "at": { "base": 1, "md": 2 },
+      "columns": [
+        [{ "ref": "city", "at": { "md": { "column": 1 } } }],
+        [{ "ref": "region", "at": { "base": { "hidden": true }, "md": { "column": 2 } } }]
+      ]
+    }
+  ]
+}
+```
+
+The breakpoints are `base`, `sm`, `md` and `lg`. A section can carry the same `at`, so a group is
+layout-able for a screen size like anything else.
+
+The row's track count stays on the row (`at` on the `columns` node), where v2 put it. There is one
+spelling for it, because a second way to say the same thing leaves every reader deciding which wins.
+
 Use `parseDynamicForm(input, { mode: "lenient" })` for AI previews: valid
 fields survive and diagnostics explain rejected fields, layout nodes, and
 rules. Use `mode: "strict"` before publishing a stored contract or accepting
 it into an API registry: any diagnostic makes `ok` false and returns no
 renderable fields. `parseDynamicFields()` remains backward compatible and
-accepts v1, v2, and the legacy bare field array.
+accepts v1, v2, v3 and the legacy bare field array.
 
 The machine-readable schema is `spec/dynamic-form-v3.schema.json`, with
 `spec/dynamic-form-v2.schema.json` for documents that stay on v2. Point a

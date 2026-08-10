@@ -5,6 +5,10 @@ arrays, sync/async/cross-field validation, dirty/touched tracking, draft
 persistence, undo/redo and minimal-patch change tracking — with zero
 dependencies and no framework in sight.
 
+```bash
+npm install @modyra/core
+```
+
 ```ts
 import { createForm, field, group, required, min } from "@modyra/core";
 

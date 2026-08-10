@@ -1,139 +1,117 @@
-# Usage modes — Angular
+# Usage modes
 
-Every adapter builds the same model from the same schema; what differs is how
-a component reaches it. This page is about **Angular**, which offers three
-ways and lets them mix: the other adapters have one each, and the
-[typed forms guide](./typed-forms.md) shows them side by side.
+There are three ways to put a Modyra form on a page, and they are independent of any framework. The
+examples use `@modyra/plain`, the framework-free renderer, because it shows the model with nothing
+in front of it. Every framework adapter offers the same three; only the syntax changes.
 
-`@modyra/angular` has one Signals engine and three ways to drive it. All
-three share the same adapter, validators, renderers and devtools — you can mix
-them inside one application (and even inside one form) while migrating.
+| Mode | You write | The form comes from | Best for |
+| :--- | :--- | :--- | :--- |
+| **Typed** | A TypeScript schema | Your code | New code — field paths checked at compile time |
+| **Contract** | A JSON document | A server, a CMS, or Studio | Forms that change without a rebuild |
+| **Headless** | Your own markup | Either of the above | An existing design system |
 
-| Mode                    | Source of truth   | Best for                                       |
-| :---------------------- | :---------------- | :--------------------------------------------- |
-| **Typed** (`mdyForm()`) | TypeScript schema | New code — compile-time checked field bindings |
-| **Declarative**         | Template          | Small forms, prototypes, template-only teams   |
-| **Explicit adapter**    | Component class   | Programmatic registration, custom integrations |
+They mix. A typed form can render one contract-driven section, and a headless field can sit beside a
+rendered one.
 
-The typed mode is the recommended default: it is the reason this library
-exists. See the [typed forms guide](./typed-forms.md).
+## Typed
 
-## Declarative mode
-
-Zero boilerplate: define structure, values and validation directly in the
-template. Fields are keyed by `name` and created lazily on first use.
-
-```html
-<mdy-form [formValue]="{ speed: 50 }" (submitted)="save($event)">
-  <mdy-control-text
-    name="username"
-    label="Username"
-    mdyRequired
-    mdyMinLength="3"
-  />
-
-  <mdy-control-slider name="speed" label="Max Speed" [min]="0" [max]="100" />
-
-  <button type="submit">Save</button>
-</mdy-form>
-```
-
-Validator directives (`mdyRequired`, `mdyEmail`, `mdyMinLength`,
-`mdyMaxLength`, `mdyPattern`, `mdyMin`, `mdyMax`) are reactive: changing
-`[mdyMin]` at runtime re-registers the validator. Cross-field validators bind
-via `[formValidators]` on `<mdy-form>`.
-
-Trade-off vs typed mode: `name` is a string — a typo silently creates a new
-field instead of failing to compile.
-
-## Explicit adapter mode
-
-Full control: create the adapter yourself to seed values, register validators
-programmatically and drive submit with an async action (returned
-`MdyFormError[]` are shown on the matching fields).
+The schema is TypeScript, so a typo in a field path is a compile error rather than a silently new
+field.
 
 ```ts
-import { Injector, inject, signal } from "@angular/core";
-import { MdyDeclarativeAdapter } from "@modyra/angular/adapter";
-import { min as mdyMin, required as mdyRequired } from "@modyra/core";
+import { createForm, field, group, min, required } from "@modyra/core";
 
-export class Component {
-  private readonly injector = inject(Injector);
+const form = createForm({
+  email: field("", [required()]),
+  age: field<number | null>(null, [min(18)]),
+  shipping: group({
+    city: field("Rome"),
+    zip: field(""),
+  }),
+});
 
-  readonly adapter = new MdyDeclarativeAdapter(
-    signal({ name: "", age: 18 }), // seed values
-    signal("valid-only"), // submit mode
-    this.injector, // enables async validators
-  );
-
-  constructor() {
-    this.adapter.upsertValidators("name", "cmp", [mdyRequired()], true);
-    this.adapter.upsertValidators("age", "cmp", [mdyMin(18)]);
-    // Async validation with a real pending state:
-    this.adapter.upsertAsyncValidators("name", "cmp", [
-      async (v) => ((await isNameTaken(v)) ? ["Name already taken"] : []),
-    ]);
-  }
-
-  readonly save = async (value: Record<string, unknown>) => {
-    const res = await api.save(value); // your own API layer (pseudocode)
-    return res.ok ? [] : [{ path: "name", kind: "server", message: res.error }];
-  };
-}
+form.f.shipping.city.set("Milan");
+form.getValue().shipping.city;  // string
 ```
 
-```html
-<mdy-form [adapter]="adapter" [action]="save">
-  <mdy-control-text name="name" label="Full Name" />
-  <mdy-control-number name="age" label="Age" />
-</mdy-form>
-```
+This form runs anywhere — a browser, a worker, a Node test — because nothing in it references a
+rendering layer. See [typed forms](./typed-forms.md) for arrays, async validation, drafts and
+history.
 
-Any object implementing the exported `MdyFormAdapter` interface works too.
+## Contract
 
-## Headless — `@modyra/angular/adapter`
-
-Bring your own design system: the `adapter` secondary entry point exposes the
-engine only — `mdyForm()`, the declarative adapter, validators, field/form
-state types, DI tokens, i18n and utilities — with **no renderer components
-and no CSS**.
+The form is data: a list of fields, optionally a layout, in a document that can be stored, sent over
+a network, or produced by a service in another language.
 
 ```ts
-import { mdyForm, field } from "@modyra/angular/adapter";
-import { required as mdyRequired } from "@modyra/core";
+import { mountMdyForm } from "@modyra/plain";
 
-const form = mdyForm({ email: field("", [mdyRequired()]) });
-// form.f.email.value(), errors(), pending() … drive your own widgets
+const fields = [
+  { name: "email", kind: "text", label: "Email", validators: { required: true } },
+  { name: "country", kind: "select", label: "Country", options: [
+    { value: "IT", label: "Italy" },
+    { value: "FR", label: "France" },
+  ] },
+];
+
+const { form, dispose } = mountMdyForm(document.querySelector("#form"), fields, {
+  onSubmit: (value) => api.save(value),
+});
 ```
 
-Same module instances and DI tokens as the primary entry point, so headless
-fields and the ready-made renderers can coexist during a migration.
+`mountMdyForm` owns everything inside the container until you call `dispose()`. It returns the real
+`@modyra/core` form, so anything the typed mode can do is available here too.
 
-## Validation (all modes)
+**When the document did not come from your code, parse it first.** TypeScript types do not validate
+runtime data:
 
-1. **Directives** — `mdyRequired`, `mdyEmail`, … in templates.
-2. **Pure functions** — compose `mdyRequired()`, `mdyMin()`, … with
-   `compose`/`composeFirst`; register via `upsertValidators` or an
-   `mdyForm()` schema.
-3. **Async validators** — in the schema
-   (`field("", [], { asyncValidators: [checkUnique], asyncDebounceMs: 300 })`)
-   or via `adapter.upsertAsyncValidators(name, key, fns, { debounceMs })`.
-   The field's `pending` signal is true for the whole debounce+run window,
-   results are last-wins (stale responses are discarded), and `canSubmit`
-   waits for them.
-4. **Cross-field validators** — `crossField(paths, fn)` receives the whole
-   form value and attributes its error to every involved field (or to the
-   form itself with an empty `paths` array). Declare them in
-   `mdyForm(schema, { validators: [...] })` or bind `[formValidators]`.
+```ts
+import { parseDynamicForm } from "@modyra/core";
 
-### Error semantics
+const result = parseDynamicForm(await response.json(), { mode: "strict" });
+if (!result.ok) return report(result.diagnostics);
 
-- Errors carry a `kind` (`"validation"`, `"async"`, `"cross-field"`,
-  `"server"`, …), a `message` and — at form level — a `path`.
-- A field's `errors()` merges, in order: sync validators, async validators,
-  cross-field errors attributed to it, server errors from the last submit.
-- Server errors clear as soon as the field's value no longer matches the
-  value that was submitted.
-- `state.valid()` is true when every field is valid **and** no cross-field
-  error is outstanding; `canSubmit()` additionally waits for `pending()` and
-  `submitting()`.
+mountMdyForm(container, result.fields, { layout: result.layout });
+```
+
+Strict mode returns nothing at all when any diagnostic exists — a partly valid document is never
+accepted. Lenient mode keeps what parsed and reports the rest, which is what an editor preview
+wants. See [forms as data](./ai-generated-forms.md) for the trust boundary in full.
+
+## Headless
+
+The engine drives your own components. Nothing is rendered for you, and nothing is assumed about
+your markup.
+
+```ts
+import { createForm, field, required } from "@modyra/core";
+
+const form = createForm({ email: field("", [required()]) });
+
+// read
+form.f.email.value();
+form.f.email.errors();
+form.f.email.pending();
+
+// write
+input.addEventListener("input", (e) => form.f.email.set(e.target.value));
+input.addEventListener("blur", () => form.f.email.markAsTouched());
+```
+
+In a framework, the adapter does the subscribing — `useMdyForm` in React and Preact, a composable in
+Vue, a store in Svelte, signals in Solid and Angular. The form model is identical in all of them.
+
+**What headless costs you:** accessibility and theming become yours. `@modyra/widgets` publishes the
+same part names, id policy, ARIA relations and class vocabulary the rendered catalogues use, so your
+markup can be built from the definition rather than guessed — but nothing checks that it was. See
+[headless recipes](./headless-recipes.md) for pairing with an existing component library.
+
+## Choosing between them
+
+- The form is known at build time and belongs to this application → **typed**.
+- The form varies per customer, region or product, or is edited by someone who does not deploy →
+  **contract**.
+- You already have a design system you are not replacing → **headless**, in either of the above.
+
+Per-framework detail lives with each adapter: [Angular](./usage-modes-angular.md) has three ways of
+its own, and the [examples](../examples/checkout-scenario.md) implement one form in every adapter.

@@ -30,14 +30,24 @@ test("the name given to the element lands on the control", async () => {
   );
 });
 
-test("a visible label takes the name back", async () => {
+test("an explicit name wins over the visible label", async () => {
   const form = createLitForm({ n: field("") });
   const element = await mount("mdy-text-field", (el) => {
     el.field = form.f.n;
-    el.setAttribute("aria-label", "Something else");
+    el.setAttribute("aria-label", "Item, row 12");
     el.label = "Item";
   });
 
-  assert.equal(element.querySelector("input").getAttribute("aria-label"), null);
+  assert.equal(element.querySelector("input").getAttribute("aria-label"), "Item, row 12");
   assert.match(element.querySelector("label").textContent, /Item/);
+});
+
+test("a labelled control is named by its label", async () => {
+  const form = createLitForm({ n: field("") });
+  const element = await mount("mdy-text-field", (el) => {
+    el.field = form.f.n;
+    el.label = "Item";
+  });
+
+  assert.equal(element.querySelector("input").getAttribute("aria-label"), "Item");
 });

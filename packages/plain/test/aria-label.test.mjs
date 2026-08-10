@@ -30,19 +30,34 @@ test("a control with no visible label is named by ariaLabel", () => {
   assert.equal(input.getAttribute("aria-label"), "Item, row 12");
 });
 
-test("a visible label wins: the control is not named twice", () => {
+test("an explicit name wins over the visible label", () => {
   const form = createForm({ n: field("") });
   const container = host();
 
   renderField(
     container,
-    { name: "n", kind: "text", label: "Item", ariaLabel: "Something else" },
+    { name: "n", kind: "text", label: "Item", ariaLabel: "Item, row 12" },
     form.f.n,
   );
 
   const input = container.querySelector("input");
-  assert.equal(input.getAttribute("aria-label"), null, "the label already names it, natively");
+  assert.equal(input.getAttribute("aria-label"), "Item, row 12");
   assert.match(container.querySelector("label").textContent, /Item/);
+});
+
+test("a labelled control is named by its label, without the required marker", () => {
+  const form = createForm({ n: field("", [(v) => (v ? [] : ["req"])]) });
+  const container = host();
+
+  renderField(
+    container,
+    { name: "n", kind: "text", label: "Item", validators: { required: true } },
+    form.f.n,
+  );
+
+  const input = container.querySelector("input");
+  assert.equal(input.getAttribute("aria-label"), "Item", "the asterisk is decoration, not a name");
+  assert.match(container.querySelector("label").textContent, /\*/, "which the label still shows");
 });
 
 test("no name at all leaves the control as it was", () => {

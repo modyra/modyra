@@ -30,9 +30,12 @@ import { MdyInlineErrorIconComponent } from "./inline-error-icon.component";
         class="mdy-label"
         [class.mdy-label--filled]="filled()"
         [class.mdy-label--has-error]="showInlineError()"
-      >
-        {{ label() }}
-        @if (required()) {
+      ><!--
+        The text and the marker sit against each other on purpose. A newline between them is a text
+        node, and a text node is part of the computed accessible name: the control ends up called
+        "First Name " while the user reads "First Name", and anything matching on the name exactly —
+        a test, an assistive tool's find-by-name — misses it.
+      -->{{ label() }}@if (required()) {
           <span
             class="mdy-label__required"
             [class.mdy-label__required--filled]="filled()"

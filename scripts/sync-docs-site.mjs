@@ -10,6 +10,7 @@
  * - preserves anchors, query strings, optional Markdown titles, and images.
  */
 import {
+  cpSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -28,6 +29,19 @@ const targetDir = join(root, 'site/src/content/docs');
 const DOCS_BASE = '/modyra';
 const REPO_ROOT = 'https://github.com/modyra/modyra';
 const REPO_BLOB = `${REPO_ROOT}/blob/main/`;
+/**
+ * Images resolve to the bytes, not to the page around them.
+ *
+ * A `blob` URL renders GitHub's file viewer, which an `<img>` cannot display, so an image published
+ * through the blob rewrite is broken on the site while looking correct in the repository.
+ *
+ * `docs/assets/` is copied into the site instead of linked out to: an image served from the site is
+ * one the local preview can show and one that does not depend on a push having landed. Images
+ * outside `docs/assets/` still resolve to raw bytes on GitHub, since the site has no copy of them.
+ */
+const REPO_RAW = 'https://raw.githubusercontent.com/modyra/modyra/main/';
+const DOCS_ASSETS = 'assets/';
+const SITE_ASSETS = join(root, 'site/public/docs-assets');
 const REPO_TREE = `${REPO_ROOT}/tree/main/`;
 const REPO_EDIT = `${REPO_ROOT}/edit/main/`;
 
@@ -67,12 +81,13 @@ function docsRoute(docsRel) {
   return clean ? `${DOCS_BASE}/${clean}/` : `${DOCS_BASE}/`;
 }
 
-function repoUrl(repoRel, isDirectory, query = '', hash = '') {
+function repoUrl(repoRel, isDirectory, query = '', hash = '', isImage = false) {
   const encoded = repoRel
     .split('/')
     .map((segment) => encodeURIComponent(segment))
     .join('/');
-  return `${isDirectory ? REPO_TREE : REPO_BLOB}${encoded}${query}${hash}`;
+  const base = isDirectory ? REPO_TREE : isImage ? REPO_RAW : REPO_BLOB;
+  return `${base}${encoded}${query}${hash}`;
 }
 
 function filesystemPath(repoRel) {
@@ -114,16 +129,18 @@ function rewriteLinks(content, fileDocsRelDir) {
 
         if (!bang && isMarkdownPage && !SYNC_EXCLUDED.has(docsRel)) {
           rewritten = `${docsRoute(docsRel)}${query}${hash}`;
+        } else if (bang && docsRel.startsWith(DOCS_ASSETS)) {
+          rewritten = `${DOCS_BASE}/docs-assets/${docsRel.slice(DOCS_ASSETS.length)}${query}${hash}`;
         } else {
           // Images, downloads, directories, and non-Markdown assets remain
           // source artifacts and therefore link to GitHub rather than a
           // non-existent Starlight route.
           const directory = isDirectoryTarget(repoRel, explicitDirectory);
-          rewritten = repoUrl(repoRel, directory, query, hash);
+          rewritten = repoUrl(repoRel, directory, query, hash, Boolean(bang));
         }
       } else {
         const directory = isDirectoryTarget(repoRel, explicitDirectory);
-        rewritten = repoUrl(repoRel, directory, query, hash);
+        rewritten = repoUrl(repoRel, directory, query, hash, Boolean(bang));
       }
 
       return `${bang}[${text}](${rewritten}${titlePart})`;
@@ -157,6 +174,11 @@ const SYNC_EXCLUDED = new Set(['contract-gaps.md']);
 
 rmSync(targetDir, { recursive: true, force: true });
 mkdirSync(targetDir, { recursive: true });
+
+// Served by the site rather than linked to GitHub, so the local preview shows what the deploy will.
+rmSync(SITE_ASSETS, { recursive: true, force: true });
+const docsAssets = join(docsDir, 'assets');
+if (existsSync(docsAssets)) cpSync(docsAssets, SITE_ASSETS, { recursive: true });
 
 let count = 0;
 for (const file of walk(docsDir)) {

@@ -1,11 +1,11 @@
 # The shared checkout scenario
 
-Every adapter example in this directory implements the same form. That is deliberate: the point of
-the examples is not seven different forms, it is **one form, seven bindings**, so a difference
-between two pages is a difference between two adapters and not between two authors.
+The seven framework examples all implement the same form: **one form, seven bindings**. A difference
+between two of those pages is therefore a difference between two adapters, not between two authors.
 
-This page describes the scenario once. Each adapter page describes only what its own binding does
-differently.
+This page describes the form once. Each adapter page covers only what its own binding does
+differently. (`@modyra/plain` has [its own page](plain.md) — it renders a contract rather than this
+scenario.)
 
 ## The shape
 

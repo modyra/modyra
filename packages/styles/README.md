@@ -1,8 +1,21 @@
 # @modyra/styles
 
 Framework-agnostic CSS themes for [Modyra](https://github.com/modyra/modyra)
-UI components — one class structure, five themes, every adapter (Angular
-renderers, Lit elements, custom renderers built on `@modyra/widgets`).
+UI components — one class structure, six themes, every renderer.
+
+| Entry point | Theme |
+| :--- | :--- |
+| `@modyra/styles/default.css` | The default look |
+| `@modyra/styles/modern.css` | Modyra's own: Satoshi typography, compact fully-bordered controls |
+| `@modyra/styles/material.css` | Material 3 |
+| `@modyra/styles/ios.css` | iOS, faithful to Apple's own pairings |
+| `@modyra/styles/ionic.css` | Ionic |
+| `@modyra/styles/salience.css` | Generated from a seed colour by the theme compiler, with light and dark solved independently |
+
+`@modyra/styles/base.css` carries the layout and the tokens every theme resolves through. It is
+**required** by each theme above — a theme loaded without it lays the controls out correctly and
+renders every colour as its initial value, which looks like controls that are present and invisible.
+`foundation.css` is the token layer beneath it.
 
 ## Install
 

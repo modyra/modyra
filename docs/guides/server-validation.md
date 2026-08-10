@@ -1,9 +1,10 @@
-# Server validation — one schema, two sides
+# Server validation
 
-A client-only validator is a suggestion: any request that skips your form
-(curl, a bug in a different client, a malicious user) reaches your handler
-unchecked. `serverValidate(schema, payload)` runs the **same** Zod or
-Standard Schema definition your form already uses, and returns errors in
+Anything that skips your form — curl, a different client, someone hostile — reaches your handler
+with no validation at all. Running the same rules on the server closes that.
+
+`serverValidate(schema, payload)` runs the **same** Zod or Standard Schema definition your form
+already uses, and returns errors in
 the exact `MdyFormError[]` shape a `form.submit()` action returns — so one
 schema feeds both the client's inline errors and the server's rejection,
 and one error shape flows through both.

@@ -151,9 +151,17 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    */
   public readonly ariaLabel = input<string | null>(null);
 
-  /** The name to put on the control element, or null when a visible label already names it. */
-  protected readonly controlAriaLabel: Signal<string | null> = computed(() =>
-    this.label() ? null : (this.ariaLabel() || null),
+  /**
+   * The name on the control element.
+   *
+   * The explicit one when it is given, otherwise the visible label's text. Naming the control from
+   * the label as well as through `for` is redundant on paper and load-bearing in practice: the
+   * label element also holds the required marker, so a name computed from its content carries an
+   * asterisk the user's word does not — and anything matching on the name exactly, a test or an
+   * assistive tool's find-by-name, then misses the control the user is asking for.
+   */
+  protected readonly controlAriaLabel: Signal<string | null> = computed(
+    () => this.ariaLabel() || this.label() || null,
   );
 
   /** Opt-in or opt-out of floating labels on a per-control basis, overriding the form-level directive. */

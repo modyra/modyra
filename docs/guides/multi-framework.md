@@ -13,7 +13,7 @@ concrete recipe each adapter follows.
 - Typed layer: `createForm()`, `field()`, `group()`, `array()`, handle tree.
 - Validators (`required`, `min`, …, `crossField`).
 - The reactive contract (`MdyReactivity`: `signal`/`computed`/`effect`/
-  `untracked`, plus optional `capabilities`/`createScope`/
+  `untracked`, plus `id`, `kind` and `capabilities`, `createScope`/
   `MdyReactiveScope`, typed errors and structured diagnostics — see
   [Writing a reactivity adapter](reactivity-adapter-guide.md)) plus
   `vanillaReactivity()`, the reference implementation (real `batch()`/
@@ -24,7 +24,7 @@ concrete recipe each adapter follows.
   (`date-utils`), time parsing/formatting and clock geometry
   (`time-utils`), option filtering (`options-utils`), value serialization (`serialize`),
   dynamic-form config domain + runtime validation (`dynamic-config`,
-  Contract v1 and v2 — see [AI-generated forms](ai-generated-forms.md)),
+  Contract v1, v2 and v3 — see [forms as data](ai-generated-forms.md)),
   i18n message catalogs en/it/de/fr/es (`i18n`).
 
 **`@modyra/widgets` — headless widget controllers, framework-free:**
