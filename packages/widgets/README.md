@@ -4,8 +4,13 @@ Headless widget controllers and the universal interaction/accessibility
 contract shared by every [Modyra](https://github.com/modyra/modyra)
 renderer — framework components, custom elements, or your own design system.
 
-Zero dependencies, framework-agnostic, DOM-free: controllers operate on
-state and emit **commands**; renderers translate commands into DOM changes.
+One dependency (`@modyra/core`), framework-agnostic and DOM-free: controllers
+operate on state and emit **commands**; renderers translate commands into DOM
+changes.
+
+```bash
+npm install @modyra/widgets
+```
 
 ## What is inside
 

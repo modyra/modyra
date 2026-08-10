@@ -1,15 +1,41 @@
-# UI toolkit — renderers, dynamic forms, theming
+# The UI toolkit
 
-This page is the **Angular UI layer** (`@modyra/angular/ui`). The engine
-stays UI-free, and every renderer — this one included — is an **ecosystem
-layer** on top of it: the core never depends on a renderer, and importing one
-control does not pull in the whole catalogue (standalone components, standard
-tree shaking).
+Modyra ships rendered controls, and one definition of how they behave. This page is that definition
+and the parts that apply to every renderer: the catalogue, theming, and accessibility.
 
-What each renderer must draw is the framework-agnostic widget contract in
-`@modyra/widgets`; see [contract compatibility](../contract-compatibility.md).
-The equivalent pages for the other bindings are linked from the
-[documentation index](../README.md).
+The framework-specific catalogues are separate: [Angular](./ui-toolkit-angular.md) has its own
+components and template syntax, Lit ships custom elements, and `@modyra/plain` renders without a
+framework at all.
+
+The engine stays UI-free. Every renderer is a layer on top of it — the core never depends on one,
+and importing a single control does not pull in the whole catalogue.
+
+## The catalogue: 17 widget kinds
+
+Every renderer draws the same seventeen kinds, with the same parts, states and keyboard behaviour.
+
+| Kind | Value type |
+| :--- | :--- |
+| `text`, `email`, `password` | `string` |
+| `textarea` | `string` |
+| `number` | `number \| null` |
+| `slider` | `number` |
+| `checkbox`, `toggle` | `boolean` |
+| `radio`, `segmented` | `TValue \| null` |
+| `select` | `TValue \| null` |
+| `multiselect` | `TValue[]` |
+| `datepicker` | `string` — ISO `yyyy-MM-dd`, a calendar date with no timezone |
+| `daterange` | `MdyDateRange` |
+| `timepicker` | `string` — `"HH:mm AM/PM"`, or `"HH:mm"` in 24-hour format |
+| `colors` | `string` — hex |
+| `file` | `File \| File[] \| null` |
+
+What each kind is made of — its parts, how they relate, which classes a theme selects on, and how
+each part looks in every state — is `@modyra/widgets`. That definition is public API:
+[contract compatibility](../contract-compatibility.md) says what a change to it costs, and the
+conformance CLI is what judges a renderer against it.
+
+Three renderers are judged by that suite today: Angular, Lit and Plain.
 
 ## Naming a control that has no visible label
 
@@ -29,110 +55,44 @@ who can see it, and a screen reader meets the control on its own. `ariaLabel` na
 renderField(container, { name: "item-12", kind: "text", ariaLabel: "Item, row 12" }, cell);
 ```
 
-It applies **only while there is no visible label**. A label names the control natively, and a second
-name over the top of it is what makes the spoken name disagree with the written one — the user asks
-for what they can read and the machine is listening for something else.
+**An explicit `ariaLabel` wins over the visible label**, which is what makes a cell in a table
+nameable: the column header says "Item" to someone who can see it, and the control still needs to
+say *which* item on its own.
 
-## Component catalog
+Use it only when the visible label genuinely does not identify the control. Giving a plainly
+labelled field a different spoken name makes the two disagree — the user asks for what they can
+read, and the machine is listening for something else.
 
-| Selector                  | Component                     | Value type                                                       |
-| :------------------------ | :---------------------------- | :--------------------------------------------------------------- |
-| `mdy-control-text`        | `MdyTextComponent`            | `string`                                                         |
-| `mdy-control-textarea`    | `MdyTextareaComponent`        | `string`                                                         |
-| `mdy-control-number`      | `MdyNumberComponent`          | `number \| null`                                                 |
-| `mdy-control-checkbox`    | `MdyCheckboxComponent`        | `boolean`                                                        |
-| `mdy-control-toggle`      | `MdyToggleComponent`          | `boolean`                                                        |
-| `mdy-control-radio`       | `MdyRadioGroupComponent`      | `TValue \| null`                                                 |
-| `mdy-control-segmented`   | `MdySegmentedButtonComponent` | `TValue \| null`                                                 |
-| `mdy-control-slider`      | `MdySliderComponent`          | `number`                                                         |
-| `mdy-control-select`      | `MdySelectComponent`          | `TValue \| null`                                                 |
-| `mdy-control-multiselect` | `MdyMultiselectComponent`     | `TValue[]`                                                       |
-| `mdy-control-datepicker`  | `MdyDatePickerComponent`      | `string` (ISO `yyyy-MM-dd`, a calendar date — no timezone)       |
-| `mdy-control-daterange`   | `MdyDateRangePickerComponent` | `MdyDateRange`                                                   |
-| `mdy-control-timepicker`  | `MdyTimepickerComponent`      | `string` (`"HH:mm AM/PM"`, or `"HH:mm"` 24h with `format="24h"`) |
-| `mdy-control-colors`      | `MdyColorsComponent`          | `string` (hex)                                                   |
-| `mdy-control-file`        | `MdyFileComponent`            | `File \| File[] \| null`                                         |
+Where nothing explicit is given, the control is still named, from the visible label's text. That is
+deliberate rather than redundant: the label element also carries the required marker, so a name read
+from its content would be "Item *" where the user reads and says "Item". The marker is decoration —
+`aria-required` carries what it means.
 
-## UI enhancements
+## Rendering from a contract
 
-### Prefixes & suffixes
-
-```html
-<mdy-control-text name="price" label="Price">
-  <span mdyPrefix>$</span>
-  <span mdySuffix>.00</span>
-</mdy-control-text>
-```
-
-### Floating labels & supporting text
-
-```html
-<mdy-form [mdyFloatingLabels]="true" [mdyFloatingLabelsDensity]="-2">
-  <mdy-control-text name="email" label="Email">
-    <small mdySupportingText>We'll never share your email.</small>
-  </mdy-control-text>
-</mdy-form>
-```
-
-### Inline errors
-
-```html
-<mdy-control-text name="password" label="Password" mdyInlineErrors />
-```
-
-## Enterprise select — server-side search & tagging
-
-```html
-<mdy-control-select
-  name="city"
-  searchable
-  allowCreate
-  [mdyLoadOptions]="searchCities"
-  [mdyLoadOptionsDebounce]="300"
-  (optionCreated)="addCity($event)"
-/>
-```
-
-`[mdyLoadOptions]` calls `(query) => Promise<MdySelectOption[]>` on every
-debounced query change (including the initial empty query) with the loading
-spinner driven for the whole window and last-wins semantics on out-of-order
-responses — works on select and multiselect. `allowCreate` adds a
-"Create «query»" row when no option label matches (keyboard: Enter with no
-active option): pick it and `optionCreated` fires with the query.
-
-### Conditional options
-
-```html
-<mdy-control-select name="country" [options]="countries" />
-<mdy-control-select
-  name="province"
-  [mdyDependsOn]="'country'"
-  [mdyOptionsMap]="provincesByCountry"
-/>
-```
-
-## Dynamic forms — render from JSON config
+The same catalogue renders from data rather than from markup. The document is a serializable
+discriminated union — store it in a CMS or a form-builder backend — and its 17 field kinds are the
+17 above. The JSON-safe validators (`required`, `email`, `min`/`max`, `minLength`/`maxLength`,
+`pattern`) map to the same validator functions a typed form uses.
 
 ```ts
-readonly fields: MdyDynamicField[] = [
+const fields = [
   { kind: "text", name: "fullName", label: "Full name", validators: { required: true, minLength: 2 } },
   { kind: "select", name: "topic", label: "Topic", options: [{ value: "sales", label: "Sales" }] },
   { kind: "slider", name: "score", label: "Score", min: 0, max: 10 },
 ];
 ```
 
-```html
-<mdy-dynamic-form [fields]="fields" (submitted)="save($event)">
-  <button type="submit">Send</button>
-</mdy-dynamic-form>
+Framework-free:
+
+```ts
+import { mountMdyForm } from "@modyra/plain";
+
+mountMdyForm(container, fields, { onSubmit: (value) => save(value) });
 ```
 
-The config is a serializable discriminated union (store it in a CMS or
-form-builder backend): 17 field kinds map to the renderer catalog and the
-JSON-safe validator set (`required`, `email`, `min/max`,
-`minLength/maxLength`, `pattern`) maps to the pure validator functions.
-Projected content (like the submit button) lands inside the generated
-`<mdy-form>`; the inner form is exposed via the `form` view child.
+Angular has an equivalent component — see [the Angular toolkit](./ui-toolkit-angular.md#rendering-from-a-contract).
+`@modyra/react` builds the form state from the same document and leaves the markup to you.
 
 Caveats when the JSON comes from the network:
 
@@ -175,15 +135,16 @@ function loadFields(raw: unknown): MdyDynamicField[] {
 envelope; unknown envelope versions are rejected wholesale (fail closed),
 while individually malformed fields are dropped item-by-item.
 
-## Form serialization
+## Serializing a form value
 
 ```ts
-const data = mdyFormSerialize(adapter.getValue());
+import { mdyFormSerialize } from "@modyra/core/serialize";
+
+const data = mdyFormSerialize(form.getValue());
 ```
 
-Converts a form value into a JSON-serializable object; `File` objects become
-descriptive strings (`"[File: resume.pdf (12345 bytes)]"`) — file _contents_
-are never read or serialized.
+Converts a form value into something `JSON.stringify` accepts. A `File` becomes a descriptive
+string — `"[File: resume.pdf (12345 bytes)]"` — and file *contents* are never read or serialized.
 
 ## Theming — CSS token customization
 
@@ -222,9 +183,12 @@ global brand color change.
 }
 ```
 
-Style entry points: `modyra.css` (all-in), or
-`modyra-material.css`, `modyra-ios.css`,
-`modyra-ionic.css`, `modyra-modern.css`, `modyra-base.css` (bare layout).
+Style entry points: `modyra.css` (everything), or one theme at a time —
+`@modyra/styles/default.css`, `/modern.css`, `/material.css`, `/ios.css`, `/ionic.css`,
+`/salience.css` — over `@modyra/styles/base.css`.
+
+`salience.css` is generated rather than written: the theme compiler takes a seed colour and solves
+the light and dark token sets independently, so neither is a darkened copy of the other.
 
 `modyra-base.css` is **required** by every theme except the all-in entry
 points that import it themselves: the component CSS resolves every value
@@ -232,13 +196,10 @@ through a `--mdy-sys-*` / `--mdy-comp-*` token declared only there. A theme
 loaded without it still applies its layout while every colour falls back to
 its initial value — controls that are present, positioned, and invisible.
 
-`modyra-modern.css` is the Modyra-branded theme: Satoshi typography and a
-compact, fully-bordered control (2.25rem) in place of M3's 3.5rem filled one.
-It also supplies the bare `input.mdy-checkbox` the other themes have no rule
-for, because the catalog's `.mdy-checkbox` styles a *label* wrapping a hidden
-input while the widget controllers put the class on the input itself. A toggle
-needs no such rule: its wrapper is `.mdy-toggle`, named by the catalog, and
-`.mdy-switch` — the spelling from before the contract — is gone.
+`modern.css` is Modyra's own theme: Satoshi typography and a compact, fully bordered control
+(2.25rem) where Material 3 uses a 3.5rem filled one. It also styles a bare `input.mdy-checkbox`,
+which the other themes do not: the catalogue's `.mdy-checkbox` styles a *label* wrapping a hidden
+input, while the widget controllers put the class on the input itself.
 
 ### Writing a theme
 
@@ -264,7 +225,7 @@ from every consumer permanently, with no way to win it back.
 
 ## Accessibility
 
-The composite controls implement the corresponding WAI-ARIA patterns:
+The composite controls implement the matching WAI-ARIA patterns:
 
 - Keyboard interaction on datepicker, select, multiselect, timepicker
   (arrow keys, Space, Enter, Escape, Home/End where applicable).
@@ -274,7 +235,11 @@ The composite controls implement the corresponding WAI-ARIA patterns:
   `aria-activedescendant`, `aria-describedby`.
 - Focus restoration when overlays close.
 
-Automated accessibility tests (axe) and cross-browser component tests are
-**not yet part of CI** — treat per-widget conformance as "implemented and
-unit-tested where the test runner allows", not as externally verified. This
-is tracked in the roadmap.
+**What is checked, and where.** axe runs against the rendered controls
+(`packages/angular/src/lib/renderers/a11y.spec.ts`) and against Studio
+(`apps/studio/e2e/a11y.spec.ts`). Cross-browser behaviour runs on Chromium, Firefox and WebKit —
+three renderers against three engines — in the browser suite on every CI run. The conformance CLI
+checks anatomy, ARIA relations, states and keyboard behaviour for the three renderers.
+
+Where the engines disagree, the difference is recorded rather than resolved; see
+[known issues](../known-issues.md).

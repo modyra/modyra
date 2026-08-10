@@ -36,13 +36,23 @@ describe("naming a control with no visible label", () => {
     expect(input.getAttribute("aria-label")).toBe("Item, row 12");
   });
 
-  it("drops it as soon as a visible label names the control", () => {
+  it("keeps the explicit name even when a label is visible", () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.label = "Item";
     fixture.detectChanges();
 
     const input = fixture.nativeElement.querySelector("input") as HTMLInputElement;
-    expect(input.getAttribute("aria-label")).toBeNull();
+    expect(input.getAttribute("aria-label")).toBe("Item, row 12");
     expect(fixture.nativeElement.querySelector("label")?.textContent).toContain("Item");
+  });
+
+  it("falls back to the label's own text, which the required marker never enters", () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.label = "Item";
+    fixture.componentInstance.ariaLabel = null;
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector("input") as HTMLInputElement;
+    expect(input.getAttribute("aria-label")).toBe("Item");
   });
 });

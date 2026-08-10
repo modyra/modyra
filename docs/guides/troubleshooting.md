@@ -1,9 +1,19 @@
 # Troubleshooting
 
-First move, always: add `mdyDevtools` to the `<mdy-form>` and press
-**Ctrl+Shift+D**. The panel shows every field's value, valid/touched/dirty/
-pending and each error with its origin (`[validation]`, `[async]`,
-`[cross-field]`, `[server]`).
+**First move, always: open the inspector.** It shows every field's value, its valid, touched, dirty
+and pending flags, and each error with its origin — `[validation]`, `[async]`, `[cross-field]` or
+`[server]`.
+
+It is part of the engine, so it works with any adapter:
+
+```ts
+import { mountMdyDevtools } from "@modyra/core/devtools";
+
+const unmount = mountMdyDevtools(form, document.querySelector("#inspector"));
+```
+
+In Angular, add `mdyDevtools` to the `<mdy-form>` and press **Ctrl+Shift+D** for the same panel as
+an overlay. See the [devtools guide](./devtools.md).
 
 ## Why is `canSubmit()` false?
 
@@ -47,15 +57,14 @@ In order of likelihood:
 5. Storage unavailable (private mode, blocked cookies, SSR) — the default
    storage silently degrades to a no-op.
 
-## Why is a control not registered / its state empty?
+## Why is a control not registered, or its state empty?
 
-- Typo in `name` (declarative mode creates a **new** field per unique name —
-  a typo silently forks the state). Use typed `[field]` bindings to make
-  this a compile error.
-- Two controls share one name: both bind to the same state (dev-mode
-  console warning). Rename one.
-- The control sits outside the `<mdy-form>` element, so it found no
-  registry — check the console for the dev-mode error.
+- **A typo in the field name.** Anything that addresses a field by string — a template attribute, a
+  contract document — creates a *new* field for an unrecognised name rather than failing. The typed
+  handles (`form.f.email`) make the same mistake a compile error.
+- **Two controls share one name.** Both bind to the same field, and dev mode warns about it. Rename
+  one.
+- **The control is outside the form.** It found no registry to claim a field from; dev mode logs it.
 
 ## Why did my value reset to null after `setValue()`?
 
@@ -66,4 +75,4 @@ are reset to `null`. Use `patch()`/`patchValue()` to change a subset.
 
 Leaves compare with `Object.is` (reference equality for objects/arrays).
 A re-created array/object counts as changed even if deep-equal. See the
-[mental model](./mental-model.md#equality-strategy).
+[mental model](./mental-model.md#how-equality-is-decided).

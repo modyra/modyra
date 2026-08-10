@@ -48,6 +48,7 @@
     "contract:snapshot": "npm run build:packages && node scripts/contract-diff.mjs --write",
     "test:contract-snapshot": "node scripts/contract-diff.mjs --check",
     "docs:sync": "node scripts/sync-docs-site.mjs",
+    "docs:widget-shots": "node scripts/capture-widget-shots.mjs",
     "docs:dev": "npm --prefix site run dev",
     "docs:build": "npm --prefix site run build",
     "docs:preview": "npm --prefix site run preview",

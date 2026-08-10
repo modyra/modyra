@@ -42,6 +42,8 @@ absent section reads as an oversight, and "no security impact" is a finding.
 | [0024](0024-an-author-time-check-calls-the-parser.md) | An author-time check calls the parser | The contract already knows what is wrong with a document; an editor check that says so again is a second answer that drifts |
 | [0025](0025-a-tag-publishes-and-nothing-else-does.md) | A tag publishes, and nothing else does | A release pipeline whose publish step was a dry run stayed green for four versions while npm served none of them |
 | [0026](0026-a-row-exists-because-it-was-declared.md) | A row exists because it was declared | A collection keyed by data, where what is mounted must not decide what exists |
+| [0027](0027-a-register-and-its-summary-are-both-checked.md) | A register and its summary are both checked | A maintainer's defect register and the page consumers read, held to the same statuses |
+| [0028](0028-a-status-sentence-names-a-version.md) | A status sentence names a version | One "pre-1.0" line over a workspace whose packages have never shared a maturity |
 
 ## Security-relevant records
 

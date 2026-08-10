@@ -1,8 +1,8 @@
 # @modyra/angular
 
 Angular binding for the [Modyra](https://github.com/modyra/modyra) form
-engine — one of seven, all equal citizens of the same form model, and one of
-the three that ship a rendered UI catalogue: typed forms on native signals,
+engine — one of eight adapters over the same form model, and one of the
+three that ship a rendered UI catalogue: typed forms on native signals,
 a full accessible UI catalog, devtools, multi-step wizard, declarative mode
 and Reactive Forms interop. No `FormControl`, no `FormGroup`, no RxJS.
 

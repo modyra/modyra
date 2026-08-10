@@ -246,8 +246,10 @@ export abstract class MdyFieldElement<T> extends LitElement {
   /**
    * Names the control when no visible label does.
    *
-   * Read from the element's own `aria-label` and moved to the control, because the name belongs to
-   * the thing a user operates. Removed again when a label arrives, so the two never disagree.
+   * The explicit name comes from the element's own `aria-label` and moves to the control, because a
+   * name belongs to the thing a user operates. Without one the visible label's text is used — the
+   * label element also holds the required marker, so a name read from its content would carry an
+   * asterisk the user's word does not.
    */
   protected applyControlName(): void {
     const named = this._pendingName ?? this.getAttribute("aria-label");
@@ -261,7 +263,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
       "input, select, textarea, [role='combobox'], [role='listbox']",
     );
     if (!control) return;
-    if (this._pendingName && !this.label) control.setAttribute("aria-label", this._pendingName);
+    const name = this._pendingName || this.label;
+    if (name) control.setAttribute("aria-label", name);
     else control.removeAttribute("aria-label");
   }
 

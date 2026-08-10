@@ -4,6 +4,9 @@ Modyra keeps a form's behaviour — state, validation, drafts, history, submissi
 framework-independent core, and lets that form travel as data. This index is organised by what you
 are trying to do.
 
+**In a hurry?** [The feature tour](feature-tour.md) shows everything Modyra does, with a runnable
+example and a screenshot for each.
+
 ## Pick your path
 
 **I want a typed form in my application.** Read the [mental model](guides/mental-model.md), then
@@ -26,7 +29,7 @@ the [compatibility policy](contract-compatibility.md), the [known issues](known-
 
 - [Mental model](guides/mental-model.md) — form state, field handles, and the lifecycle of a field
 - [Typed forms](guides/typed-forms.md) — schemas, validation, arrays, keyed collections, drafts, history
-- [Usage modes](guides/usage-modes.md) — typed, declarative and headless bindings
+- [Usage modes](guides/usage-modes.md) — typed, contract-driven and headless
 - [Schema adapters](guides/schemas.md) — Zod and Standard Schema
 - [Security](guides/security.md) — trust boundaries, persistence and sanitization
 - [Troubleshooting](guides/troubleshooting.md) — pending state, submission and integration problems
@@ -59,7 +62,8 @@ UI coverage, SSR behaviour and ecosystem integration differ by adapter. The pack
 
 One definition of how a control behaves, shared by every renderer.
 
-- [UI toolkit](guides/ui-toolkit.md) — the catalogue, and what a renderer owes it
+- [UI toolkit](guides/ui-toolkit.md) — the 17 widget kinds, theming and accessibility
+- [UI toolkit in Angular](guides/ui-toolkit-angular.md) — Angular's components and template syntax
 - [Contract compatibility](contract-compatibility.md) — what a change costs, and which changes break
 - [Known issues](known-issues.md) — what does not work yet, and who it affects
 - [Reactivity capability matrix](reactivity-capability-matrix.md) — generated, per adapter
@@ -69,6 +73,7 @@ One definition of how a control behaves, shared by every renderer.
 - [Multi-framework architecture](guides/multi-framework.md)
 - [Writing a reactivity adapter](guides/reactivity-adapter-guide.md)
 - [Headless UI recipes](guides/headless-recipes.md) — pairing an adapter with your own components
+- [Usage modes in Angular](guides/usage-modes-angular.md) — its three bindings
 - [Angular Reactive Forms interop](guides/interop.md)
 - [React Native](guides/react-native.md) — what is verified, and what is not
 

@@ -57,3 +57,9 @@ cd sdk/java/modyra-contract
 
 Requires Java 17+ (any distribution — verified against Homebrew's
 OpenJDK 17 during development).
+
+## Contract versions
+
+This SDK reads and writes **Contract v2**. `@modyra/core` accepts v1, v2 and v3; v3 adds
+per-breakpoint placement for a single layout slot and changes nothing else, so a v2 document this
+SDK produces is valid input everywhere.

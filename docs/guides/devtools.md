@@ -1,11 +1,11 @@
-# DevTools — live form inspector
+# DevTools
 
-"Why is my form invalid?" answered in one panel.
+A panel showing every field's value, flags and errors, so "why is my form invalid?" is a question
+you can answer by looking.
 
-The inspector is the core's, and it has two front-ends over the same state:
-a **headless panel** (`mountMdyDevtools`) that mounts into any DOM, and an
-**overlay** that Angular adds with a directive and a hotkey. Neither knows
-anything the other does not.
+The inspector lives in `@modyra/core`, and has two front-ends over the same state: a **panel**
+(`mountMdyDevtools`) you mount into any DOM, and an **overlay** Angular adds with a directive and a
+hotkey. Neither shows anything the other cannot.
 
 ## The headless panel — any binding
 

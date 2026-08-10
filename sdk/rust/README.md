@@ -21,6 +21,12 @@ Run:
 cargo test --manifest-path sdk/rust/Cargo.toml
 ```
 
+## Contract versions
+
+This SDK reads and writes **Contract v2**. `@modyra/core` accepts v1, v2 and v3; v3 adds
+per-breakpoint placement for a single layout slot and changes nothing else, so a v2 document this
+SDK produces is valid input everywhere.
+
 ## POST submission example
 
 The `examples/post-form` binary sends a sample Contract v2 submission and
