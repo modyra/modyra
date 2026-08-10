@@ -62,7 +62,10 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
    * visible — a control that looks empty while the form holds something tells the user nothing.
    */
   protected renderedOptions(value: unknown): ReadonlyArray<MdySelectOption<unknown>> {
-    return optionsWithUnrecognizedValue(this.options, value);
+    // The controller decides what is painted — it is the one place the rule lives, so a renderer
+    // cannot forget it. Before it exists (connectedCallback has not run) the declared list plus the
+    // held value is the same answer.
+    return this.selectAdapter?.state?.options ?? optionsWithUnrecognizedValue(this.options, value);
   }
 
   protected override get listOptions(): ReadonlyArray<MdySelectOption<unknown>> {

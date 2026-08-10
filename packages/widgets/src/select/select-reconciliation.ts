@@ -78,10 +78,35 @@ export function reconcileSelectValue<TValue>(
 export function optionsWithUnrecognizedValue<TValue>(
   options: readonly MdySelectOption<TValue>[],
   value: TValue | null,
-  label?: (value: TValue) => string,
 ): readonly MdySelectOption<TValue>[] {
   if (value === null || value === undefined || value === "") return options;
   if (options.length === 0) return options;
   if (options.some((option) => sameChoice(value, option.value))) return options;
-  return [{ value, label: label ? label(value) : String(value) }, ...options];
+  return [{ value, label: String(value) }, ...options];
+}
+
+/**
+ * The multi-value form of {@link optionsWithUnrecognizedValue}.
+ *
+ * A widget that holds several values has the same duty as one that holds one: what it will not
+ * erase, it has to show. Unrecognised values come first, in the order the value holds them, and are
+ * named by themselves — supply an option to name one differently.
+ */
+export function optionsWithUnrecognizedValues<TValue>(
+  options: readonly MdySelectOption<TValue>[],
+  values: readonly TValue[] | null | undefined,
+): readonly MdySelectOption<TValue>[] {
+  if (!values || values.length === 0 || options.length === 0) return options;
+  const unrecognized = values.filter(
+    (value) =>
+      value !== null &&
+      value !== undefined &&
+      value !== "" &&
+      !options.some((option) => sameChoice(value, option.value)),
+  );
+  if (unrecognized.length === 0) return options;
+  return [
+    ...unrecognized.map((value) => ({ value, label: String(value) })),
+    ...options,
+  ];
 }

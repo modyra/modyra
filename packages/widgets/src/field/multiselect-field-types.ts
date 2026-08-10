@@ -26,6 +26,14 @@ export interface MdyMultiselectFieldControllerOptions<TValue> {
 
 /** Semantic state of a multiselect field widget. */
 export interface MdyMultiselectFieldState<TValue> {
+  /**
+   * The options to paint: the declared list, plus every held value the list does not contain.
+   *
+   * A renderer paints this rather than the list it was handed, and that is what makes the rule the
+   * contract's instead of each renderer's — a value the widget will not erase is a value it shows,
+   * and one the user can therefore remove.
+   */
+  readonly options: readonly MdySelectOption<TValue>[];
   readonly selectedValues: ReadonlyArray<TValue>;
   readonly selectedKeys: ReadonlySet<string>;
   /** Occurrence count per option key — always populated, mainly meaningful in `"multi"` mode. */

@@ -1,6 +1,6 @@
 # ADR 0029: A widget does not repair the model
 
-Status: Accepted
+Status: Accepted — amended 2026-08-10, see **Amendment: the rule belongs to the controller**
 
 ## Context
 
@@ -92,3 +92,43 @@ guarded by its tests and by this record, and by nothing else.
 None directly. One property is worth stating: the widget no longer writes a value the user did not
 enter, so a rendered control cannot change what a form submits without a user action or an explicit
 application call. That is strictly less authority than before, not more.
+
+## Amendment: the rule belongs to the controller
+
+**2026-08-10.** The record above was applied one renderer at a time, and that is why it was applied
+unevenly: the single select carried it, the multiselect kept only the half that matters for data —
+the value stayed and was submitted, and no chip stood for it, so a person saw one chip while the
+form held two values and could not remove what they could not see.
+
+The cause was the place, not the effort. A rule each renderer has to remember is a rule two of them
+will forget, which is the same reasoning `dynamic-config.ts` gives for `searchable` being contract
+data rather than a renderer input.
+
+**The controllers decide the list a renderer paints.** `createSelectController` and
+`createMultiselectFieldController` compute the declared options plus every held value those options
+do not contain, and expose it as `state.options`; the indexes, the counts and the commands are built
+from that list, so a chip standing for an unrecognised value exists and acts like any other. A
+renderer paints `state.options` instead of the list it was handed.
+
+There is deliberately **no hook for naming** such a value. It is labelled by itself, and an
+application that wants a readable name supplies the option — at which point the value is not
+unrecognised. A callback could not have crossed into a data-only document; supplying an option
+works everywhere.
+
+### Verification
+
+- `packages/widgets/test/select-controller.spec.mjs` — the helpers and the identity rule.
+- The same case asserted through all three renderers, for both widgets:
+  `packages/plain/test/{orphan-select-value,multiselect-unrecognized}.test.mjs`,
+  `packages/lit/test/{orphan-select-value,multiselect-unrecognized}.test.mjs`,
+  `packages/angular/src/lib/renderers/{select/orphan-value,multiselect/unrecognized-value}.spec.ts`.
+- The framework-free tests include the two cases that would betray an over-eager fix: a value that
+  arrives **after** the widget was built gets its chip, and an empty option list adds nothing.
+- Removing a value through the chip that stands for it is asserted, because showing it is only half
+  the point.
+
+### Security and privacy
+
+The property this closes is worth naming: a form could submit a value the user was never shown. It
+came from the application or the server rather than from a widget, and no widget writes it — but it
+is now visible wherever it is held, which is the only honest state for a value that will be sent.

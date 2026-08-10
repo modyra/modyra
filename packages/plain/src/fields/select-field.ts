@@ -8,7 +8,7 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, selectKeyboardAction, typeaheadMatch, createSelectController, fieldShellPartIds, optionsWithUnrecognizedValue, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, selectKeyboardAction, typeaheadMatch, createSelectController, fieldShellPartIds, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
@@ -23,11 +23,7 @@ export function renderSelectField(
 ): () => void {
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("select");
-  // What this select renders: the declared options, plus the value the field holds when they do not
-  // contain it. The widget does not erase such a value to make itself consistent, so it has to be
-  // visible — a control that looks empty while the form holds something explains nothing.
-  const declared = f.options as ReadonlyArray<MdySelectOption<unknown>>;
-  const options = optionsWithUnrecognizedValue(declared, handle.value());
+  const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   // The two interaction models the contract declares: a listbox that jumps as you type, or a
   // combobox that filters. Unset is a listbox, which is what a select without a stated opinion is.
   const searchable = (f as { readonly searchable?: boolean }).searchable === true;
@@ -73,13 +69,35 @@ export function renderSelectField(
   // a search nobody wanted and focus landed in it rather than on the list.
   popup.append(...(searchable ? [search] : []), listbox);
   const optionEls = new Map<string, HTMLLIElement>();
-  for (const option of options) {
-    const key = keyFor(option);
-    const li = el("li", parts.option.classes.join(" ")) as HTMLLIElement;
-    setText(li, option.label);
-    listbox.appendChild(li);
-    optionEls.set(key, li);
+  /**
+   * Brings the list on screen in line with the list the controller says it paints.
+   *
+   * That list is not fixed: the declared options can be replaced, and a held value the options do
+   * not contain is painted as an option of its own so the user can see it and replace it. Building
+   * the `<li>`s once would leave both of those invisible.
+   */
+  function syncOptions(painted: readonly MdySelectOption<unknown>[]): void {
+    const wanted = new Set<string>();
+    for (const option of painted) {
+      const key = keyFor(option);
+      wanted.add(key);
+      let li = optionEls.get(key);
+      if (!li) {
+        li = el("li", parts.option.classes.join(" ")) as HTMLLIElement;
+        optionEls.set(key, li);
+      }
+      setText(li, option.label);
+      // Appending an element already in the list moves it, which is what keeps the order the
+      // controller's rather than the order elements happened to be created in.
+      listbox.appendChild(li);
+    }
+    for (const [key, li] of [...optionEls]) {
+      if (wanted.has(key)) continue;
+      li.remove();
+      optionEls.delete(key);
+    }
   }
+  syncOptions(controller.state().options);
 
   // `mdy-select` is what the themes anchor the dropdown against (position: relative).
   const wrapper = el("div", "mdy-select");
@@ -173,7 +191,7 @@ export function renderSelectField(
     // A listbox jumps rather than filters. Handled before the keyboard policy, which has no rule for
     // a printable character and would otherwise let it fall through to nothing.
     if (!searchable && state.open && isTypeaheadCharacter(event.key, event)) {
-      const match = typeaheadMatch(options, typeahead.push(event.key));
+      const match = typeaheadMatch(controller.state().options, typeahead.push(event.key));
       if (match) {
         event.preventDefault();
         dispatch({ type: "activate", optionKey: keyFor(match) });
@@ -234,6 +252,7 @@ export function renderSelectField(
     applyPart(search, view.parts.search);
     applyPart(listbox, view.parts.listbox);
     setErrors(shell.errorList, handle.errors().map((e) => e.message));
+    syncOptions(state.options);
 
     setOverlayOpen(popup, state.open);
     // The chevron points down when closed and up when open — the stylesheet has always carried the
@@ -254,7 +273,7 @@ export function renderSelectField(
       if (search.value) search.value = "";
     }
     // The trigger always shows the committed value: nothing the user types can hide it.
-    const selected = options.find((o) => keyFor(o) === state.selectedKey);
+    const selected = state.options.find((o) => keyFor(o) === state.selectedKey);
     setText(valueText, selected?.label ?? "");
     valueText.hidden = !selected;
     placeholderText.hidden = Boolean(selected);

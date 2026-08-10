@@ -1,5 +1,5 @@
 ---
-"@modyra/core": minor
+"@modyra/core": patch
 "@modyra/angular": patch
 ---
 
