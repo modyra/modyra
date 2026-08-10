@@ -122,6 +122,7 @@ export type {
   MdyFieldHandle,
   MdyFieldHandleTree,
   MdyFieldOptions,
+  MdyGroupOptions,
   MdyFormPatch,
   MdyFormSchema,
   MdyFormValue,
