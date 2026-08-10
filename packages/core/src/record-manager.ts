@@ -154,7 +154,7 @@ export class MdyRecordManager {
       // Admits the waiting claims of controls that mounted before this row was declared.
       this._deps.engine.refreshPathGate(this._deps.path);
     }
-    this._registerNode(`${this._deps.path}.${key}`, this._deps.item, rowValue);
+    this._registerNode(`${this._deps.path}.${key}`, this._deps.item, rowValue, `${this._deps.path}.${key}`);
   }
 
   /**
@@ -317,7 +317,7 @@ export class MdyRecordManager {
     return false;
   }
 
-  private _registerNode(fullPath: string, rowNode: MdyRowNode, value: unknown): void {
+  private _registerNode(fullPath: string, rowNode: MdyRowNode, value: unknown, rowPath: string): void {
     const { engine } = this._deps;
     if (rowNode.kind === "field") {
       const v = value === undefined ? rowNode.initial : value;
@@ -328,6 +328,22 @@ export class MdyRecordManager {
       engine.getField(fullPath);
       const marksRequired = rowNode.validators.some((fn) => hasRequiredMarker(fn));
       engine.upsertValidators(fullPath, ROW_SCHEMA_KEY, rowNode.validators, marksRequired);
+      if (rowNode.when !== null) {
+        const when = rowNode.when;
+        const item = this._deps.item;
+        // The row is what encloses a cell, so the row is what its condition reads. A rule written
+        // once for the item cannot name a key, and the whole form value would make it navigate to a
+        // row it has no way to identify.
+        engine.setInactive(
+          fullPath,
+          this._deps.rx.computed(() => {
+            const ref = engine.peekField(fullPath);
+            const value = ref ? ref().value() : null;
+            const row = this._readNode(rowPath, item);
+            return !when(value, isRecord(row) ? row : { });
+          }),
+        );
+      }
       if (rowNode.asyncValidators.length > 0) {
         engine.upsertAsyncValidators(fullPath, ROW_SCHEMA_KEY, rowNode.asyncValidators, {
           debounceMs: rowNode.asyncDebounceMs,
@@ -341,7 +357,7 @@ export class MdyRecordManager {
     const rec = isRecord(value) ? value : {};
     for (const [key, child] of Object.entries(rowNode.children)) {
       assertRowNode(child);
-      this._registerNode(`${fullPath}.${key}`, child, rec[key]);
+      this._registerNode(`${fullPath}.${key}`, child, rec[key], rowPath);
     }
   }
 

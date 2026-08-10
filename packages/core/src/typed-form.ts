@@ -337,7 +337,11 @@ export interface MdyFieldOptions<TValue> {
    * means here: not validated, not submitted, and its value kept — a branch the user leaves and
    * comes back to still holds what they typed. It is deliberately not a fourth state.
    *
-   * The predicate re-runs when the form's value changes, so it must be a pure function of the
+   * The second argument is **what encloses the field**: the form's value, or the row's when the
+   * field is inside a `record()` or an `array()` — a rule written once for the item of a collection
+   * cannot name a key or an index, so what it reads is its own row.
+   *
+   * The predicate re-runs when what it reads changes, so it must be a pure function of the
    * arguments it is given.
    */
   readonly when?: (value: TValue, formValue: Record<string, unknown>) => boolean;

@@ -12,29 +12,34 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
     max: { type: Number },
     step: { type: Number },
   };
-  declare min: number;
-  declare max: number;
+  /**
+   * The ends of the track. Left unset they are the field's own rules, and where those say nothing
+   * either, what a bare `<input type="range">` assumes — a slider has to span something to be drawn.
+   */
+  declare min?: number;
+  declare max?: number;
   declare step: number;
   protected override readonly widgetKind = "slider" as const;
 
   constructor() {
     super();
-    this.min = 0;
-    this.max = 100;
     this.step = 1;
   }
 
   protected override renderControl(handle: MdyFieldHandle<number>): unknown {
-    const value = handle.value() ?? this.min;
-    const fill = sliderFillRatio(value, this.min, this.max);
+    const bounds = handle.bounds();
+    const min = this.min ?? bounds.min ?? 0;
+    const max = this.max ?? bounds.max ?? 100;
+    const value = handle.value() ?? min;
+    const fill = sliderFillRatio(value, min, max);
     return html`<div class="${this.partClass("track")}">
       <input
         id=${this.fieldId}
         type="range"
         class="${this.partClass("control")}"
         style="${MDY_CSS_PROPERTIES.control.sliderFill}: ${fill}"
-        min=${this.min}
-        max=${this.max}
+        min=${min}
+        max=${max}
         step=${this.step}
         .value=${String(value)}
         ?disabled=${handle.disabled()}

@@ -161,7 +161,7 @@ export class MdyArrayManager {
   private _rebuild(values: unknown[]): void {
     const prevCount = this._rowCountSig();
     for (let i = 0; i < prevCount; i++) this._removeRow(i);
-    values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v));
+    values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`));
     this._rowCountSig.set(values.length);
     // Update tracking after rebuild (structural ops are always atomic)
     this._lastPresentIndices = new Set(Array.from({length: values.length}, (_, i) => i));
@@ -175,6 +175,7 @@ export class MdyArrayManager {
       | MdyAnyArrayDescriptor
       | MdyAnyRecordDescriptor,
     value: unknown,
+    rowPath: string,
   ): void {
     assertNotNestedCollection(rowNode);
     const node = rowNode;
@@ -188,6 +189,20 @@ export class MdyArrayManager {
       engine.getField(fullPath);
       const marksRequired = node.validators.some((fn) => hasRequiredMarker(fn));
       engine.upsertValidators(fullPath, ROW_SCHEMA_KEY, node.validators, marksRequired);
+      if (node.when !== null) {
+        const when = node.when;
+        const item = this._deps.item;
+        // The row encloses the field, so the row is what its condition reads: a rule written once
+        // for the item cannot name an index, and rows move.
+        engine.setInactive(
+          fullPath,
+          this._deps.rx.computed(() => {
+            const ref = engine.getField(fullPath);
+            const row = this._readNode(rowPath, item);
+            return !when(ref ? ref().value() : null, isRecord(row) ? row : {});
+          }),
+        );
+      }
       if (node.asyncValidators.length > 0) {
         engine.upsertAsyncValidators(fullPath, ROW_SCHEMA_KEY, node.asyncValidators, {
           debounceMs: node.asyncDebounceMs,
@@ -200,7 +215,7 @@ export class MdyArrayManager {
     }
     const rec = isRecord(value) ? value : {};
     for (const [key, child] of Object.entries(node.children)) {
-      this._registerNode(`${fullPath}.${key}`, child, rec[key]);
+      this._registerNode(`${fullPath}.${key}`, child, rec[key], rowPath);
     }
   }
 
@@ -270,7 +285,7 @@ export class MdyArrayManager {
       if (idx > maxIndex) maxIndex = idx;
       if (idx >= count) {
         const value = this._readNode(`${this._deps.path}.${idx}`, this._deps.item);
-        this._registerNode(`${this._deps.path}.${idx}`, this._deps.item, value);
+        this._registerNode(`${this._deps.path}.${idx}`, this._deps.item, value, `${this._deps.path}.${idx}`);
       }
     }
 

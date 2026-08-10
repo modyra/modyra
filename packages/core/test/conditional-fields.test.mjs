@@ -12,7 +12,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createForm, field, group, required } from "../dist/index.js";
+import { array, createForm, field, group, record, required } from "../dist/index.js";
 
 const conditional = () =>
   createForm({
@@ -124,4 +124,95 @@ test("the condition may read the field's own value", () => {
   assert.equal(form.f.quantity.disabled(), true, "zero takes it out of play");
   form.f.quantity.set(5);
   assert.equal(form.f.quantity.disabled(), false);
+});
+
+/**
+ * Inside a collection the enclosing value is the row.
+ *
+ * A rule written once for the item cannot name a key or an index — keys are data and rows move — so
+ * handing it the whole form value would give it nothing it could navigate. What encloses a cell is
+ * its row, and that is what the condition reads.
+ */
+test("a condition inside a keyed collection reads its own row", () => {
+  const form = createForm({
+    rows: record(group({
+      kind: field("simple"),
+      reason: field("", [required()], { when: (_value, row) => row.kind === "detailed" }),
+    })),
+  });
+
+  form.f.rows.upsert("a", { kind: "simple", reason: "" });
+  assert.equal(form.state.valid(), true, "this row is not asking for a reason");
+  assert.equal(form.getField("rows.a.reason")().interactivity(), "disabled");
+
+  form.f.rows.upsert("b", { kind: "detailed", reason: "" });
+  assert.equal(form.state.valid(), false, "and this one is");
+
+  form.f.rows.cell("b", "reason").set("because");
+  assert.equal(form.state.valid(), true);
+});
+
+test("each row answers for itself", () => {
+  const form = createForm({
+    rows: record(group({
+      kind: field("simple"),
+      reason: field("", [required()], { when: (_value, row) => row.kind === "detailed" }),
+    })),
+  });
+
+  form.f.rows.upsert("a", { kind: "detailed", reason: "given" });
+  form.f.rows.upsert("b", { kind: "simple", reason: "" });
+
+  assert.equal(form.getField("rows.a.reason")().disabled(), false);
+  assert.equal(form.getField("rows.b.reason")().disabled(), true, "a sibling row does not decide");
+  assert.equal(form.state.valid(), true);
+});
+
+test("a condition follows a row that changes its mind", () => {
+  const form = createForm({
+    rows: record(group({
+      kind: field("simple"),
+      reason: field("", [required()], { when: (_value, row) => row.kind === "detailed" }),
+    })),
+  });
+
+  form.f.rows.upsert("a", { kind: "simple", reason: "" });
+  form.f.rows.cell("a", "kind").set("detailed");
+
+  assert.equal(form.state.valid(), false, "the row now asks for a reason");
+  assert.equal(form.getField("rows.a.reason")().disabled(), false);
+});
+
+test("a condition inside an array reads its own row too", () => {
+  const form = createForm({
+    items: array(group({
+      kind: field("simple"),
+      reason: field("", [required()], { when: (_value, row) => row.kind === "detailed" }),
+    })),
+  });
+
+  form.f.items.push({ kind: "simple", reason: "" });
+  assert.equal(form.state.valid(), true);
+
+  form.f.items.push({ kind: "detailed", reason: "" });
+  assert.equal(form.state.valid(), false);
+
+  form.f.items.rows()[1].reason.set("because");
+  assert.equal(form.state.valid(), true);
+});
+
+test("a row removed while out of play takes its condition with it", () => {
+  const form = createForm({
+    rows: record(group({
+      kind: field("simple"),
+      reason: field("", [required()], { when: (_value, row) => row.kind === "detailed" }),
+    })),
+  });
+
+  form.f.rows.upsert("a", { kind: "detailed", reason: "" });
+  assert.equal(form.state.valid(), false);
+
+  form.f.rows.remove("a");
+  assert.equal(form.state.valid(), true, "the row is gone, and so is what it was asking for");
+  assert.deepEqual(form.value().rows, {});
 });
