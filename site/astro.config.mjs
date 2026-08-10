@@ -132,7 +132,10 @@ export default defineConfig({
 				},
 				{
 					label: 'Modyra Studio',
-					items: [{ autogenerate: { directory: 'studio' } }],
+					items: [
+						{ autogenerate: { directory: 'studio' } },
+						{ label: 'A worked project', slug: 'checkout-example' },
+					],
 				},
 				{
 					label: 'Comparisons',
