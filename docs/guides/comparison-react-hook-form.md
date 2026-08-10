@@ -1,8 +1,7 @@
 # Compared with react-hook-form
 
-An honest comparison — react-hook-form is a good, popular library with a
-huge ecosystem. This guide exists to help you decide, not to argue you out
-of it.
+react-hook-form is a good library with a large ecosystem, and for a React-only application it is
+often the safer pick. This page says where each one is stronger.
 
 The side-by-side snippet below is not pseudocode: it's mirrored verbatim in
 [`rhf-migration.test.mjs`](../../docs/examples/rhf-migration/rhf-migration.test.mjs),

@@ -1,9 +1,6 @@
 # React — checkout example
 
-This adapter implements the [shared checkout scenario](checkout-scenario.md): nested groups, a typed array of line
-items, a coupon validated server-side (re-checked when the country
-changes, cancelled while typing), submit with server errors, and a draft
-that survives page refreshes.
+This page shows the [shared checkout scenario](checkout-scenario.md) in React.
 
 ```bash
 npm install @modyra/react
@@ -22,7 +19,7 @@ import {
   array, createStore, crossField, field, group, min, pattern,
   required, serverValidator, useMdyField, useMdyForm,
 } from "@modyra/react";
-import type { MdySignal } from "@modyra/react";
+import type { MdyFieldHandle, MdySignal } from "@modyra/react";
 import { OrderApi } from "./order-api";
 
 /** Subscribe the component to any set of engine signals. */
@@ -132,7 +129,7 @@ export function Checkout() {
 }
 
 /** Minimal controlled bindings — or wrap your design system instead. */
-function TextField({ handle, label }: { handle: any; label: string }) {
+function TextField({ handle, label }: { handle: MdyFieldHandle<string>; label: string }) {
   const f = useMdyField(handle);
   return (
     <label>
@@ -148,7 +145,7 @@ function TextField({ handle, label }: { handle: any; label: string }) {
   );
 }
 
-function NumberField({ handle, label }: { handle: any; label: string }) {
+function NumberField({ handle, label }: { handle: MdyFieldHandle<number | null>; label: string }) {
   const f = useMdyField(handle);
   return (
     <label>

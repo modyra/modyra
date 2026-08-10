@@ -1,9 +1,6 @@
 # Angular — checkout example
 
-This adapter implements the [shared checkout scenario](checkout-scenario.md): nested groups, a typed array of line
-items rendered with `@for`, a coupon validated server-side (re-checked when
-the country changes, cancelled while typing), submit with server errors,
-and a draft that survives page refreshes.
+This page shows the [shared checkout scenario](checkout-scenario.md) in Angular. What is specific to this binding: rows rendered with `@for`, and a ready-made control catalogue.
 
 ```bash
 npm install @modyra/angular @modyra/styles

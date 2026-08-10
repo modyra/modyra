@@ -1,9 +1,9 @@
 # React Native
 
-Honest status: **the engine compiles and runs its logic under a current
-Hermes** (verified below), but there is no `@modyra/react-native` package,
-no native-input renderer, and no dedicated example — this is a
-compatibility finding, not a shipped integration.
+**The engine compiles and runs its logic under a current Hermes** — verified below. There is no
+`@modyra/react-native` package, no native-input renderer and no example app, so this is a
+compatibility finding rather than a shipped integration. Read it as "nothing is known to block you",
+not as "this is supported".
 
 ## What was actually verified
 

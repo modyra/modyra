@@ -1,8 +1,8 @@
 # Compared with Formik
 
-An honest comparison — Formik was one of the first React form libraries to
-get validation and array fields right, and still has broad production
-mileage. This guide exists to help you decide, not to argue you out of it.
+Formik was one of the first React form libraries to get validation and array fields right, and it
+still has broad production mileage. This page is here to help you decide, and it says where Formik
+is the better answer.
 
 The side-by-side snippet below is not pseudocode: it's mirrored verbatim in
 [`formik-migration.test.mjs`](../../docs/examples/formik-migration/formik-migration.test.mjs),
