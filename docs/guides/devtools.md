@@ -58,8 +58,14 @@ the table and the JSON view. Add your own paths with:
 <mdy-forms-devtools [form]="form" [maskFields]="['legacyPwd']" />
 ```
 
+A collection's rows are addressed the way they are everywhere else, so the
+rule reaches inside one and a path you list may name a row's field:
+`items.0.legacyPwd`, or the collection itself to hide all of it.
+
 File contents are never shown — `File` values render as
-`[File: name (size)]` metadata only.
+`[File: name (size)]` metadata only. Other values are shown as JSON would
+carry them, so a `Date` reads as its ISO string rather than as an empty
+object.
 
 ## Embedding and programmatic use
 

@@ -1,30 +1,59 @@
 /**
- * mdyFormSerialize utility.
+ * A form value, as something `JSON.stringify` can carry without losing it.
  *
- * Converts a form model value into a JSON-serializable object,
- * specifically mapping native File objects into descriptive strings
- * (e.g. "[File: resume.pdf (12345 bytes)]") to prevent empty {} in JSON.stringify.
+ * The reason it exists is `File`: a native file has no enumerable own properties, so it stringifies
+ * to `{}` — a payload or a devtools panel showing an empty object where the user picked a document.
+ * It is described instead.
+ *
+ * Everything else here follows from that goal rather than from the mechanics. A value that defines
+ * `toJSON` has already answered the question this function asks, so its answer is taken: rebuilding
+ * such an object property by property would *lose* what plain `JSON.stringify` keeps, which is the
+ * opposite of the point — a `Date` would come out `{}`, and so would every domain type that defines
+ * `toJSON` to be storable.
+ *
+ * A value that refers back to itself is described rather than walked: a form value is a tree, and a
+ * cycle is a mistake to report rather than a stack to exhaust.
  */
 export function mdyFormSerialize(value: unknown): unknown {
+  return serialize(value, new Set<object>());
+}
+
+/** Placeholder for a value already met on the way down — a cycle. */
+const CIRCULAR = "[Circular]";
+
+function serialize(value: unknown, seen: Set<object>): unknown {
   if (value === null || typeof value !== "object") {
     return value;
   }
 
-  // Handle single File
-  if (value instanceof File) {
+  // Before `toJSON`: a File has none, and describing it is the reason this function exists. A
+  // polyfill that added one would otherwise change what a file looks like in a payload.
+  if (typeof File !== "undefined" && value instanceof File) {
     return `[File: ${value.name} (${value.size} bytes)]`;
   }
 
-  // Handle Array (recursive)
-  if (Array.isArray(value)) {
-    return value.map(v => mdyFormSerialize(v));
-  }
+  if (seen.has(value)) return CIRCULAR;
+  seen.add(value);
+  try {
+    const toJson = (value as { toJSON?: unknown }).toJSON;
+    if (typeof toJson === "function") {
+      // What it returns may itself need describing — a `toJSON` returning an object with a File in
+      // it is unusual but not wrong.
+      return serialize((toJson as () => unknown).call(value), seen);
+    }
 
-  // Handle Object (recursive)
-  const result: Record<string, unknown> = {};
-  for (const [key, val] of Object.entries(value)) {
-    result[key] = mdyFormSerialize(val);
-  }
+    if (Array.isArray(value)) {
+      return value.map((entry) => serialize(entry, seen));
+    }
 
-  return result;
+    const result: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value)) {
+      result[key] = serialize(entry, seen);
+    }
+    return result;
+  } finally {
+    // Left behind on the way up: the same object appearing twice as a *sibling* is repetition, not a
+    // cycle, and describing the second one as circular would be a lie.
+    seen.delete(value);
+  }
 }
