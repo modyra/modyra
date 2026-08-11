@@ -321,7 +321,15 @@ dev origin (`http://localhost:4200`).
 The cross-language checkout now uses recursive Contract v2 nodes. Rust emits
 a `shipping` group and an `items` array; strict parsing expands the accepted
 initial structure to `shipping.city`, `shipping.zip`, `items.0.sku`, and
-`items.0.qty` for the current Angular renderer.
+`items.0.qty`.
+
+Those names are paths, and every renderer reads them as such: a schema built
+from them declares the structure the path describes, so the mounted form reads
+back `{ shipping: { city, zip } }` rather than a field literally called
+`shipping.city` (ADR 0031). One limit is worth knowing before you rely on it —
+a path cannot say whether `items.0` was an array row or the record key `"0"`,
+so a document's array comes back as a group keyed `"0"`, `"1"`. A form that
+must round-trip a list declares `array()` in its own schema.
 
 #### Recursive `group` and `array` nodes
 

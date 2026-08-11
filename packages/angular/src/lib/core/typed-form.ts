@@ -309,7 +309,9 @@ export class MdyTypedForm<S extends MdyFormSchema>
     this.value = computed(
       () => this._flatToValue(this._adapter.value()),
     ) as Signal<MdyFormValue<S>>;
-    this.f = this._buildHandleTree(schema, "") as MdyFieldHandleTree<S>;
+    // `this._schema`, not the argument: the base normalizes a key that spells a path into the
+    // structure it describes, and the handle tree has to be the one the value has.
+    this.f = this._buildHandleTree(this._schema, "") as MdyFieldHandleTree<S>;
   }
 
   // ── Angular-branded signal narrowing ────────────────────────────────────────

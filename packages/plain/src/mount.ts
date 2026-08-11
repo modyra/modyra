@@ -7,7 +7,7 @@
  * no framework: pure `document.createElement`/`addEventListener`, wired to
  * @modyra/widgets' headless controllers.
  */
-import { vanillaReactivity, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
+import { assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
 import { isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
@@ -69,12 +69,12 @@ export interface MdyPlainForm {
 /** Renders a complete form for `fields` into `container`. `container` is cleared first — this function owns everything inside it until `dispose()`. */
 /**
  * A field name is an identity, and the typed entry point has to hold that precondition as firmly
- * as the dynamic parser does.
+ * as the dynamic parser does. The names themselves are core's rule — it owns what a schema key may
+ * be — and are checked here rather than inside `buildForm` so a rejected list leaves the container
+ * untouched instead of cleared.
  *
- * Two definitions sharing a name used to collapse silently: the `byName` map kept the second, the
- * `rendered` set stopped the first, and the form came out with one instance where the caller asked
- * for two — a difference visible only by counting. A name carrying the id delimiter is the same
- * failure one level down, in the generated ids rather than the field list.
+ * The prefix is this function's own: it exists only because a host may mount two forms built from
+ * the same names, and nothing below this layer knows it was applied.
  */
 function assertMountableNames(fields: ReadonlyArray<MdyDynamicField>, idPrefix: string | undefined): void {
   if (idPrefix !== undefined) {
@@ -92,19 +92,7 @@ function assertMountableNames(fields: ReadonlyArray<MdyDynamicField>, idPrefix: 
     }
   }
 
-  const seen = new Set<string>();
-  for (const field of fields) {
-    if (!isValidWidgetId(field.name)) {
-      throw new Error(
-        `mountMdyForm: field name "${field.name}" cannot contain "${MDY_ID_DELIMITER}" — it separates ` +
-          `the segments of a generated id, so this name would collide with another field's parts.`,
-      );
-    }
-    if (seen.has(field.name)) {
-      throw new Error(`mountMdyForm: duplicate field name "${field.name}" — every field needs its own identity.`);
-    }
-    seen.add(field.name);
-  }
+  assertSafeDynamicFieldNames(fields);
 }
 
 export function mountMdyForm(
@@ -124,7 +112,20 @@ export function mountMdyForm(
 
   const reactivity = vanillaReactivity();
   const form = buildForm(fields, reactivity);
-  const fieldHandles = form.f as unknown as Record<string, MdyFieldHandle<never>>;
+  /**
+   * The handle a name points at.
+   *
+   * A name in this list is a path — a flattened document names a nested field `shipping.city` — and
+   * the handle tree has the shape the form has, so the name is walked rather than looked up.
+   */
+  const handleFor = (name: string): MdyFieldHandle<never> | undefined => {
+    let node: unknown = form.f;
+    for (const segment of name.split(".")) {
+      if (typeof node !== "object" || node === null) return undefined;
+      node = (node as Record<string, unknown>)[segment];
+    }
+    return node as MdyFieldHandle<never> | undefined;
+  };
 
   const disposers: Array<() => void> = [];
   const byName = new Map(fields.map((f) => [f.name, f]));
@@ -132,7 +133,7 @@ export function mountMdyForm(
 
   const renderOne = (target: HTMLElement, name: string): void => {
     const field = byName.get(name);
-    const handle = fieldHandles[name];
+    const handle = handleFor(name);
     if (!field || !handle || rendered.has(name)) return;
     rendered.add(name);
     disposers.push(renderField(target, field, handle, reactivity, widgetIdFor(name)));
