@@ -81,6 +81,7 @@
         gap: 0.5rem;
         margin-top: 0.75rem;
       }
+      .conditional-state,
       .keyed-rows-state, [data-rows-state] {
         font-size: 0.8125rem;
       }
@@ -221,6 +222,18 @@
           </p>
           <div data-rows></div>
           <pre class="keyed-rows-state" data-rows-state></pre>
+        </section>
+
+        <section data-rows-section data-conditional-section>
+          <h2>A section that only counts sometimes</h2>
+          <p class="rows-lead">
+            The company details are declared like everything else and are <strong>out of play</strong>
+            while the account is personal: not validated, not submitted, and what was typed into them
+            kept. The code below carries <code>maxlength</code> and <code>pattern</code> because its
+            rules say so — nothing wrote those attributes.
+          </p>
+          <div data-conditional></div>
+          <pre class="conditional-state" data-conditional-state></pre>
         </section>
       </div>
 

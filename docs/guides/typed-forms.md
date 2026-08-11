@@ -186,6 +186,11 @@ counterpart are `required`, `min`, `max`, `integer` (a step of one), `minLength`
 comparison, a server check, your own predicate — has no attribute to become, and stays exactly what
 it was: a rule that runs.
 
+Which control receives them is decided by the kind: text-like controls take lengths, patterns and the
+keyboard hint; number and slider take the range and the step. **The date and time kinds take none of
+it yet** — their inputs have native `min`/`max`/`step` too, expressed as dates rather than numbers,
+and deriving those from validators is not done. Their rules run as they always have.
+
 You can read the total yourself:
 
 ```ts

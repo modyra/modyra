@@ -102,16 +102,23 @@ export const completeRange = <T>(
 };
 
 /**
- * Minimum string/array length. Empty passes: a field that may hold nothing is an ordinary optional
- * field, and the type says so — pairing this with `required()` is what makes emptiness fail.
+ * Minimum string or collection length.
+ *
+ * **A blank text field is not short, it is empty** — that is `required`'s question, and `<input
+ * minlength>` agrees: the platform does not apply it to an empty value. So an empty string, and an
+ * absent value, pass.
+ *
+ * **An empty collection is short.** `minLength(1)` on an array is how "at least one row" is said,
+ * and exempting `[]` would take that away — the one thing the rule is most often there to do.
  */
 export const minLength = (
   min: number,
   message?: string,
 ): ValidatorFn<string | readonly unknown[] | null> =>
   withFacts((value) => {
-    const len = value?.length ?? 0;
-    return len < min
+    if (value === null || value === undefined) return [];
+    if (typeof value === "string" && value.length === 0) return [];
+    return value.length < min
       ? [message ?? `Minimum length is ${min}`]
       : [];
   }, { minLength: min });
@@ -134,9 +141,9 @@ export const email = (message = 'Invalid email address'): ValidatorFn<string | n
     if (!value) return [];
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(value) ? [] : [message];
-    // Declared as a type rather than a pattern: `type="email"` brings the right keyboard and the
-    // platform's own idea of an address, which is a better answer than this expression.
-  }, { inputType: "email", inputMode: "email" });
+    // The keyboard, not the type: which control this is belongs to the kind, and a rule that could
+    // change it would let a validator turn a text field into something else.
+  }, { inputMode: "email" });
 
 /** RegExp pattern validator */
 export const pattern = (regex: RegExp, message = 'Invalid format'): ValidatorFn<string | null> =>
@@ -264,7 +271,6 @@ function factsOfComposed<T>(validators: readonly ValidatorFn<T>[]): MdyValidator
     ...(constraints.minLength !== null ? { minLength: constraints.minLength } : {}),
     ...(constraints.maxLength !== null ? { maxLength: constraints.maxLength } : {}),
     ...(constraints.pattern !== null ? { pattern: constraints.pattern } : {}),
-    ...(constraints.inputType !== null ? { inputType: constraints.inputType } : {}),
     ...(constraints.inputMode !== null ? { inputMode: constraints.inputMode } : {}),
   };
 }
