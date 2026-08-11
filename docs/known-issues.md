@@ -5,7 +5,7 @@ are not fully closed and says who each one affects. The full register — every 
 and the reasoning behind its status — is [`docs/contract-gaps.md`](https://github.com/modyra/modyra/blob/main/docs/contract-gaps.md)
 in the repository.
 
-Thirty-three findings have been filed. Twenty-five are fixed, two were closed deliberately, five are
+Thirty-four findings have been filed. Twenty-five are fixed, two were closed deliberately, six are
 partly fixed, and one is open.
 
 ## Open
@@ -25,7 +25,7 @@ override it.
 
 ## Partly fixed
 
-- **Partly fixed** — C2, E2, F, L, M
+- **Partly fixed** — C2, E2, F, L, M, S
 
 **C2 — some popup placement classes are declared but unpainted.** The classes are derived correctly
 and emitted; the themes react to only some of them. A placement class earns a rule only where the
@@ -39,6 +39,13 @@ WebKit or Firefox* who wants a per-engine guarantee rather than a Chromium one.
 **M — a readable text colour is estimated, not measured.** The contrast metric is decided; the
 estimate behind automatic colour selection is still approximate. *Affects theme authors* generating
 palettes rather than writing them.
+
+**S — the conformance kit's two browser sections do not run in this repository.** *Keyboard
+behaviour* and *Accessibility audit* need a browser transport no config here supplies, so the kit
+reports eight sections of ten. The questions are answered anyway, by this repository's own browser
+suite — nineteen keyboard cases and three accessible-name cases, on every renderer. *Affects an
+implementer* conforming a fourth renderer, who gets eight sections from the kit and must write those
+two checks themselves.
 
 **E2 and F** are internal: test scripts that `npm test` did not reach, and contract tables keyed by
 a bare `string` where a narrower type belongs. Neither changes what a consumer sees.
