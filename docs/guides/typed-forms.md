@@ -228,6 +228,17 @@ the library says so in development.
 A bound that is not a finite number states nothing an input can carry: `min(NaN)` produces no
 attribute, and its rule still runs.
 
+### A rule reads, it does not write
+
+A validator is a function of the value it is given, like the `when` predicate above: it runs inside a
+derived value, so it may run many times or not at all, and writing a signal from inside it is
+**refused** rather than ignored — `MdyComputedWriteError`, naming the place. Recording something as
+validation happens (a cache, a counter, telemetry) belongs in an effect that watches the field, or in
+the code that changed the value.
+
+An exception thrown by a validator propagates to whoever read the state, and the form stays usable:
+the same read throws again while the cause is there, and works again once it is gone.
+
 ### From a schema you already have
 
 A Zod schema declares the same facts, and they cross over without being rewritten:
@@ -240,7 +251,7 @@ createZodForm(z.object({ code: z.string().min(3).max(8) }));
 Only what has a native counterpart crosses. An exclusive bound (`z.number().gt(10)`) deliberately
 does not: `min="10"` would admit exactly the value the schema refuses.
 
-## Async validation## Async validation
+## Async validation
 
 The ergonomic path is `serverValidator()` — you call your own service method,
 the library handles debounce, cancellation, pending, last-wins and timeout:
