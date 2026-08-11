@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { evaluateExpression } from "@modyra/core";
 import { compileExpressionToJs } from "../../studio-codegen/dist/index.js";
-import { toContractExpression, UnresolvedNodeError } from "../dist/index.js";
+import { toContractExpression, UnresolvedNodeError, ExpressionTooDeepError } from "../dist/index.js";
 
 const PATHS = new Map([
   ["root", ""],
@@ -121,4 +121,31 @@ test("core's interpreter and studio-codegen's compiler agree, operator by operat
       `disagreement on ${JSON.stringify(studio)} against ${JSON.stringify(value)}: core says ${interpreted}, codegen says ${compiled}`,
     );
   }
+});
+
+test("a condition deeper than the contract reads is refused, not walked", () => {
+  // The interpreter and this translation are held to the same bound: one of them stopping and the
+  // other walking is the divergence ADR 0007's parity tests exist to catch.
+  const deep = (levels) => {
+    let expression = { op: "isNotEmpty", operands: [{ nodeId: "a" }] };
+    for (let i = 0; i < levels; i += 1) expression = { op: "and", operands: [expression] };
+    return expression;
+  };
+  const paths = new Map([["a", "a"]]);
+
+  assert.doesNotThrow(() => toContractExpression(deep(3), paths), "an ordinary condition was refused");
+  for (const levels of [40, 3000]) {
+    assert.throws(
+      () => toContractExpression(deep(levels), paths),
+      ExpressionTooDeepError,
+      `a condition ${levels} deep was translated`,
+    );
+    // The generator holds the same bound: code compiled past it is code no runtime would accept.
+    assert.throws(
+      () => compileExpressionToJs(deep(levels), (id) => id),
+      /nests deeper than/,
+      `a condition ${levels} deep was compiled`,
+    );
+  }
+  assert.doesNotThrow(() => compileExpressionToJs(deep(3), (id) => id));
 });
