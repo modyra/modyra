@@ -210,6 +210,95 @@ const record = (title, findings, note) => sections.push({ title, findings, note 
   record("Renderer equivalence (at rest)", findings);
 }
 
+// ── A rule a field declares reaches the control ───────────────────────────────────────────
+//
+// A constraint is a rule and an input attribute at the same time. A renderer that keeps only the
+// first is not wrong about anything a consumer can see until someone types the fifty-first
+// character — which is exactly the kind of silence this kit exists to break.
+//
+// The kit asks in the contract's vocabulary (`rules`), so a config translates once into whatever
+// its renderer calls a validator. A config that does not declare it forwards them gets "not run":
+// the kit cannot tell a renderer that ignores a constraint from a config that never handed it one,
+// and reporting the first when it is the second is an accusation it cannot support.
+if (config.declaresRules === true) {
+  const findings = [];
+  /**
+   * The element the attributes belong on, named in the contract's vocabulary.
+   *
+   * `parts()` is the one thing every config provides, and the catalogue calls this part `input` on a
+   * text-like kind and `control` elsewhere. Asking the root instead would read the renderer's outer
+   * element and report "carries nothing" about a control that carries everything.
+   */
+  const attributeOf = (fixture, attribute) => {
+    const parts = fixture.parts?.() ?? {};
+    const control = parts["input"] ?? parts["control"] ?? fixture.control?.() ?? fixture.root;
+    return control?.getAttribute?.(attribute) ?? null;
+  };
+
+  const expectations = [
+    { kind: "text", rules: { maxLength: 8, minLength: 2 }, expect: { maxlength: "8", minlength: "2" } },
+    { kind: "textarea", rules: { maxLength: 8 }, expect: { maxlength: "8" } },
+    { kind: "number", rules: { min: 1, max: 9 }, expect: { min: "1", max: "9" } },
+  ];
+
+  for (const { kind, rules, expect } of expectations) {
+    if (!kinds.includes(kind)) continue;
+    const fixture = await mount(kind, { rules });
+    await fixture.settle?.();
+    for (const [attribute, wanted] of Object.entries(expect)) {
+      const found = attributeOf(fixture, attribute);
+      if (found !== wanted) {
+        findings.push(
+          `${kind}: the field declares ${attribute}=${wanted}, the control carries ` +
+          `${found === null ? "nothing" : `"${found}"`}`,
+        );
+      }
+    }
+    fixture.dispose();
+  }
+
+  record("Declared rules reach the control", findings);
+} else {
+  record(
+    "Declared rules reach the control",
+    null,
+    "not run — the config does not export `declaresRules`, so it may not pass `rules` to its fixture",
+  );
+}
+
+// ── A value the options do not contain is shown ───────────────────────────────────────────
+//
+// A widget does not erase what it cannot show (ADR 0029), which leaves it owing the other half:
+// what it will not erase, it has to display, or the form holds something nobody can see or remove.
+if (config.declaresRules === true) {
+  const findings = [];
+  const OUTSIDE = "mdy-conformance-not-an-option";
+
+  for (const kind of ["select", "multiselect"]) {
+    if (!kinds.includes(kind)) continue;
+    const fixture = await mount(kind, {
+      validators: false,
+      value: kind === "multiselect" ? [OUTSIDE] : OUTSIDE,
+    });
+    await fixture.settle?.();
+    if (!(fixture.root?.textContent ?? "").includes(OUTSIDE)) {
+      findings.push(
+        `${kind}: holds a value its options do not contain and shows nothing standing for it, ` +
+        "so it cannot be seen or replaced",
+      );
+    }
+    fixture.dispose();
+  }
+
+  record("A value the options do not contain is shown", findings);
+} else {
+  record(
+    "A value the options do not contain is shown",
+    null,
+    "not run — the config does not export `declaresRules`, so it may not pass `value` to its fixture",
+  );
+}
+
 // ── Lifecycle: what a mount owes when it is taken down ────────────────────────────────────
 {
   const findings = [];

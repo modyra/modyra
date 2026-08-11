@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
-import { ChangeDetectionStrategy, Component, input } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { ChangeDetectionStrategy, Component, computed, input } from "@angular/core";
+import { nativeConstraintAttributes, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -41,6 +41,8 @@ import { inputText } from "../renderer-projection";
         [readonly]="isReadonly()"
         [attr.aria-readonly]="isReadonly() ? 'true' : null"
         [rows]="rows()"
+        [attr.minlength]="native()['minlength']"
+        [attr.maxlength]="native()['maxlength']"
         (input)="onInput($event)"
         (blur)="dispatchValueBlur('textarea')"
         [attr.aria-invalid]="hasErrors()"
@@ -70,6 +72,14 @@ export class MdyTextareaComponent extends MdyBaseControl<string | null> {
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
   readonly rows = input<number>(3);
+
+  /**
+   * What the field's rules state, as this kind's own attributes. A textarea carries lengths and no
+   * pattern — the platform ignores `pattern` here, and the translation says so once for everyone.
+   */
+  protected readonly native = computed(() =>
+    nativeConstraintAttributes("textarea", this.fieldState().constraints()),
+  );
 
   protected readonly fieldId = `mdy-control-textarea-${MdyBaseControl.nextId()}`;
 
