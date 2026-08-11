@@ -663,9 +663,7 @@ export abstract class MdyTypedFormBase<
      * the rows already declared, which is the case that says whether this was really fixed or only
      * moved.
      */
-    const enclosingSections = (
-      at: string,
-    ): ReadonlyArray<(value: unknown, enclosing: Record<string, unknown>) => boolean> =>
+    const enclosingSections = (at: string): ReadonlyArray<() => boolean> =>
       [...schemaSections]
         .filter(([sectionPath]) => at.startsWith(`${sectionPath}.`))
         .map(([sectionPath, holds]) => () => {

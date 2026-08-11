@@ -1,6 +1,6 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, type PropertyDeclarations } from "lit";
-import { type MdyFieldHandle } from "@modyra/core";
+import { type MdyFieldConstraints, type MdyFieldHandle } from "@modyra/core";
 import { MDY_CSS_PROPERTIES, sliderFillRatio } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
 
@@ -21,6 +21,10 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
   declare step: number;
   protected override readonly widgetKind = "slider" as const;
 
+  protected override narrowedConstraints(): Partial<MdyFieldConstraints> {
+    return { min: this.min ?? null, max: this.max ?? null, step: this.step ?? null };
+  }
+
   constructor() {
     super();
     this.step = 1;
@@ -38,9 +42,6 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
         type="range"
         class="${this.partClass("control")}"
         style="${MDY_CSS_PROPERTIES.control.sliderFill}: ${fill}"
-        min=${min}
-        max=${max}
-        step=${this.step}
         .value=${String(value)}
         ?disabled=${handle.disabled()}
         ${mdyPart(this.controlPart(handle))}

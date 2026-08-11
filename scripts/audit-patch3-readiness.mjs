@@ -74,7 +74,14 @@ if (existsSync(fixturePath)) {
   const fixture = JSON.parse(readFileSync(fixturePath, "utf8"));
   for (const [kind, evidence] of Object.entries(fixture.controls)) {
     const source = readFileSync(resolve(rendererRoot, evidence.renderer), "utf8");
-    const missing = evidence.tokens.filter((token) => !source.includes(token));
+    // Same rule as the projection evidence below: binding the part is how a renderer consumes the
+    // ARIA the part supplies, and repeating the attribute afterwards is what the part prevents.
+    const suppliedByPart = source.includes("[mdyPart]")
+      ? ["aria-invalid", "aria-required", "aria-disabled", "aria-describedby"]
+      : [];
+    const missing = evidence.tokens.filter(
+      (token) => !source.includes(token) && !suppliedByPart.includes(token),
+    );
     if (missing.length === 0) parityFixtures++;
     else fixtureFailures.push({ kind, missing });
   }
@@ -87,8 +94,18 @@ if (existsSync(projectionPath)) {
   const projection = JSON.parse(readFileSync(projectionPath, "utf8"));
   for (const [kind, evidence] of Object.entries(projection.controls)) {
     const source = readFileSync(resolve(rendererRoot, evidence.renderer), "utf8");
+    // A renderer satisfies an ARIA token by spelling it **or** by binding the part that supplies it —
+    // which is what the header of this file has always said, and what the implementation did not do.
+    // `[mdyPart]` carries the shell projection's `aria-invalid`, `aria-required`, `aria-disabled`
+    // and `aria-describedby`, so a renderer that binds it and then repeats them would be the thing
+    // the part exists to prevent.
+    const suppliedByPart = source.includes("[mdyPart]")
+      ? ["aria-invalid", "aria-required", "aria-disabled", "aria-describedby"]
+      : [];
     const missingParts = evidence.contractProjection.parts.filter((token) => !source.includes(token));
-    const missingAria = evidence.contractProjection.aria.filter((token) => !source.includes(token));
+    const missingAria = evidence.contractProjection.aria.filter(
+      (token) => !source.includes(token) && !suppliedByPart.includes(token),
+    );
     if (missingParts.length === 0) contractPartProjections++;
     if (missingAria.length === 0) ariaProjections++;
     if (missingParts.length || missingAria.length) projectionFailures.push({ kind, missingParts, missingAria });

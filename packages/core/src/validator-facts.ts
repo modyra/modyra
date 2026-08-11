@@ -77,12 +77,11 @@ export function withFacts<T>(
   fn: ValidatorFn<T>,
   facts: MdyValidatorFacts,
 ): ValidatorFn<T> {
-  const marked = Object.assign(fn, { [MDY_VALIDATOR_FACTS]: facts });
-  // The required marker predates this module and is read by adapters that build their own
-  // validators, so it stays where those adapters can still set and see it.
-  return facts.required === true
-    ? Object.assign(marked, { [MDY_MARKS_REQUIRED]: true })
-    : marked;
+  // A wrapper rather than a tag on the caller's function: this is exported, so the function handed
+  // in may be one the caller uses elsewhere, and hanging facts on it would change a rule they did
+  // not ask to change.
+  const declared: ValidatorFn<T> = (value) => fn(value);
+  return Object.assign(declared, { [MDY_VALIDATOR_FACTS]: { ...factsOf(fn), ...facts } });
 }
 
 /** What a single rule declares, including the standalone required marker an adapter may have set. */
@@ -94,9 +93,6 @@ export function factsOf(fn: unknown): MdyValidatorFacts {
   if (facts) return facts;
   return required ? { required: true } : {};
 }
-
-const finite = (value: number | undefined): value is number =>
-  value !== undefined && Number.isFinite(value);
 
 /**
  * The sum of what a list of rules declares.
@@ -116,27 +112,38 @@ export function mergeFacts(facts: readonly MdyValidatorFacts[]): {
   /** True when more than one distinct pattern was declared, so none is offered. */
   readonly conflictingPatterns: boolean;
 } {
+  /**
+   * How each constraint combines with another of its kind.
+   *
+   * A table rather than a chain of branches: a fact added tomorrow does not compile until it says
+   * how two of them add up, which is the one thing about it that cannot be guessed.
+   */
+  const COMBINE = {
+    min: (a: number, b: number) => Math.max(a, b),
+    max: (a: number, b: number) => Math.min(a, b),
+    // A coarser step admits fewer values, so it is the tighter of two.
+    step: (a: number, b: number) => Math.max(a, b),
+    minLength: (a: number, b: number) => Math.max(a, b),
+    maxLength: (a: number, b: number) => Math.min(a, b),
+  } as const;
+
+  const numbers: { -readonly [K in keyof typeof COMBINE]: number | null } = {
+    min: null, max: null, step: null, minLength: null, maxLength: null,
+  };
   let required = false;
-  let min: number | null = null;
-  let max: number | null = null;
-  let step: number | null = null;
-  let minLength: number | null = null;
-  let maxLength: number | null = null;
   let inputType: string | null = null;
   let inputMode: string | null = null;
   const patterns = new Set<string>();
 
   for (const fact of facts) {
     if (fact.required === true) required = true;
-    if (finite(fact.min)) min = min === null ? fact.min : Math.max(min, fact.min);
-    if (finite(fact.max)) max = max === null ? fact.max : Math.min(max, fact.max);
-    // A coarser step admits fewer values, so it is the tighter of two.
-    if (finite(fact.step)) step = step === null ? fact.step : Math.max(step, fact.step);
-    if (finite(fact.minLength)) {
-      minLength = minLength === null ? fact.minLength : Math.max(minLength, fact.minLength);
-    }
-    if (finite(fact.maxLength)) {
-      maxLength = maxLength === null ? fact.maxLength : Math.min(maxLength, fact.maxLength);
+    for (const key of Object.keys(COMBINE) as Array<keyof typeof COMBINE>) {
+      const stated = fact[key];
+      // A bound that is not a finite number states nothing an input can carry — `min="NaN"` is
+      // ignored by the browser and misleading in a diff — so it is dropped while its rule runs.
+      if (stated === undefined || !Number.isFinite(stated)) continue;
+      const held = numbers[key];
+      numbers[key] = held === null ? stated : COMBINE[key](held, stated);
     }
     if (fact.pattern !== undefined) patterns.add(fact.pattern);
     if (fact.inputType !== undefined) inputType ??= fact.inputType;
@@ -148,11 +155,7 @@ export function mergeFacts(facts: readonly MdyValidatorFacts[]): {
     required,
     conflictingPatterns,
     constraints: {
-      min,
-      max,
-      step,
-      minLength,
-      maxLength,
+      ...numbers,
       pattern: conflictingPatterns ? null : [...patterns][0] ?? null,
       inputType,
       inputMode,

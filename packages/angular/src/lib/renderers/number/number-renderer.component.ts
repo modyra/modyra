@@ -1,7 +1,9 @@
 import { NgTemplateOutlet } from "@angular/common";
-import { ChangeDetectionStrategy, Component, computed, input } from "@angular/core";
+import { ChangeDetectionStrategy, Component, input } from "@angular/core";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import type { MdyFieldConstraints } from "@modyra/core";
 import { MdyBaseControl } from "../../control/control.directive";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyNumberSpinButtonsDirective } from "./number-spin-buttons.directive";
@@ -15,6 +17,7 @@ import { inputNumber } from "../renderer-projection";
     MdyControlLabelComponent,
     MdyErrorListComponent,
     MdyNumberSpinButtonsDirective,
+    MdyPartDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -42,9 +45,6 @@ import { inputNumber } from "../renderer-projection";
       <input
         [id]="fieldId"
         type="number"
-        [attr.step]="effectiveStep()"
-        [attr.min]="effectiveMin()"
-        [attr.max]="effectiveMax()"
         [placeholder]="placeholder()"
         [value]="value() ?? ''"
         [disabled]="isDisabled()"
@@ -52,11 +52,8 @@ import { inputNumber } from "../renderer-projection";
         [attr.aria-readonly]="isReadonly() ? 'true' : null"
         (input)="onInput($event)"
         (blur)="dispatchValueBlur('number')"
-        [attr.aria-invalid]="hasErrors()"
-        [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-label]="controlAriaLabel()"
-        [attr.aria-required]="ariaRequired() || isRequired()"
-        [attr.aria-disabled]="effectiveAriaDisabled()"
+        [mdyPart]="controlPart()"
         [mdyNumberSpinButtons]="showSpinButtons()"
       />
       @if (suffix(); as s) {
@@ -77,6 +74,7 @@ import { inputNumber } from "../renderer-projection";
 })
 export class MdyNumberComponent extends MdyBaseControl<number | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.number;
+  protected override readonly widgetKind = "number";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
   readonly minValue = input<number | null>(null);
@@ -84,22 +82,14 @@ export class MdyNumberComponent extends MdyBaseControl<number | null> {
   readonly step = input<number | null>(null);
   readonly showSpinButtons = input<boolean>(false);
 
+
   /**
-   * The range offered at the keyboard, from the field's own rules unless this control overrides it.
-   *
-   * A `min(0)`/`max(255)` in the schema is already the answer to "what may this hold"; making the
-   * author write it again on the control is how the two come to disagree. An explicit binding still
-   * wins — a control may narrow what it offers without changing what the field accepts.
+   * What this control asks for on top of the field's rules. It can only narrow: the projection takes
+   * whichever end is tighter, so a control cannot offer a value the rules would refuse.
    */
-  protected readonly effectiveMin = computed(
-    () => this.minValue() ?? this.fieldState().constraints().min,
-  );
-  protected readonly effectiveStep = computed(
-    () => this.step() ?? this.fieldState().constraints().step ?? 1,
-  );
-  protected readonly effectiveMax = computed(
-    () => this.maxValue() ?? this.fieldState().constraints().max,
-  );
+  protected override narrowedConstraints(): Partial<MdyFieldConstraints> {
+    return { min: this.minValue(), max: this.maxValue(), step: this.step() };
+  }
 
   protected readonly fieldId = `mdy-control-number-${MdyBaseControl.nextId()}`;
 

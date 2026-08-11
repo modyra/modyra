@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, input } from "@angular/core";
 import { nativeConstraintAttributes, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { inputText } from "../renderer-projection";
@@ -9,7 +10,7 @@ import { inputText } from "../renderer-projection";
 @Component({
   selector: "mdy-control-textarea",
   standalone: true,
-  imports: [NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent],
+  imports: [NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent, MdyPartDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
@@ -41,15 +42,10 @@ import { inputText } from "../renderer-projection";
         [readonly]="isReadonly()"
         [attr.aria-readonly]="isReadonly() ? 'true' : null"
         [rows]="rows()"
-        [attr.minlength]="native()['minlength']"
-        [attr.maxlength]="native()['maxlength']"
         (input)="onInput($event)"
         (blur)="dispatchValueBlur('textarea')"
-        [attr.aria-invalid]="hasErrors()"
-        [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-label]="controlAriaLabel()"
-        [attr.aria-required]="ariaRequired() || isRequired()"
-        [attr.aria-disabled]="effectiveAriaDisabled()"
+        [mdyPart]="controlPart()"
       ></textarea>
       @if (suffix(); as s) {
         <div class="mdy-input-suffix">
@@ -69,6 +65,7 @@ import { inputText } from "../renderer-projection";
 })
 export class MdyTextareaComponent extends MdyBaseControl<string | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.textarea;
+  protected override readonly widgetKind = "textarea";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
   readonly rows = input<number>(3);

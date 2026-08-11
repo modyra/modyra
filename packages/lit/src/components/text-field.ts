@@ -3,7 +3,6 @@ import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { createFieldController, type MdyFieldController } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
-import { nativeConstraintAttributes } from "@modyra/widgets";
 
 // ─── Text-like ────────────────────────────────────────────────────────────────
 
@@ -34,6 +33,7 @@ export class MdyTextFieldElement extends MdyFieldElement<string | null> {
       widgetId: this.fieldId,
       handle,
       inputType: this.type,
+      kind: this.widgetKind,
       autocomplete: this.autocomplete,
     });
   }
@@ -45,16 +45,9 @@ export class MdyTextFieldElement extends MdyFieldElement<string | null> {
   }
 
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
-    // What the field's rules state, as this kind's own attributes. The translation lives in
-    // `@modyra/widgets` so three renderers cannot answer it three ways.
-    const native = nativeConstraintAttributes(this.widgetKind, handle.constraints());
     return html`<input
       id=${this.fieldId}
       type=${this.type}
-      minlength=${native["minlength"] ?? nothing}
-      maxlength=${native["maxlength"] ?? nothing}
-      pattern=${native["pattern"] ?? nothing}
-      inputmode=${native["inputmode"] ?? nothing}
       placeholder=${this.placeholder}
       autocomplete=${this.autocomplete || nothing}
       .value=${handle.value() ?? ""}

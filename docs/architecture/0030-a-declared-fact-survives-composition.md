@@ -1,6 +1,6 @@
 # ADR 0030: A declared fact survives composition
 
-Status: Accepted
+Status: Accepted — amended 2026-08-11, see **Amendment: the projection places the attributes**
 
 ## Context
 
@@ -104,3 +104,52 @@ Native constraints are a convenience for the person typing, never a control. Eve
 also a rule that runs on the value whatever its origin, and the server remains the authority — see
 `docs/guides/security.md`. Nothing here narrows what the model accepts, so nothing here can be
 relied on to keep a value out.
+
+## Amendment: the projection places the attributes
+
+**2026-08-11.** The decision above was implemented with its last mile in the wrong place: each
+renderer read the field's constraints and wrote the attributes itself, template line by template
+line. The conformance kit found two renderers that had missed some — and *that* is the finding, not
+the two renderers: if forgetting is possible, it eventually happens.
+
+The library already had the answer. A widget's projection decides what a control exposes — `type`,
+`inputmode`, the ARIA set — and `MdyPartDirective` says why in its own documentation: *a template
+binds this instead of restating the semantics attribute by attribute, so an attribute added to the
+projection reaches the DOM without the template being touched.* Nine of Angular's fourteen renderers
+bound it. **The five that did not are exactly the five where the constraints had to be written by
+hand**, and two of those five are the ones the kit rejected. The defect was never a lapse of
+attention; it was two mechanisms answering one question.
+
+**The projection places the attributes.** `projectFieldA11y` and `projectFieldShellA11y` — a renderer
+takes its control part from one or the other — emit the native constraints beside the ARIA they
+already emitted. A control that wants to offer *less* than the field accepts says so once, through
+the controller (`constraints`, read rather than captured so a limit set later is honoured), and the
+projection composes rules with narrowing: whichever end is tighter, never wider than the rules.
+
+All fourteen Angular renderers now bind the part, as do the framework-free and Lit renderers. **No
+renderer names a constraint attribute.** Adding one tomorrow touches the projection and the
+per-kind translation, and no renderer at all.
+
+### Consequences
+
+The source-level audits of the Angular UI record fewer ARIA names in those five templates, because
+they no longer spell what they no longer decide. Both audits already intended this — their own
+documentation says a renderer satisfies a token by naming it *or by naming the directive that
+supplies it* — and only their implementations disagreed; they now read the rule they state.
+
+What guards the ARIA is what always did: the state matrices that mount widgets and read real
+elements, and `renderers/part-aria.spec.ts`, which asserts that the attributes a renderer stopped
+spelling still reach the DOM — including the rule that `aria-describedby` names the error list only
+once there is one to name.
+
+### Verification
+
+- `npm run test:conformance` (plain, lit) and `test:conformance-angular`: *Declared rules reach the
+  control* stays green with **no renderer naming an attribute**.
+- `packages/angular/src/lib/renderers/part-aria.spec.ts` — the DOM-level check behind the audit diff.
+- `npm run test:e2e`: 547 passing, visual baselines unchanged.
+
+### Security and privacy
+
+Unchanged from the record above. Moving where an attribute is decided does not change what the model
+accepts, and native constraints remain a convenience for the person typing rather than a control.

@@ -75,7 +75,7 @@ export interface MdyRecordManagerDeps {
    * declared included — and it cannot work that out for itself, because a manager knows its own
    * path and nothing above it.
    */
-  readonly sections?: ReadonlyArray<(value: unknown, enclosing: Record<string, unknown>) => boolean>;
+  readonly sections?: ReadonlyArray<() => boolean>;
   readonly rx: MdyReactivity;
   readonly engine: MdyFormEngine;
   /** Dotted record path, e.g. "rows" or "order.rows". */
@@ -326,7 +326,13 @@ export class MdyRecordManager {
     return false;
   }
 
-  private _registerNode(fullPath: string, rowNode: MdyRowNode, value: unknown, rowPath: string, sections: ReadonlyArray<(value: unknown, enclosing: Record<string, unknown>) => boolean> = []): void {
+  /** The row a path belongs to, as the value an enclosing condition reads. */
+  private _rowValue(rowPath: string): Record<string, unknown> {
+    const row = this._readNode(rowPath, this._deps.item);
+    return isRecord(row) ? row : {};
+  }
+
+  private _registerNode(fullPath: string, rowNode: MdyRowNode, value: unknown, rowPath: string, sections: ReadonlyArray<() => boolean> = []): void {
     const { engine } = this._deps;
     if (rowNode.kind === "field") {
       const v = value === undefined ? rowNode.initial : value;
@@ -339,12 +345,11 @@ export class MdyRecordManager {
       engine.upsertValidators(fullPath, ROW_SCHEMA_KEY, rowNode.validators, marksRequired);
       // Its own condition and every section of the row above it, composed once by
       // `conditions.ts` — the same sentence the schema registration uses.
+      // Already bound to what they read — a section above this collection knows the form, not the
+      // row — so they take no arguments and none are invented for them.
       const conditions: MdyCondition[] = sections.map((holds) => ({
-        holds,
-        read: () => {
-          const row = this._readNode(rowPath, this._deps.item);
-          return { value: row, enclosing: isRecord(row) ? row : {} };
-        },
+        holds: () => holds(),
+        read: () => ({ value: null, enclosing: {} }),
       }));
       if (rowNode.when !== null) {
         const when = rowNode.when;
@@ -377,8 +382,11 @@ export class MdyRecordManager {
     const nested = rowNode.when !== null
       ? [
           ...sections,
-          (_value: unknown, row: Record<string, unknown>) =>
-            rowNode.when!(this._readNode(fullPath, rowNode) as Record<string, unknown>, row),
+          () =>
+            rowNode.when!(
+              this._readNode(fullPath, rowNode) as Record<string, unknown>,
+              this._rowValue(rowPath),
+            ),
         ]
       : sections;
     for (const [key, child] of Object.entries(rowNode.children)) {

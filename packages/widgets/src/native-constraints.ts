@@ -42,8 +42,14 @@ export function nativeConstraintAttributes(
   const attributes: Record<string, string | null> = {};
 
   if (numeric) {
-    attributes["min"] = constraints.min === null ? null : String(constraints.min);
-    attributes["max"] = constraints.max === null ? null : String(constraints.max);
+    // A slider has to span something to be drawn at all, so where nothing states a range it takes
+    // the one a bare `<input type="range">` assumes. That is the kind's own default, not a rule —
+    // which is why it is decided here and not left to each renderer to remember.
+    const spans = kind === "slider";
+    const low = constraints.min ?? (spans ? 0 : null);
+    const high = constraints.max ?? (spans ? 100 : null);
+    attributes["min"] = low === null ? null : String(low);
+    attributes["max"] = high === null ? null : String(high);
     attributes["step"] = constraints.step === null ? null : String(constraints.step);
   }
 
@@ -76,4 +82,34 @@ export function applyNativeConstraints(
     if (value === null) element.removeAttribute(name);
     else element.setAttribute(name, value);
   }
+}
+
+/**
+ * What a control offers: the field's rules, narrowed by what the control itself asks for.
+ *
+ * A control may ask for **less** than the field accepts — a slider drawn over part of its range, a
+ * number input a caller capped — and never for more: the rules are the authority, and offering
+ * beyond them would invite a value the form is going to refuse. So each end takes whichever is
+ * tighter, which is the same rule two validators already follow between themselves.
+ */
+export function narrowConstraints(
+  rules: MdyFieldConstraints,
+  narrowing: Partial<MdyFieldConstraints> | undefined,
+): MdyFieldConstraints {
+  if (!narrowing) return rules;
+  const higher = (a: number | null, b: number | null | undefined) =>
+    a === null ? b ?? null : b === null || b === undefined ? a : Math.max(a, b);
+  const lower = (a: number | null, b: number | null | undefined) =>
+    a === null ? b ?? null : b === null || b === undefined ? a : Math.min(a, b);
+
+  return {
+    min: higher(rules.min, narrowing.min),
+    max: lower(rules.max, narrowing.max),
+    step: higher(rules.step, narrowing.step),
+    minLength: higher(rules.minLength, narrowing.minLength),
+    maxLength: lower(rules.maxLength, narrowing.maxLength),
+    pattern: narrowing.pattern ?? rules.pattern,
+    inputType: narrowing.inputType ?? rules.inputType,
+    inputMode: narrowing.inputMode ?? rules.inputMode,
+  };
 }

@@ -113,7 +113,7 @@
     "item: MdyAnyGroupDescriptor | MdyAnyFieldDescriptor",
     "path: string",
     "rx: MdyReactivity",
-    "sections?: ReadonlyArray<(value: unknown, enclosing: Record<string, unknown>) => boolean>"
+    "sections?: ReadonlyArray<() => boolean>"
   ],
   "MdyAsyncDraftStorage": [
     "flushed: Promise<void>",
@@ -679,8 +679,10 @@
   ],
   "MdyFieldA11yOptions": [
     "autocomplete?: string",
+    "constraints?: MdyFieldConstraints",
     "inputMode?: string",
     "inputType?: string",
+    "kind?: MdyWidgetKind | string",
     "widgetId: string"
   ],
   "MdyFieldConstraints": [
@@ -699,9 +701,11 @@
   ],
   "MdyFieldControllerOptions": [
     "autocomplete?: string",
+    "constraints?: () => Partial<MdyFieldConstraints>",
     "handle: MdyFieldHandle<TValue>",
     "inputMode?: string",
     "inputType?: string",
+    "kind?: string",
     "readonly?: boolean",
     "widgetId: string"
   ],
@@ -758,9 +762,11 @@
     "(opaque)"
   ],
   "MdyFieldShellA11yOptions": [
+    "constraints?: MdyFieldConstraints",
     "controlId?: string",
     "descriptionVisible?: boolean",
     "errorsVisible?: boolean",
+    "kind?: string",
     "widgetId: string"
   ],
   "MdyFieldShellFlags": [
@@ -1325,7 +1331,7 @@
     "item: MdyRowNode",
     "path: string",
     "rx: MdyReactivity",
-    "sections?: ReadonlyArray<(value: unknown, enclosing: Record<string, unknown>) => boolean>",
+    "sections?: ReadonlyArray<() => boolean>",
     "warn: (message: string) => void"
   ],
   "MdyRelationAttribute": [
@@ -2561,6 +2567,11 @@
     "(1) intent: MdyMultiselectValueIntent<T>",
     "(2) keyFor?: (value: T) => string",
     "-> returns: readonly T[]"
+  ],
+  "narrowConstraints": [
+    "(0) rules: MdyFieldConstraints",
+    "(1) narrowing: Partial<MdyFieldConstraints> | undefined",
+    "-> returns: MdyFieldConstraints"
   ],
   "nativeConstraintAttributes": [
     "(0) kind: MdyWidgetKind | string",
