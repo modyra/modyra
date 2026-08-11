@@ -17,6 +17,7 @@ import {
   MdyAnyArrayDescriptor,
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
+  MdyAnyRecordDescriptor,
   MdyArrayDescriptor,
   MdyCoreFormOptions,
   MdyFieldDescriptor,
@@ -25,14 +26,16 @@ import {
   MdyFormValidatorFn,
   MdyFormValue,
   MdyGroupDescriptor,
+  MdyRecordDescriptor,
   MdyTypedForm,
+  record,
   withFacts,
   type MdyValidatorFacts,
   ValidatorFn,
 } from "@modyra/core";
 import { z } from "zod";
 
-/** Maps a Zod array's element schema to a Modyra array item descriptor. */
+/** Maps the schema of a collection's element — an array's item, a record's value — to a row descriptor. */
 export type MdyZodItemDescriptor<Elem extends z.ZodType> =
   Elem extends z.ZodObject<infer Inner>
     ? MdyGroupDescriptor<MdyZodSchemaTree<Inner>>
@@ -41,7 +44,8 @@ export type MdyZodItemDescriptor<Elem extends z.ZodType> =
 /**
  * Maps a Zod object shape to a Modyra schema tree at the type level:
  * nested `z.object()`s become groups, `z.array()`s become typed field
- * arrays, every other schema becomes a leaf field typed
+ * arrays, `z.record()`s become keyed collections, every other schema
+ * becomes a leaf field typed
  * `z.output<Piece> | null` (`null` = not filled in yet — the Zod
  * validators reject it at submit time when the piece is required).
  */
@@ -50,6 +54,8 @@ export type MdyZodSchemaTree<Shape extends z.ZodRawShape> = {
     ? MdyGroupDescriptor<MdyZodSchemaTree<Inner>>
     : Shape[K] extends z.ZodArray<infer Elem extends z.ZodType>
     ? MdyArrayDescriptor<MdyZodItemDescriptor<Elem>>
+    : Shape[K] extends z.ZodRecord<infer _Key, infer Value extends z.ZodType>
+    ? MdyRecordDescriptor<MdyZodItemDescriptor<Value>>
     : MdyFieldDescriptor<z.output<Shape[K]> | null>;
 };
 
@@ -92,7 +98,10 @@ export function createZodForm<T extends z.ZodObject>(
 export function buildZodTree(objectSchema: z.ZodObject): MdyFormSchema {
   const out: Record<
     string,
-    MdyAnyFieldDescriptor | MdyAnyGroupDescriptor | MdyAnyArrayDescriptor
+    | MdyAnyFieldDescriptor
+    | MdyAnyGroupDescriptor
+    | MdyAnyArrayDescriptor
+    | MdyAnyRecordDescriptor
   > = {};
   for (const [key, piece] of Object.entries<z.ZodType>(objectSchema.shape)) {
     out[key] = buildZodNode(piece);
@@ -102,24 +111,41 @@ export function buildZodTree(objectSchema: z.ZodObject): MdyFormSchema {
 
 function buildZodNode(
   piece: z.ZodType,
-): MdyAnyFieldDescriptor | MdyAnyGroupDescriptor | MdyAnyArrayDescriptor {
+):
+  | MdyAnyFieldDescriptor
+  | MdyAnyGroupDescriptor
+  | MdyAnyArrayDescriptor
+  | MdyAnyRecordDescriptor {
   if (piece instanceof z.ZodObject) {
     return group(buildZodTree(piece));
   }
   if (piece instanceof z.ZodArray) {
-    const element = piece.element as z.ZodType;
-    const item =
-      element instanceof z.ZodObject
-        ? group(buildZodTree(element))
-        : field<unknown>(initialFor(element), [pieceValidator(element)]);
     // pieceValidator's ValidatorFn<unknown> accepts any value, including
-    // the array itself — safe to reuse as the array-level validator.
-    return array(item, {
+    // the collection itself — safe to reuse as the collection-level validator.
+    return array(rowDescriptor(piece.element as z.ZodType), {
       initial: initialForArray(piece),
       validators: [pieceValidator(piece)],
     });
   }
+  if (piece instanceof z.ZodRecord) {
+    // A record's rows are keyed by data, and the engine has held that since keyed collections
+    // existed. Leaving it a leaf made the value a single opaque object no renderer could draw and
+    // no row could be added to — and, since a record rejects `null`, a form invalid from its first
+    // moment. The keys the schema constrains stay the schema's business: the whole-piece validator
+    // is on the collection, so a key it refuses is refused there.
+    return record(rowDescriptor(piece.valueType as z.ZodType), {
+      initial: initialForRecord(piece),
+      validators: [pieceValidator(piece)],
+    });
+  }
   return field<unknown>(initialFor(piece), [pieceValidator(piece)]);
+}
+
+/** A collection's row: a group when the element is an object, a leaf otherwise. */
+function rowDescriptor(element: z.ZodType): MdyAnyFieldDescriptor | MdyAnyGroupDescriptor {
+  return element instanceof z.ZodObject
+    ? group(buildZodTree(element))
+    : field<unknown>(initialFor(element), [pieceValidator(element)]);
 }
 
 /** Initial value: what the piece parses `undefined` into (default/optional), else null. */
@@ -132,6 +158,14 @@ function initialFor(piece: z.ZodType): unknown {
 function initialForArray(piece: z.ZodType): ReadonlyArray<unknown> {
   const parsed = piece.safeParse(undefined);
   return parsed.success && Array.isArray(parsed.data) ? parsed.data : [];
+}
+
+/** Record initial value: the same rule one collection over — a default if the piece has one, else no rows. */
+function initialForRecord(piece: z.ZodType): Readonly<Record<string, unknown>> {
+  const parsed = piece.safeParse(undefined);
+  return parsed.success && parsed.data !== null && typeof parsed.data === "object" && !Array.isArray(parsed.data)
+    ? (parsed.data as Record<string, unknown>)
+    : {};
 }
 
 /**

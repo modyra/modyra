@@ -63,6 +63,61 @@ test("z.array() of a scalar becomes an array of leaf field handles", () => {
   assert.equal(form.f.tags.rows()[0].value(), "a");
 });
 
+test("z.record(z.object()) becomes a keyed collection, not one opaque field", () => {
+  // The engine has held keyed collections since ADR 0026, and a record derived from a schema has to
+  // reach them: as a leaf the value was a single object no row could be added to — and, since a
+  // record rejects null, a form invalid from its first moment.
+  const form = createZodForm(
+    z.object({ rates: z.record(z.string(), z.object({ price: z.number().min(1) })) }),
+  );
+
+  assert.deepEqual(form.getValue().rates, {}, "a record with no rows is an object, not null");
+  assert.equal(form.state.valid(), true, "the form was born invalid with nothing wrong in it");
+
+  form.f.rates.upsert("base", { price: 10 });
+  form.f.rates.cell("base", "price").set(12);
+  assert.deepEqual(form.getValue().rates, { base: { price: 12 } });
+  assert.equal(Array.isArray(form.getValue().rates), false, "a keyed collection must not read as a list");
+
+  // The schema's own rule still runs on the row.
+  form.f.rates.cell("base", "price").set(0);
+  assert.equal(form.state.valid(), false);
+
+  form.f.rates.remove("base");
+  assert.deepEqual(form.getValue().rates, {});
+  assert.equal(form.state.valid(), true);
+});
+
+test("a record of scalars, a record in a group, and a record with a default", () => {
+  const scalars = createZodForm(z.object({ m: z.record(z.string(), z.string().min(1)) }));
+  scalars.f.m.upsert("k", "v");
+  assert.deepEqual(scalars.getValue().m, { k: "v" });
+
+  const nested = createZodForm(z.object({ g: z.object({ m: z.record(z.string(), z.string()) }) }));
+  assert.deepEqual(nested.getValue(), { g: { m: {} } }, "a record inside a group stayed a leaf");
+
+  // A default is what the piece parses `undefined` into — the rule arrays already follow.
+  const seeded = createZodForm(z.object({ m: z.record(z.string(), z.string()).default({ a: "x" }) }));
+  assert.deepEqual(seeded.getValue().m, { a: "x" });
+});
+
+test("only a record becomes a record: every other shape degrades as it did", () => {
+  // The risk of teaching the adapter a new node is teaching it too much. The engine has no tuple, no
+  // set and no map, and inventing a structure the schema does not declare would be worse than a leaf.
+  const others = createZodForm(
+    z.object({
+      t: z.tuple([z.string()]),
+      s: z.set(z.string()),
+      nestedArrays: z.array(z.array(z.string())),
+    }),
+  );
+  const value = others.getValue();
+  assert.equal(value.t, null, "a tuple stopped being a leaf");
+  assert.equal(value.s, null, "a set stopped being a leaf");
+  assert.deepEqual(value.nestedArrays, [], "an array of arrays is still an array of leaves");
+  assert.equal(typeof others.f.nestedArrays.push, "function");
+});
+
 test("serverValidate rejects a forged payload with submit-shaped errors", () => {
   const schema = z.object({
     email: z.string().email("Invalid email"),
