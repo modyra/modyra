@@ -115,7 +115,8 @@ measured, same locale issue.
 | Async validation | ✓ debounce, `AbortSignal` cancellation, `dependsOn`, timeout | ✓ debounce + `AbortSignal` [^3] | ~ no built-in debounce or cancellation | ~ form-level only | ~ | ✓ | ~ manual cancellation |
 | Cross-field validation | ✓ | ✓ | ~ manual | ~ manual | ~ mutators | ✓ | ~ manual |
 | Dynamic arrays | ✓ push/insert/remove/move/swap | ✓ | ✓ | ✓ | ✓ via a separate package | ✓ | ✓ |
-| Keyed collections | ✓ rows keyed by data, surviving sort and re-render | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Keyed collections | ✓ rows keyed by data, surviving sort and re-render; a key can be renamed in place | ✗ arrays only | ✗ arrays only | ✗ arrays only | ✗ arrays only | ✗ arrays only | ~ `FormRecord` holds dynamic keys, with no rename [^5] |
+| Existence independent of rendering | ✓ a row exists because it was declared, so an off-screen row keeps its value and still counts against validity [^6] | ~ | ~ field-array state is tied to inputs mounting and unmounting [^7] | ~ | ~ | ~ | ✓ the model owns the controls |
 | Draft persistence | ✓ TTL, versioning, debounce, field exclusion | ~ on the v1 roadmap [^3] | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Undo/redo history | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Wizard / multi-step | ✓ per-step validation gating | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
@@ -213,3 +214,9 @@ cheap, or scope them to the fields they actually read.
 [^2]: TanStack Form supported frameworks: https://tanstack.com/form/v1/docs/framework
 [^3]: TanStack Form v1 announcement — Standard Schema, async `AbortSignal`, SSR, persistence roadmap: https://tanstack.com/blog/announcing-tanstack-form-v1
 [^4]: Compiled to Hermes bytecode with the compiler React Native 0.86 depends on, with zero errors. No native input renderer or example app. Full writeup: [React Native guide](react-native.md).
+
+[^5]: `FormRecord` API — `addControl`, `removeControl`, `setControl`, `contains`; there is no method that renames a key while keeping the control's value and state, so a rename is a removal and an addition: https://angular.dev/api/forms/FormRecord
+
+[^6]: Verified against the engine: a record row that was never rendered keeps the form invalid until it is filled, and its value reads back through a fresh handle. The rule and its reasons are [ADR 0026](../architecture/0026-a-row-exists-because-it-was-declared.md); the checks are in `packages/core/test/record-fields.test.mjs`.
+
+[^7]: react-hook-form's own documentation for `useFieldArray`: "Field array relies on inputs being mounted and unmounted to manage its internal state", which is why `shouldUnregister: true` is not supported alongside it. Values are retained on unmount by default (`shouldUnregister: false`): https://react-hook-form.com/docs/usefieldarray

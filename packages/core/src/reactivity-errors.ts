@@ -54,3 +54,25 @@ export class MdyActivationError extends Error {
     this.name = "MdyActivationError";
   }
 }
+
+/**
+ * A signal was written while a computed was recomputing.
+ *
+ * A computed is a function of its inputs and nothing else. Whether it runs at all depends on who
+ * reads it, and how often depends on what invalidates it — so a write from inside happens a number
+ * of times the program never states, in an order decided by whichever consumer read first.
+ *
+ * The same code runs on every reactivity a host may bring, and at least one of them refuses this
+ * write outright. A rule obeyed by the strictest graph is the only one that holds everywhere.
+ */
+export class MdyComputedWriteError extends Error {
+  constructor() {
+    super(
+      "[modyra] A signal was written inside a computed. A computed derives a value from its " +
+        "inputs; it may run any number of times, or none, so a write from within it is not a " +
+        "statement the program can make. Move the write into an effect, or into the code that " +
+        "caused it.",
+    );
+    this.name = "MdyComputedWriteError";
+  }
+}

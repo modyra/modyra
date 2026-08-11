@@ -93,6 +93,8 @@ export function angularReactivity(
       deterministicFlush: false,
       directObservation: false,
       writableComputed: false,
+      // Angular refuses the write itself (NG0600), which is the same rule from the other side.
+      pureComputeds: true,
       graphInspection: false,
       serverSnapshots: false,
     },

@@ -201,6 +201,8 @@ export function vueReactivity(): MdyReactivity &
       deterministicFlush: true,
       directObservation: true,
       writableComputed: false,
+      // @vue/reactivity does not refuse a write inside a computed; the rule holds regardless.
+      pureComputeds: false,
       graphInspection: false,
       serverSnapshots: false,
     },

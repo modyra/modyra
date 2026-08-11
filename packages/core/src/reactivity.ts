@@ -12,7 +12,7 @@
  * (Vue, Solid, and the signal-based frameworks generally) keep compiling unmodified — they become load-bearing
  * once each adapter is migrated (Milestones 2-4 of that plan).
  */
-import { MdyDestroyedScopeError } from "./reactivity-errors.js";
+import { MdyComputedWriteError, MdyDestroyedScopeError } from "./reactivity-errors.js";
 
 /** Structural equality check used by signals/computeds that support it. */
 export type MdyEqualityFn<T> = (previous: T, next: T) => boolean;
@@ -108,6 +108,15 @@ export interface MdyReactivityCapabilities {
   readonly writableComputed: boolean;
   readonly graphInspection: boolean;
   readonly serverSnapshots: boolean;
+  /**
+   * Whether writing a signal inside a computed is **refused**.
+   *
+   * The rule holds everywhere — a computed is a function of its inputs, and code that runs under
+   * more than one reactivity must obey the strictest of them. What differs is whether a graph can
+   * see the violation: this says it does, and `false` means it will not notice, never that the
+   * write is allowed. See ADR 0032.
+   */
+  readonly pureComputeds: boolean;
 }
 
 /**
@@ -183,6 +192,13 @@ interface ProducerNode {
 }
 
 let activeConsumer: Consumer | null = null;
+/**
+ * The computed currently recomputing, if any.
+ *
+ * Separate from `activeConsumer`, which an effect also occupies: an effect writing a signal is
+ * ordinary and intended, and only a computed's body is a place where a write cannot mean anything.
+ */
+let activeComputed: object | null = null;
 
 // ─── Shared effect scheduler (piano §6.1/§6.2: batch()/flush()) ───────────────
 //
@@ -256,6 +272,9 @@ class VanillaSignal<T> implements ProducerNode {
   }
 
   write(value: T): void {
+    // Refused while a computed is recomputing, whatever the value: allowing it only when the value
+    // differs would make the rule depend on the data, and a rule about purity cannot.
+    if (activeComputed !== null) throw new MdyComputedWriteError();
     if (this._equal(this._value, value)) return;
     this._value = value;
     for (const consumer of [...this.consumers]) consumer.markStale();
@@ -284,14 +303,17 @@ class VanillaComputed<T> implements ProducerNode, Consumer {
     if (this._dirty) {
       dropDependencies(this);
       const prev = activeConsumer;
+      const prevComputed = activeComputed;
       // eslint-disable-next-line @typescript-eslint/no-this-alias -- subscriber stack: save/restore around recompute
       activeConsumer = this;
+      activeComputed = this;
       const previousValue = this._value;
       const hadValue = !this._isInitial;
       try {
         this._value = this._fn();
       } finally {
         activeConsumer = prev;
+        activeComputed = prevComputed;
       }
       // Re-apply equality after recompute so an unchanged derived value does
       // not propagate staleness to its own consumers (mirrors what a
@@ -339,8 +361,12 @@ class VanillaEffect implements Consumer {
     this._runCleanups();
     dropDependencies(this);
     const prev = activeConsumer;
+    // An effect is where a write belongs, and one may run while a computed is being read — a flush
+    // reached from inside a read, for instance. Its body is not that computed's body.
+    const prevComputed = activeComputed;
     // eslint-disable-next-line @typescript-eslint/no-this-alias -- subscriber stack: save/restore around recompute
     activeConsumer = this;
+    activeComputed = null;
     try {
       this._fn((cleanup) => this._cleanups.push(cleanup));
     } catch (error) {
@@ -348,6 +374,7 @@ class VanillaEffect implements Consumer {
       else throw error;
     } finally {
       activeConsumer = prev;
+      activeComputed = prevComputed;
     }
   }
 
@@ -449,6 +476,8 @@ export function vanillaReactivity(): MdyReactivity &
       deterministicFlush: true,
       directObservation: true,
       writableComputed: false,
+      // Enforced, not merely intended: writing a signal while a computed recomputes throws.
+      pureComputeds: true,
       graphInspection: false,
       serverSnapshots: false,
     },
@@ -542,6 +571,8 @@ export function vanillaReactivity(): MdyReactivity &
 }
 
 function untrackedRead<T>(fn: () => T): T {
+  // `activeComputed` is deliberately left alone: untracked says "do not depend on what I read", not
+  // "this is no longer a computed". A write inside one is refused either way.
   const prev = activeConsumer;
   activeConsumer = null;
   try {

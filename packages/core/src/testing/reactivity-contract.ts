@@ -206,6 +206,33 @@ export function runReactivityContractTests(
     destroy();
   });
 
+  test(`${name}: a computed refuses a write to a signal (if capable)`, () => {
+    const { reactivity: rx, destroy } = createHarness();
+    // A computed is a function of its inputs under every reactivity — whether it runs at all
+    // depends on who reads it. What differs is whether a graph can see the breach, which is what
+    // the capability states; a graph that answers `false` is not being given permission, it is
+    // saying it will not notice. See ADR 0032.
+    if (rx.capabilities?.pureComputeds !== true) {
+      destroy();
+      return;
+    }
+    const source = rx.signal(1);
+    const target = rx.signal(0);
+    const derived = rx.computed(() => {
+      target.set(source());
+      return source();
+    });
+    assert.throws(() => derived(), "a write inside a computed was allowed by a graph that claims to refuse it");
+
+    // And the two places a write is ordinary must keep working, or the rule would cost more than it
+    // protects: after reading a computed, and inside an effect.
+    const pure = rx.computed(() => source() * 2);
+    assert.equal(pure(), 2);
+    target.set(pure());
+    assert.equal(target(), 2);
+    destroy();
+  });
+
   test(`${name}: scope destroy is idempotent and cascades to children`, () => {
     const { reactivity: rx, destroy } = createHarness();
     if (!rx.createScope) {
