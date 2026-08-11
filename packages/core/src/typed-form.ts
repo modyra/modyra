@@ -1037,6 +1037,8 @@ export abstract class MdyTypedFormBase<
       }
       this._adapter.setInitialValue(path, node.initial);
       this._adapter.getField(path);
+      // The schema declared it, so a control that unmounts releases its claim and nothing more.
+      this._adapter.ownField(path);
       const marksRequired = node.validators.some((fn) => hasRequiredMarker(fn));
       this._adapter.upsertValidators(
         path,
