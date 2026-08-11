@@ -28,11 +28,22 @@ export interface MockServerConfig {
 
 function wait(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(resolve, ms);
-    signal?.addEventListener("abort", () => {
+    // Already aborted is the same answer as aborted halfway, given sooner: a run whose signal was
+    // cancelled before it started has nothing to report, and waiting the full delay to then
+    // *succeed* would teach the preview that a server ignores cancellation.
+    if (signal?.aborted) {
+      reject(new DOMException("aborted", "AbortError"));
+      return;
+    }
+    const abort = (): void => {
       clearTimeout(timer);
       reject(new DOMException("aborted", "AbortError"));
-    });
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", abort);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", abort, { once: true });
   });
 }
 
