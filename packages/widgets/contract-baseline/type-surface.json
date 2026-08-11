@@ -1294,6 +1294,7 @@
     "effectOwnership: boolean",
     "effects: boolean",
     "graphInspection: boolean",
+    "pureComputeds: boolean",
     "serverSnapshots: boolean",
     "signalEquality: boolean",
     "writableComputed: boolean"
