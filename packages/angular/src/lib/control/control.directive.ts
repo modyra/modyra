@@ -16,12 +16,13 @@ import {
 import { MDY_DECLARATIVE_REGISTRY, MDY_FLOATING_LABELS, MDY_FORM_ADAPTER, MDY_INLINE_ERRORS } from "../core/tokens";
 import { MdyFieldHandle } from "../core/typed-form";
 import { MdyFieldError, MdyFieldState, MdyFormAdapter } from "../core/types";
-import { handleFormOf } from "@modyra/core";
+import { handleFormOf, NO_CONSTRAINTS, type MdyFieldConstraints } from "@modyra/core";
 import type { MdyInteractivity } from "@modyra/core";
 import {
   createValueWidgetController,
   type MdyValueWidgetController,
   defaultWidgetIdFactory,
+  narrowConstraints,
   projectFieldShellA11y,
   type MdyPartContract,
   type MdyValueWidgetIntent,
@@ -254,7 +255,7 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         dirty,
         required: off,
         // No field, so no rule to read a constraint from.
-        bounds: computed(() => ({ min: null, max: null })),
+        constraints: computed(() => NO_CONSTRAINTS),
         valid: computed(() => true),
         errors: computed(() => []),
         disabled: off,
@@ -406,6 +407,11 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
       this.errors(),
       {
         widgetId: this.fieldId,
+        // The kind decides which native constraints its control can carry, and the projection turns
+        // the field's rules into those attributes — so a renderer binding this part offers them
+        // without naming one, and a renderer that gains a constraint tomorrow needs no edit.
+        kind: this.widgetKind,
+        constraints: narrowConstraints(this.fieldState().constraints(), this.narrowedConstraints()),
         errorsVisible: this.errorsRendered(),
         // Supporting text is only emitted when a host projects some.
         descriptionVisible: !!this.supportingText(),
@@ -415,6 +421,20 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
 
   /** The renderer's own id, which the projection needs in order to name the parts it relates. */
   protected abstract readonly fieldId: string;
+
+  /**
+   * The kind this renderer draws. Defaults to a text-like control, which is what the projection
+   * assumes for anything that does not say otherwise.
+   */
+  protected readonly widgetKind: string = "text";
+
+  /**
+   * What this renderer asks for on top of the field's rules — nothing, unless it has its own limits
+   * to state. It cannot ask for more: the projection takes whichever end is tighter.
+   */
+  protected narrowedConstraints(): Partial<MdyFieldConstraints> {
+    return {};
+  }
   /** Whether the field is required (deduced from validators). */
   protected readonly isRequired: Signal<boolean> = computed(() =>
     this.fieldState().required(),

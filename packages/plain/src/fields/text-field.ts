@@ -8,6 +8,7 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicNumberField, MdyDynamicTextField } from "@modyra/core";
 import {
+  narrowConstraints,
   createFieldController,
   MDY_CSS_PROPERTIES,
   MDY_WIDGET_CONTRACTS,
@@ -34,37 +35,36 @@ export function renderTextField(
   const isTextarea = f.kind === "textarea";
   const isNumeric = f.kind === "number" || f.kind === "slider";
 
+  // What this control asks for on top of the field's rules. The projection composes the two and
+  // puts the attributes on the control part, so nothing here places them on the element.
+  const ranged = f.kind === "number" || f.kind === "slider" ? f : null;
+  const narrowing = ranged
+    ? { min: ranged.min ?? null, max: ranged.max ?? null, step: ranged.step ?? null }
+    : undefined;
+
   const controller = createFieldController(
-    { widgetId: widgetId, handle, inputType: isTextarea ? undefined : NATIVE_INPUT_TYPE[f.kind] },
+    {
+      widgetId: widgetId,
+      handle,
+      inputType: isTextarea ? undefined : NATIVE_INPUT_TYPE[f.kind],
+      kind: f.kind,
+      constraints: () => narrowing ?? {},
+    },
     reactivity,
   );
 
   const shell = buildFieldShell(f.label, f.kind, { prefix: f.prefix, suffix: f.suffix }, f.ariaLabel);
   const input = (isTextarea ? el("textarea") : el("input")) as HTMLInputElement | HTMLTextAreaElement;
   if (f.placeholder) input.placeholder = f.placeholder;
-  // Written as attributes, which every element type accepts and the IDL properties reflect: plain
-  // renders against a DOM shim in its own tests, so it never reaches for a DOM global like
-  // `HTMLInputElement` to narrow with.
-  // A field's validators already answer "what may this hold". The config narrows what this control
-  // offers; where it says nothing, the rule is what the keyboard gets, so a bound is stated once and
-  // cannot drift between the two.
-  const ranged = f.kind === "number" || f.kind === "slider" ? f : null;
-  const bounds = handle.bounds();
-  const low = ranged?.min ?? bounds.min ?? undefined;
-  const high = ranged?.max ?? bounds.max ?? undefined;
-  if (f.kind === "number" || f.kind === "slider") {
-    if (low !== undefined) input.setAttribute("min", String(low));
-    if (high !== undefined) input.setAttribute("max", String(high));
-    if (f.step !== undefined) input.setAttribute("step", String(f.step));
-  }
   // A slider is not a bare input: the contract gives it a container and a displayed value, and
   // the themes lay both out. Every class here comes from the catalog, none from this file.
   const slider = f.kind === "slider" ? MDY_WIDGET_CONTRACTS.slider : null;
   // The same range the attributes carry, so the painted fill and the handle agree about where the
   // track starts and ends. A slider must span something to be drawn at all, so where neither the
   // config nor the field's rules say, it is what a bare `<input type="range">` assumes.
-  const sliderMin = f.kind === "slider" ? low ?? 0 : 0;
-  const sliderMax = f.kind === "slider" ? high ?? 100 : 100;
+  const offered = () => narrowConstraints(handle.constraints(), narrowing);
+  const sliderMin = f.kind === "slider" ? offered().min ?? 0 : 0;
+  const sliderMax = f.kind === "slider" ? offered().max ?? 100 : 100;
   let sliderValue: HTMLSpanElement | null = null;
   if (slider) {
     const track = el("div") as HTMLDivElement;

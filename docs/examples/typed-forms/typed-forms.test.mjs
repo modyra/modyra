@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 
 const {
   createForm, field, group, array, record,
-  required, email, min, max, minLength, integer, compose,
+  required, email, min, max, minLength, maxLength, integer, compose,
   serverValidator,
 } = await import("@modyra/core");
 
@@ -255,27 +255,40 @@ test("a predicate reads the form in the shape the schema declares", () => {
   assert.equal(form.state.valid(), false);
 });
 
-test("a bound is declared once, and the guide's traps are real", () => {
+test("a rule declares what it enforces, and combining rules keeps it", () => {
   const form = createForm({
+    code: field("", [required(), minLength(3), maxLength(8)]),
+    composed: field("", [compose(required(), maxLength(10))]),
     quantity: field(0, [integer(), min(0), max(255)]),
     tightest: field(0, [min(0), max(65535), min(1024), max(49151)]),
-    composed: field(0, [compose(integer(), min(0), max(255))]),
     odd: field(0, [min(Number.NaN)]),
   });
 
-  assert.deepEqual(form.getField("quantity")().bounds(), { min: 0, max: 255 });
   assert.deepEqual(
-    form.getField("tightest")().bounds(),
-    { min: 1024, max: 49151 },
-    "where two rules bound the same field, the tightest wins",
+    { ...form.getField("code")().constraints() },
+    { min: null, max: null, step: null, minLength: 3, maxLength: 8, pattern: null, inputType: null, inputMode: null },
   );
-  assert.deepEqual(
-    form.getField("composed")().bounds(),
-    { min: null, max: null },
-    "compose() returns one function and its bounds are not readable from outside",
-  );
-  assert.deepEqual(form.getField("odd")().bounds(), { min: null, max: null }, "not finite, not offered");
+  assert.equal(form.getField("code")().required(), true);
 
+  assert.equal(form.getField("composed")().constraints().maxLength, 10, "a fact survives compose()");
+  assert.equal(form.getField("composed")().required(), true, "and so does the required marker");
+
+  const quantity = form.getField("quantity")().constraints();
+  assert.deepEqual({ min: quantity.min, max: quantity.max, step: quantity.step }, { min: 0, max: 255, step: 1 });
+
+  const tightest = form.getField("tightest")().constraints();
+  assert.deepEqual({ min: tightest.min, max: tightest.max }, { min: 1024, max: 49151 }, "tightest wins");
+
+  assert.equal(form.getField("odd")().constraints().min, null, "not finite, not offered");
   form.f.quantity.set(1.5);
   assert.equal(form.getField("quantity")().valid(), false, "integer() still runs");
+});
+
+test("an attribute constrains typing, never the model", () => {
+  const form = createForm({ code: field("", [maxLength(8)]) });
+
+  form.f.code.set("far too long for eight characters");
+
+  assert.equal(form.getValue().code, "far too long for eight characters", "kept whole");
+  assert.equal(form.getField("code")().valid(), false, "and judged by the rule");
 });

@@ -12,6 +12,7 @@ import { vanillaReactivity } from "@modyra/core";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectFieldA11y } from "./field-a11y.js";
+import { narrowConstraints } from "../native-constraints.js";
 import type {
   MdyFieldControllerOptions,
   MdyFieldIntent,
@@ -34,6 +35,8 @@ export function createFieldController<TValue>(
     widgetId,
     handle,
     inputType,
+    kind,
+    constraints: narrowing,
     inputMode,
     readonly: initialReadonly = false,
     autocomplete,
@@ -68,6 +71,11 @@ export function createFieldController<TValue>(
       inputType,
       inputMode,
       autocomplete,
+      kind,
+      // The rules, narrowed by whatever this control asks for. Composed here rather than applied to
+      // the element afterwards, so there is no order of application to get right — and one place
+      // answers "what does this control offer".
+      constraints: narrowConstraints(handle.constraints(), narrowing?.()),
     });
 
     return {

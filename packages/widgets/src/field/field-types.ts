@@ -7,7 +7,7 @@
  */
 
 import type { MdyInteractivity } from "@modyra/core";
-import type { MdyFieldHandle } from "@modyra/core";
+import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
 
 export interface MdyFieldControllerOptions<TValue> {
   /** Stable identity for the widget instance. */
@@ -22,6 +22,22 @@ export interface MdyFieldControllerOptions<TValue> {
   readonly readonly?: boolean;
   /** Whether the widget should use autocomplete. */
   readonly autocomplete?: string;
+  /**
+   * The kind this control belongs to, so the projection knows which native constraints it can carry.
+   * Defaults to `inputType`, which is the same answer for every text-like control.
+   */
+  readonly kind?: string;
+  /**
+   * Narrows what this control offers, on top of what the field's rules state.
+   *
+   * A control may ask for less than the field accepts — a slider bounded tighter than its rule, a
+   * number input capped by a caller — and this is where it says so. It cannot ask for more: the
+   * rules are the authority, and what is offered is their intersection with this.
+   *
+   * Read rather than captured, because a control's own limits are inputs that change: an element
+   * whose `max` is set after it connects would otherwise keep offering the one it was born with.
+   */
+  readonly constraints?: () => Partial<MdyFieldConstraints>;
 }
 
 /** Semantic state of a primitive field widget. */

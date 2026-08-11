@@ -53,7 +53,11 @@ test("with no rule the track is what a bare range input assumes", () => {
   const container = host();
   renderField(container, slider(), form.f.level, rx);
 
-  assert.equal(inputOf(container).getAttribute("min"), null, "nothing to state");
+  // A slider must span something to be drawn, so where no rule states a range it declares the one
+  // a bare `<input type="range">` assumes — the kind's own default, decided by the contract rather
+  // than remembered by each renderer.
+  assert.equal(inputOf(container).getAttribute("min"), "0");
+  assert.equal(inputOf(container).getAttribute("max"), "100");
   assert.equal(inputOf(container).style.getPropertyValue("--mdy-slider-fill").trim(), "0.5");
 });
 

@@ -2,13 +2,14 @@ import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component } from "@angular/core";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.component";
 
 @Component({
   selector: "mdy-control-toggle",
   standalone: true,
-  imports: [NgTemplateOutlet, MdyInlineErrorIconComponent, MdyErrorListComponent],
+  imports: [NgTemplateOutlet, MdyInlineErrorIconComponent, MdyErrorListComponent, MdyPartDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "mdy-renderer mdy-renderer--toggle",
@@ -27,11 +28,8 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
         (change)="onChange($event)"
         (blur)="dispatchValueBlur('toggle')"
         [attr.aria-checked]="value()"
-        [attr.aria-invalid]="hasErrors()"
-        [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-label]="controlAriaLabel()"
-        [attr.aria-required]="ariaRequired() || isRequired()"
-        [attr.aria-disabled]="effectiveAriaDisabled()"
+        [mdyPart]="controlPart()"
       />
       <span class="mdy-toggle__track" aria-hidden="true">
         <span class="mdy-toggle__thumb"></span>
@@ -59,6 +57,7 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
 })
 export class MdyToggleComponent extends MdyBaseControl<boolean> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.toggle;
+  protected override readonly widgetKind = "toggle";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly fieldId = `mdy-control-toggle-${MdyBaseControl.nextId()}`;
 

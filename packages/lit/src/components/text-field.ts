@@ -33,6 +33,7 @@ export class MdyTextFieldElement extends MdyFieldElement<string | null> {
       widgetId: this.fieldId,
       handle,
       inputType: this.type,
+      kind: this.widgetKind,
       autocomplete: this.autocomplete,
     });
   }

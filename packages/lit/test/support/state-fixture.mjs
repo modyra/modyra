@@ -10,7 +10,7 @@
  */
 import { mount as mountElement } from "./dom-env.mjs";
 
-const { createLitForm, field, required, min } = await import("../../dist/adapter.js");
+const { createLitForm, field, required, min, max, minLength, maxLength } = await import("../../dist/adapter.js");
 const { defineMdyElements } = await import("../../dist/ui.js");
 const { MDY_CANONICAL_EMPTY, findPartElement } = await import("../../../widgets/dist/testing/index.js");
 const { MDY_WIDGET_CONTRACTS } = await import("../../../widgets/dist/index.js");
@@ -131,12 +131,27 @@ export function partsOf(root, kind) {
  * empty is already failing, and a renderer free to show that immediately (the contract permits it)
  * would make "at rest" and "invalid" the same observation.
  */
-export async function mount(kind, { validators: withValidators = true, variant } = {}) {
+export async function mount(kind, { validators: withValidators = true, variant, rules, value } = {}) {
   const tag = TAG_FOR.get(kind);
   // A slider is never empty, so `required` alone can never fail on one and its `invalid` row would
   // be green because the state is unreachable rather than because the renderer is right.
-  const validators = !withValidators ? [] : kind === "slider" ? [required(), min(1)] : [required()];
-  const form = createLitForm({ value: field(emptyFor(kind), validators) });
+  // `rules` states constraints in the contract's own vocabulary, so the conformance kit can ask for
+  // one without knowing how this renderer spells a validator.
+  const validators = rules
+    ? [
+        ...(rules.min !== undefined ? [min(rules.min)] : []),
+        ...(rules.max !== undefined ? [max(rules.max)] : []),
+        ...(rules.minLength !== undefined ? [minLength(rules.minLength)] : []),
+        ...(rules.maxLength !== undefined ? [maxLength(rules.maxLength)] : []),
+      ]
+    : !withValidators
+      ? []
+      : kind === "slider"
+        ? [required(), min(1)]
+        : [required()];
+  const form = createLitForm({
+    value: field(value !== undefined ? value : emptyFor(kind), validators),
+  });
   const element = await mountElement(tag, (el) => {
     el.field = form.f.value;
     el.label = "Label";

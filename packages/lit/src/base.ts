@@ -1,4 +1,4 @@
-import { MdyFieldHandle } from "@modyra/core";
+import { MdyFieldHandle, type MdyFieldConstraints } from "@modyra/core";
 import { MDY_ICONS } from "@modyra/core/ui";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
@@ -12,6 +12,7 @@ import { defaultWidgetIdFactory as ID, MDY_FIELD_SHELL_CLASSES as SHELL, MDY_WID
   type MdyPopupWidgetKind,
 } from "@modyra/widgets";
 import { MdyFormController } from "./adapter.js";
+import { narrowConstraints } from "@modyra/widgets";
 
 /** Renders an icon from the shared library (same SVGs as every adapter). */
 export function mdyIcon(name: keyof typeof MDY_ICONS, className: string): unknown {
@@ -58,6 +59,15 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   /** The widget kind this element renders. Its classes come from the catalog, never from here. */
   protected abstract readonly widgetKind: MdyWidgetKind;
+
+  /**
+   * What this element asks for on top of the field's rules — nothing, unless a subclass has its own
+   * limits to state. It cannot ask for more than the rules allow; the projection takes whichever is
+   * tighter.
+   */
+  protected narrowedConstraints(): Partial<MdyFieldConstraints> {
+    return {};
+  }
 
   /** Root classes for this kind, straight from the catalog. */
   protected get rootClasses(): readonly string[] {
@@ -237,6 +247,10 @@ export abstract class MdyFieldElement<T> extends LitElement {
       handle.errors(),
       {
         widgetId: this.fieldId,
+        kind: this.widgetKind,
+        // The field's rules, narrowed by whatever this element asks for. One place composes them,
+        // and the part carries the result — so no element names an attribute.
+        constraints: narrowConstraints(handle.constraints(), this.narrowedConstraints()),
         errorsVisible: this.showErrors(handle),
         descriptionVisible: true,
       },

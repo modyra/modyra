@@ -87,6 +87,15 @@ export const kinds = CONTROLS.map((control) => control.kind);
 export const absentParts = {};
 
 /** The kinds whose anatomy depends on configuration, and the values this renderer supports. */
+/**
+ * This config passes the kit's `rules` and `value` to its fixture.
+ *
+ * Declared rather than assumed: without it the kit cannot tell a renderer that ignores a declared
+ * constraint from a config that never handed it one, and reporting the first when it is the second
+ * would be an accusation the kit cannot support.
+ */
+export const declaresRules = true;
+
 export const variants = { multiselect: ["single", "multi"] };
 
 /**
@@ -128,7 +137,7 @@ const seedFor = (kind) => valueFor(kind, "empty");
  * behind — which is the failure `Multi-instance isolation` exists to detect, introduced by the
  * harness rather than found in the renderer.
  */
-async function mountKind(kind, { variant, idPrefix, validators = true } = {}) {
+async function mountKind(kind, { variant, idPrefix, validators = true, rules, value } = {}) {
   // The variant name *is* the mode: `MdyWidgetVariant` aliases core's `MdyMultiselectMode`, so the
   // kit's variant key and this input's value cannot drift apart. Nothing translates between them.
   const mode = variant;
@@ -151,13 +160,26 @@ async function mountKind(kind, { variant, idPrefix, validators = true } = {}) {
    *
    * A slider is never empty, so `required` alone can never fail on one; it gets a bound instead.
    */
-  const validation = !validators ? "" : kind === "slider" ? `mdyRequired [mdyMin]="1"` : "mdyRequired";
+  // `rules` states constraints in the contract's own vocabulary, so the conformance kit can ask for
+  // one without knowing that this renderer spells a validator as a directive.
+  const validation = rules
+    ? [
+        rules.min !== undefined ? `[mdyMin]="${rules.min}"` : "",
+        rules.max !== undefined ? `[mdyMax]="${rules.max}"` : "",
+        rules.minLength !== undefined ? `[mdyMinLength]="${rules.minLength}"` : "",
+        rules.maxLength !== undefined ? `[mdyMaxLength]="${rules.maxLength}"` : "",
+      ].filter(Boolean).join(" ")
+    : !validators
+      ? ""
+      : kind === "slider"
+        ? `mdyRequired [mdyMin]="1"`
+        : "mdyRequired";
   const fieldName = idPrefix ? `${idPrefix}-field` : "field";
 
   class ConformanceHost {
     injector = inject(Injector);
     adapter = new MdyDeclarativeAdapter(
-      signal({ [fieldName]: seedFor(kind) }),
+      signal({ [fieldName]: value !== undefined ? value : seedFor(kind) }),
       undefined,
       this.injector,
     );
@@ -168,7 +190,15 @@ async function mountKind(kind, { variant, idPrefix, validators = true } = {}) {
   const Decorated = Component({
     selector: `#${hostId}`,
     standalone: true,
-    imports: [ng.MdyFormComponent, ng.MdyRequiredDirective, ng.MdyMinDirective, ng[control.component]],
+    imports: [
+      ng.MdyFormComponent,
+      ng.MdyRequiredDirective,
+      ng.MdyMinDirective,
+      ng.MdyMaxDirective,
+      ng.MdyMinLengthDirective,
+      ng.MdyMaxLengthDirective,
+      ng[control.component],
+    ],
     template: `<mdy-form [adapter]="adapter">`
       + `<${control.tag} name="${fieldName}" label="Field" ${validation} ${control.attrs}${modeInput} />`
       + `</mdy-form>`,

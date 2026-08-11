@@ -2,7 +2,6 @@ import { NgTemplateOutlet } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   DestroyRef,
   inject,
   input,
@@ -11,13 +10,14 @@ import {
 import { createFieldController, type MdyFieldController } from "@modyra/widgets";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 
 @Component({
   selector: "mdy-control-text",
   standalone: true,
-  imports: [NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent],
+  imports: [NgTemplateOutlet, MdyControlLabelComponent, MdyErrorListComponent, MdyPartDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "[class.mdy-floating-label]": "isFloatingLabel()",
@@ -50,13 +50,10 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [readonly]="isReadonly()"
         [attr.aria-readonly]="isReadonly() ? 'true' : null"
         [attr.autocomplete]="autocomplete()"
+        [mdyPart]="controlPart()"
         (input)="onInput($event)"
         (blur)="onBlur()"
-        [attr.aria-invalid]="inputAriaInvalid()"
-        [attr.aria-describedby]="inputAriaDescribedby()"
         [attr.aria-label]="controlAriaLabel()"
-        [attr.aria-required]="inputAriaRequired()"
-        [attr.aria-disabled]="effectiveAriaDisabled()"
       />
       @if (suffix(); as s) {
         <div class="mdy-input-suffix">
@@ -76,6 +73,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
 })
 export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.text;
+  protected override readonly widgetKind = "text";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
   readonly type = input<string>("text");
@@ -84,17 +82,6 @@ export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
   protected readonly fieldId = `mdy-control-text-${MdyBaseControl.nextId()}`;
   private fieldController?: MdyFieldController<string>;
   private readonly destroyRef = inject(DestroyRef);
-
-  protected readonly fieldView = computed(() => this.fieldController?.view());
-
-  protected readonly inputAriaInvalid = computed(
-    () => this.fieldView()?.parts.input?.attributes["aria-invalid"] ?? this.hasErrors(),
-  );
-  protected readonly inputAriaRequired = computed(
-    () => this.fieldView()?.parts.input?.attributes["aria-required"] ?? this.isRequired(),
-  );
-  /** Names the error list only while it is rendered; see {@link MdyBaseControl.describedById}. */
-  protected readonly inputAriaDescribedby = computed(() => this.describedById(this.fieldId));
 
   ngOnInit(): void {
     const handle = this.field();

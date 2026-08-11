@@ -93,14 +93,19 @@ export function emptyFor(kind) {
  * empty is already failing, and a renderer free to show that immediately (the contract permits it)
  * would make "at rest" and "invalid" the same observation.
  */
-export function mount(kind, { validators = true, variant } = {}) {
+export function mount(kind, { validators = true, variant, rules, value } = {}) {
   const host = document.createElement("div");
   document.body.append(host);
   const fieldFor = (extra) => ({
     name: "f", kind, label: "F",
     // A slider is never empty, so `required` alone can never fail on one and its `invalid` row would
     // be green because the state is unreachable rather than because the renderer is right.
-    ...(validators ? { validators: kind === "slider" ? { required: true, min: 1 } : { required: true } } : {}),
+    // `rules` states them in the contract's own vocabulary, so the conformance kit can ask for a
+    // constraint without knowing how this renderer declares one.
+    ...(rules ? { validators: rules } : validators
+      ? { validators: kind === "slider" ? { required: true, min: 1 } : { required: true } }
+      : {}),
+    ...(value !== undefined ? { initialValue: value } : {}),
     ...(NEEDS_OPTIONS.has(kind) ? { options: OPTIONS } : {}),
     // A kind whose anatomy depends on configuration is mounted per variant, or the suite reports
     // full coverage having rendered one of them. The variant name *is* the config value.

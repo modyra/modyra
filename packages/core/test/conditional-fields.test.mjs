@@ -361,3 +361,69 @@ test("a section inside a collection row answers for that row", () => {
   form.f.rows.cell("b", "detail.reason").set("because");
   assert.equal(form.state.valid(), true);
 });
+
+/**
+ * A collection inside a section that is not in play.
+ *
+ * The case that says whether the composition is real: rows **already declared** must go out of play
+ * with the section, not merely the ones added afterwards. A manager knows its own path and nothing
+ * above it, so the sections it sits under are handed to it — rather than a fourth copy of the rule.
+ */
+test("a collection inside a closed section is out of play, rows and all", () => {
+  const form = createForm({
+    kind: field("private"),
+    company: group(
+      { people: record(group({ name: field("", [required()]) })) },
+      { when: (_section, form) => form.kind === "company" },
+    ),
+  });
+
+  form.f.company.people.upsert("a", { name: "" });
+  assert.equal(form.state.valid(), true, "a row declared while the section is closed asks nothing");
+  assert.equal(form.getField("company.people.a.name")().disabled(), true);
+
+  form.f.kind.set("company");
+  assert.equal(form.state.valid(), false, "opening the section brings its rows into play");
+  assert.equal(form.getField("company.people.a.name")().disabled(), false);
+
+  form.f.company.people.upsert("b", { name: "" });
+  form.f.kind.set("private");
+  assert.equal(form.getField("company.people.a.name")().disabled(), true, "the row that was there");
+  assert.equal(form.getField("company.people.b.name")().disabled(), true, "and the one added since");
+  assert.equal(form.state.valid(), true);
+});
+
+test("an array inside a closed section behaves the same way", () => {
+  const form = createForm({
+    kind: field("private"),
+    company: group(
+      { lines: array(group({ label: field("", [required()]) })) },
+      { when: (_section, form) => form.kind === "company" },
+    ),
+  });
+
+  form.f.company.lines.push({ label: "" });
+  assert.equal(form.state.valid(), true);
+
+  form.f.kind.set("company");
+  assert.equal(form.state.valid(), false);
+});
+
+test("a whole collection that only counts sometimes is a section around it", () => {
+  // Deliberately not a `when` on `record()` itself: a second way to say the same thing is surface,
+  // not composition. Wrapping it in a section already reads as what it is.
+  const form = createForm({
+    wantsTable: field(false),
+    table: group(
+      // `required()` accepts zero — a price of 0 is a price — so the row is asked for something
+      // that can actually be missing.
+      { rows: record(group({ label: field("", [required()]) })) },
+      { when: (_section, form) => form.wantsTable === true },
+    ),
+  });
+
+  form.f.table.rows.upsert("a", { label: "" });
+  assert.equal(form.state.valid(), true);
+  form.f.wantsTable.set(true);
+  assert.equal(form.state.valid(), false, "now the table's rows are being asked for");
+});
