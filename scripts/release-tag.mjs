@@ -7,7 +7,11 @@
  * derived from core's version then either repeats a tag that already exists — the release stops
  * half-done, after the version commit — or claims a core release that contains nothing.
  *
- * So: core is the release when core moved, and every other package that moved carries its own tag.
+ * So: when core moved, the release is core and the tag is `v<core version>` — one tag, not thirteen,
+ * because publishing is not driven by the tag's name: the workflow fires on any `v*` and publishes
+ * every package whose version the registry does not have yet. When core did **not** move, each
+ * package that did carries its own tag, so the tag still names what was released.
+ *
  * All of them start with `v`, which is what the release workflow listens for.
  *
  *   node scripts/release-tag.mjs [<package.json path> …]
