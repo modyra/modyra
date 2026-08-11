@@ -187,6 +187,15 @@ export class MdyFormEngine
    * bring it into being, or the data model would follow the rendering. See {@link registerPathGate}.
    */
   private readonly _gates = new Map<string, MdyPathGate>();
+  /**
+   * Paths a schema declared, which no control may take away.
+   *
+   * A field created **by a control** — the declarative mode, where `name="email"` is the only place
+   * the field is ever mentioned — belongs to that control and goes when it goes. A field a schema
+   * declared belongs to the schema: it exists because someone wrote it down, and whether anything is
+   * on screen is not the schema's business. It is the same sentence the gate makes for a row.
+   */
+  private readonly _owned = new Set<string>();
   /** Claims that arrived for a path its gate refuses, held until the gate admits it. */
   private readonly _pendingClaims = new Map<string, number>();
   /**
@@ -525,6 +534,10 @@ export class MdyFormEngine
     // showing it. Destroying it here would make a value depend on whether anything is on screen,
     // which is the failure the gate exists to prevent — the owner ends the row, and takes the value.
     if (this._gateCovers(name)) return;
+    // Same sentence, one level out: a field a schema declared is the schema's, and unmounting the
+    // control that showed it used to delete it — after which `getValue()` threw, because the value
+    // no longer matched the shape the schema promised.
+    if (this._owned.has(name)) return;
     this._destroyField(name);
   }
 
@@ -539,6 +552,21 @@ export class MdyFormEngine
     );
     this._initialValues.delete(name);
     this._fieldSanitizers.delete(name);
+  }
+
+  /**
+   * Declares that `name` exists because a schema says so, not because a control does.
+   *
+   * Called by whoever owns the declaration — the typed form for its fields, an array manager for the
+   * leaves of a row it registered — and undone when that owner takes the field away.
+   */
+  ownField(name: string): void {
+    this._owned.add(name);
+  }
+
+  /** Gives up ownership: the field goes back to living as long as something claims it. */
+  disownField(name: string): void {
+    this._owned.delete(name);
   }
 
   setInitialValue(name: string, value: unknown): void {
@@ -1025,6 +1053,7 @@ export class MdyFormEngine
     this._historyManager.destroy();
     this._fields.clear();
     this._claims.clear();
+    this._owned.clear();
     this._initialValues.clear();
     this._rx.untracked(() => {
       this._fieldNames.set([]);

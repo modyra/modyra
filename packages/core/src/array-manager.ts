@@ -203,6 +203,8 @@ export class MdyArrayManager {
       }
       engine.setInitialValue(fullPath, v);
       engine.getField(fullPath);
+      // The row declared it. A control showing it may come and go; the row is what ends it.
+      engine.ownField(fullPath);
       const marksRequired = node.validators.some((fn) => hasRequiredMarker(fn));
       engine.upsertValidators(fullPath, ROW_SCHEMA_KEY, node.validators, marksRequired);
       // Its own condition and every section of the row above it, composed once by
@@ -258,6 +260,9 @@ export class MdyArrayManager {
 
   private _removeRow(index: number): void {
     for (const path of this._leafPaths(`${this._deps.path}.${index}`, this._deps.item)) {
+      // Ownership goes first: this is the row ending, which is the one thing that may take the
+      // field with it.
+      this._deps.engine.disownField(path);
       this._deps.engine.removeField(path);
     }
   }
