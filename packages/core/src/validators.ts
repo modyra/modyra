@@ -53,6 +53,10 @@ function isEmptyRange(value: unknown): boolean {
 export const required = <T>(message = 'This field is required'): ValidatorFn<T> => {
   const fn = (value: T): readonly string[] => {
     if (value === null || value === undefined) return [message];
+    // `NaN` is a number that answers nothing: it compares false against every bound, and
+    // `JSON.stringify` writes it as `null` — so a field left like this used to report itself valid
+    // and send nothing at all.
+    if (typeof value === 'number' && Number.isNaN(value)) return [message];
     if (typeof value === 'string' && value.trim() === '') return [message];
     if (Array.isArray(value) && value.length === 0) return [message];
     if (value === false) return [message];
@@ -158,6 +162,9 @@ export const pattern = (regex: RegExp, message = 'Invalid format'): ValidatorFn<
 export const min = (minimum: number, message?: string): ValidatorFn<number | null> => {
   const fn = (value: number | null): readonly string[] => {
     if (value === null || value === undefined) return [];
+    // A value that cannot be compared is not within any bound. Without this `NaN < minimum` is
+    // false, so the rule passes a value it can say nothing about.
+    if (Number.isNaN(value)) return [message ?? `Minimum value is ${minimum}`];
     return value < minimum
       ? [message ?? `Minimum value is ${minimum}`]
       : [];
@@ -169,6 +176,7 @@ export const min = (minimum: number, message?: string): ValidatorFn<number | nul
 export const max = (maximum: number, message?: string): ValidatorFn<number | null> => {
   const fn = (value: number | null): readonly string[] => {
     if (value === null || value === undefined) return [];
+    if (Number.isNaN(value)) return [message ?? `Maximum value is ${maximum}`];
     return value > maximum
       ? [message ?? `Maximum value is ${maximum}`]
       : [];

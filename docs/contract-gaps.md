@@ -26,6 +26,8 @@ to a green suite.
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
 - **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, K, N, O, P, Q
+- **Open** — R (a design system's own pairing sits below AA), T (a field out of play still paints as
+  failing)
 - **Partly fixed** — C2, E2, F, L, M, S — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
   the colour metric decided and its estimate still approximate; the kit's two browser sections
@@ -1399,3 +1401,34 @@ this by reading a passing summary.
 
 *Affects:* an implementer conforming a new renderer, who must bring their own keyboard and
 accessible-name checks. Not consumers, and not the three renderers shipped here.
+
+## T — a field the form is not asking about still paints as failing — **open**
+
+**Observed.** A field that is disabled — by a binding, or by a schema condition that puts its whole
+section out of play — keeps its own verdict, and every renderer paints it: the wrapper takes
+`mdy-input-wrapper--error` and the control carries `aria-invalid="true"`, while `form.state.valid()`
+is **true** because a disabled field is not validated by the form.
+
+Reproduced without any condition, so it is not `when`'s doing:
+
+```js
+const form = createForm({ a: field("", [required()]) });
+form.setDisabled("a", () => true);
+// wrapper: mdy-input-wrapper mdy-input-wrapper--disabled mdy-input-wrapper--error
+// aria-invalid: "true"      form.state.valid(): true
+```
+
+`when` makes it easy to meet: a closed section of empty required fields is a block of red boxes for
+something the form is not asking about. That is what surfaced it — the demo added in the same
+release shows a section, and the section looked broken while being correct.
+
+**Why it is not fixed here.** The honest fix is that a field out of play does not display a verdict
+the form itself ignores, and `invalid` is a **declared state** of every kind: the state matrix
+asserts 139 pairs across three renderers, and the visual baselines carry them. Changing what
+`invalid` means alongside `disabled` is a contract change with a matrix and 432 screenshots behind
+it, and doing that in the days before a release is how a release breaks. It is filed instead, with
+the reproduction, so the next person starts from the evidence rather than the surprise.
+
+*Affects:* anyone using `when` on a section of required fields, or disabling a field that has already
+failed — the form is right and the screen is misleading. A host that hides out-of-play sections (the
+common arrangement) never sees it.

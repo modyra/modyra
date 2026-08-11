@@ -12,7 +12,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { compose, composeFirst, createForm, field, group, integer, max, maxLength, min, minLength, pattern, required } from "../dist/index.js";
+import { compose, composeFirst, createForm, field, group, integer, max, maxLength, min, minLength, pattern, required, valueShape } from "../dist/index.js";
 
 const boundsOf = (form, path) => {
   const { min, max } = form.getField(path)().constraints();
@@ -247,4 +247,54 @@ test("a blank field with a length rule is valid until required says otherwise", 
   assert.equal(mandatory.state.valid(), false, "and one character is still short");
   mandatory.f.note.set("ab");
   assert.equal(mandatory.state.valid(), true);
+});
+
+/**
+ * A number that is not a number.
+ *
+ * `NaN` is the value every comparison lets through: `NaN < 0` is false, `NaN > 9` is false, and it
+ * is neither null nor empty — so a field holding one used to report itself **valid**, and
+ * `JSON.stringify` then wrote `null` on the wire. A form that says it is valid and sends nothing is
+ * the worst of both answers.
+ */
+test("a field holding NaN is not valid, and says why", () => {
+  const form = createForm({ qty: field(1.5, [required(), min(0), max(9)]) });
+
+  form.f.qty.set(Number.NaN);
+
+  assert.equal(form.state.valid(), false);
+  const messages = form.getField("qty")().errors().map((e) => e.message);
+  assert.ok(messages.some((m) => /required/i.test(m)), "there is no answer here");
+  assert.ok(messages.some((m) => /Minimum/.test(m)), "and it is within no bound");
+});
+
+test("what would have reached the server", () => {
+  const form = createForm({ qty: field(1, [min(0)]) });
+  form.f.qty.set(Number.NaN);
+
+  // The reason this matters beyond validity: the value does not survive serialisation, so a form
+  // that let it through would send `null` for a field its own rules called fine.
+  assert.equal(JSON.parse(JSON.stringify({ qty: form.getValue().qty })).qty, null);
+  assert.equal(form.state.valid(), false, "which is why the rules refuse it first");
+});
+
+test("an unbounded number field still holds what it is given", () => {
+  const form = createForm({ ratio: field(0) });
+
+  form.f.ratio.set(Number.NaN);
+  assert.equal(form.state.valid(), true, "no rule was stated, so nothing objects");
+  assert.ok(Number.isNaN(form.getValue().ratio), "and the model is not repaired behind anyone's back");
+});
+
+test("valueShape is the rule a data-only document applies for you", () => {
+  // A document declares a kind, so it gets this automatically. A typed schema declares a type, and
+  // TypeScript refuses the wrong one at compile time — but a value arriving from a server, a draft
+  // or a cast does not go through TypeScript, and this is how a typed schema asks the same question.
+  const form = createForm({ name: field("", [valueShape("text")]) });
+
+  form.f.name.set(42);
+  assert.equal(form.state.valid(), false, "a text field was handed a number");
+
+  form.f.name.set("ok");
+  assert.equal(form.state.valid(), true);
 });

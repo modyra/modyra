@@ -79,6 +79,7 @@ export {
   maxLength,
   MDY_MARKS_REQUIRED,
   integer,
+  valueShape,
   min,
   minLength,
   oneOf,

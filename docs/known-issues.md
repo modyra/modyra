@@ -5,12 +5,12 @@ are not fully closed and says who each one affects. The full register — every 
 and the reasoning behind its status — is [`docs/contract-gaps.md`](https://github.com/modyra/modyra/blob/main/docs/contract-gaps.md)
 in the repository.
 
-Thirty-four findings have been filed. Twenty-five are fixed, two were closed deliberately, six are
-partly fixed, and one is open.
+Thirty-five findings have been filed. Twenty-five are fixed, two were closed deliberately, six are
+partly fixed, and two are open.
 
 ## Open
 
-- **Open** — R
+- **Open** — R, T
 
 **The iOS theme pairs white text on Apple's system blue**, which measures 4.02:1 in light and 3.65:1
 in dark against a 4.5:1 floor for body text.
@@ -22,6 +22,18 @@ every iOS control. A theme exists to be faithful to the system it names, and one
 darkened this would ship an iOS theme Apple does not ship. The value is exposed as
 `--mdy-ios-on-blue`, so replacing the accent replaces both halves. If you need AA on that surface,
 override it.
+
+**T — a field the form is not asking about still paints as failing.** A disabled field keeps its own
+verdict and every renderer shows it, while the form reports itself valid — so a section put out of
+play by a condition is a block of red boxes for something nobody is being asked. The form is right
+and the screen is misleading.
+
+*Who it affects:* anyone using a conditional section of required fields, or disabling a field that
+has already failed. A host that hides out-of-play sections never sees it.
+
+*Why it stays open:* `invalid` is a declared state of every kind, asserted by a 139-pair matrix on
+three renderers and carried by the committed screenshots. Changing what it means beside `disabled`
+is a contract change, not a patch, and it is filed with its reproduction rather than rushed.
 
 ## Partly fixed
 
