@@ -266,7 +266,7 @@ test("a rule declares what it enforces, and combining rules keeps it", () => {
 
   assert.deepEqual(
     { ...form.getField("code")().constraints() },
-    { min: null, max: null, step: null, minLength: 3, maxLength: 8, pattern: null, inputType: null, inputMode: null },
+    { min: null, max: null, step: null, minLength: 3, maxLength: 8, pattern: null, inputMode: null },
   );
   assert.equal(form.getField("code")().required(), true);
 

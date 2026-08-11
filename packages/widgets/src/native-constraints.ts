@@ -68,23 +68,6 @@ export function nativeConstraintAttributes(
 }
 
 /**
- * Applies the attributes to an element, removing the ones that no longer apply.
- *
- * Removal matters as much as setting: a rule can be withdrawn at runtime — `removeValidators`, a
- * section coming back into play with different rules — and an attribute left behind constrains
- * typing on behalf of a rule that no longer exists.
- */
-export function applyNativeConstraints(
-  element: { setAttribute(name: string, value: string): void; removeAttribute(name: string): void },
-  attributes: MdyNativeAttributes,
-): void {
-  for (const [name, value] of Object.entries(attributes)) {
-    if (value === null) element.removeAttribute(name);
-    else element.setAttribute(name, value);
-  }
-}
-
-/**
  * What a control offers: the field's rules, narrowed by what the control itself asks for.
  *
  * A control may ask for **less** than the field accepts — a slider drawn over part of its range, a
@@ -109,7 +92,6 @@ export function narrowConstraints(
     minLength: higher(rules.minLength, narrowing.minLength),
     maxLength: lower(rules.maxLength, narrowing.maxLength),
     pattern: narrowing.pattern ?? rules.pattern,
-    inputType: narrowing.inputType ?? rules.inputType,
     inputMode: narrowing.inputMode ?? rules.inputMode,
   };
 }

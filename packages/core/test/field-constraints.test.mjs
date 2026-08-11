@@ -181,7 +181,7 @@ test("a rule with no native counterpart declares nothing, and still runs", () =>
 
   assert.deepEqual(form.getField("even")().constraints(), {
     min: null, max: null, step: null, minLength: null, maxLength: null,
-    pattern: null, inputType: null, inputMode: null,
+    pattern: null, inputMode: null,
   });
 
   form.f.even.set(3);

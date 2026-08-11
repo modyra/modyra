@@ -134,9 +134,9 @@ export const email = (message = 'Invalid email address'): ValidatorFn<string | n
     if (!value) return [];
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(value) ? [] : [message];
-    // Declared as a type rather than a pattern: `type="email"` brings the right keyboard and the
-    // platform's own idea of an address, which is a better answer than this expression.
-  }, { inputType: "email", inputMode: "email" });
+    // The keyboard, not the type: which control this is belongs to the kind, and a rule that could
+    // change it would let a validator turn a text field into something else.
+  }, { inputMode: "email" });
 
 /** RegExp pattern validator */
 export const pattern = (regex: RegExp, message = 'Invalid format'): ValidatorFn<string | null> =>
@@ -264,7 +264,6 @@ function factsOfComposed<T>(validators: readonly ValidatorFn<T>[]): MdyValidator
     ...(constraints.minLength !== null ? { minLength: constraints.minLength } : {}),
     ...(constraints.maxLength !== null ? { maxLength: constraints.maxLength } : {}),
     ...(constraints.pattern !== null ? { pattern: constraints.pattern } : {}),
-    ...(constraints.inputType !== null ? { inputType: constraints.inputType } : {}),
     ...(constraints.inputMode !== null ? { inputMode: constraints.inputMode } : {}),
   };
 }
