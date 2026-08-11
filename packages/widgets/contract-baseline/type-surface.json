@@ -1235,7 +1235,7 @@
     "-> Partial"
   ],
   "MdyPathGate": [
-    "isOpen: boolean",
+    "isOpen?: boolean",
     "onRefusedWrite?: void",
     "onReplace?: void"
   ],
