@@ -48,7 +48,7 @@ import {
   type MdyDynamicValidators,
 } from "@modyra/core/dynamic-config";
 import type { MdyExpression } from "@modyra/core";
-import { toContractExpression } from "./expression.js";
+import { ExpressionTooDeepError, toContractExpression } from "./expression.js";
 // Type-only: the catalog constrains what this may map to, and nothing of it survives compilation,
 // so this package still ships with no runtime dependency beyond core and the studio model.
 import type { MdyWidgetKind } from "@modyra/widgets";
@@ -450,10 +450,16 @@ export function compileToContract(project: MdyStudioProject): CompileResult {
     try {
       when = toContractExpression(v.condition, idx.pathByNode);
     } catch (error) {
+      // The two failures a translation has are different things to fix: a reference to a deleted
+      // field, and a condition too deep to carry. Reporting both as the first sends the author
+      // looking for a field that is not the problem.
+      const tooDeep = error instanceof ExpressionTooDeepError;
       diagnostics.push({
-        code: "UNRESOLVED_REFERENCE",
+        code: tooDeep ? "EXPRESSION_TOO_DEEP" : "UNRESOLVED_REFERENCE",
         severity: "error",
-        message: `Form validator "${v.id}" refers to a field that is not in the schema: ${(error as Error).message}`,
+        message: tooDeep
+          ? `Form validator "${v.id}" has a condition too deeply nested to compile: ${(error as Error).message}`
+          : `Form validator "${v.id}" refers to a field that is not in the schema: ${(error as Error).message}`,
         validatorId: v.id,
       });
       continue;

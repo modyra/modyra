@@ -179,3 +179,60 @@ test("without a target the error is form-level, and the dependencies come from t
   form.f.password.set("x");
   assert.equal(form.state.valid(), true);
 });
+
+test("an expression has a bottom: past it the parser reports instead of throwing", () => {
+  // A document is untrusted input, and a deep one need not be large: a few tens of kilobytes of
+  // nested `and` exhausts the call stack. JSON.parse walks deeper than this parser did, so the
+  // document arrives intact and the failure lands here — where a diagnostic belongs, not a throw.
+  const deepJson = (levels) => {
+    const inner = JSON.stringify({ op: "isNotEmpty", operands: [{ path: "a" }] });
+    return '{"op":"and","operands":['.repeat(levels) + inner + "]}".repeat(levels);
+  };
+  const documentJson = (levels) =>
+    '{"version":3,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}}}},' +
+    '"validations":[{"target":"a","message":"x","when":' + deepJson(levels) + "}]}";
+
+  const shallow = parseDynamicForm(JSON.parse(documentJson(3)));
+  assert.deepEqual(shallow.diagnostics, [], "an ordinary condition was refused");
+  assert.equal(shallow.validations.length, 1);
+
+  for (const levels of [40, 2000]) {
+    const parsed = parseDynamicForm(JSON.parse(documentJson(levels)));
+    assert.deepEqual(
+      parsed.diagnostics.map((d) => d.code),
+      ["MDY_DYNAMIC_INVALID_VALIDATION"],
+      `a condition ${levels} deep was not reported`,
+    );
+    assert.equal(parsed.validations.length, 0, "the unusable validation was kept");
+  }
+});
+
+test("a cyclic expression meets the bottom instead of spinning", () => {
+  // JSON cannot express a cycle, but an object graph handed straight to the parser can.
+  const cyclic = { op: "and", operands: [{ op: "isNotEmpty", operands: [{ path: "a" }] }] };
+  cyclic.operands.push(cyclic);
+
+  assert.ok(validateExpression(cyclic, "t").length > 0, "a cycle was accepted");
+  assert.deepEqual(expressionPaths(cyclic), ["a"], "reading a cycle's paths did not terminate");
+  assert.equal(evaluateExpression(cyclic, { a: "x" }), true, "an unreadable rule must not fire");
+});
+
+test("the bottom is far below anything an author writes", () => {
+  // The check that matters for a limit: the shape it must not refuse.
+  const real = {
+    op: "and",
+    operands: [
+      {
+        op: "or",
+        operands: [
+          { op: "isNotEmpty", operands: [{ path: "a" }] },
+          { op: "not", operands: [{ op: "isEmpty", operands: [{ path: "b" }] }] },
+        ],
+      },
+      { op: "equals", operands: [{ path: "c" }, 3] },
+    ],
+  };
+  assert.deepEqual(validateExpression(real, "t"), []);
+  assert.deepEqual([...expressionPaths(real)].sort(), ["a", "b", "c"]);
+  assert.equal(evaluateExpression(real, { a: "", b: "x", c: 3 }), true);
+});

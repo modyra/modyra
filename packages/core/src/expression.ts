@@ -109,9 +109,24 @@ function isEmptyValue(value: unknown): boolean {
   return false;
 }
 
-function resolveOperand(operand: MdyOperand | undefined, value: unknown): unknown {
+/**
+ * How deep a predicate tree may nest.
+ *
+ * An expression arrives from a document, and recursion over one is bounded for the same reason the
+ * schema is bounded at 8 levels and the layout at 6: a document deep enough to exhaust the call
+ * stack would take the host down instead of being reported, and it need not be large to do it — a
+ * few tens of kilobytes of `and` nest past what JavaScript itself will walk. A tree written by a
+ * person or a model is a handful of levels; thirty-two is well past that and well short of the
+ * stack.
+ *
+ * The bound also settles a shape JSON cannot express but an object graph can: a cycle meets the
+ * bottom rather than spinning.
+ */
+export const MDY_MAX_EXPRESSION_DEPTH = 32;
+
+function resolveOperand(operand: MdyOperand | undefined, value: unknown, depth: number): unknown {
   if (operand === undefined || operand === null) return null;
-  if (isExpression(operand)) return evaluateExpression(operand, value);
+  if (isExpression(operand)) return evaluateAt(operand, value, depth + 1);
   if (isPathRef(operand)) return memberAccess(value, operand.path);
   return operand;
 }
@@ -126,10 +141,18 @@ function resolveOperand(operand: MdyOperand | undefined, value: unknown): unknow
  * rather than the only defence.
  */
 export function evaluateExpression(expr: MdyExpression, value: unknown): boolean {
+  return evaluateAt(expr, value, 0);
+}
+
+function evaluateAt(expr: MdyExpression, value: unknown, depth: number): boolean {
+  // Past the bottom the expression is unreadable, which is the case the default already answers:
+  // a rule that cannot be read keeps the field visible and invents no error.
+  if (depth > MDY_MAX_EXPRESSION_DEPTH) return true;
+
   const operands = operandsOf(expr);
   const [a, b] = operands;
-  const av = (): unknown => resolveOperand(a, value);
-  const bv = (): unknown => resolveOperand(b, value);
+  const av = (): unknown => resolveOperand(a, value, depth);
+  const bv = (): unknown => resolveOperand(b, value, depth);
 
   switch (expr.op) {
     case "equals":
@@ -159,9 +182,9 @@ export function evaluateExpression(expr: MdyExpression, value: unknown): boolean
       return new RegExp(source).test(String(av() ?? ""));
     }
     case "and":
-      return operands.every((operand) => Boolean(resolveOperand(operand, value)));
+      return operands.every((operand) => Boolean(resolveOperand(operand, value, depth)));
     case "or":
-      return operands.some((operand) => Boolean(resolveOperand(operand, value)));
+      return operands.some((operand) => Boolean(resolveOperand(operand, value, depth)));
     case "not":
       return !av();
     default:
@@ -177,15 +200,18 @@ export function evaluateExpression(expr: MdyExpression, value: unknown): boolean
  */
 export function expressionPaths(expr: MdyExpression): readonly string[] {
   const paths = new Set<string>();
-  const walk = (operand: MdyOperand | undefined): void => {
+  const walk = (operand: MdyOperand | undefined, depth: number): void => {
     if (operand === undefined || operand === null) return;
+    // An expression past the bottom is one `validateExpression` refuses, so what it reads is not a
+    // dependency any rule will have.
+    if (depth > MDY_MAX_EXPRESSION_DEPTH) return;
     if (isExpression(operand)) {
-      for (const nested of operandsOf(operand)) walk(nested);
+      for (const nested of operandsOf(operand)) walk(nested, depth + 1);
       return;
     }
     if (isPathRef(operand)) paths.add(operand.path);
   };
-  for (const operand of operandsOf(expr)) walk(operand);
+  for (const operand of operandsOf(expr)) walk(operand, 1);
   return [...paths];
 }
 
@@ -196,7 +222,14 @@ export function expressionPaths(expr: MdyExpression): readonly string[] {
  * than surfacing later as a rule that silently never fires.
  */
 export function validateExpression(expr: unknown, where: string): readonly string[] {
+  return validateAt(expr, where, 0);
+}
+
+function validateAt(expr: unknown, where: string, depth: number): readonly string[] {
   if (!isExpression(expr)) return [`${where}: expected an expression object with an "op"`];
+  if (depth > MDY_MAX_EXPRESSION_DEPTH) {
+    return [`${where}: nests deeper than ${MDY_MAX_EXPRESSION_DEPTH} levels`];
+  }
 
   const problems: string[] = [];
   if (!OPS.has(expr.op)) problems.push(`${where}: unknown operator "${String(expr.op)}"`);
@@ -218,7 +251,7 @@ export function validateExpression(expr: unknown, where: string): readonly strin
   }
 
   operands.forEach((operand, index) => {
-    if (isExpression(operand)) problems.push(...validateExpression(operand, `${where}.operands[${index}]`));
+    if (isExpression(operand)) problems.push(...validateAt(operand, `${where}.operands[${index}]`, depth + 1));
     else if (typeof operand === "object" && operand !== null && !isPathRef(operand)) {
       problems.push(`${where}.operands[${index}]: an object operand must be {path} or a nested expression`);
     }
