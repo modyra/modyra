@@ -293,21 +293,37 @@ export class MdyFormsDevtoolsComponent {
     return JSON.stringify(mdyFormSerialize(value));
   }
 
-  /** Masks sensitive-looking keys and drops excluded ones in the JSON view. */
+  /**
+   * Masks sensitive-looking keys and drops excluded ones in the JSON view.
+   *
+   * A collection is walked like anything else, by the indexed paths its rows occupy: a row's field
+   * is `items.0.password` here exactly as it is in the table above, so one rule answers for both
+   * views. Left as a leaf, an array handed back its rows whole — and a password inside one was
+   * printed in the panel this masking exists to keep it out of.
+   */
   private _maskDeep(value: unknown, prefix: string): unknown {
-    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    if (value === null || typeof value !== "object") {
       return prefix && this._isMasked(prefix) && value !== null && value !== ""
         ? MASK
         : value;
     }
+    // A collection whose own path is sensitive is hidden entirely, without asking about its rows.
+    if (prefix && this._isMasked(prefix)) return MASK;
+
     const excluded = this.excludeFields();
+    const under = (key: string): string => (prefix ? `${prefix}.${key}` : key);
+
+    if (Array.isArray(value)) {
+      return value
+        .map((entry, index) => [String(index), entry] as const)
+        .filter(([index]) => !excluded.includes(under(index)))
+        .map(([index, entry]) => this._maskDeep(entry, under(index)));
+    }
+
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>)
-        .filter(([k]) => !excluded.includes(prefix ? `${prefix}.${k}` : k))
-        .map(([k, v]) => {
-          const path = prefix ? `${prefix}.${k}` : k;
-          return [k, this._maskDeep(v, path)];
-        }),
+        .filter(([k]) => !excluded.includes(under(k)))
+        .map(([k, v]) => [k, this._maskDeep(v, under(k))]),
     );
   }
 }
