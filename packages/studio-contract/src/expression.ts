@@ -10,7 +10,7 @@
  * — teaching the contract about node ids — would put a Studio concept in a public schema that
  * renderers and generated code also consume.
  */
-import type { MdyExpression, MdyOperand } from "@modyra/core";
+import { MDY_MAX_EXPRESSION_DEPTH, type MdyExpression, type MdyOperand } from "@modyra/core";
 import type { StudioExpression, StudioOperand } from "@modyra/studio-model";
 
 /** A node id that no longer resolves, meaning the expression refers to a deleted field. */
@@ -18,6 +18,14 @@ export class UnresolvedNodeError extends Error {
   constructor(readonly nodeId: string) {
     super(`Expression references node "${nodeId}", which is not in the schema`);
     this.name = "UnresolvedNodeError";
+  }
+}
+
+/** An expression that nests past what the contract will read, so translating it produces nothing usable. */
+export class ExpressionTooDeepError extends Error {
+  constructor() {
+    super(`Expression nests deeper than ${MDY_MAX_EXPRESSION_DEPTH} levels`);
+    this.name = "ExpressionTooDeepError";
   }
 }
 
@@ -29,8 +37,8 @@ function isNodeRef(operand: StudioOperand): operand is { nodeId: string } {
   return typeof operand === "object" && operand !== null && !("op" in operand) && "nodeId" in operand;
 }
 
-function translateOperand(operand: StudioOperand, pathByNode: ReadonlyMap<string, string>): MdyOperand {
-  if (isStudioExpression(operand)) return toContractExpression(operand, pathByNode);
+function translateOperand(operand: StudioOperand, pathByNode: ReadonlyMap<string, string>, depth: number): MdyOperand {
+  if (isStudioExpression(operand)) return translateExpression(operand, pathByNode, depth + 1);
   if (isNodeRef(operand)) {
     const path = pathByNode.get(operand.nodeId);
     // A node id with no path is a reference to something deleted. Compiling it to a path that
@@ -51,9 +59,20 @@ export function toContractExpression(
   expr: StudioExpression,
   pathByNode: ReadonlyMap<string, string>,
 ): MdyExpression {
+  return translateExpression(expr, pathByNode, 0);
+}
+
+function translateExpression(
+  expr: StudioExpression,
+  pathByNode: ReadonlyMap<string, string>,
+  depth: number,
+): MdyExpression {
+  // The bound is the contract's: translating deeper would produce an expression the parser refuses,
+  // and walking there costs the stack for a result nothing can use.
+  if (depth > MDY_MAX_EXPRESSION_DEPTH) throw new ExpressionTooDeepError();
   const operands = expr.operands ?? (expr.operand !== undefined ? [expr.operand] : []);
   return {
     op: expr.op,
-    operands: operands.map((operand) => translateOperand(operand, pathByNode)),
+    operands: operands.map((operand) => translateOperand(operand, pathByNode, depth)),
   };
 }
