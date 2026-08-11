@@ -26,7 +26,8 @@ import {
   MdyFormValue,
   MdyGroupDescriptor,
   MdyTypedForm,
-  MDY_MARKS_REQUIRED,
+  withFacts,
+  type MdyValidatorFacts,
   ValidatorFn,
 } from "@modyra/core";
 import { z } from "zod";
@@ -148,9 +149,62 @@ function pieceValidator(piece: z.ZodType): ValidatorFn<unknown> {
   };
   const requiredPiece =
     !acceptsUndefined && !piece.safeParse(null).success;
-  return requiredPiece
-    ? Object.assign(fn, { [MDY_MARKS_REQUIRED]: true })
-    : fn;
+  return withFacts(fn, {
+    ...(requiredPiece ? { required: true } : {}),
+    ...factsOfPiece(piece),
+  });
+}
+
+/**
+ * What a Zod piece states that an input can carry.
+ *
+ * Read from the piece's own checks rather than re-declared: a schema that already says
+ * `.min(3).max(8)` should reach the keyboard, and asking the author to write the same numbers again
+ * on the control is how the two come to disagree.
+ *
+ * Only the checks with a native counterpart are read. Everything else — refinements, transforms,
+ * formats a browser has no attribute for — stays what it already was: a rule that runs.
+ */
+function factsOfPiece(piece: z.ZodType): MdyValidatorFacts {
+  const definition = (piece as unknown as { def?: { checks?: readonly unknown[] } }).def;
+  const checks = definition?.checks ?? [];
+  const facts: Record<string, unknown> = {};
+
+  for (const raw of checks) {
+    const check = ((raw as { _zod?: { def?: Record<string, unknown> } })._zod?.def ??
+      raw) as Record<string, unknown>;
+    switch (check["check"]) {
+      case "min_length":
+        facts["minLength"] = check["minimum"];
+        break;
+      case "max_length":
+        facts["maxLength"] = check["maximum"];
+        break;
+      case "greater_than":
+        // Zod's exclusive bound has no native counterpart: `min` on an input is inclusive, and
+        // offering it would admit the one value the schema refuses.
+        if (check["inclusive"] === true) facts["min"] = check["value"];
+        break;
+      case "less_than":
+        if (check["inclusive"] === true) facts["max"] = check["value"];
+        break;
+      case "number_format":
+        if (check["format"] === "safeint" || check["format"] === "int") facts["step"] = 1;
+        break;
+      case "string_format":
+        if (check["format"] === "regex") {
+          const expression = check["pattern"];
+          if (expression instanceof RegExp && expression.flags === "") {
+            facts["pattern"] = expression.source;
+          }
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  return facts as MdyValidatorFacts;
 }
 
 function normalizeLeaf(value: unknown, acceptsUndefined: boolean): unknown {

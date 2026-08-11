@@ -31,6 +31,15 @@ export type {
 } from "./reactivity.js";
 
 export { getFieldHandleOwner, handleFormOf, registerHandleForm } from "./reactive-owner.js";
+export {
+  MDY_VALIDATOR_FACTS,
+  NO_CONSTRAINTS,
+  factsOf,
+  factsOfAll,
+  mergeFacts,
+  withFacts,
+} from "./validator-facts.js";
+export type { MdyFieldConstraints, MdyValidatorFacts } from "./validator-facts.js";
 
 export {
   MdyActivationError,
@@ -69,7 +78,6 @@ export {
   max,
   maxLength,
   MDY_MARKS_REQUIRED,
-  MDY_NUMERIC_BOUND,
   integer,
   min,
   minLength,

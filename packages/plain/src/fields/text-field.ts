@@ -8,6 +8,8 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicNumberField, MdyDynamicTextField } from "@modyra/core";
 import {
+  applyNativeConstraints,
+  nativeConstraintAttributes,
   createFieldController,
   MDY_CSS_PROPERTIES,
   MDY_WIDGET_CONTRACTS,
@@ -49,22 +51,14 @@ export function renderTextField(
   // offers; where it says nothing, the rule is what the keyboard gets, so a bound is stated once and
   // cannot drift between the two.
   const ranged = f.kind === "number" || f.kind === "slider" ? f : null;
-  const bounds = handle.bounds();
-  const low = ranged?.min ?? bounds.min ?? undefined;
-  const high = ranged?.max ?? bounds.max ?? undefined;
-  if (f.kind === "number" || f.kind === "slider") {
-    if (low !== undefined) input.setAttribute("min", String(low));
-    if (high !== undefined) input.setAttribute("max", String(high));
-    if (f.step !== undefined) input.setAttribute("step", String(f.step));
-  }
   // A slider is not a bare input: the contract gives it a container and a displayed value, and
   // the themes lay both out. Every class here comes from the catalog, none from this file.
   const slider = f.kind === "slider" ? MDY_WIDGET_CONTRACTS.slider : null;
   // The same range the attributes carry, so the painted fill and the handle agree about where the
   // track starts and ends. A slider must span something to be drawn at all, so where neither the
   // config nor the field's rules say, it is what a bare `<input type="range">` assumes.
-  const sliderMin = f.kind === "slider" ? low ?? 0 : 0;
-  const sliderMax = f.kind === "slider" ? high ?? 100 : 100;
+  const sliderMin = f.kind === "slider" ? ranged?.min ?? handle.constraints().min ?? 0 : 0;
+  const sliderMax = f.kind === "slider" ? ranged?.max ?? handle.constraints().max ?? 100 : 100;
   let sliderValue: HTMLSpanElement | null = null;
   if (slider) {
     const track = el("div") as HTMLDivElement;
@@ -91,6 +85,19 @@ export function renderTextField(
     const view = controller.view();
     applyPart(shell.label, view.parts.label);
     applyPart(input, view.parts.input);
+    // What the field's rules state, as the attributes this kind's control can carry — applied after
+    // the parts, and inside the effect, because a rule can be withdrawn or replaced while the form
+    // is alive. The config narrows what this control offers; where it says nothing, the rules are
+    // what the keyboard gets, so the constraint is stated once and cannot drift.
+    const constraints = handle.constraints();
+    const low = ranged?.min ?? constraints.min ?? undefined;
+    const high = ranged?.max ?? constraints.max ?? undefined;
+    applyNativeConstraints(input, {
+      ...nativeConstraintAttributes(f.kind, constraints),
+      ...(low !== undefined ? { min: String(low) } : {}),
+      ...(high !== undefined ? { max: String(high) } : {}),
+      ...(ranged?.step !== undefined ? { step: String(ranged.step) } : {}),
+    });
     if (sliderValue) {
       setText(sliderValue, String(state.value ?? ""));
       // On the control, not the track: the gradient is composed on the element that carries the

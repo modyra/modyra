@@ -32,6 +32,7 @@ import type {
   MdyAnyGroupDescriptor,
 } from "./typed-form.js";
 import { isRecord } from "./record-utils.js";
+import { composeConditions, type MdyCondition } from "./conditions.js";
 
 /** A row's own schema node — a record's row is a field or a group, never another collection. */
 type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
@@ -67,6 +68,14 @@ function describe(value: unknown): string {
 const ROW_SCHEMA_KEY = "mdy-schema";
 
 export interface MdyRecordManagerDeps {
+  /**
+   * The conditions of the sections this collection sits under.
+   *
+   * A collection inside a closed section is out of play like anything else under it, rows already
+   * declared included — and it cannot work that out for itself, because a manager knows its own
+   * path and nothing above it.
+   */
+  readonly sections?: ReadonlyArray<(value: unknown, enclosing: Record<string, unknown>) => boolean>;
   readonly rx: MdyReactivity;
   readonly engine: MdyFormEngine;
   /** Dotted record path, e.g. "rows" or "order.rows". */
@@ -154,7 +163,7 @@ export class MdyRecordManager {
       // Admits the waiting claims of controls that mounted before this row was declared.
       this._deps.engine.refreshPathGate(this._deps.path);
     }
-    this._registerNode(`${this._deps.path}.${key}`, this._deps.item, rowValue, `${this._deps.path}.${key}`);
+    this._registerNode(`${this._deps.path}.${key}`, this._deps.item, rowValue, `${this._deps.path}.${key}`, this._deps.sections ?? []);
   }
 
   /**
@@ -317,7 +326,7 @@ export class MdyRecordManager {
     return false;
   }
 
-  private _registerNode(fullPath: string, rowNode: MdyRowNode, value: unknown, rowPath: string, sections: ReadonlyArray<(row: Record<string, unknown>) => boolean> = []): void {
+  private _registerNode(fullPath: string, rowNode: MdyRowNode, value: unknown, rowPath: string, sections: ReadonlyArray<(value: unknown, enclosing: Record<string, unknown>) => boolean> = []): void {
     const { engine } = this._deps;
     if (rowNode.kind === "field") {
       const v = value === undefined ? rowNode.initial : value;
@@ -328,25 +337,30 @@ export class MdyRecordManager {
       engine.getField(fullPath);
       const marksRequired = rowNode.validators.some((fn) => hasRequiredMarker(fn));
       engine.upsertValidators(fullPath, ROW_SCHEMA_KEY, rowNode.validators, marksRequired);
-      const conditions = rowNode.when !== null
-        ? [...sections, (row: Record<string, unknown>) => rowNode.when!(
-            engine.peekField(fullPath)?.().value(), row)]
-        : sections;
+      // Its own condition and every section of the row above it, composed once by
+      // `conditions.ts` — the same sentence the schema registration uses.
+      const conditions: MdyCondition[] = sections.map((holds) => ({
+        holds,
+        read: () => {
+          const row = this._readNode(rowPath, this._deps.item);
+          return { value: row, enclosing: isRecord(row) ? row : {} };
+        },
+      }));
+      if (rowNode.when !== null) {
+        const when = rowNode.when;
+        conditions.push({
+          holds: when,
+          read: () => {
+            const row = this._readNode(rowPath, this._deps.item);
+            return {
+              value: engine.peekField(fullPath)?.().value(),
+              enclosing: isRecord(row) ? row : {},
+            };
+          },
+        });
+      }
       if (conditions.length > 0) {
-        const item = this._deps.item;
-        // The row is what encloses a cell, so the row is what its condition reads. A rule written
-        // once for the item cannot name a key, and the whole form value would make it navigate to a
-        // row it has no way to identify.
-        engine.setInactive(
-          fullPath,
-          this._deps.rx.computed(() => {
-            const row = this._readNode(rowPath, item);
-            const rowValue = isRecord(row) ? row : {};
-            // Out of play if any of them says so: the field's own condition and every section of
-            // the row that encloses it.
-            return !conditions.every((holds) => holds(rowValue));
-          }),
-        );
+        engine.setInactive(fullPath, composeConditions(this._deps.rx, conditions));
       }
       if (rowNode.asyncValidators.length > 0) {
         engine.upsertAsyncValidators(fullPath, ROW_SCHEMA_KEY, rowNode.asyncValidators, {
@@ -359,9 +373,13 @@ export class MdyRecordManager {
       return;
     }
     const rec = isRecord(value) ? value : {};
+    // A section inside a row: its children answer to it as well as to everything above it.
     const nested = rowNode.when !== null
-      ? [...sections, (row: Record<string, unknown>) => rowNode.when!(
-          this._readNode(fullPath, rowNode) as Record<string, unknown>, row)]
+      ? [
+          ...sections,
+          (_value: unknown, row: Record<string, unknown>) =>
+            rowNode.when!(this._readNode(fullPath, rowNode) as Record<string, unknown>, row),
+        ]
       : sections;
     for (const [key, child] of Object.entries(rowNode.children)) {
       assertRowNode(child);

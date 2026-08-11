@@ -42,7 +42,7 @@ import { inputNumber } from "../renderer-projection";
       <input
         [id]="fieldId"
         type="number"
-        [step]="step()"
+        [attr.step]="effectiveStep()"
         [attr.min]="effectiveMin()"
         [attr.max]="effectiveMax()"
         [placeholder]="placeholder()"
@@ -81,7 +81,7 @@ export class MdyNumberComponent extends MdyBaseControl<number | null> {
   readonly placeholder = input<string>("");
   readonly minValue = input<number | null>(null);
   readonly maxValue = input<number | null>(null);
-  readonly step = input<number>(1);
+  readonly step = input<number | null>(null);
   readonly showSpinButtons = input<boolean>(false);
 
   /**
@@ -92,10 +92,13 @@ export class MdyNumberComponent extends MdyBaseControl<number | null> {
    * wins — a control may narrow what it offers without changing what the field accepts.
    */
   protected readonly effectiveMin = computed(
-    () => this.minValue() ?? this.fieldState().bounds().min,
+    () => this.minValue() ?? this.fieldState().constraints().min,
+  );
+  protected readonly effectiveStep = computed(
+    () => this.step() ?? this.fieldState().constraints().step ?? 1,
   );
   protected readonly effectiveMax = computed(
-    () => this.maxValue() ?? this.fieldState().bounds().max,
+    () => this.maxValue() ?? this.fieldState().constraints().max,
   );
 
   protected readonly fieldId = `mdy-control-number-${MdyBaseControl.nextId()}`;

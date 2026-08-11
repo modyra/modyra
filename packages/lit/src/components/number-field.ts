@@ -42,9 +42,9 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
     return html`<input
       id=${this.fieldId}
       type="number"
-      min=${this.min ?? handle.bounds().min ?? nothing}
-      max=${this.max ?? handle.bounds().max ?? nothing}
-      step=${this.step ?? nothing}
+      min=${this.min ?? handle.constraints().min ?? nothing}
+      max=${this.max ?? handle.constraints().max ?? nothing}
+      step=${this.step ?? handle.constraints().step ?? nothing}
       .value=${handle.value() === null ? "" : String(handle.value())}
       ?disabled=${handle.disabled()}
       ?readonly=${handle.readonly()}

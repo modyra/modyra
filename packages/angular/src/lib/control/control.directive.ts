@@ -16,7 +16,7 @@ import {
 import { MDY_DECLARATIVE_REGISTRY, MDY_FLOATING_LABELS, MDY_FORM_ADAPTER, MDY_INLINE_ERRORS } from "../core/tokens";
 import { MdyFieldHandle } from "../core/typed-form";
 import { MdyFieldError, MdyFieldState, MdyFormAdapter } from "../core/types";
-import { handleFormOf } from "@modyra/core";
+import { handleFormOf, NO_CONSTRAINTS } from "@modyra/core";
 import type { MdyInteractivity } from "@modyra/core";
 import {
   createValueWidgetController,
@@ -254,7 +254,7 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         dirty,
         required: off,
         // No field, so no rule to read a constraint from.
-        bounds: computed(() => ({ min: null, max: null })),
+        constraints: computed(() => NO_CONSTRAINTS),
         valid: computed(() => true),
         errors: computed(() => []),
         disabled: off,

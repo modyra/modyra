@@ -19,10 +19,9 @@ import type {
   MdyFieldError,
   MdyFieldState,
   MdyInteractivity,
-  MdyNumericBounds,
   ValidatorFn,
 } from "./types.js";
-import { MDY_NUMERIC_BOUND } from "./validators.js";
+import { factsOfAll, NO_CONSTRAINTS, type MdyFieldConstraints } from "./validator-facts.js";
 
 export interface AsyncValidatorEntry {
   readonly fns: ReadonlyArray<MdyAsyncValidatorFn<unknown>>;
@@ -78,6 +77,8 @@ export function createFieldRecord(
   initialValue: unknown,
   extraErrors: (value: unknown) => ReadonlyArray<MdyFieldError>,
   beforeWrite?: (value: unknown) => unknown,
+  /** Says what a caller could not have worked out from the field alone. Silent in production. */
+  warn: (message: string) => void = () => undefined,
 ): FieldRecord {
   const rawValue = rx.signal<unknown>(initialValue);
   const value: MdyWritableSignal<unknown> = beforeWrite
@@ -133,28 +134,26 @@ export function createFieldRecord(
         : "enabled",
   );
 
-  // The tightest statement wins where two validator sets both bound the field: each was added to
-  // exclude something, and a merge that widened either would admit what one of them refused.
-  const bounds = rx.computed<MdyNumericBounds>(() => {
-    let low: number | null = null;
-    let high: number | null = null;
-    for (const fns of validators().values()) {
-      for (const fn of fns) {
-        const bound = Reflect.get(fn, MDY_NUMERIC_BOUND) as
-          | { min?: number; max?: number }
-          | undefined;
-        if (!bound) continue;
-        // A bound that is not a finite number states nothing a control could offer: `min="NaN"` on
-        // an input is ignored by the browser and misleading in a diff. The rule still runs.
-        if (bound.min !== undefined && Number.isFinite(bound.min)) {
-          low = low === null ? bound.min : Math.max(low, bound.min);
-        }
-        if (bound.max !== undefined && Number.isFinite(bound.max)) {
-          high = high === null ? bound.max : Math.min(high, bound.max);
-        }
-      }
+  /**
+   * What this field's own rules state that a control can act on.
+   *
+   * Read from the rules rather than declared beside them: a constraint offered at the keyboard and a
+   * rule that rejects the value are two faces of one fact, and only one of them can be the
+   * authority. The sum, and the tightest-wins rule inside it, live in `validator-facts`.
+   */
+  const constraints = rx.computed<MdyFieldConstraints>(() => {
+    const lists = [...validators().values()];
+    if (lists.length === 0) return NO_CONSTRAINTS;
+    const summed = factsOfAll(lists.flat());
+    if (summed.conflictingPatterns) {
+      // An input carries one `pattern`, and their intersection is a rule nobody wrote. Both rules
+      // still run; what is lost is the constraint at the keyboard, and that is worth saying.
+      warn(
+        "declares more than one pattern, so the control offers none. Both rules still run; to have " +
+        "one at the keyboard, write a single expression that means both.",
+      );
     }
-    return { min: low, max: high };
+    return summed.constraints;
   });
 
   const state: MdyFieldState<unknown> = {
@@ -162,7 +161,7 @@ export function createFieldRecord(
     touched,
     dirty,
     required: rx.computed(() => requiredKeys().size > 0),
-    bounds,
+    constraints,
     valid: rx.computed(() => errors().length === 0),
     errors,
     interactivity,

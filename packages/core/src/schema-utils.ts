@@ -1,5 +1,5 @@
 import { isSafeFieldPath } from "./path-utils.js";
-import { MDY_MARKS_REQUIRED } from "./validators.js";
+import { factsOf } from "./validator-facts.js";
 import type {
   MdyAnyArrayDescriptor,
   MdyAnyFieldDescriptor,
@@ -23,9 +23,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-/** True when a validator carries the internal "marks required" marker. */
+/**
+ * True when a validator declares that it makes the field required — including one that merely
+ * combines rules, since a combination carries the sum of what it combines.
+ */
 export function hasRequiredMarker(fn: ValidatorFn<never>): boolean {
-  return Reflect.get(fn, MDY_MARKS_REQUIRED) === true;
+  return factsOf(fn).required === true;
 }
 
 /**

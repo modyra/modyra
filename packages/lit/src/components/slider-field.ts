@@ -27,9 +27,9 @@ export class MdySliderFieldElement extends MdyFieldElement<number> {
   }
 
   protected override renderControl(handle: MdyFieldHandle<number>): unknown {
-    const bounds = handle.bounds();
-    const min = this.min ?? bounds.min ?? 0;
-    const max = this.max ?? bounds.max ?? 100;
+    const constraints = handle.constraints();
+    const min = this.min ?? constraints.min ?? 0;
+    const max = this.max ?? constraints.max ?? 100;
     const value = handle.value() ?? min;
     const fill = sliderFillRatio(value, min, max);
     return html`<div class="${this.partClass("track")}">

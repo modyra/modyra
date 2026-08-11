@@ -6,6 +6,8 @@ import {
 import { MDY_DEV } from "./dev-flags.js";
 import { MdyReactivity, MdySignal, vanillaReactivity } from "./reactivity.js";
 import { registerHandleForm, registerHandleOwner } from "./reactive-owner.js";
+import { NO_CONSTRAINTS, type MdyFieldConstraints } from "./validator-facts.js";
+import { composeConditions, type MdyCondition } from "./conditions.js";
 import { MdyArrayManager } from "./array-manager.js";
 import { MdyRecordManager } from "./record-manager.js";
 import { isRecord as isRecordValue } from "./record-utils.js";
@@ -21,7 +23,6 @@ function valueAt(value: Record<string, unknown>, path: string): Record<string, u
 }
 
 /** What a handle reports while it has no field: no rule, so no constraint to offer. */
-const NO_BOUNDS: MdyNumericBounds = { min: null, max: null };
 import {
   collectSchemaPaths,
   flattenPatch,
@@ -46,7 +47,6 @@ import {
   MdyFormSubmitEvent,
   MdyFormValidatorFn,
   MdyInteractivity,
-  MdyNumericBounds,
   MdySubmitMode,
   ValidatorFn,
 } from "./types.js";
@@ -233,8 +233,8 @@ export interface MdyFieldHandle<TValue> {
   readonly valid: MdySignal<boolean>;
   readonly pending: MdySignal<boolean>;
   readonly required: MdySignal<boolean>;
-  /** The numeric range this field's validators state, for a control to offer at the keyboard. */
-  readonly bounds: MdySignal<MdyNumericBounds>;
+  /** What this field's rules state that an input can carry. See {@link MdyFieldConstraints}. */
+  readonly constraints: MdySignal<MdyFieldConstraints>;
   /** What the user may do, as one value; `disabled` and `readonly` below are its derived halves. */
   readonly interactivity: MdySignal<MdyInteractivity>;
   readonly disabled: MdySignal<boolean>;
@@ -523,6 +523,15 @@ export interface MdyCoreFormOptions<
    * Default `true`.
    */
   readonly autoActivate?: boolean;
+  /**
+   * Development diagnostics: the calls that could not do anything, and the choices a mechanism
+   * cannot make for you. `false` silences them.
+   *
+   * They are the library's way of not being silent where it does the right thing invisibly, so the
+   * switch is deliberately one switch: turning off part of it would leave a reader wondering which
+   * part they had.
+   */
+  readonly devWarnings?: boolean;
 }
 
 /**
@@ -639,16 +648,49 @@ export abstract class MdyTypedFormBase<
 
     const arrays = new Map<string, MdyArrayManager>();
     const records = new Map<string, MdyRecordManager>();
+    /**
+     * The condition of every section, by path — filled as the walk descends, which is why a
+     * collection built below one already knows about it.
+     */
+    const schemaSections = new Map<
+      string,
+      (value: unknown, enclosing: Record<string, unknown>) => boolean
+    >();
+    /**
+     * The sections a collection sits under, as predicates over the form.
+     *
+     * A collection inside a closed section is out of play like anything else under it — including
+     * the rows already declared, which is the case that says whether this was really fixed or only
+     * moved.
+     */
+    const enclosingSections = (
+      at: string,
+    ): ReadonlyArray<(value: unknown, enclosing: Record<string, unknown>) => boolean> =>
+      [...schemaSections]
+        .filter(([sectionPath]) => at.startsWith(`${sectionPath}.`))
+        .map(([sectionPath, holds]) => () => {
+          const formValue = this.getValue() as Record<string, unknown>;
+          return holds(valueAt(formValue, sectionPath), formValue);
+        });
+
     walkSchema(
       schema,
       "",
       () => { /* fields registered below, by _registerSchema */ },
-      undefined,
+      (groupPath, groupNode) => {
+        if (groupNode.when !== null) schemaSections.set(groupPath, groupNode.when);
+      },
       (path, node) => {
         arrays.set(
           path,
           new MdyArrayManager(
-            { rx: adapter.reactivity, engine: adapter, path, item: node.item },
+            {
+              rx: adapter.reactivity,
+              engine: adapter,
+              path,
+              item: node.item,
+              sections: enclosingSections(path),
+            },
             node.initial,
           ),
         );
@@ -662,6 +704,7 @@ export abstract class MdyTypedFormBase<
               engine: adapter,
               path,
               item: node.item,
+              sections: enclosingSections(path),
               warn: (message) => adapter.warnDev(message),
             },
             node.initial,
@@ -1003,32 +1046,40 @@ export abstract class MdyTypedFormBase<
         node.validators,
         marksRequired,
       );
-      // Every condition that has a say over this field: its own, and each section above it.
-      const conditions: Array<[string, (value: unknown, enclosing: Record<string, unknown>) => boolean]> =
-        [];
+      // Every condition with a say over this field: its own, and each section above it. They are
+      // composed once, by `conditions.ts`, so this is a list rather than a rule.
+      const conditions: MdyCondition[] = [];
       for (const [sectionPath, condition] of sectionConditions) {
-        if (path.startsWith(`${sectionPath}.`)) conditions.push([sectionPath, condition]);
+        if (path.startsWith(`${sectionPath}.`)) {
+          conditions.push({
+            holds: condition,
+            read: () => {
+              const formValue = this.getValue() as Record<string, unknown>;
+              return { value: valueAt(formValue, sectionPath), enclosing: formValue };
+            },
+          });
+        }
       }
-      if (node.when !== null) conditions.push([path, node.when]);
+      if (node.when !== null) {
+        const when = node.when;
+        conditions.push({
+          holds: when,
+          read: () => ({
+            value: this._adapter.getField(path)?.().value(),
+            enclosing: this.getValue() as Record<string, unknown>,
+          }),
+        });
+      }
 
       if (conditions.length > 0) {
         // Inactive is what a disabled field already is here — not validated, not submitted, value
-        // kept. Registered as its own input to `interactivity` so a control's own `[disabled]`
-        // binding and this rule do not overwrite each other, and composed here because one field
-        // has one such input: out of play if *any* of them says so.
+        // kept — registered as its own input to `interactivity` so a control's own `[disabled]`
+        // binding and these rules cannot overwrite each other.
         this._adapter.setInactive(
           path,
-          this._adapter.reactivity.computed(() => {
-            // The nested value, not the engine's flat map: a predicate is written against the shape
-            // the schema declares, so `form.address.country` has to be reachable.
-            const formValue = this.getValue() as Record<string, unknown>;
-            return !conditions.every(([at, condition]) =>
-              condition(
-                at === path ? this._adapter.getField(path)?.().value() : valueAt(formValue, at),
-                formValue,
-              ),
-            );
-          }),
+          composeConditions(this._adapter.reactivity, conditions, (message) =>
+            this._adapter.warnDev(`"${path}": ${message}`),
+          ),
         );
       }
       if (node.asyncValidators.length > 0) {
@@ -1206,7 +1257,7 @@ export abstract class MdyTypedFormBase<
       valid: rx.computed(() => state()?.valid() ?? true),
       pending: rx.computed(() => state()?.pending() ?? false),
       required: rx.computed(() => state()?.required() ?? false),
-      bounds: rx.computed(() => state()?.bounds() ?? NO_BOUNDS),
+      constraints: rx.computed(() => state()?.constraints() ?? NO_CONSTRAINTS),
       interactivity: rx.computed(() => state()?.interactivity() ?? "enabled"),
       disabled: rx.computed(() => state()?.disabled() ?? false),
       readonly: rx.computed(() => state()?.readonly() ?? false),
@@ -1339,7 +1390,11 @@ export class MdyTypedForm<S extends MdyFormSchema>
       rx,
       () => undefined,
       () => options?.submitMode ?? "valid-only",
-      { security: options?.security, autoActivate: options?.autoActivate },
+      {
+        security: options?.security,
+        autoActivate: options?.autoActivate,
+        devWarnings: options?.devWarnings,
+      },
     );
     super(schema, engine, options);
     this.state = engine.state;
@@ -1364,7 +1419,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       valid: state.valid,
       pending: state.pending,
       required: state.required,
-      bounds: state.bounds,
+      constraints: state.constraints,
       interactivity: state.interactivity,
       disabled: state.disabled,
       readonly: state.readonly,

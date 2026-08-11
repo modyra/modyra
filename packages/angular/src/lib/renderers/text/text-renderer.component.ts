@@ -9,7 +9,7 @@ import {
   OnInit,
 } from "@angular/core";
 import { createFieldController, type MdyFieldController } from "@modyra/widgets";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { nativeConstraintAttributes, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -49,6 +49,10 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [disabled]="isDisabled()"
         [readonly]="isReadonly()"
         [attr.aria-readonly]="isReadonly() ? 'true' : null"
+        [attr.minlength]="native()['minlength']"
+        [attr.maxlength]="native()['maxlength']"
+        [attr.pattern]="native()['pattern']"
+        [attr.inputmode]="native()['inputmode']"
         [attr.autocomplete]="autocomplete()"
         (input)="onInput($event)"
         (blur)="onBlur()"
@@ -80,6 +84,14 @@ export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
   readonly placeholder = input<string>("");
   readonly type = input<string>("text");
   readonly autocomplete = input<string | null>(null);
+
+  /**
+   * What the field's rules state, as this kind's own attributes. The translation lives in
+   * `@modyra/widgets`, so three renderers cannot answer it three ways.
+   */
+  protected readonly native = computed(() =>
+    nativeConstraintAttributes(this.type() === "email" ? "email" : "text", this.fieldState().constraints()),
+  );
 
   protected readonly fieldId = `mdy-control-text-${MdyBaseControl.nextId()}`;
   private fieldController?: MdyFieldController<string>;
