@@ -1,6 +1,7 @@
 # ADR 0026: A row exists because it was declared
 
-Status: Accepted — amended 2026-08-10, see **Amendment: asking again when the row arrives**
+Status: Accepted — amended 2026-08-10, see **Amendment: asking again when the row arrives**, and
+2026-08-11, see **Amendment: an indexed collection states its shape without governing existence**
 
 ## Context
 
@@ -154,3 +155,52 @@ they cannot meaningfully provide.
 
 None. A control that re-asks still cannot create a field: `getField` answers null while the gate
 refuses, which is what this record decided and what the amendment leaves untouched.
+
+## Amendment: an indexed collection states its shape without governing existence
+
+This record decided how a **keyed** collection works, and the path gate is how the engine enforces
+it. An indexed collection — `array()` — is deliberately not the same: its rows follow its value.
+`push` and `remove` manage them, and a value arriving for a row that is not there yet brings the row
+into being, which is what lets a restored draft or an undo carry rows back.
+
+Two things followed from that difference being unexpressed.
+
+The engine writes **flat paths**, and a field absent from a whole-value write is set to `null` rather
+than removed — it cannot know that a path belongs to a row that should cease to exist. `onReplace`
+exists for exactly that: a whole-value write hands each collection the paths it carried, so a row the
+write does not mention is one that is gone. The keyed collection implemented it. The indexed one did
+not, and reconciled instead on the engine's list of field *names* — which a restore does not change,
+because the name stays and only the value becomes null. So an indexed collection could grow and never
+shrink: undoing a `push` left an empty row behind and killed the redo (the restored value no longer
+matched the snapshot, so the history recorded it as a new edit), and a draft written after a deletion
+brought the deleted row back carrying its seeded value.
+
+**A collection that does not govern existence omits `isOpen`.** `MdyPathGate.isOpen` is optional:
+without it nothing below the prefix is ever refused, a control mounting creates the field as it
+always did, and the field stays its owner's to remove by the ordinary path. What such a collection
+registers for is `onReplace` — the shape of a whole-value write, which is a different question from
+who may create a field. `_gateCovers`, the rule that stops an unmounting control from destroying a
+gated field, therefore counts only the collections that actually govern existence.
+
+Growth stays where it was: `onReplace` only prunes and never raises the row count, because a row that
+appears gets its validators from the reconciliation, and registering it here would leave that with
+nothing to do and the new row unvalidated.
+
+### Verification
+
+- `packages/core/test/array-fields.test.mjs`: undo of a `push`, of an `insert` and of a lengthening
+  `setAll` each leave the array as it was, with `redo` restoring what the row held; a draft written
+  after a deletion keeps the row deleted; and the case that guards the rule — an excluded draft key, a
+  patch elsewhere, a cell being typed into — prunes nothing.
+- The pre-existing "rows introduced by a raw restored patch are reconciled with validators" is the
+  test that caught an earlier version of this change raising the count and stealing the registration:
+  it is the reason growth and pruning are separated.
+- `node scripts/audit-type-surface.mjs` classifies making `isOpen` optional as `minor` — a widening,
+  so every existing implementation still satisfies it.
+
+### Security and privacy
+
+None for confidentiality, and one point for integrity: reading an absence as a deletion is only safe
+where absence is a statement. It is restricted to whole-value writes; a partial write — a draft that
+excludes a key, a patch that names one field — says nothing about how many rows there are, and the
+tests above hold that line.

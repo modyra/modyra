@@ -81,6 +81,7 @@ export class MdyArrayManager {
   private readonly _initial: ReadonlyArray<unknown>;
   private readonly _rowCountSig: MdyWritableSignal<number>;
   private readonly _reconcile: MdyEffectRef | null;
+  private readonly _releaseGate: () => void;
   /** Track the last known indices for cleanup detection. */
   private _lastPresentIndices = new Set<number>();
 
@@ -102,6 +103,19 @@ export class MdyArrayManager {
     deps.engine.getField(deps.path);
     this._rebuild(initial.slice());
 
+    this._releaseGate = deps.engine.registerPathGate(deps.path, {
+      // No `isOpen`: an array does not govern existence. Its rows follow its value — a write below
+      // this path is a row of it, which is how a restored draft brings one back — so nothing is
+      // refused and the field stays the owner's to remove.
+      //
+      // A whole-value write is a statement of which rows there are. Read as such it is the only
+      // thing that can say a row *ceased* to exist: the engine writes flat paths and sets an absent
+      // field to null rather than removing it, so a name that stays is a row that stays — which is
+      // how undoing a push left an empty row behind, and how a draft written after a deletion
+      // brought the deleted row back.
+      onReplace: (paths) => this._keepOnly(this._presentIndices([...paths])),
+    });
+
     this._reconcile = reactivityRunsEffects(deps.rx)
       ? deps.rx.effect(() => {
         const names = deps.engine.fieldNames();
@@ -109,6 +123,28 @@ export class MdyArrayManager {
         deps.rx.untracked(() => this._absorb(present));
       })
       : null;
+  }
+
+  /**
+   * Drops every row a whole-value write did not carry.
+   *
+   * Only drops. A write that carries *more* rows than are declared is growth, and growth is where
+   * rows get their validators — registering them here instead would leave the reconciliation with
+   * nothing left to do and the new rows unvalidated. So the count falls to what survives and is
+   * never raised.
+   *
+   * The surviving rows keep their positions: an array is contiguous, and a write that skips an index
+   * leaves that gap empty rather than closing it and moving someone else's data.
+   */
+  private _keepOnly(present: ReadonlySet<number>): void {
+    const count = this._rowCountSig();
+    let highest = -1;
+    for (const index of present) if (index > highest) highest = index;
+
+    for (let index = 0; index < count; index += 1) {
+      if (!present.has(index)) this._removeRow(index);
+    }
+    this._rowCountSig.set(Math.min(count, highest + 1));
   }
 
   push(value: unknown): void {
@@ -153,6 +189,7 @@ export class MdyArrayManager {
 
   /** Releases the reconciliation effect — call when the owning form is destroyed. */
   destroy(): void {
+    this._releaseGate();
     this._reconcile?.destroy();
   }
 

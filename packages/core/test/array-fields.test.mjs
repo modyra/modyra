@@ -266,3 +266,116 @@ test("insert and remove keep answering the same way", () => {
   assert.deepEqual(form.getValue().items.map((r) => r.name), ["a", "b"]);
   assert.equal(form.f.items.rows()[0].name.value(), "a", "and the handles read the surviving rows");
 });
+
+test("undo of a push takes the row with it, and redo brings it back whole", async () => {
+  // A whole-value write states which rows there are, and the engine writes flat paths: a field the
+  // write does not mention is set to null, never removed. Read as growth-only, that left an empty
+  // row behind after every undo — and, because the restored value then differed from the snapshot
+  // that was asked for, the history recorded it as a fresh edit and the redo stack went with it.
+  const form = createForm(
+    { rows: array(group({ n: field("") }), { initial: [{ n: "a" }] }) },
+    { history: { debounceMs: 1 } },
+  );
+  await tick();
+
+  form.f.rows.push({ n: "b" });
+  await tick();
+  assert.equal(form.f.rows.length(), 2);
+
+  form.undo();
+  await tick();
+  assert.deepEqual(form.getValue().rows, [{ n: "a" }], "the pushed row outlived its undo");
+  assert.equal(form.f.rows.length(), 1);
+  assert.equal(form.canRedo(), true, "the redo stack was cleared by the restore itself");
+
+  form.redo();
+  await tick();
+  assert.deepEqual(form.getValue().rows, [{ n: "a" }, { n: "b" }], "redo lost what the row held");
+});
+
+test("undo of an insert and of a lengthening setAll leave the array as it was", async () => {
+  const form = createForm(
+    { rows: array(group({ n: field("") }), { initial: [{ n: "a" }] }) },
+    { history: { debounceMs: 1 } },
+  );
+  await tick();
+
+  form.f.rows.insert(0, { n: "z" });
+  await tick();
+  form.undo();
+  await tick();
+  assert.deepEqual(form.getValue().rows, [{ n: "a" }], "an undone insert left a row behind");
+
+  form.f.rows.setAll([{ n: "x" }, { n: "y" }]);
+  await tick();
+  form.undo();
+  await tick();
+  assert.deepEqual(form.getValue().rows, [{ n: "a" }], "an undone setAll left a row behind");
+});
+
+test("a draft written after a deletion does not bring the row back", async () => {
+  // The engine's restoreValue already promised this in words: a row the user removed before the
+  // snapshot was written stays removed. A keyed collection kept the promise; an indexed one could
+  // only grow, so the deleted row returned carrying its seeded value — real data the user could
+  // submit without noticing.
+  const store = new Map();
+  const storage = {
+    read: (key) => store.get(key) ?? null,
+    write: (key, value) => store.set(key, value),
+    remove: (key) => store.delete(key),
+  };
+  const seeded = () => ({
+    rows: array(group({ n: field("") }), { initial: [{ n: "a" }, { n: "b" }] }),
+  });
+
+  const first = createForm(seeded(), { draft: { key: "d", storage, debounceMs: 1 } });
+  first.f.rows.remove(1);
+  await tick();
+  await tick();
+
+  const restored = createForm(seeded(), { draft: { key: "d", storage, debounceMs: 1 } });
+  await tick();
+  assert.deepEqual(restored.getValue().rows, [{ n: "a" }], "the deleted row came back");
+  assert.equal(restored.f.rows.length(), 1);
+});
+
+test("a partial write prunes nothing: only a whole value states which rows exist", async () => {
+  // The risk of reading absence as deletion is reading it everywhere. A draft that excludes a field,
+  // a patch that names one, a cell that is typed into — none of them say anything about how many
+  // rows there are.
+  const store = new Map();
+  const storage = {
+    read: (key) => store.get(key) ?? null,
+    write: (key, value) => store.set(key, value),
+    remove: (key) => store.delete(key),
+  };
+  const schema = () => ({
+    secret: field(""),
+    rows: array(group({ n: field("") }), { initial: [{ n: "a" }, { n: "b" }] }),
+  });
+
+  const first = createForm(schema(), {
+    draft: { key: "e", storage, debounceMs: 1, exclude: ["secret"] },
+  });
+  first.f.secret.set("hidden");
+  first.f.rows.rows()[1].n.set("edited");
+  await tick();
+  await tick();
+
+  const restored = createForm(schema(), {
+    draft: { key: "e", storage, debounceMs: 1, exclude: ["secret"] },
+  });
+  await tick();
+  assert.deepEqual(
+    restored.getValue().rows,
+    [{ n: "a" }, { n: "edited" }],
+    "an excluded key made the restore look like a shorter array",
+  );
+
+  const patched = createForm(schema());
+  patched.patch({ secret: "x" });
+  assert.equal(patched.f.rows.length(), 2, "a patch elsewhere pruned rows");
+
+  patched.f.rows.rows()[0].n.set("typed");
+  assert.equal(patched.f.rows.length(), 2, "typing into a cell pruned rows");
+});

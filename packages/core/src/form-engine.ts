@@ -158,9 +158,14 @@ export interface MdyFormEngineOptions {
  * declared claims nothing. `onRefusedWrite` is the other half: a *value* arriving for a refused path
  * is the owner's own data — a restored draft, an undo across the moment a row was added — and it is
  * offered to the owner rather than dropped.
+ *
+ * A collection that does not govern existence omits `isOpen`: its rows follow its value, every path
+ * below it exists as soon as something writes there, and nothing is refused. It registers to hear
+ * {@link MdyPathGate.onReplace} — the shape of a whole-value write — which is a different question
+ * from who may create a field.
  */
 export interface MdyPathGate {
-  isOpen(path: string): boolean;
+  isOpen?(path: string): boolean;
   onRefusedWrite?(path: string, value: unknown): void;
   /**
    * A whole-value write landed: these are every path it carried below this prefix.
@@ -460,8 +465,14 @@ export class MdyFormEngine
   }
 
   /** True when some collection owns this path, whether or not it currently admits it. */
+  /**
+   * True when a collection *governs existence* here — which is what stops an unmounting control from
+   * destroying the field. A collection that only listens for whole-value writes governs nothing, so
+   * its rows are removed by the ordinary path, by their owner.
+   */
   private _gateCovers(name: string): boolean {
-    for (const prefix of this._gates.keys()) {
+    for (const [prefix, gate] of this._gates) {
+      if (!gate.isOpen) continue;
       if (name === prefix || name.startsWith(`${prefix}.`)) return true;
     }
     return false;
@@ -469,7 +480,7 @@ export class MdyFormEngine
 
   private _gateRefuses(name: string): boolean {
     for (const [prefix, gate] of this._gates) {
-      if (name === prefix || name.startsWith(`${prefix}.`)) return !gate.isOpen(name);
+      if (name === prefix || name.startsWith(`${prefix}.`)) return gate.isOpen ? !gate.isOpen(name) : false;
     }
     return false;
   }
@@ -484,7 +495,7 @@ export class MdyFormEngine
   private _offerToGate(name: string, value: unknown): boolean {
     for (const [prefix, gate] of this._gates) {
       if (name !== prefix && !name.startsWith(`${prefix}.`)) continue;
-      if (gate.isOpen(name)) return true;
+      if (!gate.isOpen || gate.isOpen(name)) return true;
       gate.onRefusedWrite?.(name, value);
       return gate.isOpen(name);
     }
