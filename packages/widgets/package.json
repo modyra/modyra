@@ -1,6 +1,6 @@
 {
   "name": "@modyra/widgets",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Headless widget controllers and universal interaction/accessibility contract for Modyra.",
   "license": "MIT",
   "author": "Lorenzo Muscherà",
@@ -60,7 +60,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "2.1.0"
+    "@modyra/core": "2.1.1"
   },
   "publishConfig": {
     "access": "public"

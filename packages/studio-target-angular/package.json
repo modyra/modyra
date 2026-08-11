@@ -1,6 +1,6 @@
 {
   "name": "@modyra/studio-target-angular",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Modyra Studio: the Angular MVP target scope (plan section 10) — generates a real @modyra/angular/adapter mdyForm() definition and implementation stubs from a Studio project.",
   "license": "MIT",

@@ -1,5 +1,20 @@
 # @modyra/plain-preview-app
 
+## 0.5.4
+
+### Patch Changes
+
+- Updated dependencies [2e29f30]
+- Updated dependencies [6921584]
+- Updated dependencies [6581883]
+- Updated dependencies [2e29f30]
+- Updated dependencies [062881c]
+- Updated dependencies [992b36d]
+- Updated dependencies [90fdf00]
+- Updated dependencies [6921584]
+  - @modyra/plain@0.7.1
+  - @modyra/studio-contract@0.5.4
+
 ## 0.5.3
 
 ### Patch Changes

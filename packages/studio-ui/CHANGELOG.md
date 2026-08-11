@@ -1,5 +1,27 @@
 # @modyra/studio-ui
 
+## 0.5.5
+
+### Patch Changes
+
+- Updated dependencies [2e29f30]
+- Updated dependencies [6921584]
+- Updated dependencies [6581883]
+- Updated dependencies [2e29f30]
+- Updated dependencies [062881c]
+- Updated dependencies [d8d9242]
+- Updated dependencies [992b36d]
+- Updated dependencies [90fdf00]
+- Updated dependencies [6921584]
+  - @modyra/plain@0.7.1
+  - @modyra/studio-preview@0.5.4
+  - @modyra/studio-contract@0.5.4
+  - @modyra/studio-codegen@0.5.1
+  - @modyra/studio-target-json@0.5.4
+  - @modyra/studio-target-angular@0.5.1
+  - @modyra/studio-target-core@0.5.1
+  - @modyra/studio-target-react@0.5.1
+
 ## 0.5.4
 
 ### Patch Changes
