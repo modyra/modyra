@@ -47,6 +47,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 | [0029](0029-a-widget-does-not-repair-the-model.md) | A widget does not repair the model | A select erased a value it could not render, and the data that would have let a person fix it went with it |
 | [0030](0030-a-declared-fact-survives-composition.md) | A declared fact survives composition | `compose(required(), …)` produced a field that was not required, silently, and three copies of one rule disagreed |
 | [0031](0031-a-field-name-is-a-path.md) | A field name is a path, in a schema as everywhere else | A schema keyed by `"shipping.city"` described a shape no read could produce, so every flattened document mounted into a form that threw on `getValue()` |
+| [0032](0032-a-computed-is-a-function-of-its-inputs.md) | A computed is a function of its inputs | The vanilla graph allowed a signal write inside a computed and Angular refuses it, so shared code could pass every test on one adapter and throw on another |
 
 ## Security-relevant records
 

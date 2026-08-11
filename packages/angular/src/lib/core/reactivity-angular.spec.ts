@@ -24,6 +24,7 @@ describe("angularReactivity", () => {
         deterministicFlush: false,
         directObservation: false,
         writableComputed: false,
+        pureComputeds: true,
         graphInspection: false,
         serverSnapshots: false,
       });
