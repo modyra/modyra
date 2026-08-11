@@ -8,6 +8,7 @@
  * is plain @modyra/core, nothing React-specific).
  */
 import {
+  assertSafeDynamicFieldNames,
   buildDynamicFieldValidators,
   createForm,
   field,
@@ -20,6 +21,9 @@ import {
 
 /** Builds the (validator-free) schema for a flat field list — every field gets its default value; validators come from {@link applyDynamicFieldValidators}. */
 export function buildFormSchema(fields: ReadonlyArray<MdyDynamicField>): MdyFormSchema {
+  // Every name here becomes a key of a flat schema, so the rules a key has to satisfy are checked
+  // where the key is minted — not left to surface as a mismatched shape on the first read.
+  assertSafeDynamicFieldNames(fields);
   const schema: Record<string, unknown> = {};
   for (const f of fields) schema[f.name] = field(mdyEmptyValueFor(f) as never, []);
   return schema as MdyFormSchema;

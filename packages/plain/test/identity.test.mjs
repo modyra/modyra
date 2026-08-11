@@ -108,6 +108,45 @@ test("mountMdyForm rejects two fields with the same name", () => {
   host.remove();
 });
 
+test("a field named by path mounts, renders and reads back nested", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  // A flattened document names a nested field by its path. The form it mounts has to be readable:
+  // rendering it and then throwing on `getValue()` is a form that cannot be submitted.
+  const { form, reactivity, dispose } = mountMdyForm(host, [
+    { name: "country", kind: "text", label: "Country" },
+    { name: "shipping.city", kind: "text", label: "City" },
+  ], { submitLabel: null });
+
+  assert.deepEqual(form.getValue(), { country: "", shipping: { city: "" } });
+
+  const city = host.querySelector('[data-mdy-field="shipping.city"] input');
+  assert.ok(city, "the field named by path never reached the DOM");
+  city.value = "Roma";
+  city.dispatchEvent(new Event("input", { bubbles: true }));
+  await reactivity.flush();
+  assert.deepEqual(form.getValue(), { country: "", shipping: { city: "Roma" } }, "typing did not reach the nested value");
+
+  dispose();
+  host.remove();
+});
+
+test("a mounted form with ordinary names still reads its value", () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  // The guard above is only worth having if it lets through everything it should: a name is refused
+  // for the separator, not for being long, cased, digit-bearing or underscored.
+  const { form, dispose } = mountMdyForm(host, [
+    { name: "email", kind: "text", label: "Email" },
+    { name: "line_1", kind: "text", label: "Line 1" },
+    { name: "addressLine2", kind: "text", label: "Line 2" },
+    { name: "zip5", kind: "text", label: "ZIP" },
+  ], { submitLabel: null });
+  assert.deepEqual(form.getValue(), { email: "", line_1: "", addressLine2: "", zip5: "" });
+  dispose();
+  host.remove();
+});
+
 test("a name containing the id delimiter is rejected", () => {
   const host = document.createElement("div");
   document.body.append(host);

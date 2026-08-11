@@ -25,35 +25,26 @@
  */
 import { useEffect, useMemo } from "react";
 import {
+  assertSafeDynamicFieldNames,
   buildDynamicFieldValidators,
   createForm,
   field,
+  mdyEmptyValueFor,
   type MdyCoreFormOptions,
   type MdyDynamicField,
   type MdyFormSchema,
   type MdyTypedForm,
 } from "@modyra/core";
 
-function defaultValueFor(f: MdyDynamicField): unknown {
-  if (f.initialValue !== undefined) return f.initialValue;
-  switch (f.kind) {
-    case "number":
-    case "slider":
-      return 0;
-    case "checkbox":
-    case "toggle":
-      return false;
-    case "multiselect":
-      return [];
-    default:
-      return f.kind === "select" || f.kind === "radio" || f.kind === "segmented" || f.kind === "datepicker" || f.kind === "timepicker" ? null : "";
-  }
-}
-
 /** Builds the (validator-free) schema for a flat field list — every field gets its default value, no validators yet (those come from `applyDynamicValidators`, matching Angular's own two-step "base schema, then upsertValidators" approach). */
 export function buildDynamicFormSchema(fields: ReadonlyArray<MdyDynamicField>): MdyFormSchema {
+  // The names become the schema's keys and the empty values its initial state. Both rules are core's:
+  // it decides what a key may be and what a kind holds when it holds nothing, so a form built here
+  // starts where the same field starts under any other adapter. A local table would drift — and a
+  // number starting at 0 rather than null is a field `required` can never fail.
+  assertSafeDynamicFieldNames(fields);
   const schema: Record<string, unknown> = {};
-  for (const f of fields) schema[f.name] = field(defaultValueFor(f) as never, []);
+  for (const f of fields) schema[f.name] = field(mdyEmptyValueFor(f) as never, []);
   return schema as MdyFormSchema;
 }
 

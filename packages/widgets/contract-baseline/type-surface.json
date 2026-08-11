@@ -1923,6 +1923,10 @@
     "(0) field: never",
     "-> returns: never"
   ],
+  "assertSafeDynamicFieldNames": [
+    "(0) fields: ReadonlyArray<{ readonly name: string; }>",
+    "-> returns: void"
+  ],
   "assertWidgetDomContract": [
     "(0) root: Element",
     "(1) kind: MdyWidgetKind",

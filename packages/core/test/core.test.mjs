@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildDynamicFieldValidators, buildDynamicValidators, createForm, crossField, eachOneOf, field, group, min, oneOf, parseDynamicFields, required } from "../dist/index.js";
+import { array, assertSafeDynamicFieldNames, buildDynamicFieldValidators, buildDynamicValidators, createForm, crossField, eachOneOf, field, group, min, oneOf, parseDynamicFields, required } from "../dist/index.js";
 import { buildDateLocale } from "../dist/datetime.js";
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -248,6 +248,41 @@ test("engine rejects reserved path segments", () => {
   assert.throws(
     () => form.getField("__proto__.admin"),
     /Invalid field path/,
+  );
+});
+
+test("assertSafeDynamicFieldNames refuses a path no form can hold, and passes one it can", () => {
+  // A name is a path. What is refused is a path with nothing in a segment, a prototype key, the id
+  // delimiter, or an identity already taken — never the separator itself.
+  const refused = [
+    [{ name: "", kind: "text" }, /name/],
+    [{ name: "__proto__", kind: "text" }, /__proto__/],
+    [{ name: "prototype", kind: "text" }, /prototype/],
+    [{ name: "shipping..city", kind: "text" }, /shipping\.\.city/],
+    [{ name: "lines.__proto__.name", kind: "text" }, /__proto__/],
+    [{ name: "constructor", kind: "text" }, /constructor/],
+    [{ name: "a__label", kind: "text" }, /a__label/],
+  ];
+  for (const [field, message] of refused) {
+    assert.throws(() => assertSafeDynamicFieldNames([field]), message, `accepted ${JSON.stringify(field.name)}`);
+  }
+
+  assert.throws(() => assertSafeDynamicFieldNames([{ name: "x", kind: "text" }, { name: "x", kind: "text" }]), /x/);
+
+  // A rule that refuses more than it was given is the usual way of breaking what it protects.
+  assert.doesNotThrow(() =>
+    assertSafeDynamicFieldNames([
+      { name: "email", kind: "text" },
+      { name: "line_1", kind: "text" },
+      { name: "addressLine2", kind: "text" },
+      { name: "zip5", kind: "text" },
+      { name: "prototypeName", kind: "text" },
+      { name: "a_b", kind: "text" },
+      // A name is a path: a flattened document names a nested field this way, and every segment of
+      // this one is a name the form can hold.
+      { name: "shipping.city", kind: "text" },
+      { name: "lines.12.name", kind: "text" },
+    ]),
   );
 });
 
@@ -692,4 +727,50 @@ test("a declared locale survives the parser and is the one a renderer would use"
   // and the consumer's expectation are the same guarantee.
   assert.equal(buildDateLocale(field.locale).firstDayOfWeek, 1);
   assert.equal(buildDateLocale("en-US").firstDayOfWeek, 0);
+});
+
+test("a schema key that spells a path is the structure that path describes", () => {
+  // A name is a path everywhere else — `claimField("shipping.city")` registers a field inside
+  // `shipping` — and the engine stores every value flat by path and reads it back unflattened. A
+  // schema keyed by the literal string would describe a shape no read can produce.
+  const form = createForm({ country: field("IT"), "shipping.city": field("Roma") });
+  form.activate();
+  assert.deepEqual(form.getValue(), { country: "IT", shipping: { city: "Roma" } });
+  assert.equal(form.f.shipping.city.value(), "Roma", "the handle tree kept the flat spelling");
+
+  form.f.shipping.city.set("Milano");
+  assert.deepEqual(form.getValue(), { country: "IT", shipping: { city: "Milano" } });
+  form.deactivate();
+});
+
+test("a path is normalized wherever a schema is written, not only at the root", () => {
+  const nested = createForm({ o: group({ "shipping.city": field("MI") }) });
+  nested.activate();
+  assert.deepEqual(nested.getValue(), { o: { shipping: { city: "MI" } } });
+  nested.deactivate();
+
+  // A collection stays a collection: its item is a schema of its own, and rows still read as a list.
+  const rows = createForm({ rows: array(group({ "a.b": field("x") }), { initial: [{}, {}] }) });
+  rows.activate();
+  assert.deepEqual(rows.getValue(), { rows: [{ a: { b: "x" } }, { a: { b: "x" } }] });
+  rows.deactivate();
+});
+
+test("two declarations of the same group are one group, in either order", () => {
+  const after = createForm({ shipping: group({ zip: field("20100") }), "shipping.city": field("Milano") });
+  after.activate();
+  assert.deepEqual(after.getValue(), { shipping: { zip: "20100", city: "Milano" } });
+  after.deactivate();
+
+  const before = createForm({ "shipping.city": field("Milano"), shipping: group({ zip: field("20100") }) });
+  before.activate();
+  assert.deepEqual(before.getValue(), { shipping: { city: "Milano", zip: "20100" } });
+  before.deactivate();
+});
+
+test("a name that is both a field and a group is refused, not silently resolved", () => {
+  // Nothing can be a value and hold children at once, and picking one for the caller would drop the
+  // other without saying so.
+  assert.throws(() => createForm({ a: field(""), "a.b": field("") }), /"a"/);
+  assert.throws(() => createForm({ "a.b": field(""), a: field("") }), /"a"/);
 });
