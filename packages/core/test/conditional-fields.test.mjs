@@ -427,3 +427,42 @@ test("a whole collection that only counts sometimes is a section around it", () 
   form.f.wantsTable.set(true);
   assert.equal(form.state.valid(), false, "now the table's rows are being asked for");
 });
+
+/**
+ * A value arriving from outside, which is how a draft comes back.
+ *
+ * `enableDraft` restores through `patchValue`, so a condition that only ever saw values typed into
+ * it would be a condition that wakes up wrong the first time a form is resumed.
+ */
+test("a condition follows a value that arrives through patchValue", () => {
+  const form = createForm({
+    kind: field("private"),
+    company: group(
+      { vat: field("", [required()]) },
+      { when: (_section, form) => form.kind === "company" },
+    ),
+  });
+
+  assert.equal(form.state.valid(), true);
+
+  // Exactly what a restored draft does: the whole shape at once, nothing typed.
+  form.patchValue({ kind: "company", company: { vat: "" } });
+
+  assert.equal(form.getField("company.vat")().disabled(), false, "the section opened on its own");
+  assert.equal(form.state.valid(), false, "and what it holds is being asked for");
+
+  form.patchValue({ company: { vat: "IT123" } });
+  assert.equal(form.state.valid(), true);
+});
+
+test("a whole-value replacement moves a condition too", () => {
+  const form = createForm({
+    kind: field("company"),
+    company: group({ vat: field("", [required()]) }, { when: (_s, form) => form.kind === "company" }),
+  });
+
+  form.setValue({ kind: "private", company: { vat: "" } });
+
+  assert.equal(form.getField("company.vat")().disabled(), true);
+  assert.equal(form.state.valid(), true);
+});

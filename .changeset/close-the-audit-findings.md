@@ -27,3 +27,17 @@ per kind, and `narrowConstraints` — which can tighten an end and never widen o
 
 **Documented**: the date and time kinds derive no native constraints yet. Their inputs have
 `min`/`max`/`step` too, expressed as dates, and that crossing is not done.
+
+Two more, found by a second sweep of the places the first one did not reach:
+
+- **`useMdyField` now carries `required` and `constraints`** in `@modyra/react` and `@modyra/preact`.
+  Those adapters exist so the caller writes the input, and their hand-enumerated snapshot did not
+  include what a control needs to draw itself — so a constraint declared once was enforced and
+  unshowable there. Vue, Solid and Svelte hand back the handle and were never affected.
+- **A condition now has a test for the path a restored draft takes.** `enableDraft` restores through
+  `patchValue`; every conditional case asserted a value typed into the form, so a form resumed from a
+  draft was the one path nothing covered.
+
+`@modyra/standard-schema` deliberately gains nothing: the Standard Schema V1 contract exposes only
+`~standard.validate`, so there is no `.min(3)` to read. Zod could cross over because Zod publishes
+its checks.
