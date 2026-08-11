@@ -41,3 +41,14 @@ Two more, found by a second sweep of the places the first one did not reach:
 `@modyra/standard-schema` deliberately gains nothing: the Standard Schema V1 contract exposes only
 `~standard.validate`, so there is no `.min(3)` to read. Zod could cross over because Zod publishes
 its checks.
+
+A defect the demos found the moment they showed the feature:
+
+**`minLength` refused an empty field.** Its own documentation said the opposite, and `<input
+minlength>` agrees with the documentation — the platform does not apply it to an empty value, because
+that is `required`'s question. A collection is the other way round: `minLength(1)` on an array is how
+"at least one row" is said, and exempting `[]` would take that away. So the rule now reads: **a blank
+field is not short, it is empty; an empty collection is short.**
+
+Also: `@modyra/angular`'s `group()` wrapper dropped the `when` option, which would have made an
+Angular schema quietly poorer than every other adapter's.
