@@ -1,6 +1,6 @@
 # ADR 0032: A computed is a function of its inputs
 
-Status: Accepted
+Status: Accepted — amended 2026-08-11, see **Amendment: where the rule bites**
 
 ## Context
 
@@ -75,6 +75,25 @@ migration.
 **Ban writes in effects too.** An effect exists to act on a change; writing there is ordinary and
 intended. Only a computed's body is a place where a write cannot mean anything.
 
+## Amendment: where the rule bites
+
+The decision named computeds, and a consumer of this library may never type the word. Three of the
+places it holds are ordinary API surface:
+
+- **a validator's body** — it is evaluated to produce a field's errors, which is a derived value;
+- **a `when` predicate** — the same, for whether a field or a section is in play;
+- **a field claimed while a value is being read** — registering a field is a write, so a control that
+  claims from inside a derived value is refused like any other writer.
+
+Each was correct before this amendment and unstated, which is the same as unhelpful: the error said
+what was forbidden, not where the reader was standing. `MdyComputedWriteError` now names those places
+as examples, and the typed-forms guide says of a validator what it already said of a condition.
+
+One property was verified when this was written and is worth promising rather than leaving to be
+rediscovered: **the guard leaves the form usable.** The read that threw throws again while the cause
+is present, the value stays readable throughout, and once the offending write is gone the form
+behaves exactly as before. An author's mistake costs an exception, not a form that has to be rebuilt.
+
 ## Verification
 
 `packages/core/src/testing/reactivity-contract.ts` carries the case, so every adapter that runs the
@@ -84,7 +103,9 @@ reading a computed, and inside an effect — so a guard that refused too much wo
 
 `packages/core/test/reactivity.test.mjs` covers the vanilla graph directly, including `update()` and
 a write wrapped in `untracked`, and the pre-existing "capabilities never claim a fictitious
-guarantee" case covers the other direction.
+guarantee" case covers the other direction. It also holds the amendment's cases: a validator that
+writes is refused, a `when` predicate that writes is refused, and the form recovers once the write is
+removed.
 
 Remove the enforcement and the contract case fails for the vanilla graph and for the testing harness.
 

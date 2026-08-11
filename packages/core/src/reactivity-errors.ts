@@ -71,7 +71,13 @@ export class MdyComputedWriteError extends Error {
       "[modyra] A signal was written inside a computed. A computed derives a value from its " +
         "inputs; it may run any number of times, or none, so a write from within it is not a " +
         "statement the program can make. Move the write into an effect, or into the code that " +
-        "caused it.",
+        "caused it.\n" +
+        // The word "computed" may appear nowhere in the caller's code: the places a form puts one
+        // are a validator, a condition and a derived value. Naming them is what turns this from a
+        // statement about the graph into a pointer at a line. Examples, not an inventory — a write
+        // in any function the graph evaluates lands here.
+        "You are inside a computed if this happened in a validator, in a `when` condition, or in " +
+        "a value derived from the form — those bodies are evaluated as computeds.",
     );
     this.name = "MdyComputedWriteError";
   }
