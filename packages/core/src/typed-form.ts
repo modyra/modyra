@@ -1133,11 +1133,18 @@ export abstract class MdyTypedFormBase<
       throw new Error(`[modyra] Array "${path}" was not registered`);
     }
     const rx = this._adapter.reactivity;
+    // Built the way a keyed collection's cells are: resolving the field by path on every read.
+    //
+    // A structural change destroys every row's fields and registers them again, and `rows` is
+    // recomputed from the row count — so an operation that keeps the count, `move` above all, used
+    // to hand back the *same* handles pointing at records the engine had already destroyed. They
+    // reported the value the row held before the reorder and wrote into nothing: what a person
+    // typed after dragging a row went nowhere, in the arrangement the guide shows.
     const rows = rx.computed(() =>
       Array.from({ length: manager.rowCount() }, (_, i) =>
         node.item.kind === "field"
-          ? this._buildHandle(`${path}.${i}`)
-          : this._buildHandleTree(node.item.children, `${path}.${i}`),
+          ? this.cellHandle(`${path}.${i}`)
+          : this._buildCellTree(node.item.children, `${path}.${i}`),
       ),
     );
     const errors = this._adapter.errorsFor(path);

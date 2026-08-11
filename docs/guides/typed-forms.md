@@ -385,6 +385,13 @@ form.f.items.errors();                 // array-level errors (e.g. minLength)
 form.getValue().items;                 // Array<{ name: string; qty: number }>
 ```
 
+A structural change — `push`, `insert`, `remove`, `move`, `setAll` — rebuilds the rows it affects, and
+what it rebuilds it rebuilds **clean**: `touched` and `dirty` start again, and the errors that were
+being shown because a field was touched stop being shown. The values are what carry over.
+
+Row handles follow the rows, not the records they were born with, so a handle held across a reorder
+reads the row now at that index and writes into it.
+
 Rendering the rows, in Angular:
 
 ```html
