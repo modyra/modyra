@@ -6,7 +6,7 @@ when you are all-in on Zod, the second for everything else.
 | | `@modyra/zod` | `@modyra/standard-schema` |
 | :-- | :-- | :-- |
 | Schema libraries | Zod ≥3.25 only | Any Standard Schema v1 vendor (Zod ≥3.24, Valibot, ArkType, …) |
-| Field tree | **Derived** from `z.object(...)` — nested objects → groups, `z.array()` → typed field arrays | **Declared by you** with `field()`/`group()`/`array()` |
+| Field tree | **Derived** from `z.object(...)` — nested objects → groups, `z.array()` → typed field arrays, `z.record()` → keyed collections | **Declared by you** with `field()`/`group()`/`array()`/`record()` |
 | Defaults / `required` | Inferred from the schema | Declared in `field()`; schema defaults seed initials when `validate({})` succeeds |
 | Whole-schema rules | Object `.refine()` → cross-field validator | Every issue → form error on its dotted path |
 | Peer dependency | `zod` | none |
