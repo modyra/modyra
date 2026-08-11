@@ -158,3 +158,31 @@ test("reads the same document through the TypeScript parser", () => {
 
   assert.deepEqual(codesOf(messages), expected.map((d) => d.code));
 });
+
+/**
+ * The reconstruction has to build the document JSON builds. `out.__proto__ = value` sets a prototype
+ * and creates no property, so a key the parser judges — or a node's own `node` — either vanished
+ * from the rule's copy or arrived as inheritance, and the editor answered about a document nobody
+ * would ever run.
+ */
+for (const [name, json] of [
+  [
+    "a child named __proto__",
+    String.raw`{"version":3,"schema":{"node":"group","children":{"__proto__":{"node":"field","field":{"kind":"text"}},"ok":{"node":"field","field":{"kind":"text"}}}}}`,
+  ],
+  [
+    "a node whose type would only come from a crafted prototype",
+    String.raw`{"version":3,"schema":{"node":"group","children":{"a":{"__proto__":{"node":"field","field":{"kind":"text"}}}}}}`,
+  ],
+  [
+    "an ordinary document, which must stay silent on both sides",
+    String.raw`{"version":3,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}}}}}`,
+  ],
+]) {
+  test(`the rule and the parser read the same document: ${name}`, () => {
+    // Both sides answer about the same source text: the parser through JSON.parse, the rule through
+    // its reconstruction. Anything else would be this file stating what validity is (ADR 0024).
+    const expected = parseDynamicForm(JSON.parse(json)).diagnostics.map((d) => d.code);
+    assert.deepEqual(codesOf(lint(`const form = ${json};`)), expected);
+  });
+}
