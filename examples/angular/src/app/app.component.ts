@@ -14,6 +14,7 @@ import {
 } from "./sections/design-system-section.component";
 import { DynamicFormSectionComponent } from "./sections/dynamic-form-section.component";
 import { EnterpriseSelectSectionComponent } from "./sections/enterprise-select-section.component";
+import { ConditionalSectionComponent } from "./sections/conditional-section.component";
 import { KeyedRowsSectionComponent } from "./sections/keyed-rows-section.component";
 import { TypedFormSectionComponent } from "./sections/typed-form-section.component";
 import { ZodFormSectionComponent } from "./sections/zod-form-section.component";
@@ -32,6 +33,7 @@ import { ZodFormSectionComponent } from "./sections/zod-form-section.component";
     DynamicFormSectionComponent,
     EnterpriseSelectSectionComponent,
     KeyedRowsSectionComponent,
+    ConditionalSectionComponent,
   ],
   template: `
     <main class="demo-card">
@@ -55,6 +57,8 @@ import { ZodFormSectionComponent } from "./sections/zod-form-section.component";
       <app-enterprise-select-section />
 
       <app-keyed-rows-section />
+
+      <app-conditional-section />
     </main>
   `,
 })

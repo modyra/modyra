@@ -216,3 +216,35 @@ test("a flagged expression stays a rule", () => {
   form.f.code.set("AAA");
   assert.equal(form.getField("code")().valid(), true, "case-insensitive, as written");
 });
+
+/**
+ * A blank field and an empty collection are not the same emptiness.
+ *
+ * `<input minlength>` does not apply to an empty value, and `required` is the rule that refuses one.
+ * A collection is the other way round: `minLength(1)` is how "at least one row" is said, and
+ * exempting `[]` would take away the thing the rule is most often there to do.
+ */
+test("minLength lets a blank field through and still refuses an empty collection", () => {
+  const rule = minLength(2);
+
+  assert.deepEqual(rule(""), [], "blank is required's question, not this one");
+  assert.deepEqual(rule(null), []);
+  assert.equal(rule("a").length, 1, "one character is short");
+  assert.deepEqual(rule("ab"), []);
+
+  assert.equal(minLength(1)([]).length, 1, "an empty collection is short");
+  assert.deepEqual(minLength(1)(["one"]), []);
+});
+
+test("a blank field with a length rule is valid until required says otherwise", () => {
+  const optional = createForm({ note: field("", [minLength(2)]) });
+  assert.equal(optional.state.valid(), true);
+
+  const mandatory = createForm({ note: field("", [required(), minLength(2)]) });
+  assert.equal(mandatory.state.valid(), false, "required is what refuses the blank");
+
+  mandatory.f.note.set("a");
+  assert.equal(mandatory.state.valid(), false, "and one character is still short");
+  mandatory.f.note.set("ab");
+  assert.equal(mandatory.state.valid(), true);
+});

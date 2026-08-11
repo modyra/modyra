@@ -23,11 +23,11 @@ const RENDERERS = [
   },
   {
     name: "plain", port: 4307, command: "node scripts/serve-example.mjs plain 4307",
-    match: { testMatch: ["plain/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts"] },
+    match: { testMatch: ["plain/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts", "conditional/**/*.spec.ts"] },
   },
   {
     name: "lit", port: 4303, command: "node scripts/serve-example.mjs lit 4303",
-    match: { testMatch: ["lit/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts"] },
+    match: { testMatch: ["lit/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts", "conditional/**/*.spec.ts"] },
   },
 ] as const;
 

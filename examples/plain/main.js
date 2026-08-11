@@ -2,7 +2,16 @@
 // explicit light/dark/auto mode, and the live contract verdict for what is on screen.
 import { MDY_PALETTE_MODELS } from "@modyra/core/color-utils";
 import { compileMdyTheme, serializeMdyThemeCss } from "@modyra/core/theme-compiler";
-import { createForm, field as mdyField, group as mdyGroup, record as mdyRecord } from "@modyra/core";
+import {
+  createForm,
+  field as mdyField,
+  group as mdyGroup,
+  maxLength as mdyMaxLength,
+  minLength as mdyMinLength,
+  pattern as mdyPattern,
+  record as mdyRecord,
+  required as mdyRequired,
+} from "@modyra/core";
 import { mountMdyForm, renderField } from "@modyra/plain";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { inspectWidgetDom, portalRootFor } from "@modyra/widgets/testing";
@@ -570,4 +579,64 @@ if (rowsHost && rowsState) {
   // The verdict follows the data, so typing in a cell updates it without a re-render.
   setInterval(reportRows, 250);
   renderRows();
+}
+
+// ─── A section that only counts sometimes ─────────────────────────────────────
+//
+// Two things are on show here, and neither needed a line of rendering code:
+//
+// - the company fields are declared always and are **in play** only while the account is a company.
+//   Out of play they are not validated, not submitted, and what was typed into them is kept — so
+//   switching back and forth loses nothing;
+// - the code field's rules state a length and a shape, and the input carries `maxlength` and
+//   `pattern` because of it. Nothing below writes an attribute.
+
+const conditionalHost = document.querySelector("[data-conditional]");
+const conditionalState = document.querySelector("[data-conditional-state]");
+
+if (conditionalHost && conditionalState) {
+  const account = createForm({
+    kind: mdyField("personal"),
+    company: mdyGroup(
+      {
+        name: mdyField("", [mdyRequired()]),
+        code: mdyField("", [mdyMinLength(2), mdyMaxLength(8), mdyPattern(/^[A-Z]+$/)]),
+      },
+      { when: (_section, form) => form.kind === "company" },
+    ),
+  });
+
+  const fields = [
+    { name: "kind", kind: "select", label: "Account", options: [
+      { value: "personal", label: "Personal" },
+      { value: "company", label: "Company" },
+    ] },
+    { name: "company.name", kind: "text", label: "Company name" },
+    { name: "company.code", kind: "text", label: "Code" },
+  ];
+
+  renderField(conditionalHost, fields[0], account.f.kind);
+  const details = document.createElement("div");
+  details.className = "conditional-details";
+  conditionalHost.append(details);
+  renderField(details, fields[1], account.f.company.name);
+  renderField(details, fields[2], account.f.company.code);
+
+  // The print follows the form, not the events: a choice made in a combobox is a click on an option,
+  // not an `input` on this host, and a state dump wired to events shows the previous answer.
+  account.reactivity.effect(() => {
+    const code = conditionalHost.querySelector('input[id="company.code"]');
+    conditionalState.textContent = JSON.stringify(
+      {
+        valid: account.state.valid(),
+        submitted: Object.keys(account.submitValue()),
+        kept: account.getValue().company,
+        codeCarries: code
+          ? { maxlength: code.getAttribute("maxlength"), pattern: code.getAttribute("pattern") }
+          : null,
+      },
+      null,
+      2,
+    );
+  });
 }

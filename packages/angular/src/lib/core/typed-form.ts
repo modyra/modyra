@@ -12,6 +12,7 @@ import {
   record as coreRecord,
   field as coreField,
   group as coreGroup,
+  type MdyGroupOptions,
   MdyTypedFormBase,
   type MdyTypedFormBaseOptions,
   type MdySubmittedValue,
@@ -158,11 +159,18 @@ export function field<TValue>(
   return coreField(initial, validators, options);
 }
 
-/** Declares a nested group of fields (`address.city` paths on the adapter). */
+/**
+ * Declares a nested group of fields (`address.city` paths on the adapter).
+ *
+ * `options.when` says the whole section is only in play under a condition — see
+ * {@link MdyGroupOptions}. A wrapper that dropped it would make the Angular schema quietly poorer
+ * than the one every other adapter writes.
+ */
 export function group<TChildren extends MdyFormSchema>(
   children: TChildren,
+  options?: MdyGroupOptions,
 ): MdyGroupDescriptor<TChildren> {
-  return coreGroup(children);
+  return coreGroup(children, options);
 }
 
 /** Declares a repeatable array of fields or groups (`items.0.name` paths on the adapter). */

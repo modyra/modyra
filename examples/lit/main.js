@@ -11,7 +11,9 @@ import {
   field,
   group,
   MdyFormController,
+  maxLength,
   minLength,
+  pattern,
   record,
   required,
   serverValidator,
@@ -221,6 +223,15 @@ class SignupApp extends LitElement {
           change nothing a value depends on.
         </p>
         <keyed-rows></keyed-rows>
+
+        <h2>A section that only counts sometimes</h2>
+        <p>
+          The company details are declared like everything else and are <strong>out of play</strong>
+          while the account is personal: not validated, not submitted, and what was typed into them
+          kept. The code carries <code>maxlength</code> and <code>pattern</code> because its rules
+          say so — nothing here writes an attribute.
+        </p>
+        <conditional-section></conditional-section>
       </main>`;
   }
 }
@@ -340,3 +351,55 @@ ${JSON.stringify(this.rows.value().lines, null, 2)}</pre>`;
   }
 }
 customElements.define("keyed-rows", KeyedRows);
+
+/**
+ * A section the form only asks about under a condition, and the attributes nobody wrote.
+ *
+ * `when` is answered by the engine, so this element declares the fields and renders them; nothing
+ * here hides, disables or re-validates anything.
+ */
+class ConditionalSection extends LitElement {
+  account = createLitForm({
+    kind: field("personal"),
+    company: group(
+      {
+        name: field("", [required()]),
+        code: field("", [minLength(2), maxLength(8), pattern(/^[A-Z]+$/)]),
+      },
+      { when: (_section, form) => form.kind === "company" },
+    ),
+  });
+
+  constructor() {
+    super();
+    this._tracker = new MdyFormController(this, [this.account.value, this.account.state.valid]);
+  }
+
+  createRenderRoot() { return this; }
+
+  render() {
+    const code = this.querySelector('input[id="company.code"]');
+    return html`
+      <mdy-select-field
+        .field=${this.account.f.kind}
+        label="Account"
+        .options=${[
+          { value: "personal", label: "Personal" },
+          { value: "company", label: "Company" },
+        ]}
+      ></mdy-select-field>
+      <div class="conditional-details">
+        <mdy-text-field .field=${this.account.f.company.name} label="Company name"></mdy-text-field>
+        <mdy-text-field .field=${this.account.f.company.code} label="Code"></mdy-text-field>
+      </div>
+      <pre class="conditional-state" data-conditional-state>${JSON.stringify({
+        valid: this.account.state.valid(),
+        submitted: Object.keys(this.account.submitValue()),
+        kept: this.account.getValue().company,
+        codeCarries: code
+          ? { maxlength: code.getAttribute("maxlength"), pattern: code.getAttribute("pattern") }
+          : null,
+      }, null, 2)}</pre>`;
+  }
+}
+customElements.define("conditional-section", ConditionalSection);
