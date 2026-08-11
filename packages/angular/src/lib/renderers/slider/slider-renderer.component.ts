@@ -70,10 +70,10 @@ export class MdySliderComponent extends MdyBaseControl<number> {
   readonly max = input<number | null>(null);
 
   protected readonly effectiveMin = computed(
-    () => this.min() ?? this.fieldState().bounds().min ?? 0,
+    () => this.min() ?? this.fieldState().constraints().min ?? 0,
   );
   protected readonly effectiveMax = computed(
-    () => this.max() ?? this.fieldState().bounds().max ?? 100,
+    () => this.max() ?? this.fieldState().constraints().max ?? 100,
   );
   readonly step = input<number>(1);
   readonly showValue = input<boolean>(true);

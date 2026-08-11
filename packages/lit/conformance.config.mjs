@@ -47,4 +47,13 @@ export const mountScoped = (kind) => mount(kind);
  * Declared because a suite that mounts one variant reports full coverage having rendered half the
  * widget — the same shape as the gap the variants exist to close. The names are the config's own.
  */
+/**
+ * This config passes the kit's `rules` and `value` to its fixture.
+ *
+ * Declared rather than assumed: without it the kit cannot tell a renderer that ignores a declared
+ * constraint from a config that never handed it one, and reporting the first when it is the second
+ * would be an accusation the kit cannot support.
+ */
+export const declaresRules = true;
+
 export const variants = { multiselect: ["single", "multi"] };

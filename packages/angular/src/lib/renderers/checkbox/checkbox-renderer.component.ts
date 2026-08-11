@@ -2,12 +2,13 @@ import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component } from "@angular/core";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 
 @Component({
   selector: "mdy-control-checkbox",
   standalone: true,
-  imports: [NgTemplateOutlet, MdyErrorListComponent],
+  imports: [NgTemplateOutlet, MdyErrorListComponent, MdyPartDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: "mdy-renderer mdy-renderer--checkbox",
@@ -24,11 +25,8 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [disabled]="isDisabled()"
         (change)="onChange($event)"
         (blur)="dispatchValueBlur('checkbox')"
-        [attr.aria-invalid]="hasErrors()"
-        [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-label]="controlAriaLabel()"
-        [attr.aria-required]="ariaRequired() || isRequired()"
-        [attr.aria-disabled]="effectiveAriaDisabled()"
+        [mdyPart]="controlPart()"
       />
       <span [class]="widgetContract.parts.indicator.classes.join(' ')" aria-hidden="true"></span>
       <span
@@ -52,6 +50,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
 })
 export class MdyCheckboxComponent extends MdyBaseControl<boolean> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.checkbox;
+  protected override readonly widgetKind = "checkbox";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly fieldId = `mdy-control-checkbox-${MdyBaseControl.nextId()}`;
 

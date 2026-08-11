@@ -646,7 +646,17 @@ export class MdyFormEngine
   }
 
   setDisabled(name: string, disabled: MdySignal<boolean>): void {
-    this._getOrCreate(name).disabled.set(disabled);
+    const rec = this._getOrCreate(name);
+    // A binding cannot put back in play what the schema left out, and finding that out by watching a
+    // control stay grey is the kind of silence this library owes an explanation for.
+    if (MDY_DEV && this._devWarnings && rec.inactive()()) {
+      this._warn(
+        `"${name}" is out of play because a condition in the schema says so, so a control's own ` +
+        "disabled binding cannot change it. The condition is what decides here; the binding decides " +
+        "only while the field is in play.",
+      );
+    }
+    rec.disabled.set(disabled);
   }
 
   /**
@@ -1075,6 +1085,7 @@ export class MdyFormEngine
       this._applySecurity(name, initialValue),
       (v) => [...this._crossErrorsFor(name), ...this._serverErrorsFor(name, v)],
       (v) => this._applySecurity(name, v),
+      (message) => this._warn(`"${name}" ${message}`),
     );
   }
 

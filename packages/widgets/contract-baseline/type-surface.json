@@ -112,7 +112,8 @@
     "engine: MdyFormEngine",
     "item: MdyAnyGroupDescriptor | MdyAnyFieldDescriptor",
     "path: string",
-    "rx: MdyReactivity"
+    "rx: MdyReactivity",
+    "sections?: ReadonlyArray<() => boolean>"
   ],
   "MdyAsyncDraftStorage": [
     "flushed: Promise<void>",
@@ -270,6 +271,10 @@
     "debugName?: string",
     "equal?: MdyEqualityFn<T>"
   ],
+  "MdyCondition": [
+    "holds: (value: unknown, enclosing: Record<string, unknown>) => boolean",
+    "read: () => { readonly value: unknown; readonly enclosing: Record<string, unknown>; }"
+  ],
   "MdyControlOption": [
     "disabled?: boolean",
     "label: string",
@@ -277,6 +282,7 @@
   ],
   "MdyCoreFormOptions": [
     "autoActivate?: boolean",
+    "devWarnings?: boolean",
     "draft?: string | MdyDraftOptions",
     "history?: boolean | { readonly maxEntries?: number; readonly debounceMs?: number; }",
     "reactivity?: MdyReactivity",
@@ -673,9 +679,21 @@
   ],
   "MdyFieldA11yOptions": [
     "autocomplete?: string",
+    "constraints?: MdyFieldConstraints",
     "inputMode?: string",
     "inputType?: string",
+    "kind?: MdyWidgetKind | string",
     "widgetId: string"
+  ],
+  "MdyFieldConstraints": [
+    "inputMode: string | null",
+    "inputType: string | null",
+    "max: number | null",
+    "maxLength: number | null",
+    "min: number | null",
+    "minLength: number | null",
+    "pattern: string | null",
+    "step: number | null"
   ],
   "MdyFieldController": [
     "setReadonly: void",
@@ -683,9 +701,11 @@
   ],
   "MdyFieldControllerOptions": [
     "autocomplete?: string",
+    "constraints?: () => Partial<MdyFieldConstraints>",
     "handle: MdyFieldHandle<TValue>",
     "inputMode?: string",
     "inputType?: string",
+    "kind?: string",
     "readonly?: boolean",
     "widgetId: string"
   ],
@@ -707,7 +727,7 @@
     "payload?: unknown"
   ],
   "MdyFieldHandle": [
-    "bounds: MdySignal<MdyNumericBounds>",
+    "constraints: MdySignal<MdyFieldConstraints>",
     "dirty: MdySignal<boolean>",
     "disabled: MdySignal<boolean>",
     "errors: MdySignal<ReadonlyArray<MdyFieldError>>",
@@ -742,9 +762,11 @@
     "(opaque)"
   ],
   "MdyFieldShellA11yOptions": [
+    "constraints?: MdyFieldConstraints",
     "controlId?: string",
     "descriptionVisible?: boolean",
     "errorsVisible?: boolean",
+    "kind?: string",
     "widgetId: string"
   ],
   "MdyFieldShellFlags": [
@@ -1026,9 +1048,8 @@
   "MdyMultiselectValueIntent": [
     "(opaque)"
   ],
-  "MdyNumericBounds": [
-    "max: number | null",
-    "min: number | null"
+  "MdyNativeAttributes": [
+    "-> Readonly"
   ],
   "MdyObserveCapability": [
     "observe: MdyEffectRef"
@@ -1310,6 +1331,7 @@
     "item: MdyRowNode",
     "path: string",
     "rx: MdyReactivity",
+    "sections?: ReadonlyArray<() => boolean>",
     "warn: (message: string) => void"
   ],
   "MdyRelationAttribute": [
@@ -1644,6 +1666,17 @@
     "idsWhileMounted: ReadonlySet<string>",
     "pokeAfterDispose?: () => void"
   ],
+  "MdyValidatorFacts": [
+    "inputMode?: string",
+    "inputType?: string",
+    "max?: number",
+    "maxLength?: number",
+    "min?: number",
+    "minLength?: number",
+    "pattern?: string",
+    "required?: boolean",
+    "step?: number"
+  ],
   "MdyValueCommit": [
     "\"confirm\"",
     "\"live\""
@@ -1873,6 +1906,11 @@
     "(0) angle: number",
     "-> returns: number"
   ],
+  "applyNativeConstraints": [
+    "(0) element: { setAttribute(name: string, value: string): void; removeAttribute(name: string): void; }",
+    "(1) attributes: MdyNativeAttributes",
+    "-> returns: void"
+  ],
   "applyPart": [
     "(0) node: HTMLElement",
     "(1) part: MdyPartContract",
@@ -2004,6 +2042,12 @@
     "(0) definition: MdyThemeDefinition",
     "-> returns: MdyResolvedTheme"
   ],
+  "composeConditions": [
+    "(0) rx: MdyReactivity",
+    "(1) conditions: readonly MdyCondition[]",
+    "(2) warn?: (message: string) => void",
+    "-> returns: MdySignal<boolean>"
+  ],
   "contrastRatio": [
     "(0) a: string",
     "(1) b: string",
@@ -2044,6 +2088,7 @@
     "(1) initialValue: unknown",
     "(2) extraErrors: (value: unknown) => ReadonlyArray<MdyFieldError>",
     "(3) beforeWrite?: (value: unknown) => unknown",
+    "(4) warn?: (message: string) => void",
     "-> returns: FieldRecord"
   ],
   "createFocusCustodian": [
@@ -2195,6 +2240,14 @@
   "expressionPaths": [
     "(0) expr: MdyExpression",
     "-> returns: readonly string[]"
+  ],
+  "factsOf": [
+    "(0) fn: unknown",
+    "-> returns: MdyValidatorFacts"
+  ],
+  "factsOfAll": [
+    "(0) validators: Iterable<unknown>",
+    "-> returns: ReturnType<typeof mergeFacts>"
   ],
   "field": [
     "(0) initial: MdyWiden<TValue>",
@@ -2479,6 +2532,10 @@
     "(1) options?: MdySnapshotOptions",
     "-> returns: { readonly valid: boolean; readonly pending: boolean; readonly submitting: boolean; readonly submitCount: number; readonly fields: ReadonlyArray<{ readonly path: string; readonly value: unknown; readonly valid: boolean; readonly touched: boolean; readonly dirty: boolean; readonly pending: boolean; readonly errors: readonly string[]; }>; }"
   ],
+  "mergeFacts": [
+    "(0) facts: readonly MdyValidatorFacts[]",
+    "-> returns: { readonly constraints: MdyFieldConstraints; readonly required: boolean; /** True when more than one distinct pattern was declared, so none is offered. */ readonly conflictingPatterns: boolean; }"
+  ],
   "minuteToAngle": [
     "(0) minute: number",
     "-> returns: number"
@@ -2510,6 +2567,16 @@
     "(1) intent: MdyMultiselectValueIntent<T>",
     "(2) keyFor?: (value: T) => string",
     "-> returns: readonly T[]"
+  ],
+  "narrowConstraints": [
+    "(0) rules: MdyFieldConstraints",
+    "(1) narrowing: Partial<MdyFieldConstraints> | undefined",
+    "-> returns: MdyFieldConstraints"
+  ],
+  "nativeConstraintAttributes": [
+    "(0) kind: MdyWidgetKind | string",
+    "(1) constraints: MdyFieldConstraints",
+    "-> returns: MdyNativeAttributes"
   ],
   "normalizeStateLedger": [
     "(0) ledger: Readonly<Record<string, readonly string[]>>",
@@ -2971,6 +3038,11 @@
     "(0) kind: MdyWidgetKind",
     "(1) state: MdyWidgetState",
     "-> returns: boolean"
+  ],
+  "withFacts": [
+    "(0) fn: ValidatorFn<T>",
+    "(1) facts: MdyValidatorFacts",
+    "-> returns: ValidatorFn<T>"
   ],
   "yFromLstar": [
     "(0) lstar: number",

@@ -1,5 +1,6 @@
 import { MdyFormValidatorFn, ValidatorFn } from "./types.js";
 import { MDY_VALUE_CONTRACTS, matchesValueShape, type MdyValueKind } from "./value-contracts.js";
+import { factsOf, mergeFacts, withFacts, type MdyValidatorFacts } from "./validator-facts.js";
 
 /**
  * Built-in pure validator functions.
@@ -9,21 +10,7 @@ import { MDY_VALUE_CONTRACTS, matchesValueShape, type MdyValueKind } from "./val
  * Compose multiple validators with `compose()`.
  */
 
-/**
- * Marker attached to validators that semantically mark a field as required.
- * `mdyForm()` reads it to drive the field's `required` signal (aria-required)
- * without needing a separate flag in the schema.
- */
-export const MDY_MARKS_REQUIRED: unique symbol = Symbol("mdyMarksRequired");
-
-/**
- * Marker carrying the numeric bound a validator enforces.
- *
- * A bound is one fact, and stating it twice — once as a rule, once as an input constraint — is how
- * the two drift apart. A field's state derives its bounds from the validators it already carries,
- * so a control can offer the constraint at the keyboard while the rule stays the authority.
- */
-export const MDY_NUMERIC_BOUND: unique symbol = Symbol("mdyNumericBound");
+export { MDY_MARKS_REQUIRED } from "./validator-facts.js";
 
 /**
  * Whether a start/end pair has both endpoints unset.
@@ -72,7 +59,7 @@ export const required = <T>(message = 'This field is required'): ValidatorFn<T> 
     if (isEmptyRange(value)) return [message];
     return [];
   };
-  return Object.assign(fn, { [MDY_MARKS_REQUIRED]: true });
+  return withFacts(fn, { required: true });
 };
 
 /**
@@ -122,39 +109,43 @@ export const minLength = (
   min: number,
   message?: string,
 ): ValidatorFn<string | readonly unknown[] | null> =>
-  (value) => {
+  withFacts((value) => {
     const len = value?.length ?? 0;
     return len < min
       ? [message ?? `Minimum length is ${min}`]
       : [];
-  };
+  }, { minLength: min });
 
 /** Maximum string/array length. Empty passes, for the reason given on {@link minLength}. */
 export const maxLength = (
   max: number,
   message?: string,
 ): ValidatorFn<string | readonly unknown[] | null> =>
-  (value) => {
+  withFacts((value) => {
     const len = value?.length ?? 0;
     return len > max
       ? [message ?? `Maximum length is ${max}`]
       : [];
-  };
+  }, { maxLength: max });
 
 /** Email format validator */
 export const email = (message = 'Invalid email address'): ValidatorFn<string | null> =>
-  (value) => {
+  withFacts((value) => {
     if (!value) return [];
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(value) ? [] : [message];
-  };
+    // Declared as a type rather than a pattern: `type="email"` brings the right keyboard and the
+    // platform's own idea of an address, which is a better answer than this expression.
+  }, { inputType: "email", inputMode: "email" });
 
 /** RegExp pattern validator */
 export const pattern = (regex: RegExp, message = 'Invalid format'): ValidatorFn<string | null> =>
-  (value) => {
+  withFacts((value) => {
     if (!value) return [];
     return regex.test(value) ? [] : [message];
-  };
+    // `<input pattern>` is anchored and has no flags, so only a source without them can be offered;
+    // a flagged expression stays a rule, which is where it was working already.
+  }, regex.flags === "" ? { pattern: regex.source } : {});
 
 /** Numeric minimum. Empty passes — whether a field may be empty is `required`'s question. */
 export const min = (minimum: number, message?: string): ValidatorFn<number | null> => {
@@ -164,7 +155,7 @@ export const min = (minimum: number, message?: string): ValidatorFn<number | nul
       ? [message ?? `Minimum value is ${minimum}`]
       : [];
   };
-  return Object.assign(fn, { [MDY_NUMERIC_BOUND]: { min: minimum } });
+  return withFacts(fn, { min: minimum });
 };
 
 /** Numeric maximum. Empty passes — whether a field may be empty is `required`'s question. */
@@ -175,7 +166,7 @@ export const max = (maximum: number, message?: string): ValidatorFn<number | nul
       ? [message ?? `Maximum value is ${maximum}`]
       : [];
   };
-  return Object.assign(fn, { [MDY_NUMERIC_BOUND]: { max: maximum } });
+  return withFacts(fn, { max: maximum });
 };
 
 /**
@@ -189,10 +180,10 @@ export const max = (maximum: number, message?: string): ValidatorFn<number | nul
  * the control reads it back through {@link MdyFieldState.bounds}.
  */
 export const integer = (message = 'Enter a whole number'): ValidatorFn<number | null> =>
-  (value) => {
+  withFacts((value) => {
     if (value === null || value === undefined) return [];
     return Number.isInteger(value) ? [] : [message];
-  };
+  }, { step: 1 });
 
 /**
  * Option whitelist: the value must be one of `values` (compared with
@@ -236,20 +227,47 @@ export const eachOneOf = (
 export const compose = <T>(
   ...validators: readonly ValidatorFn<T>[]
 ): ValidatorFn<T> =>
-  (value: T): readonly string[] =>
-    validators.flatMap(v => v(value));
+  withFacts(
+    (value: T): readonly string[] => validators.flatMap(v => v(value)),
+    factsOfComposed(validators),
+  );
 
 /** Same as compose but stops at first failing validator */
 export const composeFirst = <T>(
   ...validators: readonly ValidatorFn<T>[]
 ): ValidatorFn<T> =>
-  (value: T): readonly string[] => {
-    for (const v of validators) {
-      const errors = v(value);
-      if (errors.length > 0) return errors;
-    }
-    return [];
+  withFacts(
+    (value: T): readonly string[] => {
+      for (const v of validators) {
+        const errors = v(value);
+        if (errors.length > 0) return errors;
+      }
+      return [];
+    },
+    factsOfComposed(validators),
+  );
+
+/**
+ * What a combination declares: the sum of its parts.
+ *
+ * Without this a composed rule is opaque — the field it guards reports no constraint and no required
+ * marker, so a control offers nothing and a screen reader is told nothing, while the rules run as
+ * written. A fact stated by a rule survives every way of combining it.
+ */
+function factsOfComposed<T>(validators: readonly ValidatorFn<T>[]): MdyValidatorFacts {
+  const { constraints, required } = mergeFacts(validators.map((fn) => factsOf(fn)));
+  return {
+    ...(required ? { required: true } : {}),
+    ...(constraints.min !== null ? { min: constraints.min } : {}),
+    ...(constraints.max !== null ? { max: constraints.max } : {}),
+    ...(constraints.step !== null ? { step: constraints.step } : {}),
+    ...(constraints.minLength !== null ? { minLength: constraints.minLength } : {}),
+    ...(constraints.maxLength !== null ? { maxLength: constraints.maxLength } : {}),
+    ...(constraints.pattern !== null ? { pattern: constraints.pattern } : {}),
+    ...(constraints.inputType !== null ? { inputType: constraints.inputType } : {}),
+    ...(constraints.inputMode !== null ? { inputMode: constraints.inputMode } : {}),
   };
+}
 
 /**
  * Builds a form-level (cross-field) validator.

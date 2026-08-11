@@ -11,7 +11,9 @@
  * either: the shell already applies the kind's own, and restating them would create a second source
  * of truth.
  */
-import type { MdyFieldError } from "@modyra/core";
+import type { MdyFieldConstraints, MdyFieldError } from "@modyra/core";
+import { NO_CONSTRAINTS } from "@modyra/core";
+import { nativeConstraintAttributes } from "../native-constraints.js";
 import { defaultWidgetIdFactory as idFactory } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
@@ -50,6 +52,18 @@ export interface MdyFieldShellA11yOptions {
    * Defaults to true, for a renderer that always emits the element.
    */
   readonly descriptionVisible?: boolean;
+  /**
+   * The kind whose control this is, so the shell knows which native constraints it can carry.
+   */
+  readonly kind?: string;
+  /**
+   * What the field's rules state, already narrowed by anything the control asks for.
+   *
+   * Here as well as in {@link import("./field-a11y.js").projectFieldA11y} because a renderer takes
+   * its control part from one or the other, and a control's attributes cannot depend on which
+   * projection its renderer happens to use.
+   */
+  readonly constraints?: MdyFieldConstraints;
 }
 
 /** The ids a shell's parts carry, so a renderer can put them on its own elements. */
@@ -93,6 +107,9 @@ export function projectFieldShellA11y(
     control: {
       classes: [],
       attributes: {
+        // What the field's rules state, in the attributes this kind's control can carry. Absent
+        // members are `null`, which is how a part contract says "remove this".
+        ...nativeConstraintAttributes(options.kind ?? "text", options.constraints ?? NO_CONSTRAINTS),
         "aria-invalid": String(hasErrors),
         "aria-required": String(flags.required),
         // Disabled alone, never folded with read-only: a read-only control is reachable, and

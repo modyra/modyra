@@ -495,18 +495,15 @@
         "mdy-error-list",
         "mdy-label",
         "mdy-label__required",
+        "mdy-part",
         "mdy-renderer",
         "mdy-renderer--checkbox",
         "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
-        "aria-describedby",
-        "aria-disabled",
         "aria-hidden",
-        "aria-invalid",
-        "aria-label",
-        "aria-required"
+        "aria-label"
       ],
       "selectors": [
         "mdy-control-checkbox"
@@ -888,18 +885,15 @@
         "mdy-input-suffix",
         "mdy-input-wrapper",
         "mdy-input-wrapper--disabled",
+        "mdy-part",
         "mdy-renderer",
         "mdy-renderer--number",
         "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
-        "aria-describedby",
-        "aria-disabled",
-        "aria-invalid",
         "aria-label",
-        "aria-readonly",
-        "aria-required"
+        "aria-readonly"
       ],
       "selectors": [
         "mdy-control-number"
@@ -1062,18 +1056,15 @@
         "mdy-input-suffix",
         "mdy-input-wrapper",
         "mdy-input-wrapper--disabled",
+        "mdy-part",
         "mdy-renderer",
         "mdy-renderer--text",
         "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
-        "aria-describedby",
-        "aria-disabled",
-        "aria-invalid",
         "aria-label",
-        "aria-readonly",
-        "aria-required"
+        "aria-readonly"
       ],
       "selectors": [
         "mdy-control-text"
@@ -1091,18 +1082,15 @@
         "mdy-input-suffix",
         "mdy-input-wrapper",
         "mdy-input-wrapper--disabled",
+        "mdy-part",
         "mdy-renderer",
         "mdy-renderer--textarea",
         "mdy-renderer--touched",
         "mdy-supporting-text"
       ],
       "aria": [
-        "aria-describedby",
-        "aria-disabled",
-        "aria-invalid",
         "aria-label",
-        "aria-readonly",
-        "aria-required"
+        "aria-readonly"
       ],
       "selectors": [
         "mdy-control-textarea"
@@ -1234,6 +1222,7 @@
         "mdy-error-list",
         "mdy-inline-error-icon",
         "mdy-label__required",
+        "mdy-part",
         "mdy-renderer",
         "mdy-renderer--toggle",
         "mdy-renderer--touched",
@@ -1245,12 +1234,8 @@
       ],
       "aria": [
         "aria-checked",
-        "aria-describedby",
-        "aria-disabled",
         "aria-hidden",
-        "aria-invalid",
-        "aria-label",
-        "aria-required"
+        "aria-label"
       ],
       "selectors": [
         "mdy-control-toggle"

@@ -1,6 +1,6 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
-import { type MdyFieldHandle } from "@modyra/core";
+import { type MdyFieldConstraints, type MdyFieldHandle } from "@modyra/core";
 import { createFieldController, type MdyFieldController } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
 
@@ -19,6 +19,10 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
   declare max?: number;
   declare step?: number;
   protected override readonly widgetKind = "number" as const;
+
+  protected override narrowedConstraints(): Partial<MdyFieldConstraints> {
+    return { min: this.min ?? null, max: this.max ?? null, step: this.step ?? null };
+  }
   private fieldController?: MdyFieldController<number | null>;
 
   override connectedCallback(): void {
@@ -29,6 +33,9 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
       widgetId: this.fieldId,
       handle,
       inputType: "number",
+      kind: "number",
+      // Read on every projection, so a `min` set after the element connected is honoured.
+      constraints: () => ({ min: this.min ?? null, max: this.max ?? null, step: this.step ?? null }),
     });
   }
 
@@ -42,9 +49,6 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
     return html`<input
       id=${this.fieldId}
       type="number"
-      min=${this.min ?? handle.bounds().min ?? nothing}
-      max=${this.max ?? handle.bounds().max ?? nothing}
-      step=${this.step ?? nothing}
       .value=${handle.value() === null ? "" : String(handle.value())}
       ?disabled=${handle.disabled()}
       ?readonly=${handle.readonly()}

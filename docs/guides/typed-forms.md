@@ -161,40 +161,81 @@ un-disable a control the application disabled.
 In a data-only document this already existed and still does — a rule with the `disabled` effect
 targeting a field states the same thing without any code.
 
-## Declaring a constraint once — `bounds`
+## Declaring a constraint once
 
-A numeric range is a rule and an input constraint at the same time. Stated twice — once as a
-validator, once on the control — the two are free to disagree, and nothing checks that they don't:
+A rule and an input constraint are two faces of one fact. Written twice — a validator in the schema,
+an attribute on the control — they are free to disagree, and nothing checks that they don't.
+
+So a rule **declares what it enforces**, and the control offers it:
 
 ```ts
 const form = createForm({
+  code: field("", [required(), minLength(3), maxLength(8), pattern(/^[A-Z]+$/)]),
   quantity: field(0, [integer(), min(0), max(255)]),
 });
-
-form.f.quantity.bounds(); // { min: 0, max: 255 }
 ```
 
-Every renderer's number and slider controls offer that range at the keyboard without being told it
-again. A control may still **narrow** what it offers — `[minValue]` in Angular, the `min` attribute
-in Lit, `min` in a framework-free field config — which changes what this control asks for, never
-what the field accepts.
+```html
+<input minlength="3" maxlength="8" pattern="^[A-Z]+$" aria-required="true">
+<input type="number" min="0" max="255" step="1">
+```
 
-Worth knowing:
+Nothing else was written to make that happen, in any renderer. The rules that have a native
+counterpart are `required`, `min`, `max`, `integer` (a step of one), `minLength`, `maxLength`,
+`pattern` and `email` (which asks for the right keyboard). Everything else — a cross-field
+comparison, a server check, your own predicate — has no attribute to become, and stays exactly what
+it was: a rule that runs.
 
-- Where two rules bound the same field, the **tightest wins**: each was added to exclude something.
-- A bound that is not a finite number is not offered. `min(NaN)` produces no attribute; the rule
-  still runs.
-- `compose(integer(), min(0), max(255))` returns one function, and the bounds inside it are not
-  readable from outside — the field reports nothing rather than something wrong. Pass the validators
-  as a list if you want the control to see them.
-- A slider spans the field's range too, and where neither the rules nor the control say anything it
-  spans what a bare `<input type="range">` assumes.
+You can read the total yourself:
 
-`integer()` is the rule for a field that holds a count, an identifier or a quantity of things: `1.5`
-used to report itself valid and fail wherever the value was finally parsed, with no field to name.
-An unsigned byte is three rules that compose: `compose(integer(), min(0), max(255))`.
+```ts
+form.f.quantity.constraints(); // { min: 0, max: 255, step: 1, minLength: null, … }
+```
 
-## Async validation
+### The boundary: typing, not the model
+
+An attribute constrains what someone can **type**. A value that arrives any other way — a draft
+coming back, a server response, `set()` — is kept whole and judged by the rules:
+
+```ts
+form.f.code.set("far too long for eight characters");
+form.getValue().code;            // unchanged: the model is not repaired behind your back
+form.f.code.valid();             // false
+```
+
+This is the same promise ADR 0029 makes for a value a widget cannot display, and it is what makes
+"declare once" safe: the keyboard is helped, the data is never quietly rewritten.
+
+### What combining rules does
+
+**A fact survives every way of combining it.** `compose()` and `composeFirst()` carry the sum of
+what they combine, so a composed rule is not an opaque one:
+
+```ts
+field("", [compose(required(), maxLength(10))]); // required *and* maxlength="10"
+```
+
+Where two rules bound the same thing the **tightest wins** — each was added to exclude something.
+Two *different* patterns are the one case with no answer: an input carries a single `pattern` and
+their intersection is a rule nobody wrote, so the field offers none, both rules keep running, and
+the library says so in development.
+
+A bound that is not a finite number states nothing an input can carry: `min(NaN)` produces no
+attribute, and its rule still runs.
+
+### From a schema you already have
+
+A Zod schema declares the same facts, and they cross over without being rewritten:
+
+```ts
+createZodForm(z.object({ code: z.string().min(3).max(8) }));
+// → minlength="3" maxlength="8"
+```
+
+Only what has a native counterpart crosses. An exclusive bound (`z.number().gt(10)`) deliberately
+does not: `min="10"` would admit exactly the value the schema refuses.
+
+## Async validation## Async validation
 
 The ergonomic path is `serverValidator()` — you call your own service method,
 the library handles debounce, cancellation, pending, last-wins and timeout:

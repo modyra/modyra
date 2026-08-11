@@ -12,9 +12,12 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { compose, createForm, field, group, integer, max, maxLength, min, required } from "../dist/index.js";
+import { compose, composeFirst, createForm, field, group, integer, max, maxLength, min, minLength, pattern, required } from "../dist/index.js";
 
-const boundsOf = (form, path) => form.getField(path)().bounds();
+const boundsOf = (form, path) => {
+  const { min, max } = form.getField(path)().constraints();
+  return { min, max };
+};
 
 test("a field reports the range its validators state", () => {
   const form = createForm({
@@ -43,15 +46,14 @@ test("the tightest statement wins when two rules bound the same field", () => {
   );
 });
 
-test("a composed validator reports nothing rather than something wrong", () => {
+test("a composed validator carries the sum of what it combines", () => {
   const form = createForm({
     small: field(0, [compose(integer(), min(0), max(255))]),
   });
 
-  // `compose` returns one function, and the bounds inside it are not readable from the outside.
-  // The field reports nothing rather than something wrong: a control offers no constraint, and the
-  // rule still rejects the value.
-  assert.deepEqual(boundsOf(form, "small"), { min: null, max: null });
+  // A fact stated by a rule survives every way of combining it: the composed rule declares the sum
+  // of its parts, so the control offers the range and the field is judged by the same numbers.
+  assert.deepEqual(boundsOf(form, "small"), { min: 0, max: 255 });
 });
 
 test("the bounds follow a field whose rules change", () => {
@@ -133,4 +135,84 @@ test("a bound that is not a finite number is not offered", () => {
 
   // The rule itself still runs — this is about what a control is offered, not about validity.
   assert.equal(form.getField("odd")().valid(), true);
+});
+
+/**
+ * A fact stated by a rule survives every way of combining it.
+ *
+ * This is the property the whole mechanism rests on. Without it `compose(required(), …)` produces a
+ * field that is not marked required — no `aria-required`, nothing for a screen reader — and the
+ * caller has no way to notice.
+ */
+test("composition carries the required marker", () => {
+  const form = createForm({
+    plain: field("", [required()]),
+    composed: field("", [compose(required(), maxLength(10))]),
+    first: field("", [composeFirst(required(), maxLength(10))]),
+    nested: field("", [compose(compose(required()), minLength(2))]),
+  });
+
+  for (const path of ["plain", "composed", "first", "nested"]) {
+    assert.equal(form.getField(path)().required(), true, `${path} lost its marker`);
+  }
+});
+
+test("composition carries every constraint, tightest first", () => {
+  const form = createForm({
+    text: field("", [compose(minLength(2), maxLength(20), maxLength(8))]),
+    number: field(0, [compose(integer(), min(1), max(9))]),
+  });
+
+  const text = form.getField("text")().constraints();
+  assert.equal(text.minLength, 2);
+  assert.equal(text.maxLength, 8, "two ceilings, and the lower one is the one that holds");
+
+  const number = form.getField("number")().constraints();
+  assert.deepEqual(
+    { min: number.min, max: number.max, step: number.step },
+    { min: 1, max: 9, step: 1 },
+  );
+});
+
+test("a rule with no native counterpart declares nothing, and still runs", () => {
+  const form = createForm({
+    even: field(0, [(value) => (value % 2 === 0 ? [] : ["Must be even"])]),
+  });
+
+  assert.deepEqual(form.getField("even")().constraints(), {
+    min: null, max: null, step: null, minLength: null, maxLength: null,
+    pattern: null, inputType: null, inputMode: null,
+  });
+
+  form.f.even.set(3);
+  assert.equal(form.getField("even")().valid(), false, "the rule is untouched by having no facts");
+});
+
+test("two different patterns leave the field with none, and both rules in force", () => {
+  const form = createForm({
+    code: field("", [pattern(/^[A-Z]+$/), pattern(/^.{3}$/)]),
+  });
+
+  assert.equal(
+    form.getField("code")().constraints().pattern,
+    null,
+    "an input carries one pattern, and inventing their intersection would be a rule nobody wrote",
+  );
+
+  form.f.code.set("ABCD");
+  assert.equal(form.getField("code")().valid(), false, "the length rule still refuses it");
+  form.f.code.set("ABC");
+  assert.equal(form.getField("code")().valid(), true, "and both are satisfied together");
+});
+
+test("a flagged expression stays a rule", () => {
+  const form = createForm({ code: field("", [pattern(/^a+$/i)]) });
+
+  assert.equal(
+    form.getField("code")().constraints().pattern,
+    null,
+    "`<input pattern>` has no flags, and offering the source without them would change the rule",
+  );
+  form.f.code.set("AAA");
+  assert.equal(form.getField("code")().valid(), true, "case-insensitive, as written");
 });

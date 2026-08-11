@@ -7,12 +7,30 @@ import { defaultWidgetIdFactory as idFactory } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import type { MdyFieldState } from "./field-types.js";
+import type { MdyFieldConstraints } from "@modyra/core";
+import { NO_CONSTRAINTS } from "@modyra/core";
+import type { MdyWidgetKind } from "../catalog.js";
+import { nativeConstraintAttributes } from "../native-constraints.js";
 
 export interface MdyFieldA11yOptions {
   readonly widgetId: string;
   readonly inputType?: string;
   readonly inputMode?: string;
   readonly autocomplete?: string;
+  /**
+   * The kind whose control this is, so the projection can decide which native constraints it can
+   * carry — a `maxlength` on a number input is ignored by the platform, and a `pattern` on a
+   * textarea likewise.
+   */
+  readonly kind?: MdyWidgetKind | string;
+  /**
+   * What the field's rules state, already narrowed by anything the control itself asks for.
+   *
+   * The projection is where a control's attributes are decided — `type`, `inputmode`, the ARIA set
+   * — so this is where the rules become attributes too. A renderer that had to place them itself
+   * would be a renderer that could forget one, and two of them did.
+   */
+  readonly constraints?: MdyFieldConstraints;
 }
 
 /** Builds the static IDs used by a field widget view. */
@@ -75,6 +93,10 @@ export function projectFieldA11y<TValue>(
       attributes: {
         type: options.inputType ?? "text",
         inputmode: options.inputMode ?? null,
+        // What the field's rules state, in the attributes this kind's control can carry. Absent
+        // members are `null`, which is how a part contract says "remove this" — a rule withdrawn at
+        // runtime must take its attribute with it.
+        ...nativeConstraintAttributes(options.kind ?? options.inputType ?? "text", options.constraints ?? NO_CONSTRAINTS),
         autocomplete: options.autocomplete ?? null,
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),
