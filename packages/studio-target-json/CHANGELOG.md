@@ -1,5 +1,13 @@
 # @modyra/studio-target-json
 
+## 0.5.4
+
+### Patch Changes
+
+- Updated dependencies [992b36d]
+  - @modyra/studio-contract@0.5.4
+  - @modyra/studio-codegen@0.5.1
+
 ## 0.5.3
 
 ### Patch Changes

@@ -1,5 +1,391 @@
 # @modyra/angular
 
+## 0.7.1
+
+### Patch Changes
+
+- 2e29f30: A control mounted before its row is declared now binds when the row arrives.
+
+  Rendering a keyed collection column by column means a cell can reach the DOM before whatever owns
+  the collection has declared its keys. The contract has always said such a control renders empty and
+  binds when the row arrives; in Angular it stayed empty forever, because whether a path is open is
+  answered from the collection's own set — deliberately not a signal, so that writes do not tie
+  unrelated computations to a collection's shape — and a binding that resolved its field once never
+  re-asked.
+
+  `MdyFormAdapter` now carries `fieldNames`, the membership signal the engine already maintained, as an
+  **optional** member: an adapter with no notion of membership has nothing to report, and a binding
+  reads its absence as "membership never changes". No existing adapter has to change. A binding that
+  finds no field depends on it only while it has none, so a bound control is not woken by every
+  registration in the form.
+
+  See ADR 0026, amendment "asking again when the row arrives".
+
+- 2e29f30: A numeric bound is stated once, and the control offers what the rule already says.
+
+  `min()` and `max()` now carry the bound they enforce, and a field reports the range its own
+  validators state through `MdyFieldState.bounds` and `MdyFieldHandle.bounds`. The number control of
+  every renderer offers that range at the keyboard unless the control narrows it: `[minValue]` in
+  Angular, the `min`/`max` attributes in Lit, `min`/`max` in a framework-free field config. Where two
+  rules bound the same field the tightest wins — each was added to exclude something.
+
+  Until now the range had to be written twice, once as a validator and once on the control, and
+  nothing checked that the two agreed. An application that wrote only the validators offered no
+  constraint at all at the keyboard; one that wrote only the control accepted the value and failed on
+  submit.
+
+  Also new: `integer()`, for a field that holds a count, an identifier or a quantity of things — `1.5`
+  used to report itself valid and fail wherever the value was finally parsed, with no field to name.
+  A bounded integer composes: `compose(integer(), min(0), max(255))`.
+
+  `minLength()` and `maxLength()` now accept `string | readonly unknown[] | null`. They already
+  tolerated empty at runtime; the type refused the `string | null` an optional text field actually
+  holds, and forced a cast.
+
+  **Breaking, released as a patch**: nothing depends on this library yet, so the version is kept low
+  deliberately. `MdyFieldHandle` gained a required `bounds` member. Every handle the library produces
+  has one, so reading code is unaffected; code that **constructs a handle by hand** — a test double, a
+  custom adapter — must add `bounds: computed(() => ({ min: null, max: null }))`, or the field state's
+  own `bounds` where it wraps one.
+
+- c47d0ac: A computed derives a value and writes nothing — the rule is now in the reactivity contract.
+
+  The vanilla graph allowed a signal to be written inside a `computed`; another reactivity the engine
+  runs on refuses that outright. So shared code could pass every test on one adapter and throw under
+  another — the cross-framework variation this contract exists to prevent. Nothing in `@modyra/core`
+  or `@modyra/widgets` was doing it, checked across every computed in both.
+
+  Writing a signal while a computed recomputes now throws `MdyComputedWriteError`. `untracked` does not
+  lift the ban — it says "do not depend on what I read", not "this is no longer a computed" — and an
+  **effect** is unaffected: acting on a change is what an effect is for, including one that runs while
+  a computed is being read.
+
+  **Breaking for anyone implementing `MdyReactivity` outside this repository**:
+  `MdyReactivityCapabilities` gains a required `pureComputeds`, so an adapter will not compile until it
+  answers. Report `true` only if the graph actually refuses the write; `false` means it will not
+  notice, and is never permission to do it. The shipped adapters answer: vanilla `true` (it enforces),
+  Angular `true` (Angular enforces it itself), Vue and Solid `false`.
+
+  See ADR 0032.
+
+- 2e29f30: A control rendered outside a form now says which control it is.
+
+  `NG0201: No provider for InjectionToken MDY_FORM_ADAPTER` is true and unhelpful: it names the token,
+  never the control, and the one that escaped the form is exactly the one that has to be found. The
+  error now reads `<mdy-control-text> bound to "email" is outside a form`, and says that a control
+  must be a descendant of `<mdy-form>` — including when it is rendered into an overlay or a dialog
+  body, which is where this usually happens.
+
+- 6921584: A rule declares what it enforces, and the control offers it.
+
+  `maxLength(50)` used to let someone type five hundred characters and hear about it afterwards: the
+  constraint reached the error list and never the input. Only `min`/`max` on numbers had made the
+  crossing, and each renderer wrote those by hand.
+
+  Now every rule with a native counterpart declares it — `required`, `min`, `max`, `integer` (a step of
+  one), `minLength`, `maxLength`, `pattern`, `email` — a field reports the total as
+  `MdyFieldState.constraints` / `MdyFieldHandle.constraints`, and every renderer offers what its kind
+  can carry. The translation lives in `@modyra/widgets` (`nativeConstraintAttributes`), once. A rule
+  with no native counterpart declares nothing and stays exactly what it was.
+
+  **A declared fact now survives composition.** `compose()` and `composeFirst()` carry the sum of what
+  they combine. This fixes a silent defect as old as `compose`: `compose(required(), maxLength(3))`
+  produced a field that was **not marked required** — no `aria-required`, nothing for a screen reader.
+  Where two rules bound the same thing the tightest wins; two different patterns cancel, because an
+  input carries one and their intersection is a rule nobody wrote.
+
+  **A Zod schema crosses over untouched**: `z.string().min(3).max(8)` reaches `minlength`/`maxlength`.
+  Only what has a native counterpart crosses — `z.number().gt(10)` deliberately does not, since
+  `min="10"` would admit exactly the value it refuses.
+
+  **The boundary is the model.** Attributes constrain typing. A value arriving from a draft, a server
+  or `set()` is kept whole and judged by the rules, as ADR 0029 requires of a widget.
+
+  Also in this change:
+
+  - **A conditional section now covers the collections inside it**, rows already declared included.
+    _Out of play if any condition says no_ was written three times and one copy did not know about the
+    others; it is written once now, in `conditions.ts`.
+  - **`createForm` forwards `devWarnings`.** The switch the guides promised for silencing development
+    diagnostics could not be reached from a typed form at all.
+  - New development diagnostics, each silent in the ordinary case: a binding that cannot put back in
+    play what the schema left out, two patterns that cancel each other, and a `when` predicate that
+    gives two answers for the same value.
+
+  `MdyFieldState.bounds`, added in an unreleased changeset, is now `constraints` and carries the whole
+  family. Nothing published ever had it.
+
+  See ADR 0030.
+
+- 6581883: A field name is a path in a schema, so a flattened document mounts into a readable form.
+
+  The dynamic contract carries a nested form as a flat list of fields named by path: a group becomes
+  `shipping.city`, a keyed collection becomes `lines.12.name`. A schema built from those names keyed
+  them literally, which described a form one level deep against a value two levels deep — so the form
+  rendered, accepted typing, and threw `Flat value does not match schema shape` at the first
+  `getValue()` or submit. Every nested document mounted with `@modyra/plain` or React's dynamic form
+  was unreadable; Angular was unaffected, its dynamic component registering declarative controls where
+  a name has always been a path.
+
+  A schema key that spells a path now declares the structure it describes — at the root, inside a
+  group, and inside a collection's item — and two declarations of the same group are one group in
+  either order. A name that would be both a field and a group is refused by name instead of resolved
+  in silence. Only groups are reconstructed: a path cannot say whether `lines.0` was an array row or
+  the record key `"0"`, so a form that must round-trip a list declares `array()` or `record()` itself.
+
+  `assertSafeDynamicFieldNames` is now exported from `@modyra/core`: the rules a name must satisfy —
+  no empty segment, no prototype key, no id delimiter, no name twice — are checked where a field list
+  is turned into a form, in one place rather than per adapter. `@modyra/react`'s dynamic form also
+  stops carrying its own table of empty values and reads the contract's, which is what made a number
+  field there start at `0`: a value `required` could never fail, where every other adapter started it
+  at `null`.
+
+  See ADR 0031.
+
+- cf498d8: A control bound with `[field]` reads the form that handle came from.
+
+  `[field]` names a path, and the state behind that path was resolved against whichever `<mdy-form>`
+  enclosed the control. Two forms on one page — a dialog over a list is the ordinary case — share
+  every path they have in common, so a handle from one form displayed inside the other showed the
+  wrong value and wrote what the user typed into the wrong model, with nothing said about it.
+
+  A handle now carries the form that built it (`handleFormOf`, beside the existing
+  `getFieldHandleOwner`), and a control bound to one reads that form. A `name` binding is unchanged:
+  it has no handle, so the enclosing form is the only thing that could answer.
+
+  The framework-free and Lit renderers were never affected — they are handed a handle and hold no
+  ambient form to confuse it with.
+
+- b048e2c: The devtools panel masks a sensitive field inside a collection, and stops showing dates as `{}`.
+
+  The panel's own rule is that it "must never become the easiest way to shoulder-surf a password":
+  values whose path looks sensitive — `password`, `token`, `secret`, `card`, `cvv`, `ssn`, `iban`, plus
+  whatever `[maskFields]` names — are replaced with `•••` in the table and in the JSON view. The JSON
+  view treated an **array as a leaf**, so it handed back its rows whole: a password inside a collection
+  row was printed in clear, and an `[excludeFields]` path naming a row's field was ignored. The table
+  was right, because it asks by field path; only the view that gets copied into a ticket leaked. Rows
+  are now walked by their indexed path, so one rule answers for both views and a listed path may name
+  `items.0.password`.
+
+  `mdyFormSerialize` (`@modyra/core/serialize`) exists so a `File` does not stringify to `{}` — but
+  rebuilding every object property by property discarded `toJSON`, which made it _lose_ what plain
+  `JSON.stringify` keeps: a `Date` came out `{}`, and so did every domain type that defines `toJSON` to
+  be storable. A value that defines `toJSON` now keeps the answer it already gives, `File` is still
+  described first (it has no `toJSON`, and a polyfill adding one must not change how a file reads), and
+  a value that refers back to itself is described as `[Circular]` instead of exhausting the stack.
+
+- 2e29f30: A select no longer erases a value its options do not contain.
+
+  It used to write `null` into the form the moment the control mounted with an unrecognised value —
+  consistent from the widget's point of view, and destructive from everyone else's. The case that
+  matters is a value that came from outside: an import carrying the name of a category that does not
+  exist yet is exactly what lets a person find the row and fix it, and it disappeared before they saw
+  it.
+
+  The value now stays in the model and is rendered as an option of its own, selected, labelled by the
+  value unless the application supplies a name (`[unknownOptionLabel]` in Angular). A value that
+  matches an option loosely — `"1"` against `1`, as one read from JSON does — is still normalised to
+  the option's own value. Nothing is added while the option list is empty, because options that have
+  not loaded are not a list that refuses the value.
+
+  **A value outside the list is now refused by rules, not by the widget**: pair the field with
+  `oneOf()` if it must be invalid. New in `@modyra/widgets`: `optionsWithUnrecognizedValue`, which is
+  the whole of what the three renderers share here.
+
+  If your application merged the orphan value into the option list to work around this, that code is
+  now redundant — and harmless, since the helper adds nothing when the list already contains the value.
+
+  See ADR 0029.
+
+- 062881c: Two features finished: a condition can cover a whole section, and every option widget shows what it
+  holds.
+
+  **`when` on a section.** `group(children, { when })` asks the question once for a branch instead of
+  repeating one predicate on every leaf under it — which is the work `when` existed to remove. A
+  field's own condition and every section above it are all consulted: the field is in play only while
+  each of them says so, and a section inside a section obeys both. It works the same inside a
+  `record()` or `array()` row, where what the predicate reads is its own row.
+
+  The predicate now receives the form value in **the nested shape the schema declares**, so
+  `form.address.country` reaches a nested sibling. It used to be handed the engine's flat map, which
+  happened to work for top-level keys and for nothing else.
+
+  **A value the options do not contain is shown by every option widget.** The rule left the renderers
+  and moved into the controllers: `createSelectController` and `createMultiselectFieldController`
+  compute the list a renderer paints — the declared options plus every held value they do not name —
+  and expose it as `state.options`. The multiselect now renders a chip for such a value, which is also
+  the only way to take it off; before, the value was held and submitted with nothing on screen.
+
+  **Removed**: `unknownOptionLabel` from the Angular select input list and the Lit select's properties,
+  and the `label` parameter of `optionsWithUnrecognizedValue`. Naming an out-of-list value is done by
+  supplying an option for it — the same code in every renderer and in a data-only document, which a
+  callback could not be.
+
+  See ADR 0029, amendment "the rule belongs to the controller".
+
+- 8d459d8: The published type declarations no longer import a path from inside this repository.
+
+  `modyra-angular.d.ts` declared `import * as … from 'packages/core/dist/i18n'` — a module that exists
+  only in the Modyra workspace. A consumer's build stopped with `TS2307: Cannot find module
+'packages/core/dist/i18n'` on any project that type-checks its dependencies, and the only workaround
+  was a `paths` entry in the consumer's `tsconfig.json` mapping that specifier onto
+  `@modyra/core/i18n`. Every release from 0.2.0 to 0.7.0 shipped it.
+
+  The declarations now name `@modyra/core/localization` and `@modyra/core/i18n`, both published entry
+  points. **If you added that `paths` remap, remove it once you are on this version** — it maps a
+  specifier the package no longer emits.
+
+- 850a463: Six findings from a pre-release audit, closed.
+
+  **One projection decides what a control exposes.** `projectFieldA11y` no longer spells the state and
+  constraint attributes: it asks `projectFieldShellA11y`, which is where a renderer that binds a part
+  reads them. Two projections emitting the same attributes is how they come to disagree — measured
+  identical across all thirteen attributes before and after, so nothing moved but the ownership.
+
+  **A fact no control can act on is no longer carried.** `MdyFieldConstraints.inputType` travelled from
+  `email()` through the whole pipeline and was deliberately dropped at the end: the kind decides what
+  an input _is_, and a rule that could change it would let a validator turn a text field into
+  something else. `email()` keeps asking for the right keyboard (`inputMode`), which is applied.
+
+  **Removed**: `applyNativeConstraints`, exported and used by nobody since the projection took over
+  placing attributes. **Removed**: a dead `native` computed left in the Angular textarea by the same
+  change.
+
+  **Tested directly rather than from above**: `withFacts` (including that it does not tag the function
+  it is given), `factsOf` (including the marker adapters set before this module existed), `mergeFacts`
+  (tightest end, non-finite dropped, two patterns cancelling), `factsOfAll`, `nativeConstraintAttributes`
+  per kind, and `narrowConstraints` — which can tighten an end and never widen one.
+
+  **Documented**: the date and time kinds derive no native constraints yet. Their inputs have
+  `min`/`max`/`step` too, expressed as dates, and that crossing is not done.
+
+  Two more, found by a second sweep of the places the first one did not reach:
+
+  - **`useMdyField` now carries `required` and `constraints`** in `@modyra/react` and `@modyra/preact`.
+    Those adapters exist so the caller writes the input, and their hand-enumerated snapshot did not
+    include what a control needs to draw itself — so a constraint declared once was enforced and
+    unshowable there. Vue, Solid and Svelte hand back the handle and were never affected.
+  - **A condition now has a test for the path a restored draft takes.** `enableDraft` restores through
+    `patchValue`; every conditional case asserted a value typed into the form, so a form resumed from a
+    draft was the one path nothing covered.
+
+  `@modyra/standard-schema` deliberately gains nothing: the Standard Schema V1 contract exposes only
+  `~standard.validate`, so there is no `.min(3)` to read. Zod could cross over because Zod publishes
+  its checks.
+
+  A defect the demos found the moment they showed the feature:
+
+  **`minLength` refused an empty field.** Its own documentation said the opposite, and `<input
+minlength>` agrees with the documentation — the platform does not apply it to an empty value, because
+  that is `required`'s question. A collection is the other way round: `minLength(1)` on an array is how
+  "at least one row" is said, and exempting `[]` would take that away. So the rule now reads: **a blank
+  field is not short, it is empty; an empty collection is short.**
+
+  Also: `@modyra/angular`'s `group()` wrapper dropped the `when` option, which would have made an
+  Angular schema quietly poorer than every other adapter's.
+
+- 90fdf00: Four defects found by attacking what the previous release added, before it ships.
+
+  **`when` was ignored inside `record()` and `array()` rows.** The condition applied to a field
+  declared at the top of a schema and to nothing inside a collection — so a required cell in a table
+  made the form permanently invalid, which is the exact defect `when` exists to end. Rows now honour
+  it, and the predicate's second argument is **what encloses the field**: the row when the field is
+  inside a collection, the form otherwise. A rule written once for the item of a collection cannot name
+  a key or an index, so what it reads is its own row.
+
+  **A select with object option values could swap one entity for another.** The match compared values
+  through `String()`, and every plain object renders as `[object Object]` — so an option list holding
+  entity A "recognised" entity B and wrote A into the model. Matching is now loose only between
+  primitives, which is why it exists (`"1"` from JSON against `1`), and by identity for everything
+  else. This one predates the previous release.
+
+  **A slider's track and its painted fill disagreed.** The attributes took the field's rules while the
+  fill was measured from a hardcoded 0, so a slider bounded at 10 drew its handle in the wrong place.
+  Both now read one range. Sliders in all three renderers also derive their track from the field's
+  bounds when the control does not state one — Angular's `[min]`/`[max]` accept `null` for "not
+  stated", which is what lets the field answer instead.
+
+  **A bound that is not a finite number is no longer offered to a control.** `min(NaN)` produced
+  `min="NaN"` on the input: ignored by the browser, misleading in a diff. The rule still runs.
+
+  Measured while here: 300 controls mounted before their rows are declared cost ~13ms to bind; the
+  number is in the benchmark harness so a change that makes it quadratic is visible.
+
+- 6921584: The conformance kit checks two rules a renderer used to be trusted on.
+
+  **Declared rules reach the control**: a field that states `maxLength(8)` must produce a control that
+  carries it. **A value the options do not contain is shown**: what a widget will not erase, it has to
+  display, or the form holds something nobody can see or remove.
+
+  Both were true of the framework-free renderer and asserted in its own suite, which is exactly the
+  arrangement that lets the next renderer be the one that forgets. The kit found two on its first run:
+  Lit's textarea and Angular's textarea carried no length constraint at all. Both fixed here.
+
+  A config says it forwards the kit's new inputs by exporting `declaresRules = true`; without it both
+  sections report **not run** rather than failing, because the kit cannot tell a renderer that ignores
+  a constraint from a config that never handed it one. The kit reads the control through `parts()`,
+  the one thing every config provides.
+
+- 6921584: No renderer names a constraint attribute any more: the projection places them.
+
+  The previous change had every renderer read the field's rules and write `minlength`, `maxlength`,
+  `pattern`, `min`, `max` and `step` itself. The conformance kit found two renderers that had missed
+  some — and that is the finding, not the two renderers: **if forgetting is possible it eventually
+  happens.**
+
+  `projectFieldA11y` and `projectFieldShellA11y` now emit the native constraints beside the ARIA they
+  already emitted, so a renderer that binds the control part offers them without naming one. A control
+  that wants to offer _less_ than the field accepts says so once through the controller
+  (`constraints`, read rather than captured, so a limit set after mount is honoured) and the projection
+  composes the two: whichever end is tighter, never wider than the rules.
+
+  **All fourteen Angular renderers now bind `[mdyPart]`** — the five that did not are exactly the five
+  where constraints had to be hand-written, which is what made the omission possible. Adding a
+  constraint tomorrow touches the projection and the per-kind translation, and no renderer at all.
+
+  A slider's default 0–100 span moved to the same place: a slider must span something to be drawn, and
+  that is the kind's own default rather than something each renderer remembers.
+
+  Also in this change:
+
+  - `withFacts` no longer tags the function it is given. It is exported, so that function may be one
+    the caller uses elsewhere; it returns a wrapper.
+  - `mergeFacts` combines through a table of strategies, so a fact added tomorrow cannot compile
+    without saying how two of them add up.
+  - `MdyRecordManagerDeps.sections` / `MdyArrayManagerDeps.sections` are `() => boolean`: they were
+    already bound to what they read, and the two-argument shape invented arguments nobody supplied.
+  - The two Angular source audits now read the rule they already stated — a renderer satisfies an ARIA
+    token by naming it _or by naming the directive that supplies it_.
+
+  See ADR 0030, amendment "the projection places the attributes".
+
+- Updated dependencies [2e29f30]
+- Updated dependencies [2e29f30]
+- Updated dependencies [c47d0ac]
+- Updated dependencies [6921584]
+- Updated dependencies [6581883]
+- Updated dependencies [2e29f30]
+- Updated dependencies [cf498d8]
+- Updated dependencies [985685b]
+- Updated dependencies [b048e2c]
+- Updated dependencies [d5c1774]
+- Updated dependencies [94474e4]
+- Updated dependencies [039b0b9]
+- Updated dependencies [2e29f30]
+- Updated dependencies [062881c]
+- Updated dependencies [c090eac]
+- Updated dependencies [992b36d]
+- Updated dependencies [850a463]
+- Updated dependencies [90fdf00]
+- Updated dependencies [df1aaeb]
+- Updated dependencies [c47d0ac]
+- Updated dependencies [2a38f16]
+- Updated dependencies [6921584]
+- Updated dependencies [6921584]
+- Updated dependencies [062881c]
+  - @modyra/core@2.1.1
+  - @modyra/widgets@2.0.2
+
 ## 0.7.0
 
 ### Minor Changes

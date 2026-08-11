@@ -1,5 +1,44 @@
 # @modyra/studio-preview
 
+## 0.5.4
+
+### Patch Changes
+
+- d8d9242: The preview's mock server honours a signal that is already aborted.
+
+  Its wait listened for `abort` but never asked whether the signal had already been aborted when the
+  run started, so a superseded run waited out the whole delay and then **succeeded** — returning a
+  verdict for a value nobody was asking about any more. Aborting halfway already worked.
+
+  The engine discards a late result either way, so a real form never showed the difference. What it
+  cost was the preview's honesty: `ctx.signal` is the contract an async validator is handed, and a
+  stand-in server that ignores it teaches the preview something the runtime does not do. The abort
+  listener is also removed when the wait ends normally, instead of being left registered.
+
+- Updated dependencies [2e29f30]
+- Updated dependencies [2e29f30]
+- Updated dependencies [c47d0ac]
+- Updated dependencies [6921584]
+- Updated dependencies [6581883]
+- Updated dependencies [2e29f30]
+- Updated dependencies [cf498d8]
+- Updated dependencies [985685b]
+- Updated dependencies [b048e2c]
+- Updated dependencies [d5c1774]
+- Updated dependencies [94474e4]
+- Updated dependencies [039b0b9]
+- Updated dependencies [062881c]
+- Updated dependencies [c090eac]
+- Updated dependencies [992b36d]
+- Updated dependencies [850a463]
+- Updated dependencies [90fdf00]
+- Updated dependencies [df1aaeb]
+- Updated dependencies [c47d0ac]
+- Updated dependencies [2a38f16]
+- Updated dependencies [6921584]
+  - @modyra/core@2.1.1
+  - @modyra/studio-contract@0.5.4
+
 ## 0.5.3
 
 ### Patch Changes

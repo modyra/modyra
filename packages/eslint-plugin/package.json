@@ -1,6 +1,6 @@
 {
   "name": "@modyra/eslint-plugin",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "ESLint rules that report the Modyra Dynamic Form Contract's own diagnostics while you write the contract, instead of at runtime.",
   "keywords": [
     "eslint",
@@ -39,7 +39,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "2.1.0"
+    "@modyra/core": "2.1.1"
   },
   "peerDependencies": {
     "eslint": ">=9"

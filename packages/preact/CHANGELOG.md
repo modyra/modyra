@@ -1,5 +1,36 @@
 # @modyra/preact
 
+## 0.5.4
+
+### Patch Changes
+
+- Updated dependencies [2e29f30]
+- Updated dependencies [2e29f30]
+- Updated dependencies [c47d0ac]
+- Updated dependencies [6921584]
+- Updated dependencies [6581883]
+- Updated dependencies [2e29f30]
+- Updated dependencies [cf498d8]
+- Updated dependencies [985685b]
+- Updated dependencies [b048e2c]
+- Updated dependencies [d5c1774]
+- Updated dependencies [94474e4]
+- Updated dependencies [039b0b9]
+- Updated dependencies [2e29f30]
+- Updated dependencies [062881c]
+- Updated dependencies [c090eac]
+- Updated dependencies [992b36d]
+- Updated dependencies [850a463]
+- Updated dependencies [90fdf00]
+- Updated dependencies [df1aaeb]
+- Updated dependencies [c47d0ac]
+- Updated dependencies [2a38f16]
+- Updated dependencies [6921584]
+- Updated dependencies [6921584]
+- Updated dependencies [062881c]
+  - @modyra/core@2.1.1
+  - @modyra/widgets@2.0.2
+
 ## 0.5.3
 
 ### Patch Changes

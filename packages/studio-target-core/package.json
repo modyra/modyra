@@ -1,6 +1,6 @@
 {
   "name": "@modyra/studio-target-core",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Modyra Studio: the Core target scope (plan section 10) — generates a real @modyra/core createForm() definition, implementation stubs, and a submit example from a Studio project.",
   "license": "MIT",

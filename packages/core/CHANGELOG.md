@@ -1,5 +1,511 @@
 # @modyra/core
 
+## 2.1.1
+
+### Patch Changes
+
+- 2e29f30: A control mounted before its row is declared now binds when the row arrives.
+
+  Rendering a keyed collection column by column means a cell can reach the DOM before whatever owns
+  the collection has declared its keys. The contract has always said such a control renders empty and
+  binds when the row arrives; in Angular it stayed empty forever, because whether a path is open is
+  answered from the collection's own set — deliberately not a signal, so that writes do not tie
+  unrelated computations to a collection's shape — and a binding that resolved its field once never
+  re-asked.
+
+  `MdyFormAdapter` now carries `fieldNames`, the membership signal the engine already maintained, as an
+  **optional** member: an adapter with no notion of membership has nothing to report, and a binding
+  reads its absence as "membership never changes". No existing adapter has to change. A binding that
+  finds no field depends on it only while it has none, so a bound control is not woken by every
+  registration in the form.
+
+  See ADR 0026, amendment "asking again when the row arrives".
+
+- 2e29f30: A numeric bound is stated once, and the control offers what the rule already says.
+
+  `min()` and `max()` now carry the bound they enforce, and a field reports the range its own
+  validators state through `MdyFieldState.bounds` and `MdyFieldHandle.bounds`. The number control of
+  every renderer offers that range at the keyboard unless the control narrows it: `[minValue]` in
+  Angular, the `min`/`max` attributes in Lit, `min`/`max` in a framework-free field config. Where two
+  rules bound the same field the tightest wins — each was added to exclude something.
+
+  Until now the range had to be written twice, once as a validator and once on the control, and
+  nothing checked that the two agreed. An application that wrote only the validators offered no
+  constraint at all at the keyboard; one that wrote only the control accepted the value and failed on
+  submit.
+
+  Also new: `integer()`, for a field that holds a count, an identifier or a quantity of things — `1.5`
+  used to report itself valid and fail wherever the value was finally parsed, with no field to name.
+  A bounded integer composes: `compose(integer(), min(0), max(255))`.
+
+  `minLength()` and `maxLength()` now accept `string | readonly unknown[] | null`. They already
+  tolerated empty at runtime; the type refused the `string | null` an optional text field actually
+  holds, and forced a cast.
+
+  **Breaking, released as a patch**: nothing depends on this library yet, so the version is kept low
+  deliberately. `MdyFieldHandle` gained a required `bounds` member. Every handle the library produces
+  has one, so reading code is unaffected; code that **constructs a handle by hand** — a test double, a
+  custom adapter — must add `bounds: computed(() => ({ min: null, max: null }))`, or the field state's
+  own `bounds` where it wraps one.
+
+- c47d0ac: A computed derives a value and writes nothing — the rule is now in the reactivity contract.
+
+  The vanilla graph allowed a signal to be written inside a `computed`; another reactivity the engine
+  runs on refuses that outright. So shared code could pass every test on one adapter and throw under
+  another — the cross-framework variation this contract exists to prevent. Nothing in `@modyra/core`
+  or `@modyra/widgets` was doing it, checked across every computed in both.
+
+  Writing a signal while a computed recomputes now throws `MdyComputedWriteError`. `untracked` does not
+  lift the ban — it says "do not depend on what I read", not "this is no longer a computed" — and an
+  **effect** is unaffected: acting on a change is what an effect is for, including one that runs while
+  a computed is being read.
+
+  **Breaking for anyone implementing `MdyReactivity` outside this repository**:
+  `MdyReactivityCapabilities` gains a required `pureComputeds`, so an adapter will not compile until it
+  answers. Report `true` only if the graph actually refuses the write; `false` means it will not
+  notice, and is never permission to do it. The shipped adapters answer: vanilla `true` (it enforces),
+  Angular `true` (Angular enforces it itself), Vue and Solid `false`.
+
+  See ADR 0032.
+
+- 6921584: A rule declares what it enforces, and the control offers it.
+
+  `maxLength(50)` used to let someone type five hundred characters and hear about it afterwards: the
+  constraint reached the error list and never the input. Only `min`/`max` on numbers had made the
+  crossing, and each renderer wrote those by hand.
+
+  Now every rule with a native counterpart declares it — `required`, `min`, `max`, `integer` (a step of
+  one), `minLength`, `maxLength`, `pattern`, `email` — a field reports the total as
+  `MdyFieldState.constraints` / `MdyFieldHandle.constraints`, and every renderer offers what its kind
+  can carry. The translation lives in `@modyra/widgets` (`nativeConstraintAttributes`), once. A rule
+  with no native counterpart declares nothing and stays exactly what it was.
+
+  **A declared fact now survives composition.** `compose()` and `composeFirst()` carry the sum of what
+  they combine. This fixes a silent defect as old as `compose`: `compose(required(), maxLength(3))`
+  produced a field that was **not marked required** — no `aria-required`, nothing for a screen reader.
+  Where two rules bound the same thing the tightest wins; two different patterns cancel, because an
+  input carries one and their intersection is a rule nobody wrote.
+
+  **A Zod schema crosses over untouched**: `z.string().min(3).max(8)` reaches `minlength`/`maxlength`.
+  Only what has a native counterpart crosses — `z.number().gt(10)` deliberately does not, since
+  `min="10"` would admit exactly the value it refuses.
+
+  **The boundary is the model.** Attributes constrain typing. A value arriving from a draft, a server
+  or `set()` is kept whole and judged by the rules, as ADR 0029 requires of a widget.
+
+  Also in this change:
+
+  - **A conditional section now covers the collections inside it**, rows already declared included.
+    _Out of play if any condition says no_ was written three times and one copy did not know about the
+    others; it is written once now, in `conditions.ts`.
+  - **`createForm` forwards `devWarnings`.** The switch the guides promised for silencing development
+    diagnostics could not be reached from a typed form at all.
+  - New development diagnostics, each silent in the ordinary case: a binding that cannot put back in
+    play what the schema left out, two patterns that cancel each other, and a `when` predicate that
+    gives two answers for the same value.
+
+  `MdyFieldState.bounds`, added in an unreleased changeset, is now `constraints` and carries the whole
+  family. Nothing published ever had it.
+
+  See ADR 0030.
+
+- 6581883: A field name is a path in a schema, so a flattened document mounts into a readable form.
+
+  The dynamic contract carries a nested form as a flat list of fields named by path: a group becomes
+  `shipping.city`, a keyed collection becomes `lines.12.name`. A schema built from those names keyed
+  them literally, which described a form one level deep against a value two levels deep — so the form
+  rendered, accepted typing, and threw `Flat value does not match schema shape` at the first
+  `getValue()` or submit. Every nested document mounted with `@modyra/plain` or React's dynamic form
+  was unreadable; Angular was unaffected, its dynamic component registering declarative controls where
+  a name has always been a path.
+
+  A schema key that spells a path now declares the structure it describes — at the root, inside a
+  group, and inside a collection's item — and two declarations of the same group are one group in
+  either order. A name that would be both a field and a group is refused by name instead of resolved
+  in silence. Only groups are reconstructed: a path cannot say whether `lines.0` was an array row or
+  the record key `"0"`, so a form that must round-trip a list declares `array()` or `record()` itself.
+
+  `assertSafeDynamicFieldNames` is now exported from `@modyra/core`: the rules a name must satisfy —
+  no empty segment, no prototype key, no id delimiter, no name twice — are checked where a field list
+  is turned into a form, in one place rather than per adapter. `@modyra/react`'s dynamic form also
+  stops carrying its own table of empty values and reads the contract's, which is what made a number
+  field there start at `0`: a value `required` could never fail, where every other adapter started it
+  at `null`.
+
+  See ADR 0031.
+
+- 2e29f30: `when` — a field the form only asks about under a condition.
+
+  A schema is static and a form is not. A field belonging to a branch the user did not take is
+  declared like every other one, so a `required()` on it makes the form permanently invalid, with the
+  offending field nowhere on screen to explain why. The workaround was to move the rule out of the
+  schema and rebuild it in application code.
+
+  ```ts
+  reason: field("", [required()], {
+    when: (_value, form) => form.kind === "detailed",
+  });
+  ```
+
+  While the condition is false the field is **inactive** — which is what a disabled field already
+  means here, not a fourth state: not validated by the form, not submitted, and its value kept, so a
+  branch the user leaves and returns to still holds what they typed. The predicate receives the
+  field's own value and the whole form value.
+
+  A control's `[disabled]` binding and the schema's condition are separate inputs to one state, so
+  neither can silently cancel the other.
+
+  Data-only documents already expressed this with a rule of effect `disabled`, and still do.
+
+  **Breaking, released as a patch** — nothing depends on this library yet — and all in surfaces
+  that only the library constructs:
+
+  - `MdyFieldDescriptor`/`MdyAnyFieldDescriptor` gained a required `when` member. Code that builds a
+    descriptor literal instead of calling `field()` must add `when: null`.
+  - `MdyFormRegistry` gained `setInactive`. A hand-written registry must implement it; forwarding to
+    nothing is a valid implementation for a registry with no notion of conditional fields.
+
+- cf498d8: A control bound with `[field]` reads the form that handle came from.
+
+  `[field]` names a path, and the state behind that path was resolved against whichever `<mdy-form>`
+  enclosed the control. Two forms on one page — a dialog over a list is the ordinary case — share
+  every path they have in common, so a handle from one form displayed inside the other showed the
+  wrong value and wrote what the user typed into the wrong model, with nothing said about it.
+
+  A handle now carries the form that built it (`handleFormOf`, beside the existing
+  `getFieldHandleOwner`), and a control bound to one reads that form. A `name` binding is unchanged:
+  it has no handle, so the enclosing form is the only thing that could answer.
+
+  The framework-free and Lit renderers were never affected — they are handed a handle and hold no
+  ambient form to confuse it with.
+
+- 985685b: A field holding `NaN` is no longer valid, and `valueShape` is public.
+
+  `NaN` is the value every comparison lets through: `NaN < 0` is false, `NaN > 9` is false, and it is
+  neither null nor blank. A number field holding one therefore reported itself **valid** — and
+  `JSON.stringify` writes `NaN` as `null`, so a form that declared `required()` said it was fine and
+  sent nothing at all. That is the worst of both answers, and it was reachable from a server response,
+  a restored draft or a scripted `set()`.
+
+  `required()` now refuses it — there is no answer there — and `min()`/`max()` refuse it too, because a
+  value that cannot be compared is within no bound. A field with no rule keeps whatever it is given:
+  the model is still not repaired behind anyone's back.
+
+  **`valueShape` is now exported.** A data-only document has always had it applied automatically, so a
+  `number` field refuses a string and a `text` field refuses `42`; a typed schema could not even ask
+  for it. TypeScript refuses the wrong type at compile time, but a value arriving from a server, a
+  draft or a cast does not pass through TypeScript — and this is the rule for that.
+
+  Also filed, not fixed: **a field the form is not asking about still paints as failing** (finding T in
+  `docs/contract-gaps.md`). A disabled field keeps its own verdict and every renderer shows it, while
+  the form reports itself valid — so a conditional section of required fields is a block of red boxes
+  for something nobody is being asked. `invalid` is a declared state of every kind, asserted by a
+  139-pair matrix and carried by the committed screenshots, so changing what it means beside `disabled`
+  is a contract change rather than a patch.
+
+- b048e2c: The devtools panel masks a sensitive field inside a collection, and stops showing dates as `{}`.
+
+  The panel's own rule is that it "must never become the easiest way to shoulder-surf a password":
+  values whose path looks sensitive — `password`, `token`, `secret`, `card`, `cvv`, `ssn`, `iban`, plus
+  whatever `[maskFields]` names — are replaced with `•••` in the table and in the JSON view. The JSON
+  view treated an **array as a leaf**, so it handed back its rows whole: a password inside a collection
+  row was printed in clear, and an `[excludeFields]` path naming a row's field was ignored. The table
+  was right, because it asks by field path; only the view that gets copied into a ticket leaked. Rows
+  are now walked by their indexed path, so one rule answers for both views and a listed path may name
+  `items.0.password`.
+
+  `mdyFormSerialize` (`@modyra/core/serialize`) exists so a `File` does not stringify to `{}` — but
+  rebuilding every object property by property discarded `toJSON`, which made it _lose_ what plain
+  `JSON.stringify` keeps: a `Date` came out `{}`, and so did every domain type that defines `toJSON` to
+  be storable. A value that defines `toJSON` now keeps the answer it already gives, `File` is still
+  described first (it has no `toJSON`, and a polyfill adding one must not change how a file reads), and
+  a value that refers back to itself is described as `[Circular]` instead of exhausting the stack.
+
+- d5c1774: A row handle follows the reorder, instead of the record it was born with.
+
+  `form.f.items.rows()` is recomputed from the row count, and a structural change destroys every row's
+  fields and registers them again. An operation that keeps the count — `move` above all — therefore
+  handed back **the same handle objects, pointing at records the engine had already destroyed**.
+
+  The consequence was not cosmetic. The arrangement the guide shows binds `rows()[i]` to a control, so
+  after a drag the control displayed the value the row held _before_ the move, and what the user typed
+  into it went into a destroyed record: the model never changed, and nothing said so.
+
+  Row handles are now built the way a keyed collection's cells already were — resolving the field by
+  path on every read — which is what makes a handle survive a rebuild by construction. Measured
+  unchanged on the benchmarks and the form-scale budgets.
+
+  `record()` was never affected: its cells have resolved by path since they existed, which is why
+  sorting the demo's keyed table has always been safe.
+
+- 94474e4: A field a schema declared is no longer destroyed by the control that showed it.
+
+  A renderer claims a field when it mounts a control and releases it when that control is destroyed —
+  an `@if` closing, a wizard step leaving, a tab switching. The engine took the last release as
+  permission to delete the field, and then:
+
+  ```js
+  form.fieldNames(); // the field is gone
+  form.getValue(); // throws: "Flat value does not match schema shape"
+  form.state.valid(); // true — nothing left to fail
+  ```
+
+  A form that crashes on read and calls itself valid, from an arrangement every application has.
+
+  The engine already refused to do this inside a keyed collection, and its reason applies one level
+  out: _the field belongs to the row, not to the controls that happen to be showing it._ A field a
+  schema declared belongs to the schema. It is now recorded as owned — by the typed form for its
+  fields and groups, by an array manager for the leaves of a row — and a control releasing its claim
+  releases the showing of the field, never the field.
+
+  **A field a control invented still dies with it.** In the declarative mode `name="adhoc"` is the only
+  place a field is ever mentioned, so the control is its owner; making those immortal would fill a
+  long-lived form with ghosts. That case is asserted alongside the others.
+
+  Only Angular could reach the defect in practice — the framework-free and Lit renderers never call
+  `removeField` — but the cause was in the engine, and so is the fix.
+
+- 039b0b9: A theme's `selector` and `model` are validated, like its `seed` and `name` already were.
+
+  `compileMdyTheme` refuses a seed that is not a colour and a name that is not an identifier, and
+  derives the default selector from that validated name. An **explicit** `selector` went in unchecked
+  and is interpolated into the generated stylesheet six times, so one closing brace ended the rule and
+  everything after it became CSS the theme's author never wrote:
+
+  ```
+  @layer mdy.themes {
+    } body { display:none } .x { {
+  ```
+
+  `@modyra/core/theme-compiler` is a public subpath with no callers inside the repository — it exists
+  to be used from outside, and the obvious use is compiling a theme per tenant, where the colour and
+  the selector come from data. There that was persistent CSS injection.
+
+  A selector may no longer contain `{`, `}`, `;`, `@` or a comment sequence: each of those leaves the
+  position a selector occupies. Everything a theme actually uses is unaffected — `.acme`, `#app`,
+  `:root`, `[data-tenant="acme"]`, comma-separated lists, combinators — and the CSS generated for an
+  unchanged theme is byte-for-byte what it was. This keeps interpolated text inside its position; it
+  does not decide which selectors a caller should accept from someone else.
+
+  An unknown `model` now says so and lists the models that exist, instead of arriving as
+  `TypeError: Cannot read properties of undefined (reading 'light')` three calls further down.
+
+- 062881c: Two features finished: a condition can cover a whole section, and every option widget shows what it
+  holds.
+
+  **`when` on a section.** `group(children, { when })` asks the question once for a branch instead of
+  repeating one predicate on every leaf under it — which is the work `when` existed to remove. A
+  field's own condition and every section above it are all consulted: the field is in play only while
+  each of them says so, and a section inside a section obeys both. It works the same inside a
+  `record()` or `array()` row, where what the predicate reads is its own row.
+
+  The predicate now receives the form value in **the nested shape the schema declares**, so
+  `form.address.country` reaches a nested sibling. It used to be handed the engine's flat map, which
+  happened to work for top-level keys and for nothing else.
+
+  **A value the options do not contain is shown by every option widget.** The rule left the renderers
+  and moved into the controllers: `createSelectController` and `createMultiselectFieldController`
+  compute the list a renderer paints — the declared options plus every held value they do not name —
+  and expose it as `state.options`. The multiselect now renders a chip for such a value, which is also
+  the only way to take it off; before, the value was held and submitted with nothing on screen.
+
+  **Removed**: `unknownOptionLabel` from the Angular select input list and the Lit select's properties,
+  and the `label` parameter of `optionsWithUnrecognizedValue`. Naming an out-of-list value is done by
+  supplying an option for it — the same code in every renderer and in a data-only document, which a
+  callback could not be.
+
+  See ADR 0029, amendment "the rule belongs to the controller".
+
+- c090eac: An array shrinks as well as grows, so undo stops leaving a row behind and a draft stops resurrecting one.
+
+  The engine writes flat paths, and a field absent from a whole-value write is set to `null` rather
+  than removed — it cannot know a path belongs to a row that should cease to exist. `onReplace` exists
+  for that: a whole-value write hands each collection the paths it carried, so a row it does not
+  mention is gone. A keyed collection implemented it; an indexed one did not, and reconciled on the
+  engine's list of field _names_, which a restore never changes.
+
+  Two user-visible failures came from it. Undoing a `push` left the row in place with its fields at
+  `null` and killed the redo — the restored value no longer matched the snapshot that was asked for, so
+  the history recorded it as a fresh edit — which lost what the user had typed and left a row they had
+  not created. And a draft saved after deleting a row brought that row back on the next visit, carrying
+  its seeded value: real data the user could submit without noticing.
+
+  `MdyPathGate.isOpen` is now **optional**. A collection that does not govern existence omits it —
+  nothing below the prefix is refused, a control mounting still creates the field, and the field stays
+  its owner's to remove — and registers only to hear the shape of a whole-value write. Pruning is
+  restricted to whole-value writes: a draft that excludes a key, a patch that names one field, or a
+  cell being typed into says nothing about how many rows there are and prunes nothing.
+
+  See ADR 0026, amendment "an indexed collection states its shape without governing existence".
+
+- 992b36d: An expression has a bottom, so a deep document is reported instead of taking the process down.
+
+  Every recursive part of the dynamic contract was bounded — schema depth 8, 500 nodes, layout depth 6,
+  100 initial rows, 256 characters of pattern — except the expression tree. `JSON.parse` walks deeper
+  than the parser did, so a 52 KB document nesting `and` two thousand levels deep arrived intact and
+  `parseDynamicForm` died on it with `RangeError: Maximum call stack size exceeded`, where the contract
+  promises a diagnostic. An expression handed over as an object graph could also carry a cycle, which
+  spun the same way in `validateExpression` and `expressionPaths`.
+
+  An expression now nests at most `MDY_MAX_EXPRESSION_DEPTH` (32) levels, exported from `@modyra/core`.
+  Past it, validation reports a problem like any other malformed shape, path collection stops, and
+  evaluation returns what an unreadable rule already returns — `true`, which keeps a field visible and
+  fires no error. A cycle meets the bottom rather than spinning. A real condition is three or four
+  levels deep, so nothing an author writes is affected.
+
+  `@modyra/studio-contract` holds the same bound: a deeper condition raises `ExpressionTooDeepError`,
+  which its compile step reports as `EXPRESSION_TOO_DEEP` rather than as a reference to a missing
+  field, and `@modyra/studio-codegen`'s compiler refuses it too — the parity ADR 0007 requires between
+  the interpreter and the generator.
+
+  See ADR 0007, amendment "inert includes finite".
+
+- 850a463: Six findings from a pre-release audit, closed.
+
+  **One projection decides what a control exposes.** `projectFieldA11y` no longer spells the state and
+  constraint attributes: it asks `projectFieldShellA11y`, which is where a renderer that binds a part
+  reads them. Two projections emitting the same attributes is how they come to disagree — measured
+  identical across all thirteen attributes before and after, so nothing moved but the ownership.
+
+  **A fact no control can act on is no longer carried.** `MdyFieldConstraints.inputType` travelled from
+  `email()` through the whole pipeline and was deliberately dropped at the end: the kind decides what
+  an input _is_, and a rule that could change it would let a validator turn a text field into
+  something else. `email()` keeps asking for the right keyboard (`inputMode`), which is applied.
+
+  **Removed**: `applyNativeConstraints`, exported and used by nobody since the projection took over
+  placing attributes. **Removed**: a dead `native` computed left in the Angular textarea by the same
+  change.
+
+  **Tested directly rather than from above**: `withFacts` (including that it does not tag the function
+  it is given), `factsOf` (including the marker adapters set before this module existed), `mergeFacts`
+  (tightest end, non-finite dropped, two patterns cancelling), `factsOfAll`, `nativeConstraintAttributes`
+  per kind, and `narrowConstraints` — which can tighten an end and never widen one.
+
+  **Documented**: the date and time kinds derive no native constraints yet. Their inputs have
+  `min`/`max`/`step` too, expressed as dates, and that crossing is not done.
+
+  Two more, found by a second sweep of the places the first one did not reach:
+
+  - **`useMdyField` now carries `required` and `constraints`** in `@modyra/react` and `@modyra/preact`.
+    Those adapters exist so the caller writes the input, and their hand-enumerated snapshot did not
+    include what a control needs to draw itself — so a constraint declared once was enforced and
+    unshowable there. Vue, Solid and Svelte hand back the handle and were never affected.
+  - **A condition now has a test for the path a restored draft takes.** `enableDraft` restores through
+    `patchValue`; every conditional case asserted a value typed into the form, so a form resumed from a
+    draft was the one path nothing covered.
+
+  `@modyra/standard-schema` deliberately gains nothing: the Standard Schema V1 contract exposes only
+  `~standard.validate`, so there is no `.min(3)` to read. Zod could cross over because Zod publishes
+  its checks.
+
+  A defect the demos found the moment they showed the feature:
+
+  **`minLength` refused an empty field.** Its own documentation said the opposite, and `<input
+minlength>` agrees with the documentation — the platform does not apply it to an empty value, because
+  that is `required`'s question. A collection is the other way round: `minLength(1)` on an array is how
+  "at least one row" is said, and exempting `[]` would take that away. So the rule now reads: **a blank
+  field is not short, it is empty; an empty collection is short.**
+
+  Also: `@modyra/angular`'s `group()` wrapper dropped the `when` option, which would have made an
+  Angular schema quietly poorer than every other adapter's.
+
+- 90fdf00: Four defects found by attacking what the previous release added, before it ships.
+
+  **`when` was ignored inside `record()` and `array()` rows.** The condition applied to a field
+  declared at the top of a schema and to nothing inside a collection — so a required cell in a table
+  made the form permanently invalid, which is the exact defect `when` exists to end. Rows now honour
+  it, and the predicate's second argument is **what encloses the field**: the row when the field is
+  inside a collection, the form otherwise. A rule written once for the item of a collection cannot name
+  a key or an index, so what it reads is its own row.
+
+  **A select with object option values could swap one entity for another.** The match compared values
+  through `String()`, and every plain object renders as `[object Object]` — so an option list holding
+  entity A "recognised" entity B and wrote A into the model. Matching is now loose only between
+  primitives, which is why it exists (`"1"` from JSON against `1`), and by identity for everything
+  else. This one predates the previous release.
+
+  **A slider's track and its painted fill disagreed.** The attributes took the field's rules while the
+  fill was measured from a hardcoded 0, so a slider bounded at 10 drew its handle in the wrong place.
+  Both now read one range. Sliders in all three renderers also derive their track from the field's
+  bounds when the control does not state one — Angular's `[min]`/`[max]` accept `null` for "not
+  stated", which is what lets the field answer instead.
+
+  **A bound that is not a finite number is no longer offered to a control.** `min(NaN)` produced
+  `min="NaN"` on the input: ignored by the browser, misleading in a diff. The rule still runs.
+
+  Measured while here: 300 controls mounted before their rows are declared cost ~13ms to bind; the
+  number is in the benchmark harness so a change that makes it quadratic is visible.
+
+- df1aaeb: The purity error names where you are, and the guide says of a validator what it said of a condition.
+
+  Writing a signal inside a computed is refused (ADR 0032), and the message said so — to someone whose
+  code contains no `computed`. The three places this library puts one are ordinary API surface: a
+  validator's body, a `when` predicate, and a field claimed while a value is being read. The error now
+  names them as examples, so the reader can go from the exception to the line.
+
+  `docs/guides/typed-forms.md` said a `when` predicate must be a pure function of its arguments and
+  said nothing of the kind about validators, which answer to the same rule. It does now — including
+  what to do instead (an effect that watches the field), and the property verified while writing this:
+  the guard leaves the form usable. The read that threw throws again while the cause is there, the
+  value stays readable, and the form behaves exactly as before once the write is gone.
+
+  Also fixed: a duplicated `## Async validation` heading in the same guide.
+
+- c47d0ac: The library comparison stops claiming a feature no competitor has.
+
+  `docs/guides/comparison-form-libraries.md` marked "keyed collections" ✗ for every other library,
+  Angular included. Angular has `FormRecord`: a collection with dynamic keys, added and removed at
+  runtime. The row now reads `~` for Angular and says what is actually different — `FormRecord` has no
+  way to rename a key while keeping the control's value and state — with the API cited.
+
+  A row was added for the property that matters in a long table and is easy to miss in a feature list:
+  who decides that a row exists. react-hook-form's own documentation says `useFieldArray` "relies on
+  inputs being mounted and unmounted to manage its internal state"; in Modyra a row exists because it
+  was declared, so a row scrolled off screen keeps its value and still counts against validity.
+
+  A comparison table is a claim about other people's work. This one was wrong in our favour, which is
+  the worse direction.
+
+- 2a38f16: `MdyGroupOptions` is exported, so `group(children, { when })` can be typed by name.
+
+  The guide's new sections are executed rather than asserted: `docs/examples/typed-forms/` now runs
+  the conditional field, the conditional section with its composition, a predicate reading a nested
+  sibling, and every trap listed under `bounds` — the tightest bound winning, a `compose()` hiding its
+  own, and a non-finite bound being ignored while its rule still runs.
+
+- 6921584: No renderer names a constraint attribute any more: the projection places them.
+
+  The previous change had every renderer read the field's rules and write `minlength`, `maxlength`,
+  `pattern`, `min`, `max` and `step` itself. The conformance kit found two renderers that had missed
+  some — and that is the finding, not the two renderers: **if forgetting is possible it eventually
+  happens.**
+
+  `projectFieldA11y` and `projectFieldShellA11y` now emit the native constraints beside the ARIA they
+  already emitted, so a renderer that binds the control part offers them without naming one. A control
+  that wants to offer _less_ than the field accepts says so once through the controller
+  (`constraints`, read rather than captured, so a limit set after mount is honoured) and the projection
+  composes the two: whichever end is tighter, never wider than the rules.
+
+  **All fourteen Angular renderers now bind `[mdyPart]`** — the five that did not are exactly the five
+  where constraints had to be hand-written, which is what made the omission possible. Adding a
+  constraint tomorrow touches the projection and the per-kind translation, and no renderer at all.
+
+  A slider's default 0–100 span moved to the same place: a slider must span something to be drawn, and
+  that is the kind's own default rather than something each renderer remembers.
+
+  Also in this change:
+
+  - `withFacts` no longer tags the function it is given. It is exported, so that function may be one
+    the caller uses elsewhere; it returns a wrapper.
+  - `mergeFacts` combines through a table of strategies, so a fact added tomorrow cannot compile
+    without saying how two of them add up.
+  - `MdyRecordManagerDeps.sections` / `MdyArrayManagerDeps.sections` are `() => boolean`: they were
+    already bound to what they read, and the two-argument shape invented arguments nobody supplied.
+  - The two Angular source audits now read the rule they already stated — a renderer satisfies an ARIA
+    token by naming it _or by naming the directive that supplies it_.
+
+  See ADR 0030, amendment "the projection places the attributes".
+
 ## 2.1.0
 
 ### Minor Changes
