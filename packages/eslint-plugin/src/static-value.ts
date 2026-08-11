@@ -120,7 +120,17 @@ export const evaluate = (input: EsNode | undefined): unknown => {
         if (key === undefined) return UNKNOWN;
         const value = evaluate(asNode(property["value"]));
         if (isUnknown(value)) return UNKNOWN;
-        out[key] = value;
+        // Defined rather than assigned, because assignment is not how JSON builds an object and the
+        // document is JSON at runtime: `out.__proto__ = v` sets the prototype and creates no
+        // property at all, so the key either vanishes from the reconstruction or arrives as
+        // inheritance. Either way the rule would be reading a different document than the one the
+        // parser reads, which is the one thing an author-time check may not do (ADR 0024).
+        Object.defineProperty(out, key, {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true,
+        });
       }
       return out;
     }
