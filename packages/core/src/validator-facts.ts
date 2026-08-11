@@ -41,9 +41,13 @@ export interface MdyFieldConstraints {
   readonly maxLength: number | null;
   /** Source of a regular expression, as `<input pattern>` spells it. */
   readonly pattern: string | null;
-  /** `<input type>` where a rule implies one, e.g. `email()`. */
-  readonly inputType: string | null;
-  /** `<input inputmode>` where a rule implies one. */
+  /**
+   * `<input inputmode>` where a rule implies one, e.g. `email()` asking for the address keyboard.
+   *
+   * There is deliberately no `inputType` beside it: **the kind decides what the input is**, and a
+   * rule that could change it would let a validator turn a text field into a colour picker. A rule
+   * that wants a different control asks for a different kind.
+   */
   readonly inputMode: string | null;
 }
 
@@ -56,7 +60,6 @@ export interface MdyValidatorFacts {
   readonly minLength?: number;
   readonly maxLength?: number;
   readonly pattern?: string;
-  readonly inputType?: string;
   readonly inputMode?: string;
 }
 
@@ -68,7 +71,6 @@ export const NO_CONSTRAINTS: MdyFieldConstraints = {
   minLength: null,
   maxLength: null,
   pattern: null,
-  inputType: null,
   inputMode: null,
 };
 
@@ -131,7 +133,6 @@ export function mergeFacts(facts: readonly MdyValidatorFacts[]): {
     min: null, max: null, step: null, minLength: null, maxLength: null,
   };
   let required = false;
-  let inputType: string | null = null;
   let inputMode: string | null = null;
   const patterns = new Set<string>();
 
@@ -146,7 +147,6 @@ export function mergeFacts(facts: readonly MdyValidatorFacts[]): {
       numbers[key] = held === null ? stated : COMBINE[key](held, stated);
     }
     if (fact.pattern !== undefined) patterns.add(fact.pattern);
-    if (fact.inputType !== undefined) inputType ??= fact.inputType;
     if (fact.inputMode !== undefined) inputMode ??= fact.inputMode;
   }
 
@@ -157,7 +157,6 @@ export function mergeFacts(facts: readonly MdyValidatorFacts[]): {
     constraints: {
       ...numbers,
       pattern: conflictingPatterns ? null : [...patterns][0] ?? null,
-      inputType,
       inputMode,
     },
   };

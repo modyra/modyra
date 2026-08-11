@@ -687,7 +687,6 @@
   ],
   "MdyFieldConstraints": [
     "inputMode: string | null",
-    "inputType: string | null",
     "max: number | null",
     "maxLength: number | null",
     "min: number | null",
@@ -1668,7 +1667,6 @@
   ],
   "MdyValidatorFacts": [
     "inputMode?: string",
-    "inputType?: string",
     "max?: number",
     "maxLength?: number",
     "min?: number",
@@ -1905,11 +1903,6 @@
   "angleToMinute": [
     "(0) angle: number",
     "-> returns: number"
-  ],
-  "applyNativeConstraints": [
-    "(0) element: { setAttribute(name: string, value: string): void; removeAttribute(name: string): void; }",
-    "(1) attributes: MdyNativeAttributes",
-    "-> returns: void"
   ],
   "applyPart": [
     "(0) node: HTMLElement",

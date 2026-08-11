@@ -8,9 +8,8 @@ import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import type { MdyFieldState } from "./field-types.js";
 import type { MdyFieldConstraints } from "@modyra/core";
-import { NO_CONSTRAINTS } from "@modyra/core";
 import type { MdyWidgetKind } from "../catalog.js";
-import { nativeConstraintAttributes } from "../native-constraints.js";
+import { projectFieldShellA11y } from "./shell-a11y.js";
 
 export interface MdyFieldA11yOptions {
   readonly widgetId: string;
@@ -73,7 +72,6 @@ export function projectFieldA11y<TValue>(
 } {
   const { inputId, labelId, descriptionId, errorId } = fieldPartIds(options.widgetId);
   const hasErrors = errors.length > 0;
-  const describedBy = hasErrors ? errorId : descriptionId;
 
   return {
     root: {
@@ -91,28 +89,28 @@ export function projectFieldA11y<TValue>(
       id: inputId,
       classes: [],
       attributes: {
+        // What the control is, and what this projection alone knows: the kind's input type, the
+        // autocomplete a caller asked for, and the two native flags.
         type: options.inputType ?? "text",
-        inputmode: options.inputMode ?? null,
-        // What the field's rules state, in the attributes this kind's control can carry. Absent
-        // members are `null`, which is how a part contract says "remove this" — a rule withdrawn at
-        // runtime must take its attribute with it.
-        ...nativeConstraintAttributes(options.kind ?? options.inputType ?? "text", options.constraints ?? NO_CONSTRAINTS),
         autocomplete: options.autocomplete ?? null,
-        "aria-invalid": String(hasErrors),
-        "aria-required": String(state.required),
-        // `aria-disabled` reflects `disabled` alone. A read-only control is not disabled: it takes
-        // focus, its text can be selected and copied, and announcing it as disabled tells a
-        // screen-reader user they cannot interact with something they can. `aria-readonly`
-        // carries read-only, and only on the kinds that declare the state.
-        "aria-disabled": String(state.disabled),
-        "aria-describedby": describedBy,
-        // Emitted only when true. A control that is not read-only says nothing, rather than
-        // announcing `aria-readonly="false"` — which on a slider, a checkbox or a radio group
-        // told a screen reader that read-only was a meaningful axis for something where the
-        // concept does not exist. That was the signature of an ARIA shell applied mechanically
-        // to every control; the states each kind actually admits are declared in
-        // `widget-states.ts`, and none of these three is among them.
+        // Everything a control exposes about its *state and rules* comes from the shell projection,
+        // which is where a renderer that binds a part reads it. Two projections spelling the same
+        // attributes is how they come to disagree — so this one asks rather than repeats.
+        ...projectFieldShellA11y(
+          { disabled: state.disabled, required: state.required },
+          errors,
+          {
+            widgetId: options.widgetId,
+            kind: options.kind ?? options.inputType,
+            constraints: options.constraints,
+            errorsVisible: hasErrors,
+            descriptionVisible: true,
+          },
+        ).control.attributes,
+        // The shell has no notion of read-only: it is a state only some kinds admit, and the field
+        // projection is the one that knows this control does.
         "aria-readonly": state.readonly ? "true" : null,
+        inputmode: options.inputMode ?? options.constraints?.inputMode ?? null,
         disabled: state.disabled,
         readonly: state.readonly,
       },

@@ -10,6 +10,7 @@
 import {
   createForm,
   getFieldHandleOwner,
+  type MdyFieldConstraints,
   MdyBatchingCapability,
   MdyCoreFormOptions,
   MdyFieldHandle,
@@ -150,6 +151,14 @@ export function useMdyField<T>(handle: MdyFieldHandle<T>): {
   readonly valid: boolean;
   readonly pending: boolean;
   readonly disabled: boolean;
+  /** Whether a rule marks this field required — for `aria-required` on your own control. */
+  readonly required: boolean;
+  /**
+   * What the field's rules state that an input can carry: `min`, `max`, `step`, lengths, `pattern`
+   * and the keyboard hint. You are writing the control here, so this is where a constraint declared
+   * once reaches it — see the typed-forms guide.
+   */
+  readonly constraints: MdyFieldConstraints;
   set(value: T): void;
   markAsTouched(): void;
 } {
@@ -170,6 +179,8 @@ export function useMdyField<T>(handle: MdyFieldHandle<T>): {
     valid: handle.valid(),
     pending: handle.pending(),
     disabled: handle.disabled(),
+    required: handle.required(),
+    constraints: handle.constraints(),
     set: handle.set,
     markAsTouched: handle.markAsTouched,
   };

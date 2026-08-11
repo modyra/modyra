@@ -26,9 +26,10 @@ to a green suite.
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
 - **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, K, N, O, P, Q
-- **Partly fixed** — C2, E2, F, L, M — derived but not painted; most scripts reachable; kind-keyed
+- **Partly fixed** — C2, E2, F, L, M, S — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
-  the colour metric decided and its estimate still approximate
+  the colour metric decided and its estimate still approximate; the kit's two browser sections
+  answered here by this repository's own suite and not by the kit
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
 - **Open** — R
@@ -1369,3 +1370,32 @@ the next real defect on that part gets silenced.
 
 **What would close it**: a host overriding `--mdy-ios-on-blue`, or Apple changing the pairing. Neither
 is this project's to decide, which is why this stays open rather than being closed as won't-fix.
+
+## S — the conformance kit's two browser sections do not run here — **partly fixed**
+
+**Observed.** `npm run test:conformance` reports eight sections of ten on all three renderers.
+*Keyboard behaviour* and *Accessibility audit* print **not run**, with their reason: focus, native
+key defaults and computed accessible names cannot be answered in Node, and a green that means
+nothing would be worse than an honest gap. A config reaches them by exporting `openBrowserSession`,
+and none of this repository's three configs does.
+
+**What is not a gap.** The questions themselves are answered here, in a browser, on every renderer:
+`e2e/keyboard.spec.ts` holds nineteen keyboard cases across nine projects, `e2e/screen-reader.spec.ts`
+asserts that every operable control has an accessible name, that a control claiming a description has
+one, and that the accessible name is the label a user can see. So the shipped behaviour is verified;
+what is unverified is nothing.
+
+**What is the gap, and who it affects.** The kit exists so that *someone else's* renderer can be
+judged by the same rules, and those two sections carry rules that this repository re-derives in its
+own specs rather than reading from the kit. An implementer of a fourth renderer therefore gets eight
+sections from the kit and has to write the keyboard and accessible-name checks themselves — the
+duplication the kit was built to prevent, surviving in the two places it cannot reach without a
+transport.
+
+**Why it stays.** Supplying the transport means bundling a renderer for the page, and the honest
+version of that is per renderer rather than one clever shim — work worth doing when a fourth
+renderer asks for it, and not before. The two sections report themselves; nobody has to discover
+this by reading a passing summary.
+
+*Affects:* an implementer conforming a new renderer, who must bring their own keyboard and
+accessible-name checks. Not consumers, and not the three renderers shipped here.

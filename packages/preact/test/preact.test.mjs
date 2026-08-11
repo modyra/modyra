@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createFieldStore, createForm, field, required } from "../dist/index.js";
+import { createFieldStore, createForm, field, maxLength, minLength, required } from "../dist/index.js";
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
@@ -120,4 +120,15 @@ test("createFieldStore observes through the handle's owner, not a fresh vanilla 
 
   unsubscribe();
   store.destroy();
+});
+
+test("the field surface carries what a control has to draw", () => {
+  // The point of a headless adapter is that the caller writes the input. A constraint declared once
+  // has to reach them, or the rules are enforced and unshowable — and `required` with it, since
+  // nobody else is left to put `aria-required` on anything.
+  const form = createForm({ code: field("", [required(), minLength(2), maxLength(8)]) });
+
+  assert.equal(form.f.code.required(), true);
+  assert.equal(form.f.code.constraints().minLength, 2);
+  assert.equal(form.f.code.constraints().maxLength, 8);
 });

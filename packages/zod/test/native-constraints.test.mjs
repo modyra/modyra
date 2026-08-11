@@ -23,7 +23,7 @@ test("lengths, bounds, integers and an unflagged pattern cross over", () => {
     {
       min: null, max: null, step: null,
       minLength: 3, maxLength: 8, pattern: "^[A-Z]+$",
-      inputType: null, inputMode: null,
+      inputMode: null,
     },
   );
   assert.deepEqual(
@@ -31,7 +31,7 @@ test("lengths, bounds, integers and an unflagged pattern cross over", () => {
     {
       min: 0, max: 255, step: 1,
       minLength: null, maxLength: null, pattern: null,
-      inputType: null, inputMode: null,
+      inputMode: null,
     },
   );
 });
