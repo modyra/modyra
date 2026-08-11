@@ -55,3 +55,45 @@ test("compiler is deterministic across representative seeds", () => {
     assert.ok(deltaEOK(p, s) >= 0.18);
   }
 });
+
+test("a selector stays in the position it is written into", () => {
+  // The selector is interpolated into a rule six times. Left unchecked, one closing brace ends the
+  // rule and everything after it is a stylesheet the theme's author never wrote — persistent CSS
+  // injection wherever a theme is compiled from someone else's data, which is what the public
+  // subpath exists for.
+  const hostile = [
+    "} body { display:none } .x {",
+    ".a; color:red",
+    "@media print",
+    ".a /* x */ .b",
+    ".a */ .b",
+  ];
+  for (const selector of hostile) {
+    assert.throws(
+      () => compileMdyTheme({ name: "t", seed: "#3366cc", selector }),
+      /Invalid theme selector/,
+      `accepted ${JSON.stringify(selector)}`,
+    );
+  }
+});
+
+test("every shape a real selector takes still compiles", () => {
+  // A guard that refuses what it was meant to protect is the usual way of breaking it: none of these
+  // needs a brace, a semicolon, an at-sign or a comment.
+  const real = ['.acme', '#app', ':root', '[data-tenant="acme"]', '.a, .b > .c', 'html.dark .acme'];
+  for (const selector of real) {
+    const css = serializeMdyThemeCss(compileMdyTheme({ name: "t", seed: "#3366cc", selector }));
+    assert.ok(css.includes(selector), `${selector} did not reach the stylesheet`);
+  }
+});
+
+test("an unknown model is named, not left to fail as a missing property", () => {
+  assert.throws(
+    () => compileMdyTheme({ name: "t", seed: "#3366cc", model: "nope" }),
+    (error) =>
+      error instanceof Error &&
+      /Unknown theme model: nope/.test(error.message) &&
+      /salience/.test(error.message),
+    "an unknown model arrived as a TypeError three calls away",
+  );
+});
