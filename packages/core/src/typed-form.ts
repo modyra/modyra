@@ -439,6 +439,20 @@ function nestDottedKeys<S extends MdyFormSchema>(schema: S): S {
   const nested: Record<string, unknown> = {};
 
   /** Puts a node at `segments` under `level`, building the groups the path passes through. */
+  /**
+   * The children of the group at `head`, as an object this normalization owns.
+   *
+   * The group may be the caller's — `shipping: group({ zip })` written in their module — and a path
+   * passing through it must not add a child to the object they declared: a schema held in a constant
+   * would gain members it never had, and building a second form from it would then find the name
+   * already taken. Descending copies, so what is written into belongs to the form being built.
+   */
+  const openGroup = (level: Record<string, unknown>, head: string, held: MdyGroupDescriptor<MdyFormSchema>): Record<string, unknown> => {
+    const children = { ...held.children } as Record<string, unknown>;
+    level[head] = { ...held, children };
+    return children;
+  };
+
   const place = (level: Record<string, unknown>, segments: string[], key: string, node: unknown): void => {
     const [head, ...rest] = segments;
     if (rest.length === 0) {
@@ -446,7 +460,10 @@ function nestDottedKeys<S extends MdyFormSchema>(schema: S): S {
       // Two groups meeting at the same name are one group: `shipping: group({ zip })` beside
       // `"shipping.city"` describes a single `shipping`, whichever was written first.
       if (isGroupDescriptor(held) && isGroupDescriptor(node)) {
-        place_children(held, node);
+        const children = openGroup(level, head, held);
+        for (const [childKey, child] of Object.entries(node.children)) {
+          place(children, childKey.split("."), childKey, child);
+        }
         return;
       }
       if (held !== undefined) {
@@ -467,15 +484,7 @@ function nestDottedKeys<S extends MdyFormSchema>(schema: S): S {
     if (!isGroupDescriptor(held)) {
       throw new Error(`[modyra] Schema key "${key}" needs "${head}" to be a group, and it is a field.`);
     }
-    place(held.children as Record<string, unknown>, rest, key, node);
-  };
-
-  /** Folds one group's children into another's, so a name declared from both sides is one group. */
-  const place_children = (into: MdyGroupDescriptor<MdyFormSchema>, from: MdyGroupDescriptor<MdyFormSchema>): void => {
-    const target = into.children as Record<string, unknown>;
-    for (const [key, child] of Object.entries(from.children)) {
-      place(target, key.split("."), key, child);
-    }
+    place(openGroup(level, head, held), rest, key, node);
   };
 
   // A schema with nothing to normalize is returned as it came: the common form is one without a

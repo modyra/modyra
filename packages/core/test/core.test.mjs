@@ -768,6 +768,30 @@ test("two declarations of the same group are one group, in either order", () => 
   before.deactivate();
 });
 
+test("normalizing a schema does not write into the schema it was given", () => {
+  // A schema is usually a module constant, and a path passing through a group the caller declared
+  // must not add a child to the object they wrote: it would gain members they never declared, and
+  // the next form built from it would find the name already taken.
+  const SCHEMA = { g: group({ z: field("") }), "g.y": field("") };
+  const first = createForm(SCHEMA);
+  first.activate();
+  assert.deepEqual(Object.keys(SCHEMA.g.children), ["z"], "the caller's group gained a child");
+
+  const second = createForm(SCHEMA);
+  second.activate();
+  assert.deepEqual(second.getValue(), { g: { z: "", y: "" } }, "a second form from the same schema");
+  first.deactivate();
+  second.deactivate();
+
+  // The copy has to reach every level a path passes through, not only the first.
+  const DEEP = { o: group({ inner: group({ k: field("1") }) }), "o.inner.j": field("2") };
+  const deep = createForm(DEEP);
+  deep.activate();
+  assert.deepEqual(Object.keys(DEEP.o.children.inner.children), ["k"], "a nested group gained a child");
+  assert.deepEqual(deep.getValue(), { o: { inner: { k: "1", j: "2" } } });
+  deep.deactivate();
+});
+
 test("a name that is both a field and a group is refused, not silently resolved", () => {
   // Nothing can be a value and hold children at once, and picking one for the caller would drop the
   // other without saying so.
