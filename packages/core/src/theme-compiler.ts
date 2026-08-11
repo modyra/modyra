@@ -288,6 +288,20 @@ const resolveMode = (
   });
 };
 
+/**
+ * What a selector may not contain, because it is interpolated into a rule.
+ *
+ * A selector is written into the stylesheet at the position a selector occupies, so it has to stay
+ * there: `}` closes the rule and everything after it becomes a declaration nobody wrote, and `@`,
+ * `;` and a comment sequence each open a way out of the same kind. A real selector needs none of
+ * them — `.acme`, `#app`, `:root`, `[data-tenant="acme"]`, a comma-separated list and every
+ * combinator pass unchanged.
+ *
+ * This keeps interpolated text inside its position. It does not decide *which* selectors a theme
+ * should accept: a caller compiling themes from someone else's data still owns that question.
+ */
+const SELECTOR_ESCAPES = /[{};@]|\/\*|\*\//;
+
 export function compileMdyTheme(definition: MdyThemeDefinition): MdyResolvedTheme {
   const source = hexToOklch(definition.seed);
   if (!source) throw new Error(`Invalid theme seed: ${definition.seed}`);
@@ -296,6 +310,20 @@ export function compileMdyTheme(definition: MdyThemeDefinition): MdyResolvedThem
   }
   const modelName = definition.model ?? "salience";
   const model = MDY_PERCEPTUAL_PALETTE_MODELS[modelName];
+  if (!model) {
+    // Named rather than left to fail further down: the registry is here, so the message can say what
+    // there is instead of arriving as a missing property three calls away.
+    throw new Error(
+      `Unknown theme model: ${String(modelName)}. Available: ${Object.keys(MDY_PERCEPTUAL_PALETTE_MODELS).join(", ")}.`,
+    );
+  }
+  if (definition.selector !== undefined && SELECTOR_ESCAPES.test(definition.selector)) {
+    throw new Error(
+      `Invalid theme selector: ${definition.selector}. A selector is written into a rule, so it ` +
+        `cannot contain "{", "}", ";", "@" or a comment — each of those ends the rule and turns the ` +
+        `rest into a stylesheet of its own.`,
+    );
+  }
   const selector = definition.selector ?? `[data-mdy-theme="${definition.name}"]`;
   const light = resolveMode(source, model, "light");
   const dark = resolveMode(source, model, "dark");
