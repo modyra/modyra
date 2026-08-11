@@ -418,6 +418,113 @@ export interface MdyGroupOptions {
   readonly when?: (value: Record<string, unknown>, enclosing: Record<string, unknown>) => boolean;
 }
 
+/**
+ * A schema key that spells a path becomes the structure that path describes.
+ *
+ * A name is a path everywhere else in the framework: `claimField("shipping.city")` registers a
+ * field inside `shipping`, and every value the engine holds is stored flat by path and read back
+ * unflattened. A schema declaring the literal key `"shipping.city"` therefore describes a shape no
+ * read can produce — one key at the root, against a two-level value — and the mismatch surfaces as
+ * a throw from the first `getValue()`, far from the declaration that caused it.
+ *
+ * Rather than refuse the key, it is given the meaning it already has. This is what lets a flattened
+ * document mount: the dynamic contract carries a nested form as a list of fields named by path, and
+ * a consumer that builds a schema from those names gets the structure back.
+ *
+ * Only groups are rebuilt. Whether a segment was an array row or a record key is not recoverable
+ * from a path — `lines.0` reads as the key `"0"` — so a collection flattened into paths comes back
+ * as nested groups, and a form that must round-trip a list declares {@link array} itself.
+ */
+function nestDottedKeys<S extends MdyFormSchema>(schema: S): S {
+  const nested: Record<string, unknown> = {};
+
+  /** Puts a node at `segments` under `level`, building the groups the path passes through. */
+  /**
+   * The children of the group at `head`, as an object this normalization owns.
+   *
+   * The group may be the caller's — `shipping: group({ zip })` written in their module — and a path
+   * passing through it must not add a child to the object they declared: a schema held in a constant
+   * would gain members it never had, and building a second form from it would then find the name
+   * already taken. Descending copies, so what is written into belongs to the form being built.
+   */
+  const openGroup = (level: Record<string, unknown>, head: string, held: MdyGroupDescriptor<MdyFormSchema>): Record<string, unknown> => {
+    const children = { ...held.children } as Record<string, unknown>;
+    level[head] = { ...held, children };
+    return children;
+  };
+
+  const place = (level: Record<string, unknown>, segments: string[], key: string, node: unknown): void => {
+    const [head, ...rest] = segments;
+    if (rest.length === 0) {
+      const held = level[head];
+      // Two groups meeting at the same name are one group: `shipping: group({ zip })` beside
+      // `"shipping.city"` describes a single `shipping`, whichever was written first.
+      if (isGroupDescriptor(held) && isGroupDescriptor(node)) {
+        const children = openGroup(level, head, held);
+        for (const [childKey, child] of Object.entries(node.children)) {
+          place(children, childKey.split("."), childKey, child);
+        }
+        return;
+      }
+      if (held !== undefined) {
+        throw new Error(
+          `[modyra] Schema key "${key}" is declared twice, once as a field and once as a group.`,
+        );
+      }
+      level[head] = node;
+      return;
+    }
+    const held = level[head];
+    if (held === undefined) {
+      const children: Record<string, unknown> = {};
+      level[head] = group(children as MdyFormSchema);
+      place(children, rest, key, node);
+      return;
+    }
+    if (!isGroupDescriptor(held)) {
+      throw new Error(`[modyra] Schema key "${key}" needs "${head}" to be a group, and it is a field.`);
+    }
+    place(openGroup(level, head, held), rest, key, node);
+  };
+
+  // A schema with nothing to normalize is returned as it came: the common form is one without a
+  // path in it, and a rebuilt copy would cost every consumer that compares descriptors by identity.
+  let moved = false;
+  for (const [key, node] of Object.entries(schema)) {
+    // A collection's item and a group's children are schemas of their own, and a path spelled
+    // inside one describes structure exactly as it does at the root.
+    const normalized = normalizeNode(node);
+    if (normalized !== node || key.includes(".")) moved = true;
+    place(nested, key.split("."), key, normalized);
+  }
+  return moved ? (nested as S) : schema;
+}
+
+/** The same normalization, one level down: a group's children, a collection's item. */
+function normalizeNode(node: unknown): unknown {
+  if (isGroupDescriptor(node)) {
+    const children = nestDottedKeys(node.children as MdyFormSchema);
+    return children === node.children ? node : { ...node, children };
+  }
+  if (isCollectionDescriptor(node)) {
+    const item = normalizeNode(node.item);
+    return item === node.item ? node : { ...node, item };
+  }
+  return node;
+}
+
+/** A schema node whose shape repeats: an array's rows, a record's entries. */
+function isCollectionDescriptor(node: unknown): node is { readonly kind: string; readonly item: unknown } {
+  if (typeof node !== "object" || node === null) return false;
+  const kind = (node as { kind?: unknown }).kind;
+  return (kind === "array" || kind === "record") && "item" in node;
+}
+
+/** A schema node that holds children rather than a value. */
+function isGroupDescriptor(node: unknown): node is MdyGroupDescriptor<MdyFormSchema> {
+  return typeof node === "object" && node !== null && (node as { kind?: unknown }).kind === "group";
+}
+
 export function group<TChildren extends MdyFormSchema>(
   children: TChildren,
   options?: MdyGroupOptions,
@@ -637,6 +744,9 @@ export abstract class MdyTypedFormBase<
     adapter: MdyFormEngine,
     options?: MdyTypedFormBaseOptions<MdyFormValue<S>>,
   ) {
+    // Everything below reads the normalized schema: a key that spelled a path is now the structure
+    // it described, and nothing downstream should see the two spellings of the same form.
+    schema = nestDottedKeys(schema);
     this._schema = schema;
     this._adapter = adapter;
 
@@ -1408,7 +1518,9 @@ export class MdyTypedForm<S extends MdyFormSchema>
     this.value = rx.computed(
       () => this._flatToValue(this._adapter.getValue()),
     );
-    this.f = this._buildHandleTree(schema, "") as MdyFieldHandleTree<S>;
+    // `this._schema`, not the argument: the base normalizes a key that spells a path into the
+    // structure it describes, and the handle tree has to be the one the value has.
+    this.f = this._buildHandleTree(this._schema, "") as MdyFieldHandleTree<S>;
   }
 
   protected _buildHandle(path: string): MdyFieldHandle<unknown> {
