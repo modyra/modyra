@@ -127,6 +127,25 @@ export type { MdyDragPoint, MdyPointerDrag, MdyPointerDragOptions } from "./poin
  * for its own material, which ADR 0006 says cannot happen and which was happening in five files.
  */
 export { MDY_ICONS, MDY_ICON_GRID, MDY_ICON_SPANS, MDY_ICON_STROKE } from "./icons.js";
+/**
+ * The words a widget shows, and the locales they are written in.
+ *
+ * They are the UI contract's for the same reason the icons are: a search box's placeholder and a
+ * clock's confirm button are what a widget *says*, and the engine has no opinion about either. Left
+ * in the engine they had one consumer — two renderers hardcoded English instead, and the same
+ * button was "Open the calendar" in one, "Open date picker" in another and "Toggle calendar" in the
+ * table neither of them read.
+ */
+export {
+  MDY_I18N_DEFAULT_TAGS,
+  MDY_I18N_MESSAGES_DE,
+  MDY_I18N_MESSAGES_DEFAULT,
+  MDY_I18N_MESSAGES_ES,
+  MDY_I18N_MESSAGES_FR,
+  MDY_I18N_MESSAGES_IT,
+  MDY_I18N_PRESETS,
+} from "./i18n.js";
+export type { MdyBuiltInLocale, MdyI18nMessages } from "./i18n.js";
 export type { MdyIconName } from "./icons.js";
 export { calendarKeyboardTarget, listboxNextIndex } from "./keyboard.js";
 export { filterOptionsByQuery } from "./options-utils.js";
