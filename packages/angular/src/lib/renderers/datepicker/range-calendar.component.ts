@@ -1,4 +1,4 @@
-import { calendarViewOnToggle, type MdyCalendarViewMode } from "@modyra/widgets";
+import { calendarViewOnToggle, type MdyCalendarViewMode, type MdyDaterangeFieldController } from "@modyra/widgets";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -18,8 +18,7 @@ import {
   daysInMonth,
   formatIsoDate,
   isDateInRange,
-  today,
-} from "@modyra/core/datetime";
+  today, parseIsoDate } from "@modyra/core/datetime";
 import { calendarKeyboardTarget } from "@modyra/core/ui";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyCalendarHeaderComponent } from "./calendar-header.component";
@@ -96,6 +95,15 @@ import { moveCalendarMonth } from "../renderer-projection";
   `,
 })
 export class MdyRangeCalendarComponent {
+  /**
+   * The controller for the kind, when there is a field behind this calendar.
+   *
+   * What a range means — which pick opens it, which closes it, which cells fall between, what the
+   * bounds refuse — is its answer. The signals below are the standalone case: this component is
+   * public and mountable without a form, and that caller has no controller to ask.
+   */
+  readonly controller = input<MdyDaterangeFieldController | undefined>(undefined);
+
   readonly rangeStart = input<CalendarDate | null>(null);
   readonly rangeEnd = input<CalendarDate | null>(null);
   readonly minDate = input<CalendarDate | null>(null);
@@ -128,15 +136,34 @@ export class MdyRangeCalendarComponent {
     this.grid()?.focusDate(focused);
   }
 
-  protected readonly view = signal<CalendarView>("days");
-  protected readonly viewYear = signal(today().year);
-  protected readonly viewMonth = signal(today().month);
-  protected readonly focusedDate = signal<CalendarDate>(today());
-  protected readonly hoverDate = signal<CalendarDate | null>(null);
+  private readonly _view = signal<CalendarView>("days");
+  protected readonly view = computed(() => this.controller()?.state().viewMode ?? this._view());
+  private readonly _viewYear = signal(today().year);
+  protected readonly viewYear = computed(() => this.controller()?.state().viewYear ?? this._viewYear());
+  private readonly _viewMonth = signal(today().month);
+  protected readonly viewMonth = computed(() => this.controller()?.state().viewMonth ?? this._viewMonth());
+  private readonly _focusedDate = signal<CalendarDate>(today());
+  protected readonly focusedDate = computed(
+    () => parseIsoDate(this.controller()?.state().focusedDate ?? "") ?? this._focusedDate(),
+  );
+  private readonly _hoverDate = signal<CalendarDate | null>(null);
+  protected readonly hoverDate = computed(() => this._hoverDate());
 
-  private readonly phase = signal<RangePhase>("pick-start");
-  protected readonly pendingStart = signal<CalendarDate | null>(null);
-  protected readonly pendingEnd = signal<CalendarDate | null>(null);
+  private readonly _phase = signal<RangePhase>("pick-start");
+  private readonly _pendingStart = signal<CalendarDate | null>(null);
+  private readonly _pendingEnd = signal<CalendarDate | null>(null);
+  protected readonly phase = computed((): RangePhase => {
+    const state = this.controller()?.state();
+    return state ? (state.picking === "start" ? "pick-start" : "pick-end") : this._phase();
+  });
+  // What the grid paints is the *previewed* range: the highlight follows the pointer before
+  // anything is decided, which is the distinction the controller keeps.
+  protected readonly pendingStart = computed(
+    () => parseIsoDate(this.controller()?.state().previewed.start ?? "") ?? this._pendingStart(),
+  );
+  protected readonly pendingEnd = computed(
+    () => parseIsoDate(this.controller()?.state().previewed.end ?? "") ?? this._pendingEnd(),
+  );
 
   protected readonly phaseHint = computed((): string =>
     this.phase() === "pick-start"
@@ -145,35 +172,44 @@ export class MdyRangeCalendarComponent {
   );
 
   syncView(start: CalendarDate | null, end: CalendarDate | null): void {
+    // With a controller, opening is an intent it answers and this would be a second hand on it.
+    if (this.controller()) return;
     const d = start ?? today();
-    this.viewYear.set(d.year);
-    this.viewMonth.set(d.month);
-    this.focusedDate.set(d);
-    this.pendingStart.set(start);
-    this.pendingEnd.set(end);
-    this.phase.set(start && !end ? "pick-end" : "pick-start");
-    this.view.set("days");
+    this._viewYear.set(d.year);
+    this._viewMonth.set(d.month);
+    this._focusedDate.set(d);
+    this._pendingStart.set(start);
+    this._pendingEnd.set(end);
+    this._phase.set(start && !end ? "pick-end" : "pick-start");
+    this._view.set("days");
   }
 
   /** Where the header goes, answered by the contract rather than by a branch here. */
   protected onToggleView(): void {
-    this.view.set(calendarViewOnToggle(this.view()));
+    const next = calendarViewOnToggle(this.view());
+    const controller = this.controller();
+    if (controller) controller.dispatch({ type: "set-view-mode", mode: next });
+    else this._view.set(next);
   }
 
   protected onMonthSelected(month: number): void {
-    this.viewMonth.set(month);
-    this.view.set("days");
+    const controller = this.controller();
+    if (controller) { controller.dispatch({ type: "select-month", month }); return; }
+    this._viewMonth.set(month);
+    this._view.set("days");
     const focused = this.focusedDate();
     const day = Math.min(focused.day, daysInMonth(focused.year, month));
-    this.focusedDate.set({ ...focused, month, day });
+    this._focusedDate.set({ ...focused, month, day });
   }
 
   protected onYearSelected(year: number): void {
-    this.viewYear.set(year);
-    this.view.set("months");
+    const controller = this.controller();
+    if (controller) { controller.dispatch({ type: "select-year", year }); return; }
+    this._viewYear.set(year);
+    this._view.set("months");
     const focused = this.focusedDate();
     const day = Math.min(focused.day, daysInMonth(year, focused.month));
-    this.focusedDate.set({ ...focused, year, day });
+    this._focusedDate.set({ ...focused, year, day });
   }
 
   protected goToPreviousMonth(): void {
@@ -185,45 +221,65 @@ export class MdyRangeCalendarComponent {
   }
 
   private navigateMonth(delta: number): void {
+    const controller = this.controller();
+    if (controller) { controller.dispatch({ type: "navigate-month", delta }); return; }
     const moved = moveCalendarMonth(this.viewYear(), this.viewMonth(), this.focusedDate(), delta);
-    this.viewYear.set(moved.year);
-    this.viewMonth.set(moved.month);
-    this.focusedDate.set(moved.focused);
+    this._viewYear.set(moved.year);
+    this._viewMonth.set(moved.month);
+    this._focusedDate.set(moved.focused);
   }
 
   protected onDatePicked(date: CalendarDate): void {
-    this.focusedDate.set(date);
+    const controller = this.controller();
+    if (controller) {
+      // The emit stays: it is this framework's output and nothing the contract knows about.
+      const before = controller.state().value;
+      controller.dispatch({ type: "select-date", iso: formatIsoDate(date) });
+      const after = controller.state().value;
+      if (after !== before && after.start && after.end) {
+        const s = parseIsoDate(after.start);
+        const e = parseIsoDate(after.end);
+        if (s && e) this.rangePicked.emit({ start: s, end: e });
+      }
+      return;
+    }
+    this._focusedDate.set(date);
 
     if (this.phase() === "pick-start") {
-      this.pendingStart.set(date);
-      this.pendingEnd.set(null);
-      this.phase.set("pick-end");
+      this._pendingStart.set(date);
+      this._pendingEnd.set(null);
+      this._phase.set("pick-end");
     } else {
       const start = this.pendingStart();
       if (!start) {
-        this.pendingStart.set(date);
-        this.phase.set("pick-end");
+        this._pendingStart.set(date);
+        this._phase.set("pick-end");
         return;
       }
       const [s, e] =
         compareDates(start, date) <= 0 ? [start, date] : [date, start];
-      this.pendingStart.set(s);
-      this.pendingEnd.set(e);
+      this._pendingStart.set(s);
+      this._pendingEnd.set(e);
       this.rangePicked.emit({ start: s, end: e });
     }
   }
 
   protected onDateHovered(date: CalendarDate): void {
-    if (this.phase() === "pick-end") {
-      this.hoverDate.set(date);
+    const controller = this.controller();
+    if (controller) {
+      controller.dispatch({ type: "preview", iso: formatIsoDate(date) });
+      return;
     }
+    if (this.phase() === "pick-end") this._hoverDate.set(date);
   }
 
   protected onKeydown(event: KeyboardEvent): void {
     if (this.view() !== "days") {
       if (event.key === "Escape") {
         event.preventDefault();
-        this.view.set("days");
+        const controller = this.controller();
+        if (controller) controller.dispatch({ type: "set-view-mode", mode: "days" });
+        else this._view.set("days");
       }
       return;
     }
@@ -253,14 +309,19 @@ export class MdyRangeCalendarComponent {
 
     if (next) {
       event.preventDefault();
-      this.focusedDate.set(next);
+      const controller = this.controller();
+      // Moving the focus, paging the month it crosses into and following it with the preview were
+      // three writes and are one intent.
+      if (controller) {
+        controller.dispatch({ type: "keydown", key: event.key, shiftKey: event.shiftKey });
+        return;
+      }
+      this._focusedDate.set(next);
       if (next.year !== this.viewYear() || next.month !== this.viewMonth()) {
-        this.viewYear.set(next.year);
-        this.viewMonth.set(next.month);
+        this._viewYear.set(next.year);
+        this._viewMonth.set(next.month);
       }
-      if (this.phase() === "pick-end") {
-        this.hoverDate.set(next);
-      }
+      if (this.phase() === "pick-end") this._hoverDate.set(next);
     }
   }
 }

@@ -19,7 +19,7 @@ import {
 import {
   MDY_WIDGET_CONTRACTS,
   dateRangeValueTransition,
-  overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+  overlayControlledId, projectOverlayOpenerA11y, createDaterangeFieldController } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -149,6 +149,7 @@ import { inputText, isoDateText } from "../renderer-projection";
 
         <mdy-range-calendar
           #calendar
+          [controller]="controller()"
           [rangeStart]="parsedStart()"
           [rangeEnd]="parsedEnd()"
           [minDate]="parsedMinDate()"
@@ -197,6 +198,15 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   protected override forceModalPlacement(): boolean {
     return this.variant() === "modal";
   }
+
+  // The ends can move, and the controller is told rather than rebuilt: rebuilding forgets the month
+  // on screen and which end the next pick closes.
+  protected readonly controller = this.adoptFieldController(
+    (handle, widgetId) => createDaterangeFieldController({
+      widgetId, handle: handle as never, minDate: this.minDate(), maxDate: this.maxDate(),
+      firstDayOfWeek: this.locale.firstDayOfWeek }),
+    (c) => c.setBounds(this.minDate(), this.maxDate()),
+  );
   readonly dateFilter = input<((date: string) => boolean) | null>(null);
 
   protected override readonly minSpace = 450;
