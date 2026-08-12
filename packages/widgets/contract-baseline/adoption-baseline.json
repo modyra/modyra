@@ -1,7 +1,7 @@
 {
   "note": "What each renderer consumes today. These numbers may rise and may not fall.",
   "score": {
-    "controllers": 38,
+    "controllers": 40,
     "controllersOffered": 45,
     "projections": 6,
     "projectionsOffered": 48
@@ -148,7 +148,7 @@
       "projection": false
     },
     "lit:multiselect": {
-      "controller": false,
+      "controller": true,
       "projection": false
     },
     "plain:datepicker": {
@@ -160,7 +160,7 @@
       "projection": false
     },
     "lit:datepicker": {
-      "controller": false,
+      "controller": true,
       "projection": false
     },
     "plain:daterange": {

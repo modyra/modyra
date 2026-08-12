@@ -1,5 +1,9 @@
 import { mdyPart } from "../mdy-part.js";
-import { overlayControlledId } from "@modyra/widgets";
+import {
+  createDatepickerFieldController,
+  overlayControlledId,
+  type MdyDatepickerFieldController,
+} from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { addMonths, buildDateLocale, buildMonthGrid, type CalendarCell, type CalendarDate, daysInMonth, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
@@ -154,15 +158,13 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
       this._focusedIso = iso;
       return;
     }
-    handle.set(iso);
-    handle.markAsDirty();
+    this.commitDate(iso);
     this.closePopup(handle);
   }
 
   private confirmModal(handle: MdyFieldHandle<string | null>): void {
     if (this._draftValue !== null) {
-      handle.set(this._draftValue);
-      handle.markAsDirty();
+      this.commitDate(this._draftValue);
     }
     this.closePopup(handle);
   }
@@ -281,8 +283,20 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     }
   }
 
+  private fieldController?: MdyDatepickerFieldController;
+
   override connectedCallback(): void {
     super.connectedCallback();
+    const handle = this.field;
+    if (handle && !this.fieldController) {
+      this.fieldController = createDatepickerFieldController({
+        widgetId: this.fieldId,
+        handle,
+        minDate: this.min ?? null,
+        maxDate: this.max ?? null,
+        firstDayOfWeek: this.weekStart,
+      });
+    }
     this.unbindOutside = bindOutsidePointer(this, () => {
       const handle = this.field;
       this.overlay.close();
@@ -293,7 +307,36 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   override disconnectedCallback(): void {
     this.unbindOutside?.();
     this.overlay.close();
+    this.fieldController?.destroy();
+    this.fieldController = undefined;
     super.disconnectedCallback();
+  }
+
+  override willUpdate(changed: Map<string, unknown>): void {
+    super.willUpdate?.(changed);
+    // The ends of the range are properties and can move; the controller is told rather than
+    // rebuilt, which would forget the month on screen.
+    if (changed.has("min") || changed.has("max")) {
+      this.fieldController?.setBounds(this.min ?? null, this.max ?? null);
+    }
+  }
+
+  /**
+   * One committed date, decided by the controller for this kind.
+   *
+   * What the range refuses was decided here for the grid and nowhere for the text input: a date
+   * typed outside the bounds was accepted, which the other renderers refuse. The controller answers
+   * for both.
+   */
+  private commitDate(iso: string | null): void {
+    if (this.fieldController) {
+      this.fieldController.dispatch(iso === null ? { type: "clear" } : { type: "select-date", iso });
+      return;
+    }
+    const handle = this.field;
+    if (!handle) return;
+    handle.set(iso);
+    handle.markAsDirty();
   }
 
   private renderMonthPicker(handle: MdyFieldHandle<string | null>): unknown {
@@ -501,9 +544,8 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           @change=${(e: Event) => {
             const el = e.target as HTMLInputElement;
             const iso = this.parse(el.value);
-            handle.set(iso);
-            el.value = iso ?? "";
-            handle.markAsDirty();
+            this.commitDate(iso);
+            el.value = handle.value() ?? "";
           }}
           @blur=${() => handle.markAsTouched()}
         />

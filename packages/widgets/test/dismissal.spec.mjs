@@ -301,3 +301,52 @@ test("§15 — a release with no observed press does not dismiss", () => {
   o.pointerup(OUT, PRIMARY.pointerId);
   assert.equal(o.dismissed, 0);
 });
+
+/**
+ * The binding delivers the whole gesture, not the tail of it.
+ *
+ * A renderer that bound `click` and not `pointerup` decided on the event the policy documents as
+ * the tail — so a gesture that released outside without producing a click never dismissed. The
+ * check is which events reach the policy, because that is what differed between two renderers.
+ */
+test("every event the policy decides on is bound, and unbound again", async () => {
+  const { bindLightDismiss } = await import("../dist/dismissal-dom.js");
+
+  const bound = new Map();
+  const fakeDocument = {
+    addEventListener: (type, handler, capture) => bound.set(type, { handler, capture }),
+    removeEventListener: (type) => bound.delete(type),
+  };
+  const fakeWindow = {
+    addEventListener: (type, handler) => bound.set(`window:${type}`, { handler }),
+    removeEventListener: (type) => bound.delete(`window:${type}`),
+  };
+
+  const seen = [];
+  const policy = {
+    pointerdown: (target, info) => seen.push(["pointerdown", target, info.pointerId]),
+    pointerup: (target, id) => seen.push(["pointerup", target, id]),
+    click: (target) => seen.push(["click", target]),
+    pointercancel: (id) => seen.push(["pointercancel", id]),
+    reset: () => seen.push(["reset"]),
+  };
+
+  const unbind = bindLightDismiss(policy, { document: fakeDocument, window: fakeWindow });
+
+  for (const type of ["pointerdown", "pointerup", "click", "pointercancel", "visibilitychange"]) {
+    assert.ok(bound.has(type), `${type} is bound`);
+  }
+  assert.ok(bound.has("window:blur"), "an interaction the page cannot see the end of is abandoned");
+
+  // Capture phase, or content that stops propagation silences the decision.
+  for (const type of ["pointerdown", "pointerup", "click", "pointercancel"]) {
+    assert.equal(bound.get(type).capture, true, `${type} listens in the capture phase`);
+  }
+
+  bound.get("pointerup").handler({ target: "elsewhere", pointerId: 7 });
+  assert.deepEqual(seen.at(-1), ["pointerup", "elsewhere", 7], "the release reaches the policy");
+
+  unbind();
+  assert.equal([...bound.keys()].length, 0, "nothing is left listening");
+  assert.deepEqual(seen.at(-1), ["reset"], "the policy is reset on the way out");
+});

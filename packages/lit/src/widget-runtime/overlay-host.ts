@@ -5,7 +5,7 @@
  * focus is restored — is `overlayLifecycleTransition` in `@modyra/widgets`. These helpers only
  * carry the element's `_open` flag in and out of it, so no element re-decides the policy locally.
  */
-import { createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, type MdyOverlayLifecycleIntent } from "@modyra/widgets";
+import { createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, type MdyOverlayLifecycleIntent, bindLightDismiss } from "@modyra/widgets";
 
 /** A teardown for the case where nothing was bound. */
 const noop = (): void => undefined;
@@ -60,26 +60,5 @@ export function bindOutsidePointer(
     },
   });
 
-  const onDown = (event: Event): void => {
-    const e = event as PointerEvent;
-    policy.pointerdown(e.target, { pointerId: e.pointerId ?? 0, isPrimary: e.isPrimary ?? true, button: e.button ?? 0 });
-  };
-  const onClick = (event: Event): void => policy.click(event.target);
-  const onCancel = (event: Event): void => policy.pointercancel((event as PointerEvent).pointerId ?? 0);
-  const onAbandon = (): void => policy.reset();
-
-  document.addEventListener("pointerdown", onDown, true);
-  document.addEventListener("click", onClick, true);
-  document.addEventListener("pointercancel", onCancel, true);
-  // An interaction the page can no longer observe the end of is abandoned, not completed.
-  window.addEventListener("blur", onAbandon);
-  document.addEventListener("visibilitychange", onAbandon);
-  return () => {
-    document.removeEventListener("pointerdown", onDown, true);
-    document.removeEventListener("click", onClick, true);
-    document.removeEventListener("pointercancel", onCancel, true);
-    window.removeEventListener("blur", onAbandon);
-    document.removeEventListener("visibilitychange", onAbandon);
-    policy.reset();
-  };
+  return bindLightDismiss(policy);
 }
