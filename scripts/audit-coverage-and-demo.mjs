@@ -9,8 +9,12 @@
  * - **Asserted**: the name appears in a test. That is weaker than "there is a check that fails when
  *   the behaviour changes" — `mutation-suite.spec.mjs` is where that is proved for the DOM contract.
  *   This is the floor: a public name no test mentions has never run outside the build.
- * - **Shown**: the name, or the kind it serves, is reachable in a demo. A behaviour nobody can put
- *   on screen cannot be reported as broken by the person using it.
+ * - **Shown**: the name appears in a demo. Weaker than it sounds, and measured: a page that drives
+ *   validation, drafts, collections and a parsed document through `createForm` and `renderField`
+ *   moved this number by two, because the types and codes those behaviours are made of are never
+ *   *named* by the page exercising them. Read it as "is this name reachable from something that
+ *   runs", not as "is this behaviour demonstrated" — the second needs a check per behaviour, and the
+ *   panels' own browser suite is where those live.
  *
  * `coverage-baseline.json` records what is uncovered today. The list may only get shorter.
  *
@@ -29,8 +33,15 @@ const TEST_ROOTS = [
   "packages/preact/test", "packages/zod/test", "packages/standard-schema/test",
   "packages/angular/src/lib", "docs/examples", "e2e",
 ];
-/** Where a name may be shown. */
-const DEMO_ROOTS = ["examples", "apps/plain-preview/src", "apps/studio/src", "site/src"];
+/**
+ * Where a name may be *shown* — somewhere a person can operate it.
+ *
+ * The documentation site is deliberately not here. Documentation mentions every public name by
+ * definition, so counting it made almost everything "shown" and the number said nothing: `serverValidator`
+ * and `parseDynamicForm` both counted as demonstrated while no page let anyone press them. A demo is
+ * something that runs.
+ */
+const DEMO_ROOTS = ["examples", "apps/plain-preview/src", "apps/studio/src"];
 
 const SKIP = new Set(["node_modules", "dist", "coverage", ".angular", "test-results", ".astro"]);
 const TEXT = /\.(ts|mts|tsx|js|mjs|jsx|html|svelte|vue|astro|md|mdx)$/;

@@ -1672,6 +1672,7 @@
   "MdyUnmountObservation": [
     "document: Document",
     "elementsBeforeMount: number",
+    "errorsAfterDispose?: () => readonly string[]",
     "idsWhileMounted: ReadonlySet<string>",
     "pokeAfterDispose?: () => void"
   ],

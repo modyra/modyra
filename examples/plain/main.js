@@ -499,7 +499,7 @@ if (rowsHost && rowsState) {
         const cell = document.createElement("td");
         if (editing.has(key)) {
           mountedCells.push(
-            renderField(cell, cellDescriptor(key, part), lines.f.lines.cell(key, part)),
+            renderField(cell, cellDescriptor(key, part), lines.f.lines.cell(key, part), lines.reactivity),
           );
         } else {
           cell.className = "read";
@@ -615,12 +615,12 @@ if (conditionalHost && conditionalState) {
     { name: "company.code", kind: "text", label: "Code" },
   ];
 
-  renderField(conditionalHost, fields[0], account.f.kind);
+  renderField(conditionalHost, fields[0], account.f.kind, account.reactivity);
   const details = document.createElement("div");
   details.className = "conditional-details";
   conditionalHost.append(details);
-  renderField(details, fields[1], account.f.company.name);
-  renderField(details, fields[2], account.f.company.code);
+  renderField(details, fields[1], account.f.company.name, account.reactivity);
+  renderField(details, fields[2], account.f.company.code, account.reactivity);
 
   // The print follows the form, not the events: a choice made in a combobox is a click on an option,
   // not an `input` on this host, and a state dump wired to events shows the previous answer.
@@ -638,119 +638,5 @@ if (conditionalHost && conditionalState) {
       null,
       2,
     );
-  });
-}
-
-// ─── Every kind, in every state ───────────────────────────────────────────────
-//
-// One toolbar drives the whole catalogue at once, because the states that hide defects are the ones
-// nobody thinks to open by hand: a field that is failing *and* out of play, a read-only control that
-// must stay reachable, an untouched required field that already holds an error and must show none.
-//
-// The last toggle is the interesting one. The section is declared with a `when`, so switching it off
-// takes every field below out of play: the form stops validating them, stops submitting them, and
-// keeps every value and every error exactly where they were.
-
-const STATES_KINDS = [
-  ["text", "", { label: "Text" }],
-  ["email", "", { label: "Email" }],
-  ["password", "", { label: "Password" }],
-  ["textarea", "", { label: "Bio" }],
-  ["number", null, { label: "Age" }],
-  ["slider", 0, { label: "Volume" }],
-  ["checkbox", false, { label: "Accept" }],
-  ["toggle", false, { label: "Newsletter" }],
-  ["radio", null, { label: "Plan", options: colors }],
-  ["segmented", null, { label: "Mode", options: colors }],
-  ["select", null, { label: "Country", options: colors }],
-  ["multiselect", [], { label: "Palette", options: colors }],
-  ["datepicker", null, { label: "Birthday" }],
-  ["daterange", { start: null, end: null }, { label: "Stay" }],
-  ["timepicker", null, { label: "Meeting" }],
-  ["colors", "", { label: "Brand" }],
-  ["file", [], { label: "CV" }],
-];
-
-const statesHost = document.querySelector("[data-states]");
-const statesToolbar = document.querySelector("[data-states-toolbar]");
-const statesState = document.querySelector("[data-states-state]");
-
-if (statesHost && statesToolbar && statesState) {
-  // Every field is required so that `invalid` is a state the widget can actually be in — a field
-  // with no rule can never fail, and a green row about an unreachable state proves nothing.
-  const catalogue = createForm({
-    inPlay: mdyField(true),
-    all: mdyGroup(
-      Object.fromEntries(
-        STATES_KINDS.map(([kind, empty]) => [kind, mdyField(empty, [mdyRequired()])]),
-      ),
-      { when: (_section, form) => form.inPlay === true },
-    ),
-  });
-
-  for (const [kind, , extra] of STATES_KINDS) {
-    const cell = document.createElement("div");
-    statesHost.append(cell);
-    renderField(cell, { name: `all.${kind}`, kind, ...extra }, catalogue.f.all[kind]);
-  }
-
-  const toggle = (label, apply) => {
-    const wrap = document.createElement("label");
-    const box = document.createElement("input");
-    box.type = "checkbox";
-    box.addEventListener("change", () => apply(box.checked));
-    wrap.append(box, document.createTextNode(` ${label}`));
-    statesToolbar.append(wrap);
-  };
-
-  // `setDisabled`/`setReadonly` take a predicate the form re-reads, so the toggle states the rule
-  // rather than pushing a value once.
-  toggle("Disabled", (on) => {
-    for (const [kind] of STATES_KINDS) catalogue.setDisabled(`all.${kind}`, () => on);
-  });
-  toggle("Read-only", (on) => {
-    for (const [kind] of STATES_KINDS) catalogue.setReadonly(`all.${kind}`, () => on);
-  });
-  toggle("Touched", (on) => {
-    if (on) catalogue.markAllTouched();
-    else for (const [kind] of STATES_KINDS) catalogue.f.all[kind].markAsDirty();
-  });
-  toggle("Out of play (the form stops asking)", (on) => {
-    catalogue.f.inPlay.set(!on);
-  });
-
-  // The model facts come from the form; the painted count comes from the document. They are read on
-  // different beats on purpose: this renderer's effects land on a task, so a DOM count taken inside
-  // the same effect that observed the change reports the *previous* paint — a number that looks
-  // authoritative and is one state behind.
-  const printState = () => {
-    const painted = statesHost.querySelectorAll(
-      ".mdy-input-wrapper--error, .mdy-label--has-error, [aria-invalid='true']",
-    ).length;
-    statesState.textContent = JSON.stringify(
-      {
-        formValid: catalogue.state.valid(),
-        inPlay: catalogue.f.inPlay.value(),
-        submitted: Object.keys(catalogue.submitValue()),
-        // What the form still holds for a field it is not asking about: the errors are not forgotten,
-        // they are simply not shown to someone who cannot act on them.
-        errorsHeld: STATES_KINDS.reduce(
-          (n, [kind]) => n + catalogue.f.all[kind].errors().length,
-          0,
-        ),
-        partsPaintedAsFailing: painted,
-      },
-      null,
-      2,
-    );
-  };
-
-  catalogue.reactivity.effect(() => {
-    // Observed so the print follows the form rather than the events: a choice made in a combobox is
-    // a click on an option, not an `input` on this host.
-    catalogue.state.valid();
-    catalogue.f.inPlay.value();
-    for (const [kind] of STATES_KINDS) catalogue.f.all[kind].errors();
-    setTimeout(printState, 0);
   });
 }
