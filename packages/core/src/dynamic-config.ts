@@ -621,8 +621,34 @@ export interface MdyDynamicSection {
   readonly at?: Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>>;
 }
 
-/** The sizes a row can be authored against, mirroring `MDY_LAYOUT_BREAKPOINTS` in `@modyra/widgets`. */
+/**
+ * The sizes a row can be authored against, as data rather than a union spelled at each site that
+ * checks it.
+ *
+ * A document declares placements against these names and a renderer paints them, so the two sets
+ * have to be the same or a document can author a size nothing draws. The set is declared here —
+ * the lowest layer both reach — and the widget contract derives its breakpoints from it, which is
+ * what makes adding a fourth size a compile error on the side that would otherwise stay silent.
+ */
 export type MdyDynamicBreakpoint = "base" | "sm" | "md" | "lg";
+
+/**
+ * A record rather than a list, so a size dropped here is a missing key and not a shorter array that
+ * still type-checks. The constraint sits inside `Object.freeze` because a literal handed to a call
+ * is no longer fresh, and an annotation on the binding would then accept a key the union has
+ * dropped — catching a size added and missing one removed.
+ *
+ * The union stays spelled out because it is the published shape, and a shape read through an
+ * inferred alias is one an external differ can no longer resolve.
+ */
+const MDY_DYNAMIC_BREAKPOINTS = Object.freeze({
+  base: true,
+  sm: true,
+  md: true,
+  lg: true,
+} satisfies Readonly<Record<MdyDynamicBreakpoint, true>>);
+
+const isBreakpoint = (size: string): boolean => Object.hasOwn(MDY_DYNAMIC_BREAKPOINTS, size);
 
 export interface MdyDynamicColumns {
   readonly kind: "columns";
@@ -963,7 +989,7 @@ function validLayoutNode(
   if (node.kind === "columns" && node.at !== undefined) {
     if (!isRecordValue(node.at)) return false;
     for (const [size, count] of Object.entries(node.at)) {
-      if (!["base", "sm", "md", "lg"].includes(size)) return false;
+      if (!isBreakpoint(size)) return false;
       if (typeof count !== "number" || !Number.isInteger(count) || count < 1 || count > MDY_MAX_LAYOUT_COLUMNS) return false;
     }
   }
@@ -1032,7 +1058,7 @@ function validPlacement(at: unknown, trackCount: number): boolean {
   if (trackCount === 0) return false;
   if (!isRecordValue(at)) return false;
   for (const [size, placement] of Object.entries(at)) {
-    if (!["base", "sm", "md", "lg"].includes(size)) return false;
+    if (!isBreakpoint(size)) return false;
     if (!isRecordValue(placement)) return false;
     const { column, hidden } = placement as MdyDynamicSlotPlacement;
     if (column !== undefined && (!Number.isInteger(column) || column < 1 || column > trackCount)) return false;
