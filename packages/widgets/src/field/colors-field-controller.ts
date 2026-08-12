@@ -40,8 +40,16 @@ export function createColorsFieldController(
 
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
-  /** What is in the box, as typed. Equal to the value except mid-keystroke. */
-  const text = reactivity.signal(handle.value() ?? "");
+  /**
+   * What is in the box while the user is typing, and `null` the rest of the time.
+   *
+   * The box shows the value; the only reason it is a separate thing at all is the keystroke that is
+   * not yet a colour — `#00` on its way to `#0084ff`. Held as a signal seeded from the value and
+   * written beside every commit, it was a copy: a value written from anywhere else — a draft
+   * restored, a server response, `patch()` — left the box showing the old colour for good.
+   */
+  const typed = reactivity.signal<string | null>(null);
+  const text = reactivity.computed(() => typed() ?? handle.value() ?? "");
 
   const state: MdySignal<MdyColorsFieldState> = reactivity.computed(() => {
     const value = handle.value() ?? "";
@@ -143,17 +151,23 @@ export function createColorsFieldController(
       case "preset": {
         // What is in the box is what was typed, always. Whether it also becomes the value is the
         // transition's answer, and `undefined` means "not yet a colour" rather than "clear it".
-        text.set(intent.value);
         const next = colorValueTransition(intent);
-        if (next.value === undefined) return [];
+        if (next.value === undefined) {
+          // Still on its way to a colour: the box keeps the keystrokes and the value keeps what it
+          // had.
+          typed.set(intent.value);
+          return [];
+        }
+        // It became a colour, so the box goes back to showing the value — which is now this one.
+        typed.set(null);
         return commit(next.value, next.close, next.touched);
       }
     }
   }
 
   function setValue(value: string): void {
+    typed.set(null);
     handle.set(value);
-    text.set(value);
   }
 
   function setReadonly(nextReadonly: boolean): void {
