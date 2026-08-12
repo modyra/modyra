@@ -5,6 +5,7 @@
 
 export type {
   MdyPartContract,
+  MdyPartMap,
   MdyWidgetController,
   MdyWidgetViewContract,
   MdyTypedWidgetViewContract,
@@ -19,7 +20,6 @@ export {
 } from "./structure.js";
 export type {
   MdyFieldShellPart,
-  MdyPartMap,
   MdyWidgetSemanticElement,
   MdyWidgetStructure,
   MdyWidgetStructureNode,

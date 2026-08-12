@@ -21,13 +21,13 @@ import {
 import {
   createBooleanFieldController,
   createDatepickerFieldController,
-  createFieldController,
+  createTextFieldController,
   createMultiselectFieldController,
   createOptionFieldController,
   createTimepickerFieldController,
   projectBooleanFieldA11y,
   projectDatepickerFieldA11y,
-  projectFieldA11y,
+  projectTextFieldA11y,
   projectFieldShellA11y,
   projectMultiselectFieldA11y,
   projectOptionFieldA11y,
@@ -96,7 +96,7 @@ test("the errors are forgotten by nobody — the field still holds them", () => 
 // ─── every controller asks it ─────────────────────────────────────────────────
 
 const CONTROLLERS = [
-  ["text", () => "", (h, rx) => createFieldController({ widgetId: "w", handle: h, kind: "text" }, rx)],
+  ["text", () => "", (h, rx) => createTextFieldController({ widgetId: "w", handle: h, kind: "text" }, rx)],
   ["checkbox", () => false, (h, rx) => createBooleanFieldController({ widgetId: "w", handle: h, kind: "checkbox" }, rx)],
   ["radio", () => null, (h, rx) => createOptionFieldController(
     { widgetId: "w", handle: h, kind: "radio", options: [{ value: "a", label: "A" }] }, rx)],
@@ -130,7 +130,7 @@ for (const [kind, initial, make] of CONTROLLERS) {
  * the fixture being checked.
  */
 const PROJECTIONS = [
-  ["text", projectFieldA11y, CONTROLLERS[0]],
+  ["text", projectTextFieldA11y, CONTROLLERS[0]],
   ["checkbox", projectBooleanFieldA11y, CONTROLLERS[1]],
   ["radio", projectOptionFieldA11y, CONTROLLERS[2]],
   ["multiselect", projectMultiselectFieldA11y, CONTROLLERS[3]],

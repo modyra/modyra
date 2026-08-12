@@ -77,11 +77,11 @@ test("asking for the runtime that does own it says nothing", () => {
 });
 
 test("a controller handed no runtime observes through the form's", async () => {
-  const { createFieldController } = await import("../../widgets/dist/field/index.js");
+  const { createTextFieldController } = await import("../../widgets/dist/field/index.js");
   const owner = vanillaReactivity();
   const form = createForm({ a: field("x") }, { reactivity: owner });
 
-  const controller = createFieldController({ widgetId: "w", handle: form.f.a, kind: "text" });
+  const controller = createTextFieldController({ widgetId: "w", handle: form.f.a, kind: "text" });
   // The proof is that it follows: a controller on an unrelated runtime reads the first value and
   // then never hears about another one.
   assert.equal(controller.state().value, "x");

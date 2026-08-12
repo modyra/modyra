@@ -1,15 +1,15 @@
-export { createFieldController } from "./field-controller.js";
-export type { MdyFieldController } from "./field-controller.js";
+export { createTextFieldController } from "./text-field-controller.js";
+export type { MdyTextFieldController } from "./text-field-controller.js";
 
 export {
-  fieldPartIds,
-  fieldRootClasses,
-  projectFieldA11y,
-} from "./field-a11y.js";
+  textFieldPartIds,
+  textFieldRootClasses,
+  projectTextFieldA11y,
+} from "./text-field-a11y.js";
 
 export type {
-  MdyFieldA11yOptions,
-} from "./field-a11y.js";
+  MdyTextFieldA11yOptions,
+} from "./text-field-a11y.js";
 
 export {
   fieldShellPartIds,
@@ -21,11 +21,11 @@ export type {
   MdyFieldShellFlags,
 } from "./shell-a11y.js";
 
+export type { MdyFieldState } from "./field-types.js";
 export type {
-  MdyFieldControllerOptions,
-  MdyFieldIntent,
-  MdyFieldState,
-} from "./field-types.js";
+  MdyTextFieldControllerOptions,
+  MdyTextFieldIntent,
+} from "./text-field-types.js";
 
 export { createBooleanFieldController } from "./boolean-field-controller.js";
 export type { MdyBooleanFieldController } from "./boolean-field-controller.js";
@@ -161,15 +161,15 @@ export type {
   MdyTimepickerFieldA11yOptions,
 } from "./timepicker-field-a11y.js";
 
-export { timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerSelectedDialValue, type MdyTimepickerDialKeyResult } from "./timepicker-field-types.js";
+export { timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerSelectedDialValue, type MdyTimepickerDialKeyResult } from "./timepicker-dial.js";
+export type { MdyTimepickerDialNumber } from "./timepicker-dial.js";
 export type {
-  MdyTimepickerDialNumber,
   MdyTimepickerFieldControllerOptions,
   MdyTimepickerFieldIntent,
   MdyTimepickerFieldState,
   MdyTimepickerViewMode,
 } from "./timepicker-field-types.js";
 
-export { sliderFillRatio } from "./slider-field-types.js";
+export { sliderFillRatio } from "./text-field-controller.js";
 export { errorsVisible, shownErrors, shownErrorsOf, showsAsInvalid } from "./verdict.js";
 export type { MdyFieldVerdictSource } from "./verdict.js";

@@ -21,7 +21,7 @@ const unregistered = MDY_WIDGET_KINDS.filter((kind) => !registry.includes(`case 
 if (unregistered.length) failures.push(`kinds with no renderer: ${unregistered.join(", ")}`);
 
 const CONTROLLERS = {
-  "fields/text-field.ts": "createFieldController",
+  "fields/text-field.ts": "createTextFieldController",
   "fields/boolean-field.ts": "createBooleanFieldController",
   "fields/option-field.ts": "createOptionFieldController",
   "fields/select-field.ts": "createSelectController",

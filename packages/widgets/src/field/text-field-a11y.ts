@@ -1,7 +1,6 @@
 /**
  * Accessibility projection for primitive field widgets.
  */
-
 import type { MdyFieldError } from "@modyra/core";
 import { defaultWidgetIdFactory as idFactory } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
@@ -11,8 +10,7 @@ import type { MdyFieldConstraints } from "@modyra/core";
 import type { MdyWidgetKind } from "../catalog.js";
 import { projectFieldShellA11y } from "./shell-a11y.js";
 import { shownErrors } from "./verdict.js";
-
-export interface MdyFieldA11yOptions {
+export interface MdyTextFieldA11yOptions {
   readonly widgetId: string;
   readonly inputType?: string;
   readonly inputMode?: string;
@@ -34,7 +32,7 @@ export interface MdyFieldA11yOptions {
 }
 
 /** Builds the static IDs used by a field widget view. */
-export function fieldPartIds(widgetId: string): {
+export function textFieldPartIds(widgetId: string): {
   readonly inputId: string;
   readonly labelId: string;
   readonly descriptionId: string;
@@ -49,7 +47,7 @@ export function fieldPartIds(widgetId: string): {
 }
 
 /** Computes the public state classes for the field root. */
-export function fieldRootClasses<TValue>(state: MdyFieldState<TValue>): readonly string[] {
+export function textFieldRootClasses<TValue>(state: MdyFieldState<TValue>): readonly string[] {
   const S = MDY_FIELD_STATE_CLASSES;
   return [
     S.field,
@@ -60,10 +58,10 @@ export function fieldRootClasses<TValue>(state: MdyFieldState<TValue>): readonly
 }
 
 /** Projects ARIA attributes and classes for the field parts. */
-export function projectFieldA11y<TValue>(
+export function projectTextFieldA11y<TValue>(
   state: MdyFieldState<TValue>,
   errors: ReadonlyArray<MdyFieldError>,
-  options: MdyFieldA11yOptions,
+  options: MdyTextFieldA11yOptions,
 ): {
   readonly root: MdyPartContract;
   readonly label: MdyPartContract;
@@ -71,14 +69,14 @@ export function projectFieldA11y<TValue>(
   readonly description: MdyPartContract;
   readonly error: MdyPartContract;
 } {
-  const { inputId, labelId, descriptionId, errorId } = fieldPartIds(options.widgetId);
+  const { inputId, labelId, descriptionId, errorId } = textFieldPartIds(options.widgetId);
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
   // text renders are four faces of one question, answered once in verdict.ts.
   const hasErrors = shownErrors(state, errors).length > 0;
 
   return {
     root: {
-      classes: fieldRootClasses(state),
+      classes: textFieldRootClasses(state),
       attributes: {},
     },
     label: {

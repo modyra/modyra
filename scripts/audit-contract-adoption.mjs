@@ -34,8 +34,8 @@ const RENDERERS = ["plain", "angular", "lit"];
  * controller serves it, so every renderer wires the loose transitions itself.
  */
 const CONTROLLER = {
-  text: "createFieldController", email: "createFieldController", password: "createFieldController",
-  textarea: "createFieldController", number: "createFieldController", slider: "createFieldController",
+  text: "createTextFieldController", email: "createTextFieldController", password: "createTextFieldController",
+  textarea: "createTextFieldController", number: "createTextFieldController", slider: "createTextFieldController",
   checkbox: "createBooleanFieldController", toggle: "createBooleanFieldController",
   radio: "createOptionFieldController", segmented: "createOptionFieldController",
   select: "createSelectController",
@@ -47,8 +47,8 @@ const CONTROLLER = {
 };
 
 const PROJECTION = {
-  text: "projectFieldA11y", email: "projectFieldA11y", password: "projectFieldA11y",
-  textarea: "projectFieldA11y", number: "projectFieldA11y", slider: "projectFieldA11y",
+  text: "projectTextFieldA11y", email: "projectTextFieldA11y", password: "projectTextFieldA11y",
+  textarea: "projectTextFieldA11y", number: "projectTextFieldA11y", slider: "projectTextFieldA11y",
   checkbox: "projectBooleanFieldA11y", toggle: "projectBooleanFieldA11y",
   radio: "projectOptionFieldA11y", segmented: "projectOptionFieldA11y",
   select: null,

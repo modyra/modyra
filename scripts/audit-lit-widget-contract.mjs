@@ -49,7 +49,7 @@ for (const kind of MDY_WIDGET_KINDS) {
 
 /** Each family consumes the behaviour @modyra/widgets holds for it. */
 const CONSUMES = {
-  "components/text-field.ts": "createFieldController",
+  "components/text-field.ts": "createTextFieldController",
   "components/checkbox-field.ts": "createBooleanFieldController",
   "components/radio-group-field.ts": "createOptionFieldController",
   "widget-runtime/select-adapter.ts": "createSelectController",

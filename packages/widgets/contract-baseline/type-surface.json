@@ -815,16 +815,6 @@
     "setReadonly: void",
     "setValue: void"
   ],
-  "MdyFieldControllerOptions": [
-    "autocomplete?: string",
-    "constraints?: () => Partial<MdyFieldConstraints>",
-    "handle: MdyFieldHandle<TValue>",
-    "inputMode?: string",
-    "inputType?: string",
-    "kind?: string",
-    "readonly?: boolean",
-    "widgetId: string"
-  ],
   "MdyFieldDescriptor": [
     "asyncDebounceMs: number",
     "asyncDependsOn: ReadonlyArray<string>",
@@ -860,9 +850,6 @@
     "value: MdySignal<TValue>"
   ],
   "MdyFieldHandleTree": [
-    "(opaque)"
-  ],
-  "MdyFieldIntent": [
     "(opaque)"
   ],
   "MdyFieldKind": [
@@ -1723,6 +1710,31 @@
   "MdySubmittedValue": [
     "(opaque)"
   ],
+  "MdyTextFieldA11yOptions": [
+    "autocomplete?: string",
+    "constraints?: MdyFieldConstraints",
+    "inputMode?: string",
+    "inputType?: string",
+    "kind?: MdyWidgetKind | string",
+    "widgetId: string"
+  ],
+  "MdyTextFieldController": [
+    "setReadonly: void",
+    "setValue: void"
+  ],
+  "MdyTextFieldControllerOptions": [
+    "autocomplete?: string",
+    "constraints?: () => Partial<MdyFieldConstraints>",
+    "handle: MdyFieldHandle<TValue>",
+    "inputMode?: string",
+    "inputType?: string",
+    "kind?: string",
+    "readonly?: boolean",
+    "widgetId: string"
+  ],
+  "MdyTextFieldIntent": [
+    "(opaque)"
+  ],
   "MdyThemeDefinition": [
     "model?: MdyPerceptualPaletteModelName",
     "name: string",
@@ -2346,6 +2358,11 @@
   ],
   "createSilentDiagnostics": [
     "-> returns: MdyDiagnostics"
+  ],
+  "createTextFieldController": [
+    "(0) options: MdyTextFieldControllerOptions<TValue>",
+    "(1) reactivity?: MdyReactivity",
+    "-> returns: MdyTextFieldController<TValue>"
   ],
   "createTimepickerFieldController": [
     "(0) options: MdyTimepickerFieldControllerOptions",
@@ -3056,6 +3073,12 @@
     "(0) options: MdySelectA11yOptions",
     "-> returns: MdySelectA11yProjection"
   ],
+  "projectTextFieldA11y": [
+    "(0) state: MdyFieldState<TValue>",
+    "(1) errors: ReadonlyArray<MdyFieldError>",
+    "(2) options: MdyTextFieldA11yOptions",
+    "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly input: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; }"
+  ],
   "projectTimepickerFieldA11y": [
     "(0) state: MdyTimepickerFieldState",
     "(1) errors: ReadonlyArray<MdyFieldError>",
@@ -3211,6 +3234,14 @@
     "(1) reactivity: MdyReactivity",
     "(2) notify: MdyControllerNotify",
     "-> returns: () => void"
+  ],
+  "textFieldPartIds": [
+    "(0) widgetId: string",
+    "-> returns: { readonly inputId: string; readonly labelId: string; readonly descriptionId: string; readonly errorId: string; }"
+  ],
+  "textFieldRootClasses": [
+    "(0) state: MdyFieldState<TValue>",
+    "-> returns: readonly string[]"
   ],
   "timeClockTransition": [
     "(0) currentValue: string | null",

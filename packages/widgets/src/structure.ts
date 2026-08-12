@@ -1,4 +1,3 @@
-import type { MdyPartContract } from "./contract.js";
 import { MDY_STATE_MODIFIERS, stateClass, type MdyStateName } from "./state.js";
 
 /** Version of the framework-agnostic UI contract implemented by this package. */
@@ -147,5 +146,6 @@ export const MDY_FIELD_SHELL_STRUCTURE = Object.freeze({
   ]),
 } satisfies MdyWidgetStructure<MdyFieldShellPart>);
 
-/** A typed part map used by widget-specific view contracts. */
-export type MdyPartMap<TPart extends string> = Readonly<Record<TPart, MdyPartContract>>;
+// `MdyPartMap` lives with `MdyPartContract`, in `contract.ts`. It was the only thing this module took
+// from there, and taking it closed a cycle between the package's two hubs — neither of which could
+// then be read, or extracted, on its own. A map of a thing belongs beside the thing.

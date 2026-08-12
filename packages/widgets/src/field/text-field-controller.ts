@@ -11,27 +11,26 @@ import { observerFor } from "@modyra/core";
 
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
-import { projectFieldA11y } from "./field-a11y.js";
+import { projectTextFieldA11y } from "./text-field-a11y.js";
 import { narrowConstraints } from "../native-constraints.js";
 import { showsAsInvalid } from "./verdict.js";
 import type {
-  MdyFieldControllerOptions,
-  MdyFieldIntent,
-  MdyFieldState,
+    MdyFieldState,
 } from "./field-types.js";
+import type { MdyTextFieldControllerOptions, MdyTextFieldIntent } from "./text-field-types.js";
 
-export interface MdyFieldController<TValue>
-  extends MdyWidgetController<MdyFieldState<TValue>, MdyFieldIntent<TValue>> {
+export interface MdyTextFieldController<TValue>
+  extends MdyWidgetController<MdyFieldState<TValue>, MdyTextFieldIntent<TValue>> {
   /** Set the value programmatically without producing a command. */
   setValue(value: TValue): void;
   /** Update the readonly state. */
   setReadonly(readonly: boolean): void;
 }
 
-export function createFieldController<TValue>(
-  options: MdyFieldControllerOptions<TValue>,
+export function createTextFieldController<TValue>(
+  options: MdyTextFieldControllerOptions<TValue>,
   reactivity?: MdyReactivity,
-): MdyFieldController<TValue> {
+): MdyTextFieldController<TValue> {
   // Observed through the runtime that owns the handle. A caller that supplies one keeps it
   // and is told when it does not match — a fresh runtime over another form's handle is the
   // defect this registry was added for, and it fails by rendering nothing rather than by
@@ -74,7 +73,7 @@ export function createFieldController<TValue>(
 
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
     const currentState = state();
-    const a11y = projectFieldA11y(currentState, handle.errors(), {
+    const a11y = projectTextFieldA11y(currentState, handle.errors(), {
       widgetId,
       inputType,
       inputMode,
@@ -97,7 +96,7 @@ export function createFieldController<TValue>(
     };
   });
 
-  function dispatch(intent: MdyFieldIntent<TValue>): readonly MdyUiCommand[] {
+  function dispatch(intent: MdyTextFieldIntent<TValue>): readonly MdyUiCommand[] {
     if (intent.type === "blur") {
       handle.markAsTouched();
       return [{ type: "mark-touched" }];
@@ -140,4 +139,17 @@ export function createFieldController<TValue>(
     setReadonly,
     destroy,
   };
+}
+
+/**
+ * How much of a slider's track is filled, as a ratio.
+ *
+ * A slider is a numeric field with a track, so it is served by this controller — and this was the
+ * whole content of a file called `slider-field-types.ts`, which declared no type at all. A module
+ * named for what it does not contain is a module nobody finds.
+ */
+export function sliderFillRatio(value: unknown, min: number, max: number): number {
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return 0;
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+  return Math.min(1, Math.max(0, (value - min) / (max - min)));
 }

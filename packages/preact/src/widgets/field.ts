@@ -7,9 +7,9 @@ import type { MdyFieldHandle } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import {
   subscribeController,
-  createFieldController,
-  type MdyFieldControllerOptions,
-  type MdyFieldIntent,
+  createTextFieldController,
+  type MdyTextFieldControllerOptions,
+  type MdyTextFieldIntent,
   type MdyFieldState,
   type MdyWidgetViewContract,
 } from "@modyra/widgets";
@@ -17,14 +17,14 @@ import {
 import { useMdyCommandQueue } from "./runtime.js";
 
 export type UseMdyFieldOptions<TValue> = Omit<
-  MdyFieldControllerOptions<TValue>,
+  MdyTextFieldControllerOptions<TValue>,
   "handle"
 >;
 
 export interface MdyPreactFieldApi<TValue> {
   readonly state: MdyFieldState<TValue>;
   readonly view: MdyWidgetViewContract;
-  dispatch(intent: MdyFieldIntent<TValue>): void;
+  dispatch(intent: MdyTextFieldIntent<TValue>): void;
   setValue(value: TValue): void;
   setReadonly(readonly: boolean): void;
   destroy(): void;
@@ -37,7 +37,7 @@ export function useMdyField<TValue>(
   const reactivity = useMemo(() => observerFor(handle), [handle]);
 
   const controller = useMemo(
-    () => createFieldController({ ...options, handle }, reactivity),
+    () => createTextFieldController({ ...options, handle }, reactivity),
     // Recreate only when the identity of options/handle changes.
     [options, handle, reactivity],
   );
@@ -59,7 +59,7 @@ export function useMdyField<TValue>(
   );
 
   const dispatch = useCallback(
-    (intent: MdyFieldIntent<TValue>) => {
+    (intent: MdyTextFieldIntent<TValue>) => {
       execute(controller.dispatch(intent));
     },
     [controller, execute],
