@@ -6,8 +6,7 @@ import {
   createTypeahead,
   isTypeaheadCharacter,
   optionsWithUnrecognizedValue,
-  shownErrorsOf,
-} from "@modyra/widgets";
+  shownErrorsOf, selectKeyboardAction } from "@modyra/widgets";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 import {
@@ -42,6 +41,14 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     this.searchable = false;
     this.loading = false;
     this.allowCreate = false;
+  }
+
+  /** The same question the popup asks when it decides whether to draw the create row. */
+  private createAvailable(): boolean {
+    const handle = this.field;
+    const query = this.selectAdapter?.state.query ?? "";
+    if (!handle) return false;
+    return this.showCreateOption(query, filterOptionsByQuery(this.renderedOptions(handle.value()), query));
   }
 
   private showCreateOption(
@@ -188,34 +195,48 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     this.selectAdapter?.dispatch({ type: "close", restoreFocus: true });
   }
 
+  /**
+   * The select keyboard, answered by the contract rather than by a switch here.
+   *
+   * The local version differed in ways nobody chose: an arrow on a closed list moved an active
+   * option no one could see instead of opening it, `Tab` left the list floating over a form the user
+   * had already left, and a focused search field did not change what `Home` meant.
+   */
   protected override onKeydown(e: KeyboardEvent, _handle: MdyFieldHandle<unknown | null>): void {
-    const moveTarget = mapKeyToMoveTarget(e.key);
-    if (moveTarget) {
-      e.preventDefault();
-      this.selectAdapter?.dispatch({ type: "move", target: moveTarget });
-      return;
-    }
+    const action = selectKeyboardAction({
+      key: e.key,
+      open: this._open,
+      // Whether the *search field* has focus, not merely that the select can search: the opener
+      // and the search box answer `Home` differently, which is the distinction the policy takes.
+      searchFocused:
+        this.querySelector(".mdy-select__search") === (this.ownerDocument?.activeElement ?? null),
+      activeKey: this.selectAdapter?.state.activeKey ?? null,
+      createAvailable: this.createAvailable(),
+    });
 
-    switch (e.key) {
-      case "Enter":
-      case " ":
-        e.preventDefault();
-        if (!this._open) {
+    if (action) {
+      e.preventDefault();
+      switch (action.type) {
+        case "open":
           this.overlay.open();
           this.selectAdapter?.dispatch({ type: "open", source: "keyboard" });
           return;
-        }
-        if (this.selectAdapter) {
-          const key = this.selectAdapter.state.activeKey;
-          if (key) this.selectAdapter.dispatch({ type: "select", optionKey: key });
-        }
-        break;
-      case "Escape":
-        if (this._open) {
-          e.preventDefault();
-          this.selectAdapter?.dispatch({ type: "close", restoreFocus: true });
-        }
-        break;
+        case "close":
+          this.selectAdapter?.dispatch({ type: "close", restoreFocus: action.restoreFocus });
+          return;
+        case "move":
+          this.selectAdapter?.dispatch({ type: "move", target: action.target });
+          return;
+        case "select":
+          this.selectAdapter?.dispatch({ type: "select", optionKey: action.optionKey });
+          return;
+        case "create":
+          this.onCreateOption(this.selectAdapter?.state.query ?? "");
+          return;
+      }
+    }
+
+    switch (e.key) {
       default:
         // Only the combobox reaches here: a select that does not filter renders the native chooser,
         // which brings the platform's own typeahead and never builds this keyboard path.
@@ -408,19 +429,3 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
   }
 }
 
-function mapKeyToMoveTarget(
-  key: string,
-): "next" | "previous" | "first" | "last" | null {
-  switch (key) {
-    case "ArrowDown":
-      return "next";
-    case "ArrowUp":
-      return "previous";
-    case "Home":
-      return "first";
-    case "End":
-      return "last";
-    default:
-      return null;
-  }
-}

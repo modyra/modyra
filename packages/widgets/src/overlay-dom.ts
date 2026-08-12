@@ -62,25 +62,53 @@ export function setOverlayOpen(popup: HTMLElement, open: boolean): void {
  *
  * It was written three times — once per renderer — and the three disagreed: one passed `passive`,
  * two did not, and none coalesced. A behaviour every adapter needs is one this package owes them.
+ *
+ * **Scrolling and resizing are not the same event.** A page that scrolls moves the anchor and
+ * nothing else, so the popup follows while keeping the side and height it opened with — re-deciding
+ * on every scroll frame is what makes a popup flip sides under the pointer. A viewport that changes
+ * size changes what fits, so there the decision is taken again. Both renderers that place their own
+ * popups had drawn that distinction and neither could use this function, which had one callback for
+ * two questions.
  */
-export function trackAnchoredOverlay(
-  reposition: () => void,
-  isOpen: () => boolean,
-): () => void {
+export interface MdyAnchoredOverlayTracking {
+  /** The page moved: follow the anchor, keeping the placement the popup opened with. */
+  reposition(): void;
+  /** The viewport changed size: what fits changed, so decide again. Defaults to `reposition`. */
+  reflow?(): void;
+  isOpen(): boolean;
+  /**
+   * Whether to follow scrolling at all. A popup that covers the viewport rather than hanging off a
+   * control has no anchor to follow, and binding a capture-phase scroll listener for it is cost
+   * with no effect.
+   */
+  followsScroll?(): boolean;
+}
+
+export function trackAnchoredOverlay(tracking: MdyAnchoredOverlayTracking): () => void {
+  const { reposition, isOpen } = tracking;
+  const reflow = tracking.reflow ?? reposition;
+  const followsScroll = tracking.followsScroll ?? (() => true);
   let frame = 0;
-  const schedule = (): void => {
+
+  const coalesce = (run: () => void) => (): void => {
     if (!isOpen() || frame) return;
     frame = requestAnimationFrame(() => {
       frame = 0;
-      if (isOpen()) reposition();
+      if (isOpen()) run();
     });
   };
-  window.addEventListener("resize", schedule, { passive: true });
-  window.addEventListener("scroll", schedule, { capture: true, passive: true });
+  const onScroll = coalesce(reposition);
+  const onResize = coalesce(reflow);
+
+  const scrolls = followsScroll();
+  window.addEventListener("resize", onResize, { passive: true });
+  if (scrolls) window.addEventListener("scroll", onScroll, { capture: true, passive: true });
   return () => {
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
-    window.removeEventListener("resize", schedule);
-    window.removeEventListener("scroll", schedule, { capture: true } as EventListenerOptions);
+    window.removeEventListener("resize", onResize);
+    if (scrolls) {
+      window.removeEventListener("scroll", onScroll, { capture: true } as EventListenerOptions);
+    }
   };
 }

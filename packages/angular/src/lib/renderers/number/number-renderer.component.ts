@@ -82,7 +82,6 @@ export class MdyNumberComponent extends MdyBaseControl<number | null> {
   readonly step = input<number | null>(null);
   readonly showSpinButtons = input<boolean>(false);
 
-
   /**
    * What this control asks for on top of the field's rules. It can only narrow: the projection takes
    * whichever end is tighter, so a control cannot offer a value the rules would refuse.

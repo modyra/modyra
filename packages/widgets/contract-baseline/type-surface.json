@@ -34,6 +34,12 @@
     "top: number",
     "width: number"
   ],
+  "MdyAnchoredOverlayTracking": [
+    "followsScroll?: boolean",
+    "isOpen: boolean",
+    "reflow?: void",
+    "reposition: void"
+  ],
   "MdyAnnouncer": [
     "announce: void"
   ],
@@ -3086,8 +3092,7 @@
     "-> returns: CalendarDate"
   ],
   "trackAnchoredOverlay": [
-    "(0) reposition: () => void",
-    "(1) isOpen: () => boolean",
+    "(0) tracking: MdyAnchoredOverlayTracking",
     "-> returns: () => void"
   ],
   "trailingAffordances": [

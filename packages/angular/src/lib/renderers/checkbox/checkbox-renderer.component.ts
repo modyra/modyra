@@ -1,10 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
-import { ChangeDetectionStrategy, Component, OnInit } from "@angular/core";
-import {
-  createBooleanFieldController,
-  MDY_WIDGET_CONTRACTS,
-  type MdyBooleanFieldController,
-} from "@modyra/widgets";
+import { ChangeDetectionStrategy, Component } from "@angular/core";
+import { createBooleanFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -52,35 +48,22 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
     }
   `,
 })
-export class MdyCheckboxComponent extends MdyBaseControl<boolean> implements OnInit {
+export class MdyCheckboxComponent extends MdyBaseControl<boolean> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.checkbox;
   protected override readonly widgetKind = "checkbox";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly fieldId = `mdy-control-checkbox-${MdyBaseControl.nextId()}`;
 
-  private controller: MdyBooleanFieldController | undefined;
-
-  override ngOnInit(): void {
-    this.controller = this.adoptFieldController((handle, widgetId) =>
-      createBooleanFieldController({ widgetId, handle: handle as never, variant: "checkbox" }),
-    );
-    super.ngOnInit();
-  }
+  private readonly controller = this.adoptFieldController((handle, widgetId) =>
+    createBooleanFieldController({ widgetId, handle: handle as never, variant: "checkbox" }),
+  );
 
   protected onChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (this.controller) {
-      this.controller.dispatch({ type: input.checked ? "check" : "uncheck" });
-      return;
-    }
-    this.dispatchValueIntent<boolean>("checkbox", { type: "input", value: input.checked });
+    this.controller()?.dispatch({ type: input.checked ? "check" : "uncheck" });
   }
 
   protected onBlur(): void {
-    if (this.controller) {
-      this.controller.dispatch({ type: "blur" });
-      return;
-    }
-    this.dispatchValueBlur("checkbox");
+    this.controller()?.dispatch({ type: "blur" });
   }
 }

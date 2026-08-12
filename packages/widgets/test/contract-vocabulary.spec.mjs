@@ -184,8 +184,13 @@ test("an anchored overlay repositions only while it is open", () => {
   globalThis.cancelAnimationFrame = (id) => dom.window.clearTimeout(id);
 
   let repositioned = 0;
+  let reflowed = 0;
   let open = true;
-  const stop = trackAnchoredOverlay(() => { repositioned += 1; }, () => open);
+  const stop = trackAnchoredOverlay({
+    reposition: () => { repositioned += 1; },
+    reflow: () => { reflowed += 1; },
+    isOpen: () => open,
+  });
   assert.equal(typeof stop, "function", "tracking gave back no way to stop");
 
   // Closed, the listeners are still bound and must do nothing: a popup that repositions while hidden
@@ -196,6 +201,49 @@ test("an anchored overlay repositions only while it is open", () => {
 
   stop();
   assert.doesNotThrow(() => stop(), "stopping twice threw");
+});
+
+/**
+ * Scrolling and resizing ask different questions, and a popup that answers both the same way flips
+ * sides under the pointer or stays the wrong size after a rotation. Both renderers that place their
+ * own popups had drawn the distinction and neither could use this function until it took two.
+ */
+test("a page that moves and a viewport that resizes are answered separately", async () => {
+  const dom = new JSDOM("<!doctype html><html><body></body></html>");
+  globalThis.window = dom.window;
+  globalThis.requestAnimationFrame = (fn) => dom.window.setTimeout(() => fn(0), 0);
+  globalThis.cancelAnimationFrame = (id) => dom.window.clearTimeout(id);
+  const settle = () => new Promise((resolve) => dom.window.setTimeout(resolve, 5));
+
+  let repositioned = 0;
+  let reflowed = 0;
+  const stop = trackAnchoredOverlay({
+    reposition: () => { repositioned += 1; },
+    reflow: () => { reflowed += 1; },
+    isOpen: () => true,
+  });
+
+  dom.window.dispatchEvent(new dom.window.Event("scroll"));
+  await settle();
+  assert.deepEqual([repositioned, reflowed], [1, 0], "a scroll follows the anchor, it does not re-decide");
+
+  dom.window.dispatchEvent(new dom.window.Event("resize"));
+  await settle();
+  assert.deepEqual([repositioned, reflowed], [1, 1], "a resize decides again");
+
+  stop();
+
+  // A popup that covers the viewport has no anchor to follow, so it binds no scroll listener at all.
+  let covered = 0;
+  const stopCovering = trackAnchoredOverlay({
+    reposition: () => { covered += 1; },
+    isOpen: () => true,
+    followsScroll: () => false,
+  });
+  dom.window.dispatchEvent(new dom.window.Event("scroll"));
+  await settle();
+  assert.equal(covered, 0, "a covering overlay listens for a scroll it cannot use");
+  stopCovering();
 });
 
 test("showing and hiding an overlay is one function, not each renderer's own", () => {
