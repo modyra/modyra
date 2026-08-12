@@ -494,6 +494,10 @@
     "remove: void",
     "write: void"
   ],
+  "MdyDragPoint": [
+    "clientX: number",
+    "clientY: number"
+  ],
   "MdyDynamicArrayNode": [
     "initialValue?: ReadonlyArray<unknown>",
     "item: MdyDynamicFieldNode | MdyDynamicGroupNode",
@@ -1297,6 +1301,16 @@
     "l: number",
     "minDeltaE: number",
     "salience: number"
+  ],
+  "MdyPointerDrag": [
+    "dragging: boolean",
+    "start: void",
+    "stop: void"
+  ],
+  "MdyPointerDragOptions": [
+    "document?: Document",
+    "onEnd?: void",
+    "onMove: void"
   ],
   "MdyPointerOrigin": [
     "button: number",
@@ -2179,6 +2193,10 @@
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdyOptionFieldController<TValue>"
   ],
+  "createPointerDrag": [
+    "(0) options: MdyPointerDragOptions",
+    "-> returns: MdyPointerDrag"
+  ],
   "createSelectController": [
     "(0) options: MdySelectControllerOptions<TValue>",
     "(1) reactivity?: MdyReactivity",
@@ -2271,6 +2289,10 @@
     "(0) initial: unknown",
     "(1) value: unknown",
     "-> returns: boolean"
+  ],
+  "dragPointOf": [
+    "(0) event: MouseEvent | TouchEvent",
+    "-> returns: MdyDragPoint | null"
   ],
   "dynamicParts": [
     "(0) kind: MdyWidgetKind",

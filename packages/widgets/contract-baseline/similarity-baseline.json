@@ -9,28 +9,28 @@
       "score": 1,
       "left": "packages/angular/src/lib/renderers/datepicker/range-calendar-grid.component.ts:155",
       "right": "packages/lit/src/components/daterange-field.ts:399",
-      "reason": "recorded, not yet accounted for"
+      "reason": "the range-cell test, byte-identical. @modyra/widgets offers no daterange controller, so each renderer decides for itself which cells are the endpoints — and a third renderer answers it by comparing ISO strings instead of dates. Closes when the daterange controller lands (Batch 6) and the renderers consume it (Batch 7)."
     },
     {
       "id": "angular:setupDragListeners ≡ lit:setupDragListeners",
       "score": 1,
       "left": "packages/angular/src/lib/renderers/timepicker/timepicker-clock.component.ts:75",
       "right": "packages/lit/src/components/timepicker-field.ts:248",
-      "reason": "recorded, not yet accounted for"
+      "reason": "the clock dial's pointer tracking. widgets has createFocusCustodian, createLightDismiss and createTypeahead and no sibling for a drag, so three renderers each bind their own document listeners. Closes with createPointerDrag (Batch 6)."
     },
     {
       "id": "angular:teardownDragListeners ≡ lit:teardownDragListeners",
       "score": 1,
       "left": "packages/angular/src/lib/renderers/timepicker/timepicker-clock.component.ts:82",
       "right": "packages/lit/src/components/timepicker-field.ts:255",
-      "reason": "recorded, not yet accounted for"
+      "reason": "the other half of the same missing primitive: what the drag releases. A teardown written per renderer is how one of them comes to release one listener fewer."
     },
     {
       "id": "lit:onDown ≡ plain:onDown",
       "score": 1,
       "left": "packages/lit/src/widget-runtime/overlay-host.ts:46",
       "right": "packages/plain/src/overlay.ts:157",
-      "reason": "recorded, not yet accounted for"
+      "reason": "the light-dismiss pointer origin. createLightDismiss exists and holds the policy; what is copied is the binding around it, and one of the three copies listens for one event fewer. Closes when the binding itself moves upstream (Batch 7)."
     }
   ]
 }

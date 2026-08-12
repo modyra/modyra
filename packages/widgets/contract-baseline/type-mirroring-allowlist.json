@@ -7,14 +7,14 @@
       "mirrors": "MdyArrayHandle",
       "at": "packages/angular/src/lib/core/typed-form.ts:83",
       "members": 11,
-      "reason": "recorded, not yet accounted for"
+      "reason": "restated member by member instead of derived. The same file derives MdyFieldHandle and explains why — the copy drifted once already, when `interactivity` and `readonly` arrived in the contract and not in it. Closes in Batch 7, the same way its neighbour already did."
     },
     {
       "id": "angular:MdyRecordHandle",
       "mirrors": "MdyRecordHandle",
       "at": "packages/angular/src/lib/core/typed-form.ts:98",
       "members": 14,
-      "reason": "recorded, not yet accounted for"
+      "reason": "the same restatement, fourteen members. Its own doc comment says 'the members are the core's, and their meaning is documented there' — which is the argument for deriving it rather than copying it."
     }
   ]
 }
