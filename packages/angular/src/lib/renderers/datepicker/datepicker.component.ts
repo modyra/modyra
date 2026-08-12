@@ -17,7 +17,7 @@ import {
   parseIsoDate,
   parseLocalizedDate,
   today,
-} from "@modyra/core/date-utils";
+} from "@modyra/core/datetime";
 import {
   dateDraftTransition,
   dateValueTransition,

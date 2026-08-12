@@ -15,7 +15,7 @@ import {
   CalendarDate,
   formatIsoDate,
   parseIsoDate,
-} from "@modyra/core/date-utils";
+} from "@modyra/core/datetime";
 import {
   MDY_WIDGET_CONTRACTS,
   dateRangeDraftTransition,

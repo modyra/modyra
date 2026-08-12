@@ -1,17 +1,11 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 719,
-    "asserted": 413,
+    "published": 662,
+    "asserted": 393,
     "shown": 44
   },
   "uncovered": [
-    {
-      "name": "AsyncValidatorEntry",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
     {
       "name": "CalendarCell",
       "asserted": true,
@@ -23,12 +17,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "FieldRecord",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "Hct",
@@ -49,12 +37,6 @@
       "reason": "published, neither asserted nor shown"
     },
     {
-      "name": "MDY_CANONICAL_UI_CLASSES",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "MDY_CHIP_CLASSES",
       "asserted": true,
       "shown": false,
@@ -68,12 +50,6 @@
     },
     {
       "name": "MDY_CSS_PROPERTIES",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_CSS_PROPERTY_NAMES",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -103,12 +79,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "MDY_FIELD_SHELL_STRUCTURE",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "MDY_FIELD_STATE_CLASSES",
       "asserted": true,
       "shown": false,
@@ -116,12 +86,6 @@
     },
     {
       "name": "MDY_ID_DELIMITER",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_LABELABLE_TAGS",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -223,12 +187,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "MDY_SHARED_UI_CLASSES",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "MDY_SSR_SNAPSHOT_MISMATCH",
       "asserted": false,
       "shown": false,
@@ -236,12 +194,6 @@
     },
     {
       "name": "MDY_STATE_EXPRESSION",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_STATE_MODIFIERS",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -296,24 +248,6 @@
     },
     {
       "name": "MDY_WIDGET_RELATIONS",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_WIDGET_STATES",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_WIDGET_STATE_CONTRACTS",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_WIDGET_STATE_SUPPORT",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -409,12 +343,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "MdyArrayManagerDeps",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "MdyAsyncDraftStorage",
       "asserted": false,
       "shown": false,
@@ -428,12 +356,6 @@
     },
     {
       "name": "MdyAsyncKeyValueStore",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyAsyncRunnerHost",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
@@ -589,12 +511,6 @@
       "reason": "published, neither asserted nor shown"
     },
     {
-      "name": "MdyCollectionHost",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "MdyColorValueIntent",
       "asserted": false,
       "shown": false,
@@ -665,12 +581,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "MdyCondition",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyControlOption",
@@ -884,12 +794,6 @@
     },
     {
       "name": "MdyDomPartMap",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyDragPoint",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
@@ -1135,22 +1039,10 @@
       "reason": "published, neither asserted nor shown"
     },
     {
-      "name": "MdyFieldA11yOptions",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "MdyFieldConstraints",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFieldController",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyFieldDescriptor",
@@ -1693,12 +1585,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "MdyPartLookupOptions",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "MdyPartMap",
       "asserted": true,
       "shown": false,
@@ -1741,25 +1627,7 @@
       "reason": "published, neither asserted nor shown"
     },
     {
-      "name": "MdyPointerDrag",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyPointerDragOptions",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "MdyPointerOrigin",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyPopupOpener",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
@@ -1807,12 +1675,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "MdyRecordManagerDeps",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "MdyRelationAttribute",
       "asserted": true,
       "shown": false,
@@ -1829,12 +1691,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "MdySchemaPaths",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyScopeOptions",
@@ -2623,12 +2479,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "collectSchemaPaths",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "collectStateMatrix",
       "asserted": true,
       "shown": false,
@@ -2671,12 +2521,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "composeConditions",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "composeFirst",
       "asserted": true,
       "shown": false,
@@ -2687,12 +2531,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "createAsyncRunner",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "createBooleanFieldController",
@@ -2707,12 +2545,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "createColorsFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "createConsoleDiagnostics",
       "asserted": false,
       "shown": false,
@@ -2720,24 +2552,6 @@
     },
     {
       "name": "createDaterangeFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "createFieldController",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "createFieldRecord",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "createFileFieldController",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2779,19 +2593,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "createPointerDrag",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "createSelectController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "createSelectFieldController",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2869,18 +2671,6 @@
       "reason": "published, neither asserted nor shown"
     },
     {
-      "name": "daterangeFieldPartIds",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "daterangeFieldRootClasses",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "daysInMonth",
       "asserted": true,
       "shown": false,
@@ -2900,12 +2690,6 @@
     },
     {
       "name": "defaultWidgetIdFactory",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "define",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2935,19 +2719,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "dragPointOf",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "dynamicParts",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "dynamicPartsOf",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2987,18 +2759,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "fieldPartIds",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "fieldRootClasses",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "fieldShellPartIds",
@@ -3055,12 +2815,6 @@
       "reason": "published, neither asserted nor shown"
     },
     {
-      "name": "flattenPatch",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "focusTrigger",
       "asserted": false,
       "shown": false,
@@ -3107,12 +2861,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "hasRequiredMarker",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "hctToHex",
@@ -3211,12 +2959,6 @@
       "reason": "published, neither asserted nor shown"
     },
     {
-      "name": "isFieldHandleTree",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "isFullyServerRenderable",
       "asserted": true,
       "shown": false,
@@ -3241,12 +2983,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "isRecord",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "isSafeFieldPath",
       "asserted": false,
       "shown": false,
@@ -3257,18 +2993,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "isSchemaPatch",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "isSchemaValue",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "isSensitivePath",
@@ -3439,12 +3163,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "numericKeysToArrays",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "oklchToHex",
       "asserted": true,
       "shown": false,
@@ -3607,18 +3325,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "partsSharingClassesWith",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "pathGet",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "pointerAngle",
       "asserted": true,
       "shown": false,
@@ -3665,12 +3371,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "projectFieldA11y",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "projectFieldShellA11y",
@@ -3731,12 +3431,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "registerHandleOwner",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "relativeLuminance",
@@ -3817,24 +3511,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "selectNextActiveKey",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "selectTypeaheadKey",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "semanticElement",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "serializeMdyThemeCss",
       "asserted": true,
       "shown": false,
@@ -3845,12 +3521,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "shallowEqualRecords",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "shouldCloseMultiselectOverlay",
@@ -4015,12 +3685,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "unflatten",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "validateExpression",
       "asserted": true,
       "shown": false,
@@ -4037,12 +3701,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "walkSchema",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "widgetKeyIntent",

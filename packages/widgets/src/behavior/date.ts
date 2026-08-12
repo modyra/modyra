@@ -1,5 +1,5 @@
 /** A single date: bounds, the value transition, and the draft a modal picker edits. */
-import { isDateInRange, parseIsoDate } from "@modyra/core/date-utils";
+import { isDateInRange, parseIsoDate } from "@modyra/core/datetime";
 export function dateWithinBounds(
   iso: string,
   minIso: string | null | undefined,

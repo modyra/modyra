@@ -1,11 +1,4 @@
 {
-  "AsyncValidatorEntry": [
-    "debounceMs: number",
-    "dependsOn: ReadonlyArray<string>",
-    "fns: ReadonlyArray<MdyAsyncValidatorFn<unknown>>",
-    "timeoutMs: number",
-    "when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null"
-  ],
   "CalendarCell": [
     "date: CalendarDate",
     "inMonth: boolean",
@@ -15,19 +8,6 @@
     "day: number",
     "month: number",
     "year: number"
-  ],
-  "FieldRecord": [
-    "asyncErrors: MdyWritableSignal<ReadonlyArray<MdyFieldError>>",
-    "asyncRunId: number",
-    "asyncRunner: MdyEffectRef | null",
-    "asyncValidators: MdyWritableSignal<ReadonlyMap<string, AsyncValidatorEntry>>",
-    "disabled: MdyWritableSignal<MdySignal<boolean>>",
-    "inactive: MdyWritableSignal<MdySignal<boolean>>",
-    "pending: MdyWritableSignal<boolean>",
-    "readonly: MdyWritableSignal<MdySignal<boolean>>",
-    "requiredKeys: MdyWritableSignal<ReadonlySet<string>>",
-    "state: MdyFieldState<unknown>",
-    "validators: MdyWritableSignal<ReadonlyMap<string, ReadonlyArray<ValidatorFn<unknown>>>>"
   ],
   "Hct": [
     "c: number",
@@ -108,13 +88,6 @@
   "MdyArrayItemValue": [
     "(opaque)"
   ],
-  "MdyArrayManagerDeps": [
-    "engine: MdyCollectionHost",
-    "item: MdyAnyGroupDescriptor | MdyAnyFieldDescriptor",
-    "path: string",
-    "rx: MdyReactivity",
-    "sections?: ReadonlyArray<() => boolean>"
-  ],
   "MdyAsyncDraftStorage": [
     "flushed: Promise<void>",
     "ready: Promise<void>"
@@ -128,11 +101,6 @@
     "getItem: Promise<string | null>",
     "removeItem: Promise<void>",
     "setItem: Promise<void>"
-  ],
-  "MdyAsyncRunnerHost": [
-    "fieldPath: string",
-    "fieldState: MdyFieldState<unknown> | null",
-    "formValue: Record<string, unknown>"
   ],
   "MdyAsyncValidationContext": [
     "form: { /** Whole flat form value (dotted keys). */ value(): Record<string, unknown>; /** Current value of any field by dotted path; undefined if the field doesn't exist yet. */ fieldValue(path: string): unknown; }",
@@ -259,17 +227,6 @@
     "\"option\"",
     "\"value\""
   ],
-  "MdyCollectionHost": [
-    "disownField: void",
-    "errorsFor: MdySignal<ReadonlyArray<MdyFormError>>",
-    "fieldNames: readonly string[]",
-    "getField: MdyFieldRef<unknown> | null",
-    "ownField: void",
-    "peekField: MdyFieldRef<unknown> | null",
-    "refreshPathGate: void",
-    "registerPathGate: () => void",
-    "warnDev: void"
-  ],
   "MdyColorValueIntent": [
     "(opaque)"
   ],
@@ -326,10 +283,6 @@
   "MdyComputedOptions": [
     "debugName?: string",
     "equal?: MdyEqualityFn<T>"
-  ],
-  "MdyCondition": [
-    "holds: (value: unknown, enclosing: Record<string, unknown>) => boolean",
-    "read: () => { readonly value: unknown; readonly enclosing: Record<string, unknown>; }"
   ],
   "MdyControlOption": [
     "disabled?: boolean",
@@ -574,10 +527,6 @@
     "remove: void",
     "write: void"
   ],
-  "MdyDragPoint": [
-    "clientX: number",
-    "clientY: number"
-  ],
   "MdyDynamicArrayNode": [
     "initialValue?: ReadonlyArray<unknown>",
     "item: MdyDynamicFieldNode | MdyDynamicGroupNode",
@@ -794,14 +743,6 @@
     "\"notEquals\"",
     "\"or\""
   ],
-  "MdyFieldA11yOptions": [
-    "autocomplete?: string",
-    "constraints?: MdyFieldConstraints",
-    "inputMode?: string",
-    "inputType?: string",
-    "kind?: MdyWidgetKind | string",
-    "widgetId: string"
-  ],
   "MdyFieldConstraints": [
     "inputMode: string | null",
     "max: number | null",
@@ -810,10 +751,6 @@
     "minLength: number | null",
     "pattern: string | null",
     "step: number | null"
-  ],
-  "MdyFieldController": [
-    "setReadonly: void",
-    "setValue: void"
   ],
   "MdyFieldDescriptor": [
     "asyncDebounceMs: number",
@@ -1368,9 +1305,6 @@
     "states?: readonly MdyStateName[]",
     "style?: Readonly<Record<string, string>>"
   ],
-  "MdyPartLookupOptions": [
-    "portalRoots?: readonly ParentNode[]"
-  ],
   "MdyPartMap": [
     "-> Readonly"
   ],
@@ -1398,26 +1332,10 @@
     "minDeltaE: number",
     "salience: number"
   ],
-  "MdyPointerDrag": [
-    "dragging: boolean",
-    "start: void",
-    "stop: void"
-  ],
-  "MdyPointerDragOptions": [
-    "document?: Document",
-    "onEnd?: void",
-    "onMove: void"
-  ],
   "MdyPointerOrigin": [
     "button: number",
     "isPrimary: boolean",
     "pointerId: number"
-  ],
-  "MdyPopupOpener": [
-    "controls: string",
-    "opener: string",
-    "role?: string",
-    "typeable?: boolean"
   ],
   "MdyPopupWidgetKind": [
     "(opaque)"
@@ -1479,14 +1397,6 @@
     "validOf: boolean",
     "value: MdySignal<Readonly<Record<string, TItemValue>>>"
   ],
-  "MdyRecordManagerDeps": [
-    "engine: MdyCollectionHost",
-    "item: MdyRowNode",
-    "path: string",
-    "rx: MdyReactivity",
-    "sections?: ReadonlyArray<() => boolean>",
-    "warn: (message: string) => void"
-  ],
   "MdyRelationAttribute": [
     "\"aria-activedescendant\"",
     "\"aria-controls\"",
@@ -1510,12 +1420,6 @@
   ],
   "MdySanitizer": [
     "(opaque)"
-  ],
-  "MdySchemaPaths": [
-    "arrayPaths: ReadonlySet<string>",
-    "groupPaths: ReadonlySet<string>",
-    "leafPaths: readonly string[]",
-    "recordPaths: ReadonlySet<string>"
   ],
   "MdyScopeOptions": [
     "debugName?: string",
@@ -2212,10 +2116,6 @@
   "closeOverlay": [
     "-> returns: MdyUiCommand"
   ],
-  "collectSchemaPaths": [
-    "(0) nodes: MdyFormSchema",
-    "-> returns: MdySchemaPaths"
-  ],
   "collectStateMatrix": [
     "(0) options: MdyStateMatrixOptions",
     "-> returns: Promise<MdyStateMatrixResult>"
@@ -2243,23 +2143,10 @@
     "(0) definition: MdyThemeDefinition",
     "-> returns: MdyResolvedTheme"
   ],
-  "composeConditions": [
-    "(0) rx: MdyReactivity",
-    "(1) conditions: readonly MdyCondition[]",
-    "(2) warn?: (message: string) => void",
-    "-> returns: MdySignal<boolean>"
-  ],
   "contrastRatio": [
     "(0) a: string",
     "(1) b: string",
     "-> returns: number"
-  ],
-  "createAsyncRunner": [
-    "(0) rec: FieldRecord",
-    "(1) rx: MdyReactivity",
-    "(2) host: MdyAsyncRunnerHost",
-    "(3) scope?: MdyReactiveScope",
-    "-> returns: MdyEffectRef"
   ],
   "createBooleanFieldController": [
     "(0) options: MdyBooleanFieldControllerOptions",
@@ -2270,11 +2157,6 @@
     "(0) kind: MdyWidgetKind",
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdyWidgetController<MdyCatalogWidgetState, MdyCatalogWidgetIntent>"
-  ],
-  "createColorsFieldController": [
-    "(0) options: MdyColorsFieldControllerOptions",
-    "(1) reactivity?: MdyReactivity",
-    "-> returns: MdyColorsFieldController"
   ],
   "createCommandRuntime": [
     "(0) options: MdyCommandRuntimeOptions",
@@ -2292,24 +2174,6 @@
     "(0) options: MdyDaterangeFieldControllerOptions",
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdyDaterangeFieldController"
-  ],
-  "createFieldController": [
-    "(0) options: MdyFieldControllerOptions<TValue>",
-    "(1) reactivity?: MdyReactivity",
-    "-> returns: MdyFieldController<TValue>"
-  ],
-  "createFieldRecord": [
-    "(0) rx: MdyReactivity",
-    "(1) initialValue: unknown",
-    "(2) extraErrors: (value: unknown) => ReadonlyArray<MdyFieldError>",
-    "(3) beforeWrite?: (value: unknown) => unknown",
-    "(4) warn?: (message: string) => void",
-    "-> returns: FieldRecord"
-  ],
-  "createFileFieldController": [
-    "(0) options: MdyFileFieldControllerOptions<TFile>",
-    "(1) reactivity?: MdyReactivity",
-    "-> returns: MdyFileFieldController<TFile>"
   ],
   "createFocusCustodian": [
     "(0) root: () => Element | null",
@@ -2342,19 +2206,10 @@
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdyOptionFieldController<TValue>"
   ],
-  "createPointerDrag": [
-    "(0) options: MdyPointerDragOptions",
-    "-> returns: MdyPointerDrag"
-  ],
   "createSelectController": [
     "(0) options: MdySelectControllerOptions<TValue>",
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdySelectController<TValue>"
-  ],
-  "createSelectFieldController": [
-    "(0) options: MdySelectFieldControllerOptions<TValue>",
-    "(1) reactivity?: MdyReactivity",
-    "-> returns: MdySelectFieldController<TValue>"
   ],
   "createSilentDiagnostics": [
     "-> returns: MdyDiagnostics"
@@ -2416,14 +2271,6 @@
     "(0) state: MdyDatepickerFieldState",
     "-> returns: readonly string[]"
   ],
-  "daterangeFieldPartIds": [
-    "(0) widgetId: string",
-    "-> returns: { readonly labelId: string; readonly startId: string; readonly endId: string; readonly gridId: string; readonly descriptionId: string; readonly errorId: string; }"
-  ],
-  "daterangeFieldRootClasses": [
-    "(0) state: MdyDaterangeFieldState",
-    "-> returns: readonly string[]"
-  ],
   "daysInMonth": [
     "(0) year: number",
     "(1) month: number",
@@ -2436,14 +2283,6 @@
   "decideOverlayPlacement": [
     "(0) input: MdyOverlayGeometry",
     "-> returns: MdyOverlayDecision"
-  ],
-  "define": [
-    "(0) kind: MdyWidgetKind",
-    "(1) rootClasses: readonly string[]",
-    "(2) partNames: readonly TPart[]",
-    "(3) overlay: boolean",
-    "(4) shape?: MdyWidgetShape<NoInfer<TPart>>",
-    "-> returns: MdyWidgetDefinition<TPart>"
   ],
   "deltaEOK": [
     "(0) left: Oklch",
@@ -2465,16 +2304,8 @@
     "(1) value: unknown",
     "-> returns: boolean"
   ],
-  "dragPointOf": [
-    "(0) event: MouseEvent | TouchEvent",
-    "-> returns: MdyDragPoint | null"
-  ],
   "dynamicParts": [
     "(0) kind: MdyWidgetKind",
-    "-> returns: readonly string[]"
-  ],
-  "dynamicPartsOf": [
-    "(0) nodes: readonly MdyWidgetStructureNode[]",
     "-> returns: readonly string[]"
   ],
   "errorsVisible": [
@@ -2517,14 +2348,6 @@
   "fieldCommandHandlers": [
     "(0) handle: MdyCommandTarget",
     "-> returns: MdyWidgetCommandHandlers"
-  ],
-  "fieldPartIds": [
-    "(0) widgetId: string",
-    "-> returns: { readonly inputId: string; readonly labelId: string; readonly descriptionId: string; readonly errorId: string; }"
-  ],
-  "fieldRootClasses": [
-    "(0) state: MdyFieldState<TValue>",
-    "-> returns: readonly string[]"
   ],
   "fieldShellPartIds": [
     "(0) widgetId: string",
@@ -2571,13 +2394,6 @@
     "(0) schema: MdyDynamicGroupNode",
     "-> returns: MdyDynamicField[]"
   ],
-  "flattenPatch": [
-    "(0) partial: Record<string, unknown>",
-    "(1) groupPaths: ReadonlySet<string>",
-    "(2) arrayPaths?: ReadonlySet<string>",
-    "(3) recordPaths?: ReadonlySet<string>",
-    "-> returns: Record<string, unknown>"
-  ],
   "focusTrigger": [
     "-> returns: MdyUiCommand"
   ],
@@ -2613,10 +2429,6 @@
   "handleFormOf": [
     "(0) handle: object",
     "-> returns: object | undefined"
-  ],
-  "hasRequiredMarker": [
-    "(0) fn: ValidatorFn<never>",
-    "-> returns: boolean"
   ],
   "hctToHex": [
     "(0) hct: Hct",
@@ -2690,11 +2502,6 @@
     "(0) operand: unknown",
     "-> returns: operand is MdyExpression"
   ],
-  "isFieldHandleTree": [
-    "(0) value: unknown",
-    "(1) nodes: MdyFormSchema",
-    "-> returns: boolean"
-  ],
   "isFullyServerRenderable": [
     "(0) kind: MdyWidgetKind",
     "-> returns: boolean"
@@ -2712,10 +2519,6 @@
     "(0) origin: MdyPointerOrigin",
     "-> returns: boolean"
   ],
-  "isRecord": [
-    "(0) value: unknown",
-    "-> returns: value is Record<string, unknown>"
-  ],
   "isSafeFieldPath": [
     "(0) name: string",
     "-> returns: boolean"
@@ -2724,16 +2527,6 @@
     "(0) a: CalendarDate",
     "(1) b: CalendarDate",
     "-> returns: boolean"
-  ],
-  "isSchemaPatch": [
-    "(0) value: unknown",
-    "(1) nodes: S",
-    "-> returns: value is MdyFormPatch<S>"
-  ],
-  "isSchemaValue": [
-    "(0) value: unknown",
-    "(1) nodes: S",
-    "-> returns: value is MdyFormValue<S>"
   ],
   "isSensitivePath": [
     "(0) path: string",
@@ -2852,12 +2645,6 @@
   "normalizeStateLedger": [
     "(0) ledger: Readonly<Record<string, readonly string[]>>",
     "-> returns: Readonly<Record<string, readonly string[]>>"
-  ],
-  "numericKeysToArrays": [
-    "(0) nested: Record<string, unknown>",
-    "(1) arrayPaths: ReadonlySet<string>",
-    "(2) recordPaths?: ReadonlySet<string>",
-    "-> returns: Record<string, unknown>"
   ],
   "observerFor": [
     "(0) handle: object",
@@ -2987,16 +2774,6 @@
     "(0) kind: MdyWidgetKind",
     "-> returns: readonly string[]"
   ],
-  "partsSharingClassesWith": [
-    "(0) kind: MdyWidgetKind",
-    "(1) part: string",
-    "-> returns: readonly string[]"
-  ],
-  "pathGet": [
-    "(0) value: unknown",
-    "(1) path: string",
-    "-> returns: unknown"
-  ],
   "pointerAngle": [
     "(0) rect: DOMRect",
     "(1) clientX: number",
@@ -3039,12 +2816,6 @@
     "(1) errors: ReadonlyArray<MdyFieldError>",
     "(2) options: MdyDaterangeFieldA11yOptions",
     "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly startControl: MdyPartContract; readonly endControl: MdyPartContract; readonly toggle: MdyPartContract; readonly grid: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; }"
-  ],
-  "projectFieldA11y": [
-    "(0) state: MdyFieldState<TValue>",
-    "(1) errors: ReadonlyArray<MdyFieldError>",
-    "(2) options: MdyFieldA11yOptions",
-    "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly input: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; }"
   ],
   "projectFieldShellA11y": [
     "(0) flags: MdyFieldShellFlags",
@@ -3104,11 +2875,6 @@
     "(1) form: object",
     "-> returns: void"
   ],
-  "registerHandleOwner": [
-    "(0) handle: object",
-    "(1) rx: MdyReactivity",
-    "-> returns: void"
-  ],
   "relativeLuminance": [
     "(0) hex: string",
     "-> returns: number"
@@ -3138,22 +2904,6 @@
     "(0) input: { readonly key: string; readonly open: boolean; readonly searchFocused: boolean; readonly activeKey: string | null; readonly createAvailable: boolean; }",
     "-> returns: MdySelectKeyboardAction | null"
   ],
-  "selectNextActiveKey": [
-    "(0) target: MdySelectMoveTarget",
-    "(1) activeKey: string | null",
-    "(2) enabledKeys: readonly string[]",
-    "-> returns: string | null"
-  ],
-  "selectTypeaheadKey": [
-    "(0) query: string",
-    "(1) enabledKeys: readonly string[]",
-    "(2) labelForKey: (key: string) => string",
-    "-> returns: string | null"
-  ],
-  "semanticElement": [
-    "(0) partName: string",
-    "-> returns: MdyWidgetSemanticElement"
-  ],
   "serializeMdyThemeCss": [
     "(0) theme: MdyResolvedTheme",
     "-> returns: string"
@@ -3172,11 +2922,6 @@
     "(0) beat: MdyPaintBeat",
     "(1) hostFlush?: () => Promise<unknown> | unknown",
     "-> returns: () => Promise<void>"
-  ],
-  "shallowEqualRecords": [
-    "(0) a: Record<string, unknown>",
-    "(1) b: Record<string, unknown>",
-    "-> returns: boolean"
   ],
   "shouldCloseMultiselectOverlay": [
     "(0) mode: MdyMultiselectMode",
@@ -3325,10 +3070,6 @@
     "(1) query: string",
     "-> returns: T | null"
   ],
-  "unflatten": [
-    "(0) flat: Record<string, unknown>",
-    "-> returns: Record<string, unknown>"
-  ],
   "validateExpression": [
     "(0) expr: unknown",
     "(1) where: string",
@@ -3336,15 +3077,6 @@
   ],
   "vanillaReactivity": [
     "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
-  ],
-  "walkSchema": [
-    "(0) nodes: MdyFormSchema",
-    "(1) prefix: string",
-    "(2) onField: (path: string, node: MdyAnyFieldDescriptor) => void",
-    "(3) onGroup?: (path: string, node: MdyAnyGroupDescriptor) => void",
-    "(4) onArray?: (path: string, node: MdyAnyArrayDescriptor) => void",
-    "(5) onRecord?: (path: string, node: MdyAnyRecordDescriptor) => void",
-    "-> returns: void"
   ],
   "widgetKeyIntent": [
     "(0) kind: MdyWidgetKind",

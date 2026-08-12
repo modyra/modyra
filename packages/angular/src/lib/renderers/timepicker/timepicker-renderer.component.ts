@@ -17,7 +17,7 @@ import {
   MdyTimeFormat,
   parseAnyTime,
   parseTime,
-} from "@modyra/core/time-utils";
+} from "@modyra/core/datetime";
 import {
   MDY_WIDGET_CONTRACTS,
   timeDraftTransition,

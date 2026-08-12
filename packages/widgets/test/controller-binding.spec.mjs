@@ -9,8 +9,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import { createForm, field, required, vanillaReactivity } from "@modyra/core";
-import { createCommandRuntime, fieldCommandHandlers, subscribeController } from "../dist/index.js";
-import { createTextFieldController } from "../dist/field/index.js";
+import {
+  createCommandRuntime,
+  fieldCommandHandlers,
+  subscribeController,
+} from "../dist/index.js";
+import {
+  createTextFieldController,
+} from "../dist/field/index.js";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>");
 globalThis.document = dom.window.document;

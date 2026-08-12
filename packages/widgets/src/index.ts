@@ -14,8 +14,6 @@ export type {
 export {
   MDY_FIELD_SHELL_CLASSES,
   MDY_FIELD_STATE_CLASSES,
-  MDY_SHARED_UI_CLASSES,
-  MDY_FIELD_SHELL_STRUCTURE,
   MDY_WIDGET_CONTRACT_VERSION,
 } from "./structure.js";
 export type {
@@ -27,7 +25,6 @@ export type {
 
 export { dynamicParts, isFullyServerRenderable, staticParts } from "./ssr.js";
 export {
-  MDY_LABELABLE_TAGS,
   MDY_SEMANTICS_REQUIRING_NAME,
   MDY_WIDGET_RELATIONS,
   partsRequiringName,
@@ -58,14 +55,9 @@ export type {
 } from "./commands.js";
 
 export {
-  MDY_WIDGET_STATES,
   MDY_STATE_EXPRESSION,
-  MDY_WIDGET_STATE_CONTRACTS,
-  MDY_WIDGET_STATE_SUPPORT,
   overlayOnlyParts,
   stateCarriers,
-  widgetStateMatrixSize,
-  widgetSupportsState,
 } from "./widget-states.js";
 export type { MdyWidgetState, MdyWidgetStateContract } from "./widget-states.js";
 
@@ -108,13 +100,13 @@ export type { MdyNativeAttributes } from "./native-constraints.js";
 export * from "./field/index.js";
 
 export { MDY_CHIP_CLASSES, multiselectChipClasses, type MdyChipAppearance, type MdyChipMode, type MdyChipPart, type MdyChipRole } from "./chip.js";
-export { MDY_STATE_MODIFIERS, stateClass, type MdyPartState, type MdyStateName } from "./state.js";
-export { MDY_CSS_PROPERTIES, MDY_CSS_PROPERTY_NAMES, type MdyOverlayProperty } from "./css.js";
+export { stateClass, type MdyPartState, type MdyStateName } from "./state.js";
+export { MDY_CSS_PROPERTIES, type MdyOverlayProperty } from "./css.js";
 export { partClasses, partStates, widgetStateClasses } from "./part-classes.js";
 export { MDY_LAYOUT_BREAKPOINTS, MDY_LAYOUT_CLASSES, MDY_LAYOUT_COLUMN_COUNT_PROPERTIES, MDY_LAYOUT_COLUMN_COUNT_PROPERTY, MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES, MDY_LAYOUT_COLUMN_START_PROPERTIES, layoutNodeAttributes, layoutSlotStyle, type MdyLayoutBreakpoint, type MdyLayoutColumnCounts, type MdyLayoutPart, type MdyLayoutSlotPlacement } from "./layout.js";
 export { anchorOverlay, overlayAnchoringFor, overlayStyleProperties, popupAlignmentClass, popupPlacementClass, MDY_OVERLAY_GAP, type MdyAnchorRect, type MdyOverlayAlignment, type MdyOverlayAnchorOptions, type MdyOverlayAnchoring, type MdyOverlayCoords, type MdyOverlayPlacement, type MdyOverlayPlacementResult, type MdyViewportSize } from "./overlay.js";
 export { setOverlayOpen, trackAnchoredOverlay } from "./overlay-dom.js";
-export { MDY_CANONICAL_UI_CLASSES, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS, MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } from "./catalog.js";
+export { MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS, MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } from "./catalog.js";
 export type { MdyPopupWidgetKind, MdyWidgetDefinition, MdyWidgetKind, MdyWidgetPart, MdyWidgetVariant } from "./catalog.js";
 
 export { createCatalogWidgetController } from "./catalog-controller.js";
@@ -123,8 +115,6 @@ export type { MdyCatalogWidgetIntent, MdyCatalogWidgetState } from "./catalog-co
 export { acceptTimeField, stepTimeField, timeFieldBounds } from "./time-bounds.js";
 export type { MdyTimeEntry, MdyTimeField, MdyTimeFieldBounds, MdyTimeRejection } from "./time-bounds.js";
 export { createFocusCustodian } from "./focus.js";
-export { createPointerDrag, dragPointOf } from "./pointer-drag.js";
-export type { MdyDragPoint, MdyPointerDrag, MdyPointerDragOptions } from "./pointer-drag.js";
 export { portalRootFor } from "./portal.js";
 export { createLightDismiss, isPrimaryInteraction } from "./dismissal.js";
 export { affordanceClasses, kindsWithAffordances, trailingAffordances } from "./affordance.js";

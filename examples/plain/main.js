@@ -1,7 +1,5 @@
 // Full-catalog demo for the framework-free renderer: every packaged theme, every palette engine,
 // explicit light/dark/auto mode, and the live contract verdict for what is on screen.
-import { MDY_PALETTE_MODELS } from "@modyra/core/color-utils";
-import { compileMdyTheme, serializeMdyThemeCss } from "@modyra/core/theme-compiler";
 import {
   createForm,
   field as mdyField,
@@ -12,9 +10,12 @@ import {
   record as mdyRecord,
   required as mdyRequired,
 } from "@modyra/core";
+import { MDY_PALETTE_MODELS } from "@modyra/core/color-utils";
+import { compileMdyTheme, serializeMdyThemeCss } from "@modyra/core/theme-compiler";
 import { mountMdyForm, renderField } from "@modyra/plain";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
-import { inspectWidgetDom, portalRootFor } from "@modyra/widgets/testing";
+import { inspectWidgetDom } from "@modyra/widgets/testing";
+import { portalRootFor } from "@modyra/widgets";
 
 const THEMES = {
   modern: "modyra-modern.css",
@@ -607,10 +608,12 @@ if (conditionalHost && conditionalState) {
   });
 
   const fields = [
-    { name: "kind", kind: "select", label: "Account", options: [
-      { value: "personal", label: "Personal" },
-      { value: "company", label: "Company" },
-    ] },
+    {
+      name: "kind", kind: "select", label: "Account", options: [
+        { value: "personal", label: "Personal" },
+        { value: "company", label: "Company" },
+      ]
+    },
     { name: "company.name", kind: "text", label: "Company name" },
     { name: "company.code", kind: "text", label: "Code" },
   ];

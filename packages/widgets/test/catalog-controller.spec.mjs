@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createCatalogWidgetController, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } from "../dist/index.js";
+import {
+  createCatalogWidgetController,
+  MDY_WIDGET_CONTRACTS,
+  MDY_WIDGET_KINDS,
+} from "../dist/index.js";
 
 test("every catalog controller exposes its typed anatomy through the runtime view", () => {
   for (const kind of MDY_WIDGET_KINDS) {

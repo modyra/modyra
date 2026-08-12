@@ -9,7 +9,9 @@ import assert from "node:assert";
 import test from "node:test";
 
 import { vanillaReactivity } from "@modyra/core";
-import { createTimepickerFieldController } from "../dist/field/index.js";
+import {
+  createTimepickerFieldController,
+} from "../dist/field/index.js";
 import { MDY_VALUE_CONTRACTS } from "../../core/dist/index.js";
 
 function setup(overrides = {}) {

@@ -7,7 +7,7 @@
  *
  * The working copy is canonical 12h whatever the field's own `format` says, which keeps one
  * representation for the dial to move through; `formatTimeAs` converts on the way out. The angle and
- * parsing maths lives in `@modyra/core/time-utils` — a renderer drawing its own clock face needs the
+ * parsing maths lives in `@modyra/core/datetime` — a renderer drawing its own clock face needs the
  * same functions.
  */
 import { blocksValueChange } from "../interactivity.js";
@@ -22,7 +22,7 @@ import {
   parseTime,
   type MdyTimeFormat,
   type ParsedTime,
-} from "@modyra/core/time-utils";
+} from "@modyra/core/datetime";
 
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";

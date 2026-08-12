@@ -9,7 +9,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createForm, field, required, vanillaReactivity } from "@modyra/core";
-import { createDaterangeFieldController } from "../dist/field/index.js";
+import {
+  createDaterangeFieldController,
+} from "../dist/field/index.js";
 
 function setup({ value = { start: null, end: null }, validators = [], ...rest } = {}) {
   const rx = vanillaReactivity();
@@ -166,8 +168,10 @@ test("a read-only range opens and picks nothing", () => {
  * `MdyDaterangeFieldController` are the four halves of what a host binds to.
  */
 test("both ends are named, and the opener carries the combobox", async () => {
-  const { projectDaterangeFieldA11y, daterangeFieldPartIds, daterangeFieldRootClasses } =
-    await import("../dist/field/index.js");
+  const { projectDaterangeFieldA11y } = await import("../dist/field/index.js");
+  const { daterangeFieldPartIds, daterangeFieldRootClasses } = await import(
+    "../dist/field/daterange-field-a11y.js"
+  );
   const { controller, form } = setup({ value: { start: "2026-07-10", end: "2026-07-14" } });
 
   /** @type {import("../dist/field/index.js").MdyDaterangeFieldState} */

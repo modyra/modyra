@@ -13,7 +13,9 @@
 import assert from "node:assert";
 import test from "node:test";
 
-import { sliderFillRatio } from "../dist/field/index.js";
+import {
+  sliderFillRatio,
+} from "../dist/field/index.js";
 
 test("the ends and the middle of a range", () => {
   assert.equal(sliderFillRatio(0, 0, 100), 0);

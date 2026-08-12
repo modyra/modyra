@@ -6,7 +6,9 @@ import assert from "node:assert";
 import test from "node:test";
 
 import { createForm, field, required, vanillaReactivity } from "@modyra/core";
-import { createTextFieldController } from "../dist/field/index.js";
+import {
+  createTextFieldController,
+} from "../dist/field/index.js";
 
 function setupText() {
   const form = createForm({ email: field("", [required()]) });

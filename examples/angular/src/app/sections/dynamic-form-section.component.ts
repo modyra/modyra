@@ -10,7 +10,7 @@ import { type MdyFormSubmitEvent } from "@modyra/core";
 import {
   parseDynamicForm,
   type MdyDynamicField,
-} from "@modyra/core/dynamic-config";
+} from "@modyra/core";
 
 interface RustSubmissionResponse {
   readonly ok: boolean;

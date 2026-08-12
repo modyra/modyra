@@ -1,4 +1,4 @@
-import { parseDynamicForm } from "@modyra/core/dynamic-config";
+import { parseDynamicForm } from "@modyra/core";
 import { evaluate, isUnknown, propertyKey, resolvePath, unwrapTypeOnly } from "../static-value.js";
 import type { EsNode } from "../static-value.js";
 
