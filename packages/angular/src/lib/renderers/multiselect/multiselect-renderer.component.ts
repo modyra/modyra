@@ -11,6 +11,8 @@ import {
   input,
   signal,
   viewChild,
+  OnInit,
+  effect,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
 import type { MdyMultiselectMode } from "@modyra/core";
@@ -21,6 +23,8 @@ import {
   multiselectValueTransition,
   optionNavigationIndex,
   shouldCloseMultiselectOverlay,
+  createMultiselectFieldController,
+  type MdyMultiselectFieldController,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -237,7 +241,7 @@ import { MdyDropdownBase } from "../dropdown-base";
 })
 export class MdyMultiselectComponent<TValue = string>
   extends MdyDropdownBase<ReadonlyArray<TValue>, TValue>
-  implements MdyOptionsControl<TValue> {
+  implements MdyOptionsControl<TValue>, OnInit {
   /* The popup wears what the catalogue says it wears. Restated in the template, a class added
      to the contract reached the renderers that derive and stopped at this one. */
   protected readonly popupClass = MDY_WIDGET_CONTRACTS.multiselect.parts.popup.classes.join(" ");
@@ -252,6 +256,26 @@ export class MdyMultiselectComponent<TValue = string>
   readonly filterFn = input<((value: TValue) => boolean) | undefined>(undefined);
 
   protected readonly fieldId = `mdy-control-multiselect-${MdyBaseControl.nextId()}`;
+
+  private controller: MdyMultiselectFieldController<TValue> | undefined;
+
+  override ngOnInit(): void {
+    this.controller = this.adoptFieldController((handle, widgetId) =>
+      createMultiselectFieldController<TValue>({
+        widgetId,
+        handle: handle as never,
+        options: this.filteredOptions(),
+        mode: this.mode(),
+      }),
+    );
+    // The list is an input and the pre-filter is the host's; the controller is told what remains
+    // rather than rebuilt, so the query it is holding survives a list that changes beneath it.
+    effect(() => this.controller?.setOptions(this.filteredOptions()), { injector: this.injector });
+    effect(() => this.controller?.dispatch({ type: "search", query: this.searchQuery() }), {
+      injector: this.injector,
+    });
+    super.ngOnInit();
+  }
 
   /** The id the opener names, which the projected panel has to carry. */
   protected readonly popupId = computed(
@@ -355,7 +379,30 @@ export class MdyMultiselectComponent<TValue = string>
     this.closeOverlay();
   }
 
+  /**
+   * One selection change, decided by the controller for this kind.
+   *
+   * The transition, what a readonly field refuses and when the value is dirty all belong to it; this
+   * renderer contributes the option it matched, which is Angular's own output and nothing the
+   * contract knows about.
+   */
   private commitMultiselect(intent: Parameters<typeof multiselectValueTransition<TValue>>[1]): void {
+    if (this.controller) {
+      const before = this.value() ?? [];
+      this.controller.dispatch(
+        intent.type === "clear"
+          ? { type: "clear" }
+          : { type: intent.type, optionKey: this.optionKey(intent.value) },
+      );
+      if (this.value() === before) return;
+      if (intent.type !== "clear") {
+        const matched = this.paintedOptions().find(
+          (option) => this.optionKey(option.value) === this.optionKey(intent.value),
+        );
+        if (matched) this.selectionChange.emit(matched);
+      }
+      return;
+    }
     const current = this.value() ?? [];
     const next = multiselectValueTransition(current, intent);
     if (next === current) return;

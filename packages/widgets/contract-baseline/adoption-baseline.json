@@ -1,7 +1,7 @@
 {
   "note": "What each renderer consumes today. These numbers may rise and may not fall.",
   "score": {
-    "controllers": 32,
+    "controllers": 38,
     "controllersOffered": 45,
     "projections": 6,
     "projectionsOffered": 48
@@ -84,7 +84,7 @@
       "projection": false
     },
     "angular:checkbox": {
-      "controller": false,
+      "controller": true,
       "projection": false
     },
     "lit:checkbox": {
@@ -96,7 +96,7 @@
       "projection": false
     },
     "angular:toggle": {
-      "controller": false,
+      "controller": true,
       "projection": false
     },
     "lit:toggle": {
@@ -108,7 +108,7 @@
       "projection": false
     },
     "angular:radio": {
-      "controller": false,
+      "controller": true,
       "projection": false
     },
     "lit:radio": {
@@ -120,7 +120,7 @@
       "projection": false
     },
     "angular:segmented": {
-      "controller": false,
+      "controller": true,
       "projection": false
     },
     "lit:segmented": {
@@ -144,7 +144,7 @@
       "projection": false
     },
     "angular:multiselect": {
-      "controller": false,
+      "controller": true,
       "projection": false
     },
     "lit:multiselect": {
@@ -156,7 +156,7 @@
       "projection": false
     },
     "angular:datepicker": {
-      "controller": false,
+      "controller": true,
       "projection": false
     },
     "lit:datepicker": {

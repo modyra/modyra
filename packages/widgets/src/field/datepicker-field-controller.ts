@@ -44,6 +44,14 @@ export interface MdyDatepickerFieldController
   setValue(iso: string | null): void;
   /** Update the readonly state. */
   setReadonly(readonly: boolean): void;
+  /**
+   * Replace the range of dates on offer, ISO `YYYY-MM-DD` or null for open-ended.
+   *
+   * A host whose bounds arrive later, or move — a departure date that cannot precede an arrival —
+   * tells the controller rather than building a new one, which would forget the month on screen and
+   * the cell holding focus.
+   */
+  setBounds(minDate: string | null, maxDate: string | null): void;
 }
 
 export function createDatepickerFieldController(
@@ -57,8 +65,12 @@ export function createDatepickerFieldController(
   reactivity = observerFor(options.handle, reactivity);
   const { widgetId, handle, firstDayOfWeek = 0, readonly: initialReadonly = false } = options;
 
-  const minDate = (): CalendarDate | null => parseIsoDate(options.minDate ?? null);
-  const maxDate = (): CalendarDate | null => parseIsoDate(options.maxDate ?? null);
+  // Signals, because the grid, what a key may reach and what a cell refuses are all derived from
+  // them: bounds that move have to move every answer with them, not only the next one asked for.
+  const minIso = reactivity.signal<string | null>(options.minDate ?? null);
+  const maxIso = reactivity.signal<string | null>(options.maxDate ?? null);
+  const minDate = (): CalendarDate | null => parseIsoDate(minIso());
+  const maxDate = (): CalendarDate | null => parseIsoDate(maxIso());
 
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
@@ -228,6 +240,11 @@ export function createDatepickerFieldController(
     moveFocus(parseIsoDate(iso) ?? today());
   }
 
+  function setBounds(nextMin: string | null, nextMax: string | null): void {
+    minIso.set(nextMin);
+    maxIso.set(nextMax);
+  }
+
   function setReadonly(nextReadonly: boolean): void {
     readonly.set(nextReadonly);
   }
@@ -236,5 +253,5 @@ export function createDatepickerFieldController(
     // No owned effects; the handle lifecycle belongs to the form engine.
   }
 
-  return { state, view, dispatch, setValue, setReadonly, destroy };
+  return { state, view, dispatch, setValue, setReadonly, setBounds, destroy };
 }
