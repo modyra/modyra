@@ -53,9 +53,10 @@ for (const { name, entry, jsxImportSource, plugins, pages = [] } of targets) {
     alias: {
       // vue: runtime template compiler build
       vue: "vue/dist/vue.esm-bundler.js",
-      // `@modyra/plain` is a private workspace package, so it is resolved from its build output
-      // rather than through node_modules — no dependency is added for a demo.
+      // `@modyra/plain` and `@modyra/styles` are private workspace packages, so they are resolved
+      // from their build output rather than through node_modules — no dependency is added for a demo.
       "@modyra/plain": "./packages/plain/dist/index.js",
+      "@modyra/styles": "./packages/styles/dist/index.js",
     },
     logLevel: "error",
   });

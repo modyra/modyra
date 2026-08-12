@@ -41,3 +41,24 @@ test("the year picker always contains the year on screen", () => {
   assert.ok(bounded.includes(1800) && bounded.includes(2400), "the bounds themselves are reachable");
   assert.deepEqual([...bounded].sort((a, b) => a - b), [...bounded], "the years come out in order");
 });
+
+test("a bound narrows the year picker, it does not merely disable it", () => {
+  // The picker offered two centuries whatever the field accepted, and the bounds only greyed the
+  // years out: a field taking eleven years drew two hundred and seven buttons, one hundred and
+  // ninety-six of them dead. The earlier check passed because it only ever widened the bounds.
+  const narrow = calendarYearRange(2026, { year: 2020, month: 1, day: 1 }, { year: 2030, month: 1, day: 1 });
+  assert.deepEqual([...narrow], [2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030]);
+  for (const year of narrow) {
+    assert.equal(isYearOutOfRange(year, { year: 2020, month: 1, day: 1 }, { year: 2030, month: 1, day: 1 }), false,
+      `${year} is offered and refused at the same time`);
+  }
+
+  // One bound narrows its own end and leaves the other wide.
+  const floorOnly = calendarYearRange(2026, { year: 2020, month: 1, day: 1 }, null);
+  assert.equal(Math.min(...floorOnly), 2020);
+  assert.ok(Math.max(...floorOnly) >= 2120, "an absent bound stays wide");
+
+  // A view outside the bounds still reaches back: a value can arrive from a draft or a server.
+  const outside = calendarYearRange(1990, { year: 2020, month: 1, day: 1 }, { year: 2030, month: 1, day: 1 });
+  assert.ok(outside.includes(1990) && outside.includes(2030), "the view and the bound are both reachable");
+});

@@ -126,8 +126,13 @@ export function isYearOutOfRange(
 /**
  * The years a year picker offers.
  *
- * Wide enough that a birth date and a far maturity are both reachable by scrolling, and always
- * containing the year on screen — a picker that cannot show where it already is has no way back.
+ * A bound is a bound: a field that accepts 2020 to 2030 offers eleven years, not two centuries with
+ * eleven of them enabled. Where there is no bound the span is wide enough that a birth date and a
+ * far maturity are both reachable by scrolling.
+ *
+ * Always contains the year on screen, bound or not — a picker that cannot show where it already is
+ * has no way back, and a view can sit outside the bounds when a value arrives from elsewhere.
+ *
  * Stated once because two renderers each choosing a span is two different pickers.
  */
 export function calendarYearRange(
@@ -135,8 +140,8 @@ export function calendarYearRange(
   min: CalendarDate | null,
   max: CalendarDate | null,
 ): readonly number[] {
-  const start = Math.min(min?.year ?? 1920, viewYear - 100, 1920);
-  const end = Math.max(max?.year ?? 2120, viewYear + 100, 2120);
+  const start = Math.min(min?.year ?? Math.min(viewYear - 100, 1920), viewYear);
+  const end = Math.max(max?.year ?? Math.max(viewYear + 100, 2120), viewYear);
   const years: number[] = [];
   for (let year = start; year <= end; year += 1) years.push(year);
   return years;
