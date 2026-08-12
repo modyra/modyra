@@ -11,8 +11,7 @@ import {
   type MdyOverlayAlignment,
   type MdyOverlayDecision,
   type MdyOverlayPlacement,
-  type MdyWidgetKind,
-} from "@modyra/widgets";
+  type MdyWidgetKind, trackAnchoredOverlay } from "@modyra/widgets";
 
 /** Visually hidden native input used as the platform picker behind a styled control. */
 export const POPUP_ANCHOR_STYLE = "position:relative";
@@ -182,15 +181,7 @@ export class MdyLitOverlayController {
   private _state: OverlayPanelState = computeOverlayPanelState(undefined);
   private clickX: number | undefined;
   private active = false;
-  private scrollRaf = 0;
-  private readonly onScroll = (): void => {
-    if (!this.active || this.scrollRaf !== 0) return;
-    this.scrollRaf = requestAnimationFrame(() => {
-      this.scrollRaf = 0;
-      this.refresh(false);
-    });
-  };
-  private readonly onResize = (): void => this.refresh(true);
+  private stopTracking: (() => void) | null = null;
 
   constructor(
     private readonly host: OverlayHost,
@@ -247,10 +238,14 @@ export class MdyLitOverlayController {
       if (this.active && this.content === null) this.refresh(true);
     });
     if (!wasActive) {
-      // Passive: this follows a scroll, it never cancels one, and a listener the engine must wait on
-      // before committing the frame is a listener that blocks the scroll it is following.
-      window.addEventListener("scroll", this.onScroll, { capture: true, passive: true });
-      window.addEventListener("resize", this.onResize, { passive: true });
+      // The contract's tracking, which keeps the two events apart: a page that scrolls moves the
+      // anchor and the popup follows with the corner it opened on, while a viewport that changes
+      // size changes what fits and the corner is chosen again.
+      this.stopTracking = trackAnchoredOverlay({
+        isOpen: () => this.active,
+        reposition: () => this.refresh(false),
+        reflow: () => this.refresh(true),
+      });
     }
   }
 
@@ -265,12 +260,8 @@ export class MdyLitOverlayController {
       setOverlayOpen(this.shown, false);
       this.shown = null;
     }
-    if (this.scrollRaf !== 0) {
-      cancelAnimationFrame(this.scrollRaf);
-      this.scrollRaf = 0;
-    }
-    window.removeEventListener("scroll", this.onScroll, { capture: true } as EventListenerOptions);
-    window.removeEventListener("resize", this.onResize);
+    this.stopTracking?.();
+    this.stopTracking = null;
   }
 
   refresh(reselectCorner = true): void {

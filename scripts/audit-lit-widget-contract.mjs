@@ -66,10 +66,7 @@ const CONSUMES = {
  * Asserted both ways: a new gap fails, and so does an entry that has been closed and left here. A
  * list that only grows is a comment; this one is a claim about the code that is checked on every run.
  */
-const KNOWN_GAPS = {
-  "components/select-field.ts:selectKeyboardAction":
-    "the select keyboard is written here as a local switch — `mapKeyToMoveTarget` plus a handler — while the contract holds the policy two other renderers already share",
-};
+const KNOWN_GAPS = {};
 
 for (const [file, symbol] of Object.entries(CONSUMES)) {
   const key = `${file}:${symbol}`;

@@ -76,7 +76,7 @@ export function createMultiselectFieldController<TValue>(
    * is empty: options that have not loaded are not a list that refuses the value.
    */
   const effectiveOptions = reactivity.computed(() =>
-    optionsWithUnrecognizedValues(allOptions(), handle.value()),
+    optionsWithUnrecognizedValues(allOptions(), heldValues()),
   );
 
   const indexOf = (options: readonly MdySelectOption<TValue>[]) => {
@@ -97,8 +97,12 @@ export function createMultiselectFieldController<TValue>(
   const query = reactivity.signal("");
   const open = reactivity.signal(false);
 
+  // A field that has never been set holds null, not an empty list — a document-declared control and
+  // a registry-backed one both start there. Read once, so nothing below has to remember it.
+  const heldValues = (): ReadonlyArray<TValue> => handle.value() ?? [];
+
   const state: MdySignal<MdyMultiselectFieldState<TValue>> = reactivity.computed(() => {
-    const selectedValues = handle.value();
+    const selectedValues = heldValues();
     const options = effectiveOptions();
     const keys = keysOf(selectedValues, indexOf(options));
     const counts = new Map<string, number>();
@@ -204,7 +208,7 @@ export function createMultiselectFieldController<TValue>(
 
   function toggle(key: string): readonly MdyUiCommand[] {
     return withOption(key, (option) => {
-      const values = [...handle.value()];
+      const values = [...heldValues()];
       const index = values.findIndex((v) => v === option.value);
       if (index === -1) values.push(option.value);
       else values.splice(index, 1);
@@ -215,7 +219,7 @@ export function createMultiselectFieldController<TValue>(
 
   function increment(key: string): readonly MdyUiCommand[] {
     return withOption(key, (option) => {
-      handle.set([...handle.value(), option.value]);
+      handle.set([...heldValues(), option.value]);
       return [{ type: "mark-dirty" }, { type: "mark-touched" }];
     });
   }
@@ -223,7 +227,7 @@ export function createMultiselectFieldController<TValue>(
   function decrement(key: string): readonly MdyUiCommand[] {
     const option = indexOf(effectiveOptions()).get(key);
     if (!option) return [];
-    const values = [...handle.value()];
+    const values = [...heldValues()];
     const index = values.findIndex((v) => v === option.value);
     if (index === -1) return [];
     values.splice(index, 1);

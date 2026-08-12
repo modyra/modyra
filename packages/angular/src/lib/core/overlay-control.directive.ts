@@ -21,6 +21,7 @@ import {
   type MdyOverlayDecision,
   type MdyOverlayLifecycleIntent,
   type MdyWidgetKind,
+  trackAnchoredOverlay,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../control/control.directive";
 import { MdyA11yAnnouncer } from "./a11y-announcer";
@@ -277,42 +278,34 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
 
     this.setupGlobalListeners();
 
-    // Non-modal overlays follow the container during scroll,
-    // keeping the same corner chosen at open time.
-    if (decision.placement !== "overlay") {
-      window.addEventListener("scroll", this.handleScroll, { capture: true, passive: true });
-    }
-    window.addEventListener("resize", this.handleResize);
+    this.startTracking();
   }
 
-  private scrollFrameId: number | null = null;
-  private resizeFrameId: number | null = null;
   private remeasureFrameId: number | null = null;
+  private stopTracking: (() => void) | null = null;
 
-  protected readonly handleScroll = () => {
-    if (!this.open()) return;
-    if (this.scrollFrameId !== null) cancelAnimationFrame(this.scrollFrameId);
-    this.scrollFrameId = requestAnimationFrame(() => {
-      this.scrollFrameId = null;
-      // Follow the anchor while keeping the shape the overlay opened with: re-deciding on every
-      // scroll frame is what makes a popup flip sides and resize under the pointer.
-      const anchored = this.anchorNow(undefined, this.heldDecision);
-      this.coords.set(anchored.coords);
-      this.maxHeight.set(anchored.maxHeight);
+  /**
+   * Follows the anchor while the page moves under it, through the contract's own tracking.
+   *
+   * The two events are not the same question and this renderer had always known it: scrolling moves
+   * the anchor and nothing else, so the overlay keeps the side and height it opened with, while a
+   * viewport that changes size changes what fits and the decision is taken again.
+   */
+  private startTracking(): void {
+    this.stopTracking?.();
+    this.stopTracking = trackAnchoredOverlay({
+      isOpen: () => this.open(),
+      reposition: () => {
+        const anchored = this.anchorNow(undefined, this.heldDecision);
+        this.coords.set(anchored.coords);
+        this.maxHeight.set(anchored.maxHeight);
+      },
+      // Orientation changes are resizes, and an overlay that only repositioned through them closed.
+      reflow: () => this.updatePosition(),
+      // An overlay that covers the viewport hangs off no control, so it has no anchor to follow.
+      followsScroll: () => this.position() !== "overlay",
     });
-  };
-
-  protected readonly handleResize = () => {
-    if (!this.open()) return;
-    // Debounce resize with RAF to avoid excessive calculations
-    if (this.resizeFrameId !== null) cancelAnimationFrame(this.resizeFrameId);
-    this.resizeFrameId = requestAnimationFrame(() => {
-      this.resizeFrameId = null;
-      // Recalculate position + maxHeight to adapt to new viewport dimensions.
-      // This fixes orientation change (portrait ↔ landscape) closing the overlay.
-      this.updatePosition();
-    });
-  };
+  }
 
 
   /** Recalculates the position of the currently open overlay. */
@@ -328,13 +321,10 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     this.maxHeight.set(anchored.maxHeight);
     this.heldDecision = anchored.decision;
 
-    // If position changed between overlay and anchored, manage scroll listener
-    const wasOverlay = prevPosition === "overlay";
-    const isOverlay = anchored.decision.placement === "overlay";
-    if (!wasOverlay && isOverlay) {
-      window.removeEventListener("scroll", this.handleScroll, true);
-    } else if (wasOverlay && !isOverlay) {
-      window.addEventListener("scroll", this.handleScroll, { capture: true, passive: true });
+    // Crossing between covering the viewport and hanging off the control changes whether there is
+    // an anchor to follow at all, so the tracking is bound again for the answer it now gives.
+    if ((prevPosition === "overlay") !== (anchored.decision.placement === "overlay")) {
+      this.startTracking();
     }
   }
 
@@ -439,16 +429,8 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     document.removeEventListener("visibilitychange", this.handleOutsideAbandon);
     document.removeEventListener("keydown", this.handleDocumentKeydown);
     this.outsideDismissal.reset();
-    window.removeEventListener("scroll", this.handleScroll, true);
-    window.removeEventListener("resize", this.handleResize);
-    if (this.scrollFrameId !== null) {
-      cancelAnimationFrame(this.scrollFrameId);
-      this.scrollFrameId = null;
-    }
-    if (this.resizeFrameId !== null) {
-      cancelAnimationFrame(this.resizeFrameId);
-      this.resizeFrameId = null;
-    }
+    this.stopTracking?.();
+    this.stopTracking = null;
     if (this.remeasureFrameId !== null) {
       cancelAnimationFrame(this.remeasureFrameId);
       this.remeasureFrameId = null;

@@ -150,7 +150,14 @@ export function trackOverlay(
 ): () => void {
   // The listening is `@modyra/widgets`', because passive and frame-coalesced is what it has to be
   // and that was written three times here and in the other two renderers, differently each time.
-  return trackAnchoredOverlay(() => positionOverlay(popup, anchor, options), isOpen);
+  //
+  // One answer for both events, deliberately: this renderer re-decides the placement on every
+  // reposition rather than holding the one it opened with, so a scroll and a resize genuinely have
+  // the same reply here.
+  return trackAnchoredOverlay({
+    reposition: () => positionOverlay(popup, anchor, options),
+    isOpen,
+  });
 }
 
 /**

@@ -11,12 +11,14 @@ import {
   OnInit,
   Signal,
   signal,
-  untracked
+  Injector,
+  untracked,
 } from "@angular/core";
 import { MDY_DECLARATIVE_REGISTRY, MDY_FLOATING_LABELS, MDY_FORM_ADAPTER, MDY_INLINE_ERRORS } from "../core/tokens";
 import { MdyFieldHandle } from "../core/typed-form";
+import { angularReactivity } from "../core/reactivity-angular";
 import { MdyFieldError, MdyFieldState, MdyFormAdapter } from "../core/types";
-import { handleFormOf, NO_CONSTRAINTS, type MdyFieldConstraints } from "@modyra/core";
+import { handleFormOf, NO_CONSTRAINTS, registerHandleForm, type MdyFieldConstraints } from "@modyra/core";
 import type { MdyInteractivity } from "@modyra/core";
 import {
   createValueWidgetController,
@@ -53,6 +55,7 @@ let _nextFieldId = 0;
 export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   protected readonly hostElement = inject(ElementRef<HTMLElement>);
   private readonly _destroyRef = inject(DestroyRef);
+  private readonly _injector = inject(Injector);
   private prefixObserver?: ResizeObserver;
   /** Field name currently claimed on the registry (tracks name changes). */
   private _claimedName: string | null = null;
@@ -519,25 +522,76 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   }
 
   /**
-   * The kind's own controller, bound to the handle this renderer draws.
+   * The kind's own controller, built the first time this renderer needs it.
    *
-   * A renderer with a handle behind it sends its intents through the controller for its kind, which
-   * owns the decisions — what an interactivity state blocks, when a value is dirty, what the
-   * projection then says. Without a handle there is no field to own anything, and the scalar bridge
-   * above stands in; that is the declarative `name` path, where the registry holds the value.
-   *
-   * Creating it here rather than in each renderer keeps the lifecycle in one place: a controller
-   * outliving its component is an effect writing to a destroyed view, and seven components each
-   * remembering to destroy is seven chances to forget one.
+   * Deferred rather than built in `ngOnInit`, because a field initializer is an injection context
+   * and `ngOnInit` is not — and because six renderers each writing the same lifecycle is the
+   * duplication that adopting a shared controller was supposed to remove, not relocate.
    */
   protected adoptFieldController<TController extends { destroy(): void }>(
     create: (handle: MdyFieldHandle<TValue | null>, widgetId: string) => TController,
-  ): TController | undefined {
-    const handle = this.field();
-    if (!handle) return undefined;
-    const controller = create(handle as MdyFieldHandle<TValue | null>, this.fieldId);
-    this._destroyRef.onDestroy(() => controller.destroy());
-    return controller;
+    sync?: (controller: TController) => void,
+  ): () => TController | undefined {
+    let controller: TController | undefined;
+    let built = false;
+    // Built outside any reactive context: the first read can come from a computed, and an effect
+    // created inside one is a nested effect Angular refuses (NG0602). Nothing here should be a
+    // dependency of the caller either — the controller is built once, not per recomputation.
+    return () =>
+      untracked(() => {
+        if (built) return controller;
+        built = true;
+        const handle = this.controllerHandle();
+        if (!handle) return undefined;
+        controller = create(handle, this.fieldId);
+        this._destroyRef.onDestroy(() => controller?.destroy());
+        // What a reactive input feeds the controller — an option list, a pair of bounds. The
+        // injector is passed because the first read is not an injection context.
+        if (sync) effect(() => sync(controller as TController), { injector: this._injector });
+        return controller;
+      });
+  }
+
+  /**
+   * A handle for the control to build its controller on, however the field was named.
+   *
+   * `[field]` hands one over. The `name` form does not — it resolves to the registry's state — and
+   * for want of a handle every renderer kept a second way to commit its value, so the kind's
+   * controller decided for one caller and the renderer decided for the other. The state carries
+   * everything a handle exposes; what was missing was the shape, and the shape is written once.
+   *
+   * Registered against Angular's own runtime, because a controller resolves the runtime that owns
+   * its handle: a synthetic one nobody claims would be observed by a vanilla runtime that cannot
+   * see an Angular signal, and would render once and then never again.
+   */
+  private _syntheticHandle: MdyFieldHandle<TValue | null> | undefined;
+  private controllerHandle(): MdyFieldHandle<TValue | null> | undefined {
+    const bound = this.field();
+    if (bound) return bound as MdyFieldHandle<TValue | null>;
+    if (!this.effectiveName()) return undefined;
+    if (!this._syntheticHandle) {
+      const state = () => this.fieldState();
+      const handle: MdyFieldHandle<TValue | null> = {
+        get path() { return "" as string; },
+        value: computed(() => state().value() as TValue | null),
+        errors: computed(() => state().errors()),
+        touched: computed(() => state().touched()),
+        dirty: computed(() => state().dirty()),
+        valid: computed(() => state().valid()),
+        pending: computed(() => state().pending()),
+        required: computed(() => state().required()),
+        constraints: computed(() => state().constraints()),
+        interactivity: computed(() => state().interactivity()),
+        disabled: computed(() => state().disabled()),
+        readonly: computed(() => state().readonly()),
+        set: (value) => this.setValue(value as TValue),
+        markAsTouched: () => this.markAsTouched(),
+        markAsDirty: () => this.markAsDirty(),
+      };
+      registerHandleForm(handle, angularReactivity(this._injector));
+      this._syntheticHandle = handle;
+    }
+    return this._syntheticHandle;
   }
 
   protected dispatchValueBlur(kind: MdyWidgetKind): void {

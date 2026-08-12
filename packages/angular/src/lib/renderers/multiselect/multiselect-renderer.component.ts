@@ -11,8 +11,6 @@ import {
   input,
   signal,
   viewChild,
-  OnInit,
-  effect,
 } from "@angular/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
 import type { MdyMultiselectMode } from "@modyra/core";
@@ -24,8 +22,7 @@ import {
   optionNavigationIndex,
   shouldCloseMultiselectOverlay,
   createMultiselectFieldController,
-  type MdyMultiselectFieldController,
-} from "@modyra/widgets";
+  } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -241,7 +238,7 @@ import { MdyDropdownBase } from "../dropdown-base";
 })
 export class MdyMultiselectComponent<TValue = string>
   extends MdyDropdownBase<ReadonlyArray<TValue>, TValue>
-  implements MdyOptionsControl<TValue>, OnInit {
+  implements MdyOptionsControl<TValue> {
   /* The popup wears what the catalogue says it wears. Restated in the template, a class added
      to the contract reached the renderers that derive and stopped at this one. */
   protected readonly popupClass = MDY_WIDGET_CONTRACTS.multiselect.parts.popup.classes.join(" ");
@@ -257,25 +254,20 @@ export class MdyMultiselectComponent<TValue = string>
 
   protected readonly fieldId = `mdy-control-multiselect-${MdyBaseControl.nextId()}`;
 
-  private controller: MdyMultiselectFieldController<TValue> | undefined;
-
-  override ngOnInit(): void {
-    this.controller = this.adoptFieldController((handle, widgetId) =>
+  // Told rather than rebuilt, so the query it holds survives a list that changes beneath it.
+  private readonly controller = this.adoptFieldController(
+    (handle, widgetId) =>
       createMultiselectFieldController<TValue>({
         widgetId,
         handle: handle as never,
         options: this.filteredOptions(),
         mode: this.mode(),
       }),
-    );
-    // The list is an input and the pre-filter is the host's; the controller is told what remains
-    // rather than rebuilt, so the query it is holding survives a list that changes beneath it.
-    effect(() => this.controller?.setOptions(this.filteredOptions()), { injector: this.injector });
-    effect(() => this.controller?.dispatch({ type: "search", query: this.searchQuery() }), {
-      injector: this.injector,
-    });
-    super.ngOnInit();
-  }
+    (c) => {
+      c.setOptions(this.filteredOptions());
+      c.dispatch({ type: "search", query: this.searchQuery() });
+    },
+  );
 
   /** The id the opener names, which the projected panel has to carry. */
   protected readonly popupId = computed(
@@ -288,10 +280,8 @@ export class MdyMultiselectComponent<TValue = string>
   );
 
   /**
-   * What this control paints: the declared options, plus every held value they do not contain.
-   *
-   * A widget does not erase a value to make itself consistent, so what it will not erase it has to
-   * show — otherwise the form holds something the user cannot see and cannot take off.
+   * What this control paints: the declared options, plus every held value they do not contain. A
+   * widget does not erase a value to make itself consistent, so what it will not erase it shows.
    */
   protected readonly paintedOptions = computed(() =>
     optionsWithUnrecognizedValues(this.effectiveOptions(), this.value() ?? []),
@@ -350,18 +340,9 @@ export class MdyMultiselectComponent<TValue = string>
     if (action.type === "select" && active) this.onOverlaySelect(active.value);
   }
 
-  protected readonly counts = computed(() => {
-    const map = new Map<string, number>();
-    for (const v of this.value() ?? []) {
-      const key = this.optionKey(v);
-      map.set(key, (map.get(key) ?? 0) + 1);
-    }
-    return map;
-  });
-
-  protected readonly selectedSet = computed(
-    () => new Set((this.value() ?? []).map((v) => this.optionKey(v))),
-  );
+  // What is selected and how many of each: the controller's own state, not counted twice here.
+  protected readonly counts = computed(() => this.controller()?.state().counts ?? new Map<string, number>());
+  protected readonly selectedSet = computed(() => this.controller()?.state().selectedKeys ?? new Set<string>());
 
   protected override onBeforeOpen(): void {
     super.onBeforeOpen();
@@ -380,37 +361,21 @@ export class MdyMultiselectComponent<TValue = string>
   }
 
   /**
-   * One selection change, decided by the controller for this kind.
-   *
-   * The transition, what a readonly field refuses and when the value is dirty all belong to it; this
-   * renderer contributes the option it matched, which is Angular's own output and nothing the
-   * contract knows about.
+   * One selection change, decided by the controller for this kind. This renderer contributes only
+   * the matched option, which is Angular's own output and nothing the contract knows about.
    */
   private commitMultiselect(intent: Parameters<typeof multiselectValueTransition<TValue>>[1]): void {
-    if (this.controller) {
-      const before = this.value() ?? [];
-      this.controller.dispatch(
-        intent.type === "clear"
-          ? { type: "clear" }
-          : { type: intent.type, optionKey: this.optionKey(intent.value) },
-      );
-      if (this.value() === before) return;
-      if (intent.type !== "clear") {
-        const matched = this.paintedOptions().find(
-          (option) => this.optionKey(option.value) === this.optionKey(intent.value),
-        );
-        if (matched) this.selectionChange.emit(matched);
-      }
-      return;
-    }
-    const current = this.value() ?? [];
-    const next = multiselectValueTransition(current, intent);
-    if (next === current) return;
-    this.dispatchValueIntent<ReadonlyArray<TValue>>("multiselect", { type: "input", value: next });
-    if (intent.type !== "clear") {
-      const matched = this.paintedOptions().find((option) => this.optionKey(option.value) === this.optionKey(intent.value));
-      if (matched) this.selectionChange.emit(matched);
-    }
+    const before = this.value() ?? [];
+    this.controller()?.dispatch(
+      intent.type === "clear"
+        ? { type: "clear" }
+        : { type: intent.type, optionKey: this.optionKey(intent.value) },
+    );
+    if (this.value() === before || intent.type === "clear") return;
+    const matched = this.paintedOptions().find(
+      (option) => this.optionKey(option.value) === this.optionKey(intent.value),
+    );
+    if (matched) this.selectionChange.emit(matched);
   }
 
   /**
