@@ -40,7 +40,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "^2.2.2"
+    "@modyra/core": "^2.1.2"
   },
   "devDependencies": {
     "valibot": "^1.4.2",

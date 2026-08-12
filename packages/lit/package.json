@@ -47,7 +47,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "^2.2.2",
+    "@modyra/core": "^2.1.2",
     "@modyra/widgets": "^2.1.0"
   },
   "publishConfig": {
