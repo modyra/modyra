@@ -1,8 +1,8 @@
 import { mdyPart } from "../mdy-part.js";
-import { overlayControlledId } from "@modyra/widgets";
+import { overlayControlledId, createPointerDrag, dragPointOf } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import { angleToHour, angleToMinute, buildTimeString, formatTime, formatTimeAs, getCurrentTime, getPointerCoords, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
+import { angleToHour, angleToMinute, buildTimeString, formatTime, formatTimeAs, getCurrentTime, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
 import { acceptTimeField, stepTimeField, timeFieldBounds, timepickerDialNumbers, timepickerSelectedDialValue } from "@modyra/widgets";
 import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
@@ -84,7 +84,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this.overlay.close();
     super.disconnectedCallback();
     if (this.switchTimer !== null) clearTimeout(this.switchTimer);
-    this.teardownDragListeners();
+    this.drag.stop();
   }
 
   private get effectivePlaceholder(): string {
@@ -253,31 +253,24 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
 
   // ── Drag interaction ────────────────────────────────────────────────────────
 
-  private readonly handleDocMove = (event: MouseEvent | TouchEvent): void =>
-    this.onDragMove(event);
-  private readonly handleDocEnd = (): void => this.onDragEnd();
-
-  private setupDragListeners(): void {
-    document.addEventListener("mousemove", this.handleDocMove);
-    document.addEventListener("touchmove", this.handleDocMove, { passive: false });
-    document.addEventListener("mouseup", this.handleDocEnd);
-    document.addEventListener("touchend", this.handleDocEnd);
-  }
-
-  private teardownDragListeners(): void {
-    if (typeof document === "undefined") return;
-    document.removeEventListener("mousemove", this.handleDocMove);
-    document.removeEventListener("touchmove", this.handleDocMove);
-    document.removeEventListener("mouseup", this.handleDocEnd);
-    document.removeEventListener("touchend", this.handleDocEnd);
-  }
+  /**
+   * The gesture's plumbing, which is not this renderer's to write.
+   *
+   * A drag cannot be tracked on the element it starts on — the pointer leaves the dial at once — so
+   * it belongs to the document, and every renderer that binds it there binds the same four
+   * listeners. What the angle *becomes* stays here.
+   */
+  private readonly drag = createPointerDrag({
+    onMove: (_point: unknown, event: MouseEvent | TouchEvent) => this.onDragMove(event),
+    onEnd: () => this.onDragEnd(),
+  });
 
   private onDragStart(event: MouseEvent | TouchEvent): void {
     if (this._viewMode !== "dial") return;
     if (event.cancelable) event.preventDefault();
     this.dragField = this._focusedField;
     this._isDragging = true;
-    this.setupDragListeners();
+    this.drag.start();
     this.updateAngle(event);
   }
 
@@ -299,7 +292,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
 
   private onDragEnd(): void {
     if (!this._isDragging) return;
-    this.teardownDragListeners();
+    this.drag.stop();
     const angle = this._dragAngle;
     if (angle !== null) {
       const p = this.parsed();
@@ -319,7 +312,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   private updateAngle(event: MouseEvent | TouchEvent): void {
     const el = this.querySelector<HTMLElement>(".mdy-timepicker-dial__face");
     if (!el) return;
-    const coords = getPointerCoords(event);
+    const coords = dragPointOf(event);
     if (!coords) return;
     this._dragAngle = pointerAngle(el.getBoundingClientRect(), coords.clientX, coords.clientY);
   }

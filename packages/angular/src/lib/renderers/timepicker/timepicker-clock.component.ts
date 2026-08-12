@@ -13,7 +13,6 @@ import {
 } from "@angular/core";
 import {
   formatTime,
-  getPointerCoords,
   hourToAngle,
   MdyTimeFormat,
   minuteToAngle,
@@ -21,7 +20,7 @@ import {
   pointerAngle,
   to24Hour,
 } from "@modyra/core/datetime";
-import { timeClockTransition, timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerSelectedDialValue } from "@modyra/widgets";
+import { timeClockTransition, timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerSelectedDialValue, createPointerDrag, dragPointOf } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";
 
@@ -64,7 +63,7 @@ export class MdyTimepickerClockComponent {
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       if (this.switchTimer !== null) clearTimeout(this.switchTimer);
-      this.teardownDragListeners();
+      this.drag.stop();
     });
     // Opening is when the dial should take focus, and the clock is never destroyed — the panel
     // projects it rather than creating it — so an effect on `open` is what "it has just been
@@ -74,24 +73,17 @@ export class MdyTimepickerClockComponent {
     });
   }
 
-  private readonly handleDocMove = (event: MouseEvent | TouchEvent): void =>
-    this.onDragMove(event);
-  private readonly handleDocEnd = (): void => this.onDragEnd();
-
-  private setupDragListeners(): void {
-    document.addEventListener("mousemove", this.handleDocMove);
-    document.addEventListener("touchmove", this.handleDocMove, { passive: false });
-    document.addEventListener("mouseup", this.handleDocEnd);
-    document.addEventListener("touchend", this.handleDocEnd);
-  }
-
-  private teardownDragListeners(): void {
-    if (typeof document === "undefined") return;
-    document.removeEventListener("mousemove", this.handleDocMove);
-    document.removeEventListener("touchmove", this.handleDocMove);
-    document.removeEventListener("mouseup", this.handleDocEnd);
-    document.removeEventListener("touchend", this.handleDocEnd);
-  }
+  /**
+   * The gesture's plumbing, which is not this renderer's to write.
+   *
+   * A drag cannot be tracked on the element it starts on — the pointer leaves the dial at once — so
+   * it belongs to the document, and every renderer that binds it there binds the same four
+   * listeners. What the angle *becomes* stays here.
+   */
+  private readonly drag = createPointerDrag({
+    onMove: (_point: unknown, event: MouseEvent | TouchEvent) => this.onDragMove(event),
+    onEnd: () => this.onDragEnd(),
+  });
 
   private scheduleMinuteSwitch(delayMs: number): void {
     if (this.switchTimer !== null) clearTimeout(this.switchTimer);
@@ -267,7 +259,7 @@ export class MdyTimepickerClockComponent {
     if (event.cancelable) event.preventDefault();
     this.dragField = this.focusedField();
     this.isDragging.set(true);
-    this.setupDragListeners();
+    this.drag.start();
     this.updateAngle(event);
   }
 
@@ -285,7 +277,6 @@ export class MdyTimepickerClockComponent {
 
   protected onDragEnd(): void {
     if (!this.isDragging()) return;
-    this.teardownDragListeners();
 
     const angle = this.dragAngle();
     if (angle !== null) {
@@ -301,7 +292,7 @@ export class MdyTimepickerClockComponent {
   private updateAngle(event: MouseEvent | TouchEvent): void {
     const el = this.dialFaceRef()?.nativeElement;
     if (!el) return;
-    const coords = getPointerCoords(event);
+    const coords = dragPointOf(event);
     if (!coords) return;
     this.dragAngle.set(pointerAngle(el.getBoundingClientRect(), coords.clientX, coords.clientY));
   }

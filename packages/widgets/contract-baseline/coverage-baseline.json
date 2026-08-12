@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 662,
-    "asserted": 393,
+    "published": 669,
+    "asserted": 399,
     "shown": 44
   },
   "uncovered": [
@@ -392,9 +392,9 @@
     },
     {
       "name": "MdyBooleanFieldController",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyBooleanFieldControllerOptions",
@@ -680,9 +680,9 @@
     },
     {
       "name": "MdyDatepickerFieldController",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyDatepickerFieldControllerOptions",
@@ -769,6 +769,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "MdyDismissalBindingOptions",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
       "name": "MdyDismissalPhase",
       "asserted": false,
       "shown": false,
@@ -794,6 +800,12 @@
     },
     {
       "name": "MdyDomPartMap",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyDragPoint",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
@@ -1352,9 +1364,9 @@
     },
     {
       "name": "MdyMultiselectFieldController",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyMultiselectFieldControllerOptions",
@@ -1430,9 +1442,9 @@
     },
     {
       "name": "MdyOptionFieldController",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyOptionFieldControllerOptions",
@@ -1622,6 +1634,18 @@
     },
     {
       "name": "MdyPerceptualRelation",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyPointerDrag",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyPointerDragOptions",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
@@ -2371,6 +2395,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "bindLightDismiss",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "blocksFocus",
       "asserted": true,
       "shown": false,
@@ -2593,6 +2623,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "createPointerDrag",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "createSelectController",
       "asserted": true,
       "shown": false,
@@ -2714,6 +2750,12 @@
     },
     {
       "name": "draftShapeMatches",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "dragPointOf",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2852,9 +2894,9 @@
     },
     {
       "name": "getPointerCoords",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "handleFormOf",
