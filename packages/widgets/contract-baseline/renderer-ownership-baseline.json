@@ -1,0 +1,6 @@
+{
+  "note": "Renderer-owned mutations that exist today. The list may only get shorter.",
+  "violations": [
+    "select/select-renderer.component.ts:markAsTouched"
+  ]
+}
