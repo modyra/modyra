@@ -1,0 +1,164 @@
+/**
+ * A collection talks to an interface, and the interface is enough.
+ *
+ * `MdyFormRegistry` was declared inside the engine's own file, beside its only implementation, and
+ * both collection managers imported the concrete class and called eight methods that were on no
+ * interface at all. An abstraction nothing can be substituted for is a description of a class, and
+ * the only way to tell the two apart is to substitute something.
+ *
+ * The double below implements `MdyCollectionHost` and nothing else — no engine, no validation, no
+ * value tree. If a manager reaches past the contract, it reaches for a method that is not here.
+ */
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { field, group, vanillaReactivity } from "../dist/index.js";
+import { MdyArrayManager } from "../dist/array-manager.js";
+import { MdyRecordManager } from "../dist/record-manager.js";
+
+/** Records what a collection asks for, and answers with the least that satisfies the contract. */
+function hostDouble(rx) {
+  const calls = [];
+  const fields = new Map();
+  const gates = new Map();
+  const note = (name, ...args) => calls.push(`${name}(${args.filter((a) => typeof a === "string").join(",")})`);
+
+  const refFor = (name) => {
+    if (!fields.has(name)) {
+      const value = rx.signal(undefined);
+      fields.set(name, () => ({
+        value,
+        errors: rx.signal([]),
+        valid: rx.computed(() => true),
+        touched: rx.signal(false),
+        dirty: rx.signal(false),
+        pending: rx.signal(false),
+        required: rx.signal(false),
+        disabled: rx.signal(false),
+        readonly: rx.signal(false),
+        interactivity: rx.computed(() => "enabled"),
+        set: (next) => value.set(next),
+        markAsTouched() {},
+        markAsDirty() {},
+      }));
+    }
+    return fields.get(name);
+  };
+
+  return {
+    calls,
+    fieldsHeld: () => [...fields.keys()],
+    gatesHeld: () => [...gates.keys()],
+
+    // ── MdyFormRegistry ──────────────────────────────────────────────────────
+    addValidators: (...a) => note("addValidators", ...a),
+    upsertValidators: (...a) => note("upsertValidators", ...a),
+    removeValidators: (...a) => note("removeValidators", ...a),
+    upsertAsyncValidators: (...a) => note("upsertAsyncValidators", ...a),
+    setInitialValue: (...a) => note("setInitialValue", ...a),
+    setSanitizer: (...a) => note("setSanitizer", ...a),
+    setDisabled: (...a) => note("setDisabled", ...a),
+    setInactive: (...a) => note("setInactive", ...a),
+    setReadonly: (...a) => note("setReadonly", ...a),
+    claimField: (...a) => note("claimField", ...a),
+    removeField: (name) => { note("removeField", name); fields.delete(name); },
+
+    // ── what a collection needs beyond a control ─────────────────────────────
+    registerPathGate: (prefix, gate) => {
+      note("registerPathGate", prefix);
+      gates.set(prefix, gate);
+      return () => gates.delete(prefix);
+    },
+    refreshPathGate: (prefix) => note("refreshPathGate", prefix),
+    peekField: (name) => fields.get(name) ?? null,
+    getField: (name) => refFor(name),
+    fieldNames: () => [...fields.keys()],
+    errorsFor: () => rx.computed(() => []),
+    ownField: (...a) => note("ownField", ...a),
+    disownField: (...a) => note("disownField", ...a),
+    warnDev: (message) => note("warnDev", message),
+  };
+}
+
+test("an array manager runs against a host that is not the engine", () => {
+  const rx = vanillaReactivity();
+  const engine = hostDouble(rx);
+  const manager = new MdyArrayManager(
+    { rx, engine, path: "items", item: group({ name: field(""), qty: field(1) }) },
+    [{ name: "Bolt", qty: 4 }],
+  );
+
+  assert.equal(manager.rowCount(), 1, "the initial row was not registered");
+  manager.push({ name: "Nut", qty: 8 });
+  assert.equal(manager.rowCount(), 2);
+  manager.remove(0);
+  assert.equal(manager.rowCount(), 1);
+
+  // The gate is how a collection answers for its own paths, and it is on the contract now.
+  assert.deepEqual(engine.gatesHeld(), ["items"], "the manager did not claim its path range");
+  manager.destroy();
+});
+
+test("a record manager runs against the same double", () => {
+  const rx = vanillaReactivity();
+  const engine = hostDouble(rx);
+  const manager = new MdyRecordManager(
+    { rx, engine, path: "people", item: field("") },
+    { ada: "Ada" },
+  );
+
+  assert.deepEqual([...manager.keys()], ["ada"]);
+  manager.upsert("grace", "Grace");
+  assert.deepEqual([...manager.keys()].sort(), ["ada", "grace"]);
+  manager.rename("ada", "ada2");
+  assert.deepEqual([...manager.keys()].sort(), ["ada2", "grace"]);
+  manager.remove("grace");
+  assert.deepEqual([...manager.keys()], ["ada2"]);
+
+  assert.deepEqual(engine.gatesHeld(), ["people"]);
+  manager.destroy();
+});
+
+test("neither manager reached for a method the contract does not have", () => {
+  const rx = vanillaReactivity();
+  const engine = hostDouble(rx);
+  // A `Proxy` answers the question the double alone cannot: the double *has* the contract's methods,
+  // so a manager calling something else would throw `undefined is not a function` and be reported as
+  // a crash rather than as what it is — a dependency on the concrete class.
+  const strict = new Proxy(engine, {
+    get(target, property) {
+      if (property in target) return Reflect.get(target, property);
+      throw new Error(`[test] a collection reached past MdyCollectionHost for "${String(property)}"`);
+    },
+  });
+
+  const manager = new MdyArrayManager(
+    { rx, engine: strict, path: "rows", item: field("") },
+    ["a", "b"],
+  );
+  manager.push("c");
+  manager.move(0, 2);
+  manager.setAll(["x"]);
+  assert.equal(manager.rowCount(), 1);
+  manager.destroy();
+});
+
+/**
+ * The kind vocabulary has one home.
+ *
+ * `MdyValueKind` used to be `(typeof MDY_DYNAMIC_FIELD_KINDS)[number]` — the canonical type of this
+ * library derived from a constant inside a thirteen-hundred-line JSON parser, which also closed a
+ * cycle between three modules. It is a leaf now, and the document format names it rather than owning
+ * it. A re-export that quietly forks would be invisible without this.
+ */
+test("a kind is declared once, whatever names it", async () => {
+  const { MDY_FIELD_KINDS } = await import("../dist/field-kinds.js");
+  const { MDY_DYNAMIC_FIELD_KINDS, MDY_VALUE_CONTRACTS } = await import("../dist/index.js");
+
+  /** @type {ReadonlyArray<import("../dist/field-kinds.js").MdyFieldKind>} */
+  const kinds = MDY_FIELD_KINDS;
+  assert.equal(kinds.length, 17);
+  assert.deepEqual([...MDY_DYNAMIC_FIELD_KINDS], [...MDY_FIELD_KINDS],
+    "the document format forked the vocabulary instead of naming it");
+  assert.deepEqual(Object.keys(MDY_VALUE_CONTRACTS).sort(), [...MDY_FIELD_KINDS].sort(),
+    "a kind exists with no value contract, or a contract with no kind");
+});

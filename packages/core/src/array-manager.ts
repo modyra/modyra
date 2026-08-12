@@ -12,14 +12,14 @@
  * that have disappeared. This prevents field record accumulation when
  * undo/redo happens across structural boundaries.
  */
-import { MdyFormEngine } from "./form-engine.js";
+import type { MdyCollectionHost } from "./contracts/collection-host.js";
 import {
   MdyEffectRef,
   MdyReactivity,
   MdySignal,
   MdyWritableSignal,
   reactivityRunsEffects,
-} from "./reactivity.js";
+} from "./reactivity-contract.js";
 import { hasRequiredMarker } from "./schema-utils.js";
 import type {
   MdyAnyArrayDescriptor,
@@ -56,7 +56,7 @@ export interface MdyArrayManagerDeps {
    */
   readonly sections?: ReadonlyArray<() => boolean>;
   readonly rx: MdyReactivity;
-  readonly engine: MdyFormEngine;
+  readonly engine: MdyCollectionHost;
   /** Dotted array path, e.g. "items" or "order.items". */
   readonly path: string;
   readonly item: MdyAnyGroupDescriptor | MdyAnyFieldDescriptor;

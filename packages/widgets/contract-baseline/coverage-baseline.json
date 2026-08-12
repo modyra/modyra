@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 667,
-    "asserted": 343,
+    "published": 669,
+    "asserted": 346,
     "shown": 35
   },
   "uncovered": [
@@ -589,6 +589,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyCollectionHost",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyColorValueIntent",
       "asserted": false,
       "shown": false,
@@ -1079,6 +1085,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyFieldKind",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MdyFieldOptions",
@@ -2060,9 +2072,9 @@
     },
     {
       "name": "MdyValueKind",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyValueSecurityResult",

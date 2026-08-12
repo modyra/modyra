@@ -12,7 +12,7 @@ import type {
   MdyReactivity,
   MdySignal,
   MdyWritableSignal,
-} from "./reactivity.js";
+} from "./reactivity-contract.js";
 import type {
   MdyAsyncValidationContext,
   MdyAsyncValidatorFn,

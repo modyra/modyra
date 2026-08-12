@@ -1,4 +1,4 @@
-import { MdySignal, MdyWritableSignal } from "./reactivity.js";
+import { MdySignal, MdyWritableSignal } from "./reactivity-contract.js";
 import type { MdyFieldConstraints } from "./validator-facts.js";
 
 // ─── Validators ───────────────────────────────────────────────────────────────
