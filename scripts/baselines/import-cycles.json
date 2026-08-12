@@ -1,0 +1,10 @@
+{
+  "cycles": {
+    "packages/solid/src/index.ts -> packages/solid/src/widgets/index.ts -> packages/solid/src/widgets/field.ts": "The host's reactivity binding is declared in the package entry, and a widget hook reaches back to it through that entry. Breaking it means the binding gets its own module in all three packages, which is adapter work rather than engine work.",
+    "packages/solid/src/index.ts -> packages/solid/src/widgets/index.ts -> packages/solid/src/widgets/select.ts": "Same ring as the field hook above, through the select hook.",
+    "packages/svelte/src/index.ts -> packages/svelte/src/widgets/index.ts -> packages/svelte/src/widgets/field.ts": "Same shape as solid: the reactivity binding lives in the entry the hook imports.",
+    "packages/svelte/src/index.ts -> packages/svelte/src/widgets/index.ts -> packages/svelte/src/widgets/select.ts": "Same ring as the field hook above, through the select hook.",
+    "packages/vue/src/index.ts -> packages/vue/src/widgets/index.ts -> packages/vue/src/widgets/field.ts": "Same shape as solid: the reactivity binding lives in the entry the hook imports.",
+    "packages/vue/src/index.ts -> packages/vue/src/widgets/index.ts -> packages/vue/src/widgets/select.ts": "Same ring as the field hook above, through the select hook."
+  }
+}
