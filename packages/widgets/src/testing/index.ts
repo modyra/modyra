@@ -24,3 +24,12 @@ export type { MdyCanonicalExpectation, MdyCanonicalOptions, MdyCanonicalOverlay,
 
 export { MDY_PAINT_BEATS, settleFor } from "./paint-beat.js";
 export type { MdyPaintBeat } from "./paint-beat.js";
+
+/**
+ * Conformance fixtures for the select's transitions.
+ *
+ * They shipped in the runtime entry, which put test data in the bundle of every consumer that
+ * imported a class name. They belong to the harness they were written for.
+ */
+export { selectTransitionFixtures } from "../select/fixtures/transitions.js";
+export type { MdySelectTransitionFixture } from "../select/fixtures/transitions.js";

@@ -106,6 +106,31 @@ export type {
   MdyDatepickerFieldState,
 } from "./datepicker-field-types.js";
 
+export { createSelectFieldController } from "./select-field-controller.js";
+export type {
+  MdySelectFieldController,
+  MdySelectFieldControllerOptions,
+} from "./select-field-controller.js";
+
+export { createColorsFieldController } from "./colors-field-controller.js";
+export type { MdyColorsFieldController } from "./colors-field-controller.js";
+export type {
+  MdyColorsFieldControllerOptions,
+  MdyColorsFieldIntent,
+  MdyColorsFieldPreset,
+  MdyColorsFieldState,
+} from "./colors-field-types.js";
+
+export { createFileFieldController } from "./file-field-controller.js";
+export type { MdyFileFieldController } from "./file-field-controller.js";
+export type {
+  MdyFileFieldControllerOptions,
+  MdyFileFieldIntent,
+  MdyFileFieldState,
+} from "./file-field-types.js";
+
+export { fieldShellRootClasses } from "./shell-a11y.js";
+
 export { createDaterangeFieldController } from "./daterange-field-controller.js";
 export type { MdyDaterangeFieldController } from "./daterange-field-controller.js";
 

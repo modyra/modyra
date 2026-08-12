@@ -16,7 +16,7 @@ import { NO_CONSTRAINTS } from "@modyra/core";
 import { nativeConstraintAttributes } from "../native-constraints.js";
 import { defaultWidgetIdFactory as idFactory } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
-import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
+import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import { shownErrors } from "./verdict.js";
 
 /** The state a shell reflects: the flags, with no value and no control-specific concerns. */
@@ -78,6 +78,21 @@ export function fieldShellPartIds(widgetId: string): {
     descriptionId: idFactory.part(widgetId, "description"),
     errorId: idFactory.part(widgetId, "errors"),
   };
+}
+
+/**
+ * The classes the field's own root carries, from the states it is in.
+ *
+ * Every kind had this function, and every copy was the same five lines over the same table. The
+ * states a root may carry are declared once in `MDY_FIELD_STATE_CLASSES`; deriving the classes from
+ * them is not a per-kind decision.
+ */
+export function fieldShellRootClasses(state: Readonly<Record<string, unknown>>): readonly string[] {
+  const S = MDY_FIELD_STATE_CLASSES;
+  return [
+    S.field,
+    ...S.fieldStates.filter((name: string) => Boolean(state[name])).map((name: string) => `${S.field}--${name}`),
+  ];
 }
 
 export function projectFieldShellA11y(

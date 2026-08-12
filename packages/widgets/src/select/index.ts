@@ -19,6 +19,14 @@ export type {
   MdySelectMoveTarget,
 } from "./select-keyboard.js";
 
+/**
+ * The projection is exported, not only its types.
+ *
+ * Every other kind publishes the function that turns its state into ARIA. This one published the
+ * shape and kept the function, so a renderer wanting a select of its own had to rewrite the
+ * projection — which is exactly what ADR 0006 says a renderer must never have to do.
+ */
+export { projectSelectA11y } from "./select-a11y.js";
 export type {
   MdySelectA11yOptions,
   MdySelectA11yProjection,
@@ -32,11 +40,5 @@ export {
   scrollOptionIntoView,
 } from "./select-commands.js";
 
-export {
-  selectTransitionFixtures,
-} from "./fixtures/transitions.js";
-export type {
-  MdySelectTransitionFixture,
-} from "./fixtures/transitions.js";
-export { optionsWithUnrecognizedValue, optionsWithUnrecognizedValues, reconcileSelectValue } from "./select-reconciliation.js";
-export type { MdySelectReconciliationState } from "./select-reconciliation.js";
+export { optionsWithUnrecognizedValue, optionsWithUnrecognizedValues, reconcileSelectValue } from "../options-reconciliation.js";
+export type { MdySelectReconciliationState } from "../options-reconciliation.js";

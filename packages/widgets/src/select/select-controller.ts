@@ -11,7 +11,7 @@ import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js"
 import { defaultWidgetIdFactory } from "../ids.js";
 import { projectSelectA11y } from "./select-a11y.js";
 import { selectNextActiveKey } from "./select-keyboard.js";
-import { optionsWithUnrecognizedValue } from "./select-reconciliation.js";
+import { optionsWithUnrecognizedValue } from "../options-reconciliation.js";
 import type { MdySelectOption } from "@modyra/core";
 
 import type {

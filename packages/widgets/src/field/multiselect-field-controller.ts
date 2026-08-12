@@ -15,7 +15,7 @@ import { observerFor } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/options-utils";
 
 import { overlayLifecycleTransition } from "../behavior.js";
-import { optionsWithUnrecognizedValues } from "../select/select-reconciliation.js";
+import { optionsWithUnrecognizedValues } from "../options-reconciliation.js";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectMultiselectFieldA11y } from "./multiselect-field-a11y.js";
