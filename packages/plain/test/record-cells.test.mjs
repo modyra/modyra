@@ -133,3 +133,51 @@ test("a document declaring a keyed collection renders its rows", async () => {
   const values = [...host.querySelectorAll("input")].map((input) => input.value);
   assert.deepEqual(values.sort(), ["Cornetto", "Espresso"], "both declared rows are on screen");
 });
+
+test("a document's array reads back as a list, and a record keyed by digits stays a record", async () => {
+  // A path cannot say which it came from: `lines.0` and `m.0` are the same shape. The parser reports
+  // the collections it walked, so the form holds what the document declared instead of a guess.
+  const { parseDynamicForm } = await import("@modyra/core");
+  const { mountMdyForm } = await import("../dist/index.js");
+  const document_ = {
+    version: 3,
+    schema: {
+      node: "group",
+      children: {
+        lines: {
+          node: "array",
+          item: { node: "group", children: { n: { node: "field", field: { kind: "text", label: "N" } } } },
+          initialValue: [{ n: "a" }, { n: "b" }],
+        },
+        m: {
+          node: "record",
+          item: { node: "group", children: { n: { node: "field", field: { kind: "text", label: "M" } } } },
+          initialValue: { 0: { n: "zero" } },
+        },
+      },
+    },
+  };
+
+  const parsed = parseDynamicForm(document_);
+  assert.deepEqual(parsed.diagnostics, []);
+  assert.deepEqual(
+    [...parsed.collections],
+    [{ path: "lines", kind: "array" }, { path: "m", kind: "record" }],
+    "the parser must say which kind each collection is",
+  );
+
+  const host = column();
+  const { form } = mountMdyForm(host, parsed.fields, { collections: parsed.collections });
+
+  const value = form.getValue();
+  assert.equal(Array.isArray(value.lines), true, "the document's array came back as an object");
+  assert.deepEqual(value.lines, [{ n: "a" }, { n: "b" }], "each row keeps its own values");
+  assert.equal(Array.isArray(value.m), false, "a record keyed by digits became a list");
+  assert.deepEqual(value.m, { 0: { n: "zero" } });
+
+  // And the controls reach their handles through the collections, not by object lookup.
+  assert.deepEqual(
+    [...host.querySelectorAll("input")].map((input) => input.value).sort(),
+    ["a", "b", "zero"],
+  );
+});

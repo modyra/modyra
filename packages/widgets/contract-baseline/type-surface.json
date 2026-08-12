@@ -489,6 +489,10 @@
     "maxDate?: string",
     "minDate?: string"
   ],
+  "MdyDynamicCollection": [
+    "kind: \"array\" | \"record\"",
+    "path: string"
+  ],
   "MdyDynamicColorsField": [
     "kind: \"colors\"",
     "presets?: ReadonlyArray<string>"
@@ -544,6 +548,7 @@
   ],
   "MdyDynamicFormParseResult": [
     "acceptedCount: number",
+    "collections?: ReadonlyArray<MdyDynamicCollection>",
     "diagnostics: ReadonlyArray<MdyDynamicDiagnostic>",
     "fields: ReadonlyArray<MdyDynamicField>",
     "layout: ReadonlyArray<MdyDynamicLayoutNode>",
@@ -2293,6 +2298,10 @@
     "(0) year: number",
     "(1) month: number",
     "-> returns: number"
+  ],
+  "flattenDynamicForm": [
+    "(0) schema: MdyDynamicGroupNode",
+    "-> returns: { readonly fields: MdyDynamicField[]; readonly collections: MdyDynamicCollection[]; }"
   ],
   "flattenDynamicSchema": [
     "(0) schema: MdyDynamicGroupNode",

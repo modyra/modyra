@@ -1,6 +1,6 @@
 # ADR 0031: A field name is a path, in a schema as everywhere else
 
-Status: Accepted
+Status: Accepted — amended 2026-08-12, see **Amendment: a collection survives the flattening**
 
 ## Context
 
@@ -96,3 +96,29 @@ check.
 
 No data leaves the process, and nothing is stored differently: the engine already kept values flat
 by path, which is what this record aligns the schema with.
+
+## Amendment: a collection survives the flattening
+
+This record left one limit open and named it: only groups are reconstructed, because "whether a
+segment was an array row or a record key is not recoverable from a path — `lines.0` reads as the key
+`"0"`". The consequence was that a document's **array** came back as a group keyed `"0"`, `"1"`.
+
+It is not recoverable from a path, and it never needed to be: the document knows. `parseDynamicForm`
+now reports the collections it walked — `{ path, kind }` for each array and record — beside the
+fields it flattened, and `@modyra/plain` builds real `array()` and `record()` nodes from them. A
+document's array reads back as a list; a record keyed `"0"` stays a record. The pair is what makes
+the fix honest: the two are indistinguishable by path and are told apart by declaration.
+
+`collections` is optional on `MdyDynamicFormParseResult` and always present at runtime, so a
+consumer's stand-in keeps compiling; a caller that ignores it gets exactly the previous behaviour,
+nested groups included.
+
+**Not done here:** `@modyra/react`'s dynamic form builds its schema from the field list alone and
+still reconstructs groups. It is the same change against a different builder, and it is left for a
+batch of its own rather than bundled into this one.
+
+### Verification
+
+`packages/plain/test/record-cells.test.mjs` mounts a document holding both an array and a record
+keyed `"0"`, and asserts the value reads back as a list and an object respectively, each row keeping
+its own data, with the controls resolving through the collections rather than by object lookup.
