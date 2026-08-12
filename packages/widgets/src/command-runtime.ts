@@ -144,3 +144,65 @@ export function createMdyAnnouncer(elementId: string): MdyAnnouncer {
     },
   };
 }
+
+/**
+ * How a host defers work until after it has rendered.
+ *
+ * The only thing that genuinely differs between adapters. A microtask for the ones whose scheduler
+ * has already flushed by then, a frame for the ones that batch into one, a host promise for the ones
+ * that publish "I have finished rendering" — and focus is the reason it matters: focusing an element
+ * the host is about to replace moves focus to a node that will not be there.
+ */
+export type MdyCommandDefer = (run: () => void) => void;
+
+export interface MdyCommandRuntimeOptions {
+  /** The live region this host announces through. Idempotent by id, so one per host costs nothing. */
+  readonly announcerId: string;
+  readonly defer: MdyCommandDefer;
+}
+
+export interface MdyCommandRuntime {
+  execute(
+    commands: readonly MdyUiCommand[],
+    lookup: MdyElementLookup,
+    handlers: MdyWidgetCommandHandlers,
+  ): void;
+}
+
+/**
+ * Executing widget commands, written once.
+ *
+ * Seven adapters had this function and it was the same function seven times: collect focus and
+ * scroll into a queue, run everything else now, then drain the queue after the host has rendered.
+ * What differed was the id of the live region and one call — `queueMicrotask`, `requestAnimationFrame`,
+ * `afterNextRender`, `host.updateComplete.then`. A copy per adapter is how one of them comes to defer
+ * with the wrong primitive and focus lands on a node the host has already replaced.
+ */
+export function createCommandRuntime(options: MdyCommandRuntimeOptions): MdyCommandRuntime {
+  const announcer = createMdyAnnouncer(options.announcerId);
+
+  return {
+    execute(commands, lookup, handlers): void {
+      const deferred: Array<{ readonly el: HTMLElement; readonly type: "focus" | "scroll" }> = [];
+
+      processWidgetCommands(commands, {
+        lookup,
+        handlers,
+        scheduleFocus: (el) => deferred.push({ el, type: "focus" }),
+        scheduleScroll: (el) => deferred.push({ el, type: "scroll" }),
+        announce: (message) => announcer.announce(message),
+      });
+
+      if (deferred.length === 0) return;
+      options.defer(() => {
+        for (const item of deferred) {
+          if (item.type === "focus") item.el.focus();
+          // Every browser has `scrollIntoView`; some minimal DOM implementations — the one every
+          // adapter's own suite runs under — do not implement it at all. A missing scroll affordance
+          // must not take the whole interaction down with it.
+          else item.el.scrollIntoView?.({ block: "nearest" });
+        }
+      });
+    },
+  };
+}

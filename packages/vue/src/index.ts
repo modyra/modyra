@@ -192,10 +192,9 @@ export function vueReactivity(): MdyReactivity &
       // below so a *custom* `options.equal` is honored too, not
       // silently ignored (piano §4.2's rule on accepted-but-unhonored options).
       signalEquality: true,
-      // @vue/reactivity's computed() has no public custom-comparator hook —
-      // unlike Angular's native computed(), which does. Declaring this
-      // false rather than reimplementing computed() by hand around a raw
-      // effect(), which would stop being "native Vue reactivity" at all.
+      // This host's computed() has no public custom-comparator hook. Declared false rather than
+      // reimplemented by hand around a raw effect(), which would stop being this host's own
+      // reactivity — which is the entire reason to bind to it.
       computedEquality: false,
       batching: true,
       deterministicFlush: true,

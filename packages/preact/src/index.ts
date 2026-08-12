@@ -1,11 +1,9 @@
 /**
  * @modyra/preact — Preact binding for the Modyra form engine.
  *
- * A thin variant of `@modyra/react`: Preact has no signal primitive either,
- * so the engine runs on the core's `vanillaReactivity()` and components
- * subscribe through `useSyncExternalStore` — Preact ships this via
- * `preact/compat`, its React-compatibility layer, rather than natively in
- * `preact/hooks`.
+ * This host has no fine-grained signal of its own, so the engine runs on the core's
+ * `vanillaReactivity()` and components subscribe through `useSyncExternalStore` — which arrives
+ * here via `preact/compat` rather than natively in `preact/hooks`.
  */
 import {
   createForm,
@@ -27,10 +25,11 @@ import { useSyncExternalStore } from "preact/compat";
 import { useEffect, useMemo } from "preact/hooks";
 
 /**
- * `vanillaReactivity()` tagged `kind: "preact"` — same reasoning as
- * `@modyra/react`'s `reactReactivity()`: `useMdyForm` already runs on the
- * vanilla graph by default, this just gives the capability matrix
- * (`scripts/reactivity-capability-matrix.mjs`) a named export to introspect.
+ * `vanillaReactivity()` tagged `kind: "preact"`.
+ *
+ * `useMdyForm` already runs on the vanilla graph by default; this exists so the capability matrix
+ * (`scripts/reactivity-capability-matrix.mjs`) has a named export to introspect, and so a diagnostic
+ * can say which host it came from.
  */
 export function preactReactivity(): MdyReactivity &
   MdyBatchingCapability &
@@ -87,8 +86,9 @@ export function createStore(
 /**
  * Store over everything a field row usually renders. Observes through the
  * reactivity that actually created `handle` (resolved via
- * {@link getFieldHandleOwner}) instead of a fresh, unrelated instance — see
- * `@modyra/react`'s equivalent for the cross-runtime bug this fixes.
+ * {@link observerFor}) instead of a fresh, unrelated instance. A fresh runtime over another form's
+ * handle works by accident — vanilla's tracking is global to the module — and stops working with no
+ * error the moment the handle belongs elsewhere: nothing re-renders, and nothing says so.
  */
 export function createFieldStore(
   handle: MdyFieldHandle<unknown>,

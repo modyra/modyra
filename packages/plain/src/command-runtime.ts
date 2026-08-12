@@ -1,33 +1,26 @@
 /**
- * Thin adapter over @modyra/widgets' own framework-agnostic command runtime
- * — reused as-is rather than hand-rolled, since it already does exactly
- * what a vanilla-DOM host needs (focus/scroll scheduling, a shared
- * screen-reader announcer, open/close callbacks).
+ * Executing widget commands with no host to wait for.
+ *
+ * The execution is `@modyra/widgets`'. What this renderer contributes is the beat: it writes to the
+ * document itself, so there is nothing scheduled between a command and its effect and focus can be
+ * taken immediately. Every other adapter has to wait for its host to render first.
  */
 import {
-  createMdyAnnouncer,
-  processWidgetCommands,
+  createCommandRuntime,
   type MdyElementLookup,
   type MdyUiCommand,
   type MdyWidgetCommandHandlers,
 } from "@modyra/widgets";
 
-const announcer = createMdyAnnouncer("mdy-plain-announcer");
+const runtime = createCommandRuntime({
+  announcerId: "mdy-plain-announcer",
+  defer: (run) => { run(); },
+});
 
 export function runCommands(
   commands: readonly MdyUiCommand[],
   lookup: MdyElementLookup,
   handlers: MdyWidgetCommandHandlers,
 ): void {
-  processWidgetCommands(commands, {
-    lookup,
-    handlers,
-    scheduleFocus: (el) => el.focus(),
-    // Real browsers always have scrollIntoView; some minimal DOM
-    // implementations (e.g. jsdom, used by this package's own tests) don't
-    // implement it at all — guard rather than let a missing scroll affordance
-    // crash the whole interaction.
-    scheduleScroll: (el) => el.scrollIntoView?.({ block: "nearest" }),
-    announce: (message) => announcer.announce(message),
-  });
+  runtime.execute(commands, lookup, handlers);
 }

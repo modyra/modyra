@@ -5,6 +5,7 @@
 import { getCurrentScope, onScopeDispose, shallowRef, triggerRef } from "@vue/reactivity";
 import type { MdyFieldHandle } from "@modyra/core";
 import {
+  fieldCommandHandlers,
   createFieldController,
   type MdyFieldControllerOptions,
   type MdyFieldIntent,
@@ -57,11 +58,7 @@ export function useMdyField<TValue>(
     executeVueCommands(
       controller.dispatch(intent),
       () => undefined,
-      {
-        setOpen: () => undefined, // no overlay in this control
-        onTouched: () => handle.markAsTouched(),
-        onDirty: () => handle.markAsDirty(),
-      },
+      fieldCommandHandlers(handle),
     );
   };
 

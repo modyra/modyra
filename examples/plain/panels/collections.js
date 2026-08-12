@@ -23,6 +23,8 @@ export const collectionsPanel = {
    * covered. What a panel exercises is a claim its own browser test checks.
    */
   exercises: [
+    "subscribeController",
+    "fieldCommandHandlers",
     "createForm",
     "array",
     "record",

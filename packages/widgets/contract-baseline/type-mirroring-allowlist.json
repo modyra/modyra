@@ -3,13 +3,6 @@
   "minMembers": 3,
   "allowed": [
     {
-      "id": "angular:MdyAngularCommandHandlers",
-      "mirrors": "MdyWidgetCommandHandlers",
-      "at": "packages/angular/src/lib/widget-runtime/widget-runtime.ts:27",
-      "members": 4,
-      "reason": "recorded, not yet accounted for"
-    },
-    {
       "id": "angular:MdyArrayHandle",
       "mirrors": "MdyArrayHandle",
       "at": "packages/angular/src/lib/core/typed-form.ts:83",
@@ -21,13 +14,6 @@
       "mirrors": "MdyRecordHandle",
       "at": "packages/angular/src/lib/core/typed-form.ts:98",
       "members": 14,
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "lit:MdyLitCommandHandlers",
-      "mirrors": "MdyWidgetCommandHandlers",
-      "at": "packages/lit/src/widget-runtime/widget-runtime.ts:12",
-      "members": 4,
       "reason": "recorded, not yet accounted for"
     }
   ]

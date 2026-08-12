@@ -9,9 +9,8 @@
  * (`writable`/`derived`/`get`/the `Readable` contract), by contrast, is
  * ordinary JavaScript — it has worked outside `.svelte` files
  * since Svelte 3 and Svelte 5 still fully supports it. So the engine
- * runs on the core's `vanillaReactivity()` (same as `@modyra/react` and
- * `@modyra/preact` — Svelte has no exported fine-grained signal any more
- * than React does), and {@link toStore} adapts any Modyra signal into a
+ * runs on the core's `vanillaReactivity()` — this host exports no fine-grained signal to bind to —
+ * and {@link toStore} adapts any Modyra signal into a
  * Svelte `Readable`, so a `.svelte` template can write `{$emailStore}` and
  * subscribe to it the native way. A runes-based ergonomic layer is
  * possible as a follow-up (a small `@modyra/svelte/runes` subpath built
@@ -34,10 +33,11 @@ import {
 import type { Readable, Subscriber, Unsubscriber } from "svelte/store";
 
 /**
- * `vanillaReactivity()` tagged `kind: "svelte"` — same reasoning as
- * `@modyra/react`'s `reactReactivity()`: `createSvelteForm` already runs on
- * the vanilla graph by default, this just gives the capability matrix
- * (`scripts/reactivity-capability-matrix.mjs`) a named export to introspect.
+ * `vanillaReactivity()` tagged `kind: "svelte"`.
+ *
+ * `createSvelteForm` already runs on the vanilla graph by default; this exists so the capability
+ * matrix (`scripts/reactivity-capability-matrix.mjs`) has a named export to introspect, and so a
+ * diagnostic can say which host it came from.
  */
 export function svelteReactivity(): MdyReactivity &
   MdyBatchingCapability &

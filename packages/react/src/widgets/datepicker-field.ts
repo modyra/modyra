@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MdyFieldHandle } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import {
+  subscribeController,
   createDatepickerFieldController,
   type MdyDatepickerFieldControllerOptions,
   type MdyDatepickerFieldIntent,
@@ -50,16 +51,13 @@ export function useMdyDatepickerField(
 
   const [, setVersion] = useState(0);
 
-  useEffect(() => {
-    const ref = reactivity.effect(() => {
-      controller.state();
-      setVersion((v) => v + 1);
-    });
-    return () => {
-      ref.destroy();
-      controller.destroy();
-    };
-  }, [controller, reactivity]);
+  // Both signals. Today the view is a function of the state and nothing else, so watching one is
+  // enough — but that is a property of the current controllers, not of the contract, and a host that
+  // subscribes to half of what it renders is right by coincidence.
+  useEffect(
+    () => subscribeController(controller, reactivity, () => setVersion((v) => v + 1)),
+    [controller, reactivity],
+  );
 
   const dispatch = useCallback(
     (intent: MdyDatepickerFieldIntent) => {

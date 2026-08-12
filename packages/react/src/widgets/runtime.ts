@@ -1,29 +1,41 @@
 /**
- * React runtime for Modyra widget commands.
+ * Executing widget commands, in this host's terms.
+ *
+ * The execution is `@modyra/widgets`' — collecting focus and scroll, running the rest now, draining
+ * the queue once the host has rendered. What belongs to this adapter is the last part: **when** it
+ * has rendered.
  */
-
+import { useCallback, useMemo, useRef } from "react";
 import {
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
-import type { MdyUiCommand } from "@modyra/widgets";
-import {
-  createMdyAnnouncer,
-  processWidgetCommands,
+  createCommandRuntime,
   type MdyElementLookup,
-  type MdyWidgetCommandContext,
+  type MdyUiCommand,
   type MdyWidgetCommandHandlers,
 } from "@modyra/widgets";
 
 export type { MdyElementLookup };
 export type { MdyWidgetCommandHandlers as MdyReactCommandHandlers };
 
+/** React commits before the next frame, and focusing inside the commit moves focus to a node React is about to replace. */
+const runtime = createCommandRuntime({
+  announcerId: "mdy-react-announcer",
+  defer: (run) => { requestAnimationFrame(run); },
+});
+
+export function executeReactCommands(
+  commands: readonly MdyUiCommand[],
+  lookup: MdyElementLookup,
+  handlers: MdyWidgetCommandHandlers,
+): void {
+  runtime.execute(commands, lookup, handlers);
+}
+
 /**
- * Schedules command execution after the next layout effect / paint.
+ * The same execution, queued across a render rather than run inside one.
  *
- * Returns a queue function; call it from event handlers to push commands
- * that will be flushed inside a layout effect.
+ * A component dispatches an intent while rendering; running the commands there would touch the DOM
+ * the host is in the middle of producing. So they accumulate and drain on a microtask, and the
+ * execution itself is the shared one — this hook owns *when*, not *what*.
  */
 export function useMdyCommandQueue(
   lookup: MdyElementLookup,
@@ -32,40 +44,15 @@ export function useMdyCommandQueue(
   execute(commands: readonly MdyUiCommand[]): void;
 } {
   const queueRef = useRef<readonly MdyUiCommand[]>([]);
-  const focusQueueRef = useRef<ReadonlyArray<{ el: HTMLElement; type: "focus" | "scroll" }>>([]);
-  const announcerRef = useRef(createMdyAnnouncer("mdy-react-announcer"));
-  const contextRef = useRef<MdyWidgetCommandContext>(null as unknown as MdyWidgetCommandContext);
-
-  // Keep context fresh without recreating the stable execute callback.
-  contextRef.current = {
-    lookup,
-    handlers,
-    scheduleFocus: (el) => {
-      focusQueueRef.current = [...focusQueueRef.current, { el, type: "focus" }];
-    },
-    scheduleScroll: (el) => {
-      focusQueueRef.current = [...focusQueueRef.current, { el, type: "scroll" }];
-    },
-    announce: (message) => announcerRef.current.announce(message),
-  };
+  // Kept fresh without recreating the stable callback below.
+  const liveRef = useRef({ lookup, handlers });
+  liveRef.current = { lookup, handlers };
 
   const flush = useCallback((): void => {
     const commands = queueRef.current;
     if (commands.length === 0) return;
     queueRef.current = [];
-
-    processWidgetCommands(commands, contextRef.current);
-
-    const items = focusQueueRef.current;
-    if (items.length === 0) return;
-    focusQueueRef.current = [];
-
-    requestAnimationFrame(() => {
-      for (const item of items) {
-        if (item.type === "focus") item.el.focus();
-        else item.el.scrollIntoView({ block: "nearest" });
-      }
-    });
+    runtime.execute(commands, liveRef.current.lookup, liveRef.current.handlers);
   }, []);
 
   return useMemo(

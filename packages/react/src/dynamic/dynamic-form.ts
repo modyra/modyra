@@ -4,10 +4,9 @@
  * low-code scenarios. Headless by design, matching every other hook this
  * package ships (@modyra/react has never shipped a rendered component;
  * consumers bring their own JSX — see docs/guides/headless-recipes.md).
- * "Parity" with Angular's `<mdy-dynamic-form>` means the same value/
- * validation/error semantics for the same Contract, not identical visual
- * output — this shares its scope and its one real limitation with that
- * component exactly: `fields` is a flat list, and Contract `layout` is not
+ * Parity across renderers means the same value, validation and error semantics for the same
+ * Contract, not identical visual output. The scope and the one real limitation are the contract's,
+ * not this binding's: `fields` is a flat list, and Contract `layout` is not
  * applied — because there is nothing here to apply it to.
  *
  * That is not a gap this package is waiting to close. It renders no elements
@@ -36,7 +35,11 @@ import {
   type MdyTypedForm,
 } from "@modyra/core";
 
-/** Builds the (validator-free) schema for a flat field list — every field gets its default value, no validators yet (those come from `applyDynamicValidators`, matching Angular's own two-step "base schema, then upsertValidators" approach). */
+/**
+ * Builds the validator-free schema for a flat field list: every field gets its default value and no
+ * rules. Rules arrive separately through `applyDynamicValidators`, because a document that changes
+ * must be able to replace them without rebuilding the form the user is typing into.
+ */
 export function buildDynamicFormSchema(fields: ReadonlyArray<MdyDynamicField>): MdyFormSchema {
   // The names become the schema's keys and the empty values its initial state. Both rules are core's:
   // it decides what a key may be and what a kind holds when it holds nothing, so a form built here
@@ -48,7 +51,11 @@ export function buildDynamicFormSchema(fields: ReadonlyArray<MdyDynamicField>): 
   return schema as MdyFormSchema;
 }
 
-/** Applies each field's Contract validators (via the same `buildDynamicFieldValidators` Angular's own dynamic form calls) onto an already-built form, keyed so re-applying replaces rather than accumulates. */
+/**
+ * Applies each field's Contract validators onto an already-built form, through the core's own
+ * `buildDynamicFieldValidators`. Keyed, so re-applying replaces rather than accumulates — a document
+ * edited twice must not leave the first edition's rules behind.
+ */
 export function applyDynamicValidators(form: MdyTypedForm<MdyFormSchema>, fields: ReadonlyArray<MdyDynamicField>): void {
   for (const f of fields) {
     const { validators, marksRequired } = buildDynamicFieldValidators(f);
@@ -60,8 +67,8 @@ export type UseMdyDynamicFormOptions = Omit<MdyCoreFormOptions<Record<string, un
 
 /**
  * Builds a real, running form from a flat `MdyDynamicField[]` — the same
- * config shape `parseDynamicForm()` produces and Angular's
- * `<mdy-dynamic-form [fields]>` consumes. The schema (field *names*) is
+ * config shape `parseDynamicForm()` produces and every renderer consumes. The schema (field
+ * *names*) is
  * fixed at first render, matching `useMdyForm`'s own "construct once"
  * contract; validators re-apply whenever `fields` changes (config-driven
  * apps commonly swap validator rules without remounting).
