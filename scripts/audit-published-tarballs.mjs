@@ -117,6 +117,37 @@ const work = mkdtempSync(join(tmpdir(), "modyra-tarball-"));
 const consumer = join(work, "consumer");
 mkdirSync(consumer, { recursive: true });
 
+/**
+ * How many times a package appears under the consumer's `node_modules`, nested copies included.
+ *
+ * A range that overlaps deduplicates; a pin that does not, multiplies. This counts what the install
+ * actually produced instead of reading the manifests and believing them.
+ */
+function assertOneCopyOf(name) {
+  const found = [];
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const child = join(dir, entry.name);
+      if (child.endsWith(join("node_modules", name))) found.push(child);
+      if (entry.name === "node_modules" || entry.name.startsWith("@") || existsSync(join(child, "node_modules"))) {
+        walk(child);
+      }
+    }
+  };
+  walk(join(consumer, "node_modules"));
+  if (found.length > 1) {
+    const where = found.map((path) => path.replace(consumer, "").replace(/^\//, "")).join("\n    ");
+    fail(`${name} is installed ${found.length} times — two copies are two engines:\n    ${where}`);
+  }
+}
+
 try {
   // ── Pack, exactly as a release would ──────────────────────────────────────
   const tarballs = [];
@@ -154,6 +185,15 @@ try {
   }, null, 2));
 
   run("npm", ["install", "--no-audit", "--no-fund", "--loglevel=error"], consumer);
+
+  // ── One engine, however many packages asked for it ────────────────────────
+  //
+  // The core holds module-level symbols and registries: two copies in a tree are two engines, and a
+  // `required()` made by one is not required to the other — `aria-required` and every declared fact
+  // silently stop crossing the boundary. Exact intra-workspace pins produced exactly that on the
+  // registry, so the shape that prevents it is checked here rather than trusted.
+  assertOneCopyOf("@modyra/core");
+  assertOneCopyOf("@modyra/widgets");
 
   // ── Every entry point the manifests declare ───────────────────────────────
   const entries = [];
