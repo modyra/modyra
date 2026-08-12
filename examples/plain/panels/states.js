@@ -42,6 +42,18 @@ export const statesPanel = {
     "calendarViewAfterPick",
     "projectCalendarViewA11y",
     "projectCalendarPeriodCellA11y",
+    // Every kind is mounted here and driven into each state, so every kind's controller runs and
+    // the projection it composes reaches the DOM. Named one by one rather than in bulk, because a
+    // kind whose renderer stops consuming its controller should make this list wrong.
+    "createBooleanFieldController",
+    "createTextFieldController",
+    "createOptionFieldController",
+    "createMultiselectFieldController",
+    "createSelectController",
+    "createDatepickerFieldController",
+    "createDaterangeFieldController",
+    "createTimepickerFieldController",
+    "projectFieldShellA11y",
   ],
 
   invariant:
