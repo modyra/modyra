@@ -43,19 +43,20 @@ export function renderTimepickerField(
   const anchoring = overlayAnchoringFor("timepicker");
   const controller = createTimepickerFieldController({ widgetId: widgetId, handle, format }, reactivity);
 
+  const parts = MDY_WIDGET_CONTRACTS.timepicker.parts;
+
   const shell = buildFieldShell(f.label, "timepicker", {}, f.ariaLabel);
   // The catalogue's timepicker anatomy: a typeable input plus a toggle button opening the
   // dialog, rather than one button doing both jobs.
-  const control = el("input", "mdy-timepicker__input") as HTMLInputElement;
+  const control = el("input", parts.control.classes.join(" ")) as HTMLInputElement;
   control.type = "text";
   if (f.placeholder) control.placeholder = f.placeholder;
-  const toggle = el("button", "mdy-timepicker__toggle") as HTMLButtonElement;
+  const toggle = el("button", parts.toggle.classes.join(" ")) as HTMLButtonElement;
   setIcon(toggle, "CLOCK");
   toggle.type = "button";
   toggle.setAttribute("aria-label", "Open the clock");
   // `mdy-timepicker__popup` is the class the themes position and frame; the controller only
   // names the dialog, the hour and the minute.
-  const parts = MDY_WIDGET_CONTRACTS.timepicker.parts;
   const dialog = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   // The id the opener names. The relation points at the popup rather than the dialog inside it,
   // because a renderer whose panel is not modal has no dialog to name.
@@ -66,14 +67,14 @@ export function renderTimepickerField(
   const header = el("div", parts.header.classes.join(" "));
   const fields = el("div", "mdy-timepicker-fields");
   const hourSegment = el("div", parts.hour.classes.join(" "));
-  const hourInput = el("input", "mdy-timepicker-segment-input") as HTMLInputElement;
+  const hourInput = el("input", parts.hourControl.classes.join(" ")) as HTMLInputElement;
   hourInput.type = "number";
   hourInput.setAttribute("aria-label", "Hour");
   hourSegment.appendChild(hourInput);
   const separator = el("span", "mdy-timepicker-separator");
   setText(separator, ":");
   const minuteSegment = el("div", parts.minute.classes.join(" "));
-  const minuteInput = el("input", "mdy-timepicker-segment-input") as HTMLInputElement;
+  const minuteInput = el("input", parts.hourControl.classes.join(" ")) as HTMLInputElement;
   minuteInput.type = "number";
   minuteInput.setAttribute("aria-label", "Minute");
   minuteSegment.appendChild(minuteInput);

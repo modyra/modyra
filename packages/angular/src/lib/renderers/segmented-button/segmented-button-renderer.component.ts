@@ -104,15 +104,9 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
 
   protected readonly fieldId = `mdy-control-segmented-${MdyBaseControl.nextId()}`;
 
-  // Told rather than rebuilt when the list changes: rebuilding forgets the roving focus.
   private readonly controller = this.adoptFieldController(
-    (handle, widgetId) =>
-      createOptionFieldController<TValue>({
-        widgetId,
-        handle: handle as never,
-        options: this.options(),
-        variant: "segmented",
-      }),
+    (handle, widgetId) => createOptionFieldController<TValue>(
+      { widgetId, handle: handle as never, options: this.options(), variant: "segmented" }),
     (c) => c.setOptions(this.options()),
   );
 

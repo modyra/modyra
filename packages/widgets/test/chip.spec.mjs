@@ -20,6 +20,7 @@ test("the chip vocabulary is fixed and namespaced", () => {
     counter: "mdy-chip--counter",
     value: "mdy-chip--value",
     selected: "mdy-chip--selected",
+    removable: "mdy-chip--removable",
     check: "mdy-chip__check",
     label: "mdy-chip__label",
     count: "mdy-chip__count",

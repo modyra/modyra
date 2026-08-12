@@ -177,17 +177,10 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   private readonly injector = inject(Injector);
   protected readonly fieldId = `mdy-control-datepicker-${MdyBaseControl.nextId()}`;
 
-  // The ends can move — a return date cannot precede a departure — and the controller is told
-  // rather than rebuilt, which would forget the month on screen.
   private readonly controller = this.adoptFieldController(
-    (handle, widgetId) =>
-      createDatepickerFieldController({
-        widgetId,
-        handle: handle as never,
-        minDate: this.minDate(),
-        maxDate: this.maxDate(),
-        firstDayOfWeek: this.locale.firstDayOfWeek,
-      }),
+    (handle, widgetId) => createDatepickerFieldController({
+      widgetId, handle: handle as never, minDate: this.minDate(), maxDate: this.maxDate(),
+      firstDayOfWeek: this.locale.firstDayOfWeek }),
     (c) => c.setBounds(this.minDate(), this.maxDate()),
   );
 

@@ -73,13 +73,7 @@
     "mdy-chip",
     "mdy-chip--centered",
     "mdy-chip--counter",
-    "mdy-chip--removable",
     "mdy-chip--selected",
-    "mdy-chip-wrapper",
-    "mdy-chip__btn",
-    "mdy-chip__check",
-    "mdy-chip__count",
-    "mdy-chip__label",
     "mdy-color-swatch",
     "mdy-color-swatch--active",
     "mdy-colors",
@@ -337,11 +331,7 @@
   ],
   "files": {
     "packages/angular/src/lib/control/chips.directive.ts": {
-      "classes": [
-        "mdy-chip",
-        "mdy-chip--removable",
-        "mdy-chip--selected"
-      ],
+      "classes": [],
       "aria": [],
       "selectors": [
         "[mdyChips]"
@@ -834,11 +824,6 @@
         "mdy-chip--centered",
         "mdy-chip--counter",
         "mdy-chip--selected",
-        "mdy-chip-wrapper",
-        "mdy-chip__btn",
-        "mdy-chip__check",
-        "mdy-chip__count",
-        "mdy-chip__label",
         "mdy-control-label",
         "mdy-control-multiselect",
         "mdy-control-multiselect-",

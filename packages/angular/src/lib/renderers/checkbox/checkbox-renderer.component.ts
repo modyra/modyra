@@ -55,8 +55,7 @@ export class MdyCheckboxComponent extends MdyBaseControl<boolean> {
   protected readonly fieldId = `mdy-control-checkbox-${MdyBaseControl.nextId()}`;
 
   private readonly controller = this.adoptFieldController((handle, widgetId) =>
-    createBooleanFieldController({ widgetId, handle: handle as never, variant: "checkbox" }),
-  );
+    createBooleanFieldController({ widgetId, handle: handle as never, variant: "checkbox" }));
 
   protected onChange(event: Event): void {
     const input = event.target as HTMLInputElement;

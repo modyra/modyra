@@ -62,8 +62,7 @@ export class MdyToggleComponent extends MdyBaseControl<boolean> {
   protected readonly fieldId = `mdy-control-toggle-${MdyBaseControl.nextId()}`;
 
   private readonly controller = this.adoptFieldController((handle, widgetId) =>
-    createBooleanFieldController({ widgetId, handle: handle as never, variant: "switch" }),
-  );
+    createBooleanFieldController({ widgetId, handle: handle as never, variant: "switch" }));
 
   protected onChange(event: Event): void {
     const input = event.target as HTMLInputElement;
