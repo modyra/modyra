@@ -43,6 +43,8 @@ export const dynamicPanel = {
    */
   exercises: [
     "MDY_DYNAMIC_DIAGNOSTICS",
+    "applyFlatValidators",
+    "buildFlatFormSchema",
     "MDY_DYNAMIC_INVALID_FIELD",
     "parseDynamicForm",
     "mountMdyForm",

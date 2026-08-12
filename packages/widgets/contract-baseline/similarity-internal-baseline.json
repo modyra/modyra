@@ -1,0 +1,174 @@
+{
+  "threshold": 0.85,
+  "note": "Bodies a package duplicates within itself. Recorded at the value the check found on the day it was written: seventeen of the twenty-four are byte-identical, and the shape is the same in all three renderers — each one built its daterange by copying its datepicker, because @modyra/widgets offers no daterange controller to consume. Closing that gap upstream deletes most of this list; until then it may only get shorter.",
+  "pairs": [
+    {
+      "id": "angular:constructor@calendar.component.ts ≡ angular:constructor@range-calendar.component.ts",
+      "score": 1,
+      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:97",
+      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:115",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "angular:navigateMonth@calendar.component.ts ≡ angular:navigateMonth@range-calendar.component.ts",
+      "score": 1,
+      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:162",
+      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:187",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "angular:onMonthSelected@calendar.component.ts ≡ angular:onMonthSelected@range-calendar.component.ts",
+      "score": 1,
+      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:138",
+      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:163",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "angular:onYearSelected@calendar.component.ts ≡ angular:onYearSelected@range-calendar.component.ts",
+      "score": 1,
+      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:146",
+      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:171",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:isMonthDisabled@datepicker-field.ts ≡ lit:isMonthDisabled@daterange-field.ts",
+      "score": 1,
+      "left": "packages/lit/src/components/datepicker-field.ts:195",
+      "right": "packages/lit/src/components/daterange-field.ts:269",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:isYearDisabled@datepicker-field.ts ≡ lit:isYearDisabled@daterange-field.ts",
+      "score": 1,
+      "left": "packages/lit/src/components/datepicker-field.ts:210",
+      "right": "packages/lit/src/components/daterange-field.ts:284",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:monthNamesShort@datepicker-field.ts ≡ lit:monthNamesShort@daterange-field.ts",
+      "score": 1,
+      "left": "packages/lit/src/components/datepicker-field.ts:94",
+      "right": "packages/lit/src/components/daterange-field.ts:143",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:navigateMonths@datepicker-field.ts ≡ lit:navigateMonths@daterange-field.ts",
+      "score": 1,
+      "left": "packages/lit/src/components/datepicker-field.ts:128",
+      "right": "packages/lit/src/components/daterange-field.ts:184",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:onMonthSelected@datepicker-field.ts ≡ lit:onMonthSelected@daterange-field.ts",
+      "score": 1,
+      "left": "packages/lit/src/components/datepicker-field.ts:171",
+      "right": "packages/lit/src/components/daterange-field.ts:253",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:onYearSelected@datepicker-field.ts ≡ lit:onYearSelected@daterange-field.ts",
+      "score": 1,
+      "left": "packages/lit/src/components/datepicker-field.ts:179",
+      "right": "packages/lit/src/components/daterange-field.ts:261",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:renderYearPicker@datepicker-field.ts ≡ lit:renderYearPicker@daterange-field.ts",
+      "score": 1,
+      "left": "packages/lit/src/components/datepicker-field.ts:309",
+      "right": "packages/lit/src/components/daterange-field.ts:452",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:rows@datepicker-field.ts ≡ lit:rows@daterange-field.ts",
+      "score": 1,
+      "left": "packages/lit/src/components/datepicker-field.ts:101",
+      "right": "packages/lit/src/components/daterange-field.ts:150",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:weekdayNames@datepicker-field.ts ≡ lit:weekdayNames@daterange-field.ts",
+      "score": 1,
+      "left": "packages/lit/src/components/datepicker-field.ts:85",
+      "right": "packages/lit/src/components/daterange-field.ts:135",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:yearRange@datepicker-field.ts ≡ lit:yearRange@daterange-field.ts",
+      "score": 1,
+      "left": "packages/lit/src/components/datepicker-field.ts:218",
+      "right": "packages/lit/src/components/daterange-field.ts:292",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "plain:dispatch@datepicker-field.ts ≡ plain:dispatch@select-field.ts",
+      "score": 1,
+      "left": "packages/plain/src/fields/datepicker-field.ts:76",
+      "right": "packages/plain/src/fields/select-field.ts:150",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "plain:dispatch@datepicker-field.ts ≡ plain:dispatch@timepicker-field.ts",
+      "score": 1,
+      "left": "packages/plain/src/fields/datepicker-field.ts:76",
+      "right": "packages/plain/src/fields/timepicker-field.ts:113",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "plain:dispatch@select-field.ts ≡ plain:dispatch@timepicker-field.ts",
+      "score": 1,
+      "left": "packages/plain/src/fields/select-field.ts:150",
+      "right": "packages/plain/src/fields/timepicker-field.ts:113",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "angular:constructor@conditional-options.directive.ts ≡ angular:effect@conditional-options.directive.ts",
+      "score": 0.939,
+      "left": "packages/angular/src/lib/control/conditional-options.directive.ts:28",
+      "right": "packages/angular/src/lib/control/conditional-options.directive.ts:30",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "angular:constructor@mdy-disabled.directive.ts ≡ angular:effect@mdy-disabled.directive.ts",
+      "score": 0.906,
+      "left": "packages/angular/src/lib/validators/directives/mdy-disabled.directive.ts:30",
+      "right": "packages/angular/src/lib/validators/directives/mdy-disabled.directive.ts:32",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "angular:constructor@overlay-panel.component.ts ≡ angular:effect@overlay-panel.component.ts",
+      "score": 0.906,
+      "left": "packages/angular/src/lib/core/overlay-panel.component.ts:101",
+      "right": "packages/angular/src/lib/core/overlay-panel.component.ts:103",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:renderMonthPicker@datepicker-field.ts ≡ lit:renderMonthPicker@daterange-field.ts",
+      "score": 0.898,
+      "left": "packages/lit/src/components/datepicker-field.ts:288",
+      "right": "packages/lit/src/components/daterange-field.ts:431",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "angular:constructor@mdy-form-wizard.component.ts ≡ angular:effect@mdy-form-wizard.component.ts",
+      "score": 0.893,
+      "left": "packages/angular/src/lib/wizard/mdy-form-wizard.component.ts:107",
+      "right": "packages/angular/src/lib/wizard/mdy-form-wizard.component.ts:109",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "angular:afterNextRender@year-picker.component.ts ≡ angular:constructor@year-picker.component.ts",
+      "score": 0.878,
+      "left": "packages/angular/src/lib/renderers/datepicker/year-picker.component.ts:43",
+      "right": "packages/angular/src/lib/renderers/datepicker/year-picker.component.ts:41",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "angular:effect@mdy-form.component.ts ≡ angular:untracked@mdy-form.component.ts",
+      "score": 0.851,
+      "left": "packages/angular/src/lib/form/mdy-form.component.ts:144",
+      "right": "packages/angular/src/lib/form/mdy-form.component.ts:151",
+      "reason": "recorded, not yet accounted for"
+    }
+  ]
+}
