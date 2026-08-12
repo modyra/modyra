@@ -3,7 +3,7 @@
   "score": {
     "published": 683,
     "asserted": 405,
-    "shown": 48
+    "shown": 56
   },
   "uncovered": [
     {
@@ -2599,12 +2599,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "createBooleanFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "createCatalogWidgetController",
       "asserted": true,
       "shown": false,
@@ -2615,12 +2609,6 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "createDaterangeFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "createFocusCustodian",
@@ -2647,25 +2635,7 @@
       "reason": "published and never shown"
     },
     {
-      "name": "createMultiselectFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "createOptionFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "createPointerDrag",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "createSelectController",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2675,18 +2645,6 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "createTextFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "createTimepickerFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
     },
     {
       "name": "createTypeahead",
@@ -3458,12 +3416,6 @@
     },
     {
       "name": "projectDaterangeFieldA11y",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "projectFieldShellA11y",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
