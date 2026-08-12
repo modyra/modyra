@@ -22,6 +22,7 @@ import {
   type MdyOverlayLifecycleIntent,
   type MdyWidgetKind,
   trackAnchoredOverlay,
+  bindLightDismiss,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../control/control.directive";
 import { MdyA11yAnnouncer } from "./a11y-announcer";
@@ -416,30 +417,24 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     this.focus.restore(preferred);
   }
 
+  private unbindDismissal: (() => void) | null = null;
+
   private setupGlobalListeners(): void {
     if (typeof window === "undefined") return;
-    // Three listeners, not one: the contract dismisses on a *gesture*, and a gesture has two ends.
-    // Which ends dismiss is `createOutsidePointerGesture`, never decided here.
-    document.addEventListener("pointerdown", this.handleOutsideDown, true);
-    document.addEventListener("pointerup", this.handleOutsideUp, true);
-    document.addEventListener("click", this.handleOutsideClick, true);
-    document.addEventListener("pointercancel", this.handleOutsideCancel, true);
-    window.addEventListener("blur", this.handleOutsideAbandon);
-    document.addEventListener("visibilitychange", this.handleOutsideAbandon);
+    // Six listeners feed the policy, and which six is `bindLightDismiss`'. Bound here, the set
+    // drifted from the one the other renderers bind — the defect that left one of them deciding on
+    // `click` alone, which the policy documents as the tail of a gesture rather than the gesture.
+    this.unbindDismissal = bindLightDismiss(this.outsideDismissal);
     document.addEventListener("keydown", this.handleDocumentKeydown);
   }
 
   /** Removes all document/window listeners registered while open. */
   private teardownGlobalListeners(): void {
     if (typeof window === "undefined") return;
-    document.removeEventListener("pointerdown", this.handleOutsideDown, true);
-    document.removeEventListener("pointerup", this.handleOutsideUp, true);
-    document.removeEventListener("click", this.handleOutsideClick, true);
-    document.removeEventListener("pointercancel", this.handleOutsideCancel, true);
-    window.removeEventListener("blur", this.handleOutsideAbandon);
-    document.removeEventListener("visibilitychange", this.handleOutsideAbandon);
+    // Unbinding resets the policy too, which is why it is not reset again here.
+    this.unbindDismissal?.();
+    this.unbindDismissal = null;
     document.removeEventListener("keydown", this.handleDocumentKeydown);
-    this.outsideDismissal.reset();
     this.stopTracking?.();
     this.stopTracking = null;
     if (this.remeasureFrameId !== null) {
@@ -469,23 +464,6 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     dismiss: () => this.dismissFromOutside(),
   });
 
-  private readonly handleOutsideDown = (event: Event): void => {
-    const e = event as PointerEvent;
-    this.outsideDismissal.pointerdown(e.target, {
-      pointerId: e.pointerId ?? 0,
-      isPrimary: e.isPrimary ?? true,
-      button: e.button ?? 0,
-    });
-  };
-  private readonly handleOutsideUp = (event: Event): void => {
-    const e = event as PointerEvent;
-    this.outsideDismissal.pointerup(e.target, e.pointerId ?? undefined);
-  };
-  private readonly handleOutsideClick = (event: Event): void =>
-    this.outsideDismissal.click(event.target);
-  private readonly handleOutsideCancel = (event: Event): void =>
-    this.outsideDismissal.pointercancel((event as PointerEvent).pointerId ?? 0);
-  private readonly handleOutsideAbandon = (): void => this.outsideDismissal.reset();
 
   /** Escape closes the open overlay regardless of where focus is (R19). */
   private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {

@@ -20,6 +20,7 @@ import {
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
+import { withControls, type MdyMountedField } from "../field-controls.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 
@@ -30,7 +31,7 @@ export function renderMultiselectField(
   reactivity?: MdyReactivity,
   mode: MdyMultiselectMode = "single",
   widgetId: string = f.name,
-): () => void {
+): MdyMountedField {
   reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("multiselect");
@@ -296,12 +297,17 @@ export function renderMultiselectField(
     }
   });
 
-  return () => {
+  return withControls(
+    () => {
     undismiss();
     untrack();
     effectRef.destroy();
     controller.destroy();
     popup.remove();
     shell.root.remove();
-  };
+    },
+    // The list can arrive after the field is on screen; the controller is told rather than the
+    // field remounted, which would forget the query it was holding.
+    { setOptions: (next) => controller.setOptions(next as never) },
+  );
 }
