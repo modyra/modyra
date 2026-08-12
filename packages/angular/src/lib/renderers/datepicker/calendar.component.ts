@@ -15,7 +15,7 @@ import {
   CalendarDate,
   isDateInRange,
 } from "@modyra/core/datetime";
-import { calendarKeyboardTarget } from "@modyra/core/ui";
+import { calendarKeyboardTarget } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyCalendarGridComponent } from "./calendar-grid.component";
 import { MdyCalendarHeaderComponent } from "./calendar-header.component";

@@ -11,7 +11,7 @@ import {
   addYears,
   CalendarDate,
   daysInMonth,
-} from "./date-utils.js";
+} from "@modyra/core/datetime";
 
 /**
  * Listbox navigation (WAI-ARIA listbox pattern): returns the next active

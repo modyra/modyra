@@ -16,7 +16,7 @@ import {
   MDY_ICON_GRID,
   MDY_ICON_SPANS,
   MDY_ICON_STROKE,
-} from "../dist/icons.js";
+} from "../dist/index.js";
 
 const NAMES = Object.keys(MDY_ICONS);
 

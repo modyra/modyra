@@ -4,7 +4,7 @@ import {
   shownErrorsOf,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
-import { filterOptionsByQuery } from "@modyra/core/ui";
+import { filterOptionsByQuery } from "@modyra/widgets";
 import {
   createMultiselectFieldController,
   MDY_CHIP_CLASSES,

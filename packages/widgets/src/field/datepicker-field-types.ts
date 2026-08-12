@@ -4,7 +4,7 @@
  * The committed value is an ISO `YYYY-MM-DD` string or `null`. Which month is on screen
  * (`{viewYear, viewMonth}`) and which cell the keyboard is on (`focusedDate`) are view state kept
  * apart from it, so paging and moving focus change what is shown without selecting anything.
- * Keyboard navigation resolves through `calendarKeyboardTarget` (`@modyra/core/ui`).
+ * Keyboard navigation resolves through `calendarKeyboardTarget` (`@modyra/widgets`).
  *
  * Month and year drill-down views, and a confirm/cancel draft, belong to the host — see
  * datepicker-field-controller.ts.

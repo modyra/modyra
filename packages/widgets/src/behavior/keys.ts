@@ -59,7 +59,7 @@ export type MdyOptionNavigationTarget = "next" | "previous" | "first" | "last";
  * option. Distinct from `optionNavigationIndex`, which wraps because a segmented control is a
  * closed ring. Adapters take both from here so a listbox never quietly behaves like a ring.
  */
-export { listboxNextIndex as listboxNavigationIndex } from "@modyra/core/ui";
+
 
 export function optionNavigationIndex(
   key: string,

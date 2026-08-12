@@ -54,6 +54,11 @@ export const statesPanel = {
     "createDaterangeFieldController",
     "createTimepickerFieldController",
     "projectFieldShellA11y",
+    // Drawn by every toggle the panel mounts — the calendar button, the clock, the chevrons.
+    // Only the geometry: the grid, the spans and the stroke are read by the themes and the
+    // conformance kit, not by this renderer, and claiming them here would inflate the number this
+    // metric exists to keep honest.
+    "MDY_ICONS",
   ],
 
   invariant:

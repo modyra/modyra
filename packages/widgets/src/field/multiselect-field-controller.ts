@@ -12,7 +12,7 @@
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
-import { filterOptionsByQuery } from "@modyra/core/ui";
+import { filterOptionsByQuery } from "../options-utils.js";
 
 import { overlayLifecycleTransition } from "../behavior.js";
 import { optionsWithUnrecognizedValues } from "../options-reconciliation.js";

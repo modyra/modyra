@@ -2,7 +2,7 @@
  * Select keyboard behavior.
  */
 
-import { listboxNextIndex } from "@modyra/core/ui";
+import { listboxNextIndex } from "../keyboard.js";
 
 export type MdySelectMoveTarget = "next" | "previous" | "first" | "last";
 
