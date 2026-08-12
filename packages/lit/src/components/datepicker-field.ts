@@ -2,14 +2,19 @@ import { mdyPart } from "../mdy-part.js";
 import {
   createDatepickerFieldController,
   overlayControlledId,
-  type MdyDatepickerFieldController, partClasses, calendarViewOnToggle, type MdyCalendarViewMode } from "@modyra/widgets";
+  type MdyDatepickerFieldController,
+  type MdyDatepickerFieldIntent,
+  type MdyDatepickerFieldState,
+  partClasses,
+  calendarViewOnToggle,
+  subscribeController,
+} from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
-import { type MdyFieldHandle } from "@modyra/core";
-import { addMonths, buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, daysInMonth, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
-import { calendarKeyboardTarget } from "@modyra/core/ui";
+import { observerFor, type MdyFieldHandle } from "@modyra/core";
+import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { calendarRows, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
+import { calendarGridKey, calendarRows, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
 import {
   MdyLitOverlayController,
   POPUP_ANCHOR_STYLE,
@@ -19,7 +24,6 @@ import {
 // ─── Date & time ─────────────────────────────────────────────────────────────
 
 /** Which view the calendar shows — the contract's vocabulary, not a second set of three strings. */
-type CalendarView = MdyCalendarViewMode;
 
 /**
  * ISO `yyyy-MM-dd` value model — identical to the engine's convention.
@@ -27,6 +31,25 @@ type CalendarView = MdyCalendarViewMode;
  * a calendar toggle opening a full keyboard-navigable month grid — the
  * structure and classes the themes style.
  */
+/** What the component shows before a handle reaches it — a calendar on this month, nothing picked. */
+const RESTING: MdyDatepickerFieldState = Object.freeze({
+  selectedDate: null,
+  viewMode: "days",
+  viewYear: today().year,
+  viewMonth: today().month,
+  focusedDate: formatIsoDate(today()),
+  cells: [],
+  open: false,
+  invalid: false,
+  disabled: false,
+  interactivity: "enabled",
+  readonly: false,
+  required: false,
+  touched: false,
+  dirty: false,
+  pending: false,
+});
+
 export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   static override properties: PropertyDeclarations = {
     min: { type: String },
@@ -35,11 +58,6 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     firstDayOfWeek: { type: Number, attribute: "first-day-of-week" },
     variant: { type: String },
     _open: { state: true },
-    _view: { state: true },
-    _viewYear: { state: true },
-    _viewMonth: { state: true },
-    _focusedIso: { state: true },
-    _draftValue: { state: true },
   };
   declare min?: string;
   declare max?: string;
@@ -64,12 +82,9 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     return this.variant === "modal";
   }
   declare _open: boolean;
-  declare _view: CalendarView;
-  declare _viewYear: number;
-  declare _viewMonth: number;
-  declare _focusedIso: string;
+
   /** Temporary value used while the modal variant is open. */
-  declare _draftValue: string | null;
+
   protected override readonly widgetKind = "datepicker" as const;
   private readonly overlay = new MdyLitOverlayController(
     this,
@@ -86,12 +101,6 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     this.placeholder = "";
     this.variant = "docked";
     this._open = false;
-    this._view = "days";
-    const now = today();
-    this._viewYear = now.year;
-    this._viewMonth = now.month;
-    this._focusedIso = formatIsoDate(now);
-    this._draftValue = null;
   }
 
   private get locale(): string {
@@ -110,39 +119,21 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private rows(): CalendarCell[][] {
-    return calendarRows(this._viewYear, this._viewMonth, this.weekStart);
+    return calendarRows(this.view.viewYear, this.view.viewMonth, this.weekStart);
   }
 
-  private openPopup(handle: MdyFieldHandle<string | null>, event?: Event): void {
-    const selected = handle.value() ? parseIsoDate(handle.value() ?? "") : null;
-    const base = selected ?? today();
-    this._viewYear = base.year;
-    this._viewMonth = base.month;
-    this._focusedIso = formatIsoDate(base);
-    this._view = "days";
-    this._draftValue = handle.value() ?? null;
-    applyOverlayIntent(this, { type: "open", disabled: handle.disabled(), available: true });
-    this.overlay.open(event);
+  private openPopup(_handle: MdyFieldHandle<string | null>, event?: Event): void {
+    void event;
+    this.send({ type: "open" });
   }
 
   private closePopup(_handle: MdyFieldHandle<string | null>, refocus = true): void {
     if (!this._open) return;
-    applyOverlayIntent(this, { type: "close", restoreFocus: refocus });
-    this.overlay.close();
-    this._view = "days";
-    if (refocus) this.querySelector<HTMLInputElement>(".mdy-datepicker__input")?.focus();
+    this.send({ type: "close", restoreFocus: refocus });
   }
 
   private navigateMonths(delta: number): void {
-    const moved = addMonths(
-      { year: this._viewYear, month: this._viewMonth, day: 1 },
-      delta,
-    );
-    this._viewYear = moved.year;
-    this._viewMonth = moved.month;
-    const focused = parseIsoDate(this._focusedIso) ?? today();
-    const newFocused = addMonths(focused, delta);
-    this._focusedIso = formatIsoDate(newFocused);
+    this.send({ type: "navigate-month", delta });
   }
 
   /** Choosing a day writes it: this kind's value contract says `live`, whatever the placement. */
@@ -153,23 +144,15 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
 
   /** Where the header goes, answered by the contract rather than by a branch here. */
   private onToggleView(): void {
-    this._view = calendarViewOnToggle(this._view);
+    this.send({ type: "set-view-mode", mode: calendarViewOnToggle(this.view.viewMode) });
   }
 
   private onMonthSelected(_handle: MdyFieldHandle<string | null>, month: number): void {
-    this._viewMonth = month;
-    this._view = "days";
-    const focused = parseIsoDate(this._focusedIso) ?? today();
-    const day = Math.min(focused.day, daysInMonth(focused.year, month));
-    this._focusedIso = formatIsoDate({ ...focused, month, day });
+    this.send({ type: "select-month", month });
   }
 
   private onYearSelected(year: number): void {
-    this._viewYear = year;
-    this._view = "months";
-    const focused = parseIsoDate(this._focusedIso) ?? today();
-    const day = Math.min(focused.day, daysInMonth(year, focused.month));
-    this._focusedIso = formatIsoDate({ ...focused, year, day });
+    this.send({ type: "select-year", year });
   }
 
   /**
@@ -191,7 +174,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private isMonthDisabled(month: number): boolean {
-    return isMonthOutOfRange(this._viewYear, month, this.parseMin(), this.parseMax());
+    return isMonthOutOfRange(this.view.viewYear, month, this.parseMin(), this.parseMax());
   }
 
   private isYearDisabled(year: number): boolean {
@@ -199,7 +182,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private yearRange(): readonly number[] {
-    return calendarYearRange(this._viewYear, this.parseMin(), this.parseMax());
+    return calendarYearRange(this.view.viewYear, this.parseMin(), this.parseMax());
   }
 
   private parseMin(): CalendarDate | null {
@@ -210,41 +193,16 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     return this.max ? parseIsoDate(this.max) : null;
   }
 
+  /** The calendar keyboard, which the controller answers — moving, paging and picking alike. */
   private onGridKeydown(e: KeyboardEvent, handle: MdyFieldHandle<string | null>): void {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      if (this._view !== "days") {
-        this._view = "days";
-      } else {
-        this.closePopup(handle);
-      }
-      return;
-    }
-
-    if (this._view !== "days") return;
-
-    const focused = parseIsoDate(this._focusedIso) ?? today();
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      this.pick(handle, formatIsoDate(focused));
-      return;
-    }
-    // Grid navigation is a pure decision shared with every adapter.
-    const next = calendarKeyboardTarget(e.key, focused, e.shiftKey);
-    if (!next) return;
-    e.preventDefault();
-    this._focusedIso = formatIsoDate(next);
-    if (next.year !== this._viewYear || next.month !== this._viewMonth) {
-      this._viewYear = next.year;
-      this._viewMonth = next.month;
-    }
+    calendarGridKey(e, this.view.viewMode, (intent) => this.send(intent), () => this.closePopup(handle));
   }
 
   protected override updated(): void {
     if (this._open) {
-      if (this._view === "days") {
+      if (this.view.viewMode === "days") {
         this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused")?.focus();
-      } else if (this._view === "years") {
+      } else if (this.view.viewMode === "years") {
         this.querySelector<HTMLElement>(
           `.${partClasses("datepicker", "yearCell", { selected: true }).join(".")}`,
         )?.scrollIntoView?.({
@@ -256,6 +214,31 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private fieldController?: MdyDatepickerFieldController;
+  private unsubscribe?: () => void;
+
+  /** What the controller is holding, or the resting shape before a handle exists. */
+  private get view(): MdyDatepickerFieldState {
+    return this.fieldController?.state() ?? RESTING;
+  }
+
+  /** Carries out what the controller asks of the DOM, which is the only half this renderer owns. */
+  private send(intent: MdyDatepickerFieldIntent): void {
+    const handle = this.field;
+    if (!this.fieldController || !handle) return;
+    for (const command of this.fieldController.dispatch(intent)) {
+      if (command.type === "open-overlay") {
+        applyOverlayIntent(this, { type: "open", disabled: handle.disabled(), available: true });
+        this.overlay.open();
+      }
+      if (command.type === "close-overlay") {
+        applyOverlayIntent(this, { type: "close" });
+        this.overlay.close();
+      }
+      if (command.type === "restore-focus") {
+        this.querySelector<HTMLInputElement>(".mdy-datepicker__input")?.focus();
+      }
+    }
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -268,6 +251,13 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         maxDate: this.max ?? null,
         firstDayOfWeek: this.weekStart,
       });
+      // Lit repaints on its own reactive properties, and the controller's state is not one of them.
+      // `subscribeController` is the contract's answer to exactly that.
+      this.unsubscribe = subscribeController(
+        this.fieldController as never,
+        observerFor(handle),
+        () => this.requestUpdate(),
+      );
     }
     this.unbindOutside = bindOutsidePointer(this, () => {
       const handle = this.field;
@@ -279,7 +269,8 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   override disconnectedCallback(): void {
     this.unbindOutside?.();
     this.overlay.close();
-    this.fieldController?.destroy();
+    this.unsubscribe?.();
+    this.unsubscribe = undefined;
     this.fieldController = undefined;
     super.disconnectedCallback();
   }
@@ -315,7 +306,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     return renderMonthPicker(this.monthNamesShort(), {
       kind: "datepicker",
       widgetId: this.fieldId,
-      current: this._viewMonth,
+      current: this.view.viewMonth,
       disabled: (month) => this.isMonthDisabled(month),
       pick: (month) => this.onMonthSelected(handle, month),
     });
@@ -325,7 +316,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     return renderYearPicker(this.yearRange(), {
       kind: "datepicker",
       widgetId: this.fieldId,
-      current: this._viewYear,
+      current: this.view.viewYear,
       disabled: (year) => this.isYearDisabled(year),
       pick: (year) => this.onYearSelected(year),
     });
@@ -351,14 +342,14 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
               cell.inMonth ? "" : "mdy-datepicker__cell--outside",
               cell.iso === todayIso ? "mdy-datepicker__cell--today" : "",
               cell.iso === selectedIso ? "mdy-datepicker__cell--selected" : "",
-              cell.iso === this._focusedIso ? "mdy-datepicker__cell--focused" : "",
+              cell.iso === this.view.focusedDate ? "mdy-datepicker__cell--focused" : "",
               disabled ? "mdy-datepicker__cell--disabled" : "",
             ].join(" ");
             return html`<button
               type="button"
               class=${classes}
               role="gridcell"
-              tabindex=${cell.iso === this._focusedIso ? "0" : "-1"}
+              tabindex=${cell.iso === this.view.focusedDate ? "0" : "-1"}
               aria-selected=${cell.iso === selectedIso ? "true" : "false"}
               ?disabled=${disabled}
               @click=${() => this.pick(handle, cell.iso)}
@@ -372,7 +363,8 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private modalDisplayValue(): string {
-    const parsed = this._draftValue ? parseIsoDate(this._draftValue) : null;
+    // The committed value: with `commit: "live"` there is no draft to show instead.
+    const parsed = parseIsoDate(this.field?.value() ?? "");
     if (!parsed) return this.label || "Select date";
     try {
       return new Intl.DateTimeFormat(this.locale, {
@@ -381,13 +373,13 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         day: "numeric",
       }).format(new Date(parsed.year, parsed.month - 1, parsed.day));
     } catch {
-      return (this._draftValue ?? this.label) || "Select date";
+      return (this.field?.value() ?? this.label) || "Select date";
     }
   }
 
   private renderPopup(handle: MdyFieldHandle<string | null>): unknown {
     const monthLabel = new Intl.DateTimeFormat(this.locale, { month: "long" }).format(
-      new Date(Date.UTC(this._viewYear, this._viewMonth - 1, 1)),
+      new Date(Date.UTC(this.view.viewYear, this.view.viewMonth - 1, 1)),
     );
     const modalHeader =
       this.overlay.state.position === "overlay"
@@ -415,7 +407,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
               aria-label="Change view"
               @click=${this.onToggleView}
             >
-              <span class="mdy-datepicker__title">${monthLabel} ${this._viewYear}</span>
+              <span class="mdy-datepicker__title">${monthLabel} ${this.view.viewYear}</span>
               ${mdyIcon("CHEVRON_DOWN", "mdy-datepicker__view-icon")}
             </button>
           </div>
@@ -424,7 +416,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
               type="button"
               class="mdy-datepicker__nav-btn"
               aria-label="Previous month"
-              ?disabled=${this._view !== "days"}
+              ?disabled=${this.view.viewMode !== "days"}
               @click=${() => this.navigateMonths(-1)}
             >
               ${mdyIcon("CHEVRON_LEFT", "")}
@@ -433,18 +425,18 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
               type="button"
               class="mdy-datepicker__nav-btn"
               aria-label="Next month"
-              ?disabled=${this._view !== "days"}
+              ?disabled=${this.view.viewMode !== "days"}
               @click=${() => this.navigateMonths(1)}
             >
               ${mdyIcon("CHEVRON_RIGHT", "")}
             </button>
           </div>
         </div>
-        ${this._view === "days"
+        ${this.view.viewMode === "days"
           ? html`<div class="mdy-datepicker__grid" role="grid" id=${overlayControlledId("datepicker", this.fieldId) ?? nothing}>
               ${this.renderCalendarGrid(handle)}
             </div>`
-          : this._view === "months"
+          : this.view.viewMode === "months"
             ? this.renderMonthPicker(handle)
             : this.renderYearPicker()}
         ${actions}

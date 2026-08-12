@@ -11,7 +11,7 @@ import { type MdyDateRange, type MdyFieldHandle, observerFor } from "@modyra/cor
 import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, compareDates, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
 import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { calendarRows, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
+import { calendarGridKey, calendarRows, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
 import {
   MdyLitOverlayController,
   POPUP_ANCHOR_STYLE,
@@ -315,15 +315,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
    * every renderer that asks.
    */
   private onGridKeydown(e: KeyboardEvent, handle: MdyFieldHandle<MdyDateRange | null>): void {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      if (this.view.viewMode !== "days") this.send({ type: "set-view-mode", mode: "days" });
-      else this.closePopup(handle);
-      return;
-    }
-    if (this.view.viewMode !== "days") return;
-    e.preventDefault();
-    this.send({ type: "keydown", key: e.key, shiftKey: e.shiftKey });
+    calendarGridKey(e, this.view.viewMode, (intent) => this.send(intent), () => this.closePopup(handle));
   }
 
   protected override updated(): void {
