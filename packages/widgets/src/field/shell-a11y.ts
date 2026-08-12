@@ -60,7 +60,7 @@ export interface MdyFieldShellA11yOptions {
   /**
    * What the field's rules state, already narrowed by anything the control asks for.
    *
-   * Here as well as in {@link import("./field-a11y.js").projectFieldA11y} because a renderer takes
+   * Here as well as in {@link import("./text-field-a11y.js").projectTextFieldA11y} because a renderer takes
    * its control part from one or the other, and a control's attributes cannot depend on which
    * projection its renderer happens to use.
    */

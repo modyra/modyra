@@ -1,9 +1,9 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 713,
-    "asserted": 384,
-    "shown": 43
+    "published": 719,
+    "asserted": 413,
+    "shown": 44
   },
   "uncovered": [
     {
@@ -224,9 +224,9 @@
     },
     {
       "name": "MDY_SHARED_UI_CLASSES",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MDY_SSR_SNAPSHOT_MISMATCH",
@@ -236,9 +236,9 @@
     },
     {
       "name": "MDY_STATE_EXPRESSION",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MDY_STATE_MODIFIERS",
@@ -302,9 +302,9 @@
     },
     {
       "name": "MDY_WIDGET_STATES",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MDY_WIDGET_STATE_CONTRACTS",
@@ -326,9 +326,9 @@
     },
     {
       "name": "MdyAccessibleNameSource",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyActivationError",
@@ -362,9 +362,9 @@
     },
     {
       "name": "MdyAnnouncer",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyAnyArrayDescriptor",
@@ -1112,9 +1112,9 @@
     },
     {
       "name": "MdyElementTarget",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyEqualityFn",
@@ -1148,12 +1148,6 @@
     },
     {
       "name": "MdyFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFieldControllerOptions",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
@@ -1181,12 +1175,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "MdyFieldIntent",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyFieldKind",
@@ -1220,9 +1208,9 @@
     },
     {
       "name": "MdyFieldShellPart",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyFieldState",
@@ -1622,9 +1610,9 @@
     },
     {
       "name": "MdyOverlayGeometry",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyOverlayLifecycleIntent",
@@ -1646,9 +1634,9 @@
     },
     {
       "name": "MdyOverlayOpenerA11yOptions",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyOverlayPhase",
@@ -1670,9 +1658,9 @@
     },
     {
       "name": "MdyOverlayProperty",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyPaintBeat",
@@ -1712,9 +1700,9 @@
     },
     {
       "name": "MdyPartMap",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyPartState",
@@ -1826,9 +1814,9 @@
     },
     {
       "name": "MdyRelationAttribute",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyResolvedTheme",
@@ -1922,9 +1910,9 @@
     },
     {
       "name": "MdySelectReconciliationState",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdySelectState",
@@ -2027,6 +2015,30 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
+    },
+    {
+      "name": "MdyTextFieldA11yOptions",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyTextFieldController",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyTextFieldControllerOptions",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyTextFieldIntent",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyThemeDefinition",
@@ -2180,9 +2192,9 @@
     },
     {
       "name": "MdyTypedWidgetViewContract",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyUiCommand",
@@ -2276,15 +2288,15 @@
     },
     {
       "name": "MdyWidgetCommandContext",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetCommandExecutor",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetCommandHandlers",
@@ -2306,9 +2318,9 @@
     },
     {
       "name": "MdyWidgetIdFactory",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetKeyIntent",
@@ -2330,27 +2342,27 @@
     },
     {
       "name": "MdyWidgetRelation",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetRuntimeCapabilities",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetSemanticElement",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetState",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetStateContract",
@@ -2360,15 +2372,15 @@
     },
     {
       "name": "MdyWidgetStructure",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetStructureNode",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetTransition",
@@ -2384,9 +2396,9 @@
     },
     {
       "name": "MdyWidgetViewContract",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWritableSignal",
@@ -2707,12 +2719,6 @@
       "reason": "published, neither asserted nor shown"
     },
     {
-      "name": "createDatepickerFieldController",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "createDaterangeFieldController",
       "asserted": true,
       "shown": false,
@@ -2720,9 +2726,9 @@
     },
     {
       "name": "createFieldController",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "createFieldRecord",
@@ -2756,9 +2762,9 @@
     },
     {
       "name": "createMdyAnnouncer",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "createMultiselectFieldController",
@@ -2795,6 +2801,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "createTextFieldController",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "createTimepickerFieldController",
@@ -2876,9 +2888,9 @@
     },
     {
       "name": "decideOverlayAlignment",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "decideOverlayPlacement",
@@ -2978,9 +2990,9 @@
     },
     {
       "name": "fieldPartIds",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "fieldRootClasses",
@@ -3656,9 +3668,9 @@
     },
     {
       "name": "projectFieldA11y",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "projectFieldShellA11y",
@@ -3686,6 +3698,12 @@
     },
     {
       "name": "projectSelectA11y",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "projectTextFieldA11y",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3824,9 +3842,9 @@
     },
     {
       "name": "setOverlayOpen",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "shallowEqualRecords",
@@ -3881,6 +3899,18 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
+    },
+    {
+      "name": "textFieldPartIds",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "textFieldRootClasses",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "timeClockTransition",
@@ -3962,9 +3992,9 @@
     },
     {
       "name": "trackAnchoredOverlay",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "trailingAffordances",
@@ -4028,9 +4058,9 @@
     },
     {
       "name": "widgetStateMatrixSize",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "widgetSupportsState",

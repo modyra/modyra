@@ -1,6 +1,6 @@
 /**
  * Renders text/textarea/email/password/number/slider kinds — all of these
- * map to the same headless createFieldController from @modyra/widgets
+ * map to the same headless createTextFieldController from @modyra/widgets
  * (per this session's own finding while designing the datepicker/timepicker
  * controllers: "slider" is structurally just a numeric field with
  * <input type=range> markup, not a distinct controller).
@@ -10,7 +10,7 @@ import type { MdyDynamicNumberField, MdyDynamicTextField } from "@modyra/core";
 import {
   MDY_CSS_PROPERTIES,
   MDY_WIDGET_CONTRACTS,
-  createFieldController,
+  createTextFieldController,
   narrowConstraints,
   shownErrorsOf,
   sliderFillRatio,
@@ -44,7 +44,7 @@ export function renderTextField(
     ? { min: ranged.min ?? null, max: ranged.max ?? null, step: ranged.step ?? null }
     : undefined;
 
-  const controller = createFieldController(
+  const controller = createTextFieldController(
     {
       widgetId: widgetId,
       handle,

@@ -10,7 +10,7 @@ import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import { createForm, field, required, vanillaReactivity } from "@modyra/core";
 import { createCommandRuntime, fieldCommandHandlers, subscribeController } from "../dist/index.js";
-import { createFieldController } from "../dist/field/index.js";
+import { createTextFieldController } from "../dist/field/index.js";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>");
 globalThis.document = dom.window.document;
@@ -95,7 +95,7 @@ const drained = () => new Promise((resolve) => { setTimeout(resolve, 0); });
 test("a subscription follows what the host renders, and stops when told", async () => {
   const rx = vanillaReactivity();
   const form = createForm({ f: field("", [required()]) }, { reactivity: rx });
-  const controller = createFieldController({ widgetId: "w", handle: form.f.f, kind: "text" });
+  const controller = createTextFieldController({ widgetId: "w", handle: form.f.f, kind: "text" });
 
   let notified = 0;
   const stop = subscribeController(controller, rx, () => { notified += 1; });
@@ -117,7 +117,7 @@ test("the view is read as well as the state, whether or not it currently differs
   const rx = vanillaReactivity();
   const form = createForm({ f: field("") }, { reactivity: rx });
   const reads = [];
-  const controller = createFieldController({ widgetId: "w", handle: form.f.f, kind: "text" });
+  const controller = createTextFieldController({ widgetId: "w", handle: form.f.f, kind: "text" });
   const spy = {
     state: Object.assign(() => { reads.push("state"); return controller.state(); }, controller.state),
     view: Object.assign(() => { reads.push("view"); return controller.view(); }, controller.view),

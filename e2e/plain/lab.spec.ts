@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
  * panel: it reports the previous answer with the authority of the current one. These are the checks
  * that the controls do what the panel says they do.
  */
-const PANELS = ["states", "validation", "collections", "lifecycle", "dynamic", "security"];
+const PANELS = ["states", "validation", "collections", "lifecycle", "dynamic", "security", "headless"];
 
 async function open(page: import("@playwright/test").Page, id: string) {
   const errors: string[] = [];
@@ -140,4 +140,28 @@ test("security: markup is intercepted at the boundary, not by the renderer", asy
   expect(state.lengths.nickname).toBeLessThanOrEqual(24);
   expect(state.elementsInjected).toBe(0);
   expect(state.violations.length).toBeGreaterThan(0);
+});
+
+/**
+ * The recipe in the headless guide, running.
+ *
+ * A snippet nobody executes is a snippet that stops compiling and nobody notices. This panel builds
+ * a datepicker from the controller with no wrapper and no renderer, which is exactly what the guide
+ * tells a consumer of the four adapters that ship two wrappers instead of seven.
+ */
+test("headless: a controller is enough, with no wrapper and no renderer", async ({ page }) => {
+  await open(page, "headless");
+  await page.waitForTimeout(150);
+  const state = await readout(page);
+  expect(state.cellsDrawn).toBeGreaterThan(27);
+  expect(state.observesTheFormsRuntime).toBe(true);
+
+  const month = state.month;
+  await page.locator('[data-action="Next month"]').click();
+  await page.waitForTimeout(150);
+  expect((await readout(page)).month).not.toBe(month);
+
+  await page.locator('[data-headless-grid] button').nth(15).click();
+  await page.waitForTimeout(150);
+  expect((await readout(page)).selected).toBeTruthy();
 });

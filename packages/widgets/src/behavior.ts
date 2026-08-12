@@ -9,7 +9,15 @@
  * Re-exported here so the surface is unchanged: a consumer importing from `@modyra/widgets` cannot
  * tell this happened, which is the point of doing it as its own step.
  */
-export * from "./behavior/overlay-placement.js";
+// The overlay's geometry lives with the anchoring that reads it — one decision, one file. Re-exported
+// here because it was published from this entry.
+export {
+  MDY_OVERLAY_VIEWPORT_MARGIN,
+  decideOverlayAlignment,
+  decideOverlayPlacement,
+  stabilizeOverlayPlacement,
+} from "./overlay.js";
+export type { MdyOverlayDecision, MdyOverlayGeometry } from "./overlay.js";
 export * from "./behavior/keys.js";
 export * from "./behavior/select.js";
 export * from "./behavior/multiselect.js";
