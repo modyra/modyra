@@ -14,7 +14,7 @@
  * A fact is not an outcome. `compose(required(), …)` declares "required" even along a path where
  * the rule would pass, because the fact describes the rule, not what it does to a particular value.
  */
-import type { ValidatorFn } from "./types.js";
+import type { ValidatorFn } from "./contracts/validators.js";
 
 /**
  * Marker attached to validators that semantically mark a field as required.

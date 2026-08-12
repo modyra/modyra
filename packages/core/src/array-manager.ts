@@ -26,7 +26,7 @@ import type {
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
   MdyAnyRecordDescriptor,
-} from "./typed-form.js";
+} from "./contracts/descriptors.js";
 import { isRecord } from "./record-utils.js";
 import { composeConditions, type MdyCondition } from "./conditions.js";
 

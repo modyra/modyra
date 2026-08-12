@@ -6,7 +6,7 @@ import {
 import { MDY_DEV } from "./dev-flags.js";
 import { MdyReactivity, MdySignal, vanillaReactivity } from "./reactivity.js";
 import { registerHandleForm, registerHandleOwner } from "./reactive-owner.js";
-import { NO_CONSTRAINTS, type MdyFieldConstraints } from "./validator-facts.js";
+import { NO_CONSTRAINTS } from "./validator-facts.js";
 import { composeConditions, type MdyCondition } from "./conditions.js";
 import { MdyArrayManager } from "./array-manager.js";
 import { MdyRecordManager } from "./record-manager.js";
@@ -38,7 +38,6 @@ import {
 import {
   MdyAsyncValidatorFn,
   MdyAsyncValidatorOptions,
-  MdyFieldError,
   MdyFieldRef,
   MdyFieldState,
   MdyFormAdapter,
@@ -46,284 +45,58 @@ import {
   MdyFormState,
   MdyFormSubmitEvent,
   MdyFormValidatorFn,
-  MdyInteractivity,
   MdySubmitMode,
   ValidatorFn,
 } from "./types.js";
 import { MdySanitizer, MdySecurityPolicy } from "./security.js";
 
+import type {
+  MdyAnyArrayDescriptor,
+  MdyAnyFieldDescriptor,
+  MdyAnyGroupDescriptor,
+  MdyAnyRecordDescriptor,
+  MdyArrayDescriptor,
+  MdyFieldDescriptor,
+  MdyFormPatch,
+  MdyFormSchema,
+  MdyFormValue,
+  MdyGroupDescriptor,
+  MdyRecordDescriptor,
+  MdySubmittedValue,
+} from "./contracts/descriptors.js";
+import type {
+  MdyArrayHandle,
+  MdyFieldHandle,
+  MdyFieldHandleTree,
+  MdyRecordHandle,
+} from "./contracts/handles.js";
+
+// The schema vocabulary and the handles are declared in `contracts/`, and published from here:
+// splitting a file is not a reason for a consumer to learn a second import path.
+export type {
+  MdyAnyArrayDescriptor,
+  MdyAnyFieldDescriptor,
+  MdyAnyGroupDescriptor,
+  MdyAnyRecordDescriptor,
+  MdyArrayDescriptor,
+  MdyArrayItemValue,
+  MdyFieldDescriptor,
+  MdyFormPatch,
+  MdyFormSchema,
+  MdyFormValue,
+  MdyGroupDescriptor,
+  MdyRecordDescriptor,
+  MdySubmittedValue,
+} from "./contracts/descriptors.js";
+export type {
+  MdyArrayHandle,
+  MdyFieldHandle,
+  MdyFieldHandleTree,
+  MdyItemHandleTree,
+  MdyRecordHandle,
+} from "./contracts/handles.js";
+
 // ─── Schema descriptors ───────────────────────────────────────────────────────
-
-/** Leaf descriptor produced by {@link field}. */
-export interface MdyFieldDescriptor<TValue> {
-  readonly kind: "field";
-  readonly initial: TValue;
-  readonly validators: ReadonlyArray<ValidatorFn<TValue>>;
-  readonly asyncValidators: ReadonlyArray<MdyAsyncValidatorFn<TValue>>;
-  readonly asyncDebounceMs: number;
-  readonly asyncDependsOn: ReadonlyArray<string>;
-  readonly asyncTimeoutMs: number;
-  readonly asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
-  /** Whether the field is in play; null → always. See {@link MdyFieldOptions.when}. */
-  readonly when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
-  /** Per-field sanitizer override; null → the form-level policy applies. */
-  readonly sanitize: MdySanitizer | null;
-}
-
-/** Group descriptor produced by {@link group}. */
-export interface MdyGroupDescriptor<TChildren extends MdyFormSchema> {
-  readonly kind: "group";
-  readonly children: TChildren;
-  /** Whether the whole section is in play; null → always. See {@link MdyGroupOptions.when}. */
-  readonly when: ((value: unknown, enclosing: Record<string, unknown>) => boolean) | null;
-}
-
-/**
- * Widest field shape, used as the schema constraint. Validators are typed
- * contravariantly (`never`) so any `MdyFieldDescriptor<T>` is assignable.
- */
-export interface MdyAnyFieldDescriptor {
-  readonly kind: "field";
-  readonly initial: unknown;
-  readonly validators: ReadonlyArray<ValidatorFn<never>>;
-  readonly asyncValidators: ReadonlyArray<MdyAsyncValidatorFn<never>>;
-  readonly asyncDebounceMs: number;
-  readonly asyncDependsOn: ReadonlyArray<string>;
-  readonly asyncTimeoutMs: number;
-  readonly asyncWhen: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
-  readonly when: ((value: unknown, formValue: Record<string, unknown>) => boolean) | null;
-  readonly sanitize: MdySanitizer | null;
-}
-
-export interface MdyAnyGroupDescriptor {
-  readonly kind: "group";
-  readonly children: MdyFormSchema;
-  readonly when: ((value: unknown, enclosing: Record<string, unknown>) => boolean) | null;
-}
-
-/** Array descriptor produced by {@link array}. Rows follow the value — see array-manager.ts. */
-export interface MdyArrayDescriptor<TItem> {
-  readonly kind: "array";
-  /** Item schema: a group descriptor (rows are objects) or a field descriptor (rows are leaves). */
-  readonly item: TItem;
-  readonly initial: ReadonlyArray<unknown>;
-  readonly validators: ReadonlyArray<ValidatorFn<readonly unknown[]>>;
-}
-
-export interface MdyAnyArrayDescriptor {
-  readonly kind: "array";
-  readonly item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
-  readonly initial: ReadonlyArray<unknown>;
-  readonly validators: ReadonlyArray<ValidatorFn<never>>;
-}
-
-/**
- * Record descriptor produced by {@link record}: a collection whose keys are data.
- *
- * Where an array is keyed by position, a record is keyed by a value the domain owns — an entity id,
- * a provisional key, a slug — so a key is stable under sorting, filtering and re-rendering, and a row
- * is not addressed by where it happens to sit.
- *
- * A row exists because it was declared (`upsert`), never because a control mounted. Controls claim
- * and release; the set of keys is the record's own. See record-manager.ts for what follows from that.
- */
-export interface MdyRecordDescriptor<TItem> {
-  readonly kind: "record";
-  /** Row schema: a group descriptor (rows are objects) or a field descriptor (rows are leaves). */
-  readonly item: TItem;
-  readonly initial: Readonly<Record<string, unknown>>;
-  readonly validators: ReadonlyArray<ValidatorFn<Readonly<Record<string, unknown>>>>;
-}
-
-export interface MdyAnyRecordDescriptor {
-  readonly kind: "record";
-  readonly item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
-  readonly initial: Readonly<Record<string, unknown>>;
-  readonly validators: ReadonlyArray<ValidatorFn<never>>;
-}
-
-/** A form schema: field descriptors and (arbitrarily nested) groups, arrays or records. */
-export type MdyFormSchema = Readonly<
-  Record<
-    string,
-    | MdyAnyFieldDescriptor
-    | MdyAnyGroupDescriptor
-    | MdyAnyArrayDescriptor
-    | MdyAnyRecordDescriptor
-  >
->;
-
-// ─── Inferred model types ─────────────────────────────────────────────────────
-
-/** The value an array item descriptor produces — a row of {@link MdyFormValue} or a leaf. */
-export type MdyArrayItemValue<I> = I extends MdyGroupDescriptor<infer C>
-  ? MdyFormValue<C>
-  : I extends MdyFieldDescriptor<infer V>
-  ? V
-  : never;
-
-/** The value type a schema produces — `form.getValue()` returns this. */
-export type MdyFormValue<S extends MdyFormSchema> = {
-  [K in keyof S]: S[K] extends MdyFieldDescriptor<infer V>
-  ? V
-  : S[K] extends MdyGroupDescriptor<infer C>
-  ? MdyFormValue<C>
-  : S[K] extends MdyArrayDescriptor<infer I>
-  ? MdyArrayItemValue<I>[]
-  : S[K] extends MdyRecordDescriptor<infer I>
-  ? Record<string, MdyArrayItemValue<I>>
-  : never;
-};
-
-/**
- * What a submit actually sends.
- *
- * Weaker than {@link MdyFormValue} because any field may be disabled at runtime and a disabled
- * field is not submitted. A total type would promise something no runtime check guarantees.
- *
- * The gap between the two types is the semantics: {@link MdyFormValue} is what the user is editing
- * and always complete; this is what leaves the process. A read-only field is present in both — it
- * holds a real answer the form asserts, the user simply may not change it.
- *
- * Optional at every level the schema declares, and no deeper. A leaf inside a group can be disabled
- * on its own, so groups recurse; an object-valued *leaf* must not, since making the halves of a
- * date range optional would describe a payload the form can never produce. Only the schema
- * distinguishes the two, which is why this is driven by `S` rather than by the value type.
- *
- * Arrays keep their element type: a row is submitted whole or not at all.
- */
-export type MdySubmittedValue<S extends MdyFormSchema> = {
-  readonly [K in keyof S]?: S[K] extends MdyFieldDescriptor<infer V>
-  ? V
-  : S[K] extends MdyGroupDescriptor<infer C>
-  ? MdySubmittedValue<C>
-  : S[K] extends MdyArrayDescriptor<infer I>
-  ? ReadonlyArray<MdyArrayItemValue<I>>
-  : S[K] extends MdyRecordDescriptor<infer I>
-  ? Readonly<Record<string, MdyArrayItemValue<I>>>
-  : never;
-};
-
-/** Deep partial of the schema value — accepted by `patch`. */
-export type MdyFormPatch<S extends MdyFormSchema> = {
-  readonly [K in keyof S]?: S[K] extends MdyFieldDescriptor<infer V>
-  ? V
-  : S[K] extends MdyGroupDescriptor<infer C>
-  ? MdyFormPatch<C>
-  : S[K] extends MdyArrayDescriptor<infer I>
-  ? ReadonlyArray<MdyArrayItemValue<I>>
-  : S[K] extends MdyRecordDescriptor<infer I>
-  ? Readonly<Record<string, MdyArrayItemValue<I>>>
-  : never;
-};
-
-// ─── Field handles ────────────────────────────────────────────────────────────
-
-/**
- * Typed handle for a single field, exposed on `form.f` — a typo on the
- * handle path is a compile error, unlike a stringly name.
- */
-export interface MdyFieldHandle<TValue> {
-  /** Flat engine path of the field (dot-separated for nested groups). */
-  readonly path: string;
-  readonly value: MdySignal<TValue>;
-  readonly errors: MdySignal<ReadonlyArray<MdyFieldError>>;
-  readonly touched: MdySignal<boolean>;
-  readonly dirty: MdySignal<boolean>;
-  readonly valid: MdySignal<boolean>;
-  readonly pending: MdySignal<boolean>;
-  readonly required: MdySignal<boolean>;
-  /** What this field's rules state that an input can carry. See {@link MdyFieldConstraints}. */
-  readonly constraints: MdySignal<MdyFieldConstraints>;
-  /** What the user may do, as one value; `disabled` and `readonly` below are its derived halves. */
-  readonly interactivity: MdySignal<MdyInteractivity>;
-  readonly disabled: MdySignal<boolean>;
-  /** Read but not written: the user may focus the control and copy from it, but not change it. */
-  readonly readonly: MdySignal<boolean>;
-  set(value: TValue): void;
-  markAsTouched(): void;
-  markAsDirty(): void;
-}
-
-/** Typed handle for a repeatable array item, exposed on `form.f` (`form.f.items`). */
-export interface MdyArrayHandle<TItemHandle, TItemValue> {
-  readonly path: string;
-  readonly length: MdySignal<number>;
-  readonly rows: MdySignal<ReadonlyArray<TItemHandle>>;
-  readonly errors: MdySignal<ReadonlyArray<MdyFieldError>>;
-  readonly valid: MdySignal<boolean>;
-  push(value: TItemValue): void;
-  insert(index: number, value: TItemValue): void;
-  remove(index: number): void;
-  move(from: number, to: number): void;
-  setAll(values: ReadonlyArray<TItemValue>): void;
-  at(index: number): TItemHandle | null;
-}
-
-/**
- * Typed handle for a keyed collection, exposed on `form.f` (`form.f.rows`).
- *
- * `cell` is what makes cell-by-cell mounting possible: a renderer asks for one control of one row
- * without knowing whether the row exists yet, and gets a handle that is inert until it does and stays
- * the same object across `upsert`/`remove`/`upsert`. A handle that changed identity would make a
- * binding re-bind and a control re-claim on every structural change.
- *
- * Every member reads live, including the two that return a plain value: `has` and `validOf` are
- * usable inside a computed and re-evaluate when their answer changes, like the signals beside them.
- */
-export interface MdyRecordHandle<TItemHandle, TItemValue> {
-  readonly path: string;
-  /** The declared keys, in declaration order. Existence lives here, not in what is mounted. */
-  readonly keys: MdySignal<ReadonlyArray<string>>;
-  readonly value: MdySignal<Readonly<Record<string, TItemValue>>>;
-  readonly errors: MdySignal<ReadonlyArray<MdyFieldError>>;
-  readonly valid: MdySignal<boolean>;
-  /** True while the key is declared. */
-  has(key: string): boolean;
-  /** The row's handle tree. Returned for undeclared keys too, inert until the row is declared. */
-  row(key: string): TItemHandle;
-  /**
-   * One control of one row. `path` addresses a leaf inside the row and is omitted when rows are
-   * leaves themselves. Stable per `key`/`path` pair.
-   *
-   * The value type is `unknown` unless stated, because the part is a string chosen at runtime — that
-   * is the point of this call. Where the part is known at compile time, `row(key)` gives the typed
-   * tree instead, and a binding that needs a typed handle should prefer it.
-   */
-  cell<TCell = unknown>(key: string, path?: string): MdyFieldHandle<TCell>;
-  /** Declares the row, or rewrites the value of one already declared. */
-  upsert(key: string, value?: TItemValue): void;
-  remove(key: string): void;
-  /** Declares exactly these keys, removing the rest. */
-  setAll(values: Readonly<Record<string, TItemValue>>): void;
-  /** Several rows in one write — one structural change, not one per row. */
-  patch(values: Readonly<Record<string, unknown>>): void;
-  /** Carries value, validity and touched to the new key. */
-  rename(from: string, to: string): void;
-  validOf(key: string): boolean;
-}
-
-/** The handle tree for a single array item — a field handle or nested group tree. */
-export type MdyItemHandleTree<I> = I extends MdyGroupDescriptor<infer C>
-  ? MdyFieldHandleTree<C>
-  : I extends MdyFieldDescriptor<infer V>
-  ? MdyFieldHandle<V>
-  : never;
-
-/** The typed handle tree mirroring the schema shape (`form.f.address.city`). */
-export type MdyFieldHandleTree<S extends MdyFormSchema> = {
-  readonly [K in keyof S]: S[K] extends MdyFieldDescriptor<infer V>
-  ? MdyFieldHandle<V>
-  : S[K] extends MdyGroupDescriptor<infer C>
-  ? MdyFieldHandleTree<C>
-  : S[K] extends MdyArrayDescriptor<infer I>
-  ? MdyArrayHandle<MdyItemHandleTree<I>, MdyArrayItemValue<I>>
-  : S[K] extends MdyRecordDescriptor<infer I>
-  ? MdyRecordHandle<MdyItemHandleTree<I>, MdyArrayItemValue<I>>
-  : never;
-};
-
-// ─── Factories ────────────────────────────────────────────────────────────────
 
 export interface MdyFieldOptions<TValue> {
   readonly asyncValidators?: ReadonlyArray<MdyAsyncValidatorFn<TValue>>;
@@ -756,6 +529,31 @@ export abstract class MdyTypedFormBase<
     this._arrayPaths = paths.arrayPaths;
     this._recordPaths = paths.recordPaths;
 
+    const collections = this._buildCollections(schema, adapter);
+    this._arrays = collections.arrays;
+    this._records = collections.records;
+
+    this._registerSchema(schema);
+    const arrayValidators = this._buildArrayValidators(schema);
+
+    this._enableHistory(options?.history);
+    this._enableDraft(options?.draft);
+    this._installFormValidators(options?.validators ?? [], arrayValidators);
+  }
+
+  /**
+   * One manager per array and record node, each told which sections it sits under.
+   *
+   * The walk fills the section conditions as it descends, so a collection built below a section
+   * already knows about it — the ordering is the reason this is one pass and not two.
+   */
+  private _buildCollections(
+    schema: S,
+    adapter: MdyFormEngine,
+  ): {
+    readonly arrays: ReadonlyMap<string, MdyArrayManager>;
+    readonly records: ReadonlyMap<string, MdyRecordManager>;
+  } {
     const arrays = new Map<string, MdyArrayManager>();
     const records = new Map<string, MdyRecordManager>();
     /**
@@ -820,41 +618,45 @@ export abstract class MdyTypedFormBase<
         );
       },
     );
-    this._arrays = arrays;
-    this._records = records;
+    return { arrays, records };
+  }
 
-    this._registerSchema(schema);
-
-    const arrayValidators = this._buildArrayValidators(schema);
-
-    const history = options?.history;
+  /** History is off unless asked for; `true` takes the engine's own defaults. */
+  private _enableHistory(history: MdyTypedFormBaseOptions<MdyFormValue<S>>["history"]): void {
     if (history === true) {
       this._adapter.enableHistory();
     } else if (history) {
       this._adapter.enableHistory(history);
     }
+  }
 
-    const draft = options?.draft;
+  /** A bare string is the storage key; anything else is the full option set. */
+  private _enableDraft(draft: MdyTypedFormBaseOptions<MdyFormValue<S>>["draft"]): void {
     if (typeof draft === "string") {
       this._adapter.enableDraft({ key: draft });
     } else if (draft) {
       this._adapter.enableDraft(draft);
     }
+  }
 
-    const formValidators = options?.validators ?? [];
-    if (formValidators.length > 0 || arrayValidators.length > 0) {
-      // Cross-field validators see the nested typed value; the errors they
-      // return use the same dotted paths the flat adapter stores fields under.
-      // Array-level validators (e.g. minLength on the array itself) are
-      // merged in here too — setFormValidators replaces the whole list.
-      this._adapter.setFormValidators([
-        ...formValidators.map(
-          (fn) => (flat: Record<string, unknown>) =>
-            fn(this._flatToValue(flat)),
-        ),
-        ...arrayValidators,
-      ]);
-    }
+  /**
+   * Cross-field validators see the nested typed value, and the errors they return use the same
+   * dotted paths the flat adapter stores fields under.
+   *
+   * Array-level rules — `minLength` on the array itself — are merged in here rather than installed
+   * separately, because `setFormValidators` replaces the whole list.
+   */
+  private _installFormValidators(
+    formValidators: ReadonlyArray<MdyFormValidatorFn<MdyFormValue<S>>>,
+    arrayValidators: ReadonlyArray<(flat: Record<string, unknown>) => ReadonlyArray<MdyFormError>>,
+  ): void {
+    if (formValidators.length === 0 && arrayValidators.length === 0) return;
+    this._adapter.setFormValidators([
+      ...formValidators.map(
+        (fn) => (flat: Record<string, unknown>) => fn(this._flatToValue(flat)),
+      ),
+      ...arrayValidators,
+    ]);
   }
 
   // ── MdyFormAdapter ──────────────────────────────────────────────────────────

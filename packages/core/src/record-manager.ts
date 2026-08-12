@@ -30,7 +30,7 @@ import { hasRequiredMarker } from "./schema-utils.js";
 import type {
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
-} from "./typed-form.js";
+} from "./contracts/descriptors.js";
 import { isRecord } from "./record-utils.js";
 import { composeConditions, type MdyCondition } from "./conditions.js";
 

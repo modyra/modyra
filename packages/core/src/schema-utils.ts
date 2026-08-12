@@ -8,7 +8,7 @@ import type {
   MdyFormPatch,
   MdyFormSchema,
   MdyFormValue,
-} from "./typed-form.js";
+} from "./contracts/descriptors.js";
 import type { ValidatorFn } from "./types.js";
 
 /** Schema traversal result used by typed forms. */
