@@ -22,6 +22,7 @@ import {
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
+import { withControls, type MdyMountedField } from "../field-controls.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
@@ -33,7 +34,7 @@ export function renderDatepickerField(
   reactivity?: MdyReactivity,
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
   widgetId: string = f.name,
-): () => void {
+): MdyMountedField {
   reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("datepicker");
@@ -257,11 +258,17 @@ export function renderDatepickerField(
     }
   });
 
-  return () => {
+  return withControls(
+    () => {
     untrack();
     undismiss();
     effectRef.destroy();
     controller.destroy();
     shell.root.remove();
-  };
+    },
+    // Bounds move when a sibling field is answered — a return date that cannot precede a
+    // departure — and the controller is told rather than the field remounted, which would forget
+    // the month on screen.
+    { setBounds: (min, max) => controller.setBounds(min, max) },
+  );
 }

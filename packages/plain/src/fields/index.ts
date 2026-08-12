@@ -12,6 +12,7 @@ import { renderBooleanField } from "./boolean-field.js";
 import { renderDatepickerField } from "./datepicker-field.js";
 import { renderMultiselectField } from "./multiselect-field.js";
 import { renderOptionField } from "./option-field.js";
+import type { MdyMountedField } from "../field-controls.js";
 import { renderSelectField } from "./select-field.js";
 import { renderTextField } from "./text-field.js";
 import { renderTimepickerField } from "./timepicker-field.js";
@@ -47,7 +48,7 @@ export function renderField(
   handle: MdyFieldHandle<never>,
   reactivity?: MdyReactivity,
   widgetId: string = f.name,
-): () => void {
+): MdyMountedField {
   reactivity = observerFor(handle, reactivity);
   switch (f.kind) {
     case "text":
