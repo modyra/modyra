@@ -20,6 +20,22 @@ export const lifecyclePanel = {
   title: "Lifecycle",
   blurb:
     "Type something, reload the page, and it is still here. Undo walks back through what you typed. Deactivate and the autosave stops — reload then, and the draft is whatever it was when the form went quiet.",
+  /**
+   * The public names this panel drives.
+   *
+   * Declared rather than inferred: `audit-coverage-and-demo` used to search the demo sources for
+   * a name, which counted an import line as a demonstration and made almost everything look
+   * covered. What a panel exercises is a claim its own browser test checks.
+   */
+  exercises: [
+    "createForm",
+    "field",
+    "required",
+    "renderField",
+    "MdyDraftOptions",
+    "MdyDraftStorage",
+  ],
+
   invariant:
     "A draft is the form's value and nothing else. `exclude` keeps a field out of storage entirely, and an error-free submit clears the draft rather than leaving a stale copy to be restored over a fresh form.",
 

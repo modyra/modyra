@@ -15,6 +15,23 @@ export const collectionsPanel = {
   title: "Collections",
   blurb:
     "An array of rows and a record keyed by name, both live. Add, remove, move and rename while the controls are mounted; the readout shows what the form holds against what is drawn.",
+  /**
+   * The public names this panel drives.
+   *
+   * Declared rather than inferred: `audit-coverage-and-demo` used to search the demo sources for
+   * a name, which counted an import line as a demonstration and made almost everything look
+   * covered. What a panel exercises is a claim its own browser test checks.
+   */
+  exercises: [
+    "createForm",
+    "array",
+    "record",
+    "group",
+    "field",
+    "required",
+    "renderField",
+  ],
+
   invariant:
     "A row exists because it was declared, not because it was mounted. Removing the elements does not remove the row, and moving a row carries its handle, its errors and its touched state with it.",
 

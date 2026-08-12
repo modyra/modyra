@@ -7,7 +7,7 @@
 
 import { blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor } from "@modyra/core";
 
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
@@ -30,8 +30,13 @@ export interface MdyFieldController<TValue>
 
 export function createFieldController<TValue>(
   options: MdyFieldControllerOptions<TValue>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
 ): MdyFieldController<TValue> {
+  // Observed through the runtime that owns the handle. A caller that supplies one keeps it
+  // and is told when it does not match — a fresh runtime over another form's handle is the
+  // defect this registry was added for, and it fails by rendering nothing rather than by
+  // raising.
+  reactivity = observerFor(options.handle, reactivity);
   const {
     widgetId,
     handle,

@@ -5,7 +5,7 @@
  * What counts as a colour, and whether picking one should close the popup, is
  * `colorValueTransition` in `@modyra/widgets` — this renderer asks and obeys.
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
@@ -28,9 +28,10 @@ export function renderColorsField(
   container: HTMLElement,
   f: MdyDynamicColorsField,
   handle: MdyFieldHandle<unknown>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("colors");
   const definition = MDY_WIDGET_CONTRACTS.colors;

@@ -4,7 +4,7 @@
  * a CSS-only visual variant, as the catalogue's segmented anatomy declares — a button
  * reusing the radiogroup pattern).
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
@@ -18,9 +18,10 @@ export function renderOptionField(
   container: HTMLElement,
   f: MdyDynamicOptionsField,
   handle: MdyFieldHandle<unknown>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   const variant = f.kind === "segmented" ? "segmented" : "radio";
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);

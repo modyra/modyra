@@ -7,7 +7,7 @@
  * foundation styles `.mdy-chip` and its variants, and a renderer that spelled a variant itself would
  * be the reason a theme's rule silently stopped applying.
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyMultiselectMode, type MdyReactivity, type MdySelectOption } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyMultiselectMode, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
@@ -27,10 +27,11 @@ export function renderMultiselectField(
   container: HTMLElement,
   f: MdyDynamicOptionsField,
   handle: MdyFieldHandle<ReadonlyArray<unknown>>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   mode: MdyMultiselectMode = "single",
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("multiselect");
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;

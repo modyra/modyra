@@ -34,6 +34,21 @@ export const dynamicPanel = {
   title: "Declared as data",
   blurb:
     "Edit the document and render it. The buttons paste documents that must be refused; each one should produce a diagnostic that names what is wrong and where, and no form at all.",
+  /**
+   * The public names this panel drives.
+   *
+   * Declared rather than inferred: `audit-coverage-and-demo` used to search the demo sources for
+   * a name, which counted an import line as a demonstration and made almost everything look
+   * covered. What a panel exercises is a claim its own browser test checks.
+   */
+  exercises: [
+    "parseDynamicForm",
+    "mountMdyForm",
+    "MdyDynamicField",
+    "MdyDynamicDiagnostic",
+    "MdyDynamicFormParseResult",
+  ],
+
   invariant:
     "Expressions are data, never code. Nothing in this document is evaluated, a field name is validated as a path before it becomes one, and a document the parser rejects mounts nothing rather than mounting partly.",
 

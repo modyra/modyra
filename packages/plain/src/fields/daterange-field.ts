@@ -6,7 +6,7 @@
  * (`dateRangeValueTransition`, `dateRangeDraftTransition`) plus the shared field anatomy, so this
  * renderer owns only DOM and events. Anything that decides what a range means lives in widgets.
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
 import { addMonths, buildDateLocale, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import {
@@ -37,10 +37,11 @@ export function renderDaterangeField(
   container: HTMLElement,
   f: MdyDynamicDaterangeField,
   handle: MdyFieldHandle<unknown>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("daterange");
   const definition = MDY_WIDGET_CONTRACTS.daterange;

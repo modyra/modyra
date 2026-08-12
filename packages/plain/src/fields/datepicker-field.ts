@@ -4,7 +4,7 @@
  * arrow-key navigation via the shared calendarKeyboardTarget the
  * controller already wires up).
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import { buildDateLocale, formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
 import type { MdyDynamicDateField } from "@modyra/core";
 import {
@@ -25,10 +25,11 @@ export function renderDatepickerField(
   container: HTMLElement,
   f: MdyDynamicDateField,
   handle: MdyFieldHandle<string | null>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("datepicker");
   const controller = createDatepickerFieldController({ widgetId: widgetId, handle, ...options }, reactivity);

@@ -43,6 +43,9 @@ export function useMdySelect<TValue>(
   lookup: MdyElementLookup,
   handlers: MdyPreactCommandHandlers,
 ): MdySelectApi<TValue> {
+  // No handle to resolve an owner from: the select controller takes options and a callback rather
+  // than a field, so there is no form whose runtime this could observe through. Its own runtime is
+  // correct here and would not be for any other kind.
   const reactivity = useMemo(() => vanillaReactivity(), []);
   const controller = useMemo(
     () => createSelectController(options, reactivity),

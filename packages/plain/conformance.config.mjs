@@ -44,6 +44,11 @@ export const variants = { multiselect: ["single", "multi"] };
 
 
 const { mountMdyForm } = await import("./dist/index.js");
+
+/** This renderer schedules onto a task: a signal write is not in the DOM until the turn ends. */
+const { settleFor } = await import("../widgets/dist/testing/index.js");
+const PAINT_BEAT = "task";
+
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 const NEEDS_OPTIONS = new Set(["radio", "segmented", "select", "multiselect"]);
 
@@ -65,7 +70,7 @@ export function mountScoped(kind, scope) {
   return {
     root: host.querySelector(`[data-mdy-field="f"]`) ?? host,
     parts: () => ({}),
-    settle: () => new Promise((done) => setTimeout(done, 20)),
+    settle: settleFor(PAINT_BEAT),
     dispose: () => { mounted.dispose(); host.remove(); },
   };
 }

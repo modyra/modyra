@@ -1210,6 +1210,9 @@
   "MdyOverlayProperty": [
     "(opaque)"
   ],
+  "MdyPaintBeat": [
+    "(opaque)"
+  ],
   "MdyPaletteModel": [
     "contrastProxy: { readonly threshold: number; readonly chromaWeight: number; readonly hueOffset: number; }",
     "error: { readonly h: number; readonly c: number; readonly l: number; }",
@@ -2605,6 +2608,12 @@
     "(2) recordPaths?: ReadonlySet<string>",
     "-> returns: Record<string, unknown>"
   ],
+  "observerFor": [
+    "(0) handle: object",
+    "(1) requested?: MdyReactivity",
+    "(2) diagnostics?: MdyDiagnostics",
+    "-> returns: MdyReactivity"
+  ],
   "oklchToHex": [
     "(0) color: Oklch",
     "-> returns: string"
@@ -2891,6 +2900,11 @@
     "(0) popup: HTMLElement",
     "(1) open: boolean",
     "-> returns: void"
+  ],
+  "settleFor": [
+    "(0) beat: MdyPaintBeat",
+    "(1) hostFlush?: () => Promise<unknown> | unknown",
+    "-> returns: () => Promise<void>"
   ],
   "shallowEqualRecords": [
     "(0) a: Record<string, unknown>",

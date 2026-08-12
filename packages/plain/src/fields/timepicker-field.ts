@@ -8,7 +8,7 @@
  * (`set-from-angle`, `timepickerDialNumbers`, `timepickerSelectedDialValue`), so the gesture means
  * the same thing here as it does anywhere else.
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDateField } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
@@ -34,10 +34,11 @@ export function renderTimepickerField(
   container: HTMLElement,
   f: MdyDynamicDateField,
   handle: MdyFieldHandle<string | null>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   format: MdyTimeFormat = "12h",
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("timepicker");
   const controller = createTimepickerFieldController({ widgetId: widgetId, handle, format }, reactivity);

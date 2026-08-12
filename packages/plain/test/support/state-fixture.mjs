@@ -10,7 +10,11 @@
  */
 const { mountMdyForm } = await import("../../dist/index.js");
 const { partsOf } = await import("../contract-parts.mjs");
-const { MDY_CANONICAL_EMPTY } = await import("../../../widgets/dist/testing/index.js");
+const { MDY_CANONICAL_EMPTY, settleFor } = await import("../../../widgets/dist/testing/index.js");
+
+/** This renderer schedules onto a task: a signal write is not in the DOM until the turn ends. */
+const PAINT_BEAT = "task";
+
 
 export const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 const NEEDS_OPTIONS = new Set(["radio", "segmented", "select", "multiselect"]);
@@ -132,7 +136,7 @@ export function mount(kind, { validators = true, variant, rules, value } = {}) {
     control: () => controlOf(root),
     value: () => handle.value(),
     // Plain's effects land on a task rather than synchronously.
-    settle: () => new Promise((resolve) => setTimeout(resolve, 20)),
+    settle: settleFor(PAINT_BEAT),
     dispose: () => { mounted.dispose(); host.remove(); },
     press: (key) => pressKey(root, partsOf(root, kind).popup, key),
     drive(state) {

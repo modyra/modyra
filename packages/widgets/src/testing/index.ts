@@ -21,3 +21,6 @@ export type { MdyStructureContractIssue } from "./structure-tests.js";
 export { portalRootFor } from "../portal.js";
 export { canonicalWidgetSnapshot, compareToCanonical, MDY_CANONICAL_AFTER_ESCAPE, MDY_FOCUS_WITHIN, MDY_CANONICAL_AT_REST, MDY_CANONICAL_DISABLED, MDY_CANONICAL_EMPTY, MDY_CANONICAL_FILLED, MDY_CANONICAL_FILLED_OBSERVATION, MDY_CANONICAL_INVALID, MDY_CANONICAL_OPEN } from "./canonical.js";
 export type { MdyCanonicalExpectation, MdyCanonicalOptions, MdyCanonicalOverlay, MdyCanonicalPart, MdyCanonicalRelationship, MdyCanonicalSnapshot } from "./canonical.js";
+
+export { MDY_PAINT_BEATS, settleFor } from "./paint-beat.js";
+export type { MdyPaintBeat } from "./paint-beat.js";
