@@ -229,7 +229,7 @@ importers:
   apps/vscode:
     dependencies:
       '@modyra/widgets':
-        specifier: 2.0.2
+        specifier: 2.1.0
         version: link:../../packages/widgets
       jsonc-parser:
         specifier: ^3.3.1
@@ -254,10 +254,10 @@ importers:
         specifier: '>=21.2.19'
         version: 21.2.19(@angular/animations@21.2.19(@angular/core@21.2.19(@angular/compiler@21.2.19)(rxjs@7.8.2)))(@angular/common@21.2.19(@angular/core@21.2.19(@angular/compiler@21.2.19)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.19(@angular/compiler@21.2.19)(rxjs@7.8.2))
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
       '@modyra/widgets':
-        specifier: ^2.0.2
+        specifier: ^2.1.0
         version: link:../widgets
       '@modyra/zod':
         specifier: '>=0.1.0'
@@ -274,7 +274,7 @@ importers:
   packages/eslint-plugin:
     dependencies:
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
       eslint:
         specifier: '>=9'
@@ -283,10 +283,10 @@ importers:
   packages/lit:
     dependencies:
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
       '@modyra/widgets':
-        specifier: ^2.0.2
+        specifier: ^2.1.0
         version: link:../widgets
     devDependencies:
       lit:
@@ -296,10 +296,10 @@ importers:
   packages/plain:
     dependencies:
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
       '@modyra/widgets':
-        specifier: ^2.0.2
+        specifier: ^2.1.0
         version: link:../widgets
     devDependencies:
       jsdom:
@@ -309,10 +309,10 @@ importers:
   packages/preact:
     dependencies:
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
       '@modyra/widgets':
-        specifier: ^2.0.2
+        specifier: ^2.1.0
         version: link:../widgets
     devDependencies:
       preact:
@@ -322,10 +322,10 @@ importers:
   packages/react:
     dependencies:
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
       '@modyra/widgets':
-        specifier: ^2.0.2
+        specifier: ^2.1.0
         version: link:../widgets
     devDependencies:
       '@types/react':
@@ -338,10 +338,10 @@ importers:
   packages/solid:
     dependencies:
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
       '@modyra/widgets':
-        specifier: ^2.0.2
+        specifier: ^2.1.0
         version: link:../widgets
     devDependencies:
       solid-js:
@@ -351,7 +351,7 @@ importers:
   packages/standard-schema:
     dependencies:
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
     devDependencies:
       valibot:
@@ -480,10 +480,10 @@ importers:
   packages/svelte:
     dependencies:
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
       '@modyra/widgets':
-        specifier: ^2.0.2
+        specifier: ^2.1.0
         version: link:../widgets
     devDependencies:
       svelte:
@@ -493,10 +493,10 @@ importers:
   packages/vue:
     dependencies:
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
       '@modyra/widgets':
-        specifier: ^2.0.2
+        specifier: ^2.1.0
         version: link:../widgets
     devDependencies:
       '@vue/reactivity':
@@ -506,13 +506,13 @@ importers:
   packages/widgets:
     dependencies:
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
 
   packages/zod:
     dependencies:
       '@modyra/core':
-        specifier: ^2.1.1
+        specifier: ^2.2.2
         version: link:../core
     devDependencies:
       zod:

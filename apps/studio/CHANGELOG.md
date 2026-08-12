@@ -1,5 +1,11 @@
 # @modyra/studio-app
 
+## 0.5.6
+
+### Patch Changes
+
+- @modyra/studio-ui@0.5.6
+
 ## 0.5.5
 
 ### Patch Changes

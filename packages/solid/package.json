@@ -1,6 +1,6 @@
 {
   "name": "@modyra/solid",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "Solid binding for the Modyra form engine — type-safe forms on Solid's native signals.",
   "keywords": [
     "solid",
@@ -39,8 +39,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "^2.1.1",
-    "@modyra/widgets": "^2.0.2"
+    "@modyra/core": "^2.2.2",
+    "@modyra/widgets": "^2.1.0"
   },
   "peerDependencies": {
     "solid-js": ">=1.8.0"
