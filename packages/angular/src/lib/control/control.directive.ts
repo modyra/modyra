@@ -33,7 +33,7 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
-import { shownErrors } from "@modyra/widgets";
+import { errorsVisible, shownErrors, showsAsInvalid } from "@modyra/widgets";
 
 /** Global counter for generating unique field IDs. */
 let _nextFieldId = 0;
@@ -367,7 +367,26 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    * but untouched field is the common case: it has errors and shows none.
    */
   protected readonly errorsRendered: Signal<boolean> = computed(
-    () => !this.inlineErrors && this.touched() && this.hasErrors(),
+    () =>
+      !this.inlineErrors &&
+      errorsVisible(
+        { disabled: this.isDisabled(), touched: this.touched() },
+        this.fieldState().errors(),
+      ),
+  );
+
+  /**
+   * The same question for a renderer that draws its error text beside the control rather than in a
+   * list below it. One of the two is true at a time; both read the one rule, so a renderer cannot
+   * show text the other would have hidden.
+   */
+  protected readonly inlineErrorShown: Signal<boolean> = computed(
+    () =>
+      this.inlineErrors &&
+      errorsVisible(
+        { disabled: this.isDisabled(), touched: this.touched() },
+        this.fieldState().errors(),
+      ),
   );
 
   /**
@@ -488,7 +507,7 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     controller.setValue(this.value() as unknown as T);
     controller.setDisabled(this.isDisabled());
     controller.setReadonly(this.fieldState().readonly());
-    controller.setInvalid(this.hasErrors());
+    controller.setInvalid(showsAsInvalid({ valid: this.isValid(), disabled: this.isDisabled() }));
     for (const command of controller.dispatch(intent)) {
       if (command.type === "mark-dirty") this.markAsDirty();
       if (command.type === "mark-touched") this.markAsTouched();

@@ -31,6 +31,23 @@
         border-top: 1px solid var(--mdy-outline-variant);
         padding-top: 1.5rem;
       }
+      .states-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      .states-toolbar label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font: inherit;
+      }
+      [data-states] {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+        gap: 1rem 1.5rem;
+      }
       [data-rows-section] h2 {
         font-size: 1rem;
         margin: 0 0 0.5rem;
@@ -224,7 +241,20 @@
           <pre class="keyed-rows-state" data-rows-state></pre>
         </section>
 
-        <section data-rows-section data-conditional-section>
+        <section data-rows-section data-states-section>
+        <h2>Every kind, in every state</h2>
+        <p>
+          The states a form actually reaches, driven from one place. The rule worth watching is the
+          last toggle: a field the form is <em>not asking about</em> shows no verdict at all — no red
+          box, no <code>aria-invalid</code>, no error text — and loses nothing, because the errors
+          come back with the field.
+        </p>
+        <div data-states-toolbar class="states-toolbar"></div>
+        <div data-states></div>
+        <pre class="conditional-state" data-states-state></pre>
+      </section>
+
+      <section data-rows-section data-conditional-section>
           <h2>A section that only counts sometimes</h2>
           <p class="rows-lead">
             The company details are declared like everything else and are <strong>out of play</strong>

@@ -25,7 +25,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
       [forId]="fieldId"
       [required]="isRequired()"
       [filled]="fileNames().length > 0"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
 
@@ -92,7 +92,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     }
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     }
   `,

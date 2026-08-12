@@ -7,9 +7,19 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, overlayAnchoringFor, projectFieldShellA11y, type MdyColorValueIntent , defaultWidgetIdFactory} from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  colorValueEquals,
+  colorValueTransition,
+  defaultWidgetIdFactory,
+  overlayAnchoringFor,
+  projectFieldShellA11y,
+  shownErrorsOf,
+  showsAsInvalid,
+  type MdyColorValueIntent,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setIcon } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, setOverlayOpen, trackOverlay } from "../overlay.js";
 
 const DEFAULT_PRESETS = ["#7067ff", "#0e0f16", "#f8fafc", "#94a3b8", "#22c55e", "#ef4444", "#f59e0b", "#3b82f6"];
@@ -154,7 +164,7 @@ export function renderColorsField(
     // `applyPart` on the same element recomputes classes from the base it captured first.
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
-      errorsToShow(handle),
+      shownErrorsOf(handle),
       { widgetId: widgetId, controlId: hexInput.id },
     );
     applyPart(shell.label, a11y.label);
@@ -177,10 +187,10 @@ export function renderColorsField(
     // The themes place the panel from `--mdy-overlay-*`; the widget policy decides them.
     if (isOpen) queueMicrotask(() => positionOverlay(popup, shell.wrapper, anchoring));
     toggleArrow.classList.toggle("mdy-select__arrow--open", isOpen);
-    setErrors(shell.errorList, errorsToShow(handle).map((error) => error.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
-      hasError: !handle.valid(), filled: Boolean(value), required: handle.required(),
+      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: Boolean(value), required: handle.required(),
     });
   });
 

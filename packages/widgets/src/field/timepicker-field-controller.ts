@@ -27,6 +27,7 @@ import {
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectTimepickerFieldA11y } from "./timepicker-field-a11y.js";
+import { showsAsInvalid } from "./verdict.js";
 import type {
   MdyTimepickerFieldControllerOptions,
   MdyTimepickerFieldIntent,
@@ -68,7 +69,7 @@ export function createTimepickerFieldController(
     open: open(),
     focusedField: focusedField(),
     viewMode: viewMode(),
-    invalid: !handle.valid(),
+    invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
     disabled: handle.disabled(),
     readonly: readonly(),
     // `disabled`/`readonly` above are the derived halves of this one value.

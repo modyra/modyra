@@ -8,9 +8,17 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicFileField } from "@modyra/core";
-import { clearFileSelection, fileSelectionTransition, MDY_WIDGET_CONTRACTS, projectFieldShellA11y, type MdyFileCandidate } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  clearFileSelection,
+  fileSelectionTransition,
+  projectFieldShellA11y,
+  shownErrorsOf,
+  showsAsInvalid,
+  type MdyFileCandidate,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
-import { buildFieldShell, errorsToShow } from "../field-shell.js";
+import { buildFieldShell } from "../field-shell.js";
 
 const DRAGOVER_CLASS = "mdy-file-container--dragover";
 
@@ -108,7 +116,7 @@ export function renderFileField(
     // `applyPart` on the same element recomputes classes from the base it captured first.
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
-      errorsToShow(handle),
+      shownErrorsOf(handle),
       { widgetId: widgetId, controlId: control.id },
     );
     applyPart(shell.label, a11y.label);
@@ -134,10 +142,10 @@ export function renderFileField(
       item.append(name, meta);
       fileList.appendChild(item);
     }
-    setErrors(shell.errorList, errorsToShow(handle).map((error) => error.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
-      hasError: !handle.valid(), filled: files.length > 0, required: handle.required(),
+      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: files.length > 0, required: handle.required(),
     });
   });
 

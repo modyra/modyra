@@ -8,9 +8,12 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicBooleanField } from "@modyra/core";
-import { createBooleanFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  createBooleanFieldController,
+  shownErrorsOf,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
-import { errorsToShow } from "../field-shell.js";
 
 export function renderBooleanField(
   container: HTMLElement,
@@ -72,7 +75,7 @@ export function renderBooleanField(
     applyPart(input, view.parts.input);
     applyPart(description, view.parts.description);
     applyPart(errorList, view.parts.error);
-    setErrors(errorList, errorsToShow(handle).map((e) => e.message));
+    setErrors(errorList, shownErrorsOf(handle).map((e) => e.message));
     requiredMark.hidden = !state.required;
     // The "checked" content attribute (set by applyPart above) only sets the initial
     // state; the live IDL property is what the browser actually renders/toggles after

@@ -8,14 +8,15 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicNumberField, MdyDynamicTextField } from "@modyra/core";
 import {
-  narrowConstraints,
-  createFieldController,
   MDY_CSS_PROPERTIES,
   MDY_WIDGET_CONTRACTS,
+  createFieldController,
+  narrowConstraints,
+  shownErrorsOf,
   sliderFillRatio,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
 
 const NATIVE_INPUT_TYPE: Record<string, string> = {
   text: "text",
@@ -102,12 +103,12 @@ export function renderTextField(
     }
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, errorsToShow(handle).map((e) => e.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     // The themes style these state classes, the contract's own base element toggles.
     shell.syncState({
       touched: handle.touched(),
       disabled: handle.disabled(),
-      hasError: errorsToShow(handle).length > 0,
+      hasError: shownErrorsOf(handle).length > 0,
       filled: Boolean(handle.value()),
       required: handle.required(),
     });

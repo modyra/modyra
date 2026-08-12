@@ -31,7 +31,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
       <span [class]="widgetContract.parts.indicator.classes.join(' ')" aria-hidden="true"></span>
       <span
         class="mdy-label"
-        [title]="(inlineErrors && touched() && hasErrors()) ? inlineErrorText() : null"
+        [title]="inlineErrorShown() ? inlineErrorText() : null"
       >
         {{ label() }}
         @if (label() && isRequired()) {
@@ -39,7 +39,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         }
       </span>
     </label>
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">

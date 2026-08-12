@@ -6,9 +6,13 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { createOptionFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  createOptionFieldController,
+  shownErrorsOf,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
 
 export function renderOptionField(
   container: HTMLElement,
@@ -74,7 +78,7 @@ export function renderOptionField(
     shell.syncState({
       touched: handle.touched(),
       disabled: handle.disabled(),
-      hasError: errorsToShow(handle).length > 0,
+      hasError: shownErrorsOf(handle).length > 0,
       filled: handle.value() !== null && handle.value() !== undefined,
       required: handle.required(),
     });
@@ -82,7 +86,7 @@ export function renderOptionField(
     applyPart(group, view.parts.group);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, errorsToShow(handle).map((e) => e.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     for (const { key, input, row } of rows) {
       const part = view.parts[key];
       // Classes go to the option element the contract names; the ARIA the part carries belongs to

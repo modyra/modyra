@@ -44,7 +44,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
       [forId]="hexInputId"
       [required]="isRequired()"
       [filled]="!!value()"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
 
@@ -160,7 +160,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
       </mdy-overlay-panel>
     </div>
 
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">

@@ -1,10 +1,13 @@
 import { mdyPart } from "../mdy-part.js";
-import { overlayControlledId } from "@modyra/widgets";
+import {
+  overlayControlledId,
+  shownErrorsOf,
+} from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
 import { MDY_CHIP_CLASSES, multiselectChipClasses, optionsWithUnrecognizedValues } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
-import { mdyIcon, errorsToShow } from "../base.js";
+import { mdyIcon } from "../base.js";
 import {
   MdyLitOverlayController,
   renderOverlayPanel,
@@ -262,7 +265,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               aria-expanded=${this._open ? "true" : "false"}
               aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}
               aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
-              aria-invalid=${String(errorsToShow(handle).length > 0)}
+              aria-invalid=${String(shownErrorsOf(handle).length > 0)}
               aria-disabled=${String(handle.disabled())}
             >
               ${this.loading

@@ -25,7 +25,7 @@ import { inputText } from "../renderer-projection";
       [forId]="fieldId"
       [required]="isRequired()"
       [filled]="!!value()"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
     <div class="mdy-input-wrapper" [class.mdy-input-wrapper--disabled]="isDisabled()">
@@ -54,7 +54,7 @@ import { inputText } from "../renderer-projection";
       }
     </div>
 
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">

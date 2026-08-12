@@ -10,10 +10,23 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDateField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, acceptTimeField, createTimepickerFieldController, stepTimeField, timeFieldBounds, overlayAnchoringFor, timepickerDialNumbers, timepickerSelectedDialValue, type MdyElementLookup, overlayControlledId } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  acceptTimeField,
+  createTimepickerFieldController,
+  overlayAnchoringFor,
+  overlayControlledId,
+  shownErrorsOf,
+  showsAsInvalid,
+  stepTimeField,
+  timeFieldBounds,
+  timepickerDialNumbers,
+  timepickerSelectedDialValue,
+  type MdyElementLookup,
+} from "@modyra/widgets";
 import { hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/time-utils";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 
@@ -258,10 +271,10 @@ export function renderTimepickerField(
     applyPart(minuteInput, view.parts.minuteControl);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, errorsToShow(handle).map((e) => e.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
-      hasError: !handle.valid(), filled: (state.value || "") !== "", required: handle.required(),
+      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: (state.value || "") !== "", required: handle.required(),
     });
 
     // The input mirrors the committed value; while it has focus the user's own text wins.

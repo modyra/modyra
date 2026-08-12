@@ -60,7 +60,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       [forId]="fieldId"
       [required]="isRequired()"
       [filled]="!!value() && value()!.length > 0"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
     <div class="mdy-multiselect" #wrapper [class.mdy-multiselect--open]="open()">
@@ -226,7 +226,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       </div>
     </mdy-overlay-panel>
 
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
