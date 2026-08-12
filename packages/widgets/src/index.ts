@@ -144,6 +144,7 @@ export {
   MDY_I18N_MESSAGES_FR,
   MDY_I18N_MESSAGES_IT,
   MDY_I18N_PRESETS,
+  messagesForLocale,
 } from "./i18n.js";
 export type { MdyBuiltInLocale, MdyI18nMessages } from "./i18n.js";
 export type { MdyIconName } from "./icons.js";

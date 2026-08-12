@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 661,
-    "asserted": 400,
+    "published": 662,
+    "asserted": 401,
     "shown": 60
   },
   "uncovered": [
@@ -3026,6 +3026,12 @@
     },
     {
       "name": "mdyFormSnapshot",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "messagesForLocale",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

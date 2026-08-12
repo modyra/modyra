@@ -312,3 +312,17 @@ export const MDY_I18N_DEFAULT_TAGS: Readonly<Record<MdyBuiltInLocale, string>> =
   fr: "fr-FR",
   es: "es-ES",
 };
+
+/**
+ * The messages a locale tag asks for.
+ *
+ * A tag is `it-IT`, `it`, or `IT-it`; a preset is keyed by the primary subtag alone, because a
+ * region does not change what a confirm button says. An unknown tag answers with the default rather
+ * than nothing: a renderer that cannot find a translation shows English, it does not show blanks.
+ *
+ * Stated once. Three renderers each parsing a tag is three answers to "what does `pt-BR` get".
+ */
+export function messagesForLocale(tag: string | undefined | null): MdyI18nMessages {
+  const primary = (tag ?? "").split("-")[0]?.toLowerCase() ?? "";
+  return MDY_I18N_PRESETS[primary as MdyBuiltInLocale] ?? MDY_I18N_MESSAGES_DEFAULT;
+}
