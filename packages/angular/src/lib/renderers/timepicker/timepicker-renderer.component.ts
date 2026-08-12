@@ -82,7 +82,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           (focus)="onInputFocus($event)"
           (blur)="onInputBlur($event)"
           (keydown.arrowdown)="openOverlay($event); $event.preventDefault()"
-          [attr.aria-invalid]="hasErrors()"
+          [attr.aria-invalid]="paintsAsInvalid()"
           [attr.aria-describedby]="describedById(fieldId)"
           [attr.aria-label]="controlAriaLabel()"
           [attr.aria-required]="ariaRequired() || isRequired()"

@@ -95,7 +95,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             [placeholder]="placeholder()"
             [disabled]="isDisabled()"
             [attr.aria-label]="label() || i18n.colorHexLabel"
-            [attr.aria-invalid]="touched() && hasErrors() ? 'true' : null"
+            [attr.aria-invalid]="paintsAsInvalid() ? 'true' : null"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="isRequired() ? 'true' : null"

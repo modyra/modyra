@@ -81,11 +81,19 @@ function executable(source) {
 }
 
 const called = {};
+const consumesView = {};
 for (const renderer of RENDERERS) {
   const text = sources(join(root, "packages", renderer, "src"))
     .map((f) => executable(readFileSync(f, "utf8")))
     .join("\n");
   called[renderer] = (symbol) => symbol !== null && new RegExp(`\\b${symbol}\\s*[(<]`).test(text);
+  // A projection reaches the DOM through the controller's `view()`, which is the path the contract
+  // intends: the controller composes it and the renderer applies the parts. Calling it by name
+  // *beside* a controller would be the duplication, so asking only for the direct call measured the
+  // opposite of what it meant — every projection read as unconsumed while the ARIA it computes was
+  // on the page.
+  consumesView[renderer] = (controller) =>
+    controller !== null && called[renderer](controller) && /\.view\(\)/.test(text);
 }
 
 const rows = [];
@@ -94,7 +102,10 @@ for (const kind of MDY_WIDGET_KINDS) {
     rows.push({
       id: `${renderer}:${kind}`,
       controller: CONTROLLER[kind] === null ? "none offered" : called[renderer](CONTROLLER[kind]),
-      projection: PROJECTION[kind] === null ? "none offered" : called[renderer](PROJECTION[kind]),
+      projection:
+        PROJECTION[kind] === null
+          ? "none offered"
+          : called[renderer](PROJECTION[kind]) || consumesView[renderer](CONTROLLER[kind]),
     });
   }
 }
