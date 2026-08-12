@@ -20,7 +20,10 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
 
-export { name, kinds, mount, absentParts, variants, mountScoped } from "./conformance.config.mjs";
+// `declaresRules` travels with `mount`: the fixture is the Node one, and the sections that pass
+// `rules` and `value` ask *it*, not the page. Leaving it behind is what made this run report eight
+// of ten while the config beside it answered those two — the same renderer, described twice.
+export { name, kinds, mount, absentParts, variants, mountScoped, declaresRules } from "./conformance.config.mjs";
 
 const EXAMPLE_ROOT = resolve(new URL("../../dist/examples/plain", import.meta.url).pathname);
 const TYPES = {
