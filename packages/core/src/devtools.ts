@@ -3,7 +3,7 @@
  * a form running on ANY reactivity (it refreshes by polling, so it never
  * couples to the host graph). Sensitive-looking paths are masked.
  */
-import { MdyReactivity, MdySignal, reactivityRunsEffects } from "./reactivity.js";
+import { MdyReactivity, MdySignal, reactivityRunsEffects } from "./reactivity-contract.js";
 import { MdyFormState } from "./types.js";
 
 interface InspectableForm {

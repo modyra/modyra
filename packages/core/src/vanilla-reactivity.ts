@@ -1,0 +1,427 @@
+/**
+ * The reference reactive runtime: dependency-tracked signals for Node, CLIs and plain unit tests.
+ *
+ * Separate from the contract it implements because the two have different weights. This file owns a
+ * module-level scheduler — a pending set, a batch depth, the currently-tracking consumer — and that
+ * state is why importing it is a decision rather than a formality.
+ */
+import { MdyComputedWriteError, MdyDestroyedScopeError } from "./reactivity-errors.js";
+import type {
+  MdyBatchingCapability,
+  MdyComputedOptions,
+  MdyEffectOptions,
+  MdyEffectRef,
+  MdyEqualityFn,
+  MdyFlushCapability,
+  MdyObserveCapability,
+  MdyObserveOptions,
+  MdyOnCleanup,
+  MdyReactiveScope,
+  MdyReactivity,
+  MdyScopeOptions,
+  MdySignal,
+  MdySignalOptions,
+  MdyWritableSignal,
+} from "./reactivity-contract.js";
+
+// ─── Vanilla implementation ───────────────────────────────────────────────────
+
+interface Consumer {
+  markStale(): void;
+  readonly producers: Set<ProducerNode>;
+}
+
+interface ProducerNode {
+  readonly consumers: Set<Consumer>;
+}
+
+let activeConsumer: Consumer | null = null;
+/**
+ * The computed currently recomputing, if any.
+ *
+ * Separate from `activeConsumer`, which an effect also occupies: an effect writing a signal is
+ * ordinary and intended, and only a computed's body is a place where a write cannot mean anything.
+ */
+let activeComputed: object | null = null;
+
+// ─── Shared effect scheduler (piano §6.1/§6.2: batch()/flush()) ───────────────
+//
+// Every VanillaEffect schedules itself into one shared pending set instead of
+// queueing its own microtask. This is what makes batch() and flush() real:
+// batch() suppresses the drain while its callback runs and then drains once,
+// synchronously, before returning; flush() drains synchronously too. Neither
+// changes the default (non-batch, non-flush) timing — the first effect to go
+// stale still queues exactly one microtask, same as before this milestone.
+
+const pendingEffects = new Set<VanillaEffect>();
+let drainScheduled = false;
+let batchDepth = 0;
+
+function scheduleEffect(effectNode: VanillaEffect): void {
+  pendingEffects.add(effectNode);
+  if (batchDepth > 0 || drainScheduled) return;
+  drainScheduled = true;
+  queueMicrotask(() => {
+    drainScheduled = false;
+    if (batchDepth === 0) drainPendingEffects();
+  });
+}
+
+/** Runs every pending effect, looping until none remain (settles chained re-triggers too). */
+function drainPendingEffects(): void {
+  while (pendingEffects.size > 0) {
+    const snapshot = [...pendingEffects];
+    pendingEffects.clear();
+    for (const effectNode of snapshot) {
+      try {
+        effectNode.runIfPending();
+      } catch (error) {
+        // One effect's uncaught error (no onError given — VanillaEffect's
+        // own try/catch already handled it if one was provided) must not
+        // stop sibling effects in this same drain pass from running, nor
+        // corrupt the scheduler. Reporting via console.error (not a
+        // rethrow): re-throwing from inside a microtask callback would
+        // itself become an *unhandled* exception, which crashes a Node
+        // process with no global handler — worse than the bug this fixes.
+        console.error("[modyra] Uncaught error in effect:", error);
+      }
+    }
+  }
+}
+
+function track(producer: ProducerNode): void {
+  if (activeConsumer) {
+    producer.consumers.add(activeConsumer);
+    activeConsumer.producers.add(producer);
+  }
+}
+
+function dropDependencies(consumer: Consumer): void {
+  for (const producer of consumer.producers) {
+    producer.consumers.delete(consumer);
+  }
+  consumer.producers.clear();
+}
+
+class VanillaSignal<T> implements ProducerNode {
+  readonly consumers = new Set<Consumer>();
+  private readonly _equal: MdyEqualityFn<T>;
+  constructor(private _value: T, equal?: MdyEqualityFn<T>) {
+    this._equal = equal ?? Object.is;
+  }
+
+  read(): T {
+    track(this);
+    return this._value;
+  }
+
+  write(value: T): void {
+    // Refused while a computed is recomputing, whatever the value: allowing it only when the value
+    // differs would make the rule depend on the data, and a rule about purity cannot.
+    if (activeComputed !== null) throw new MdyComputedWriteError();
+    if (this._equal(this._value, value)) return;
+    this._value = value;
+    for (const consumer of [...this.consumers]) consumer.markStale();
+  }
+}
+
+class VanillaComputed<T> implements ProducerNode, Consumer {
+  readonly consumers = new Set<Consumer>();
+  readonly producers = new Set<ProducerNode>();
+  private readonly _equal: MdyEqualityFn<T>;
+  private _value!: T;
+  private _dirty = true;
+
+  constructor(private readonly _fn: () => T, equal?: MdyEqualityFn<T>) {
+    this._equal = equal ?? Object.is;
+  }
+
+  markStale(): void {
+    if (this._dirty) return;
+    this._dirty = true;
+    for (const consumer of [...this.consumers]) consumer.markStale();
+  }
+
+  read(): T {
+    track(this);
+    if (this._dirty) {
+      dropDependencies(this);
+      const prev = activeConsumer;
+      const prevComputed = activeComputed;
+      // eslint-disable-next-line @typescript-eslint/no-this-alias -- subscriber stack: save/restore around recompute
+      activeConsumer = this;
+      activeComputed = this;
+      const previousValue = this._value;
+      const hadValue = !this._isInitial;
+      try {
+        this._value = this._fn();
+      } finally {
+        activeConsumer = prev;
+        activeComputed = prevComputed;
+      }
+      // Re-apply equality after recompute so an unchanged derived value does
+      // not propagate staleness to its own consumers (mirrors what a
+      // native-signal framework's `computed({ equal })` guarantees).
+      if (hadValue && this._equal(previousValue, this._value)) {
+        this._value = previousValue;
+      }
+      this._isInitial = false;
+      this._dirty = false;
+    }
+    return this._value;
+  }
+
+  private _isInitial = true;
+}
+
+class VanillaEffect implements Consumer {
+  readonly producers = new Set<ProducerNode>();
+  private _destroyed = false;
+  private _cleanups: Array<() => void> = [];
+
+  constructor(
+    private readonly _fn: (onCleanup: MdyOnCleanup) => void,
+    private readonly _onError?: (error: unknown) => void,
+  ) {
+    this._run();
+  }
+
+  get destroyed(): boolean {
+    return this._destroyed;
+  }
+
+  markStale(): void {
+    if (this._destroyed) return;
+    scheduleEffect(this);
+  }
+
+  /** Called only from the shared drain — set membership was the schedule marker. */
+  runIfPending(): void {
+    if (this._destroyed) return;
+    this._run();
+  }
+
+  private _run(): void {
+    this._runCleanups();
+    dropDependencies(this);
+    const prev = activeConsumer;
+    // An effect is where a write belongs, and one may run while a computed is being read — a flush
+    // reached from inside a read, for instance. Its body is not that computed's body.
+    const prevComputed = activeComputed;
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- subscriber stack: save/restore around recompute
+    activeConsumer = this;
+    activeComputed = null;
+    try {
+      this._fn((cleanup) => this._cleanups.push(cleanup));
+    } catch (error) {
+      if (this._onError) this._onError(error);
+      else throw error;
+    } finally {
+      activeConsumer = prev;
+      activeComputed = prevComputed;
+    }
+  }
+
+  private _runCleanups(): void {
+    const cleanups = this._cleanups;
+    this._cleanups = [];
+    for (const cleanup of cleanups) cleanup();
+  }
+
+  destroy(): void {
+    if (this._destroyed) return;
+    this._destroyed = true;
+    pendingEffects.delete(this);
+    this._runCleanups();
+    dropDependencies(this);
+  }
+}
+
+class VanillaScope implements MdyReactiveScope {
+  readonly id: symbol;
+  private _destroyed = false;
+  private _cleanups: Array<() => void> = [];
+  private readonly _children = new Set<VanillaScope>();
+
+  constructor(
+    debugName: string | undefined,
+    private readonly _parent?: VanillaScope,
+  ) {
+    this.id = Symbol(debugName ?? "scope");
+    if (_parent) {
+      if (_parent.destroyed) throw new MdyDestroyedScopeError(_parent.id);
+      _parent._children.add(this);
+    }
+  }
+
+  get destroyed(): boolean {
+    return this._destroyed;
+  }
+
+  run<T>(fn: () => T): T {
+    if (this._destroyed) throw new MdyDestroyedScopeError(this.id);
+    return fn();
+  }
+
+  onCleanup(cleanup: () => void): void {
+    if (this._destroyed) throw new MdyDestroyedScopeError(this.id);
+    this._cleanups.push(cleanup);
+  }
+
+  destroy(): void {
+    if (this._destroyed) return;
+    this._destroyed = true;
+    this._parent?._children.delete(this);
+    for (const child of [...this._children]) child.destroy();
+    this._children.clear();
+    const cleanups = this._cleanups;
+    this._cleanups = [];
+    for (const cleanup of cleanups) cleanup();
+  }
+}
+
+/**
+ * Standalone reactive engine: dependency-tracked signals, lazy cached
+ * computeds and microtask-batched effects. Enough to run the whole form
+ * engine outside any framework — the "decisive test":
+ *
+ * ```ts
+ * const form = createForm({ email: field("") });
+ * form.f.email.set("foo@bar.com");
+ * console.log(form.f.email.errors());
+ * ```
+ *
+ * works in Node with no framework installed. Await a microtask
+ * (`await Promise.resolve()`) after writes when asserting on
+ * effect-driven state (async validators, drafts, history).
+ */
+export function vanillaReactivity(): MdyReactivity &
+  MdyBatchingCapability &
+  MdyFlushCapability &
+  MdyObserveCapability {
+  return {
+    id: Symbol("vanilla"),
+    kind: "vanilla",
+    // writableComputed/graphInspection/serverSnapshots are not implemented
+    // (out of scope per piano §6.4-§6.5/§10.7 — reporting them true would
+    // be exactly the "fictitious capability" the plan's §8.1 forbids).
+    capabilities: {
+      effects: true,
+      effectOwnership: true,
+      signalEquality: true,
+      // A recomputed value that's equal to the previous one is reused (so a
+      // consumer's `Object.is` on the returned value still short-circuits),
+      // but staleness already propagated synchronously at write time before
+      // the equality check runs — this does NOT stop a downstream
+      // computed/effect from re-running. Best-effort per piano §4.2, not a
+      // full glitch-free guarantee, so this stays false.
+      computedEquality: false,
+      batching: true,
+      deterministicFlush: true,
+      directObservation: true,
+      writableComputed: false,
+      // Enforced, not merely intended: writing a signal while a computed recomputes throws.
+      pureComputeds: true,
+      graphInspection: false,
+      serverSnapshots: false,
+    },
+    signal<T>(initial: T, options?: MdySignalOptions<T>): MdyWritableSignal<T> {
+      const node = new VanillaSignal(initial, options?.equal);
+      const read = (() => node.read()) as MdyWritableSignal<T>;
+      read.set = (value: T) => node.write(value);
+      read.update = (fn: (value: T) => T) =>
+        node.write(fn(untrackedRead(() => node.read())));
+      read.asReadonly = () => () => node.read();
+      return read;
+    },
+    computed<T>(fn: () => T, options?: MdyComputedOptions<T>): MdySignal<T> {
+      const node = new VanillaComputed(fn, options?.equal);
+      return () => node.read();
+    },
+    effect(
+      fn: (onCleanup: MdyOnCleanup) => void,
+      options?: MdyEffectOptions,
+    ): MdyEffectRef {
+      if (options?.scope?.destroyed) {
+        throw new MdyDestroyedScopeError(
+          (options.scope as { id?: symbol }).id,
+        );
+      }
+      const node = new VanillaEffect(fn, options?.onError);
+      const ref: MdyEffectRef = {
+        destroy: () => node.destroy(),
+        get destroyed() {
+          return node.destroyed;
+        },
+      };
+      options?.scope?.onCleanup(() => ref.destroy());
+      return ref;
+    },
+    untracked: untrackedRead,
+    createScope(options?: MdyScopeOptions): MdyReactiveScope {
+      return new VanillaScope(
+        options?.debugName,
+        options?.parent as VanillaScope | undefined,
+      );
+    },
+    batch<T>(fn: () => T): T {
+      batchDepth++;
+      try {
+        return fn();
+      } finally {
+        batchDepth--;
+        if (batchDepth === 0) drainPendingEffects();
+      }
+    },
+    flush(): Promise<void> {
+      // Deterministic, not "wait one tick": drainPendingEffects() loops
+      // until settled, so a chain of effects each triggering the next all
+      // resolve within this one flush() rather than needing N awaits.
+      return Promise.resolve().then(() => {
+        drainPendingEffects();
+      });
+    },
+    observe<T>(
+      selector: () => T,
+      listener: (value: T, previous: T) => void,
+      options?: MdyObserveOptions<T>,
+    ): MdyEffectRef {
+      // `options.timing` is accepted but not differentiated: vanilla only
+      // has one timing model (microtask-scheduled, same as effect()) —
+      // best-effort per piano §4.2 rather than rejecting the option.
+      const equal = options?.equal ?? Object.is;
+      let hasPrevious = false;
+      let previous: T;
+      const node = new VanillaEffect(() => {
+        const current = selector();
+        if (!hasPrevious) {
+          hasPrevious = true;
+          previous = current;
+          return; // no "previous" to report yet — only fire on later changes
+        }
+        if (equal(previous, current)) return;
+        const prev = previous;
+        previous = current;
+        listener(current, prev);
+      });
+      return {
+        destroy: () => node.destroy(),
+        get destroyed() {
+          return node.destroyed;
+        },
+      };
+    },
+  };
+}
+
+function untrackedRead<T>(fn: () => T): T {
+  // `activeComputed` is deliberately left alone: untracked says "do not depend on what I read", not
+  // "this is no longer a computed". A write inside one is refused either way.
+  const prev = activeConsumer;
+  activeConsumer = null;
+  try {
+    return fn();
+  } finally {
+    activeConsumer = prev;
+  }
+}

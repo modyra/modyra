@@ -109,7 +109,7 @@
     "(opaque)"
   ],
   "MdyArrayManagerDeps": [
-    "engine: MdyFormEngine",
+    "engine: MdyCollectionHost",
     "item: MdyAnyGroupDescriptor | MdyAnyFieldDescriptor",
     "path: string",
     "rx: MdyReactivity",
@@ -258,6 +258,17 @@
   "MdyChipRole": [
     "\"option\"",
     "\"value\""
+  ],
+  "MdyCollectionHost": [
+    "disownField: void",
+    "errorsFor: MdySignal<ReadonlyArray<MdyFormError>>",
+    "fieldNames: readonly string[]",
+    "getField: MdyFieldRef<unknown> | null",
+    "ownField: void",
+    "peekField: MdyFieldRef<unknown> | null",
+    "refreshPathGate: void",
+    "registerPathGate: () => void",
+    "warnDev: void"
   ],
   "MdyColorValueIntent": [
     "(opaque)"
@@ -751,6 +762,9 @@
     "(opaque)"
   ],
   "MdyFieldIntent": [
+    "(opaque)"
+  ],
+  "MdyFieldKind": [
     "(opaque)"
   ],
   "MdyFieldOptions": [
@@ -1339,7 +1353,7 @@
     "value: MdySignal<Readonly<Record<string, TItemValue>>>"
   ],
   "MdyRecordManagerDeps": [
-    "engine: MdyFormEngine",
+    "engine: MdyCollectionHost",
     "item: MdyRowNode",
     "path: string",
     "rx: MdyReactivity",

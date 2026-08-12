@@ -1,3 +1,4 @@
+import { MDY_FIELD_KINDS } from "./field-kinds.js";
 import { evaluateExpression, expressionPaths, validateExpression, type MdyExpression } from "./expression.js";
 import { isSafeFieldPath } from "./path-utils.js";
 import { MdyFormValidatorFn, MdySelectOption, ValidatorFn } from "./types.js";
@@ -246,15 +247,13 @@ export function assertNeverField(field: never): never {
 
 // ─── Runtime validation of network-borne configs ─────────────────────────────
 
-/** Every kind the dynamic renderer knows how to draw. */
-export const MDY_DYNAMIC_FIELD_KINDS = [
-  "text", "textarea", "email", "password",
-  "number", "slider",
-  "checkbox", "toggle",
-  "select", "radio", "multiselect", "segmented",
-  "datepicker", "daterange", "timepicker",
-  "file", "colors",
-] as const;
+/**
+ * Every kind the dynamic renderer knows how to draw.
+ *
+ * The vocabulary itself is a leaf module: a kind is what a field is, not something a document
+ * format owns. Re-exported here because a document names one.
+ */
+export const MDY_DYNAMIC_FIELD_KINDS = MDY_FIELD_KINDS;
 
 /**
  * What separates the segments of a generated DOM id (`@modyra/widgets`' id factory builds

@@ -19,13 +19,13 @@
  * `MdyFormEngine.registerPathGate`.
  */
 import { MDY_DEV } from "./dev-flags.js";
-import { MdyFormEngine } from "./form-engine.js";
+import type { MdyCollectionHost } from "./contracts/collection-host.js";
 import { isSafeFieldPath } from "./path-utils.js";
 import {
   MdyReactivity,
   MdySignal,
   MdyWritableSignal,
-} from "./reactivity.js";
+} from "./reactivity-contract.js";
 import { hasRequiredMarker } from "./schema-utils.js";
 import type {
   MdyAnyFieldDescriptor,
@@ -77,7 +77,7 @@ export interface MdyRecordManagerDeps {
    */
   readonly sections?: ReadonlyArray<() => boolean>;
   readonly rx: MdyReactivity;
-  readonly engine: MdyFormEngine;
+  readonly engine: MdyCollectionHost;
   /** Dotted record path, e.g. "rows" or "order.rows". */
   readonly path: string;
   readonly item: MdyRowNode;

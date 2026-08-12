@@ -12,8 +12,8 @@ import type {
   MdyReactiveScope,
   MdySignal,
   MdyWritableSignal,
-} from "./reactivity.js";
-import { reactivityRunsEffects } from "./reactivity.js";
+} from "./reactivity-contract.js";
+import { reactivityRunsEffects } from "./reactivity-contract.js";
 import { shallowEqualRecords } from "./record-utils.js";
 import { MDY_DEV } from "./dev-flags.js";
 

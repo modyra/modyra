@@ -11,8 +11,8 @@ import type {
   MdyReactivity,
   MdyReactiveScope,
   MdyWritableSignal,
-} from "./reactivity.js";
-import { reactivityRunsEffects } from "./reactivity.js";
+} from "./reactivity-contract.js";
+import { reactivityRunsEffects } from "./reactivity-contract.js";
 import { isSafeFieldPath } from "./path-utils.js";
 import { MDY_DEV } from "./dev-flags.js";
 import { isRecord } from "./record-utils.js";
