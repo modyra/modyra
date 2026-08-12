@@ -5,6 +5,7 @@
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import { fieldShellPartIds } from "../field/shell-a11y.js";
+import { stateClass, type MdyStateName } from "../state.js";
 import type { MdyPartContract } from "../contract.js";
 
 const SELECT = MDY_WIDGET_CONTRACTS.select;
@@ -126,13 +127,18 @@ function buildTriggerClasses(
   // The trigger's own declared states, and only those. A parallel `mdy-control--*` spelling of the
   // same states is not emitted here: no theme styles one, so it would put classes on the trigger
   // that paint nothing.
-  const classes = [...SELECT.parts.trigger.classes];
-  if (open) classes.push("mdy-select__trigger--open");
-  if (disabled) classes.push("mdy-select__trigger--disabled");
-  if (readonly) classes.push("mdy-select__trigger--readonly");
-  if (invalid) classes.push("mdy-select__trigger--invalid");
-  if (loading) classes.push("mdy-select__trigger--loading");
-  return classes;
+  // Derived from the declared vocabulary rather than spelled out. `state.ts` exists because a
+  // renderer writing `mdy-select__trigger--open` and a theme writing a rule for it agree only by
+  // coincidence — and this file was writing eight of them by hand.
+  const base = SELECT.parts.trigger.classes[0]!;
+  const states: ReadonlyArray<[boolean, MdyStateName]> = [
+    [open, "open"], [disabled, "disabled"], [readonly, "readonly"],
+    [invalid, "invalid"], [loading, "loading"],
+  ];
+  return [
+    ...SELECT.parts.trigger.classes,
+    ...states.filter(([on]) => on).map(([, state]) => stateClass(base, state)),
+  ];
 }
 
 function buildListboxClasses(open: boolean): readonly string[] {
@@ -146,9 +152,9 @@ function buildOptionClasses(
   active: boolean,
   visible: boolean,
 ): readonly string[] {
-  const classes = ["mdy-select__option"];
-  if (selected) classes.push("mdy-select__option--selected");
-  if (active) classes.push("mdy-select__option--active");
-  if (!visible) classes.push("mdy-select__option--hidden");
-  return classes;
+  const base = SELECT.parts.option.classes[0] ?? "mdy-select__option";
+  const states: ReadonlyArray<[boolean, MdyStateName]> = [
+    [selected, "selected"], [active, "active"], [!visible, "hidden"],
+  ];
+  return [base, ...states.filter(([on]) => on).map(([, state]) => stateClass(base, state))];
 }

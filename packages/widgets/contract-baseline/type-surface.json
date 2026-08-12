@@ -278,6 +278,37 @@
     "touched: boolean",
     "value: string | undefined"
   ],
+  "MdyColorsFieldController": [
+    "setReadonly: void",
+    "setValue: void"
+  ],
+  "MdyColorsFieldControllerOptions": [
+    "handle: MdyFieldHandle<string>",
+    "presets?: readonly string[]",
+    "readonly?: boolean",
+    "widgetId: string"
+  ],
+  "MdyColorsFieldIntent": [
+    "(opaque)"
+  ],
+  "MdyColorsFieldPreset": [
+    "selected: boolean",
+    "value: string"
+  ],
+  "MdyColorsFieldState": [
+    "dirty: boolean",
+    "disabled: boolean",
+    "interactivity: MdyInteractivity",
+    "invalid: boolean",
+    "open: boolean",
+    "pending: boolean",
+    "presets: ReadonlyArray<MdyColorsFieldPreset>",
+    "readonly: boolean",
+    "required: boolean",
+    "text: string",
+    "touched: boolean",
+    "value: string"
+  ],
   "MdyCommandDefer": [
     "(opaque)"
   ],
@@ -893,6 +924,35 @@
     "name: string",
     "size: number",
     "type: string"
+  ],
+  "MdyFileFieldController": [
+    "setReadonly: void",
+    "setValue: void"
+  ],
+  "MdyFileFieldControllerOptions": [
+    "accept?: string",
+    "handle: MdyFieldHandle<readonly TFile[]>",
+    "maxFileSize?: number",
+    "maxFiles?: number",
+    "multiple?: boolean",
+    "readonly?: boolean",
+    "widgetId: string"
+  ],
+  "MdyFileFieldIntent": [
+    "(opaque)"
+  ],
+  "MdyFileFieldState": [
+    "dirty: boolean",
+    "disabled: boolean",
+    "dragover: boolean",
+    "files: readonly TFile[]",
+    "interactivity: MdyInteractivity",
+    "invalid: boolean",
+    "pending: boolean",
+    "readonly: boolean",
+    "rejected: readonly TFile[]",
+    "required: boolean",
+    "touched: boolean"
   ],
   "MdyFileSelectionOptions": [
     "accept?: string",
@@ -1532,6 +1592,19 @@
     "options: readonly MdySelectOption<TValue>[]",
     "readonly?: boolean",
     "value?: TValue | null",
+    "widgetId: string"
+  ],
+  "MdySelectFieldController": [
+    "setLoading: void",
+    "setOptions: void",
+    "setReadonly: void"
+  ],
+  "MdySelectFieldControllerOptions": [
+    "handle: MdyFieldHandle<TValue | null>",
+    "keyFor?: (option: MdySelectOption<TValue>) => string",
+    "loading?: boolean",
+    "options: readonly MdySelectOption<TValue>[]",
+    "readonly?: boolean",
     "widgetId: string"
   ],
   "MdySelectIntent": [
@@ -2186,6 +2259,11 @@
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdyWidgetController<MdyCatalogWidgetState, MdyCatalogWidgetIntent>"
   ],
+  "createColorsFieldController": [
+    "(0) options: MdyColorsFieldControllerOptions",
+    "(1) reactivity?: MdyReactivity",
+    "-> returns: MdyColorsFieldController"
+  ],
   "createCommandRuntime": [
     "(0) options: MdyCommandRuntimeOptions",
     "-> returns: MdyCommandRuntime"
@@ -2215,6 +2293,11 @@
     "(3) beforeWrite?: (value: unknown) => unknown",
     "(4) warn?: (message: string) => void",
     "-> returns: FieldRecord"
+  ],
+  "createFileFieldController": [
+    "(0) options: MdyFileFieldControllerOptions<TFile>",
+    "(1) reactivity?: MdyReactivity",
+    "-> returns: MdyFileFieldController<TFile>"
   ],
   "createFocusCustodian": [
     "(0) root: () => Element | null",
@@ -2255,6 +2338,11 @@
     "(0) options: MdySelectControllerOptions<TValue>",
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdySelectController<TValue>"
+  ],
+  "createSelectFieldController": [
+    "(0) options: MdySelectFieldControllerOptions<TValue>",
+    "(1) reactivity?: MdyReactivity",
+    "-> returns: MdySelectFieldController<TValue>"
   ],
   "createSilentDiagnostics": [
     "-> returns: MdyDiagnostics"
@@ -2331,6 +2419,14 @@
   "decideOverlayPlacement": [
     "(0) input: MdyOverlayGeometry",
     "-> returns: MdyOverlayDecision"
+  ],
+  "define": [
+    "(0) kind: MdyWidgetKind",
+    "(1) rootClasses: readonly string[]",
+    "(2) partNames: readonly TPart[]",
+    "(3) overlay: boolean",
+    "(4) shape?: MdyWidgetShape<NoInfer<TPart>>",
+    "-> returns: MdyWidgetDefinition<TPart>"
   ],
   "deltaEOK": [
     "(0) left: Oklch",
@@ -2416,6 +2512,10 @@
   "fieldShellPartIds": [
     "(0) widgetId: string",
     "-> returns: { readonly labelId: string; readonly descriptionId: string; readonly errorId: string; }"
+  ],
+  "fieldShellRootClasses": [
+    "(0) state: Readonly<Record<string, unknown>>",
+    "-> returns: readonly string[]"
   ],
   "fileSelectionTransition": [
     "(0) candidates: readonly TFile[]",
@@ -3026,6 +3126,10 @@
     "(1) enabledKeys: readonly string[]",
     "(2) labelForKey: (key: string) => string",
     "-> returns: string | null"
+  ],
+  "semanticElement": [
+    "(0) partName: string",
+    "-> returns: MdyWidgetSemanticElement"
   ],
   "serializeMdyThemeCss": [
     "(0) theme: MdyResolvedTheme",

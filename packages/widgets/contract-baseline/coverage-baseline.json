@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 697,
-    "asserted": 369,
+    "published": 713,
+    "asserted": 384,
     "shown": 43
   },
   "uncovered": [
@@ -116,15 +116,15 @@
     },
     {
       "name": "MDY_ID_DELIMITER",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MDY_LABELABLE_TAGS",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MDY_LAYOUT_BREAKPOINTS",
@@ -218,9 +218,9 @@
     },
     {
       "name": "MDY_SEMANTICS_REQUIRING_NAME",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MDY_SHARED_UI_CLASSES",
@@ -296,9 +296,9 @@
     },
     {
       "name": "MDY_WIDGET_RELATIONS",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MDY_WIDGET_STATES",
@@ -314,9 +314,9 @@
     },
     {
       "name": "MDY_WIDGET_STATE_SUPPORT",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MDY_WIDGET_TRANSITIONS",
@@ -602,6 +602,36 @@
     },
     {
       "name": "MdyColorValueTransition",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyColorsFieldController",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyColorsFieldControllerOptions",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyColorsFieldIntent",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyColorsFieldPreset",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyColorsFieldState",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
@@ -1208,6 +1238,30 @@
     },
     {
       "name": "MdyFileCandidate",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyFileFieldController",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyFileFieldControllerOptions",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyFileFieldIntent",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyFileFieldState",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
@@ -1826,6 +1880,18 @@
     },
     {
       "name": "MdySelectControllerOptions",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdySelectFieldController",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdySelectFieldControllerOptions",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2629,6 +2695,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "createColorsFieldController",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "createConsoleDiagnostics",
       "asserted": false,
       "shown": false,
@@ -2644,7 +2716,7 @@
       "name": "createDaterangeFieldController",
       "asserted": true,
       "shown": false,
-      "reason": "the daterange controller exists and no renderer consumes it yet. It was written because three of them built their range picker by copying their datepicker — 21 duplicated bodies the cross-package check could not see. It reaches a demo when a renderer adopts it, which changes what that renderer draws and belongs to the batch that verifies a visual change."
+      "reason": "published and never shown"
     },
     {
       "name": "createFieldController",
@@ -2657,6 +2729,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "createFileFieldController",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "createFocusCustodian",
@@ -2702,6 +2780,12 @@
     },
     {
       "name": "createSelectController",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "createSelectFieldController",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2776,13 +2860,13 @@
       "name": "daterangeFieldPartIds",
       "asserted": true,
       "shown": false,
-      "reason": "the daterange controller exists and no renderer consumes it yet. It was written because three of them built their range picker by copying their datepicker — 21 duplicated bodies the cross-package check could not see. It reaches a demo when a renderer adopts it, which changes what that renderer draws and belongs to the batch that verifies a visual change."
+      "reason": "published and never shown"
     },
     {
       "name": "daterangeFieldRootClasses",
       "asserted": true,
       "shown": false,
-      "reason": "the daterange controller exists and no renderer consumes it yet. It was written because three of them built their range picker by copying their datepicker — 21 duplicated bodies the cross-package check could not see. It reaches a demo when a renderer adopts it, which changes what that renderer draws and belongs to the batch that verifies a visual change."
+      "reason": "published and never shown"
     },
     {
       "name": "daysInMonth",
@@ -2804,6 +2888,12 @@
     },
     {
       "name": "defaultWidgetIdFactory",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "define",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2903,6 +2993,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "fieldShellRootClasses",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "fileSelectionTransition",
@@ -3176,9 +3272,9 @@
     },
     {
       "name": "isValidWidgetId",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "keyBindingFor",
@@ -3494,9 +3590,9 @@
     },
     {
       "name": "partsRequiringName",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "partsSharingClassesWith",
@@ -3556,7 +3652,7 @@
       "name": "projectDaterangeFieldA11y",
       "asserted": true,
       "shown": false,
-      "reason": "the daterange controller exists and no renderer consumes it yet. It was written because three of them built their range picker by copying their datepicker — 21 duplicated bodies the cross-package check could not see. It reaches a demo when a renderer adopts it, which changes what that renderer draws and belongs to the batch that verifies a visual change."
+      "reason": "published and never shown"
     },
     {
       "name": "projectFieldA11y",
@@ -3590,9 +3686,9 @@
     },
     {
       "name": "projectSelectA11y",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "projectTimepickerFieldA11y",
@@ -3709,16 +3805,16 @@
       "reason": "published, neither asserted nor shown"
     },
     {
-      "name": "selectTransitionFixtures",
+      "name": "selectTypeaheadKey",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
     },
     {
-      "name": "selectTypeaheadKey",
-      "asserted": false,
+      "name": "semanticElement",
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "serializeMdyThemeCss",

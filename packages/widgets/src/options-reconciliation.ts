@@ -1,3 +1,15 @@
+/**
+ * A value the options do not contain is still the value.
+ *
+ * Any control that offers a list faces this: a form holds `"fr"`, the options arrive without it, and
+ * the control has to show something. Erasing the value loses data the person could have fixed; hiding
+ * it shows a control that disagrees with the form. So the value stays and the list gains an entry for
+ * it, marked as unrecognised.
+ *
+ * Neutral ground, deliberately. It lived under `select/` and the multiselect — which is in `field/` —
+ * reached across for it, while `select/` reached the other way for the field shell. Two directions
+ * between two folders is one module with two names.
+ */
 import type { MdySelectOption } from "@modyra/core";
 
 export interface MdySelectReconciliationState<TValue> {

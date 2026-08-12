@@ -4,8 +4,9 @@
 
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
-import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
+import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import { shownErrors } from "./verdict.js";
+import { fieldShellRootClasses } from "./shell-a11y.js";
 import type {
   MdyBooleanFieldState,
   MdyBooleanFieldVariant,
@@ -37,14 +38,9 @@ export function booleanFieldPartIds(widgetId: string): {
  * Through the shared vocabulary rather than as literals: these were nine hand-written `mdy-field--*`
  * names, and no theme styled a single one of them.
  */
+/** The root's classes, from the shared table every kind reads. */
 export function booleanFieldRootClasses(state: MdyBooleanFieldState): readonly string[] {
-  const S = MDY_FIELD_STATE_CLASSES;
-  return [
-    S.field,
-    ...S.fieldStates
-      .filter((name: string) => Boolean((state as unknown as Record<string, unknown>)[name]))
-      .map((name: string) => `${S.field}--${name}`),
-  ];
+  return fieldShellRootClasses(state as unknown as Readonly<Record<string, unknown>>);
 }
 
 /** Projects ARIA attributes and classes for the boolean field parts. */
