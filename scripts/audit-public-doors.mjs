@@ -11,15 +11,24 @@
  * Types count. A type alias reachable from two subpaths misleads exactly as much as a function does,
  * and is what a `.d.ts`-only entry publishes, so the check runs through the checker rather than
  * through `import()`.
+ *
+ * The same pass answers a second question the other surface gates cannot: **does every import in
+ * this repository still resolve?** A subpath that leaves the `exports` map takes no type with it, so
+ * the type-surface snapshot reports nothing; the widget catalogue is untouched, so the contract
+ * differ reports `patch`. The place that breaks first is a demo, and demos are built by the e2e
+ * chain rather than by `npm run test`. Reading the imports is cheaper than building them and finds
+ * the same thing.
  */
-import { readFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 import ts from "typescript";
 
 const ROOT = resolve(new URL("..", import.meta.url).pathname);
 const PACKAGES = ["core", "widgets"];
 
 let failures = 0;
+/** Per package: name → the subpaths that publish it. */
+const published = new Map();
 for (const pkg of PACKAGES) {
   const manifest = JSON.parse(readFileSync(resolve(ROOT, `packages/${pkg}/package.json`), "utf8"));
   const entries = [];
@@ -46,6 +55,8 @@ for (const pkg of PACKAGES) {
     }
   }
 
+  published.set(pkg, doors);
+
   const multi = [...doors].filter(([, subpaths]) => subpaths.length > 1);
   console.log(
     `@modyra/${pkg}: ${entries.length} subpaths, ${doors.size} public names, ${multi.length} reachable from more than one`,
@@ -54,6 +65,56 @@ for (const pkg of PACKAGES) {
     console.log(`  ${name}  ←  ${subpaths.join(", ")}`);
     failures += 1;
   }
+}
+
+/**
+ * Every `@modyra/core` or `@modyra/widgets` import in the repository, checked against what the
+ * package publishes — the subpath and the names alike.
+ *
+ * Sources only. A compiled `dist` mirrors its source and a changelog describes a surface that has
+ * since moved on; both would report a break that does not exist.
+ */
+const ROOTS = ["packages", "examples", "apps", "e2e", "scripts", "site/src", "docs"];
+const SKIP = new Set(["node_modules", "dist", ".astro", "test-results", "contract-baseline"]);
+const SOURCE = /\.(ts|tsx|mts|mjs|js|jsx|svelte|vue)$/;
+const IMPORT = /(?:import|export)\s+(?:type\s+)?(?:\{([^}]*)\}|\*\s+as\s+\w+|\w+)?\s*(?:from\s*)?["']@modyra\/(core|widgets)(\/[^"']+)?["']/g;
+
+const unresolved = [];
+const walk = (dir) => {
+  for (const entry of readdirSync(dir)) {
+    if (SKIP.has(entry)) continue;
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) { walk(path); continue; }
+    if (!SOURCE.test(entry)) continue;
+    const text = readFileSync(path, "utf8");
+    for (const match of text.matchAll(IMPORT)) {
+      const [, names, pkg, tail] = match;
+      const doors = published.get(pkg);
+      if (!doors) continue;
+      const subpath = tail ? `.${tail}` : ".";
+      const declared = new Set([...doors.values()].flat());
+      if (!declared.has(subpath)) {
+        unresolved.push([relative(ROOT, path), `@modyra/${pkg}${tail ?? ""} is not a declared subpath`]);
+        continue;
+      }
+      for (const raw of (names ?? "").split(",")) {
+        const name = raw.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0].trim();
+        if (!name) continue;
+        if (!doors.get(name)?.includes(subpath)) {
+          unresolved.push([relative(ROOT, path), `${name} is not published by @modyra/${pkg}${tail ?? ""}`]);
+        }
+      }
+    }
+  }
+};
+for (const root of ROOTS) if (existsSync(resolve(ROOT, root))) walk(resolve(ROOT, root));
+
+if (unresolved.length > 0) {
+  console.log(`\n${unresolved.length} import(s) name something the package does not publish:`);
+  for (const [file, what] of unresolved) console.log(`  ${file}: ${what}`);
+  failures += unresolved.length;
+} else {
+  console.log("Every @modyra/core and @modyra/widgets import in the repository resolves.");
 }
 
 if (failures > 0) {
