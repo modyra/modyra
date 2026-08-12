@@ -17,7 +17,7 @@ import {
   triggerRef,
 } from "@vue/reactivity";
 
-import { vueReactivity } from "../index.js";
+import { vueReactivity } from "../reactivity.js";
 
 export interface UseMdySelectOptions<TValue>
   extends Omit<MdySelectControllerOptions<TValue>, "onChange"> {

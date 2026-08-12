@@ -13,7 +13,7 @@ import {
   type MdyWidgetViewContract,
 } from "@modyra/widgets";
 
-import { vueReactivity } from "../index.js";
+import { vueReactivity } from "../reactivity.js";
 import { executeVueCommands } from "./runtime.js";
 
 export type UseMdyFieldOptions<TValue> = Omit<
