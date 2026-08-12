@@ -357,6 +357,20 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   protected readonly hasErrors: Signal<boolean> = computed(
     () => this.errors().length > 0,
   );
+
+  /**
+   * Whether the control announces itself as failing — the one answer for `aria-invalid`.
+   *
+   * Named for the question because eight templates were answering it and one of them answered
+   * differently: the colours field waited for `touched`, so a screen-reader user met a control the
+   * form was rejecting and the control said nothing was wrong. The rule is the contract's
+   * (`showsAsInvalid`: out of play, no verdict), and `errors()` already withholds the errors of a
+   * field the form is not asking about — so a template that spells its own combination is a
+   * template that can disagree with both.
+   */
+  protected readonly paintsAsInvalid: Signal<boolean> = computed(() =>
+    showsAsInvalid({ valid: this.isValid(), disabled: this.isDisabled() }),
+  );
   /** Effective aria-disabled: explicit input overrides field state. */
   protected readonly effectiveAriaDisabled: Signal<boolean> = computed(
     () => this.ariaDisabled() ?? this.isDisabled(),

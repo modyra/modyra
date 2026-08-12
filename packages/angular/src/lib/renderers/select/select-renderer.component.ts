@@ -86,7 +86,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             [attr.aria-activedescendant]="
               activeIndex() >= 0 ? fieldId + '-opt-' + activeIndex() : null
             "
-            [attr.aria-invalid]="hasErrors()"
+            [attr.aria-invalid]="paintsAsInvalid()"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="ariaRequired() || isRequired()"
@@ -219,7 +219,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             [disabled]="isDisabled()"
             (change)="onNativeChange($event)"
             (blur)="markAsTouched()"
-            [attr.aria-invalid]="hasErrors()"
+            [attr.aria-invalid]="paintsAsInvalid()"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="ariaRequired() || isRequired()"

@@ -81,7 +81,7 @@ import { MdyCalendarComponent } from "./calendar.component";
           (change)="onInputChange($event)"
           (blur)="onInputBlur($event)"
           [attr.aria-haspopup]="'dialog'"
-          [attr.aria-invalid]="hasErrors()"
+          [attr.aria-invalid]="paintsAsInvalid()"
           [attr.aria-describedby]="describedById(fieldId)"
           [attr.aria-label]="controlAriaLabel()"
           [attr.aria-required]="ariaRequired() || isRequired()"

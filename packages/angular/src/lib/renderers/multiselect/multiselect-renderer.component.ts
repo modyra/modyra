@@ -79,7 +79,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             (click)="toggleOverlay($event)"
             (keydown)="onOverlayKeydown($event)"
             [attr.aria-label]="i18n.searchOptionsLabel"
-            [attr.aria-invalid]="hasErrors()"
+            [attr.aria-invalid]="paintsAsInvalid()"
             [attr.aria-disabled]="effectiveAriaDisabled()"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
