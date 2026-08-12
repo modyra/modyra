@@ -74,3 +74,31 @@ test("a document that parses reports no diagnostic at all", () => {
   assert.equal(ok, true);
   assert.deepEqual(diagnostics, []);
 });
+
+/**
+ * A finding belongs to the document being read, and to no other.
+ *
+ * The sink is module state: one parse installs it, the next reads it. Restoring it only on the
+ * happy path would mean a document that throws mid-read leaves the following parse reporting into
+ * a result that has already been returned — findings attributed to a document that never produced
+ * them, and a console that goes quiet for everyone.
+ */
+test("a finding stays with the document that produced it", async () => {
+  const { collectingDiagnostics, warnDev } = await import("../dist/dynamic/guards.js");
+
+  const outer = [];
+  const seen = collectingDiagnostics((m) => outer.push(m), () => {
+    const inner = [];
+    assert.throws(() => collectingDiagnostics((m) => inner.push(m), () => {
+      warnDev("inner finding");
+      throw new Error("document abandoned mid-read");
+    }), /abandoned/);
+    assert.deepEqual(inner, ["inner finding"], "the abandoned read still collected its own finding");
+
+    warnDev("outer finding");
+    return "read";
+  });
+
+  assert.equal(seen, "read");
+  assert.deepEqual(outer, ["outer finding"], "a nested read that threw did not keep the sink");
+});

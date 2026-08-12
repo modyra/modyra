@@ -23,7 +23,7 @@
  *   node scripts/audit-contract-schema.mjs          # report
  *   node scripts/audit-contract-schema.mjs --check  # exit 1 on defects
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import Ajv from "ajv/dist/2020.js";
 import { MDY_DYNAMIC_FIELD_KINDS, parseDynamicForm } from "../packages/core/dist/dynamic-config.js";
@@ -48,8 +48,13 @@ const SCHEMAS = [
  * on the next run instead of the next bug report.
  */
 const documentSlots = () => {
-  const source = readFileSync(join(ROOT, "packages/core/src/dynamic-config.ts"), "utf8");
-  const block = /export interface MdyDynamicFormConfigV2 \{([\s\S]*?)\n\}/.exec(source);
+  // Read from wherever the document's modules put it: which file holds the declaration is an
+  // internal arrangement, and a gate that pins one is a gate that breaks on a rename.
+  const dir = join(ROOT, "packages/core/src/dynamic");
+  const block = readdirSync(dir)
+    .filter((name) => name.endsWith(".ts"))
+    .map((name) => /export interface MdyDynamicFormConfigV2 \{([\s\S]*?)\n\}/.exec(readFileSync(join(dir, name), "utf8")))
+    .find(Boolean);
   if (!block) throw new Error("MdyDynamicFormConfigV2 is no longer declared where this audit reads it");
   return [...block[1].matchAll(/^\s*readonly (\w+)\??:/gm)].map((match) => match[1]);
 };
