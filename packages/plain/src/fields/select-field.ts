@@ -8,9 +8,21 @@
  */
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, selectKeyboardAction, typeaheadMatch, createSelectController, fieldShellPartIds, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  createSelectController,
+  createTypeahead,
+  fieldShellPartIds,
+  isTypeaheadCharacter,
+  overlayAnchoringFor,
+  selectKeyboardAction,
+  shownErrorsOf,
+  showsAsInvalid,
+  type MdyElementLookup,
+  typeaheadMatch,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 
@@ -37,7 +49,7 @@ export function renderSelectField(
       keyFor,
       value: handle.value(),
       disabled: handle.disabled(),
-      invalid: !handle.valid(),
+      invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
       onChange: (value) => {
         handle.set(value);
         handle.markAsDirty();
@@ -230,10 +242,10 @@ export function renderSelectField(
   const effectRef = reactivity.effect(() => {
     controller.setValue(handle.value());
     controller.setDisabled(handle.disabled());
-    controller.setInvalid(!handle.valid());
+    controller.setInvalid(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }));
     // The trigger describes itself by whichever of the two is on screen, and this renderer is what
     // decides that: the error list appears once the field is touched and has something to say.
-    const errorsShown = handle.touched() && errorsToShow(handle).length > 0;
+    const errorsShown = handle.touched() && shownErrorsOf(handle).length > 0;
     controller.setDescribedBy({ errorsVisible: errorsShown, descriptionVisible: !errorsShown });
 
     // The shell's own state, which every other kind here reflects and this one did not: the themes
@@ -241,7 +253,7 @@ export function renderSelectField(
     shell.syncState({
       touched: handle.touched(),
       disabled: handle.disabled(),
-      hasError: errorsToShow(handle).length > 0,
+      hasError: shownErrorsOf(handle).length > 0,
       filled: handle.value() !== null && handle.value() !== undefined,
       required: handle.required(),
     });
@@ -251,7 +263,7 @@ export function renderSelectField(
     applyPart(trigger, view.parts.trigger);
     applyPart(search, view.parts.search);
     applyPart(listbox, view.parts.listbox);
-    setErrors(shell.errorList, errorsToShow(handle).map((e) => e.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     syncOptions(state.options);
 
     setOverlayOpen(popup, state.open);

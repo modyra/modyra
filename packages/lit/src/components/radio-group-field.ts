@@ -1,8 +1,12 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdySelectOption } from "@modyra/core";
-import { createOptionFieldController, type MdyOptionFieldController } from "@modyra/widgets";
+import {
+  createOptionFieldController,
+  shownErrorsOf,
+  type MdyOptionFieldController,
+} from "@modyra/widgets";
 import { MdyOptionsFieldElement } from "./options-field.js";
-import { errorsToShow } from "../base.js";
+
 
 export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | null> {
   static override properties: PropertyDeclarations = {
@@ -59,7 +63,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
         aria-labelledby=${this.label ? this.labelId : nothing}
         aria-describedby=${groupAttrs?.["aria-describedby"] ?? nothing}
         aria-disabled=${groupAttrs?.["aria-disabled"] ?? nothing}
-        aria-invalid=${groupAttrs?.["aria-invalid"] ?? (errorsToShow(handle).length > 0 ? "true" : "false")}
+        aria-invalid=${groupAttrs?.["aria-invalid"] ?? (shownErrorsOf(handle).length > 0 ? "true" : "false")}
         aria-required=${groupAttrs?.["aria-required"] ?? (handle.required() ? "true" : "false")}
       >
         ${this.options.map(

@@ -2,19 +2,22 @@ import { MdyFieldHandle, type MdyFieldConstraints } from "@modyra/core";
 import { MDY_ICONS } from "@modyra/core/ui";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
-import { defaultWidgetIdFactory as ID, MDY_FIELD_SHELL_CLASSES as SHELL, MDY_WIDGET_CONTRACTS, type MdyWidgetKind,
+import {
+  MDY_FIELD_SHELL_CLASSES as SHELL,
+  MDY_WIDGET_CONTRACTS,
+  defaultWidgetIdFactory as ID,
   popupAlignmentClass,
   popupPlacementClass,
   projectFieldShellA11y,
+  shownErrorsOf,
   type MdyOverlayAlignment,
   type MdyOverlayPlacement,
   type MdyPartContract,
   type MdyPopupWidgetKind,
+  type MdyWidgetKind,
 } from "@modyra/widgets";
 import { MdyFormController } from "./adapter.js";
 import { narrowConstraints } from "@modyra/widgets";
-import { shownErrors } from "@modyra/widgets";
-import type { MdyFieldError } from "@modyra/core";
 
 /** Renders an icon from the shared library (same SVGs as every adapter). */
 export function mdyIcon(name: keyof typeof MDY_ICONS, className: string): unknown {
@@ -161,7 +164,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   }
 
   protected showErrors(handle: MdyFieldHandle<T>): boolean {
-    return handle.touched() && errorsToShow(handle).length > 0;
+    return handle.touched() && shownErrorsOf(handle).length > 0;
   }
 
   /** Whether the field currently holds a value (drives label styling). */
@@ -172,7 +175,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   /** Error text joined for inline display. */
   protected inlineErrorText(handle: MdyFieldHandle<T>): string {
-    return errorsToShow(handle)
+    return shownErrorsOf(handle)
       .map((e) => e.message)
       .filter((msg) => !!msg && msg.trim() !== "")
       .join(", ");
@@ -246,7 +249,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   protected controlPart(handle: MdyFieldHandle<T>): MdyPartContract {
     return projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
-      errorsToShow(handle),
+      shownErrorsOf(handle),
       {
         widgetId: this.fieldId,
         kind: this.widgetKind,
@@ -306,7 +309,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
       id=${this.errorsId}
       aria-live="polite"
     >
-      ${errorsToShow(handle).map(
+      ${shownErrorsOf(handle).map(
         (er) => html`<li class="${SHELL.errorItem}">${er.message}</li>`,
       )}
     </ul>`;
@@ -346,16 +349,3 @@ export abstract class MdyFieldElement<T> extends LitElement {
   }
 }
 
-/**
- * The errors a field may show.
- *
- * Asked once here rather than decided at each component: a field the form is not asking about shows
- * no verdict, and that rule lives in `@modyra/widgets` beside the projection every component already
- * uses.
- */
-export function errorsToShow(handle: {
-  errors(): ReadonlyArray<MdyFieldError>;
-  disabled(): boolean;
-}): ReadonlyArray<MdyFieldError> {
-  return shownErrors({ disabled: handle.disabled() }, handle.errors());
-}

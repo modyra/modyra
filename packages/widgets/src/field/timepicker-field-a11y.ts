@@ -8,6 +8,7 @@ import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import type { MdyTimepickerFieldState } from "./timepicker-field-types.js";
+import { shownErrors } from "./verdict.js";
 
 export interface MdyTimepickerFieldA11yOptions {
   readonly widgetId: string;
@@ -60,7 +61,7 @@ export function projectTimepickerFieldA11y(
   readonly error: MdyPartContract;
 } {
   const { labelId, triggerId, dialogId, hourId, minuteId, descriptionId, errorId } = timepickerFieldPartIds(options.widgetId);
-  const hasErrors = errors.length > 0;
+  const hasErrors = shownErrors(state, errors).length > 0;
   const describedBy = hasErrors ? errorId : descriptionId;
 
   return {

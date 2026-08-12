@@ -40,13 +40,13 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
           @if (isRequired()) {
             <span class="mdy-label__required" aria-hidden="true">*</span>
           }
-          @if (inlineErrors && touched() && hasErrors()) {
+          @if (inlineErrorShown()) {
             <mdy-inline-error-icon [errorText]="inlineErrorText()" />
           }
         </span>
       }
     </label>
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">

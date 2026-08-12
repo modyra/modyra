@@ -9,9 +9,19 @@
 import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
 import { addMonths, buildDateLocale, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
-import { MDY_WIDGET_CONTRACTS, dateRangeDraftTransition, overlayAnchoringFor, projectFieldShellA11y, type MdyDateRangeDraftState, type MdyDateRangeValue , defaultWidgetIdFactory} from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  dateRangeDraftTransition,
+  defaultWidgetIdFactory,
+  overlayAnchoringFor,
+  projectFieldShellA11y,
+  shownErrorsOf,
+  showsAsInvalid,
+  type MdyDateRangeDraftState,
+  type MdyDateRangeValue,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 
@@ -179,7 +189,7 @@ export function renderDaterangeField(
     // on its own it never said the range was invalid, required, disabled or described by its errors.
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
-      errorsToShow(handle),
+      shownErrorsOf(handle),
       { widgetId: widgetId, controlId: startInput.id },
     );
 
@@ -206,10 +216,10 @@ export function renderDaterangeField(
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
     if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
     else releaseOverlayPlacement(popup);
-    setErrors(shell.errorList, errorsToShow(handle).map((error) => error.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
-      hasError: !handle.valid(), filled: value.start !== null, required: handle.required(),
+      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: value.start !== null, required: handle.required(),
     });
 
     const monthKey = `${anchor.year}-${anchor.month}`;

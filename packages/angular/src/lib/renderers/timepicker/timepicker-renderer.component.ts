@@ -58,7 +58,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
       [forId]="fieldId"
       [required]="isRequired()"
       [filled]="value() !== null"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
 
@@ -142,7 +142,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     }
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     }
   `,

@@ -24,7 +24,7 @@ import { inputText } from "../renderer-projection";
       [forId]="fieldId"
       [required]="isRequired()"
       [filled]="true"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
 
@@ -54,7 +54,7 @@ import { inputText } from "../renderer-projection";
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     }
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     }
   `,

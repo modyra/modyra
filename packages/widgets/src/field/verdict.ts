@@ -28,3 +28,32 @@ export function shownErrors(
 export function showsAsInvalid(flags: { readonly disabled: boolean; readonly valid: boolean }): boolean {
   return !flags.valid && !flags.disabled;
 }
+
+/** What a field handle offers when asked for its verdict. */
+export interface MdyFieldVerdictSource {
+  errors(): ReadonlyArray<MdyFieldError>;
+  disabled(): boolean;
+}
+
+/** {@link shownErrors}, asked of a field handle rather than of a state object. */
+export function shownErrorsOf(handle: MdyFieldVerdictSource): ReadonlyArray<MdyFieldError> {
+  return shownErrors({ disabled: handle.disabled() }, handle.errors());
+}
+
+/**
+ * Whether the error text is on screen.
+ *
+ * Two conditions, and the second is the one renderers answer differently: a field is failing, **and**
+ * the person has been given the chance to fill it. An invalid untouched field is the ordinary state
+ * of an empty form — every required field holds an error before anyone has typed — so painting those
+ * errors on arrival tells a user off for a form they have not started.
+ *
+ * Whatever names the error list — `aria-describedby` above all — reads the same answer, because a
+ * reference to an element that was never rendered points at nothing.
+ */
+export function errorsVisible(
+  flags: { readonly disabled: boolean; readonly touched: boolean },
+  errors: ReadonlyArray<MdyFieldError>,
+): boolean {
+  return flags.touched && shownErrors(flags, errors).length > 0;
+}

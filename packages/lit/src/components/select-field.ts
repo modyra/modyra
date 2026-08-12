@@ -1,8 +1,13 @@
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
 import { filterOptionsByQuery } from "@modyra/core/ui";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
-import { MdyFieldElement, mdyIcon, errorsToShow } from "../base.js";
-import { createTypeahead, isTypeaheadCharacter, optionsWithUnrecognizedValue } from "@modyra/widgets";
+import { MdyFieldElement, mdyIcon } from "../base.js";
+import {
+  createTypeahead,
+  isTypeaheadCharacter,
+  optionsWithUnrecognizedValue,
+  shownErrorsOf,
+} from "@modyra/widgets";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 import {
@@ -85,7 +90,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         value: handle.value(),
         disabled: handle.disabled(),
         readonly: false,
-        invalid: errorsToShow(handle).length > 0,
+        invalid: shownErrorsOf(handle).length > 0,
         loading: this.loading,
         onChange: (value) => {
           handle.set(value);
@@ -147,7 +152,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     if (!this.selectAdapter || !handle) return;
     this.selectAdapter.setDisabled(handle.disabled());
     this.selectAdapter.setReadonly(false);
-    this.selectAdapter.setInvalid(errorsToShow(handle).length > 0);
+    this.selectAdapter.setInvalid(shownErrorsOf(handle).length > 0);
     this.selectAdapter.setLoading(this.loading);
     // Keep the local open flag in sync with the controller before rendering.
     this._open = this.selectAdapter.state.open;
@@ -370,7 +375,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             aria-describedby=${trigger.attributes["aria-describedby"] ?? nothing}
             aria-activedescendant=${trigger.attributes["aria-activedescendant"] ?? nothing}
             aria-disabled=${trigger.attributes["aria-disabled"] === "true" ? "true" : nothing}
-            aria-invalid=${errorsToShow(handle).length > 0 ? "true" : "false"}
+            aria-invalid=${shownErrorsOf(handle).length > 0 ? "true" : "false"}
             aria-required=${handle.required() ? "true" : "false"}
             aria-label=${this.label || nothing}
             ?disabled=${handle.disabled()}

@@ -801,6 +801,10 @@
     "touched: boolean",
     "value: TValue"
   ],
+  "MdyFieldVerdictSource": [
+    "disabled: boolean",
+    "errors: ReadonlyArray<MdyFieldError>"
+  ],
   "MdyFileCandidate": [
     "name: string",
     "size: number",
@@ -2226,6 +2230,11 @@
     "(0) nodes: readonly MdyWidgetStructureNode[]",
     "-> returns: readonly string[]"
   ],
+  "errorsVisible": [
+    "(0) flags: { readonly disabled: boolean; readonly touched: boolean; }",
+    "(1) errors: ReadonlyArray<MdyFieldError>",
+    "-> returns: boolean"
+  ],
   "evaluateExpression": [
     "(0) expr: MdyExpression",
     "(1) value: unknown",
@@ -2895,6 +2904,10 @@
   "shownErrors": [
     "(0) flags: { readonly disabled: boolean; }",
     "(1) errors: ReadonlyArray<MdyFieldError>",
+    "-> returns: ReadonlyArray<MdyFieldError>"
+  ],
+  "shownErrorsOf": [
+    "(0) handle: MdyFieldVerdictSource",
     "-> returns: ReadonlyArray<MdyFieldError>"
   ],
   "showsAsInvalid": [
