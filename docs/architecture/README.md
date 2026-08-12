@@ -52,6 +52,9 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0034: A draft is not a linked signal](0034-a-draft-is-not-a-linked-signal.md) — a value derived from a handle is a computed; a draft resets on the event that starts it, never on its source
 - [ADR 0035: The colour arithmetic lives with the themes](0035-the-colour-arithmetic-lives-with-the-themes.md) — `color-utils` and `theme-compiler` ship with the stylesheets they generate, measured to be a leaf with no edge either way
 - [ADR 0036: The UI contract lives in one package](0036-the-ui-contract-lives-in-one-package.md) — icons, keyboard policy and the option filter move to `@modyra/widgets`, which had been importing them sideways from the engine
+- [ADR 0037: A vocabulary does not belong to a parser](0037-a-vocabulary-does-not-belong-to-a-parser.md) — the seventeen field kinds were the property of the JSON reader that happened to declare them; a shared vocabulary lives in a leaf owned by nobody who uses it
+- [ADR 0038: An adapter does not redeclare what it derives](0038-an-adapter-does-not-redeclare-what-it-derives.md) — narrowing an upstream type for a framework's signals is legitimate; restating its members is drift with a delay
+- [ADR 0039: A breaking change shipped as a patch](0039-a-breaking-change-shipped-as-a-patch.md) — eighteen subpaths removed at `2.1.2 → 2.1.3`, why that was bounded rather than habitual, and the complete migration table
 
 ## Security-relevant records
 
