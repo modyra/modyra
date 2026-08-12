@@ -1,10 +1,21 @@
 import { mdyPart } from "../mdy-part.js";
 import { overlayControlledId, createPointerDrag, dragPointOf } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
-import { type MdyFieldHandle } from "@modyra/core";
-import { angleToHour, angleToMinute, buildTimeString, formatTime, formatTimeAs, getCurrentTime, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
-import { acceptTimeField, stepTimeField, timeFieldBounds, timepickerDialNumbers, timepickerSelectedDialValue } from "@modyra/widgets";
-import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
+import { observerFor, type MdyFieldHandle } from "@modyra/core";
+import { angleToHour, angleToMinute, buildTimeString, formatTimeAs, hourToAngle, minuteToAngle, parseAnyTime, parseTime, pointerAngle, to24Hour, type MdyTimeFormat } from "@modyra/core/datetime";
+import {
+  acceptTimeField,
+  createTimepickerFieldController,
+  stepTimeField,
+  subscribeController,
+  timeFieldBounds,
+  timepickerDialNumbers,
+  timepickerSelectedDialValue,
+  type MdyTimepickerFieldController,
+  type MdyTimepickerFieldIntent,
+  type MdyTimepickerFieldState,
+} from "@modyra/widgets";
+import { applyWidgetCommands, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
   MdyLitOverlayController,
@@ -21,15 +32,30 @@ type TimeField = "hour" | "minute";
  * Supports 12h/24h formats, a dial clock face with drag/click selection,
  * and a keyboard-input mode toggle.
  */
+/** What the component shows before a handle reaches it — a clock on the hour, nothing confirmed. */
+const RESTING: MdyTimepickerFieldState = Object.freeze({
+  value: null,
+  draft: { hour: 12, minute: 0, period: "AM" as const },
+  open: false,
+  focusedField: "hour",
+  viewMode: "dial",
+  format: "12h",
+  invalid: false,
+  disabled: false,
+  interactivity: "enabled",
+  readonly: false,
+  required: false,
+  touched: false,
+  dirty: false,
+  pending: false,
+});
+
 export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   static override properties: PropertyDeclarations = {
     placeholder: { type: String },
     format: { type: String },
     compact: { type: Boolean },
     _open: { state: true },
-    _viewMode: { state: true },
-    _focusedField: { state: true },
-    _draftValue: { state: true },
     _isDragging: { state: true },
     _dragAngle: { state: true },
   };
@@ -39,13 +65,30 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   /** Compact period-toggle layout. */
   declare compact: boolean;
   declare _open: boolean;
-  declare _viewMode: TimepickerViewMode;
-  declare _focusedField: TimeField;
-  declare _draftValue: string | null;
   declare _isDragging: boolean;
   declare _dragAngle: number | null;
   private unbindOutside?: () => void;
   protected override readonly widgetKind = "timepicker" as const;
+
+  private fieldController?: MdyTimepickerFieldController;
+  private unsubscribe?: () => void;
+
+  /** What the controller is holding, or the resting shape before a handle exists. */
+  private get view(): MdyTimepickerFieldState {
+    return this.fieldController?.state() ?? RESTING;
+  }
+
+  /** Carries out what the controller asks of the DOM, which is the only half this renderer owns. */
+  private send(intent: MdyTimepickerFieldIntent): void {
+    const handle = this.field;
+    if (!this.fieldController || !handle) return;
+    applyWidgetCommands(this, this.fieldController.dispatch(intent), {
+      open: () => this.overlay.open(),
+      close: () => this.overlay.close(),
+      disabled: handle.disabled(),
+      control: ".mdy-timepicker__input",
+    });
+  }
 
   private dragField: TimeField = "hour";
   private switchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -64,15 +107,25 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     this.format = "12h";
     this.compact = false;
     this._open = false;
-    this._viewMode = "dial";
-    this._focusedField = "hour";
-    this._draftValue = null;
     this._isDragging = false;
     this._dragAngle = null;
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
+    const handle = this.field;
+    if (handle && !this.fieldController) {
+      this.fieldController = createTimepickerFieldController({
+        widgetId: this.fieldId,
+        handle,
+        format: this.format,
+      });
+      this.unsubscribe = subscribeController(
+        this.fieldController as never,
+        observerFor(handle),
+        () => this.requestUpdate(),
+      );
+    }
     this.unbindOutside = bindOutsidePointer(this, () => {
       const handle = this.field;
       if (handle) this.closePopup(handle);
@@ -80,6 +133,9 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   override disconnectedCallback(): void {
+    this.unsubscribe?.();
+    this.unsubscribe = undefined;
+    this.fieldController = undefined;
     this.unbindOutside?.();
     this.overlay.close();
     super.disconnectedCallback();
@@ -91,38 +147,39 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     return this.placeholder || (this.format === "24h" ? "HH:mm" : "hh:mm AM/PM");
   }
 
-  private openPopup(handle: MdyTimepickerFieldElement["field"], event?: Event): void {
-    const parsed = parseAnyTime(handle?.value() ?? null, this.format);
-    this._draftValue = parsed ? formatTime(parsed) : getCurrentTime();
-    this._viewMode = "dial";
-    this._focusedField = "hour";
-    applyOverlayIntent(this, { type: "open", disabled: this.field?.disabled() ?? false, available: true });
-    this.overlay.open(event);
+  private openPopup(_handle: MdyTimepickerFieldElement["field"], event?: Event): void {
+    void event;
+    this.send({ type: "open" });
   }
 
   private closePopup(_handle: MdyFieldHandle<string | null>): void {
     if (!this._open) return;
-    applyOverlayIntent(this, { type: "close" });
-    this.overlay.close();
-    this.querySelector<HTMLInputElement>(".mdy-timepicker__input")?.focus();
+    this.send({ type: "close", restoreFocus: true });
   }
 
-  private confirm(handle: MdyFieldHandle<string | null>): void {
-    const draft = parseTime(this._draftValue);
-    const next = draft ? formatTimeAs(draft, this.format) : null;
-    if (next !== null && next !== handle.value()) {
-      handle.set(next);
-      handle.markAsDirty();
-    }
-    this.closePopup(handle);
+  /** Confirming is the contract's: this kind's value contract says `confirm`, and it owns the draft. */
+  private confirm(_handle: MdyFieldHandle<string | null>): void {
+    this.send({ type: "confirm" });
   }
 
+  /**
+   * A time chosen on the dial, sent as the parts the controller takes.
+   *
+   * The dial builds a string because that is what a clock face reads back; the draft it edits is the
+   * controller's, and it holds hours, minutes and the period separately so the two never disagree
+   * about what "half past" means at noon.
+   */
   private onTimePicked(time: string): void {
-    this._draftValue = time;
+    const parsed = parseTime(time);
+    if (!parsed) return;
+    this.send({ type: "set-hour", hour: parsed.hour });
+    this.send({ type: "set-minute", minute: parsed.minute });
+    if (this.format === "12h") this.send({ type: "set-period", period: parsed.period });
   }
 
+  /** The draft the controller is editing, which is what the dial draws. */
   private parsed(): import("@modyra/core/datetime").ParsedTime | null {
-    return parseTime(this._draftValue);
+    return this.fieldController?.state().draft ?? null;
   }
 
   private numericHour(): number {
@@ -153,14 +210,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     if (this._isDragging && this._dragAngle !== null) return this._dragAngle;
     const p = this.parsed();
     if (!p) return 0;
-    return this._focusedField === "minute" ? minuteToAngle(p.minute) : hourToAngle(p.hour);
+    return this.view.focusedField === "minute" ? minuteToAngle(p.minute) : hourToAngle(p.hour);
   }
 
   private scheduleMinuteSwitch(delayMs: number): void {
     if (this.switchTimer !== null) clearTimeout(this.switchTimer);
     this.switchTimer = setTimeout(() => {
       this.switchTimer = null;
-      this._focusedField = "minute";
+      this.send({ type: "focus-field", field: "minute" });
     }, delayMs);
   }
 
@@ -213,7 +270,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
         target.value = this.hourDisplay();
         return;
       }
-      this._focusedField = "hour";
+      this.send({ type: "focus-field", field: "hour" });
       const hour12 = h % 12 === 0 ? 12 : h % 12;
       this.onTimePicked(buildTimeString(hour12, p?.minute ?? 0, h >= 12 ? "PM" : "AM"));
       return;
@@ -223,7 +280,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
       target.value = this.hourDisplay();
       return;
     }
-    this._focusedField = "hour";
+    this.send({ type: "focus-field", field: "hour" });
     this.onTimePicked(buildTimeString(h, p?.minute ?? 0, p?.period ?? "AM"));
   }
 
@@ -236,7 +293,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
       target.value = this.minuteDisplay();
       return;
     }
-    this._focusedField = "minute";
+    this.send({ type: "focus-field", field: "minute" });
     const p = this.parsed();
     this.onTimePicked(buildTimeString(p?.hour ?? 12, m, p?.period ?? "AM"));
   }
@@ -248,7 +305,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private setViewMode(mode: TimepickerViewMode): void {
-    this._viewMode = mode;
+    this.send({ type: "set-view-mode", mode });
   }
 
   // ── Drag interaction ────────────────────────────────────────────────────────
@@ -266,16 +323,16 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   });
 
   private onDragStart(event: MouseEvent | TouchEvent): void {
-    if (this._viewMode !== "dial") return;
+    if (this.view.viewMode !== "dial") return;
     if (event.cancelable) event.preventDefault();
-    this.dragField = this._focusedField;
+    this.dragField = this.view.focusedField;
     this._isDragging = true;
     this.drag.start();
     this.updateAngle(event);
   }
 
   private onDragMove(event: MouseEvent | TouchEvent): void {
-    if (!this._isDragging || this._viewMode !== "dial") return;
+    if (!this._isDragging || this.view.viewMode !== "dial") return;
     if (event.cancelable) event.preventDefault();
     this.updateAngle(event);
     const angle = this._dragAngle;
@@ -320,22 +377,22 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   // ── Rendering ───────────────────────────────────────────────────────────────
 
   private renderHeader(): unknown {
-    const hourActive = this._focusedField === "hour";
-    const minuteActive = this._focusedField === "minute";
+    const hourActive = this.view.focusedField === "hour";
+    const minuteActive = this.view.focusedField === "minute";
     return html`
       <div class="mdy-timepicker-header">
         <div class="mdy-timepicker-fields">
           <div class="${this.partClass("hour")} ${hourActive ? "mdy-timepicker-segment--active" : ""}">
             <input
               type="number"
-              class="mdy-timepicker-segment-input ${this._viewMode === "dial" ? "mdy-timepicker-segment-input--readonly" : ""}"
+              class="mdy-timepicker-segment-input ${this.view.viewMode === "dial" ? "mdy-timepicker-segment-input--readonly" : ""}"
               .value=${this.hourDisplay()}
-              ?readonly=${this._viewMode === "dial"}
+              ?readonly=${this.view.viewMode === "dial"}
               aria-label="Hour"
               @input=${this.onHourInput}
-              @focus=${() => (this._focusedField = "hour")}
+              @focus=${() => this.send({ type: "focus-field", field: "hour" })}
               @click=${() => {
-                if (this._viewMode === "dial") this._focusedField = "hour";
+                if (this.view.viewMode === "dial") this.send({ type: "focus-field", field: "hour" });
               }}
               @keydown=${(e: KeyboardEvent) => {
                 if (this.stepSegment(e, "hour")) return;
@@ -352,14 +409,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           <div class="${this.partClass("minute")} ${minuteActive ? "mdy-timepicker-segment--active" : ""}">
             <input
               type="number"
-              class="mdy-timepicker-segment-input ${this._viewMode === "dial" ? "mdy-timepicker-segment-input--readonly" : ""}"
+              class="mdy-timepicker-segment-input ${this.view.viewMode === "dial" ? "mdy-timepicker-segment-input--readonly" : ""}"
               .value=${this.minuteDisplay()}
-              ?readonly=${this._viewMode === "dial"}
+              ?readonly=${this.view.viewMode === "dial"}
               aria-label="Minute"
               @input=${this.onMinuteInput}
-              @focus=${() => (this._focusedField = "minute")}
+              @focus=${() => this.send({ type: "focus-field", field: "minute" })}
               @click=${() => {
-                if (this._viewMode === "dial") this._focusedField = "minute";
+                if (this.view.viewMode === "dial") this.send({ type: "focus-field", field: "minute" });
               }}
               @keydown=${(e: KeyboardEvent) => {
                 if (this.stepSegment(e, "minute")) return;
@@ -402,13 +459,13 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private renderDial(): unknown {
-    const field = this._focusedField;
+    const field = this.view.focusedField;
     // Which numbers the face carries, where each one sits and which is selected are the contract's:
     // minute 0 belongs at the top of the face and a draft of 07 marks the 05 nearest it, and those
     // are exactly the details three renderers would each get slightly differently.
     // The face the format has: 1–12 with a period beside them, or 0–23 with none.
     const numbers = timepickerDialNumbers(field, this.format);
-    const parsed = parseTime(this._draftValue) ?? { hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay() };
+    const parsed = this.parsed() ?? { hour: this.numericHour(), minute: this.numericMinute(), period: this.periodDisplay() };
     // In the units the face shows: on a 24-hour face this marks 14, not the 2 the draft holds.
     const selected = timepickerSelectedDialValue(field, parsed, this.format);
     return html`
@@ -444,7 +501,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   private renderPopup(handle: MdyFieldHandle<string | null>): unknown {
     return html`
       <div
-        class="mdy-timepicker-container ${this._viewMode === "dial" ? "mdy-timepicker--dial" : ""}"
+        class="mdy-timepicker-container ${this.view.viewMode === "dial" ? "mdy-timepicker--dial" : ""}"
         role="dialog"
         aria-label=${this.label || "Choose time"}
         @keydown=${(e: KeyboardEvent) => {
@@ -456,16 +513,16 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
       >
         <div class="mdy-timepicker-content">
           ${this.renderHeader()}
-          ${this._viewMode === "dial" ? this.renderDial() : nothing}
+          ${this.view.viewMode === "dial" ? this.renderDial() : nothing}
         </div>
         <div class="mdy-timepicker-actions">
           <button
             type="button"
             class="mdy-timepicker-mode-toggle"
-            aria-label=${this._viewMode === "input" ? "Switch to dial" : "Switch to input"}
-            @click=${() => this.setViewMode(this._viewMode === "input" ? "dial" : "input")}
+            aria-label=${this.view.viewMode === "input" ? "Switch to dial" : "Switch to input"}
+            @click=${() => this.setViewMode(this.view.viewMode === "input" ? "dial" : "input")}
           >
-            ${this._viewMode === "input"
+            ${this.view.viewMode === "input"
               ? html`<svg viewBox="0 0 24 24" width="20" height="20">
                   <path
                     d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"

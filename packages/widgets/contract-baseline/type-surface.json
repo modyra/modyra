@@ -2973,6 +2973,11 @@
     "(1) form: object",
     "-> returns: void"
   ],
+  "registerHandleOwner": [
+    "(0) handle: object",
+    "(1) rx: MdyReactivity",
+    "-> returns: void"
+  ],
   "relativeLuminance": [
     "(0) hex: string",
     "-> returns: number"

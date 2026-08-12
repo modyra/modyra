@@ -30,7 +30,17 @@ export type {
   MdyWritableSignal
 } from "./reactivity.js";
 
-export { getFieldHandleOwner, handleFormOf, observerFor, registerHandleForm } from "./reactive-owner.js";
+// `registerHandleOwner` is public because `observerFor` is: a registry with a public reader and a
+// private writer means an adapter that builds a handle of its own cannot say which runtime owns it,
+// and `observerFor` then falls back to a vanilla runtime whose signals that adapter cannot see —
+// state changes and nothing re-renders, silently, which is the defect this registry exists to stop.
+export {
+  getFieldHandleOwner,
+  handleFormOf,
+  observerFor,
+  registerHandleForm,
+  registerHandleOwner,
+} from "./reactive-owner.js";
 export {
   MDY_VALIDATOR_FACTS,
   NO_CONSTRAINTS,
