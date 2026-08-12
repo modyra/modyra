@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 670,
-    "asserted": 395,
+    "published": 673,
+    "asserted": 398,
     "shown": 44
   },
   "uncovered": [
@@ -2497,6 +2497,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "calendarYearRange",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "canonicalWidgetSnapshot",
       "asserted": true,
       "shown": false,
@@ -3019,6 +3025,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "isMonthOutOfRange",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "isPathRef",
       "asserted": false,
       "shown": false,
@@ -3056,6 +3068,12 @@
     },
     {
       "name": "isValidWidgetId",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "isYearOutOfRange",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

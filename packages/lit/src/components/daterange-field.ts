@@ -2,7 +2,7 @@ import { mdyPart } from "../mdy-part.js";
 import { overlayControlledId } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle } from "@modyra/core";
-import { addMonths, buildDateLocale, buildMonthGrid, type CalendarCell, type CalendarDate, compareDates, daysInMonth, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
+import { addMonths, buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, buildMonthGrid, type CalendarCell, type CalendarDate, compareDates, daysInMonth, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
 import { calendarKeyboardTarget } from "@modyra/core/ui";
 import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
@@ -122,6 +122,36 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     return true;
   }
 
+  /**
+   * The calendar's own vocabulary, from the contract: which months and years the bounds allow, the
+   * years a picker offers, and the names for both. Written here it was written twice — the range
+   * picker is this component copied — and the two could answer differently.
+   */
+  private get calendar(): MdyDateLocale {
+    return buildDateLocale(this.locale, this.firstDayOfWeek);
+  }
+
+  private weekdayNames(): readonly string[] {
+    const names = this.calendar.dayNamesNarrow;
+    return Array.from({ length: 7 }, (_, i) => names[(this.weekStart + i) % 7] as string);
+  }
+
+  private monthNamesShort(): readonly string[] {
+    return this.calendar.monthNamesShort;
+  }
+
+  private isMonthDisabled(month: number): boolean {
+    return isMonthOutOfRange(this._viewYear, month, this.parseMin(), this.parseMax());
+  }
+
+  private isYearDisabled(year: number): boolean {
+    return isYearOutOfRange(year, this.parseMin(), this.parseMax());
+  }
+
+  private yearRange(): readonly number[] {
+    return calendarYearRange(this._viewYear, this.parseMin(), this.parseMax());
+  }
+
   private parseMin(): CalendarDate | null {
     return this.min ? parseIsoDate(this.min) : null;
   }
@@ -140,21 +170,6 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
 
   private isDateFilterAllowed(iso: string): boolean {
     return this.dateFilter ? this.dateFilter(iso) : true;
-  }
-
-  private weekdayNames(): string[] {
-    const format = new Intl.DateTimeFormat(this.locale, { weekday: "narrow" });
-    return Array.from({ length: 7 }, (_, i) => {
-      const day = ((this.weekStart + i + 6) % 7) + 1;
-      return format.format(new Date(Date.UTC(2024, 0, day)));
-    });
-  }
-
-  private monthNamesShort(): string[] {
-    const format = new Intl.DateTimeFormat(this.locale, { month: "short" });
-    return Array.from({ length: 12 }, (_, i) =>
-      format.format(new Date(Date.UTC(2024, i, 1))),
-    );
   }
 
   private rows(): CalendarCell[][] {
@@ -274,41 +289,6 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     const focused = parseIsoDate(this._focusedIso) ?? today();
     const day = Math.min(focused.day, daysInMonth(year, focused.month));
     this._focusedIso = formatIsoDate({ ...focused, year, day });
-  }
-
-  private isMonthDisabled(month: number): boolean {
-    const min = this.parseMin();
-    const max = this.parseMax();
-    const year = this._viewYear;
-    if (min) {
-      if (year < min.year) return true;
-      if (year === min.year && month < min.month) return true;
-    }
-    if (max) {
-      if (year > max.year) return true;
-      if (year === max.year && month > max.month) return true;
-    }
-    return false;
-  }
-
-  private isYearDisabled(year: number): boolean {
-    const min = this.parseMin();
-    const max = this.parseMax();
-    if (min && year < min.year) return true;
-    if (max && year > max.year) return true;
-    return false;
-  }
-
-  private yearRange(): number[] {
-    const min = this.parseMin();
-    const max = this.parseMax();
-    const minYear = min?.year ?? 1920;
-    const maxYear = max?.year ?? 2120;
-    const startYear = Math.min(minYear, this._viewYear - 100, 1920);
-    const endYear = Math.max(maxYear, this._viewYear + 100, 2120);
-    const result: number[] = [];
-    for (let y = startYear; y <= endYear; y++) result.push(y);
-    return result;
   }
 
   private commitRange(

@@ -6,7 +6,7 @@ import {
   input,
   output,
 } from "@angular/core";
-import { CalendarDate } from "@modyra/core/datetime";
+import { CalendarDate, isMonthOutOfRange } from "@modyra/core/datetime";
 import { MDY_DATE_LOCALE } from "../../core/date-locale";
 
 @Component({
@@ -40,18 +40,6 @@ export class MdyMonthPickerComponent {
   protected readonly months = computed(() => this.locale.monthNamesShort);
 
   protected isMonthDisabled(month: number): boolean {
-    const year = this.viewYear();
-    const min = this.minDate();
-    const max = this.maxDate();
-
-    if (min) {
-      if (year < min.year) return true;
-      if (year === min.year && month < min.month) return true;
-    }
-    if (max) {
-      if (year > max.year) return true;
-      if (year === max.year && month > max.month) return true;
-    }
-    return false;
+    return isMonthOutOfRange(this.viewYear(), month, this.minDate(), this.maxDate());
   }
 }
