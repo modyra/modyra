@@ -21,6 +21,7 @@ import {
   MdyTypedForm,
   vanillaReactivity,
 } from "@modyra/core";
+import { errorsVisible, shownErrors, showsAsInvalid } from "@modyra/widgets";
 import { useSyncExternalStore } from "preact/compat";
 import { useEffect, useMemo } from "preact/hooks";
 
@@ -145,10 +146,23 @@ export function useMdyForm<S extends MdyFormSchema>(
 /** Subscribes the component to one field and returns its current state. */
 export function useMdyField<T>(handle: MdyFieldHandle<T>): {
   readonly value: T;
+  /**
+   * The errors this field **shows**, which is not always the errors it holds.
+   *
+   * A field the form is not asking about — disabled by a binding, or inside a section a condition
+   * has closed — is not validated by the form, so painting it as failing shows a verdict its own
+   * form does not hold. `heldErrors` is what it still carries, for a debugging view: the model, as
+   * against what the person is being asked.
+   */
   readonly errors: ReadonlyArray<{ readonly kind: string; readonly message: string }>;
+  readonly heldErrors: ReadonlyArray<{ readonly kind: string; readonly message: string }>;
   readonly touched: boolean;
   readonly dirty: boolean;
   readonly valid: boolean;
+  /** Whether the field paints as failing: it is failing **and** the form is asking about it. */
+  readonly showsAsInvalid: boolean;
+  /** Whether the error text belongs on screen: failing, in play, and the person has had a turn. */
+  readonly errorsVisible: boolean;
   readonly pending: boolean;
   readonly disabled: boolean;
   /** Whether a rule marks this field required — for `aria-required` on your own control. */
@@ -171,12 +185,17 @@ export function useMdyField<T>(handle: MdyFieldHandle<T>): {
   // Preact's `useSyncExternalStore` (via preact/compat) takes no
   // getServerSnapshot argument, unlike React's.
   useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const flags = { disabled: handle.disabled(), touched: handle.touched(), valid: handle.valid() };
+  const held = handle.errors();
   return {
     value: handle.value(),
-    errors: handle.errors(),
+    errors: shownErrors(flags, held),
+    heldErrors: held,
     touched: handle.touched(),
     dirty: handle.dirty(),
     valid: handle.valid(),
+    showsAsInvalid: showsAsInvalid(flags),
+    errorsVisible: errorsVisible(flags, held),
     pending: handle.pending(),
     disabled: handle.disabled(),
     required: handle.required(),

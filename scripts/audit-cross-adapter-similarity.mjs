@@ -33,6 +33,17 @@ import { join, relative } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname;
 const BASELINE = join(root, "packages/widgets/contract-baseline/similarity-baseline.json");
+/**
+ * A package duplicating *itself* is a different question, and gets its own list.
+ *
+ * The cross-adapter threshold is calibrated for two renderers writing the same body, which is never
+ * legitimate. Inside one package it often is: seven controller wrappers that differ only in the type
+ * of the controller they hold *must* resemble each other. So the ceiling is separate, and so is the
+ * baseline — one number sliding under the other would hide whichever moved.
+ */
+const INTERNAL_BASELINE = join(root, "packages/widgets/contract-baseline/similarity-internal-baseline.json");
+/** Higher than the cross-adapter one: a typed variant of a shape is not a copy of it. */
+const INTERNAL_THRESHOLD = 0.85;
 
 /** The packages that derive from the contract. A copy inside one package is that package's business. */
 const ADAPTERS = ["plain", "angular", "lit", "react", "preact", "vue", "svelte", "solid"];
@@ -128,6 +139,30 @@ for (const adapter of ADAPTERS) {
   }
 }
 
+/** Pairs of bodies that resemble each other, either across packages or within one. */
+function comparePairs({ sameAdapter, threshold }) {
+  const found = [];
+  for (let i = 0; i < units.length; i += 1) {
+    for (let j = i + 1; j < units.length; j += 1) {
+      if ((units[i].adapter === units[j].adapter) !== sameAdapter) continue;
+      const [a, b] = [units[i].shingles.size, units[j].shingles.size];
+      if (Math.min(a, b) / Math.max(a, b) < threshold) continue;
+      const score = jaccard(units[i].shingles, units[j].shingles);
+      if (score < threshold) continue;
+      const [left, right] = [units[i], units[j]].sort((x, y) => (x.path + x.name).localeCompare(y.path + y.name));
+      found.push({
+        id: `${left.adapter}:${left.name}@${left.path.split("/").pop()} ≡ ${right.adapter}:${right.name}@${right.path.split("/").pop()}`,
+        score: Number(score.toFixed(3)),
+        left: `${left.path}:${left.line}`,
+        right: `${right.path}:${right.line}`,
+      });
+    }
+  }
+  return found.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+}
+
+const internal = comparePairs({ sameAdapter: true, threshold: INTERNAL_THRESHOLD });
+
 const pairs = [];
 for (let i = 0; i < units.length; i += 1) {
   for (let j = i + 1; j < units.length; j += 1) {
@@ -157,7 +192,13 @@ if (process.argv.includes("--write")) {
     note: "Each entry is a duplication that exists today. The list may only get shorter.",
     pairs: pairs.map((p) => ({ ...p, reason: "recorded, not yet accounted for" })),
   }, null, 2)}\n`);
+  writeFileSync(INTERNAL_BASELINE, `${JSON.stringify({
+    threshold: INTERNAL_THRESHOLD,
+    note: "Bodies a package duplicates within itself. A typed variant of one shape is legitimate; a copy is not, and the list may only get shorter.",
+    pairs: internal.map((p) => ({ ...p, reason: "recorded, not yet accounted for" })),
+  }, null, 2)}\n`);
   console.log(`Similarity baseline written: ${pairs.length} pair(s) over ${units.length} bodies.`);
+  console.log(`Internal baseline written: ${internal.length} pair(s) at ${INTERNAL_THRESHOLD}.`);
   process.exit(0);
 }
 
@@ -170,8 +211,26 @@ const seen = new Set(pairs.map((p) => p.id));
 const appeared = pairs.filter((p) => !recorded.has(p.id));
 const resolved = baseline.pairs.filter((p) => !seen.has(p.id));
 
+let internalBaseline;
+try { internalBaseline = JSON.parse(readFileSync(INTERNAL_BASELINE, "utf8")); }
+catch { internalBaseline = { pairs: [] }; }
+const internalRecorded = new Set(internalBaseline.pairs.map((p) => p.id));
+const internalSeen = new Set(internal.map((p) => p.id));
+const internalAppeared = internal.filter((p) => !internalRecorded.has(p.id));
+const internalResolved = internalBaseline.pairs.filter((p) => !internalSeen.has(p.id));
+
 console.log(`Bodies compared: ${units.length} across ${ADAPTERS.length} adapters`);
 console.log(`Duplicated pairs: ${pairs.length} (recorded: ${baseline.pairs.length})`);
+console.log(`Within one package: ${internal.length} (recorded: ${internalBaseline.pairs.length}, at ${INTERNAL_THRESHOLD})`);
+
+if (internalAppeared.length) {
+  console.error("\nA PACKAGE DUPLICATED ITSELF");
+  for (const p of internalAppeared) console.error(`- ${p.id}  ${p.score}\n    ${p.left}\n    ${p.right}`);
+}
+if (internalResolved.length) {
+  console.error("\nSTALE INTERNAL ENTRIES — these no longer match");
+  for (const p of internalResolved) console.error(`- ${p.id}`);
+}
 
 if (appeared.length) {
   console.error("\nCROSS-ADAPTER DUPLICATION — a body was written twice");
@@ -184,5 +243,5 @@ if (resolved.length) {
   for (const p of resolved) console.error(`- ${p.id}`);
   console.error("\nRe-record: node scripts/audit-cross-adapter-similarity.mjs --write");
 }
-if (appeared.length || resolved.length) process.exit(1);
+if (appeared.length || resolved.length || internalAppeared.length || internalResolved.length) process.exit(1);
 console.log("CROSS-ADAPTER SIMILARITY UNCHANGED");

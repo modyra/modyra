@@ -1949,6 +1949,12 @@
     "(0) angle: number",
     "-> returns: number"
   ],
+  "applyFlatValidators": [
+    "(0) form: Pick<MdyFormRegistry, \"upsertValidators\">",
+    "(1) fields: ReadonlyArray<MdyDynamicField>",
+    "(2) key?: string",
+    "-> returns: void"
+  ],
   "applyPart": [
     "(0) node: HTMLElement",
     "(1) part: MdyPartContract",
@@ -2022,6 +2028,11 @@
   "buildDynamicValidators": [
     "(0) config: MdyDynamicValidators",
     "-> returns: { readonly validators: ReadonlyArray<ValidatorFn<never>>; readonly marksRequired: boolean; }"
+  ],
+  "buildFlatFormSchema": [
+    "(0) fields: ReadonlyArray<MdyDynamicField>",
+    "(1) collections?: ReadonlyArray<MdyDynamicCollection>",
+    "-> returns: MdyFormSchema"
   ],
   "buildMonthGrid": [
     "(0) year: number",

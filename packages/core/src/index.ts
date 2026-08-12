@@ -247,6 +247,12 @@ export type {
   MdyMultiselectMode,
 } from "./dynamic-config.js";
 
+/**
+ * A form from a flat field list — what a document over a wire produces, as against the nested node
+ * `buildDynamicFormSchema` takes. Named for its input because that name used to mean both.
+ */
+export { applyFlatValidators, buildFlatFormSchema } from "./flat-schema.js";
+
 export {
   MDY_VALUE_CONTRACTS,
   explainValueMismatch,
