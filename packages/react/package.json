@@ -39,8 +39,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "2.1.1",
-    "@modyra/widgets": "2.0.2"
+    "@modyra/core": "^2.1.1",
+    "@modyra/widgets": "^2.0.2"
   },
   "peerDependencies": {
     "react": ">=18.0.0"

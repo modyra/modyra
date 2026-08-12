@@ -39,7 +39,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "2.1.1"
+    "@modyra/core": "^2.1.1"
   },
   "peerDependencies": {
     "eslint": ">=9"
