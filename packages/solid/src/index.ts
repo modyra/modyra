@@ -116,7 +116,6 @@ export function solidReactivity(): MdyReactivity &
       // vanilla's/Vue's do.
       deterministicFlush: true,
       directObservation: true,
-      writableComputed: false,
       // Solid's createMemo does not refuse a write from inside; the rule still holds for code that
       // must run under every adapter, this graph just will not notice the breach.
       pureComputeds: false,

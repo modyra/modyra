@@ -104,7 +104,6 @@ export interface MdyReactivityCapabilities {
   readonly batching: boolean;
   readonly deterministicFlush: boolean;
   readonly directObservation: boolean;
-  readonly writableComputed: boolean;
   readonly graphInspection: boolean;
   readonly serverSnapshots: boolean;
   /**

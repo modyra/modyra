@@ -302,7 +302,7 @@ export function vanillaReactivity(): MdyReactivity &
   return {
     id: Symbol("vanilla"),
     kind: "vanilla",
-    // writableComputed/graphInspection/serverSnapshots are not implemented
+    // graphInspection/serverSnapshots are not implemented
     // (out of scope per piano §6.4-§6.5/§10.7 — reporting them true would
     // be exactly the "fictitious capability" the plan's §8.1 forbids).
     capabilities: {
@@ -319,7 +319,6 @@ export function vanillaReactivity(): MdyReactivity &
       batching: true,
       deterministicFlush: true,
       directObservation: true,
-      writableComputed: false,
       // Enforced, not merely intended: writing a signal while a computed recomputes throws.
       pureComputeds: true,
       graphInspection: false,
