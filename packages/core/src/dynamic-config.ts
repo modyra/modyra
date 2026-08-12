@@ -896,14 +896,36 @@ function warnDev(message: string): void {
   console.warn(`[modyra] ${message}`);
 }
 
+/**
+ * What each refusal is called, and the phrase that identifies it.
+ *
+ * A consumer keys on the code; the message is prose and may be reworded. Deriving one from the other
+ * inverts that — an edit to an English sentence silently renames a code somebody is matching on, and
+ * nothing in a build objects.
+ *
+ * The table is the coupling made visible rather than removed: the phrases still have to appear in the
+ * messages, and `dynamic-diagnostics.test.mjs` fails when one stops appearing. Removing the coupling
+ * altogether means naming a code at each of the thirty sites that refuse something, which is the
+ * right shape and a different change.
+ */
+export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
+  readonly code: string;
+  readonly phrase: string;
+}> = [
+  { code: "MDY_DYNAMIC_UNSUPPORTED_VERSION", phrase: "Unsupported dynamic form config version" },
+  { code: "MDY_DYNAMIC_DUPLICATE_NAME", phrase: "duplicate dynamic field" },
+  { code: "MDY_DYNAMIC_UNSAFE_NAME", phrase: "reserved or contains forbidden" },
+  { code: "MDY_DYNAMIC_UNKNOWN_KIND", phrase: "unknown kind" },
+  { code: "MDY_DYNAMIC_OPTIONS_REQUIRED", phrase: "requires a valid options" },
+  { code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" },
+];
+
+/** What a refusal is called when none of the named ones fits. */
+export const MDY_DYNAMIC_INVALID_FIELD = "MDY_DYNAMIC_INVALID_FIELD";
+
 function diagnosticCode(message: string): string {
-  if (message.includes("Unsupported dynamic form config version")) return "MDY_DYNAMIC_UNSUPPORTED_VERSION";
-  if (message.includes("duplicate dynamic field")) return "MDY_DYNAMIC_DUPLICATE_NAME";
-  if (message.includes("reserved or contains forbidden")) return "MDY_DYNAMIC_UNSAFE_NAME";
-  if (message.includes("unknown kind")) return "MDY_DYNAMIC_UNKNOWN_KIND";
-  if (message.includes("requires a valid options")) return "MDY_DYNAMIC_OPTIONS_REQUIRED";
-  if (message.includes("pattern length")) return "MDY_DYNAMIC_PATTERN_TOO_LONG";
-  return "MDY_DYNAMIC_INVALID_FIELD";
+  return MDY_DYNAMIC_DIAGNOSTICS.find((entry) => message.includes(entry.phrase))?.code
+    ?? MDY_DYNAMIC_INVALID_FIELD;
 }
 
 function validFieldReference(name: unknown, names: ReadonlySet<string>): name is string {

@@ -66,7 +66,25 @@ export type {
   MdyDiagnostics
 } from "./reactivity-diagnostics.js";
 
-export * from "./types.js";
+export type {
+  MdyAsyncValidationContext,
+  MdyAsyncValidatorFn,
+  MdyAsyncValidatorOptions,
+  MdyControlOption,
+  MdyDateRange,
+  MdyFieldError,
+  MdyFieldRef,
+  MdyFieldState,
+  MdyFormAdapter,
+  MdyFormError,
+  MdyFormState,
+  MdyFormSubmitEvent,
+  MdyFormValidatorFn,
+  MdyInteractivity,
+  MdySelectOption,
+  MdySubmitMode,
+  ValidatorFn,
+} from "./types.js";
 
 export {
   completeRange,
@@ -144,10 +162,102 @@ export type {
   MdyWiden
 } from "./typed-form.js";
 
+/**
+ * What a field can be, stated once.
+ *
+ * The vocabulary is a leaf module rather than a constant inside the document parser, because a kind
+ * is what a field *is* and not something a wire format owns.
+ */
+export { MDY_FIELD_KINDS } from "./field-kinds.js";
+export type { MdyFieldKind } from "./field-kinds.js";
+
 // ─── Dynamic forms (AI/CMS-declared configs) ─────────────────────────────────
-export * from "./expression.js";
-export * from "./dynamic-config.js";
-export * from "./value-contracts.js";
+//
+// Named, not wildcarded. Four `export *` published seventy-four symbols nobody could read from the
+// entry point, forty-seven of them from the least curated file in the package — so neither the type
+// surface nor the coverage audit was measuring a surface anyone had chosen.
+export {
+  MDY_MAX_EXPRESSION_DEPTH,
+  evaluateExpression,
+  expressionPaths,
+  isExpression,
+  isPathRef,
+  validateExpression,
+} from "./expression.js";
+export type {
+  MdyExpression,
+  MdyExpressionOp,
+  MdyOperand,
+  MdyPathRef,
+} from "./expression.js";
+
+export {
+  MDY_DYNAMIC_DIAGNOSTICS,
+  MDY_DYNAMIC_FIELD_KINDS,
+  MDY_DYNAMIC_INVALID_FIELD,
+  MDY_ID_DELIMITER,
+  MDY_LAYOUT_MAX_DEPTH,
+  assertNeverField,
+  assertSafeDynamicFieldNames,
+  buildDynamicFieldValidators,
+  buildDynamicFormSchema,
+  buildDynamicValidations,
+  buildDynamicValidators,
+  flattenDynamicForm,
+  flattenDynamicSchema,
+  mdyEmptyValueFor,
+  parseDynamicFields,
+  parseDynamicForm,
+} from "./dynamic-config.js";
+export type {
+  MdyDynamicArrayNode,
+  MdyDynamicBooleanField,
+  MdyDynamicBreakpoint,
+  MdyDynamicCalendarOptions,
+  MdyDynamicCollection,
+  MdyDynamicColorsField,
+  MdyDynamicColumns,
+  MdyDynamicDateField,
+  MdyDynamicDaterangeField,
+  MdyDynamicDiagnostic,
+  MdyDynamicField,
+  MdyDynamicFieldNode,
+  MdyDynamicFileField,
+  MdyDynamicFormConfig,
+  MdyDynamicFormConfigV2,
+  MdyDynamicFormConfigV3,
+  MdyDynamicFormDocument,
+  MdyDynamicFormParseResult,
+  MdyDynamicGroupNode,
+  MdyDynamicLayoutChild,
+  MdyDynamicLayoutNode,
+  MdyDynamicLayoutSlot,
+  MdyDynamicNode,
+  MdyDynamicNumberField,
+  MdyDynamicOptionsField,
+  MdyDynamicParseMode,
+  MdyDynamicRecordNode,
+  MdyDynamicRule,
+  MdyDynamicRuleOperator,
+  MdyDynamicSection,
+  MdyDynamicSlotPlacement,
+  MdyDynamicTextField,
+  MdyDynamicValidation,
+  MdyDynamicValidators,
+  MdyMultiselectMode,
+} from "./dynamic-config.js";
+
+export {
+  MDY_VALUE_CONTRACTS,
+  explainValueMismatch,
+  matchesValueShape,
+} from "./value-contracts.js";
+export type {
+  MdyValueCommit,
+  MdyValueContract,
+  MdyValueKind,
+  MdyValueShape,
+} from "./value-contracts.js";
 
 // Satellite utilities (date/time, i18n, icons, keyboard, overlay positioning,
 // serialize, devtools, options-utils) are deliberately absent from this entry.

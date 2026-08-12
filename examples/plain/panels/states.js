@@ -24,6 +24,7 @@ export const statesPanel = {
    * covered. What a panel exercises is a claim its own browser test checks.
    */
   exercises: [
+    "MDY_FIELD_KINDS",
     "createForm",
     "field",
     "group",

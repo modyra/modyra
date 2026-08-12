@@ -5,7 +5,7 @@
  * and never code, a field name is a path and is checked as one, and everything the parser rejects
  * it says out loud. Paste something broken and read the diagnostics — that is the panel.
  */
-import { parseDynamicForm } from "@modyra/core";
+import { MDY_DYNAMIC_DIAGNOSTICS, MDY_DYNAMIC_INVALID_FIELD, parseDynamicForm } from "@modyra/core";
 import { mountMdyForm } from "@modyra/plain";
 import { action, readoutPrinter, toolbar } from "./shell.js";
 
@@ -42,6 +42,8 @@ export const dynamicPanel = {
    * covered. What a panel exercises is a claim its own browser test checks.
    */
   exercises: [
+    "MDY_DYNAMIC_DIAGNOSTICS",
+    "MDY_DYNAMIC_INVALID_FIELD",
     "parseDynamicForm",
     "mountMdyForm",
     "MdyDynamicField",
@@ -97,6 +99,20 @@ export const dynamicPanel = {
       action(bar, label, () => { editor.value = JSON.stringify(document_, null, 2); render(); });
     }
     action(bar, "Back to a good one", () => { editor.value = JSON.stringify(SAMPLE, null, 2); render(); });
+
+    // Every refusal the parser has a name for, listed where a reader can compare it against what
+    // the document above actually produced. A code is what a consumer matches on; the sentence
+    // beside it is prose and may be reworded.
+    const legend = document.createElement("details");
+    legend.innerHTML = `<summary>What this parser can refuse (${MDY_DYNAMIC_DIAGNOSTICS.length} named, plus ${MDY_DYNAMIC_INVALID_FIELD})</summary>`;
+    const list = document.createElement("ul");
+    for (const { code, phrase } of MDY_DYNAMIC_DIAGNOSTICS) {
+      const item = document.createElement("li");
+      item.textContent = `${code} — recognised by "${phrase}"`;
+      list.append(item);
+    }
+    legend.append(list);
+    work.append(legend);
 
     const print = readoutPrinter(readout, () => ({
       ...lastResult,
