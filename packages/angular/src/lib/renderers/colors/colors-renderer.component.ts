@@ -177,6 +177,7 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   protected override readonly overlayKind = "colors" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.colors;
+  protected override readonly widgetKind = "colors" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
 
   protected readonly i18n = inject(MDY_I18N_MESSAGES);

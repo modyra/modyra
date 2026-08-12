@@ -451,10 +451,14 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   protected abstract readonly fieldId: string;
 
   /**
-   * The kind this renderer draws. Defaults to a text-like control, which is what the projection
-   * assumes for anything that does not say otherwise.
+   * The kind this renderer draws.
+   *
+   * The projection decides from it which native constraints the control can carry, so a renderer
+   * that does not say leaves a slider claiming `maxlength` and offering no range. It was typed
+   * `string` and defaulted to text, which is how nine renderers came to inherit an answer none of
+   * them meant; the union is what makes a wrong one unspellable.
    */
-  protected readonly widgetKind: string = "text";
+  protected readonly widgetKind: MdyWidgetKind = "text";
 
   /**
    * What this renderer asks for on top of the field's rules — nothing, unless it has its own limits
@@ -512,6 +516,28 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
       if (command.type === "mark-dirty") this.markAsDirty();
       if (command.type === "mark-touched") this.markAsTouched();
     }
+  }
+
+  /**
+   * The kind's own controller, bound to the handle this renderer draws.
+   *
+   * A renderer with a handle behind it sends its intents through the controller for its kind, which
+   * owns the decisions — what an interactivity state blocks, when a value is dirty, what the
+   * projection then says. Without a handle there is no field to own anything, and the scalar bridge
+   * above stands in; that is the declarative `name` path, where the registry holds the value.
+   *
+   * Creating it here rather than in each renderer keeps the lifecycle in one place: a controller
+   * outliving its component is an effect writing to a destroyed view, and seven components each
+   * remembering to destroy is seven chances to forget one.
+   */
+  protected adoptFieldController<TController extends { destroy(): void }>(
+    create: (handle: MdyFieldHandle<TValue | null>, widgetId: string) => TController,
+  ): TController | undefined {
+    const handle = this.field();
+    if (!handle) return undefined;
+    const controller = create(handle as MdyFieldHandle<TValue | null>, this.fieldId);
+    this._destroyRef.onDestroy(() => controller.destroy());
+    return controller;
   }
 
   protected dispatchValueBlur(kind: MdyWidgetKind): void {

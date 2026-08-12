@@ -146,3 +146,41 @@ test("setValue updates selectedKey", () => {
   assert.strictEqual(handle.value(), "small");
   assert.strictEqual(controller.state().selectedKey, "small");
 });
+
+/**
+ * A host whose options change tells the controller, rather than replacing it: the roving focus and
+ * the selection both live here, and a fresh controller starts with neither.
+ */
+test("replacing the options moves everything derived from them", () => {
+  const { controller, handle } = setup("radio", "medium");
+
+  assert.equal(controller.state().selectedKey, "medium");
+  for (const key of ["small", "medium", "large"]) {
+    assert.ok(key in controller.view().parts, `${key} is projected before the list changes`);
+  }
+
+  controller.setOptions([
+    { value: "medium", label: "Medium" },
+    { value: "huge", label: "Huge" },
+  ]);
+
+  // The value survives because it is still offered, and the projection follows the new list.
+  assert.equal(handle.value(), "medium");
+  assert.equal(controller.state().selectedKey, "medium");
+  assert.ok("huge" in controller.view().parts, "the new option is projected");
+  assert.ok(!("small" in controller.view().parts), "the option that left is gone");
+
+  // Keyboard navigation moves within the new list, not the one it was built with.
+  controller.dispatch({ type: "move", target: "last" });
+  const active = Object.entries(controller.view().parts).find(
+    ([, part]) => part.attributes?.["tabindex"] === "0" || part.attributes?.["aria-checked"] === "true",
+  );
+  assert.ok(active, "some option is reachable after the list changed");
+});
+
+/** A value no longer on offer selects nothing rather than a stale key. */
+test("a replaced list that drops the chosen value selects nothing", () => {
+  const { controller } = setup("radio", "medium");
+  controller.setOptions([{ value: "huge", label: "Huge" }]);
+  assert.equal(controller.state().selectedKey, null);
+});

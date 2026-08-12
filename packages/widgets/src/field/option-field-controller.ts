@@ -22,6 +22,14 @@ export interface MdyOptionFieldController<TValue>
   setValue(value: TValue | null): void;
   /** Update the readonly state. */
   setReadonly(readonly: boolean): void;
+  /**
+   * Replace the option list.
+   *
+   * A host whose options arrive later, or change, tells the controller rather than building a new
+   * one: a fresh controller forgets which option the keyboard was on, so a list that reorders
+   * beneath an open group would drop the roving focus.
+   */
+  setOptions(options: readonly MdySelectOption<TValue>[]): void;
 }
 
 export function createOptionFieldController<TValue>(
@@ -36,16 +44,21 @@ export function createOptionFieldController<TValue>(
   const {
     widgetId,
     handle,
-    options: allOptions,
+    options: initialOptions,
     keyFor = (option) => String(option.value),
     variant = "radio",
     readonly: initialReadonly = false,
   } = options;
 
+  // The list is a signal because the projection and the roving focus both read it: a host that
+  // replaces it has to move every derived answer with it, not just the next lookup.
+  const optionList = reactivity.signal<readonly MdySelectOption<TValue>[]>(initialOptions);
+  const allOptions = (): readonly MdySelectOption<TValue>[] => optionList();
+
   const optionByKey = new Map<string, MdySelectOption<TValue>>();
   function rebuildIndex(): void {
     optionByKey.clear();
-    for (const option of allOptions) {
+    for (const option of optionList()) {
       optionByKey.set(keyFor(option), option);
     }
   }
@@ -55,7 +68,7 @@ export function createOptionFieldController<TValue>(
     value === null ? null : [...optionByKey.entries()].find(([, o]) => o.value === value)?.[0] ?? null;
 
   const enabledKeys = (): readonly string[] =>
-    allOptions.filter((o) => !o.disabled).map(keyFor);
+    allOptions().filter((o) => !o.disabled).map(keyFor);
 
   const readonly = reactivity.signal(initialReadonly);
   const selectedKey = reactivity.signal<string | null>(keyForValue(handle.value()));
@@ -83,12 +96,12 @@ export function createOptionFieldController<TValue>(
     const a11y = projectOptionFieldA11y(currentState, handle.errors(), {
       widgetId,
       variant,
-      optionCount: allOptions.length,
+      optionCount: allOptions().length,
       ...(options.errorsVisible ? { errorsVisible: options.errorsVisible(currentState) } : {}),
     });
 
     const parts: Record<string, ReturnType<typeof a11yOption>> = {};
-    for (const option of allOptions) {
+    for (const option of allOptions()) {
       const key = keyFor(option);
       parts[key] = a11yOption(key, option, currentState, currentActiveKey);
     }
@@ -197,6 +210,15 @@ export function createOptionFieldController<TValue>(
     handle.set(value);
   }
 
+  function setOptions(next: readonly MdySelectOption<TValue>[]): void {
+    optionList.set(next);
+    rebuildIndex();
+    // The selection follows the value, not the old key: a list replaced under a chosen value keeps
+    // that value selected when it is still offered, and selects nothing when it is not.
+    selectedKey.set(keyForValue(handle.value()));
+    if (activeKey() !== null && !optionByKey.has(activeKey() as string)) activeKey.set(null);
+  }
+
   function setReadonly(nextReadonly: boolean): void {
     readonly.set(nextReadonly);
   }
@@ -211,6 +233,7 @@ export function createOptionFieldController<TValue>(
     dispatch,
     setValue,
     setReadonly,
+    setOptions,
     destroy,
   };
 }

@@ -1,6 +1,11 @@
 import { NgTemplateOutlet } from "@angular/common";
-import { booleanAttribute, ChangeDetectionStrategy, Component, computed, ElementRef, input, InputSignalWithTransform, viewChild } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS, optionNavigationIndex } from "@modyra/widgets";
+import { booleanAttribute, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, Injector, input, InputSignalWithTransform, OnInit, viewChild } from "@angular/core";
+import {
+  createOptionFieldController,
+  MDY_WIDGET_CONTRACTS,
+  optionNavigationIndex,
+  type MdyOptionFieldController,
+} from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -90,14 +95,35 @@ import { MdySelectOption } from "../../core/types";
     }
   `,
 })
-export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseControl<TValue | null> {
+export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseControl<TValue | null> implements OnInit {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.segmented;
+  protected override readonly widgetKind = "segmented" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
 
   public readonly fullWidth: InputSignalWithTransform<boolean, unknown> = input<boolean, unknown>(false, { transform: booleanAttribute });
 
   protected readonly fieldId = `mdy-control-segmented-${MdyBaseControl.nextId()}`;
+
+  private readonly injector = inject(Injector);
+  private controller: MdyOptionFieldController<TValue> | undefined;
+
+  override ngOnInit(): void {
+    this.controller = this.adoptFieldController((handle, widgetId) =>
+      createOptionFieldController<TValue>({
+        widgetId,
+        handle: handle as never,
+        options: this.options(),
+        variant: "segmented",
+      }),
+    );
+    // The list is an input, so it can be replaced after the controller exists — the controller is
+    // told rather than rebuilt, because rebuilding forgets which option the keyboard was on. The
+    // injector is passed because this runs in `ngOnInit`, which is not an injection context.
+    effect(() => this.controller?.setOptions(this.options()), { injector: this.injector });
+    super.ngOnInit();
+  }
+
 
   protected readonly segmentsCount = computed(() => this.options().length);
 
@@ -142,6 +168,10 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
   }
 
   protected onSelect(value: TValue): void {
+    if (this.controller) {
+      this.controller.dispatch({ type: "select", optionKey: String(value) });
+      return;
+    }
     this.dispatchValueIntent<TValue | null>("segmented", { type: "select", value });
   }
 

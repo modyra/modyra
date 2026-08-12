@@ -265,6 +265,7 @@ export class MdySelectComponent<TValue = string>
   protected override readonly overlayKind = "select" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.select;
+  protected override readonly widgetKind = "select" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
   readonly disabled = input<boolean>(false);

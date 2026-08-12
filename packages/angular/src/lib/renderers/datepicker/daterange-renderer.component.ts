@@ -187,6 +187,7 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   protected override readonly overlayKind = "daterange" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.daterange;
+  protected override readonly widgetKind = "daterange" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly startPlaceholder = input<string>("Start");
   readonly endPlaceholder = input<string>("End");

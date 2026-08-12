@@ -99,6 +99,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
 })
 export class MdyFileComponent extends MdyBaseControl<File | File[] | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.file;
+  protected override readonly widgetKind = "file" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly accept = input<string>("");
   readonly multiple = input<boolean>(false);
