@@ -14,7 +14,7 @@ import {
 } from "@modyra/widgets";
 import type { Readable } from "svelte/store";
 
-import { toStore } from "../index.js";
+import { toStore } from "../reactivity.js";
 import { executeSvelteCommands } from "./runtime.js";
 
 export type UseMdyFieldOptions<TValue> = Omit<

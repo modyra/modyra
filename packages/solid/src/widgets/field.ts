@@ -13,7 +13,7 @@ import {
 } from "@modyra/widgets";
 import { getOwner, onCleanup } from "solid-js";
 
-import { solidReactivity } from "../index.js";
+import { solidReactivity } from "../reactivity.js";
 import { executeSolidCommands } from "./runtime.js";
 
 export type UseMdyFieldOptions<TValue> = Omit<
