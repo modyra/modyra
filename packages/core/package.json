@@ -1,6 +1,6 @@
 {
   "name": "@modyra/core",
-  "version": "2.2.2",
+  "version": "2.1.2",
   "description": "Framework-agnostic type-safe form engine \u2014 typed field trees, sync/async/cross-field validation, drafts and undo/redo over a minimal reactive contract.",
   "license": "MIT",
   "author": "Lorenzo Muscher\u00e0",

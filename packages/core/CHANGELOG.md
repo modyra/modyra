@@ -1,6 +1,6 @@
 # @modyra/core
 
-## 2.2.2
+## 2.1.2
 
 ### Minor Changes
 

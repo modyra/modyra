@@ -60,7 +60,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@modyra/core": "^2.2.2"
+    "@modyra/core": "^2.1.2"
   },
   "publishConfig": {
     "access": "public"
