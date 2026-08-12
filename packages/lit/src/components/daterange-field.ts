@@ -1,5 +1,5 @@
 import { mdyPart } from "../mdy-part.js";
-import { overlayControlledId, partClasses } from "@modyra/widgets";
+import { overlayControlledId, partClasses, calendarViewOnToggle, type MdyCalendarViewMode } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle } from "@modyra/core";
 import { addMonths, buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, buildMonthGrid, type CalendarCell, type CalendarDate, compareDates, daysInMonth, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
@@ -15,7 +15,8 @@ import {
 
 // ─── Date range ──────────────────────────────────────────────────────────────
 
-type CalendarView = "calendar" | "month" | "year";
+/** Which view the calendar shows — the contract's vocabulary, not a second set of three strings. */
+type CalendarView = MdyCalendarViewMode;
 type RangePhase = "pick-start" | "pick-end";
 
 /**
@@ -81,7 +82,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     this.endPlaceholder = "End";
     this.variant = "docked";
     this._open = false;
-    this._view = "calendar";
+    this._view = "days";
     const now = today();
     this._viewYear = now.year;
     this._viewMonth = now.month;
@@ -192,7 +193,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     this._pendingEndIso = value?.end ?? null;
     this._phase = start && !end ? "pick-end" : "pick-start";
     this._hoverIso = null;
-    this._view = "calendar";
+    this._view = "days";
     applyOverlayIntent(this, { type: "open", disabled: this.field?.disabled() ?? false, available: true });
     this.overlay.open(event);
   }
@@ -201,7 +202,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     if (!this._open) return;
     applyOverlayIntent(this, { type: "close" });
     this.overlay.close();
-    this._view = "calendar";
+    this._view = "days";
     if (refocus) {
       this.querySelector<HTMLInputElement>(".mdy-daterange__input")?.focus();
     }
@@ -268,17 +269,14 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     }
   }
 
+  /** Where the header goes, answered by the contract rather than by a branch here. */
   private onToggleView(): void {
-    if (this._view === "calendar") {
-      this._view = "year";
-    } else {
-      this._view = "calendar";
-    }
+    this._view = calendarViewOnToggle(this._view);
   }
 
   private onMonthSelected(month: number): void {
     this._viewMonth = month;
-    this._view = "calendar";
+    this._view = "days";
     const focused = parseIsoDate(this._focusedIso) ?? today();
     const day = Math.min(focused.day, daysInMonth(focused.year, month));
     this._focusedIso = formatIsoDate({ ...focused, month, day });
@@ -286,7 +284,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
 
   private onYearSelected(year: number): void {
     this._viewYear = year;
-    this._view = "month";
+    this._view = "months";
     const focused = parseIsoDate(this._focusedIso) ?? today();
     const day = Math.min(focused.day, daysInMonth(year, focused.month));
     this._focusedIso = formatIsoDate({ ...focused, year, day });
@@ -320,15 +318,15 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   private onGridKeydown(e: KeyboardEvent, handle: MdyFieldHandle<MdyDateRange | null>): void {
     if (e.key === "Escape") {
       e.preventDefault();
-      if (this._view !== "calendar") {
-        this._view = "calendar";
+      if (this._view !== "days") {
+        this._view = "days";
       } else {
         this.closePopup(handle);
       }
       return;
     }
 
-    if (this._view !== "calendar") return;
+    if (this._view !== "days") return;
 
     const focused = parseIsoDate(this._focusedIso) ?? today();
 
@@ -359,9 +357,9 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
 
   protected override updated(): void {
     if (this._open) {
-      if (this._view === "calendar") {
+      if (this._view === "days") {
         this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused")?.focus();
-      } else if (this._view === "year") {
+      } else if (this._view === "years") {
         this.querySelector<HTMLElement>(
           `.${partClasses("daterange", "yearCell", { selected: true }).join(".")}`,
         )?.scrollIntoView({
@@ -560,7 +558,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               type="button"
               class="mdy-datepicker__nav-btn"
               aria-label="Previous month"
-              ?disabled=${this._view !== "calendar"}
+              ?disabled=${this._view !== "days"}
               @click=${() => this.navigateMonths(-1)}
             >
               ${mdyIcon("CHEVRON_LEFT", "")}
@@ -569,19 +567,19 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               type="button"
               class="mdy-datepicker__nav-btn"
               aria-label="Next month"
-              ?disabled=${this._view !== "calendar"}
+              ?disabled=${this._view !== "days"}
               @click=${() => this.navigateMonths(1)}
             >
               ${mdyIcon("CHEVRON_RIGHT", "")}
             </button>
           </div>
         </div>
-        ${this._view === "calendar"
+        ${this._view === "days"
           ? html`<div class="mdy-datepicker__grid" role="grid">
               ${this.renderCalendarGrid(handle)}
             </div>
             <div class="mdy-daterange__hint" aria-live="polite">${hint}</div>`
-          : this._view === "month"
+          : this._view === "months"
             ? this.renderMonthPicker()
             : this.renderYearPicker()}
         ${actions}

@@ -62,17 +62,15 @@ test("states: a calendar reaches its months and its years", async ({ page }) => 
 
   const months = field.locator(".mdy-datepicker__month-picker");
   const years = field.locator(".mdy-datepicker__year-picker");
-  await expect(months).toBeHidden();
+  await expect(years).toBeHidden();
 
-  await field.locator(".mdy-datepicker__header-label").click();
-  await page.waitForTimeout(120);
-  await expect(months).toBeVisible();
-  await expect(months).toHaveAttribute("role", "grid");
-  await expect(months.locator('[aria-selected="true"]')).toHaveCount(1);
-
+  // The header opens the top of the funnel, because someone reaching for it wants a date far from
+  // the month on screen.
   await field.locator(".mdy-datepicker__header-label").click();
   await page.waitForTimeout(120);
   await expect(years).toBeVisible();
+  await expect(years).toHaveAttribute("role", "grid");
+  await expect(years.locator('[aria-selected="true"]')).toHaveCount(1);
 
   // Choosing narrows: a year lands on its months, a month on its days.
   await years.locator("button:not([disabled])").first().click();

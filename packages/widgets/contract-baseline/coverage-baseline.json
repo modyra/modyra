@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 680,
-    "asserted": 402,
+    "published": 681,
+    "asserted": 403,
     "shown": 48
   },
   "uncovered": [
@@ -2510,6 +2510,12 @@
     },
     {
       "name": "calendarKeyboardTarget",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "calendarViewOnToggle",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
