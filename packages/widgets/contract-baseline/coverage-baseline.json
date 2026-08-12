@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 682,
-    "asserted": 359,
+    "published": 687,
+    "asserted": 361,
     "shown": 43
   },
   "uncovered": [
@@ -821,6 +821,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyDragPoint",
+      "asserted": false,
+      "shown": false,
+      "reason": "the drag primitive exists and no renderer consumes it yet. Two of them wrote it identically on the document; the third listens on the dial face itself, so a pointer that leaves the dial stops turning it there and keeps turning it in the other two. Adopting it is a behaviour change for that renderer and belongs to the batch that verifies one."
     },
     {
       "name": "MdyDynamicArrayNode",
@@ -1655,6 +1661,18 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyPointerDrag",
+      "asserted": false,
+      "shown": false,
+      "reason": "the drag primitive exists and no renderer consumes it yet. Two of them wrote it identically on the document; the third listens on the dial face itself, so a pointer that leaves the dial stops turning it there and keeps turning it in the other two. Adopting it is a behaviour change for that renderer and belongs to the batch that verifies one."
+    },
+    {
+      "name": "MdyPointerDragOptions",
+      "asserted": false,
+      "shown": false,
+      "reason": "the drag primitive exists and no renderer consumes it yet. Two of them wrote it identically on the document; the third listens on the dial face itself, so a pointer that leaves the dial stops turning it there and keeps turning it in the other two. Adopting it is a behaviour change for that renderer and belongs to the batch that verifies one."
     },
     {
       "name": "MdyPointerOrigin",
@@ -2635,6 +2653,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "createPointerDrag",
+      "asserted": true,
+      "shown": false,
+      "reason": "the drag primitive exists and no renderer consumes it yet. Two of them wrote it identically on the document; the third listens on the dial face itself, so a pointer that leaves the dial stops turning it there and keeps turning it in the other two. Adopting it is a behaviour change for that renderer and belongs to the batch that verifies one."
+    },
+    {
       "name": "createSelectController",
       "asserted": true,
       "shown": false,
@@ -2753,6 +2777,12 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
+    },
+    {
+      "name": "dragPointOf",
+      "asserted": true,
+      "shown": false,
+      "reason": "the drag primitive exists and no renderer consumes it yet. Two of them wrote it identically on the document; the third listens on the dial face itself, so a pointer that leaves the dial stops turning it there and keeps turning it in the other two. Adopting it is a behaviour change for that renderer and belongs to the batch that verifies one."
     },
     {
       "name": "dynamicParts",
