@@ -477,3 +477,43 @@ test("an executor is given a lookup, handlers and somewhere to announce", () => 
   const openerOptions = { widgetId: "w", open: false };
   assert.equal(projectOverlayOpenerA11y("select", openerOptions).attributes["aria-expanded"], "false");
 });
+
+/**
+ * A modal dims what is behind it, and the contract draws the thing that dims.
+ *
+ * The backdrop is a class the contract names and a theme paints, and it had gone three ways: one
+ * renderer wrote its colour as a literal, one drew it under every open popup including the
+ * dropdowns, and one drew none at all. Where it comes from is not a rendering decision each of them
+ * gets to make differently.
+ */
+test("the backdrop appears with the modal placement and leaves with it", async () => {
+  const { syncOverlayBackdrop, setOverlayOpen } = await import("../dist/index.js");
+  // The class is the contract's, read from the table that declares it rather than spelled here.
+  const { MDY_SHARED_UI_CLASSES } = await import("../dist/vocabulary.js");
+  const BACKDROP = MDY_SHARED_UI_CLASSES.find((c) => c.endsWith("backdrop"));
+  assert.ok(BACKDROP, "the shared vocabulary names no backdrop");
+  const dom = new JSDOM("<!doctype html><html><body><div id='host'></div></body></html>");
+  const host = dom.window.document.getElementById("host");
+  const popup = dom.window.document.createElement("div");
+  host.append(popup);
+
+  const backdrop = () => host.querySelector(`.${BACKDROP}`);
+  assert.equal(backdrop(), null, "nothing is dimmed before anything opens");
+
+  syncOverlayBackdrop(popup, true);
+  assert.ok(backdrop(), "the modal placement drew no backdrop");
+  // Under the popup in paint order, without a z-index race: the popup is in the top layer.
+  assert.equal(backdrop().nextElementSibling, popup);
+
+  // Idempotent: a renderer that repositions on every scroll frame calls this on every one of them.
+  syncOverlayBackdrop(popup, true);
+  assert.equal(host.querySelectorAll(`.${BACKDROP}`).length, 1, "a frame per scroll left a stack of them");
+
+  syncOverlayBackdrop(popup, false);
+  assert.equal(backdrop(), null, "the backdrop outlived the placement that wanted it");
+
+  // And closing takes it away whatever the placement said.
+  syncOverlayBackdrop(popup, true);
+  setOverlayOpen(popup, false);
+  assert.equal(backdrop(), null, "a closed popup left the page dimmed");
+});

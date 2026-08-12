@@ -5,7 +5,7 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import { trackAnchoredOverlay, bindLightDismiss } from "@modyra/widgets";
+import { trackAnchoredOverlay, bindLightDismiss, syncOverlayBackdrop } from "@modyra/widgets";
 import { anchorOverlay, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind } from "@modyra/widgets";
 
 export interface OverlayPlacementOptions {
@@ -134,6 +134,9 @@ export function positionOverlay(
     popup.style.setProperty(property, value);
   }
   popup.dataset.placement = anchoring.placement;
+  // A modal dims what is behind it, and which placement is modal is the contract's answer. Here
+  // rather than in each field: the placement is only known once the popup has been measured.
+  syncOverlayBackdrop(popup, anchoring.decision.placement === "overlay");
   if (options.kind) reflectPlacement(popup, options.kind, anchoring.placement);
   return anchoring.decision;
 }

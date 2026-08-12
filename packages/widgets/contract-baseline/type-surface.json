@@ -3014,6 +3014,7 @@
   "setOverlayOpen": [
     "(0) popup: HTMLElement",
     "(1) open: boolean",
+    "(2) modal?: boolean",
     "-> returns: void"
   ],
   "settleFor": [
@@ -3077,6 +3078,11 @@
     "(1) reactivity: MdyReactivity",
     "(2) notify: MdyControllerNotify",
     "-> returns: () => void"
+  ],
+  "syncOverlayBackdrop": [
+    "(0) popup: HTMLElement",
+    "(1) wanted: boolean",
+    "-> returns: void"
   ],
   "textFieldPartIds": [
     "(0) widgetId: string",

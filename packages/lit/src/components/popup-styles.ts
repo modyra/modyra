@@ -335,7 +335,7 @@ export class MdyLitOverlayController {
     // throws on an element already showing.
     const popup = this.getPopup();
     if (popup && popup !== this.shown) {
-      setOverlayOpen(popup, true);
+      setOverlayOpen(popup, true, this._state.position === "overlay");
       this.shown = popup;
     }
     this.host.requestUpdate();
@@ -380,7 +380,6 @@ export function renderOverlayPanel(
   // inside it is the single container — the same one every renderer portals and a host-projected panel wrular projects. Two nested
   // positioned boxes is what put a Lit popup 35px below where its anchor said it belonged.
   return html`
-    <div class="mdy-overlay-backdrop"></div>
     <div
       class="mdy-overlay-panel mdy-overlay-panel--visible${modalClass}${rightClass}"
       style="display: contents"

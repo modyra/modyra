@@ -34,11 +34,10 @@ import {
   },
   template: `
     @if (hasBackdrop() && open()) {
-      <div
-        class="mdy-overlay-backdrop"
-        style="position: fixed; inset: 0; background-color: rgba(0,0,0,0.32); z-index: 1; pointer-events: auto;"
-        (click)="onBackdropClick($event)"
-      ></div>
+      <!-- The class carries the whole appearance. The colour was written here as a literal, so the
+           theme token for it, which has a dark ramp, was declared and read by nothing and a product
+           could not change how its modals dim. -->
+      <div class="mdy-overlay-backdrop" (click)="onBackdropClick($event)"></div>
     }
     <div
       #panel

@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 681,
-    "asserted": 402,
+    "published": 682,
+    "asserted": 403,
     "shown": 48
   },
   "uncovered": [
@@ -3656,6 +3656,12 @@
     },
     {
       "name": "stepTimeField",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "syncOverlayBackdrop",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
