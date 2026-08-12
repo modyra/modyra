@@ -1,9 +1,14 @@
 import { mdyPart } from "../mdy-part.js";
-import { overlayControlledId, partClasses, calendarViewOnToggle, type MdyCalendarViewMode } from "@modyra/widgets";
+import { overlayControlledId, partClasses, calendarViewOnToggle,
+  createDaterangeFieldController,
+  subscribeController,
+  type MdyDaterangeFieldController,
+  type MdyDaterangeFieldIntent,
+  type MdyDaterangeFieldState,
+} from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
-import { type MdyDateRange, type MdyFieldHandle } from "@modyra/core";
-import { addMonths, buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, buildMonthGrid, type CalendarCell, type CalendarDate, compareDates, daysInMonth, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
-import { calendarKeyboardTarget } from "@modyra/core/ui";
+import { type MdyDateRange, type MdyFieldHandle, observerFor } from "@modyra/core";
+import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, buildMonthGrid, type CalendarCell, type CalendarDate, compareDates, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
 import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import { renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
@@ -16,14 +21,39 @@ import {
 // ─── Date range ──────────────────────────────────────────────────────────────
 
 /** Which view the calendar shows — the contract's vocabulary, not a second set of three strings. */
-type CalendarView = MdyCalendarViewMode;
-type RangePhase = "pick-start" | "pick-end";
 
 /**
  * Date range picker renderer — compact two-input calendar picker for selecting
  * a start and end date. Matches the structure, classes and interaction of the
  * the catalogue's `daterange` anatomy.
  */
+/**
+ * What the component shows before a handle reaches it — a calendar on this month, nothing picked.
+ *
+ * A resting shape rather than a nullable state everywhere: every read below would otherwise carry
+ * the same `?.` and the same fallback, written slightly differently each time.
+ */
+const RESTING: MdyDaterangeFieldState = Object.freeze({
+  value: { start: null, end: null },
+  draft: { start: null, end: null },
+  previewed: { start: null, end: null },
+  viewMode: "days",
+  viewYear: today().year,
+  viewMonth: today().month,
+  focusedDate: formatIsoDate(today()),
+  cells: [],
+  open: false,
+  picking: "start",
+  invalid: false,
+  disabled: false,
+  interactivity: "enabled",
+  readonly: false,
+  required: false,
+  touched: false,
+  dirty: false,
+  pending: false,
+});
+
 export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | null> {
   static override properties: PropertyDeclarations = {
     min: { type: String },
@@ -34,14 +64,6 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     dateFilter: { attribute: false },
     variant: { type: String },
     _open: { state: true },
-    _view: { state: true },
-    _viewYear: { state: true },
-    _viewMonth: { state: true },
-    _focusedIso: { state: true },
-    _phase: { state: true },
-    _pendingStartIso: { state: true },
-    _pendingEndIso: { state: true },
-    _hoverIso: { state: true },
   };
   declare min?: string;
   declare max?: string;
@@ -68,14 +90,18 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     return this.variant === "modal";
   }
   declare _open: boolean;
-  declare _view: CalendarView;
-  declare _viewYear: number;
-  declare _viewMonth: number;
-  declare _focusedIso: string;
-  declare _phase: RangePhase;
-  declare _pendingStartIso: string | null;
-  declare _pendingEndIso: string | null;
-  declare _hoverIso: string | null;
+
+  /**
+   * Everything a range picker decides, decided by the controller for the kind.
+   *
+   * The draft, the preview that follows the pointer, which pick opens the range and which closes
+   * it, which month is on screen, which cell has the keyboard, and which of the three views is
+   * showing: all of it lived here in nine reactive properties, and the range picker of every other
+   * renderer decided the same things for itself. `_open` stays, because the overlay host is this
+   * package's and drives the popover; the controller is told, and its commands are applied.
+   */
+  private controller?: MdyDaterangeFieldController;
+  private unsubscribe?: () => void;
   private unbindOutside?: () => void;
   protected override readonly widgetKind = "daterange" as const;
   private readonly overlay = new MdyLitOverlayController(
@@ -93,19 +119,51 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     this.endPlaceholder = "End";
     this.variant = "docked";
     this._open = false;
-    this._view = "days";
-    const now = today();
-    this._viewYear = now.year;
-    this._viewMonth = now.month;
-    this._focusedIso = formatIsoDate(now);
-    this._phase = "pick-start";
-    this._pendingStartIso = null;
-    this._pendingEndIso = null;
-    this._hoverIso = null;
+  }
+
+  /** What the controller is holding, or the resting shape before a handle exists. */
+  private get view(): MdyDaterangeFieldState {
+    return this.controller?.state() ?? RESTING;
+  }
+
+  /** Carries out what the controller asks of the DOM, which is the only half this renderer owns. */
+  private send(intent: MdyDaterangeFieldIntent): void {
+    const handle = this.field;
+    if (!this.controller || !handle) return;
+    for (const command of this.controller.dispatch(intent)) {
+      if (command.type === "open-overlay") {
+        applyOverlayIntent(this, { type: "open", disabled: handle.disabled(), available: true });
+        this.overlay.open();
+      }
+      if (command.type === "close-overlay") {
+        applyOverlayIntent(this, { type: "close" });
+        this.overlay.close();
+      }
+      if (command.type === "restore-focus") {
+        this.querySelector<HTMLInputElement>(".mdy-daterange__input")?.focus();
+      }
+    }
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
+    const handle = this.field;
+    if (handle && !this.controller) {
+      this.controller = createDaterangeFieldController({
+        widgetId: this.fieldId,
+        handle: handle as never,
+        minDate: this.min ?? null,
+        maxDate: this.max ?? null,
+        firstDayOfWeek: this.weekStart,
+      });
+      // Lit repaints on its own reactive properties, and the controller's state is not one of them.
+      // `subscribeController` is the contract's answer to exactly that, and had no consumer.
+      this.unsubscribe = subscribeController(
+        this.controller as never,
+        observerFor(handle),
+        () => this.requestUpdate(),
+      );
+    }
     this.unbindOutside = bindOutsidePointer(this, () => {
       const handle = this.field;
       if (handle) this.closePopup(handle);
@@ -154,7 +212,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 
   private isMonthDisabled(month: number): boolean {
-    return isMonthOutOfRange(this._viewYear, month, this.parseMin(), this.parseMax());
+    return isMonthOutOfRange(this.view.viewYear, month, this.parseMin(), this.parseMax());
   }
 
   private isYearDisabled(year: number): boolean {
@@ -162,7 +220,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 
   private yearRange(): readonly number[] {
-    return calendarYearRange(this._viewYear, this.parseMin(), this.parseMax());
+    return calendarYearRange(this.view.viewYear, this.parseMin(), this.parseMax());
   }
 
   private parseMin(): CalendarDate | null {
@@ -186,105 +244,45 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 
   private rows(): CalendarCell[][] {
-    const cells = buildMonthGrid(this._viewYear, this._viewMonth, this.weekStart);
+    const cells = buildMonthGrid(this.view.viewYear, this.view.viewMonth, this.weekStart);
     const rows: CalendarCell[][] = [];
     for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7) as CalendarCell[]);
     return rows;
   }
 
-  private openPopup(handle: MdyFieldHandle<MdyDateRange | null>, event?: Event): void {
-    const value = handle.value();
-    const start = value?.start ? parseIsoDate(value.start) : null;
-    const end = value?.end ? parseIsoDate(value.end) : null;
-    const base = start ?? today();
-    this._viewYear = base.year;
-    this._viewMonth = base.month;
-    this._focusedIso = formatIsoDate(base);
-    this._pendingStartIso = value?.start ?? null;
-    this._pendingEndIso = value?.end ?? null;
-    this._phase = start && !end ? "pick-end" : "pick-start";
-    this._hoverIso = null;
-    this._view = "days";
-    applyOverlayIntent(this, { type: "open", disabled: this.field?.disabled() ?? false, available: true });
-    this.overlay.open(event);
+  private openPopup(_handle: MdyFieldHandle<MdyDateRange | null>, event?: Event): void {
+    void event;
+    this.send({ type: "open" });
   }
 
   private closePopup(_handle: MdyFieldHandle<MdyDateRange | null>, refocus = true): void {
     if (!this._open) return;
-    applyOverlayIntent(this, { type: "close" });
-    this.overlay.close();
-    this._view = "days";
-    if (refocus) {
-      this.querySelector<HTMLInputElement>(".mdy-daterange__input")?.focus();
-    }
+    this.send({ type: "close", restoreFocus: refocus });
   }
 
   private navigateMonths(delta: number): void {
-    const moved = addMonths(
-      { year: this._viewYear, month: this._viewMonth, day: 1 },
-      delta,
-    );
-    this._viewYear = moved.year;
-    this._viewMonth = moved.month;
-    const focused = parseIsoDate(this._focusedIso) ?? today();
-    const newFocused = addMonths(focused, delta);
-    this._focusedIso = formatIsoDate(newFocused);
+    this.send({ type: "navigate-month", delta });
   }
 
-  private onDatePicked(handle: MdyFieldHandle<MdyDateRange | null>, date: CalendarDate): void {
-    const iso = formatIsoDate(date);
-    this._focusedIso = iso;
-
-    if (this._phase === "pick-start") {
-      this._pendingStartIso = iso;
-      this._pendingEndIso = null;
-      this._phase = "pick-end";
-      this._hoverIso = null;
-      return;
-    }
-
-    const start = this._pendingStartIso ? parseIsoDate(this._pendingStartIso) : null;
-    if (!start) {
-      this._pendingStartIso = iso;
-      this._phase = "pick-end";
-      this._hoverIso = null;
-      return;
-    }
-
-    // The second pick closes the range and writes it: this kind's value contract says `live`, and
-    // a placement never changes that.
-    const [s, e] = compareDates(start, date) <= 0 ? [start, date] : [date, start];
-    this._pendingStartIso = formatIsoDate(s);
-    this._pendingEndIso = formatIsoDate(e);
-    this.commitRange(handle, this._pendingStartIso, this._pendingEndIso);
-    this.closePopup(handle);
+  private onDatePicked(_handle: MdyFieldHandle<MdyDateRange | null>, date: CalendarDate): void {
+    this.send({ type: "select-date", iso: formatIsoDate(date) });
   }
 
   private onDateHovered(date: CalendarDate): void {
-    if (this._phase === "pick-end") {
-      this._hoverIso = formatIsoDate(date);
-    }
+    this.send({ type: "preview", iso: formatIsoDate(date) });
   }
 
   /** Where the header goes, answered by the contract rather than by a branch here. */
   private onToggleView(): void {
-    this._view = calendarViewOnToggle(this._view);
+    this.send({ type: "set-view-mode", mode: calendarViewOnToggle(this.view.viewMode) });
   }
 
   private onMonthSelected(month: number): void {
-    this._viewMonth = month;
-    this._view = "days";
-    const focused = parseIsoDate(this._focusedIso) ?? today();
-    const day = Math.min(focused.day, daysInMonth(focused.year, month));
-    this._focusedIso = formatIsoDate({ ...focused, month, day });
+    this.send({ type: "select-month", month });
   }
 
   private onYearSelected(year: number): void {
-    this._viewYear = year;
-    this._view = "months";
-    const focused = parseIsoDate(this._focusedIso) ?? today();
-    const day = Math.min(focused.day, daysInMonth(year, focused.month));
-    this._focusedIso = formatIsoDate({ ...focused, year, day });
+    this.send({ type: "select-year", year });
   }
 
   private commitRange(
@@ -312,54 +310,33 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     handle.markAsDirty();
   }
 
+  /**
+   * The calendar keyboard, which the controller answers.
+   *
+   * Moving the focus, following it with the preview and paging the month when it crosses a boundary
+   * were three writes here and are one intent now — `keydown` — so a key means the same thing in
+   * every renderer that asks.
+   */
   private onGridKeydown(e: KeyboardEvent, handle: MdyFieldHandle<MdyDateRange | null>): void {
     if (e.key === "Escape") {
       e.preventDefault();
-      if (this._view !== "days") {
-        this._view = "days";
-      } else {
-        this.closePopup(handle);
-      }
+      if (this.view.viewMode !== "days") this.send({ type: "set-view-mode", mode: "days" });
+      else this.closePopup(handle);
       return;
     }
-
-    if (this._view !== "days") return;
-
-    const focused = parseIsoDate(this._focusedIso) ?? today();
-
-    switch (e.key) {
-      case "Enter":
-      case " ": {
-        e.preventDefault();
-        if (!isDateInRange(focused, this.parseMin(), this.parseMax())) return;
-        const iso = formatIsoDate(focused);
-        if (!this.isDateFilterAllowed(iso)) return;
-        this.onDatePicked(handle, focused);
-        return;
-      }
-    }
-
-    const next = calendarKeyboardTarget(e.key, focused, e.shiftKey);
-    if (!next) return;
+    if (this.view.viewMode !== "days") return;
     e.preventDefault();
-    this._focusedIso = formatIsoDate(next);
-    if (this._phase === "pick-end") {
-      this._hoverIso = formatIsoDate(next);
-    }
-    if (next.year !== this._viewYear || next.month !== this._viewMonth) {
-      this._viewYear = next.year;
-      this._viewMonth = next.month;
-    }
+    this.send({ type: "keydown", key: e.key, shiftKey: e.shiftKey });
   }
 
   protected override updated(): void {
     if (this._open) {
-      if (this._view === "days") {
+      if (this.view.viewMode === "days") {
         this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused")?.focus();
-      } else if (this._view === "years") {
+      } else if (this.view.viewMode === "years") {
         this.querySelector<HTMLElement>(
           `.${partClasses("daterange", "yearCell", { selected: true }).join(".")}`,
-        )?.scrollIntoView({
+        )?.scrollIntoView?.({
           block: "center",
           behavior: "instant",
         });
@@ -368,14 +345,19 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 
   override disconnectedCallback(): void {
+    this.unsubscribe?.();
+    this.unsubscribe = undefined;
+    this.controller = undefined;
     this.unbindOutside?.();
     this.overlay.close();
     super.disconnectedCallback();
   }
 
   private effectiveRange(): readonly [CalendarDate | null, CalendarDate | null] {
-    const start = this._pendingStartIso ? parseIsoDate(this._pendingStartIso) : null;
-    const end = this._pendingEndIso ? parseIsoDate(this._pendingEndIso) : this._hoverIso ? parseIsoDate(this._hoverIso) : null;
+    // What the calendar paints is the previewed range: the highlight follows the pointer before
+    // anything is decided, which is the distinction `previewed` exists for.
+    const start = parseIsoDate(this.view.previewed.start);
+    const end = parseIsoDate(this.view.previewed.end);
     return orderDates(start, end);
   }
 
@@ -408,7 +390,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 
   private isCellFocused(cell: CalendarCell): boolean {
-    const focused = parseIsoDate(this._focusedIso);
+    const focused = parseIsoDate(this.view.focusedDate);
     return focused !== null && isSameDay(cell.date, focused);
   }
 
@@ -420,7 +402,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     return renderMonthPicker(this.monthNamesShort(), {
       kind: "daterange",
       widgetId: this.fieldId,
-      current: this._viewMonth,
+      current: this.view.viewMonth,
       disabled: (month) => this.isMonthDisabled(month),
       pick: (month) => this.onMonthSelected(month),
     });
@@ -430,7 +412,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     return renderYearPicker(this.yearRange(), {
       kind: "daterange",
       widgetId: this.fieldId,
-      current: this._viewYear,
+      current: this.view.viewYear,
       disabled: (year) => this.isYearDisabled(year),
       pick: (year) => this.onYearSelected(year),
     });
@@ -478,8 +460,8 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 
   private modalDisplayValue(): string {
-    const start = this._pendingStartIso ? parseIsoDate(this._pendingStartIso) : null;
-    const end = this._pendingEndIso ? parseIsoDate(this._pendingEndIso) : null;
+    const start = parseIsoDate(this.view.draft.start);
+    const end = parseIsoDate(this.view.draft.end);
     if (!start) return this.label || "Select range";
     const fmt = (d: CalendarDate): string => {
       try {
@@ -497,9 +479,9 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
 
   private renderPopup(handle: MdyFieldHandle<MdyDateRange | null>): unknown {
     const monthLabel = new Intl.DateTimeFormat(this.locale, { month: "long" }).format(
-      new Date(Date.UTC(this._viewYear, this._viewMonth - 1, 1)),
+      new Date(Date.UTC(this.view.viewYear, this.view.viewMonth - 1, 1)),
     );
-    const hint = this._phase === "pick-start" ? "Select start date" : "Select end date";
+    const hint = this.view.picking === "start" ? "Select start date" : "Select end date";
     const modalHeader =
       this.overlay.state.position === "overlay"
         ? html`
@@ -526,7 +508,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               aria-label="Change view"
               @click=${this.onToggleView}
             >
-              <span class="mdy-datepicker__title">${monthLabel} ${this._viewYear}</span>
+              <span class="mdy-datepicker__title">${monthLabel} ${this.view.viewYear}</span>
               ${mdyIcon("CHEVRON_DOWN", "mdy-datepicker__view-icon")}
             </button>
           </div>
@@ -535,7 +517,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               type="button"
               class="mdy-datepicker__nav-btn"
               aria-label="Previous month"
-              ?disabled=${this._view !== "days"}
+              ?disabled=${this.view.viewMode !== "days"}
               @click=${() => this.navigateMonths(-1)}
             >
               ${mdyIcon("CHEVRON_LEFT", "")}
@@ -544,19 +526,19 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               type="button"
               class="mdy-datepicker__nav-btn"
               aria-label="Next month"
-              ?disabled=${this._view !== "days"}
+              ?disabled=${this.view.viewMode !== "days"}
               @click=${() => this.navigateMonths(1)}
             >
               ${mdyIcon("CHEVRON_RIGHT", "")}
             </button>
           </div>
         </div>
-        ${this._view === "days"
+        ${this.view.viewMode === "days"
           ? html`<div class="mdy-datepicker__grid" role="grid">
               ${this.renderCalendarGrid(handle)}
             </div>
             <div class="mdy-daterange__hint" aria-live="polite">${hint}</div>`
-          : this._view === "months"
+          : this.view.viewMode === "months"
             ? this.renderMonthPicker()
             : this.renderYearPicker()}
         ${actions}

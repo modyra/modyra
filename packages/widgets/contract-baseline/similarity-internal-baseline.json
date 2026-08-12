@@ -5,77 +5,28 @@
     {
       "id": "angular:constructor@calendar.component.ts ≡ angular:constructor@range-calendar.component.ts",
       "score": 1,
-      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:97",
-      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:115",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "angular:navigateMonth@calendar.component.ts ≡ angular:navigateMonth@range-calendar.component.ts",
-      "score": 1,
-      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:162",
-      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:187",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "angular:onMonthSelected@calendar.component.ts ≡ angular:onMonthSelected@range-calendar.component.ts",
-      "score": 1,
-      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:138",
-      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:163",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "angular:onYearSelected@calendar.component.ts ≡ angular:onYearSelected@range-calendar.component.ts",
-      "score": 1,
-      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:146",
-      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:171",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "lit:navigateMonths@datepicker-field.ts ≡ lit:navigateMonths@daterange-field.ts",
-      "score": 1,
-      "left": "packages/lit/src/components/datepicker-field.ts:116",
-      "right": "packages/lit/src/components/daterange-field.ts:196",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "lit:onMonthSelected@datepicker-field.ts ≡ lit:onMonthSelected@daterange-field.ts",
-      "score": 1,
-      "left": "packages/lit/src/components/datepicker-field.ts:157",
-      "right": "packages/lit/src/components/daterange-field.ts:265",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "lit:onYearSelected@datepicker-field.ts ≡ lit:onYearSelected@daterange-field.ts",
-      "score": 1,
-      "left": "packages/lit/src/components/datepicker-field.ts:165",
-      "right": "packages/lit/src/components/daterange-field.ts:273",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "lit:rows@datepicker-field.ts ≡ lit:rows@daterange-field.ts",
-      "score": 1,
-      "left": "packages/lit/src/components/datepicker-field.ts:89",
-      "right": "packages/lit/src/components/daterange-field.ts:162",
+      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:99",
+      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:119",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "lit:weekdayNames@datepicker-field.ts ≡ lit:weekdayNames@daterange-field.ts",
       "score": 1,
-      "left": "packages/lit/src/components/datepicker-field.ts:178",
-      "right": "packages/lit/src/components/daterange-field.ts:121",
+      "left": "packages/lit/src/components/datepicker-field.ts:167",
+      "right": "packages/lit/src/components/daterange-field.ts:173",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "plain:dispatch@datepicker-field.ts ≡ plain:dispatch@select-field.ts",
       "score": 1,
-      "left": "packages/plain/src/fields/datepicker-field.ts:127",
+      "left": "packages/plain/src/fields/datepicker-field.ts:128",
       "right": "packages/plain/src/fields/select-field.ts:150",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "plain:dispatch@datepicker-field.ts ≡ plain:dispatch@timepicker-field.ts",
       "score": 1,
-      "left": "packages/plain/src/fields/datepicker-field.ts:127",
+      "left": "packages/plain/src/fields/datepicker-field.ts:128",
       "right": "packages/plain/src/fields/timepicker-field.ts:114",
       "reason": "recorded, not yet accounted for"
     },

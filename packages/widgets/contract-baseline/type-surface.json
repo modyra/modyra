@@ -428,6 +428,7 @@
     "rangeStart: boolean"
   ],
   "MdyDaterangeFieldController": [
+    "setBounds: void",
     "setReadonly: void",
     "setValue: void"
   ],

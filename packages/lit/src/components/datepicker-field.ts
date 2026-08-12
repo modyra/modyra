@@ -250,7 +250,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
       } else if (this._view === "years") {
         this.querySelector<HTMLElement>(
           `.${partClasses("datepicker", "yearCell", { selected: true }).join(".")}`,
-        )?.scrollIntoView({
+        )?.scrollIntoView?.({
           block: "center",
           behavior: "instant",
         });

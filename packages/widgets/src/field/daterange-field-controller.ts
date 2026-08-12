@@ -36,6 +36,14 @@ export interface MdyDaterangeFieldController
   setValue(value: MdyDateRangeValue): void;
   /** Update the readonly state. */
   setReadonly(readonly: boolean): void;
+  /**
+   * Replace the range of dates on offer, ISO `YYYY-MM-DD` or null for open-ended.
+   *
+   * A host whose bounds move — a return date that cannot precede a departure — tells the controller
+   * rather than building a new one, which would forget the month on screen and which end the next
+   * pick closes.
+   */
+  setBounds(minDate: string | null, maxDate: string | null): void;
 }
 
 const EMPTY: MdyDateRangeValue = { start: null, end: null };
@@ -53,9 +61,13 @@ export function createDaterangeFieldController(
   reactivity = observerFor(options.handle, reactivity);
   const { widgetId, handle, firstDayOfWeek = 0, readonly: initialReadonly = false } = options;
 
-  const bounds = () => ({ minIso: options.minDate ?? null, maxIso: options.maxDate ?? null });
-  const minDate = (): CalendarDate | null => parseIsoDate(options.minDate ?? null);
-  const maxDate = (): CalendarDate | null => parseIsoDate(options.maxDate ?? null);
+  // Signals, because the grid, what a key may reach and what a cell refuses are all derived from
+  // them: bounds that move have to move every answer with them, not only the next one asked for.
+  const minIso = reactivity.signal<string | null>(options.minDate ?? null);
+  const maxIso = reactivity.signal<string | null>(options.maxDate ?? null);
+  const bounds = () => ({ minIso: minIso(), maxIso: maxIso() });
+  const minDate = (): CalendarDate | null => parseIsoDate(minIso());
+  const maxDate = (): CalendarDate | null => parseIsoDate(maxIso());
 
   // Which of the three views the popup is showing. State, so a renderer asks rather than deciding:
   // two of them had grown their own and could disagree about where choosing a year lands.
@@ -318,6 +330,11 @@ export function createDaterangeFieldController(
     moveFocus(parseIsoDate(next.start) ?? today());
   }
 
+  function setBounds(nextMin: string | null, nextMax: string | null): void {
+    minIso.set(nextMin);
+    maxIso.set(nextMax);
+  }
+
   function setReadonly(nextReadonly: boolean): void {
     readonly.set(nextReadonly);
   }
@@ -327,5 +344,5 @@ export function createDaterangeFieldController(
     preview.set(null);
   }
 
-  return { state, view, dispatch, setValue, setReadonly, destroy };
+  return { state, view, dispatch, setValue, setReadonly, setBounds, destroy };
 }
