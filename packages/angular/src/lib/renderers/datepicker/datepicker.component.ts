@@ -127,6 +127,7 @@ import { MdyCalendarComponent } from "./calendar.component";
         <mdy-calendar
         [gridId]="popupId()"
           #calendar
+          [controller]="controller()"
           [selectedDate]="parsedSelectedDate()"
           [minDate]="parsedMinDate()"
           [maxDate]="parsedMaxDate()"
@@ -179,7 +180,7 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   private readonly injector = inject(Injector);
   protected readonly fieldId = `mdy-control-datepicker-${MdyBaseControl.nextId()}`;
 
-  private readonly controller = this.adoptFieldController(
+  protected readonly controller = this.adoptFieldController(
     (handle, widgetId) => createDatepickerFieldController({
       widgetId, handle: handle as never, minDate: this.minDate(), maxDate: this.maxDate(),
       firstDayOfWeek: this.locale.firstDayOfWeek }),

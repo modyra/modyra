@@ -71,7 +71,16 @@ export function createOptionFieldController<TValue>(
     allOptions().filter((o) => !o.disabled).map(keyFor);
 
   const readonly = reactivity.signal(initialReadonly);
-  const selectedKey = reactivity.signal<string | null>(keyForValue(handle.value()));
+  /**
+   * Which option is chosen, derived rather than copied.
+   *
+   * It was a signal seeded from the value and written beside every `handle.set` — which carries no
+   * information the value does not, since selecting always writes both. What it did carry was the
+   * chance of disagreeing: a value written from anywhere else — a draft restored, a server
+   * response, `patch()` — left the state reporting the live value beside a stale key, and a
+   * renderer checks the radio from the key.
+   */
+  const selectedKey = reactivity.computed(() => keyForValue(handle.value()));
   const activeKey = reactivity.signal<string | null>(null);
 
   const state: MdySignal<MdyOptionFieldState<TValue>> = reactivity.computed(() => ({
@@ -150,7 +159,6 @@ export function createOptionFieldController<TValue>(
     if (key === null) return [];
     const option = optionByKey.get(key);
     if (!option || option.disabled) return [];
-    selectedKey.set(key);
     handle.set(option.value);
     handle.markAsDirty();
     handle.markAsTouched();
@@ -206,16 +214,15 @@ export function createOptionFieldController<TValue>(
   }
 
   function setValue(value: TValue | null): void {
-    selectedKey.set(keyForValue(value));
     handle.set(value);
   }
 
   function setOptions(next: readonly MdySelectOption<TValue>[]): void {
     optionList.set(next);
     rebuildIndex();
-    // The selection follows the value, not the old key: a list replaced under a chosen value keeps
-    // that value selected when it is still offered, and selects nothing when it is not.
-    selectedKey.set(keyForValue(handle.value()));
+    // The selection follows the value on its own, because it is derived from it: a list replaced
+    // under a chosen value keeps it selected while it is still offered, and selects nothing when it
+    // is not.
     if (activeKey() !== null && !optionByKey.has(activeKey() as string)) activeKey.set(null);
   }
 

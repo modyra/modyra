@@ -2,7 +2,7 @@
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
     "published": 682,
-    "asserted": 403,
+    "asserted": 404,
     "shown": 48
   },
   "uncovered": [
@@ -704,9 +704,9 @@
     },
     {
       "name": "MdyDatepickerFieldController",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyDatepickerFieldControllerOptions",
