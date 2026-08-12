@@ -5,9 +5,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   Injector,
   input,
+  OnInit,
   signal,
   viewChild,
 } from "@angular/core";
@@ -19,10 +21,15 @@ import {
   today,
 } from "@modyra/core/datetime";
 import {
+  createDatepickerFieldController,
   dateDraftTransition,
   dateValueTransition,
   MDY_WIDGET_CONTRACTS,
-  type MdyDateDraftState, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+  type MdyDateDraftState,
+  type MdyDatepickerFieldController,
+  overlayControlledId,
+  projectOverlayOpenerA11y,
+} from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -154,7 +161,7 @@ import { MdyCalendarComponent } from "./calendar.component";
     }
   `,
 })
-export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
+export class MdyDatePickerComponent extends MdyOverlayControl<string | null> implements OnInit {
   /* The popup wears what the catalogue says it wears. Restated in the template, a class added
      to the contract reached the renderers that derive and stopped at this one. */
   protected readonly popupClass = MDY_WIDGET_CONTRACTS.datepicker.parts.popup.classes.join(" ");
@@ -172,6 +179,41 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   protected override readonly minSpace = 450;
 
   protected readonly fieldId = `mdy-control-datepicker-${MdyBaseControl.nextId()}`;
+
+  private controller: MdyDatepickerFieldController | undefined;
+
+  override ngOnInit(): void {
+    this.controller = this.adoptFieldController((handle, widgetId) =>
+      createDatepickerFieldController({
+        widgetId,
+        handle: handle as never,
+        minDate: this.minDate(),
+        maxDate: this.maxDate(),
+        firstDayOfWeek: this.locale.firstDayOfWeek,
+      }),
+    );
+    // The ends of the range are inputs and can move — a return date that cannot precede a
+    // departure. The controller is told, not rebuilt: rebuilding forgets the month on screen.
+    effect(() => this.controller?.setBounds(this.minDate(), this.maxDate()), {
+      injector: this.injector,
+    });
+    super.ngOnInit();
+  }
+
+  /**
+   * One committed date, decided by the controller for this kind.
+   *
+   * What a range refuses, what a readonly field refuses and when the value is dirty belong to it.
+   * The modal variant's draft does not: a picker that waits for a confirmation is this renderer's
+   * shape, built on the contract's own `dateDraftTransition`.
+   */
+  private commitDate(iso: string | null): void {
+    if (this.controller) {
+      this.controller.dispatch(iso === null ? { type: "clear" } : { type: "select-date", iso });
+      return;
+    }
+    this.dispatchValueIntent<string | null>("datepicker", { type: "select", value: iso });
+  }
 
   /** The id the opener names — the grid, which is what carries the overlay's role. */
   protected readonly popupId = computed(() => overlayControlledId("datepicker", this.fieldId) ?? "");
@@ -257,7 +299,7 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
     );
     this.modalDraft.set(transition.state);
     if (transition.commit !== undefined) {
-      this.dispatchValueIntent<string | null>("datepicker", { type: "select", value: transition.commit });
+      this.commitDate(transition.commit);
     }
     this.closeOverlay();
   }
@@ -284,14 +326,14 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
       this.maxDate(),
     );
     if (isoString === null) return;
-    this.dispatchValueIntent<string | null>("datepicker", { type: "select", value: isoString });
+    this.commitDate(isoString);
     this.closeOverlay();
   }
 
   protected onInputChange(event: Event): void {
     const raw = inputText(event).trim();
     if (!raw) {
-      this.dispatchValueIntent<string | null>("datepicker", { type: "select", value: null });
+      this.commitDate(null);
       return;
     }
     const parsed =
@@ -305,13 +347,17 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
         this.maxDate(),
       );
       if (isoString !== null) {
-        this.dispatchValueIntent<string | null>("datepicker", { type: "select", value: isoString });
+        this.commitDate(isoString);
       }
     }
   }
 
   protected onInputBlur(event: FocusEvent): void {
     (event.target as HTMLInputElement).value = this.displayValue();
+    if (this.controller) {
+      this.controller.dispatch({ type: "blur" });
+      return;
+    }
     this.dispatchValueBlur("datepicker");
   }
 }

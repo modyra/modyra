@@ -359,6 +359,7 @@
     "selected: boolean"
   ],
   "MdyDatepickerFieldController": [
+    "setBounds: void",
     "setReadonly: void",
     "setValue: void"
   ],
@@ -1084,6 +1085,7 @@
   ],
   "MdyMultiselectFieldController": [
     "filteredOptions: MdySignal<readonly MdySelectOption<TValue>[]>",
+    "setOptions: void",
     "setReadonly: void",
     "setValue: void"
   ],
