@@ -1,0 +1,215 @@
+{
+  "note": "What each renderer consumes today. These numbers may rise and may not fall.",
+  "score": {
+    "controllers": 32,
+    "controllersOffered": 42,
+    "projections": 9,
+    "projectionsOffered": 48
+  },
+  "rows": {
+    "plain:text": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:text": {
+      "controller": true,
+      "projection": false
+    },
+    "lit:text": {
+      "controller": true,
+      "projection": false
+    },
+    "plain:email": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:email": {
+      "controller": true,
+      "projection": false
+    },
+    "lit:email": {
+      "controller": true,
+      "projection": false
+    },
+    "plain:password": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:password": {
+      "controller": true,
+      "projection": false
+    },
+    "lit:password": {
+      "controller": true,
+      "projection": false
+    },
+    "plain:textarea": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:textarea": {
+      "controller": true,
+      "projection": false
+    },
+    "lit:textarea": {
+      "controller": true,
+      "projection": false
+    },
+    "plain:number": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:number": {
+      "controller": true,
+      "projection": false
+    },
+    "lit:number": {
+      "controller": true,
+      "projection": false
+    },
+    "plain:slider": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:slider": {
+      "controller": true,
+      "projection": false
+    },
+    "lit:slider": {
+      "controller": true,
+      "projection": false
+    },
+    "plain:checkbox": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:checkbox": {
+      "controller": false,
+      "projection": false
+    },
+    "lit:checkbox": {
+      "controller": true,
+      "projection": false
+    },
+    "plain:toggle": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:toggle": {
+      "controller": false,
+      "projection": false
+    },
+    "lit:toggle": {
+      "controller": true,
+      "projection": false
+    },
+    "plain:radio": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:radio": {
+      "controller": false,
+      "projection": false
+    },
+    "lit:radio": {
+      "controller": true,
+      "projection": false
+    },
+    "plain:segmented": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:segmented": {
+      "controller": false,
+      "projection": false
+    },
+    "lit:segmented": {
+      "controller": true,
+      "projection": false
+    },
+    "plain:select": {
+      "controller": true,
+      "projection": "none offered"
+    },
+    "angular:select": {
+      "controller": true,
+      "projection": "none offered"
+    },
+    "lit:select": {
+      "controller": true,
+      "projection": "none offered"
+    },
+    "plain:multiselect": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:multiselect": {
+      "controller": false,
+      "projection": false
+    },
+    "lit:multiselect": {
+      "controller": false,
+      "projection": false
+    },
+    "plain:datepicker": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:datepicker": {
+      "controller": false,
+      "projection": false
+    },
+    "lit:datepicker": {
+      "controller": false,
+      "projection": false
+    },
+    "plain:daterange": {
+      "controller": "none offered",
+      "projection": true
+    },
+    "angular:daterange": {
+      "controller": "none offered",
+      "projection": true
+    },
+    "lit:daterange": {
+      "controller": "none offered",
+      "projection": true
+    },
+    "plain:timepicker": {
+      "controller": true,
+      "projection": false
+    },
+    "angular:timepicker": {
+      "controller": false,
+      "projection": false
+    },
+    "lit:timepicker": {
+      "controller": false,
+      "projection": false
+    },
+    "plain:file": {
+      "controller": "none offered",
+      "projection": true
+    },
+    "angular:file": {
+      "controller": "none offered",
+      "projection": true
+    },
+    "lit:file": {
+      "controller": "none offered",
+      "projection": true
+    },
+    "plain:colors": {
+      "controller": "none offered",
+      "projection": true
+    },
+    "angular:colors": {
+      "controller": "none offered",
+      "projection": true
+    },
+    "lit:colors": {
+      "controller": "none offered",
+      "projection": true
+    }
+  }
+}
