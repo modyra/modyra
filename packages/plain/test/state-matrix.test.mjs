@@ -129,3 +129,36 @@ test("Escape closes an open overlay, on every kind that declares the transition"
     }
   }
 });
+
+test("out of play, no verdict: the wrapper and the error text go with it", async () => {
+  // What the widgets contract decides, painted: a field the form is not asking about carries neither
+  // the error modifier nor the message. The rule is one line in `@modyra/widgets`; this is the half
+  // that reaches a screen.
+  const { mountMdyForm } = await import("../dist/index.js");
+  const host = document.createElement("div");
+  document.body.append(host);
+  const { form, reactivity, dispose } = mountMdyForm(
+    host,
+    [{ name: "a", kind: "text", label: "A", validators: { required: true } }],
+    { submitLabel: null },
+  );
+  const wrapper = () => host.querySelector(".mdy-input-wrapper")?.className ?? "";
+  const errorText = () => host.querySelector("[class*=error]")?.textContent?.trim() ?? "";
+
+  assert.ok(wrapper().includes("mdy-input-wrapper--error"), `enabled and empty: ${wrapper()}`);
+  assert.equal(host.querySelector("input")?.getAttribute("aria-invalid"), "true");
+
+  form.setDisabled("a", () => true);
+  await reactivity.flush();
+  assert.ok(!wrapper().includes("mdy-input-wrapper--error"), `out of play: ${wrapper()}`);
+  assert.ok(wrapper().includes("mdy-input-wrapper--disabled"), "and it still says it is disabled");
+  assert.equal(host.querySelector("input")?.getAttribute("aria-invalid"), "false");
+  assert.equal(errorText(), "", "the message stayed on screen");
+
+  form.setDisabled("a", () => false);
+  await reactivity.flush();
+  assert.ok(wrapper().includes("mdy-input-wrapper--error"), "the verdict did not come back");
+
+  dispose();
+  host.remove();
+});

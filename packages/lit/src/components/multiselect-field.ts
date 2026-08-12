@@ -4,7 +4,7 @@ import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } fr
 import { filterOptionsByQuery } from "@modyra/core/ui";
 import { MDY_CHIP_CLASSES, multiselectChipClasses, optionsWithUnrecognizedValues } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
-import { mdyIcon } from "../base.js";
+import { mdyIcon, errorsToShow } from "../base.js";
 import {
   MdyLitOverlayController,
   renderOverlayPanel,
@@ -262,7 +262,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               aria-expanded=${this._open ? "true" : "false"}
               aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}
               aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
-              aria-invalid=${String(handle.errors().length > 0)}
+              aria-invalid=${String(errorsToShow(handle).length > 0)}
               aria-disabled=${String(handle.disabled())}
             >
               ${this.loading

@@ -8,6 +8,8 @@
  */
 import { MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "@modyra/widgets";
 import { el, setText } from "./dom.js";
+import { shownErrors } from "@modyra/widgets";
+import type { MdyFieldError } from "@modyra/core";
 
 export interface FieldShell {
   readonly root: HTMLDivElement;
@@ -98,4 +100,18 @@ export function insertControl(shell: FieldShell, control: HTMLElement): void {
   const name = shell.ariaLabel || shell.labelText;
   if (name) control.setAttribute("aria-label", name);
   (shell.wrapper.querySelector(`.${MDY_FIELD_SHELL_CLASSES.control}`) ?? shell.wrapper).appendChild(control);
+}
+
+/**
+ * The errors this field may show.
+ *
+ * Asked rather than computed: a field the form is not asking about shows no verdict, and that rule
+ * belongs to `@modyra/widgets` — ten field files deciding it separately is how they came to disagree
+ * with the projection that sits beside them.
+ */
+export function errorsToShow(handle: {
+  errors(): ReadonlyArray<MdyFieldError>;
+  disabled(): boolean;
+}): ReadonlyArray<MdyFieldError> {
+  return shownErrors({ disabled: handle.disabled() }, handle.errors());
 }
