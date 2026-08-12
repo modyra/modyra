@@ -24,7 +24,10 @@ import { join, relative, resolve } from "node:path";
 import ts from "typescript";
 
 const ROOT = resolve(new URL("..", import.meta.url).pathname);
-const PACKAGES = ["core", "widgets"];
+// Every package a demo, an app or a test can import, not only the two that publish a contract:
+// the check exists because a removal reached a demo unnoticed, and a demo does not care which
+// package the name came from.
+const PACKAGES = ["core", "widgets", "plain", "styles"];
 
 let failures = 0;
 /** Per package: name → the subpaths that publish it. */
@@ -32,13 +35,19 @@ const published = new Map();
 for (const pkg of PACKAGES) {
   const manifest = JSON.parse(readFileSync(resolve(ROOT, `packages/${pkg}/package.json`), "utf8"));
   const entries = [];
+  // A stylesheet entry is a door with nothing to name: it must resolve, and there is no symbol to
+  // publish twice. Recorded so an import of one is checked rather than skipped.
+  const assets = [];
   for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
     const js = typeof target === "string" ? target : (target.import ?? target.default ?? "");
-    if (!String(js).endsWith(".js")) continue;
+    if (!String(js).endsWith(".js")) {
+      if (String(js)) assets.push(subpath);
+      continue;
+    }
     const declaration = resolve(ROOT, `packages/${pkg}`, String(js).replace(/\.js$/, ".d.ts"));
     if (existsSync(declaration)) entries.push([subpath, declaration]);
   }
-  if (entries.length === 0) continue;
+  if (entries.length === 0 && assets.length === 0) continue;
 
   const program = ts.createProgram(entries.map(([, file]) => file), { allowJs: false });
   const checker = program.getTypeChecker();
@@ -55,11 +64,15 @@ for (const pkg of PACKAGES) {
     }
   }
 
+  for (const subpath of assets) {
+    if (!doors.has(subpath)) doors.set(subpath, []);
+    doors.get(subpath).push(subpath);
+  }
   published.set(pkg, doors);
 
   const multi = [...doors].filter(([, subpaths]) => subpaths.length > 1);
   console.log(
-    `@modyra/${pkg}: ${entries.length} subpaths, ${doors.size} public names, ${multi.length} reachable from more than one`,
+    `@modyra/${pkg}: ${entries.length + assets.length} subpaths, ${doors.size} public names, ${multi.length} reachable from more than one`,
   );
   for (const [name, subpaths] of multi) {
     console.log(`  ${name}  ←  ${subpaths.join(", ")}`);
@@ -68,7 +81,7 @@ for (const pkg of PACKAGES) {
 }
 
 /**
- * Every `@modyra/core` or `@modyra/widgets` import in the repository, checked against what the
+ * Every import of a package published from this workspace, checked against what the
  * package publishes — the subpath and the names alike.
  *
  * Sources only. A compiled `dist` mirrors its source and a changelog describes a surface that has
@@ -77,7 +90,7 @@ for (const pkg of PACKAGES) {
 const ROOTS = ["packages", "examples", "apps", "e2e", "scripts", "site/src", "docs"];
 const SKIP = new Set(["node_modules", "dist", ".astro", "test-results", "contract-baseline"]);
 const SOURCE = /\.(ts|tsx|mts|mjs|js|jsx|svelte|vue)$/;
-const IMPORT = /(?:import|export)\s+(?:type\s+)?(?:\{([^}]*)\}|\*\s+as\s+\w+|\w+)?\s*(?:from\s*)?["']@modyra\/(core|widgets)(\/[^"']+)?["']/g;
+const IMPORT = /(?:import|export)\s+(?:type\s+)?(?:\{([^}]*)\}|\*\s+as\s+\w+|\w+)?\s*(?:from\s*)?["']@modyra\/(core|widgets|plain|styles)(\/[^"']+)?["']/g;
 
 const unresolved = [];
 const walk = (dir) => {
@@ -114,7 +127,7 @@ if (unresolved.length > 0) {
   for (const [file, what] of unresolved) console.log(`  ${file}: ${what}`);
   failures += unresolved.length;
 } else {
-  console.log("Every @modyra/core and @modyra/widgets import in the repository resolves.");
+  console.log(`Every ${PACKAGES.map((p) => `@modyra/${p}`).join(", ")} import in the repository resolves.`);
 }
 
 if (failures > 0) {
