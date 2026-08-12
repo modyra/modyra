@@ -133,28 +133,6 @@
       "modyra.css"
     ]
   },
-  "mdy-datepicker__action-btn": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-material.css"
-    ]
-  },
-  "mdy-datepicker__action-btn--primary": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-material.css"
-    ]
-  },
   "mdy-datepicker__header-label": {
     "kind": "drift",
     "adapters": [

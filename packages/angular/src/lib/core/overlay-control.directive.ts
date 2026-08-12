@@ -182,6 +182,16 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    * `current` carries the decision an open overlay is already holding, so following the anchor
    * during scroll does not re-decide its side or height.
    */
+  /**
+   * Whether this control asks for the modal placement whatever the room.
+   *
+   * A presentation choice and nothing else: the value contract says what a field commits and when,
+   * and where its popup sits never changes that. A control that wants it overrides this.
+   */
+  protected forceModalPlacement(): boolean {
+    return false;
+  }
+
   private anchorNow(clickX?: number, current?: MdyOverlayDecision | null) {
     const rect = this.anchor instanceof HTMLElement ? this.anchor.getBoundingClientRect() : this.anchor;
     const content = this.panelContent;
@@ -199,6 +209,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
         // The widget's own anchoring wins over the defaults above: those are what a control falls
         // back to when the catalog does not know it, not a decision it gets to keep making.
         ...(this.overlayKind ? overlayAnchoringFor(this.overlayKind) : {}),
+        ...(this.forceModalPlacement() ? { forceModal: true } : {}),
         ...(clickX !== undefined ? { pointerX: clickX } : {}),
         ...(current ? { current } : {}),
         // With the panel measured the popup goes where its content shows whole; before it is in the

@@ -51,7 +51,18 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
    */
   declare firstDayOfWeek?: number;
   /** `"docked"` (default) opens inline; `"modal"` shows a header and Cancel/OK actions. */
+  /**
+   * Where the popup sits: hung off the control, or covering the viewport.
+   *
+   * Presentation and nothing else. It used to mean "modal *and* confirm before committing", which
+   * contradicted this kind's own value contract (`commit: "live"`).
+   */
   declare variant: "docked" | "modal";
+
+  /** Read by the overlay controller, which carries it to the contract. */
+  protected forceModalPlacement(): boolean {
+    return this.variant === "modal";
+  }
   declare _open: boolean;
   declare _view: CalendarView;
   declare _viewYear: number;
@@ -137,24 +148,9 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     this._focusedIso = formatIsoDate(newFocused);
   }
 
+  /** Choosing a day writes it: this kind's value contract says `live`, whatever the placement. */
   private pick(handle: MdyFieldHandle<string | null>, iso: string): void {
-    if (this.variant === "modal") {
-      this._draftValue = iso;
-      this._focusedIso = iso;
-      return;
-    }
     this.commitDate(iso);
-    this.closePopup(handle);
-  }
-
-  private confirmModal(handle: MdyFieldHandle<string | null>): void {
-    if (this._draftValue !== null) {
-      this.commitDate(this._draftValue);
-    }
-    this.closePopup(handle);
-  }
-
-  private cancelModal(handle: MdyFieldHandle<string | null>): void {
     this.closePopup(handle);
   }
 
@@ -339,7 +335,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private renderCalendarGrid(handle: MdyFieldHandle<string | null>): unknown {
-    const selectedIso = this.variant === "modal" ? this._draftValue : handle.value();
+    const selectedIso = handle.value();
     const todayIso = formatIsoDate(today());
     const inRange = (iso: string): boolean =>
       (!this.min || iso >= this.min) && (!this.max || iso <= this.max);
@@ -397,7 +393,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
       new Date(Date.UTC(this._viewYear, this._viewMonth - 1, 1)),
     );
     const modalHeader =
-      this.variant === "modal"
+      this.overlay.state.position === "overlay"
         ? html`
             <div class="mdy-datepicker__modal-header">
               <span class="mdy-datepicker__modal-label">${this.label || "Select date"}</span>
@@ -405,27 +401,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             </div>
           `
         : nothing;
-    const actions =
-      this.variant === "modal"
-        ? html`
-            <div class="mdy-datepicker__actions">
-              <button
-                type="button"
-                class="mdy-datepicker__action-btn"
-                @click=${() => this.cancelModal(handle)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                class="mdy-datepicker__action-btn mdy-datepicker__action-btn--primary"
-                @click=${() => this.confirmModal(handle)}
-              >
-                OK
-              </button>
-            </div>
-          `
-        : nothing;
+    const actions = nothing;
     return html`
       <div
         class="mdy-datepicker__calendar"
@@ -524,7 +500,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           {
             position: this.overlay.state.position,
           alignment: this.overlay.state.alignment,
-          modal: this.overlay.state.position === "overlay" || this.variant === "modal",
+          modal: this.overlay.state.position === "overlay",
           panelStyle: this.overlay.state.panelStyle,
         })}
       </div>

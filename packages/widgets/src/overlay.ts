@@ -64,6 +64,18 @@ export interface MdyOverlayGeometry {
    * would not fit.
    */
   readonly preferredAlignment?: "left" | "right";
+  /**
+   * Take the modal placement whatever the room, because the host asked for it.
+   *
+   * The placement itself is not new — it is where a popup goes when neither side holds it, and
+   * ADR 0023 names it the modal placement. What was missing is the host being able to *choose* it: a
+   * picker that covers the viewport on a phone, or one a product wants modal on every screen, had to
+   * hope the geometry refused every side.
+   *
+   * Presentation and nothing else. What a widget commits, and when, is the value contract's answer
+   * (`MDY_VALUE_CONTRACTS`), and a placement never changes it.
+   */
+  readonly forceModal?: boolean;
 }
 
 export interface MdyOverlayDecision {
@@ -94,7 +106,11 @@ export function decideOverlayPlacement(input: MdyOverlayGeometry): MdyOverlayDec
   const roomOn = (side: "above" | "below"): number => (side === "above" ? above : below);
 
   let placement: MdyOverlayDecision["placement"];
-  if (desired !== undefined && roomOn(input.preferred) >= desired) {
+  if (input.forceModal === true) {
+    // Asked for, so nothing is weighed: a host that says modal is not making a suggestion the room
+    // can overrule.
+    placement = "overlay";
+  } else if (desired !== undefined && roomOn(input.preferred) >= desired) {
     // The side asked for holds the whole popup: nothing to weigh up.
     placement = input.preferred;
   } else if (desired !== undefined && roomOn(other) >= desired) {
@@ -379,6 +395,12 @@ export interface MdyOverlayAnchorOptions {
   /** Where the pointer opened it, so a popup follows the click rather than the element's centre. */
   readonly pointerX?: number;
   /**
+   * Take the modal placement whatever the room. See {@link MdyOverlayGeometry.forceModal}.
+   *
+   * Presentation only: it decides where the popup goes, never what the field commits.
+   */
+  readonly forceModal?: boolean;
+  /**
    * The decision this overlay is already holding, if it is open. Passing it keeps the popup's side
    * and height steady while its anchor moves; omitting it decides afresh, which is what opening is.
    */
@@ -519,6 +541,7 @@ export function anchorOverlay(
     scrolls: options.scrolls ?? true,
     minWidth: options.minWidth ?? 160,
     preferred: options.preferred ?? ("below" as const),
+    ...(options.forceModal === undefined ? {} : { forceModal: options.forceModal }),
     ...(options.pointerX !== undefined ? { pointerX: options.pointerX } : {}),
     // The popup needs its own height *plus* the gap it must leave: the space it is given is the
     // room minus that gap, so comparing the bare content height would call a squeeze a fit.

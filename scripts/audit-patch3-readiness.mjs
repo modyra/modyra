@@ -42,8 +42,10 @@ const renderers = {
 const behaviorEvidence = {
   checkbox: ["createBooleanFieldController|dispatchValueIntent"],
   colors: ["colorValueTransition", "dispatchValueIntent"],
-  datepicker: ["createDatepickerFieldController|dateValueTransition", "dateDraftTransition"],
-  daterange: ["dateRangeValueTransition", "dateRangeDraftTransition"],
+  // The draft was the second half of this claim until the modal variant stopped holding one: what a
+  // datepicker commits is `commit: "live"`, so the controller is the whole of it.
+  datepicker: ["createDatepickerFieldController|dateValueTransition"],
+  daterange: ["createDaterangeFieldController|dateRangeValueTransition"],
   file: ["fileSelectionTransition", "dispatchValueIntent"],
   multiselect: ["createMultiselectFieldController|multiselectValueTransition", "multiselectOverlayAction"],
   number: ["dispatchValueIntent", "dispatchValueBlur"],

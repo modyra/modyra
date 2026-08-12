@@ -66,6 +66,12 @@ interface OverlayStateConfig {
    */
   readonly current?: MdyOverlayDecision | null;
   readonly widthMode?: "match-anchor" | "auto-content";
+  /**
+   * Take the modal placement whatever the room, because the host asked for it.
+   *
+   * Presentation only: where the popup sits, never what the field commits.
+   */
+  readonly forceModal?: boolean;
   /** The popup's own size, when the host has measured it, so it is placed where it shows whole. */
   readonly contentHeight?: number;
   readonly contentWidth?: number;
@@ -106,6 +112,7 @@ export function computeOverlayPanelState(
       minWidth: config?.minWidth,
       preferred: config?.preferredPosition,
       matchAnchorWidth: (config?.widthMode ?? "match-anchor") === "match-anchor",
+      ...(config?.forceModal ? { forceModal: true } : {}),
       // The widget declares which *inline* edge its popup hangs from; only the live direction says
       // which physical edge that is.
       direction:
@@ -205,6 +212,16 @@ export class MdyLitOverlayController {
    */
   private shown: HTMLElement | null = null;
 
+  /**
+   * Whether the host asks for the modal placement whatever the room.
+   *
+   * Read structurally, like `widgetKind` beside it: a renderer states it and this controller carries
+   * it to the contract, without either of them widening a public shape.
+   */
+  private forcesModal(): boolean {
+    return (this.host as { forceModalPlacement?: () => boolean }).forceModalPlacement?.() === true;
+  }
+
   /** The host widget's declared anchoring, in this controller's vocabulary. */
   private contractConfig(): Partial<OverlayStateConfig> {
     // Every Lit renderer declares the widget it draws. It is `protected`, so it is read
@@ -276,6 +293,7 @@ export class MdyLitOverlayController {
       // below, rather than by holding a number of its own.
       ...this.contractConfig(),
       ...this.config,
+      ...(this.forcesModal() ? { forceModal: true } : {}),
       clickX: reselectCorner ? this.clickX : undefined,
       // Deciding afresh is what opening and resizing are; a scroll frame holds what it has. The
       // popup therefore keeps its size while the anchor moves and changes side only once the side
