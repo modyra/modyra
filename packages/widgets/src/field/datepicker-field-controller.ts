@@ -30,6 +30,7 @@ import { calendarKeyboardTarget } from "@modyra/core/keyboard";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectDatepickerFieldA11y } from "./datepicker-field-a11y.js";
+import { showsAsInvalid } from "./verdict.js";
 import type {
   MdyDatepickerFieldCell,
   MdyDatepickerFieldControllerOptions,
@@ -92,7 +93,9 @@ export function createDatepickerFieldController(
       focusedDate: focused,
       cells,
       open: open(),
-      invalid: !handle.valid(),
+      // Out of play, no verdict: a disabled field is not validated by the form, so painting it as
+    // failing would show a verdict the form itself ignores. See verdict.ts.
+    invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
       disabled: handle.disabled(),
       // The form owns this state; `setReadonly()` is an imperative override for a renderer with no
     // form behind it.

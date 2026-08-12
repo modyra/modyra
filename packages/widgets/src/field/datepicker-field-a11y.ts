@@ -10,6 +10,7 @@ import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import type { MdyDatepickerFieldState } from "./datepicker-field-types.js";
+import { shownErrors } from "./verdict.js";
 
 export interface MdyDatepickerFieldA11yOptions {
   readonly widgetId: string;
@@ -54,7 +55,9 @@ export function projectDatepickerFieldA11y(
   readonly error: MdyPartContract;
 } {
   const { labelId, triggerId, gridId, descriptionId, errorId } = datepickerFieldPartIds(options.widgetId);
-  const hasErrors = errors.length > 0;
+  // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
+  // text renders are four faces of one question, answered once in verdict.ts.
+  const hasErrors = shownErrors(state, errors).length > 0;
   const describedBy = hasErrors ? errorId : descriptionId;
 
   return {

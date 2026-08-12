@@ -10,6 +10,7 @@ import type { MdyFieldState } from "./field-types.js";
 import type { MdyFieldConstraints } from "@modyra/core";
 import type { MdyWidgetKind } from "../catalog.js";
 import { projectFieldShellA11y } from "./shell-a11y.js";
+import { shownErrors } from "./verdict.js";
 
 export interface MdyFieldA11yOptions {
   readonly widgetId: string;
@@ -71,7 +72,9 @@ export function projectFieldA11y<TValue>(
   readonly error: MdyPartContract;
 } {
   const { inputId, labelId, descriptionId, errorId } = fieldPartIds(options.widgetId);
-  const hasErrors = errors.length > 0;
+  // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
+  // text renders are four faces of one question, answered once in verdict.ts.
+  const hasErrors = shownErrors(state, errors).length > 0;
 
   return {
     root: {

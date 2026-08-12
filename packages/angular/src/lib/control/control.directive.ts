@@ -33,6 +33,7 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
+import { shownErrors } from "@modyra/widgets";
 
 /** Global counter for generating unique field IDs. */
 let _nextFieldId = 0;
@@ -316,8 +317,16 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   public readonly value: Signal<TValue> = computed(() =>
     this.fieldState().value(),
   );
-  protected readonly errors: Signal<ReadonlyArray<MdyFieldError>> = computed(
-    () => this.fieldState().errors(),
+  /**
+   * The errors this control shows — which is not always the errors the field holds.
+   *
+   * A field the form is not asking about carries no verdict on screen: the rule belongs to
+   * `@modyra/widgets`, and everything below reads it from here, so the wrapper class, the label
+   * state, `aria-invalid` and the error list cannot drift apart. The devtools panel deliberately
+   * reads the field instead: a debugging view shows the model, not what the user is being asked.
+   */
+  protected readonly errors: Signal<ReadonlyArray<MdyFieldError>> = computed(() =>
+    shownErrors({ disabled: this.isDisabled() }, this.fieldState().errors()),
   );
   protected readonly touched: Signal<boolean> = computed(() =>
     this.fieldState().touched(),

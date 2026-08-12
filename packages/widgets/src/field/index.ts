@@ -129,3 +129,4 @@ export type {
 } from "./timepicker-field-types.js";
 
 export { sliderFillRatio } from "./slider-field-types.js";
+export { shownErrors, showsAsInvalid } from "./verdict.js";
