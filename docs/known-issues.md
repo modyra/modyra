@@ -5,8 +5,8 @@ are not fully closed and says who each one affects. The full register — every 
 and the reasoning behind its status — is [`docs/contract-gaps.md`](https://github.com/modyra/modyra/blob/main/docs/contract-gaps.md)
 in the repository.
 
-Thirty-five findings have been filed. Twenty-six are fixed, two were closed deliberately, six are
-partly fixed, and one is open.
+Thirty-five findings have been filed. Twenty-six are fixed, two were closed deliberately, five are
+partly fixed, and two are open.
 
 ## Open
 
@@ -25,7 +25,7 @@ override it.
 
 ## Partly fixed
 
-- **Partly fixed** — C2, E2, F, L, M, S
+- **Partly fixed** — C2, E2, F, L, M
 
 **C2 — some popup placement classes are declared but unpainted.** The classes are derived correctly
 and emitted; the themes react to only some of them. A placement class earns a rule only where the
@@ -64,7 +64,7 @@ and it is recorded as a finding so that nobody has to rediscover why the numbers
 
 ## Everything else
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, K, N, O, P, Q, T
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, K, N, O, P, Q, S, T
 
 Each carries its evidence in the register. `npm run test:docs` fails if this page and the register
 disagree about a finding's status.
