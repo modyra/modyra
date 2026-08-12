@@ -7,13 +7,21 @@
  * no framework: pure `document.createElement`/`addEventListener`, wired to
  * @modyra/widgets' headless controllers.
  */
-import { assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
+import { assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
 import { isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
 import { el, setText } from "./dom.js";
 
 export interface MountMdyFormOptions {
+  /**
+   * The collections the document declared, as `parseDynamicForm` reports them.
+   *
+   * A field name is a path, and a path cannot say whether `lines.0` was an array row or the record
+   * key `"0"`. Handed these, the form holds the shape the document declared; without them it holds
+   * nested groups, which is what a flat list alone can express.
+   */
+  readonly collections?: ReadonlyArray<MdyDynamicCollection>;
   /**
    * Called on submit once the form is valid; return field-level errors to reject, same contract as
    * `form.submit()`.
@@ -111,7 +119,7 @@ export function mountMdyForm(
   container.classList.add("mdy-dynamic-form", "mdy-plain-form");
 
   const reactivity = vanillaReactivity();
-  const form = buildForm(fields, reactivity);
+  const form = buildForm(fields, reactivity, options.collections);
   /**
    * The handle a name points at.
    *
@@ -120,9 +128,35 @@ export function mountMdyForm(
    */
   const handleFor = (name: string): MdyFieldHandle<never> | undefined => {
     let node: unknown = form.f;
-    for (const segment of name.split(".")) {
+    const segments = name.split(".");
+    for (let index = 0; index < segments.length; index += 1) {
       if (typeof node !== "object" || node === null) return undefined;
-      node = (node as Record<string, unknown>)[segment];
+      const holder = node as Record<string, unknown> & {
+        rows?: () => ReadonlyArray<unknown>;
+        cell?: (key: string, field: string) => unknown;
+      };
+      const segment = segments[index]!;
+      // A collection is walked the way it is addressed rather than as an object: an array's rows are
+      // a list, a record's are reached by key, and neither answers to `f.lines["0"]`. Without this a
+      // document's collection mounted no controls at all — the value was right and the screen empty.
+      if (typeof holder.rows === "function" || typeof holder.cell === "function") {
+        const rest = segments.slice(index + 1);
+        if (typeof holder.cell === "function" && rest.length === 1) {
+          return holder.cell(segment, rest[0]!) as MdyFieldHandle<never>;
+        }
+        const row = typeof holder.rows === "function"
+          ? holder.rows()[Number(segment)]
+          : holder.cell?.(segment, rest[0] ?? "");
+        if (rest.length === 0) return row as MdyFieldHandle<never>;
+        node = row;
+        // The row itself consumed this segment; the rest addresses inside it.
+        for (const within of rest) {
+          if (typeof node !== "object" || node === null) return undefined;
+          node = (node as Record<string, unknown>)[within];
+        }
+        return node as MdyFieldHandle<never> | undefined;
+      }
+      node = holder[segment];
     }
     return node as MdyFieldHandle<never> | undefined;
   };
