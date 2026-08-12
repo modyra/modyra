@@ -545,8 +545,9 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         if (!handle) return undefined;
         controller = create(handle, this.fieldId);
         this._destroyRef.onDestroy(() => controller?.destroy());
-        // What a reactive input feeds the controller — an option list, a pair of bounds. The
-        // injector is passed because the first read is not an injection context.
+        // What a reactive input feeds the controller — an option list, a pair of bounds. Told
+        // rather than rebuilt: a fresh controller forgets the query, the roving focus and the month
+        // on screen. The injector is passed because the first read is not an injection context.
         if (sync) effect(() => sync(controller as TController), { injector: this._injector });
         return controller;
       });

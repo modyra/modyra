@@ -5,7 +5,7 @@
  * controllers: "slider" is structurally just a numeric field with
  * <input type=range> markup, not a distinct controller).
  */
-import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity, MDY_VALUE_CONTRACTS } from "@modyra/core";
 import type { MdyDynamicNumberField, MdyDynamicTextField } from "@modyra/core";
 import {
   MDY_CSS_PROPERTIES,
@@ -35,7 +35,9 @@ export function renderTextField(
 ): () => void {
   reactivity = observerFor(handle, reactivity);
   const isTextarea = f.kind === "textarea";
-  const isNumeric = f.kind === "number" || f.kind === "slider";
+  // Which kinds hold a number is the value contract's answer, not a list repeated here: a renderer
+  // that decides it again is a renderer that can disagree with the engine about what it stores.
+  const isNumeric = MDY_VALUE_CONTRACTS[f.kind].shape === "number";
 
   // What this control asks for on top of the field's rules. The projection composes the two and
   // puts the attributes on the control part, so nothing here places them on the element.

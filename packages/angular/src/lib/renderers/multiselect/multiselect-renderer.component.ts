@@ -22,7 +22,8 @@ import {
   optionNavigationIndex,
   shouldCloseMultiselectOverlay,
   createMultiselectFieldController,
-  } from "@modyra/widgets";
+  MDY_CHIP_CLASSES,
+} from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -106,7 +107,7 @@ import { MdyDropdownBase } from "../dropdown-base";
         @if (optionTpl(); as tpl) {
            <button
             type="button"
-            class="mdy-chip-wrapper"
+            [class]="chip.wrapper"
             [disabled]="isDisabled()"
             (click)="onToggle(opt.value)"
           >
@@ -120,18 +121,18 @@ import { MdyDropdownBase } from "../dropdown-base";
             <div [class]="chipClasses(countOf(opt.value) > 0)" [title]="opt.label">
               <button
                 type="button"
-                class="mdy-chip__btn"
+                [class]="chip.step"
                 [disabled]="isDisabled() || countOf(opt.value) === 0"
                 (click)="decrement(opt.value)"
                 [attr.aria-label]="i18n.decrease"
               >
                 <mdy-icon name="MINUS" />
               </button>
-              <span class="mdy-chip__label">{{ opt.label }}</span>
-              <span class="mdy-chip__count">&times;{{ countOf(opt.value) }}</span>
+              <span [class]="chip.label">{{ opt.label }}</span>
+              <span [class]="chip.count">&times;{{ countOf(opt.value) }}</span>
               <button
                 type="button"
-                class="mdy-chip__btn"
+                [class]="chip.step"
                 [disabled]="isDisabled()"
                 (click)="increment(opt.value)"
                 [attr.aria-label]="i18n.increase"
@@ -149,8 +150,8 @@ import { MdyDropdownBase } from "../dropdown-base";
               (click)="onToggle(opt.value)"
               (blur)="markAsTouched()"
             >
-              <mdy-icon name="CHECKMARK" class="mdy-chip__check" />
-              <span class="mdy-chip__label">{{ opt.label }}</span>
+              <mdy-icon name="CHECKMARK" [class]="chip.check" />
+              <span [class]="chip.label">{{ opt.label }}</span>
             </button>
           }
         }
@@ -185,22 +186,22 @@ import { MdyDropdownBase } from "../dropdown-base";
             <div [class]="chipClasses(countOf(opt.value) > 0)">
               <button
                 type="button"
-                class="mdy-chip__btn"
+                [class]="chip.step"
                 (click)="decrement(opt.value)"
                 [disabled]="countOf(opt.value) === 0"
                 [attr.aria-label]="i18n.decrease"
               >
                 <mdy-icon name="MINUS" />
               </button>
-              <span class="mdy-chip__label">{{
+              <span [class]="chip.label">{{
                 opt.label
               }}</span>
-              <span class="mdy-chip__count"
+              <span [class]="chip.count"
                 >&times;{{ countOf(opt.value) }}</span
               >
               <button
                 type="button"
-                class="mdy-chip__btn"
+                [class]="chip.step"
                 (click)="increment(opt.value)"
                 [attr.aria-label]="i18n.increase"
               >
@@ -209,7 +210,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             </div>
           } @else {
             <button type="button" [class]="chipClasses(isSelected(opt.value))" (click)="onOverlaySelect(opt.value)">
-              <span class="mdy-chip__label">{{ opt.label }}</span>
+              <span [class]="chip.label">{{ opt.label }}</span>
             </button>
           }
         } @empty {
@@ -242,6 +243,8 @@ export class MdyMultiselectComponent<TValue = string>
   /* The popup wears what the catalogue says it wears. Restated in the template, a class added
      to the contract reached the renderers that derive and stopped at this one. */
   protected readonly popupClass = MDY_WIDGET_CONTRACTS.multiselect.parts.popup.classes.join(" ");
+  /** The chip vocabulary, so no class for one is spelled in this template. */
+  protected readonly chip = MDY_CHIP_CLASSES;
   /** The widget this draws: its popup's room, width and edge come from the catalog. */
   protected override readonly overlayKind = "multiselect" as const;
 
@@ -254,15 +257,9 @@ export class MdyMultiselectComponent<TValue = string>
 
   protected readonly fieldId = `mdy-control-multiselect-${MdyBaseControl.nextId()}`;
 
-  // Told rather than rebuilt, so the query it holds survives a list that changes beneath it.
   private readonly controller = this.adoptFieldController(
-    (handle, widgetId) =>
-      createMultiselectFieldController<TValue>({
-        widgetId,
-        handle: handle as never,
-        options: this.filteredOptions(),
-        mode: this.mode(),
-      }),
+    (handle, widgetId) => createMultiselectFieldController<TValue>(
+      { widgetId, handle: handle as never, options: this.filteredOptions(), mode: this.mode() }),
     (c) => {
       c.setOptions(this.filteredOptions());
       c.dispatch({ type: "search", query: this.searchQuery() });
@@ -280,8 +277,8 @@ export class MdyMultiselectComponent<TValue = string>
   );
 
   /**
-   * What this control paints: the declared options, plus every held value they do not contain. A
-   * widget does not erase a value to make itself consistent, so what it will not erase it shows.
+   * What this control paints: the declared options, plus every held value they do not contain. Read
+   * from here rather than from the controller's state, which is built out of this list.
    */
   protected readonly paintedOptions = computed(() =>
     optionsWithUnrecognizedValues(this.effectiveOptions(), this.value() ?? []),

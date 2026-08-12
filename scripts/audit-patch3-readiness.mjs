@@ -31,22 +31,30 @@ const renderers = {
   timepicker: "timepicker/timepicker-renderer.component.ts",
   toggle: "toggle/toggle-renderer.component.ts",
 };
+/**
+ * What counts as proof that a renderer takes its behaviour from the contract.
+ *
+ * A kind's own controller is the stronger claim than the scalar bridge: it owns the transition, what
+ * an interactivity state blocks and what the projection then says, where the bridge owns only the
+ * value. So a renderer satisfies its kind by naming either — and the four that moved onto their
+ * controllers stopped naming the bridge, which is the point rather than a gap.
+ */
 const behaviorEvidence = {
-  checkbox: ["dispatchValueIntent", "dispatchValueBlur"],
+  checkbox: ["createBooleanFieldController|dispatchValueIntent"],
   colors: ["colorValueTransition", "dispatchValueIntent"],
-  datepicker: ["dateValueTransition", "dateDraftTransition"],
+  datepicker: ["createDatepickerFieldController|dateValueTransition", "dateDraftTransition"],
   daterange: ["dateRangeValueTransition", "dateRangeDraftTransition"],
   file: ["fileSelectionTransition", "dispatchValueIntent"],
-  multiselect: ["multiselectValueTransition", "multiselectOverlayAction"],
+  multiselect: ["createMultiselectFieldController|multiselectValueTransition", "multiselectOverlayAction"],
   number: ["dispatchValueIntent", "dispatchValueBlur"],
-  radio: ["dispatchValueIntent", "dispatchValueBlur"],
-  segmented: ["optionNavigationIndex", "dispatchValueIntent"],
+  radio: ["createOptionFieldController|dispatchValueIntent"],
+  segmented: ["optionNavigationIndex", "createOptionFieldController|dispatchValueIntent"],
   select: ["MdyWidgetRuntime", "selectKeyboardAction"],
   slider: ["dispatchValueIntent", "dispatchValueBlur"],
   text: ["dispatchValueIntent", "dispatchValueBlur"],
   textarea: ["dispatchValueIntent", "dispatchValueBlur"],
   timepicker: ["timeDraftTransition", "timeInputTransition"],
-  toggle: ["dispatchValueIntent", "dispatchValueBlur"],
+  toggle: ["createBooleanFieldController|dispatchValueIntent"],
 };
 const scalarBase = readFileSync(resolve(root, "packages/angular/src/lib/control/control.directive.ts"), "utf8");
 let rootContractConsumers = 0;
@@ -56,7 +64,10 @@ for (const [kind, relative] of Object.entries(renderers)) {
   const source = readFileSync(resolve(rendererRoot, relative), "utf8");
   if (source.includes("widgetHasRootClass")) rootContractConsumers++;
   const evidenceSource = kind === "text" ? `${source}\n${scalarBase}` : source;
-  const missing = behaviorEvidence[kind].filter((token) => !evidenceSource.includes(token));
+  // A token may name alternatives: any one of them is the evidence.
+  const missing = behaviorEvidence[kind].filter(
+    (token) => !token.split("|").some((name) => evidenceSource.includes(name)),
+  );
   if (missing.length === 0) behaviorContractConsumers++;
   else missingBehavior.push({ kind, missing });
 }

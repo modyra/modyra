@@ -62,7 +62,7 @@ export function renderDaterangeField(
   startInput.autocomplete = "off";
   startInput.setAttribute("aria-label", `${f.label ?? "Range"} — start`);
   startInput.placeholder = f.placeholder ?? "Start";
-  const separator = el("span", "mdy-daterange__sep");
+  const separator = el("span", definition.parts.separator.classes.join(" "));
   separator.setAttribute("aria-hidden", "true");
   setText(separator, "–");
   const endInput = el("input", "mdy-datepicker__input mdy-daterange__input") as HTMLInputElement;
@@ -70,7 +70,7 @@ export function renderDaterangeField(
   endInput.autocomplete = "off";
   endInput.setAttribute("aria-label", `${f.label ?? "Range"} — end`);
   endInput.placeholder = "End";
-  const toggle = el("button", "mdy-datepicker__toggle") as HTMLButtonElement;
+  const toggle = el("button", definition.parts.toggle.classes.join(" ")) as HTMLButtonElement;
   setIcon(toggle, "CALENDAR");
   toggle.type = "button";
   toggle.setAttribute("aria-label", "Open the calendar");
@@ -81,7 +81,7 @@ export function renderDaterangeField(
   // is what ties opener to popup for assistive technology — the relation select has always had.
   popup.id = defaultWidgetIdFactory.part(widgetId, "popup");
   toggle.setAttribute("aria-controls", popup.id);
-  const header = el("div", "mdy-datepicker__header") as HTMLDivElement;
+  const header = el("div", definition.parts.dialogHeader.classes.join(" ")) as HTMLDivElement;
   const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   prevButton.type = "button";
   prevButton.setAttribute("aria-label", "Previous month");
@@ -93,7 +93,7 @@ export function renderDaterangeField(
   setIcon(nextButton, "CHEVRON_RIGHT");
   header.append(prevButton, monthLabel, nextButton);
   const grid = buildCalendarGrid("daterange");
-  const actions = el("div", "mdy-datepicker__actions") as HTMLDivElement;
+  const actions = el("div", definition.parts.actions.classes.join(" ")) as HTMLDivElement;
   const cancelButton = el("button", "mdy-datepicker__action-btn") as HTMLButtonElement;
   cancelButton.type = "button";
   setText(cancelButton, "Cancel");

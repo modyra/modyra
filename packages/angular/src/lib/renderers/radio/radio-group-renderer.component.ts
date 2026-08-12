@@ -71,16 +71,9 @@ export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TVa
 
   protected readonly fieldId = `mdy-control-radio-${MdyBaseControl.nextId()}`;
 
-  // Told rather than rebuilt when the list changes: rebuilding forgets which option the keyboard
-  // was on, so a list reordering under an open group would drop the roving focus.
   private readonly controller = this.adoptFieldController(
-    (handle, widgetId) =>
-      createOptionFieldController<TValue>({
-        widgetId,
-        handle: handle as never,
-        options: this.options(),
-        variant: "radio",
-      }),
+    (handle, widgetId) => createOptionFieldController<TValue>(
+      { widgetId, handle: handle as never, options: this.options(), variant: "radio" }),
     (c) => c.setOptions(this.options()),
   );
 
