@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import type { MdyFieldHandle } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import {
+  subscribeController,
   createFieldController,
   type MdyFieldControllerOptions,
   type MdyFieldIntent,
@@ -52,17 +53,10 @@ export function useMdyField<TValue>(
 
   const [, setVersion] = useState(0);
 
-  useEffect(() => {
-    const ref = reactivity.effect(() => {
-      controller.state();
-      controller.view();
-      setVersion((v) => v + 1);
-    });
-    return () => {
-      ref.destroy();
-      controller.destroy();
-    };
-  }, [controller, reactivity]);
+  useEffect(
+    () => subscribeController(controller, reactivity, () => setVersion((v) => v + 1)),
+    [controller, reactivity],
+  );
 
   const dispatch = useCallback(
     (intent: MdyFieldIntent<TValue>) => {

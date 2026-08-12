@@ -89,10 +89,8 @@ export function createStore(
  * Store over everything a field row usually renders. Observes through the
  * reactivity that actually created `handle` (resolved via
  * {@link getFieldHandleOwner}) instead of a fresh, unrelated instance — the
- * fix for the cross-runtime observation trap noted in §10.1: this makes it
- * safe to pass a handle from ANY Modyra adapter's form (Vue, Solid,
- * Angular, vanilla), not just one created by this package's own
- * `useMdyForm`.
+ * fix for the cross-runtime observation trap: this makes it safe to pass a handle from a form built
+ * by any host at all, not only one created by this package's own `useMdyForm`.
  */
 export function createFieldStore(
   handle: MdyFieldHandle<unknown>,

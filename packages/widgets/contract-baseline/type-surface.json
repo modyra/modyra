@@ -278,6 +278,20 @@
     "touched: boolean",
     "value: string | undefined"
   ],
+  "MdyCommandDefer": [
+    "(opaque)"
+  ],
+  "MdyCommandRuntime": [
+    "execute: void"
+  ],
+  "MdyCommandRuntimeOptions": [
+    "announcerId: string",
+    "defer: MdyCommandDefer"
+  ],
+  "MdyCommandTarget": [
+    "markAsDirty: void",
+    "markAsTouched: void"
+  ],
   "MdyComputedOptions": [
     "debugName?: string",
     "equal?: MdyEqualityFn<T>"
@@ -290,6 +304,9 @@
     "disabled?: boolean",
     "label: string",
     "value: TValue"
+  ],
+  "MdyControllerNotify": [
+    "(opaque)"
   ],
   "MdyCoreFormOptions": [
     "autoActivate?: boolean",
@@ -2095,6 +2112,10 @@
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdyWidgetController<MdyCatalogWidgetState, MdyCatalogWidgetIntent>"
   ],
+  "createCommandRuntime": [
+    "(0) options: MdyCommandRuntimeOptions",
+    "-> returns: MdyCommandRuntime"
+  ],
   "createConsoleDiagnostics": [
     "-> returns: MdyDiagnostics"
   ],
@@ -2284,6 +2305,10 @@
     "(1) validators?: ReadonlyArray<ValidatorFn<MdyWiden<TValue>>>",
     "(2) options?: MdyFieldOptions<MdyWiden<TValue>>",
     "-> returns: MdyFieldDescriptor<MdyWiden<TValue>>"
+  ],
+  "fieldCommandHandlers": [
+    "(0) handle: MdyCommandTarget",
+    "-> returns: MdyWidgetCommandHandlers"
   ],
   "fieldPartIds": [
     "(0) widgetId: string",
@@ -2975,6 +3000,12 @@
     "(2) current: number",
     "(3) delta: number",
     "-> returns: number"
+  ],
+  "subscribeController": [
+    "(0) controller: MdyWidgetController<unknown, unknown>",
+    "(1) reactivity: MdyReactivity",
+    "(2) notify: MdyControllerNotify",
+    "-> returns: () => void"
   ],
   "timeClockTransition": [
     "(0) currentValue: string | null",

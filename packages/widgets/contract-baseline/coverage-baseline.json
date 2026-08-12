@@ -1,9 +1,9 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 672,
-    "asserted": 349,
-    "shown": 38
+    "published": 680,
+    "asserted": 357,
+    "shown": 41
   },
   "uncovered": [
     {
@@ -607,6 +607,30 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyCommandDefer",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyCommandRuntime",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyCommandRuntimeOptions",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyCommandTarget",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyComputedOptions",
       "asserted": true,
       "shown": false,
@@ -620,6 +644,12 @@
     },
     {
       "name": "MdyControlOption",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyControllerNotify",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2138,9 +2168,9 @@
     },
     {
       "name": "MdyWidgetCommandHandlers",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyWidgetController",
@@ -2588,9 +2618,9 @@
     },
     {
       "name": "createMdyAnnouncer",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "createMultiselectFieldController",

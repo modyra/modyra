@@ -88,11 +88,15 @@ export type {
 } from "./runtime.js";
 
 export {
+  createCommandRuntime,
   createMdyAnnouncer,
   processWidgetCommands,
 } from "./command-runtime.js";
 export type {
   MdyAnnouncer,
+  MdyCommandDefer,
+  MdyCommandRuntime,
+  MdyCommandRuntimeOptions,
   MdyElementLookup,
   MdyWidgetCommandContext,
   MdyWidgetCommandHandlers,
@@ -132,6 +136,9 @@ export type { MdyColorValueIntent, MdyColorValueTransition, MdyDateDraftIntent, 
 
 export { createValueWidgetController } from "./value-controller.js";
 export type { MdyValueWidgetController, MdyValueWidgetControllerOptions, MdyValueWidgetIntent, MdyValueWidgetState } from "./value-controller.js";
+
+export { fieldCommandHandlers, subscribeController } from "./controller-binding.js";
+export type { MdyCommandTarget, MdyControllerNotify } from "./controller-binding.js";
 
 export { blocksFocus, blocksValueChange } from "./interactivity.js";
 export { applyPart } from "./apply-part.js";

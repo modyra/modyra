@@ -1,47 +1,30 @@
 /**
- * Vue runtime for Modyra widget commands.
+ * Executing widget commands, in this host's terms.
+ *
+ * The execution is `@modyra/widgets`' — collecting focus and scroll, running the rest now, draining
+ * the queue once the host has rendered. What belongs to this adapter is the last part: **when** it
+ * has rendered.
  */
-
-import type { MdyUiCommand } from "@modyra/widgets";
 import {
-  createMdyAnnouncer,
-  processWidgetCommands,
+  createCommandRuntime,
   type MdyElementLookup,
+  type MdyUiCommand,
   type MdyWidgetCommandHandlers,
 } from "@modyra/widgets";
 
 export type { MdyElementLookup };
 export type { MdyWidgetCommandHandlers as MdyVueCommandHandlers };
 
-/**
- * Executes commands in a Vue runtime context.
- *
- * Focus/scroll are deferred so they run after the next DOM update flush
- * (callers should await `nextTick()` before invoking this if they need
- * a guaranteed fresh DOM).
- */
+/** Vue's scheduler has flushed by the time a microtask runs. */
+const runtime = createCommandRuntime({
+  announcerId: "mdy-vue-announcer",
+  defer: (run) => { queueMicrotask(run); },
+});
+
 export function executeVueCommands(
   commands: readonly MdyUiCommand[],
   lookup: MdyElementLookup,
   handlers: MdyWidgetCommandHandlers,
 ): void {
-  const focusQueue: Array<{ el: HTMLElement; type: "focus" | "scroll" }> = [];
-  const announcer = createMdyAnnouncer("mdy-vue-announcer");
-
-  processWidgetCommands(commands, {
-    lookup,
-    handlers,
-    scheduleFocus: (el) => focusQueue.push({ el, type: "focus" }),
-    scheduleScroll: (el) => focusQueue.push({ el, type: "scroll" }),
-    announce: (message) => announcer.announce(message),
-  });
-
-  if (focusQueue.length > 0) {
-    queueMicrotask(() => {
-      for (const item of focusQueue) {
-        if (item.type === "focus") item.el.focus();
-        else item.el.scrollIntoView({ block: "nearest" });
-      }
-    });
-  }
+  runtime.execute(commands, lookup, handlers);
 }

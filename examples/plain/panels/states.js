@@ -25,6 +25,7 @@ export const statesPanel = {
    */
   exercises: [
     "MDY_FIELD_KINDS",
+    "createCommandRuntime",
     "createForm",
     "field",
     "group",
