@@ -9,7 +9,7 @@ import { buildDateLocale, formatIsoDate, parseLocalizedDate } from "@modyra/core
 import type { MdyDynamicDateField } from "@modyra/core";
 import { MDY_WIDGET_CONTRACTS, createDatepickerFieldController, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
-import { buildFieldShell, insertControl } from "../field-shell.js";
+import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
@@ -140,7 +140,7 @@ export function renderDatepickerField(
     applyPart(grid, view.parts.grid);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, handle.errors().map((e) => e.message));
+    setErrors(shell.errorList, errorsToShow(handle).map((e) => e.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
       hasError: !handle.valid(), filled: state.selectedDate !== "", required: handle.required(),

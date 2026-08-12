@@ -6,6 +6,7 @@ import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_CSS_PROPERTIES } from "../css.js";
 import { MDY_FIELD_STATE_CLASSES, MDY_FIELD_SHELL_CLASSES } from "../structure.js";
+import { shownErrors } from "./verdict.js";
 import type {
   MdyOptionFieldState,
   MdyOptionFieldVariant,
@@ -71,7 +72,9 @@ export function projectOptionFieldA11y<TValue>(
   readonly error: MdyPartContract;
 } {
   const { labelId, groupId, descriptionId, errorId } = optionFieldPartIds(options.widgetId);
-  const hasErrors = errors.length > 0;
+  // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
+  // text renders are four faces of one question, answered once in verdict.ts.
+  const hasErrors = shownErrors(state, errors).length > 0;
   // What the group describes itself by depends on what was *rendered*, not on what is wrong.
   const describedBy = (options.errorsVisible ?? hasErrors) ? errorId : descriptionId;
 

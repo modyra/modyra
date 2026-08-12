@@ -13,6 +13,7 @@ import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectFieldA11y } from "./field-a11y.js";
 import { narrowConstraints } from "../native-constraints.js";
+import { showsAsInvalid } from "./verdict.js";
 import type {
   MdyFieldControllerOptions,
   MdyFieldIntent,
@@ -46,7 +47,9 @@ export function createFieldController<TValue>(
 
   const state: MdySignal<MdyFieldState<TValue>> = reactivity.computed(() => ({
     value: handle.value(),
-    invalid: !handle.valid(),
+    // Out of play, no verdict: a disabled field is not validated by the form, so painting it as
+    // failing would show a verdict the form itself ignores. See verdict.ts.
+    invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
     disabled: handle.disabled(),
     // The form owns this state; `setReadonly()` is an imperative override for a renderer with no
     // form behind it.

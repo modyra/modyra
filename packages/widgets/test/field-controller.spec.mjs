@@ -141,3 +141,29 @@ test("view updates when value becomes valid", () => {
   assert.strictEqual(view.root.classes.includes("mdy-renderer"), true);
   assert.strictEqual(view.parts.input.attributes["aria-describedby"].includes("email__description"), true);
 });
+
+test("out of play, no verdict: a disabled field reports no failure to show", () => {
+  // The form does not validate a disabled field — `form.state.valid()` ignores it — so reporting it
+  // as failing offers a verdict its own form does not hold. A closed section of required fields was
+  // a block of red boxes for something nobody was being asked. The wrapper class belongs to each
+  // renderer; what every renderer reads is this state and this attribute.
+  const form = createForm({ email: field("", [required()]) });
+  form.activate();
+  const controller = createFieldController({ widgetId: "email", handle: form.f.email, inputType: "email" });
+
+  assert.equal(controller.state().invalid, true, "an empty required field is failing");
+  assert.equal(controller.view().parts.input.attributes["aria-invalid"], "true");
+
+  form.setDisabled("email", () => true);
+  assert.equal(controller.state().invalid, false, "a field the form ignores still reported a verdict");
+  assert.equal(controller.view().parts.input.attributes["aria-invalid"], "false");
+  assert.equal(form.state.valid(), true, "the form was asking about it after all");
+
+  // The verdict was never wrong — it comes back the moment the field is in play again.
+  form.setDisabled("email", () => false);
+  assert.equal(controller.state().invalid, true);
+  assert.equal(controller.view().parts.input.attributes["aria-invalid"], "true");
+
+  controller.destroy();
+  form.deactivate();
+});

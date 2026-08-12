@@ -17,6 +17,7 @@ import { nativeConstraintAttributes } from "../native-constraints.js";
 import { defaultWidgetIdFactory as idFactory } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
+import { shownErrors } from "./verdict.js";
 
 /** The state a shell reflects: the flags, with no value and no control-specific concerns. */
 export interface MdyFieldShellFlags {
@@ -91,7 +92,9 @@ export function projectFieldShellA11y(
   readonly error: MdyPartContract;
 } {
   const { labelId, descriptionId, errorId } = fieldShellPartIds(options.widgetId);
-  const hasErrors = errors.length > 0;
+  // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
+  // text renders are four faces of one question, answered once in verdict.ts.
+  const hasErrors = shownErrors(flags, errors).length > 0;
   // What the control describes itself by depends on what was *rendered*, not on what is wrong.
   const errorsVisible = options.errorsVisible ?? hasErrors;
   const describedBy = errorsVisible

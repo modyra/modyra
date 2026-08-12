@@ -2883,6 +2883,15 @@
     "(1) remainingResultCount: number",
     "-> returns: boolean"
   ],
+  "shownErrors": [
+    "(0) flags: { readonly disabled: boolean; }",
+    "(1) errors: ReadonlyArray<MdyFieldError>",
+    "-> returns: ReadonlyArray<MdyFieldError>"
+  ],
+  "showsAsInvalid": [
+    "(0) flags: { readonly disabled: boolean; readonly valid: boolean; }",
+    "-> returns: boolean"
+  ],
   "sliderFillRatio": [
     "(0) value: unknown",
     "(1) min: number",

@@ -9,6 +9,7 @@ import { vanillaReactivity } from "@modyra/core";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectBooleanFieldA11y } from "./boolean-field-a11y.js";
+import { showsAsInvalid } from "./verdict.js";
 import type {
   MdyBooleanFieldControllerOptions,
   MdyBooleanFieldIntent,
@@ -33,7 +34,9 @@ export function createBooleanFieldController(
 
   const state: MdySignal<MdyBooleanFieldState> = reactivity.computed(() => ({
     checked: handle.value() === true,
-    invalid: !handle.valid(),
+    // Out of play, no verdict: a disabled field is not validated by the form, so painting it as
+    // failing would show a verdict the form itself ignores. See verdict.ts.
+    invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
     disabled: handle.disabled(),
     // The form owns this state; `setReadonly()` is an imperative override for a renderer with no
     // form behind it.

@@ -9,6 +9,7 @@ import { vanillaReactivity } from "@modyra/core";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectOptionFieldA11y } from "./option-field-a11y.js";
+import { showsAsInvalid } from "./verdict.js";
 import type {
   MdyOptionFieldControllerOptions,
   MdyOptionFieldIntent,
@@ -58,7 +59,9 @@ export function createOptionFieldController<TValue>(
   const state: MdySignal<MdyOptionFieldState<TValue>> = reactivity.computed(() => ({
     selectedValue: handle.value(),
     selectedKey: selectedKey(),
-    invalid: !handle.valid(),
+    // Out of play, no verdict: a disabled field is not validated by the form, so painting it as
+    // failing would show a verdict the form itself ignores. See verdict.ts.
+    invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
     disabled: handle.disabled(),
     readonly: readonly(),
     // `disabled`/`readonly` above are the derived halves of this one value.
