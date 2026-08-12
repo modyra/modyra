@@ -5,28 +5,28 @@
     {
       "id": "angular:constructor@calendar.component.ts ≡ angular:constructor@range-calendar.component.ts",
       "score": 1,
-      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:99",
-      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:119",
+      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:98",
+      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:116",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "lit:weekdayNames@datepicker-field.ts ≡ lit:weekdayNames@daterange-field.ts",
       "score": 1,
-      "left": "packages/lit/src/components/datepicker-field.ts:167",
-      "right": "packages/lit/src/components/daterange-field.ts:173",
+      "left": "packages/lit/src/components/datepicker-field.ts:147",
+      "right": "packages/lit/src/components/daterange-field.ts:166",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "plain:dispatch@datepicker-field.ts ≡ plain:dispatch@select-field.ts",
       "score": 1,
-      "left": "packages/plain/src/fields/datepicker-field.ts:128",
+      "left": "packages/plain/src/fields/datepicker-field.ts:129",
       "right": "packages/plain/src/fields/select-field.ts:150",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "plain:dispatch@datepicker-field.ts ≡ plain:dispatch@timepicker-field.ts",
       "score": 1,
-      "left": "packages/plain/src/fields/datepicker-field.ts:128",
+      "left": "packages/plain/src/fields/datepicker-field.ts:129",
       "right": "packages/plain/src/fields/timepicker-field.ts:114",
       "reason": "recorded, not yet accounted for"
     },
@@ -54,8 +54,8 @@
     {
       "id": "angular:constructor@overlay-panel.component.ts ≡ angular:effect@overlay-panel.component.ts",
       "score": 0.906,
-      "left": "packages/angular/src/lib/core/overlay-panel.component.ts:101",
-      "right": "packages/angular/src/lib/core/overlay-panel.component.ts:103",
+      "left": "packages/angular/src/lib/core/overlay-panel.component.ts:95",
+      "right": "packages/angular/src/lib/core/overlay-panel.component.ts:97",
       "reason": "recorded, not yet accounted for"
     },
     {
@@ -71,6 +71,13 @@
       "left": "packages/angular/src/lib/renderers/datepicker/year-picker.component.ts:43",
       "right": "packages/angular/src/lib/renderers/datepicker/year-picker.component.ts:41",
       "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:send@datepicker-field.ts ≡ lit:send@timepicker-field.ts",
+      "score": 0.865,
+      "left": "packages/lit/src/components/datepicker-field.ts:204",
+      "right": "packages/lit/src/components/timepicker-field.ts:75",
+      "reason": "two thin adapters over `applyWidgetCommands`, differing only in their kind's intent type and the selector focus returns to. What was shared — which command opens, closes and restores — is shared; a type parameter is not duplication."
     },
     {
       "id": "angular:effect@mdy-form.component.ts ≡ angular:untracked@mdy-form.component.ts",

@@ -9,7 +9,7 @@ import { overlayControlledId, partClasses, calendarViewOnToggle,
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle, observerFor } from "@modyra/core";
 import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, compareDates, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
-import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
+import { applyWidgetCommands, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import { calendarGridKey, calendarRows, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
 import {
@@ -130,19 +130,12 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   private send(intent: MdyDaterangeFieldIntent): void {
     const handle = this.field;
     if (!this.controller || !handle) return;
-    for (const command of this.controller.dispatch(intent)) {
-      if (command.type === "open-overlay") {
-        applyOverlayIntent(this, { type: "open", disabled: handle.disabled(), available: true });
-        this.overlay.open();
-      }
-      if (command.type === "close-overlay") {
-        applyOverlayIntent(this, { type: "close" });
-        this.overlay.close();
-      }
-      if (command.type === "restore-focus") {
-        this.querySelector<HTMLInputElement>(".mdy-daterange__input")?.focus();
-      }
-    }
+    applyWidgetCommands(this, this.controller.dispatch(intent), {
+      open: () => this.overlay.open(),
+      close: () => this.overlay.close(),
+      disabled: handle.disabled(),
+      control: ".mdy-daterange__input",
+    });
   }
 
   override connectedCallback(): void {

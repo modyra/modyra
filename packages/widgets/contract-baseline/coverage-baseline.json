@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 682,
-    "asserted": 404,
+    "published": 683,
+    "asserted": 405,
     "shown": 48
   },
   "uncovered": [
@@ -1970,9 +1970,9 @@
     },
     {
       "name": "MdyTimeDraftState",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyTimeDraftTransition",
@@ -2504,9 +2504,9 @@
     },
     {
       "name": "buildTimeString",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "calendarKeyboardTarget",
@@ -3518,6 +3518,12 @@
     },
     {
       "name": "registerHandleForm",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "registerHandleOwner",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

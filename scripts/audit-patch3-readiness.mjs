@@ -55,7 +55,8 @@ const behaviorEvidence = {
   slider: ["dispatchValueIntent", "dispatchValueBlur"],
   text: ["dispatchValueIntent", "dispatchValueBlur"],
   textarea: ["dispatchValueIntent", "dispatchValueBlur"],
-  timepicker: ["timeDraftTransition", "timeInputTransition"],
+  // The draft left this renderer when it took the controller that owns it.
+  timepicker: ["createTimepickerFieldController|timeDraftTransition", "timeInputTransition"],
   toggle: ["createBooleanFieldController|dispatchValueIntent"],
 };
 const scalarBase = readFileSync(resolve(root, "packages/angular/src/lib/control/control.directive.ts"), "utf8");

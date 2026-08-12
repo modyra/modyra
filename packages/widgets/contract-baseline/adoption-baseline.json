@@ -1,9 +1,9 @@
 {
   "note": "What each renderer consumes today. These numbers may rise and may not fall.",
   "score": {
-    "controllers": 43,
+    "controllers": 45,
     "controllersOffered": 45,
-    "projections": 46,
+    "projections": 48,
     "projectionsOffered": 48
   },
   "rows": {
@@ -180,12 +180,12 @@
       "projection": true
     },
     "angular:timepicker": {
-      "controller": false,
-      "projection": false
+      "controller": true,
+      "projection": true
     },
     "lit:timepicker": {
-      "controller": false,
-      "projection": false
+      "controller": true,
+      "projection": true
     },
     "plain:file": {
       "controller": "none offered",

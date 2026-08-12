@@ -18,7 +18,7 @@ import { MDY_DECLARATIVE_REGISTRY, MDY_FLOATING_LABELS, MDY_FORM_ADAPTER, MDY_IN
 import { MdyFieldHandle } from "../core/typed-form";
 import { angularReactivity } from "../core/reactivity-angular";
 import { MdyFieldError, MdyFieldState, MdyFormAdapter } from "../core/types";
-import { handleFormOf, NO_CONSTRAINTS, registerHandleForm, type MdyFieldConstraints } from "@modyra/core";
+import { handleFormOf, NO_CONSTRAINTS, registerHandleOwner, type MdyFieldConstraints } from "@modyra/core";
 import type { MdyInteractivity } from "@modyra/core";
 import {
   createValueWidgetController,
@@ -554,9 +554,13 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     return () =>
       untracked(() => {
         if (built) return controller;
-        built = true;
         const handle = this.controllerHandle();
+        // Not built until there is a handle to build on. Latching before the check made the first
+        // read the only one: a renderer whose template reads the controller during the first change
+        // detection — before a name resolves to a field — cached `undefined` for the life of the
+        // component, and every later interaction went nowhere.
         if (!handle) return undefined;
+        built = true;
         controller = create(handle, this.fieldId);
         this._destroyRef.onDestroy(() => controller?.destroy());
         // What a reactive input feeds the controller — an option list, a pair of bounds. Told
@@ -603,7 +607,11 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         markAsTouched: () => this.markAsTouched(),
         markAsDirty: () => this.markAsDirty(),
       };
-      registerHandleForm(handle, angularReactivity(this._injector));
+      // The *owner* registry, not the form one: `observerFor` reads this to decide which runtime a
+      // controller should observe the handle through. Registered in the wrong one, the controller
+      // fell back to a vanilla runtime whose signals an Angular computed cannot see — so its state
+      // changed and nothing re-rendered, which is the failure this registry exists to prevent.
+      registerHandleOwner(handle, angularReactivity(this._injector));
       this._syntheticHandle = handle;
     }
     return this._syntheticHandle;
