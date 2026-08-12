@@ -1049,7 +1049,7 @@
     "when?: MdyOverlayPhase"
   ],
   "MdyLayoutBreakpoint": [
-    "(opaque)"
+    "-> MdyDynamicBreakpoint"
   ],
   "MdyLayoutColumnCounts": [
     "-> Partial"
@@ -1058,8 +1058,7 @@
     "(opaque)"
   ],
   "MdyLayoutSlotPlacement": [
-    "column?: number",
-    "hidden?: boolean"
+    "-> MdyDynamicSlotPlacement"
   ],
   "MdyLifecycleIssue": [
     "code: MdyLifecycleIssueCode",

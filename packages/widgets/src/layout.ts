@@ -8,6 +8,8 @@
  * any of them.
  */
 
+import type { MdyDynamicBreakpoint, MdyDynamicSlotPlacement } from "@modyra/core";
+
 import { MDY_CSS_PROPERTIES } from "./css.js";
 
 /** Canonical class vocabulary for declarative layout. */
@@ -38,7 +40,7 @@ export type MdyLayoutPart = keyof typeof MDY_LAYOUT_CLASSES;
  * theme because a row that becomes two columns at `sm` has to do it at the same width everywhere —
  * a breakpoint that moved per theme would make a layout untestable, which is the point of naming it.
  */
-export const MDY_LAYOUT_BREAKPOINTS = Object.freeze({
+export const MDY_LAYOUT_BREAKPOINTS: Readonly<Record<MdyDynamicBreakpoint, string>> = Object.freeze({
   /** Narrowest first: what a row looks like before any breakpoint applies. */
   base: "0",
   sm: "40rem",
@@ -46,7 +48,17 @@ export const MDY_LAYOUT_BREAKPOINTS = Object.freeze({
   lg: "80rem",
 });
 
-export type MdyLayoutBreakpoint = keyof typeof MDY_LAYOUT_BREAKPOINTS;
+/**
+ * The same sizes a document authors against, not a second list that happens to agree.
+ *
+ * A placement declared for a size nothing paints is a layout that silently does nothing, so the set
+ * is derived rather than restated: `MDY_LAYOUT_BREAKPOINTS` is typed by it, and a size added on
+ * either side fails to compile until both carry it.
+ */
+export type MdyLayoutBreakpoint = MdyDynamicBreakpoint;
+
+/** Where a child sits at one size. Aliased, because a document and a renderer describe one placement. */
+export type MdyLayoutSlotPlacement = MdyDynamicSlotPlacement;
 
 /** How many tracks a row has, per breakpoint. Omitted sizes inherit the next smaller one. */
 export type MdyLayoutColumnCounts = Partial<Readonly<Record<MdyLayoutBreakpoint, number>>>;
@@ -75,11 +87,6 @@ export const MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES: Readonly<Record<MdyLayoutBrea
   lg: `${MDY_CSS_PROPERTIES.layout.columnDisplay}-lg`,
 });
 
-/** Where a slot sits and whether it shows, at one size — Contract v3's per-slot placement. */
-export interface MdyLayoutSlotPlacement {
-  readonly column?: number;
-  readonly hidden?: boolean;
-}
 
 /**
  * The inline style a column takes from the slot inside it.
