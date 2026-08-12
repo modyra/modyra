@@ -27,9 +27,19 @@ function calendarOptionsOf(f: MdyDynamicDateField | MdyDynamicDaterangeField): {
 }
 
 /**
+ * @param reactivity The runtime the field observes on. Pass the form's own — `form.reactivity` —
+ * whenever the host holds one. The default builds a fresh runtime, which is right for a field
+ * rendered on its own and wrong for a field belonging to a form: two runtimes over one handle are
+ * two schedulers with no ordering between them, and only one of them stops when the form does.
+ *
  * @param widgetId The identity every generated id derives from. Defaults to the field name, which
  * is what a single form on a page wants; a host rendering two forms scopes it so the second form's
  * relationships do not resolve to the first form's elements.
+ *
+ * @returns The teardown, and it is not optional. It releases the effects this field subscribed;
+ * a caller that drops it keeps them running against a form that may already be destroyed, and a
+ * surviving effect renders nothing — so nothing in the document says it is still there.
+ * `packages/plain/test/render-field-lifecycle.test.mjs` asserts this for every kind.
  */
 export function renderField(
   container: HTMLElement,

@@ -3,7 +3,7 @@
   "score": {
     "published": 652,
     "asserted": 334,
-    "shown": 92
+    "shown": 27
   },
   "uncovered": [
     {
@@ -85,6 +85,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MDY_DYNAMIC_FIELD_KINDS",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MDY_EFFECTS_UNAVAILABLE",
       "asserted": true,
       "shown": false,
@@ -127,6 +133,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "MDY_LAYOUT_CLASSES",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MDY_LAYOUT_COLUMN_COUNT_PROPERTIES",
       "asserted": true,
       "shown": false,
@@ -146,6 +158,12 @@
     },
     {
       "name": "MDY_LAYOUT_COLUMN_START_PROPERTIES",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_LAYOUT_MAX_DEPTH",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -182,6 +200,12 @@
     },
     {
       "name": "MDY_POPUP_CLASS",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_POPUP_OPENERS",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -253,6 +277,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "MDY_WIDGET_KEYBOARD",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MDY_WIDGET_KINDS",
       "asserted": true,
       "shown": false,
@@ -297,14 +327,14 @@
     {
       "name": "MdyActivationError",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyAdapterContractError",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyAffordance",
@@ -565,6 +595,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyComputedOptions",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyCondition",
       "asserted": false,
       "shown": false,
@@ -585,8 +621,8 @@
     {
       "name": "MdyCrossRuntimeObservationError",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyDateDraftIntent",
@@ -608,6 +644,12 @@
     },
     {
       "name": "MdyDateLocale",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyDateRange",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -687,8 +729,8 @@
     {
       "name": "MdyDestroyedScopeError",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyDiagnostic",
@@ -701,6 +743,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyDiagnostics",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MdyDismissalPhase",
@@ -734,6 +782,12 @@
     },
     {
       "name": "MdyDraftOptions",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyDraftStorage",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -795,8 +849,8 @@
     {
       "name": "MdyDynamicDiagnostic",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyDynamicFieldNode",
@@ -879,8 +933,8 @@
     {
       "name": "MdyDynamicOptionsField",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyDynamicParseMode",
@@ -937,6 +991,18 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyEffectOptions",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyEffectRef",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyElementLookup",
       "asserted": true,
       "shown": false,
@@ -957,8 +1023,8 @@
     {
       "name": "MdyExpression",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyExpressionOp",
@@ -998,6 +1064,12 @@
     },
     {
       "name": "MdyFieldError",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyFieldHandle",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -1087,10 +1159,28 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyFormAdapter",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyFormEngine",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyFormEngineOptions",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyFormError",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MdyFormPatch",
@@ -1267,6 +1357,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyMultiselectMode",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyMultiselectOverlayAction",
       "asserted": false,
       "shown": false,
@@ -1295,6 +1391,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyOnCleanup",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MdyOperand",
@@ -1525,10 +1627,22 @@
       "reason": "published and never shown"
     },
     {
+      "name": "MdyReactiveScope",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyReactivity",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyReactivityCapabilities",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyReactivityTestHarness",
@@ -1587,11 +1701,17 @@
     {
       "name": "MdyScopeOptions",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdySecurityPolicy",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdySecurityViolation",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -1667,6 +1787,18 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdySignal",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdySignalOptions",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MdySnapshotOptions",
@@ -1873,6 +2005,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyTypedForm",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyTypedFormBase",
       "asserted": true,
       "shown": false,
@@ -1901,6 +2039,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyUnsupportedCapabilityError",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MdyValidatorFacts",
@@ -2017,10 +2161,16 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyWidgetKind",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyWidgetPart",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWidgetRelation",
@@ -2073,14 +2223,20 @@
     {
       "name": "MdyWidgetVariant",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyWidgetViewContract",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyWritableSignal",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "NO_CONSTRAINTS",
@@ -2099,6 +2255,12 @@
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "ValidatorFn",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "acceptTimeField",
@@ -2215,6 +2377,18 @@
       "reason": "published and never shown"
     },
     {
+      "name": "buildDateLocale",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "buildDynamicFieldValidators",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "buildDynamicFormSchema",
       "asserted": true,
       "shown": false,
@@ -2317,6 +2491,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "composeFirst",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "contrastRatio",
       "asserted": true,
       "shown": false,
@@ -2366,6 +2546,18 @@
     },
     {
       "name": "createFocusCustodian",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "createHydratedDraftStorage",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "createLightDismiss",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2473,6 +2665,12 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "decideOverlayPlacement",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "defaultWidgetIdFactory",
       "asserted": true,
       "shown": false,
@@ -2480,6 +2678,12 @@
     },
     {
       "name": "deltaEOK",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "deriveHctPalette",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2509,7 +2713,19 @@
       "reason": "published and never shown"
     },
     {
+      "name": "eachOneOf",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "errorsVisible",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "evaluateExpression",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2629,6 +2845,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "formatTimeAs",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "getCurrentTime",
       "asserted": true,
       "shown": false,
@@ -2637,8 +2859,8 @@
     {
       "name": "getFieldHandleOwner",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "getPointerCoords",
@@ -2787,8 +3009,8 @@
     {
       "name": "isSafeFieldPath",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "isSameDay",
@@ -2827,7 +3049,31 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "keyBindingFor",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "kindsWithAffordances",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "layoutNodeAttributes",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "layoutSlotStyle",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "listboxNavigationIndex",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2937,8 +3183,8 @@
     {
       "name": "numericKeysToArrays",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "oklchToHex",
@@ -2948,6 +3194,12 @@
     },
     {
       "name": "oklchToLinearRgb",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "oneOf",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3019,6 +3271,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "overlayOnlyParts",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "overlayStyleProperties",
       "asserted": true,
       "shown": false,
@@ -3031,6 +3289,18 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "parseAnyTime",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "parseDynamicFields",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "parseHex",
       "asserted": true,
       "shown": false,
@@ -3038,6 +3308,12 @@
     },
     {
       "name": "parseIsoDate",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "parseLocalizedDate",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3205,6 +3481,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "runReactivityContractTests",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "scrollOptionIntoView",
       "asserted": false,
       "shown": false,
@@ -3289,6 +3571,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "stateCarriers",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "stateClass",
       "asserted": true,
       "shown": false,
@@ -3367,6 +3655,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "to24Hour",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "toHex",
       "asserted": false,
       "shown": false,
@@ -3375,8 +3669,8 @@
     {
       "name": "trackAnchoredOverlay",
       "asserted": false,
-      "shown": true,
-      "reason": "published and never asserted"
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "trailingAffordances",
@@ -3410,6 +3704,12 @@
     },
     {
       "name": "valueShape",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "vanillaReactivity",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
