@@ -2555,6 +2555,10 @@
     "(0) facts: readonly MdyValidatorFacts[]",
     "-> returns: { readonly constraints: MdyFieldConstraints; readonly required: boolean; /** True when more than one distinct pattern was declared, so none is offered. */ readonly conflictingPatterns: boolean; }"
   ],
+  "messagesForLocale": [
+    "(0) tag: string | undefined | null",
+    "-> returns: MdyI18nMessages"
+  ],
   "minuteToAngle": [
     "(0) minute: number",
     "-> returns: number"
