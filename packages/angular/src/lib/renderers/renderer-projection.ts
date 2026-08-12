@@ -1,4 +1,4 @@
-import { addMonths, CalendarDate } from "@modyra/core/date-utils";
+import { addMonths, CalendarDate } from "@modyra/core/datetime";
 import { MdySelectOption } from "../core/types";
 
 export const projectionKey = (value: unknown): string => String(value);

@@ -10,7 +10,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
-import { createPointerDrag, dragPointOf } from "../dist/index.js";
+import { createPointerDrag, dragPointOf } from "../dist/pointer-drag.js";
 
 /** A document that records what was bound to it, since no DOM exposes its own listener registry. */
 function recordingDocument() {

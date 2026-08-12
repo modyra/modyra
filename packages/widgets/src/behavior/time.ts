@@ -1,5 +1,5 @@
 /** A time, typed or turned: the draft the dial edits and what an angle becomes. */
-import { MdyTimeFormat, angleToHour, angleToMinute, buildTimeString, parseTime } from "@modyra/core/time-utils";
+import { MdyTimeFormat, angleToHour, angleToMinute, buildTimeString, parseTime } from "@modyra/core/datetime";
 import { acceptTimeField } from "../time-bounds.js";
 export interface MdyTimeDraftState {
   readonly committed: string | null;

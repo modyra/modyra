@@ -28,21 +28,9 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./contract": {
-      "types": "./dist/contract.d.ts",
-      "default": "./dist/contract.js"
-    },
-    "./commands": {
-      "types": "./dist/commands.d.ts",
-      "default": "./dist/commands.js"
-    },
-    "./ids": {
-      "types": "./dist/ids.d.ts",
-      "default": "./dist/ids.js"
-    },
-    "./runtime": {
-      "types": "./dist/runtime.d.ts",
-      "default": "./dist/runtime.js"
+    "./vocabulary": {
+      "types": "./dist/vocabulary.d.ts",
+      "default": "./dist/vocabulary.js"
     },
     "./testing": {
       "types": "./dist/testing/index.d.ts",

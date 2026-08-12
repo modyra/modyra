@@ -6,7 +6,7 @@ import {
   input,
   output,
 } from "@angular/core";
-import { CalendarDate } from "@modyra/core/date-utils";
+import { CalendarDate } from "@modyra/core/datetime";
 import { MDY_DATE_LOCALE } from "../../core/date-locale";
 
 @Component({

@@ -2,19 +2,19 @@
  * Timepicker field widget types.
  *
  * The committed value is a formatted time string in the configured `format` ("12h"/"24h"). The draft
- * held while editing is always canonical 12h `ParsedTime` (`@modyra/core/time-utils`), converted at
+ * held while editing is always canonical 12h `ParsedTime` (`@modyra/core/datetime`), converted at
  * the boundary by `parseAnyTime` and `formatTimeAs`, so the dial has one representation to move
  * through whatever the field displays. Editing is draft/commit: nothing reaches the field until
  * `"confirm"`.
  *
  * The angle maths (`pointerAngle`, `angleToHour`, `angleToMinute`, `hourToAngle`, `minuteToAngle`)
- * is pure and lives in `@modyra/core/time-utils`. The `"set-from-angle"` intent calls into it, so a
+ * is pure and lives in `@modyra/core/datetime`. The `"set-from-angle"` intent calls into it, so a
  * host building a drag-dial gets the snapping without reimplementing it — but the controller owns no
  * pointer or DOM listeners, which stays the host's job as it does for every controller here.
  */
 import type { MdyInteractivity } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
-import type { MdyTimeFormat, ParsedTime } from "@modyra/core/time-utils";
+import type { MdyTimeFormat, ParsedTime } from "@modyra/core/datetime";
 export interface MdyTimepickerFieldControllerOptions {
   /** Stable identity for the widget instance. */
   readonly widgetId: string;

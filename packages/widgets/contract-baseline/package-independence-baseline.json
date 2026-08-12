@@ -8,7 +8,7 @@
     "packages/react/test/headless-recipes.test.mjs:223: names @modyra/plain — // not yours to invent either. These are the same two functions `@modyra",
     "packages/react/test/headless-recipes.test.mjs:224: names @modyra/angular — // `@modyra/angular` call, so a two-column row is the same row whoever d",
     "packages/react/test/react.test.mjs:34: names @modyra/angular — * any other runtime (Vue/Solid/Angular, or — as here — a custom one).",
-    "packages/widgets/test/behavior.spec.mjs:27: names @modyra/angular — test(\"select keyboard policy resolves host actions without Angular\", () ",
-    "packages/widgets/test/catalog-contract.spec.mjs:5: names @modyra/angular — test(\"the complete Angular catalog has ordered anatomy and closed part m"
+    "packages/widgets/test/behavior.spec.mjs:49: names @modyra/angular — test(\"select keyboard policy resolves host actions without Angular\", () ",
+    "packages/widgets/test/catalog-contract.spec.mjs:9: names @modyra/angular — test(\"the complete Angular catalog has ordered anatomy and closed part m"
   ]
 }

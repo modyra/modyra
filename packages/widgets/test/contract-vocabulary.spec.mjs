@@ -10,16 +10,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import {
-  MDY_CANONICAL_UI_CLASSES,
-  MDY_CSS_PROPERTY_NAMES,
   MDY_ID_DELIMITER,
-  MDY_LABELABLE_TAGS,
   MDY_POPUP_OPENERS,
   MDY_SEMANTICS_REQUIRING_NAME,
   MDY_WIDGET_CONTRACTS,
   MDY_WIDGET_KINDS,
   MDY_WIDGET_RELATIONS,
-  MDY_WIDGET_STATE_SUPPORT,
   browserRuntimeCapabilities,
   defaultWidgetIdFactory,
   isValidWidgetId,
@@ -27,8 +23,8 @@ import {
   partsRequiringName,
   ssrRuntimeCapabilities,
   stateClass,
-  widgetSupportsState,
 } from "../dist/index.js";
+import { MDY_CANONICAL_UI_CLASSES, MDY_CSS_PROPERTY_NAMES, MDY_LABELABLE_TAGS, MDY_WIDGET_STATE_SUPPORT, widgetSupportsState } from "../dist/vocabulary.js";
 
 test("every kind the vocabulary names has a definition, and no definition names a kind it does not", () => {
   assert.deepEqual([...MDY_WIDGET_KINDS].sort(), Object.keys(MDY_WIDGET_CONTRACTS).sort());
@@ -172,11 +168,9 @@ import {
   setOverlayOpen,
   staticParts,
   trackAnchoredOverlay,
-  widgetStateMatrixSize,
-  MDY_SHARED_UI_CLASSES,
   MDY_STATE_EXPRESSION,
-  MDY_WIDGET_STATES,
 } from "../dist/index.js";
+import { widgetStateMatrixSize, MDY_SHARED_UI_CLASSES, MDY_WIDGET_STATES } from "../dist/vocabulary.js";
 
 /**
  * `trackAnchoredOverlay` had no test at all, and it is the function that exists to end three
@@ -291,7 +285,10 @@ test("a value the options do not contain is reconciled, not erased", () => {
 
 // ─── the shapes, named where they are used ───────────────────────────────────
 
-import { decideOverlayAlignment, decideOverlayPlacement } from "../dist/index.js";
+import {
+  decideOverlayAlignment,
+  decideOverlayPlacement,
+} from "../dist/index.js";
 
 /**
  * An alignment is a decision about the other axis, and it had no test.

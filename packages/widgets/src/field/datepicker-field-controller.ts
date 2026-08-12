@@ -3,7 +3,7 @@
  *
  * The field value is an ISO date string. Which month the calendar is showing and which cell the
  * keyboard is on are view state, held separately: paging to another month does not change the value,
- * and moving focus across the grid does not select. `calendarKeyboardTarget` (`@modyra/core/keyboard`)
+ * and moving focus across the grid does not select. `calendarKeyboardTarget` (`@modyra/core/ui`)
  * answers where an arrow key lands, including across a month boundary.
  *
  * The grid uses a roving tabindex — one cell is reachable by Tab and the arrows move which one — so
@@ -24,8 +24,8 @@ import {
   parseIsoDate,
   today,
   type CalendarDate,
-} from "@modyra/core/date-utils";
-import { calendarKeyboardTarget } from "@modyra/core/keyboard";
+} from "@modyra/core/datetime";
+import { calendarKeyboardTarget } from "@modyra/core/ui";
 
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";

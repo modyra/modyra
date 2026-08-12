@@ -46,7 +46,7 @@ import {
   type MdyDynamicSection,
   type MdyDynamicValidation,
   type MdyDynamicValidators,
-} from "@modyra/core/dynamic-config";
+} from "@modyra/core";
 import type { MdyExpression } from "@modyra/core";
 import { ExpressionTooDeepError, toContractExpression } from "./expression.js";
 // Type-only: the catalog constrains what this may map to, and nothing of it survives compilation,

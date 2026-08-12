@@ -4,7 +4,7 @@
  * The committed value is an ISO `YYYY-MM-DD` string or `null`. Which month is on screen
  * (`{viewYear, viewMonth}`) and which cell the keyboard is on (`focusedDate`) are view state kept
  * apart from it, so paging and moving focus change what is shown without selecting anything.
- * Keyboard navigation resolves through `calendarKeyboardTarget` (`@modyra/core/keyboard`).
+ * Keyboard navigation resolves through `calendarKeyboardTarget` (`@modyra/core/ui`).
  *
  * Month and year drill-down views, and a confirm/cancel draft, belong to the host — see
  * datepicker-field-controller.ts.
@@ -21,7 +21,7 @@ export interface MdyDatepickerFieldControllerOptions {
   readonly minDate?: string | null;
   /** Inclusive upper bound, ISO `YYYY-MM-DD`. */
   readonly maxDate?: string | null;
-  /** 0 = Sunday (default), 1 = Monday, … — pass `locale.firstDayOfWeek` from `@modyra/core/date-locale` for a real locale. */
+  /** 0 = Sunday (default), 1 = Monday, … — pass `locale.firstDayOfWeek` from `@modyra/core/datetime` for a real locale. */
   readonly firstDayOfWeek?: number;
   /** Whether the widget is visually/programmatically readonly. */
   readonly readonly?: boolean;

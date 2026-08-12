@@ -16,7 +16,7 @@ import {
   MdyDynamicLayoutChild,
   MdyDynamicLayoutNode,
   MdyDynamicLayoutSlot,
-} from "@modyra/core/dynamic-config";
+} from "@modyra/core";
 import { layoutNodeAttributes, layoutSlotStyle, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { MdyFormSubmitEvent } from "../core/types";
 import { MdyFormComponent } from "../form/mdy-form.component";

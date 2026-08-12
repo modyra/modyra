@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from "@angular/core";
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
-import { MDY_ICONS, MdyIconName } from "@modyra/core/icons";
+import { MDY_ICONS, MdyIconName } from "@modyra/core/ui";
 
 /**
  * Lightweight component to render SVGs from the shared icon library.

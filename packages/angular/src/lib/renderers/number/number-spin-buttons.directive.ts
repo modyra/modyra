@@ -1,5 +1,5 @@
 import { Directive, ElementRef, inject, input, OnInit, Renderer2 } from "@angular/core";
-import { MDY_ICONS } from "@modyra/core/icons";
+import { MDY_ICONS } from "@modyra/core/ui";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 
 @Directive({

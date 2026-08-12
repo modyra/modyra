@@ -11,7 +11,10 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createLightDismiss, isPrimaryInteraction } from "../dist/index.js";
+import {
+  createLightDismiss,
+  isPrimaryInteraction,
+} from "../dist/index.js";
 
 const IN = "inside";
 const OUT = "outside";

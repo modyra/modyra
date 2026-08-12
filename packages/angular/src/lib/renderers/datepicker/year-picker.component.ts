@@ -8,7 +8,7 @@ import {
   output,
   viewChildren,
 } from "@angular/core";
-import { CalendarDate } from "@modyra/core/date-utils";
+import { CalendarDate } from "@modyra/core/datetime";
 
 @Component({
   selector: "mdy-year-picker",

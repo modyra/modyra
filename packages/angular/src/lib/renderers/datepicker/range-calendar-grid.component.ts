@@ -18,7 +18,7 @@ import {
   isSameDay,
   orderDates,
   today,
-} from "@modyra/core/date-utils";
+} from "@modyra/core/datetime";
 import { MDY_DATE_LOCALE } from "../../core/date-locale";
 
 @Component({

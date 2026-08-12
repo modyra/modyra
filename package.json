@@ -67,7 +67,7 @@
     "plain-preview:dev": "npm run build:plain && node apps/plain-preview/build.mjs && node apps/plain-preview/server.mjs",
     "test:widget-contract": "node scripts/audit-angular-widget-contract.mjs --check && node scripts/audit-widget-contract-completeness.mjs && npm run build:core && node scripts/tsc7.mjs packages/widgets/tsconfig.json && node --test packages/widgets/test/*.spec.mjs",
     "test:plain-contract": "npm run build:plain && node scripts/audit-plain-full-catalog.mjs && node scripts/audit-plain-widget-contract.mjs",
-    "test:contracts": "node scripts/audit-package-independence.mjs && npm run test:cross-adapter-similarity && npm run test:type-mirroring && npm run test:widget-contract && npm run test:plain-contract && npm run test:lit-contract && npm run test:contract-adoption && npm run test:coverage-and-demo && npm run test:angular-renderer-ownership && npm run test:angular-renderer-budget && npm run test:plain && npm run test:layout-contract && npm run test:contract-coverage && npm run test:conformance-manifest && npm run test:contract-snapshot && npm run test:type-surface && npm run test:harness-exceptions && npm run test:deprecations && npm run test:contract-schema && npm run test:eslint-plugin && npm run test:docs && npm run test:conformance && node scripts/audit-patch3-readiness.mjs --require-ready",
+    "test:contracts": "node scripts/audit-package-independence.mjs && npm run test:cross-adapter-similarity && npm run test:type-mirroring && npm run test:widget-contract && npm run test:plain-contract && npm run test:lit-contract && npm run test:contract-adoption && npm run test:coverage-and-demo && npm run test:angular-renderer-ownership && npm run test:angular-renderer-budget && npm run test:plain && npm run test:layout-contract && npm run test:contract-coverage && npm run test:conformance-manifest && npm run test:contract-snapshot && npm run test:type-surface && npm run test:public-doors && npm run test:harness-exceptions && npm run test:deprecations && npm run test:contract-schema && npm run test:eslint-plugin && npm run test:docs && npm run test:conformance && node scripts/audit-patch3-readiness.mjs --require-ready",
     "test:docs": "node scripts/audit-docs.mjs --check",
     "test:layout-contract": "node scripts/audit-layout-contract.mjs --check",
     "test:styles-architecture": "node scripts/audit-styles-architecture.mjs --check",
@@ -87,7 +87,8 @@
     "test:contract-adoption": "npm run build:packages && node scripts/audit-contract-adoption.mjs",
     "test:coverage-and-demo": "npm run build:packages && node scripts/audit-coverage-and-demo.mjs",
     "test:lit-contract": "node scripts/tsc7.mjs packages/lit/tsconfig.json && node scripts/audit-lit-widget-contract.mjs",
-    "test:angular-renderer-ownership": "node scripts/audit-angular-renderer-ownership.mjs"
+    "test:angular-renderer-ownership": "node scripts/audit-angular-renderer-ownership.mjs",
+    "test:public-doors": "node scripts/audit-public-doors.mjs"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^21.2.19",

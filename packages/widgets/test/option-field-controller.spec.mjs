@@ -6,7 +6,9 @@ import assert from "node:assert";
 import test from "node:test";
 
 import { vanillaReactivity } from "@modyra/core";
-import { createOptionFieldController } from "../dist/field/index.js";
+import {
+  createOptionFieldController,
+} from "../dist/field/index.js";
 
 const options = [
   { value: "small", label: "Small" },

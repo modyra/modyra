@@ -10,7 +10,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   MDY_CHIP_CLASSES,
-  MDY_STATE_MODIFIERS,
   MDY_WIDGET_CONTRACTS,
   MDY_WIDGET_KINDS,
   multiselectChipClasses,
@@ -19,6 +18,7 @@ import {
   stateClass,
   widgetStateClasses,
 } from "../dist/index.js";
+import { MDY_STATE_MODIFIERS } from "../dist/vocabulary.js";
 
 test("a state is spelled once, and the spelling is kebab-case", () => {
   for (const [name, modifier] of Object.entries(MDY_STATE_MODIFIERS)) {

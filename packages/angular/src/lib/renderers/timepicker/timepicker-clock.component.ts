@@ -20,7 +20,7 @@ import {
   parseTime,
   pointerAngle,
   to24Hour,
-} from "@modyra/core/time-utils";
+} from "@modyra/core/datetime";
 import { timeClockTransition, timepickerDialAria, timepickerDialKeyIntent, timepickerDialNumbers, timepickerSelectedDialValue } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyTimepickerHeaderComponent } from "./timepicker-header.component";

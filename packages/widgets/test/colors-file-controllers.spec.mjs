@@ -8,7 +8,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createForm, field, required, vanillaReactivity } from "@modyra/core";
-import { createColorsFieldController, createFileFieldController } from "../dist/field/index.js";
+import { createColorsFieldController } from "../dist/field/colors-field-controller.js";
+import { createFileFieldController } from "../dist/field/file-field-controller.js";
 
 function colors({ value = "", presets = ["#0084ff", "#ff0044"], validators = [] } = {}) {
   const rx = vanillaReactivity();

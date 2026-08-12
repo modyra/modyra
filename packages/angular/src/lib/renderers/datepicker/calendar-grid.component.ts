@@ -14,7 +14,7 @@ import {
   isDateInRange,
   isSameDay,
   today,
-} from "@modyra/core/date-utils";
+} from "@modyra/core/datetime";
 import { MDY_DATE_LOCALE } from "../../core/date-locale";
 import { MdyCalendarCellComponent } from "./calendar-cell.component";
 

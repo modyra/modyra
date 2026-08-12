@@ -4,7 +4,20 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { anchorOverlay, decideOverlayPlacement, overlayAnchoringFor, overlayStyleProperties, partClasses, popupAlignmentClass, popupPlacementClass, stabilizeOverlayPlacement, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_OVERLAY_PORTAL_CLASS, MDY_POPUP_CLASS } from "../dist/index.js";
+import {
+  anchorOverlay,
+  decideOverlayPlacement,
+  overlayAnchoringFor,
+  overlayStyleProperties,
+  partClasses,
+  popupAlignmentClass,
+  popupPlacementClass,
+  stabilizeOverlayPlacement,
+  MDY_WIDGET_CONTRACTS,
+  MDY_WIDGET_KINDS,
+  MDY_OVERLAY_PORTAL_CLASS,
+  MDY_POPUP_CLASS,
+} from "../dist/index.js";
 
 const VIEWPORT = { width: 1000, height: 800 };
 /** A control in the middle of the page, with room on both sides. */

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, viewChild } from "@angular/core";
 import { acceptTimeField, stepTimeField, timeFieldBounds } from "@modyra/widgets";
-import type { MdyTimeFormat } from "@modyra/core/time-utils";
+import type { MdyTimeFormat } from "@modyra/core/datetime";
 
 @Component({
   selector: "mdy-timepicker-segment",

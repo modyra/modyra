@@ -18,8 +18,8 @@ import {
   formatIsoDate,
   isDateInRange,
   today,
-} from "@modyra/core/date-utils";
-import { calendarKeyboardTarget } from "@modyra/core/keyboard";
+} from "@modyra/core/datetime";
+import { calendarKeyboardTarget } from "@modyra/core/ui";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyCalendarHeaderComponent } from "./calendar-header.component";
 import { MdyMonthPickerComponent } from "./month-picker.component";

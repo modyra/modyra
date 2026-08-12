@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Linter } from "eslint";
 import tseslint from "typescript-eslint";
-import { parseDynamicForm } from "@modyra/core/dynamic-config";
+import { parseDynamicForm } from "@modyra/core";
 import plugin from "../dist/index.js";
 
 /**

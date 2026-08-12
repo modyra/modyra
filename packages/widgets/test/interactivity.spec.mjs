@@ -18,9 +18,9 @@ import { createForm, field, required } from "@modyra/core";
 import {
   blocksFocus,
   blocksValueChange,
-  MDY_WIDGET_STATE_CONTRACTS,
   projectMultiselectFieldA11y,
 } from "../dist/index.js";
+import { MDY_WIDGET_STATE_CONTRACTS } from "../dist/vocabulary.js";
 
 test("the two questions differ on exactly one state", () => {
   // Enabled permits everything.

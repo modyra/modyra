@@ -6,8 +6,8 @@
  * `*-types.ts` in this folder holding two hundred lines of behaviour, and the only place a reader
  * looking for the dial's rules would not think to open.
  */
-import { to24Hour } from "@modyra/core/time-utils";
-import type { MdyTimeFormat, ParsedTime } from "@modyra/core/time-utils";
+import { to24Hour } from "@modyra/core/datetime";
+import type { MdyTimeFormat, ParsedTime } from "@modyra/core/datetime";
 export interface MdyTimepickerDialNumber {
   readonly value: number;
   readonly label: string;

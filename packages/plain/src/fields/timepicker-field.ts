@@ -24,7 +24,7 @@ import {
   timepickerSelectedDialValue,
   type MdyElementLookup,
 } from "@modyra/widgets";
-import { hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/time-utils";
+import { hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/datetime";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
