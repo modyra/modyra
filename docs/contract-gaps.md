@@ -25,12 +25,11 @@ to a green suite.
 **Status.** The headings below are the source of truth; this list is a convenience for a reader who
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
-- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, K, N, O, P, Q, T
+- **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, K, N, O, P, Q, S, T
 - **Open** — R (a design system's own pairing sits below AA)
-- **Partly fixed** — C2, E2, F, L, M, S — derived but not painted; most scripts reachable; kind-keyed
+- **Partly fixed** — C2, E2, F, L, M — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
-  the colour metric decided and its estimate still approximate; the kit's two browser sections
-  answered here by this repository's own suite and not by the kit
+  the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
 - **Open** — R
@@ -1372,9 +1371,17 @@ the next real defect on that part gets silenced.
 **What would close it**: a host overriding `--mdy-ios-on-blue`, or Apple changing the pairing. Neither
 is this project's to decide, which is why this stays open rather than being closed as won't-fix.
 
-## S — the conformance kit's two browser sections do not run here — **partly fixed**
+## S — the conformance kit's two browser sections do not run here — **fixed**
 
-**Observed.** `npm run test:conformance` reports eight sections of ten on all three renderers.
+**Fixed.** `npm run test:conformance-browser` reports **ten of ten** on the framework-free renderer
+and says `CONFORMANT` without a qualifier. What was missing was smaller than it looked: the browser
+config re-exports the Node config's `mount`, and had not re-exported `declaresRules` beside it — so
+the two sections that hand the fixture `rules` and a `value` reported "not run" while the config next
+to it answered them. The same renderer, described twice. The keyboard and accessibility sections were
+already answered through `openBrowserSession`.
+
+**Originally observed.** `npm run test:conformance` reports eight sections of ten on all three
+renderers.
 *Keyboard behaviour* and *Accessibility audit* print **not run**, with their reason: focus, native
 key defaults and computed accessible names cannot be answered in Node, and a green that means
 nothing would be worse than an honest gap. A config reaches them by exporting `openBrowserSession`,
@@ -1423,18 +1430,11 @@ release shows a section, and the section looked broken while being correct.
 
 **Fixed.** *Out of play, no verdict*: a disabled field reports no failure to show, so the wrapper
 takes no error modifier, the label no `has-error`, `aria-invalid` reads `false`, and the message is
-not rendered. The rule is one function in `@modyra/widgets` (`shownErrors`/`showsAsInvalid`), asked
-by the five controllers, the six projections, and each renderer through a single accessor of its own
-— thirty-three call sites had been deciding it separately, which is how the projection and the
-wrapper beside it came to disagree.
+not rendered. The rule is one function in `@modyra/widgets` (`shownErrors` / `showsAsInvalid`), asked
+by the five controllers, the six projections and each renderer through a single accessor.
 
-The errors are not forgotten: the field keeps them, the form keeps ignoring them, and both come back
-the moment the field is in play again. The verdict was never wrong — it was being shown to someone
-who could not act on it.
-
-The diff is visible in the committed baselines: on the plain demo's closed section, the red border
-under *Company name* and the words *This field is required* are what disappeared, and nothing else on
-the page moved.
+The errors are not forgotten: the field keeps them, the form keeps ignoring them, and both return the
+moment it is in play again.
 
 *Affects:* anyone using `when` on a section of required fields, or disabling a field that has already
 failed — the form is right and the screen is misleading. A host that hides out-of-play sections (the
