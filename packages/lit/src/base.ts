@@ -1,5 +1,5 @@
 import { MdyFieldHandle, type MdyFieldConstraints } from "@modyra/core";
-import { MDY_ICONS } from "@modyra/core/ui";
+import { MDY_ICONS } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {

@@ -3,7 +3,7 @@ import { type MdyFieldHandle } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
   createLightDismiss,
-  listboxNavigationIndex,
+  listboxNextIndex,
   overlayLifecycleTransition,
   shownErrorsOf,
 } from "@modyra/widgets";
@@ -145,7 +145,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
       return;
     }
     // Navigation is a pure decision the contract owns — a listbox clamps, it does not wrap.
-    const next = listboxNavigationIndex(e.key, this._activeIndex, this.listOptions.length);
+    const next = listboxNextIndex(e.key, this._activeIndex, this.listOptions.length);
     if (next !== null) {
       e.preventDefault();
       this._activeIndex = next;

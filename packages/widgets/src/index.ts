@@ -118,6 +118,19 @@ export type { MdyTimeEntry, MdyTimeField, MdyTimeFieldBounds, MdyTimeRejection }
 export { createFocusCustodian } from "./focus.js";
 export { createPointerDrag, dragPointOf } from "./pointer-drag.js";
 export type { MdyDragPoint, MdyPointerDrag, MdyPointerDragOptions } from "./pointer-drag.js";
+/**
+ * The UI vocabulary that used to live in the engine.
+ *
+ * Icons, the keyboard policy a listbox and a calendar answer to, and the filter a search box runs:
+ * all of it is what a widget *is*, and it sat in `@modyra/core` because that is where it was
+ * written. This package imported it from there — the UI contract reaching sideways into the engine
+ * for its own material, which ADR 0006 says cannot happen and which was happening in five files.
+ */
+export { MDY_ICONS, MDY_ICON_GRID, MDY_ICON_SPANS, MDY_ICON_STROKE } from "./icons.js";
+export type { MdyIconName } from "./icons.js";
+export { calendarKeyboardTarget, listboxNextIndex } from "./keyboard.js";
+export { filterOptionsByQuery } from "./options-utils.js";
+
 export { portalRootFor } from "./portal.js";
 export { createLightDismiss, isPrimaryInteraction } from "./dismissal.js";
 export { bindLightDismiss } from "./dismissal-dom.js";
@@ -128,7 +141,7 @@ export { createTypeahead, isTypeaheadCharacter, typeaheadMatch, MDY_TYPEAHEAD_ID
 export type { MdyTypeahead, MdyTypeaheadOptions } from "./typeahead.js";
 export type { MdyDismissalPhase, MdyLightDismiss, MdyLightDismissOptions, MdyOutsideDismiss, MdyPointerOrigin } from "./dismissal.js";
 export type { MdyFocusCustodian } from "./focus.js";
-export { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayAlignment, decideOverlayPlacement, MDY_OVERLAY_VIEWPORT_MARGIN, fileSelectionTransition, clearFileSelection, listboxNavigationIndex, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, overlayLifecycleTransition, selectKeyboardAction, shouldCloseMultiselectOverlay, stabilizeOverlayPlacement, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "./behavior.js";
+export { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayAlignment, decideOverlayPlacement, MDY_OVERLAY_VIEWPORT_MARGIN, fileSelectionTransition, clearFileSelection, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, overlayLifecycleTransition, selectKeyboardAction, shouldCloseMultiselectOverlay, stabilizeOverlayPlacement, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "./behavior.js";
 export type { MdyColorValueIntent, MdyColorValueTransition, MdyDateDraftIntent, MdyDateDraftState, MdyDateDraftTransition, MdyDateRangeDraftIntent, MdyDateRangeDraftState, MdyDateRangeDraftTransition, MdyDateRangeValue, MdyDateValueIntent, MdyFileCandidate, MdyFileSelectionOptions, MdyFileSelectionTransition, MdyMultiselectOverlayAction, MdyMultiselectValueIntent, MdyOptionNavigationTarget, MdyOverlayDecision, MdyOverlayGeometry, MdyOverlayLifecycleIntent, MdyOverlayLifecycleState, MdyOverlayLifecycleTransition, MdySelectKeyboardAction, MdyTimeClockIntent, MdyTimeDraftIntent, MdyTimeDraftState, MdyTimeDraftTransition, MdyWidgetKeyIntent } from "./behavior.js";
 
 export { createValueWidgetController } from "./value-controller.js";

@@ -16,7 +16,7 @@ import {
   untracked,
   viewChild,
 } from "@angular/core";
-import { filterOptionsByQuery } from "@modyra/core/ui";
+import { filterOptionsByQuery } from "@modyra/widgets";
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
 import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, popupAlignmentClass, popupPlacementClass, optionsWithUnrecognizedValue, reconcileSelectValue, selectKeyboardAction, typeaheadMatch, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";

@@ -48,7 +48,13 @@ const TEST_ROOTS = [
  * contract. It is exercised by the suites it exists for; a page that demonstrated it would be
  * demonstrating the test harness rather than the library.
  */
-const TESTING_ONLY = new Set(["settleFor", "MdyPaintBeat", "MDY_PAINT_BEATS"]);
+const TESTING_ONLY = new Set([
+  "settleFor", "MdyPaintBeat", "MDY_PAINT_BEATS",
+  // The icon geometry a theme sizes against and the conformance kit measures — the grid the paths
+  // are drawn on, which span each glyph occupies, the stroke width. A renderer reads `MDY_ICONS`
+  // and nothing else, so there is no demo that could show these without inventing one.
+  "MDY_ICON_GRID", "MDY_ICON_SPANS", "MDY_ICON_STROKE",
+]);
 
 const PANELS = join(root, "examples/plain/panels");
 const PANEL_SUITE = join(root, "e2e/plain/lab.spec.ts");

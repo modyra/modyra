@@ -19,7 +19,7 @@ import {
   formatIsoDate,
   isDateInRange,
   parseIsoDate } from "@modyra/core/datetime";
-import { calendarKeyboardTarget } from "@modyra/core/ui";
+import { calendarKeyboardTarget } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyCalendarHeaderComponent } from "./calendar-header.component";
 import { MdyMonthPickerComponent } from "./month-picker.component";

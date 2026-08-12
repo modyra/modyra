@@ -1,9 +1,9 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 652,
-    "asserted": 390,
-    "shown": 56
+    "published": 654,
+    "asserted": 393,
+    "shown": 60
   },
   "uncovered": [
     {
@@ -1283,12 +1283,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "MdyIconSpan",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyInteractivity",
@@ -2948,12 +2942,6 @@
     },
     {
       "name": "layoutSlotStyle",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "listboxNavigationIndex",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

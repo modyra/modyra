@@ -40,10 +40,6 @@
       "types": "./dist/datetime.d.ts",
       "default": "./dist/datetime.js"
     },
-    "./ui": {
-      "types": "./dist/ui.d.ts",
-      "default": "./dist/ui.js"
-    },
     "./localization": {
       "types": "./dist/localization.d.ts",
       "default": "./dist/localization.js"

@@ -14,7 +14,7 @@
  * is view state and never reaches the form.
  */
 import { addMonths, buildMonthGrid, formatIsoDate, isDateInRange, parseIsoDate, today, type CalendarDate } from "@modyra/core/datetime";
-import { calendarKeyboardTarget } from "@modyra/core/ui";
+import { calendarKeyboardTarget } from "../keyboard.js";
 import { observerFor, type MdyReactivity, type MdySignal } from "@modyra/core";
 import { dateRangeValueTransition, type MdyDateRangeValue } from "../behavior.js";
 import type { MdyUiCommand } from "../commands.js";

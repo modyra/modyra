@@ -1,4 +1,4 @@
-import { MdySelectOption } from "./types.js";
+import type { MdySelectOption } from "@modyra/core";
 
 /**
  * Filters an option list by a search query string.

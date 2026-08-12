@@ -214,7 +214,7 @@ above).
 - **Datepicker and timepicker interaction state machines** (grid focus
   movement, segment editing) still live inside the Angular components —
   unlike select/boolean/text, which moved to `@modyra/widgets`. Same
-  "the math is already in core" situation `@modyra/core/ui`/
+  "the math is already in core" situation `@modyra/widgets`/
   `date-utils`/`time-utils` describe; the remaining work is the
   stateful navigation logic itself.
 - **Overlay orchestration**: positioning *geometry* is core; the

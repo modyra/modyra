@@ -3,7 +3,7 @@
  */
 
 import { vanillaReactivity } from "@modyra/core";
-import { filterOptionsByQuery } from "@modyra/core/ui";
+import { filterOptionsByQuery } from "../options-utils.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 
 import type { MdyUiCommand } from "../commands.js";

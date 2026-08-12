@@ -10,7 +10,7 @@
 // sites keep their import. It was always framework-agnostic; keeping it in Plain is what let the
 // other two adapters drift, because only Plain was applying the projection's whole attribute map.
 export { applyPart } from "@modyra/widgets";
-import { MDY_ICONS, type MdyIconName } from "@modyra/core/ui";
+import { MDY_ICONS, type MdyIconName } from "@modyra/widgets";
 
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);

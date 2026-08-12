@@ -12,7 +12,7 @@ import {
   signal,
   viewChild,
 } from "@angular/core";
-import { filterOptionsByQuery } from "@modyra/core/ui";
+import { filterOptionsByQuery } from "@modyra/widgets";
 import type { MdyMultiselectMode } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
