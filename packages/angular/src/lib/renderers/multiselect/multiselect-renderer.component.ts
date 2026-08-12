@@ -245,6 +245,7 @@ export class MdyMultiselectComponent<TValue = string>
   protected override readonly overlayKind = "multiselect" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.multiselect;
+  protected override readonly widgetKind = "multiselect" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly mode = input<MdyMultiselectMode>("single");
 

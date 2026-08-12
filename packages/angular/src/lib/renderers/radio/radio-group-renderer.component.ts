@@ -1,6 +1,10 @@
 import { NgTemplateOutlet } from "@angular/common";
-import { ChangeDetectionStrategy, Component, input } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { ChangeDetectionStrategy, Component, effect, inject, Injector, input, OnInit } from "@angular/core";
+import {
+  createOptionFieldController,
+  MDY_WIDGET_CONTRACTS,
+  type MdyOptionFieldController,
+} from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -45,7 +49,7 @@ import { MdySelectOption } from "../../core/types";
             [checked]="value() === opt.value"
             [disabled]="isDisabled()"
             (change)="onSelectionChange(opt.value)"
-            (blur)="dispatchValueBlur('radio')"
+            (blur)="onBlur()"
           />
           <span class="mdy-radio-circle"></span>
           <span class="mdy-radio-label">{{ opt.label }}</span>
@@ -62,15 +66,48 @@ import { MdySelectOption } from "../../core/types";
     }
   `,
 })
-export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TValue | null> {
+export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TValue | null> implements OnInit {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.radio;
+  protected override readonly widgetKind = "radio" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
   readonly layout  = input<"vertical" | "horizontal">("vertical");
 
   protected readonly fieldId = `mdy-control-radio-${MdyBaseControl.nextId()}`;
 
+  private readonly injector = inject(Injector);
+  private controller: MdyOptionFieldController<TValue> | undefined;
+
+  override ngOnInit(): void {
+    this.controller = this.adoptFieldController((handle, widgetId) =>
+      createOptionFieldController<TValue>({
+        widgetId,
+        handle: handle as never,
+        options: this.options(),
+        variant: "radio",
+      }),
+    );
+    // The list is an input, so it can be replaced after the controller exists — the controller is
+    // told rather than rebuilt, because rebuilding forgets which option the keyboard was on. The
+    // injector is passed because this runs in `ngOnInit`, which is not an injection context.
+    effect(() => this.controller?.setOptions(this.options()), { injector: this.injector });
+    super.ngOnInit();
+  }
+
+
   protected onSelectionChange(value: TValue): void {
+    if (this.controller) {
+      this.controller.dispatch({ type: "select", optionKey: String(value) });
+      return;
+    }
     this.dispatchValueIntent<TValue | null>("radio", { type: "select", value });
+  }
+
+  protected onBlur(): void {
+    if (this.controller) {
+      this.controller.dispatch({ type: "blur" });
+      return;
+    }
+    this.dispatchValueBlur("radio");
   }
 }

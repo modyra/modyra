@@ -155,6 +155,7 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   protected override readonly overlayKind = "timepicker" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.timepicker;
+  protected override readonly widgetKind = "timepicker" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly placeholder = input<string>("");
