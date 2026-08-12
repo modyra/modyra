@@ -7,7 +7,6 @@ import {
   computed,
   inject,
   input,
-  signal,
   viewChild,
   Injector,
 } from "@angular/core";
@@ -20,9 +19,7 @@ import {
 } from "@modyra/core/datetime";
 import {
   createDatepickerFieldController,
-  dateDraftTransition,
   MDY_WIDGET_CONTRACTS,
-  type MdyDateDraftState,
   overlayControlledId,
   projectOverlayOpenerA11y,
 } from "@modyra/widgets";
@@ -114,13 +111,13 @@ import { MdyCalendarComponent } from "./calendar.component";
         [position]="position()"
         [alignment]="alignment()"
         [coords]="coords()"
-        [hasBackdrop]="variant() === 'modal' || position() === 'overlay'"
+        [hasBackdrop]="position() === 'overlay'"
         [widthMode]="'auto-content'"
         [panelClass]="popupClass"
         [kind]="'datepicker'"
         (close)="closeOverlay()"
       >
-        @if (variant() === 'modal') {
+        @if (position() === 'overlay') {
            <div class="mdy-datepicker__modal-header">
               <span class="mdy-datepicker__modal-label">{{ label() || i18n.datepickerSelectFallback }}</span>
               <span class="mdy-datepicker__modal-value">{{ modalDisplayValue() }}</span>
@@ -130,7 +127,7 @@ import { MdyCalendarComponent } from "./calendar.component";
         <mdy-calendar
         [gridId]="popupId()"
           #calendar
-          [selectedDate]="variant() === 'modal' ? tempSelectedDate() : parsedSelectedDate()"
+          [selectedDate]="parsedSelectedDate()"
           [minDate]="parsedMinDate()"
           [maxDate]="parsedMaxDate()"
           [ariaLabel]="label() || i18n.datepickerChooseDate"
@@ -138,12 +135,6 @@ import { MdyCalendarComponent } from "./calendar.component";
           (closed)="closeOverlay()"
         />
 
-        @if (variant() === 'modal') {
-           <div class="mdy-datepicker__actions">
-              <button type="button" class="mdy-datepicker__action-btn" (click)="cancelSelection()">{{ i18n.datepickerCancel }}</button>
-              <button type="button" class="mdy-datepicker__action-btn mdy-datepicker__action-btn--primary" (click)="applySelection()">{{ i18n.datepickerConfirm }}</button>
-           </div>
-        }
       </mdy-overlay-panel>
     </div>
 
@@ -169,7 +160,18 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   readonly placeholder = input<string>("YYYY-MM-DD");
   readonly minDate = input<string | null>(null);
   readonly maxDate = input<string | null>(null);
+  /**
+   * Where the popup sits: hung off the control, or covering the viewport.
+   *
+   * Presentation and nothing else. It used to mean "modal *and* confirm before committing", which
+   * contradicted this kind's own value contract (`commit: "live"`); what a field commits is the
+   * contract's answer and a placement never changes it.
+   */
   readonly variant = input<"docked" | "modal">("docked");
+
+  protected override forceModalPlacement(): boolean {
+    return this.variant() === "modal";
+  }
   readonly displayFormat = input<"iso" | "localized">("localized");
 
   protected override readonly minSpace = 450;
@@ -201,8 +203,6 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   private readonly calendarRef = viewChild<MdyCalendarComponent>("calendar");
   private readonly locale = inject(MDY_DATE_LOCALE);
 
-  private readonly modalDraft = signal<MdyDateDraftState>({ committed: null, draft: null, open: false });
-  protected readonly tempSelectedDate = computed(() => parseIsoDate(this.modalDraft().draft));
 
   protected readonly displayValue = computed((): string => {
     const v = this.value();
@@ -224,7 +224,7 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
 
   protected readonly modalDisplayValue = computed((): string => {
     try {
-      const d = this.tempSelectedDate() ?? this.parsedSelectedDate() ?? today();
+      const d = this.parsedSelectedDate() ?? today();
       const date = new Date(d.year, d.month - 1, d.day);
       return new Intl.DateTimeFormat(this.locale.locale, {
         weekday: "short",
@@ -249,50 +249,15 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   );
 
   protected override onBeforeOpen(): void {
-    this.modalDraft.set(dateDraftTransition(
-      this.modalDraft(),
-      { type: "open", committed: this.value() },
-      this.minDate(),
-      this.maxDate(),
-    ).state);
     afterNextRender(() => {
       const cal = this.calendarRef();
       if (!cal) return;
-      cal.syncView(this.tempSelectedDate());
+      cal.syncView(this.parsedSelectedDate());
       cal.focusFocusedDate();
     }, { injector: this.injector });
   }
 
-  protected applySelection(): void {
-    const transition = dateDraftTransition(
-      this.modalDraft(),
-      { type: "confirm" },
-      this.minDate(),
-      this.maxDate(),
-    );
-    this.modalDraft.set(transition.state);
-    if (transition.commit !== undefined) {
-      this.commitDate(transition.commit);
-    }
-    this.closeOverlay();
-  }
-
-  protected cancelSelection(): void {
-    const transition = dateDraftTransition(this.modalDraft(), { type: "cancel" });
-    this.modalDraft.set(transition.state);
-    this.closeOverlay();
-  }
-
-  protected onDatePicked(date: CalendarDate, forceApply = false): void {
-    if (this.variant() === "modal" && !forceApply) {
-      this.modalDraft.set(dateDraftTransition(
-        this.modalDraft(),
-        { type: "select", iso: formatIsoDate(date) },
-        this.minDate(),
-        this.maxDate(),
-      ).state);
-      return;
-    }
+  protected onDatePicked(date: CalendarDate): void {
     this.commitDate(formatIsoDate(date));
     this.closeOverlay();
   }

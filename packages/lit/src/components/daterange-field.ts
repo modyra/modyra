@@ -55,7 +55,18 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   declare firstDayOfWeek?: number;
   declare dateFilter?: (date: string) => boolean;
   /** `"docked"` (default) opens inline; `"modal"` shows a header and Cancel/OK actions. */
+  /**
+   * Where the popup sits: hung off the control, or covering the viewport.
+   *
+   * Presentation and nothing else. It used to mean "modal *and* confirm before committing", which
+   * contradicted this kind's own value contract (`commit: "live"`).
+   */
   declare variant: "docked" | "modal";
+
+  /** Read by the overlay controller, which carries it to the contract. */
+  protected forceModalPlacement(): boolean {
+    return this.variant === "modal";
+  }
   declare _open: boolean;
   declare _view: CalendarView;
   declare _viewYear: number;
@@ -240,26 +251,12 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       return;
     }
 
+    // The second pick closes the range and writes it: this kind's value contract says `live`, and
+    // a placement never changes that.
     const [s, e] = compareDates(start, date) <= 0 ? [start, date] : [date, start];
     this._pendingStartIso = formatIsoDate(s);
     this._pendingEndIso = formatIsoDate(e);
-    if (this.variant === "modal") {
-      this._phase = "pick-start";
-      this._hoverIso = null;
-      return;
-    }
     this.commitRange(handle, this._pendingStartIso, this._pendingEndIso);
-    this.closePopup(handle);
-  }
-
-  private confirmModal(handle: MdyFieldHandle<MdyDateRange | null>): void {
-    if (this._pendingStartIso && this._pendingEndIso) {
-      this.commitRange(handle, this._pendingStartIso, this._pendingEndIso);
-    }
-    this.closePopup(handle);
-  }
-
-  private cancelModal(handle: MdyFieldHandle<MdyDateRange | null>): void {
     this.closePopup(handle);
   }
 
@@ -504,7 +501,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     );
     const hint = this._phase === "pick-start" ? "Select start date" : "Select end date";
     const modalHeader =
-      this.variant === "modal"
+      this.overlay.state.position === "overlay"
         ? html`
             <div class="mdy-datepicker__modal-header">
               <span class="mdy-datepicker__modal-label">${this.label || "Select range"}</span>
@@ -512,27 +509,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
             </div>
           `
         : nothing;
-    const actions =
-      this.variant === "modal"
-        ? html`
-            <div class="mdy-datepicker__actions">
-              <button
-                type="button"
-                class="mdy-datepicker__action-btn"
-                @click=${() => this.cancelModal(handle)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                class="mdy-datepicker__action-btn mdy-datepicker__action-btn--primary"
-                @click=${() => this.confirmModal(handle)}
-              >
-                OK
-              </button>
-            </div>
-          `
-        : nothing;
+    const actions = nothing;
     return html`
       <div
         class="mdy-datepicker__calendar"
@@ -675,7 +652,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
           {
             position: this.overlay.state.position,
           alignment: this.overlay.state.alignment,
-          modal: this.overlay.state.position === "overlay" || this.variant === "modal",
+          modal: this.overlay.state.position === "overlay",
           panelStyle: this.overlay.state.panelStyle,
         })}
       </div>

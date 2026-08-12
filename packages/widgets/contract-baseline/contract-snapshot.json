@@ -2428,17 +2428,6 @@
             "selected"
           ]
         },
-        "actions": {
-          "element": "group",
-          "parent": "popup",
-          "optional": true,
-          "repeated": false,
-          "role": null,
-          "classes": [
-            "mdy-datepicker__actions"
-          ],
-          "states": []
-        },
         "inlineError": {
           "element": "image",
           "parent": "label",
@@ -2787,17 +2776,6 @@
           "states": [
             "selected"
           ]
-        },
-        "actions": {
-          "element": "group",
-          "parent": "popup",
-          "optional": true,
-          "repeated": false,
-          "role": null,
-          "classes": [
-            "mdy-datepicker__actions"
-          ],
-          "states": []
         },
         "inlineError": {
           "element": "image",

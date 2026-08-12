@@ -1,12 +1,10 @@
 {
   "note": "How far past its budget each renderer is today. These numbers may shrink and may not grow.",
   "overrun": {
-    "total": 449,
+    "total": 380,
     "files": {
       "select/select-renderer.component.ts": 90,
       "multiselect/multiselect-renderer.component.ts": 56,
-      "datepicker/daterange-renderer.component.ts": 18,
-      "datepicker/datepicker.component.ts": 16,
       "datepicker/calendar.component.ts": 1,
       "timepicker/timepicker-clock.component.ts": 78,
       "timepicker/timepicker-renderer.component.ts": 20,

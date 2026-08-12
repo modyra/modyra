@@ -2,7 +2,7 @@
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
     "published": 681,
-    "asserted": 403,
+    "asserted": 402,
     "shown": 48
   },
   "uncovered": [
@@ -458,9 +458,9 @@
     },
     {
       "name": "MdyCalendarViewMode",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
     },
     {
       "name": "MdyCanonicalExpectation",
@@ -638,9 +638,9 @@
     },
     {
       "name": "MdyDateDraftState",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyDateDraftTransition",
@@ -668,9 +668,9 @@
     },
     {
       "name": "MdyDateRangeDraftState",
-      "asserted": true,
+      "asserted": false,
       "shown": false,
-      "reason": "published and never shown"
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyDateRangeDraftTransition",

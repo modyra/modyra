@@ -1,6 +1,6 @@
 /**
  * Renders the "daterange" kind: two endpoints in one wrapper, a toggle, and a calendar popup that
- * edits a draft and commits on confirm.
+ * edits a draft and writes it as soon as both ends are known.
  *
  * What a range means — which pick starts it, which closes it, which cells fall between, what the
  * bounds refuse — is `createDaterangeFieldController`'s. This renderer owns DOM and events, and
@@ -90,17 +90,9 @@ export function renderDaterangeField(
   setIcon(nextButton, "CHEVRON_RIGHT");
   header.append(prevButton, monthLabel, nextButton);
   const grid = buildCalendarGrid("daterange");
-  const actions = el("div", definition.parts.actions.classes.join(" ")) as HTMLDivElement;
-  const cancelButton = el("button", "mdy-datepicker__action-btn") as HTMLButtonElement;
-  cancelButton.type = "button";
-  setText(cancelButton, "Cancel");
-  const applyButton = el("button", "mdy-datepicker__action-btn mdy-datepicker__action-btn--primary") as HTMLButtonElement;
-  applyButton.type = "button";
-  setText(applyButton, "Apply");
-  actions.append(cancelButton, applyButton);
   // Same frame as the single-date picker: the popup positions, the calendar lays out.
   const calendar = el("div", MDY_WIDGET_CONTRACTS.daterange.parts.calendar.classes.join(" "));
-  calendar.append(header, grid, actions);
+  calendar.append(header, grid);
   popup.append(calendar);
 
   // The start input is what the label names: a range has two controls and `for` can point at only
@@ -150,8 +142,6 @@ export function renderDaterangeField(
   }
   prevButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: -1 }));
   nextButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: 1 }));
-  cancelButton.addEventListener("click", () => dispatch({ type: "cancel" }));
-  applyButton.addEventListener("click", () => dispatch({ type: "confirm" }));
   // Escape dismisses from wherever the user is. This overlay does not take focus when it opens, so
   // listening on the popup alone meant the handler could only ever fire if the user had already
   // reached inside it — the keyboard could open the range and not close it.
@@ -218,14 +208,11 @@ export function renderDaterangeField(
     const monthKey = `${anchor.year}-${anchor.month}`;
     setText(monthLabel, `${dateLocale.monthNamesLong[anchor.month - 1]} ${anchor.year}`);
     if (renderedMonth !== monthKey) {
-      cellEls = fillCalendar(grid, "daterange", anchor.year, anchor.month, dateLocale, (cell) => {
-        dispatch({ type: "select-date", iso: cell.iso });
-        // Choosing the second endpoint answers the question the overlay asked.
-        if (!controller.state().open) return;
-        if (controller.state().picking === "start" && controller.state().draft.end !== null) {
-          dispatch({ type: "confirm" });
-        }
-      });
+      // The second pick closes the range, writes it and shuts the popup — all the controller's,
+      // because this kind's value contract says `live`.
+      cellEls = fillCalendar(grid, "daterange", anchor.year, anchor.month, dateLocale, (cell) =>
+        dispatch({ type: "select-date", iso: cell.iso }),
+      );
       renderedMonth = monthKey;
     }
     // Which cell is an endpoint and which falls between them is the controller's answer. Comparing

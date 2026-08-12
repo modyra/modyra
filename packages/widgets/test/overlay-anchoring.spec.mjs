@@ -505,3 +505,59 @@ test("every popup kind derives all three placement states, and the ordinary case
     assert.equal(popupAlignmentClass(kind, "left"), null, kind);
   }
 });
+
+/**
+ * The modal placement, chosen rather than fallen into.
+ *
+ * It is where a popup goes when neither side holds it, and ADR 0023 names it the modal placement.
+ * What was missing is a host being able to *ask* for it: a picker meant to cover the viewport had to
+ * hope the geometry refused every side, so two renderers grew a `modal` variant that reached it by
+ * other means — and carried a confirmation step along with it, which the value contract says never
+ * happens.
+ */
+test("a host can ask for the modal placement, and the room does not overrule it", () => {
+  // Room on both sides, generously: nothing here would centre the popup on its own.
+  const anchor = { top: 300, bottom: 340, left: 40, right: 340, width: 300 };
+  const viewport = { width: 1400, height: 1000 };
+
+  const docked = anchorOverlay(anchor, viewport, { minSpace: 240 });
+  assert.notEqual(docked.decision.placement, "overlay", "the room was there and it docked");
+
+  const modal = anchorOverlay(anchor, viewport, { minSpace: 240, forceModal: true });
+  assert.equal(modal.decision.placement, "overlay", "asked for, so nothing is weighed");
+
+  // The same answer through the lower-level policy, since a renderer may reach either.
+  assert.equal(
+    decideOverlayPlacement({
+      viewportWidth: viewport.width,
+      viewportHeight: viewport.height,
+      anchorTop: anchor.top,
+      anchorBottom: anchor.bottom,
+      anchorLeft: anchor.left,
+      anchorRight: anchor.right,
+      anchorWidth: anchor.width,
+      minSpace: 240,
+      minWidth: 160,
+      preferred: "below",
+      desiredHeight: 100,
+      forceModal: true,
+    }).placement,
+    "overlay",
+  );
+});
+
+/**
+ * A placement is presentation. It decides where the popup goes and never what the field commits —
+ * which is the confusion this option exists to end.
+ */
+test("forcing the modal placement changes nothing a field commits", () => {
+  const anchor = { top: 300, bottom: 340, left: 40, right: 340, width: 300 };
+  const viewport = { width: 1400, height: 1000 };
+  const docked = anchorOverlay(anchor, viewport, { minSpace: 240 });
+  const modal = anchorOverlay(anchor, viewport, { minSpace: 240, forceModal: true });
+
+  // Nothing about the value model travels with the placement: the two differ in where the popup is
+  // and in the room it has, and in nothing else the caller could mistake for a commit rule.
+  assert.equal(typeof modal.decision.fits, "boolean");
+  assert.equal(Object.keys(modal.decision).sort().join(","), Object.keys(docked.decision).sort().join(","));
+});
