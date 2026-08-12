@@ -49,11 +49,10 @@ test("the caret turns 180 degrees to open, and back again", async ({ page }) => 
 
   await page.locator(TRIGGER).first().click();
   await expect(page.locator(TRIGGER).first()).toHaveAttribute("aria-expanded", "true");
-  // Past the transition, so the resting angle is read rather than a frame of the animation.
-  await page.waitForTimeout(350);
-  const open = await caretAngle(page);
-
-  expect(open - rest).toBe(180);
+  // Waited *for the angle*, not for a duration: a fixed sleep is a guess about how long a transition
+  // takes on a loaded machine, and the guess is what made this suite red on webkit — an angle read
+  // two thirds of the way through a turn. Polling asks the same question until the answer settles.
+  await expect.poll(() => caretAngle(page)).toBe(rest + 180);
 });
 
 test("selecting an option returns the caret to its resting angle", async ({ page }) => {
@@ -62,10 +61,12 @@ test("selecting an option returns the caret to its resting angle", async ({ page
   const rest = await caretAngle(page);
 
   await page.locator(TRIGGER).first().click();
-  await page.waitForTimeout(350);
+  await expect(page.locator(TRIGGER).first()).toHaveAttribute("aria-expanded", "true");
   await page.locator(".mdy-select__option").first().click();
   await expect(page.locator(TRIGGER).first()).toHaveAttribute("aria-expanded", "false");
-  await page.waitForTimeout(350);
 
-  expect(await caretAngle(page)).toBe(rest);
+  // The regression this test exists for is a caret that *settles* pointing the wrong way, so waiting
+  // for it to settle is the honest way to read it — and it cannot hide the defect: a caret turned by
+  // `:focus-within` stays turned, and the poll would time out on it rather than pass.
+  await expect.poll(() => caretAngle(page)).toBe(rest);
 });
