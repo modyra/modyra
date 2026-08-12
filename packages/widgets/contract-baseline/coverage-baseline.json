@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 683,
-    "asserted": 405,
+    "published": 652,
+    "asserted": 390,
     "shown": 56
   },
   "uncovered": [
@@ -17,12 +17,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "Hct",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MDY_ADAPTER_CONTRACT_VIOLATION",
@@ -763,12 +757,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "MdyDerivedPalette",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "MdyDestroyedScopeError",
       "asserted": false,
       "shown": false,
@@ -1285,12 +1273,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "MdyHctPaletteModel",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "MdyI18nMessages",
       "asserted": true,
       "shown": false,
@@ -1597,24 +1579,6 @@
       "reason": "a testing utility: exercised by the suites it exists for, and not demonstrable in a demo"
     },
     {
-      "name": "MdyPaletteModel",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyPaletteModelName",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyPaletteRelation",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "MdyPartContract",
       "asserted": true,
       "shown": false,
@@ -1640,24 +1604,6 @@
     },
     {
       "name": "MdyPathRef",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyPerceptualPaletteModel",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyPerceptualPaletteModelName",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyPerceptualRelation",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
@@ -1727,12 +1673,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "MdyResolvedTheme",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdySanitizer",
@@ -1940,18 +1880,6 @@
     },
     {
       "name": "MdyTextFieldIntent",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyThemeDefinition",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
-      "name": "MdyThemeMode",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
@@ -2317,12 +2245,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "Oklch",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "ParsedTime",
       "asserted": false,
       "shown": false,
@@ -2575,12 +2497,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "compileMdyTheme",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "completeRange",
       "asserted": true,
       "shown": false,
@@ -2588,12 +2504,6 @@
     },
     {
       "name": "composeFirst",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "contrastRatio",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2720,24 +2630,6 @@
     },
     {
       "name": "defaultWidgetIdFactory",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "deltaEOK",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "deriveHctPalette",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "derivePalette",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -2899,24 +2791,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "hctToHex",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "hexToHct",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "hexToOklch",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "hourToAngle",
       "asserted": true,
       "shown": false,
@@ -2996,12 +2870,6 @@
     },
     {
       "name": "isFullyServerRenderable",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "isInSrgb",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3103,12 +2971,6 @@
       "reason": "published, neither asserted nor shown"
     },
     {
-      "name": "lstarFromY",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "matchesValueShape",
       "asserted": true,
       "shown": false,
@@ -3116,12 +2978,6 @@
     },
     {
       "name": "max",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "maxSrgbChroma",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3206,18 +3062,6 @@
     },
     {
       "name": "normalizeStateLedger",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "oklchToHex",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "oklchToLinearRgb",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3320,12 +3164,6 @@
     },
     {
       "name": "parseDynamicFields",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "parseHex",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3481,12 +3319,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "relativeLuminance",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
       "name": "renderBooleanField",
       "asserted": false,
       "shown": false,
@@ -3554,12 +3386,6 @@
     },
     {
       "name": "selectKeyboardAction",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "serializeMdyThemeCss",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3703,12 +3529,6 @@
       "reason": "published and never shown"
     },
     {
-      "name": "toHex",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
-    },
-    {
       "name": "today",
       "asserted": true,
       "shown": false,
@@ -3785,12 +3605,6 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
-    },
-    {
-      "name": "yFromLstar",
-      "asserted": false,
-      "shown": false,
-      "reason": "published, neither asserted nor shown"
     }
   ]
 }

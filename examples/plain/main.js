@@ -10,8 +10,7 @@ import {
   record as mdyRecord,
   required as mdyRequired,
 } from "@modyra/core";
-import { MDY_PALETTE_MODELS } from "@modyra/core/color-utils";
-import { compileMdyTheme, serializeMdyThemeCss } from "@modyra/core/theme-compiler";
+import { MDY_PALETTE_MODELS, compileMdyTheme, serializeMdyThemeCss } from "@modyra/styles";
 import { mountMdyForm, renderField } from "@modyra/plain";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { inspectWidgetDom } from "@modyra/widgets/testing";

@@ -28,14 +28,6 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./color-utils": {
-      "types": "./dist/color-utils.d.ts",
-      "default": "./dist/color-utils.js"
-    },
-    "./theme-compiler": {
-      "types": "./dist/theme-compiler.d.ts",
-      "default": "./dist/theme-compiler.js"
-    },
     "./serialize": {
       "types": "./dist/serialize.d.ts",
       "default": "./dist/serialize.js"
