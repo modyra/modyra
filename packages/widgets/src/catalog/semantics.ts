@@ -42,6 +42,9 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   // Structures with their own semantics.
   listbox: "listbox", option: "option", swatch: "option", popup: "popup", calendar: "popup",
   clock: "popup", dialog: "dialog", grid: "grid", gridcell: "gridcell",
+  // The month and year views are grids of choices, like the day grid they replace — so a keyboard
+  // user meets the same structure whichever view is showing, rather than a run of bare buttons.
+  monthPicker: "grid", monthCell: "gridcell", yearPicker: "grid", yearCell: "gridcell",
   // Containers the contract deliberately leaves unconstrained.
   group: "group", inputWrapper: "group", prefix: "group", suffix: "group", container: "group",
   content: "group", header: "group", dialogHeader: "group", actions: "group", chips: "group",

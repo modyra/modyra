@@ -11,6 +11,7 @@
  */
 import type { MdyFieldHandle, MdyInteractivity } from "@modyra/core";
 import type { MdyDateRangeValue } from "../behavior.js";
+import type { MdyCalendarViewMode } from "./calendar-view.js";
 
 export type { MdyDateRangeValue };
 
@@ -61,6 +62,8 @@ export interface MdyDaterangeFieldState {
    * not a decision, and treating it as one commits a range on the first click.
    */
   readonly previewed: MdyDateRangeValue;
+  /** Days, months or years — what the popup is showing. See {@link MdyCalendarViewMode}. */
+  readonly viewMode: MdyCalendarViewMode;
   readonly viewYear: number;
   readonly viewMonth: number;
   readonly focusedDate: string;
@@ -87,6 +90,11 @@ export type MdyDaterangeFieldIntent =
   | { readonly type: "open" }
   | { readonly type: "close"; readonly restoreFocus?: boolean }
   | { readonly type: "navigate-month"; readonly delta: number }
+  | { readonly type: "set-view-mode"; readonly mode: MdyCalendarViewMode }
+  /** Choose a month from the month view; narrows to its days. */
+  | { readonly type: "select-month"; readonly month: number }
+  /** Choose a year from the year view; narrows to its months. */
+  | { readonly type: "select-year"; readonly year: number }
   | { readonly type: "keydown"; readonly key: string; readonly shiftKey?: boolean }
   | { readonly type: "select-date"; readonly iso: string }
   /** The cell under the pointer, or null when it leaves the grid. */

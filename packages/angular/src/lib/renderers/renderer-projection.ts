@@ -34,3 +34,4 @@ export function moveCalendarMonth(
   const view = addMonths({ year, month, day: 1 }, delta);
   return { year: view.year, month: view.month, focused: addMonths(focused, delta) };
 }
+

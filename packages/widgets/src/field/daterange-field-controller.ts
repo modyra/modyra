@@ -28,6 +28,7 @@ import type {
   MdyDaterangeFieldState,
 } from "./daterange-field-types.js";
 import { showsAsInvalid } from "./verdict.js";
+import { calendarViewAfterPick, type MdyCalendarViewMode } from "./calendar-view.js";
 
 export interface MdyDaterangeFieldController
   extends MdyWidgetController<MdyDaterangeFieldState, MdyDaterangeFieldIntent> {
@@ -55,6 +56,10 @@ export function createDaterangeFieldController(
   const bounds = () => ({ minIso: options.minDate ?? null, maxIso: options.maxDate ?? null });
   const minDate = (): CalendarDate | null => parseIsoDate(options.minDate ?? null);
   const maxDate = (): CalendarDate | null => parseIsoDate(options.maxDate ?? null);
+
+  // Which of the three views the popup is showing. State, so a renderer asks rather than deciding:
+  // two of them had grown their own and could disagree about where choosing a year lands.
+  const viewMode = reactivity.signal<MdyCalendarViewMode>("days");
 
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
@@ -123,6 +128,7 @@ export function createDaterangeFieldController(
       value: committed,
       draft: draft(),
       previewed: shown,
+      viewMode: viewMode(),
       viewYear: year,
       viewMonth: month,
       focusedDate: focused,
@@ -212,6 +218,7 @@ export function createDaterangeFieldController(
     draft.set(committed);
     preview.set(null);
     moveFocus(parseIsoDate(committed.start) ?? parseIsoDate(focusedDate()) ?? today());
+    viewMode.set("days");
     open.set(true);
     return [{ type: "open-overlay", anchor: { part: "toggle" } }];
   }
@@ -260,6 +267,21 @@ export function createDaterangeFieldController(
       case "preview":
         preview.set(intent.iso);
         return [];
+      case "set-view-mode": {
+        viewMode.set(intent.mode);
+        return [];
+      }
+      case "select-month": {
+        viewMonth.set(intent.month);
+        // Choosing narrows: a month lands on its days, so the funnel ends where the picking is.
+        viewMode.set(calendarViewAfterPick("months"));
+        return [];
+      }
+      case "select-year": {
+        viewYear.set(intent.year);
+        viewMode.set(calendarViewAfterPick("years"));
+        return [];
+      }
       case "keydown": {
         if (intent.key === "Escape") {
           draft.set(handle.value() ?? EMPTY);

@@ -216,38 +216,6 @@
       "modyra-material.css"
     ]
   },
-  "mdy-datepicker__month-cell": {
-    "kind": "drift",
-    "adapters": [
-      "angular"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__month-cell--selected": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__month-picker": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
   "mdy-datepicker__nav-btn": {
     "kind": "drift",
     "adapters": [
@@ -294,28 +262,6 @@
       "modyra.css"
     ]
   },
-  "mdy-datepicker__year-cell": {
-    "kind": "drift",
-    "adapters": [
-      "angular"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__year-cell--selected": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra.css"
-    ]
-  },
   "mdy-datepicker__year-grid": {
     "kind": "unstyled",
     "adapters": [
@@ -323,16 +269,6 @@
       "lit"
     ],
     "themes": []
-  },
-  "mdy-datepicker__year-picker": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
   },
   "mdy-daterange__group": {
     "kind": "drift",

@@ -10,6 +10,7 @@
  * datepicker-field-controller.ts.
  */
 import type { MdyInteractivity } from "@modyra/core";
+import type { MdyCalendarViewMode } from "./calendar-view.js";
 import type { MdyFieldHandle } from "@modyra/core";
 
 export interface MdyDatepickerFieldControllerOptions {
@@ -40,6 +41,8 @@ export interface MdyDatepickerFieldCell {
 /** Semantic state of a datepicker field widget. */
 export interface MdyDatepickerFieldState {
   readonly selectedDate: string | null;
+  /** Days, months or years — what the popup is showing. See {@link MdyCalendarViewMode}. */
+  readonly viewMode: MdyCalendarViewMode;
   readonly viewYear: number;
   readonly viewMonth: number;
   readonly focusedDate: string;
@@ -64,6 +67,11 @@ export type MdyDatepickerFieldIntent =
   | { readonly type: "open" }
   | { readonly type: "close"; readonly restoreFocus?: boolean }
   | { readonly type: "navigate-month"; readonly delta: number }
+  | { readonly type: "set-view-mode"; readonly mode: MdyCalendarViewMode }
+  /** Choose a month from the month view; narrows to its days. */
+  | { readonly type: "select-month"; readonly month: number }
+  /** Choose a year from the year view; narrows to its months. */
+  | { readonly type: "select-year"; readonly year: number }
   | { readonly type: "keydown"; readonly key: string; readonly shiftKey?: boolean }
   | { readonly type: "select-date"; readonly iso: string }
   | { readonly type: "clear" }

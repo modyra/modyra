@@ -31,6 +31,7 @@ import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectDatepickerFieldA11y } from "./datepicker-field-a11y.js";
 import { showsAsInvalid } from "./verdict.js";
+import { calendarViewAfterPick, type MdyCalendarViewMode } from "./calendar-view.js";
 import type {
   MdyDatepickerFieldCell,
   MdyDatepickerFieldControllerOptions,
@@ -72,6 +73,10 @@ export function createDatepickerFieldController(
   const minDate = (): CalendarDate | null => parseIsoDate(minIso());
   const maxDate = (): CalendarDate | null => parseIsoDate(maxIso());
 
+  // Which of the three views the popup is showing. State, so a renderer asks rather than deciding:
+  // two of them had grown their own and could disagree about where choosing a year lands.
+  const viewMode = reactivity.signal<MdyCalendarViewMode>("days");
+
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
 
@@ -105,6 +110,7 @@ export function createDatepickerFieldController(
     }));
     return {
       selectedDate,
+      viewMode: viewMode(),
       viewYear: year,
       viewMonth: month,
       focusedDate: focused,
@@ -185,6 +191,7 @@ export function createDatepickerFieldController(
   function openPicker(): readonly MdyUiCommand[] {
     const current = parseIsoDate(handle.value()) ?? parseIsoDate(focusedDate()) ?? today();
     moveFocus(current);
+    viewMode.set("days");
     open.set(true);
     return [{ type: "open-overlay", anchor: { part: "trigger" } }];
   }
@@ -214,6 +221,21 @@ export function createDatepickerFieldController(
         const next = addMonths({ year: viewYear(), month: viewMonth(), day: 1 }, intent.delta);
         viewYear.set(next.year);
         viewMonth.set(next.month);
+        return [];
+      }
+      case "set-view-mode": {
+        viewMode.set(intent.mode);
+        return [];
+      }
+      case "select-month": {
+        viewMonth.set(intent.month);
+        // Choosing narrows: a month lands on its days, so the funnel ends where the picking is.
+        viewMode.set(calendarViewAfterPick("months"));
+        return [];
+      }
+      case "select-year": {
+        viewYear.set(intent.year);
+        viewMode.set(calendarViewAfterPick("years"));
         return [];
       }
       case "keydown": {

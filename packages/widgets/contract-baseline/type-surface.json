@@ -171,6 +171,21 @@
   "MdyCalendarIssueCode": [
     "(opaque)"
   ],
+  "MdyCalendarPeriodCell": [
+    "disabled: boolean",
+    "focused?: boolean",
+    "label: string",
+    "selected: boolean",
+    "value: number"
+  ],
+  "MdyCalendarViewA11yOptions": [
+    "kind: \"datepicker\" | \"daterange\"",
+    "labelledBy?: string",
+    "widgetId: string"
+  ],
+  "MdyCalendarViewMode": [
+    "(opaque)"
+  ],
   "MdyCanonicalExpectation": [
     "focusOwner?: string | null",
     "optional: readonly string[]",
@@ -393,6 +408,7 @@
     "required: boolean",
     "selectedDate: string | null",
     "touched: boolean",
+    "viewMode: MdyCalendarViewMode",
     "viewMonth: number",
     "viewYear: number"
   ],
@@ -442,6 +458,7 @@
     "required: boolean",
     "touched: boolean",
     "value: MdyDateRangeValue",
+    "viewMode: MdyCalendarViewMode",
     "viewMonth: number",
     "viewYear: number"
   ],
@@ -2136,6 +2153,10 @@
     "(2) shiftKey?: boolean",
     "-> returns: CalendarDate | null"
   ],
+  "calendarViewAfterPick": [
+    "(0) mode: MdyCalendarViewMode",
+    "-> returns: MdyCalendarViewMode"
+  ],
   "calendarYearRange": [
     "(0) viewYear: number",
     "(1) min: CalendarDate | null",
@@ -2863,6 +2884,17 @@
     "(1) errors: ReadonlyArray<MdyFieldError>",
     "(2) options: MdyBooleanFieldA11yOptions",
     "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly input: MdyPartContract; /** The drawn control: a checkbox's box, decorative because the native input carries the state. */ readonly indicator: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; }"
+  ],
+  "projectCalendarPeriodCellA11y": [
+    "(0) mode: Exclude<MdyCalendarViewMode, \"days\">",
+    "(1) cell: MdyCalendarPeriodCell",
+    "(2) options: MdyCalendarViewA11yOptions",
+    "-> returns: MdyPartContract"
+  ],
+  "projectCalendarViewA11y": [
+    "(0) mode: MdyCalendarViewMode",
+    "(1) options: MdyCalendarViewA11yOptions",
+    "-> returns: MdyPartContract | null"
   ],
   "projectDatepickerFieldA11y": [
     "(0) state: MdyDatepickerFieldState",
