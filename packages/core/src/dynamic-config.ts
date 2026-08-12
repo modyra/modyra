@@ -443,8 +443,26 @@ export type MdyDynamicNode =
   | MdyDynamicRecordNode;
 
 /** Flattens a recursive schema to the dotted/indexed paths consumed by the current renderer. */
-export function flattenDynamicSchema(schema: MdyDynamicGroupNode): MdyDynamicField[] {
+/** A collection the schema declared, and which of the two kinds it is. */
+export interface MdyDynamicCollection {
+  readonly path: string;
+  readonly kind: "array" | "record";
+}
+
+/**
+ * The fields a nested schema flattens to, and the collections that flattening walked through.
+ *
+ * A path cannot say which it came from: `lines.0` reads as the key `"0"` whether the document
+ * declared an array or a record keyed by digits. Reporting the collections alongside the fields is
+ * what lets a consumer rebuild the shape the document declared instead of guessing it — and
+ * guessing is the one thing that cannot be made safe, because both readings are legitimate.
+ */
+export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
+  readonly fields: MdyDynamicField[];
+  readonly collections: MdyDynamicCollection[];
+} {
   const out: MdyDynamicField[] = [];
+  const collections: MdyDynamicCollection[] = [];
   const visit = (node: MdyDynamicNode, path: string, initial: unknown): void => {
     if (node.node === "field") {
       const candidate = { ...node.field, name: path, initialValue: initial ?? node.field.initialValue } as MdyDynamicField;
@@ -463,6 +481,7 @@ export function flattenDynamicSchema(schema: MdyDynamicGroupNode): MdyDynamicFie
       return;
     }
     if (node.node === "record") {
+      collections.push({ path, kind: "record" });
       const declared = isRecordValue(initial)
         ? initial
         : isRecordValue(node.initialValue) ? node.initialValue : {};
@@ -473,11 +492,17 @@ export function flattenDynamicSchema(schema: MdyDynamicGroupNode): MdyDynamicFie
       }
       return;
     }
+    collections.push({ path, kind: "array" });
     const rows = Array.isArray(initial) ? initial : Array.isArray(node.initialValue) ? node.initialValue : [];
     rows.forEach((row, index) => visit(node.item, `${path}.${index}`, row));
   };
   visit(schema, "", undefined);
-  return out;
+  return { fields: out, collections };
+}
+
+/** The fields alone — {@link flattenDynamicForm} also reports the collections they came from. */
+export function flattenDynamicSchema(schema: MdyDynamicGroupNode): MdyDynamicField[] {
+  return flattenDynamicForm(schema).fields;
 }
 
 function isRecordValue(value: unknown): value is Record<string, unknown> {
@@ -711,6 +736,18 @@ export interface MdyDynamicFormParseResult {
   readonly ok: boolean;
   readonly version: 1 | 2 | 3 | null;
   readonly fields: ReadonlyArray<MdyDynamicField>;
+  /**
+   * The collections the document declared, by path and kind.
+   *
+   * `fields` names them by path — `lines.0.name` — and a path cannot say which kind it came from:
+   * `lines.0` reads as the key `"0"` whether the document declared an array or a record keyed by
+   * digits. A consumer that rebuilds a schema from these fields reads this to rebuild the shape the
+   * document declared rather than guessing it.
+   *
+   * Optional on the type and always present at runtime: a stand-in built by a consumer's test keeps
+   * compiling, and reading it is what a consumer actually does with a parse result.
+   */
+  readonly collections?: ReadonlyArray<MdyDynamicCollection>;
   readonly layout: ReadonlyArray<MdyDynamicLayoutNode>;
   readonly rules: ReadonlyArray<MdyDynamicRule>;
   readonly validations: ReadonlyArray<MdyDynamicValidation>;
@@ -1049,6 +1086,7 @@ export function parseDynamicForm(
     ? input as { version?: unknown; schema?: unknown }
     : undefined;
   let fields: MdyDynamicField[];
+  let collections: MdyDynamicCollection[] = [];
   try {
     fields = (rawEnvelope?.version === 2 || rawEnvelope?.version === 3) && rawEnvelope.schema !== undefined
       ? []
@@ -1066,7 +1104,11 @@ export function parseDynamicForm(
   if (structured && envelope?.schema !== undefined) {
     const schemaDiagnostics = validateDynamicSchema(envelope.schema);
     diagnostics.push(...schemaDiagnostics);
-    if (schemaDiagnostics.length === 0) fields = flattenDynamicSchema(envelope.schema as MdyDynamicGroupNode);
+    if (schemaDiagnostics.length === 0) {
+      const walked = flattenDynamicForm(envelope.schema as MdyDynamicGroupNode);
+      fields = walked.fields;
+      collections = walked.collections;
+    }
   }
   const names = new Set(fields.map((field) => field.name));
   const layout: MdyDynamicLayoutNode[] = [];
@@ -1157,7 +1199,7 @@ export function parseDynamicForm(
     layout: strict && diagnostics.length > 0 ? [] : layout,
     rules: strict && diagnostics.length > 0 ? [] : rules,
     validations: strict && diagnostics.length > 0 ? [] : validations,
-    diagnostics, acceptedCount: fields.length, rejectedCount,
+    collections, diagnostics, acceptedCount: fields.length, rejectedCount,
   };
 }
 
