@@ -25,7 +25,19 @@
  * `manual` rather than `auto`: light-dismiss would close the popup before an adapter's own
  * outside-pointer handling ran, and two things closing one popup is how a click-through appears.
  */
-export function setOverlayOpen(popup: HTMLElement, open: boolean): void {
+/**
+ * Shows or hides a popup, and puts the backdrop under it when the placement is modal.
+ *
+ * The backdrop is what makes a modal one: the page behind stays visible and stops taking the
+ * pointer. `MDY_SHARED_UI_CLASSES` names it, a theme paints it, and every adapter draws it — which
+ * is the part that had gone wrong. One renderer wrote its colour as a literal, one drew it under
+ * every open popup including the dropdowns, and one drew none at all, so the same contract produced
+ * three different modals.
+ *
+ * Here rather than in each renderer, because "a modal dims what is behind it" is not a rendering
+ * decision any of them gets to make differently.
+ */
+export function setOverlayOpen(popup: HTMLElement, open: boolean, modal = false): void {
   if (popup.getAttribute("popover") !== "manual") popup.setAttribute("popover", "manual");
   popup.hidden = !open;
   // `showPopover` throws when the element is already showing, is disconnected, or the browser has no
@@ -37,6 +49,36 @@ export function setOverlayOpen(popup: HTMLElement, open: boolean): void {
   } catch {
     // Nothing to do: the attribute and `hidden` already carry the state.
   }
+  syncOverlayBackdrop(popup, open && modal);
+}
+
+/** Marks the backdrop this module owns, so it is never confused with one a renderer drew itself. */
+const BACKDROP_OWNER = "mdyOverlayBackdrop";
+
+/**
+ * One backdrop per popup, in the popup's own document, removed when it closes.
+ *
+ * Placed immediately before the popup so it sits under it in paint order without a z-index race,
+ * and marked so a renderer that draws its own — a framework whose template owns the element — is
+ * left alone.
+ *
+ * Exported because the placement is often known a moment after the popup is shown: a renderer that
+ * measures, decides and then places calls this with the answer rather than opening twice.
+ */
+export function syncOverlayBackdrop(popup: HTMLElement, wanted: boolean): void {
+  const existing = popup.previousElementSibling as HTMLElement | null;
+  const own = existing?.dataset?.[BACKDROP_OWNER] === "" ? existing : null;
+  if (!wanted) {
+    own?.remove();
+    return;
+  }
+  if (own) return;
+  const document = popup.ownerDocument;
+  if (!document) return;
+  const backdrop = document.createElement("div");
+  backdrop.className = "mdy-overlay-backdrop";
+  backdrop.dataset[BACKDROP_OWNER] = "";
+  popup.parentElement?.insertBefore(backdrop, popup);
 }
 
 /**

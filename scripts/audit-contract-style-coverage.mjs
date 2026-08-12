@@ -54,6 +54,7 @@ import {
   stateClass,
   widgetStateClasses,
 } from "../packages/widgets/dist/index.js";
+import { MDY_SHARED_UI_CLASSES } from "../packages/widgets/dist/vocabulary.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const ALLOWLIST_PATH = join(ROOT, "scripts/contract-coverage-allowlist.json");
@@ -82,6 +83,11 @@ function contractClasses() {
     ...Object.values(MDY_FIELD_SHELL_CLASSES),
     ...Object.values(MDY_LAYOUT_CLASSES),
     ...Object.values(MDY_CHIP_CLASSES),
+    // The classes that belong to no single kind: the overlay panel and its backdrop, the button, the
+    // inline-error tooltip. The contract names them in one table and this audit did not read it, so
+    // nine classes the contract declares were reported as being outside it and lived in the
+    // allowlist for that reason alone.
+    ...MDY_SHARED_UI_CLASSES,
   ]);
   for (const kind of MDY_WIDGET_KINDS) for (const c of widgetStateClasses(kind)) out.add(c);
   // The chip is a primitive rather than a part of one widget: its variants come from the function
