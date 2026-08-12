@@ -2136,6 +2136,12 @@
     "(2) shiftKey?: boolean",
     "-> returns: CalendarDate | null"
   ],
+  "calendarYearRange": [
+    "(0) viewYear: number",
+    "(1) min: CalendarDate | null",
+    "(2) max: CalendarDate | null",
+    "-> returns: readonly number[]"
+  ],
   "canonicalWidgetSnapshot": [
     "(0) root: Element",
     "(1) kind: MdyWidgetKind",
@@ -2551,6 +2557,13 @@
     "(1) epsilon?: number",
     "-> returns: boolean"
   ],
+  "isMonthOutOfRange": [
+    "(0) year: number",
+    "(1) month: number",
+    "(2) min: CalendarDate | null",
+    "(3) max: CalendarDate | null",
+    "-> returns: boolean"
+  ],
   "isPathRef": [
     "(0) operand: MdyOperand",
     "-> returns: operand is MdyPathRef"
@@ -2580,6 +2593,12 @@
   ],
   "isValidWidgetId": [
     "(0) widgetId: string",
+    "-> returns: boolean"
+  ],
+  "isYearOutOfRange": [
+    "(0) year: number",
+    "(1) min: CalendarDate | null",
+    "(2) max: CalendarDate | null",
     "-> returns: boolean"
   ],
   "keyBindingFor": [

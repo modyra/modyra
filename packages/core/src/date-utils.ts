@@ -96,6 +96,52 @@ export function isDateInRange(
   return true;
 }
 
+/**
+ * Whether a whole month lies outside the range, so a month picker can grey it out.
+ *
+ * The question a calendar asks when it offers months rather than days, and asking it of a *date*
+ * gets it wrong at the edges: the first of a month can be before `min` while most of that month is
+ * reachable. So it is asked of the month.
+ */
+export function isMonthOutOfRange(
+  year: number,
+  month: number,
+  min: CalendarDate | null,
+  max: CalendarDate | null,
+): boolean {
+  if (min && (year < min.year || (year === min.year && month < min.month))) return true;
+  if (max && (year > max.year || (year === max.year && month > max.month))) return true;
+  return false;
+}
+
+/** Whether a whole year lies outside the range, for the same reason as the month above. */
+export function isYearOutOfRange(
+  year: number,
+  min: CalendarDate | null,
+  max: CalendarDate | null,
+): boolean {
+  return (min !== null && year < min.year) || (max !== null && year > max.year);
+}
+
+/**
+ * The years a year picker offers.
+ *
+ * Wide enough that a birth date and a far maturity are both reachable by scrolling, and always
+ * containing the year on screen — a picker that cannot show where it already is has no way back.
+ * Stated once because two renderers each choosing a span is two different pickers.
+ */
+export function calendarYearRange(
+  viewYear: number,
+  min: CalendarDate | null,
+  max: CalendarDate | null,
+): readonly number[] {
+  const start = Math.min(min?.year ?? 1920, viewYear - 100, 1920);
+  const end = Math.max(max?.year ?? 2120, viewYear + 100, 2120);
+  const years: number[] = [];
+  for (let year = start; year <= end; year += 1) years.push(year);
+  return years;
+}
+
 /** Add months to a CalendarDate, clamping the day if needed. */
 export function addMonths(d: CalendarDate, count: number): CalendarDate {
   let month = d.month + count;

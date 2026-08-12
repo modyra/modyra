@@ -8,7 +8,7 @@ import {
   output,
   viewChildren,
 } from "@angular/core";
-import { CalendarDate } from "@modyra/core/datetime";
+import { CalendarDate, calendarYearRange, isYearOutOfRange } from "@modyra/core/datetime";
 
 @Component({
   selector: "mdy-year-picker",
@@ -51,27 +51,12 @@ export class MdyYearPickerComponent {
     });
   }
 
-  protected readonly years = computed(() => {
-
-    const min = this.minDate()?.year ?? 1920;
-    const max = this.maxDate()?.year ?? 2120;
-
-    const cur = this.currentYear();
-    const startYear = Math.min(min, cur - 100, 1920);
-    const endYear = Math.max(max, cur + 100, 2120);
-
-    const result: number[] = [];
-    for (let i = startYear; i <= endYear; i++) {
-      result.push(i);
-    }
-    return result;
-  });
+  /** The years on offer, from the contract: two renderers each choosing a span is two pickers. */
+  protected readonly years = computed(() =>
+    calendarYearRange(this.currentYear(), this.minDate(), this.maxDate()),
+  );
 
   protected isYearDisabled(year: number): boolean {
-    const min = this.minDate();
-    const max = this.maxDate();
-    if (min && year < min.year) return true;
-    if (max && year > max.year) return true;
-    return false;
+    return isYearOutOfRange(year, this.minDate(), this.maxDate());
   }
 }
