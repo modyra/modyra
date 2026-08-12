@@ -17,6 +17,7 @@ import {
   partClasses,
   projectCalendarPeriodCellA11y,
   projectCalendarViewA11y,
+  calendarViewOnToggle,
   type MdyCalendarViewMode,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
@@ -185,12 +186,12 @@ export function renderDatepickerField(
   wrapper.addEventListener("keydown", onEscape);
   popup.addEventListener("keydown", onEscape);
 
-  // The label is how the other two renderers reach the month and year views, and how this one does
-  // now: days → months → years, and choosing narrows back down.
-  monthLabel.addEventListener("click", () => {
-    const mode = controller.state().viewMode;
-    dispatch({ type: "set-view-mode", mode: mode === "days" ? "months" : "years" });
-  });
+  // The header goes to the top of the funnel and choosing narrows back down. Which view it opens
+  // is `calendarViewOnToggle`'s answer, not this renderer's: writing it here is how three renderers
+  // came to disagree about what the same control does.
+  monthLabel.addEventListener("click", () =>
+    dispatch({ type: "set-view-mode", mode: calendarViewOnToggle(controller.state().viewMode) }),
+  );
 
   const undismiss = dismissOnOutsidePointer(
     [wrapper],

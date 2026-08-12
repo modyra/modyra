@@ -2157,6 +2157,10 @@
     "(0) mode: MdyCalendarViewMode",
     "-> returns: MdyCalendarViewMode"
   ],
+  "calendarViewOnToggle": [
+    "(0) mode: MdyCalendarViewMode",
+    "-> returns: MdyCalendarViewMode"
+  ],
   "calendarYearRange": [
     "(0) viewYear: number",
     "(1) min: CalendarDate | null",

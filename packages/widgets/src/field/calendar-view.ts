@@ -23,3 +23,18 @@ export type MdyCalendarViewMode = (typeof MDY_CALENDAR_VIEW_MODES)[number];
 export function calendarViewAfterPick(mode: MdyCalendarViewMode): MdyCalendarViewMode {
   return mode === "years" ? "months" : "days";
 }
+
+/**
+ * Where the header's own control goes.
+ *
+ * The top of the funnel, not the next step down it: from the days it opens the *years*, because a
+ * user reaching for the header is looking for a date far from the month on screen — a birth date, a
+ * maturity — and walking through the months to get there is the paging the views exist to avoid.
+ * From anywhere else it goes back to the days.
+ *
+ * Stated because the two renderers that had these views agreed on it by accident and a third,
+ * written later, chose the other order.
+ */
+export function calendarViewOnToggle(mode: MdyCalendarViewMode): MdyCalendarViewMode {
+  return mode === "days" ? "years" : "days";
+}

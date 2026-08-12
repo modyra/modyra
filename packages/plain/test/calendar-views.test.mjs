@@ -38,26 +38,26 @@ const monthGrid = (host) => host.querySelector(".mdy-datepicker__month-picker");
 const yearGrid = (host) => host.querySelector(".mdy-datepicker__year-picker");
 const dayGrid = (host) => host.querySelector(".mdy-datepicker__grid");
 
-test("the header opens the month view, and again the year view", async () => {
+test("the header opens the years, and closes back to the days", async () => {
   const { host } = await mount();
   assert.equal(dayGrid(host).hidden, false, "a calendar opens on its days");
-  assert.equal(monthGrid(host).hidden, true);
+  assert.equal(yearGrid(host).hidden, true);
 
+  // The top of the funnel, not the next step down it: someone reaching for the header wants a date
+  // far from the month on screen, and walking the months to get there is the paging this avoids.
   label(host).dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
   await settle();
-  assert.equal(monthGrid(host).hidden, false, "the label opened the months");
+  assert.equal(yearGrid(host).hidden, false, "the label opened the years");
   assert.equal(dayGrid(host).hidden, true, "the views replace the grid, they do not stack on it");
 
   label(host).dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
   await settle();
-  assert.equal(yearGrid(host).hidden, false, "and again, the years");
-  assert.equal(monthGrid(host).hidden, true);
+  assert.equal(dayGrid(host).hidden, false, "and again, back to the days");
+  assert.equal(yearGrid(host).hidden, true);
 });
 
 test("choosing narrows towards the days, and the grid follows", async () => {
   const { host } = await mount();
-  label(host).dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
-  await settle();
   label(host).dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
   await settle();
 
@@ -80,9 +80,9 @@ test("the views carry the semantics the day grid already had", async () => {
   label(host).dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
   await settle();
 
-  assert.equal(monthGrid(host).getAttribute("role"), "grid", "a run of bare buttons announces nothing");
-  const chosen = monthGrid(host).querySelector('[aria-selected="true"]');
-  assert.ok(chosen, "which month is showing was a class and nothing a screen reader could read");
+  assert.equal(yearGrid(host).getAttribute("role"), "grid", "a run of bare buttons announces nothing");
+  const chosen = yearGrid(host).querySelector('[aria-selected="true"]');
+  assert.ok(chosen, "which year is showing was a class and nothing a screen reader could read");
   assert.equal(chosen.textContent.trim().length > 0, true);
 });
 
@@ -90,6 +90,8 @@ test("choosing a month or a year commits no value", async () => {
   const { host, form } = await mount();
   const before = form.f.when.value();
   label(host).dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+  await settle();
+  yearGrid(host).querySelector("button:not([disabled])").dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
   await settle();
   monthGrid(host).querySelectorAll("button")[4].dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
   await settle();

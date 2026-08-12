@@ -1,3 +1,4 @@
+import { calendarViewOnToggle, type MdyCalendarViewMode } from "@modyra/widgets";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -24,7 +25,8 @@ import { MdyCalendarHeaderComponent } from "./calendar-header.component";
 import { MdyMonthPickerComponent } from "./month-picker.component";
 import { MdyYearPickerComponent } from "./year-picker.component";
 
-type CalendarView = "calendar" | "month" | "year";
+/** Which view the calendar shows — the contract's vocabulary, not a second set of three strings. */
+type CalendarView = MdyCalendarViewMode;
 import { moveCalendarMonth } from "../renderer-projection";
 
 @Component({
@@ -54,7 +56,7 @@ import { moveCalendarMonth } from "../renderer-projection";
       (toggleView)="onToggleView()"
     />
 
-    @if (view() === "calendar") {
+    @if (view() === "days") {
       <mdy-calendar-grid
         [gridId]="gridId()"
         [year]="viewYear()"
@@ -65,7 +67,7 @@ import { moveCalendarMonth } from "../renderer-projection";
         [maxDate]="maxDate()"
         (datePicked)="onDatePicked($event)"
       />
-    } @else if (view() === "month") {
+    } @else if (view() === "months") {
       <mdy-month-picker
         [viewYear]="viewYear()"
         [minDate]="minDate()"
@@ -73,7 +75,7 @@ import { moveCalendarMonth } from "../renderer-projection";
         [currentMonth]="viewMonth()"
         (monthSelected)="onMonthSelected($event)"
       />
-    } @else if (view() === "year") {
+    } @else if (view() === "years") {
       <mdy-year-picker
         [currentYear]="viewYear()"
         [minDate]="minDate()"
@@ -91,7 +93,7 @@ export class MdyCalendarComponent {
   readonly minDate = input<CalendarDate | null>(null);
   readonly maxDate = input<CalendarDate | null>(null);
 
-  protected readonly view = signal<CalendarView>("calendar");
+  protected readonly view = signal<CalendarView>("days");
 
   private readonly grid = viewChild(MdyCalendarGridComponent);
   private readonly injector = inject(Injector);
@@ -125,21 +127,17 @@ export class MdyCalendarComponent {
     this.viewYear.set(d.year);
     this.viewMonth.set(d.month);
     this.focusedDate.set(d);
-    this.view.set("calendar");
+    this.view.set("days");
   }
 
+  /** Where the header goes, answered by the contract rather than by a branch here. */
   protected onToggleView(): void {
-    const current = this.view();
-    if (current === "calendar") {
-      this.view.set("year");
-    } else {
-      this.view.set("calendar");
-    }
+    this.view.set(calendarViewOnToggle(this.view()));
   }
 
   protected onMonthSelected(month: number): void {
     this.viewMonth.set(month);
-    this.view.set("calendar");
+    this.view.set("days");
     const focused = this.focusedDate();
     const day = Math.min(focused.day, daysInMonth(focused.year, month));
     this.focusedDate.set({ ...focused, month, day });
@@ -147,7 +145,7 @@ export class MdyCalendarComponent {
 
   protected onYearSelected(year: number): void {
     this.viewYear.set(year);
-    this.view.set("month");
+    this.view.set("months");
     const focused = this.focusedDate();
     const day = Math.min(focused.day, daysInMonth(year, focused.month));
     this.focusedDate.set({ ...focused, year, day });
@@ -174,10 +172,10 @@ export class MdyCalendarComponent {
   }
 
   protected onKeydown(event: KeyboardEvent): void {
-    if (this.view() !== "calendar") {
+    if (this.view() !== "days") {
       if (event.key === "Escape") {
         event.preventDefault();
-        this.view.set("calendar");
+        this.view.set("days");
       }
       return;
     }

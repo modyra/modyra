@@ -112,3 +112,17 @@ test("a chosen period announces itself, and a refused one is unavailable", () =>
   assert.equal(refused.attributes.disabled, true, "and out of the tab order natively");
   assert.equal(refused.attributes["aria-selected"], "false");
 });
+
+/**
+ * Where the header's control goes, which two renderers agreed on by accident and a third, written
+ * later against the same contract, got the other way round.
+ */
+test("the header opens the top of the funnel, and closes back to the days", async () => {
+  const { calendarViewOnToggle } = await import("../dist/index.js");
+  assert.equal(calendarViewOnToggle("days"), "years", "a header reached for is a date far from here");
+  assert.equal(calendarViewOnToggle("months"), "days");
+  assert.equal(calendarViewOnToggle("years"), "days");
+
+  // Toggling twice from the days is a round trip, not a walk down the funnel.
+  assert.equal(calendarViewOnToggle(calendarViewOnToggle("days")), "days");
+});
