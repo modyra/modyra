@@ -39,6 +39,15 @@ export interface OverlayPanelState {
     readonly width: string;
     readonly maxHeight: string;
     readonly maxWidth: string;
+    /**
+     * How the popup is moved after it is placed — `translate(-50%, -50%)` for the modal placement.
+     *
+     * Carried with the rest because it is how the modal placement centres at all: the coordinates
+     * put its corner at the middle of the viewport and this pulls it back by half its own size.
+     * Written into the panel's style string and left out of the properties actually applied, it
+     * centred nothing, so a popup asked to go modal stayed hanging off its control.
+     */
+    readonly transform: string;
   };
 }
 
@@ -96,7 +105,7 @@ export function computeOverlayPanelState(
       alignment: "left",
       decision: null,
       panelStyle: POPUP_STYLE,
-      cssVars: { top: "auto", bottom: "auto", left: "auto", right: "auto", width: "auto", maxHeight: "50vh", maxWidth: "none" },
+      cssVars: { top: "auto", bottom: "auto", left: "auto", right: "auto", width: "auto", maxHeight: "50vh", maxWidth: "none", transform: "none" },
     };
   }
 
@@ -146,8 +155,9 @@ export function computeOverlayPanelState(
     width: read(prop.width, "auto"),
     maxHeight: read(prop.maxHeight, "50vh"),
     maxWidth: read(prop.maxWidth, "none"),
+    transform: read(prop.transform, "none"),
   };
-  const transform = read(prop.transform, "none");
+  const transform = cssVars.transform;
   const panelStyle =
     `${POPUP_STYLE};top:${cssVars.top};bottom:${cssVars.bottom};left:${cssVars.left};` +
     `right:${cssVars.right};width:${cssVars.width};max-height:${cssVars.maxHeight};` +
@@ -312,6 +322,10 @@ export class MdyLitOverlayController {
     // The popup is sized from its content, so the width it may take has to reach the element too:
     // without it a content-sized popup near the edge of the screen shows half off it.
     this.host.style.setProperty(prop.maxWidth, this._state.cssVars.maxWidth);
+    // The modal placement centres by putting the popup's corner at the middle of the viewport and
+    // pulling it back by half its own size. Without this the first half happened and the second did
+    // not, so asking for the modal placement moved the popup nowhere.
+    this.host.style.setProperty(prop.transform, this._state.cssVars.transform);
     // The popup joins the top layer as soon as it exists. The coordinates written above are
     // viewport coordinates, and a `position: fixed` box only honours those while no ancestor is a
     // containing block for fixed descendants — which `container-type` on the form makes every
