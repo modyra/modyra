@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 687,
-    "asserted": 361,
+    "published": 697,
+    "asserted": 369,
     "shown": 43
   },
   "uncovered": [
@@ -763,6 +763,42 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "MdyDaterangeFieldA11yOptions",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyDaterangeFieldCell",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyDaterangeFieldController",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyDaterangeFieldControllerOptions",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyDaterangeFieldIntent",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyDaterangeFieldState",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
       "name": "MdyDerivedPalette",
       "asserted": false,
       "shown": false,
@@ -826,7 +862,7 @@
       "name": "MdyDragPoint",
       "asserted": false,
       "shown": false,
-      "reason": "the drag primitive exists and no renderer consumes it yet. Two of them wrote it identically on the document; the third listens on the dial face itself, so a pointer that leaves the dial stops turning it there and keeps turning it in the other two. Adopting it is a behaviour change for that renderer and belongs to the batch that verifies one."
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyDynamicArrayNode",
@@ -1666,13 +1702,13 @@
       "name": "MdyPointerDrag",
       "asserted": false,
       "shown": false,
-      "reason": "the drag primitive exists and no renderer consumes it yet. Two of them wrote it identically on the document; the third listens on the dial face itself, so a pointer that leaves the dial stops turning it there and keeps turning it in the other two. Adopting it is a behaviour change for that renderer and belongs to the batch that verifies one."
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyPointerDragOptions",
       "asserted": false,
       "shown": false,
-      "reason": "the drag primitive exists and no renderer consumes it yet. Two of them wrote it identically on the document; the third listens on the dial face itself, so a pointer that leaves the dial stops turning it there and keeps turning it in the other two. Adopting it is a behaviour change for that renderer and belongs to the batch that verifies one."
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "MdyPointerOrigin",
@@ -2605,6 +2641,12 @@
       "reason": "published and never shown"
     },
     {
+      "name": "createDaterangeFieldController",
+      "asserted": true,
+      "shown": false,
+      "reason": "the daterange controller exists and no renderer consumes it yet. It was written because three of them built their range picker by copying their datepicker — 21 duplicated bodies the cross-package check could not see. It reaches a demo when a renderer adopts it, which changes what that renderer draws and belongs to the batch that verifies a visual change."
+    },
+    {
       "name": "createFieldController",
       "asserted": true,
       "shown": false,
@@ -2656,7 +2698,7 @@
       "name": "createPointerDrag",
       "asserted": true,
       "shown": false,
-      "reason": "the drag primitive exists and no renderer consumes it yet. Two of them wrote it identically on the document; the third listens on the dial face itself, so a pointer that leaves the dial stops turning it there and keeps turning it in the other two. Adopting it is a behaviour change for that renderer and belongs to the batch that verifies one."
+      "reason": "published and never shown"
     },
     {
       "name": "createSelectController",
@@ -2731,6 +2773,18 @@
       "reason": "published, neither asserted nor shown"
     },
     {
+      "name": "daterangeFieldPartIds",
+      "asserted": true,
+      "shown": false,
+      "reason": "the daterange controller exists and no renderer consumes it yet. It was written because three of them built their range picker by copying their datepicker — 21 duplicated bodies the cross-package check could not see. It reaches a demo when a renderer adopts it, which changes what that renderer draws and belongs to the batch that verifies a visual change."
+    },
+    {
+      "name": "daterangeFieldRootClasses",
+      "asserted": true,
+      "shown": false,
+      "reason": "the daterange controller exists and no renderer consumes it yet. It was written because three of them built their range picker by copying their datepicker — 21 duplicated bodies the cross-package check could not see. It reaches a demo when a renderer adopts it, which changes what that renderer draws and belongs to the batch that verifies a visual change."
+    },
+    {
       "name": "daysInMonth",
       "asserted": true,
       "shown": false,
@@ -2782,7 +2836,7 @@
       "name": "dragPointOf",
       "asserted": true,
       "shown": false,
-      "reason": "the drag primitive exists and no renderer consumes it yet. Two of them wrote it identically on the document; the third listens on the dial face itself, so a pointer that leaves the dial stops turning it there and keeps turning it in the other two. Adopting it is a behaviour change for that renderer and belongs to the batch that verifies one."
+      "reason": "published and never shown"
     },
     {
       "name": "dynamicParts",
@@ -3497,6 +3551,12 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
+    },
+    {
+      "name": "projectDaterangeFieldA11y",
+      "asserted": true,
+      "shown": false,
+      "reason": "the daterange controller exists and no renderer consumes it yet. It was written because three of them built their range picker by copying their datepicker — 21 duplicated bodies the cross-package check could not see. It reaches a demo when a renderer adopts it, which changes what that renderer draws and belongs to the batch that verifies a visual change."
     },
     {
       "name": "projectFieldA11y",

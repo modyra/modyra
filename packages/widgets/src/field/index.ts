@@ -106,6 +106,23 @@ export type {
   MdyDatepickerFieldState,
 } from "./datepicker-field-types.js";
 
+export { createDaterangeFieldController } from "./daterange-field-controller.js";
+export type { MdyDaterangeFieldController } from "./daterange-field-controller.js";
+
+export {
+  daterangeFieldPartIds,
+  daterangeFieldRootClasses,
+  projectDaterangeFieldA11y,
+} from "./daterange-field-a11y.js";
+export type { MdyDaterangeFieldA11yOptions } from "./daterange-field-a11y.js";
+
+export type {
+  MdyDaterangeFieldCell,
+  MdyDaterangeFieldControllerOptions,
+  MdyDaterangeFieldIntent,
+  MdyDaterangeFieldState,
+} from "./daterange-field-types.js";
+
 export { createTimepickerFieldController } from "./timepicker-field-controller.js";
 export type { MdyTimepickerFieldController } from "./timepicker-field-controller.js";
 
