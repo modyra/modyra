@@ -28,7 +28,9 @@ const CONTROLLERS = {
   "fields/multiselect-field.ts": "createMultiselectFieldController",
   "fields/datepicker-field.ts": "createDatepickerFieldController",
   "fields/timepicker-field.ts": "createTimepickerFieldController",
-  "fields/daterange-field.ts": "dateRangeDraftTransition",
+  // The kind's controller is the stronger claim than the transition it wraps: it owns the draft,
+  // the preview and which cells fall between the ends.
+  "fields/daterange-field.ts": "createDaterangeFieldController",
   "fields/file-field.ts": "fileSelectionTransition",
   "fields/colors-field.ts": "colorValueTransition",
 };
