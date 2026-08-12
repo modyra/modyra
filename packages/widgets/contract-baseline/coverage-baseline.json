@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 654,
-    "asserted": 393,
+    "published": 661,
+    "asserted": 400,
     "shown": 60
   },
   "uncovered": [
@@ -74,6 +74,48 @@
     },
     {
       "name": "MDY_FIELD_STATE_CLASSES",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_I18N_DEFAULT_TAGS",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_I18N_MESSAGES_DE",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_I18N_MESSAGES_DEFAULT",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_I18N_MESSAGES_ES",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_I18N_MESSAGES_FR",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_I18N_MESSAGES_IT",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MDY_I18N_PRESETS",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

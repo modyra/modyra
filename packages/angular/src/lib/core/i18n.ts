@@ -1,5 +1,5 @@
 import { InjectionToken } from "@angular/core";
-import { MDY_I18N_MESSAGES_DEFAULT, MdyI18nMessages } from "@modyra/core/localization";
+import { MDY_I18N_MESSAGES_DEFAULT, MdyI18nMessages } from "@modyra/widgets";
 
 /**
  * All static UI strings used by modyra renderers.
