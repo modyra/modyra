@@ -34,55 +34,48 @@
       "id": "lit:navigateMonths@datepicker-field.ts ≡ lit:navigateMonths@daterange-field.ts",
       "score": 1,
       "left": "packages/lit/src/components/datepicker-field.ts:116",
-      "right": "packages/lit/src/components/daterange-field.ts:195",
+      "right": "packages/lit/src/components/daterange-field.ts:196",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "lit:onMonthSelected@datepicker-field.ts ≡ lit:onMonthSelected@daterange-field.ts",
       "score": 1,
       "left": "packages/lit/src/components/datepicker-field.ts:157",
-      "right": "packages/lit/src/components/daterange-field.ts:264",
+      "right": "packages/lit/src/components/daterange-field.ts:265",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "lit:onYearSelected@datepicker-field.ts ≡ lit:onYearSelected@daterange-field.ts",
       "score": 1,
       "left": "packages/lit/src/components/datepicker-field.ts:165",
-      "right": "packages/lit/src/components/daterange-field.ts:272",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "lit:renderYearPicker@datepicker-field.ts ≡ lit:renderYearPicker@daterange-field.ts",
-      "score": 1,
-      "left": "packages/lit/src/components/datepicker-field.ts:321",
-      "right": "packages/lit/src/components/daterange-field.ts:428",
+      "right": "packages/lit/src/components/daterange-field.ts:273",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "lit:rows@datepicker-field.ts ≡ lit:rows@daterange-field.ts",
       "score": 1,
       "left": "packages/lit/src/components/datepicker-field.ts:89",
-      "right": "packages/lit/src/components/daterange-field.ts:161",
+      "right": "packages/lit/src/components/daterange-field.ts:162",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "lit:weekdayNames@datepicker-field.ts ≡ lit:weekdayNames@daterange-field.ts",
       "score": 1,
       "left": "packages/lit/src/components/datepicker-field.ts:178",
-      "right": "packages/lit/src/components/daterange-field.ts:120",
+      "right": "packages/lit/src/components/daterange-field.ts:121",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "plain:dispatch@datepicker-field.ts ≡ plain:dispatch@select-field.ts",
       "score": 1,
-      "left": "packages/plain/src/fields/datepicker-field.ts:76",
+      "left": "packages/plain/src/fields/datepicker-field.ts:127",
       "right": "packages/plain/src/fields/select-field.ts:150",
       "reason": "recorded, not yet accounted for"
     },
     {
       "id": "plain:dispatch@datepicker-field.ts ≡ plain:dispatch@timepicker-field.ts",
       "score": 1,
-      "left": "packages/plain/src/fields/datepicker-field.ts:76",
+      "left": "packages/plain/src/fields/datepicker-field.ts:127",
       "right": "packages/plain/src/fields/timepicker-field.ts:114",
       "reason": "recorded, not yet accounted for"
     },
@@ -112,13 +105,6 @@
       "score": 0.906,
       "left": "packages/angular/src/lib/core/overlay-panel.component.ts:101",
       "right": "packages/angular/src/lib/core/overlay-panel.component.ts:103",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
-      "id": "lit:renderMonthPicker@datepicker-field.ts ≡ lit:renderMonthPicker@daterange-field.ts",
-      "score": 0.898,
-      "left": "packages/lit/src/components/datepicker-field.ts:300",
-      "right": "packages/lit/src/components/daterange-field.ts:407",
       "reason": "recorded, not yet accounted for"
     },
     {

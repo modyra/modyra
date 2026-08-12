@@ -46,6 +46,43 @@ test("states: out of play withdraws the verdict and keeps the errors", async ({ 
   expect(quiet.formValid).toBe(true);
 });
 
+/**
+ * The three views of a calendar, driven from the page.
+ *
+ * A picker that only pages a month at a time is a picker nobody reaches a birth date with, and which
+ * view is showing is contract state rather than each renderer's — so the check is that choosing
+ * narrows towards the days and that the views announce themselves on the way.
+ */
+test("states: a calendar reaches its months and its years", async ({ page }) => {
+  await open(page, "states");
+  // The range picker's root carries the datepicker class too, so it is excluded by name.
+  const field = page.locator(".mdy-renderer--datepicker:not(.mdy-renderer--daterange)").first();
+  await field.locator(".mdy-datepicker__toggle").click();
+  await page.waitForTimeout(120);
+
+  const months = field.locator(".mdy-datepicker__month-picker");
+  const years = field.locator(".mdy-datepicker__year-picker");
+  await expect(months).toBeHidden();
+
+  await field.locator(".mdy-datepicker__header-label").click();
+  await page.waitForTimeout(120);
+  await expect(months).toBeVisible();
+  await expect(months).toHaveAttribute("role", "grid");
+  await expect(months.locator('[aria-selected="true"]')).toHaveCount(1);
+
+  await field.locator(".mdy-datepicker__header-label").click();
+  await page.waitForTimeout(120);
+  await expect(years).toBeVisible();
+
+  // Choosing narrows: a year lands on its months, a month on its days.
+  await years.locator("button:not([disabled])").first().click();
+  await page.waitForTimeout(120);
+  await expect(months).toBeVisible();
+  await months.locator("button:not([disabled])").first().click();
+  await page.waitForTimeout(120);
+  await expect(field.locator(".mdy-datepicker__grid")).toBeVisible();
+});
+
 test("validation: a composed rule reaches the input as attributes", async ({ page }) => {
   await open(page, "validation");
   await page.waitForTimeout(120);

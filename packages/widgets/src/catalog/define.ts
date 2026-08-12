@@ -74,6 +74,11 @@ export const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Ob
   // and to the popup where it does not. What the contract requires is that it is inside the overlay.
   dialogHeader: ["calendar", "popup"], header: ["content", "popup"], calendar: ["popup"], clock: ["content", "popup"], actions: ["container", "popup"],
   grid: ["calendar", "popup"], weekdays: ["grid"], weekday: ["weekdays"], row: ["grid"], gridcell: ["row", "grid"],
+  // The two views that replace the day grid rather than sitting beside it: a calendar showing its
+  // months is not also showing its days, which is why they share the calendar as their parent and
+  // never appear at once.
+  monthPicker: ["calendar", "popup"], monthCell: ["monthPicker"],
+  yearPicker: ["calendar", "popup"], yearCell: ["yearPicker"],
   hour: ["header", "popup"], minute: ["header", "popup"], period: ["header", "popup"],
   preview: ["nativePicker", "inputWrapper"], nativePicker: ["inputWrapper"], hexInput: ["inputWrapper", "popup"], presets: ["popup"], swatch: ["presets"],
   // Resolved against what the kind declares: a timepicker's content frames its dial inside the
@@ -95,6 +100,7 @@ const REQUIRED_PARTS: ReadonlySet<string> = new Set(["control", "startControl", 
 const REPEATED_PARTS: ReadonlySet<string> = new Set([
   "option", "optionWrapper", "optionLabel", "optionCheck", "optionStep", "optionCount",
   "errorItem", "chip", "gridcell", "row", "weekday", "swatch", "fileItem", "dialNumber", "action",
+  "monthCell", "yearCell",
 ]);
 
 /**
@@ -273,6 +279,16 @@ export const POPUP_PLACEMENT_STATES: readonly MdyStateName[] = Object.freeze(["a
 export const CALENDAR_CELL_STATES: readonly MdyStateName[] = Object.freeze([
   "selected", "today", "outside", "disabled", "focused", "inRange", "rangeStart", "rangeEnd",
 ]);
+
+/**
+ * A month or a year in the views that replace the day grid.
+ *
+ * One state, because one is what a theme paints. Nothing here is "today" or "outside" — a month
+ * picker shows exactly one year's twelve — and a period the bounds refuse carries the native
+ * `disabled`, which every theme already styles through `:disabled`. A class declared and painted
+ * nowhere is a promise to a theme author that nothing keeps.
+ */
+export const CALENDAR_PERIOD_CELL_STATES: readonly MdyStateName[] = Object.freeze(["selected"]);
 
 /**
  * The part that opens each overlay, and therefore the part that must carry `aria-controls` naming

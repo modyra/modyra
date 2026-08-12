@@ -1,11 +1,12 @@
 import { mdyPart } from "../mdy-part.js";
-import { overlayControlledId } from "@modyra/widgets";
+import { overlayControlledId, partClasses } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle } from "@modyra/core";
 import { addMonths, buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, buildMonthGrid, type CalendarCell, type CalendarDate, compareDates, daysInMonth, formatIsoDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, today } from "@modyra/core/datetime";
 import { calendarKeyboardTarget } from "@modyra/core/ui";
 import { applyOverlayIntent, bindOutsidePointer } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
+import { renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
 import {
   MdyLitOverlayController,
   POPUP_ANCHOR_STYLE,
@@ -361,7 +362,9 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       if (this._view === "calendar") {
         this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused")?.focus();
       } else if (this._view === "year") {
-        this.querySelector<HTMLElement>(".mdy-datepicker__year-cell--selected")?.scrollIntoView({
+        this.querySelector<HTMLElement>(
+          `.${partClasses("daterange", "yearCell", { selected: true }).join(".")}`,
+        )?.scrollIntoView({
           block: "center",
           behavior: "instant",
         });
@@ -419,48 +422,23 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 
   private renderMonthPicker(): unknown {
-    return html`
-      <div class="mdy-datepicker__month-picker">
-        ${this.monthNamesShort().map(
-          (name, i) => html`
-            <button
-              type="button"
-              class="mdy-datepicker__month-cell ${i + 1 === this._viewMonth
-                ? "mdy-datepicker__month-cell--selected"
-                : ""}"
-              ?disabled=${this.isMonthDisabled(i + 1)}
-              @click=${() => this.onMonthSelected(i + 1)}
-            >
-              ${name}
-            </button>
-          `,
-        )}
-      </div>
-    `;
+    return renderMonthPicker(this.monthNamesShort(), {
+      kind: "daterange",
+      widgetId: this.fieldId,
+      current: this._viewMonth,
+      disabled: (month) => this.isMonthDisabled(month),
+      pick: (month) => this.onMonthSelected(month),
+    });
   }
 
   private renderYearPicker(): unknown {
-    const years = this.yearRange();
-    return html`
-      <div class="mdy-datepicker__year-picker">
-        <div class="mdy-datepicker__year-grid">
-          ${years.map(
-            (year) => html`
-              <button
-                type="button"
-                class="mdy-datepicker__year-cell ${year === this._viewYear
-                  ? "mdy-datepicker__year-cell--selected"
-                  : ""}"
-                ?disabled=${this.isYearDisabled(year)}
-                @click=${() => this.onYearSelected(year)}
-              >
-                ${year}
-              </button>
-            `,
-          )}
-        </div>
-      </div>
-    `;
+    return renderYearPicker(this.yearRange(), {
+      kind: "daterange",
+      widgetId: this.fieldId,
+      current: this._viewYear,
+      disabled: (year) => this.isYearDisabled(year),
+      pick: (year) => this.onYearSelected(year),
+    });
   }
 
   private renderCalendarGrid(handle: MdyFieldHandle<MdyDateRange | null>): unknown {

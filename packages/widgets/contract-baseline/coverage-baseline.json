@@ -1,9 +1,9 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 673,
-    "asserted": 398,
-    "shown": 44
+    "published": 680,
+    "asserted": 402,
+    "shown": 48
   },
   "uncovered": [
     {
@@ -440,6 +440,24 @@
     },
     {
       "name": "MdyCalendarIssueCode",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyCalendarPeriodCell",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyCalendarViewA11yOptions",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "MdyCalendarViewMode",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"

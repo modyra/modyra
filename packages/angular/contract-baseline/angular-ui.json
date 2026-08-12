@@ -146,9 +146,6 @@
     "mdy-datepicker__modal-header",
     "mdy-datepicker__modal-label",
     "mdy-datepicker__modal-value",
-    "mdy-datepicker__month-cell",
-    "mdy-datepicker__month-cell--selected",
-    "mdy-datepicker__month-picker",
     "mdy-datepicker__nav-btn",
     "mdy-datepicker__row",
     "mdy-datepicker__title",
@@ -157,10 +154,7 @@
     "mdy-datepicker__view-toggle",
     "mdy-datepicker__weekday",
     "mdy-datepicker__weekdays",
-    "mdy-datepicker__year-cell",
-    "mdy-datepicker__year-cell--selected",
     "mdy-datepicker__year-grid",
-    "mdy-datepicker__year-picker",
     "mdy-daterange-",
     "mdy-daterange__group",
     "mdy-daterange__hint",
@@ -715,10 +709,8 @@
     },
     "packages/angular/src/lib/renderers/datepicker/month-picker.component.ts": {
       "classes": [
-        "mdy-datepicker__month-cell",
-        "mdy-datepicker__month-cell--selected",
-        "mdy-datepicker__month-picker",
-        "mdy-month-picker"
+        "mdy-month-picker",
+        "mdy-part"
       ],
       "aria": [],
       "selectors": [
@@ -773,10 +765,8 @@
     },
     "packages/angular/src/lib/renderers/datepicker/year-picker.component.ts": {
       "classes": [
-        "mdy-datepicker__year-cell",
-        "mdy-datepicker__year-cell--selected",
         "mdy-datepicker__year-grid",
-        "mdy-datepicker__year-picker",
+        "mdy-part",
         "mdy-year-picker"
       ],
       "aria": [],

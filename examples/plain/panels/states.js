@@ -36,6 +36,12 @@ export const statesPanel = {
     "showsAsInvalid",
     "errorsVisible",
     "shownErrorsOf",
+    // The calendar's three views: a date picker that only pages a month at a time puts a birth date
+    // thirty clicks away, and which view is showing is state the contract owns.
+    "MDY_CALENDAR_VIEW_MODES",
+    "calendarViewAfterPick",
+    "projectCalendarViewA11y",
+    "projectCalendarPeriodCellA11y",
   ],
 
   invariant:
