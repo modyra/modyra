@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MdyFieldHandle } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor } from "@modyra/core";
 import {
   createTimepickerFieldController,
   type MdyTimepickerFieldControllerOptions,
@@ -32,7 +32,7 @@ export function useMdyTimepickerField(
   handle: MdyFieldHandle<string | null>,
   options: UseMdyTimepickerFieldOptions,
 ): MdyReactTimepickerFieldApi {
-  const reactivity = useMemo(() => vanillaReactivity(), []);
+  const reactivity = useMemo(() => observerFor(handle), [handle]);
 
   const controller = useMemo(
     () => createTimepickerFieldController({ ...options, handle }, reactivity),

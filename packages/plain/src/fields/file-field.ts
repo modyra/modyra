@@ -6,7 +6,7 @@
  * `fileSelectionTransition` in `@modyra/widgets`; this renderer only turns picks and drops into
  * candidates and draws the outcome.
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicFileField } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
@@ -31,9 +31,10 @@ export function renderFileField(
   container: HTMLElement,
   f: MdyDynamicFileField,
   handle: MdyFieldHandle<unknown>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   const definition = MDY_WIDGET_CONTRACTS.file;
   const selectionOptions = { accept: f.accept, multiple: Boolean(f.multiple) };
 

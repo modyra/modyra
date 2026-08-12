@@ -43,6 +43,30 @@ export const validationPanel = {
   title: "Validation",
   blurb:
     "Synchronous rules, a rule that reads two fields at once, and a rule that has to wait for an answer. The readout separates what the form thinks from what the DOM carries.",
+  /**
+   * The public names this panel drives.
+   *
+   * Declared rather than inferred: `audit-coverage-and-demo` used to search the demo sources for
+   * a name, which counted an import line as a demonstration and made almost everything look
+   * covered. What a panel exercises is a claim its own browser test checks.
+   */
+  exercises: [
+    "createForm",
+    "field",
+    "compose",
+    "required",
+    "minLength",
+    "maxLength",
+    "pattern",
+    "email",
+    "crossField",
+    "serverValidator",
+    "renderField",
+    "MDY_VALIDATOR_FACTS",
+    "factsOf",
+    "mergeFacts",
+  ],
+
   invariant:
     "A declared fact survives composition. `compose(required(), maxLength(8), pattern(…))` marks the field required AND puts maxlength and pattern on the input — a rule that combines two others must not swallow what either declared.",
 

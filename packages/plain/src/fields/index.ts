@@ -3,7 +3,7 @@
  * about every Dynamic Form Contract kind, mirroring the same `@switch`
  * a declarative form template already does over `MdyDynamicField.kind`.
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDateField, MdyDynamicDaterangeField, MdyDynamicField } from "@modyra/core";
 import { renderDaterangeField } from "./daterange-field.js";
 import { renderColorsField } from "./colors-field.js";
@@ -45,9 +45,10 @@ export function renderField(
   container: HTMLElement,
   f: MdyDynamicField,
   handle: MdyFieldHandle<never>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   switch (f.kind) {
     case "text":
     case "textarea":

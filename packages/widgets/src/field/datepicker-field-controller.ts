@@ -15,7 +15,7 @@
  */
 import { blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor } from "@modyra/core";
 import {
   addMonths,
   buildMonthGrid,
@@ -48,8 +48,13 @@ export interface MdyDatepickerFieldController
 
 export function createDatepickerFieldController(
   options: MdyDatepickerFieldControllerOptions,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
 ): MdyDatepickerFieldController {
+  // Observed through the runtime that owns the handle. A caller that supplies one keeps it
+  // and is told when it does not match — a fresh runtime over another form's handle is the
+  // defect this registry was added for, and it fails by rendering nothing rather than by
+  // raising.
+  reactivity = observerFor(options.handle, reactivity);
   const { widgetId, handle, firstDayOfWeek = 0, readonly: initialReadonly = false } = options;
 
   const minDate = (): CalendarDate | null => parseIsoDate(options.minDate ?? null);

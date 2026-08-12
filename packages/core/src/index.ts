@@ -30,7 +30,7 @@ export type {
   MdyWritableSignal
 } from "./reactivity.js";
 
-export { getFieldHandleOwner, handleFormOf, registerHandleForm } from "./reactive-owner.js";
+export { getFieldHandleOwner, handleFormOf, observerFor, registerHandleForm } from "./reactive-owner.js";
 export {
   MDY_VALIDATOR_FACTS,
   NO_CONSTRAINTS,

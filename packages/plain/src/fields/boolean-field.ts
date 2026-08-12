@@ -6,7 +6,7 @@
  * label *inside* the wrapper, after the control, and the themes style `.mdy-checkbox` /
  * `.mdy-toggle` as that wrapper.
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicBooleanField } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
@@ -19,9 +19,10 @@ export function renderBooleanField(
   container: HTMLElement,
   f: MdyDynamicBooleanField,
   handle: MdyFieldHandle<boolean>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   const isToggle = f.kind === "toggle";
   const controller = createBooleanFieldController({ widgetId: widgetId, handle, variant: isToggle ? "switch" : "checkbox" }, reactivity);
   const definition = f.kind === "toggle" ? MDY_WIDGET_CONTRACTS.toggle : MDY_WIDGET_CONTRACTS.checkbox;

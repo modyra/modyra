@@ -5,7 +5,7 @@
  * controllers: "slider" is structurally just a numeric field with
  * <input type=range> markup, not a distinct controller).
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicNumberField, MdyDynamicTextField } from "@modyra/core";
 import {
   MDY_CSS_PROPERTIES,
@@ -30,9 +30,10 @@ export function renderTextField(
   container: HTMLElement,
   f: MdyDynamicTextField | MdyDynamicNumberField,
   handle: MdyFieldHandle<string | number>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   const isTextarea = f.kind === "textarea";
   const isNumeric = f.kind === "number" || f.kind === "slider";
 

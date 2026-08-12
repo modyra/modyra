@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MdyFieldHandle } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor } from "@modyra/core";
 import {
   createFieldController,
   type MdyFieldControllerOptions,
@@ -33,7 +33,7 @@ export function useMdyField<TValue>(
   handle: MdyFieldHandle<TValue>,
   options: UseMdyFieldOptions<TValue>,
 ): MdyReactFieldApi<TValue> {
-  const reactivity = useMemo(() => vanillaReactivity(), []);
+  const reactivity = useMemo(() => observerFor(handle), [handle]);
 
   const controller = useMemo(
     () => createFieldController({ ...options, handle }, reactivity),

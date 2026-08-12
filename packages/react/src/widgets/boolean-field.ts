@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MdyFieldHandle } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor } from "@modyra/core";
 import {
   createBooleanFieldController,
   type MdyBooleanFieldControllerOptions,
@@ -32,7 +32,7 @@ export function useMdyBooleanField(
   handle: MdyFieldHandle<boolean>,
   options: UseMdyBooleanFieldOptions,
 ): MdyReactBooleanFieldApi {
-  const reactivity = useMemo(() => vanillaReactivity(), []);
+  const reactivity = useMemo(() => observerFor(handle), [handle]);
 
   const controller = useMemo(
     () => createBooleanFieldController({ ...options, handle }, reactivity),

@@ -16,6 +16,26 @@ export const statesPanel = {
   title: "Kind × state",
   blurb:
     "The seventeen kinds the catalogue declares, driven together. Every field is required, so `invalid` is a state the widget can actually be in — a field with no rule can never fail, and a panel that looks right about an unreachable state proves nothing.",
+  /**
+   * The public names this panel drives.
+   *
+   * Declared rather than inferred: `audit-coverage-and-demo` used to search the demo sources for
+   * a name, which counted an import line as a demonstration and made almost everything look
+   * covered. What a panel exercises is a claim its own browser test checks.
+   */
+  exercises: [
+    "createForm",
+    "field",
+    "group",
+    "required",
+    "renderField",
+    "observerFor",
+    "shownErrors",
+    "showsAsInvalid",
+    "errorsVisible",
+    "shownErrorsOf",
+  ],
+
   invariant:
     "Out of play, no verdict. A field the form is not asking about shows no error class, no aria-invalid and no error text — and loses neither its value nor its errors, which return the moment it is back in play.",
 

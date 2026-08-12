@@ -6,7 +6,7 @@
  * renderer owns the handle<->controller sync itself (mirrors how
  * packages/lit's select-field.ts does the same thing).
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
@@ -30,9 +30,10 @@ export function renderSelectField(
   container: HTMLElement,
   f: MdyDynamicOptionsField,
   handle: MdyFieldHandle<unknown>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("select");
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;

@@ -23,6 +23,23 @@ export const securityPanel = {
   title: "Security",
   blurb:
     "Paste markup or press the buttons. The policy here is `strict`, which removes the characters markup is made of; `text` is the milder profile and removes only what is invisible. Every interception appears in the readout with what it did and why.",
+  /**
+   * The public names this panel drives.
+   *
+   * Declared rather than inferred: `audit-coverage-and-demo` used to search the demo sources for
+   * a name, which counted an import line as a demonstration and made almost everything look
+   * covered. What a panel exercises is a claim its own browser test checks.
+   */
+  exercises: [
+    "createForm",
+    "field",
+    "renderField",
+    "MdySecurityPolicy",
+    "MdySecurityViolation",
+    "MdySanitizeProfile",
+    "applyValueSecurity",
+  ],
+
   invariant:
     "A widget does not repair the model. Sanitizing happens at the boundary where a value enters the form, once, and it is reported — not applied again by each renderer and not applied silently.",
 

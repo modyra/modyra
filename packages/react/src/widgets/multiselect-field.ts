@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MdyFieldHandle } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor } from "@modyra/core";
 import {
   createMultiselectFieldController,
   type MdyMultiselectFieldControllerOptions,
@@ -33,7 +33,7 @@ export function useMdyMultiselectField<TValue>(
   handle: MdyFieldHandle<ReadonlyArray<TValue>>,
   options: UseMdyMultiselectFieldOptions<TValue>,
 ): MdyReactMultiselectFieldApi<TValue> {
-  const reactivity = useMemo(() => vanillaReactivity(), []);
+  const reactivity = useMemo(() => observerFor(handle), [handle]);
 
   const controller = useMemo(
     () => createMultiselectFieldController({ ...options, handle }, reactivity),
