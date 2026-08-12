@@ -1,11 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
-import { MDY_ON_COLOR_FLOOR as FLOOR } from "../packages/core/dist/color-utils.js";
+import { MDY_ON_COLOR_FLOOR as FLOOR } from "../packages/styles/dist/color-utils.js";
 
 /**
  * The palette follows its primary, and every `on-` colour is readable against the colour it names.
  *
  * `modyra-base.css` derives secondary, tertiary and error from `--mdy-sys-color-primary` in OKLCH,
- * with the model chosen by `data-mdy-palette`. The same numbers live in `@modyra/core/color-utils`,
+ * with the model chosen by `data-mdy-palette`. The same numbers live in `@modyra/styles`,
  * which is where the arithmetic is unit-tested; what can only be checked here is what a browser
  * actually paints — relative colour syntax, gamut clipping and the `clamp()` step all happen in the
  * engine, not in the source.
@@ -28,7 +28,7 @@ import { MDY_ON_COLOR_FLOOR as FLOOR } from "../packages/core/dist/color-utils.j
  * corrected form disagrees with the exact policy on 1.4% of a 6000-colour sweep and the uncorrected
  * one on 4.6%, landing at worst 3.32:1 and 3.11:1 against a floor of 3.5:1.
  *
- * The floor is deliberately below AA — `MDY_ON_COLOR_FLOOR` in `@modyra/core/color-utils` carries
+ * The floor is deliberately below AA — `MDY_ON_COLOR_FLOOR` in `@modyra/styles` carries
  * the reason, and that module is where the rule is applied exactly rather than estimated.
  */
 const legibleFloor = (correctedPivot: boolean): number => (correctedPivot ? 3.3 : 2.8);
@@ -128,7 +128,7 @@ test("every on- colour is readable, and chosen in the right direction", async ({
   //
   // A stylesheet cannot compute a contrast ratio: it holds the colour in OKLCH and the ratio wants
   // sRGB luminance, so `modyra-base.css` estimates that luminance and compares it against a
-  // threshold. `@modyra/core/color-utils` measures the ratios directly, and the floor it names is
+  // threshold. `@modyra/styles` measures the ratios directly, and the floor it names is
   // where both of them get the rule from.
   //
   // So what is asserted here is the quality of the estimate — never below a floor that stays

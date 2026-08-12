@@ -9,11 +9,6 @@
     "month: number",
     "year: number"
   ],
-  "Hct": [
-    "c: number",
-    "h: number",
-    "t: number"
-  ],
   "MdyAccessibleNameSource": [
     "\"label\"",
     "\"labelledby\"",
@@ -462,16 +457,6 @@
     "viewMode: MdyCalendarViewMode",
     "viewMonth: number",
     "viewYear: number"
-  ],
-  "MdyDerivedPalette": [
-    "error: string",
-    "onError: string",
-    "onPrimary: string",
-    "onSecondary: string",
-    "onTertiary: string",
-    "primary: string",
-    "secondary: string",
-    "tertiary: string"
   ],
   "MdyDiagnostic": [
     "adapter?: string | undefined",
@@ -1003,15 +988,6 @@
   "MdyGroupOptions": [
     "when?: (value: Record<string, unknown>, enclosing: Record<string, unknown>) => boolean"
   ],
-  "MdyHctPaletteModel": [
-    "error: { readonly hue: number; readonly chroma: number; }",
-    "neutral: { readonly hueShift: number; readonly chroma: number; }",
-    "neutralVariant: { readonly hueShift: number; readonly chroma: number; }",
-    "primary: { readonly hueShift: number; readonly chroma: number; readonly atLeastSource: boolean; }",
-    "secondary: { readonly hueShift: number; readonly chroma: number; }",
-    "tertiary: { readonly hueShift: number; readonly chroma: number; }",
-    "tones: { readonly role: number; readonly on: number; readonly container: number; readonly onContainer: number; }"
-  ],
   "MdyI18nMessages": [
     "colorHexLabel: string",
     "colorPresetsHeader: string",
@@ -1318,22 +1294,6 @@
   "MdyPaintBeat": [
     "(opaque)"
   ],
-  "MdyPaletteModel": [
-    "contrastProxy: { readonly threshold: number; readonly chromaWeight: number; readonly hueOffset: number; }",
-    "error: { readonly h: number; readonly c: number; readonly l: number; }",
-    "onChroma: number",
-    "secondary: MdyPaletteRelation",
-    "tertiary: MdyPaletteRelation"
-  ],
-  "MdyPaletteModelName": [
-    "(opaque)"
-  ],
-  "MdyPaletteRelation": [
-    "c: number",
-    "h: number",
-    "l: number",
-    "minC?: number"
-  ],
   "MdyPartContract": [
     "attributes: Readonly<Record<string, string | number | boolean | null | undefined>>",
     "classes: readonly string[]",
@@ -1355,19 +1315,6 @@
   ],
   "MdyPathRef": [
     "path: string"
-  ],
-  "MdyPerceptualPaletteModel": [
-    "dark: { readonly primary: MdyPerceptualRelation; readonly secondary: MdyPerceptualRelation; readonly tertiary: MdyPerceptualRelation; readonly error: MdyPerceptualRelation; }",
-    "errorHue: number",
-    "light: { readonly primary: MdyPerceptualRelation; readonly secondary: MdyPerceptualRelation; readonly tertiary: MdyPerceptualRelation; readonly error: MdyPerceptualRelation; }"
-  ],
-  "MdyPerceptualPaletteModelName": [
-    "(opaque)"
-  ],
-  "MdyPerceptualRelation": [
-    "l: number",
-    "minDeltaE: number",
-    "salience: number"
   ],
   "MdyPointerDrag": [
     "dragging: boolean",
@@ -1449,15 +1396,6 @@
     "\"aria-describedby\"",
     "\"aria-labelledby\"",
     "\"for\""
-  ],
-  "MdyResolvedTheme": [
-    "dark: Readonly<Record<string, string>>",
-    "light: Readonly<Record<string, string>>",
-    "metrics: { readonly light: Readonly<Record<string, number>>; readonly dark: Readonly<Record<string, number>>; }",
-    "model: MdyPerceptualPaletteModelName",
-    "name: string",
-    "seed: string",
-    "selector: string"
   ],
   "MdySanitizeProfile": [
     "\"off\"",
@@ -1684,16 +1622,6 @@
   ],
   "MdyTextFieldIntent": [
     "(opaque)"
-  ],
-  "MdyThemeDefinition": [
-    "model?: MdyPerceptualPaletteModelName",
-    "name: string",
-    "seed: string",
-    "selector?: string"
-  ],
-  "MdyThemeMode": [
-    "\"dark\"",
-    "\"light\""
   ],
   "MdyTimeClockIntent": [
     "(opaque)"
@@ -1995,11 +1923,6 @@
     "set: void",
     "update: void"
   ],
-  "Oklch": [
-    "c: number",
-    "h: number",
-    "l: number"
-  ],
   "ParsedTime": [
     "hour: number",
     "minute: number",
@@ -2204,15 +2127,6 @@
     "(1) expectation: MdyCanonicalExpectation",
     "-> returns: readonly string[]"
   ],
-  "compileMdyTheme": [
-    "(0) definition: MdyThemeDefinition",
-    "-> returns: MdyResolvedTheme"
-  ],
-  "contrastRatio": [
-    "(0) a: string",
-    "(1) b: string",
-    "-> returns: number"
-  ],
   "createBooleanFieldController": [
     "(0) options: MdyBooleanFieldControllerOptions",
     "(1) reactivity?: MdyReactivity",
@@ -2353,21 +2267,6 @@
     "(0) input: MdyOverlayGeometry",
     "-> returns: MdyOverlayDecision"
   ],
-  "deltaEOK": [
-    "(0) left: Oklch",
-    "(1) right: Oklch",
-    "-> returns: number"
-  ],
-  "deriveHctPalette": [
-    "(0) primary: string",
-    "(1) model?: MdyHctPaletteModel",
-    "-> returns: MdyDerivedPalette | null"
-  ],
-  "derivePalette": [
-    "(0) primary: string",
-    "(1) model?: MdyPaletteModel",
-    "-> returns: MdyDerivedPalette | null"
-  ],
   "draftShapeMatches": [
     "(0) initial: unknown",
     "(1) value: unknown",
@@ -2503,18 +2402,6 @@
     "(0) handle: object",
     "-> returns: object | undefined"
   ],
-  "hctToHex": [
-    "(0) hct: Hct",
-    "-> returns: string"
-  ],
-  "hexToHct": [
-    "(0) hex: string",
-    "-> returns: Hct | null"
-  ],
-  "hexToOklch": [
-    "(0) hex: string",
-    "-> returns: Oklch | null"
-  ],
   "hourToAngle": [
     "(0) hour: number",
     "-> returns: number"
@@ -2577,11 +2464,6 @@
   ],
   "isFullyServerRenderable": [
     "(0) kind: MdyWidgetKind",
-    "-> returns: boolean"
-  ],
-  "isInSrgb": [
-    "(0) rgb: LinearRgb",
-    "(1) epsilon?: number",
     "-> returns: boolean"
   ],
   "isMonthOutOfRange": [
@@ -2655,19 +2537,10 @@
     "(0) locale: string",
     "-> returns: readonly [\"day\" | \"month\" | \"year\", \"day\" | \"month\" | \"year\", \"day\" | \"month\" | \"year\"]"
   ],
-  "lstarFromY": [
-    "(0) y: number",
-    "-> returns: number"
-  ],
   "matchesValueShape": [
     "(0) shape: MdyValueShape",
     "(1) value: unknown",
     "-> returns: boolean"
-  ],
-  "maxSrgbChroma": [
-    "(0) l: number",
-    "(1) h: number",
-    "-> returns: number"
   ],
   "mdyEmptyValueFor": [
     "(0) field: MdyDynamicField",
@@ -2737,14 +2610,6 @@
     "(1) requested?: MdyReactivity",
     "(2) diagnostics?: MdyDiagnostics",
     "-> returns: MdyReactivity"
-  ],
-  "oklchToHex": [
-    "(0) color: Oklch",
-    "-> returns: string"
-  ],
-  "oklchToLinearRgb": [
-    "(0) color: Oklch",
-    "-> returns: LinearRgb"
   ],
   "openOverlay": [
     "(0) anchor?: MdyElementTarget",
@@ -2822,10 +2687,6 @@
     "(0) input: unknown",
     "(1) options?: { readonly mode?: MdyDynamicParseMode; }",
     "-> returns: MdyDynamicFormParseResult"
-  ],
-  "parseHex": [
-    "(0) hex: string",
-    "-> returns: readonly [number, number, number] | null"
   ],
   "parseIsoDate": [
     "(0) value: string | null | undefined",
@@ -2977,10 +2838,6 @@
     "(1) rx: MdyReactivity",
     "-> returns: void"
   ],
-  "relativeLuminance": [
-    "(0) hex: string",
-    "-> returns: number"
-  ],
   "restoreFocusTrigger": [
     "-> returns: MdyUiCommand"
   ],
@@ -3005,10 +2862,6 @@
   "selectKeyboardAction": [
     "(0) input: { readonly key: string; readonly open: boolean; readonly searchFocused: boolean; readonly activeKey: string | null; readonly createAvailable: boolean; }",
     "-> returns: MdySelectKeyboardAction | null"
-  ],
-  "serializeMdyThemeCss": [
-    "(0) theme: MdyResolvedTheme",
-    "-> returns: string"
   ],
   "serverValidator": [
     "(0) check: (value: TValue, ctx: MdyAsyncValidationContext) => Promise<string | readonly string[] | null | undefined>",
@@ -3152,10 +3005,6 @@
     "(0) t: ParsedTime",
     "-> returns: number"
   ],
-  "toHex": [
-    "(0) rgb: readonly [number, number, number]",
-    "-> returns: string"
-  ],
   "today": [
     "-> returns: CalendarDate"
   ],
@@ -3207,9 +3056,5 @@
     "(0) fn: ValidatorFn<T>",
     "(1) facts: MdyValidatorFacts",
     "-> returns: ValidatorFn<T>"
-  ],
-  "yFromLstar": [
-    "(0) lstar: number",
-    "-> returns: number"
   ]
 }

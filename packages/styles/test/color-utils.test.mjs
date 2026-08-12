@@ -1,5 +1,5 @@
 /**
- * The relational maths behind a palette (`@modyra/core/color-utils`).
+ * The relational maths behind a palette (`@modyra/styles`).
  *
  * The interesting assertions here are not "does the arithmetic run" but the two properties the
  * whole design rests on: a palette *follows* its primary, and an `on-` colour is *readable* against

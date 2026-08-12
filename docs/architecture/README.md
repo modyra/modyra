@@ -50,6 +50,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 | [0032](0032-a-computed-is-a-function-of-its-inputs.md) | A computed is a function of its inputs | The vanilla graph allowed a signal write inside a computed and Angular refuses it, so shared code could pass every test on one adapter and throw on another |
 | [0033](0033-one-engine-in-the-tree.md) | One engine in the tree | Exact sibling pins installed `@modyra/core` twice after a partial release, and a `required()` from one engine was not required to the other |
 - [ADR 0034: A draft is not a linked signal](0034-a-draft-is-not-a-linked-signal.md) — a value derived from a handle is a computed; a draft resets on the event that starts it, never on its source
+- [ADR 0035: The colour arithmetic lives with the themes](0035-the-colour-arithmetic-lives-with-the-themes.md) — `color-utils` and `theme-compiler` ship with the stylesheets they generate, measured to be a leaf with no edge either way
 
 ## Security-relevant records
 
