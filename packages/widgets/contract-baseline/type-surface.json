@@ -405,6 +405,55 @@
     "viewMonth: number",
     "viewYear: number"
   ],
+  "MdyDaterangeFieldA11yOptions": [
+    "endLabel?: string",
+    "startLabel?: string",
+    "widgetId: string"
+  ],
+  "MdyDaterangeFieldCell": [
+    "day: number",
+    "disabled: boolean",
+    "focused: boolean",
+    "inMonth: boolean",
+    "inRange: boolean",
+    "iso: string",
+    "rangeEnd: boolean",
+    "rangeStart: boolean"
+  ],
+  "MdyDaterangeFieldController": [
+    "setReadonly: void",
+    "setValue: void"
+  ],
+  "MdyDaterangeFieldControllerOptions": [
+    "firstDayOfWeek?: number",
+    "handle: MdyFieldHandle<MdyDateRangeValue>",
+    "maxDate?: string | null",
+    "minDate?: string | null",
+    "readonly?: boolean",
+    "widgetId: string"
+  ],
+  "MdyDaterangeFieldIntent": [
+    "(opaque)"
+  ],
+  "MdyDaterangeFieldState": [
+    "cells: ReadonlyArray<MdyDaterangeFieldCell>",
+    "dirty: boolean",
+    "disabled: boolean",
+    "draft: MdyDateRangeValue",
+    "focusedDate: string",
+    "interactivity: MdyInteractivity",
+    "invalid: boolean",
+    "open: boolean",
+    "pending: boolean",
+    "picking: \"start\" | \"end\"",
+    "previewed: MdyDateRangeValue",
+    "readonly: boolean",
+    "required: boolean",
+    "touched: boolean",
+    "value: MdyDateRangeValue",
+    "viewMonth: number",
+    "viewYear: number"
+  ],
   "MdyDerivedPalette": [
     "error: string",
     "onError: string",
@@ -2149,6 +2198,11 @@
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdyDatepickerFieldController"
   ],
+  "createDaterangeFieldController": [
+    "(0) options: MdyDaterangeFieldControllerOptions",
+    "(1) reactivity?: MdyReactivity",
+    "-> returns: MdyDaterangeFieldController"
+  ],
   "createFieldController": [
     "(0) options: MdyFieldControllerOptions<TValue>",
     "(1) reactivity?: MdyReactivity",
@@ -2255,6 +2309,14 @@
   ],
   "datepickerFieldRootClasses": [
     "(0) state: MdyDatepickerFieldState",
+    "-> returns: readonly string[]"
+  ],
+  "daterangeFieldPartIds": [
+    "(0) widgetId: string",
+    "-> returns: { readonly labelId: string; readonly startId: string; readonly endId: string; readonly gridId: string; readonly descriptionId: string; readonly errorId: string; }"
+  ],
+  "daterangeFieldRootClasses": [
+    "(0) state: MdyDaterangeFieldState",
     "-> returns: readonly string[]"
   ],
   "daysInMonth": [
@@ -2854,6 +2916,12 @@
     "(1) errors: ReadonlyArray<MdyFieldError>",
     "(2) options: MdyDatepickerFieldA11yOptions",
     "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly trigger: MdyPartContract; readonly grid: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; }"
+  ],
+  "projectDaterangeFieldA11y": [
+    "(0) state: MdyDaterangeFieldState",
+    "(1) errors: ReadonlyArray<MdyFieldError>",
+    "(2) options: MdyDaterangeFieldA11yOptions",
+    "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly startControl: MdyPartContract; readonly endControl: MdyPartContract; readonly toggle: MdyPartContract; readonly grid: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; }"
   ],
   "projectFieldA11y": [
     "(0) state: MdyFieldState<TValue>",

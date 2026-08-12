@@ -42,7 +42,8 @@ const CONTROLLER = {
   multiselect: "createMultiselectFieldController",
   datepicker: "createDatepickerFieldController",
   timepicker: "createTimepickerFieldController",
-  daterange: null, colors: null, file: null,
+  daterange: "createDaterangeFieldController",
+  colors: null, file: null,
 };
 
 const PROJECTION = {
@@ -54,7 +55,8 @@ const PROJECTION = {
   multiselect: "projectMultiselectFieldA11y",
   datepicker: "projectDatepickerFieldA11y",
   timepicker: "projectTimepickerFieldA11y",
-  daterange: "projectFieldShellA11y", colors: "projectFieldShellA11y", file: "projectFieldShellA11y",
+  daterange: "projectDaterangeFieldA11y",
+  colors: "projectFieldShellA11y", file: "projectFieldShellA11y",
 };
 
 const SKIP = new Set(["node_modules", "dist", "coverage", ".angular", "contract-baseline"]);
