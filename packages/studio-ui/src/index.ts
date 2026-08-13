@@ -1539,7 +1539,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     if (diagnosticNodeIds.has(n.id)) {
       badges.push(`<span class="indicator issue" title="Has a diagnostic — see the Diagnostics tab">!</span>`);
     }
-    if (n.node === "field" || n.node === "array") {
+    if (n.node === "field" || n.node === "array" || n.node === "record") {
       if (n.validators.some((v) => v.kind === "required")) {
         badges.push(`<span class="indicator required" title="Required">*</span>`);
       }
@@ -1649,7 +1649,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
            <ul>${n.children.map(markup).join("")}</ul>`
         : "";
     const arrayItem =
-      n.node === "array" ? `<section class="array-item"><b>Item schema</b>${markup(n.item)}</section>` : "";
+      n.node === "array" || n.node === "record"
+        ? `<section class="array-item"><b>Item schema</b>${markup(n.item)}</section>`
+        : "";
 
     return `
       <li class="tree-node ${selected === n.id ? "selected" : ""}">
@@ -1675,7 +1677,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     const nodeIdByPath = new Map(Array.from(idx.pathByNode, ([nodeId, path]) => [path, nodeId]));
     /** Every path at which the schema has a repeater. */
     const arrayPaths = new Set(
-      Array.from(idx.nodeById.values(), (node) => (node.node === "array" ? idx.pathByNode.get(node.id) : undefined))
+      Array.from(idx.nodeById.values(), (node) =>
+        node.node === "array" || node.node === "record" ? idx.pathByNode.get(node.id) : undefined)
         .filter((path): path is string => path !== undefined),
     );
 
@@ -2245,7 +2248,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       // The label and the code name are edited on the field itself: the visible label the form
       // renders *is* the thing being edited, so there is no "where did that come from" gap.
       const required =
-        node?.node === "field" || node?.node === "array" ? node.validators.some((v) => v.kind === "required") : false;
+        node?.node === "field" || node?.node === "array" || node?.node === "record"
+          ? node.validators.some((v) => v.kind === "required")
+          : false;
       const requiredToggle = document.createElement("button");
       requiredToggle.type = "button";
       requiredToggle.className = "plain-canvas-required";

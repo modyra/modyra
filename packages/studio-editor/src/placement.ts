@@ -71,11 +71,11 @@ export function validatePlacement(
   const containerNode = idx.nodeById.get(containerId)!;
 
   if (placement.kind === "arrayItem") {
-    if (containerNode.node !== "array") {
+    if (containerNode.node !== "array" && containerNode.node !== "record") {
       diagnostics.push({
         code: "INVALID_PARENT_CHILD",
         severity: "error",
-        message: `arrayItem placement target "${containerId}" is not an array node`,
+        message: `arrayItem placement target "${containerId}" is not a collection node`,
         nodeId,
       });
     } else if (containerNode.item.id !== nodeId && isDescendantOrSelf(idx, nodeId, containerNode.item.id)) {
