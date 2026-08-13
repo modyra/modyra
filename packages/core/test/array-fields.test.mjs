@@ -379,3 +379,36 @@ test("a partial write prunes nothing: only a whole value states which rows exist
   patched.f.rows.rows()[0].n.set("typed");
   assert.equal(patched.f.rows.length(), 2, "typing into a cell pruned rows");
 });
+
+/**
+ * A patch that says nothing does not say "delete everything".
+ *
+ * `patch({ items: response.items })` where the response omitted the list hands the form an
+ * `undefined`; a `null` arrives the same way. A value that is not an array says nothing about rows —
+ * the array manager has always read it that way for whole-value writes, and the keyed collection
+ * beside it ignores a member of the wrong shape too. Only this path turned it into an empty array.
+ */
+test("a patch member that is not an array leaves the rows alone", () => {
+  for (const malformed of [null, undefined, {}, "nonsense", 7]) {
+    const form = orderForm();
+    form.f.items.setAll([{ name: "First", qty: 1 }, { name: "Second", qty: 2 }]);
+
+    form.patch({ items: malformed });
+
+    assert.equal(form.f.items.length(), 2, `patching with ${JSON.stringify(malformed) ?? "undefined"} kept the rows`);
+    assert.deepEqual(form.getValue().items, [
+      { name: "First", qty: 1 },
+      { name: "Second", qty: 2 },
+    ]);
+  }
+});
+
+test("a patch member that is an array still replaces the rows", () => {
+  const form = orderForm();
+  form.f.items.setAll([{ name: "First", qty: 1 }, { name: "Second", qty: 2 }]);
+
+  form.patch({ items: [{ name: "Only", qty: 9 }] });
+
+  assert.equal(form.f.items.length(), 1);
+  assert.deepEqual(form.getValue().items, [{ name: "Only", qty: 9 }]);
+});

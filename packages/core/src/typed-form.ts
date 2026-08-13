@@ -1413,11 +1413,15 @@ export abstract class MdyTypedFormBase<
       const array = this._arrays.get(key);
       const record = this._records.get(key);
       if (array) {
-        array.setAll(Array.isArray(v) ? v : []);
+        // A value that is not an array says nothing about rows — it is not an instruction to delete
+        // them. `patch({ items: response.items })` where the response omitted the list is the
+        // ordinary way that value arrives, and emptying the collection over it is silent data loss.
+        array.setAllFrom(v);
       } else if (record) {
         // A patch names the rows it touches and leaves the others alone; replacing the collection is
-        // what `setValue` means, and it goes through `setAll` below.
-        record.patch(isRecordValue(v) ? v : {});
+        // what `setValue` means, and it goes through `setAll` below. The manager is handed the value
+        // as it came, so a shape it cannot use is reported rather than quietly read as "no rows".
+        record.patch(v as Readonly<Record<string, unknown>>);
       } else {
         plain[key] = v;
       }
