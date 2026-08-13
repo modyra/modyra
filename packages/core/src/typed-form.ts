@@ -1302,49 +1302,85 @@ export abstract class MdyTypedFormBase<
     }
   }
 
-  /** Wraps each array node's own validators as a form-level validator (A.6). */
+  /**
+   * Wraps each collection node's own validators as form-level validators (A.6) — at every depth.
+   *
+   * A collection inside another collection's row has no static path: `orders.<key>.lines` exists
+   * once per row. So a nested collection's validators are compiled against *instances*, resolved
+   * from the current value at run time — every row of every ancestor — and each instance's errors
+   * carry that instance's concrete path. A top-level collection is the base case: one instance, at
+   * the schema's own path, which is exactly what this compiled before it recursed.
+   */
   private _buildArrayValidators(
     schema: MdyFormSchema,
   ): ReadonlyArray<MdyFormValidatorFn<Record<string, unknown>>> {
     const out: Array<MdyFormValidatorFn<Record<string, unknown>>> = [];
+    interface CollectionNode {
+      readonly kind: "array" | "record";
+      readonly item: unknown;
+      readonly validators: ReadonlyArray<ValidatorFn<never>>;
+    }
+    interface Instance { readonly path: string; readonly value: unknown }
+
+    /** The collections directly inside a row's item, with their sub-path through any groups. */
+    const nestedIn = (item: unknown, prefix: string): Array<{ sub: string; node: CollectionNode }> => {
+      if (item === null || typeof item !== "object") return [];
+      const node = item as { kind?: string; children?: Record<string, unknown> };
+      if (node.kind === "group" && node.children) {
+        return Object.entries(node.children).flatMap(([key, child]) =>
+          nestedIn(child, prefix.length > 0 ? `${prefix}.${key}` : key),
+        );
+      }
+      if (node.kind === "array" || node.kind === "record") {
+        return [{ sub: prefix, node: node as unknown as CollectionNode }];
+      }
+      return [];
+    };
+
+    const rowsOf = (node: CollectionNode, value: unknown): Array<[string, unknown]> =>
+      node.kind === "array"
+        ? (Array.isArray(value) ? value.map((row, index) => [String(index), row] as [string, unknown]) : [])
+        : (isRecordValue(value) ? Object.entries(value) : []);
+
+    const register = (node: CollectionNode, instances: (nested: unknown) => Instance[]): void => {
+      if (node.validators.length > 0) {
+        out.push((flat) => {
+          const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths, this._recordPaths);
+          return instances(nested).flatMap(({ path, value }) => {
+            // Cast at the storage boundary, like upsertValidators does for fields: the validators
+            // are erased to ValidatorFn<never> in the schema union, but the runtime value always
+            // matches the collection's shape.
+            const coerced = node.kind === "array"
+              ? (Array.isArray(value) ? value : [])
+              : (isRecordValue(value) ? value : {});
+            return node.validators.flatMap((fn) =>
+              (fn as ValidatorFn<unknown>)(coerced).map((message) => ({ path, kind: node.kind, message })),
+            );
+          });
+        });
+      }
+      for (const { sub, node: child } of nestedIn(node.item, "")) {
+        register(child, (nested) =>
+          instances(nested).flatMap(({ path, value }) =>
+            rowsOf(node, value).map(([key, row]) => ({
+              path: `${path}.${key}.${sub}`,
+              value: this._pathGet(row, sub),
+            })),
+          ),
+        );
+      }
+    };
+
+    const registerRoot = (path: string, node: unknown): void =>
+      register(node as CollectionNode, (nested) => [{ path, value: this._pathGet(nested, path) }]);
+
     walkSchema(
       schema,
       "",
-      () => { /* fields are not array-level */ },
+      () => { /* fields are not collection-level */ },
       undefined,
-      (path, node) => {
-        if (node.validators.length === 0) return;
-        out.push((flat) => {
-          const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths, this._recordPaths);
-          const value = this._pathGet(nested, path);
-          const arr = Array.isArray(value) ? value : [];
-          // Cast at the storage boundary, like upsertValidators does for
-          // fields: node.validators is erased to ValidatorFn<never> in the
-          // schema union, but the runtime value always matches the array.
-          return node.validators.flatMap((fn) =>
-            (fn as ValidatorFn<unknown[]>)(arr).map((message) => ({
-              path,
-              kind: "array",
-              message,
-            })),
-          );
-        });
-      },
-      (path, node) => {
-        if (node.validators.length === 0) return;
-        out.push((flat) => {
-          const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths, this._recordPaths);
-          const value = this._pathGet(nested, path);
-          const rows = isRecordValue(value) ? value : {};
-          return node.validators.flatMap((fn) =>
-            (fn as ValidatorFn<Record<string, unknown>>)(rows).map((message) => ({
-              path,
-              kind: "record",
-              message,
-            })),
-          );
-        });
-      },
+      registerRoot,
+      registerRoot,
     );
     return out;
   }

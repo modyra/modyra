@@ -9,12 +9,13 @@
 import { statesPanel } from "./panels/states.js";
 import { validationPanel } from "./panels/validation.js";
 import { collectionsPanel } from "./panels/collections.js";
+import { ordersPanel } from "./panels/orders.js";
 import { lifecyclePanel } from "./panels/lifecycle.js";
 import { dynamicPanel } from "./panels/dynamic.js";
 import { securityPanel } from "./panels/security.js";
 import { headlessPanel } from "./panels/headless.js";
 
-const PANELS = [statesPanel, validationPanel, collectionsPanel, lifecyclePanel, dynamicPanel, securityPanel, headlessPanel];
+const PANELS = [statesPanel, validationPanel, collectionsPanel, ordersPanel, lifecyclePanel, dynamicPanel, securityPanel, headlessPanel];
 
 const nav = document.querySelector("[data-lab-nav]");
 const host = document.querySelector("[data-lab-panel]");

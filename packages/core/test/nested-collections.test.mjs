@@ -397,3 +397,20 @@ test("record → record → record: the properties are recursive, not two-deep",
   assert.deepEqual(validity.getValue(), { a: {} });
   validity.destroy();
 });
+
+test("a nested collection's own validators run, one instance per row", () => {
+  const needsOne = (rows) => (Object.keys(rows ?? {}).length === 0 ? ["needs a line"] : []);
+  const form = createForm({
+    orders: record(group({ customer: field(""), lines: record(rows(), { validators: [needsOne] }) })),
+  });
+  form.f.orders.upsert("o1", { customer: "A", lines: {} });
+  form.f.orders.upsert("o2", { customer: "B", lines: { l1: { sku: "s", qty: 1 } } });
+
+  assert.equal(form.state.valid(), false, "an empty nested collection gates the form");
+  assert.equal(form.errorsFor("orders.o1.lines")().length, 1, "the error carries the instance's own path");
+  assert.deepEqual(form.errorsFor("orders.o2.lines")(), [], "the sibling row's instance is untouched");
+
+  form.f.orders.row("o1").lines.upsert("l9", { sku: "x", qty: 1 });
+  assert.equal(form.state.valid(), true, "declaring the row clears that instance's verdict");
+  form.destroy();
+});
