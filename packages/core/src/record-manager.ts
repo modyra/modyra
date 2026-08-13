@@ -26,13 +26,12 @@ import {
   MdySignal,
   MdyWritableSignal,
 } from "./reactivity-contract.js";
-import { hasRequiredMarker } from "./schema-utils.js";
 import type {
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
 } from "./contracts/descriptors.js";
 import { isRecord } from "./record-utils.js";
-import { composeConditions, type MdyCondition } from "./conditions.js";
+import { registerRowNode, type MdyRowRegistration } from "./collections/register.js";
 
 /** A row's own schema node — a record's row is a field or a group, never another collection. */
 type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
@@ -64,8 +63,6 @@ function describe(value: unknown): string {
   return `a ${typeof value}`;
 }
 
-/** Owner key for validators this manager registers (schema namespace, as arrays use). */
-const ROW_SCHEMA_KEY = "mdy-schema";
 
 export interface MdyRecordManagerDeps {
   /**
@@ -332,67 +329,26 @@ export class MdyRecordManager {
     return isRecord(row) ? row : {};
   }
 
-  private _registerNode(fullPath: string, rowNode: MdyRowNode, value: unknown, rowPath: string, sections: ReadonlyArray<() => boolean> = []): void {
-    const { engine } = this._deps;
-    if (rowNode.kind === "field") {
-      const v = value === undefined ? rowNode.initial : value;
-      if (rowNode.sanitize !== null) {
-        engine.setSanitizer(fullPath, rowNode.sanitize);
-      }
-      engine.setInitialValue(fullPath, v);
-      engine.getField(fullPath);
-      const marksRequired = rowNode.validators.some((fn) => hasRequiredMarker(fn));
-      engine.upsertValidators(fullPath, ROW_SCHEMA_KEY, rowNode.validators, marksRequired);
-      // Its own condition and every section of the row above it, composed once by
-      // `conditions.ts` — the same sentence the schema registration uses.
-      // Already bound to what they read — a section above this collection knows the form, not the
-      // row — so they take no arguments and none are invented for them.
-      const conditions: MdyCondition[] = sections.map((holds) => ({
-        holds: () => holds(),
-        read: () => ({ value: null, enclosing: {} }),
-      }));
-      if (rowNode.when !== null) {
-        const when = rowNode.when;
-        conditions.push({
-          holds: when,
-          read: () => {
-            const row = this._readNode(rowPath, this._deps.item);
-            return {
-              value: engine.peekField(fullPath)?.().value(),
-              enclosing: isRecord(row) ? row : {},
-            };
-          },
-        });
-      }
-      if (conditions.length > 0) {
-        engine.setInactive(fullPath, composeConditions(this._deps.rx, conditions));
-      }
-      if (rowNode.asyncValidators.length > 0) {
-        engine.upsertAsyncValidators(fullPath, ROW_SCHEMA_KEY, rowNode.asyncValidators, {
-          debounceMs: rowNode.asyncDebounceMs,
-          dependsOn: rowNode.asyncDependsOn,
-          timeoutMs: rowNode.asyncTimeoutMs,
-          when: rowNode.asyncWhen ?? undefined,
-        });
-      }
-      return;
-    }
-    const rec = isRecord(value) ? value : {};
-    // A section inside a row: its children answer to it as well as to everything above it.
-    const nested = rowNode.when !== null
-      ? [
-          ...sections,
-          () =>
-            rowNode.when!(
-              this._readNode(fullPath, rowNode) as Record<string, unknown>,
-              this._rowValue(rowPath),
-            ),
-        ]
-      : sections;
-    for (const [key, child] of Object.entries(rowNode.children)) {
-      assertRowNode(child);
-      this._registerNode(`${fullPath}.${key}`, child, rec[key], rowPath, nested);
-    }
+  private _registerNode(
+    fullPath: string,
+    rowNode: MdyRowNode,
+    value: unknown,
+    rowPath: string,
+    sections: ReadonlyArray<() => boolean> = [],
+  ): void {
+    registerRowNode(this._registration, fullPath, rowNode, value, rowPath, sections);
+  }
+
+  /** What the shared visit needs from this manager, built once. */
+  private get _registration(): MdyRowRegistration {
+    return {
+      engine: this._deps.engine,
+      rx: this._deps.rx,
+      readRow: (rowPath) => this._readNode(rowPath, this._deps.item),
+      readNode: (path, node) => this._readNode(path, node as MdyRowNode),
+      rowValue: (rowPath) => this._rowValue(rowPath),
+      onCollection: (_path, node) => assertRowNode(node),
+    };
   }
 
   /** Writes a partial row without re-registering it — the row keeps its validators and its flags. */

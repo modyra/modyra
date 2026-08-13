@@ -20,7 +20,6 @@ import {
   MdyWritableSignal,
   reactivityRunsEffects,
 } from "./reactivity-contract.js";
-import { hasRequiredMarker } from "./schema-utils.js";
 import type {
   MdyAnyArrayDescriptor,
   MdyAnyFieldDescriptor,
@@ -28,7 +27,7 @@ import type {
   MdyAnyRecordDescriptor,
 } from "./contracts/descriptors.js";
 import { isRecord } from "./record-utils.js";
-import { composeConditions, type MdyCondition } from "./conditions.js";
+import { registerRowNode, type MdyRowRegistration } from "./collections/register.js";
 
 /** A row's own schema node — a collection cannot nest inside an array's item in v1. */
 type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
@@ -43,8 +42,6 @@ function assertNotNestedCollection(
   }
 }
 
-/** Owner key for validators the array manager registers (schema namespace). */
-const ROW_SCHEMA_KEY = "mdy-schema";
 
 export interface MdyArrayManagerDeps {
   /**
@@ -221,78 +218,24 @@ export class MdyArrayManager {
 
   private _registerNode(
     fullPath: string,
-    rowNode:
-      | MdyAnyFieldDescriptor
-      | MdyAnyGroupDescriptor
-      | MdyAnyArrayDescriptor
-      | MdyAnyRecordDescriptor,
+    rowNode: MdyRowNode | { readonly kind: "array" | "record" },
     value: unknown,
     rowPath: string,
     sections: ReadonlyArray<() => boolean> = [],
   ): void {
-    assertNotNestedCollection(rowNode);
-    const node = rowNode;
-    const { engine } = this._deps;
-    if (node.kind === "field") {
-      const v = value === undefined ? node.initial : value;
-      if (node.sanitize !== null) {
-        engine.setSanitizer(fullPath, node.sanitize);
-      }
-      engine.setInitialValue(fullPath, v);
-      engine.getField(fullPath);
-      // The row declared it. A control showing it may come and go; the row is what ends it.
-      engine.ownField(fullPath);
-      const marksRequired = node.validators.some((fn) => hasRequiredMarker(fn));
-      engine.upsertValidators(fullPath, ROW_SCHEMA_KEY, node.validators, marksRequired);
-      // Its own condition and every section of the row above it, composed once by
-      // `conditions.ts` — the same sentence the schema registration uses.
-      // Already bound to what they read — a section above this collection knows the form, not the
-      // row — so they take no arguments and none are invented for them.
-      const conditions: MdyCondition[] = sections.map((holds) => ({
-        holds: () => holds(),
-        read: () => ({ value: null, enclosing: {} }),
-      }));
-      if (node.when !== null) {
-        const when = node.when;
-        conditions.push({
-          holds: when,
-          read: () => {
-            const row = this._readNode(rowPath, this._deps.item);
-            return {
-              value: engine.getField(fullPath)?.().value(),
-              enclosing: isRecord(row) ? row : {},
-            };
-          },
-        });
-      }
-      if (conditions.length > 0) {
-        engine.setInactive(fullPath, composeConditions(this._deps.rx, conditions));
-      }
-      if (node.asyncValidators.length > 0) {
-        engine.upsertAsyncValidators(fullPath, ROW_SCHEMA_KEY, node.asyncValidators, {
-          debounceMs: node.asyncDebounceMs,
-          dependsOn: node.asyncDependsOn,
-          timeoutMs: node.asyncTimeoutMs,
-          when: node.asyncWhen ?? undefined,
-        });
-      }
-      return;
-    }
-    const rec = isRecord(value) ? value : {};
-    // A section inside a row: its children answer to it as well as to everything above it.
-    const nested = node.when !== null
-      ? [
-          ...sections,
-          () =>
-            node.when!(
-              this._readNode(fullPath, node) as Record<string, unknown>,
-              this._rowValue(rowPath),
-            ),
-        ]
-      : sections;
-    for (const [key, child] of Object.entries(node.children)) {
-      this._registerNode(`${fullPath}.${key}`, child, rec[key], rowPath, nested);
-    }
+    registerRowNode(this._registration, fullPath, rowNode as MdyRowNode, value, rowPath, sections);
+  }
+
+  /** What the shared visit needs from this manager, built once. */
+  private get _registration(): MdyRowRegistration {
+    return {
+      engine: this._deps.engine,
+      rx: this._deps.rx,
+      readRow: (rowPath) => this._readNode(rowPath, this._deps.item),
+      readNode: (path, node) => this._readNode(path, node as MdyRowNode),
+      rowValue: (rowPath) => this._rowValue(rowPath),
+      onCollection: (_path, node) => assertNotNestedCollection(node),
+    };
   }
 
   private _removeRow(index: number): void {
