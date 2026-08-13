@@ -3,7 +3,7 @@
   "score": {
     "published": 663,
     "asserted": 401,
-    "shown": 68
+    "shown": 69
   },
   "uncovered": [
     {
@@ -1652,12 +1652,6 @@
     },
     {
       "name": "MdyRecordDescriptor",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MdyRecordHandle",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

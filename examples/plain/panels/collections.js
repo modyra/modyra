@@ -28,6 +28,7 @@ export const collectionsPanel = {
     "createForm",
     "array",
     "record",
+    "MdyRecordHandle",
     "group",
     "field",
     "required",
@@ -43,7 +44,13 @@ export const collectionsPanel = {
         initial: [{ name: "Bolt", qty: 4 }, { name: "Nut", qty: 8 }],
       }),
       people: mdyRecord(mdyField("", [mdyRequired()]), { initial: { ada: "Ada", alan: "Alan" } }),
+      // A row that owns a collection of its own: the order is keyed by data, and so are its lines.
+      orders: mdyRecord(mdyGroup({
+        customer: mdyField("", [mdyRequired()]),
+        lines: mdyRecord(mdyGroup({ sku: mdyField(""), qty: mdyField(1) })),
+      })),
     });
+    form.f.orders.upsert("o1", { customer: "Ada", lines: { l1: { sku: "SKU-1", qty: 2 } } });
 
     let print = () => {};
 
@@ -105,6 +112,25 @@ export const collectionsPanel = {
     action(recordBar, "Remove alan", () => { form.f.people.remove("alan"); draw(); });
     action(recordBar, "Touch everything", () => { form.markAllTouched(); });
 
+    // A collection inside a row. Nothing here reaches for a path: the row hands back its own
+    // collection, and removing the order takes its lines with it.
+    const nestedBar = toolbar(work);
+    const lines = () => form.f.orders.row("o1").lines;
+    action(nestedBar, "Add a line", () => {
+      lines().upsert(`l${lines().keys().length + 1}`, { sku: `SKU-${lines().keys().length + 1}`, qty: 1 });
+      print();
+    });
+    action(nestedBar, "Rename the first line", () => {
+      const [first] = lines().keys();
+      if (first) lines().rename(first, `${first}-renamed`);
+      print();
+    });
+    action(nestedBar, "Remove the order", () => { form.f.orders.remove("o1"); print(); });
+    action(nestedBar, "Declare the order again", () => {
+      form.f.orders.upsert("o1", { customer: "Ada", lines: { l1: { sku: "SKU-1", qty: 2 } } });
+      print();
+    });
+
     draw();
 
     print = readoutPrinter(readout, () => ({
@@ -113,12 +139,17 @@ export const collectionsPanel = {
       people: Object.fromEntries(form.f.people.keys().map((k) => [k, form.f.people.row(k).value()])),
       peopleDrawn: recordHost.querySelectorAll("[data-key]").length,
       formValid: form.state.valid(),
+      orders: form.f.orders.keys(),
+      // Read through the row's own handle, which is the whole point: no path is spelled out here.
+      orderLines: form.f.orders.has("o1") ? form.f.orders.row("o1").lines.keys() : [],
+      nestedValue: form.getValue().orders,
     }));
 
     const effect = form.reactivity.effect(() => {
       form.state.valid();
       form.f.items.length();
       form.f.people.keys();
+      form.f.orders.keys();
       for (const row of form.f.items.rows()) { row.name.value(); row.name.touched(); }
       print();
     });

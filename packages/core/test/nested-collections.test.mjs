@@ -297,3 +297,37 @@ test("history does not cross a structural change, at either depth", () => {
     "two levels: the same, which is what says this is not about nesting");
   nested.destroy();
 });
+
+/**
+ * The suite above is two levels deep, which is what the phase promised — and two is exactly the
+ * depth at which a rule written for "the parent" can pass while being wrong. `assertRowShape` walks
+ * into a row rather than glancing at it, and the gate asks *every* collection above a path, so both
+ * should hold at any depth. Should is not a verification.
+ */
+test("record → record → record: the properties are recursive, not two-deep", () => {
+  const deep = () =>
+    createForm({
+      a: record(group({ b: record(group({ c: record(group({ n: field("", [mdyRequired()]) })) })) })),
+    });
+
+  const built = deep();
+  built.activate();
+  built.f.a.upsert("x", { b: { y: { c: { z: { n: "deep" } } } } });
+  assert.deepEqual(
+    built.getValue(),
+    { a: { x: { b: { y: { c: { z: { n: "deep" } } } } } } },
+    "three levels did not read back the shape they were given",
+  );
+  built.destroy();
+
+  const validity = deep();
+  validity.activate();
+  validity.f.a.upsert("x", { b: { y: { c: { z: { n: "" } } } } });
+  assert.equal(validity.state.valid(), false, "a required field three levels down was not asked about");
+
+  // Removing the row at the top takes the whole subtree — not hides it, takes it.
+  validity.f.a.remove("x");
+  assert.equal(validity.state.valid(), true, "something under the removed row was still being validated");
+  assert.deepEqual(validity.getValue(), { a: {} });
+  validity.destroy();
+});
