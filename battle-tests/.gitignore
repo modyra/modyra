@@ -1,0 +1,9 @@
+# Failure artefacts are evidence of one run on one machine. A confirmed break is preserved by
+# promoting it to regressions/, not by committing the raw report.
+reports/failures/
+reports/*.json
+
+# Packed tarballs and the temporary consumers installed from them.
+hostile-consumers/**/node_modules/
+hostile-consumers/**/*.tgz
+.tmp-consumer/

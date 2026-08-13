@@ -57,6 +57,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0039: A breaking change shipped as a patch](0039-a-breaking-change-shipped-as-a-patch.md) — eighteen subpaths removed at `2.1.2 → 2.1.3`, why that was bounded rather than habitual, and the complete migration table
 - [ADR 0040: A collection owns its subtree](0040-a-collection-owns-its-subtree.md) — nested collections: gates compose along the whole chain, ownership is explicit, and the eight semantics decided before a line of runtime
 - [ADR 0041: History crosses structural changes](0041-history-crosses-structural-changes.md) — undo acts on the value as it is now: a declared, removed or renamed row is undoable the moment it happens, at any depth; only the value is restored
+- [ADR 0042: An adversarial suite attacks from outside](0042-an-adversarial-suite-attacks-from-outside.md) — `battle-tests/` consumes published entry points only and exists to falsify public claims: every battle cites a registered claim, proves it attacked, and writes a replayable artefact when it breaks something
 
 ## Security-relevant records
 
