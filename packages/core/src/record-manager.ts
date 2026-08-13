@@ -32,6 +32,7 @@ import type {
   MdyAnyRecordDescriptor,
 } from "./contracts/descriptors.js";
 import { isRecord } from "./record-utils.js";
+import { MdyArrayManager } from "./array-manager.js";
 import { registerRowNode, type MdyRowRegistration } from "./collections/register.js";
 
 /** A row's own schema node — a record's row is a field or a group, never another collection. */
@@ -45,7 +46,17 @@ type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
  * combinations arrive in, and why a record inside a record is first: both levels have declared
  * identity, so rename and late binding are answerable without a rebase.
  */
-const NESTABLE_IN_RECORD: ReadonlySet<string> = new Set(["record"]);
+const NESTABLE_IN_RECORD: ReadonlySet<string> = new Set(["record", "array"]);
+
+/**
+ * How deep a form may nest, collections included.
+ *
+ * One number for the whole engine: the document validator has published 8 since before collections
+ * could nest at all, and a second limit in the same system is a limit someone reads wrong. A
+ * document a network sends describing a thousand-deep nesting is refused where it is built, before
+ * anything is allocated.
+ */
+const MAX_NESTING_DEPTH = 8;
 
 function assertRowNode(
   node: MdyRowNode | { readonly kind: "array" | "record" },
@@ -65,15 +76,20 @@ function assertRowNode(
  * A supported nesting is walked into rather than waved through: a combination this manager can run
  * may still hold one it cannot, and a document saying so must fail at construction.
  */
-function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record" }): void {
+function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record" }, depth = 1): void {
+  if (depth > MAX_NESTING_DEPTH) {
+    throw new Error(
+      `[modyra] A form may nest ${MAX_NESTING_DEPTH} levels deep, collections included — this one goes deeper`,
+    );
+  }
   if (node.kind === "array" || node.kind === "record") {
     if (!NESTABLE_IN_RECORD.has(node.kind)) assertRowNode(node);
-    assertRowShape((node as MdyAnyRecordDescriptor).item as MdyRowNode);
+    assertRowShape((node as MdyAnyRecordDescriptor).item as MdyRowNode, depth + 1);
     return;
   }
   if (node.kind === "group") {
     for (const child of Object.values(node.children)) {
-      assertRowShape(child as MdyRowNode);
+      assertRowShape(child as MdyRowNode, depth + 1);
     }
   }
 }
@@ -122,7 +138,7 @@ export class MdyRecordManager {
    * form-level registry would have to work that ownership back out of a path, which is the thing
    * ADR 0040 says not to do.
    */
-  private readonly _nested = new Map<string, MdyRecordManager>();
+  private readonly _nested = new Map<string, MdyRecordManager | MdyArrayManager>();
 
   /** The declared keys, in declaration order. */
   readonly keys: MdySignal<readonly string[]>;
@@ -205,6 +221,22 @@ export class MdyRecordManager {
    */
   private _declareNested(path: string, node: MdyAnyRecordDescriptor, value: unknown): void {
     this._nested.get(path)?.destroy();
+    if ((node as { kind: string }).kind === "array") {
+      this._nested.set(path, new MdyArrayManager(
+        {
+          rx: this._deps.rx,
+          engine: this._deps.engine,
+          path,
+          item: node.item as MdyRowNode,
+          sections: [
+            ...(this._deps.sections ?? []),
+            () => this._declared.has(this._keyOf(path)),
+          ],
+        },
+        Array.isArray(value) ? value : [],
+      ));
+      return;
+    }
     this._nested.set(path, new MdyRecordManager(
       {
         rx: this._deps.rx,
@@ -224,11 +256,12 @@ export class MdyRecordManager {
   }
 
   /** The manager for a collection declared inside one of these rows, wherever it sits below. */
-  nested(path: string): MdyRecordManager | undefined {
+  nested(path: string): MdyRecordManager | MdyArrayManager | undefined {
     const own = this._nested.get(path);
     if (own) return own;
     for (const [at, manager] of this._nested) {
-      if (path.startsWith(`${at}.`)) return manager.nested(path);
+      // An array's rows hold no collections in v1, so only a record can hold the rest of the path.
+      if (path.startsWith(`${at}.`) && manager instanceof MdyRecordManager) return manager.nested(path);
     }
     return undefined;
   }
@@ -444,11 +477,15 @@ export class MdyRecordManager {
     for (const [key, child] of Object.entries(rowNode.children)) {
       if (!(key in value)) continue;
       const at = `${fullPath}.${key}`;
-      if (child.kind === "record") {
+      if (child.kind === "record" || child.kind === "array") {
         // `setAll`, because a whole-row write says what the row is: a nested collection the write
         // does not mention is emptied, not left behind.
         const nested = this._nested.get(at);
-        if (nested && isRecord(value[key])) nested.setAll(value[key] as Record<string, unknown>);
+        if (nested instanceof MdyArrayManager) {
+          if (Array.isArray(value[key])) nested.setAll(value[key] as unknown[]);
+        } else if (nested && isRecord(value[key])) {
+          nested.setAll(value[key] as Record<string, unknown>);
+        }
         continue;
       }
       assertRowNode(child);
@@ -459,10 +496,13 @@ export class MdyRecordManager {
   private _leafPaths(fullPath: string, rowNode: MdyRowNode | { readonly kind: "array" | "record" }): string[] {
     if (rowNode.kind === "record") {
       const nested = this._nested.get(fullPath);
-      if (!nested) return [];
+      if (!nested || !(nested instanceof MdyRecordManager)) return [];
       return nested.keysNow().flatMap((key) => nested._leafPaths(`${fullPath}.${key}`, nested._deps.item));
     }
-    if (rowNode.kind === "array") { assertRowNode(rowNode); return []; }
+    if (rowNode.kind === "array") {
+      const nested = this._nested.get(fullPath);
+      return nested instanceof MdyArrayManager ? nested.leafPathsNow() : [];
+    }
     if (rowNode.kind === "field") return [fullPath];
     const group = rowNode as MdyAnyGroupDescriptor;
     return Object.entries(group.children).flatMap(([key, child]) =>
@@ -483,12 +523,15 @@ export class MdyRecordManager {
       // Through the manager that owns it: the rows are its answer, not something derivable from
       // the declaration, which names no keys.
       const nested = this._nested.get(fullPath);
-      if (!nested) return {};
+      if (!nested || !(nested instanceof MdyRecordManager)) return {};
       return Object.fromEntries(
         nested.keysNow().map((key) => [key, nested._readRow(key)]),
       );
     }
-    if (rowNode.kind === "array") { assertRowNode(rowNode); return null; }
+    if (rowNode.kind === "array") {
+      const nested = this._nested.get(fullPath);
+      return nested instanceof MdyArrayManager ? nested.getValues() : [];
+    }
     if (rowNode.kind === "field") {
       const ref = this._deps.engine.peekField(fullPath);
       return ref ? ref().value() : null;

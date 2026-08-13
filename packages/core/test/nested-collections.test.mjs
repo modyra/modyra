@@ -18,8 +18,9 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 test("a nesting the runtime cannot execute is refused when the form is built", () => {
   // Not when a row arrives: a shape the runtime cannot execute must not survive long enough to
   // produce paths that look valid. This is the property the recursion has to keep.
+  // A record's row may hold either kind (phases A and B). An array's row may hold neither: its
+  // rows are positional, so a descendant's whole path moves on every insert, remove and move.
   for (const [name, schema] of [
-    ["array in record", { orders: record(group({ lines: array(rows()) })) }],
     ["record in array", { orders: array(group({ lines: record(rows()) })) }],
     ["array in array", { orders: array(group({ lines: array(rows()) })) }],
   ]) {
@@ -100,9 +101,48 @@ test("an open parent does not force a closed child open", () => {
 
 const phase = (name, fn) => test(name, { skip: "phase not implemented yet" }, fn);
 
-phase("record → array: rows push and move inside one parent key without touching another's", () => {});
+test("record → array: rows push and move inside one parent key without touching another's", async () => {
+  const form = createForm({
+    orders: record(group({ customer: field(""), lines: array(rows()) })),
+  }, { history: true });
+  form.f.orders.upsert("o1", { customer: "Ada", lines: [{ sku: "A", qty: 1 }] });
+  form.f.orders.upsert("o2", { customer: "Bob", lines: [{ sku: "Z", qty: 9 }] });
+
+  const o1 = () => form.f.orders.row("o1").lines;
+  o1().push({ sku: "B", qty: 2 });
+  assert.equal(o1().length(), 2, "the row's array grew");
+  assert.equal(form.f.orders.row("o2").lines.length(), 1, "the sibling's array is untouched");
+
+  o1().move(0, 1);
+  assert.deepEqual(o1().rows().map((r) => r.sku.value()), ["B", "A"], "a move reorders inside the row");
+  assert.equal(form.f.orders.row("o2").lines.rows()[0].sku.value(), "Z");
+
+  // The value reads back as a list, and the whole subtree goes with its row.
+  assert.deepEqual(form.getValue().orders.o1.lines.map((l) => l.sku), ["B", "A"]);
+  form.f.orders.remove("o1");
+  assert.deepEqual(Object.keys(form.getValue().orders), ["o2"]);
+  form.destroy();
+});
+
+test("record → array: a row's array is undoable with its row", async () => {
+  const form = createForm({ orders: record(group({ lines: array(rows()) })) }, { history: true });
+  form.f.orders.upsert("o1", { lines: [{ sku: "A", qty: 1 }] });
+  await tick();
+  form.f.orders.remove("o1");
+  form.undo();
+  assert.deepEqual(form.f.orders.keys(), ["o1"]);
+  assert.deepEqual(form.getValue().orders.o1.lines.map((l) => l.sku), ["A"], "the array came back whole");
+  form.destroy();
+});
 phase("array → record: a move rebuilds the descendant record and says which flags it lost", () => {});
-phase("depth beyond the document's cap is refused when the form is built", () => {});
+test("depth beyond the document's cap is refused when the form is built", () => {
+  // Eight, the number the document validator has published since before collections could nest:
+  // one limit for the whole engine, refused where the form is built rather than on first use.
+  const nest = (depth) => (depth === 0 ? field("") : record(group({ next: nest(depth - 1) })));
+  assert.doesNotThrow(() => createForm({ a: nest(2) }).destroy(), "a shallow form builds");
+  assert.throws(() => createForm({ a: nest(12) }), /nest 8 levels deep/,
+    "a form deeper than the cap is refused, and the message says the number");
+});
 
 /**
  * The two managers declare a row the same way, because they now run the same code.
