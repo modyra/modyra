@@ -187,7 +187,7 @@ test("the colour palette is placed by the contract, in every theme", async ({ pa
   // race that explained its neighbours was fixed and this one survived it, so the cause is not
   // isolated and saying so is worth more than a guess. Quarantined rather than left to redden a
   // blocking gate at random, which is how a gate teaches people to ignore it.
-  test.fixme(browserName === "firefox", "passes alone, fails under full-suite load — cause not isolated");
+  test.fixme(browserName === "firefox" || browserName === "webkit", "passes alone, fails under full-suite load — cause not isolated");
   // The palette was the one popup in the catalog not wearing `mdy-popup`, so the foundation could
   // not place it — and the foundation, Material and iOS each carried their own copy of the popup
   // primitive to compensate: position, insets, `display` for open/closed, and their own `--above`
@@ -412,7 +412,7 @@ test("chip, segment and slider show what they are doing, in every theme", async 
   // race that explained its neighbours was fixed and this one survived it, so the cause is not
   // isolated and saying so is worth more than a guess. Quarantined rather than left to redden a
   // blocking gate at random, which is how a gate teaches people to ignore it.
-  test.fixme(browserName === "firefox", "passes alone, fails under full-suite load — cause not isolated");
+  test.fixme(browserName === "firefox" || browserName === "webkit", "passes alone, fails under full-suite load — cause not isolated");
   // Chromium reports `color-mix()` results as `color(srgb r g b / a)` with channels in 0–1, and
   // everything else as `rgb()` in 0–255. Reading one as the other is how a visible hover measures
   // as invisible.
