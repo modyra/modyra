@@ -107,6 +107,10 @@ export type MdyItemHandleTree<I> = I extends MdyGroupDescriptor<infer C>
   ? MdyFieldHandleTree<C>
   : I extends MdyFieldDescriptor<infer V>
   ? MdyFieldHandle<V>
+  : I extends MdyRecordDescriptor<infer R>
+  ? MdyRecordHandle<MdyItemHandleTree<R>, MdyArrayItemValue<R>>
+  : I extends MdyArrayDescriptor<infer A>
+  ? MdyArrayHandle<MdyItemHandleTree<A>, MdyArrayItemValue<A>>
   : never;
 
 /** The typed handle tree mirroring the schema shape (`form.f.address.city`). */

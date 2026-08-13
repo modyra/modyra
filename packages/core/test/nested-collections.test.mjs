@@ -8,17 +8,16 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MdyFormEngine, array, createForm, field, group, record, vanillaReactivity } from "../dist/index.js";
+import { MdyFormEngine, array, createForm, field, group, record, required as mdyRequired, vanillaReactivity } from "../dist/index.js";
 
 const rows = () => group({ sku: field(""), qty: field(0) });
 
 // ── What the refusal does today ────────────────────────────────────────────
 
-test("a collection inside a collection is refused when the form is built", () => {
+test("a nesting the runtime cannot execute is refused when the form is built", () => {
   // Not when a row arrives: a shape the runtime cannot execute must not survive long enough to
   // produce paths that look valid. This is the property the recursion has to keep.
   for (const [name, schema] of [
-    ["record in record", { orders: record(group({ lines: record(rows()) })) }],
     ["array in record", { orders: record(group({ lines: array(rows()) })) }],
     ["record in array", { orders: array(group({ lines: record(rows()) })) }],
     ["array in array", { orders: array(group({ lines: array(rows()) })) }],
@@ -100,16 +99,12 @@ test("an open parent does not force a closed child open", () => {
 
 const phase = (name, fn) => test(name, { skip: "phase not implemented yet" }, fn);
 
-phase("record → record: a child row survives its parent being declared after it", () => {});
-phase("record → record: removing the parent destroys the child's fields and async runners", () => {});
 phase("record → record: renaming the parent carries the whole subtree, values and flags", () => {});
 phase("record → record: renaming onto an occupied key is refused", () => {});
-phase("record → record: an unmounted descendant still decides the form's validity", () => {});
 phase("record → record: setAll on the parent drops subtrees the write does not mention", () => {});
 phase("record → record: patch on the parent leaves unnamed subtrees alone", () => {});
 phase("record → record: a restored draft rebuilds both levels", () => {});
 phase("record → record: undo crosses a nested creation in one step", () => {});
-phase("record → record: a hostile key is refused at every level", () => {});
 phase("record → array: rows push and move inside one parent key without touching another's", () => {});
 phase("array → record: a move rebuilds the descendant record and says which flags it lost", () => {});
 phase("depth beyond the document's cap is refused when the form is built", () => {});
@@ -135,4 +130,69 @@ test("a row owns its cells, whichever collection declared it", () => {
     assert.notEqual(form.getField(leaf), null, `${kind}: the cell went with the control`);
     form.destroy();
   }
+});
+
+// ── record → record, the first public combination ──────────────────────────
+
+const nestedForm = () => createForm({
+  orders: record(group({ customer: field(""), lines: record(rows()) })),
+});
+
+test("record → record: a row's collection is a collection, not a cell", () => {
+  const form = nestedForm();
+  form.f.orders.upsert("o1", { customer: "Ada", lines: {} });
+  const lines = form.f.orders.row("o1").lines;
+  assert.equal(typeof lines.upsert, "function", "the row's own collection answers as one");
+  assert.deepEqual(form.getValue(), { orders: { o1: { customer: "Ada", lines: {} } } });
+
+  lines.upsert("l1", { sku: "S", qty: 2 });
+  assert.deepEqual(lines.keys(), ["l1"]);
+  lines.row("l1").sku.set("S9");
+  assert.equal(form.getValue().orders.o1.lines.l1.sku, "S9", "a nested cell writes through");
+  form.destroy();
+});
+
+test("record → record: removing the parent takes the whole subtree", () => {
+  const form = nestedForm();
+  form.f.orders.upsert("o1", { customer: "Ada", lines: { l1: { sku: "S", qty: 1 } } });
+  assert.notEqual(form.getField("orders.o1.lines.l1.sku"), null);
+
+  form.f.orders.remove("o1");
+  assert.deepEqual(form.getValue(), { orders: {} });
+  // Not merely absent from the value: the field is gone, so nothing downstream is validating it.
+  assert.equal(form.getField("orders.o1.lines.l1.sku")?.().value(), undefined);
+  form.destroy();
+});
+
+test("record → record: an undeclared parent means an undeclared child", () => {
+  const form = nestedForm();
+  // Nothing is declared, so the row handle is inert rather than a way to bring a row into being.
+  assert.throws(() => form.f.orders.row("ghost").lines.upsert("l", {}), /not declared/);
+  form.destroy();
+});
+
+test("record → record: a descendant nobody mounted still decides validity", () => {
+  const form = createForm({
+    orders: record(group({ lines: record(group({ sku: field("", [mdyRequired()]) })) })),
+  });
+  form.f.orders.upsert("o1", { lines: { l1: { sku: "" } } });
+  assert.equal(form.state.valid(), false, "an empty required cell two levels down still counts");
+  form.f.orders.row("o1").lines.row("l1").sku.set("S");
+  assert.equal(form.state.valid(), true);
+  form.destroy();
+});
+
+test("record → record: a hostile key is refused at both levels", () => {
+  const form = nestedForm();
+  for (const key of ["__proto__", "constructor", "with.a.dot"]) {
+    form.f.orders.upsert(key, { customer: "x", lines: {} });
+    assert.ok(!form.f.orders.keys().includes(key), `the outer level took ${key}`);
+  }
+  form.f.orders.upsert("o1", { customer: "Ada", lines: {} });
+  for (const key of ["__proto__", "constructor", "with.a.dot"]) {
+    form.f.orders.row("o1").lines.upsert(key, { sku: "x", qty: 0 });
+    assert.ok(!form.f.orders.row("o1").lines.keys().includes(key), `the inner level took ${key}`);
+  }
+  assert.equal(Object.prototype.polluted, undefined);
+  form.destroy();
 });
