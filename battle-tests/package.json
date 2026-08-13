@@ -1,0 +1,14 @@
+{
+  "name": "modyra-battle-tests",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Adversarial suite that tries to falsify Modyra's public promises. Never published.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test \"**/*.test.mjs\"",
+    "test:quick": "node --test \"adversarial/**/*.test.mjs\"",
+    "audit": "node harness/black-box-audit.mjs",
+    "replay": "node harness/replay.mjs"
+  }
+}
