@@ -64,6 +64,9 @@ export const collectionsPanel = {
     recordHost.dataset.recordHost = "";
     work.append(recordHost);
 
+    const nestedHost = document.createElement("div");
+    nestedHost.dataset.nestedHost = "";
+
     /**
      * Redraw both collections from the handles. The rows decide; the DOM follows.
      *
@@ -95,6 +98,21 @@ export const collectionsPanel = {
         recordHost.append(line);
         rendered.push(renderField(line, { name: `people.${key}`, kind: "text", label: key, ariaLabel: `Person ${key}` }, form.f.people.row(key), form.reactivity));
       }
+
+      // The nested lines are real controls, not just readout: each order row draws its own lines
+      // through its own handle, so a removed order takes its inputs off the screen with it.
+      nestedHost.replaceChildren();
+      for (const orderKey of form.f.orders.keys()) {
+        const order = form.f.orders.row(orderKey);
+        for (const lineKey of order.lines.keys()) {
+          const line = document.createElement("div");
+          line.className = "grid";
+          line.dataset.line = `${orderKey}.${lineKey}`;
+          nestedHost.append(line);
+          rendered.push(renderField(line, { name: `orders.${orderKey}.lines.${lineKey}.sku`, kind: "text", label: `Line ${lineKey}`, ariaLabel: `Line ${lineKey} SKU` }, order.lines.row(lineKey).sku, form.reactivity));
+          rendered.push(renderField(line, { name: `orders.${orderKey}.lines.${lineKey}.qty`, kind: "number", label: "Qty", ariaLabel: `Line ${lineKey} qty` }, order.lines.row(lineKey).qty, form.reactivity));
+        }
+      }
       print();
     };
 
@@ -118,18 +136,19 @@ export const collectionsPanel = {
     const lines = () => form.f.orders.row("o1").lines;
     action(nestedBar, "Add a line", () => {
       lines().upsert(`l${lines().keys().length + 1}`, { sku: `SKU-${lines().keys().length + 1}`, qty: 1 });
-      print();
+      draw();
     });
     action(nestedBar, "Rename the first line", () => {
       const [first] = lines().keys();
       if (first) lines().rename(first, `${first}-renamed`);
-      print();
+      draw();
     });
-    action(nestedBar, "Remove the order", () => { form.f.orders.remove("o1"); print(); });
+    action(nestedBar, "Remove the order", () => { form.f.orders.remove("o1"); draw(); });
     action(nestedBar, "Declare the order again", () => {
       form.f.orders.upsert("o1", { customer: "Ada", lines: { l1: { sku: "SKU-1", qty: 2 } } });
-      print();
+      draw();
     });
+    work.append(nestedHost);
 
     draw();
 
@@ -142,6 +161,7 @@ export const collectionsPanel = {
       orders: form.f.orders.keys(),
       // Read through the row's own handle, which is the whole point: no path is spelled out here.
       orderLines: form.f.orders.has("o1") ? form.f.orders.row("o1").lines.keys() : [],
+      nestedDrawn: nestedHost.querySelectorAll("[data-line]").length,
       nestedValue: form.getValue().orders,
     }));
 

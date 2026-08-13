@@ -161,15 +161,23 @@ test("collections: a row's own collection lives and dies with the row", async ({
   // The value moved with the key rather than being rebuilt empty.
   expect(renamed.nestedValue.o1.lines["l1-renamed"].sku).toBe("SKU-1");
 
-  // Removing the parent takes the subtree: not hidden, gone.
+  // Removing the parent takes the subtree: not hidden, gone — the value and the *controls*. The
+  // nested lines are real mounted inputs, and a removed order must take its inputs off the screen.
   await page.locator('[data-action="Remove the order"]').click();
   await expect.poll(async () => (await readout(page)).orders).toEqual([]);
   const removed = await readout(page);
   expect(removed.orderLines).toEqual([]);
   expect(removed.nestedValue).toEqual({});
+  expect(removed.nestedDrawn).toBe(0);
 
   await page.locator('[data-action="Declare the order again"]').click();
   await expect.poll(async () => (await readout(page)).orderLines).toEqual(["l1"]);
+  await expect.poll(async () => (await readout(page)).nestedDrawn).toBe(1);
+
+  // A nested cell is a real control: typing in it lands in the row's own value.
+  const sku = page.locator('[data-nested-host] input').first();
+  await sku.fill("SKU-typed");
+  await expect.poll(async () => (await readout(page)).nestedValue.o1.lines.l1.sku).toBe("SKU-typed");
 });
 
 test("lifecycle: three writes undo once, and the secret never reaches storage", async ({ page }) => {
