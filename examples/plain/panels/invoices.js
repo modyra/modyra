@@ -14,7 +14,7 @@ import {
   required as mdyRequired,
 } from "@modyra/core";
 import { renderField } from "@modyra/plain";
-import { action, toolbar, readoutPrinter } from "./shell.js";
+import { actionWithHint, badge, level, scenario, toolbar, verdictPrinter } from "./shell.js";
 
 /** Every line's splits must total 100%, and a cost centre may appear once per line. */
 const linesBalanced = (lines) => {
@@ -42,6 +42,12 @@ export const invoicesPanel = {
 
   mount(work, readout) {
     readout.classList.add("demo-state");
+    scenario(
+      work,
+      "Sei in amministrazione. Ogni fattura ha righe di spesa, e ogni riga va ripartita fra centri " +
+        "di costo fino a coprire il 100%. La demo mostra che chiudere una riga non la mette a posto: " +
+        "una ripartizione incompleta continua a bloccare la fattura anche quando nessuno la guarda.",
+    );
     const form = createForm({
       invoices: mdyRecord(
         mdyGroup({
@@ -84,23 +90,36 @@ export const invoicesPanel = {
         box.className = "order-box";
         box.dataset.invoice = invKey;
         const head = document.createElement("strong");
-        head.textContent = `${invKey} — ${inv.supplier.value()}`;
+        head.textContent = `Fattura ${invKey} — ${inv.supplier.value()}`;
         box.append(head);
         for (const lineKey of inv.lines.keys()) {
-          if (collapsed.has(`${invKey}.${lineKey}`)) continue;
           const line = inv.lines.row(lineKey);
+          const approved = approvedLocks.includes(`invoices.${invKey}.lines.${lineKey}`);
+          if (collapsed.has(`${invKey}.${lineKey}`)) {
+            const note = document.createElement("p");
+            note.className = "demo-hidden-note";
+            const n = line.splits.keys().length;
+            note.textContent =
+              `Riga ${lineKey} chiusa — ${n} ${n === 1 ? "ripartizione nascosta" : "ripartizioni nascoste"}, ` +
+              "la fattura resta bloccata finche non arrivano al 100%";
+            box.append(note);
+            continue;
+          }
+          const lineLevel = level(box, `Riga ${lineKey} — descrizione e importo`);
+          if (approved) badge(lineLevel.firstChild, "approvata: sola lettura");
           const row = document.createElement("div");
           row.className = "grid";
           row.dataset.line = `${invKey}.${lineKey}`;
-          box.append(row);
+          lineLevel.append(row);
           rendered.push(renderField(row, { name: `i-${invKey}-${lineKey}-desc`, kind: "text", ariaLabel: `Description ${lineKey}` }, line.desc, form.reactivity));
           rendered.push(renderField(row, { name: `i-${invKey}-${lineKey}-amount`, kind: "number", ariaLabel: `Amount ${lineKey}` }, line.amount, form.reactivity));
           for (const splitKey of line.splits.keys()) {
             const split = line.splits.row(splitKey);
+            const splitLevel = level(lineLevel, `Ripartizione ${splitKey} — centro di costo e quota`);
             const srow = document.createElement("div");
             srow.className = "grid";
             srow.dataset.split = `${invKey}.${lineKey}.${splitKey}`;
-            box.append(srow);
+            splitLevel.append(srow);
             rendered.push(renderField(srow, { name: `i-${invKey}-${lineKey}-${splitKey}-cc`, kind: "text", ariaLabel: `Cost centre ${splitKey}` }, split.costCenter, form.reactivity));
             rendered.push(renderField(srow, { name: `i-${invKey}-${lineKey}-${splitKey}-pc`, kind: "number", ariaLabel: `Percent ${splitKey}` }, split.percent, form.reactivity));
           }
@@ -110,13 +129,19 @@ export const invoicesPanel = {
       print();
     };
 
-    action(bar, "Close the line", () => { collapsed.add("INV-1.l1"); draw(); });
-    action(bar, "Reopen the line", () => { collapsed.delete("INV-1.l1"); draw(); });
-    action(bar, "Fix the split", () => {
+    actionWithHint(bar, "Close the line", "nasconde la riga: la fattura resta invalida al 95%", () => {
+      collapsed.add("INV-1.l1");
+      draw();
+    });
+    actionWithHint(bar, "Reopen the line", "riapre la riga: l'errore e ancora sulla ripartizione che lo causa", () => {
+      collapsed.delete("INV-1.l1");
+      draw();
+    });
+    actionWithHint(bar, "Fix the split", "porta CC-20 dal 35% al 40%: la ripartizione arriva a 100", () => {
       form.f.invoices.row("INV-1").lines.row("l1").splits.row("s2").percent.set(40);
       draw();
     });
-    action(bar, "Approve the line", () => {
+    actionWithHint(bar, "Approve the line", "blocca la riga in sola lettura: resta validata e inviata", () => {
       // Readonly, not disabled: still submitted, still validated, no longer editable (G4 pattern —
       // per-leaf, since a subtree readonly does not exist yet).
       const base = "invoices.INV-1.lines.l1";
@@ -126,7 +151,7 @@ export const invoicesPanel = {
       approvedLocks.push(base);
       draw();
     });
-    action(bar, "Submit to the server", () => {
+    actionWithHint(bar, "Submit to the server", "il server rifiuta CC-10: l'errore torna sul path della ripartizione", () => {
       // The server rejects a split nobody has open: the error is attributed to its path and waits
       // in the global bucket while the field is unregistered or unchanged.
       form.submit(async () => [
@@ -135,21 +160,43 @@ export const invoicesPanel = {
       draw();
     });
 
-    print = readoutPrinter(readout, () => ({
-      invoices: form.f.invoices.keys(),
-      lines: Object.fromEntries(form.f.invoices.keys().map((k) => [k, form.f.invoices.row(k).lines.keys()])),
-      valid: form.state.valid(),
-      lineErrors: Object.fromEntries(
-        form.f.invoices.keys().map((k) => [k, form.f.invoices.row(k).lines.errors()]).filter(([, e]) => e.length > 0),
-      ),
-      approved: approvedLocks,
-      serverBucket: form.errorsFor("")().map((e) => `${e.path ?? "(form)"}: ${e.message}`),
-      splitServerError: form.errorsFor("invoices.INV-1.lines.l1.splits.s1.percent")().map((e) => e.message),
-      value: form.getValue().invoices,
-    }));
+    /** Turn a validator's failure into the sentence an accountant would have written. */
+    const readable = (message) =>
+      message
+        .replace(/^line (\S+): splits total (\d+)%$/, "Riga $1 — ripartito $2%, manca il resto per arrivare a 100")
+        .replace(/^line (\S+): duplicate cost centre$/, "Riga $1 — lo stesso centro di costo compare due volte");
+
+    print = verdictPrinter(
+      readout,
+      () => ({
+        invoices: form.f.invoices.keys(),
+        lines: Object.fromEntries(form.f.invoices.keys().map((k) => [k, form.f.invoices.row(k).lines.keys()])),
+        valid: form.state.valid(),
+        lineErrors: Object.fromEntries(
+          form.f.invoices.keys().map((k) => [k, form.f.invoices.row(k).lines.errors()]).filter(([, e]) => e.length > 0),
+        ),
+        approved: approvedLocks,
+        serverBucket: form.errorsFor("")().map((e) => `${e.path ?? "(form)"}: ${e.message}`),
+        splitServerError: form.errorsFor("invoices.INV-1.lines.l1.splits.s1.percent")().map((e) => e.message),
+        value: form.getValue().invoices,
+      }),
+      (s) => {
+        const rows = [];
+        rows.push(s.valid
+          ? ["ok", "Fattura pronta: ogni riga e ripartita al 100%"]
+          : ["ko", "Fattura bloccata — le ripartizioni non tornano"]);
+        for (const [key, errs] of Object.entries(s.lineErrors)) {
+          for (const e of errs) rows.push(["ko", `${key}: ${readable(e.message)}`]);
+        }
+        for (const base of s.approved) rows.push(["", `${base.split(".").slice(-1)[0]} approvata — sola lettura, ma sempre validata e inviata`]);
+        for (const message of s.splitServerError) rows.push(["ko", `Il server rifiuta la ripartizione s1: ${message}`]);
+        if (collapsed.size > 0) rows.push(["", "Una riga e chiusa: il verdetto qui sopra la conta comunque"]);
+        return rows;
+      },
+    );
 
     const effect = form.reactivity.effect(() => { form.state.valid(); print(); });
     draw();
-    return () => { effect.destroy(); for (const d of rendered) d?.(); form.destroy(); };
+    return () => { effect.destroy(); print.cancel?.(); for (const d of rendered) d?.(); form.destroy(); };
   },
 };

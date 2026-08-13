@@ -14,7 +14,7 @@ import {
   serverValidator,
 } from "@modyra/core";
 import { renderField } from "@modyra/plain";
-import { action, toolbar, readoutPrinter } from "./shell.js";
+import { actionWithHint, badge, level, scenario, toolbar, verdictPrinter } from "./shell.js";
 
 /** The lot check a server would run: L-DEAD is never available, everything else takes a beat. */
 const lotAvailable = async (value) => {
@@ -71,14 +71,13 @@ export const ordersPanel = {
 
   mount(work, readout) {
     readout.classList.add("demo-state");
-    const scenario = document.createElement("p");
-    scenario.className = "demo-scenario";
-    scenario.textContent =
+    scenario(
+      work,
       "Sei un operatore logistico. Gestisci ordini che contengono righe di prodotto, e ogni riga " +
-      "va coperta da allocazioni di magazzino. La demo mostra che ordinare, filtrare e chiudere " +
-      "pezzi di interfaccia non tocca mai i dati: il modello possiede tutto, lo schermo ne mostra " +
-      "una parte.";
-    work.append(scenario);
+        "va coperta da allocazioni di magazzino. La demo mostra che ordinare, filtrare e chiudere " +
+        "pezzi di interfaccia non tocca mai i dati: il modello possiede tutto, lo schermo ne mostra " +
+        "una parte.",
+    );
     const form = createForm(
       {
         orders: mdyRecord(
@@ -115,12 +114,7 @@ export const ordersPanel = {
         const head = document.createElement("strong");
         head.textContent = `Ordine ${orderKey} — ${order.customer.value()}`;
         box.append(head);
-        if (orderKey.startsWith("tmp:")) {
-          const badge = document.createElement("span");
-          badge.className = "demo-badge";
-          badge.textContent = "provvisorio";
-          head.append(" ", badge);
-        }
+        if (orderKey.startsWith("tmp:")) badge(head, "provvisorio");
         if (collapsed.has(orderKey)) {
           const note = document.createElement("p");
           note.className = "demo-hidden-note";
@@ -131,32 +125,20 @@ export const ordersPanel = {
         if (!collapsed.has(orderKey)) {
           for (const lineKey of order.lines.keys()) {
             const line = order.lines.row(lineKey);
-            const level = document.createElement("div");
-            level.className = "demo-level";
-            const cap = document.createElement("div");
-            cap.className = "demo-level-caption";
-            cap.textContent = `Riga ${lineKey} — prodotto e quantita`;
-            level.append(cap);
-            box.append(level);
+            const lineLevel = level(box, `Riga ${lineKey} — prodotto e quantita`);
             const row = document.createElement("div");
             row.className = "grid";
             row.dataset.line = `${orderKey}.${lineKey}`;
-            level.append(row);
+            lineLevel.append(row);
             rendered.push(renderField(row, { name: `o-${orderKey}-${lineKey}-sku`, kind: "text", ariaLabel: `SKU ${lineKey}` }, line.sku, form.reactivity));
             rendered.push(renderField(row, { name: `o-${orderKey}-${lineKey}-qty`, kind: "number", ariaLabel: `Qty ${lineKey}` }, line.qty, form.reactivity));
             for (const allocKey of line.allocs.keys()) {
               const alloc = line.allocs.row(allocKey);
-              const sub = document.createElement("div");
-              sub.className = "demo-level";
-              const scap = document.createElement("div");
-              scap.className = "demo-level-caption";
-              scap.textContent = `Allocazione ${allocKey} — lotto e quantita coperta`;
-              sub.append(scap);
-              level.append(sub);
+              const allocLevel = level(lineLevel, `Allocazione ${allocKey} — lotto e quantita coperta`);
               const arow = document.createElement("div");
               arow.className = "grid";
               arow.dataset.alloc = `${orderKey}.${lineKey}.${allocKey}`;
-              sub.append(arow);
+              allocLevel.append(arow);
               rendered.push(renderField(arow, { name: `o-${orderKey}-${lineKey}-${allocKey}-lot`, kind: "text", ariaLabel: `Lot ${allocKey}` }, alloc.lot, form.reactivity));
               rendered.push(renderField(arow, { name: `o-${orderKey}-${lineKey}-${allocKey}-aqty`, kind: "number", ariaLabel: `Allocated ${allocKey}` }, alloc.qty, form.reactivity));
             }
@@ -168,32 +150,16 @@ export const ordersPanel = {
     };
 
     const firstOrder = () => form.f.orders.keys()[0];
-    // Every action explains itself: label + one line of what it will do.
-    const explain = {
-      "Add order": "crea un ordine con chiave provvisoria tmp:*",
-      "Server assigns code": "il server risponde: la chiave tmp diventa ORD-*, i dati restano",
-      "Add allocation": "aggiunge un'allocazione alla prima riga (copre la quantita)",
-      "Remove order": "elimina il primo ordine con tutte le righe e allocazioni",
-      "Undo": "ripristina intero l'ultimo ordine rimosso",
-      "Collapse first": "nasconde le righe del primo ordine: la validita non cambia",
-      "Filter ORD": "mostra solo gli ordini confermati: i tmp restano nel modello",
-    };
-    const _origAction = action;
-    const actionWithHint = (host, label, run) => {
-      _origAction(host, label, run);
-      const btn = host.querySelector(`[data-action="${label}"]`);
-      if (btn && explain[label]) { btn.title = explain[label]; btn.classList.add("demo-action-btn"); }
-    };
-    actionWithHint(bar, "Add order", () => {
+    actionWithHint(bar, "Add order", "crea un ordine con chiave provvisoria tmp:*", () => {
       form.f.orders.upsert(`tmp:${form.f.orders.keys().length + 1}`, { customer: "New Co", lines: {} });
       draw();
     });
-    actionWithHint(bar, "Server assigns code", () => {
+    actionWithHint(bar, "Server assigns code", "il server risponde: la chiave tmp diventa ORD-*, i dati restano", () => {
       const provisional = form.f.orders.keys().find((k) => k.startsWith("tmp:"));
       if (provisional) form.f.orders.rename(provisional, `ORD-${100 + form.f.orders.keys().length}`);
       draw();
     });
-    actionWithHint(bar, "Add allocation", () => {
+    actionWithHint(bar, "Add allocation", "aggiunge un'allocazione alla prima riga (copre la quantita)", () => {
       const key = firstOrder();
       if (!key) return;
       const lines = form.f.orders.row(key).lines;
@@ -203,19 +169,19 @@ export const ordersPanel = {
       allocs.upsert(`a${allocs.keys().length + 1}`, { warehouse: "W2", lot: "L-9", qty: 1 });
       draw();
     });
-    actionWithHint(bar, "Remove order", () => {
+    actionWithHint(bar, "Remove order", "elimina il primo ordine con tutte le righe e allocazioni", () => {
       const key = firstOrder();
       if (key) form.f.orders.remove(key);
       draw();
     });
-    actionWithHint(bar, "Undo", () => { form.undo(); draw(); });
-    actionWithHint(bar, "Collapse first", () => {
+    actionWithHint(bar, "Undo", "ripristina intero l'ultimo ordine rimosso", () => { form.undo(); draw(); });
+    actionWithHint(bar, "Collapse first", "nasconde le righe del primo ordine: la validita non cambia", () => {
       const key = firstOrder();
       if (!key) return;
       if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key);
       draw();
     });
-    actionWithHint(bar, "Filter ORD", () => { filter = filter ? "" : "ORD"; draw(); });
+    actionWithHint(bar, "Filter ORD", "mostra solo gli ordini confermati: i tmp restano nel modello", () => { filter = filter ? "" : "ORD"; draw(); });
 
     const collect = () => ({
       orders: form.f.orders.keys(),
@@ -230,40 +196,23 @@ export const ordersPanel = {
       value: form.getValue().orders,
     });
 
-    // The readable half: sentences above, the raw JSON behind a details — same data, same tick.
-    const verdict = document.createElement("ul");
-    verdict.className = "demo-verdict";
-    const details = document.createElement("details");
-    const summary = document.createElement("summary");
-    summary.textContent = "dati grezzi (JSON)";
-    details.append(summary);
-    readout.before(verdict, details);
-    details.append(readout);
-    const line = (cls, text) => {
-      const li = document.createElement("li");
-      li.className = cls;
-      li.textContent = text;
-      return li;
-    };
-    print = () => {
-      const s = collect();
-      readout.textContent = JSON.stringify(s, null, 2);
+    print = verdictPrinter(readout, collect, (s) => {
       const rows = [];
       rows.push(s.valid
-        ? line("ok", "Tutti i controlli passano: ogni riga e coperta dalle sue allocazioni")
-        : line("ko", "L'ordine non e completo — vedi sotto"));
-      if (s.pending) rows.push(line("", "… verifica disponibilita lotto in corso"));
+        ? ["ok", "Tutti i controlli passano: ogni riga e coperta dalle sue allocazioni"]
+        : ["ko", "L'ordine non e completo — vedi sotto"]);
+      if (s.pending) rows.push(["", "… verifica disponibilita lotto in corso"]);
       for (const key of s.orders) {
-        rows.push(line("", key.startsWith("tmp:")
+        rows.push(["", key.startsWith("tmp:")
           ? `Ordine ${key} — provvisorio, in attesa del codice server`
-          : `Ordine ${key} — confermato`));
+          : `Ordine ${key} — confermato`]);
       }
       for (const errs of Object.values(s.lineErrors)) {
-        for (const e of errs) rows.push(line("ko", e.message.replace(/^line (\S+): allocated (\d+) of (\d+)$/, "Riga $1 — allocati $2 su $3")));
+        for (const e of errs) rows.push(["ko", e.message.replace(/^line (\S+): allocated (\d+) of (\d+)$/, "Riga $1 — allocati $2 su $3")]);
       }
-      if (s.canUndo) rows.push(line("", "Undo disponibile: l'ultima operazione e reversibile, struttura inclusa"));
-      verdict.replaceChildren(...rows);
-    };
+      if (s.canUndo) rows.push(["", "Undo disponibile: l'ultima operazione e reversibile, struttura inclusa"]);
+      return rows;
+    });
 
     const effect = form.reactivity.effect(() => {
       form.state.valid();
@@ -272,6 +221,6 @@ export const ordersPanel = {
     });
 
     draw();
-    return () => { effect.destroy(); for (const d of rendered) d?.(); form.destroy(); };
+    return () => { effect.destroy(); print.cancel?.(); for (const d of rendered) d?.(); form.destroy(); };
   },
 };
