@@ -57,24 +57,38 @@ test("one level is unaffected, in both directions", () => {
 });
 
 /**
- * The gate order, characterized because it is a defect.
+ * Out of play if any collection above it says no.
  *
- * The engine returns on the first prefix that matches, and the map is in registration order — so
- * with two nested gates the answer belongs to whichever registered first. This test states that,
- * and the phase that composes the chain is the one that deletes it.
+ * The engine used to answer from the first gate whose prefix matched, in registration order — so a
+ * child registered before its parent admitted paths the closed parent refused. This is the same
+ * sentence `conditions.ts` states about sections, over a different set of ancestors.
  */
-test("a path is answered by the first gate registered, not the outermost", () => {
+test("a path is in play only when every collection above it admits it", () => {
+  for (const order of ["inner first", "outer first"]) {
+    const engine = new MdyFormEngine(vanillaReactivity(), () => undefined, () => "valid-only");
+    const closedOuter = ["orders", { isOpen: () => false }];
+    const openInner = ["orders.a.lines", { isOpen: () => true }];
+    for (const [prefix, gate] of order === "inner first" ? [openInner, closedOuter] : [closedOuter, openInner]) {
+      engine.registerPathGate(prefix, gate);
+    }
+
+    engine.claimField("orders.a.lines.x");
+    assert.equal(engine.peekField("orders.a.lines.x"), null,
+      `${order}: the closed parent should refuse the path whatever the registration order`);
+
+    engine.destroy();
+  }
+});
+
+test("an open parent does not force a closed child open", () => {
   const engine = new MdyFormEngine(vanillaReactivity(), () => undefined, () => "valid-only");
-  const closed = { isOpen: () => false };
-  const open = { isOpen: () => true };
-
-  // The inner gate first: it answers for a path the outer one would refuse.
-  engine.registerPathGate("orders.a.lines", open);
-  engine.registerPathGate("orders", closed);
+  engine.registerPathGate("orders", { isOpen: () => true });
+  engine.registerPathGate("orders.a.lines", { isOpen: () => false });
   engine.claimField("orders.a.lines.x");
-  assert.notEqual(engine.peekField("orders.a.lines.x"), null,
-    "today the inner gate wins because it was registered first");
-
+  assert.equal(engine.peekField("orders.a.lines.x"), null, "the inner refusal still holds");
+  // A sibling the inner gate does not cover is unaffected: composition narrows, it does not spread.
+  engine.claimField("orders.a.customer");
+  assert.notEqual(engine.peekField("orders.a.customer"), null, "a path only the open gate covers is in play");
   engine.destroy();
 });
 
@@ -98,7 +112,6 @@ phase("record → record: undo crosses a nested creation in one step", () => {})
 phase("record → record: a hostile key is refused at every level", () => {});
 phase("record → array: rows push and move inside one parent key without touching another's", () => {});
 phase("array → record: a move rebuilds the descendant record and says which flags it lost", () => {});
-phase("a path is in play only when every collection above it admits it", () => {});
 phase("depth beyond the document's cap is refused when the form is built", () => {});
 
 /**
