@@ -140,6 +140,38 @@ test("collections: a rename keeps the value with the row", async ({ page }) => {
   expect(state.people.ada2).toBe("Ada");
 });
 
+test("collections: a row's own collection lives and dies with the row", async ({ page }) => {
+  await open(page, "collections");
+  const start = await readout(page);
+  expect(start.orders).toEqual(["o1"]);
+  expect(start.orderLines).toEqual(["l1"]);
+
+  // Waited *for the readout*, not for a duration: a fixed sleep is a guess about how long a machine
+  // takes, and that guess is what makes a suite flaky on a loaded runner rather than wrong.
+  await page.locator('[data-action="Add a line"]').click();
+  await expect.poll(async () => (await readout(page)).orderLines.length).toBe(2);
+
+  await page.locator('[data-action="Rename the first line"]').click();
+  await expect.poll(async () => (await readout(page)).orderLines).toContain("l1-renamed");
+  const renamed = await readout(page);
+  // Renaming re-declares, so the key lands at the end of the declaration order — as it does at one
+  // level, for the same reason. What matters is that it is there and brought its value.
+  expect(renamed.orderLines).toContain("l1-renamed");
+  expect(renamed.orderLines).not.toContain("l1");
+  // The value moved with the key rather than being rebuilt empty.
+  expect(renamed.nestedValue.o1.lines["l1-renamed"].sku).toBe("SKU-1");
+
+  // Removing the parent takes the subtree: not hidden, gone.
+  await page.locator('[data-action="Remove the order"]').click();
+  await expect.poll(async () => (await readout(page)).orders).toEqual([]);
+  const removed = await readout(page);
+  expect(removed.orderLines).toEqual([]);
+  expect(removed.nestedValue).toEqual({});
+
+  await page.locator('[data-action="Declare the order again"]').click();
+  await expect.poll(async () => (await readout(page)).orderLines).toEqual(["l1"]);
+});
+
 test("lifecycle: three writes undo once, and the secret never reaches storage", async ({ page }) => {
   await open(page, "lifecycle");
   await page.locator('[data-action="Clear the draft"]').click();
