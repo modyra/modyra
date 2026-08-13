@@ -11,6 +11,10 @@ import { composeConditions, type MdyCondition } from "./conditions.js";
 import { MdyArrayManager } from "./array-manager.js";
 import { MdyRecordManager } from "./record-manager.js";
 import { isRecord as isRecordValue } from "./record-utils.js";
+import type {
+  MdyCollectionFactory,
+  MdyNestedCollection,
+} from "./contracts/collection-manager.js";
 
 /** The value at a dotted path inside a nested form value; `{}` where the path names no object. */
 function valueAt(value: Record<string, unknown>, path: string): Record<string, unknown> {
@@ -579,6 +583,23 @@ export abstract class MdyTypedFormBase<
           return holds(valueAt(formValue, sectionPath), formValue);
         });
 
+    /**
+     * Which manager owns a collection, wherever it was declared.
+     *
+     * The two kinds are mutually recursive — a record's row may hold an array and an array's row a
+     * record — and this is the one place that knows both, so neither has to name the other.
+     */
+    const createCollection: MdyCollectionFactory = (kind, deps, value) =>
+      kind === "array"
+        ? new MdyArrayManager(
+            { ...deps, item: deps.item as MdyAnyGroupDescriptor | MdyAnyFieldDescriptor },
+            Array.isArray(value) ? value : [],
+          )
+        : new MdyRecordManager(
+            { ...deps, item: deps.item as MdyAnyGroupDescriptor | MdyAnyFieldDescriptor },
+            isRecordValue(value) ? value : {},
+          );
+
     walkSchema(
       schema,
       "",
@@ -596,6 +617,8 @@ export abstract class MdyTypedFormBase<
               path,
               item: node.item,
               sections: enclosingSections(path),
+              warn: (message) => adapter.warnDev(message),
+              createCollection,
             },
             node.initial,
           ),
@@ -612,6 +635,7 @@ export abstract class MdyTypedFormBase<
               item: node.item,
               sections: enclosingSections(path),
               warn: (message) => adapter.warnDev(message),
+              createCollection,
             },
             node.initial,
           ),
@@ -1243,7 +1267,7 @@ export abstract class MdyTypedFormBase<
   }
 
   /** The manager for a collection at `path`, declared by the form or by a row below it. */
-  private _collectionAt(path: string): MdyRecordManager | MdyArrayManager | undefined {
+  private _collectionAt(path: string): MdyNestedCollection | undefined {
     const own = this._records.get(path);
     if (own) return own;
     for (const [at, manager] of this._records) {
@@ -1256,7 +1280,7 @@ export abstract class MdyTypedFormBase<
     // path like any other — the index is part of the path, not a separate lookup.
     for (const [at, manager] of this._arrays) {
       if (path.startsWith(`${at}.`)) {
-        const found = manager.nestedAt(path);
+        const found = manager.nested(path);
         if (found) return found;
       }
     }

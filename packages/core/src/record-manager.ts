@@ -1,7 +1,7 @@
 /**
  * Owns one record node: a collection whose keys are data.
  *
- * Where {@link MdyArrayManager} makes structure follow the value, here structure follows a
+ * Where a positional collection makes structure follow the value, here structure follows a
  * **declaration**. `upsert` brings a row into being and `remove` ends it; mounting a control does
  * neither. That single rule is what lets a table render column by column — the controls of one row
  * are mounted apart and at different times, and they come and go for reasons that have nothing to do
@@ -32,7 +32,11 @@ import type {
   MdyAnyRecordDescriptor,
 } from "./contracts/descriptors.js";
 import { isRecord } from "./record-utils.js";
-import { MdyArrayManager } from "./array-manager.js";
+import type {
+  MdyCollectionDeps,
+  MdyCollectionKind,
+  MdyNestedCollection,
+} from "./contracts/collection-manager.js";
 import { registerRowNode, type MdyRowRegistration } from "./collections/register.js";
 
 /** A row's own schema node — a record's row is a field or a group, never another collection. */
@@ -140,9 +144,12 @@ export interface MdyRecordManagerDeps {
    * an array.
    */
   readonly positionalAncestor?: boolean;
+  /** How to build a collection declared inside one of this collection's rows. */
+  readonly createCollection: MdyCollectionDeps["createCollection"];
 }
 
-export class MdyRecordManager {
+export class MdyRecordManager implements MdyNestedCollection {
+  readonly collectionKind: MdyCollectionKind = "record";
   private readonly _deps: MdyRecordManagerDeps;
   private readonly _initial: Readonly<Record<string, unknown>>;
   private readonly _keysSig: MdyWritableSignal<readonly string[]>;
@@ -160,7 +167,7 @@ export class MdyRecordManager {
    * form-level registry would have to work that ownership back out of a path, which is the thing
    * ADR 0040 says not to do.
    */
-  private readonly _nested = new Map<string, MdyRecordManager | MdyArrayManager>();
+  private readonly _nested = new Map<string, MdyNestedCollection>();
 
   /** The declared keys, in declaration order. */
   readonly keys: MdySignal<readonly string[]>;
@@ -243,23 +250,9 @@ export class MdyRecordManager {
    */
   private _declareNested(path: string, node: MdyAnyRecordDescriptor, value: unknown): void {
     this._nested.get(path)?.destroy();
-    if ((node as { kind: string }).kind === "array") {
-      this._nested.set(path, new MdyArrayManager(
-        {
-          rx: this._deps.rx,
-          engine: this._deps.engine,
-          path,
-          item: node.item as MdyRowNode,
-          sections: [
-            ...(this._deps.sections ?? []),
-            () => this._declared.has(this._keyOf(path)),
-          ],
-        },
-        Array.isArray(value) ? value : [],
-      ));
-      return;
-    }
-    this._nested.set(path, new MdyRecordManager(
+    const kind = (node as { kind: MdyCollectionKind }).kind;
+    this._nested.set(path, this._deps.createCollection(
+      kind,
       {
         rx: this._deps.rx,
         engine: this._deps.engine,
@@ -272,8 +265,10 @@ export class MdyRecordManager {
           ...(this._deps.sections ?? []),
           () => this._declared.has(this._keyOf(path)),
         ],
+        positionalAncestor: this._deps.positionalAncestor ?? false,
+        createCollection: this._deps.createCollection,
       },
-      isRecord(value) ? value : {},
+      value,
     ));
   }
 
@@ -284,12 +279,14 @@ export class MdyRecordManager {
   }
 
   /** The manager for a collection declared inside one of these rows, wherever it sits below. */
-  nested(path: string): MdyRecordManager | MdyArrayManager | undefined {
+  nested(path: string): MdyNestedCollection | undefined {
     const own = this._nested.get(path);
     if (own) return own;
     for (const [at, manager] of this._nested) {
-      // An array's rows hold no collections in v1, so only a record can hold the rest of the path.
-      if (path.startsWith(`${at}.`) && manager instanceof MdyRecordManager) return manager.nested(path);
+      if (path.startsWith(`${at}.`)) {
+        const found = manager.nested(path);
+        if (found) return found;
+      }
     }
     return undefined;
   }
@@ -512,12 +509,7 @@ export class MdyRecordManager {
       if (child.kind === "record" || child.kind === "array") {
         // `setAll`, because a whole-row write says what the row is: a nested collection the write
         // does not mention is emptied, not left behind.
-        const nested = this._nested.get(at);
-        if (nested instanceof MdyArrayManager) {
-          if (Array.isArray(value[key])) nested.setAll(value[key] as unknown[]);
-        } else if (nested && isRecord(value[key])) {
-          nested.setAll(value[key] as Record<string, unknown>);
-        }
+        this._nested.get(at)?.setAllFrom(value[key]);
         continue;
       }
       assertRowNode(child);
@@ -526,19 +518,24 @@ export class MdyRecordManager {
   }
 
   private _leafPaths(fullPath: string, rowNode: MdyRowNode | { readonly kind: "array" | "record" }): string[] {
-    if (rowNode.kind === "record") {
-      const nested = this._nested.get(fullPath);
-      if (!nested || !(nested instanceof MdyRecordManager)) return [];
-      return nested.keysNow().flatMap((key) => nested._leafPaths(`${fullPath}.${key}`, nested._deps.item));
-    }
-    if (rowNode.kind === "array") {
-      const nested = this._nested.get(fullPath);
-      return nested instanceof MdyArrayManager ? nested.leafPathsNow() : [];
+    if (rowNode.kind === "record" || rowNode.kind === "array") {
+      return this._nested.get(fullPath)?.leafPathsNow() ?? [];
     }
     if (rowNode.kind === "field") return [fullPath];
     const group = rowNode as MdyAnyGroupDescriptor;
     return Object.entries(group.children).flatMap(([key, child]) =>
       this._leafPaths(`${fullPath}.${key}`, child as MdyRowNode));
+  }
+
+  /**
+   * Replaces the rows wholesale, from whatever the enclosing write carried.
+   *
+   * A value that is not a record says nothing about keys, so it changes nothing: a whole-row write
+   * that names this collection with the wrong shape is a defect upstream, not an instruction to
+   * empty it.
+   */
+  setAllFrom(value: unknown): void {
+    if (isRecord(value)) this.setAll(value);
   }
 
   /** The declared keys as a plain array, for a sibling manager reading through this one. */
@@ -551,18 +548,12 @@ export class MdyRecordManager {
   }
 
   private _readNode(fullPath: string, rowNode: MdyRowNode | { readonly kind: "array" | "record" }): unknown {
-    if (rowNode.kind === "record") {
+    if (rowNode.kind === "record" || rowNode.kind === "array") {
       // Through the manager that owns it: the rows are its answer, not something derivable from
       // the declaration, which names no keys.
       const nested = this._nested.get(fullPath);
-      if (!nested || !(nested instanceof MdyRecordManager)) return {};
-      return Object.fromEntries(
-        nested.keysNow().map((key) => [key, nested._readRow(key)]),
-      );
-    }
-    if (rowNode.kind === "array") {
-      const nested = this._nested.get(fullPath);
-      return nested instanceof MdyArrayManager ? nested.getValues() : [];
+      if (nested) return nested.getValues();
+      return rowNode.kind === "array" ? [] : {};
     }
     if (rowNode.kind === "field") {
       const ref = this._deps.engine.peekField(fullPath);
