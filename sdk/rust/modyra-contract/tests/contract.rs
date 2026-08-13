@@ -207,3 +207,49 @@ fn an_unrecognised_mode_is_reported() {
         "a mode the contract does not describe leaves the field checked against no anatomy"
     );
 }
+
+#[test]
+fn accepts_the_shared_nested_collections_fixture() {
+    // The same document the TS parser accepts: a keyed collection inside a keyed row, an array
+    // below that, and a keyed collection as the whole row of an array.
+    let json = include_str!("../../../../spec/fixtures/dynamic-form/v3/nested-collections.json");
+    let result = parse_v2(json, ValidationMode::Strict).unwrap();
+    assert!(result.valid, "{:?}", result.diagnostics);
+    let form = result.form.expect("form");
+
+    use modyra_contract::DynamicNode;
+    let schema = form.schema.expect("schema");
+    let DynamicNode::Group { children, .. } = &schema else {
+        panic!("expected a group at the root, got {schema:?}");
+    };
+    assert!(matches!(children["orders"], DynamicNode::Record { .. }));
+    match &children["shipments"] {
+        // A row that *is* a collection: an array of keyed serial lists.
+        DynamicNode::Array { item, .. } => assert!(matches!(**item, DynamicNode::Record { .. })),
+        other => panic!("expected an array of records, got {other:?}"),
+    }
+}
+
+#[test]
+fn refuses_a_second_positional_level_wherever_it_sits() {
+    // A path crosses one positional level: the two shapes that would make it cross two are named
+    // where they are written, with the code the other parsers use.
+    let array_in_array = r#"{"version":3,"schema":{"node":"array","item":
+        {"node":"array","item":{"node":"field","field":{"kind":"text","name":"leaf"}}}}}"#;
+    let result = parse_v2(array_in_array, ValidationMode::Strict).unwrap();
+    assert!(!result.valid);
+    assert!(result
+        .diagnostics
+        .iter()
+        .any(|d| d.code == "MDY_DYNAMIC_INVALID_ARRAY"));
+
+    let array_under_a_rows_record = r#"{"version":3,"schema":{"node":"array","item":
+        {"node":"record","item":{"node":"array","item":
+        {"node":"field","field":{"kind":"text","name":"leaf"}}}}}}"#;
+    let nested = parse_v2(array_under_a_rows_record, ValidationMode::Strict).unwrap();
+    assert!(!nested.valid);
+    assert!(nested
+        .diagnostics
+        .iter()
+        .any(|d| d.code == "MDY_DYNAMIC_INVALID_RECORD"));
+}

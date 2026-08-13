@@ -266,6 +266,23 @@ pub enum DynamicNode {
         #[serde(default, rename = "maxItems", skip_serializing_if = "Option::is_none")]
         max_items: Option<usize>,
     },
+    /// A collection whose keys are data rather than positions — an entity id, a provisional key.
+    ///
+    /// The document declares the shape of a row and, where it has them, the rows it starts with.
+    /// Which rows exist afterwards is the application's word.
+    Record {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        label: Option<String>,
+
+        item: Box<DynamicNode>,
+
+        #[serde(
+            default,
+            rename = "initialValue",
+            skip_serializing_if = "std::collections::BTreeMap::is_empty"
+        )]
+        initial_value: std::collections::BTreeMap<String, Value>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -453,7 +470,7 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
         }
     }
     if let Some(schema) = &form.schema {
-        validate_node(schema, "/schema", 0, &mut d);
+        validate_node(schema, "/schema", 0, false, &mut d);
     }
     let valid = d.is_empty();
     Ok(ValidationResult {
@@ -467,7 +484,15 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
     })
 }
 
-fn validate_node(node: &DynamicNode, path: &str, depth: usize, out: &mut Vec<Diagnostic>) {
+/// `positional` says an array already encloses this node: a path crosses one positional level
+/// (ADR 0040), so a second array below one is refused where it is written.
+fn validate_node(
+    node: &DynamicNode,
+    path: &str,
+    depth: usize,
+    positional: bool,
+    out: &mut Vec<Diagnostic>,
+) {
     if depth > 8 {
         out.push(diag(
             "MDY_DYNAMIC_SCHEMA_LIMIT",
@@ -494,7 +519,13 @@ fn validate_node(node: &DynamicNode, path: &str, depth: usize, out: &mut Vec<Dia
                         "unsafe group child name",
                     ));
                 } else {
-                    validate_node(child, &format!("{path}/children/{name}"), depth + 1, out);
+                    validate_node(
+                        child,
+                        &format!("{path}/children/{name}"),
+                        depth + 1,
+                        positional,
+                        out,
+                    );
                 }
             }
         }
@@ -522,7 +553,50 @@ fn validate_node(node: &DynamicNode, path: &str, depth: usize, out: &mut Vec<Dia
                     "minItems cannot exceed maxItems",
                 ));
             }
-            validate_node(item, &format!("{path}/item"), depth + 1, out);
+            if matches!(**item, DynamicNode::Array { .. }) {
+                out.push(diag(
+                    "MDY_DYNAMIC_INVALID_ARRAY",
+                    &format!("{path}/item"),
+                    "a path crosses one positional level — an array below another array is not addressable",
+                ));
+            } else {
+                validate_node(item, &format!("{path}/item"), depth + 1, true, out);
+            }
+        }
+        DynamicNode::Record {
+            item,
+            initial_value,
+            ..
+        } => {
+            if initial_value.len() > 100 {
+                out.push(diag(
+                    "MDY_DYNAMIC_SCHEMA_LIMIT",
+                    path,
+                    "record initial value exceeds 100 rows",
+                ));
+            }
+            for key in initial_value.keys() {
+                // A key that cannot be a path segment names a row nothing can address.
+                if key.is_empty()
+                    || key.contains('.')
+                    || matches!(key.as_str(), "__proto__" | "prototype" | "constructor")
+                {
+                    out.push(diag(
+                        "MDY_DYNAMIC_UNSAFE_NAME",
+                        &format!("{path}/initialValue/{key}"),
+                        "unsafe row key",
+                    ));
+                }
+            }
+            if positional && matches!(**item, DynamicNode::Array { .. }) {
+                out.push(diag(
+                    "MDY_DYNAMIC_INVALID_RECORD",
+                    &format!("{path}/item"),
+                    "a path crosses one positional level — an array below another array is not addressable",
+                ));
+            } else {
+                validate_node(item, &format!("{path}/item"), depth + 1, positional, out);
+            }
         }
     }
 }

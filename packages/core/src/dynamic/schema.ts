@@ -259,7 +259,12 @@ export interface MdyDynamicGroupNode {
 export interface MdyDynamicArrayNode {
   readonly node: "array";
   readonly label?: string;
-  readonly item: MdyDynamicFieldNode | MdyDynamicGroupNode;
+  /**
+   * A row's shape. It may hold a keyed collection: a row's descendants are then addressed by name
+   * below this collection's index. It may not hold another positional one — a path crosses one
+   * positional level (ADR 0040).
+   */
+  readonly item: MdyDynamicFieldNode | MdyDynamicGroupNode | MdyDynamicRecordNode;
   readonly initialValue?: ReadonlyArray<unknown>;
   readonly minItems?: number;
   readonly maxItems?: number;
@@ -274,7 +279,8 @@ export interface MdyDynamicArrayNode {
 export interface MdyDynamicRecordNode {
   readonly node: "record";
   readonly label?: string;
-  readonly item: MdyDynamicFieldNode | MdyDynamicGroupNode;
+  /** A row's shape, a collection of either kind included — keys address it, so nothing moves. */
+  readonly item: MdyDynamicFieldNode | MdyDynamicGroupNode | MdyDynamicRecordNode | MdyDynamicArrayNode;
   readonly initialValue?: Readonly<Record<string, unknown>>;
 }
 export type MdyDynamicNode =

@@ -378,4 +378,53 @@ class MdyDynamicFormParserTest {
         "an ignored property must be reported, never dropped in silence");
   }
 
+
+  /**
+   * The shared nested-collections fixture: a keyed collection inside a keyed row, an array below
+   * that, and a keyed collection as the whole row of an array — the same document TS and Rust take.
+   */
+  @Test
+  void acceptsTheSharedNestedCollectionsFixture() throws Exception {
+    MdyDynamicFormParseResult result =
+        parser.parse(readV3Fixture("nested-collections.json"), MdyDynamicFormParser.Mode.STRICT);
+
+    assertTrue(result.ok(), () -> String.valueOf(result.diagnostics()));
+    // A document declares the rows it starts with; this one declares none, so the flat view is
+    // empty while the schema is whole.
+    assertTrue(result.fields().isEmpty(), "no row is declared, so no leaf is named");
+  }
+
+  /**
+   * A path crosses one positional level, so an array below another array is refused where it is
+   * written — with the code the collection that found it owns.
+   */
+  @Test
+  void refusesASecondPositionalLevelWhereverItSits() {
+    String arrayInArray = "{\"version\":3,\"schema\":{\"node\":\"array\",\"item\":"
+        + "{\"node\":\"array\",\"item\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"}}}}}";
+    MdyDynamicFormParseResult refused = parser.parse(arrayInArray, MdyDynamicFormParser.Mode.STRICT);
+    assertFalse(refused.ok());
+    assertTrue(refused.diagnostics().stream().anyMatch((d) -> "MDY_DYNAMIC_INVALID_ARRAY".equals(d.code())));
+
+    String arrayUnderARowsRecord = "{\"version\":3,\"schema\":{\"node\":\"array\",\"item\":"
+        + "{\"node\":\"record\",\"item\":{\"node\":\"array\",\"item\":"
+        + "{\"node\":\"field\",\"field\":{\"kind\":\"text\"}}}}}}";
+    MdyDynamicFormParseResult nested = parser.parse(arrayUnderARowsRecord, MdyDynamicFormParser.Mode.STRICT);
+    assertFalse(nested.ok());
+    assertTrue(nested.diagnostics().stream().anyMatch((d) -> "MDY_DYNAMIC_INVALID_RECORD".equals(d.code())));
+  }
+
+  /** A record's declared rows are named in the flat view, by key rather than by index. */
+  @Test
+  void namesADeclaredRowByItsKey() {
+    String json = "{\"version\":3,\"schema\":{\"node\":\"group\",\"children\":{"
+        + "\"lines\":{\"node\":\"record\",\"item\":{\"node\":\"field\","
+        + "\"field\":{\"kind\":\"text\"}},\"initialValue\":{\"tmp:1\":\"Espresso\"}}}}}";
+
+    MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(result.ok(), () -> String.valueOf(result.diagnostics()));
+    assertEquals("lines.tmp:1", result.fields().get(0).name());
+    assertEquals("Espresso", result.fields().get(0).initialValue());
+  }
+
 }

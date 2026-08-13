@@ -645,7 +645,7 @@ test("removing a row while its async validator is in flight settles cleanly", as
   assert.deepEqual(form.fieldNames(), ["rows"], "nothing of the row is left registered");
 });
 
-test("a document nesting one collection inside another is refused where it is written", async () => {
+test("a document may nest a collection, and the parser answers for the same rule the runtime does", async () => {
   const { parseDynamicForm, buildDynamicFormSchema, array } = await import("../dist/index.js");
 
   const recordInsideArray = {
@@ -658,15 +658,52 @@ test("a document nesting one collection inside another is refused where it is wr
     },
   };
 
-  // The **document** contract still refuses what the runtime now runs: the parser is the next
-  // phase, and until it lands a document may not say what a typed schema may.
   const parsed = parseDynamicForm({ version: 3, schema: recordInsideArray });
+  assert.deepEqual(parsed.diagnostics, [], "a keyed collection below a positional one is addressable");
+  // The row *is* the keyed collection here, so the row handle is the record's own.
+  const built = createForm(buildDynamicFormSchema(recordInsideArray));
+  built.f.rows.push({});
+  built.f.rows.at(0).upsert("k", "written");
+  assert.deepEqual(built.getValue(), { rows: [{ k: "written" }] });
+  built.destroy();
+
+  // What both refuse is a second *positional* level, wherever it sits.
+  const arrayInsideArray = parseDynamicForm({
+    version: 3,
+    schema: {
+      node: "group",
+      children: {
+        rows: {
+          node: "array",
+          item: { node: "array", item: { node: "field", field: { name: "leaf", kind: "text" } } },
+        },
+      },
+    },
+  });
   assert.ok(
-    parsed.diagnostics.some((d) => d.code === "MDY_DYNAMIC_INVALID_ARRAY"),
+    arrayInsideArray.diagnostics.some((d) => d.code === "MDY_DYNAMIC_INVALID_ARRAY"),
     "the parser names the shape it cannot address",
   );
+  const arrayUnderARowsRecord = parseDynamicForm({
+    version: 3,
+    schema: {
+      node: "group",
+      children: {
+        rows: {
+          node: "array",
+          item: {
+            node: "record",
+            item: { node: "array", item: { node: "field", field: { name: "leaf", kind: "text" } } },
+          },
+        },
+      },
+    },
+  });
+  assert.ok(
+    arrayUnderARowsRecord.diagnostics.some((d) => d.code === "MDY_DYNAMIC_INVALID_RECORD"),
+    "one positional level per path, however deep the second one sits",
+  );
 
-  // What the runtime refuses is a second *positional* level, wherever it sits.
   assert.throws(
     () => createForm({ rows: array(group({ inner: array(field("")) })) }),
     /Nested collections/,
@@ -677,23 +714,26 @@ test("a document nesting one collection inside another is refused where it is wr
   );
 });
 
-test("an array inside a record row is refused the same way", async () => {
-  const { parseDynamicForm } = await import("../dist/index.js");
+test("an array inside a record row is a document a form can run", async () => {
+  const { parseDynamicForm, buildDynamicFormSchema } = await import("../dist/index.js");
 
-  const parsed = parseDynamicForm({
-    version: 3,
-    schema: {
-      node: "group",
-      children: {
-        rows: {
-          node: "record",
-          item: { node: "array", item: { node: "field", field: { name: "leaf", kind: "text" } } },
-        },
+  const schema = {
+    node: "group",
+    children: {
+      rows: {
+        node: "record",
+        item: { node: "array", item: { node: "field", field: { name: "leaf", kind: "text" } } },
       },
     },
-  });
+  };
+  const parsed = parseDynamicForm({ version: 3, schema });
 
-  assert.ok(parsed.diagnostics.some((d) => d.code === "MDY_DYNAMIC_INVALID_RECORD"));
+  assert.deepEqual(parsed.diagnostics, []);
+  const form = createForm(buildDynamicFormSchema(schema));
+  form.f.rows.upsert("a", []);
+  form.f.rows.row("a").push("first");
+  assert.deepEqual(form.getValue(), { rows: { a: ["first"] } });
+  form.destroy();
 });
 
 test("a draft restores the rows that were there, and not the one the user removed", async () => {

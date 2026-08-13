@@ -36,7 +36,11 @@ public final class MdyDynamicFormParser {
   public enum Mode { STRICT, LENIENT }
 
   private static final Set<String> FORBIDDEN_NAMES = Set.of("__proto__", "prototype", "constructor");
-  private static final Set<String> SCHEMA_NODE_KINDS = Set.of("field", "group", "array");
+  /** What both collections say when a second positional level would make a path unaddressable. */
+  private static final String POSITIONAL_LEVEL =
+      "a path crosses one positional level — an array below another array is not addressable.";
+
+  private static final Set<String> SCHEMA_NODE_KINDS = Set.of("field", "group", "array", "record");
   private static final Set<String> RULE_EFFECTS = Set.of("visible", "hidden", "enabled", "disabled");
   private static final Set<String> RULE_OPERATORS = Set.of(
       "equals", "notEquals", "in", "notIn", "isEmpty", "isNotEmpty",
@@ -220,6 +224,14 @@ public final class MdyDynamicFormParser {
   // ─── v2 recursive schema: validate + flatten (mirrors validateDynamicSchema / flattenDynamicSchema) ───
 
   private void validateSchema(JsonNode node, String path, int depth, List<MdyDynamicDiagnostic> out, int[] count) {
+    validateSchema(node, path, depth, out, count, false);
+  }
+
+  /**
+   * {@code positional} says an array already encloses this node. A path crosses one positional
+   * level, so an array below another array is refused where it is written.
+   */
+  private void validateSchema(JsonNode node, String path, int depth, List<MdyDynamicDiagnostic> out, int[] count, boolean positional) {
     count[0]++;
     if (depth > SCHEMA_MAX_DEPTH || count[0] > SCHEMA_MAX_NODES) {
       out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_SCHEMA_LIMIT", MdyDynamicDiagnostic.ERROR, path, "schema exceeds depth/node limits."));
@@ -227,7 +239,7 @@ public final class MdyDynamicFormParser {
     }
     String kind = node.isObject() && node.path("node").isTextual() ? node.path("node").asText() : null;
     if (!node.isObject() || kind == null || !SCHEMA_NODE_KINDS.contains(kind)) {
-      out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_NODE", MdyDynamicDiagnostic.ERROR, path, "node must be field, group, or array."));
+      out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_NODE", MdyDynamicDiagnostic.ERROR, path, "node must be field, group, array, or record."));
       return;
     }
     if (kind.equals("field")) {
@@ -248,17 +260,43 @@ public final class MdyDynamicFormParser {
         if (!isSafeSegment(key)) {
           out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, childPath, "unsafe child name."));
         } else {
-          validateSchema(entry.getValue(), childPath, depth + 1, out, count);
+          validateSchema(entry.getValue(), childPath, depth + 1, out, count, positional);
+        }
+      }
+      return;
+    }
+    JsonNode item = node.path("item");
+    if (kind.equals("record")) {
+      if (!item.isObject()) {
+        out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RECORD", MdyDynamicDiagnostic.ERROR, path, "record requires an item node."));
+      } else if (positional && item.path("node").asText("").equals("array")) {
+        out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RECORD", MdyDynamicDiagnostic.ERROR, path + "/item", POSITIONAL_LEVEL));
+      } else {
+        validateSchema(item, path + "/item", depth + 1, out, count, positional);
+      }
+      JsonNode rows = node.path("initialValue");
+      if (!rows.isMissingNode() && !rows.isObject()) {
+        out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RECORD", MdyDynamicDiagnostic.ERROR, path + "/initialValue", "record initialValue must be an object keyed by row key."));
+      } else if (rows.isObject()) {
+        if (rows.size() > SCHEMA_MAX_ARRAY_ROWS) {
+          out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_SCHEMA_LIMIT", MdyDynamicDiagnostic.ERROR, path + "/initialValue", "record initialValue exceeds 100 rows."));
+        }
+        for (var entry : rows.properties()) {
+          // A key that cannot be a path segment names a row nothing can address.
+          if (!isSafeSegment(entry.getKey())) {
+            out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, path + "/initialValue/" + entry.getKey(), "unsafe row key."));
+          }
         }
       }
       return;
     }
     // array
-    JsonNode item = node.path("item");
     if (!item.isObject()) {
       out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_ARRAY", MdyDynamicDiagnostic.ERROR, path, "array requires an item node."));
+    } else if (item.path("node").asText("").equals("array")) {
+      out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_ARRAY", MdyDynamicDiagnostic.ERROR, path + "/item", POSITIONAL_LEVEL));
     } else {
-      validateSchema(item, path + "/item", depth + 1, out, count);
+      validateSchema(item, path + "/item", depth + 1, out, count, true);
     }
     JsonNode initialValue = node.path("initialValue");
     if (!initialValue.isMissingNode() && !initialValue.isArray()) {
@@ -293,8 +331,22 @@ public final class MdyDynamicFormParser {
       }
       return;
     }
-    // array
     JsonNode item = node.get("item");
+    if (kind.equals("record")) {
+      // Which rows a record has is the application's word; a document can only declare the ones it
+      // starts with, so those are the ones a flat view can name.
+      JsonNode declared = hasValue(initial) && initial.isObject() ? initial
+          : node.path("initialValue").isObject() ? node.path("initialValue") : null;
+      if (declared != null) {
+        for (var entry : declared.properties()) {
+          if (!isSafeSegment(entry.getKey())) continue;
+          String key = entry.getKey();
+          flattenSchemaInto(item, path.isEmpty() ? key : path + "." + key, entry.getValue(), out);
+        }
+      }
+      return;
+    }
+    // array
     JsonNode rows = hasValue(initial) && initial.isArray() ? initial
         : node.path("initialValue").isArray() ? node.path("initialValue") : null;
     if (rows != null) {
