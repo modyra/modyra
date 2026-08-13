@@ -17,6 +17,7 @@
       .demo-level .demo-level .demo-level { border-left-color: color-mix(in srgb, var(--mdy-primary) 18%, transparent); }
       .demo-level-caption { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mdy-on-surface-variant); }
       .demo-badge { display: inline-block; padding: 0.05rem 0.5rem; border-radius: 999px; font-size: 0.72rem; background: color-mix(in srgb, var(--mdy-primary) 14%, transparent); }
+      .grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .demo-hidden-note { font-size: 0.8rem; font-style: italic; opacity: 0.75; }
       .demo-action { display: grid; gap: 0.05rem; text-align: left; }
       .demo-action small { font-size: 0.7rem; opacity: 0.75; font-weight: normal; }
@@ -31,6 +32,7 @@
   <body>
     <nested-orders></nested-orders>
     <nested-invoices></nested-invoices>
+    <nested-contracts></nested-contracts>
     <script type="module" src="./enterprise.js"></script>
   </body>
 </html>
