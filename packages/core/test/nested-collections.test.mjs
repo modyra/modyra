@@ -100,3 +100,26 @@ phase("record → array: rows push and move inside one parent key without touchi
 phase("array → record: a move rebuilds the descendant record and says which flags it lost", () => {});
 phase("a path is in play only when every collection above it admits it", () => {});
 phase("depth beyond the document's cap is refused when the form is built", () => {});
+
+/**
+ * The two managers declare a row the same way, because they now run the same code.
+ *
+ * They did not: only the array told the form the row *owns* its cells, so the sentence
+ * `MdyCollectionHost` states about ownership was true of one collection and not the other. Nothing
+ * in the value showed it, because the path gate refuses the removal first — which is exactly how a
+ * divergence survives.
+ */
+test("a row owns its cells, whichever collection declared it", () => {
+  for (const [kind, build, declare, leaf] of [
+    ["record", () => createForm({ c: record(rows()) }), (f) => f.f.c.upsert("k", { sku: "S", qty: 1 }), "c.k.sku"],
+    ["array", () => createForm({ c: array(rows()) }), (f) => f.f.c.push({ sku: "S", qty: 1 }), "c.0.sku"],
+  ]) {
+    const form = build();
+    declare(form);
+    // A control mounts and goes; the cell is the row's, so it outlives the control.
+    form.claimField(leaf);
+    form.removeField(leaf);
+    assert.notEqual(form.getField(leaf), null, `${kind}: the cell went with the control`);
+    form.destroy();
+  }
+});
