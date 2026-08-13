@@ -30,7 +30,7 @@ const RENDERERS = [
   },
   {
     name: "plain", port: 4307, command: "node scripts/serve-example.mjs plain 4307",
-    match: { testMatch: ["plain/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts", "conditional/**/*.spec.ts"] },
+    match: { testMatch: ["plain/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts", "conditional/**/*.spec.ts", "nested-orders/**/*.spec.ts"] },
     // Not parallel: the plain demo's full-page height oscillates by 1px between consecutive
     // captures under CPU contention (actual 4502, previous 4501, contents byte-identical), so the
     // screenshot stabilisation loop never converges. Measured on the runner, 2026-08-13. Until the
@@ -40,7 +40,7 @@ const RENDERERS = [
   },
   {
     name: "lit", port: 4303, command: "node scripts/serve-example.mjs lit 4303",
-    match: { testMatch: ["lit/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts", "conditional/**/*.spec.ts"] },
+    match: { testMatch: ["lit/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts", "conditional/**/*.spec.ts", "nested-orders/**/*.spec.ts"] },
     fullyParallel: true,
   },
 ] as const;

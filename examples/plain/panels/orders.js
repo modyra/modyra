@@ -70,6 +70,7 @@ export const ordersPanel = {
     "removed order comes back whole on undo.",
 
   mount(work, readout) {
+    readout.classList.add("demo-state");
     const form = createForm(
       {
         orders: mdyRecord(
