@@ -76,7 +76,11 @@ function assertRowNode(
  * A supported nesting is walked into rather than waved through: a combination this manager can run
  * may still hold one it cannot, and a document saying so must fail at construction.
  */
-function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record" }, depth = 1): void {
+function assertRowShape(
+  node: MdyRowNode | { readonly kind: "array" | "record" },
+  depth = 1,
+  positionalAncestor = false,
+): void {
   if (depth > MAX_NESTING_DEPTH) {
     throw new Error(
       `[modyra] A form may nest ${MAX_NESTING_DEPTH} levels deep, collections included — this one goes deeper`,
@@ -84,12 +88,21 @@ function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record" }
   }
   if (node.kind === "array" || node.kind === "record") {
     if (!NESTABLE_IN_RECORD.has(node.kind)) assertRowNode(node);
-    assertRowShape((node as MdyAnyRecordDescriptor).item as MdyRowNode, depth + 1);
+    if (node.kind === "array" && positionalAncestor) {
+      throw new Error(
+        "[modyra] Nested collections (an array below another array) are not supported — a path may cross one positional level",
+      );
+    }
+    assertRowShape(
+      (node as MdyAnyRecordDescriptor).item as MdyRowNode,
+      depth + 1,
+      positionalAncestor || node.kind === "array",
+    );
     return;
   }
   if (node.kind === "group") {
     for (const child of Object.values(node.children)) {
-      assertRowShape(child as MdyRowNode, depth + 1);
+      assertRowShape(child as MdyRowNode, depth + 1, positionalAncestor);
     }
   }
 }
@@ -118,6 +131,15 @@ export interface MdyRecordManagerDeps {
   readonly item: MdyRowNode;
   /** The host's development channel, so `devWarnings: false` silences these too. */
   readonly warn: (message: string) => void;
+  /**
+   * True when a positional collection encloses this one.
+   *
+   * A path may cross **one** positional level. Two of them make a descendant's path move for two
+   * independent reasons — an insert above and an insert beside — and nothing in the contract can
+   * say which one moved it, so a row under an array may hold a record and that record may not hold
+   * an array.
+   */
+  readonly positionalAncestor?: boolean;
 }
 
 export class MdyRecordManager {
@@ -144,7 +166,7 @@ export class MdyRecordManager {
   readonly keys: MdySignal<readonly string[]>;
 
   constructor(deps: MdyRecordManagerDeps, initial: Readonly<Record<string, unknown>>) {
-    assertRowShape(deps.item);
+    assertRowShape(deps.item, 1, deps.positionalAncestor ?? false);
     this._deps = deps;
     this._initial = initial;
     this._keysSig = deps.rx.signal<readonly string[]>([]);
@@ -255,6 +277,12 @@ export class MdyRecordManager {
     ));
   }
 
+  /** Every leaf path of every declared row — what an enclosing collection treats as its fields. */
+  leafPathsNow(): string[] {
+    return this.keysNow().flatMap((key) =>
+      this._leafPaths(`${this._deps.path}.${key}`, this._deps.item));
+  }
+
   /** The manager for a collection declared inside one of these rows, wherever it sits below. */
   nested(path: string): MdyRecordManager | MdyArrayManager | undefined {
     const own = this._nested.get(path);
@@ -272,6 +300,10 @@ export class MdyRecordManager {
       if (path === prefix || path.startsWith(`${prefix}.`)) {
         manager.destroy();
         this._nested.delete(path);
+        // The collection's own phantom field goes with it: registered so collection-level errors
+        // have somewhere to surface, it would otherwise outlive the row and read as a value.
+        this._deps.engine.disownField(path);
+        this._deps.engine.removeField(path);
       }
     }
   }

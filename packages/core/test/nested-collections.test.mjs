@@ -18,11 +18,12 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 test("a nesting the runtime cannot execute is refused when the form is built", () => {
   // Not when a row arrives: a shape the runtime cannot execute must not survive long enough to
   // produce paths that look valid. This is the property the recursion has to keep.
-  // A record's row may hold either kind (phases A and B). An array's row may hold neither: its
-  // rows are positional, so a descendant's whole path moves on every insert, remove and move.
+  // A record's row may hold either kind; an array's row may hold a record. What no row may hold is
+  // a second *positional* level: two of them make a descendant's path move for two independent
+  // reasons, and nothing in the contract can say which one moved it.
   for (const [name, schema] of [
-    ["record in array", { orders: array(group({ lines: record(rows()) })) }],
     ["array in array", { orders: array(group({ lines: array(rows()) })) }],
+    ["array in an array's record", { orders: array(group({ lines: record(group({ deep: array(rows()) })) })) }],
   ]) {
     // The two managers word it differently — "nested collections … are not supported" against
     // "a record's row cannot contain another record". Asserted as a refusal that names the kind,
@@ -37,10 +38,10 @@ test("a nesting the runtime cannot execute is refused when the form is built", (
 
 test("the refusal names the shape it refused, not the row that reached it", () => {
   try {
-    createForm({ orders: array(group({ lines: record(rows()) })) });
+    createForm({ orders: array(group({ lines: array(rows()) })) });
     assert.fail("expected a refusal");
   } catch (error) {
-    assert.match(String(error.message), /record/, "the message says which kind was nested");
+    assert.match(String(error.message), /array/, "the message says which kind was nested");
   }
 });
 
@@ -134,7 +135,35 @@ test("record → array: a row's array is undoable with its row", async () => {
   assert.deepEqual(form.getValue().orders.o1.lines.map((l) => l.sku), ["A"], "the array came back whole");
   form.destroy();
 });
-phase("array → record: a move rebuilds the descendant record and says which flags it lost", () => {});
+test("array → record: a move rebuilds the descendant record and says which flags it lost", () => {
+  const form = createForm({
+    orders: array(group({ code: field(""), allocs: record(group({ lot: field(""), qty: field(0) })) })),
+  });
+  form.f.orders.push({ code: "A", allocs: { a1: { lot: "L1", qty: 2 } } });
+  form.f.orders.push({ code: "B", allocs: { b1: { lot: "L9", qty: 5 } } });
+
+  // The row's own record answers by key, below a positional prefix.
+  assert.deepEqual([...form.f.orders.rows()[0].allocs.keys()], ["a1"]);
+  form.f.orders.rows()[0].allocs.upsert("a2", { lot: "L2", qty: 1 });
+  assert.deepEqual([...form.f.orders.rows()[0].allocs.keys()], ["a1", "a2"]);
+  assert.deepEqual([...form.f.orders.rows()[1].allocs.keys()], ["b1"], "the sibling row is untouched");
+
+  // What a move costs, stated: the descendant is rebuilt under its new index — values follow,
+  // touched and dirty do not, exactly as an array's own rows have always behaved (ADR 0040).
+  form.f.orders.rows()[0].allocs.row("a1").lot.markAsTouched();
+  assert.equal(form.f.orders.rows()[0].allocs.row("a1").lot.touched(), true);
+  form.f.orders.move(0, 1);
+  assert.equal(form.f.orders.rows()[1].code.value(), "A", "the row moved");
+  assert.deepEqual([...form.f.orders.rows()[1].allocs.keys()], ["a1", "a2"], "with its whole record");
+  assert.equal(form.f.orders.rows()[1].allocs.row("a1").lot.value(), "L1", "values survive the rebuild");
+  assert.equal(form.f.orders.rows()[1].allocs.row("a1").lot.touched(), false, "flags do not — the documented cost");
+
+  // Removing the row takes the record with it, fields and all.
+  form.f.orders.remove(1);
+  assert.deepEqual(form.getValue().orders.map((o) => o.code), ["B"]);
+  assert.equal(form.fieldNames().some((n) => n.includes("a1")), false, "nothing of the row is left registered");
+  form.destroy();
+});
 test("depth beyond the document's cap is refused when the form is built", () => {
   // Eight, the number the document validator has published since before collections could nest:
   // one limit for the whole engine, refused where the form is built rather than on first use.
