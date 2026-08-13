@@ -55,6 +55,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0037: A vocabulary does not belong to a parser](0037-a-vocabulary-does-not-belong-to-a-parser.md) — the seventeen field kinds were the property of the JSON reader that happened to declare them; a shared vocabulary lives in a leaf owned by nobody who uses it
 - [ADR 0038: An adapter does not redeclare what it derives](0038-an-adapter-does-not-redeclare-what-it-derives.md) — narrowing an upstream type for a framework's signals is legitimate; restating its members is drift with a delay
 - [ADR 0039: A breaking change shipped as a patch](0039-a-breaking-change-shipped-as-a-patch.md) — eighteen subpaths removed at `2.1.2 → 2.1.3`, why that was bounded rather than habitual, and the complete migration table
+- [ADR 0040: A collection owns its subtree](0040-a-collection-owns-its-subtree.md) — nested collections: gates compose along the whole chain, ownership is explicit, and the eight semantics decided before a line of runtime
 
 ## Security-relevant records
 
