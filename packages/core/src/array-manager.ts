@@ -27,7 +27,11 @@ import type {
   MdyAnyRecordDescriptor,
 } from "./contracts/descriptors.js";
 import { isRecord } from "./record-utils.js";
-import { MdyRecordManager } from "./record-manager.js";
+import type {
+  MdyCollectionDeps,
+  MdyCollectionKind,
+  MdyNestedCollection,
+} from "./contracts/collection-manager.js";
 import { registerRowNode, type MdyRowRegistration } from "./collections/register.js";
 
 /** A row's own schema node. A record may sit inside an array's item; another array may not. */
@@ -66,6 +70,10 @@ export interface MdyArrayManagerDeps {
   /** Dotted array path, e.g. "items" or "order.items". */
   readonly path: string;
   readonly item: MdyAnyGroupDescriptor | MdyAnyFieldDescriptor;
+  /** The host's development channel, so `devWarnings: false` silences these too. */
+  readonly warn?: (message: string) => void;
+  /** How to build a collection declared inside one of this collection's rows. */
+  readonly createCollection: MdyCollectionDeps["createCollection"];
 }
 
 /**
@@ -92,7 +100,8 @@ function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record"; 
   }
 }
 
-export class MdyArrayManager {
+export class MdyArrayManager implements MdyNestedCollection {
+  readonly collectionKind: MdyCollectionKind = "array";
   private readonly _deps: MdyArrayManagerDeps;
   private readonly _initial: ReadonlyArray<unknown>;
   private readonly _rowCountSig: MdyWritableSignal<number>;
@@ -270,11 +279,12 @@ export class MdyArrayManager {
   }
 
   /** The record managers rows declared, keyed by their full path. */
-  private readonly _nested = new Map<string, MdyRecordManager>();
+  private readonly _nested = new Map<string, MdyNestedCollection>();
 
   private _declareNested(path: string, node: MdyAnyRecordDescriptor, value: unknown): void {
     this._nested.get(path)?.destroy();
-    this._nested.set(path, new MdyRecordManager(
+    this._nested.set(path, this._deps.createCollection(
+      "record",
       {
         rx: this._deps.rx,
         engine: this._deps.engine,
@@ -291,12 +301,13 @@ export class MdyArrayManager {
           ...(this._deps.sections ?? []),
           () => Number(path.slice(this._deps.path.length + 1).split(".")[0]) < this._rowCountSig(),
         ],
+        createCollection: this._deps.createCollection,
       },
-      isRecord(value) ? value : {},
+      value,
     ));
   }
 
-  /** Everything a row owned below this prefix, the collections it declared included. */
+  /** Everything a row owned, the collections it declared included. */
   private _destroyNestedUnder(prefix: string): void {
     for (const [path, manager] of [...this._nested]) {
       if (path === prefix || path.startsWith(`${prefix}.`)) {
@@ -310,14 +321,26 @@ export class MdyArrayManager {
     }
   }
 
-  /** The record manager a row declared at this path, if it is still alive. */
-  nestedAt(path: string): MdyRecordManager | undefined {
+  /** The manager for a collection a row declared below this one, if it is still alive. */
+  nested(path: string): MdyNestedCollection | undefined {
     const own = this._nested.get(path);
     if (own) return own;
     for (const [at, manager] of this._nested) {
-      if (path.startsWith(`${at}.`)) return manager.nested(path) as MdyRecordManager | undefined;
+      if (path.startsWith(`${at}.`)) {
+        const found = manager.nested(path);
+        if (found) return found;
+      }
     }
     return undefined;
+  }
+
+  /**
+   * Replaces the rows wholesale, from whatever the enclosing write carried.
+   *
+   * A value that is not an array says nothing about rows, so it changes nothing.
+   */
+  setAllFrom(value: unknown): void {
+    if (Array.isArray(value)) this.setAll(value as unknown[]);
   }
 
   private _removeRow(index: number): void {
