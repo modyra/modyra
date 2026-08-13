@@ -33,8 +33,15 @@ export function createBattleContext({
   });
   const form = createForm(schema, formOptions);
 
+  // A collection inside a row is reachable only through a key that does not exist yet, so the
+  // schema spec names it with a wildcard — `orders.*.lines`. Only the collections a handle can be
+  // resolved for at construction are held here; a nested one is reached the way a consumer reaches
+  // it, through its parent's `row(key)`.
   const collections = {};
-  for (const path of collectionPaths) collections[path] = resolveHandle(form, path);
+  for (const path of collectionPaths) {
+    if (path.includes("*")) continue;
+    collections[path] = resolveHandle(form, path);
+  }
 
   const mounted = new Set();
   const disabledSignals = new Map();
@@ -53,7 +60,7 @@ export function createBattleContext({
 
     /** Which record path a leaf path belongs to, or null — the interpreter routes cells through it. */
     collectionOf(path) {
-      return collectionPaths.find((each) => path.startsWith(`${each}.`)) ?? null;
+      return Object.keys(collections).find((each) => path.startsWith(`${each}.`)) ?? null;
     },
 
     mountedPaths: () => [...mounted],

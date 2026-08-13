@@ -324,9 +324,12 @@ describe("MdyDeclarativeAdapter", () => {
 
       adapter.removeField("b"); // validator now sees value without "b"
       expect(() => adapter.state.valid()).not.toThrow();
-      // "b" is gone: its attributed error gates validity no longer via the
-      // field, but the form-level computation still evaluates safely.
-      expect(adapter.errorsFor("")().length).toBe(0);
+      // "b" is gone and the rule still names it, so the error no longer reads at a field. It still
+      // decides validity, so it reads at the form instead — the same place a server error whose
+      // path matches no field has always surfaced. A refusal a consumer cannot render is worse
+      // than a misplaced one.
+      expect(adapter.state.valid()).toBe(false);
+      expect(adapter.errorsFor("")().map((e) => e.message)).toEqual(["differ"]);
     });
   });
 
