@@ -52,6 +52,27 @@ class MountedBeforeDeclaredComponent {
   readonly form = mdyForm({ rows: record(group({ name: field("") })) });
 }
 
+@Component({
+  standalone: true,
+  imports: [MdyFormComponent, MdyTextComponent],
+  template: `
+    <mdy-form [form]="form">
+      <mdy-control-text [field]="form.f.orders.row('o1').lines.row('l1').sku" [ariaLabel]="'SKU'" />
+    </mdy-form>
+  `,
+})
+class NestedCellComponent {
+  readonly form = mdyForm({
+    orders: record(group({
+      customer: field(""),
+      lines: record(group({ sku: field(""), qty: field(1) })),
+    })),
+  });
+  constructor() {
+    this.form.f.orders.upsert("o1", { customer: "Ada", lines: { l1: { sku: "SKU-1", qty: 2 } } });
+  }
+}
+
 describe("a record across an Angular component's lifecycle", () => {
   it("keeps the row when the cell is unmounted", () => {
     const fixture = TestBed.createComponent(HostComponent);
@@ -106,5 +127,24 @@ describe("a record across an Angular component's lifecycle", () => {
     fixture.detectChanges();
 
     expect(input.value).toBe("arrived");
+  });
+
+  it("binds a cell that lives inside a row's own record, and the subtree dies with the row", () => {
+    const fixture = TestBed.createComponent(NestedCellComponent);
+    fixture.detectChanges();
+    const form = fixture.componentInstance.form;
+    const input = fixture.nativeElement.querySelector("input") as HTMLInputElement;
+
+    expect(input.value).toBe("SKU-1");
+
+    input.value = "SKU-typed";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    fixture.detectChanges();
+    expect(form.value().orders["o1"]?.lines["l1"]?.sku).toBe("SKU-typed");
+
+    // Removing the order takes the whole subtree out of the value, mounted control or not.
+    form.f.orders.remove("o1");
+    fixture.detectChanges();
+    expect(form.value().orders).toEqual({});
   });
 });
