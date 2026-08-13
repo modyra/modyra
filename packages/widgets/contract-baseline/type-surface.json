@@ -1972,6 +1972,11 @@
     "(2) key?: string",
     "-> returns: void"
   ],
+  "applyOverlayProperties": [
+    "(0) element: HTMLElement",
+    "(1) properties: Readonly<Record<string, string>>",
+    "-> returns: void"
+  ],
   "applyPart": [
     "(0) node: HTMLElement",
     "(1) part: MdyPartContract",

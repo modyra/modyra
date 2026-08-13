@@ -11,7 +11,10 @@ import {
   type MdyOverlayAlignment,
   type MdyOverlayDecision,
   type MdyOverlayPlacement,
-  type MdyWidgetKind, trackAnchoredOverlay } from "@modyra/widgets";
+  type MdyWidgetKind,
+  trackAnchoredOverlay,
+  applyOverlayProperties,
+} from "@modyra/widgets";
 
 /** Visually hidden native input used as the platform picker behind a styled control. */
 export const POPUP_ANCHOR_STYLE = "position:relative";
@@ -313,19 +316,22 @@ export class MdyLitOverlayController {
     });
 
     const prop = MDY_CSS_PROPERTIES.overlay;
-    this.host.style.setProperty(prop.top, this._state.cssVars.top);
-    this.host.style.setProperty(prop.bottom, this._state.cssVars.bottom);
-    this.host.style.setProperty(prop.left, this._state.cssVars.left);
-    this.host.style.setProperty(prop.right, this._state.cssVars.right);
-    this.host.style.setProperty(prop.width, this._state.cssVars.width);
-    this.host.style.setProperty(prop.maxHeight, this._state.cssVars.maxHeight);
-    // The popup is sized from its content, so the width it may take has to reach the element too:
-    // without it a content-sized popup near the edge of the screen shows half off it.
-    this.host.style.setProperty(prop.maxWidth, this._state.cssVars.maxWidth);
-    // The modal placement centres by putting the popup's corner at the middle of the viewport and
-    // pulling it back by half its own size. Without this the first half happened and the second did
-    // not, so asking for the modal placement moved the popup nowhere.
-    this.host.style.setProperty(prop.transform, this._state.cssVars.transform);
+    // The width a content-sized popup may take reaches the element too, or one near the edge of the
+    // screen shows half off it; and the modal placement needs its transform, or the corner moves to
+    // the middle of the viewport and nothing pulls it back by half its own size.
+    //
+    // Which of these are written is `applyOverlayProperties`' answer: on a pass that changes
+    // nothing, none of them are.
+    applyOverlayProperties(this.host, {
+      [prop.top]: this._state.cssVars.top,
+      [prop.bottom]: this._state.cssVars.bottom,
+      [prop.left]: this._state.cssVars.left,
+      [prop.right]: this._state.cssVars.right,
+      [prop.width]: this._state.cssVars.width,
+      [prop.maxHeight]: this._state.cssVars.maxHeight,
+      [prop.maxWidth]: this._state.cssVars.maxWidth,
+      [prop.transform]: this._state.cssVars.transform,
+    });
     // The popup joins the top layer as soon as it exists. The coordinates written above are
     // viewport coordinates, and a `position: fixed` box only honours those while no ancestor is a
     // containing block for fixed descendants — which `container-type` on the form makes every

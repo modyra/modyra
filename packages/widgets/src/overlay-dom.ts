@@ -154,3 +154,24 @@ export function trackAnchoredOverlay(tracking: MdyAnchoredOverlayTracking): () =
     }
   };
 }
+
+/**
+ * Writes a placement onto an element, skipping every property that already says it.
+ *
+ * A renderer re-applies the placement on each pass while a popup is open, so most of these writes
+ * set a property to the value it already holds. That is not free: a custom property write
+ * invalidates style on the element and everything inheriting from it, which for a popup holding a
+ * calendar is its whole subtree, on every pass.
+ *
+ * Stated once because three renderers each write these properties, and a rule about when *not* to
+ * write is exactly the kind that gets applied in one of them and forgotten in the others.
+ */
+export function applyOverlayProperties(
+  element: HTMLElement,
+  properties: Readonly<Record<string, string>>,
+): void {
+  for (const [property, value] of Object.entries(properties)) {
+    if (element.style.getPropertyValue(property) === value) continue;
+    element.style.setProperty(property, value);
+  }
+}

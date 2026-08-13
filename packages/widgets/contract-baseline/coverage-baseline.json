@@ -1,7 +1,7 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 662,
+    "published": 663,
     "asserted": 401,
     "shown": 68
   },
@@ -2300,6 +2300,12 @@
     },
     {
       "name": "applyFieldValidators",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
+    },
+    {
+      "name": "applyOverlayProperties",
       "asserted": false,
       "shown": false,
       "reason": "published, neither asserted nor shown"
