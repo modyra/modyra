@@ -19,7 +19,7 @@ const THEME_FILES = (await import("node:fs")).readdirSync("packages/styles/dist"
 const targets = [
   { name: "react", entry: "examples/react/main.jsx" },
   { name: "vue", entry: "examples/vue/main.js" },
-  { name: "lit", entry: "examples/lit/main.js" },
+  { name: "lit", entry: "examples/lit/main.js", pages: ["examples/lit/enterprise.js"] },
   // The framework-free renderer needs no transform at all — it is the plain-DOM baseline every
   // other adapter is measured against.
   // The framework-free demo is two pages: `/` is the catalogue every visual baseline is pinned to,
