@@ -122,11 +122,19 @@ export type MdyRecordHandle<TItemHandle, TItemValue> =
 type MdyRecordHandleCommands =
   | "has" | "row" | "cell" | "upsert" | "remove" | "setAll" | "patch" | "rename" | "validOf";
 
-/** The handle tree for a single array item — a field handle or nested group tree. */
+/**
+ * The handle tree for a single row — a field handle, a nested group tree, or the collection a row
+ * of a record may itself hold. The two collection arms return this framework's own handle types,
+ * so a nested handle carries Angular's signals exactly like a top-level one.
+ */
 export type MdyItemHandleTree<I> = I extends MdyGroupDescriptor<infer C>
   ? MdyFieldHandleTree<C>
   : I extends MdyFieldDescriptor<infer V>
   ? MdyFieldHandle<V>
+  : I extends MdyRecordDescriptor<infer R>
+  ? MdyRecordHandle<MdyItemHandleTree<R>, MdyArrayItemValue<R>>
+  : I extends MdyArrayDescriptor<infer A>
+  ? MdyArrayHandle<MdyItemHandleTree<A>, MdyArrayItemValue<A>>
   : never;
 
 /** The typed handle tree mirroring the schema shape (`form.f.address.city`). */
