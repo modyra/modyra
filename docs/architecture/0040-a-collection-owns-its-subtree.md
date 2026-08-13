@@ -85,12 +85,25 @@ paths nobody owns. The guard goes last, when the runtime beneath it can answer.
 combination brings its own rebase question. A recursion nobody asked for is surface that 1.0 has to
 keep stable.
 
+## Amendment: neither manager names the other
+
+Both directions of nesting shipped, and each manager built the other by name — a ring between the
+two modules, which `npm run test:import-cycles` refuses. The recursion is real and stays; the
+dependency does not. The composer that already knows both kinds hands every collection a factory,
+and both kinds answer one interface (`MdyNestedCollection`): kind, leaves, value, wholesale write,
+and the collection below. An enclosing collection therefore reads through a nested one without
+asking what kind it is — the four `instanceof` branches that used to ask are gone.
+
+The cost is one indirection between a collection and the collections it declares: reading
+`_declareNested` no longer names the class it builds. The check that fails if this is violated is
+`npm run test:import-cycles`, at zero recorded cycles.
+
 ## Verification
 
 - `packages/core/test/nested-collections.test.mjs` — the characterization suite: what the refusal
   does today, and the scenarios each phase must satisfy, skipped until the phase that answers them.
-- `npm run test:import-cycles` — the shared registration module must not close a ring with the
-  managers that use it.
+- `npm run test:import-cycles` — neither the shared registration module nor either manager may
+  close a ring: the two kinds are mutually recursive, and the modules that implement them are not.
 - `npm run test:type-surface` — widening `MdyItemHandleTree` and `MdyArrayItemValue` is a public
   change and is classified rather than slipped in.
 - `npm run test:core` — the collection host double keeps passing unchanged, which is what says the
