@@ -117,6 +117,10 @@ export type MdyArrayItemValue<I> = I extends MdyGroupDescriptor<infer C>
   ? MdyFormValue<C>
   : I extends MdyFieldDescriptor<infer V>
   ? V
+  : I extends MdyRecordDescriptor<infer R>
+  ? Readonly<Record<string, MdyArrayItemValue<R>>>
+  : I extends MdyArrayDescriptor<infer A>
+  ? ReadonlyArray<MdyArrayItemValue<A>>
   : never;
 
 /** The value type a schema produces — `form.getValue()` returns this. */

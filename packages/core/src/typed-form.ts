@@ -1132,16 +1132,81 @@ export abstract class MdyTypedFormBase<
     };
   }
 
-  /** The handle tree for one row of a record, built from cell handles. */
+  /**
+   * The handle tree for one row, built from cell handles — and from the collections the row itself
+   * declared, which are handles of their own rather than cells.
+   *
+   * A collection inside a row has no manager until the row is declared, so the handle resolves it
+   * on each read: a tree built once would hand back a handle onto a manager the row has since
+   * replaced, which is the defect the array's row handles were already fixed for.
+   */
   private _buildCellTree(nodes: MdyFormSchema, prefix: string): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [key, child] of Object.entries(nodes)) {
       const path = `${prefix}.${key}`;
-      out[key] = child.kind === "group"
-        ? this._buildCellTree(child.children, path)
-        : this.cellHandle(path);
+      if (child.kind === "group") {
+        out[key] = this._buildCellTree(child.children, path);
+      } else if (child.kind === "record" || child.kind === "array") {
+        out[key] = this._buildNestedCollectionHandle(path, child);
+      } else {
+        out[key] = this.cellHandle(path);
+      }
     }
     return out;
+  }
+
+  /**
+   * A handle onto a collection a row declared, resolved through the collection that owns it.
+   *
+   * The manager exists only while the row does. Every call goes through `_collectionAt` rather than
+   * closing over one, so a row removed and declared again is answered by the manager it has now.
+   */
+  private _buildNestedCollectionHandle(path: string, node: MdyAnyRecordDescriptor | MdyAnyArrayDescriptor): unknown {
+    const manager = (): MdyRecordManager => {
+      const found = this._collectionAt(path);
+      if (!found) throw new Error(`[modyra] Collection "${path}" is not declared — its row is not either`);
+      return found;
+    };
+    const rx = this._adapter.reactivity;
+    const rowTree = (key: string): unknown =>
+      node.item.kind === "field"
+        ? this.cellHandle(`${path}.${key}`)
+        : this._buildCellTree((node.item as MdyAnyGroupDescriptor).children, `${path}.${key}`);
+    return {
+      path,
+      keys: rx.computed(() => this._collectionAt(path)?.keys() ?? []),
+      value: rx.computed(() => {
+        this._adapter.value();
+        const found = this._collectionAt(path);
+        if (!found) return {};
+        return Object.fromEntries(found.keys().map((key) => [key, this._pathGet(this.getValue() as Record<string, unknown>, `${path}.${key}`)]));
+      }),
+      errors: this._adapter.errorsFor(path),
+      valid: rx.computed(() => this._collectionAt(path)?.keys().every((key) => manager().validOf(key)) ?? true),
+      has: (key: string) => this._collectionAt(path)?.has(key) ?? false,
+      row: rowTree,
+      cell: <T,>(key: string, leaf?: string) =>
+        this.cellHandle(leaf === undefined ? `${path}.${key}` : `${path}.${key}.${leaf}`) as MdyFieldHandle<T>,
+      upsert: (key: string, value?: unknown) => manager().upsert(key, value),
+      remove: (key: string) => manager().remove(key),
+      setAll: (values: Readonly<Record<string, unknown>>) => manager().setAll(values),
+      patch: (values: Readonly<Record<string, unknown>>) => manager().patch(values),
+      rename: (from: string, to: string) => manager().rename(from, to),
+      validOf: (key: string) => manager().validOf(key),
+    };
+  }
+
+  /** The manager for a collection at `path`, declared by the form or by a row below it. */
+  private _collectionAt(path: string): MdyRecordManager | undefined {
+    const own = this._records.get(path);
+    if (own) return own;
+    for (const [at, manager] of this._records) {
+      if (path.startsWith(`${at}.`)) {
+        const found = manager.nested(path);
+        if (found) return found;
+      }
+    }
+    return undefined;
   }
 
   /**
