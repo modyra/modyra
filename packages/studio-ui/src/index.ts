@@ -12,6 +12,7 @@ import {
   getFieldValidatorRegistryEntry,
   isDuplicateKindAllowed,
   type ArrayNode,
+  type RecordNode,
   type FieldNode,
   type GroupNode,
   type MdyStudioProject,
@@ -107,6 +108,7 @@ const TEMPLATE_CATALOG: readonly FieldTemplate[] = [
   { id: "multiselect", label: "Multi-select", group: "Choice", terms: ["tags", "many", "multiple choice"] },
   { id: "group", label: "Group", group: "Structure", terms: ["object", "nested", "fieldset"] },
   { id: "array", label: "Repeater", group: "Structure", terms: ["list", "rows", "items", "repeat"] },
+  { id: "record", label: "Keyed rows", group: "Structure", terms: ["record", "map", "dictionary", "by key", "id", "entity"] },
 ];
 
 /** Kinds whose value comes from a declared option list — seeded with one option so they compile. */
@@ -165,6 +167,22 @@ function createNodeFromTemplate(template: string): StudioSchemaNode {
       // Starting with a row means the shape you are designing is the thing you can see. It is
       // ordinary contract data: the row controls on the canvas add and remove more.
       initialRows: [{}],
+      validators: [],
+    };
+  }
+
+  if (template === "record") {
+    return {
+      node: "record",
+      id,
+      name: `rows${suffix}`,
+      label: "New keyed rows",
+      item: { node: "group", id: createId("nd"), name: "row", children: [] },
+      // One row, for the reason a repeater starts with one: the shape you are designing is drawn as
+      // the fields of a row, and a collection with no rows is a box that stays empty however many
+      // controls you put in its shape. The key is provisional, as a key chosen before the server
+      // has spoken always is.
+      initialRows: { "tmp:1": {} },
       validators: [],
     };
   }
@@ -1779,11 +1797,17 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       container.append(element);
     };
 
-    const arrays = Array.from(idx.nodeById.values())
-      .filter((node): node is ArrayNode => node.node === "array")
+    const collections = Array.from(idx.nodeById.values())
+      .filter((node): node is ArrayNode | RecordNode => node.node === "array" || node.node === "record")
       .sort((a, b) => (idx.pathByNode.get(a.id)?.split(".").length ?? 0) - (idx.pathByNode.get(b.id)?.split(".").length ?? 0));
 
-    for (const array of arrays) {
+    for (const array of collections) {
+      // Rows are addressed by index in a positional collection and by key in a keyed one; the box
+      // is otherwise the same box, and says which kind it is rather than looking like two features.
+      const keyed = array.node === "record";
+      const rowKeys: readonly string[] = keyed
+        ? Object.keys(array.initialRows)
+        : array.initialRows.map((_row: unknown, index: number) => String(index));
       const arrayPath = idx.pathByNode.get(array.id);
       if (!arrayPath) continue;
 
@@ -1794,25 +1818,25 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       section.dataset.node = array.id;
       section.draggable = true;
       section.classList.toggle("selected", array.id === selected);
-      section.setAttribute("aria-label", `${array.name}, array field`);
+      section.setAttribute("aria-label", `${array.name}, ${keyed ? "keyed rows" : "array"} field`);
 
       const header = document.createElement("header");
       header.className = "plain-canvas-array-header plain-canvas-head";
-      const select = kindChip("array", array.id, `Select array ${array.name} in Studio`);
+      const select = kindChip(array.node, array.id, `Select ${array.node} ${array.name} in Studio`);
       const count = document.createElement("span");
       count.className = "plain-canvas-array-count";
-      count.textContent = `${array.initialRows.length} row${array.initialRows.length === 1 ? "" : "s"}`;
+      count.textContent = `${rowKeys.length} row${rowKeys.length === 1 ? "" : "s"}`;
       const actions = document.createElement("span");
       actions.className = "plain-canvas-array-actions plain-canvas-actions";
       const addRow = iconButton("+", `Add initial row to ${array.name}`);
       addRow.dataset.plainArrayAdd = array.id;
       const removeRow = iconButton("\u2212", `Remove last initial row from ${array.name}`);
       removeRow.dataset.plainArrayRemove = array.id;
-      removeRow.disabled = array.initialRows.length === 0;
+      removeRow.disabled = rowKeys.length === 0;
       const siblings = idx.childrenByParent.get(idx.parentById.get(array.id) ?? "") ?? [];
       const position = siblings.indexOf(array.id);
       const move = (label: string, icon: string, kind: "before" | "after", targetId?: string): HTMLButtonElement => {
-        const button = iconButton(icon, `${label} array ${array.name}`);
+        const button = iconButton(icon, `${label} ${array.node} ${array.name}`);
         button.dataset.plainArrayMove = kind;
         button.dataset.plainArrayNode = array.id;
         button.dataset.plainArrayTarget = targetId ?? "";
@@ -1826,28 +1850,28 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         move("Move down", "\u2193", "after", position >= 0 && position < siblings.length - 1 ? siblings[position + 1] : undefined),
       );
       if (idx.parentById.get(array.id) !== project.schema.id) {
-        const root = iconButton("\u2912", `Move array ${array.name} to form root`);
+        const root = iconButton("\u2912", `Move ${array.node} ${array.name} to form root`);
         root.dataset.plainArrayRoot = array.id;
         actions.append(root);
       }
       const into = document.createElement("select");
       into.dataset.plainArrayInto = array.id;
-      into.setAttribute("aria-label", `Move array ${array.name} into group`);
+      into.setAttribute("aria-label", `Move ${array.node} ${array.name} into group`);
       into.append(new Option("⊞", ""));
       for (const group of Array.from(idx.nodeById.values()).filter((node): node is GroupNode => node.node === "group" && node.id !== project.schema.id)) {
         if (group.id === idx.parentById.get(array.id)) continue;
         into.append(new Option(group.label || group.name, group.id));
       }
       actions.append(into);
-      const arrayDuplicate = iconButton("\u29c9", `Duplicate array ${array.name}`);
+      const arrayDuplicate = iconButton("\u29c9", `Duplicate ${array.node} ${array.name}`);
       arrayDuplicate.dataset.duplicate = array.id;
-      const arrayDelete = iconButton("\u00d7", `Delete array ${array.name}`);
+      const arrayDelete = iconButton("\u00d7", `Delete ${array.node} ${array.name}`);
       arrayDelete.dataset.delete = array.id;
       actions.append(arrayDuplicate, arrayDelete);
       header.append(
         dragGrip(array.id),
-        inlineEditor("label", array.id, array.label ?? "", "Untitled array", `Label for array ${array.name}`),
-        inlineEditor("name", array.id, array.name, "name", `Code name for array ${array.name}`),
+        inlineEditor("label", array.id, array.label ?? "", keyed ? "Untitled keyed rows" : "Untitled array", `Label for ${array.node} ${array.name}`),
+        inlineEditor("name", array.id, array.name, "name", `Code name for ${array.node} ${array.name}`),
         select,
         count,
         actions,
@@ -1855,18 +1879,18 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
 
       const body = document.createElement("div");
       body.className = "plain-canvas-array-body";
-      if (array.initialRows.length === 0) {
+      if (rowKeys.length === 0) {
         const empty = document.createElement("p");
         empty.className = "plain-canvas-array-empty";
         empty.textContent = "No initial rows";
         body.append(empty);
       } else {
-        array.initialRows.forEach((_row, index) => {
+        rowKeys.forEach((rowKey, index) => {
           const row = document.createElement("div");
           row.className = "plain-canvas-array-row";
-          row.dataset.plainArrayRow = String(index);
+          row.dataset.plainArrayRow = rowKey;
           const label = document.createElement("span");
-          label.textContent = `Initial row ${index + 1}`;
+          label.textContent = keyed ? `Initial row "${rowKey}"` : `Initial row ${index + 1}`;
           const rowActions = document.createElement("span");
           rowActions.className = "plain-canvas-array-row-actions";
           const rowButton = (labelText: string, action: "up" | "down" | "remove", disabled = false): HTMLButtonElement => {
@@ -1874,17 +1898,21 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
             button.type = "button";
             button.dataset.plainArrayRowAction = action;
             button.dataset.plainArrayNode = array.id;
-            button.dataset.plainArrayRowIndex = String(index);
+            button.dataset.plainArrayRowIndex = rowKey;
             button.disabled = disabled;
-            button.setAttribute("aria-label", `${labelText} initial row ${index + 1} in ${array.name}`);
+            button.setAttribute("aria-label", `${labelText} initial row ${keyed ? rowKey : index + 1} in ${array.name}`);
             button.textContent = labelText;
             return button;
           };
-          rowActions.append(
-            rowButton("Move up", "up", index === 0),
-            rowButton("Move down", "down", index === array.initialRows.length - 1),
-            rowButton("Remove", "remove"),
-          );
+          // A key is data, not a position: reordering keyed rows would say something about them
+          // that the model does not hold, so a keyed row is removed and not moved.
+          if (!keyed) {
+            rowActions.append(
+              rowButton("Move up", "up", index === 0),
+              rowButton("Move down", "down", index === rowKeys.length - 1),
+            );
+          }
+          rowActions.append(rowButton("Remove", "remove"));
           row.append(label, rowActions);
           body.append(row);
         });
@@ -2080,10 +2108,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       containerBodies.set(group.id, body);
     }
 
-    // Arrays are placed last because a group may be an array's row shape *and* an array may sit
-    // inside a group: only once every container has a body can each one be put where it belongs.
-    // Deepest first, so an array nested in a group finds that group's body already in the document.
-    for (const array of [...arrays].reverse()) {
+    // Collections are placed last because a group may be a collection's row shape *and* a
+    // collection may sit inside a group: only once every container has a body can each be put where
+    // it belongs. Deepest first, so one nested in a group finds that group's body already there.
+    for (const array of [...collections].reverse()) {
       const section = containerElements.get(array.id);
       if (section) placeContainer(array.id, section);
     }
@@ -3355,10 +3383,28 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     root.querySelectorAll<HTMLButtonElement>("[data-plain-array-row-action]").forEach((button) =>
       button.addEventListener("click", () => {
         const nodeId = button.dataset.plainArrayNode;
-        const index = Number(button.dataset.plainArrayRowIndex);
+        const rowKey = button.dataset.plainArrayRowIndex ?? "";
         const action = button.dataset.plainArrayRowAction;
         const array = nodeId ? indexes.nodeById.get(nodeId) : undefined;
-        if (!nodeId || array?.node !== "array" || !Number.isInteger(index) || index < 0 || index >= array.initialRows.length) return;
+        if (!nodeId || (array?.node !== "array" && array?.node !== "record")) return;
+
+        if (array.node === "record") {
+          // A key is data: the only thing a keyed row does on the canvas is stop existing.
+          if (action !== "remove" || !(rowKey in array.initialRows)) return;
+          const rest = Object.fromEntries(
+            Object.entries(array.initialRows).filter(([key]) => key !== rowKey),
+          );
+          selected = nodeId;
+          const remaining = Object.keys(rest);
+          commit(createUpdateNodeCommand(nodeId, { initialRows: rest }), nodeId,
+            remaining.length
+              ? `[data-plain-array="${nodeId}"] [data-plain-array-row="${remaining[remaining.length - 1]}"] [data-plain-array-row-action="remove"]`
+              : `[data-plain-array="${nodeId}"] [data-plain-array-add]`);
+          return;
+        }
+
+        const index = Number(rowKey);
+        if (!Number.isInteger(index) || index < 0 || index >= array.initialRows.length) return;
         const rows = [...array.initialRows];
         if (action === "remove") rows.splice(index, 1);
         else if (action === "up" && index > 0) [rows[index - 1], rows[index]] = [rows[index], rows[index - 1]];
@@ -3402,12 +3448,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       button.addEventListener("click", () => {
         const nodeId = button.dataset.plainArrayAdd;
         const array = nodeId ? indexes.nodeById.get(nodeId) : undefined;
-        if (!nodeId || array?.node !== "array") return;
+        if (!nodeId || (array?.node !== "array" && array?.node !== "record")) return;
         selected = nodeId;
+        // A key chosen before the server has spoken is provisional, and says so.
+        const withRow = array.node === "record"
+          ? { ...array.initialRows, [`tmp:${Object.keys(array.initialRows).length + 1}`]: defaultRowValue(array.item) }
+          : [...array.initialRows, defaultRowValue(array.item)];
         commit(
-          createUpdateNodeCommand(nodeId, {
-            initialRows: [...array.initialRows, defaultRowValue(array.item)],
-          }),
+          createUpdateNodeCommand(nodeId, { initialRows: withRow } as Parameters<typeof createUpdateNodeCommand>[1]),
           nodeId,
           `[data-plain-array="${nodeId}"] [data-plain-array-add]`,
         );
@@ -3417,12 +3465,15 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       button.addEventListener("click", () => {
         const nodeId = button.dataset.plainArrayRemove;
         const array = nodeId ? indexes.nodeById.get(nodeId) : undefined;
-        if (!nodeId || array?.node !== "array" || array.initialRows.length === 0) return;
+        if (!nodeId || (array?.node !== "array" && array?.node !== "record")) return;
+        const keys = array.node === "record" ? Object.keys(array.initialRows) : [];
+        if (array.node === "record" ? keys.length === 0 : array.initialRows.length === 0) return;
         selected = nodeId;
+        const withoutLast = array.node === "record"
+          ? Object.fromEntries(Object.entries(array.initialRows).filter(([key]) => key !== keys[keys.length - 1]))
+          : array.initialRows.slice(0, -1);
         commit(
-          createUpdateNodeCommand(nodeId, {
-            initialRows: array.initialRows.slice(0, -1),
-          }),
+          createUpdateNodeCommand(nodeId, { initialRows: withoutLast } as Parameters<typeof createUpdateNodeCommand>[1]),
           nodeId,
           `[data-plain-array="${nodeId}"] [data-plain-array-remove]`,
         );
