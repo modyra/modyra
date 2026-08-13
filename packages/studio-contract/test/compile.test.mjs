@@ -348,3 +348,136 @@ test("the catalog kinds Studio does not offer are listed, not merely absent", as
   const notOffered = MDY_WIDGET_KINDS.filter((kind) => !OFFERED.includes(kind));
   assert.deepEqual([...notOffered].sort(), ["colors", "daterange", "file"]);
 });
+
+/** A project whose rows hold collections: keyed lines under a keyed order, and a keyed row per shipment. */
+function createNestedProject() {
+  const project = createCheckoutProject();
+  return {
+    ...project,
+    schema: {
+      ...project.schema,
+      children: [
+        {
+          node: "record",
+          id: "nd_orders",
+          name: "orders",
+          label: "Orders",
+          item: {
+            node: "group",
+            id: "nd_order",
+            name: "order",
+            children: [
+              {
+                node: "record",
+                id: "nd_lines",
+                name: "lines",
+                label: "Lines",
+                item: {
+                  node: "field",
+                  id: "nd_sku2",
+                  name: "sku",
+                  fieldKind: "text",
+                  valueType: "string",
+                  initialValue: "",
+                  validators: [],
+                },
+                initialRows: {},
+                validators: [],
+              },
+            ],
+          },
+          initialRows: { "tmp:1": { lines: {} } },
+          validators: [],
+        },
+        {
+          node: "array",
+          id: "nd_shipments",
+          name: "shipments",
+          label: "Shipments",
+          item: {
+            node: "record",
+            id: "nd_serials",
+            name: "serials",
+            item: {
+              node: "field",
+              id: "nd_serial",
+              name: "serial",
+              fieldKind: "text",
+              valueType: "string",
+              initialValue: "",
+              validators: [],
+            },
+            initialRows: {},
+            validators: [],
+          },
+          initialRows: [],
+          validators: [],
+        },
+      ],
+    },
+    // The checkout fixture's references name its own nodes; a schema of new nodes keeps none of them.
+    formValidators: [],
+    behaviors: {},
+    implementations: [],
+    layout: [],
+    presentation: { ...project.presentation, layout: [] },
+  };
+}
+
+test("a record compiles to the contract's record node, and a keyed row may sit under a positional one", () => {
+  const { contract, diagnostics } = compileToContract(createNestedProject());
+
+  assert.ok(contract, "expected a non-null contract");
+  assert.deepEqual(diagnostics.filter((d) => d.severity === "error"), []);
+  const orders = contract.schema.children.orders;
+  assert.equal(orders.node, "record");
+  assert.equal(orders.item.children.lines.node, "record", "a keyed collection inside a keyed row");
+  assert.deepEqual(orders.initialValue, { "tmp:1": { lines: {} } }, "the declared rows survive the boundary");
+  assert.equal(contract.schema.children.shipments.item.node, "record", "the row itself may be the collection");
+
+  // The parser is the other half of the claim: what Studio emits is a document a form can run.
+  const parsed = parseDynamicForm({ version: 2, schema: contract.schema });
+  assert.deepEqual(parsed.diagnostics.filter((d) => d.severity === "error"), []);
+});
+
+test("an array below another array is refused where it is written, not emitted", () => {
+  const project = createNestedProject();
+  const nested = {
+    ...project,
+    schema: {
+      ...project.schema,
+      children: [
+        {
+          node: "array",
+          id: "nd_outer",
+          name: "outer",
+          item: {
+            node: "array",
+            id: "nd_inner",
+            name: "inner",
+            item: {
+              node: "field",
+              id: "nd_leaf",
+              name: "leaf",
+              fieldKind: "text",
+              valueType: "string",
+              initialValue: "",
+              validators: [],
+            },
+            initialRows: [],
+            validators: [],
+          },
+          initialRows: [],
+          validators: [],
+        },
+      ],
+    },
+  };
+
+  const { contract, diagnostics } = compileToContract(nested);
+  assert.ok(
+    diagnostics.some((d) => d.code === "UNSUPPORTED_NESTING" && d.severity === "error"),
+    "a second positional level is named, with the node that declared it",
+  );
+  assert.equal(contract?.schema.children.outer, undefined, "and nothing unaddressable is emitted");
+});

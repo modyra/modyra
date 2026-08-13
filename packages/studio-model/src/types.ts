@@ -142,12 +142,30 @@ export interface GroupNode extends NodeBase {
 
 export interface ArrayNode extends NodeBase {
   node: "array";
-  item: FieldNode | GroupNode;
+  /**
+   * A row's shape. It may hold a keyed collection — its descendants are then addressed by name
+   * below this array's index. It may not hold another array: a path crosses one positional level.
+   */
+  item: FieldNode | GroupNode | RecordNode;
   initialRows: unknown[];
   validators: StudioArrayValidator[];
 }
 
-export type StudioSchemaNode = FieldNode | GroupNode | ArrayNode;
+/**
+ * A collection whose keys are data rather than positions — an entity id, a provisional key.
+ *
+ * The author declares the shape of a row and, where the form starts with some, the rows it opens
+ * with. Which rows exist afterwards is the running application's word, so a record node carries a
+ * row template and initial rows keyed by their key, never a row count.
+ */
+export interface RecordNode extends NodeBase {
+  node: "record";
+  item: FieldNode | GroupNode | RecordNode | ArrayNode;
+  initialRows: Record<string, unknown>;
+  validators: StudioArrayValidator[];
+}
+
+export type StudioSchemaNode = FieldNode | GroupNode | ArrayNode | RecordNode;
 
 /** Symbolic reference + generated stub, never inline code (, ). */
 export interface StudioImplementationRef {

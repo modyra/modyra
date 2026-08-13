@@ -22,6 +22,7 @@ import {
   buildIndexes,
   normalize,
   type ArrayNode,
+  type RecordNode,
   type FieldNode,
   type GroupNode,
   type MdyStudioProject,
@@ -36,6 +37,7 @@ import {
   parseDynamicForm,
   type MdyDynamicField,
   type MdyDynamicFieldNode,
+  type MdyDynamicRecordNode,
   type MdyDynamicFormConfigV2,
   type MdyDynamicFormConfigV3,
   type MdyDynamicGroupNode,
@@ -173,10 +175,14 @@ function mapFieldNode(node: FieldNode, diagnostics: StudioDiagnostic[]): MdyDyna
   };
 }
 
-function mapGroupNode(node: GroupNode, diagnostics: StudioDiagnostic[]): MdyDynamicGroupNode {
+function mapGroupNode(
+  node: GroupNode,
+  diagnostics: StudioDiagnostic[],
+  positional = false,
+): MdyDynamicGroupNode {
   const children: Record<string, MdyDynamicNode> = {};
   for (const child of node.children) {
-    const mapped = mapNode(child, diagnostics);
+    const mapped = mapNode(child, diagnostics, positional);
     if (mapped) children[child.name] = mapped;
   }
   return { node: "group", label: node.label, children };
@@ -198,12 +204,29 @@ export function dynamicFieldForNode(node: FieldNode, name: string): MdyDynamicFi
   return mapped ? ({ ...mapped.field, name } as MdyDynamicField) : null;
 }
 
-function mapArrayNode(node: ArrayNode, diagnostics: StudioDiagnostic[]): MdyDynamicNode | null {
-  const item = mapNode(node.item, diagnostics);
-  // A row is a field or a group. The project's model has no collection inside a row to map, and the
-  // Contract would not accept one either — both collection kinds are refused here rather than only
-  // the one that existed when this was written.
-  if (!item || item.node === "array" || item.node === "record") return null;
+/**
+ * A collection, positional or keyed.
+ *
+ * A row may hold a collection of its own — the Contract accepts one keyed level below a positional
+ * one, and any depth of keyed levels — with one rule enforced here as it is everywhere: a path
+ * crosses **one** positional level, so an array below another array is refused rather than emitted.
+ */
+function mapCollectionNode(
+  node: ArrayNode | RecordNode,
+  diagnostics: StudioDiagnostic[],
+  positional: boolean,
+): MdyDynamicNode | null {
+  const item = mapNode(node.item, diagnostics, positional || node.node === "array");
+  if (!item) return null;
+  if (item.node === "array" && (positional || node.node === "array")) {
+    diagnostics.push({
+      code: "UNSUPPORTED_NESTING",
+      severity: "error",
+      message: "A path crosses one positional level: an array below another array is not addressable",
+      nodeId: node.id,
+    });
+    return null;
+  }
 
   for (const v of node.validators) {
     if (v.kind !== "min" && v.kind !== "max") {
@@ -216,23 +239,36 @@ function mapArrayNode(node: ArrayNode, diagnostics: StudioDiagnostic[]): MdyDyna
       });
     }
   }
+
+  if (node.node === "record") {
+    // A record has no row count to bound: which rows exist is the running form's word, and the
+    // document can only carry the ones the author declared.
+    return { node: "record", label: node.label, item, initialValue: node.initialRows };
+  }
+  // Refused above, so an array's row is never another array by the time it is emitted.
+  const row = item as MdyDynamicFieldNode | MdyDynamicGroupNode | MdyDynamicRecordNode;
+
   const minItems = node.validators.find((v): v is typeof v & { value: number } => v.kind === "min")?.value;
   const maxItems = node.validators.find((v): v is typeof v & { value: number } => v.kind === "max")?.value;
 
   return {
     node: "array",
     label: node.label,
-    item,
+    item: row,
     initialValue: node.initialRows,
     ...(typeof minItems === "number" ? { minItems } : {}),
     ...(typeof maxItems === "number" ? { maxItems } : {}),
   };
 }
 
-function mapNode(node: StudioSchemaNode, diagnostics: StudioDiagnostic[]): MdyDynamicNode | null {
+function mapNode(
+  node: StudioSchemaNode,
+  diagnostics: StudioDiagnostic[],
+  positional = false,
+): MdyDynamicNode | null {
   if (node.node === "field") return mapFieldNode(node, diagnostics);
-  if (node.node === "group") return mapGroupNode(node, diagnostics);
-  return mapArrayNode(node, diagnostics);
+  if (node.node === "group") return mapGroupNode(node, diagnostics, positional);
+  return mapCollectionNode(node, diagnostics, positional);
 }
 
 /**

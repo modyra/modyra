@@ -18,7 +18,7 @@
  * them. It is rebuilt only when the structure it draws actually changed — the same rule
  * `syncLiveCanvas` applies to the canvas.
  */
-import type { ArrayNode, FieldNode, GroupNode, MdyStudioProject, StudioLayoutNode, StudioSchemaNode } from "@modyra/studio-model";
+import type { ArrayNode, FieldNode, GroupNode, MdyStudioProject, RecordNode, StudioLayoutNode, StudioSchemaNode } from "@modyra/studio-model";
 import { renderField } from "@modyra/plain";
 import { MDY_LAYOUT_CLASSES, layoutNodeAttributes, layoutSlotStyle } from "@modyra/widgets";
 import type { MdyDynamicField } from "@modyra/studio-contract";
@@ -82,6 +82,12 @@ function rowCount(handle: Record<string, unknown> | null): number {
   return typeof length === "function" ? Number((length as () => number).call(handle)) || 0 : 0;
 }
 
+/** The keys a keyed collection currently has, in the order its handle reports them. */
+function rowKeys(handle: Record<string, unknown> | null): readonly string[] {
+  const keys = handle?.keys;
+  return typeof keys === "function" ? (keys as () => readonly string[]).call(handle) ?? [] : [];
+}
+
 /**
  * Renders the project's fields into `container` as real controls, arranged the way the canvas
  * arranges them. Returns a disposer that tears every mounted control down.
@@ -141,16 +147,31 @@ export function mountPreviewFields(container: HTMLElement, project: MdyStudioPro
     target.append(section);
   };
 
-  const mountArray = (target: HTMLElement, node: ArrayNode, path: string): void => {
-    const length = rowCount(options.handleFor(path));
+  /**
+   * A collection, drawn row by row from the handle rather than from the project.
+   *
+   * Which rows exist is the running form's answer, not the author's: a positional collection is
+   * asked for its length and a keyed one for its keys, and the preview draws what it is told.
+   */
+  const mountCollection = (target: HTMLElement, node: ArrayNode | RecordNode, path: string): void => {
+    const handle = options.handleFor(path);
+    const keyed = node.node === "record";
+    const rows: readonly string[] = keyed
+      ? rowKeys(handle)
+      : Array.from({ length: rowCount(handle) }, (_, index) => String(index));
     const wrapper = element("div", "preview-array");
     const label = element("div", "preview-array-label");
-    label.textContent = `${node.label || node.name} (${length})`;
+    label.textContent = `${node.label || node.name} (${rows.length})`;
     wrapper.append(label);
 
-    for (let index = 0; index < length; index += 1) {
-      const rowPath = `${path}.${index}`;
+    for (const rowKey of rows) {
+      const rowPath = `${path}.${rowKey}`;
       const row = element("div", "preview-array-row");
+      if (keyed) {
+        const key = element("span", "preview-array-key");
+        key.textContent = rowKey;
+        row.append(key);
+      }
       if (node.item.node === "group") {
         for (const child of node.item.children) mountNode(row, child, `${rowPath}.${child.name}`);
       } else {
@@ -160,7 +181,7 @@ export function mountPreviewFields(container: HTMLElement, project: MdyStudioPro
       remove.type = "button";
       remove.textContent = "Remove";
       remove.dataset.previewArrayRemove = path;
-      remove.dataset.previewArrayIndex = String(index);
+      remove.dataset.previewArrayIndex = rowKey;
       row.append(remove);
       wrapper.append(row);
     }
@@ -176,7 +197,7 @@ export function mountPreviewFields(container: HTMLElement, project: MdyStudioPro
   const mountNode = (target: HTMLElement, node: StudioSchemaNode, path: string): void => {
     if (node.node === "field") mountField(target, node, path);
     else if (node.node === "group") mountGroup(target, node, path);
-    else mountArray(target, node, path);
+    else mountCollection(target, node, path);
   };
 
   mountArrangement(container, project.schema.children, project.presentation.layout ?? [], element, mountNode);

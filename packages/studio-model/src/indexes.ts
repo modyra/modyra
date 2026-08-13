@@ -3,9 +3,6 @@
  * never hand-maintained —
  */
 import type {
-  ArrayNode,
-  FieldNode,
-  GroupNode,
   MdyStudioProject,
   NodeRef,
   StudioExpression,
@@ -88,24 +85,37 @@ function walk(node: StudioSchemaNode, parentId: string, parentPath: string, idx:
   descend(node, path, idx);
 }
 
-/** Array item templates are path-transparent: they represent the row shape, not a named field. */
-function walkArrayItem(node: FieldNode | GroupNode, arrayId: string, arrayPath: string, idx: StudioIndexes): void {
+/**
+ * A collection's row template is path-transparent: it represents the row shape, not a named field.
+ *
+ * The row's key or index is chosen while the form runs, so everything under the template shares the
+ * collection's own path — which is what makes a template's descendants addressable by the editor
+ * without inventing a row that does not exist yet.
+ */
+function walkRowTemplate(
+  node: StudioSchemaNode,
+  collectionId: string,
+  collectionPath: string,
+  idx: StudioIndexes,
+): void {
   idx.nodeById.set(node.id, node);
-  idx.parentById.set(node.id, arrayId);
-  idx.pathByNode.set(node.id, arrayPath);
-  const siblings = idx.childrenByParent.get(arrayId) ?? [];
+  idx.parentById.set(node.id, collectionId);
+  idx.pathByNode.set(node.id, collectionPath);
+  const siblings = idx.childrenByParent.get(collectionId) ?? [];
   siblings.push(node.id);
-  idx.childrenByParent.set(arrayId, siblings);
+  idx.childrenByParent.set(collectionId, siblings);
   if (node.node === "group") {
-    for (const child of node.children) walk(child, node.id, arrayPath, idx);
+    for (const child of node.children) walk(child, node.id, collectionPath, idx);
+  } else if (node.node === "array" || node.node === "record") {
+    walkRowTemplate(node.item, node.id, collectionPath, idx);
   }
 }
 
 function descend(node: StudioSchemaNode, path: string, idx: StudioIndexes): void {
   if (node.node === "group") {
     for (const child of node.children) walk(child, node.id, path, idx);
-  } else if (node.node === "array") {
-    walkArrayItem((node as ArrayNode).item, node.id, path, idx);
+  } else if (node.node === "array" || node.node === "record") {
+    walkRowTemplate(node.item, node.id, path, idx);
   }
 }
 
