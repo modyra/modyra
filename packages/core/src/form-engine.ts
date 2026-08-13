@@ -411,9 +411,31 @@ export class MdyFormEngine
     return false;
   }
 
-  private _gateRefuses(name: string): boolean {
+  /**
+   * Every gate whose prefix covers `name`, outermost first.
+   *
+   * Order matters for the report, not for the verdict: a path is in play only if *all* of them
+   * admit it, and the outermost is the one whose refusal a caller can act on.
+   */
+  private _gatesOver(name: string): Array<[string, MdyPathGate]> {
+    const covering: Array<[string, MdyPathGate]> = [];
     for (const [prefix, gate] of this._gates) {
-      if (name === prefix || name.startsWith(`${prefix}.`)) return gate.isOpen ? !gate.isOpen(name) : false;
+      if (name === prefix || name.startsWith(`${prefix}.`)) covering.push([prefix, gate]);
+    }
+    return covering.sort(([a], [b]) => a.length - b.length);
+  }
+
+  /**
+   * Out of play if any collection above it says no.
+   *
+   * The chain, not the first match: a collection nested inside another is covered by both gates,
+   * and answering from whichever registered first lets a child admit a path its closed parent
+   * refuses. It is the same sentence `conditions.ts` states about sections, over a different set of
+   * ancestors.
+   */
+  private _gateRefuses(name: string): boolean {
+    for (const [, gate] of this._gatesOver(name)) {
+      if (gate.isOpen && !gate.isOpen(name)) return true;
     }
     return false;
   }
@@ -426,13 +448,14 @@ export class MdyFormEngine
    * owner's own data, and refusing it would silently drop the user's work rather than protect it.
    */
   private _offerToGate(name: string, value: unknown): boolean {
-    for (const [prefix, gate] of this._gates) {
-      if (name !== prefix && !name.startsWith(`${prefix}.`)) continue;
-      if (!gate.isOpen || gate.isOpen(name)) return true;
+    // Offered outermost first: a row cannot be declared inside a parent row that does not exist,
+    // so the outer collection is asked to take the value before the inner one is asked anything.
+    for (const [, gate] of this._gatesOver(name)) {
+      if (!gate.isOpen || gate.isOpen(name)) continue;
       gate.onRefusedWrite?.(name, value);
-      return gate.isOpen(name);
+      if (!gate.isOpen(name)) return false;
     }
-    return true;
+    return !this._gateRefuses(name);
   }
 
   claimField(name: string): void {
