@@ -100,7 +100,21 @@ jobs:
       #
       # What cannot run is quarantined by name in the specs themselves. A permissive suite hides the
       # difference between a known gap and an unknown one.
-      - name: Browser smoke test
+      # A pull request answers with one engine; main answers with three. The full matrix is where
+      # both documented load-sensitive families live and where two thirds of the pipeline's wall
+      # time went, and an engine-specific regression is rare enough that finding it at merge — with
+      # the release still guarded by the full run — costs less than paying the matrix on every push.
+      - name: Browser smoke test (chromium, pull requests)
+        if: github.event_name == 'pull_request'
+        run: |
+          npx playwright install --with-deps chromium
+          node scripts/audit-baseline-parity.mjs
+          pnpm run build:demo
+          pnpm run build:examples
+          npx playwright test --project=angular --project=plain --project=lit
+
+      - name: Browser smoke test (full matrix, main)
+        if: github.event_name != 'pull_request'
         run: |
           npx playwright install --with-deps chromium firefox webkit
           pnpm run test:e2e
