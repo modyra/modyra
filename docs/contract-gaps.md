@@ -26,13 +26,13 @@ to a green suite.
 does not want to scroll, and `npm run test:docs` fails if the two disagree.
 
 - **Fixed** — A1, A2, A3, B1, B2, B3, C1, C3, C5, D, E1, G1, G2, G3, G4, H, I, J1, J2, J3, J4a, J4b, K, N, O, P, Q, S, T
-- **Open** — R (a design system's own pairing sits below AA)
+- **Open** — R (a design system's own pairing sits below AA), U (the plain demo page's height flaps by one pixel under load)
 - **Partly fixed** — C2, E2, F, L, M — derived but not painted; most scripts reachable; kind-keyed
   tables narrowed and part-keyed ones key-checked; three engines running, their disagreements open;
   the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — R
+- **Open** — R, U
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 
@@ -1439,3 +1439,22 @@ moment it is in play again.
 *Affects:* anyone using `when` on a section of required fields, or disabling a field that has already
 failed — the form is right and the screen is misleading. A host that hides out-of-play sections (the
 common arrangement) never sees it.
+
+## U — the plain demo page's height flaps by one pixel under load — **open**
+
+**Observed** on the CI runner, 2026-08-13. During a full-page screenshot of the plain demo,
+`toHaveScreenshot`'s stabilisation loop captured consecutive images of 4501 and 4502 pixels of
+height whose shared rows are **byte-identical** — the content does not move, the document's total
+height rounds differently from one layout pass to the next. Under CPU contention (the plain project
+run fully parallel) the flap is frequent enough that the loop never converges and the comparison
+fails with a final capture identical to the committed baseline.
+
+The diagnosis is in the artifact of run 31688352357: `page-modyra-actual.png` equals the baseline at
+every pixel; `page-modyra-previous.png` is one row shorter.
+
+*Why it stays open:* the fractional-height source has not been isolated. Until it is, the plain
+Playwright project keeps `fullyParallel: false` — the load profile its baselines were recorded
+under — and the config says so at the declaration.
+
+*Affects:* nobody in production — the demo page renders correctly. It taxes the suite: plain's
+screenshot tests cannot join the parallel schedule until the source is found.

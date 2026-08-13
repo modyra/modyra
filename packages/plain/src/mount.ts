@@ -134,11 +134,14 @@ export function mountMdyForm(
       const holder = node as Record<string, unknown> & {
         rows?: () => ReadonlyArray<unknown>;
         cell?: (key: string, field: string) => unknown;
+        row?: (key: string) => unknown;
       };
       const segment = segments[index]!;
       // A collection is walked the way it is addressed rather than as an object: an array's rows are
       // a list, a record's are reached by key, and neither answers to `f.lines["0"]`. Without this a
       // document's collection mounted no controls at all — the value was right and the screen empty.
+      // The row goes back through this same loop, because a row may hold a collection of its own:
+      // `orders.o1.lines.l1.sku` crosses two of them, and each is walked the way it is addressed.
       if (typeof holder.rows === "function" || typeof holder.cell === "function") {
         const rest = segments.slice(index + 1);
         if (typeof holder.cell === "function" && rest.length === 1) {
@@ -146,15 +149,10 @@ export function mountMdyForm(
         }
         const row = typeof holder.rows === "function"
           ? holder.rows()[Number(segment)]
-          : holder.cell?.(segment, rest[0] ?? "");
+          : holder.row?.(segment);
         if (rest.length === 0) return row as MdyFieldHandle<never>;
         node = row;
-        // The row itself consumed this segment; the rest addresses inside it.
-        for (const within of rest) {
-          if (typeof node !== "object" || node === null) return undefined;
-          node = (node as Record<string, unknown>)[within];
-        }
-        return node as MdyFieldHandle<never> | undefined;
+        continue;
       }
       node = holder[segment];
     }

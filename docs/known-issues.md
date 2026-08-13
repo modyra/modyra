@@ -5,12 +5,12 @@ are not fully closed and says who each one affects. The full register — every 
 and the reasoning behind its status — is [`docs/contract-gaps.md`](https://github.com/modyra/modyra/blob/main/docs/contract-gaps.md)
 in the repository.
 
-Thirty-five findings have been filed. Twenty-six are fixed, two were closed deliberately, five are
-partly fixed, and two are open.
+Thirty-six findings have been filed. Twenty-six are fixed, two were closed deliberately, five are
+partly fixed, and three are open.
 
 ## Open
 
-- **Open** — R
+- **Open** — R, U
 
 **The iOS theme pairs white text on Apple's system blue**, which measures 4.02:1 in light and 3.65:1
 in dark against a 4.5:1 floor for body text.
@@ -22,6 +22,12 @@ every iOS control. A theme exists to be faithful to the system it names, and one
 darkened this would ship an iOS theme Apple does not ship. The value is exposed as
 `--mdy-ios-on-blue`, so replacing the accent replaces both halves. If you need AA on that surface,
 override it.
+
+**The plain demo page's height flaps by one pixel under load**, so its screenshot tests stay off the
+parallel schedule (`fullyParallel: false` for the plain project) until the fractional-height source
+is isolated. Contents are byte-identical between the flapping captures; only the total height moves.
+
+*Who it affects:* nobody in production; the suite pays for it in wall time.
 
 ## Partly fixed
 
