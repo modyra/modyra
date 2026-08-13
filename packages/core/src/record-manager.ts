@@ -443,32 +443,60 @@ export class MdyRecordManager {
     if (!isRecord(value)) return;
     for (const [key, child] of Object.entries(rowNode.children)) {
       if (!(key in value)) continue;
+      const at = `${fullPath}.${key}`;
+      if (child.kind === "record") {
+        // `setAll`, because a whole-row write says what the row is: a nested collection the write
+        // does not mention is emptied, not left behind.
+        const nested = this._nested.get(at);
+        if (nested && isRecord(value[key])) nested.setAll(value[key] as Record<string, unknown>);
+        continue;
+      }
       assertRowNode(child);
-      this._writeInto(`${fullPath}.${key}`, child, value[key]);
+      this._writeInto(at, child, value[key]);
     }
   }
 
-  private _leafPaths(fullPath: string, rowNode: MdyRowNode): string[] {
+  private _leafPaths(fullPath: string, rowNode: MdyRowNode | { readonly kind: "array" | "record" }): string[] {
+    if (rowNode.kind === "record") {
+      const nested = this._nested.get(fullPath);
+      if (!nested) return [];
+      return nested.keysNow().flatMap((key) => nested._leafPaths(`${fullPath}.${key}`, nested._deps.item));
+    }
+    if (rowNode.kind === "array") { assertRowNode(rowNode); return []; }
     if (rowNode.kind === "field") return [fullPath];
-    return Object.entries(rowNode.children).flatMap(([key, child]) => {
-      assertRowNode(child);
-      return this._leafPaths(`${fullPath}.${key}`, child);
-    });
+    const group = rowNode as MdyAnyGroupDescriptor;
+    return Object.entries(group.children).flatMap(([key, child]) =>
+      this._leafPaths(`${fullPath}.${key}`, child as MdyRowNode));
+  }
+
+  /** The declared keys as a plain array, for a sibling manager reading through this one. */
+  keysNow(): readonly string[] {
+    return [...this._declared];
   }
 
   private _readRow(key: string): unknown {
     return this._readNode(`${this._deps.path}.${key}`, this._deps.item);
   }
 
-  private _readNode(fullPath: string, rowNode: MdyRowNode): unknown {
+  private _readNode(fullPath: string, rowNode: MdyRowNode | { readonly kind: "array" | "record" }): unknown {
+    if (rowNode.kind === "record") {
+      // Through the manager that owns it: the rows are its answer, not something derivable from
+      // the declaration, which names no keys.
+      const nested = this._nested.get(fullPath);
+      if (!nested) return {};
+      return Object.fromEntries(
+        nested.keysNow().map((key) => [key, nested._readRow(key)]),
+      );
+    }
+    if (rowNode.kind === "array") { assertRowNode(rowNode); return null; }
     if (rowNode.kind === "field") {
       const ref = this._deps.engine.peekField(fullPath);
       return ref ? ref().value() : null;
     }
     const out: Record<string, unknown> = {};
-    for (const [key, child] of Object.entries(rowNode.children)) {
-      assertRowNode(child);
-      out[key] = this._readNode(`${fullPath}.${key}`, child);
+    const group = rowNode as MdyAnyGroupDescriptor;
+    for (const [key, child] of Object.entries(group.children)) {
+      out[key] = this._readNode(`${fullPath}.${key}`, child as MdyRowNode);
     }
     return out;
   }
