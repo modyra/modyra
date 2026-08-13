@@ -272,3 +272,18 @@ test("headless: a controller is enough, with no wrapper and no renderer", async 
   await page.waitForTimeout(150);
   expect((await readout(page)).selected).toBeTruthy();
 });
+
+test("orders: three keyed levels, and the model owns what the screen hides", async ({ page }) => {
+  await open(page, "orders");
+  // Under-allocated from the seed: the verdict names the line by its own path, two levels down.
+  await expect.poll(async () => (await readout(page)).valid).toBe(false);
+  const start = await readout(page);
+  expect(JSON.stringify(start.lineErrors)).toContain("allocated 2 of 3");
+
+  // Removing the order and undoing brings the whole subtree back — the batch-H claim, in a browser.
+  await page.locator('[data-action="Remove order"]').click();
+  await expect.poll(async () => (await readout(page)).orders).toEqual([]);
+  await page.locator('[data-action="Undo"]').click();
+  await expect.poll(async () => (await readout(page)).orders).toEqual(["tmp:1"]);
+  expect((await readout(page)).lines["tmp:1"]).toEqual(["l1"]);
+});
