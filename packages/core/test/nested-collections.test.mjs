@@ -1,0 +1,102 @@
+/**
+ * What a collection does about another collection inside it — today, and what it must do.
+ *
+ * Two halves. The first fixes the behaviour that exists, including the parts that are defects: a
+ * characterization test that blesses nothing, it only makes a change visible. The second is the
+ * matrix ADR 0040 commits to, skipped until the phase that answers it, so the work is written down
+ * where it will be run rather than in a plan nobody executes.
+ */
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { MdyFormEngine, array, createForm, field, group, record, vanillaReactivity } from "../dist/index.js";
+
+const rows = () => group({ sku: field(""), qty: field(0) });
+
+// ── What the refusal does today ────────────────────────────────────────────
+
+test("a collection inside a collection is refused when the form is built", () => {
+  // Not when a row arrives: a shape the runtime cannot execute must not survive long enough to
+  // produce paths that look valid. This is the property the recursion has to keep.
+  for (const [name, schema] of [
+    ["record in record", { orders: record(group({ lines: record(rows()) })) }],
+    ["array in record", { orders: record(group({ lines: array(rows()) })) }],
+    ["record in array", { orders: array(group({ lines: record(rows()) })) }],
+    ["array in array", { orders: array(group({ lines: array(rows()) })) }],
+  ]) {
+    // The two managers word it differently — "nested collections … are not supported" against
+    // "a record's row cannot contain another record". Asserted as a refusal that names the kind,
+    // because pinning either sentence would make a reworded message look like a regression.
+    assert.throws(() => createForm(schema), (error) => {
+      assert.match(error.message, /^\[modyra\]/, `${name} should be refused by the engine`);
+      assert.match(error.message, /record|array/, `${name}'s refusal should name a collection kind`);
+      return true;
+    }, `${name} should be refused`);
+  }
+});
+
+test("the refusal names the shape it refused, not the row that reached it", () => {
+  try {
+    createForm({ orders: array(group({ lines: record(rows()) })) });
+    assert.fail("expected a refusal");
+  } catch (error) {
+    assert.match(String(error.message), /record/, "the message says which kind was nested");
+  }
+});
+
+test("one level is unaffected, in both directions", () => {
+  const form = createForm({ orders: record(rows()), items: array(rows()) });
+  form.f.orders.upsert("a", { sku: "S", qty: 1 });
+  form.f.items.push({ sku: "T", qty: 2 });
+  assert.deepEqual(form.f.orders.keys(), ["a"]);
+  assert.equal(form.f.items.rows().length, 1);
+  // A record stays an object even where its keys look like indices — the property a nested record
+  // under an array must keep, and the reason `array → record` is the hard one.
+  form.f.orders.upsert("0", { sku: "Z", qty: 0 });
+  assert.equal(Array.isArray(form.getValue().orders), false);
+  form.destroy();
+});
+
+/**
+ * The gate order, characterized because it is a defect.
+ *
+ * The engine returns on the first prefix that matches, and the map is in registration order — so
+ * with two nested gates the answer belongs to whichever registered first. This test states that,
+ * and the phase that composes the chain is the one that deletes it.
+ */
+test("a path is answered by the first gate registered, not the outermost", () => {
+  const engine = new MdyFormEngine(vanillaReactivity(), () => undefined, () => "valid-only");
+  const closed = { isOpen: () => false };
+  const open = { isOpen: () => true };
+
+  // The inner gate first: it answers for a path the outer one would refuse.
+  engine.registerPathGate("orders.a.lines", open);
+  engine.registerPathGate("orders", closed);
+  engine.claimField("orders.a.lines.x");
+  assert.notEqual(engine.peekField("orders.a.lines.x"), null,
+    "today the inner gate wins because it was registered first");
+
+  engine.destroy();
+});
+
+// ── The matrix ADR 0040 commits to ─────────────────────────────────────────
+//
+// Each of these is a claim the phase named beside it must make true. They are skipped rather than
+// absent so the suite is the work list, and an implementation that forgets one leaves a skip behind
+// where a reviewer looks.
+
+const phase = (name, fn) => test(name, { skip: "phase not implemented yet" }, fn);
+
+phase("record → record: a child row survives its parent being declared after it", () => {});
+phase("record → record: removing the parent destroys the child's fields and async runners", () => {});
+phase("record → record: renaming the parent carries the whole subtree, values and flags", () => {});
+phase("record → record: renaming onto an occupied key is refused", () => {});
+phase("record → record: an unmounted descendant still decides the form's validity", () => {});
+phase("record → record: setAll on the parent drops subtrees the write does not mention", () => {});
+phase("record → record: patch on the parent leaves unnamed subtrees alone", () => {});
+phase("record → record: a restored draft rebuilds both levels", () => {});
+phase("record → record: undo crosses a nested creation in one step", () => {});
+phase("record → record: a hostile key is refused at every level", () => {});
+phase("record → array: rows push and move inside one parent key without touching another's", () => {});
+phase("array → record: a move rebuilds the descendant record and says which flags it lost", () => {});
+phase("a path is in play only when every collection above it admits it", () => {});
+phase("depth beyond the document's cap is refused when the form is built", () => {});
