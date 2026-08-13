@@ -85,10 +85,12 @@ function insert(root: StudioSchemaNode, node: StudioSchemaNode, placement: Place
     return;
   }
   const array = findNode(root, placement.arrayId);
-  if (!array || array.node !== "array") {
-    throw new Error(`insert: "arrayItem" target "${placement.arrayId}" is not an array node`);
+  if (!array || (array.node !== "array" && array.node !== "record")) {
+    throw new Error(`insert: "arrayItem" target "${placement.arrayId}" is not a collection node`);
   }
-  if (node.node === "array") {
+  // A path crosses one positional level: a row below a positional collection may be keyed, and a
+  // keyed row may hold either kind, but two positional levels address nothing.
+  if (node.node === "array" && array.node === "array") {
     throw new Error("insert: an array's item cannot itself be an array");
   }
   array.item = node;
