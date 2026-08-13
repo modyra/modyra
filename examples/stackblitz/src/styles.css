@@ -10,7 +10,6 @@ body {
 }
 
 .demo-card {
-  max-width: 480px;
   margin: 0 auto;
   padding: 1.5rem 2rem 2rem;
   background: #fff;
