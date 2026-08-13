@@ -164,13 +164,9 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     this.classList.add("mdy-renderer--datepicker");
   }
 
-  private get locale(): string {
-    return typeof navigator !== "undefined" ? navigator.language : "en-US";
-  }
-
   /** The host's choice if it made one, the locale's otherwise. */
   private get weekStart(): number {
-    return this.firstDayOfWeek ?? buildDateLocale(this.locale).firstDayOfWeek;
+    return this.firstDayOfWeek ?? buildDateLocale(this.resolvedLocale).firstDayOfWeek;
   }
 
   private get startInputId(): string {
@@ -192,7 +188,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
    * picker is this component copied — and the two could answer differently.
    */
   private get calendar(): MdyDateLocale {
-    return buildDateLocale(this.locale, this.firstDayOfWeek);
+    return buildDateLocale(this.resolvedLocale, this.firstDayOfWeek);
   }
 
   private weekdayNames(): readonly string[] {
@@ -447,7 +443,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     if (!start) return this.label || "Select range";
     const fmt = (d: CalendarDate): string => {
       try {
-        return new Intl.DateTimeFormat(this.locale, { month: "short", day: "numeric" }).format(
+        return new Intl.DateTimeFormat(this.resolvedLocale, { month: "short", day: "numeric" }).format(
           new Date(d.year, d.month - 1, d.day),
         );
       } catch {
@@ -460,7 +456,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
   }
 
   private renderPopup(handle: MdyFieldHandle<MdyDateRange | null>): unknown {
-    const monthLabel = new Intl.DateTimeFormat(this.locale, { month: "long" }).format(
+    const monthLabel = new Intl.DateTimeFormat(this.resolvedLocale, { month: "long" }).format(
       new Date(Date.UTC(this.view.viewYear, this.view.viewMonth - 1, 1)),
     );
     const hint = this.view.picking === "start" ? "Select start date" : "Select end date";
@@ -487,7 +483,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
             <button
               type="button"
               class="mdy-datepicker__view-toggle"
-              aria-label="Change view"
+              aria-label=${this.messages.datepickerChangeView(`${monthLabel} ${this.view.viewYear}`)}
               @click=${this.onToggleView}
             >
               <span class="mdy-datepicker__title">${monthLabel} ${this.view.viewYear}</span>
@@ -498,7 +494,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
             <button
               type="button"
               class="mdy-datepicker__nav-btn"
-              aria-label="Previous month"
+              aria-label=${this.messages.datepickerPreviousMonth}
               ?disabled=${this.view.viewMode !== "days"}
               @click=${() => this.navigateMonths(-1)}
             >
@@ -507,7 +503,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
             <button
               type="button"
               class="mdy-datepicker__nav-btn"
-              aria-label="Next month"
+              aria-label=${this.messages.datepickerNextMonth}
               ?disabled=${this.view.viewMode !== "days"}
               @click=${() => this.navigateMonths(1)}
             >
@@ -594,7 +590,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               type="button"
               class="mdy-datepicker__toggle"
               ?disabled=${handle.disabled()}
-              aria-label="Open date range picker"
+              aria-label=${this.messages.daterangeChooseRange}
               aria-expanded=${this._open ? "true" : "false"}
               aria-controls=${this._open ? overlayControlledId("daterange", this.fieldId) ?? nothing : nothing}
               tabindex="-1"

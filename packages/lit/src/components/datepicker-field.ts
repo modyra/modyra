@@ -103,18 +103,14 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     this._open = false;
   }
 
-  private get locale(): string {
-    return typeof navigator !== "undefined" ? navigator.language : "en-US";
-  }
-
   /** The host's choice if it made one, the locale's otherwise. */
   private get weekStart(): number {
-    return this.firstDayOfWeek ?? buildDateLocale(this.locale).firstDayOfWeek;
+    return this.firstDayOfWeek ?? buildDateLocale(this.resolvedLocale).firstDayOfWeek;
   }
 
   private parse(raw: string): string | null {
     if (!raw) return null;
-    const parsed = parseLocalizedDate(raw, this.locale) ?? parseIsoDate(raw);
+    const parsed = parseLocalizedDate(raw, this.resolvedLocale) ?? parseIsoDate(raw);
     return parsed ? formatIsoDate(parsed) : null;
   }
 
@@ -161,7 +157,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
    * picker is this component copied — and the two could answer differently.
    */
   private get calendar(): MdyDateLocale {
-    return buildDateLocale(this.locale, this.firstDayOfWeek);
+    return buildDateLocale(this.resolvedLocale, this.firstDayOfWeek);
   }
 
   private weekdayNames(): readonly string[] {
@@ -360,7 +356,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     const parsed = parseIsoDate(this.field?.value() ?? "");
     if (!parsed) return this.label || "Select date";
     try {
-      return new Intl.DateTimeFormat(this.locale, {
+      return new Intl.DateTimeFormat(this.resolvedLocale, {
         weekday: "short",
         month: "short",
         day: "numeric",
@@ -371,7 +367,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   }
 
   private renderPopup(handle: MdyFieldHandle<string | null>): unknown {
-    const monthLabel = new Intl.DateTimeFormat(this.locale, { month: "long" }).format(
+    const monthLabel = new Intl.DateTimeFormat(this.resolvedLocale, { month: "long" }).format(
       new Date(Date.UTC(this.view.viewYear, this.view.viewMonth - 1, 1)),
     );
     const modalHeader =
@@ -397,7 +393,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             <button
               type="button"
               class="mdy-datepicker__view-toggle"
-              aria-label="Change view"
+              aria-label=${this.messages.datepickerChangeView(`${monthLabel} ${this.view.viewYear}`)}
               @click=${this.onToggleView}
             >
               <span class="mdy-datepicker__title">${monthLabel} ${this.view.viewYear}</span>
@@ -408,7 +404,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             <button
               type="button"
               class="mdy-datepicker__nav-btn"
-              aria-label="Previous month"
+              aria-label=${this.messages.datepickerPreviousMonth}
               ?disabled=${this.view.viewMode !== "days"}
               @click=${() => this.navigateMonths(-1)}
             >
@@ -417,7 +413,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             <button
               type="button"
               class="mdy-datepicker__nav-btn"
-              aria-label="Next month"
+              aria-label=${this.messages.datepickerNextMonth}
               ?disabled=${this.view.viewMode !== "days"}
               @click=${() => this.navigateMonths(1)}
             >
@@ -466,7 +462,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             type="button"
             class="mdy-datepicker__toggle"
             ?disabled=${handle.disabled()}
-            aria-label="Open date picker"
+            aria-label=${this.messages.datepickerToggleLabel}
             aria-expanded=${this._open ? "true" : "false"}
             @click=${(e: Event) => (this._open ? this.closePopup(handle) : this.openPopup(handle, e))}
           >

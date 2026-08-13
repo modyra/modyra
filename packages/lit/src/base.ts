@@ -1,5 +1,5 @@
 import { MdyFieldHandle, type MdyFieldConstraints } from "@modyra/core";
-import { MDY_ICONS } from "@modyra/widgets";
+import { MDY_ICONS, messagesForLocale, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import {
@@ -52,12 +52,33 @@ export abstract class MdyFieldElement<T> extends LitElement {
     label: { type: String },
     inlineErrors: { type: Boolean, attribute: "inline-errors" },
     floatingLabel: { type: Boolean, attribute: "floating-label" },
+    locale: { type: String },
   };
 
   declare field: MdyFieldHandle<T> | undefined;
   declare label: string;
   declare inlineErrors: boolean;
   declare floatingLabel: boolean;
+  /**
+   * The language this control speaks. Unset it follows the page, which is what a control owes a
+   * reader who never chose one.
+   */
+  declare locale: string | undefined;
+
+  /**
+   * The words this control shows, for the locale it was given.
+   *
+   * From the widget contract's tables, never spelled here: the same button was written three ways
+   * across three renderers while each of them owned its own English.
+   */
+  protected get messages(): MdyI18nMessages {
+    return messagesForLocale(this.resolvedLocale);
+  }
+
+  /** The host's choice if it made one, the page's otherwise. */
+  protected get resolvedLocale(): string {
+    return this.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language);
+  }
 
   protected readonly fieldId = `mdy-field-${nextId++}`;
   private _tracker: MdyFormController | null = null;

@@ -373,7 +373,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
                       ${mdyIcon("LOADER", "mdy-select__loader")}
                       <span>Loading…</span>
                     </div>`
-            : html`No results`}
+            : html`${this.messages.noResults}`}
               </li>`
         : nothing}
         </ul>

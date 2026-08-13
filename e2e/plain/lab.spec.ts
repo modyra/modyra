@@ -177,6 +177,30 @@ test("security: markup is intercepted at the boundary, not by the renderer", asy
   expect(state.violations.length).toBeGreaterThan(0);
 });
 
+test("i18n: the words follow the locale, and an untranslated one still says something", async ({ page }) => {
+  await open(page, "security");
+  const english = await readout(page);
+  expect(english.locale).toBe("en-US");
+
+  await page.locator('[data-action="IT"]').click();
+  await page.waitForTimeout(150);
+  const italian = await readout(page);
+  expect(italian.translated).toBe(true);
+  // Every word on screen moved, not just the one the switch was written against.
+  for (const key of Object.keys(english.wordsOnScreen)) {
+    expect(italian.wordsOnScreen[key], `${key} stayed in English`).not.toBe(english.wordsOnScreen[key]);
+    expect(italian.wordsOnScreen[key]).not.toBe("");
+  }
+
+  // A locale no table carries falls back to English rather than to blanks, which is the case a
+  // renderer that built its own lookup would get wrong quietly.
+  await page.locator('[data-action="PT"]').click();
+  await page.waitForTimeout(150);
+  const portuguese = await readout(page);
+  expect(portuguese.translated).toBe(false);
+  expect(portuguese.wordsOnScreen).toEqual(english.wordsOnScreen);
+});
+
 /**
  * The recipe in the headless guide, running.
  *

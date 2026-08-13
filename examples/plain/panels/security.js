@@ -8,6 +8,7 @@
  */
 import { createForm, field as mdyField } from "@modyra/core";
 import { renderField } from "@modyra/plain";
+import { MDY_I18N_DEFAULT_TAGS, MDY_I18N_PRESETS, messagesForLocale } from "@modyra/widgets";
 import { action, grid, readoutPrinter, toolbar } from "./shell.js";
 
 const MARKUP = '<img src=x onerror="alert(1)">Hello <b>there</b>';
@@ -16,11 +17,15 @@ const LONG = "x".repeat(300);
 const FIELDS = [
   { name: "bio", kind: "textarea", label: "Bio (strict: no < > or quotes)" },
   { name: "nickname", kind: "text", label: "Nickname (capped at 24)" },
+  // Kinds that actually say something: a calendar and a clock carry most of the words a widget owns.
+  { name: "when", kind: "datepicker", label: "When" },
+  { name: "at", kind: "timepicker", label: "At" },
+  { name: "upload", kind: "file", label: "Attachment" },
 ];
 
 export const securityPanel = {
   id: "security",
-  title: "Security",
+  title: "Security and i18n",
   blurb:
     "Paste markup or press the buttons. The policy here is `strict`, which removes the characters markup is made of; `text` is the milder profile and removes only what is invisible. Every interception appears in the readout with what it did and why.",
   /**
@@ -38,15 +43,23 @@ export const securityPanel = {
     "MdySecurityViolation",
     "MdySanitizeProfile",
     "applyValueSecurity",
+    "MDY_I18N_PRESETS",
+    "MDY_I18N_DEFAULT_TAGS",
+    "MDY_I18N_MESSAGES_DEFAULT",
+    "MDY_I18N_MESSAGES_IT",
+    "MDY_I18N_MESSAGES_DE",
+    "MDY_I18N_MESSAGES_FR",
+    "MDY_I18N_MESSAGES_ES",
+    "messagesForLocale",
   ],
 
   invariant:
-    "A widget does not repair the model. Sanitizing happens at the boundary where a value enters the form, once, and it is reported — not applied again by each renderer and not applied silently.",
+    "The words a widget shows come from the contract's tables, so five renderers cannot answer in five Englishes — and a locale a table does not carry falls back to English rather than to blanks. A widget does not repair the model. Sanitizing happens at the boundary where a value enters the form, once, and it is reported — not applied again by each renderer and not applied silently.",
 
   mount(work, readout) {
     const violations = [];
     const form = createForm(
-      { bio: mdyField(""), nickname: mdyField("") },
+      { bio: mdyField(""), nickname: mdyField(""), when: mdyField(null), at: mdyField(null), upload: mdyField(null) },
       {
         security: {
           sanitize: "strict",
@@ -58,7 +71,25 @@ export const securityPanel = {
 
     const bar = toolbar(work);
     const area = grid(work);
-    const dispose = FIELDS.map((f) => renderField(area, f, form.f[f.name], form.reactivity));
+
+    // The words are re-read, not re-decided: switching locale re-renders the same fields with a
+    // different table, which is the whole of what a host has to do.
+    let locale = "en-US";
+    let dispose = [];
+    const draw = () => {
+      for (const d of dispose) d?.();
+      area.replaceChildren();
+      const messages = messagesForLocale(locale);
+      dispose = FIELDS.map((f) => renderField(area, f, form.f[f.name], form.reactivity, f.name, messages));
+    };
+    draw();
+
+    for (const [code, tag] of Object.entries(MDY_I18N_DEFAULT_TAGS)) {
+      action(bar, code.toUpperCase(), () => { locale = tag; draw(); print(); });
+    }
+    // A locale no table carries: English, and visibly so, because a missing translation must not
+    // render as an empty button.
+    action(bar, "PT", () => { locale = "pt-BR"; draw(); print(); });
 
     action(bar, "Paste markup", () => form.f.bio.set(MARKUP));
     action(bar, "Paste 300 characters", () => form.f.nickname.set(LONG));
@@ -78,6 +109,14 @@ export const securityPanel = {
       // What reached the DOM. The point of sanitizing at the boundary is that no renderer has to be
       // trusted to do it, so this is the number that proves it happened upstream.
       elementsInjected: area.querySelectorAll("img, script, b").length,
+      locale,
+      // Read off the page, not off the table: this is the number that says the words arrived.
+      wordsOnScreen: {
+        openTheClock: area.querySelector(".mdy-timepicker__toggle")?.getAttribute("aria-label") ?? "",
+        openTheCalendar: area.querySelector(".mdy-datepicker__toggle")?.getAttribute("aria-label") ?? "",
+        chooseAFile: area.querySelector(".mdy-file-content .mdy-button")?.textContent ?? "",
+      },
+      translated: MDY_I18N_PRESETS[locale.split("-")[0]] !== undefined,
     }));
 
     const effect = form.reactivity.effect(() => {

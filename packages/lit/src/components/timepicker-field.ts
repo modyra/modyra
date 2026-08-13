@@ -388,7 +388,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
               class="mdy-timepicker-segment-input ${this.view.viewMode === "dial" ? "mdy-timepicker-segment-input--readonly" : ""}"
               .value=${this.hourDisplay()}
               ?readonly=${this.view.viewMode === "dial"}
-              aria-label="Hour"
+              aria-label=${this.messages.timepickerHourLabel}
               @input=${this.onHourInput}
               @focus=${() => this.send({ type: "focus-field", field: "hour" })}
               @click=${() => {
@@ -412,7 +412,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
               class="mdy-timepicker-segment-input ${this.view.viewMode === "dial" ? "mdy-timepicker-segment-input--readonly" : ""}"
               .value=${this.minuteDisplay()}
               ?readonly=${this.view.viewMode === "dial"}
-              aria-label="Minute"
+              aria-label=${this.messages.timepickerMinuteLabel}
               @input=${this.onMinuteInput}
               @focus=${() => this.send({ type: "focus-field", field: "minute" })}
               @click=${() => {
@@ -614,7 +614,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
               type="button"
               class="mdy-timepicker__toggle"
               ?disabled=${handle.disabled()}
-              aria-label="Open time picker"
+              aria-label=${this.messages.timepickerOpenLabel}
               aria-expanded=${this._open ? "true" : "false"}
               tabindex="-1"
               @click=${(e: Event) => (this._open ? this.closePopup(handle) : this.openPopup(handle, e))}

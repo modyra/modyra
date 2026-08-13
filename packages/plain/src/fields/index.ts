@@ -16,6 +16,7 @@ import type { MdyMountedField } from "../field-controls.js";
 import { renderSelectField } from "./select-field.js";
 import { renderTextField } from "./text-field.js";
 import { renderTimepickerField } from "./timepicker-field.js";
+import { messagesForLocale, type MdyI18nMessages } from "@modyra/widgets";
 
 /** The calendar presentation a date field declares, in the shape its renderer takes. */
 function calendarOptionsOf(f: MdyDynamicDateField | MdyDynamicDaterangeField): {
@@ -48,6 +49,14 @@ export function renderField(
   handle: MdyFieldHandle<never>,
   reactivity?: MdyReactivity,
   widgetId: string = f.name,
+  /**
+   * The words the control shows. Omitted, a field that declares a locale speaks it: the tag that
+   * formats a date and the tag that names a button are the same tag, and asking a caller to pass
+   * both is asking it to keep two answers in step.
+   */
+  messages: MdyI18nMessages = messagesForLocale(
+    "locale" in f ? (f as { readonly locale?: string }).locale : undefined,
+  ),
 ): MdyMountedField {
   reactivity = observerFor(handle, reactivity);
   switch (f.kind) {
@@ -65,18 +74,18 @@ export function renderField(
     case "segmented":
       return renderOptionField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, widgetId);
     case "select":
-      return renderSelectField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, widgetId);
+      return renderSelectField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, widgetId, messages);
     case "multiselect":
-      return renderMultiselectField(container, f, handle as unknown as MdyFieldHandle<ReadonlyArray<unknown>>, reactivity, f.mode ?? "single", widgetId);
+      return renderMultiselectField(container, f, handle as unknown as MdyFieldHandle<ReadonlyArray<unknown>>, reactivity, f.mode ?? "single", widgetId, messages);
     case "datepicker":
-      return renderDatepickerField(container, f, handle as unknown as MdyFieldHandle<string | null>, reactivity, calendarOptionsOf(f), widgetId);
+      return renderDatepickerField(container, f, handle as unknown as MdyFieldHandle<string | null>, reactivity, calendarOptionsOf(f), widgetId, messages);
     case "daterange":
-      return renderDaterangeField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, calendarOptionsOf(f), widgetId);
+      return renderDaterangeField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, calendarOptionsOf(f), widgetId, messages);
     case "file":
-      return renderFileField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, widgetId);
+      return renderFileField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, widgetId, messages);
     case "colors":
-      return renderColorsField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, widgetId);
+      return renderColorsField(container, f, handle as unknown as MdyFieldHandle<unknown>, reactivity, widgetId, messages);
     case "timepicker":
-      return renderTimepickerField(container, f, handle as unknown as MdyFieldHandle<string | null>, reactivity, undefined, widgetId);
+      return renderTimepickerField(container, f, handle as unknown as MdyFieldHandle<string | null>, reactivity, undefined, widgetId, messages);
   }
 }
