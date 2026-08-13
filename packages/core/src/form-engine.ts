@@ -1149,7 +1149,29 @@ export class MdyFormEngine
    * as-is.
    */
   private _draftEntryAllowed(key: string, value: unknown): boolean {
-    if (!this._initialValues.has(key)) return true;
+    if (!this._initialValues.has(key)) {
+      // A form whose structure was declared — a schema owns fields, a collection owns a subtree —
+      // restores only what that declaration describes. Storage is the least trustworthy input a
+      // form has, and a key nobody declared arriving from it becomes a field: a name of the
+      // writer's choosing in `fieldNames()`, which is what a document-driven renderer draws from.
+      // A collection's own paths are described by its gate, so a row restores as it always did.
+      const declared = this._owned.size > 0 || this._gates.size > 0;
+      // Every collection's own subtree, not only the ones that govern existence: an array's rows
+      // follow its value, and a draft naming a row it does not have yet is how a restored order
+      // gets its lines back.
+      const insideCollection = [...this._gates.keys()].some(
+        (prefix) => key === prefix || key.startsWith(`${prefix}.`),
+      );
+      if (declared && !insideCollection) {
+        this._report({
+          kind: "draft-shape",
+          path: key,
+          detail: `Draft entry "${key}" dropped: the form declares no field by that name.`,
+        });
+        return false;
+      }
+      return true;
+    }
     if (draftShapeMatches(this._initialValues.get(key), value)) return true;
     this._report({
       kind: "draft-shape",
