@@ -317,5 +317,5 @@ div.keyed-rows-actions {
 .demo-verdict li { margin: 0.15rem 0; list-style: none; }
 .demo-verdict .ok::before { content: "\2713  "; color: var(--mdy-primary); }
 .demo-verdict .ko::before { content: "\2717  "; }
-.demo-state details { margin-top: 0.5rem; }
-.demo-state summary { cursor: pointer; font-size: 0.78rem; opacity: 0.8; }
+.demo-verdict + details { margin-top: 0.5rem; }
+.demo-verdict + details summary { cursor: pointer; font-size: 0.78rem; opacity: 0.8; }

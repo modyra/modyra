@@ -84,8 +84,12 @@ export function scenario(host, text) {
 /** A button that also says what it will do, so the reader does not have to guess. */
 export function actionWithHint(host, label, hint, run) {
   const button = action(host, label, run);
-  button.title = hint;
-  button.classList.add("demo-action-btn");
+  button.classList.add("demo-action");
+  const name = document.createElement("span");
+  name.textContent = label;
+  const sub = document.createElement("small");
+  sub.textContent = hint;
+  button.replaceChildren(name, sub);
   return button;
 }
 

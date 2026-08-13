@@ -25,36 +25,65 @@ const linesBalanced = (lines: Readonly<Record<string, unknown>>): string[] => {
   imports: [MdyFormComponent, MdyTextComponent, MdyNumberComponent],
   template: `
     <section class="demo-section">
-      <h2>Invoices — splits that must balance</h2>
+      <h2>Fatture, righe, ripartizioni</h2>
+      <p class="demo-scenario">
+        Sei in amministrazione. Ogni fattura ha righe di spesa, e ogni riga va ripartita fra centri
+        di costo fino a coprire il 100%. La demo mostra che chiudere una riga non la mette a posto:
+        una ripartizione incompleta continua a bloccare la fattura anche quando nessuno la guarda.
+      </p>
       <mdy-form [form]="form">
         <div class="keyed-rows-actions">
-          <button type="button" (click)="close()">Close the line</button>
-          <button type="button" (click)="reopen()">Reopen the line</button>
-          <button type="button" (click)="fixSplit()">Fix the split</button>
-          <button type="button" (click)="approve()">Approve the line</button>
-          <button type="button" (click)="submitToServer()">Submit to the server</button>
+          <button type="button" class="demo-action" (click)="close()"><span>Close the line</span><small>nasconde la riga: la fattura resta invalida al 95%</small></button>
+          <button type="button" class="demo-action" (click)="reopen()"><span>Reopen the line</span><small>riapre la riga: l'errore e ancora sulla ripartizione che lo causa</small></button>
+          <button type="button" class="demo-action" (click)="fixSplit()"><span>Fix the split</span><small>porta CC-20 dal 35% al 40%: la ripartizione arriva a 100</small></button>
+          <button type="button" class="demo-action" (click)="approve()"><span>Approve the line</span><small>blocca la riga in sola lettura: resta validata e inviata</small></button>
+          <button type="button" class="demo-action" (click)="submitToServer()"><span>Submit to the server</span><small>il server rifiuta CC-10: l'errore torna sul path della ripartizione</small></button>
         </div>
         @for (invKey of form.f.invoices.keys(); track invKey) {
           <div class="order-box" [attr.data-invoice]="invKey">
-            <strong>{{ invKey }} — {{ form.f.invoices.row(invKey).supplier.value() }}</strong>
+            <strong>Fattura {{ invKey }} — {{ form.f.invoices.row(invKey).supplier.value() }}</strong>
             @for (lineKey of form.f.invoices.row(invKey).lines.keys(); track lineKey) {
-              @if (!collapsed().has(invKey + '.' + lineKey)) {
-                <div class="grid" [attr.data-line]="invKey + '.' + lineKey">
-                  <mdy-control-text [field]="form.f.invoices.row(invKey).lines.row(lineKey).desc" [ariaLabel]="'Description ' + lineKey" />
-                  <mdy-control-number [field]="form.f.invoices.row(invKey).lines.row(lineKey).amount" [ariaLabel]="'Amount ' + lineKey" />
-                </div>
-                @for (splitKey of form.f.invoices.row(invKey).lines.row(lineKey).splits.keys(); track splitKey) {
-                  <div class="grid" [attr.data-split]="invKey + '.' + lineKey + '.' + splitKey">
-                    <mdy-control-text [field]="form.f.invoices.row(invKey).lines.row(lineKey).splits.row(splitKey).costCenter" [ariaLabel]="'Cost centre ' + splitKey" />
-                    <mdy-control-number [field]="form.f.invoices.row(invKey).lines.row(lineKey).splits.row(splitKey).percent" [ariaLabel]="'Percent ' + splitKey" />
+              @if (collapsed().has(invKey + '.' + lineKey)) {
+                <p class="demo-hidden-note">
+                  Riga {{ lineKey }} chiusa —
+                  {{ form.f.invoices.row(invKey).lines.row(lineKey).splits.keys().length }}
+                  {{ form.f.invoices.row(invKey).lines.row(lineKey).splits.keys().length === 1 ? "ripartizione nascosta" : "ripartizioni nascoste" }},
+                  la fattura resta bloccata finche non arrivano al 100%
+                </p>
+              } @else {
+                <div class="demo-level">
+                  <div class="demo-level-caption">
+                    Riga {{ lineKey }} — descrizione e importo
+                    @if (approved().includes('invoices.' + invKey + '.lines.' + lineKey)) {
+                      <span class="demo-badge">approvata: sola lettura</span>
+                    }
                   </div>
-                }
+                  <div class="grid" [attr.data-line]="invKey + '.' + lineKey">
+                    <mdy-control-text [field]="form.f.invoices.row(invKey).lines.row(lineKey).desc" [ariaLabel]="'Description ' + lineKey" />
+                    <mdy-control-number [field]="form.f.invoices.row(invKey).lines.row(lineKey).amount" [ariaLabel]="'Amount ' + lineKey" />
+                  </div>
+                  @for (splitKey of form.f.invoices.row(invKey).lines.row(lineKey).splits.keys(); track splitKey) {
+                    <div class="demo-level">
+                      <div class="demo-level-caption">Ripartizione {{ splitKey }} — centro di costo e quota</div>
+                      <div class="grid" [attr.data-split]="invKey + '.' + lineKey + '.' + splitKey">
+                        <mdy-control-text [field]="form.f.invoices.row(invKey).lines.row(lineKey).splits.row(splitKey).costCenter" [ariaLabel]="'Cost centre ' + splitKey" />
+                        <mdy-control-number [field]="form.f.invoices.row(invKey).lines.row(lineKey).splits.row(splitKey).percent" [ariaLabel]="'Percent ' + splitKey" />
+                      </div>
+                    </div>
+                  }
+                </div>
               }
             }
           </div>
         }
       </mdy-form>
-      <pre class="demo-state">{{ stateJson() }}</pre>
+      <ul class="demo-verdict">
+        @for (row of sentences(); track $index) { <li [class]="row[0]">{{ row[1] }}</li> }
+      </ul>
+      <details>
+        <summary>dati grezzi (JSON)</summary>
+        <pre class="demo-state">{{ stateJson() }}</pre>
+      </details>
     </section>
   `,
 })
@@ -103,9 +132,16 @@ export class InvoicesSectionComponent {
     ]);
   }
 
-  stateJson(): string {
+  /** The state both halves of the panel read — sentences above, JSON behind the details. */
+  private state(): {
+    readonly valid: boolean;
+    readonly lineErrors: Record<string, readonly { readonly message: string }[]>;
+    readonly approved: readonly string[];
+    readonly splitServerError: readonly string[];
+    readonly [key: string]: unknown;
+  } {
     const invoices = this.form.f.invoices;
-    return JSON.stringify({
+    return {
       invoices: invoices.keys(),
       lines: Object.fromEntries(invoices.keys().map((k) => [k, invoices.row(k).lines.keys()])),
       valid: this.form.state.valid(),
@@ -115,6 +151,30 @@ export class InvoicesSectionComponent {
       approved: this.approved(),
       splitServerError: this.form.errorsFor("invoices.INV-1.lines.l1.splits.s1.percent")().map((e) => e.message),
       value: this.form.value().invoices,
-    }, null, 2);
+    };
+  }
+
+  stateJson(): string {
+    return JSON.stringify(this.state(), null, 2);
+  }
+
+  sentences(): readonly (readonly [string, string])[] {
+    const readable = (message: string): string => message
+      .replace(/^line (\S+): splits total (\d+)%$/, "Riga $1 — ripartito $2%, manca il resto per arrivare a 100")
+      .replace(/^line (\S+): duplicate cost centre$/, "Riga $1 — lo stesso centro di costo compare due volte");
+    const s = this.state();
+    const rows: (readonly [string, string])[] = [];
+    rows.push(s.valid
+      ? ["ok", "Fattura pronta: ogni riga e ripartita al 100%"]
+      : ["ko", "Fattura bloccata — le ripartizioni non tornano"]);
+    for (const [key, errs] of Object.entries(s.lineErrors)) {
+      for (const e of errs) rows.push(["ko", `${key}: ${readable(e.message)}`]);
+    }
+    for (const base of s.approved) {
+      rows.push(["", `${base.split(".").slice(-1)[0]} approvata — sola lettura, ma sempre validata e inviata`]);
+    }
+    for (const message of s.splitServerError) rows.push(["ko", `Il server rifiuta la ripartizione s1: ${message}`]);
+    if (this.collapsed().size > 0) rows.push(["", "Una riga e chiusa: il verdetto qui sopra la conta comunque"]);
+    return rows;
   }
 }
