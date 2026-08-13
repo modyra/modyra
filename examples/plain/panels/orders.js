@@ -71,6 +71,14 @@ export const ordersPanel = {
 
   mount(work, readout) {
     readout.classList.add("demo-state");
+    const scenario = document.createElement("p");
+    scenario.className = "demo-scenario";
+    scenario.textContent =
+      "Sei un operatore logistico. Gestisci ordini che contengono righe di prodotto, e ogni riga " +
+      "va coperta da allocazioni di magazzino. La demo mostra che ordinare, filtrare e chiudere " +
+      "pezzi di interfaccia non tocca mai i dati: il modello possiede tutto, lo schermo ne mostra " +
+      "una parte.";
+    work.append(scenario);
     const form = createForm(
       {
         orders: mdyRecord(
@@ -133,16 +141,32 @@ export const ordersPanel = {
     };
 
     const firstOrder = () => form.f.orders.keys()[0];
-    action(bar, "Add order", () => {
+    // Every action explains itself: label + one line of what it will do.
+    const explain = {
+      "Add order": "crea un ordine con chiave provvisoria tmp:*",
+      "Server assigns code": "il server risponde: la chiave tmp diventa ORD-*, i dati restano",
+      "Add allocation": "aggiunge un'allocazione alla prima riga (copre la quantita)",
+      "Remove order": "elimina il primo ordine con tutte le righe e allocazioni",
+      "Undo": "ripristina intero l'ultimo ordine rimosso",
+      "Collapse first": "nasconde le righe del primo ordine: la validita non cambia",
+      "Filter ORD": "mostra solo gli ordini confermati: i tmp restano nel modello",
+    };
+    const _origAction = action;
+    const actionWithHint = (host, label, run) => {
+      _origAction(host, label, run);
+      const btn = host.querySelector(`[data-action="${label}"]`);
+      if (btn && explain[label]) { btn.title = explain[label]; btn.classList.add("demo-action-btn"); }
+    };
+    actionWithHint(bar, "Add order", () => {
       form.f.orders.upsert(`tmp:${form.f.orders.keys().length + 1}`, { customer: "New Co", lines: {} });
       draw();
     });
-    action(bar, "Server assigns code", () => {
+    actionWithHint(bar, "Server assigns code", () => {
       const provisional = form.f.orders.keys().find((k) => k.startsWith("tmp:"));
       if (provisional) form.f.orders.rename(provisional, `ORD-${100 + form.f.orders.keys().length}`);
       draw();
     });
-    action(bar, "Add allocation", () => {
+    actionWithHint(bar, "Add allocation", () => {
       const key = firstOrder();
       if (!key) return;
       const lines = form.f.orders.row(key).lines;
@@ -152,19 +176,19 @@ export const ordersPanel = {
       allocs.upsert(`a${allocs.keys().length + 1}`, { warehouse: "W2", lot: "L-9", qty: 1 });
       draw();
     });
-    action(bar, "Remove order", () => {
+    actionWithHint(bar, "Remove order", () => {
       const key = firstOrder();
       if (key) form.f.orders.remove(key);
       draw();
     });
-    action(bar, "Undo", () => { form.undo(); draw(); });
-    action(bar, "Collapse first", () => {
+    actionWithHint(bar, "Undo", () => { form.undo(); draw(); });
+    actionWithHint(bar, "Collapse first", () => {
       const key = firstOrder();
       if (!key) return;
       if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key);
       draw();
     });
-    action(bar, "Filter ORD", () => { filter = filter ? "" : "ORD"; draw(); });
+    actionWithHint(bar, "Filter ORD", () => { filter = filter ? "" : "ORD"; draw(); });
 
     print = readoutPrinter(readout, () => ({
       orders: form.f.orders.keys(),
