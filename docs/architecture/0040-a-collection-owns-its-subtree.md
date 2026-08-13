@@ -1,6 +1,6 @@
 # ADR 0040: A collection owns its subtree
 
-Status: Accepted
+Status: Accepted — amended 2026-08-13 (phases B and C landed; the rule is one positional level)
 
 ## Context
 
@@ -48,6 +48,8 @@ Eight questions the implementation cannot avoid, decided here:
 | Maximum depth | 6, the document's existing cap | A second limit in the same engine is a limit someone reads wrong |
 | `array → record` | Rebuild atomically | An array row's identity is positional: `insert`, `remove` and `move` change every descendant's prefix. Rebasing would preserve flags the array does not promise anyway. What is lost is documented rather than discovered |
 | First public combination | `record → record` | The only one where both levels have declared identity, so rename and late binding are verifiable without a rebase |
+| Supported combinations (amendment) | `record → record`, `record → array`, `array → record`; **never two positional levels** | A path may cross one positional level. Two make a descendant's path move for two independent reasons — an insert above and an insert beside — and nothing in the contract can say which one moved it. So an array below an array is refused wherever it sits, including below a record that an array's row declared |
+| Maximum depth (amendment) | 8, matching the document validator | ADR 0040 said 6 citing "the document's existing cap"; the cap the validator publishes is 8. One number for the engine, and no document that is valid today becomes invalid |
 | Dynamic Form Contract | Same major, after the core | The parser must not accept a shape the runtime cannot execute |
 | `getChanges()` | Represents structural change | A declared, empty row is a change to the form's shape; a consumer sending only changed leaves would drop the row itself |
 | `when` inside a nested collection | Composes every ancestor | ADR 0030's rule, and the section conditions are already threaded down to a collection today |

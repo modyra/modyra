@@ -27,17 +27,26 @@ import type {
   MdyAnyRecordDescriptor,
 } from "./contracts/descriptors.js";
 import { isRecord } from "./record-utils.js";
+import { MdyRecordManager } from "./record-manager.js";
 import { registerRowNode, type MdyRowRegistration } from "./collections/register.js";
 
-/** A row's own schema node — a collection cannot nest inside an array's item in v1. */
+/** A row's own schema node. A record may sit inside an array's item; another array may not. */
 type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
 
+/**
+ * What an array's row may hold.
+ *
+ * A record, yes: it is keyed, so a row's descendants are addressed by name below a positional
+ * prefix and a reorder rebuilds them under the new index. Another array, no: two positional levels
+ * make a descendant's whole path move for two independent reasons, and nothing in the contract can
+ * tell which one moved it (ADR 0040).
+ */
 function assertNotNestedCollection(
   node: MdyRowNode | { readonly kind: "array" | "record" },
 ): asserts node is MdyRowNode {
-  if (node.kind === "array" || node.kind === "record") {
+  if (node.kind === "array") {
     throw new Error(
-      `[modyra] Nested collections (an array item containing another ${node.kind}) are not supported`,
+      "[modyra] Nested collections (an array item containing another array) are not supported",
     );
   }
 }
@@ -63,9 +72,19 @@ export interface MdyArrayManagerDeps {
  * Owns one array node: registers/removes row fields on the engine so the
  * structure follows the value, and implements push/insert/remove/move/setAll.
  */
-/** Refuses a nested collection anywhere in the row, when the form is built. */
-function assertRowShape(node: MdyRowNode): void {
-  assertNotNestedCollection(node);
+/**
+ * Refuses, when the form is built, a shape this manager cannot run.
+ *
+ * Everything below an array sits under a positional level, and a path may cross **one**: the walk
+ * therefore goes *through* a record a row declares, and refuses any array it finds there — the
+ * failure belongs where the schema was written, not to the first `push` in front of a user.
+ */
+function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record"; readonly item?: unknown }): void {
+  assertNotNestedCollection(node as MdyRowNode);
+  if (node.kind === "record") {
+    assertRowShape((node as { readonly item: MdyRowNode }).item);
+    return;
+  }
   if (node.kind === "group") {
     for (const child of Object.values(node.children)) {
       assertRowShape(child as MdyRowNode);
@@ -195,6 +214,8 @@ export class MdyArrayManager {
   destroy(): void {
     this._releaseGate();
     this._reconcile?.destroy();
+    for (const manager of this._nested.values()) manager.destroy();
+    this._nested.clear();
   }
 
   // ── Internals ────────────────────────────────────────────────────────────
@@ -241,12 +262,70 @@ export class MdyArrayManager {
       readRow: (rowPath) => this._readNode(rowPath, this._deps.item),
       readNode: (path, node) => this._readNode(path, node as MdyRowNode),
       rowValue: (rowPath) => this._rowValue(rowPath),
-      onCollection: (_path, node) => assertNotNestedCollection(node),
+      onCollection: (path, node, value) => {
+        if (node.kind === "array") assertNotNestedCollection(node);
+        this._declareNested(path, node as MdyAnyRecordDescriptor, value);
+      },
     };
   }
 
+  /** The record managers rows declared, keyed by their full path. */
+  private readonly _nested = new Map<string, MdyRecordManager>();
+
+  private _declareNested(path: string, node: MdyAnyRecordDescriptor, value: unknown): void {
+    this._nested.get(path)?.destroy();
+    this._nested.set(path, new MdyRecordManager(
+      {
+        rx: this._deps.rx,
+        engine: this._deps.engine,
+        path,
+        item: node.item as MdyAnyFieldDescriptor | MdyAnyGroupDescriptor,
+        // Everything below an array is under a positional level, and one is the limit.
+        positionalAncestor: true,
+        // Nothing here has a name to complain about that the engine has not already reported, so a
+        // nested record's diagnostics go where the engine's do.
+        warn: (message: string) => void message,
+        // A row's collection is out of play with the row: an array's rows are positional, so what
+        // says the row exists is the count, not a declaration.
+        sections: [
+          ...(this._deps.sections ?? []),
+          () => Number(path.slice(this._deps.path.length + 1).split(".")[0]) < this._rowCountSig(),
+        ],
+      },
+      isRecord(value) ? value : {},
+    ));
+  }
+
+  /** Everything a row owned below this prefix, the collections it declared included. */
+  private _destroyNestedUnder(prefix: string): void {
+    for (const [path, manager] of [...this._nested]) {
+      if (path === prefix || path.startsWith(`${prefix}.`)) {
+        manager.destroy();
+        this._nested.delete(path);
+        // The collection's own phantom field goes with it: registered so collection-level errors
+        // have somewhere to surface, it would otherwise outlive the row and read as a value.
+        this._deps.engine.disownField(path);
+        this._deps.engine.removeField(path);
+      }
+    }
+  }
+
+  /** The record manager a row declared at this path, if it is still alive. */
+  nestedAt(path: string): MdyRecordManager | undefined {
+    const own = this._nested.get(path);
+    if (own) return own;
+    for (const [at, manager] of this._nested) {
+      if (path.startsWith(`${at}.`)) return manager.nested(path) as MdyRecordManager | undefined;
+    }
+    return undefined;
+  }
+
   private _removeRow(index: number): void {
-    for (const path of this._leafPaths(`${this._deps.path}.${index}`, this._deps.item)) {
+    // The leaves are read before the subtree is destroyed: a nested collection answers what its
+    // rows are, and a destroyed manager answers nothing — which used to leave its fields behind.
+    const leaves = this._leafPaths(`${this._deps.path}.${index}`, this._deps.item);
+    this._destroyNestedUnder(`${this._deps.path}.${index}`);
+    for (const path of leaves) {
       // Ownership goes first: this is the row ending, which is the one thing that may take the
       // field with it.
       this._deps.engine.disownField(path);
@@ -262,6 +341,11 @@ export class MdyArrayManager {
       | MdyAnyArrayDescriptor
       | MdyAnyRecordDescriptor,
   ): string[] {
+    if (rowNode.kind === "record") {
+      const nested = this._nested.get(fullPath);
+      if (!nested) return [];
+      return nested.leafPathsNow();
+    }
     assertNotNestedCollection(rowNode);
     if (rowNode.kind === "field") return [fullPath];
     return Object.entries(rowNode.children).flatMap(([key, child]) =>
@@ -277,6 +361,10 @@ export class MdyArrayManager {
       | MdyAnyArrayDescriptor
       | MdyAnyRecordDescriptor,
   ): unknown {
+    if (rowNode.kind === "record") {
+      const nested = this._nested.get(fullPath);
+      return nested ? nested.getValues() : {};
+    }
     assertNotNestedCollection(rowNode);
     if (rowNode.kind === "field") {
       const ref = this._deps.engine.getField(fullPath);

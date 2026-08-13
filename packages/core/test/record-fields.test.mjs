@@ -658,21 +658,22 @@ test("a document nesting one collection inside another is refused where it is wr
     },
   };
 
+  // The **document** contract still refuses what the runtime now runs: the parser is the next
+  // phase, and until it lands a document may not say what a typed schema may.
   const parsed = parseDynamicForm({ version: 3, schema: recordInsideArray });
   assert.ok(
     parsed.diagnostics.some((d) => d.code === "MDY_DYNAMIC_INVALID_ARRAY"),
     "the parser names the shape it cannot address",
   );
 
-  // The builder translates; the form is what refuses, and it refuses when it is built rather than
-  // when a row first arrives in front of a user.
+  // What the runtime refuses is a second *positional* level, wherever it sits.
   assert.throws(
-    () => createForm(buildDynamicFormSchema(recordInsideArray)),
-    /Nested collections|one collection per node/,
+    () => createForm({ rows: array(group({ inner: array(field("")) })) }),
+    /Nested collections/,
   );
   assert.throws(
-    () => createForm({ rows: array(group({ inner: record(field("")) })) }),
-    /Nested collections|one collection per node/,
+    () => createForm({ rows: array(group({ inner: record(group({ deep: array(field("")) })) })) }),
+    /Nested collections/,
   );
 });
 
@@ -977,10 +978,14 @@ test("a nesting the runtime cannot execute is refused when the form is built", a
 
   // Not when a row arrives: a shape that cannot run must not survive long enough to produce paths
   // nobody owns. The message says what a row may hold, so the list is readable from the failure.
-  // An array's row may hold neither kind: its rows are positional, so a descendant's whole path
-  // moves on every insert, remove and move.
+  // A path may cross one positional level: an array's row may hold a record, and that record may
+  // not hold an array.
+  const inArray = createForm({ list: array(group({ inner: record(field("")) })) });
+  inArray.f.list.push({ inner: { a: "x" } });
+  assert.deepEqual(inArray.value().list, [{ inner: { a: "x" } }]);
+  inArray.destroy();
   assert.throws(
-    () => createForm({ list: array(group({ inner: record(field("")) })) }),
+    () => createForm({ list: array(group({ inner: array(field("")) })) }),
     /Nested collections/,
   );
   // A record's row may hold both — that is phases A and B, and this is the shape they produce.

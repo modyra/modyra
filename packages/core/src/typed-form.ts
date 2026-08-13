@@ -1176,6 +1176,7 @@ export abstract class MdyTypedFormBase<
         return found instanceof MdyArrayManager ? found : undefined;
       };
       const rows = rx.computed(() => {
+        this._adapter.value();
         const found = arrayAt();
         const count = found ? found.rowCount() : 0;
         return Array.from({ length: count }, (_, i) =>
@@ -1216,7 +1217,10 @@ export abstract class MdyTypedFormBase<
         : this._buildCellTree((node.item as MdyAnyGroupDescriptor).children, `${path}.${key}`);
     return {
       path,
-      keys: rx.computed(() => recordAt()?.keys() ?? []),
+      // The value is read first so a structural change invalidates this: a move rebuilds the row's
+      // manager, and a computed tracking only the old manager's key signal would answer for a
+      // collection that no longer exists.
+      keys: rx.computed(() => { this._adapter.value(); return recordAt()?.keys() ?? []; }),
       value: rx.computed(() => {
         this._adapter.value();
         const found = recordAt();
@@ -1245,6 +1249,14 @@ export abstract class MdyTypedFormBase<
     for (const [at, manager] of this._records) {
       if (path.startsWith(`${at}.`)) {
         const found = manager.nested(path);
+        if (found) return found;
+      }
+    }
+    // An array's rows may own a record too: its rows are positional, so the manager is asked by
+    // path like any other — the index is part of the path, not a separate lookup.
+    for (const [at, manager] of this._arrays) {
+      if (path.startsWith(`${at}.`)) {
+        const found = manager.nestedAt(path);
         if (found) return found;
       }
     }
