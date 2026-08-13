@@ -229,7 +229,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         class="mdy-multiselect-overlay__input"
         .value=${this._query}
         @input=${this.onSearchInput}
-        placeholder="Search..."
+        placeholder=${this.messages.searchPlaceholder}
       />
       ${this.optionTemplate
         ? html`<button type="button" class=${MDY_CHIP_CLASSES.wrapper}>Custom option</button>`
@@ -241,7 +241,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                   ${mdyIcon("LOADER", "mdy-select__loader")}
                   <span>Loading…</span>
                 </div>`
-              : html`No results`}
+              : html`${this.messages.noResults}`}
           </div>`
         : this.renderOptionsGrid(handle, this.searchResults(handle), "mdy-multiselect-overlay__grid")}
       </div>
@@ -281,7 +281,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                 if (!this._open) this.overlay.open(e);
                 this.toggleOpen(handle);
               }}
-              aria-label="Show options"
+              aria-label=${this.messages.searchOptionsLabel}
               aria-haspopup="listbox"
               aria-expanded=${this._open ? "true" : "false"}
               aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}

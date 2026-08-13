@@ -20,6 +20,8 @@ import {
   showsAsInvalid,
   type MdyElementLookup,
   typeaheadMatch,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -32,6 +34,12 @@ export function renderSelectField(
   handle: MdyFieldHandle<unknown>,
   reactivity?: MdyReactivity,
   widgetId: string = f.name,
+  /**
+   * The words this control shows. The engine has no opinion about them, so they arrive from the
+   * widget contract's tables rather than being written here — three renderers each spelling
+   * "open the calendar" is three answers to one question.
+   */
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
 ): () => void {
   reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
@@ -76,7 +84,7 @@ export function renderSelectField(
   const search = el("input", parts.search.classes.join(" ")) as HTMLInputElement;
   search.type = "text";
   search.autocomplete = "off";
-  search.placeholder = "Search…";
+  search.placeholder = messages.searchPlaceholder;
   const listbox = el("ul", parts.listbox.classes.join(" ")) as HTMLUListElement;
   // A filter box only where the field asked for one: drawn unconditionally, a five-option select got
   // a search nobody wanted and focus landed in it rather than on the list.

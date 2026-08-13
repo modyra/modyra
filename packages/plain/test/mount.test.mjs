@@ -10,6 +10,8 @@ import { installDomGlobals } from "./support/dom-env.mjs";
 
 installDomGlobals();
 const { mountMdyForm } = await import("../dist/index.js");
+// The words a control shows are the contract's, so a test names the key rather than the English.
+const { MDY_I18N_MESSAGES_DEFAULT: MSG } = await import("@modyra/widgets");
 
 const fields = [
   { name: "name", kind: "text", label: "Name", validators: { required: true } },
@@ -215,7 +217,7 @@ test("timepicker: setting hour/minute and confirming commits a formatted value",
   minuteInput.value = "15";
   minuteInput.dispatchEvent(new Event("input"));
 
-  const confirm = [...wrapper.querySelectorAll("button")].find((b) => b.textContent === "Confirm");
+  const confirm = [...wrapper.querySelectorAll("button")].find((b) => b.textContent === MSG.timepickerConfirm);
   confirm.dispatchEvent(new Event("click"));
 
   assert.match(form.f.meeting.value(), /^07:15 (AM|PM)$/);

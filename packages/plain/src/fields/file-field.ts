@@ -16,6 +16,8 @@ import {
   shownErrorsOf,
   showsAsInvalid,
   type MdyFileCandidate,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell } from "../field-shell.js";
@@ -33,6 +35,12 @@ export function renderFileField(
   handle: MdyFieldHandle<unknown>,
   reactivity?: MdyReactivity,
   widgetId: string = f.name,
+  /**
+   * The words this control shows. The engine has no opinion about them, so they arrive from the
+   * widget contract's tables rather than being written here — three renderers each spelling
+   * "open the calendar" is three answers to one question.
+   */
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
 ): () => void {
   reactivity = observerFor(handle, reactivity);
   const definition = MDY_WIDGET_CONTRACTS.file;
@@ -58,14 +66,14 @@ export function renderFileField(
   // cannot be styled), so the affordance is a button that forwards the click to it.
   const browse = el("button", "mdy-button") as HTMLButtonElement;
   browse.type = "button";
-  setText(browse, "Choose a file");
+  setText(browse, messages.fileSelect);
   const fileList = el("ul") as HTMLUListElement;
   applyPart(fileList, definition.parts.fileList);
   const placeholder = el("span", "mdy-file-placeholder");
-  setText(placeholder, "No file selected");
+  setText(placeholder, messages.fileNoneSelected);
   const clear = el("button", "mdy-file-clear") as HTMLButtonElement;
   clear.type = "button";
-  setText(clear, "Clear");
+  setText(clear, messages.fileClearSelection);
   const info = el("div", "mdy-file-info") as HTMLDivElement;
   info.append(fileList, placeholder, clear);
   content.append(browse, info);

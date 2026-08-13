@@ -23,6 +23,8 @@ import {
   timepickerDialNumbers,
   timepickerSelectedDialValue,
   type MdyElementLookup,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
 } from "@modyra/widgets";
 import { hourToAngle, minuteToAngle, parseAnyTime, pointerAngle, type MdyTimeFormat } from "@modyra/core/datetime";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
@@ -37,6 +39,12 @@ export function renderTimepickerField(
   reactivity?: MdyReactivity,
   format: MdyTimeFormat = "12h",
   widgetId: string = f.name,
+  /**
+   * The words this control shows. The engine has no opinion about them, so they arrive from the
+   * widget contract's tables rather than being written here — three renderers each spelling
+   * "open the calendar" is three answers to one question.
+   */
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
 ): () => void {
   reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
@@ -54,7 +62,7 @@ export function renderTimepickerField(
   const toggle = el("button", parts.toggle.classes.join(" ")) as HTMLButtonElement;
   setIcon(toggle, "CLOCK");
   toggle.type = "button";
-  toggle.setAttribute("aria-label", "Open the clock");
+  toggle.setAttribute("aria-label", messages.timepickerOpenLabel);
   // `mdy-timepicker__popup` is the class the themes position and frame; the controller only
   // names the dialog, the hour and the minute.
   const dialog = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
@@ -69,14 +77,14 @@ export function renderTimepickerField(
   const hourSegment = el("div", parts.hour.classes.join(" "));
   const hourInput = el("input", parts.hourControl.classes.join(" ")) as HTMLInputElement;
   hourInput.type = "number";
-  hourInput.setAttribute("aria-label", "Hour");
+  hourInput.setAttribute("aria-label", messages.timepickerHourLabel);
   hourSegment.appendChild(hourInput);
   const separator = el("span", "mdy-timepicker-separator");
   setText(separator, ":");
   const minuteSegment = el("div", parts.minute.classes.join(" "));
   const minuteInput = el("input", parts.hourControl.classes.join(" ")) as HTMLInputElement;
   minuteInput.type = "number";
-  minuteInput.setAttribute("aria-label", "Minute");
+  minuteInput.setAttribute("aria-label", messages.timepickerMinuteLabel);
   minuteSegment.appendChild(minuteInput);
   fields.append(hourSegment, separator, minuteSegment);
   const period = el("div", parts.period.classes.join(" "));
@@ -103,10 +111,10 @@ export function renderTimepickerField(
   const spacer = el("div", "mdy-timepicker-spacer");
   const confirmButton = el("button", `${parts.action.classes.join(" ")} mdy-timepicker-action-btn--confirm`) as HTMLButtonElement;
   confirmButton.type = "button";
-  setText(confirmButton, "Confirm");
+  setText(confirmButton, messages.timepickerConfirm);
   const cancelButton = el("button", parts.action.classes.join(" ")) as HTMLButtonElement;
   cancelButton.type = "button";
-  setText(cancelButton, "Cancel");
+  setText(cancelButton, messages.timepickerCancel);
   actions.append(modeToggle, spacer, cancelButton, confirmButton);
 
   // The container is what the popup frames: it carries the padding, the width and the surface, so

@@ -18,6 +18,8 @@ import {
   shownErrorsOf,
   showsAsInvalid,
   type MdyDateRangeValue,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -32,6 +34,12 @@ export function renderDaterangeField(
   reactivity?: MdyReactivity,
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
   widgetId: string = f.name,
+  /**
+   * The words this control shows. The engine has no opinion about them, so they arrive from the
+   * widget contract's tables rather than being written here — three renderers each spelling
+   * "open the calendar" is three answers to one question.
+   */
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
 ): MdyMountedField {
   reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
@@ -67,11 +75,11 @@ export function renderDaterangeField(
   endInput.type = "text";
   endInput.autocomplete = "off";
   endInput.setAttribute("aria-label", `${f.label ?? "Range"} — end`);
-  endInput.placeholder = "End";
+  endInput.placeholder = messages.daterangeEndLabel;
   const toggle = el("button", definition.parts.toggle.classes.join(" ")) as HTMLButtonElement;
   setIcon(toggle, "CALENDAR");
   toggle.type = "button";
-  toggle.setAttribute("aria-label", "Open the calendar");
+  toggle.setAttribute("aria-label", messages.daterangeChooseRange);
   toggle.setAttribute("aria-haspopup", "dialog");
 
   const popup = el("div", `${MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
@@ -82,12 +90,12 @@ export function renderDaterangeField(
   const header = el("div", definition.parts.dialogHeader.classes.join(" ")) as HTMLDivElement;
   const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   prevButton.type = "button";
-  prevButton.setAttribute("aria-label", "Previous month");
+  prevButton.setAttribute("aria-label", messages.datepickerPreviousMonth);
   setIcon(prevButton, "CHEVRON_LEFT");
   const monthLabel = el("span", "mdy-datepicker__header-label");
   const nextButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   nextButton.type = "button";
-  nextButton.setAttribute("aria-label", "Next month");
+  nextButton.setAttribute("aria-label", messages.datepickerNextMonth);
   setIcon(nextButton, "CHEVRON_RIGHT");
   header.append(prevButton, monthLabel, nextButton);
   const grid = buildCalendarGrid("daterange");

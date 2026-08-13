@@ -19,6 +19,8 @@ import {
   projectCalendarViewA11y,
   calendarViewOnToggle,
   type MdyCalendarViewMode,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -34,6 +36,12 @@ export function renderDatepickerField(
   reactivity?: MdyReactivity,
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
   widgetId: string = f.name,
+  /**
+   * The words this control shows. The engine has no opinion about them, so they arrive from the
+   * widget contract's tables rather than being written here — three renderers each spelling
+   * "open the calendar" is three answers to one question.
+   */
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
 ): MdyMountedField {
   reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
@@ -51,7 +59,7 @@ export function renderDatepickerField(
   const toggle = el("button", "mdy-datepicker__toggle") as HTMLButtonElement;
   setIcon(toggle, "CALENDAR");
   toggle.type = "button";
-  toggle.setAttribute("aria-label", "Open the calendar");
+  toggle.setAttribute("aria-label", messages.datepickerToggleLabel);
   // The popup, its header and the day cells carry the class names the shipped themes already
   // style (`mdy-datepicker__popup` positions and frames the panel, `__header` lays out the
   // month nav) — the controller only names the trigger and the grid.
@@ -60,7 +68,7 @@ export function renderDatepickerField(
   const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   prevButton.type = "button";
   setIcon(prevButton, "CHEVRON_LEFT");
-  prevButton.setAttribute("aria-label", "Previous month");
+  prevButton.setAttribute("aria-label", messages.datepickerPreviousMonth);
   // The header label opens the month view, which opens the year view: paging a month at a time put
   // a birth date thirty clicks away, and the other two renderers had grown this and this one had
   // not. Nobody decided that — see the calendar view contract.
@@ -69,7 +77,7 @@ export function renderDatepickerField(
   const nextButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   nextButton.type = "button";
   setIcon(nextButton, "CHEVRON_RIGHT");
-  nextButton.setAttribute("aria-label", "Next month");
+  nextButton.setAttribute("aria-label", messages.datepickerNextMonth);
   header.append(prevButton, monthLabel, nextButton);
   const grid = buildCalendarGrid("datepicker");
   // The two views exist from the start, hidden: an element that only gains its classes when it is
@@ -233,7 +241,7 @@ export function renderDatepickerField(
           ? String(state.viewYear)
           : `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`,
     );
-    monthLabel.setAttribute("aria-label", "Change the month or year shown");
+    monthLabel.setAttribute("aria-label", messages.datepickerChangeView(monthLabel.textContent ?? ""));
     // Paging belongs to the day view: in the other two the arrows would move a month nobody is
     // looking at.
     prevButton.hidden = state.viewMode !== "days";

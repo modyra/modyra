@@ -3,7 +3,7 @@
   "score": {
     "published": 662,
     "asserted": 401,
-    "shown": 60
+    "shown": 68
   },
   "uncovered": [
     {
@@ -74,48 +74,6 @@
     },
     {
       "name": "MDY_FIELD_STATE_CLASSES",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_I18N_DEFAULT_TAGS",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_I18N_MESSAGES_DE",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_I18N_MESSAGES_DEFAULT",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_I18N_MESSAGES_ES",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_I18N_MESSAGES_FR",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_I18N_MESSAGES_IT",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "MDY_I18N_PRESETS",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
@@ -3026,12 +2984,6 @@
     },
     {
       "name": "mdyFormSnapshot",
-      "asserted": true,
-      "shown": false,
-      "reason": "published and never shown"
-    },
-    {
-      "name": "messagesForLocale",
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"

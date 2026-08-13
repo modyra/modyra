@@ -17,6 +17,8 @@ import {
   overlayAnchoringFor,
   shownErrorsOf,
   type MdyElementLookup,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -31,6 +33,12 @@ export function renderMultiselectField(
   reactivity?: MdyReactivity,
   mode: MdyMultiselectMode = "single",
   widgetId: string = f.name,
+  /**
+   * The words this control shows. The engine has no opinion about them, so they arrive from the
+   * widget contract's tables rather than being written here — three renderers each spelling
+   * "open the calendar" is three answers to one question.
+   */
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
 ): MdyMountedField {
   reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
@@ -47,7 +55,7 @@ export function renderMultiselectField(
   const header = el("div", parts.header.classes.join(" "));
   const searchButton = el("button", parts.searchButton.classes.join(" ")) as HTMLButtonElement;
   searchButton.type = "button";
-  searchButton.setAttribute("aria-label", "Search the options");
+  searchButton.setAttribute("aria-label", messages.searchOptionsLabel);
   setIcon(searchButton, "SEARCH");
   // Waiting on its options: the indicator goes on the search button, which is the control here, so
   // the field says it is loading without being opened.
@@ -64,7 +72,7 @@ export function renderMultiselectField(
   const popup = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   const search = el("input", parts.search.classes.join(" ")) as HTMLInputElement;
   search.type = "search";
-  search.placeholder = "Filter…";
+  search.placeholder = messages.searchPlaceholder;
 
   /**
    * One option chip, in whichever grid asked for it.

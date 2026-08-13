@@ -90,8 +90,8 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
           }
         }}
       >
-        <div class="mdy-colors__dropdown-header">Presets</div>
-        <div class="mdy-colors__presets" role="listbox" aria-label="Colour presets">
+        <div class="mdy-colors__dropdown-header">${this.messages.colorPresetsHeader}</div>
+        <div class="mdy-colors__presets" role="listbox" aria-label=${this.messages.colorPresetsHeader}>
           ${this.presets.map(
             (preset) => html`<button
               type="button"
