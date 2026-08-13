@@ -66,6 +66,21 @@
         font-size: 0.9rem;
       }
       @media (max-width: 900px) { .panel { grid-template-columns: minmax(0, 1fr); } }
+          .demo-scenario { max-width: 60ch; opacity: 0.9; margin: 0 0 1rem; }
+      .demo-level { border-left: 3px solid color-mix(in srgb, var(--mdy-primary) 60%, transparent); padding-left: 0.85rem; margin: 0.6rem 0; }
+      .demo-level .demo-level { border-left-color: color-mix(in srgb, var(--mdy-primary) 35%, transparent); }
+      .demo-level .demo-level .demo-level { border-left-color: color-mix(in srgb, var(--mdy-primary) 18%, transparent); }
+      .demo-level-caption { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mdy-on-surface-variant); }
+      .demo-badge { display: inline-block; padding: 0.05rem 0.5rem; border-radius: 999px; font-size: 0.72rem; background: color-mix(in srgb, var(--mdy-primary) 14%, transparent); }
+      .demo-hidden-note { font-size: 0.8rem; font-style: italic; opacity: 0.75; }
+      .demo-action { display: grid; gap: 0.05rem; text-align: left; }
+      .demo-action small { font-size: 0.7rem; opacity: 0.75; font-weight: normal; }
+      .demo-verdict { font-size: 0.9rem; }
+      .demo-verdict li { margin: 0.15rem 0; list-style: none; }
+      .demo-verdict .ok::before { content: "\2713  "; color: var(--mdy-primary); }
+      .demo-verdict .ko::before { content: "\2717  "; }
+      .demo-state details { margin-top: 0.5rem; }
+      .demo-state summary { cursor: pointer; font-size: 0.78rem; opacity: 0.8; }
     </style>
   </head>
 

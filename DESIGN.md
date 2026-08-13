@@ -285,3 +285,22 @@ Baselines are per engine and per platform, and they compare a renderer to *itsel
 claims two engines look alike.
 
 If a change is visual and none of these rules covers it, that is a gap in this file. Extend it.
+
+## Enterprise demo pages
+
+The demos exist to be understood by someone who has never seen the engine. Three rules, enforced by
+review of screenshots before any push:
+
+**A demo opens with its scenario.** Two or three sentences in business language — who you are, what
+you are doing, what the demo proves — before any control. A demo that needs the reader to infer its
+point from buttons has not stated it.
+
+**State is sentences, not JSON.** The panel says "Fattura INV-1 — ripartito 95%, manca 5%", with
+validity as ✓/✗ and errors as phrases naming the thing, not the path. The raw JSON stays available
+behind a `<details>` for the reader who wants it — the default is the sentence.
+
+**Hierarchy is drawn, not implied.** Levels are indented under a coloured left border
+(`--mdy-primary` at decreasing strength per depth), each level is captioned (Ordine / Riga /
+Allocazione), a locked row carries a badge, and a collapsed level says what it hides ("2
+ripartizioni nascoste") instead of disappearing. Buttons carry a one-line subtext of what they will
+do. The vocabulary is identical in all three renderers.
