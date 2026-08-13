@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="data:," />
+    <link id="theme" rel="stylesheet" href="./themes/modyra-modern.css" />
+    <title>Modyra × lit — enterprise</title>
+    <style>
+      body { margin: 2rem auto; max-width: 60rem; font-family: system-ui, sans-serif; }
+      .order-box { border: 1px solid var(--mdy-outline-variant); border-radius: 10px; padding: 0.75rem 1rem; margin: 0.75rem 0; background: var(--mdy-surface); }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem; }
+      .demo-state { font-size: 0.8125rem; border-left: 3px solid var(--mdy-primary); padding: 0.6rem 0.85rem; background: var(--mdy-surface-container-low); overflow-x: auto; }
+      .bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0; }
+    </style>
+  </head>
+  <body>
+    <nested-orders></nested-orders>
+    <script type="module" src="./enterprise.js"></script>
+  </body>
+</html>
