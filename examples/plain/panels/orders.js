@@ -190,7 +190,7 @@ export const ordersPanel = {
     });
     actionWithHint(bar, "Filter ORD", () => { filter = filter ? "" : "ORD"; draw(); });
 
-    print = readoutPrinter(readout, () => ({
+    const collect = () => ({
       orders: form.f.orders.keys(),
       lines: Object.fromEntries(form.f.orders.keys().map((k) => [k, form.f.orders.row(k).lines.keys()])),
       valid: form.state.valid(),
@@ -201,7 +201,42 @@ export const ordersPanel = {
       canUndo: form.canUndo(),
       canRedo: form.canRedo(),
       value: form.getValue().orders,
-    }));
+    });
+
+    // The readable half: sentences above, the raw JSON behind a details — same data, same tick.
+    const verdict = document.createElement("ul");
+    verdict.className = "demo-verdict";
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "dati grezzi (JSON)";
+    details.append(summary);
+    readout.before(verdict, details);
+    details.append(readout);
+    const line = (cls, text) => {
+      const li = document.createElement("li");
+      li.className = cls;
+      li.textContent = text;
+      return li;
+    };
+    print = () => {
+      const s = collect();
+      readout.textContent = JSON.stringify(s, null, 2);
+      const rows = [];
+      rows.push(s.valid
+        ? line("ok", "Tutti i controlli passano: ogni riga e coperta dalle sue allocazioni")
+        : line("ko", "L'ordine non e completo — vedi sotto"));
+      if (s.pending) rows.push(line("", "… verifica disponibilita lotto in corso"));
+      for (const key of s.orders) {
+        rows.push(line("", key.startsWith("tmp:")
+          ? `Ordine ${key} — provvisorio, in attesa del codice server`
+          : `Ordine ${key} — confermato`));
+      }
+      for (const errs of Object.values(s.lineErrors)) {
+        for (const e of errs) rows.push(line("ko", e.message.replace(/^line (\S+): allocated (\d+) of (\d+)$/, "Riga $1 — allocati $2 su $3")));
+      }
+      if (s.canUndo) rows.push(line("", "Undo disponibile: l'ultima operazione e reversibile, struttura inclusa"));
+      verdict.replaceChildren(...rows);
+    };
 
     const effect = form.reactivity.effect(() => {
       form.state.valid();
