@@ -287,3 +287,12 @@ test("orders: three keyed levels, and the model owns what the screen hides", asy
   await expect.poll(async () => (await readout(page)).orders).toEqual(["tmp:1"]);
   expect((await readout(page)).lines["tmp:1"]).toEqual(["l1"]);
 });
+
+test("invoices: a closed line at 95% keeps the invoice invalid", async ({ page }) => {
+  await open(page, "invoices");
+  await expect.poll(async () => (await readout(page)).valid).toBe(false);
+  await page.locator('[data-action="Close the line"]').click();
+  await expect.poll(async () => JSON.stringify((await readout(page)).lineErrors)).toContain("95%");
+  await page.locator('[data-action="Fix the split"]').click();
+  await expect.poll(async () => (await readout(page)).valid).toBe(true);
+});

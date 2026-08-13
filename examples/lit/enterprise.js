@@ -102,3 +102,86 @@ class NestedOrders extends LitElement {
   }
 }
 customElements.define("nested-orders", NestedOrders);
+
+const linesBalanced = (lines) => {
+  const failures = [];
+  for (const [key, line] of Object.entries(lines ?? {})) {
+    const splits = Object.entries(line.splits ?? {});
+    const total = splits.reduce((sum, [, s]) => sum + Number(s.percent ?? 0), 0);
+    if (total !== 100) failures.push(`line ${key}: splits total ${total}%`);
+    const centres = splits.map(([, s]) => s.costCenter).filter(Boolean);
+    if (new Set(centres).size !== centres.length) failures.push(`line ${key}: duplicate cost centre`);
+  }
+  return failures;
+};
+
+class NestedInvoices extends LitElement {
+  static properties = { collapsed: { state: true }, approved: { state: true } };
+
+  form = createLitForm({
+    invoices: record(group({
+      supplier: field("", [required()]),
+      lines: record(group({
+        desc: field(""),
+        amount: field(100),
+        splits: record(group({ costCenter: field(""), percent: field(0) })),
+      }), { validators: [linesBalanced] }),
+    })),
+  });
+
+  constructor() {
+    super();
+    this.collapsed = new Set();
+    this.approved = [];
+    this.form.f.invoices.upsert("INV-1", {
+      supplier: "Acme",
+      lines: { l1: { desc: "Consulting", amount: 100, splits: { s1: { costCenter: "CC-10", percent: 60 }, s2: { costCenter: "CC-20", percent: 35 } } } },
+    });
+    this._tracker = new MdyFormController(this, [this.form.f.invoices.keys, this.form.value, this.form.state.valid]);
+  }
+
+  createRenderRoot() { return this; }
+
+  #approve() {
+    const base = "invoices.INV-1.lines.l1";
+    for (const leaf of ["desc", "amount", "splits.s1.costCenter", "splits.s1.percent", "splits.s2.costCenter", "splits.s2.percent"]) {
+      this.form.setReadonly(`${base}.${leaf}`, () => true);
+    }
+    this.approved = [...this.approved, base];
+  }
+
+  render() {
+    const invoices = this.form.f.invoices;
+    return html`
+      <h1>Invoices — splits that must balance</h1>
+      <div class="bar">
+        <button @click=${() => { const next = new Set(this.collapsed); next.add("INV-1.l1"); this.collapsed = next; }}>Close the line</button>
+        <button @click=${() => { const next = new Set(this.collapsed); next.delete("INV-1.l1"); this.collapsed = next; }}>Reopen the line</button>
+        <button @click=${() => { invoices.row("INV-1").lines.row("l1").splits.row("s2").percent.set(40); }}>Fix the split</button>
+        <button @click=${() => this.#approve()}>Approve the line</button>
+        <button @click=${() => { this.form.submit(async () => [{ path: "invoices.INV-1.lines.l1.splits.s1.percent", kind: "server", message: "CC-10 is frozen this quarter" }]); }}>Submit to the server</button>
+      </div>
+      ${invoices.keys().map((invKey) => html`<div class="order-box" data-invoice=${invKey}>
+        <strong>${invKey} — ${invoices.row(invKey).supplier.value()}</strong>
+        ${invoices.row(invKey).lines.keys().map((lineKey) => this.collapsed.has(`${invKey}.${lineKey}`) ? nothing : html`
+          <div class="grid" data-line=${`${invKey}.${lineKey}`}>
+            <mdy-text-field aria-label=${`Description ${lineKey}`} .field=${invoices.row(invKey).lines.row(lineKey).desc}></mdy-text-field>
+            <mdy-number-field aria-label=${`Amount ${lineKey}`} .field=${invoices.row(invKey).lines.row(lineKey).amount}></mdy-number-field>
+          </div>
+          ${invoices.row(invKey).lines.row(lineKey).splits.keys().map((splitKey) => html`<div class="grid" data-split=${`${invKey}.${lineKey}.${splitKey}`}>
+            <mdy-text-field aria-label=${`Cost centre ${splitKey}`} .field=${invoices.row(invKey).lines.row(lineKey).splits.row(splitKey).costCenter}></mdy-text-field>
+            <mdy-number-field aria-label=${`Percent ${splitKey}`} .field=${invoices.row(invKey).lines.row(lineKey).splits.row(splitKey).percent}></mdy-number-field>
+          </div>`)}`)}
+      </div>`)}
+      <pre class="demo-state">${JSON.stringify({
+        invoices: this.form.f.invoices.keys(),
+        lines: Object.fromEntries(this.form.f.invoices.keys().map((k) => [k, this.form.f.invoices.row(k).lines.keys()])),
+        valid: this.form.state.valid(),
+        lineErrors: Object.fromEntries(this.form.f.invoices.keys().map((k) => [k, this.form.f.invoices.row(k).lines.errors()]).filter(([, e]) => e.length > 0)),
+        approved: this.approved,
+        splitServerError: this.form.errorsFor("invoices.INV-1.lines.l1.splits.s1.percent")().map((e) => e.message),
+        value: this.form.getValue().invoices,
+      }, null, 2)}</pre>`;
+  }
+}
+customElements.define("nested-invoices", NestedInvoices);
