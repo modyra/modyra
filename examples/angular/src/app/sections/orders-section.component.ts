@@ -31,38 +31,64 @@ const linesCovered = (lines: Readonly<Record<string, unknown>>): string[] => {
   imports: [MdyFormComponent, MdyTextComponent, MdyNumberComponent],
   template: `
     <section class="demo-section">
-      <h2>Orders — three keyed levels</h2>
+      <h2>Ordini, righe, allocazioni</h2>
+      <p class="demo-scenario">
+        Sei un operatore logistico. Gestisci ordini che contengono righe di prodotto, e ogni riga va
+        coperta da allocazioni di magazzino. La demo mostra che ordinare, filtrare e chiudere pezzi
+        di interfaccia non tocca mai i dati: il modello possiede tutto, lo schermo ne mostra una parte.
+      </p>
       <mdy-form [form]="form">
         <div class="keyed-rows-actions">
-          <button type="button" (click)="addOrder()">Add order</button>
-          <button type="button" (click)="serverAssigns()">Server assigns code</button>
-          <button type="button" (click)="addAllocation()">Add allocation</button>
-          <button type="button" (click)="removeOrder()">Remove order</button>
-          <button type="button" (click)="form.undo()">Undo</button>
-          <button type="button" (click)="toggleCollapse()">Collapse first</button>
-          <button type="button" (click)="filter.set(filter() ? '' : 'ORD')">Filter ORD</button>
+          <button type="button" class="demo-action" (click)="addOrder()"><span>Add order</span><small>crea un ordine con chiave provvisoria tmp:*</small></button>
+          <button type="button" class="demo-action" (click)="serverAssigns()"><span>Server assigns code</span><small>il server risponde: la chiave tmp diventa ORD-*, i dati restano</small></button>
+          <button type="button" class="demo-action" (click)="addAllocation()"><span>Add allocation</span><small>aggiunge un'allocazione alla prima riga (copre la quantita)</small></button>
+          <button type="button" class="demo-action" (click)="removeOrder()"><span>Remove order</span><small>elimina il primo ordine con tutte le righe e allocazioni</small></button>
+          <button type="button" class="demo-action" (click)="form.undo()"><span>Undo</span><small>ripristina intero l'ultimo ordine rimosso</small></button>
+          <button type="button" class="demo-action" (click)="toggleCollapse()"><span>Collapse first</span><small>nasconde le righe del primo ordine: la validita non cambia</small></button>
+          <button type="button" class="demo-action" (click)="filter.set(filter() ? '' : 'ORD')"><span>Filter ORD</span><small>mostra solo gli ordini confermati: i tmp restano nel modello</small></button>
         </div>
         @for (orderKey of visibleOrders(); track orderKey) {
           <div class="order-box" [attr.data-order]="orderKey">
-            <strong>{{ orderKey }} — {{ form.f.orders.row(orderKey).customer.value() }}</strong>
-            @if (!collapsed().has(orderKey)) {
+            <strong>
+              Ordine {{ orderKey }} — {{ form.f.orders.row(orderKey).customer.value() }}
+              @if (orderKey.startsWith("tmp:")) { <span class="demo-badge">provvisorio</span> }
+            </strong>
+            @if (collapsed().has(orderKey)) {
+              <p class="demo-hidden-note">
+                {{ form.f.orders.row(orderKey).lines.keys().length }}
+                {{ form.f.orders.row(orderKey).lines.keys().length === 1 ? "riga nascosta" : "righe nascoste" }}
+                — validita ed errori restano attivi
+              </p>
+            } @else {
               @for (lineKey of form.f.orders.row(orderKey).lines.keys(); track lineKey) {
-                <div class="grid" [attr.data-line]="orderKey + '.' + lineKey">
-                  <mdy-control-text [field]="form.f.orders.row(orderKey).lines.row(lineKey).sku" [ariaLabel]="'SKU ' + lineKey" />
-                  <mdy-control-number [field]="form.f.orders.row(orderKey).lines.row(lineKey).qty" [ariaLabel]="'Qty ' + lineKey" />
-                </div>
-                @for (allocKey of form.f.orders.row(orderKey).lines.row(lineKey).allocs.keys(); track allocKey) {
-                  <div class="grid" [attr.data-alloc]="orderKey + '.' + lineKey + '.' + allocKey">
-                    <mdy-control-text [field]="form.f.orders.row(orderKey).lines.row(lineKey).allocs.row(allocKey).lot" [ariaLabel]="'Lot ' + allocKey" />
-                    <mdy-control-number [field]="form.f.orders.row(orderKey).lines.row(lineKey).allocs.row(allocKey).qty" [ariaLabel]="'Allocated ' + allocKey" />
+                <div class="demo-level">
+                  <div class="demo-level-caption">Riga {{ lineKey }} — prodotto e quantita</div>
+                  <div class="grid" [attr.data-line]="orderKey + '.' + lineKey">
+                    <mdy-control-text [field]="form.f.orders.row(orderKey).lines.row(lineKey).sku" [ariaLabel]="'SKU ' + lineKey" />
+                    <mdy-control-number [field]="form.f.orders.row(orderKey).lines.row(lineKey).qty" [ariaLabel]="'Qty ' + lineKey" />
                   </div>
-                }
+                  @for (allocKey of form.f.orders.row(orderKey).lines.row(lineKey).allocs.keys(); track allocKey) {
+                    <div class="demo-level">
+                      <div class="demo-level-caption">Allocazione {{ allocKey }} — lotto e quantita coperta</div>
+                      <div class="grid" [attr.data-alloc]="orderKey + '.' + lineKey + '.' + allocKey">
+                        <mdy-control-text [field]="form.f.orders.row(orderKey).lines.row(lineKey).allocs.row(allocKey).lot" [ariaLabel]="'Lot ' + allocKey" />
+                        <mdy-control-number [field]="form.f.orders.row(orderKey).lines.row(lineKey).allocs.row(allocKey).qty" [ariaLabel]="'Allocated ' + allocKey" />
+                      </div>
+                    </div>
+                  }
+                </div>
               }
             }
           </div>
         }
       </mdy-form>
-      <pre class="demo-state">{{ stateJson() }}</pre>
+      <ul class="demo-verdict">
+        @for (row of sentences(); track $index) { <li [class]="row[0]">{{ row[1] }}</li> }
+      </ul>
+      <details>
+        <summary>dati grezzi (JSON)</summary>
+        <pre class="demo-state">{{ stateJson() }}</pre>
+      </details>
     </section>
   `,
 })
@@ -129,9 +155,17 @@ export class OrdersSectionComponent {
     this.collapsed.set(next);
   }
 
-  stateJson(): string {
+  /** The state both halves of the panel read — sentences above, JSON behind the details. */
+  private state(): {
+    readonly orders: readonly string[];
+    readonly valid: boolean;
+    readonly pending: boolean;
+    readonly lineErrors: Record<string, readonly { readonly message: string }[]>;
+    readonly canUndo: boolean;
+    readonly [key: string]: unknown;
+  } {
     const orders = this.form.f.orders;
-    return JSON.stringify({
+    return {
       orders: orders.keys(),
       lines: Object.fromEntries(orders.keys().map((k) => [k, orders.row(k).lines.keys()])),
       valid: this.form.state.valid(),
@@ -142,6 +176,31 @@ export class OrdersSectionComponent {
       canUndo: this.form.canUndo(),
       canRedo: this.form.canRedo(),
       value: this.form.value().orders,
-    }, null, 2);
+    };
+  }
+
+  stateJson(): string {
+    return JSON.stringify(this.state(), null, 2);
+  }
+
+  sentences(): readonly (readonly [string, string])[] {
+    const s = this.state();
+    const rows: (readonly [string, string])[] = [];
+    rows.push(s.valid
+      ? ["ok", "Tutti i controlli passano: ogni riga e coperta dalle sue allocazioni"]
+      : ["ko", "L'ordine non e completo — vedi sotto"]);
+    if (s.pending) rows.push(["", "… verifica disponibilita lotto in corso"]);
+    for (const key of s.orders) {
+      rows.push(["", key.startsWith("tmp:")
+        ? `Ordine ${key} — provvisorio, in attesa del codice server`
+        : `Ordine ${key} — confermato`]);
+    }
+    for (const errs of Object.values(s.lineErrors)) {
+      for (const e of errs) {
+        rows.push(["ko", e.message.replace(/^line (\S+): allocated (\d+) of (\d+)$/, "Riga $1 — allocati $2 su $3")]);
+      }
+    }
+    if (s.canUndo) rows.push(["", "Undo disponibile: l'ultima operazione e reversibile, struttura inclusa"]);
+    return rows;
   }
 }
