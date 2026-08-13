@@ -17,17 +17,31 @@ import { defineConfig } from "@playwright/test";
  * Build first: `npm run build:demo` for Angular, `npm run build:examples` for the other two.
  */
 const RENDERERS = [
+  /**
+   * `fullyParallel` is per renderer, not global. The plain and lit files are stacks of independent
+   * screenshot-and-assert tests — one theme, one widget each — that parallelise safely and carry
+   * most of the suite's wall time. The Angular specs are the heavy ones, and two of them are
+   * load-sensitive in a way the suite documents but has not isolated (see the fixme in
+   * e2e/demo.spec.ts); running their file-mates concurrently is exactly the load that tips them.
+   */
   {
     name: "angular", port: 4173, command: "node scripts/serve-static.mjs dist/demo/browser 4173",
-    match: { testIgnore: ["plain/**", "lit/**"] },
+    match: { testIgnore: ["plain/**", "lit/**"] }, fullyParallel: false,
   },
   {
     name: "plain", port: 4307, command: "node scripts/serve-example.mjs plain 4307",
     match: { testMatch: ["plain/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts", "conditional/**/*.spec.ts"] },
+    // Not parallel: the plain demo's full-page height oscillates by 1px between consecutive
+    // captures under CPU contention (actual 4502, previous 4501, contents byte-identical), so the
+    // screenshot stabilisation loop never converges. Measured on the runner, 2026-08-13. Until the
+    // fractional-height source is found, this project keeps the load profile its baselines were
+    // recorded under.
+    fullyParallel: false,
   },
   {
     name: "lit", port: 4303, command: "node scripts/serve-example.mjs lit 4303",
     match: { testMatch: ["lit/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts", "conditional/**/*.spec.ts"] },
+    fullyParallel: true,
   },
 ] as const;
 
@@ -48,6 +62,7 @@ const ENGINES = [
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
+  workers: process.env.CI ? "100%" : undefined,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
   /**
@@ -75,6 +90,7 @@ export default defineConfig({
     ENGINES.map((engine) => ({
       name: `${renderer.name}${engine.suffix}`,
       ...renderer.match,
+      fullyParallel: renderer.fullyParallel,
       use: {
         baseURL: `http://localhost:${renderer.port}`,
         browserName: engine.browserName,
