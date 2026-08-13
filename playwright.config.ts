@@ -31,7 +31,12 @@ const RENDERERS = [
   {
     name: "plain", port: 4307, command: "node scripts/serve-example.mjs plain 4307",
     match: { testMatch: ["plain/**/*.spec.ts", "shared/**/*.spec.ts", "record-table/**/*.spec.ts", "conditional/**/*.spec.ts"] },
-    fullyParallel: true,
+    // Not parallel: the plain demo's full-page height oscillates by 1px between consecutive
+    // captures under CPU contention (actual 4502, previous 4501, contents byte-identical), so the
+    // screenshot stabilisation loop never converges. Measured on the runner, 2026-08-13. Until the
+    // fractional-height source is found, this project keeps the load profile its baselines were
+    // recorded under.
+    fullyParallel: false,
   },
   {
     name: "lit", port: 4303, command: "node scripts/serve-example.mjs lit 4303",

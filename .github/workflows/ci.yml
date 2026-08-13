@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+# A push supersedes the run of the commit it replaced; finishing the old one buys nothing and
+# delays the verdict on the code that actually exists. Runs on main are never cancelled — every
+# main commit keeps its own verdict.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
