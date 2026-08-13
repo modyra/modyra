@@ -7,7 +7,11 @@ import { expect, test, type Page } from "@playwright/test";
 const entry = (project: string): string =>
   project.startsWith("plain") ? "/lab.html#orders" : project.startsWith("lit") ? "/enterprise.html" : "/";
 const scopeOf = (page: Page, project: string) =>
-  project.startsWith("angular") ? page.locator("app-orders-section") : page.locator("body");
+  project.startsWith("angular") ? page.locator("app-orders-section")
+  // The lit page hosts more than one demo, so the element is the scope — a page-wide selector
+  // would resolve to whichever demo happens to come first.
+  : project.startsWith("lit") ? page.locator("nested-orders")
+  : page.locator("body");
 
 const state = async (page: Page, project: string) =>
   JSON.parse((await scopeOf(page, project).locator("pre.demo-state").textContent()) ?? "{}");
