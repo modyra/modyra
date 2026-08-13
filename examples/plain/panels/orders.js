@@ -113,23 +113,50 @@ export const ordersPanel = {
         box.className = "order-box";
         box.dataset.order = orderKey;
         const head = document.createElement("strong");
-        head.textContent = `${orderKey} — ${order.customer.value()}`;
+        head.textContent = `Ordine ${orderKey} — ${order.customer.value()}`;
         box.append(head);
+        if (orderKey.startsWith("tmp:")) {
+          const badge = document.createElement("span");
+          badge.className = "demo-badge";
+          badge.textContent = "provvisorio";
+          head.append(" ", badge);
+        }
+        if (collapsed.has(orderKey)) {
+          const note = document.createElement("p");
+          note.className = "demo-hidden-note";
+          const n = order.lines.keys().length;
+          note.textContent = `${n} ${n === 1 ? "riga nascosta" : "righe nascoste"} — validita ed errori restano attivi`;
+          box.append(note);
+        }
         if (!collapsed.has(orderKey)) {
           for (const lineKey of order.lines.keys()) {
             const line = order.lines.row(lineKey);
+            const level = document.createElement("div");
+            level.className = "demo-level";
+            const cap = document.createElement("div");
+            cap.className = "demo-level-caption";
+            cap.textContent = `Riga ${lineKey} — prodotto e quantita`;
+            level.append(cap);
+            box.append(level);
             const row = document.createElement("div");
             row.className = "grid";
             row.dataset.line = `${orderKey}.${lineKey}`;
-            box.append(row);
+            level.append(row);
             rendered.push(renderField(row, { name: `o-${orderKey}-${lineKey}-sku`, kind: "text", ariaLabel: `SKU ${lineKey}` }, line.sku, form.reactivity));
             rendered.push(renderField(row, { name: `o-${orderKey}-${lineKey}-qty`, kind: "number", ariaLabel: `Qty ${lineKey}` }, line.qty, form.reactivity));
             for (const allocKey of line.allocs.keys()) {
               const alloc = line.allocs.row(allocKey);
+              const sub = document.createElement("div");
+              sub.className = "demo-level";
+              const scap = document.createElement("div");
+              scap.className = "demo-level-caption";
+              scap.textContent = `Allocazione ${allocKey} — lotto e quantita coperta`;
+              sub.append(scap);
+              level.append(sub);
               const arow = document.createElement("div");
               arow.className = "grid";
               arow.dataset.alloc = `${orderKey}.${lineKey}.${allocKey}`;
-              box.append(arow);
+              sub.append(arow);
               rendered.push(renderField(arow, { name: `o-${orderKey}-${lineKey}-${allocKey}-lot`, kind: "text", ariaLabel: `Lot ${allocKey}` }, alloc.lot, form.reactivity));
               rendered.push(renderField(arow, { name: `o-${orderKey}-${lineKey}-${allocKey}-aqty`, kind: "number", ariaLabel: `Allocated ${allocKey}` }, alloc.qty, form.reactivity));
             }
