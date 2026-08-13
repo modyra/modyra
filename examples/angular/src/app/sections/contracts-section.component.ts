@@ -68,7 +68,7 @@ const linesCoherent = (lines: Readonly<Record<string, unknown>>): string[] => {
           <button type="button" class="demo-action" (click)="restore()"><span>Restore the ladder</span><small>riporta b2 a partire da 100: gli scaglioni tornano contigui</small></button>
           <button type="button" class="demo-action" (click)="addBand()"><span>Add a band</span><small>aggiunge lo scaglione oltre i 500 pezzi</small></button>
           <button type="button" class="demo-action" (click)="raiseTopPrice()"><span>Raise the top price</span><small>porta l'ultimo scaglione sopra il precedente: il prezzo risale</small></button>
-          <button type="button" class="demo-action" (click)="descending.set(!descending())"><span>Sort descending</span><small>inverte solo l'ordine di lettura: le chiavi non cambiano</small></button>
+          <button type="button" class="demo-action" (click)="descending.set(!descending())"><span>Sort bands descending</span><small>inverte solo l'ordine di lettura: le chiavi non cambiano</small></button>
           <button type="button" class="demo-action" (click)="collapsed.set(!collapsed())"><span>Collapse the bands</span><small>chiude le fasce: le regole di copertura restano attive</small></button>
           <button type="button" class="demo-action" (click)="sendForApproval()"><span>Send for approval</span><small>il server rifiuta lo sconto oltre la soglia sulla fascia b2</small></button>
         </div>

@@ -413,7 +413,7 @@ class NestedContracts extends LitElement {
         <button class="demo-action" @click=${() => { this.#bands().row("b2").minQty.set(100); }}><span>Restore the ladder</span><small>riporta b2 a partire da 100: gli scaglioni tornano contigui</small></button>
         <button class="demo-action" @click=${() => { const b = this.#bands(); b.upsert(`b${b.keys().length + 1}`, { minQty: 500, maxQty: 2000, price: 7 }); }}><span>Add a band</span><small>aggiunge lo scaglione oltre i 500 pezzi</small></button>
         <button class="demo-action" @click=${() => { const b = this.#bands(); const last = b.keys()[b.keys().length - 1]; if (last) b.row(last).price.set(99); }}><span>Raise the top price</span><small>porta l'ultimo scaglione sopra il precedente: il prezzo risale</small></button>
-        <button class="demo-action" @click=${() => { this.descending = !this.descending; }}><span>Sort descending</span><small>inverte solo l'ordine di lettura: le chiavi non cambiano</small></button>
+        <button class="demo-action" @click=${() => { this.descending = !this.descending; }}><span>Sort bands descending</span><small>inverte solo l'ordine di lettura: le chiavi non cambiano</small></button>
         <button class="demo-action" @click=${() => { this.collapsed = !this.collapsed; }}><span>Collapse the bands</span><small>chiude le fasce: le regole di copertura restano attive</small></button>
         <button class="demo-action" @click=${() => { this.form.submit(async () => [{ path: "contracts.C-1.lines.l1.bands.b2.price", kind: "server", message: "Discount above 20% needs approval" }]); }}><span>Send for approval</span><small>il server rifiuta lo sconto oltre la soglia sulla fascia b2</small></button>
       </div>
