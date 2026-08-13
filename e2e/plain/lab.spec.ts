@@ -296,3 +296,22 @@ test("invoices: a closed line at 95% keeps the invoice invalid", async ({ page }
   await page.locator('[data-action="Fix the split"]').click();
   await expect.poll(async () => (await readout(page)).valid).toBe(true);
 });
+
+test("contracts: a rule about the whole collection outlives the bands being drawn", async ({ page }) => {
+  await open(page, "contracts");
+  await expect.poll(async () => (await readout(page)).valid).toBe(true);
+
+  // The bands stop tiling the axis; the verdict names both, and survives them being collapsed.
+  await page.locator('[data-action="Move the threshold"]').click();
+  await expect.poll(async () => (await readout(page)).bandErrors.join(" ")).toContain("overlap");
+  await page.locator('[data-action="Collapse the bands"]').click();
+  await expect(page.locator("[data-band]")).toHaveCount(0);
+  expect((await readout(page)).valid).toBe(false);
+
+  // Reading order is the screen's; the keys stay the model's.
+  await page.locator('[data-action="Collapse the bands"]').click();
+  const before = await readout(page);
+  await page.locator('[data-action="Sort descending"]').click();
+  await expect.poll(async () => (await readout(page)).readingOrder).toEqual([...before.readingOrder].reverse());
+  expect((await readout(page)).bands).toEqual(before.bands);
+});

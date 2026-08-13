@@ -483,3 +483,34 @@ test("a nested collection's own validators run, one instance per row", () => {
   assert.equal(form.state.valid(), true, "declaring the row clears that instance's verdict");
   form.destroy();
 });
+
+test("a validator two collections down answers for its own instance, not for its siblings", () => {
+  // The price-band shape: bands own a rule, and every line owns its own bands.
+  const ascending = (bands) => {
+    const mins = Object.values(bands ?? {}).map((b) => Number(b.min ?? 0));
+    return [...mins].sort((a, b) => a - b).join() === mins.join() ? [] : ["bands are out of order"];
+  };
+  const form = createForm({
+    contracts: record(group({
+      lines: record(group({ bands: record(group({ min: field(0) }), { validators: [ascending] }) })),
+    })),
+  });
+  form.f.contracts.upsert("c1", {
+    lines: {
+      l1: { bands: { b1: { min: 1 }, b2: { min: 100 } } },
+      l2: { bands: { b1: { min: 1 }, b2: { min: 100 } } },
+    },
+  });
+  assert.equal(form.state.valid(), true, "two well-ordered instances of the same nested rule");
+
+  form.f.contracts.row("c1").lines.row("l1").bands.row("b2").min.set(0);
+  assert.equal(form.errorsFor("contracts.c1.lines.l1.bands")().length, 1, "the error names the band collection that broke");
+  assert.deepEqual(form.errorsFor("contracts.c1.lines.l2.bands")(), [], "the other line's bands answer for themselves");
+  assert.equal(form.state.valid(), false);
+
+  // The rule outlives the row that broke it being replaced wholesale.
+  form.f.contracts.row("c1").lines.upsert("l1", { bands: { b1: { min: 1 }, b2: { min: 100 } } });
+  assert.deepEqual(form.errorsFor("contracts.c1.lines.l1.bands")(), [], "re-declaring the row recompiles its rule");
+  assert.equal(form.state.valid(), true);
+  form.destroy();
+});
