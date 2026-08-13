@@ -305,3 +305,46 @@ test("draftShapeMatches: null initial accepts JSON shapes, typed initials are st
   assert.equal(draftShapeMatches({ a: 1 }, { b: 2 }), true);
   assert.equal(draftShapeMatches({ a: 1 }, [1]), false);
 });
+
+/**
+ * A key the schema never declared does not become a field.
+ *
+ * `patch()` takes whatever a consumer received — a server response, a payload read back from
+ * storage — and a restored draft is the same data arriving through the draft manager. Neither may
+ * add a member to a typed form: `fieldNames()` is what a document-driven renderer draws from, and
+ * `getValue()` promises the shape the schema declares. `setValue()` has always ignored an
+ * undeclared member; these are the two doors that did not.
+ */
+test("an undeclared key in a patch is ignored, and the reads keep working", () => {
+  const form = createForm({ name: field("") });
+
+  form.patch({ evil: 1 });
+
+  assert.deepEqual(form.fieldNames(), ["name"]);
+  assert.deepEqual(form.getValue(), { name: "" });
+  assert.deepEqual(form.submitValue(), { name: "" }, "reading what would be submitted must not throw");
+});
+
+test("a restored draft cannot add a field the schema never declared", () => {
+  const store = new Map([
+    [
+      "hostile",
+      JSON.stringify({
+        __mdyDraft: 1,
+        savedAt: Date.now(),
+        value: { name: "restored", evil: 1 },
+      }),
+    ],
+  ]);
+  const storage = {
+    read: (key) => store.get(key) ?? null,
+    write: (key, value) => store.set(key, value),
+    remove: (key) => store.delete(key),
+  };
+
+  const form = createForm({ name: field("") }, { draft: { key: "hostile", storage } });
+
+  assert.deepEqual(form.fieldNames(), ["name"]);
+  assert.equal(form.getValue().name, "restored", "what the schema declares still restores");
+  assert.deepEqual(form.submitValue(), { name: "restored" });
+});

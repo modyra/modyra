@@ -482,6 +482,8 @@ export abstract class MdyTypedFormBase<
   protected readonly _adapter: MdyFormEngine;
   /** Leaf paths in schema order. */
   protected readonly _leafPaths: readonly string[];
+  /** The same paths as a set, for the reads that ask about one path at a time. */
+  protected readonly _leafPathSet: ReadonlySet<string>;
   /** Group prefixes — used to flatten nested patches. */
   protected readonly _groupPaths: ReadonlySet<string>;
   /** Array prefixes — used to flatten patches and unflatten values. */
@@ -529,6 +531,7 @@ export abstract class MdyTypedFormBase<
 
     const paths = collectSchemaPaths(schema);
     this._leafPaths = paths.leafPaths;
+    this._leafPathSet = new Set(paths.leafPaths);
     this._groupPaths = paths.groupPaths;
     this._arrayPaths = paths.arrayPaths;
     this._recordPaths = paths.recordPaths;
@@ -1352,16 +1355,55 @@ export abstract class MdyTypedFormBase<
     ) as MdyFormPatch<S>;
   }
 
-  /** Flattens a (possibly nested) patch object into dotted adapter paths. */
+  /**
+   * Which flat paths this schema can describe: a declared leaf, a collection, or something inside
+   * one.
+   *
+   * A field can exist that the schema never declared — a restored draft carries a key nobody wrote
+   * down, a patch arrives from a server response with a member the form does not have. The engine
+   * accepts such a field on purpose: used directly, without a schema, that is how a draft creates
+   * one. A *typed* form is a narrower promise, and `getValue()` states it in its type.
+   */
+  protected _describes(path: string): boolean {
+    if (this._leafPathSet.has(path)) return true;
+    if (this._recordPaths.has(path) || this._arrayPaths.has(path)) return true;
+    for (const prefix of this._recordPaths) if (path.startsWith(`${prefix}.`)) return true;
+    for (const prefix of this._arrayPaths) if (path.startsWith(`${prefix}.`)) return true;
+    return false;
+  }
+
+  /**
+   * The flat entries this schema describes.
+   *
+   * Read on the way out rather than refused on the way in: the field is the engine's to hold, and
+   * whoever put it there may have had a reason the form cannot see. What a typed read answers is
+   * the shape the schema declares — including when the answer would otherwise be a throw, which is
+   * what an undeclared key used to produce on the next `submitValue()`.
+   */
+  protected _described(flat: Record<string, unknown>): Record<string, unknown> {
+    const kept: Record<string, unknown> = {};
+    for (const [path, value] of Object.entries(flat)) {
+      if (this._describes(path)) kept[path] = value;
+    }
+    return kept;
+  }
+
+  /**
+   * Flattens a (possibly nested) patch object into dotted adapter paths.
+   *
+   * A member the schema does not describe is dropped rather than written: `patch` takes whatever a
+   * consumer received — a server response, a stored payload — and a key from there must not become
+   * a field. `setValue` has always ignored one; this is the same answer for the other door.
+   */
   protected _flattenPatch(
     partial: Partial<MdyFormValue<S>> | MdyFormPatch<S>,
   ): Record<string, unknown> {
-    return flattenPatch(
+    return this._described(flattenPatch(
       partial as Record<string, unknown>,
       this._groupPaths,
       this._arrayPaths,
       this._recordPaths,
-    );
+    ));
   }
 
   /** Routes array- and record-path entries to their manager, the rest to the flat adapter. */
@@ -1539,7 +1581,9 @@ export class MdyTypedForm<S extends MdyFormSchema>
 
   /** Core validates the unflattened value against the schema shape. */
   protected override _flatToValue(flat: Record<string, unknown>): MdyFormValue<S> {
-    const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths, this._recordPaths);
+    const nested = numericKeysToArrays(
+      unflatten(this._described(flat)), this._arrayPaths, this._recordPaths,
+    );
     if (isSchemaValue(nested, this._schema)) {
       return nested;
     }
@@ -1548,7 +1592,9 @@ export class MdyTypedForm<S extends MdyFormSchema>
 
   /** Core validates the unflattened patch against the schema shape. */
   protected override _flatToPatch(flat: Record<string, unknown>): MdyFormPatch<S> {
-    const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths, this._recordPaths);
+    const nested = numericKeysToArrays(
+      unflatten(this._described(flat)), this._arrayPaths, this._recordPaths,
+    );
     if (isSchemaPatch(nested, this._schema)) {
       return nested;
     }
