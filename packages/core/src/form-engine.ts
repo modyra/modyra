@@ -763,7 +763,14 @@ export class MdyFormEngine
             ...this._lastSubmitErrors().filter(
               e => e.path === null || !this._fields.has(e.path),
             ),
-            ...this._crossErrors().filter(e => e.path === null),
+            // A cross-field error naming a path with no field, for the same reason as the line
+            // above: a keyed collection's paths are data, so a rule about a row names one and the
+            // row can leave while the rule still says it. The error keeps deciding `valid`, so it
+            // has to be readable — a form that will not submit and cannot say why is the one state
+            // a consumer cannot render.
+            ...this._crossErrors().filter(
+              e => e.path === null || !this._fields.has(e.path),
+            ),
           ]
           : [];
       return [...fieldErrors, ...globalErrors];

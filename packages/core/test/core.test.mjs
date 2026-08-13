@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { array, assertSafeDynamicFieldNames, buildDynamicFieldValidators, buildDynamicValidators, createForm, crossField, eachOneOf, field, group, min, oneOf, parseDynamicFields, required } from "../dist/index.js";
+import { array, assertSafeDynamicFieldNames, buildDynamicFieldValidators, buildDynamicValidators, createForm, crossField, eachOneOf, field, group, min, oneOf, parseDynamicFields, record, required } from "../dist/index.js";
 import { buildDateLocale } from "../dist/datetime.js";
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -797,4 +797,34 @@ test("a name that is both a field and a group is refused, not silently resolved"
   // other without saying so.
   assert.throws(() => createForm({ a: field(""), "a.b": field("") }), /"a"/);
   assert.throws(() => createForm({ "a.b": field(""), a: field("") }), /"a"/);
+});
+
+/**
+ * A verdict that decides `valid` is readable somewhere.
+ *
+ * A form-level validator attributes errors to field paths, and a keyed collection's paths are data:
+ * a rule about rows names one, and the row can leave while the rule still names it. The error keeps
+ * deciding validity, so dropping it from every read leaves a form that will not submit and cannot
+ * say why — the one state a consumer cannot render. Server errors already surface at the form when
+ * their path matches no field; cross-field errors now do the same.
+ */
+test("a cross-field error naming no live field surfaces at the form", async () => {
+  const form = createForm(
+    { rows: record(group({ code: field("") })) },
+    { validators: [() => [{ path: "rows.a.code", kind: "range", message: "bad code" }]] },
+  );
+
+  form.f.rows.upsert("a", { code: "C" });
+  await tick();
+  assert.equal(form.state.valid(), false);
+  assert.equal(form.errorsFor("rows.a.code")().length, 1, "while the row exists it reads at its own path");
+
+  form.f.rows.remove("a");
+  await tick();
+  assert.equal(form.state.valid(), false, "the rule still says the form is invalid");
+  assert.deepEqual(
+    form.errorsFor("")().map((error) => error.message),
+    ["bad code"],
+    "and the form's own bucket is where it can be read",
+  );
 });
