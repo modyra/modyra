@@ -173,28 +173,27 @@ export function numericKeysToArrays(
    * through one substitutes `*` for it. Without that a collection inside a row is not recognised as
    * a collection, and an empty one disappears from the value entirely.
    */
-  const walk = (node: unknown, prefix: string): unknown => {
+  const walk = (node: unknown, path: string): unknown => {
+    if (recordPaths.has(path)) {
+      // Keys are kept as they are; the collection's own phantom field reads null, and a record is
+      // an object even when it holds no rows.
+      const rows = isRecord(node) && !Array.isArray(node) ? node : {};
+      return Object.fromEntries(
+        Object.entries(rows).map(([rowKey, row]) => [rowKey, walk(row, `${path}.*`)]),
+      );
+    }
+    if (arrayPaths.has(path)) {
+      return isIndexRecord(node)
+        ? Object.keys(node)
+          .map(Number)
+          .sort((a, b) => a - b)
+          .map((i) => walk((node as Record<string, unknown>)[String(i)], `${path}.*`))
+        : [];
+    }
     if (!isRecord(node)) return node;
     const out: Record<string, unknown> = {};
     for (const [key, v] of Object.entries(node)) {
-      const path = prefix ? `${prefix}.${key}` : key;
-      if (recordPaths.has(path)) {
-        // Keys are kept as they are; the collection's own phantom field reads null, and a record is
-        // an object even when it holds no rows.
-        const rows = isRecord(v) && !Array.isArray(v) ? v : {};
-        out[key] = Object.fromEntries(
-          Object.entries(rows).map(([rowKey, row]) => [rowKey, walk(row, `${path}.*`)]),
-        );
-      } else if (arrayPaths.has(path)) {
-        out[key] = isIndexRecord(v)
-          ? Object.keys(v)
-            .map(Number)
-            .sort((a, b) => a - b)
-            .map((i) => walk(v[String(i)], `${path}.*`))
-          : [];
-      } else {
-        out[key] = walk(v, path);
-      }
+      out[key] = walk(v, path ? `${path}.${key}` : key);
     }
     return out;
   };

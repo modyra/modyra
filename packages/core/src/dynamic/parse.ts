@@ -713,15 +713,22 @@ function validPlacement(at: unknown, trackCount: number): boolean {
   return true;
 }
 
-/** A node that holds rows. One of these inside another is a shape the contract cannot address. */
-function isCollectionNode(raw: unknown): boolean {
-  return isRecordValue(raw) && (raw["node"] === "array" || raw["node"] === "record");
+/** A node whose rows are addressed by index — the level a path may cross exactly once. */
+function isPositionalNode(raw: unknown): boolean {
+  return isRecordValue(raw) && raw["node"] === "array";
 }
 
 function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
   const out: MdyDynamicDiagnostic[] = [];
   let count = 0;
-  const visit = (raw: unknown, path: string, depth: number): void => {
+  /**
+   * `positional` says an array already encloses this node.
+   *
+   * A path may cross one positional level. Two would make a descendant's whole path move for two
+   * independent reasons — an insert above and an insert beside — with nothing in the contract able
+   * to say which one moved it (ADR 0040), so a second array is refused where it is written.
+   */
+  const visit = (raw: unknown, path: string, depth: number, positional = false): void => {
     count += 1;
     if (depth > 8 || count > 500) { out.push({ code: "MDY_DYNAMIC_SCHEMA_LIMIT", severity: "error", path, message: "schema exceeds depth/node limits." }); return; }
     if (!isRecordValue(raw) || !["field", "group", "array", "record"].includes(String(raw["node"]))) { out.push({ code: "MDY_DYNAMIC_INVALID_NODE", severity: "error", path, message: "node must be field, group, array, or record." }); return; }
@@ -733,14 +740,14 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
       if (!isRecordValue(raw["children"])) { out.push({ code: "MDY_DYNAMIC_INVALID_GROUP", severity: "error", path, message: "group requires children." }); return; }
       for (const [key, child] of Object.entries(raw["children"])) {
         if (!isSafeDynamicSegment(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/children/${key}`, message: "unsafe child name." });
-        else visit(child, `${path}/children/${key}`, depth + 1);
+        else visit(child, `${path}/children/${key}`, depth + 1, positional);
       }
       return;
     }
     if (raw["node"] === "record") {
       if (!isRecordValue(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path, message: "record requires an item node." });
-      else if (isCollectionNode(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path: `${path}/item`, message: "a row is a field or a group — one collection per node." });
-      else visit(raw["item"], `${path}/item`, depth + 1);
+      else if (positional && isPositionalNode(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path: `${path}/item`, message: "a path crosses one positional level — an array below another array is not addressable." });
+      else visit(raw["item"], `${path}/item`, depth + 1, positional);
       const initial = raw["initialValue"];
       if (initial !== undefined && !isRecordValue(initial)) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path: `${path}/initialValue`, message: "record initialValue must be an object keyed by row key." });
       else if (isRecordValue(initial)) {
@@ -753,8 +760,8 @@ function validateDynamicSchema(input: unknown): MdyDynamicDiagnostic[] {
       return;
     }
     if (!isRecordValue(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path, message: "array requires an item node." });
-    else if (isCollectionNode(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path: `${path}/item`, message: "a row is a field or a group — one collection per node." });
-    else visit(raw["item"], `${path}/item`, depth + 1);
+    else if (isPositionalNode(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path: `${path}/item`, message: "a path crosses one positional level — an array below another array is not addressable." });
+    else visit(raw["item"], `${path}/item`, depth + 1, true);
     if (raw["initialValue"] !== undefined && !Array.isArray(raw["initialValue"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path: `${path}/initialValue`, message: "array initialValue must be an array." });
     if (Array.isArray(raw["initialValue"]) && raw["initialValue"].length > 100) out.push({ code: "MDY_DYNAMIC_SCHEMA_LIMIT", severity: "error", path: `${path}/initialValue`, message: "array initialValue exceeds 100 rows." });
   };

@@ -1079,11 +1079,7 @@ export abstract class MdyTypedFormBase<
     // reported the value the row held before the reorder and wrote into nothing: what a person
     // typed after dragging a row went nowhere, in the arrangement the guide shows.
     const rows = rx.computed(() =>
-      Array.from({ length: manager.rowCount() }, (_, i) =>
-        node.item.kind === "field"
-          ? this.cellHandle(`${path}.${i}`)
-          : this._buildCellTree(node.item.children, `${path}.${i}`),
-      ),
+      Array.from({ length: manager.rowCount() }, (_, i) => this._rowHandle(node.item, `${path}.${i}`)),
     );
     const errors = this._adapter.errorsFor(path);
     return {
@@ -1111,10 +1107,7 @@ export abstract class MdyTypedFormBase<
     }
     const rx = this._adapter.reactivity;
     const errors = this._adapter.errorsFor(path);
-    const row = (key: string): unknown =>
-      node.item.kind === "field"
-        ? this.cellHandle(`${path}.${key}`)
-        : this._buildCellTree(node.item.children, `${path}.${key}`);
+    const row = (key: string): unknown => this._rowHandle(node.item, `${path}.${key}`);
     return {
       path,
       keys: manager.keys,
@@ -1164,6 +1157,18 @@ export abstract class MdyTypedFormBase<
    * on each read: a tree built once would hand back a handle onto a manager the row has since
    * replaced, which is the defect the array's row handles were already fixed for.
    */
+  /**
+   * A row's handle, whatever the row's shape is.
+   *
+   * A row is usually a group of cells, but a schema may make the row itself a leaf or a whole
+   * collection — `record(array(field()))` is a keyed list of lists, and the row is the list.
+   */
+  private _rowHandle(item: MdyFormSchema[string], path: string): unknown {
+    if (item.kind === "field") return this.cellHandle(path);
+    if (item.kind === "record" || item.kind === "array") return this._buildNestedCollectionHandle(path, item);
+    return this._buildCellTree(item.children, path);
+  }
+
   private _buildCellTree(nodes: MdyFormSchema, prefix: string): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [key, child] of Object.entries(nodes)) {

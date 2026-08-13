@@ -547,7 +547,7 @@
   ],
   "MdyDynamicArrayNode": [
     "initialValue?: ReadonlyArray<unknown>",
-    "item: MdyDynamicFieldNode | MdyDynamicGroupNode",
+    "item: MdyDynamicFieldNode | MdyDynamicGroupNode | MdyDynamicRecordNode",
     "label?: string",
     "maxItems?: number",
     "minItems?: number",
@@ -674,7 +674,7 @@
   ],
   "MdyDynamicRecordNode": [
     "initialValue?: Readonly<Record<string, unknown>>",
-    "item: MdyDynamicFieldNode | MdyDynamicGroupNode",
+    "item: MdyDynamicFieldNode | MdyDynamicGroupNode | MdyDynamicRecordNode | MdyDynamicArrayNode",
     "label?: string",
     "node: \"record\""
   ],

@@ -1,0 +1,90 @@
+{
+  "version": 3,
+  "id": "nested-collections",
+  "schema": {
+    "node": "group",
+    "children": {
+      "orders": {
+        "node": "record",
+        "label": "Orders",
+        "item": {
+          "node": "group",
+          "children": {
+            "customer": {
+              "node": "field",
+              "field": {
+                "kind": "text",
+                "label": "Customer",
+                "validators": {
+                  "required": true
+                },
+                "name": "leaf"
+              }
+            },
+            "lines": {
+              "node": "record",
+              "label": "Lines",
+              "item": {
+                "node": "group",
+                "children": {
+                  "sku": {
+                    "node": "field",
+                    "field": {
+                      "kind": "text",
+                      "label": "SKU",
+                      "name": "leaf"
+                    }
+                  },
+                  "allocations": {
+                    "node": "array",
+                    "label": "Allocations",
+                    "item": {
+                      "node": "group",
+                      "children": {
+                        "warehouse": {
+                          "node": "field",
+                          "field": {
+                            "kind": "text",
+                            "label": "Warehouse",
+                            "name": "leaf"
+                          }
+                        },
+                        "qty": {
+                          "node": "field",
+                          "field": {
+                            "kind": "number",
+                            "label": "Quantity",
+                            "validators": {
+                              "min": 0
+                            },
+                            "name": "leaf"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "shipments": {
+        "node": "array",
+        "label": "Shipments",
+        "item": {
+          "node": "record",
+          "label": "Serials",
+          "item": {
+            "node": "field",
+            "field": {
+              "kind": "text",
+              "label": "Serial",
+              "name": "leaf"
+            }
+          }
+        }
+      }
+    }
+  }
+}

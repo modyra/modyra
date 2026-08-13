@@ -431,8 +431,12 @@
             },
             {
               "$ref": "#/$defs/groupNode"
+            },
+            {
+              "$ref": "#/$defs/recordNode"
             }
-          ]
+          ],
+          "description": "A row's shape. It may hold a keyed collection \u2014 its descendants are then addressed by name below this array's index. It may not hold another array: a path crosses one positional level."
         },
         "initialValue": {
           "type": "array",
@@ -469,8 +473,15 @@
             },
             {
               "$ref": "#/$defs/groupNode"
+            },
+            {
+              "$ref": "#/$defs/recordNode"
+            },
+            {
+              "$ref": "#/$defs/arrayNode"
             }
-          ]
+          ],
+          "description": "A row's shape, a collection of either kind included: keys address a row, so nothing below one moves."
         },
         "initialValue": {
           "type": "object",
