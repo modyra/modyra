@@ -19,7 +19,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
-import { inspectWidgetDom, inspectWidgetState } from "../dist/testing/index.js";
+import {
+  idsUnder,
+  inspectCoexistence,
+  inspectUnmount,
+  inspectWidgetDom,
+  inspectWidgetState,
+} from "../dist/testing/index.js";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>");
 const document = dom.window.document;
@@ -143,6 +149,106 @@ function disabledDateRange() {
  * Each `mutate` breaks exactly one thing and returns what to inspect. Returning a
  * new `parts`/`kind` lets a mutation change what the adapter *claims*, which is how
  * several of these hide from an inspector that trusts the caller's part map. */
+
+/**
+ * A teardown that leaves something behind, built the way a renderer leaves it.
+ *
+ * These are judged by `inspectUnmount`/`inspectCoexistence` rather than by the DOM or state
+ * inspectors, and until now nothing put those to the test: the nineteen mutations above all struck
+ * the other two, while the blind spot found in the demo batch — an effect still subscribed after
+ * teardown — lived precisely here. An inspector that has never rejected anything is a promise.
+ */
+const LIFECYCLE_MUTATIONS = [
+  {
+    n: "L1", id: "dom-survived", title: "a teardown that leaves its root in the document",
+    // The rule this mutation breaks. Asserting only "something was reported" lets one rule
+    // cover for another: a leftover element raises the DOM code too, and the id rule could stop
+    // looking without a single test noticing.
+    expect: "DOM_SURVIVED_UNMOUNT",
+    run: () => {
+      const before = document.body.querySelectorAll("*").length;
+      const root = el("div", "mdy-renderer");
+      root.append(el("span", "mdy-label"));
+      mount(root);
+      const ids = idsUnder(root);
+      // The renderer "disposes" and removes nothing.
+      return inspectUnmount({ document, idsWhileMounted: ids, elementsBeforeMount: before });
+    },
+  },
+  {
+    n: "L2", id: "id-survived", title: "a teardown that leaves an id resolvable",
+    // The rule this mutation breaks. Asserting only "something was reported" lets one rule
+    // cover for another: a leftover element raises the DOM code too, and the id rule could stop
+    // looking without a single test noticing.
+    expect: "ID_SURVIVED_UNMOUNT",
+    run: () => {
+      const before = document.body.querySelectorAll("*").length;
+      const root = el("div", "mdy-renderer");
+      const labelled = el("span", "mdy-label");
+      labelled.id = "mdy-ghost-1";
+      root.append(labelled);
+      mount(root);
+      const ids = idsUnder(root);
+      // The root goes; a portalled element carrying the same id does not.
+      root.remove();
+      const ghost = el("div", null);
+      ghost.id = "mdy-ghost-1";
+      mount(ghost);
+      return inspectUnmount({ document, idsWhileMounted: ids, elementsBeforeMount: before });
+    },
+  },
+  {
+    n: "L3", id: "effect-survived", title: "a disposed instance that still writes to the document",
+    // The rule this mutation breaks. Asserting only "something was reported" lets one rule
+    // cover for another: a leftover element raises the DOM code too, and the id rule could stop
+    // looking without a single test noticing.
+    expect: "REACTIVE_EFFECT_SURVIVED_UNMOUNT",
+    run: () => {
+      const before = document.body.querySelectorAll("*").length;
+      const root = el("div", "mdy-renderer");
+      mount(root);
+      const ids = idsUnder(root);
+      root.remove();
+      return inspectUnmount({
+        document,
+        idsWhileMounted: ids,
+        elementsBeforeMount: before,
+        // The effect outlived its teardown and renders again into a document it no longer owns.
+        pokeAfterDispose: () => mount(el("div", "mdy-renderer")),
+      });
+    },
+  },
+  {
+    n: "L4", id: "effect-threw", title: "a disposed instance whose effect ran and failed",
+    // The rule this mutation breaks. Asserting only "something was reported" lets one rule
+    // cover for another: a leftover element raises the DOM code too, and the id rule could stop
+    // looking without a single test noticing.
+    expect: "EFFECT_THREW_AFTER_UNMOUNT",
+    run: () => {
+      const before = document.body.querySelectorAll("*").length;
+      const root = el("div", "mdy-renderer");
+      mount(root);
+      const ids = idsUnder(root);
+      root.remove();
+      return inspectUnmount({
+        document,
+        idsWhileMounted: ids,
+        elementsBeforeMount: before,
+        pokeAfterDispose: () => undefined,
+        // Nothing reaches the document, which is why the visible half reads this as clean.
+        errorsAfterDispose: () => ["effect ran after its scope was destroyed"],
+      });
+    },
+  },
+  {
+    n: "L5", id: "ids-collided", title: "two live instances minting the same id",
+    // The rule this mutation breaks. Asserting only "something was reported" lets one rule
+    // cover for another: a leftover element raises the DOM code too, and the id rule could stop
+    // looking without a single test noticing.
+    expect: "ID_COLLIDED_ACROSS_INSTANCES",
+    run: () => inspectCoexistence(new Set(["mdy-text-1", "mdy-text-1__label"]), new Set(["mdy-text-1"])),
+  },
+];
 
 const MUTATIONS = [
   {
@@ -372,6 +478,42 @@ function runAll() {
 }
 
 const RESULTS = runAll();
+
+/** The same question of the lifecycle inspector: did it reject what it exists to reject. */
+const LIFECYCLE_RESULTS = LIFECYCLE_MUTATIONS.map((mutation) => {
+  let issues;
+  try {
+    issues = mutation.run();
+  } catch (error) {
+    issues = [{ code: "THREW", detail: String(error && error.message) }];
+  }
+  clearMounted();
+  return { ...mutation, issues, caught: issues.length > 0 };
+});
+
+for (const mutation of LIFECYCLE_RESULTS) {
+  const label = `lifecycle mutation ${mutation.n} — ${mutation.title}`;
+  test(`${label} is rejected`, () => {
+    assert.ok(
+      mutation.issues.length > 0,
+      `${label} was accepted. The lifecycle inspector is what stands between a renderer that leaks ` +
+        `and a suite that says nothing.`,
+    );
+    assert.ok(
+      mutation.issues.some((issue) => issue.code === mutation.expect),
+      `${label} was reported, but not as ${mutation.expect} — which is the rule it breaks. Reported: ` +
+        mutation.issues.map((issue) => issue.code).join(", "),
+    );
+    // Locatable, like every other issue: a code from the contract's own vocabulary and a detail.
+    for (const issue of mutation.issues) {
+      assert.match(issue.code, /^[A-Z_]+$/, `${label}: an issue with no code names nothing`);
+      assert.ok(
+        typeof issue.detail === "string" && issue.detail.length > 0,
+        `${label}: an issue with no detail cannot be acted on`,
+      );
+    }
+  });
+}
 
 test("every unmutated fixture conforms", () => {
   for (const [name, build] of Object.entries({ textField, dateRange, selectField })) {

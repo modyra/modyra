@@ -17,6 +17,7 @@ import {
   type MdyOverlayCoords,
   type MdyOverlayPlacement,
   type MdyPopupWidgetKind,
+  syncOverlayBackdrop,
 } from "@modyra/widgets";
 
 /**
@@ -33,13 +34,6 @@ import {
     "[class.mdy-overlay--open]": "open()",
   },
   template: `
-    @if (hasBackdrop() && open()) {
-      <div
-        class="mdy-overlay-backdrop"
-        style="position: fixed; inset: 0; background-color: rgba(0,0,0,0.32); z-index: 1; pointer-events: auto;"
-        (click)="onBackdropClick($event)"
-      ></div>
-    }
     <div
       #panel
       popover="manual"
@@ -214,10 +208,18 @@ export class MdyOverlayPanelComponent {
     };
   });
 
-  protected onBackdropClick(event: MouseEvent): void {
-    event.stopPropagation();
-    this.close.emit();
-  }
+  /**
+   * The backdrop, drawn by the contract rather than by this template.
+   *
+   * It was a `<div>` here with the colour written inline, so no theme could change how a product's
+   * modals dim, and this was the only adapter drawing its own. Dismissing it is the shared
+   * light-dismiss policy's job — a click on the backdrop is a click outside — so the handler that
+   * used to close it went with the element.
+   */
+  protected readonly backdrop = effect(() => {
+    const panel = this.panelRef()?.nativeElement;
+    if (panel) syncOverlayBackdrop(panel, this.hasBackdrop() && this.open());
+  });
 
   /** Traps Tab focus inside modal panels (B36). */
   protected onPanelKeydown(event: KeyboardEvent): void {

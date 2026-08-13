@@ -12,6 +12,8 @@ import {
   type MdyOverlayDecision,
   type MdyOverlayPlacement,
   type MdyWidgetKind,
+  trackAnchoredOverlay,
+  applyOverlayProperties,
 } from "@modyra/widgets";
 
 /** Visually hidden native input used as the platform picker behind a styled control. */
@@ -40,6 +42,15 @@ export interface OverlayPanelState {
     readonly width: string;
     readonly maxHeight: string;
     readonly maxWidth: string;
+    /**
+     * How the popup is moved after it is placed — `translate(-50%, -50%)` for the modal placement.
+     *
+     * Carried with the rest because it is how the modal placement centres at all: the coordinates
+     * put its corner at the middle of the viewport and this pulls it back by half its own size.
+     * Written into the panel's style string and left out of the properties actually applied, it
+     * centred nothing, so a popup asked to go modal stayed hanging off its control.
+     */
+    readonly transform: string;
   };
 }
 
@@ -67,6 +78,12 @@ interface OverlayStateConfig {
    */
   readonly current?: MdyOverlayDecision | null;
   readonly widthMode?: "match-anchor" | "auto-content";
+  /**
+   * Take the modal placement whatever the room, because the host asked for it.
+   *
+   * Presentation only: where the popup sits, never what the field commits.
+   */
+  readonly forceModal?: boolean;
   /** The popup's own size, when the host has measured it, so it is placed where it shows whole. */
   readonly contentHeight?: number;
   readonly contentWidth?: number;
@@ -91,7 +108,7 @@ export function computeOverlayPanelState(
       alignment: "left",
       decision: null,
       panelStyle: POPUP_STYLE,
-      cssVars: { top: "auto", bottom: "auto", left: "auto", right: "auto", width: "auto", maxHeight: "50vh", maxWidth: "none" },
+      cssVars: { top: "auto", bottom: "auto", left: "auto", right: "auto", width: "auto", maxHeight: "50vh", maxWidth: "none", transform: "none" },
     };
   }
 
@@ -107,6 +124,7 @@ export function computeOverlayPanelState(
       minWidth: config?.minWidth,
       preferred: config?.preferredPosition,
       matchAnchorWidth: (config?.widthMode ?? "match-anchor") === "match-anchor",
+      ...(config?.forceModal ? { forceModal: true } : {}),
       // The widget declares which *inline* edge its popup hangs from; only the live direction says
       // which physical edge that is.
       direction:
@@ -140,8 +158,9 @@ export function computeOverlayPanelState(
     width: read(prop.width, "auto"),
     maxHeight: read(prop.maxHeight, "50vh"),
     maxWidth: read(prop.maxWidth, "none"),
+    transform: read(prop.transform, "none"),
   };
-  const transform = read(prop.transform, "none");
+  const transform = cssVars.transform;
   const panelStyle =
     `${POPUP_STYLE};top:${cssVars.top};bottom:${cssVars.bottom};left:${cssVars.left};` +
     `right:${cssVars.right};width:${cssVars.width};max-height:${cssVars.maxHeight};` +
@@ -182,15 +201,7 @@ export class MdyLitOverlayController {
   private _state: OverlayPanelState = computeOverlayPanelState(undefined);
   private clickX: number | undefined;
   private active = false;
-  private scrollRaf = 0;
-  private readonly onScroll = (): void => {
-    if (!this.active || this.scrollRaf !== 0) return;
-    this.scrollRaf = requestAnimationFrame(() => {
-      this.scrollRaf = 0;
-      this.refresh(false);
-    });
-  };
-  private readonly onResize = (): void => this.refresh(true);
+  private stopTracking: (() => void) | null = null;
 
   constructor(
     private readonly host: OverlayHost,
@@ -213,6 +224,16 @@ export class MdyLitOverlayController {
    * A closing overlay renders `nothing` and the element goes with it, which is what removes it.
    */
   private shown: HTMLElement | null = null;
+
+  /**
+   * Whether the host asks for the modal placement whatever the room.
+   *
+   * Read structurally, like `widgetKind` beside it: a renderer states it and this controller carries
+   * it to the contract, without either of them widening a public shape.
+   */
+  private forcesModal(): boolean {
+    return (this.host as { forceModalPlacement?: () => boolean }).forceModalPlacement?.() === true;
+  }
 
   /** The host widget's declared anchoring, in this controller's vocabulary. */
   private contractConfig(): Partial<OverlayStateConfig> {
@@ -247,10 +268,14 @@ export class MdyLitOverlayController {
       if (this.active && this.content === null) this.refresh(true);
     });
     if (!wasActive) {
-      // Passive: this follows a scroll, it never cancels one, and a listener the engine must wait on
-      // before committing the frame is a listener that blocks the scroll it is following.
-      window.addEventListener("scroll", this.onScroll, { capture: true, passive: true });
-      window.addEventListener("resize", this.onResize, { passive: true });
+      // The contract's tracking, which keeps the two events apart: a page that scrolls moves the
+      // anchor and the popup follows with the corner it opened on, while a viewport that changes
+      // size changes what fits and the corner is chosen again.
+      this.stopTracking = trackAnchoredOverlay({
+        isOpen: () => this.active,
+        reposition: () => this.refresh(false),
+        reflow: () => this.refresh(true),
+      });
     }
   }
 
@@ -265,12 +290,8 @@ export class MdyLitOverlayController {
       setOverlayOpen(this.shown, false);
       this.shown = null;
     }
-    if (this.scrollRaf !== 0) {
-      cancelAnimationFrame(this.scrollRaf);
-      this.scrollRaf = 0;
-    }
-    window.removeEventListener("scroll", this.onScroll, { capture: true } as EventListenerOptions);
-    window.removeEventListener("resize", this.onResize);
+    this.stopTracking?.();
+    this.stopTracking = null;
   }
 
   refresh(reselectCorner = true): void {
@@ -285,6 +306,7 @@ export class MdyLitOverlayController {
       // below, rather than by holding a number of its own.
       ...this.contractConfig(),
       ...this.config,
+      ...(this.forcesModal() ? { forceModal: true } : {}),
       clickX: reselectCorner ? this.clickX : undefined,
       // Deciding afresh is what opening and resizing are; a scroll frame holds what it has. The
       // popup therefore keeps its size while the anchor moves and changes side only once the side
@@ -294,15 +316,22 @@ export class MdyLitOverlayController {
     });
 
     const prop = MDY_CSS_PROPERTIES.overlay;
-    this.host.style.setProperty(prop.top, this._state.cssVars.top);
-    this.host.style.setProperty(prop.bottom, this._state.cssVars.bottom);
-    this.host.style.setProperty(prop.left, this._state.cssVars.left);
-    this.host.style.setProperty(prop.right, this._state.cssVars.right);
-    this.host.style.setProperty(prop.width, this._state.cssVars.width);
-    this.host.style.setProperty(prop.maxHeight, this._state.cssVars.maxHeight);
-    // The popup is sized from its content, so the width it may take has to reach the element too:
-    // without it a content-sized popup near the edge of the screen shows half off it.
-    this.host.style.setProperty(prop.maxWidth, this._state.cssVars.maxWidth);
+    // The width a content-sized popup may take reaches the element too, or one near the edge of the
+    // screen shows half off it; and the modal placement needs its transform, or the corner moves to
+    // the middle of the viewport and nothing pulls it back by half its own size.
+    //
+    // Which of these are written is `applyOverlayProperties`' answer: on a pass that changes
+    // nothing, none of them are.
+    applyOverlayProperties(this.host, {
+      [prop.top]: this._state.cssVars.top,
+      [prop.bottom]: this._state.cssVars.bottom,
+      [prop.left]: this._state.cssVars.left,
+      [prop.right]: this._state.cssVars.right,
+      [prop.width]: this._state.cssVars.width,
+      [prop.maxHeight]: this._state.cssVars.maxHeight,
+      [prop.maxWidth]: this._state.cssVars.maxWidth,
+      [prop.transform]: this._state.cssVars.transform,
+    });
     // The popup joins the top layer as soon as it exists. The coordinates written above are
     // viewport coordinates, and a `position: fixed` box only honours those while no ancestor is a
     // containing block for fixed descendants — which `container-type` on the form makes every
@@ -312,7 +341,7 @@ export class MdyLitOverlayController {
     // throws on an element already showing.
     const popup = this.getPopup();
     if (popup && popup !== this.shown) {
-      setOverlayOpen(popup, true);
+      setOverlayOpen(popup, true, this._state.position === "overlay");
       this.shown = popup;
     }
     this.host.requestUpdate();
@@ -357,7 +386,6 @@ export function renderOverlayPanel(
   // inside it is the single container — the same one every renderer portals and a host-projected panel wrular projects. Two nested
   // positioned boxes is what put a Lit popup 35px below where its anchor said it belonged.
   return html`
-    <div class="mdy-overlay-backdrop"></div>
     <div
       class="mdy-overlay-panel mdy-overlay-panel--visible${modalClass}${rightClass}"
       style="display: contents"

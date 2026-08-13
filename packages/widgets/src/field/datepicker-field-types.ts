@@ -4,12 +4,13 @@
  * The committed value is an ISO `YYYY-MM-DD` string or `null`. Which month is on screen
  * (`{viewYear, viewMonth}`) and which cell the keyboard is on (`focusedDate`) are view state kept
  * apart from it, so paging and moving focus change what is shown without selecting anything.
- * Keyboard navigation resolves through `calendarKeyboardTarget` (`@modyra/core/keyboard`).
+ * Keyboard navigation resolves through `calendarKeyboardTarget` (`@modyra/widgets`).
  *
  * Month and year drill-down views, and a confirm/cancel draft, belong to the host — see
  * datepicker-field-controller.ts.
  */
 import type { MdyInteractivity } from "@modyra/core";
+import type { MdyCalendarViewMode } from "./calendar-view.js";
 import type { MdyFieldHandle } from "@modyra/core";
 
 export interface MdyDatepickerFieldControllerOptions {
@@ -21,7 +22,7 @@ export interface MdyDatepickerFieldControllerOptions {
   readonly minDate?: string | null;
   /** Inclusive upper bound, ISO `YYYY-MM-DD`. */
   readonly maxDate?: string | null;
-  /** 0 = Sunday (default), 1 = Monday, … — pass `locale.firstDayOfWeek` from `@modyra/core/date-locale` for a real locale. */
+  /** 0 = Sunday (default), 1 = Monday, … — pass `locale.firstDayOfWeek` from `@modyra/core/datetime` for a real locale. */
   readonly firstDayOfWeek?: number;
   /** Whether the widget is visually/programmatically readonly. */
   readonly readonly?: boolean;
@@ -40,6 +41,8 @@ export interface MdyDatepickerFieldCell {
 /** Semantic state of a datepicker field widget. */
 export interface MdyDatepickerFieldState {
   readonly selectedDate: string | null;
+  /** Days, months or years — what the popup is showing. See {@link MdyCalendarViewMode}. */
+  readonly viewMode: MdyCalendarViewMode;
   readonly viewYear: number;
   readonly viewMonth: number;
   readonly focusedDate: string;
@@ -64,6 +67,11 @@ export type MdyDatepickerFieldIntent =
   | { readonly type: "open" }
   | { readonly type: "close"; readonly restoreFocus?: boolean }
   | { readonly type: "navigate-month"; readonly delta: number }
+  | { readonly type: "set-view-mode"; readonly mode: MdyCalendarViewMode }
+  /** Choose a month from the month view; narrows to its days. */
+  | { readonly type: "select-month"; readonly month: number }
+  /** Choose a year from the year view; narrows to its months. */
+  | { readonly type: "select-year"; readonly year: number }
   | { readonly type: "keydown"; readonly key: string; readonly shiftKey?: boolean }
   | { readonly type: "select-date"; readonly iso: string }
   | { readonly type: "clear" }

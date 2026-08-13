@@ -8,21 +8,20 @@ import {
   inject,
   Injector,
   input,
-  signal,
 } from "@angular/core";
 import {
-  formatTime,
   formatTimeAs,
   getCurrentTime,
   MdyTimeFormat,
   parseAnyTime,
-  parseTime,
-} from "@modyra/core/time-utils";
+  parseTime, buildTimeString } from "@modyra/core/datetime";
 import {
   MDY_WIDGET_CONTRACTS,
-  timeDraftTransition,
   timeInputTransition,
-  type MdyTimeDraftState, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+  createTimepickerFieldController,
+  overlayControlledId,
+  projectOverlayOpenerA11y,
+} from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -58,7 +57,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
       [forId]="fieldId"
       [required]="isRequired()"
       [filled]="value() !== null"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
 
@@ -82,7 +81,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
           (focus)="onInputFocus($event)"
           (blur)="onInputBlur($event)"
           (keydown.arrowdown)="openOverlay($event); $event.preventDefault()"
-          [attr.aria-invalid]="hasErrors()"
+          [attr.aria-invalid]="paintsAsInvalid()"
           [attr.aria-describedby]="describedById(fieldId)"
           [attr.aria-label]="controlAriaLabel()"
           [attr.aria-required]="ariaRequired() || isRequired()"
@@ -142,7 +141,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     }
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     }
   `,
@@ -155,6 +154,7 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   protected override readonly overlayKind = "timepicker" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.timepicker;
+  protected override readonly widgetKind = "timepicker" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
   readonly placeholder = input<string>("");
@@ -174,36 +174,37 @@ export class MdyTimepickerComponent extends MdyOverlayControl<string | null> {
   protected readonly openerPart = computed(
     () => projectOverlayOpenerA11y("timepicker", { widgetId: this.fieldId, open: this.open() })!,
   );
-  private readonly timeDraft = signal<MdyTimeDraftState>({ committed: null, draft: getCurrentTime(), open: false });
-  protected readonly draftValue = computed(() => this.timeDraft().draft);
+  /** The clock's draft, which the controller owns — this kind's value contract says `confirm`. */
+  protected readonly controller = this.adoptFieldController((handle, widgetId) =>
+    createTimepickerFieldController({ widgetId, handle: handle as never, format: this.format() }),
+  );
+  protected readonly draftValue = computed(() => {
+    const draft = this.controller()?.state().draft;
+    return draft ? buildTimeString(draft.hour, draft.minute, draft.period) : getCurrentTime();
+  });
   private readonly injector = inject(Injector);
 
   protected override onBeforeOpen(): void {
-    const parsed = parseAnyTime(this.value(), this.format());
-    const committed = parsed ? formatTime(parsed) : null;
-    this.timeDraft.set(timeDraftTransition(
-      this.timeDraft(),
-      { type: "open", committed, fallback: getCurrentTime() },
-    ).state);
+    this.controller()?.dispatch({ type: "open" });
   }
 
+  /** A time chosen on the dial, sent as the parts the controller takes. */
   protected onTimePicked(time: string): void {
-    this.timeDraft.set(timeDraftTransition(this.timeDraft(), { type: "select", value: time }).state);
+    const parsed = parseTime(time);
+    const controller = this.controller();
+    if (!parsed || !controller) return;
+    controller.dispatch({ type: "set-hour", hour: parsed.hour });
+    controller.dispatch({ type: "set-minute", minute: parsed.minute });
+    if (this.format() === "12h") controller.dispatch({ type: "set-period", period: parsed.period });
   }
 
   protected confirmPicker(): void {
-    const transition = timeDraftTransition(this.timeDraft(), { type: "confirm" });
-    this.timeDraft.set(transition.state);
-    const draft = parseTime(transition.commit);
-    const next = draft ? formatTimeAs(draft, this.format()) : null;
-    if (next !== null && next !== this.value()) {
-      this.dispatchValueIntent<string | null>("timepicker", { type: "select", value: next });
-    }
+    this.controller()?.dispatch({ type: "confirm" });
     this.closeOverlay();
   }
 
   protected cancelPicker(): void {
-    this.timeDraft.set(timeDraftTransition(this.timeDraft(), { type: "cancel" }).state);
+    this.controller()?.dispatch({ type: "cancel" });
     this.closeOverlay();
   }
 

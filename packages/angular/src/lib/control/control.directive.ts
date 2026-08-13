@@ -11,12 +11,14 @@ import {
   OnInit,
   Signal,
   signal,
-  untracked
+  Injector,
+  untracked,
 } from "@angular/core";
 import { MDY_DECLARATIVE_REGISTRY, MDY_FLOATING_LABELS, MDY_FORM_ADAPTER, MDY_INLINE_ERRORS } from "../core/tokens";
 import { MdyFieldHandle } from "../core/typed-form";
+import { angularReactivity } from "../core/reactivity-angular";
 import { MdyFieldError, MdyFieldState, MdyFormAdapter } from "../core/types";
-import { handleFormOf, NO_CONSTRAINTS, type MdyFieldConstraints } from "@modyra/core";
+import { handleFormOf, NO_CONSTRAINTS, registerHandleOwner, type MdyFieldConstraints } from "@modyra/core";
 import type { MdyInteractivity } from "@modyra/core";
 import {
   createValueWidgetController,
@@ -33,7 +35,7 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
-import { shownErrors } from "@modyra/widgets";
+import { errorsVisible, shownErrors, showsAsInvalid } from "@modyra/widgets";
 
 /** Global counter for generating unique field IDs. */
 let _nextFieldId = 0;
@@ -53,6 +55,7 @@ let _nextFieldId = 0;
 export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   protected readonly hostElement = inject(ElementRef<HTMLElement>);
   private readonly _destroyRef = inject(DestroyRef);
+  private readonly _injector = inject(Injector);
   private prefixObserver?: ResizeObserver;
   /** Field name currently claimed on the registry (tracks name changes). */
   private _claimedName: string | null = null;
@@ -354,6 +357,20 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   protected readonly hasErrors: Signal<boolean> = computed(
     () => this.errors().length > 0,
   );
+
+  /**
+   * Whether the control announces itself as failing — the one answer for `aria-invalid`.
+   *
+   * Named for the question because eight templates were answering it and one of them answered
+   * differently: the colours field waited for `touched`, so a screen-reader user met a control the
+   * form was rejecting and the control said nothing was wrong. The rule is the contract's
+   * (`showsAsInvalid`: out of play, no verdict), and `errors()` already withholds the errors of a
+   * field the form is not asking about — so a template that spells its own combination is a
+   * template that can disagree with both.
+   */
+  protected readonly paintsAsInvalid: Signal<boolean> = computed(() =>
+    showsAsInvalid({ valid: this.isValid(), disabled: this.isDisabled() }),
+  );
   /** Effective aria-disabled: explicit input overrides field state. */
   protected readonly effectiveAriaDisabled: Signal<boolean> = computed(
     () => this.ariaDisabled() ?? this.isDisabled(),
@@ -367,7 +384,26 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    * but untouched field is the common case: it has errors and shows none.
    */
   protected readonly errorsRendered: Signal<boolean> = computed(
-    () => !this.inlineErrors && this.touched() && this.hasErrors(),
+    () =>
+      !this.inlineErrors &&
+      errorsVisible(
+        { disabled: this.isDisabled(), touched: this.touched() },
+        this.fieldState().errors(),
+      ),
+  );
+
+  /**
+   * The same question for a renderer that draws its error text beside the control rather than in a
+   * list below it. One of the two is true at a time; both read the one rule, so a renderer cannot
+   * show text the other would have hidden.
+   */
+  protected readonly inlineErrorShown: Signal<boolean> = computed(
+    () =>
+      this.inlineErrors &&
+      errorsVisible(
+        { disabled: this.isDisabled(), touched: this.touched() },
+        this.fieldState().errors(),
+      ),
   );
 
   /**
@@ -432,10 +468,14 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   protected abstract readonly fieldId: string;
 
   /**
-   * The kind this renderer draws. Defaults to a text-like control, which is what the projection
-   * assumes for anything that does not say otherwise.
+   * The kind this renderer draws.
+   *
+   * The projection decides from it which native constraints the control can carry, so a renderer
+   * that does not say leaves a slider claiming `maxlength` and offering no range. It was typed
+   * `string` and defaulted to text, which is how nine renderers came to inherit an answer none of
+   * them meant; the union is what makes a wrong one unspellable.
    */
-  protected readonly widgetKind: string = "text";
+  protected readonly widgetKind: MdyWidgetKind = "text";
 
   /**
    * What this renderer asks for on top of the field's rules — nothing, unless it has its own limits
@@ -488,11 +528,93 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
     controller.setValue(this.value() as unknown as T);
     controller.setDisabled(this.isDisabled());
     controller.setReadonly(this.fieldState().readonly());
-    controller.setInvalid(this.hasErrors());
+    controller.setInvalid(showsAsInvalid({ valid: this.isValid(), disabled: this.isDisabled() }));
     for (const command of controller.dispatch(intent)) {
       if (command.type === "mark-dirty") this.markAsDirty();
       if (command.type === "mark-touched") this.markAsTouched();
     }
+  }
+
+  /**
+   * The kind's own controller, built the first time this renderer needs it.
+   *
+   * Deferred rather than built in `ngOnInit`, because a field initializer is an injection context
+   * and `ngOnInit` is not — and because six renderers each writing the same lifecycle is the
+   * duplication that adopting a shared controller was supposed to remove, not relocate.
+   */
+  protected adoptFieldController<TController extends { destroy(): void }>(
+    create: (handle: MdyFieldHandle<TValue | null>, widgetId: string) => TController,
+    sync?: (controller: TController) => void,
+  ): () => TController | undefined {
+    let controller: TController | undefined;
+    let built = false;
+    // Built outside any reactive context: the first read can come from a computed, and an effect
+    // created inside one is a nested effect Angular refuses (NG0602). Nothing here should be a
+    // dependency of the caller either — the controller is built once, not per recomputation.
+    return () =>
+      untracked(() => {
+        if (built) return controller;
+        const handle = this.controllerHandle();
+        // Not built until there is a handle to build on. Latching before the check made the first
+        // read the only one: a renderer whose template reads the controller during the first change
+        // detection — before a name resolves to a field — cached `undefined` for the life of the
+        // component, and every later interaction went nowhere.
+        if (!handle) return undefined;
+        built = true;
+        controller = create(handle, this.fieldId);
+        this._destroyRef.onDestroy(() => controller?.destroy());
+        // What a reactive input feeds the controller — an option list, a pair of bounds. Told
+        // rather than rebuilt: a fresh controller forgets the query, the roving focus and the month
+        // on screen. The injector is passed because the first read is not an injection context.
+        if (sync) effect(() => sync(controller as TController), { injector: this._injector });
+        return controller;
+      });
+  }
+
+  /**
+   * A handle for the control to build its controller on, however the field was named.
+   *
+   * `[field]` hands one over. The `name` form does not — it resolves to the registry's state — and
+   * for want of a handle every renderer kept a second way to commit its value, so the kind's
+   * controller decided for one caller and the renderer decided for the other. The state carries
+   * everything a handle exposes; what was missing was the shape, and the shape is written once.
+   *
+   * Registered against Angular's own runtime, because a controller resolves the runtime that owns
+   * its handle: a synthetic one nobody claims would be observed by a vanilla runtime that cannot
+   * see an Angular signal, and would render once and then never again.
+   */
+  private _syntheticHandle: MdyFieldHandle<TValue | null> | undefined;
+  private controllerHandle(): MdyFieldHandle<TValue | null> | undefined {
+    const bound = this.field();
+    if (bound) return bound as MdyFieldHandle<TValue | null>;
+    if (!this.effectiveName()) return undefined;
+    if (!this._syntheticHandle) {
+      const state = () => this.fieldState();
+      const handle: MdyFieldHandle<TValue | null> = {
+        get path() { return "" as string; },
+        value: computed(() => state().value() as TValue | null),
+        errors: computed(() => state().errors()),
+        touched: computed(() => state().touched()),
+        dirty: computed(() => state().dirty()),
+        valid: computed(() => state().valid()),
+        pending: computed(() => state().pending()),
+        required: computed(() => state().required()),
+        constraints: computed(() => state().constraints()),
+        interactivity: computed(() => state().interactivity()),
+        disabled: computed(() => state().disabled()),
+        readonly: computed(() => state().readonly()),
+        set: (value) => this.setValue(value as TValue),
+        markAsTouched: () => this.markAsTouched(),
+        markAsDirty: () => this.markAsDirty(),
+      };
+      // The *owner* registry, not the form one: `observerFor` reads this to decide which runtime a
+      // controller should observe the handle through. Registered in the wrong one, the controller
+      // fell back to a vanilla runtime whose signals an Angular computed cannot see — so its state
+      // changed and nothing re-rendered, which is the failure this registry exists to prevent.
+      registerHandleOwner(handle, angularReactivity(this._injector));
+      this._syntheticHandle = handle;
+    }
+    return this._syntheticHandle;
   }
 
   protected dispatchValueBlur(kind: MdyWidgetKind): void {

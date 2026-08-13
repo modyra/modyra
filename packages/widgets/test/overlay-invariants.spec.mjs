@@ -14,7 +14,11 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { anchorOverlay, MDY_OVERLAY_GAP, MDY_OVERLAY_VIEWPORT_MARGIN } from "../dist/index.js";
+import {
+  anchorOverlay,
+  MDY_OVERLAY_GAP,
+  MDY_OVERLAY_VIEWPORT_MARGIN,
+} from "../dist/index.js";
 
 const VIEWPORTS = [
   { width: 1440, height: 900 }, // desktop

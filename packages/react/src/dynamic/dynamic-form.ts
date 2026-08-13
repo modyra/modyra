@@ -4,10 +4,9 @@
  * low-code scenarios. Headless by design, matching every other hook this
  * package ships (@modyra/react has never shipped a rendered component;
  * consumers bring their own JSX — see docs/guides/headless-recipes.md).
- * "Parity" with Angular's `<mdy-dynamic-form>` means the same value/
- * validation/error semantics for the same Contract, not identical visual
- * output — this shares its scope and its one real limitation with that
- * component exactly: `fields` is a flat list, and Contract `layout` is not
+ * Parity across renderers means the same value, validation and error semantics for the same
+ * Contract, not identical visual output. The scope and the one real limitation are the contract's,
+ * not this binding's: `fields` is a flat list, and Contract `layout` is not
  * applied — because there is nothing here to apply it to.
  *
  * That is not a gap this package is waiting to close. It renders no elements
@@ -25,43 +24,44 @@
  */
 import { useEffect, useMemo } from "react";
 import {
-  assertSafeDynamicFieldNames,
-  buildDynamicFieldValidators,
+  applyFlatValidators,
+  buildFlatFormSchema,
   createForm,
-  field,
-  mdyEmptyValueFor,
   type MdyCoreFormOptions,
   type MdyDynamicField,
   type MdyFormSchema,
   type MdyTypedForm,
 } from "@modyra/core";
 
-/** Builds the (validator-free) schema for a flat field list — every field gets its default value, no validators yet (those come from `applyDynamicValidators`, matching Angular's own two-step "base schema, then upsertValidators" approach). */
-export function buildDynamicFormSchema(fields: ReadonlyArray<MdyDynamicField>): MdyFormSchema {
-  // The names become the schema's keys and the empty values its initial state. Both rules are core's:
-  // it decides what a key may be and what a kind holds when it holds nothing, so a form built here
-  // starts where the same field starts under any other adapter. A local table would drift — and a
-  // number starting at 0 rather than null is a field `required` can never fail.
-  assertSafeDynamicFieldNames(fields);
-  const schema: Record<string, unknown> = {};
-  for (const f of fields) schema[f.name] = field(mdyEmptyValueFor(f) as never, []);
-  return schema as MdyFormSchema;
-}
+/**
+ * The schema and the validators are `@modyra/core`'s.
+ *
+ * Both were written here, again in the framework-free renderer under a different name, and inlined a
+ * third time — while a *fourth* function called `buildDynamicFormSchema` in core took a nested node
+ * and did something else. The logic is pure engine: what a name may be, what a kind holds when it
+ * holds nothing, how a flattened collection reads back as a list rather than an object keyed "0".
+ *
+ * Re-exported under the names this package has always published, so a consumer's import keeps
+ * working. The core version also rebuilds collections, which this one never could.
+ */
+export {
+  buildFlatFormSchema as buildDynamicFormSchema,
+} from "@modyra/core";
 
-/** Applies each field's Contract validators (via the same `buildDynamicFieldValidators` Angular's own dynamic form calls) onto an already-built form, keyed so re-applying replaces rather than accumulates. */
-export function applyDynamicValidators(form: MdyTypedForm<MdyFormSchema>, fields: ReadonlyArray<MdyDynamicField>): void {
-  for (const f of fields) {
-    const { validators, marksRequired } = buildDynamicFieldValidators(f);
-    form.upsertValidators(f.name, "mdy-dynamic", validators, marksRequired);
-  }
+/** Applies the Contract validators, under this binding's own key. */
+export function applyDynamicValidators(
+  form: MdyTypedForm<MdyFormSchema>,
+  fields: ReadonlyArray<MdyDynamicField>,
+): void {
+  applyFlatValidators(form, fields, "mdy-dynamic");
 }
 
 export type UseMdyDynamicFormOptions = Omit<MdyCoreFormOptions<Record<string, unknown>>, "reactivity">;
 
 /**
  * Builds a real, running form from a flat `MdyDynamicField[]` — the same
- * config shape `parseDynamicForm()` produces and Angular's
- * `<mdy-dynamic-form [fields]>` consumes. The schema (field *names*) is
+ * config shape `parseDynamicForm()` produces and every renderer consumes. The schema (field
+ * *names*) is
  * fixed at first render, matching `useMdyForm`'s own "construct once"
  * contract; validators re-apply whenever `fields` changes (config-driven
  * apps commonly swap validator rules without remounting).
@@ -71,7 +71,7 @@ export function useMdyDynamicForm(
   options?: UseMdyDynamicFormOptions,
 ): MdyTypedForm<MdyFormSchema> {
   const form = useMemo(
-    () => createForm(buildDynamicFormSchema(fields), { ...options, autoActivate: false }),
+    () => createForm(buildFlatFormSchema(fields), { ...options, autoActivate: false }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- schema is intentionally built once, like useMdyForm's own schema thunk
     [],
   );

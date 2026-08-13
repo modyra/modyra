@@ -73,13 +73,7 @@
     "mdy-chip",
     "mdy-chip--centered",
     "mdy-chip--counter",
-    "mdy-chip--removable",
     "mdy-chip--selected",
-    "mdy-chip-wrapper",
-    "mdy-chip__btn",
-    "mdy-chip__check",
-    "mdy-chip__count",
-    "mdy-chip__label",
     "mdy-color-swatch",
     "mdy-color-swatch--active",
     "mdy-colors",
@@ -130,9 +124,6 @@
     "mdy-control__inline-errors-icon",
     "mdy-control__inline-errors-tooltip",
     "mdy-datepicker",
-    "mdy-datepicker__action-btn",
-    "mdy-datepicker__action-btn--primary",
-    "mdy-datepicker__actions",
     "mdy-datepicker__calendar",
     "mdy-datepicker__cell",
     "mdy-datepicker__cell--disabled",
@@ -152,9 +143,6 @@
     "mdy-datepicker__modal-header",
     "mdy-datepicker__modal-label",
     "mdy-datepicker__modal-value",
-    "mdy-datepicker__month-cell",
-    "mdy-datepicker__month-cell--selected",
-    "mdy-datepicker__month-picker",
     "mdy-datepicker__nav-btn",
     "mdy-datepicker__row",
     "mdy-datepicker__title",
@@ -163,10 +151,7 @@
     "mdy-datepicker__view-toggle",
     "mdy-datepicker__weekday",
     "mdy-datepicker__weekdays",
-    "mdy-datepicker__year-cell",
-    "mdy-datepicker__year-cell--selected",
     "mdy-datepicker__year-grid",
-    "mdy-datepicker__year-picker",
     "mdy-daterange-",
     "mdy-daterange__group",
     "mdy-daterange__hint",
@@ -337,11 +322,7 @@
   ],
   "files": {
     "packages/angular/src/lib/control/chips.directive.ts": {
-      "classes": [
-        "mdy-chip",
-        "mdy-chip--removable",
-        "mdy-chip--selected"
-      ],
+      "classes": [],
       "aria": [],
       "selectors": [
         "[mdyChips]"
@@ -638,9 +619,6 @@
         "mdy-control-datepicker-",
         "mdy-control-label",
         "mdy-datepicker",
-        "mdy-datepicker__action-btn",
-        "mdy-datepicker__action-btn--primary",
-        "mdy-datepicker__actions",
         "mdy-datepicker__icon",
         "mdy-datepicker__input",
         "mdy-datepicker__modal-header",
@@ -680,9 +658,6 @@
         "mdy-control-daterange",
         "mdy-control-label",
         "mdy-datepicker",
-        "mdy-datepicker__action-btn",
-        "mdy-datepicker__action-btn--primary",
-        "mdy-datepicker__actions",
         "mdy-datepicker__icon",
         "mdy-datepicker__input",
         "mdy-datepicker__modal-header",
@@ -725,10 +700,8 @@
     },
     "packages/angular/src/lib/renderers/datepicker/month-picker.component.ts": {
       "classes": [
-        "mdy-datepicker__month-cell",
-        "mdy-datepicker__month-cell--selected",
-        "mdy-datepicker__month-picker",
-        "mdy-month-picker"
+        "mdy-month-picker",
+        "mdy-part"
       ],
       "aria": [],
       "selectors": [
@@ -783,10 +756,8 @@
     },
     "packages/angular/src/lib/renderers/datepicker/year-picker.component.ts": {
       "classes": [
-        "mdy-datepicker__year-cell",
-        "mdy-datepicker__year-cell--selected",
         "mdy-datepicker__year-grid",
-        "mdy-datepicker__year-picker",
+        "mdy-part",
         "mdy-year-picker"
       ],
       "aria": [],
@@ -834,11 +805,6 @@
         "mdy-chip--centered",
         "mdy-chip--counter",
         "mdy-chip--selected",
-        "mdy-chip-wrapper",
-        "mdy-chip__btn",
-        "mdy-chip__check",
-        "mdy-chip__count",
-        "mdy-chip__label",
         "mdy-control-label",
         "mdy-control-multiselect",
         "mdy-control-multiselect-",

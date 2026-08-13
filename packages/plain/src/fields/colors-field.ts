@@ -5,11 +5,23 @@
  * What counts as a colour, and whether picking one should close the popup, is
  * `colorValueTransition` in `@modyra/widgets` — this renderer asks and obeys.
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicColorsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, colorValueEquals, colorValueTransition, overlayAnchoringFor, projectFieldShellA11y, type MdyColorValueIntent , defaultWidgetIdFactory} from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  colorValueEquals,
+  colorValueTransition,
+  defaultWidgetIdFactory,
+  overlayAnchoringFor,
+  projectFieldShellA11y,
+  shownErrorsOf,
+  showsAsInvalid,
+  type MdyColorValueIntent,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setIcon } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnOutsidePointer, positionOverlay, setOverlayOpen, trackOverlay } from "../overlay.js";
 
 const DEFAULT_PRESETS = ["#7067ff", "#0e0f16", "#f8fafc", "#94a3b8", "#22c55e", "#ef4444", "#f59e0b", "#3b82f6"];
@@ -18,9 +30,16 @@ export function renderColorsField(
   container: HTMLElement,
   f: MdyDynamicColorsField,
   handle: MdyFieldHandle<unknown>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
+  /**
+   * The words this control shows. The engine has no opinion about them, so they arrive from the
+   * widget contract's tables rather than being written here — three renderers each spelling
+   * "open the calendar" is three answers to one question.
+   */
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("colors");
   const definition = MDY_WIDGET_CONTRACTS.colors;
@@ -61,7 +80,7 @@ export function renderColorsField(
   toggle.type = "button";
   applyPart(toggle, definition.parts.toggle);
   toggle.setAttribute("aria-haspopup", "listbox");
-  toggle.setAttribute("aria-label", "Show the preset colours");
+  toggle.setAttribute("aria-label", messages.selectColorPrefix);
   // The themes draw the caret on `.mdy-select__arrow`, which is where the contract nests it
   // inside this toggle — an empty button would have no size at all.
   const toggleArrow = el("span", "mdy-select__arrow");
@@ -82,7 +101,7 @@ export function renderColorsField(
   presetList.setAttribute("role", "listbox");
   // A listbox with no name is announced as an unlabelled container, and the user has to guess what
   // they have landed in.
-  presetList.setAttribute("aria-label", "Colour presets");
+  presetList.setAttribute("aria-label", messages.colorPresetsHeader);
   popup.append(presetList);
 
   const swatches = presets.map((preset) => {
@@ -154,7 +173,7 @@ export function renderColorsField(
     // `applyPart` on the same element recomputes classes from the base it captured first.
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
-      errorsToShow(handle),
+      shownErrorsOf(handle),
       { widgetId: widgetId, controlId: hexInput.id },
     );
     applyPart(shell.label, a11y.label);
@@ -177,10 +196,10 @@ export function renderColorsField(
     // The themes place the panel from `--mdy-overlay-*`; the widget policy decides them.
     if (isOpen) queueMicrotask(() => positionOverlay(popup, shell.wrapper, anchoring));
     toggleArrow.classList.toggle("mdy-select__arrow--open", isOpen);
-    setErrors(shell.errorList, errorsToShow(handle).map((error) => error.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
-      hasError: !handle.valid(), filled: Boolean(value), required: handle.required(),
+      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: Boolean(value), required: handle.required(),
     });
   });
 

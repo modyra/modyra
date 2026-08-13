@@ -1,6 +1,28 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { colorValueEquals, colorValueTransition, dateDraftTransition, dateRangeDraftTransition, dateRangeValueTransition, dateValueTransition, dateWithinBounds, decideOverlayPlacement, fileSelectionTransition, clearFileSelection, multiselectOverlayAction, multiselectValueTransition, optionNavigationIndex, overlayCloseCommands, overlayLifecycleTransition, selectKeyboardAction, shouldCloseMultiselectOverlay, timeClockTransition, timeDraftTransition, timeInputTransition, widgetKeyIntent } from "../dist/index.js";
+import {
+  colorValueEquals,
+  colorValueTransition,
+  dateDraftTransition,
+  dateRangeDraftTransition,
+  dateRangeValueTransition,
+  dateValueTransition,
+  dateWithinBounds,
+  decideOverlayPlacement,
+  fileSelectionTransition,
+  clearFileSelection,
+  multiselectOverlayAction,
+  multiselectValueTransition,
+  optionNavigationIndex,
+  overlayCloseCommands,
+  overlayLifecycleTransition,
+  selectKeyboardAction,
+  shouldCloseMultiselectOverlay,
+  timeClockTransition,
+  timeDraftTransition,
+  timeInputTransition,
+  widgetKeyIntent,
+} from "../dist/index.js";
 
 test("overlay placement resolves collision without a DOM dependency", () => {
   assert.equal(decideOverlayPlacement({ viewportWidth: 1000, viewportHeight: 800, anchorTop: 700, anchorBottom: 740, anchorLeft: 800, anchorRight: 900, anchorWidth: 100, minSpace: 128, minWidth: 250, preferred: "below" }).placement, "above");

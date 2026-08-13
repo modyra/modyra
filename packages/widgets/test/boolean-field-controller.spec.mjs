@@ -6,7 +6,9 @@ import assert from "node:assert";
 import test from "node:test";
 
 import { vanillaReactivity } from "@modyra/core";
-import { createBooleanFieldController } from "../dist/field/index.js";
+import {
+  createBooleanFieldController,
+} from "../dist/field/index.js";
 
 function setup(checked = false, variant = "checkbox") {
   const rx = vanillaReactivity();

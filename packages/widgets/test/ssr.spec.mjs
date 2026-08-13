@@ -12,7 +12,7 @@ import { test } from "node:test";
 const {
   MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, browserRuntimeCapabilities, createCatalogWidgetController,
   dynamicParts, isFullyServerRenderable, ssrRuntimeCapabilities, staticParts,
-  defaultWidgetIdFactory, fieldPartIds, projectFieldA11y, processWidgetCommands,
+  defaultWidgetIdFactory, textFieldPartIds, projectTextFieldA11y, processWidgetCommands,
 } = await import("../dist/index.js");
 
 test("this process has no DOM, or nothing below proves anything", () => {
@@ -57,9 +57,9 @@ test("ids are computable and deterministic with no DOM", () => {
   // will look for.
   assert.equal(defaultWidgetIdFactory.part("email", "label"), "email__label");
   assert.equal(defaultWidgetIdFactory.item("pick", "option", "a"), "pick__option__a");
-  assert.deepEqual(fieldPartIds("email"), fieldPartIds("email"));
+  assert.deepEqual(textFieldPartIds("email"), textFieldPartIds("email"));
 
-  const projected = projectFieldA11y(
+  const projected = projectTextFieldA11y(
     { disabled: false, readonly: false, required: true, touched: false, open: false },
     [],
     { widgetId: "email" },

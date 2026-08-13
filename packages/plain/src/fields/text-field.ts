@@ -1,21 +1,22 @@
 /**
  * Renders text/textarea/email/password/number/slider kinds — all of these
- * map to the same headless createFieldController from @modyra/widgets
+ * map to the same headless createTextFieldController from @modyra/widgets
  * (per this session's own finding while designing the datepicker/timepicker
  * controllers: "slider" is structurally just a numeric field with
  * <input type=range> markup, not a distinct controller).
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity, MDY_VALUE_CONTRACTS } from "@modyra/core";
 import type { MdyDynamicNumberField, MdyDynamicTextField } from "@modyra/core";
 import {
-  narrowConstraints,
-  createFieldController,
   MDY_CSS_PROPERTIES,
   MDY_WIDGET_CONTRACTS,
+  createTextFieldController,
+  narrowConstraints,
+  shownErrorsOf,
   sliderFillRatio,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
 
 const NATIVE_INPUT_TYPE: Record<string, string> = {
   text: "text",
@@ -29,11 +30,14 @@ export function renderTextField(
   container: HTMLElement,
   f: MdyDynamicTextField | MdyDynamicNumberField,
   handle: MdyFieldHandle<string | number>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   const isTextarea = f.kind === "textarea";
-  const isNumeric = f.kind === "number" || f.kind === "slider";
+  // Which kinds hold a number is the value contract's answer, not a list repeated here: a renderer
+  // that decides it again is a renderer that can disagree with the engine about what it stores.
+  const isNumeric = MDY_VALUE_CONTRACTS[f.kind].shape === "number";
 
   // What this control asks for on top of the field's rules. The projection composes the two and
   // puts the attributes on the control part, so nothing here places them on the element.
@@ -42,7 +46,7 @@ export function renderTextField(
     ? { min: ranged.min ?? null, max: ranged.max ?? null, step: ranged.step ?? null }
     : undefined;
 
-  const controller = createFieldController(
+  const controller = createTextFieldController(
     {
       widgetId: widgetId,
       handle,
@@ -102,12 +106,12 @@ export function renderTextField(
     }
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, errorsToShow(handle).map((e) => e.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     // The themes style these state classes, the contract's own base element toggles.
     shell.syncState({
       touched: handle.touched(),
       disabled: handle.disabled(),
-      hasError: errorsToShow(handle).length > 0,
+      hasError: shownErrorsOf(handle).length > 0,
       filled: Boolean(handle.value()),
       required: handle.required(),
     });

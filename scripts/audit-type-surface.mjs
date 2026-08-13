@@ -27,14 +27,52 @@ import ts from "typescript";
 const ROOT = resolve(new URL("..", import.meta.url).pathname);
 const BASELINE = resolve(ROOT, "packages/widgets/contract-baseline/type-surface.json");
 /**
- * Every emitted declaration, not the entry points.
+ * Where a shape is *declared*, and separately, whether a consumer can *reach* it.
  *
- * Reading `index.d.ts` alone captured 38 shapes and missed `MdyFormError` entirely — it is declared
- * in `types.d.ts` and only *re-exported* from the entry, so nothing was there to read. A check that
- * covers a fraction of what it claims is worse than none, because the number it prints looks like
- * coverage.
+ * These are two different questions and reading only one of them gets the surface wrong in both
+ * directions. Reading `index.d.ts` alone captured 38 shapes and missed `MdyFormError`, which is
+ * declared in `types.d.ts` and only re-exported — so the shapes have to be gathered from every
+ * emitted declaration. But gathering them from every declaration and stopping there counted 623
+ * "public" shapes when a consumer can reach 26 subpaths: `FieldRecord`, `Hct`, `define` and
+ * `MdyWidgetShape` were all reported as public and none of them is on an entry.
+ *
+ * So: shapes from everywhere, filtered by the names the declared `exports` map actually publishes.
  */
-const PACKAGE_DIRS = ["packages/core/dist", "packages/widgets/dist"];
+const PACKAGES = ["core", "widgets"];
+const PACKAGE_DIRS = PACKAGES.map((name) => `packages/${name}/dist`);
+
+/**
+ * Every name a consumer can import, from every subpath the package declares.
+ *
+ * Resolved through the checker rather than by reading the entry's own text: an entry that says
+ * `export * from "./types.js"` names nothing, and the whole point is what that expands to.
+ */
+function publicNames() {
+  const reachable = new Set();
+  for (const pkg of PACKAGES) {
+    const manifest = JSON.parse(readFileSync(resolve(ROOT, `packages/${pkg}/package.json`), "utf8"));
+    const entries = [];
+    for (const target of Object.values(manifest.exports ?? {})) {
+      const js = typeof target === "string" ? target : (target.import ?? target.default ?? "");
+      if (!String(js).endsWith(".js")) continue;
+      const declaration = resolve(ROOT, `packages/${pkg}`, String(js).replace(/\.js$/, ".d.ts"));
+      if (existsSync(declaration)) entries.push(declaration);
+    }
+    if (entries.length === 0) continue;
+    const program = ts.createProgram(entries, { allowJs: false, noResolve: false });
+    const checker = program.getTypeChecker();
+    for (const entry of entries) {
+      const source = program.getSourceFile(entry);
+      if (!source) continue;
+      const symbol = checker.getSymbolAtLocation(source);
+      if (!symbol) continue;
+      for (const exported of checker.getExportsOfModule(symbol)) reachable.add(exported.getName());
+    }
+  }
+  return reachable;
+}
+
+const PUBLIC = publicNames();
 
 function declarationFiles(dir) {
   const out = [];
@@ -155,7 +193,10 @@ for (const entry of ENTRIES) {
   }
   const source = ts.createSourceFile(file, readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true);
   const visit = (node) => {
-    const exported = node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+    const exported = node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
+      // Exported from its module *and* published by an entry. A module's own `export` keyword says
+      // the package can use it across files; the `exports` map says a consumer can have it.
+      && PUBLIC.has(node.name?.text ?? "");
     if (exported && ts.isInterfaceDeclaration(node)) {
       surface[node.name.text] = membersOf(node);
     } else if (exported && ts.isTypeAliasDeclaration(node) && ts.isTypeLiteralNode(node.type)) {
@@ -185,7 +226,7 @@ const current = Object.fromEntries(names.map((name) => [name, surface[name]]));
 
 if (process.argv.includes("--write")) {
   writeFileSync(BASELINE, `${JSON.stringify(current, null, 2)}\n`);
-  console.log(`Type surface written: ${relative(ROOT, BASELINE)} — ${names.length} exported shapes.`);
+  console.log(`Type surface written: ${relative(ROOT, BASELINE)} — ${names.length} shapes reachable from a declared entry (of ${PUBLIC.size} public names).`);
   process.exit(0);
 }
 

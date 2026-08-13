@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import { createFieldController, type MdyFieldController } from "@modyra/widgets";
+import { createTextFieldController, type MdyTextFieldController } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
 
 // ─── Text-like ────────────────────────────────────────────────────────────────
@@ -16,7 +16,7 @@ export class MdyTextFieldElement extends MdyFieldElement<string | null> {
   declare placeholder: string;
   declare autocomplete: string;
   protected override readonly widgetKind = "text" as const;
-  private fieldController?: MdyFieldController<string | null>;
+  private fieldController?: MdyTextFieldController<string | null>;
 
   constructor() {
     super();
@@ -29,7 +29,7 @@ export class MdyTextFieldElement extends MdyFieldElement<string | null> {
     super.connectedCallback();
     const handle = this.field;
     if (!handle || this.fieldController) return;
-    this.fieldController = createFieldController({
+    this.fieldController = createTextFieldController({
       widgetId: this.fieldId,
       handle,
       inputType: this.type,

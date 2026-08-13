@@ -876,34 +876,6 @@
         color: var(--mdy-on-surface);
     }
 
-    .mdy-datepicker__actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.5rem;
-        padding: 1rem 1.5rem 1.5rem;
-    }
-
-    .mdy-datepicker__action-btn {
-        padding: 0.625rem 1rem;
-        background: transparent;
-        border: none;
-        border-radius: var(--mdy-corner-full);
-        color: var(--mdy-primary);
-        font-size: 0.875rem;
-        font-weight: var(--mdy-font-weight-medium);
-        cursor: pointer;
-        transition: background var(--mdy-sys-motion-duration-slow, 0.2s);
-    }
-
-    .mdy-datepicker__action-btn:hover {
-        background: var(--mdy-surface-container-highest-hover);
-    }
-
-    .mdy-datepicker__action-btn--primary {
-        color: var(--mdy-primary);
-        font-weight: var(--mdy-font-weight-semibold);
-    }
-
     /* ─── DatePicker input (filled style) ────────────────────────────────────── */
 
     .mdy-datepicker__input {

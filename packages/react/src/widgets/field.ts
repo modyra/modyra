@@ -4,11 +4,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MdyFieldHandle } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor } from "@modyra/core";
 import {
-  createFieldController,
-  type MdyFieldControllerOptions,
-  type MdyFieldIntent,
+  subscribeController,
+  createTextFieldController,
+  type MdyTextFieldControllerOptions,
+  type MdyTextFieldIntent,
   type MdyFieldState,
   type MdyWidgetViewContract,
 } from "@modyra/widgets";
@@ -16,14 +17,14 @@ import {
 import { useMdyCommandQueue } from "./runtime.js";
 
 export type UseMdyFieldOptions<TValue> = Omit<
-  MdyFieldControllerOptions<TValue>,
+  MdyTextFieldControllerOptions<TValue>,
   "handle"
 >;
 
 export interface MdyReactFieldApi<TValue> {
   readonly state: MdyFieldState<TValue>;
   readonly view: MdyWidgetViewContract;
-  dispatch(intent: MdyFieldIntent<TValue>): void;
+  dispatch(intent: MdyTextFieldIntent<TValue>): void;
   setValue(value: TValue): void;
   setReadonly(readonly: boolean): void;
   destroy(): void;
@@ -33,10 +34,10 @@ export function useMdyField<TValue>(
   handle: MdyFieldHandle<TValue>,
   options: UseMdyFieldOptions<TValue>,
 ): MdyReactFieldApi<TValue> {
-  const reactivity = useMemo(() => vanillaReactivity(), []);
+  const reactivity = useMemo(() => observerFor(handle), [handle]);
 
   const controller = useMemo(
-    () => createFieldController({ ...options, handle }, reactivity),
+    () => createTextFieldController({ ...options, handle }, reactivity),
     // Recreate only when the identity of options/handle changes.
     [options, handle, reactivity],
   );
@@ -52,20 +53,13 @@ export function useMdyField<TValue>(
 
   const [, setVersion] = useState(0);
 
-  useEffect(() => {
-    const ref = reactivity.effect(() => {
-      controller.state();
-      controller.view();
-      setVersion((v) => v + 1);
-    });
-    return () => {
-      ref.destroy();
-      controller.destroy();
-    };
-  }, [controller, reactivity]);
+  useEffect(
+    () => subscribeController(controller, reactivity, () => setVersion((v) => v + 1)),
+    [controller, reactivity],
+  );
 
   const dispatch = useCallback(
-    (intent: MdyFieldIntent<TValue>) => {
+    (intent: MdyTextFieldIntent<TValue>) => {
       execute(controller.dispatch(intent));
     },
     [controller, execute],

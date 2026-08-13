@@ -5,25 +5,26 @@
 import { getCurrentScope, onScopeDispose, shallowRef, triggerRef } from "@vue/reactivity";
 import type { MdyFieldHandle } from "@modyra/core";
 import {
-  createFieldController,
-  type MdyFieldControllerOptions,
-  type MdyFieldIntent,
+  fieldCommandHandlers,
+  createTextFieldController,
+  type MdyTextFieldControllerOptions,
+  type MdyTextFieldIntent,
   type MdyFieldState,
   type MdyWidgetViewContract,
 } from "@modyra/widgets";
 
-import { vueReactivity } from "../index.js";
+import { vueReactivity } from "../reactivity.js";
 import { executeVueCommands } from "./runtime.js";
 
 export type UseMdyFieldOptions<TValue> = Omit<
-  MdyFieldControllerOptions<TValue>,
+  MdyTextFieldControllerOptions<TValue>,
   "handle"
 >;
 
 export interface MdyVueFieldApi<TValue> {
   readonly state: MdyFieldState<TValue>;
   readonly view: MdyWidgetViewContract;
-  dispatch(intent: MdyFieldIntent<TValue>): void;
+  dispatch(intent: MdyTextFieldIntent<TValue>): void;
   setValue(value: TValue): void;
   setReadonly(readonly: boolean): void;
   destroy(): void;
@@ -34,7 +35,7 @@ export function useMdyField<TValue>(
   options: UseMdyFieldOptions<TValue>,
 ): MdyVueFieldApi<TValue> {
   const reactivity = vueReactivity();
-  const controller = createFieldController({ ...options, handle }, reactivity);
+  const controller = createTextFieldController({ ...options, handle }, reactivity);
 
   const stateRef = shallowRef(controller.state());
   const viewRef = shallowRef(controller.view());
@@ -53,15 +54,11 @@ export function useMdyField<TValue>(
     });
   }
 
-  const dispatch = (intent: MdyFieldIntent<TValue>) => {
+  const dispatch = (intent: MdyTextFieldIntent<TValue>) => {
     executeVueCommands(
       controller.dispatch(intent),
       () => undefined,
-      {
-        setOpen: () => undefined, // no overlay in this control
-        onTouched: () => handle.markAsTouched(),
-        onDirty: () => handle.markAsDirty(),
-      },
+      fieldCommandHandlers(handle),
     );
   };
 

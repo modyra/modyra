@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import type { MdySelectOption } from "@modyra/core";
 import { vanillaReactivity } from "@modyra/core";
 import {
+  subscribeController,
   createSelectController,
   type MdySelectController,
   type MdySelectControllerOptions,
@@ -43,6 +44,9 @@ export function useMdySelect<TValue>(
   lookup: MdyElementLookup,
   handlers: MdyPreactCommandHandlers,
 ): MdySelectApi<TValue> {
+  // No handle to resolve an owner from: the select controller takes options and a callback rather
+  // than a field, so there is no form whose runtime this could observe through. Its own runtime is
+  // correct here and would not be for any other kind.
   const reactivity = useMemo(() => vanillaReactivity(), []);
   const controller = useMemo(
     () => createSelectController(options, reactivity),
@@ -55,17 +59,10 @@ export function useMdySelect<TValue>(
 
   const [, setVersion] = useState(0);
 
-  useEffect(() => {
-    const ref = reactivity.effect(() => {
-      controller.state();
-      controller.view();
-      setVersion((v) => v + 1);
-    });
-    return () => {
-      ref.destroy();
-      controller.destroy();
-    };
-  }, [controller, reactivity]);
+  useEffect(
+    () => subscribeController(controller, reactivity, () => setVersion((v) => v + 1)),
+    [controller, reactivity],
+  );
 
   const dispatch = useCallback(
     (intent: MdySelectIntent) => {

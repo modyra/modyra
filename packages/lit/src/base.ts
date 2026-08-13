@@ -1,20 +1,23 @@
 import { MdyFieldHandle, type MdyFieldConstraints } from "@modyra/core";
-import { MDY_ICONS } from "@modyra/core/ui";
+import { MDY_ICONS, messagesForLocale, type MdyI18nMessages } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
-import { defaultWidgetIdFactory as ID, MDY_FIELD_SHELL_CLASSES as SHELL, MDY_WIDGET_CONTRACTS, type MdyWidgetKind,
+import {
+  MDY_FIELD_SHELL_CLASSES as SHELL,
+  MDY_WIDGET_CONTRACTS,
+  defaultWidgetIdFactory as ID,
   popupAlignmentClass,
   popupPlacementClass,
   projectFieldShellA11y,
+  shownErrorsOf,
   type MdyOverlayAlignment,
   type MdyOverlayPlacement,
   type MdyPartContract,
   type MdyPopupWidgetKind,
+  type MdyWidgetKind,
 } from "@modyra/widgets";
 import { MdyFormController } from "./adapter.js";
 import { narrowConstraints } from "@modyra/widgets";
-import { shownErrors } from "@modyra/widgets";
-import type { MdyFieldError } from "@modyra/core";
 
 /** Renders an icon from the shared library (same SVGs as every adapter). */
 export function mdyIcon(name: keyof typeof MDY_ICONS, className: string): unknown {
@@ -49,12 +52,33 @@ export abstract class MdyFieldElement<T> extends LitElement {
     label: { type: String },
     inlineErrors: { type: Boolean, attribute: "inline-errors" },
     floatingLabel: { type: Boolean, attribute: "floating-label" },
+    locale: { type: String },
   };
 
   declare field: MdyFieldHandle<T> | undefined;
   declare label: string;
   declare inlineErrors: boolean;
   declare floatingLabel: boolean;
+  /**
+   * The language this control speaks. Unset it follows the page, which is what a control owes a
+   * reader who never chose one.
+   */
+  declare locale: string | undefined;
+
+  /**
+   * The words this control shows, for the locale it was given.
+   *
+   * From the widget contract's tables, never spelled here: the same button was written three ways
+   * across three renderers while each of them owned its own English.
+   */
+  protected get messages(): MdyI18nMessages {
+    return messagesForLocale(this.resolvedLocale);
+  }
+
+  /** The host's choice if it made one, the page's otherwise. */
+  protected get resolvedLocale(): string {
+    return this.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language);
+  }
 
   protected readonly fieldId = `mdy-field-${nextId++}`;
   private _tracker: MdyFormController | null = null;
@@ -161,7 +185,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   }
 
   protected showErrors(handle: MdyFieldHandle<T>): boolean {
-    return handle.touched() && errorsToShow(handle).length > 0;
+    return handle.touched() && shownErrorsOf(handle).length > 0;
   }
 
   /** Whether the field currently holds a value (drives label styling). */
@@ -172,7 +196,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
 
   /** Error text joined for inline display. */
   protected inlineErrorText(handle: MdyFieldHandle<T>): string {
-    return errorsToShow(handle)
+    return shownErrorsOf(handle)
       .map((e) => e.message)
       .filter((msg) => !!msg && msg.trim() !== "")
       .join(", ");
@@ -246,7 +270,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
   protected controlPart(handle: MdyFieldHandle<T>): MdyPartContract {
     return projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
-      errorsToShow(handle),
+      shownErrorsOf(handle),
       {
         widgetId: this.fieldId,
         kind: this.widgetKind,
@@ -306,7 +330,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
       id=${this.errorsId}
       aria-live="polite"
     >
-      ${errorsToShow(handle).map(
+      ${shownErrorsOf(handle).map(
         (er) => html`<li class="${SHELL.errorItem}">${er.message}</li>`,
       )}
     </ul>`;
@@ -346,16 +370,3 @@ export abstract class MdyFieldElement<T> extends LitElement {
   }
 }
 
-/**
- * The errors a field may show.
- *
- * Asked once here rather than decided at each component: a field the form is not asking about shows
- * no verdict, and that rule lives in `@modyra/widgets` beside the projection every component already
- * uses.
- */
-export function errorsToShow(handle: {
-  errors(): ReadonlyArray<MdyFieldError>;
-  disabled(): boolean;
-}): ReadonlyArray<MdyFieldError> {
-  return shownErrors({ disabled: handle.disabled() }, handle.errors());
-}

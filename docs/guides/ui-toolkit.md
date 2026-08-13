@@ -114,7 +114,7 @@ loader **before** parsing:
 import {
   parseDynamicFields,
   type MdyDynamicField,
-} from "@modyra/core/dynamic-config";
+} from "@modyra/core";
 
 function loadFields(raw: unknown): MdyDynamicField[] {
   // v0 legacy payloads used `type` instead of `kind` — migrate, then parse.

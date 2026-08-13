@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, input } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { createOptionFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -25,7 +25,7 @@ import { MdySelectOption } from "../../core/types";
       [labelId]="fieldId + '-label'"
       [required]="isRequired()"
       [filled]="value() !== null"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
 
@@ -45,7 +45,7 @@ import { MdySelectOption } from "../../core/types";
             [checked]="value() === opt.value"
             [disabled]="isDisabled()"
             (change)="onSelectionChange(opt.value)"
-            (blur)="dispatchValueBlur('radio')"
+            (blur)="onBlur()"
           />
           <span class="mdy-radio-circle"></span>
           <span class="mdy-radio-label">{{ opt.label }}</span>
@@ -53,7 +53,7 @@ import { MdySelectOption } from "../../core/types";
       }
     </div>
 
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
@@ -64,13 +64,24 @@ import { MdySelectOption } from "../../core/types";
 })
 export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TValue | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.radio;
+  protected override readonly widgetKind = "radio" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
   readonly layout  = input<"vertical" | "horizontal">("vertical");
 
   protected readonly fieldId = `mdy-control-radio-${MdyBaseControl.nextId()}`;
 
+  private readonly controller = this.adoptFieldController(
+    (handle, widgetId) => createOptionFieldController<TValue>(
+      { widgetId, handle: handle as never, options: this.options(), variant: "radio" }),
+    (c) => c.setOptions(this.options()),
+  );
+
   protected onSelectionChange(value: TValue): void {
-    this.dispatchValueIntent<TValue | null>("radio", { type: "select", value });
+    this.controller()?.dispatch({ type: "select", optionKey: String(value) });
+  }
+
+  protected onBlur(): void {
+    this.controller()?.dispatch({ type: "blur" });
   }
 }

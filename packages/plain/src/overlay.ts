@@ -5,7 +5,7 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import { trackAnchoredOverlay } from "@modyra/widgets";
+import { applyOverlayProperties, trackAnchoredOverlay, bindLightDismiss, syncOverlayBackdrop } from "@modyra/widgets";
 import { anchorOverlay, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind } from "@modyra/widgets";
 
 export interface OverlayPlacementOptions {
@@ -130,10 +130,11 @@ export function positionOverlay(
     },
   );
   heldDecisions.set(popup, { decision: anchoring.decision, content, ...(options.kind ? { kind: options.kind } : {}) });
-  for (const [property, value] of Object.entries(anchoring.properties)) {
-    popup.style.setProperty(property, value);
-  }
+  applyOverlayProperties(popup, anchoring.properties);
   popup.dataset.placement = anchoring.placement;
+  // A modal dims what is behind it, and which placement is modal is the contract's answer. Here
+  // rather than in each field: the placement is only known once the popup has been measured.
+  syncOverlayBackdrop(popup, anchoring.decision.placement === "overlay");
   if (options.kind) reflectPlacement(popup, options.kind, anchoring.placement);
   return anchoring.decision;
 }
@@ -150,7 +151,14 @@ export function trackOverlay(
 ): () => void {
   // The listening is `@modyra/widgets`', because passive and frame-coalesced is what it has to be
   // and that was written three times here and in the other two renderers, differently each time.
-  return trackAnchoredOverlay(() => positionOverlay(popup, anchor, options), isOpen);
+  //
+  // One answer for both events, deliberately: this renderer re-decides the placement on every
+  // reposition rather than holding the one it opened with, so a scroll and a resize genuinely have
+  // the same reply here.
+  return trackAnchoredOverlay({
+    reposition: () => positionOverlay(popup, anchor, options),
+    isOpen,
+  });
 }
 
 /**
@@ -212,33 +220,7 @@ export function dismissOnOutsidePointer(
     },
   });
 
-  const onDown = (event: Event): void => {
-    const e = event as PointerEvent;
-    policy.pointerdown(e.target, { pointerId: e.pointerId ?? 0, isPrimary: e.isPrimary ?? true, button: e.button ?? 0 });
-  };
-  const onUp = (event: Event): void => {
-    const e = event as PointerEvent;
-    policy.pointerup(e.target, e.pointerId ?? undefined);
-  };
-  const onClick = (event: Event): void => policy.click(event.target);
-  const onCancel = (event: Event): void => policy.pointercancel((event as PointerEvent).pointerId ?? 0);
-  // An interaction whose end the page cannot observe is abandoned, not completed.
-  const onAbandon = (): void => policy.reset();
+  const dispose = bindLightDismiss(policy);
 
-  document.addEventListener("pointerdown", onDown, true);
-  document.addEventListener("pointerup", onUp, true);
-  document.addEventListener("click", onClick, true);
-  document.addEventListener("pointercancel", onCancel, true);
-  window.addEventListener("blur", onAbandon);
-  document.addEventListener("visibilitychange", onAbandon);
-  const dispose = (): void => {
-    document.removeEventListener("pointerdown", onDown, true);
-    document.removeEventListener("pointerup", onUp, true);
-    document.removeEventListener("click", onClick, true);
-    document.removeEventListener("pointercancel", onCancel, true);
-    window.removeEventListener("blur", onAbandon);
-    document.removeEventListener("visibilitychange", onAbandon);
-    policy.reset();
-  };
   return Object.assign(dispose, { interactionFromInside: policy.interactionFromInside });
 }

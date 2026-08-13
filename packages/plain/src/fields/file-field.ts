@@ -6,11 +6,21 @@
  * `fileSelectionTransition` in `@modyra/widgets`; this renderer only turns picks and drops into
  * candidates and draws the outcome.
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicFileField } from "@modyra/core";
-import { clearFileSelection, fileSelectionTransition, MDY_WIDGET_CONTRACTS, projectFieldShellA11y, type MdyFileCandidate } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  clearFileSelection,
+  fileSelectionTransition,
+  projectFieldShellA11y,
+  shownErrorsOf,
+  showsAsInvalid,
+  type MdyFileCandidate,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
-import { buildFieldShell, errorsToShow } from "../field-shell.js";
+import { buildFieldShell } from "../field-shell.js";
 
 const DRAGOVER_CLASS = "mdy-file-container--dragover";
 
@@ -23,9 +33,16 @@ export function renderFileField(
   container: HTMLElement,
   f: MdyDynamicFileField,
   handle: MdyFieldHandle<unknown>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
+  /**
+   * The words this control shows. The engine has no opinion about them, so they arrive from the
+   * widget contract's tables rather than being written here — three renderers each spelling
+   * "open the calendar" is three answers to one question.
+   */
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   const definition = MDY_WIDGET_CONTRACTS.file;
   const selectionOptions = { accept: f.accept, multiple: Boolean(f.multiple) };
 
@@ -49,14 +66,14 @@ export function renderFileField(
   // cannot be styled), so the affordance is a button that forwards the click to it.
   const browse = el("button", "mdy-button") as HTMLButtonElement;
   browse.type = "button";
-  setText(browse, "Choose a file");
+  setText(browse, messages.fileSelect);
   const fileList = el("ul") as HTMLUListElement;
   applyPart(fileList, definition.parts.fileList);
   const placeholder = el("span", "mdy-file-placeholder");
-  setText(placeholder, "No file selected");
+  setText(placeholder, messages.fileNoneSelected);
   const clear = el("button", "mdy-file-clear") as HTMLButtonElement;
   clear.type = "button";
-  setText(clear, "Clear");
+  setText(clear, messages.fileClearSelection);
   const info = el("div", "mdy-file-info") as HTMLDivElement;
   info.append(fileList, placeholder, clear);
   content.append(browse, info);
@@ -108,7 +125,7 @@ export function renderFileField(
     // `applyPart` on the same element recomputes classes from the base it captured first.
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
-      errorsToShow(handle),
+      shownErrorsOf(handle),
       { widgetId: widgetId, controlId: control.id },
     );
     applyPart(shell.label, a11y.label);
@@ -134,10 +151,10 @@ export function renderFileField(
       item.append(name, meta);
       fileList.appendChild(item);
     }
-    setErrors(shell.errorList, errorsToShow(handle).map((error) => error.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
-      hasError: !handle.valid(), filled: files.length > 0, required: handle.required(),
+      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: files.length > 0, required: handle.required(),
     });
   });
 

@@ -15,12 +15,11 @@ import {
   CalendarDate,
   formatIsoDate,
   parseIsoDate,
-} from "@modyra/core/date-utils";
+} from "@modyra/core/datetime";
 import {
   MDY_WIDGET_CONTRACTS,
-  dateRangeDraftTransition,
   dateRangeValueTransition,
-  type MdyDateRangeDraftState, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+  overlayControlledId, projectOverlayOpenerA11y, createDaterangeFieldController } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -59,7 +58,7 @@ import { inputText, isoDateText } from "../renderer-projection";
         [forId]="fieldId + '-start'"
         [required]="isRequired()"
         [filled]="true"
-        [showInlineError]="inlineErrors && touched() && hasErrors()"
+        [showInlineError]="inlineErrorShown()"
         [errorText]="inlineErrorText()"
       />
     }
@@ -79,7 +78,7 @@ import { inputText, isoDateText } from "../renderer-projection";
             (blur)="onEndpointBlur($event, 'start')"
             (focus)="lastFocused.set('start')"
             (keydown.arrowdown)="openOverlay($event); $event.preventDefault()"
-            [attr.aria-invalid]="hasErrors()"
+            [attr.aria-invalid]="paintsAsInvalid()"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="ariaRequired() || isRequired()"
@@ -103,7 +102,7 @@ import { inputText, isoDateText } from "../renderer-projection";
             (blur)="onEndpointBlur($event, 'end')"
             (focus)="lastFocused.set('end')"
             (keydown.arrowdown)="openOverlay($event); $event.preventDefault()"
-            [attr.aria-invalid]="hasErrors()"
+            [attr.aria-invalid]="paintsAsInvalid()"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="ariaRequired() || isRequired()"
@@ -135,13 +134,13 @@ import { inputText, isoDateText } from "../renderer-projection";
         [position]="position()"
         [alignment]="alignment()"
         [coords]="coords()"
-        [hasBackdrop]="variant() === 'modal' || position() === 'overlay'"
+        [hasBackdrop]="position() === 'overlay'"
         [widthMode]="'auto-content'"
         [panelClass]="popupClass"
         [kind]="'daterange'"
         (close)="closeOverlay()"
       >
-        @if (variant() === 'modal') {
+        @if (position() === 'overlay') {
            <div class="mdy-datepicker__modal-header">
               <span class="mdy-datepicker__modal-label">{{ label() || i18n.daterangeSelectFallback }}</span>
               <span class="mdy-datepicker__modal-value">{{ modalDisplayValue() }}</span>
@@ -150,8 +149,9 @@ import { inputText, isoDateText } from "../renderer-projection";
 
         <mdy-range-calendar
           #calendar
-          [rangeStart]="variant() === 'modal' ? tempStart() : parsedStart()"
-          [rangeEnd]="variant() === 'modal' ? tempEnd() : parsedEnd()"
+          [controller]="controller()"
+          [rangeStart]="parsedStart()"
+          [rangeEnd]="parsedEnd()"
           [minDate]="parsedMinDate()"
           [maxDate]="parsedMaxDate()"
           [ariaLabel]="label() || i18n.daterangeChooseRange"
@@ -160,12 +160,6 @@ import { inputText, isoDateText } from "../renderer-projection";
           (closed)="closeOverlay()"
         />
 
-        @if (variant() === 'modal') {
-           <div class="mdy-datepicker__actions">
-              <button type="button" class="mdy-datepicker__action-btn" (click)="cancelSelection()">{{ i18n.datepickerCancel }}</button>
-              <button type="button" class="mdy-datepicker__action-btn mdy-datepicker__action-btn--primary" (click)="applySelection()">{{ i18n.datepickerConfirm }}</button>
-           </div>
-        }
       </mdy-overlay-panel>
     </div>
 
@@ -174,7 +168,7 @@ import { inputText, isoDateText } from "../renderer-projection";
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     }
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     }
   `,
@@ -187,12 +181,32 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   protected override readonly overlayKind = "daterange" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.daterange;
+  protected override readonly widgetKind = "daterange" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly startPlaceholder = input<string>("Start");
   readonly endPlaceholder = input<string>("End");
   readonly minDate = input<string | null>(null);
   readonly maxDate = input<string | null>(null);
+  /**
+   * Where the popup sits: hung off the control, or covering the viewport.
+   *
+   * Presentation and nothing else. It used to mean "modal *and* confirm before committing", which
+   * contradicted this kind's own value contract (`commit: "live"`).
+   */
   readonly variant = input<"docked" | "modal">("docked");
+
+  protected override forceModalPlacement(): boolean {
+    return this.variant() === "modal";
+  }
+
+  // The ends can move, and the controller is told rather than rebuilt: rebuilding forgets the month
+  // on screen and which end the next pick closes.
+  protected readonly controller = this.adoptFieldController(
+    (handle, widgetId) => createDaterangeFieldController({
+      widgetId, handle: handle as never, minDate: this.minDate(), maxDate: this.maxDate(),
+      firstDayOfWeek: this.locale.firstDayOfWeek }),
+    (c) => c.setBounds(this.minDate(), this.maxDate()),
+  );
   readonly dateFilter = input<((date: string) => boolean) | null>(null);
 
   protected override readonly minSpace = 450;
@@ -216,20 +230,13 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   private readonly injector = inject(Injector);
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
 
-  private readonly modalDraft = signal<MdyDateRangeDraftState>({
-    committed: { start: null, end: null },
-    draft: { start: null, end: null },
-    open: false,
-  });
-  protected readonly tempStart = computed(() => parseIsoDate(this.modalDraft().draft.start));
-  protected readonly tempEnd = computed(() => parseIsoDate(this.modalDraft().draft.end));
 
   protected readonly displayStart = computed(() => isoDateText(this.value()?.start));
   protected readonly displayEnd = computed(() => isoDateText(this.value()?.end));
 
   protected readonly modalDisplayValue = computed((): string => {
-    const s = this.tempStart() ?? this.parsedStart();
-    const e = this.tempEnd() ?? this.parsedEnd();
+    const s = this.parsedStart();
+    const e = this.parsedEnd();
 
     if (!s) return this.i18n.daterangeSelectFallback;
 
@@ -268,48 +275,18 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   );
 
   protected override onBeforeOpen(): void {
-    this.modalDraft.set(dateRangeDraftTransition(
-      this.modalDraft(),
-      { type: "open", committed: this.value() ?? { start: null, end: null } },
-      { minIso: this.minDate(), maxIso: this.maxDate(), accepts: this.dateFilter() },
-    ).state);
     afterNextRender(() => {
       const cal = this.calendarRef();
       if (!cal) return;
-      cal.syncView(this.tempStart(), this.tempEnd());
+      cal.syncView(this.parsedStart(), this.parsedEnd());
       cal.focusFocusedDate();
     }, { injector: this.injector });
   }
 
-  protected applySelection(): void {
-    const transition = dateRangeDraftTransition(this.modalDraft(), { type: "confirm" });
-    this.modalDraft.set(transition.state);
-    if (transition.commit !== undefined) {
-      this.dispatchValueIntent<MdyDateRange | null>("daterange", { type: "select", value: transition.commit });
-    }
-    this.closeOverlay();
-  }
-
-  protected cancelSelection(): void {
-    this.modalDraft.set(dateRangeDraftTransition(this.modalDraft(), { type: "cancel" }).state);
-    this.closeOverlay();
-  }
-
-  protected onRangePicked(
-    range: {
-      readonly start: CalendarDate;
-      readonly end: CalendarDate;
-    },
-    forceApply = false,
-  ): void {
-    if (this.variant() === "modal" && !forceApply) {
-      this.modalDraft.set(dateRangeDraftTransition(
-        this.modalDraft(),
-        { type: "select", value: { start: formatIsoDate(range.start), end: formatIsoDate(range.end) } },
-        { minIso: this.minDate(), maxIso: this.maxDate(), accepts: this.dateFilter() },
-      ).state);
-      return;
-    }
+  protected onRangePicked(range: {
+    readonly start: CalendarDate;
+    readonly end: CalendarDate;
+  }): void {
     this.commitRange(formatIsoDate(range.start), formatIsoDate(range.end));
     this.closeOverlay();
   }

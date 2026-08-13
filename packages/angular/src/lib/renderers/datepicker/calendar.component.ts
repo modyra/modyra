@@ -1,3 +1,4 @@
+import { type MdyDatepickerFieldController } from "@modyra/widgets";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -8,24 +9,20 @@ import {
   Injector,
   input,
   output,
-  signal,
   viewChild,
 } from "@angular/core";
 import {
   CalendarDate,
-  daysInMonth,
   isDateInRange,
-  today,
-} from "@modyra/core/date-utils";
-import { calendarKeyboardTarget } from "@modyra/core/keyboard";
+} from "@modyra/core/datetime";
+import { calendarKeyboardTarget } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 import { MdyCalendarGridComponent } from "./calendar-grid.component";
 import { MdyCalendarHeaderComponent } from "./calendar-header.component";
 import { MdyMonthPickerComponent } from "./month-picker.component";
 import { MdyYearPickerComponent } from "./year-picker.component";
 
-type CalendarView = "calendar" | "month" | "year";
-import { moveCalendarMonth } from "../renderer-projection";
+import { calendarViewState } from "../../core/calendar-view-state";
 
 @Component({
   selector: "mdy-calendar",
@@ -54,7 +51,7 @@ import { moveCalendarMonth } from "../renderer-projection";
       (toggleView)="onToggleView()"
     />
 
-    @if (view() === "calendar") {
+    @if (view() === "days") {
       <mdy-calendar-grid
         [gridId]="gridId()"
         [year]="viewYear()"
@@ -65,7 +62,7 @@ import { moveCalendarMonth } from "../renderer-projection";
         [maxDate]="maxDate()"
         (datePicked)="onDatePicked($event)"
       />
-    } @else if (view() === "month") {
+    } @else if (view() === "months") {
       <mdy-month-picker
         [viewYear]="viewYear()"
         [minDate]="minDate()"
@@ -73,7 +70,7 @@ import { moveCalendarMonth } from "../renderer-projection";
         [currentMonth]="viewMonth()"
         (monthSelected)="onMonthSelected($event)"
       />
-    } @else if (view() === "year") {
+    } @else if (view() === "years") {
       <mdy-year-picker
         [currentYear]="viewYear()"
         [minDate]="minDate()"
@@ -91,7 +88,18 @@ export class MdyCalendarComponent {
   readonly minDate = input<CalendarDate | null>(null);
   readonly maxDate = input<CalendarDate | null>(null);
 
-  protected readonly view = signal<CalendarView>("calendar");
+  /**
+   * The controller for the kind, when there is a field behind this calendar.
+   *
+   * Which month is on screen, which cell has the keyboard and which of the three views is showing
+   * are its answers. Without one — this component is public and mountable without a form — the same
+   * questions are answered by signals, and both halves live in `calendarViewState` because the range
+   * calendar needs exactly the same pair.
+   */
+  readonly controller = input<MdyDatepickerFieldController | undefined>(undefined);
+
+  private readonly viewState = calendarViewState(() => this.controller() as never);
+  protected readonly view = this.viewState.mode;
 
   private readonly grid = viewChild(MdyCalendarGridComponent);
   private readonly injector = inject(Injector);
@@ -116,41 +124,25 @@ export class MdyCalendarComponent {
   readonly datePicked = output<CalendarDate>();
   readonly closed = output<void>();
 
-  protected readonly viewYear = signal(today().year);
-  protected readonly viewMonth = signal(today().month);
-  protected readonly focusedDate = signal<CalendarDate>(today());
+  protected readonly viewYear = this.viewState.year;
+  protected readonly viewMonth = this.viewState.month;
+  protected readonly focusedDate = this.viewState.focused;
 
   syncView(date: CalendarDate | null): void {
-    const d = date ?? today();
-    this.viewYear.set(d.year);
-    this.viewMonth.set(d.month);
-    this.focusedDate.set(d);
-    this.view.set("calendar");
+    this.viewState.reset(date);
   }
 
+  /** Where the header goes, answered by the contract rather than by a branch here. */
   protected onToggleView(): void {
-    const current = this.view();
-    if (current === "calendar") {
-      this.view.set("year");
-    } else {
-      this.view.set("calendar");
-    }
+    this.viewState.toggleView();
   }
 
   protected onMonthSelected(month: number): void {
-    this.viewMonth.set(month);
-    this.view.set("calendar");
-    const focused = this.focusedDate();
-    const day = Math.min(focused.day, daysInMonth(focused.year, month));
-    this.focusedDate.set({ ...focused, month, day });
+    this.viewState.selectMonth(month);
   }
 
   protected onYearSelected(year: number): void {
-    this.viewYear.set(year);
-    this.view.set("month");
-    const focused = this.focusedDate();
-    const day = Math.min(focused.day, daysInMonth(year, focused.month));
-    this.focusedDate.set({ ...focused, year, day });
+    this.viewState.selectYear(year);
   }
 
   protected goToPreviousMonth(): void {
@@ -162,22 +154,22 @@ export class MdyCalendarComponent {
   }
 
   private navigateMonth(delta: number): void {
-    const moved = moveCalendarMonth(this.viewYear(), this.viewMonth(), this.focusedDate(), delta);
-    this.viewYear.set(moved.year);
-    this.viewMonth.set(moved.month);
-    this.focusedDate.set(moved.focused);
+    this.viewState.navigate(delta);
   }
 
   protected onDatePicked(date: CalendarDate): void {
-    this.focusedDate.set(date);
+    // The emit stays: it is this framework's output and nothing the contract knows about.
+    this.viewState.focus(date);
     this.datePicked.emit(date);
   }
 
   protected onKeydown(event: KeyboardEvent): void {
-    if (this.view() !== "calendar") {
+    if (this.view() !== "days") {
       if (event.key === "Escape") {
         event.preventDefault();
-        this.view.set("calendar");
+        const controller = this.controller();
+        if (controller) controller.dispatch({ type: "set-view-mode", mode: "days" });
+        else this.viewState.reset(this.focusedDate());
       }
       return;
     }
@@ -202,11 +194,10 @@ export class MdyCalendarComponent {
 
     if (next) {
       event.preventDefault();
-      this.focusedDate.set(next);
-      if (next.year !== this.viewYear() || next.month !== this.viewMonth()) {
-        this.viewYear.set(next.year);
-        this.viewMonth.set(next.month);
-      }
+      const controller = this.controller();
+      // Moving the focus and paging the month it crosses into were two writes and are one intent.
+      if (controller) controller.dispatch({ type: "keydown", key: event.key, shiftKey: event.shiftKey });
+      else this.viewState.focus(next);
     }
   }
 }

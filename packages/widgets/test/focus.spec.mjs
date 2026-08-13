@@ -9,7 +9,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { JSDOM } from "jsdom";
-import { createFocusCustodian } from "../dist/index.js";
+import {
+  createFocusCustodian,
+} from "../dist/index.js";
 
 /** A widget with a trigger, a popup and a field inside the popup. */
 function widget() {

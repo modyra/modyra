@@ -96,6 +96,57 @@ export function isDateInRange(
   return true;
 }
 
+/**
+ * Whether a whole month lies outside the range, so a month picker can grey it out.
+ *
+ * The question a calendar asks when it offers months rather than days, and asking it of a *date*
+ * gets it wrong at the edges: the first of a month can be before `min` while most of that month is
+ * reachable. So it is asked of the month.
+ */
+export function isMonthOutOfRange(
+  year: number,
+  month: number,
+  min: CalendarDate | null,
+  max: CalendarDate | null,
+): boolean {
+  if (min && (year < min.year || (year === min.year && month < min.month))) return true;
+  if (max && (year > max.year || (year === max.year && month > max.month))) return true;
+  return false;
+}
+
+/** Whether a whole year lies outside the range, for the same reason as the month above. */
+export function isYearOutOfRange(
+  year: number,
+  min: CalendarDate | null,
+  max: CalendarDate | null,
+): boolean {
+  return (min !== null && year < min.year) || (max !== null && year > max.year);
+}
+
+/**
+ * The years a year picker offers.
+ *
+ * A bound is a bound: a field that accepts 2020 to 2030 offers eleven years, not two centuries with
+ * eleven of them enabled. Where there is no bound the span is wide enough that a birth date and a
+ * far maturity are both reachable by scrolling.
+ *
+ * Always contains the year on screen, bound or not — a picker that cannot show where it already is
+ * has no way back, and a view can sit outside the bounds when a value arrives from elsewhere.
+ *
+ * Stated once because two renderers each choosing a span is two different pickers.
+ */
+export function calendarYearRange(
+  viewYear: number,
+  min: CalendarDate | null,
+  max: CalendarDate | null,
+): readonly number[] {
+  const start = Math.min(min?.year ?? Math.min(viewYear - 100, 1920), viewYear);
+  const end = Math.max(max?.year ?? Math.max(viewYear + 100, 2120), viewYear);
+  const years: number[] = [];
+  for (let year = start; year <= end; year += 1) years.push(year);
+  return years;
+}
+
 /** Add months to a CalendarDate, clamping the day if needed. */
 export function addMonths(d: CalendarDate, count: number): CalendarDate {
   let month = d.month + count;

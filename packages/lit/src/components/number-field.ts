@@ -1,7 +1,7 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldConstraints, type MdyFieldHandle } from "@modyra/core";
-import { createFieldController, type MdyFieldController } from "@modyra/widgets";
+import { createTextFieldController, type MdyTextFieldController } from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
 
 export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
@@ -23,13 +23,13 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
   protected override narrowedConstraints(): Partial<MdyFieldConstraints> {
     return { min: this.min ?? null, max: this.max ?? null, step: this.step ?? null };
   }
-  private fieldController?: MdyFieldController<number | null>;
+  private fieldController?: MdyTextFieldController<number | null>;
 
   override connectedCallback(): void {
     super.connectedCallback();
     const handle = this.field;
     if (!handle || this.fieldController) return;
-    this.fieldController = createFieldController({
+    this.fieldController = createTextFieldController({
       widgetId: this.fieldId,
       handle,
       inputType: "number",

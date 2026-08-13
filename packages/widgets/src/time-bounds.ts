@@ -18,7 +18,7 @@
  *
  * Both halves are stated here, once, so a renderer cannot enforce one of them and forget the other.
  */
-import type { MdyTimeFormat } from "@modyra/core/time-utils";
+import type { MdyTimeFormat } from "@modyra/core/datetime";
 
 /** The three numbers a time is made of. */
 export type MdyTimeField = "hour" | "minute";

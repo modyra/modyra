@@ -41,6 +41,9 @@ export interface MdyWidgetViewContract<TPart extends string = string> {
   readonly structure?: MdyWidgetStructure<TPart | "root">;
 }
 
+/** A typed part map, for a view contract with a closed set of named parts. */
+export type MdyPartMap<TPart extends string> = Readonly<Record<TPart, MdyPartContract>>;
+
 /** Typed specialization for controllers with a closed set of named parts. */
 export interface MdyTypedWidgetViewContract<TPart extends string>
   extends MdyWidgetViewContract<TPart> {

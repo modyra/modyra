@@ -47,6 +47,15 @@ export const MDY_LIFECYCLE_ISSUE = {
   reactiveEffectSurvived: "REACTIVE_EFFECT_SURVIVED_UNMOUNT",
   /** Two live instances minted the same id, so one field's relationships point at the other's DOM. */
   idCollidedAcrossInstances: "ID_COLLIDED_ACROSS_INSTANCES",
+  /**
+   * A disposed instance still ran, and failed.
+   *
+   * The distinction from {@link reactiveEffectSurvived} is which side refused. A handle that rejects
+   * a write after teardown is answering correctly and nothing renders. An *effect* that is still
+   * subscribed does run, reads a form that has been destroyed, and raises — leaving nothing in the
+   * document to see, which is why a check that only compares the document reads it as clean.
+   */
+  effectThrewAfterUnmount: "EFFECT_THREW_AFTER_UNMOUNT",
 } as const;
 
 export type MdyLifecycleIssueCode = (typeof MDY_LIFECYCLE_ISSUE)[keyof typeof MDY_LIFECYCLE_ISSUE];
@@ -81,6 +90,14 @@ export interface MdyUnmountObservation {
    * this is how that is caught without a listener registry to inspect.
    */
   readonly pokeAfterDispose?: () => void;
+  /**
+   * Whatever the reactive runtime reported while the poke ran.
+   *
+   * A surviving effect announces itself here rather than in the document: it runs, reads a form that
+   * is gone, and raises where the runtime routes uncaught effect errors. Supply the collector and an
+   * effect that outlived its teardown is named; omit it and only the visible half is judged.
+   */
+  readonly errorsAfterDispose?: () => readonly string[];
 }
 
 /**
@@ -120,6 +137,13 @@ export function inspectUnmount(observation: MdyUnmountObservation): readonly Mdy
       issues.push({
         code: MDY_LIFECYCLE_ISSUE.reactiveEffectSurvived,
         detail: "a value change after dispose still reached the document",
+      });
+    }
+    const raised = observation.errorsAfterDispose?.() ?? [];
+    if (raised.length > 0) {
+      issues.push({
+        code: MDY_LIFECYCLE_ISSUE.effectThrewAfterUnmount,
+        detail: `${raised.length} error(s) raised by an effect that outlived its teardown: ${raised[0]}`,
       });
     }
   }

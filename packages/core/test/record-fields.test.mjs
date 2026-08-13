@@ -226,11 +226,13 @@ test("a record of leaves needs no path to address a cell", () => {
   assert.deepEqual(form.value().note, { a: "hello" });
 });
 
-test("a collection inside a row is refused with a message, not a broken path", () => {
-  assert.throws(
-    () => createForm({ rows: record(group({ inner: record(field("")) })) }),
-    /one collection per node/,
-  );
+test("a record inside a row is declared, not refused", () => {
+  // The first nesting the runtime can execute. Both levels have declared identity, which is what
+  // makes rename and late binding answerable without rebasing anything — see ADR 0040.
+  const form = createForm({ rows: record(group({ inner: record(field("")) })) });
+  form.f.rows.upsert("r", { inner: {} });
+  assert.deepEqual(form.getValue(), { rows: { r: { inner: {} } } });
+  form.destroy();
 });
 
 test("a draft restores the rows it was holding", async () => {
@@ -970,16 +972,18 @@ test("reset returns both collections to what the schema declared", async () => {
   assert.deepEqual([...form.f.rows.keys()], ["s"]);
 });
 
-test("a collection nested in a collection is refused whichever way round", async () => {
+test("a nesting the runtime cannot execute is refused when the form is built", async () => {
   const { array } = await import("../dist/index.js");
 
+  // Not when a row arrives: a shape that cannot run must not survive long enough to produce paths
+  // nobody owns. The message says what a row may hold, so the list is readable from the failure.
   assert.throws(
     () => createForm({ list: array(group({ inner: record(field("")) })) }),
     /Nested collections/,
   );
   assert.throws(
     () => createForm({ rows: record(group({ inner: array(field("")) })) }),
-    /one collection per node/,
+    /cannot contain an array yet.*a row may hold: record/s,
   );
 });
 

@@ -7,7 +7,12 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { acceptTimeField, dateWithinBounds as dateWithinBoundsSync, stepTimeField, timeFieldBounds } from "../dist/index.js";
+import {
+  acceptTimeField,
+  dateWithinBounds as dateWithinBoundsSync,
+  stepTimeField,
+  timeFieldBounds,
+} from "../dist/index.js";
 
 test("the hour's range depends on the clock, the minute's never does", () => {
   assert.deepEqual(timeFieldBounds("hour", "12h"), { min: 1, max: 12 });

@@ -16,7 +16,7 @@ import {
   untracked,
   viewChild,
 } from "@angular/core";
-import { filterOptionsByQuery } from "@modyra/core/options-utils";
+import { filterOptionsByQuery } from "@modyra/widgets";
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
 import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, popupAlignmentClass, popupPlacementClass, optionsWithUnrecognizedValue, reconcileSelectValue, selectKeyboardAction, typeaheadMatch, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
@@ -62,7 +62,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       [forId]="fieldId"
       [required]="isRequired()"
       [filled]="value() !== null"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
 
@@ -86,7 +86,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             [attr.aria-activedescendant]="
               activeIndex() >= 0 ? fieldId + '-opt-' + activeIndex() : null
             "
-            [attr.aria-invalid]="hasErrors()"
+            [attr.aria-invalid]="paintsAsInvalid()"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="ariaRequired() || isRequired()"
@@ -219,7 +219,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             [disabled]="isDisabled()"
             (change)="onNativeChange($event)"
             (blur)="markAsTouched()"
-            [attr.aria-invalid]="hasErrors()"
+            [attr.aria-invalid]="paintsAsInvalid()"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="ariaRequired() || isRequired()"
@@ -246,7 +246,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       </div>
     }
 
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
@@ -265,6 +265,7 @@ export class MdySelectComponent<TValue = string>
   protected override readonly overlayKind = "select" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.select;
+  protected override readonly widgetKind = "select" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
   readonly disabled = input<boolean>(false);

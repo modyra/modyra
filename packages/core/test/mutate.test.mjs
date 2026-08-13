@@ -95,7 +95,7 @@ function syncReactivity() {
     capabilities: {
       effects: true, effectOwnership: false, signalEquality: false, computedEquality: false,
       batching: false, deterministicFlush: false, directObservation: false,
-      writableComputed: false, pureComputeds: false, graphInspection: false, serverSnapshots: false,
+      pureComputeds: false, graphInspection: false, serverSnapshots: false,
     },
     signal,
     computed: (fn) => () => fn(),

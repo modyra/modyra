@@ -11,6 +11,7 @@ export type { MdyPlainForm, MountMdyFormOptions } from "./mount.js";
 
 export { buildForm, buildFormSchema, applyFieldValidators } from "./schema.js";
 
+export type { MdyFieldControls, MdyMountedField } from "./field-controls.js";
 export { renderField } from "./fields/index.js";
 export { renderTextField } from "./fields/text-field.js";
 export { renderBooleanField } from "./fields/boolean-field.js";

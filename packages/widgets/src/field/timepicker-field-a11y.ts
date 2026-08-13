@@ -6,8 +6,10 @@ import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import type { MdyFieldError } from "@modyra/core";
 import type { MdyPartContract } from "../contract.js";
-import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
+import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyTimepickerFieldState } from "./timepicker-field-types.js";
+import { shownErrors } from "./verdict.js";
+import { fieldShellRootClasses } from "./shell-a11y.js";
 
 export interface MdyTimepickerFieldA11yOptions {
   readonly widgetId: string;
@@ -33,14 +35,9 @@ export function timepickerFieldPartIds(widgetId: string): {
   };
 }
 
+/** The root's classes, from the shared table every kind reads. */
 export function timepickerFieldRootClasses(state: MdyTimepickerFieldState): readonly string[] {
-  const S = MDY_FIELD_STATE_CLASSES;
-  return [
-    S.field,
-    ...S.fieldStates
-      .filter((name: string) => Boolean((state as unknown as Record<string, unknown>)[name]))
-      .map((name: string) => `${S.field}--${name}`),
-  ];
+  return fieldShellRootClasses(state as unknown as Readonly<Record<string, unknown>>);
 }
 
 export function projectTimepickerFieldA11y(
@@ -60,7 +57,7 @@ export function projectTimepickerFieldA11y(
   readonly error: MdyPartContract;
 } {
   const { labelId, triggerId, dialogId, hourId, minuteId, descriptionId, errorId } = timepickerFieldPartIds(options.widgetId);
-  const hasErrors = errors.length > 0;
+  const hasErrors = shownErrors(state, errors).length > 0;
   const describedBy = hasErrors ? errorId : descriptionId;
 
   return {

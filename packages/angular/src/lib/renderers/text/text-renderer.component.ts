@@ -7,7 +7,7 @@ import {
   input,
   OnInit,
 } from "@angular/core";
-import { createFieldController, type MdyFieldController } from "@modyra/widgets";
+import { createTextFieldController, type MdyTextFieldController } from "@modyra/widgets";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
@@ -32,7 +32,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
       [forId]="fieldId"
       [required]="isRequired()"
       [filled]="!!value()"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
     <div class="mdy-input-wrapper" [class.mdy-input-wrapper--disabled]="isDisabled()">
@@ -62,7 +62,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
       }
     </div>
 
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
@@ -80,14 +80,14 @@ export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
   readonly autocomplete = input<string | null>(null);
 
   protected readonly fieldId = `mdy-control-text-${MdyBaseControl.nextId()}`;
-  private fieldController?: MdyFieldController<string>;
+  private fieldController?: MdyTextFieldController<string>;
   private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     const handle = this.field();
     const autocomplete = this.autocomplete();
     if (handle) {
-      this.fieldController = createFieldController({
+      this.fieldController = createTextFieldController({
         widgetId: this.fieldId,
         handle: handle as never,
         inputType: this.type(),

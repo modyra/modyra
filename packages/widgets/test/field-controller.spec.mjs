@@ -6,12 +6,14 @@ import assert from "node:assert";
 import test from "node:test";
 
 import { createForm, field, required, vanillaReactivity } from "@modyra/core";
-import { createFieldController } from "../dist/field/index.js";
+import {
+  createTextFieldController,
+} from "../dist/field/index.js";
 
 function setupText() {
   const form = createForm({ email: field("", [required()]) });
   const handle = form.f.email;
-  const controller = createFieldController({
+  const controller = createTextFieldController({
     widgetId: "email",
     handle,
     inputType: "email",
@@ -59,7 +61,7 @@ function setupMockHandle(initialValue = "") {
     },
   };
 
-  const controller = createFieldController({
+  const controller = createTextFieldController({
     widgetId: "mock",
     handle,
     inputType: "text",
@@ -149,7 +151,7 @@ test("out of play, no verdict: a disabled field reports no failure to show", () 
   // renderer; what every renderer reads is this state and this attribute.
   const form = createForm({ email: field("", [required()]) });
   form.activate();
-  const controller = createFieldController({ widgetId: "email", handle: form.f.email, inputType: "email" });
+  const controller = createTextFieldController({ widgetId: "email", handle: form.f.email, inputType: "email" });
 
   assert.equal(controller.state().invalid, true, "an empty required field is failing");
   assert.equal(controller.view().parts.input.attributes["aria-invalid"], "true");

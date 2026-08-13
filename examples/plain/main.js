@@ -1,7 +1,5 @@
 // Full-catalog demo for the framework-free renderer: every packaged theme, every palette engine,
 // explicit light/dark/auto mode, and the live contract verdict for what is on screen.
-import { MDY_PALETTE_MODELS } from "@modyra/core/color-utils";
-import { compileMdyTheme, serializeMdyThemeCss } from "@modyra/core/theme-compiler";
 import {
   createForm,
   field as mdyField,
@@ -12,9 +10,11 @@ import {
   record as mdyRecord,
   required as mdyRequired,
 } from "@modyra/core";
+import { MDY_PALETTE_MODELS, compileMdyTheme, serializeMdyThemeCss } from "@modyra/styles";
 import { mountMdyForm, renderField } from "@modyra/plain";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
-import { inspectWidgetDom, portalRootFor } from "@modyra/widgets/testing";
+import { inspectWidgetDom } from "@modyra/widgets/testing";
+import { portalRootFor } from "@modyra/widgets";
 
 const THEMES = {
   modern: "modyra-modern.css",
@@ -499,7 +499,7 @@ if (rowsHost && rowsState) {
         const cell = document.createElement("td");
         if (editing.has(key)) {
           mountedCells.push(
-            renderField(cell, cellDescriptor(key, part), lines.f.lines.cell(key, part)),
+            renderField(cell, cellDescriptor(key, part), lines.f.lines.cell(key, part), lines.reactivity),
           );
         } else {
           cell.className = "read";
@@ -607,20 +607,22 @@ if (conditionalHost && conditionalState) {
   });
 
   const fields = [
-    { name: "kind", kind: "select", label: "Account", options: [
-      { value: "personal", label: "Personal" },
-      { value: "company", label: "Company" },
-    ] },
+    {
+      name: "kind", kind: "select", label: "Account", options: [
+        { value: "personal", label: "Personal" },
+        { value: "company", label: "Company" },
+      ]
+    },
     { name: "company.name", kind: "text", label: "Company name" },
     { name: "company.code", kind: "text", label: "Code" },
   ];
 
-  renderField(conditionalHost, fields[0], account.f.kind);
+  renderField(conditionalHost, fields[0], account.f.kind, account.reactivity);
   const details = document.createElement("div");
   details.className = "conditional-details";
   conditionalHost.append(details);
-  renderField(details, fields[1], account.f.company.name);
-  renderField(details, fields[2], account.f.company.code);
+  renderField(details, fields[1], account.f.company.name, account.reactivity);
+  renderField(details, fields[2], account.f.company.code, account.reactivity);
 
   // The print follows the form, not the events: a choice made in a combobox is a click on an option,
   // not an `input` on this host, and a state dump wired to events shows the previous answer.

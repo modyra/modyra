@@ -37,7 +37,7 @@ const { KINDS, emptyFor, mount, valueFor } = await import("./support/state-fixtu
  *   `@modyra/widgets` builds one, so those three applied the static part contract and nothing
  *   state-driven. The six rows understated it: there was no `aria-required` and no
  *   `aria-describedby` either, so their error lists were rendered, styled, and announced to nobody.
- *   `projectFieldShellA11y` is the shared half of `projectFieldA11y` for exactly this case.
+ *   `projectFieldShellA11y` is the shared half of `projectTextFieldA11y` for exactly this case.
  *
  * Empty, and the reason it stays that way: a divergence that every adapter shows identically is a
  * validation finding, not a renderer one. An unchecked required checkbox, an off required toggle and

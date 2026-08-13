@@ -21,6 +21,8 @@ import {
   type MdyOverlayDecision,
   type MdyOverlayLifecycleIntent,
   type MdyWidgetKind,
+  trackAnchoredOverlay,
+  bindLightDismiss,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../control/control.directive";
 import { MdyA11yAnnouncer } from "./a11y-announcer";
@@ -181,6 +183,16 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
    * `current` carries the decision an open overlay is already holding, so following the anchor
    * during scroll does not re-decide its side or height.
    */
+  /**
+   * Whether this control asks for the modal placement whatever the room.
+   *
+   * A presentation choice and nothing else: the value contract says what a field commits and when,
+   * and where its popup sits never changes that. A control that wants it overrides this.
+   */
+  protected forceModalPlacement(): boolean {
+    return false;
+  }
+
   private anchorNow(clickX?: number, current?: MdyOverlayDecision | null) {
     const rect = this.anchor instanceof HTMLElement ? this.anchor.getBoundingClientRect() : this.anchor;
     const content = this.panelContent;
@@ -198,6 +210,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
         // The widget's own anchoring wins over the defaults above: those are what a control falls
         // back to when the catalog does not know it, not a decision it gets to keep making.
         ...(this.overlayKind ? overlayAnchoringFor(this.overlayKind) : {}),
+        ...(this.forceModalPlacement() ? { forceModal: true } : {}),
         ...(clickX !== undefined ? { pointerX: clickX } : {}),
         ...(current ? { current } : {}),
         // With the panel measured the popup goes where its content shows whole; before it is in the
@@ -277,42 +290,34 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
 
     this.setupGlobalListeners();
 
-    // Non-modal overlays follow the container during scroll,
-    // keeping the same corner chosen at open time.
-    if (decision.placement !== "overlay") {
-      window.addEventListener("scroll", this.handleScroll, { capture: true, passive: true });
-    }
-    window.addEventListener("resize", this.handleResize);
+    this.startTracking();
   }
 
-  private scrollFrameId: number | null = null;
-  private resizeFrameId: number | null = null;
   private remeasureFrameId: number | null = null;
+  private stopTracking: (() => void) | null = null;
 
-  protected readonly handleScroll = () => {
-    if (!this.open()) return;
-    if (this.scrollFrameId !== null) cancelAnimationFrame(this.scrollFrameId);
-    this.scrollFrameId = requestAnimationFrame(() => {
-      this.scrollFrameId = null;
-      // Follow the anchor while keeping the shape the overlay opened with: re-deciding on every
-      // scroll frame is what makes a popup flip sides and resize under the pointer.
-      const anchored = this.anchorNow(undefined, this.heldDecision);
-      this.coords.set(anchored.coords);
-      this.maxHeight.set(anchored.maxHeight);
+  /**
+   * Follows the anchor while the page moves under it, through the contract's own tracking.
+   *
+   * The two events are not the same question and this renderer had always known it: scrolling moves
+   * the anchor and nothing else, so the overlay keeps the side and height it opened with, while a
+   * viewport that changes size changes what fits and the decision is taken again.
+   */
+  private startTracking(): void {
+    this.stopTracking?.();
+    this.stopTracking = trackAnchoredOverlay({
+      isOpen: () => this.open(),
+      reposition: () => {
+        const anchored = this.anchorNow(undefined, this.heldDecision);
+        this.coords.set(anchored.coords);
+        this.maxHeight.set(anchored.maxHeight);
+      },
+      // Orientation changes are resizes, and an overlay that only repositioned through them closed.
+      reflow: () => this.updatePosition(),
+      // An overlay that covers the viewport hangs off no control, so it has no anchor to follow.
+      followsScroll: () => this.position() !== "overlay",
     });
-  };
-
-  protected readonly handleResize = () => {
-    if (!this.open()) return;
-    // Debounce resize with RAF to avoid excessive calculations
-    if (this.resizeFrameId !== null) cancelAnimationFrame(this.resizeFrameId);
-    this.resizeFrameId = requestAnimationFrame(() => {
-      this.resizeFrameId = null;
-      // Recalculate position + maxHeight to adapt to new viewport dimensions.
-      // This fixes orientation change (portrait ↔ landscape) closing the overlay.
-      this.updatePosition();
-    });
-  };
+  }
 
 
   /** Recalculates the position of the currently open overlay. */
@@ -328,13 +333,10 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     this.maxHeight.set(anchored.maxHeight);
     this.heldDecision = anchored.decision;
 
-    // If position changed between overlay and anchored, manage scroll listener
-    const wasOverlay = prevPosition === "overlay";
-    const isOverlay = anchored.decision.placement === "overlay";
-    if (!wasOverlay && isOverlay) {
-      window.removeEventListener("scroll", this.handleScroll, true);
-    } else if (wasOverlay && !isOverlay) {
-      window.addEventListener("scroll", this.handleScroll, { capture: true, passive: true });
+    // Crossing between covering the viewport and hanging off the control changes whether there is
+    // an anchor to follow at all, so the tracking is bound again for the answer it now gives.
+    if ((prevPosition === "overlay") !== (anchored.decision.placement === "overlay")) {
+      this.startTracking();
     }
   }
 
@@ -415,40 +417,26 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     this.focus.restore(preferred);
   }
 
+  private unbindDismissal: (() => void) | null = null;
+
   private setupGlobalListeners(): void {
     if (typeof window === "undefined") return;
-    // Three listeners, not one: the contract dismisses on a *gesture*, and a gesture has two ends.
-    // Which ends dismiss is `createOutsidePointerGesture`, never decided here.
-    document.addEventListener("pointerdown", this.handleOutsideDown, true);
-    document.addEventListener("pointerup", this.handleOutsideUp, true);
-    document.addEventListener("click", this.handleOutsideClick, true);
-    document.addEventListener("pointercancel", this.handleOutsideCancel, true);
-    window.addEventListener("blur", this.handleOutsideAbandon);
-    document.addEventListener("visibilitychange", this.handleOutsideAbandon);
+    // Six listeners feed the policy, and which six is `bindLightDismiss`'. Bound here, the set
+    // drifted from the one the other renderers bind — the defect that left one of them deciding on
+    // `click` alone, which the policy documents as the tail of a gesture rather than the gesture.
+    this.unbindDismissal = bindLightDismiss(this.outsideDismissal);
     document.addEventListener("keydown", this.handleDocumentKeydown);
   }
 
   /** Removes all document/window listeners registered while open. */
   private teardownGlobalListeners(): void {
     if (typeof window === "undefined") return;
-    document.removeEventListener("pointerdown", this.handleOutsideDown, true);
-    document.removeEventListener("pointerup", this.handleOutsideUp, true);
-    document.removeEventListener("click", this.handleOutsideClick, true);
-    document.removeEventListener("pointercancel", this.handleOutsideCancel, true);
-    window.removeEventListener("blur", this.handleOutsideAbandon);
-    document.removeEventListener("visibilitychange", this.handleOutsideAbandon);
+    // Unbinding resets the policy too, which is why it is not reset again here.
+    this.unbindDismissal?.();
+    this.unbindDismissal = null;
     document.removeEventListener("keydown", this.handleDocumentKeydown);
-    this.outsideDismissal.reset();
-    window.removeEventListener("scroll", this.handleScroll, true);
-    window.removeEventListener("resize", this.handleResize);
-    if (this.scrollFrameId !== null) {
-      cancelAnimationFrame(this.scrollFrameId);
-      this.scrollFrameId = null;
-    }
-    if (this.resizeFrameId !== null) {
-      cancelAnimationFrame(this.resizeFrameId);
-      this.resizeFrameId = null;
-    }
+    this.stopTracking?.();
+    this.stopTracking = null;
     if (this.remeasureFrameId !== null) {
       cancelAnimationFrame(this.remeasureFrameId);
       this.remeasureFrameId = null;
@@ -476,23 +464,6 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     dismiss: () => this.dismissFromOutside(),
   });
 
-  private readonly handleOutsideDown = (event: Event): void => {
-    const e = event as PointerEvent;
-    this.outsideDismissal.pointerdown(e.target, {
-      pointerId: e.pointerId ?? 0,
-      isPrimary: e.isPrimary ?? true,
-      button: e.button ?? 0,
-    });
-  };
-  private readonly handleOutsideUp = (event: Event): void => {
-    const e = event as PointerEvent;
-    this.outsideDismissal.pointerup(e.target, e.pointerId ?? undefined);
-  };
-  private readonly handleOutsideClick = (event: Event): void =>
-    this.outsideDismissal.click(event.target);
-  private readonly handleOutsideCancel = (event: Event): void =>
-    this.outsideDismissal.pointercancel((event as PointerEvent).pointerId ?? 0);
-  private readonly handleOutsideAbandon = (): void => this.outsideDismissal.reset();
 
   /** Escape closes the open overlay regardless of where focus is (R19). */
   private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {

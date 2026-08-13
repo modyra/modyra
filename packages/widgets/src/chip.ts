@@ -28,6 +28,8 @@ export const MDY_CHIP_CLASSES = Object.freeze({
   value: "mdy-chip--value",
   /** Taken. The state a theme paints; it applies in either mode. */
   selected: "mdy-chip--selected",
+  /** Carries a control for taking the value off again, which changes the room the label has. */
+  removable: "mdy-chip--removable",
   /** The tick. Drawn by the theme when a renderer supplies no icon of its own. */
   check: "mdy-chip__check",
   /** The chip's text. */

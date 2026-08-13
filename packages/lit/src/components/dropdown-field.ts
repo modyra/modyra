@@ -1,7 +1,13 @@
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
-import { createLightDismiss, listboxNavigationIndex, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition } from "@modyra/widgets";
-import { mdyIcon, errorsToShow } from "../base.js";
+import {
+  MDY_WIDGET_CONTRACTS,
+  createLightDismiss,
+  listboxNextIndex,
+  overlayLifecycleTransition,
+  shownErrorsOf,
+} from "@modyra/widgets";
+import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
 import { outsideDismissDeclared } from "../widget-runtime/overlay-host.js";
 
@@ -139,7 +145,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
       return;
     }
     // Navigation is a pure decision the contract owns — a listbox clamps, it does not wrap.
-    const next = listboxNavigationIndex(e.key, this._activeIndex, this.listOptions.length);
+    const next = listboxNextIndex(e.key, this._activeIndex, this.listOptions.length);
     if (next !== null) {
       e.preventDefault();
       this._activeIndex = next;
@@ -181,7 +187,7 @@ export abstract class MdyDropdownFieldElement<T> extends MdyOptionsFieldElement<
           aria-haspopup="listbox"
           aria-expanded=${this._open ? "true" : "false"}
           aria-labelledby=${this.labelId}
-          aria-invalid=${errorsToShow(handle).length > 0 ? "true" : "false"}
+          aria-invalid=${shownErrorsOf(handle).length > 0 ? "true" : "false"}
           aria-required=${handle.required() ? "true" : "false"}
           ?disabled=${handle.disabled()}
           @click=${() => this.toggleOpen(handle)}

@@ -1,10 +1,19 @@
 import { mdyPart } from "../mdy-part.js";
-import { overlayControlledId } from "@modyra/widgets";
+import {
+  overlayControlledId,
+  shownErrorsOf,
+} from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
-import { filterOptionsByQuery } from "@modyra/core/ui";
-import { MDY_CHIP_CLASSES, multiselectChipClasses, optionsWithUnrecognizedValues } from "@modyra/widgets";
+import { filterOptionsByQuery } from "@modyra/widgets";
+import {
+  createMultiselectFieldController,
+  MDY_CHIP_CLASSES,
+  multiselectChipClasses,
+  optionsWithUnrecognizedValues,
+  type MdyMultiselectFieldController,
+} from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
-import { mdyIcon, errorsToShow } from "../base.js";
+import { mdyIcon } from "../base.js";
 import {
   MdyLitOverlayController,
   renderOverlayPanel,
@@ -29,6 +38,26 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
 
   protected override readonly widgetKind = "multiselect" as const;
   private readonly overlay = new MdyLitOverlayController(this);
+  private fieldController?: MdyMultiselectFieldController<unknown>;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    const handle = this.field;
+    if (!handle || this.fieldController) return;
+    this.fieldController = createMultiselectFieldController<unknown>({
+      widgetId: this.fieldId,
+      handle: handle as never,
+      options: this.options,
+      mode: this.mode,
+    });
+  }
+
+  override willUpdate(changed: Map<string, unknown>): void {
+    super.willUpdate?.(changed);
+    // The option list is a property and can be replaced; the controller is told rather than
+    // rebuilt, so the query it is holding survives a list that changes beneath it.
+    if (changed.has("options")) this.fieldController?.setOptions(this.options);
+  }
 
   constructor() {
     super();
@@ -92,36 +121,29 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     return filterOptionsByQuery(opts, this._query);
   }
 
+  /**
+   * One selection change, decided by the controller for this kind.
+   *
+   * Toggling, counting and what a readonly field refuses were written here, in a third form that
+   * matched neither of the other renderers — which is the divergence a shared contract exists to
+   * make impossible rather than to catch afterwards.
+   */
   protected override pick(
-    handle: MdyFieldHandle<readonly unknown[]>,
+    _handle: MdyFieldHandle<readonly unknown[]>,
     value: unknown,
   ): void {
-    if (this.mode === "multi") {
-      this.increment(handle, value);
-      return;
-    }
-    const current = handle.value() ?? [];
-    const key = String(value);
-    const next = current.some((v) => String(v) === key)
-      ? current.filter((v) => String(v) !== key)
-      : [...current, value];
-    handle.set(next);
-    handle.markAsDirty();
+    const optionKey = String(value);
+    this.fieldController?.dispatch(
+      this.mode === "multi" ? { type: "increment", optionKey } : { type: "toggle", optionKey },
+    );
   }
 
-  private increment(handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
-    handle.set([...(handle.value() ?? []), value]);
-    handle.markAsDirty();
+  private increment(_handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
+    this.fieldController?.dispatch({ type: "increment", optionKey: String(value) });
   }
 
-  private decrement(handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
-    const arr = [...(handle.value() ?? [])];
-    const idx = arr.findIndex((v) => String(v) === String(value));
-    if (idx >= 0) {
-      arr.splice(idx, 1);
-      handle.set(arr);
-      handle.markAsDirty();
-    }
+  private decrement(_handle: MdyFieldHandle<readonly unknown[]>, value: unknown): void {
+    this.fieldController?.dispatch({ type: "decrement", optionKey: String(value) });
   }
 
   protected override triggerText(handle: MdyFieldHandle<readonly unknown[]>): string {
@@ -156,6 +178,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
 
   override disconnectedCallback(): void {
     this.overlay.close();
+    this.fieldController?.destroy();
+    this.fieldController = undefined;
     super.disconnectedCallback();
   }
 
@@ -205,7 +229,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
         class="mdy-multiselect-overlay__input"
         .value=${this._query}
         @input=${this.onSearchInput}
-        placeholder="Search..."
+        placeholder=${this.messages.searchPlaceholder}
       />
       ${this.optionTemplate
         ? html`<button type="button" class=${MDY_CHIP_CLASSES.wrapper}>Custom option</button>`
@@ -217,7 +241,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                   ${mdyIcon("LOADER", "mdy-select__loader")}
                   <span>Loading…</span>
                 </div>`
-              : html`No results`}
+              : html`${this.messages.noResults}`}
           </div>`
         : this.renderOptionsGrid(handle, this.searchResults(handle), "mdy-multiselect-overlay__grid")}
       </div>
@@ -257,12 +281,12 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
                 if (!this._open) this.overlay.open(e);
                 this.toggleOpen(handle);
               }}
-              aria-label="Show options"
+              aria-label=${this.messages.searchOptionsLabel}
               aria-haspopup="listbox"
               aria-expanded=${this._open ? "true" : "false"}
               aria-controls=${this._open ? overlayControlledId("multiselect", this.fieldId) ?? nothing : nothing}
               aria-describedby=${this.showErrors(handle) && !this.inlineErrors ? this.errorsId : this.descriptionId}
-              aria-invalid=${String(errorsToShow(handle).length > 0)}
+              aria-invalid=${String(shownErrorsOf(handle).length > 0)}
               aria-disabled=${String(handle.disabled())}
             >
               ${this.loading

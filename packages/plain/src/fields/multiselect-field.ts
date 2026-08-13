@@ -7,11 +7,22 @@
  * foundation styles `.mdy-chip` and its variants, and a renderer that spelled a variant itself would
  * be the reason a theme's rule silently stopped applying.
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyMultiselectMode, type MdyReactivity, type MdySelectOption } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyMultiselectMode, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, multiselectOverlayAction, createMultiselectFieldController, multiselectChipClasses, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  createMultiselectFieldController,
+  multiselectChipClasses,
+  multiselectOverlayAction,
+  overlayAnchoringFor,
+  shownErrorsOf,
+  type MdyElementLookup,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
+import { withControls, type MdyMountedField } from "../field-controls.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 
@@ -19,10 +30,17 @@ export function renderMultiselectField(
   container: HTMLElement,
   f: MdyDynamicOptionsField,
   handle: MdyFieldHandle<ReadonlyArray<unknown>>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   mode: MdyMultiselectMode = "single",
   widgetId: string = f.name,
-): () => void {
+  /**
+   * The words this control shows. The engine has no opinion about them, so they arrive from the
+   * widget contract's tables rather than being written here — three renderers each spelling
+   * "open the calendar" is three answers to one question.
+   */
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
+): MdyMountedField {
+  reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("multiselect");
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
@@ -37,7 +55,7 @@ export function renderMultiselectField(
   const header = el("div", parts.header.classes.join(" "));
   const searchButton = el("button", parts.searchButton.classes.join(" ")) as HTMLButtonElement;
   searchButton.type = "button";
-  searchButton.setAttribute("aria-label", "Search the options");
+  searchButton.setAttribute("aria-label", messages.searchOptionsLabel);
   setIcon(searchButton, "SEARCH");
   // Waiting on its options: the indicator goes on the search button, which is the control here, so
   // the field says it is loading without being opened.
@@ -54,7 +72,7 @@ export function renderMultiselectField(
   const popup = el("div", `${parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   const search = el("input", parts.search.classes.join(" ")) as HTMLInputElement;
   search.type = "search";
-  search.placeholder = "Filter…";
+  search.placeholder = messages.searchPlaceholder;
 
   /**
    * One option chip, in whichever grid asked for it.
@@ -233,7 +251,7 @@ export function renderMultiselectField(
     syncGrids(state.options);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, errorsToShow(handle).map((e) => e.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     shell.syncState({
       touched: state.touched,
       disabled: state.disabled,
@@ -287,12 +305,17 @@ export function renderMultiselectField(
     }
   });
 
-  return () => {
+  return withControls(
+    () => {
     undismiss();
     untrack();
     effectRef.destroy();
     controller.destroy();
     popup.remove();
     shell.root.remove();
-  };
+    },
+    // The list can arrive after the field is on screen; the controller is told rather than the
+    // field remounted, which would forget the query it was holding.
+    { setOptions: (next) => controller.setOptions(next as never) },
+  );
 }

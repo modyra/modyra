@@ -15,9 +15,9 @@ import {
 } from "@angular/core";
 import type { MdyUiCommand } from "@modyra/widgets";
 import {
-  createMdyAnnouncer,
-  processWidgetCommands,
+  createCommandRuntime,
   type MdyElementLookup,
+  type MdyWidgetCommandHandlers,
 } from "@modyra/widgets";
 
 /** Maps a widget part name to an element reference. */
@@ -29,17 +29,13 @@ export type MdyElementRefMap = ReadonlyMap<
 /** Lookup for item elements inside a part (e.g. options inside listbox). */
 export type MdyItemRefLookup = (part: string, key: string) => ElementRef<HTMLElement> | undefined;
 
-/** Handlers for command side effects that need host/component cooperation. */
-export interface MdyAngularCommandHandlers {
-  /** Called for open-overlay / close-overlay. */
-  setOpen(open: boolean): void;
-  /** Called for emit-change. */
-  onChange?(): void;
-  /** Called for mark-touched. */
-  onTouched?(): void;
-  /** Called for mark-dirty. */
-  onDirty?(): void;
-}
+/**
+ * Handlers for command side effects that need host/component cooperation.
+ *
+ * An alias, not a restatement: written out member by member it drifts the moment the contract gains
+ * one, and the five reactivity adapters have always aliased it.
+ */
+export type MdyAngularCommandHandlers = MdyWidgetCommandHandlers;
 
 /**
  * Executes a list of UI commands in an Angular runtime context.
@@ -50,7 +46,15 @@ export interface MdyAngularCommandHandlers {
 @Injectable({ providedIn: "root" })
 export class MdyWidgetRuntime {
   private readonly injector = inject(Injector);
-  private readonly announcer = createMdyAnnouncer("mdy-angular-announcer");
+
+  /**
+   * This framework renders on change detection, so focus waits for the render it schedules. A
+   * microtask would fire while the view is still the previous one.
+   */
+  private readonly runtime = createCommandRuntime({
+    announcerId: "mdy-angular-announcer",
+    defer: (run) => { afterNextRender(run, { injector: this.injector }); },
+  });
 
   execute(
     commands: readonly MdyUiCommand[],
@@ -58,32 +62,12 @@ export class MdyWidgetRuntime {
     itemLookup: MdyItemRefLookup,
     handlers: MdyAngularCommandHandlers,
   ): void {
-    const focusQueue: Array<{ el: HTMLElement; type: "focus" | "scroll" }> = [];
-
+    /** This host addresses its DOM through `ElementRef`s, which is the one thing it does not share. */
     const lookup: MdyElementLookup = (part, key) => {
-      const ref = key
-        ? itemLookup(part, key)
-        : elements.get(part);
+      const ref = key ? itemLookup(part, key) : elements.get(part);
       return ref?.nativeElement;
     };
 
-    processWidgetCommands(commands, {
-      lookup,
-      handlers,
-      scheduleFocus: (el) => focusQueue.push({ el, type: "focus" }),
-      scheduleScroll: (el) => focusQueue.push({ el, type: "scroll" }),
-      announce: (message) => this.announcer.announce(message),
-    });
-
-    if (focusQueue.length === 0) return;
-
-    afterNextRender(() => {
-      for (const item of focusQueue) {
-        if (item.type === "focus") item.el.focus();
-        else item.el.scrollIntoView({ block: "nearest" });
-      }
-    }, {
-      injector: this.injector,
-    });
+    this.runtime.execute(commands, lookup, handlers);
   }
 }

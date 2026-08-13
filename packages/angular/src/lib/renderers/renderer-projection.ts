@@ -1,4 +1,4 @@
-import { addMonths, CalendarDate } from "@modyra/core/date-utils";
+import { addMonths, CalendarDate } from "@modyra/core/datetime";
 import { MdySelectOption } from "../core/types";
 
 export const projectionKey = (value: unknown): string => String(value);
@@ -34,3 +34,4 @@ export function moveCalendarMonth(
   const view = addMonths({ year, month, day: 1 }, delta);
   return { year: view.year, month: view.month, focused: addMonths(focused, delta) };
 }
+

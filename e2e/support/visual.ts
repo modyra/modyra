@@ -69,6 +69,15 @@ export interface MdyVisualFixture {
   readonly themeLinkId: string;
   /** Something the renderer has certainly drawn, waited for before anything is shot. */
   readonly ready: string;
+  /**
+   * How this renderer is told to take the modal placement, when it can be told at all.
+   *
+   * A popup that covers the viewport is reached by running out of room, which a desktop shot never
+   * does — so without a way to ask for it, the placement had no baseline and a change to it was
+   * invisible here. A renderer with no such door leaves this out and the modal shot is skipped
+   * rather than faked.
+   */
+  readonly forceModal?: (page: import("@playwright/test").Page) => Promise<void>;
 }
 
 /**
@@ -77,7 +86,20 @@ export interface MdyVisualFixture {
  * The name of every snapshot is `<subject>-<theme>.png`; Playwright appends the project and the
  * platform, so one call here produces a set per engine without the caller naming any of them.
  */
+/** The popup every renderer puts its calendar in, named by the catalogue rather than by a guess. */
+const POPUP = ".mdy-datepicker__popup";
+
+/** The affordance that opens it, which all three renderers draw with the same class. */
+const CALENDAR_TOGGLE = ".mdy-renderer--datepicker:not(.mdy-renderer--daterange) .mdy-datepicker__toggle";
+
 export function declareVisualBaselines(fixture: MdyVisualFixture): void {
+  const openCalendar = async (page: import("@playwright/test").Page): Promise<void> => {
+    await page.locator(CALENDAR_TOGGLE).first().click();
+    // The popup measures itself and is placed on the next frame; a shot taken before that is a shot
+    // of a popup at the origin.
+    await page.waitForTimeout(200);
+  };
+
   const settle = async (page: import("@playwright/test").Page, theme: string): Promise<void> => {
     await page.evaluate(
       async ([id, name]) => {
@@ -119,6 +141,40 @@ export function declareVisualBaselines(fixture: MdyVisualFixture): void {
   // One test per pair, not one test looping themes. A test that shoots four themes stops at the
   // first that differs, so its name says which widget moved and never which theme — half the answer,
   // and the half a per-widget baseline exists to supply.
+  /**
+   * The popup, which nothing photographed.
+   *
+   * Every shot above is at rest, and a resting overlay widget draws none of its popup: the calendar
+   * grid, the month and year views, the modal header and the surface they sit on had no baseline at
+   * all. A change to any of them was invisible to this suite — which is how a confirmation row could
+   * be removed from two renderers without a single image moving.
+   */
+  test.describe("with the calendar open", () => {
+    for (const theme of THEMES) {
+      test(`the docked calendar renders as it did under ${theme}`, async ({ page }) => {
+        await settle(page, theme);
+        await openCalendar(page);
+        await expect(page.locator(POPUP).first()).toBeVisible();
+        await expect(page.locator(POPUP).first()).toHaveScreenshot(`calendar-open-${theme}.png`);
+      });
+    }
+
+    if (fixture.forceModal) {
+      for (const theme of THEMES) {
+        test(`the modal calendar renders as it did under ${theme}`, async ({ page }) => {
+          await settle(page, theme);
+          await fixture.forceModal!(page);
+          await openCalendar(page);
+          const popup = page.locator(POPUP).first();
+          await expect(popup).toBeVisible();
+          // The whole page: a modal is defined by covering what is behind it, so a shot cropped to
+          // the popup would photograph everything except the thing that makes it modal.
+          await expect(page).toHaveScreenshot(`calendar-modal-${theme}.png`, { fullPage: false });
+        });
+      }
+    }
+  });
+
   for (const kind of WIDGETS) {
     for (const theme of THEMES) {
       test(`${kind} renders as it did under ${theme}`, async ({ page }) => {

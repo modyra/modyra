@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, viewChild } from "@angular/core";
+import type { MdyFieldConstraints } from "@modyra/core";
 import { MDY_CSS_PROPERTIES, MDY_WIDGET_CONTRACTS, sliderFillRatio } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
@@ -24,7 +25,7 @@ import { inputText } from "../renderer-projection";
       [forId]="fieldId"
       [required]="isRequired()"
       [filled]="true"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
 
@@ -34,9 +35,6 @@ import { inputText } from "../renderer-projection";
         type="range"
         class="mdy-slider"
         [id]="fieldId"
-        [min]="effectiveMin()"
-        [max]="effectiveMax()"
-        [step]="step()"
         [value]="value() ?? effectiveMin()"
         [disabled]="isDisabled()"
         (input)="onInput($event)"
@@ -54,13 +52,14 @@ import { inputText } from "../renderer-projection";
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     }
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     }
   `,
 })
 export class MdySliderComponent extends MdyBaseControl<number> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.slider;
+  protected override readonly widgetKind = "slider" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   /**
    * The ends of the track. Left unset they are the field's own rules, and where those say nothing
@@ -76,6 +75,23 @@ export class MdySliderComponent extends MdyBaseControl<number> {
     () => this.max() ?? this.fieldState().constraints().max ?? 100,
   );
   readonly step = input<number>(1);
+
+  /**
+   * What this control offers of the track, which can only ever be less than the rules allow.
+   *
+   * Stated once, here, rather than as `min`/`max`/`step` on the input: the projection places those
+   * attributes, and a template writing them too means two answers whose order decides which one the
+   * user gets.
+   */
+  protected override narrowedConstraints(): Partial<MdyFieldConstraints> {
+    const low = this.min();
+    const high = this.max();
+    return {
+      ...(low === null ? {} : { min: low }),
+      ...(high === null ? {} : { max: high }),
+      step: this.step(),
+    };
+  }
   readonly showValue = input<boolean>(true);
 
   private readonly rangeInput = viewChild<ElementRef<HTMLInputElement>>('rangeInput');
