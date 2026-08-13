@@ -16,6 +16,7 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `COL-005` | Removing a row removes its value and settles descendant async work. | A removed row's validator answers, or its path is submitted. |
 | `COL-006` | A waiting cell binds when its row arrives and waits again after removal. | The handle held before declaration is not the one the row arrives on. |
 | `COL-007` | Rename preserves the state promised by the contract. | Value, validity or touched is lost across a rename. |
+| `COL-008` | A row declared without a value is the row the template describes. | Cells come back `null` instead of the initial the schema declares. |
 
 ## Lifecycle and reactivity
 
@@ -34,6 +35,7 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `VAL-002` | Disabled values are retained in edit state and excluded from submission. | A disabled value is submitted, or is lost from the model. |
 | `VAL-003` | Hidden or unmounted controls do not alter validation semantics. | Validity depends on what is on screen. |
 | `SUB-001` | Submission contains no undeclared path introduced by rendering. | A mounted control adds a path to the payload. |
+| `SUB-002` | The shape of a form's value follows the schema, not the order controls mounted. | A row's cells come back in the order controls happened to bind them. |
 
 ## Contracts, persistence, security, packaging
 

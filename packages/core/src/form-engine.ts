@@ -137,6 +137,19 @@ export class MdyFormEngine
   /** Claims that arrived for a path its gate refuses, held until the gate admits it. */
   private readonly _pendingClaims = new Map<string, number>();
   /**
+   * What a binding said about a field, kept apart from the field record.
+   *
+   * `disabled` and `readonly` are the binder's word, and a binder outlives the record: inside a
+   * keyed collection a control may bind before its row is declared, and it stays bound while the row
+   * is removed and declared again. The record is the row's and is destroyed with it, so a binding
+   * held only there would be dropped by a structural change the control never saw — leaving a
+   * control that believes it is disabled over a field that is submitted.
+   */
+  private readonly _bindings = new Map<string, {
+    disabled?: MdySignal<boolean>;
+    readonly?: MdySignal<boolean>;
+  }>();
+  /**
    * Records handed to callers for refused paths: inert, absent from `_fields` and from
    * `fieldNames`, so they contribute neither value nor validity. Cached so repeated lookups of the
    * same refused path answer with the same object.
@@ -382,8 +395,10 @@ export class MdyFormEngine
     for (const [name, count] of [...this._claims]) {
       if (!covers(name) || !this._gateRefuses(name)) continue;
       this._claims.delete(name);
-      this._destroyField(name);
+      // The claim moves to waiting before the record goes, so that what is keyed by the name and
+      // belongs to the control — its disabled and readonly bindings — is kept for the row's return.
       this._pendingClaims.set(name, count);
+      this._destroyField(name);
     }
 
     for (const name of [...this._fields.keys()]) {
@@ -519,6 +534,9 @@ export class MdyFormEngine
     );
     this._initialValues.delete(name);
     this._fieldSanitizers.delete(name);
+    // The binding outlives the record only while something is still bound: a claim, or a claim
+    // waiting for its row. With neither, the control that spoke is gone and so is what it said.
+    if (!this._claims.has(name) && !this._pendingClaims.has(name)) this._bindings.delete(name);
   }
 
   /**
@@ -651,6 +669,7 @@ export class MdyFormEngine
         "only while the field is in play.",
       );
     }
+    this._bind(name, { disabled });
     rec.disabled.set(disabled);
   }
 
@@ -666,7 +685,15 @@ export class MdyFormEngine
   }
 
   setReadonly(name: string, readonly: MdySignal<boolean>): void {
+    this._bind(name, { readonly });
     this._getOrCreate(name).readonly.set(readonly);
+  }
+
+  private _bind(name: string, binding: {
+    disabled?: MdySignal<boolean>;
+    readonly?: MdySignal<boolean>;
+  }): void {
+    this._bindings.set(name, { ...this._bindings.get(name), ...binding });
   }
 
   // ── MdyFormAdapter ──────────────────────────────────────────────────────────
@@ -1076,13 +1103,20 @@ export class MdyFormEngine
       ? this._initialValues.get(name)
       : this._rx.untracked(() => this._formValue())?.[name] ?? null;
 
-    return createFieldRecord(
+    const rec = createFieldRecord(
       this._rx,
       this._applySecurity(name, initialValue),
       (v) => [...this._crossErrorsFor(name), ...this._serverErrorsFor(name, v)],
       (v) => this._applySecurity(name, v),
       (message) => this._warn(`"${name}" ${message}`),
     );
+
+    // A record built for a path a binding already spoke about answers to that binding from the
+    // start: the row is new, what the control said about it is not.
+    const bound = this._bindings.get(name);
+    if (bound?.disabled) rec.disabled.set(bound.disabled);
+    if (bound?.readonly) rec.readonly.set(bound.readonly);
+    return rec;
   }
 
   // ── Security (see security.ts) ─────────────────────────────────────────────

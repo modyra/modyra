@@ -1165,3 +1165,84 @@ test("a disabled cell leaves the row in the submit, without itself", () => {
   assert.deepEqual(form.submitValue(), { rows: { k: { nome: "sent" } } });
   assert.equal(form.value().rows.k.qta, 3, "the value is still the form's; it is simply not sent");
 });
+
+/**
+ * A row declared with no value is the row the template describes.
+ *
+ * `upsert(key)` states that a row exists without stating its contents, and the item descriptor is
+ * what a row is. Reading the row back before it exists answers `null` for every cell, and declaring
+ * it from that answer would ship a row of nulls where the schema declares initials — visible in the
+ * submitted payload, and in every control bound to a cell that should have started empty.
+ */
+test("a row declared without a value carries the template's initial values", () => {
+  const form = createForm({
+    rows: record(group({ nome: field(""), qta: field(7) })),
+  });
+
+  form.f.rows.upsert("valueless");
+  form.f.rows.upsert("empty", {});
+  form.f.rows.patch({ patched: {} });
+
+  const template = { nome: "", qta: 7 };
+  assert.deepEqual(form.value().rows.valueless, template);
+  assert.deepEqual(form.value().rows.empty, template);
+  assert.deepEqual(form.value().rows.patched, template);
+  assert.deepEqual(form.submitValue().rows.valueless, template, "and it is what would be submitted");
+});
+
+test("re-declaring an existing row without a value keeps what the row holds", () => {
+  const form = createForm({ rows: record(group({ nome: field(""), qta: field(7) })) });
+
+  form.f.rows.upsert("k", { nome: "Espresso", qta: 2 });
+  form.f.rows.upsert("k");
+
+  assert.deepEqual(form.value().rows.k, { nome: "Espresso", qta: 2 });
+});
+
+/**
+ * A binding is the binder's, and the binder outlives the row.
+ *
+ * A control may bind before its row is declared — that is what a waiting claim is for — and it stays
+ * bound while a row is removed and declared again under it. A binding held only on the field record
+ * would be dropped by both, leaving a control that believes the field is disabled over a value that
+ * is submitted.
+ */
+test("a disabled binding made before the row applies to the row that arrives", () => {
+  const rx = vanillaReactivity();
+  const form = createForm({ rows: record(group({ nome: field(""), qta: field(0) })) }, { reactivity: rx });
+  const disabled = rx.signal(true);
+
+  form.claimField("rows.14.nome");
+  form.setDisabled("rows.14.nome", disabled);
+
+  form.f.rows.upsert("14", { nome: "Espresso", qta: 2 });
+  assert.equal(form.getField("rows.14.nome")().disabled(), true);
+  assert.deepEqual(form.submitValue().rows["14"], { qta: 2 }, "a disabled cell is not submitted");
+
+  form.f.rows.remove("14");
+  form.f.rows.upsert("14", { nome: "Ristretto", qta: 1 });
+  assert.equal(
+    form.getField("rows.14.nome")().disabled(),
+    true,
+    "the control never moved, so neither did what it said",
+  );
+
+  disabled.set(false);
+  assert.equal(form.getField("rows.14.nome")().disabled(), false, "and it is still the binder's to release");
+});
+
+/**
+ * The row's shape is the template's shape.
+ *
+ * Which control mounted first is a rendering decision, and a value whose key order followed it would
+ * let the rendering be read out of the payload.
+ */
+test("a row's value keys follow the template, not the order controls mounted", () => {
+  const form = createForm({ rows: record(group({ nome: field(""), qta: field(0) })) });
+
+  form.claimField("rows.k.qta");
+  form.f.rows.upsert("k", { nome: "Espresso", qta: 2 });
+
+  assert.deepEqual(Object.keys(form.value().rows.k), ["nome", "qta"]);
+  assert.deepEqual(Object.keys(form.submitValue().rows.k), ["nome", "qta"]);
+});

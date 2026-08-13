@@ -228,14 +228,23 @@ export class MdyRecordManager implements MdyNestedCollection {
   /** Declares the row, or rewrites the value of one already declared. */
   upsert(key: string, value?: unknown): void {
     if (!this._acceptKey(key)) return;
-    const rowValue = value === undefined ? this._readRow(key) : value;
-    if (!this._declared.has(key)) {
+    // A row that does not exist yet has nothing to read back: every cell of it reads as `null`, and
+    // handing those down would declare a row of nulls where the template says what a row starts as.
+    // Left undefined, each cell takes the initial its descriptor declares.
+    const rowValue = value !== undefined
+      ? value
+      : this._declared.has(key) ? this._readRow(key) : undefined;
+    const isNew = !this._declared.has(key);
+    if (isNew) {
       this._declared.add(key);
       this._keysSig.update((keys) => [...keys, key]);
-      // Admits the waiting claims of controls that mounted before this row was declared.
-      this._deps.engine.refreshPathGate(this._deps.path);
     }
     this._registerNode(`${this._deps.path}.${key}`, this._deps.item, rowValue, `${this._deps.path}.${key}`, this._deps.sections ?? []);
+    // Admits the waiting claims of controls that mounted before this row was declared — after the
+    // row has registered its own fields, so that the row's shape is the template's and not the
+    // order in which controls happened to arrive. A value whose keys follow the rendering is a
+    // value the rendering can be read out of.
+    if (isNew) this._deps.engine.refreshPathGate(this._deps.path);
   }
 
   /**

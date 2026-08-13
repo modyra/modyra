@@ -20,6 +20,11 @@ import { resolve } from "node:path";
 import { diffCanonical } from "../models/observations.mjs";
 import { createBattleContext } from "./context.mjs";
 
+/** The shape {@link canonicalObservation} produces, as opposed to a battle's own projection. */
+function isCanonicalObservation(state) {
+  return typeof state === "object" && state !== null && "fieldNames" in state && "collections" in state;
+}
+
 export async function replay(report) {
   const context = createBattleContext({
     spec: report.schema,
@@ -35,8 +40,20 @@ export async function replay(report) {
       else await context.execute(operation);
     }
     const actual = context.observe("replay");
-    const divergence = report.actual ? diffCanonical(report.actual, actual) : null;
-    return { actual, operations, reproduced: report.actual ? divergence === null : null, divergence };
+
+    // A report's recorded state is comparable only when it is a canonical observation. A campaign
+    // that compares its own projection — a model's view of one collection — records that instead,
+    // and replaying it reproduces the sequence rather than the comparison. Saying so is the point:
+    // claiming reproduction against a shape that was never compared would be a false green.
+    const comparable = isCanonicalObservation(report.actual);
+    const divergence = comparable ? diffCanonical(report.actual, actual) : null;
+    return {
+      actual,
+      operations,
+      reproduced: comparable ? divergence === null : null,
+      divergence,
+      comparable,
+    };
   } finally {
     await context.dispose();
   }
@@ -60,7 +77,11 @@ async function main() {
   console.log(`Applied ${outcome.operations.length} operation(s).`);
 
   if (outcome.reproduced === null) {
-    console.log("Report carried no observed state; nothing to compare. Final state:");
+    console.log(
+      outcome.comparable === false
+        ? "Report carried a battle-specific observation; the sequence replayed, final state:"
+        : "Report carried no observed state; nothing to compare. Final state:",
+    );
     console.log(JSON.stringify(outcome.actual, null, 2));
     return;
   }

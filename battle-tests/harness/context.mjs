@@ -72,15 +72,21 @@ export function createBattleContext({
       }
     },
 
-    /** A disabled binding is a signal the binder owns, exactly as a renderer would hold one. */
+    /**
+     * A disabled binding is a signal the binder owns, exactly as a renderer would hold one.
+     *
+     * The signal is created once per path and kept — a control does not swap the signal it exposes —
+     * but the binding is declared on every operation, because that is what a renderer does each time
+     * it binds a control, and a row that came and went in between has a new field to bind to.
+     */
     setDisabled(path, disabled) {
       let signal = disabledSignals.get(path);
       if (!signal) {
         signal = form.reactivity.signal(false);
         disabledSignals.set(path, signal);
-        form.setDisabled(path, signal);
       }
       signal.set(disabled);
+      form.setDisabled(path, signal);
     },
 
     /**
