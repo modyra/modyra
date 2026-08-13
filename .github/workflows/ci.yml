@@ -98,6 +98,20 @@ jobs:
           npx playwright install --with-deps chromium firefox webkit
           pnpm run test:e2e
 
+      # A failed visual comparison is only actionable if the actual and diff images can be read.
+      # Without this, diagnosing a baseline mismatch means re-recording on a runner — a full
+      # workflow round-trip to see what one image already showed.
+      - name: Publish browser test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
       # What a consumer actually receives: the tarballs, installed into a project that has never seen
       # this repository, with every declared entry point imported and type-checked. Blocking from the
       # day it lands — it is green, and a packaging break is invisible everywhere else.
