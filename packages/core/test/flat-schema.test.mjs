@@ -90,3 +90,56 @@ test("the two names in this package take different things and say so", async () 
   const flat = buildFlatFormSchema(parsed.fields, parsed.collections);
   assert.ok("email" in flat, "the flat builder did not read the parsed field list");
 });
+
+test("a collection declared inside a row builds as a collection, not a group", () => {
+  const fields = [
+    { name: "orders.o1.customer", kind: "text", label: "Customer" },
+    { name: "orders.o1.lines.l1.sku", kind: "text", label: "SKU" },
+    { name: "orders.o1.lines.l1.qty", kind: "number", label: "Qty" },
+    { name: "orders.o2.customer", kind: "text", label: "Customer" },
+    { name: "orders.o2.lines.l9.sku", kind: "text", label: "SKU" },
+    { name: "orders.o2.lines.l9.qty", kind: "number", label: "Qty" },
+  ];
+  const collections = [
+    { path: "orders", kind: "record" },
+    { path: "orders.o1.lines", kind: "record" },
+    { path: "orders.o2.lines", kind: "record" },
+  ];
+  const form = createForm(buildFlatFormSchema(fields, collections));
+
+  assert.deepEqual([...form.f.orders.keys()].sort(), ["o1", "o2"]);
+  // Each row's own child, with its own keys — not the first row's repeated.
+  assert.deepEqual([...form.f.orders.row("o1").lines.keys()], ["l1"]);
+  assert.deepEqual([...form.f.orders.row("o2").lines.keys()], ["l9"]);
+  const sku = form.f.orders.row("o1").lines.row("l1").sku;
+  assert.ok(sku, "the nested cell did not resolve");
+  sku.set("SKU-1");
+  assert.equal(form.f.orders.row("o1").lines.row("l1").sku.value(), "SKU-1");
+  // The sibling row's child is untouched by the write.
+  assert.equal(form.f.orders.row("o2").lines.row("l9").sku.value(), "");
+  form.destroy();
+});
+
+test("three levels of declared collections stay collections all the way down", () => {
+  const fields = [
+    { name: "orders.o1.lines.l1.allocs.a1.amount", kind: "number", label: "Amount" },
+  ];
+  const collections = [
+    { path: "orders", kind: "record" },
+    { path: "orders.o1.lines", kind: "record" },
+    { path: "orders.o1.lines.l1.allocs", kind: "record" },
+  ];
+  const form = createForm(buildFlatFormSchema(fields, collections));
+  const cell = form.f.orders.row("o1").lines.row("l1").allocs.row("a1").amount;
+  assert.ok(cell, "the third-level cell did not resolve");
+  form.destroy();
+});
+
+test("a hostile key anywhere in a flattened path is refused before any schema exists", () => {
+  const fields = [{ name: "orders.__proto__.lines.l1.sku", kind: "text", label: "SKU" }];
+  const collections = [
+    { path: "orders", kind: "record" },
+    { path: "orders.__proto__.lines", kind: "record" },
+  ];
+  assert.throws(() => buildFlatFormSchema(fields, collections));
+});

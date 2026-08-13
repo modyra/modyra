@@ -62,7 +62,12 @@ const ENGINES = [
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
-  workers: process.env.CI ? "100%" : undefined,
+  /**
+   * Worker count stays at Playwright's default everywhere. `"100%"` was tried on the runner and
+   * measured: with all four cores saturated, the two documented load-sensitive families (the
+   * angular fixme in e2e/demo.spec.ts, finding U's 1px page-height flap) fail often enough that a
+   * green run is a coin flip — and a rerun costs more wall time than the two extra workers saved.
+   */
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
   /**
