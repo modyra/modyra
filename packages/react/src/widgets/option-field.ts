@@ -5,8 +5,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MdyFieldHandle } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor } from "@modyra/core";
 import {
+  subscribeController,
   createOptionFieldController,
   type MdyOptionFieldControllerOptions,
   type MdyOptionFieldIntent,
@@ -32,7 +33,7 @@ export function useMdyOptionField<TValue>(
   handle: MdyFieldHandle<TValue | null>,
   options: UseMdyOptionFieldOptions<TValue>,
 ): MdyReactOptionFieldApi<TValue> {
-  const reactivity = useMemo(() => vanillaReactivity(), []);
+  const reactivity = useMemo(() => observerFor(handle), [handle]);
 
   const controller = useMemo(
     () => createOptionFieldController({ ...options, handle }, reactivity),
@@ -50,16 +51,13 @@ export function useMdyOptionField<TValue>(
 
   const [, setVersion] = useState(0);
 
-  useEffect(() => {
-    const ref = reactivity.effect(() => {
-      controller.state();
-      setVersion((v) => v + 1);
-    });
-    return () => {
-      ref.destroy();
-      controller.destroy();
-    };
-  }, [controller, reactivity]);
+  // Both signals. Today the view is a function of the state and nothing else, so watching one is
+  // enough — but that is a property of the current controllers, not of the contract, and a host that
+  // subscribes to half of what it renders is right by coincidence.
+  useEffect(
+    () => subscribeController(controller, reactivity, () => setVersion((v) => v + 1)),
+    [controller, reactivity],
+  );
 
   const dispatch = useCallback(
     (intent: MdyOptionFieldIntent) => {

@@ -4,19 +4,25 @@
  * a CSS-only visual variant, as the catalogue's segmented anatomy declares — a button
  * reusing the radiogroup pattern).
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { createOptionFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  createOptionFieldController,
+  shownErrorsOf,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
+import { withControls, type MdyMountedField } from "../field-controls.js";
 
 export function renderOptionField(
   container: HTMLElement,
   f: MdyDynamicOptionsField,
   handle: MdyFieldHandle<unknown>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
-): () => void {
+): MdyMountedField {
+  reactivity = observerFor(handle, reactivity);
   const variant = f.kind === "segmented" ? "segmented" : "radio";
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
   const keyFor = (option: MdySelectOption<unknown>) => String(option.value);
@@ -30,7 +36,17 @@ export function renderOptionField(
   const shell = buildFieldShell(f.label, f.kind, {}, f.ariaLabel);
   const group = el("div") as HTMLDivElement;
   group.className = parts.group.classes.join(" ");
-  const rows = options.map((option) => {
+  /**
+   * One row per option, rebuilt when the list is replaced.
+   *
+   * Built once at mount, the DOM outlived the list it was built from: a chooser told about new
+   * options showed the old ones, which is the same shape of defect as reading state a controller
+   * owns.
+   */
+  let rows: ReadonlyArray<{ key: string; input: HTMLInputElement; row: HTMLLabelElement }> = [];
+  const buildRows = (list: ReadonlyArray<MdySelectOption<unknown>>): void => {
+    group.replaceChildren();
+    rows = list.map((option) => {
     const key = keyFor(option);
     const row = el("label") as HTMLLabelElement;
     row.className = parts.option.classes.join(" ");
@@ -57,14 +73,15 @@ export function renderOptionField(
     row.appendChild(text);
     group.appendChild(row);
     return { key, input, row };
-  });
+    });
+    for (const { key, input } of rows) {
+      input.addEventListener("change", () => controller.dispatch({ type: "select", optionKey: key }));
+      input.addEventListener("blur", () => controller.dispatch({ type: "blur" }));
+    }
+  };
+  buildRows(options);
   insertControl(shell, group);
   container.appendChild(shell.root);
-
-  for (const { key, input } of rows) {
-    input.addEventListener("change", () => controller.dispatch({ type: "select", optionKey: key }));
-    input.addEventListener("blur", () => controller.dispatch({ type: "blur" }));
-  }
 
   const effectRef = reactivity.effect(() => {
     const state = controller.state();
@@ -74,7 +91,7 @@ export function renderOptionField(
     shell.syncState({
       touched: handle.touched(),
       disabled: handle.disabled(),
-      hasError: errorsToShow(handle).length > 0,
+      hasError: shownErrorsOf(handle).length > 0,
       filled: handle.value() !== null && handle.value() !== undefined,
       required: handle.required(),
     });
@@ -82,7 +99,7 @@ export function renderOptionField(
     applyPart(group, view.parts.group);
     applyPart(shell.description, view.parts.description);
     applyPart(shell.errorList, view.parts.error);
-    setErrors(shell.errorList, errorsToShow(handle).map((e) => e.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     for (const { key, input, row } of rows) {
       const part = view.parts[key];
       // Classes go to the option element the contract names; the ARIA the part carries belongs to
@@ -97,9 +114,20 @@ export function renderOptionField(
     }
   });
 
-  return () => {
-    effectRef.destroy();
-    controller.destroy();
-    shell.root.remove();
-  };
+  return withControls(
+    () => {
+      effectRef.destroy();
+      controller.destroy();
+      shell.root.remove();
+    },
+    // The list can arrive after the field is on screen — a fetch, a sibling that narrows it — and
+    // the controller is told rather than the field remounted, which would forget the roving focus.
+    {
+      setOptions: (next) => {
+        const list = next as ReadonlyArray<MdySelectOption<unknown>>;
+        controller.setOptions(list);
+        buildRows(list);
+      },
+    },
+  );
 }

@@ -25,7 +25,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
       [forId]="fieldId"
       [required]="isRequired()"
       [filled]="fileNames().length > 0"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
 
@@ -92,13 +92,14 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     }
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     }
   `,
 })
 export class MdyFileComponent extends MdyBaseControl<File | File[] | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.file;
+  protected override readonly widgetKind = "file" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly accept = input<string>("");
   readonly multiple = input<boolean>(false);

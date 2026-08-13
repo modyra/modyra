@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   MDY_FIELD_SHELL_CLASSES,
-  MDY_FIELD_SHELL_STRUCTURE,
   MDY_WIDGET_CONTRACT_VERSION,
 } from "../dist/index.js";
+import { MDY_FIELD_SHELL_STRUCTURE } from "../dist/vocabulary.js";
 import { inspectWidgetStructure } from "../dist/testing/index.js";
 
 test("contract v1 exposes the canonical field shell without structural issues", () => {

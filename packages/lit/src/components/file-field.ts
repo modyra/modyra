@@ -76,7 +76,7 @@ export class MdyFileFieldElement extends MdyFieldElement<File | File[] | null> {
           </button>
           <div class="mdy-file-info">
             ${files.length === 0
-              ? html`<span class="mdy-file-placeholder">${this.placeholder || "Choose a file or drop it here"}</span>`
+              ? html`<span class="mdy-file-placeholder">${this.placeholder || this.messages.fileSelect}</span>`
               : html`<ul class="mdy-file-list">
                   ${files.map(
                     (f, i) => html`<li class="mdy-file-item">

@@ -1,0 +1,5 @@
+{
+  "note": "Each entry restates an upstream shape. Derive it instead, or say here why it cannot be.",
+  "minMembers": 3,
+  "allowed": []
+}

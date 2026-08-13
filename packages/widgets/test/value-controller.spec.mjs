@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createValueWidgetController } from "../dist/index.js";
+import {
+  createValueWidgetController,
+} from "../dist/index.js";
 
 test("scalar controller owns input, dirty and touched transitions", () => {
   const changes = [];

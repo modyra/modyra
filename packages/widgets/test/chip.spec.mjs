@@ -7,7 +7,11 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MDY_CHIP_CLASSES, MDY_WIDGET_CONTRACTS, multiselectChipClasses } from "../dist/index.js";
+import {
+  MDY_CHIP_CLASSES,
+  MDY_WIDGET_CONTRACTS,
+  multiselectChipClasses,
+} from "../dist/index.js";
 
 test("the chip vocabulary is fixed and namespaced", () => {
   assert.deepEqual(MDY_CHIP_CLASSES, {
@@ -16,6 +20,7 @@ test("the chip vocabulary is fixed and namespaced", () => {
     counter: "mdy-chip--counter",
     value: "mdy-chip--value",
     selected: "mdy-chip--selected",
+    removable: "mdy-chip--removable",
     check: "mdy-chip__check",
     label: "mdy-chip__label",
     count: "mdy-chip__count",

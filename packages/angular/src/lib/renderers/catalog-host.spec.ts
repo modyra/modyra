@@ -23,7 +23,16 @@ import { Component, Injector, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { By } from "@angular/platform-browser";
 import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "@modyra/widgets";
-import { findPartElement, findPartElements, MDY_CANONICAL_EMPTY, type MdyStateFixture } from "@modyra/widgets/testing";
+import { findPartElement, findPartElements, MDY_CANONICAL_EMPTY, settleFor, type MdyStateFixture } from "@modyra/widgets/testing";
+
+/**
+ * This framework paints when it is told to, and nothing is pending afterwards.
+ *
+ * Said here rather than implied by whatever each fixture happened to call: a suite that waits the
+ * wrong amount reads every state as its previous value, which is indistinguishable from a renderer
+ * that ignored the change.
+ */
+const PAINT_BEAT = "synchronous";
 import { MdyDeclarativeAdapter } from "../core/declarative-form-adapter";
 import { MdyFormComponent } from "../form/mdy-form.component";
 import { MdyPrefixDirective } from "../control/prefix.directive";
@@ -302,8 +311,10 @@ export function mountStateFixture(
     parts: () => partsOf(root, kind),
     control: () => controlOf(root),
     value: () => field?.().value(),
-    // Angular renders on change detection, not on a task.
-    settle: () => { fixture.detectChanges(); },
+    // Change detection is the flush, and nothing is pending after it — this framework paints when
+    // it is told rather than on a queue, which is a different beat from the other renderers' and is
+    // now said rather than implied by a number.
+    settle: settleFor(PAINT_BEAT, () => { fixture.detectChanges(); }),
     dispose: () => fixture.destroy(),
     /**
      * Send a key where the user actually is.

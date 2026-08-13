@@ -165,6 +165,17 @@ function extractAngularClasses(ts, filePath, kind) {
       }
     }
   }
+  // A component may take the chip vocabulary as a field (`readonly chip = MDY_CHIP_CLASSES`) and
+  // name every chip class through the alias; a member read through it emits the class as literally
+  // as the constant would.
+  const aliasMatch = ts.match(/([A-Za-z0-9_$]+)\s*=\s*MDY_CHIP_CLASSES\b/);
+  for (const name of aliasMatch ? [aliasMatch[1], "MDY_CHIP_CLASSES"] : ["MDY_CHIP_CLASSES"]) {
+    const memberRe = new RegExp(`\\b${name}\\.([A-Za-z0-9_]+)`, "g");
+    while ((m = memberRe.exec(ts)) !== null) {
+      const value = MDY_CHIP_CLASSES[m[1]];
+      if (value) fromContract.push(value);
+    }
+  }
   return new Set([...fromTemplate, ...host, ...fromContract]);
 }
 
@@ -420,7 +431,7 @@ function buildLitVocabulary() {
     // Pull in shared style/helper files explicitly imported by this component
     // (e.g. popup-styles.ts with renderOverlayPanel) without blindly following
     // every relative import, which would over-attribute shared base classes.
-    const sharedImportRe = /from\s+['"](\.\/[^'"]*(?:popup-styles|overlay)[^'"]*)['"];/g;
+    const sharedImportRe = /from\s+['"](\.\/[^'"]*(?:popup-styles|overlay|calendar-pickers)[^'"]*)['"];/g;
     let m;
     while ((m = sharedImportRe.exec(ts)) !== null) {
       const resolved = resolveLitImportPath(path, m[1]);

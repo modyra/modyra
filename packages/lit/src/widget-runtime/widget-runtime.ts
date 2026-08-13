@@ -8,55 +8,36 @@
 
 import type { MdyUiCommand } from "@modyra/widgets";
 import {
+  createCommandRuntime,
   createMdyAnnouncer,
-  processWidgetCommands,
   type MdyElementLookup,
+  type MdyWidgetCommandHandlers,
 } from "@modyra/widgets";
 import type { LitElement } from "lit";
 
-/** Host callbacks for command side effects. */
-export interface MdyLitCommandHandlers {
-  /** Called for open-overlay / close-overlay. */
-  setOpen(open: boolean): void;
-  /** Called for emit-change. */
-  onChange?(): void;
-  /** Called for mark-touched. */
-  onTouched?(): void;
-  /** Called for mark-dirty. */
-  onDirty?(): void;
-}
+/**
+ * Host callbacks for command side effects.
+ *
+ * An alias, not a restatement: written out member by member it drifts the moment the contract gains
+ * one, and the five reactivity adapters have always aliased it.
+ */
+export type MdyLitCommandHandlers = MdyWidgetCommandHandlers;
 
 /**
- * Executes a list of UI commands in a Lit runtime context.
- *
- * Commands are run synchronously where possible; focus/scroll are queued
- * behind `host.updateComplete`.
+ * This host publishes its own promise for "I have finished rendering", so that is what focus waits
+ * on. A microtask would fire before the update lands and focus would go to a node about to be
+ * replaced; the runtime is built per host because the promise is the host's.
  */
 export function executeLitCommands(
   host: LitElement,
   commands: readonly MdyUiCommand[],
   lookup: MdyElementLookup,
-  handlers: MdyLitCommandHandlers,
+  handlers: MdyWidgetCommandHandlers,
 ): void {
-  const focusQueue: Array<{ el: HTMLElement; type: "focus" | "scroll" }> = [];
-  const announcer = createMdyAnnouncer("mdy-lit-announcer");
-
-  processWidgetCommands(commands, {
-    lookup,
-    handlers,
-    scheduleFocus: (el) => focusQueue.push({ el, type: "focus" }),
-    scheduleScroll: (el) => focusQueue.push({ el, type: "scroll" }),
-    announce: (message) => announcer.announce(message),
-  });
-
-  if (focusQueue.length > 0) {
-    host.updateComplete.then(() => {
-      for (const item of focusQueue) {
-        if (item.type === "focus") item.el.focus();
-        else item.el.scrollIntoView({ block: "nearest" });
-      }
-    });
-  }
+  createCommandRuntime({
+    announcerId: "mdy-lit-announcer",
+    defer: (run) => { void host.updateComplete.then(run); },
+  }).execute(commands, lookup, handlers);
 }
 
 /** Visually hidden live region for screen reader announcements. */

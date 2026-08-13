@@ -11,7 +11,7 @@ import { MdyInlineErrorIconComponent } from "./inline-error-icon.component";
  * <mdy-control-label
  *   [label]="label()"
  *   [forId]="fieldId"
- *   [showInlineError]="inlineErrors && touched() && hasErrors()"
+ *   [showInlineError]="inlineErrorShown()"
  *   [errorText]="inlineErrorText()"
  * />
  * ```

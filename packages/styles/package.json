@@ -1,7 +1,7 @@
 {
     "name": "@modyra/styles",
     "version": "0.7.1",
-    "description": "Framework-agnostic style themes for modyra components.",
+    "description": "Framework-agnostic themes for modyra: the stylesheets, and the colour arithmetic that generates them.",
     "license": "MIT",
     "author": "Lorenzo Muscherà",
     "repository": {
@@ -21,9 +21,14 @@
         "framework-agnostic"
     ],
     "scripts": {
-        "build": "node build.mjs"
+        "build": "node ../../scripts/tsc7.mjs packages/styles/tsconfig.json && node build.mjs",
+        "test": "node --test test/*.test.mjs"
     },
     "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
         "./default.css": {
             "default": "./dist/modyra-default.css"
         },

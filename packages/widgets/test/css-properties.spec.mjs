@@ -10,7 +10,10 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
-import { MDY_CSS_PROPERTIES, MDY_CSS_PROPERTY_NAMES } from "../dist/index.js";
+import {
+  MDY_CSS_PROPERTIES,
+} from "../dist/index.js";
+import { MDY_CSS_PROPERTY_NAMES } from "../dist/vocabulary.js";
 
 // Every shipped stylesheet, not only the foundation: a theme is free to be the only one that needs a
 // number. `--mdy-segments-count` is read by iOS alone, because only iOS slides a pill along the

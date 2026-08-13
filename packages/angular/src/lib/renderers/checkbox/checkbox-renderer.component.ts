@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { createBooleanFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -24,14 +24,14 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [checked]="value()"
         [disabled]="isDisabled()"
         (change)="onChange($event)"
-        (blur)="dispatchValueBlur('checkbox')"
+        (blur)="onBlur()"
         [attr.aria-label]="controlAriaLabel()"
         [mdyPart]="controlPart()"
       />
       <span [class]="widgetContract.parts.indicator.classes.join(' ')" aria-hidden="true"></span>
       <span
         class="mdy-label"
-        [title]="(inlineErrors && touched() && hasErrors()) ? inlineErrorText() : null"
+        [title]="inlineErrorShown() ? inlineErrorText() : null"
       >
         {{ label() }}
         @if (label() && isRequired()) {
@@ -39,7 +39,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         }
       </span>
     </label>
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
@@ -54,8 +54,15 @@ export class MdyCheckboxComponent extends MdyBaseControl<boolean> {
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly fieldId = `mdy-control-checkbox-${MdyBaseControl.nextId()}`;
 
+  private readonly controller = this.adoptFieldController((handle, widgetId) =>
+    createBooleanFieldController({ widgetId, handle: handle as never, variant: "checkbox" }));
+
   protected onChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.dispatchValueIntent<boolean>("checkbox", { type: "input", value: input.checked });
+    this.controller()?.dispatch({ type: input.checked ? "check" : "uncheck" });
+  }
+
+  protected onBlur(): void {
+    this.controller()?.dispatch({ type: "blur" });
   }
 }

@@ -6,23 +6,23 @@ import {
   input,
   output,
 } from "@angular/core";
-import { CalendarDate } from "@modyra/core/date-utils";
+import { CalendarDate, isMonthOutOfRange } from "@modyra/core/datetime";
+import { projectCalendarPeriodCellA11y, projectCalendarViewA11y } from "@modyra/widgets";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MDY_DATE_LOCALE } from "../../core/date-locale";
 
 @Component({
   selector: "mdy-month-picker",
   standalone: true,
+  imports: [MdyPartDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: "mdy-datepicker__month-picker" },
+  host: {
+    "[class]": "view().classes.join(' ')",
+    "[attr.role]": "view().attributes['role']",
+  },
   template: `
     @for (monthName of months(); track $index) {
-      <button
-        type="button"
-        class="mdy-datepicker__month-cell"
-        [class.mdy-datepicker__month-cell--selected]="currentMonth() === $index + 1"
-        [disabled]="isMonthDisabled($index + 1)"
-        (click)="monthSelected.emit($index + 1)"
-      >
+      <button type="button" [mdyPart]="cell($index + 1)" (click)="monthSelected.emit($index + 1)">
         {{ monthName }}
       </button>
     }
@@ -33,25 +33,24 @@ export class MdyMonthPickerComponent {
   readonly viewYear = input.required<number>();
   readonly minDate = input<CalendarDate | null>(null);
   readonly maxDate = input<CalendarDate | null>(null);
+  readonly widgetId = input<string>("");
   readonly monthSelected = output<number>();
 
   private readonly locale = inject(MDY_DATE_LOCALE);
 
   protected readonly months = computed(() => this.locale.monthNamesShort);
 
-  protected isMonthDisabled(month: number): boolean {
-    const year = this.viewYear();
-    const min = this.minDate();
-    const max = this.maxDate();
+  /** Classes, role and chosen state, all the contract's. */
+  protected readonly view = computed(() =>
+    projectCalendarViewA11y("months", { kind: "datepicker", widgetId: this.widgetId() })!,
+  );
 
-    if (min) {
-      if (year < min.year) return true;
-      if (year === min.year && month < min.month) return true;
-    }
-    if (max) {
-      if (year > max.year) return true;
-      if (year === max.year && month > max.month) return true;
-    }
-    return false;
+  protected cell(month: number) {
+    return projectCalendarPeriodCellA11y("months", {
+      value: month,
+      label: this.months()[month - 1] ?? String(month),
+      selected: this.currentMonth() === month,
+      disabled: isMonthOutOfRange(this.viewYear(), month, this.minDate(), this.maxDate()),
+    }, { kind: "datepicker", widgetId: this.widgetId() });
   }
 }

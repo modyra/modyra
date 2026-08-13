@@ -9,7 +9,9 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { anchorOverlay } from "../dist/index.js";
+import {
+  anchorOverlay,
+} from "../dist/index.js";
 
 const VIEWPORT = { width: 1200, height: 900 };
 /** A control comfortably inside the viewport, so nothing is forced by the edges. */

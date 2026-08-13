@@ -1,6 +1,10 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { booleanAttribute, ChangeDetectionStrategy, Component, computed, ElementRef, input, InputSignalWithTransform, viewChild } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS, optionNavigationIndex } from "@modyra/widgets";
+import {
+  createOptionFieldController,
+  MDY_WIDGET_CONTRACTS,
+  optionNavigationIndex,
+  } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -27,7 +31,7 @@ import { MdySelectOption } from "../../core/types";
       [labelId]="fieldId + '-label'"
       [required]="isRequired()"
       [filled]="value() !== null"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
 
@@ -85,19 +89,26 @@ import { MdySelectOption } from "../../core/types";
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     }
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     }
   `,
 })
 export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseControl<TValue | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.segmented;
+  protected override readonly widgetKind = "segmented" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
 
   public readonly fullWidth: InputSignalWithTransform<boolean, unknown> = input<boolean, unknown>(false, { transform: booleanAttribute });
 
   protected readonly fieldId = `mdy-control-segmented-${MdyBaseControl.nextId()}`;
+
+  private readonly controller = this.adoptFieldController(
+    (handle, widgetId) => createOptionFieldController<TValue>(
+      { widgetId, handle: handle as never, options: this.options(), variant: "segmented" }),
+    (c) => c.setOptions(this.options()),
+  );
 
   protected readonly segmentsCount = computed(() => this.options().length);
 
@@ -142,7 +153,7 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
   }
 
   protected onSelect(value: TValue): void {
-    this.dispatchValueIntent<TValue | null>("segmented", { type: "select", value });
+    this.controller()?.dispatch({ type: "select", optionKey: String(value) });
   }
 
   protected tabIndexFor(index: number): number {

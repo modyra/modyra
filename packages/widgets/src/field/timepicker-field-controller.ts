@@ -7,12 +7,12 @@
  *
  * The working copy is canonical 12h whatever the field's own `format` says, which keeps one
  * representation for the dial to move through; `formatTimeAs` converts on the way out. The angle and
- * parsing maths lives in `@modyra/core/time-utils` — a renderer drawing its own clock face needs the
+ * parsing maths lives in `@modyra/core/datetime` — a renderer drawing its own clock face needs the
  * same functions.
  */
 import { blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor } from "@modyra/core";
 import {
   angleToHour,
   angleToMinute,
@@ -22,11 +22,12 @@ import {
   parseTime,
   type MdyTimeFormat,
   type ParsedTime,
-} from "@modyra/core/time-utils";
+} from "@modyra/core/datetime";
 
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectTimepickerFieldA11y } from "./timepicker-field-a11y.js";
+import { showsAsInvalid } from "./verdict.js";
 import type {
   MdyTimepickerFieldControllerOptions,
   MdyTimepickerFieldIntent,
@@ -49,8 +50,13 @@ function currentTimeAsParsed(): ParsedTime {
 
 export function createTimepickerFieldController(
   options: MdyTimepickerFieldControllerOptions,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
 ): MdyTimepickerFieldController {
+  // Observed through the runtime that owns the handle. A caller that supplies one keeps it
+  // and is told when it does not match — a fresh runtime over another form's handle is the
+  // defect this registry was added for, and it fails by rendering nothing rather than by
+  // raising.
+  reactivity = observerFor(options.handle, reactivity);
   const { widgetId, handle, format = "12h" as MdyTimeFormat, readonly: initialReadonly = false } = options;
 
   const readonly = reactivity.signal(initialReadonly);
@@ -68,7 +74,7 @@ export function createTimepickerFieldController(
     open: open(),
     focusedField: focusedField(),
     viewMode: viewMode(),
-    invalid: !handle.valid(),
+    invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
     disabled: handle.disabled(),
     readonly: readonly(),
     // `disabled`/`readonly` above are the derived halves of this one value.

@@ -8,24 +8,23 @@ import {
   output,
   viewChildren,
 } from "@angular/core";
-import { CalendarDate } from "@modyra/core/date-utils";
+import { CalendarDate, calendarYearRange, isYearOutOfRange } from "@modyra/core/datetime";
+import { projectCalendarPeriodCellA11y, projectCalendarViewA11y } from "@modyra/widgets";
+import { MdyPartDirective } from "../../control/mdy-part.directive";
 
 @Component({
   selector: "mdy-year-picker",
   standalone: true,
+  imports: [MdyPartDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: "mdy-datepicker__year-picker" },
+  host: {
+    "[class]": "view().classes.join(' ')",
+    "[attr.role]": "view().attributes['role']",
+  },
   template: `
     <div class="mdy-datepicker__year-grid">
       @for (yearNum of years(); track $index) {
-        <button
-          #yearBtn
-          type="button"
-          class="mdy-datepicker__year-cell"
-          [class.mdy-datepicker__year-cell--selected]="currentYear() === yearNum"
-          [disabled]="isYearDisabled(yearNum)"
-          (click)="yearSelected.emit(yearNum)"
-        >
+        <button #yearBtn type="button" [mdyPart]="cell(yearNum)" (click)="yearSelected.emit(yearNum)">
           {{ yearNum }}
         </button>
       }
@@ -36,6 +35,7 @@ export class MdyYearPickerComponent {
   readonly currentYear = input.required<number>();
   readonly minDate = input<CalendarDate | null>(null);
   readonly maxDate = input<CalendarDate | null>(null);
+  readonly widgetId = input<string>("");
   readonly yearSelected = output<number>();
 
   private readonly yearButtons = viewChildren<ElementRef<HTMLButtonElement>>("yearBtn");
@@ -51,27 +51,22 @@ export class MdyYearPickerComponent {
     });
   }
 
-  protected readonly years = computed(() => {
+  /** The years on offer, from the contract: two renderers each choosing a span is two pickers. */
+  protected readonly years = computed(() =>
+    calendarYearRange(this.currentYear(), this.minDate(), this.maxDate()),
+  );
 
-    const min = this.minDate()?.year ?? 1920;
-    const max = this.maxDate()?.year ?? 2120;
+  /** Classes, role and chosen state, all the contract's. */
+  protected readonly view = computed(() =>
+    projectCalendarViewA11y("years", { kind: "datepicker", widgetId: this.widgetId() })!,
+  );
 
-    const cur = this.currentYear();
-    const startYear = Math.min(min, cur - 100, 1920);
-    const endYear = Math.max(max, cur + 100, 2120);
-
-    const result: number[] = [];
-    for (let i = startYear; i <= endYear; i++) {
-      result.push(i);
-    }
-    return result;
-  });
-
-  protected isYearDisabled(year: number): boolean {
-    const min = this.minDate();
-    const max = this.maxDate();
-    if (min && year < min.year) return true;
-    if (max && year > max.year) return true;
-    return false;
+  protected cell(year: number) {
+    return projectCalendarPeriodCellA11y("years", {
+      value: year,
+      label: String(year),
+      selected: this.currentYear() === year,
+      disabled: isYearOutOfRange(year, this.minDate(), this.maxDate()),
+    }, { kind: "datepicker", widgetId: this.widgetId() });
   }
 }

@@ -6,7 +6,7 @@ import {
   input,
   output,
 } from "@angular/core";
-import { CalendarCell, CalendarDate } from "@modyra/core/date-utils";
+import { CalendarCell, CalendarDate } from "@modyra/core/datetime";
 
 @Component({
   selector: "mdy-calendar-cell",

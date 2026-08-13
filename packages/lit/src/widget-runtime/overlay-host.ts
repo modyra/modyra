@@ -5,7 +5,7 @@
  * focus is restored — is `overlayLifecycleTransition` in `@modyra/widgets`. These helpers only
  * carry the element's `_open` flag in and out of it, so no element re-decides the policy locally.
  */
-import { createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, type MdyOverlayLifecycleIntent } from "@modyra/widgets";
+import { createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, type MdyOverlayLifecycleIntent, bindLightDismiss } from "@modyra/widgets";
 
 /** A teardown for the case where nothing was bound. */
 const noop = (): void => undefined;
@@ -60,26 +60,42 @@ export function bindOutsidePointer(
     },
   });
 
-  const onDown = (event: Event): void => {
-    const e = event as PointerEvent;
-    policy.pointerdown(e.target, { pointerId: e.pointerId ?? 0, isPrimary: e.isPrimary ?? true, button: e.button ?? 0 });
-  };
-  const onClick = (event: Event): void => policy.click(event.target);
-  const onCancel = (event: Event): void => policy.pointercancel((event as PointerEvent).pointerId ?? 0);
-  const onAbandon = (): void => policy.reset();
+  return bindLightDismiss(policy);
+}
 
-  document.addEventListener("pointerdown", onDown, true);
-  document.addEventListener("click", onClick, true);
-  document.addEventListener("pointercancel", onCancel, true);
-  // An interaction the page can no longer observe the end of is abandoned, not completed.
-  window.addEventListener("blur", onAbandon);
-  document.addEventListener("visibilitychange", onAbandon);
-  return () => {
-    document.removeEventListener("pointerdown", onDown, true);
-    document.removeEventListener("click", onClick, true);
-    document.removeEventListener("pointercancel", onCancel, true);
-    window.removeEventListener("blur", onAbandon);
-    document.removeEventListener("visibilitychange", onAbandon);
-    policy.reset();
-  };
+/**
+ * Carries out what a controller asks of the DOM, for an element whose popup this package owns.
+ *
+ * The three commands an overlay widget produces — open, close, give focus back — are the same three
+ * for every kind, and each renderer that adopted a controller wrote the same loop: the date picker,
+ * the range picker and the clock had it byte-identical the moment the third one landed. What a kind
+ * *decides* differs; what a popup does when told is not a per-kind question.
+ */
+export function applyWidgetCommands(
+  host: OverlayHost & { querySelector<E extends Element>(selectors: string): E | null },
+  commands: ReadonlyArray<{ readonly type: string }>,
+  options: {
+    /** Opens the popup this host owns. */
+    readonly open: () => void;
+    /** Closes it. */
+    readonly close: () => void;
+    /** Whether the field refuses interaction, which decides if an open is honoured at all. */
+    readonly disabled: boolean;
+    /** The selector focus returns to, which is the control the popup hangs off. */
+    readonly control: string;
+  },
+): void {
+  for (const command of commands) {
+    if (command.type === "open-overlay") {
+      applyOverlayIntent(host, { type: "open", disabled: options.disabled, available: true });
+      options.open();
+    }
+    if (command.type === "close-overlay") {
+      applyOverlayIntent(host, { type: "close" });
+      options.close();
+    }
+    if (command.type === "restore-focus") {
+      host.querySelector<HTMLInputElement>(options.control)?.focus();
+    }
+  }
 }

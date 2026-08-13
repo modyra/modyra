@@ -432,6 +432,56 @@ Three things are worth knowing:
   vocabulary every adapter and every theme uses; a literal string here is
   how one renderer's two-column row stops matching another's.
 
+## A widget controller without a wrapper
+
+`@modyra/react` ships a hook for each widget controller. The other four reactivity
+adapters ship two, and that is a deliberate gap rather than an oversight: a wrapper
+is ergonomics, not capability. Every controller in `@modyra/widgets` takes a field
+handle and a reactive runtime, and both are things you already have.
+
+```ts
+import { observerFor } from "@modyra/core";
+import { createDatepickerFieldController } from "@modyra/widgets";
+
+// `observerFor` resolves the runtime that owns the handle. Building a fresh one
+// works by accident — it stops working, silently, the moment the handle belongs
+// to a form built by another adapter, because nothing re-renders and nothing says so.
+const controller = createDatepickerFieldController(
+  { widgetId: "birthday", handle: form.f.birthday },
+  observerFor(form.f.birthday),
+);
+```
+
+From there the controller is the same object a hook would have handed you:
+
+- `controller.state()` — the semantic state to render from;
+- `controller.view()` — the classes, ids and ARIA for each part;
+- `controller.dispatch(intent)` — returns the commands to execute;
+- `controller.destroy()` — call it when your component goes away.
+
+Two things your host has to do, and they are the only two a wrapper does for you:
+
+```ts
+// 1. Re-render when the controller changes. Both signals, not one: the view is a
+//    computed over the state today, and the contract does not promise it stays that way.
+const stop = subscribeController(controller, observerFor(handle), () => rerender());
+
+// 2. Execute the commands a dispatch returns, deferred the way your host renders.
+const runtime = createCommandRuntime({
+  announcerId: "mdy-my-app-announcer",
+  defer: (run) => queueMicrotask(run),   // or requestAnimationFrame, or your host's promise
+});
+runtime.execute(controller.dispatch({ type: "open" }), lookup, handlers);
+```
+
+Both helpers are exported from `@modyra/widgets`. `defer` is the only part that is
+genuinely yours: it is *when* your host has finished rendering, and focusing before
+that moves focus to a node the host is about to replace.
+
+This recipe runs in the framework-free laboratory (`npm run demo:plain`, the
+**Headless** panel) and is checked by its browser suite, so it cannot rot into a
+snippet that no longer compiles.
+
 ## Accessibility checklist
 
 The recipes encode these; keep them when customizing:

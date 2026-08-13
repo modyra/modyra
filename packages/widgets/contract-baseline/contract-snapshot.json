@@ -2380,16 +2380,53 @@
             "today"
           ]
         },
-        "actions": {
-          "element": "group",
-          "parent": "popup",
+        "monthPicker": {
+          "element": "grid",
+          "parent": "calendar",
           "optional": true,
           "repeated": false,
-          "role": null,
+          "role": "grid",
           "classes": [
-            "mdy-datepicker__actions"
+            "mdy-datepicker__month-picker"
           ],
           "states": []
+        },
+        "monthCell": {
+          "element": "gridcell",
+          "parent": "monthPicker",
+          "optional": true,
+          "repeated": true,
+          "role": "gridcell",
+          "classes": [
+            "mdy-datepicker__month-cell"
+          ],
+          "states": [
+            "selected"
+          ]
+        },
+        "yearPicker": {
+          "element": "grid",
+          "parent": "calendar",
+          "optional": true,
+          "repeated": false,
+          "role": "grid",
+          "classes": [
+            "mdy-datepicker__year-picker"
+          ],
+          "states": []
+        },
+        "yearCell": {
+          "element": "gridcell",
+          "parent": "yearPicker",
+          "optional": true,
+          "repeated": true,
+          "role": "gridcell",
+          "classes": [
+            "mdy-datepicker__year-cell"
+          ],
+          "states": [
+            "selected"
+          ]
         },
         "inlineError": {
           "element": "image",
@@ -2692,16 +2729,53 @@
             "today"
           ]
         },
-        "actions": {
-          "element": "group",
-          "parent": "popup",
+        "monthPicker": {
+          "element": "grid",
+          "parent": "calendar",
           "optional": true,
           "repeated": false,
-          "role": null,
+          "role": "grid",
           "classes": [
-            "mdy-datepicker__actions"
+            "mdy-datepicker__month-picker"
           ],
           "states": []
+        },
+        "monthCell": {
+          "element": "gridcell",
+          "parent": "monthPicker",
+          "optional": true,
+          "repeated": true,
+          "role": "gridcell",
+          "classes": [
+            "mdy-datepicker__month-cell"
+          ],
+          "states": [
+            "selected"
+          ]
+        },
+        "yearPicker": {
+          "element": "grid",
+          "parent": "calendar",
+          "optional": true,
+          "repeated": false,
+          "role": "grid",
+          "classes": [
+            "mdy-datepicker__year-picker"
+          ],
+          "states": []
+        },
+        "yearCell": {
+          "element": "gridcell",
+          "parent": "yearPicker",
+          "optional": true,
+          "repeated": true,
+          "role": "gridcell",
+          "classes": [
+            "mdy-datepicker__year-cell"
+          ],
+          "states": [
+            "selected"
+          ]
         },
         "inlineError": {
           "element": "image",

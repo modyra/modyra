@@ -11,7 +11,7 @@
  * how they combine.
  */
 import { MDY_DEV } from "./dev-flags.js";
-import type { MdyReactivity, MdySignal } from "./reactivity.js";
+import type { MdyReactivity, MdySignal } from "./reactivity-contract.js";
 
 /**
  * One say over whether a field is in play.

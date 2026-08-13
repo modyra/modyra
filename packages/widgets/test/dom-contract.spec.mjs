@@ -7,7 +7,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import { assertWidgetDomContract, inspectWidgetDom } from "../dist/testing/index.js";
-import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } from "../dist/index.js";
+import {
+  MDY_FIELD_SHELL_CLASSES,
+  MDY_FIELD_STATE_CLASSES,
+  MDY_POPUP_OPENERS,
+  MDY_WIDGET_CONTRACTS,
+} from "../dist/index.js";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>");
 const document = dom.window.document;

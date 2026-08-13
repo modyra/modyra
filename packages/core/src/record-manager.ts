@@ -19,37 +19,58 @@
  * `MdyFormEngine.registerPathGate`.
  */
 import { MDY_DEV } from "./dev-flags.js";
-import { MdyFormEngine } from "./form-engine.js";
+import type { MdyCollectionHost } from "./contracts/collection-host.js";
 import { isSafeFieldPath } from "./path-utils.js";
 import {
   MdyReactivity,
   MdySignal,
   MdyWritableSignal,
-} from "./reactivity.js";
-import { hasRequiredMarker } from "./schema-utils.js";
+} from "./reactivity-contract.js";
 import type {
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
-} from "./typed-form.js";
+  MdyAnyRecordDescriptor,
+} from "./contracts/descriptors.js";
 import { isRecord } from "./record-utils.js";
-import { composeConditions, type MdyCondition } from "./conditions.js";
+import { registerRowNode, type MdyRowRegistration } from "./collections/register.js";
 
 /** A row's own schema node — a record's row is a field or a group, never another collection. */
 type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
+
+/**
+ * The nestings the runtime can execute today.
+ *
+ * A shape outside this set fails when the form is built rather than producing paths nobody owns —
+ * the property the blanket refusal had, kept while the set grows. ADR 0040 states the order the
+ * combinations arrive in, and why a record inside a record is first: both levels have declared
+ * identity, so rename and late binding are answerable without a rebase.
+ */
+const NESTABLE_IN_RECORD: ReadonlySet<string> = new Set(["record"]);
 
 function assertRowNode(
   node: MdyRowNode | { readonly kind: "array" | "record" },
 ): asserts node is MdyRowNode {
   if (node.kind === "array" || node.kind === "record") {
     throw new Error(
-      `[modyra] A record's row cannot contain another ${node.kind} — one collection per node`,
+      `[modyra] A record's row cannot contain ${node.kind === "array" ? "an array" : "another record"} yet — ` +
+      `a row may hold: ${[...NESTABLE_IN_RECORD].join(", ")}`,
     );
   }
 }
 
 /** Refuses a nested collection anywhere in the row, when the form is built rather than when a row arrives. */
-function assertRowShape(node: MdyRowNode): void {
-  assertRowNode(node);
+/**
+ * Refuses a shape the runtime cannot execute, when the form is built rather than when a row arrives.
+ *
+ * A supported nesting is walked into rather than waved through: a combination this manager can run
+ * may still hold one it cannot, and a document saying so must fail at construction.
+ */
+function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record" }): void {
+  if (node.kind === "array" || node.kind === "record") {
+    if (!NESTABLE_IN_RECORD.has(node.kind)) assertRowNode(node);
+    assertRowShape((node as MdyAnyRecordDescriptor).item as MdyRowNode);
+    return;
+  }
   if (node.kind === "group") {
     for (const child of Object.values(node.children)) {
       assertRowShape(child as MdyRowNode);
@@ -64,8 +85,6 @@ function describe(value: unknown): string {
   return `a ${typeof value}`;
 }
 
-/** Owner key for validators this manager registers (schema namespace, as arrays use). */
-const ROW_SCHEMA_KEY = "mdy-schema";
 
 export interface MdyRecordManagerDeps {
   /**
@@ -77,7 +96,7 @@ export interface MdyRecordManagerDeps {
    */
   readonly sections?: ReadonlyArray<() => boolean>;
   readonly rx: MdyReactivity;
-  readonly engine: MdyFormEngine;
+  readonly engine: MdyCollectionHost;
   /** Dotted record path, e.g. "rows" or "order.rows". */
   readonly path: string;
   readonly item: MdyRowNode;
@@ -96,6 +115,14 @@ export class MdyRecordManager {
    */
   private readonly _declared = new Set<string>();
   private readonly _releaseGate: () => void;
+  /**
+   * One manager per collection declared inside a row, keyed by its full path.
+   *
+   * They belong to the row, not to the form: the row declared them and they go when it goes. A
+   * form-level registry would have to work that ownership back out of a path, which is the thing
+   * ADR 0040 says not to do.
+   */
+  private readonly _nested = new Map<string, MdyRecordManager>();
 
   /** The declared keys, in declaration order. */
   readonly keys: MdySignal<readonly string[]>;
@@ -170,8 +197,55 @@ export class MdyRecordManager {
    * Ends the row. Its value goes with it, and controls still mounted on it go back to waiting —
    * deletion is the owner's word, and a mounted control neither prevents it nor survives it.
    */
+  /**
+   * A collection inside a row: declared when the row is, destroyed with it.
+   *
+   * Re-declaring replaces what is there. A row rewritten by `upsert` runs the whole visit again,
+   * and two managers over one path would both answer the gate for it.
+   */
+  private _declareNested(path: string, node: MdyAnyRecordDescriptor, value: unknown): void {
+    this._nested.get(path)?.destroy();
+    this._nested.set(path, new MdyRecordManager(
+      {
+        rx: this._deps.rx,
+        engine: this._deps.engine,
+        path,
+        item: node.item as MdyRowNode,
+        warn: this._deps.warn,
+        // Everything the row answers to, and the row itself: a collection inside a row that is no
+        // longer declared is out of play with it.
+        sections: [
+          ...(this._deps.sections ?? []),
+          () => this._declared.has(this._keyOf(path)),
+        ],
+      },
+      isRecord(value) ? value : {},
+    ));
+  }
+
+  /** The manager for a collection declared inside one of these rows, wherever it sits below. */
+  nested(path: string): MdyRecordManager | undefined {
+    const own = this._nested.get(path);
+    if (own) return own;
+    for (const [at, manager] of this._nested) {
+      if (path.startsWith(`${at}.`)) return manager.nested(path);
+    }
+    return undefined;
+  }
+
+  /** Everything a row owned, the collections it declared included. */
+  private _destroyNestedUnder(prefix: string): void {
+    for (const [path, manager] of [...this._nested]) {
+      if (path === prefix || path.startsWith(`${prefix}.`)) {
+        manager.destroy();
+        this._nested.delete(path);
+      }
+    }
+  }
+
   remove(key: string): void {
     if (!this._declared.delete(key)) return;
+    this._destroyNestedUnder(`${this._deps.path}.${key}`);
     this._keysSig.update((keys) => keys.filter((k) => k !== key));
     this._deps.engine.refreshPathGate(this._deps.path);
   }
@@ -280,6 +354,8 @@ export class MdyRecordManager {
 
   /** Releases the gate — call when the owning form is destroyed. */
   destroy(): void {
+    for (const manager of this._nested.values()) manager.destroy();
+    this._nested.clear();
     this._releaseGate();
   }
 
@@ -332,67 +408,29 @@ export class MdyRecordManager {
     return isRecord(row) ? row : {};
   }
 
-  private _registerNode(fullPath: string, rowNode: MdyRowNode, value: unknown, rowPath: string, sections: ReadonlyArray<() => boolean> = []): void {
-    const { engine } = this._deps;
-    if (rowNode.kind === "field") {
-      const v = value === undefined ? rowNode.initial : value;
-      if (rowNode.sanitize !== null) {
-        engine.setSanitizer(fullPath, rowNode.sanitize);
-      }
-      engine.setInitialValue(fullPath, v);
-      engine.getField(fullPath);
-      const marksRequired = rowNode.validators.some((fn) => hasRequiredMarker(fn));
-      engine.upsertValidators(fullPath, ROW_SCHEMA_KEY, rowNode.validators, marksRequired);
-      // Its own condition and every section of the row above it, composed once by
-      // `conditions.ts` — the same sentence the schema registration uses.
-      // Already bound to what they read — a section above this collection knows the form, not the
-      // row — so they take no arguments and none are invented for them.
-      const conditions: MdyCondition[] = sections.map((holds) => ({
-        holds: () => holds(),
-        read: () => ({ value: null, enclosing: {} }),
-      }));
-      if (rowNode.when !== null) {
-        const when = rowNode.when;
-        conditions.push({
-          holds: when,
-          read: () => {
-            const row = this._readNode(rowPath, this._deps.item);
-            return {
-              value: engine.peekField(fullPath)?.().value(),
-              enclosing: isRecord(row) ? row : {},
-            };
-          },
-        });
-      }
-      if (conditions.length > 0) {
-        engine.setInactive(fullPath, composeConditions(this._deps.rx, conditions));
-      }
-      if (rowNode.asyncValidators.length > 0) {
-        engine.upsertAsyncValidators(fullPath, ROW_SCHEMA_KEY, rowNode.asyncValidators, {
-          debounceMs: rowNode.asyncDebounceMs,
-          dependsOn: rowNode.asyncDependsOn,
-          timeoutMs: rowNode.asyncTimeoutMs,
-          when: rowNode.asyncWhen ?? undefined,
-        });
-      }
-      return;
-    }
-    const rec = isRecord(value) ? value : {};
-    // A section inside a row: its children answer to it as well as to everything above it.
-    const nested = rowNode.when !== null
-      ? [
-          ...sections,
-          () =>
-            rowNode.when!(
-              this._readNode(fullPath, rowNode) as Record<string, unknown>,
-              this._rowValue(rowPath),
-            ),
-        ]
-      : sections;
-    for (const [key, child] of Object.entries(rowNode.children)) {
-      assertRowNode(child);
-      this._registerNode(`${fullPath}.${key}`, child, rec[key], rowPath, nested);
-    }
+  private _registerNode(
+    fullPath: string,
+    rowNode: MdyRowNode,
+    value: unknown,
+    rowPath: string,
+    sections: ReadonlyArray<() => boolean> = [],
+  ): void {
+    registerRowNode(this._registration, fullPath, rowNode, value, rowPath, sections);
+  }
+
+  /** What the shared visit needs from this manager, built once. */
+  private get _registration(): MdyRowRegistration {
+    return {
+      engine: this._deps.engine,
+      rx: this._deps.rx,
+      readRow: (rowPath) => this._readNode(rowPath, this._deps.item),
+      readNode: (path, node) => this._readNode(path, node as MdyRowNode),
+      rowValue: (rowPath) => this._rowValue(rowPath),
+      onCollection: (path, node, value) => {
+        if (!NESTABLE_IN_RECORD.has(node.kind)) assertRowNode(node);
+        this._declareNested(path, node as MdyAnyRecordDescriptor, value);
+      },
+    };
   }
 
   /** Writes a partial row without re-registering it — the row keeps its validators and its flags. */
@@ -405,32 +443,60 @@ export class MdyRecordManager {
     if (!isRecord(value)) return;
     for (const [key, child] of Object.entries(rowNode.children)) {
       if (!(key in value)) continue;
+      const at = `${fullPath}.${key}`;
+      if (child.kind === "record") {
+        // `setAll`, because a whole-row write says what the row is: a nested collection the write
+        // does not mention is emptied, not left behind.
+        const nested = this._nested.get(at);
+        if (nested && isRecord(value[key])) nested.setAll(value[key] as Record<string, unknown>);
+        continue;
+      }
       assertRowNode(child);
-      this._writeInto(`${fullPath}.${key}`, child, value[key]);
+      this._writeInto(at, child, value[key]);
     }
   }
 
-  private _leafPaths(fullPath: string, rowNode: MdyRowNode): string[] {
+  private _leafPaths(fullPath: string, rowNode: MdyRowNode | { readonly kind: "array" | "record" }): string[] {
+    if (rowNode.kind === "record") {
+      const nested = this._nested.get(fullPath);
+      if (!nested) return [];
+      return nested.keysNow().flatMap((key) => nested._leafPaths(`${fullPath}.${key}`, nested._deps.item));
+    }
+    if (rowNode.kind === "array") { assertRowNode(rowNode); return []; }
     if (rowNode.kind === "field") return [fullPath];
-    return Object.entries(rowNode.children).flatMap(([key, child]) => {
-      assertRowNode(child);
-      return this._leafPaths(`${fullPath}.${key}`, child);
-    });
+    const group = rowNode as MdyAnyGroupDescriptor;
+    return Object.entries(group.children).flatMap(([key, child]) =>
+      this._leafPaths(`${fullPath}.${key}`, child as MdyRowNode));
+  }
+
+  /** The declared keys as a plain array, for a sibling manager reading through this one. */
+  keysNow(): readonly string[] {
+    return [...this._declared];
   }
 
   private _readRow(key: string): unknown {
     return this._readNode(`${this._deps.path}.${key}`, this._deps.item);
   }
 
-  private _readNode(fullPath: string, rowNode: MdyRowNode): unknown {
+  private _readNode(fullPath: string, rowNode: MdyRowNode | { readonly kind: "array" | "record" }): unknown {
+    if (rowNode.kind === "record") {
+      // Through the manager that owns it: the rows are its answer, not something derivable from
+      // the declaration, which names no keys.
+      const nested = this._nested.get(fullPath);
+      if (!nested) return {};
+      return Object.fromEntries(
+        nested.keysNow().map((key) => [key, nested._readRow(key)]),
+      );
+    }
+    if (rowNode.kind === "array") { assertRowNode(rowNode); return null; }
     if (rowNode.kind === "field") {
       const ref = this._deps.engine.peekField(fullPath);
       return ref ? ref().value() : null;
     }
     const out: Record<string, unknown> = {};
-    for (const [key, child] of Object.entries(rowNode.children)) {
-      assertRowNode(child);
-      out[key] = this._readNode(`${fullPath}.${key}`, child);
+    const group = rowNode as MdyAnyGroupDescriptor;
+    for (const [key, child] of Object.entries(group.children)) {
+      out[key] = this._readNode(`${fullPath}.${key}`, child as MdyRowNode);
     }
     return out;
   }

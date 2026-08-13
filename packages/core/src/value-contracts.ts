@@ -10,10 +10,10 @@
  * contract because a value is not a rendering: `required`, {@link mdyEmptyValueFor} and the engine
  * that holds the value are all in this package.
  */
-import { MDY_DYNAMIC_FIELD_KINDS } from "./dynamic-config.js";
+import { MDY_FIELD_KINDS } from "./field-kinds.js";
 
 /** Every kind the contract describes a value for. */
-export type MdyValueKind = (typeof MDY_DYNAMIC_FIELD_KINDS)[number];
+export type MdyValueKind = (typeof MDY_FIELD_KINDS)[number];
 
 /**
  * The runtime shape a value takes.

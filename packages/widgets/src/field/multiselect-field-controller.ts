@@ -11,11 +11,11 @@
  */
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
-import { filterOptionsByQuery } from "@modyra/core/options-utils";
+import { observerFor } from "@modyra/core";
+import { filterOptionsByQuery } from "../options-utils.js";
 
 import { overlayLifecycleTransition } from "../behavior.js";
-import { optionsWithUnrecognizedValues } from "../select/select-reconciliation.js";
+import { optionsWithUnrecognizedValues } from "../options-reconciliation.js";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { projectMultiselectFieldA11y } from "./multiselect-field-a11y.js";
@@ -36,20 +36,37 @@ export interface MdyMultiselectFieldController<TValue>
   setValue(values: ReadonlyArray<TValue>): void;
   /** Update the readonly state. */
   setReadonly(readonly: boolean): void;
+  /**
+   * Replace the option list.
+   *
+   * A host whose options arrive later, or change, tells the controller rather than building a new
+   * one: a fresh controller forgets the query and which option the keyboard was on.
+   */
+  setOptions(options: readonly MdySelectOption<TValue>[]): void;
 }
 
 export function createMultiselectFieldController<TValue>(
   options: MdyMultiselectFieldControllerOptions<TValue>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
 ): MdyMultiselectFieldController<TValue> {
+  // Observed through the runtime that owns the handle. A caller that supplies one keeps it
+  // and is told when it does not match — a fresh runtime over another form's handle is the
+  // defect this registry was added for, and it fails by rendering nothing rather than by
+  // raising.
+  reactivity = observerFor(options.handle, reactivity);
   const {
     widgetId,
     handle,
-    options: allOptions,
+    options: initialOptions,
     keyFor = (option) => String(option.value),
     mode = "single",
     readonly: initialReadonly = false,
   } = options;
+
+  // The declared list is a signal because everything below is derived from it: what is painted,
+  // what a query narrows, what the projection names. A host that replaces it moves all of them.
+  const optionList = reactivity.signal<readonly MdySelectOption<TValue>[]>(initialOptions);
+  const allOptions = (): readonly MdySelectOption<TValue>[] => optionList();
 
   /**
    * What this widget paints: the declared options, plus every held value they do not contain.
@@ -59,7 +76,7 @@ export function createMultiselectFieldController<TValue>(
    * is empty: options that have not loaded are not a list that refuses the value.
    */
   const effectiveOptions = reactivity.computed(() =>
-    optionsWithUnrecognizedValues(allOptions, handle.value()),
+    optionsWithUnrecognizedValues(allOptions(), heldValues()),
   );
 
   const indexOf = (options: readonly MdySelectOption<TValue>[]) => {
@@ -80,8 +97,12 @@ export function createMultiselectFieldController<TValue>(
   const query = reactivity.signal("");
   const open = reactivity.signal(false);
 
+  // A field that has never been set holds null, not an empty list — a document-declared control and
+  // a registry-backed one both start there. Read once, so nothing below has to remember it.
+  const heldValues = (): ReadonlyArray<TValue> => handle.value() ?? [];
+
   const state: MdySignal<MdyMultiselectFieldState<TValue>> = reactivity.computed(() => {
-    const selectedValues = handle.value();
+    const selectedValues = heldValues();
     const options = effectiveOptions();
     const keys = keysOf(selectedValues, indexOf(options));
     const counts = new Map<string, number>();
@@ -115,7 +136,7 @@ export function createMultiselectFieldController<TValue>(
   });
 
   const filteredOptions: MdySignal<readonly MdySelectOption<TValue>[]> = reactivity.computed(() =>
-    filterOptionsByQuery(allOptions, query()),
+    filterOptionsByQuery(allOptions(), query()),
   );
 
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
@@ -123,7 +144,7 @@ export function createMultiselectFieldController<TValue>(
     const a11y = projectMultiselectFieldA11y(currentState, handle.errors(), { widgetId });
 
     const parts: Record<string, ReturnType<typeof a11yOption>> = {};
-    for (const option of allOptions) {
+    for (const option of allOptions()) {
       const key = keyFor(option);
       parts[key] = a11yOption(key, option, currentState);
     }
@@ -187,7 +208,7 @@ export function createMultiselectFieldController<TValue>(
 
   function toggle(key: string): readonly MdyUiCommand[] {
     return withOption(key, (option) => {
-      const values = [...handle.value()];
+      const values = [...heldValues()];
       const index = values.findIndex((v) => v === option.value);
       if (index === -1) values.push(option.value);
       else values.splice(index, 1);
@@ -198,7 +219,7 @@ export function createMultiselectFieldController<TValue>(
 
   function increment(key: string): readonly MdyUiCommand[] {
     return withOption(key, (option) => {
-      handle.set([...handle.value(), option.value]);
+      handle.set([...heldValues(), option.value]);
       return [{ type: "mark-dirty" }, { type: "mark-touched" }];
     });
   }
@@ -206,7 +227,7 @@ export function createMultiselectFieldController<TValue>(
   function decrement(key: string): readonly MdyUiCommand[] {
     const option = indexOf(effectiveOptions()).get(key);
     if (!option) return [];
-    const values = [...handle.value()];
+    const values = [...heldValues()];
     const index = values.findIndex((v) => v === option.value);
     if (index === -1) return [];
     values.splice(index, 1);
@@ -281,6 +302,10 @@ export function createMultiselectFieldController<TValue>(
     handle.set(values);
   }
 
+  function setOptions(next: readonly MdySelectOption<TValue>[]): void {
+    optionList.set(next);
+  }
+
   function setReadonly(nextReadonly: boolean): void {
     readonly.set(nextReadonly);
   }
@@ -296,6 +321,7 @@ export function createMultiselectFieldController<TValue>(
     filteredOptions,
     setValue,
     setReadonly,
+    setOptions,
     destroy,
   };
 }

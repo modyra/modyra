@@ -22,7 +22,10 @@ const targets = [
   { name: "lit", entry: "examples/lit/main.js" },
   // The framework-free renderer needs no transform at all — it is the plain-DOM baseline every
   // other adapter is measured against.
-  { name: "plain", entry: "examples/plain/main.js" },
+  // The framework-free demo is two pages: `/` is the catalogue every visual baseline is pinned to,
+  // and `lab.html` is where each feature can be driven into the states that hide defects. Keeping
+  // them apart is what stops a new panel from moving a screenshot of the catalogue.
+  { name: "plain", entry: "examples/plain/main.js", pages: ["examples/plain/lab.js"] },
   // Preact's automatic JSX runtime is esbuild's react transform pointed at
   // a different import source — no Babel plugin needed.
   { name: "preact", entry: "examples/preact/main.jsx", jsxImportSource: "preact" },
@@ -37,31 +40,35 @@ const targets = [
   // `esbuild-plugin-solid`.
   { name: "svelte", entry: "examples/svelte/main.js", plugins: [sveltePlugin()] },
 ];
-for (const { name, entry, jsxImportSource, plugins } of targets) {
+for (const { name, entry, jsxImportSource, plugins, pages = [] } of targets) {
   await build({
-    entryPoints: [entry],
+    entryPoints: [entry, ...pages],
     bundle: true,
     ...(plugins ? {} : { jsx: "automatic", ...(jsxImportSource ? { jsxImportSource } : {}) }),
     ...(plugins ? { plugins } : {}),
     format: "esm",
-    outfile: `dist/examples/${name}/main.js`,
+    ...(pages.length ? { outdir: `dist/examples/${name}` } : { outfile: `dist/examples/${name}/main.js` }),
     minify: true,
     define: { "process.env.NODE_ENV": '"production"' },
     alias: {
       // vue: runtime template compiler build
       vue: "vue/dist/vue.esm-bundler.js",
-      // `@modyra/plain` is a private workspace package, so it is resolved from its build output
-      // rather than through node_modules — no dependency is added for a demo.
+      // `@modyra/plain` and `@modyra/styles` are private workspace packages, so they are resolved
+      // from their build output rather than through node_modules — no dependency is added for a demo.
       "@modyra/plain": "./packages/plain/dist/index.js",
+      "@modyra/styles": "./packages/styles/dist/index.js",
     },
     logLevel: "error",
   });
-  const { copyFileSync, mkdirSync } = await import("node:fs");
+  const { copyFileSync, mkdirSync, readdirSync } = await import("node:fs");
   mkdirSync(`dist/examples/${name}`, { recursive: true });
-  copyFileSync(`examples/${name}/index.html`, `dist/examples/${name}/index.html`);
+  // Every page the example ships, not just the entry one.
+  for (const page of readdirSync(`examples/${name}`).filter((f) => f.endsWith(".html"))) {
+    copyFileSync(`examples/${name}/${page}`, `dist/examples/${name}/${page}`);
+  }
   mkdirSync(`dist/examples/${name}/themes`, { recursive: true });
   for (const file of THEME_FILES) {
     copyFileSync(`packages/styles/dist/${file}`, `dist/examples/${name}/themes/${file}`);
   }
-  console.log(`examples/${name} → dist/examples/${name} (${THEME_FILES.length} themes)`);
+  console.log(`examples/${name} → dist/examples/${name} (${THEME_FILES.length} themes${pages.length ? `, ${pages.length + 1} pages` : ""})`);
 }

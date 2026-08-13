@@ -67,15 +67,15 @@ test("a portalled part is reached through the relation, not by scanning", () => 
   const first = html(`<div class="mdy-input-wrapper"><input class="mdy-datepicker__input" aria-controls="g1" /></div>`);
   const second = html(`<div class="mdy-input-wrapper"><input class="mdy-datepicker__input" aria-controls="g2" /></div>`);
   const popups = html(
-    `<div class="mdy-datepicker__popup mdy-popup mdy-popup--surface"><div class="mdy-datepicker__grid" id="g1"></div><div class="mdy-datepicker__actions">A1</div></div>`
-    + `<div class="mdy-datepicker__popup mdy-popup mdy-popup--surface"><div class="mdy-datepicker__grid" id="g2"></div><div class="mdy-datepicker__actions">A2</div></div>`,
+    `<div class="mdy-datepicker__popup mdy-popup mdy-popup--surface"><div class="mdy-datepicker__grid" id="g1"></div><div class="mdy-datepicker__header">A1</div></div>`
+    + `<div class="mdy-datepicker__popup mdy-popup mdy-popup--surface"><div class="mdy-datepicker__grid" id="g2"></div><div class="mdy-datepicker__header">A2</div></div>`,
   );
 
-  const found = findPartElement(first, "datepicker", "actions", { portalRoots: [document.body] });
+  const found = findPartElement(first, "datepicker", "dialogHeader", { portalRoots: [document.body] });
   assert.ok(found, "the portalled part was not found at all");
-  assert.equal(found.textContent, "A1", "the other datepicker's actions were returned");
+  assert.equal(found.textContent, "A1", "the other datepicker's header was returned");
 
-  const other = findPartElement(second, "datepicker", "actions", { portalRoots: [document.body] });
+  const other = findPartElement(second, "datepicker", "dialogHeader", { portalRoots: [document.body] });
   assert.equal(other?.textContent, "A2");
 
   first.remove(); second.remove(); popups.remove();

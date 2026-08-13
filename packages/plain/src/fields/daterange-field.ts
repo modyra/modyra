@@ -1,36 +1,47 @@
 /**
  * Renders the "daterange" kind: two endpoints in one wrapper, a toggle, and a calendar popup that
- * edits a draft and commits on confirm.
+ * edits a draft and writes it as soon as both ends are known.
  *
- * There is no daterange controller in `@modyra/widgets` — the widget is the range *policy*
- * (`dateRangeValueTransition`, `dateRangeDraftTransition`) plus the shared field anatomy, so this
- * renderer owns only DOM and events. Anything that decides what a range means lives in widgets.
+ * What a range means — which pick starts it, which closes it, which cells fall between, what the
+ * bounds refuse — is `createDaterangeFieldController`'s. This renderer owns DOM and events, and
+ * paints the cells the controller hands it.
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
-import { addMonths, buildDateLocale, formatIsoDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
-import { MDY_WIDGET_CONTRACTS, dateRangeDraftTransition, overlayAnchoringFor, projectFieldShellA11y, type MdyDateRangeDraftState, type MdyDateRangeValue , defaultWidgetIdFactory} from "@modyra/widgets";
+import { buildDateLocale, formatIsoDate, parseLocalizedDate } from "@modyra/core/datetime";
+import {
+  MDY_WIDGET_CONTRACTS,
+  createDaterangeFieldController,
+  defaultWidgetIdFactory,
+  overlayAnchoringFor,
+  projectFieldShellA11y,
+  shownErrorsOf,
+  showsAsInvalid,
+  type MdyDateRangeValue,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
+import { withControls, type MdyMountedField } from "../field-controls.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
-
-const EMPTY: MdyDateRangeValue = { start: null, end: null };
-
-function asRange(value: unknown): MdyDateRangeValue {
-  if (!value || typeof value !== "object") return EMPTY;
-  const candidate = value as Partial<MdyDateRangeValue>;
-  return { start: candidate.start ?? null, end: candidate.end ?? null };
-}
 
 export function renderDaterangeField(
   container: HTMLElement,
   f: MdyDynamicDaterangeField,
   handle: MdyFieldHandle<unknown>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   options: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number } = {},
   widgetId: string = f.name,
-): () => void {
+  /**
+   * The words this control shows. The engine has no opinion about them, so they arrive from the
+   * widget contract's tables rather than being written here — three renderers each spelling
+   * "open the calendar" is three answers to one question.
+   */
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
+): MdyMountedField {
+  reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("daterange");
   const definition = MDY_WIDGET_CONTRACTS.daterange;
@@ -39,10 +50,16 @@ export function renderDaterangeField(
   // `buildDateLocale` — the same bundle every renderer is given by DI.
   const dateLocale = buildDateLocale(options.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language), options.firstDayOfWeek);
 
-  const draft = reactivity.signal<MdyDateRangeDraftState>({
-    committed: asRange(handle.value()), draft: asRange(handle.value()), open: false,
-  });
-  const view = reactivity.signal(today());
+  const controller = createDaterangeFieldController(
+    {
+      widgetId,
+      handle: handle as MdyFieldHandle<MdyDateRangeValue>,
+      minDate: bounds.minIso,
+      maxDate: bounds.maxIso,
+      firstDayOfWeek: dateLocale.firstDayOfWeek,
+    },
+    reactivity,
+  );
 
   const shell = buildFieldShell(f.label, "daterange", {}, f.ariaLabel);
   const wrapper = el("div", "mdy-datepicker mdy-plain-daterange");
@@ -51,18 +68,18 @@ export function renderDaterangeField(
   startInput.autocomplete = "off";
   startInput.setAttribute("aria-label", `${f.label ?? "Range"} — start`);
   startInput.placeholder = f.placeholder ?? "Start";
-  const separator = el("span", "mdy-daterange__sep");
+  const separator = el("span", definition.parts.separator.classes.join(" "));
   separator.setAttribute("aria-hidden", "true");
   setText(separator, "–");
   const endInput = el("input", "mdy-datepicker__input mdy-daterange__input") as HTMLInputElement;
   endInput.type = "text";
   endInput.autocomplete = "off";
   endInput.setAttribute("aria-label", `${f.label ?? "Range"} — end`);
-  endInput.placeholder = "End";
-  const toggle = el("button", "mdy-datepicker__toggle") as HTMLButtonElement;
+  endInput.placeholder = messages.daterangeEndLabel;
+  const toggle = el("button", definition.parts.toggle.classes.join(" ")) as HTMLButtonElement;
   setIcon(toggle, "CALENDAR");
   toggle.type = "button";
-  toggle.setAttribute("aria-label", "Open the calendar");
+  toggle.setAttribute("aria-label", messages.daterangeChooseRange);
   toggle.setAttribute("aria-haspopup", "dialog");
 
   const popup = el("div", `${MDY_WIDGET_CONTRACTS.daterange.parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
@@ -70,29 +87,21 @@ export function renderDaterangeField(
   // is what ties opener to popup for assistive technology — the relation select has always had.
   popup.id = defaultWidgetIdFactory.part(widgetId, "popup");
   toggle.setAttribute("aria-controls", popup.id);
-  const header = el("div", "mdy-datepicker__header") as HTMLDivElement;
+  const header = el("div", definition.parts.dialogHeader.classes.join(" ")) as HTMLDivElement;
   const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   prevButton.type = "button";
-  prevButton.setAttribute("aria-label", "Previous month");
+  prevButton.setAttribute("aria-label", messages.datepickerPreviousMonth);
   setIcon(prevButton, "CHEVRON_LEFT");
   const monthLabel = el("span", "mdy-datepicker__header-label");
   const nextButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
   nextButton.type = "button";
-  nextButton.setAttribute("aria-label", "Next month");
+  nextButton.setAttribute("aria-label", messages.datepickerNextMonth);
   setIcon(nextButton, "CHEVRON_RIGHT");
   header.append(prevButton, monthLabel, nextButton);
   const grid = buildCalendarGrid("daterange");
-  const actions = el("div", "mdy-datepicker__actions") as HTMLDivElement;
-  const cancelButton = el("button", "mdy-datepicker__action-btn") as HTMLButtonElement;
-  cancelButton.type = "button";
-  setText(cancelButton, "Cancel");
-  const applyButton = el("button", "mdy-datepicker__action-btn mdy-datepicker__action-btn--primary") as HTMLButtonElement;
-  applyButton.type = "button";
-  setText(applyButton, "Apply");
-  actions.append(cancelButton, applyButton);
   // Same frame as the single-date picker: the popup positions, the calendar lays out.
   const calendar = el("div", MDY_WIDGET_CONTRACTS.daterange.parts.calendar.classes.join(" "));
-  calendar.append(header, grid, actions);
+  calendar.append(header, grid);
   popup.append(calendar);
 
   // The start input is what the label names: a range has two controls and `for` can point at only
@@ -103,25 +112,11 @@ export function renderDaterangeField(
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
 
-  function dispatch(intent: Parameters<typeof dateRangeDraftTransition>[1]): void {
-    const transition = dateRangeDraftTransition(draft(), intent, bounds);
-    draft.set(transition.state);
-    if (transition.commit) {
-      handle.set(transition.commit);
-      handle.markAsDirty();
+  /** Commands the controller asks for, carried out where the DOM is. */
+  function dispatch(intent: Parameters<typeof controller.dispatch>[0]): void {
+    for (const command of controller.dispatch(intent)) {
+      if (command.type === "restore-focus") startInput.focus();
     }
-    if (transition.restoreFocus) startInput.focus();
-  }
-
-  /** Clicking a day extends the draft: a complete range restarts, an open one closes. */
-  function pickDate(iso: string): void {
-    const current = draft().draft;
-    const completing = current.start !== null && current.end === null;
-    const next = completing ? { start: current.start, end: iso } : { start: iso, end: null };
-    dispatch({ type: "select", value: next });
-    // Choosing the second endpoint answers the question the overlay asked: commit and close,
-    // rather than leaving the calendar open over a finished selection.
-    if (completing) dispatch({ type: "confirm" });
   }
 
   function commitTyped(): void {
@@ -129,28 +124,33 @@ export function renderDaterangeField(
       const parsed = parseLocalizedDate(raw, dateLocale.locale);
       return parsed ? formatIsoDate(parsed) : null;
     };
-    dispatch({ type: "select", value: { start: parse(startInput.value), end: parse(endInput.value) } });
+    const start = parse(startInput.value);
+    const end = parse(endInput.value);
+    // Typing names both ends at once, which the controller reaches by picking them in order — the
+    // same two intents a click produces, so a typed range and a clicked one commit the same way.
+    if (start === null && end === null) {
+      dispatch({ type: "clear" });
+      return;
+    }
+    dispatch({ type: "clear" });
+    if (start !== null) dispatch({ type: "select-date", iso: start });
+    if (end !== null) dispatch({ type: "select-date", iso: end });
     dispatch({ type: "confirm" });
   }
 
   // Committing from the calendar restores focus to the start input, so the endpoints are synced
   // unless the user is mid-edit.
   let typing = false;
-  const openPopup = () => {
-    dispatch({ type: "open", committed: asRange(handle.value()) });
-    const anchor = parseIsoDate(draft().draft.start) ?? today();
-    view.set(anchor);
-  };
-  toggle.addEventListener("click", () => (draft().open ? dispatch({ type: "cancel" }) : openPopup()));
+  toggle.addEventListener("click", () =>
+    dispatch(controller.state().open ? { type: "cancel" } : { type: "open" }),
+  );
   for (const input of [startInput, endInput]) {
     input.addEventListener("input", () => { typing = true; });
     input.addEventListener("change", () => { typing = false; commitTyped(); });
     input.addEventListener("blur", () => { typing = false; handle.markAsTouched(); });
   }
-  prevButton.addEventListener("click", () => view.set(addMonths(view(), -1)));
-  nextButton.addEventListener("click", () => view.set(addMonths(view(), 1)));
-  cancelButton.addEventListener("click", () => dispatch({ type: "cancel" }));
-  applyButton.addEventListener("click", () => dispatch({ type: "confirm" }));
+  prevButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: -1 }));
+  nextButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: 1 }));
   // Escape dismisses from wherever the user is. This overlay does not take focus when it opens, so
   // listening on the popup alone meant the handler could only ever fire if the user had already
   // reached inside it — the keyboard could open the range and not close it.
@@ -163,23 +163,25 @@ export function renderDaterangeField(
   popup.addEventListener("keydown", onEscape);
   wrapper.addEventListener("keydown", onEscape);
 
-  const undismiss = dismissOnOutsidePointer([wrapper], () => draft().open, () => dispatch({ type: "cancel" }));
+  const undismiss = dismissOnOutsidePointer([wrapper], () => controller.state().open, () => dispatch({ type: "cancel" }));
 
   let cellEls: ReadonlyMap<string, HTMLButtonElement> = new Map();
   let renderedMonth = "";
 
-  const untrack = trackOverlay(popup, shell.wrapper, () => draft().open, anchoring);
+  const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, anchoring);
 
   const effectRef = reactivity.effect(() => {
-    const state = draft();
-    const anchor = view();
-    const value = state.open ? state.draft : asRange(handle.value());
+    const state = controller.state();
+    const anchor = { year: state.viewYear, month: state.viewMonth, day: 1 };
+    // What the calendar paints is the previewed range, not the committed one: the highlight has to
+    // follow the pointer before anything is decided.
+    const value = state.open ? state.previewed : state.value;
 
     // The state-driven half of the contract. `definition.parts` is static — classes and shape — so
     // on its own it never said the range was invalid, required, disabled or described by its errors.
     const a11y = projectFieldShellA11y(
       { disabled: handle.disabled(), required: handle.required() },
-      errorsToShow(handle),
+      shownErrorsOf(handle),
       { widgetId: widgetId, controlId: startInput.id },
     );
 
@@ -206,29 +208,34 @@ export function renderDaterangeField(
     // coordinates are `anchorOverlay`'s, and this only measures and applies them.
     if (state.open) positionOverlay(popup, shell.wrapper, anchoring);
     else releaseOverlayPlacement(popup);
-    setErrors(shell.errorList, errorsToShow(handle).map((error) => error.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((error) => error.message));
     shell.syncState({
       touched: handle.touched(), disabled: handle.disabled(),
-      hasError: !handle.valid(), filled: value.start !== null, required: handle.required(),
+      hasError: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }), filled: value.start !== null, required: handle.required(),
     });
 
     const monthKey = `${anchor.year}-${anchor.month}`;
     setText(monthLabel, `${dateLocale.monthNamesLong[anchor.month - 1]} ${anchor.year}`);
     if (renderedMonth !== monthKey) {
-      cellEls = fillCalendar(grid, "daterange", anchor.year, anchor.month, dateLocale, (cell) => pickDate(cell.iso));
+      // The second pick closes the range, writes it and shuts the popup — all the controller's,
+      // because this kind's value contract says `live`.
+      cellEls = fillCalendar(grid, "daterange", anchor.year, anchor.month, dateLocale, (cell) =>
+        dispatch({ type: "select-date", iso: cell.iso }),
+      );
       renderedMonth = monthKey;
     }
-    // Range state is drawn from the draft, so the highlight follows the pointer selection before
-    // anything is committed.
+    // Which cell is an endpoint and which falls between them is the controller's answer. Comparing
+    // ISO strings here was a fourth opinion, and it could not see a preview at all.
+    const byIso = new Map(state.cells.map((cell) => [cell.iso, cell]));
     for (const [iso, button] of cellEls) {
-      const isStart = iso === value.start;
-      const isEnd = iso === value.end;
-      const inRange = value.start !== null && value.end !== null && iso > value.start && iso < value.end;
-      button.classList.toggle("mdy-datepicker__cell--range-start", isStart);
-      button.classList.toggle("mdy-datepicker__cell--range-end", isEnd);
-      button.classList.toggle("mdy-datepicker__cell--in-range", inRange);
-      button.classList.toggle("mdy-datepicker__cell--selected", isStart || isEnd);
-      button.setAttribute("aria-selected", String(isStart || isEnd));
+      const cell = byIso.get(iso);
+      if (!cell) continue;
+      button.classList.toggle("mdy-datepicker__cell--range-start", cell.rangeStart);
+      button.classList.toggle("mdy-datepicker__cell--range-end", cell.rangeEnd);
+      button.classList.toggle("mdy-datepicker__cell--in-range", cell.inRange);
+      button.classList.toggle("mdy-datepicker__cell--selected", cell.rangeStart || cell.rangeEnd);
+      button.setAttribute("aria-selected", String(cell.rangeStart || cell.rangeEnd));
+      button.disabled = cell.disabled;
     }
 
     // A calendar takes focus into its grid when it opens, which its own datepicker sibling already
@@ -242,10 +249,17 @@ export function renderDaterangeField(
     }
   });
 
-  return () => {
+  return withControls(
+    () => {
     untrack();
     undismiss();
+    controller.destroy();
     effectRef.destroy();
     shell.root.remove();
-  };
+    },
+    // Bounds move when a sibling field is answered — a return date that cannot precede a
+    // departure — and the controller is told rather than the field remounted, which would forget
+    // which end the next pick closes.
+    { setBounds: (min, max) => controller.setBounds(min, max) },
+  );
 }

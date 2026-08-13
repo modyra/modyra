@@ -21,10 +21,9 @@ import { inspectWidgetDom, inspectWidgetState } from "../dist/testing/index.js";
 import {
   MDY_WIDGET_CONTRACTS,
   MDY_WIDGET_KINDS,
-  MDY_WIDGET_STATE_CONTRACTS,
   stateCarriers,
-  widgetSupportsState,
 } from "../dist/index.js";
+import { MDY_WIDGET_STATE_CONTRACTS, widgetSupportsState } from "../dist/vocabulary.js";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>");
 const document = dom.window.document;

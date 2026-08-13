@@ -44,7 +44,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
       [forId]="hexInputId"
       [required]="isRequired()"
       [filled]="!!value()"
-      [showInlineError]="inlineErrors && touched() && hasErrors()"
+      [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
     />
 
@@ -95,7 +95,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             [placeholder]="placeholder()"
             [disabled]="isDisabled()"
             [attr.aria-label]="label() || i18n.colorHexLabel"
-            [attr.aria-invalid]="touched() && hasErrors() ? 'true' : null"
+            [attr.aria-invalid]="paintsAsInvalid() ? 'true' : null"
             [attr.aria-describedby]="describedById(fieldId)"
             [attr.aria-label]="controlAriaLabel()"
             [attr.aria-required]="isRequired() ? 'true' : null"
@@ -160,7 +160,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
       </mdy-overlay-panel>
     </div>
 
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
@@ -177,6 +177,7 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   protected override readonly overlayKind = "colors" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.colors;
+  protected override readonly widgetKind = "colors" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
 
   protected readonly i18n = inject(MDY_I18N_MESSAGES);

@@ -9,7 +9,9 @@ import assert from "node:assert";
 import test from "node:test";
 
 import { vanillaReactivity } from "@modyra/core";
-import { createDatepickerFieldController } from "../dist/field/index.js";
+import {
+  createDatepickerFieldController,
+} from "../dist/field/index.js";
 
 function setup(overrides = {}) {
   const rx = vanillaReactivity();
@@ -188,4 +190,30 @@ test("setValue updates state and view programmatically", () => {
   assert.strictEqual(handle.value(), "2027-06-01");
   assert.strictEqual(controller.state().viewYear, 2027);
   assert.strictEqual(controller.state().viewMonth, 6);
+});
+
+/**
+ * Bounds that move take the grid with them: a departure date cannot precede an arrival, and the
+ * arrival is chosen while the departure widget is already on screen.
+ */
+test("moving the bounds moves what the grid will accept", () => {
+  const { controller, handle } = setup({ initialValue: "2026-07-15" });
+
+  controller.setBounds("2026-07-10", "2026-07-20");
+  controller.dispatch({ type: "select-date", iso: "2026-07-05" });
+  assert.equal(handle.value(), "2026-07-15", "a date outside the new range is refused");
+
+  controller.setBounds("2026-07-01", "2026-07-20");
+  controller.dispatch({ type: "select-date", iso: "2026-07-05" });
+  assert.equal(handle.value(), "2026-07-05", "the same date is accepted once the range moves");
+
+  const disabled = controller.state().cells.filter((cell) => cell.disabled).map((c) => c.iso);
+  assert.ok(!disabled.includes("2026-07-05"), "the grid agrees with what the range now allows");
+
+  // Both ends move, or only half the range is real.
+  controller.setBounds("2026-07-01", "2026-07-06");
+  controller.dispatch({ type: "select-date", iso: "2026-07-19" });
+  assert.equal(handle.value(), "2026-07-05", "a date past the new upper end is refused");
+  const stillOffered = controller.state().cells.filter((cell) => !cell.disabled).map((c) => c.iso);
+  assert.ok(!stillOffered.includes("2026-07-19"), "the grid closes at the new upper end too");
 });

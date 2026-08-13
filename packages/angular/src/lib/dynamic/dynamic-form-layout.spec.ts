@@ -8,7 +8,7 @@
 import { Component, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { MDY_LAYOUT_CLASSES, MDY_LAYOUT_COLUMN_COUNT_PROPERTY } from "@modyra/widgets";
-import type { MdyDynamicField, MdyDynamicLayoutNode } from "@modyra/core/dynamic-config";
+import type { MdyDynamicField, MdyDynamicLayoutNode } from "@modyra/core";
 import { MdyDynamicFormComponent } from "./mdy-dynamic-form.component";
 
 @Component({

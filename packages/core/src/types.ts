@@ -1,12 +1,12 @@
-import { MdySignal, MdyWritableSignal } from "./reactivity.js";
+import { MdySignal, MdyWritableSignal } from "./reactivity-contract.js";
 import type { MdyFieldConstraints } from "./validator-facts.js";
+
+// Declared in `contracts/`, published from here: splitting a file is not a reason for a consumer
+// to learn a second import path.
+export type { ValidatorFn } from "./contracts/validators.js";
 
 // ─── Validators ───────────────────────────────────────────────────────────────
 
-/** Pure validator: current value → error messages (empty = valid). */
-export type ValidatorFn<TValue = unknown> = (
-  value: TValue,
-) => readonly string[];
 
 /**
  * Context passed as the second argument to an async validator: cancellation

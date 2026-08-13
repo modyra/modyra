@@ -12,7 +12,20 @@ import { mount as mountElement } from "./dom-env.mjs";
 
 const { createLitForm, field, required, min, max, minLength, maxLength } = await import("../../dist/adapter.js");
 const { defineMdyElements } = await import("../../dist/ui.js");
-const { MDY_CANONICAL_EMPTY, findPartElement } = await import("../../../widgets/dist/testing/index.js");
+const { MDY_CANONICAL_EMPTY, findPartElement, settleFor } = await import("../../../widgets/dist/testing/index.js");
+
+/**
+ * This renderer publishes its own promise for "I have finished rendering", and it is the only
+ * honest thing to wait on: a write outside its update cycle needs a turn first, and then the host
+ * says when the DOM caught up.
+ *
+ * Waiting on `updateComplete` alone is not enough and forcing `requestUpdate()` is worse — it used
+ * to be here, and it hid a real defect: the form controller subscribed to a hand-written list of
+ * signals that omitted `readonly`, so the element never re-rendered when a field was marked
+ * read-only, and forcing the update made the attribute appear anyway. Whether the element
+ * subscribed to the signal that changed is exactly what these suites are for.
+ */
+const PAINT_BEAT = "host";
 const { MDY_WIDGET_CONTRACTS } = await import("../../../widgets/dist/index.js");
 
 defineMdyElements();
@@ -173,6 +186,11 @@ export async function mount(kind, { validators: withValidators = true, variant, 
     parts: () => partsOf(element, kind),
     control: () => controlOf(element),
     value: () => form.f.value.value(),
+    /**
+     * The handle itself, for a suite that has to write to it *after* the element is gone.
+     * Reading `value()` cannot do that: the question is whether anything still reacts.
+     */
+    handle: form.f.value,
     // Lit batches into its own update cycle, so a signal write outside it needs a task turn before
     // the DOM reflects anything.
     //
@@ -181,10 +199,7 @@ export async function mount(kind, { validators: withValidators = true, variant, 
     // and Lit therefore never re-rendered when a field was marked read-only. Forcing an update made
     // the attribute appear anyway, so the row passed while the adapter was inert. Whether the
     // element subscribed to the signal that changed is exactly what this matrix is for.
-    settle: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 20));
-      await element.updateComplete;
-    },
+    settle: settleFor(PAINT_BEAT, () => element.updateComplete),
     dispose: () => element.remove(),
     press: (key) => pressKey(element, partsOf(element, kind).popup, key),
     drive(state) {

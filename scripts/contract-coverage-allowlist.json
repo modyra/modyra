@@ -36,7 +36,9 @@
     "mdy-timepicker__popup--above": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-timepicker__popup--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
     "mdy-toggle__control": "the themes reach the input by descendant selector (.mdy-toggle input:disabled), not by its part class",
-    "mdy-toggle__label": "unreviewed"
+    "mdy-toggle__label": "unreviewed",
+    "mdy-glass-effect": "an Angular directive a product opts into; no theme ships the material yet, so the class is declared and the treatment is the host's",
+    "mdy-glass-effect--medium": "the intensity variants of the same directive; they select a material no theme defines"
   },
   "mdy-angular-announcer": {
     "kind": "unstyled",
@@ -44,19 +46,6 @@
       "angular"
     ],
     "themes": []
-  },
-  "mdy-button": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
   },
   "mdy-color-swatch--selected": {
     "kind": "unstyled",
@@ -99,28 +88,6 @@
       "modyra.css"
     ]
   },
-  "mdy-control__inline-errors-icon": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
-  "mdy-control__inline-errors-tooltip": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
   "mdy-datepicker": {
     "kind": "drift",
     "adapters": [
@@ -131,28 +98,6 @@
     "themes": [
       "modyra-material.css",
       "modyra.css"
-    ]
-  },
-  "mdy-datepicker__action-btn": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-material.css"
-    ]
-  },
-  "mdy-datepicker__action-btn--primary": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit",
-      "plain"
-    ],
-    "themes": [
-      "modyra-material.css"
     ]
   },
   "mdy-datepicker__header-label": {
@@ -216,38 +161,6 @@
       "modyra-material.css"
     ]
   },
-  "mdy-datepicker__month-cell": {
-    "kind": "drift",
-    "adapters": [
-      "angular"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__month-cell--selected": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__month-picker": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
-  },
   "mdy-datepicker__nav-btn": {
     "kind": "drift",
     "adapters": [
@@ -294,28 +207,6 @@
       "modyra.css"
     ]
   },
-  "mdy-datepicker__year-cell": {
-    "kind": "drift",
-    "adapters": [
-      "angular"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
-  "mdy-datepicker__year-cell--selected": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra.css"
-    ]
-  },
   "mdy-datepicker__year-grid": {
     "kind": "unstyled",
     "adapters": [
@@ -323,16 +214,6 @@
       "lit"
     ],
     "themes": []
-  },
-  "mdy-datepicker__year-picker": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra.css"
-    ]
   },
   "mdy-daterange__group": {
     "kind": "drift",
@@ -538,14 +419,6 @@
     ],
     "themes": []
   },
-  "mdy-glass-effect": {
-    "kind": "unstyled",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": []
-  },
   "mdy-glass-effect--high": {
     "kind": "unstyled",
     "adapters": [
@@ -559,23 +432,6 @@
       "angular"
     ],
     "themes": []
-  },
-  "mdy-glass-effect--medium": {
-    "kind": "unstyled",
-    "adapters": [
-      "angular"
-    ],
-    "themes": []
-  },
-  "mdy-inline-errors": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-ios.css"
-    ]
   },
   "mdy-lit-announcer": {
     "kind": "unstyled",
@@ -596,21 +452,6 @@
     "kind": "unstyled",
     "adapters": [
       "angular"
-    ],
-    "themes": []
-  },
-  "mdy-overlay-backdrop": {
-    "kind": "unstyled",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": []
-  },
-  "mdy-overlay-panel": {
-    "kind": "unstyled",
-    "adapters": [
-      "lit"
     ],
     "themes": []
   },

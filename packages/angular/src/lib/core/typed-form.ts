@@ -17,6 +17,8 @@ import {
   type MdyTypedFormBaseOptions,
   type MdySubmittedValue,
   type MdyFieldHandle as CoreFieldHandle,
+  type MdyArrayHandle as CoreArrayHandle,
+  type MdyRecordHandle as CoreRecordHandle,
   type MdyRecordDescriptor,
 } from "@modyra/core";
 import {
@@ -25,7 +27,6 @@ import {
 } from "./declarative-form-adapter";
 import {
   type AsAngularSignals,
-  MdyFieldError,
   MdyFieldRef,
   MdyFormAdapter,
   MdyFormError,
@@ -90,20 +91,19 @@ export type MdyFieldHandle<TValue> =
 /** The handle's imperative half: what a renderer calls, as against what it reads. */
 type MdyFieldHandleCommands = "set" | "markAsTouched" | "markAsDirty";
 
-/** Typed handle for a repeatable array item, exposed on `form.f` (`form.f.items`). */
-export interface MdyArrayHandle<TItemHandle, TItemValue> {
-  readonly path: string;
-  readonly length: Signal<number>;
-  readonly rows: Signal<ReadonlyArray<TItemHandle>>;
-  readonly errors: Signal<ReadonlyArray<MdyFieldError>>;
-  readonly valid: Signal<boolean>;
-  push(value: TItemValue): void;
-  insert(index: number, value: TItemValue): void;
-  remove(index: number): void;
-  move(from: number, to: number): void;
-  setAll(values: ReadonlyArray<TItemValue>): void;
-  at(index: number): TItemHandle | null;
-}
+/**
+ * Typed handle for a repeatable array item, exposed on `form.f` (`form.f.items`).
+ *
+ * Derived from the engine's handle, like the field handle above and for the same reason: written out
+ * member by member it satisfies this file's idea of the type and drifts the moment the engine gains
+ * one.
+ */
+export type MdyArrayHandle<TItemHandle, TItemValue> =
+  AsAngularSignals<Omit<CoreArrayHandle<TItemHandle, TItemValue>, MdyArrayHandleCommands>>
+  & Pick<CoreArrayHandle<TItemHandle, TItemValue>, MdyArrayHandleCommands>;
+
+/** The array handle's imperative half: what a renderer calls, as against what it reads. */
+type MdyArrayHandleCommands = "push" | "insert" | "remove" | "move" | "setAll" | "at";
 
 /**
  * Typed handle for a collection keyed by data, exposed on `form.f` (`form.f.rows`).
@@ -111,22 +111,16 @@ export interface MdyArrayHandle<TItemHandle, TItemValue> {
  * The core's shape with this framework's signal type — the members are the core's, and their meaning
  * is documented there.
  */
-export interface MdyRecordHandle<TItemHandle, TItemValue> {
-  readonly path: string;
-  readonly keys: Signal<ReadonlyArray<string>>;
-  readonly value: Signal<Readonly<Record<string, TItemValue>>>;
-  readonly errors: Signal<ReadonlyArray<MdyFieldError>>;
-  readonly valid: Signal<boolean>;
-  has(key: string): boolean;
-  row(key: string): TItemHandle;
-  cell<TCell = unknown>(key: string, path?: string): MdyFieldHandle<TCell>;
-  upsert(key: string, value?: TItemValue): void;
-  remove(key: string): void;
-  setAll(values: Readonly<Record<string, TItemValue>>): void;
-  patch(values: Readonly<Record<string, unknown>>): void;
-  rename(from: string, to: string): void;
-  validOf(key: string): boolean;
-}
+export type MdyRecordHandle<TItemHandle, TItemValue> =
+  AsAngularSignals<Omit<CoreRecordHandle<TItemHandle, TItemValue>, MdyRecordHandleCommands>>
+  & Omit<Pick<CoreRecordHandle<TItemHandle, TItemValue>, MdyRecordHandleCommands>, "cell">
+  // `cell` is the one member this framework narrows rather than passes through: the handle it
+  // returns carries Angular's signals like every other handle here.
+  & { cell<TCell = unknown>(key: string, path?: string): MdyFieldHandle<TCell> };
+
+/** The record handle's imperative half. */
+type MdyRecordHandleCommands =
+  | "has" | "row" | "cell" | "upsert" | "remove" | "setAll" | "patch" | "rename" | "validOf";
 
 /** The handle tree for a single array item — a field handle or nested group tree. */
 export type MdyItemHandleTree<I> = I extends MdyGroupDescriptor<infer C>

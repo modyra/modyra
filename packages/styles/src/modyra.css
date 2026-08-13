@@ -2158,7 +2158,20 @@
     }
 
     /* There is no per-widget backdrop. Every adapter draws one backdrop, `mdy-overlay-backdrop`,
-       from the overlay panel. */
+       from the overlay panel — and until now no theme painted it, so the token below was declared
+       and read by nothing while one renderer dimmed through a literal of its own and another did not
+       dim at all.
+     *
+     * It covers the viewport under the popup and takes the pointer, which is what makes a modal
+     * modal: the page behind is visible and unreachable. The popup itself is in the top layer, so
+     * this sits below it without a z-index race. */
+    .mdy-overlay-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        background: var(--mdy-overlay-backdrop-bg);
+        pointer-events: auto;
+    }
 
     /* A modal list: what it is, not where it is.
      *

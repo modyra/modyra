@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" data-mdy-theme="modyra-salience">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <link id="modyra-base" rel="stylesheet" href="./themes/modyra-base.css" />
+    <link id="modyra-theme" rel="stylesheet" href="./themes/modyra-modern.css" />
+    <title>Modyra × plain — the laboratory</title>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 1.5rem 2rem 4rem;
+        font-family: system-ui, sans-serif;
+        background: var(--mdy-sys-color-surface, canvas);
+        color: var(--mdy-sys-color-on-surface, canvastext);
+      }
+      header { margin-bottom: 1.5rem; }
+      h1 { margin: 0 0 0.25rem; font-size: 1.4rem; }
+      header p { margin: 0; max-width: 60ch; opacity: 0.8; }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1.25rem 0 2rem;
+        border-bottom: 1px solid var(--mdy-sys-color-outline-variant, rgb(0 0 0 / 15%));
+        padding-bottom: 0.75rem;
+      }
+      nav button {
+        font: inherit;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid var(--mdy-sys-color-outline, rgb(0 0 0 / 25%));
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+      nav button[aria-current="page"] {
+        background: var(--mdy-sys-color-primary, #004cff);
+        color: var(--mdy-sys-color-on-primary, white);
+        border-color: transparent;
+      }
+      .panel { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
+      .panel h2 { margin: 0 0 0.35rem; font-size: 1.1rem; }
+      .panel > div > p { margin: 0 0 1.25rem; max-width: 70ch; opacity: 0.85; }
+      .toolbar { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; }
+      .toolbar label { display: inline-flex; align-items: center; gap: 0.35rem; font: inherit; }
+      .toolbar button { font: inherit; padding: 0.35rem 0.8rem; border-radius: 0.4rem; cursor: pointer; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem 1.5rem; }
+      pre {
+        margin: 0;
+        padding: 1rem;
+        overflow: auto;
+        max-height: 75vh;
+        border-radius: 0.5rem;
+        background: var(--mdy-sys-color-surface-container, rgb(0 0 0 / 6%));
+        font-size: 12px;
+      }
+      .invariant {
+        margin: 0 0 1.25rem;
+        padding: 0.6rem 0.9rem;
+        border-left: 3px solid var(--mdy-sys-color-primary, #004cff);
+        background: var(--mdy-sys-color-surface-container, rgb(0 0 0 / 4%));
+        font-size: 0.9rem;
+      }
+      @media (max-width: 900px) { .panel { grid-template-columns: minmax(0, 1fr); } }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>@modyra/plain — the laboratory</h1>
+      <p>
+        One panel per thing the engine does, each with the controls to drive it into the states where
+        defects hide. <a href="./index.html">The catalogue</a> shows every kind at rest; this shows
+        what happens next.
+      </p>
+    </header>
+
+    <nav data-lab-nav aria-label="Panels"></nav>
+    <div data-lab-panel></div>
+
+    <script type="module" src="./lab.js"></script>
+  </body>
+</html>

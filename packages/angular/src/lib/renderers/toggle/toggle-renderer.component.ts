@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { createBooleanFieldController, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -26,7 +26,7 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
         [checked]="value()"
         [disabled]="isDisabled()"
         (change)="onChange($event)"
-        (blur)="dispatchValueBlur('toggle')"
+        (blur)="onBlur()"
         [attr.aria-checked]="value()"
         [attr.aria-label]="controlAriaLabel()"
         [mdyPart]="controlPart()"
@@ -40,13 +40,13 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
           @if (isRequired()) {
             <span class="mdy-label__required" aria-hidden="true">*</span>
           }
-          @if (inlineErrors && touched() && hasErrors()) {
+          @if (inlineErrorShown()) {
             <mdy-inline-error-icon [errorText]="inlineErrorText()" />
           }
         </span>
       }
     </label>
-    @if (!inlineErrors && touched() && hasErrors()) {
+    @if (errorsRendered()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errors()" />
     } @else if (supportingText(); as st) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
@@ -61,8 +61,15 @@ export class MdyToggleComponent extends MdyBaseControl<boolean> {
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   protected readonly fieldId = `mdy-control-toggle-${MdyBaseControl.nextId()}`;
 
+  private readonly controller = this.adoptFieldController((handle, widgetId) =>
+    createBooleanFieldController({ widgetId, handle: handle as never, variant: "switch" }));
+
   protected onChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.dispatchValueIntent<boolean>("toggle", { type: "input", value: input.checked });
+    this.controller()?.dispatch({ type: input.checked ? "check" : "uncheck" });
+  }
+
+  protected onBlur(): void {
+    this.controller()?.dispatch({ type: "blur" });
   }
 }

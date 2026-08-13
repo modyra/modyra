@@ -6,11 +6,25 @@
  * renderer owns the handle<->controller sync itself (mirrors how
  * packages/lit's select-field.ts does the same thing).
  */
-import { vanillaReactivity, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
+import { observerFor, type MdyFieldHandle, type MdyReactivity, type MdySelectOption } from "@modyra/core";
 import type { MdyDynamicOptionsField } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, selectKeyboardAction, typeaheadMatch, createSelectController, fieldShellPartIds, overlayAnchoringFor, type MdyElementLookup } from "@modyra/widgets";
+import {
+  MDY_WIDGET_CONTRACTS,
+  createSelectController,
+  createTypeahead,
+  fieldShellPartIds,
+  isTypeaheadCharacter,
+  overlayAnchoringFor,
+  selectKeyboardAction,
+  shownErrorsOf,
+  showsAsInvalid,
+  type MdyElementLookup,
+  typeaheadMatch,
+  MDY_I18N_MESSAGES_DEFAULT,
+  type MdyI18nMessages,
+} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
-import { buildFieldShell, insertControl, errorsToShow } from "../field-shell.js";
+import { buildFieldShell, insertControl } from "../field-shell.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, setOverlayOpen, trackOverlay } from "../overlay.js";
 
@@ -18,9 +32,16 @@ export function renderSelectField(
   container: HTMLElement,
   f: MdyDynamicOptionsField,
   handle: MdyFieldHandle<unknown>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
   widgetId: string = f.name,
+  /**
+   * The words this control shows. The engine has no opinion about them, so they arrive from the
+   * widget contract's tables rather than being written here — three renderers each spelling
+   * "open the calendar" is three answers to one question.
+   */
+  messages: MdyI18nMessages = MDY_I18N_MESSAGES_DEFAULT,
 ): () => void {
+  reactivity = observerFor(handle, reactivity);
   // How this popup attaches is the contract's, not this renderer's.
   const anchoring = overlayAnchoringFor("select");
   const options = f.options as ReadonlyArray<MdySelectOption<unknown>>;
@@ -37,7 +58,7 @@ export function renderSelectField(
       keyFor,
       value: handle.value(),
       disabled: handle.disabled(),
-      invalid: !handle.valid(),
+      invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
       onChange: (value) => {
         handle.set(value);
         handle.markAsDirty();
@@ -63,7 +84,7 @@ export function renderSelectField(
   const search = el("input", parts.search.classes.join(" ")) as HTMLInputElement;
   search.type = "text";
   search.autocomplete = "off";
-  search.placeholder = "Search…";
+  search.placeholder = messages.searchPlaceholder;
   const listbox = el("ul", parts.listbox.classes.join(" ")) as HTMLUListElement;
   // A filter box only where the field asked for one: drawn unconditionally, a five-option select got
   // a search nobody wanted and focus landed in it rather than on the list.
@@ -230,10 +251,10 @@ export function renderSelectField(
   const effectRef = reactivity.effect(() => {
     controller.setValue(handle.value());
     controller.setDisabled(handle.disabled());
-    controller.setInvalid(!handle.valid());
+    controller.setInvalid(showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }));
     // The trigger describes itself by whichever of the two is on screen, and this renderer is what
     // decides that: the error list appears once the field is touched and has something to say.
-    const errorsShown = handle.touched() && errorsToShow(handle).length > 0;
+    const errorsShown = handle.touched() && shownErrorsOf(handle).length > 0;
     controller.setDescribedBy({ errorsVisible: errorsShown, descriptionVisible: !errorsShown });
 
     // The shell's own state, which every other kind here reflects and this one did not: the themes
@@ -241,7 +262,7 @@ export function renderSelectField(
     shell.syncState({
       touched: handle.touched(),
       disabled: handle.disabled(),
-      hasError: errorsToShow(handle).length > 0,
+      hasError: shownErrorsOf(handle).length > 0,
       filled: handle.value() !== null && handle.value() !== undefined,
       required: handle.required(),
     });
@@ -251,7 +272,7 @@ export function renderSelectField(
     applyPart(trigger, view.parts.trigger);
     applyPart(search, view.parts.search);
     applyPart(listbox, view.parts.listbox);
-    setErrors(shell.errorList, errorsToShow(handle).map((e) => e.message));
+    setErrors(shell.errorList, shownErrorsOf(handle).map((e) => e.message));
     syncOptions(state.options);
 
     setOverlayOpen(popup, state.open);

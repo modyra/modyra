@@ -1,9 +1,9 @@
 {
   "name": "@modyra/core",
   "version": "2.1.2",
-  "description": "Framework-agnostic type-safe form engine \u2014 typed field trees, sync/async/cross-field validation, drafts and undo/redo over a minimal reactive contract.",
+  "description": "Framework-agnostic type-safe form engine — typed field trees, sync/async/cross-field validation, drafts and undo/redo over a minimal reactive contract.",
   "license": "MIT",
-  "author": "Lorenzo Muscher\u00e0",
+  "author": "Lorenzo Muscherà",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/modyra/modyra.git",
@@ -28,73 +28,17 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./date-utils": {
-      "types": "./dist/date-utils.d.ts",
-      "default": "./dist/date-utils.js"
-    },
-    "./date-locale": {
-      "types": "./dist/date-locale.d.ts",
-      "default": "./dist/date-locale.js"
-    },
-    "./time-utils": {
-      "types": "./dist/time-utils.d.ts",
-      "default": "./dist/time-utils.js"
-    },
-    "./color-utils": {
-      "types": "./dist/color-utils.d.ts",
-      "default": "./dist/color-utils.js"
-    },
-    "./theme-compiler": {
-      "types": "./dist/theme-compiler.d.ts",
-      "default": "./dist/theme-compiler.js"
-    },
-    "./options-utils": {
-      "types": "./dist/options-utils.d.ts",
-      "default": "./dist/options-utils.js"
-    },
     "./serialize": {
       "types": "./dist/serialize.d.ts",
       "default": "./dist/serialize.js"
-    },
-    "./dynamic-config": {
-      "types": "./dist/dynamic-config.d.ts",
-      "default": "./dist/dynamic-config.js"
-    },
-    "./i18n": {
-      "types": "./dist/i18n.d.ts",
-      "default": "./dist/i18n.js"
-    },
-    "./keyboard": {
-      "types": "./dist/keyboard.d.ts",
-      "default": "./dist/keyboard.js"
     },
     "./devtools": {
       "types": "./dist/devtools.d.ts",
       "default": "./dist/devtools.js"
     },
-    "./icons": {
-      "types": "./dist/icons.d.ts",
-      "default": "./dist/icons.js"
-    },
-    "./form": {
-      "types": "./dist/form.d.ts",
-      "default": "./dist/form.js"
-    },
-    "./validation": {
-      "types": "./dist/validation.d.ts",
-      "default": "./dist/validation.js"
-    },
     "./datetime": {
       "types": "./dist/datetime.d.ts",
       "default": "./dist/datetime.js"
-    },
-    "./ui": {
-      "types": "./dist/ui.d.ts",
-      "default": "./dist/ui.js"
-    },
-    "./localization": {
-      "types": "./dist/localization.d.ts",
-      "default": "./dist/localization.js"
     },
     "./testing": {
       "types": "./dist/testing/index.d.ts",

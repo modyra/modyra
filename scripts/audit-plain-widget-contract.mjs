@@ -21,14 +21,16 @@ const unregistered = MDY_WIDGET_KINDS.filter((kind) => !registry.includes(`case 
 if (unregistered.length) failures.push(`kinds with no renderer: ${unregistered.join(", ")}`);
 
 const CONTROLLERS = {
-  "fields/text-field.ts": "createFieldController",
+  "fields/text-field.ts": "createTextFieldController",
   "fields/boolean-field.ts": "createBooleanFieldController",
   "fields/option-field.ts": "createOptionFieldController",
   "fields/select-field.ts": "createSelectController",
   "fields/multiselect-field.ts": "createMultiselectFieldController",
   "fields/datepicker-field.ts": "createDatepickerFieldController",
   "fields/timepicker-field.ts": "createTimepickerFieldController",
-  "fields/daterange-field.ts": "dateRangeDraftTransition",
+  // The kind's controller is the stronger claim than the transition it wraps: it owns the draft,
+  // the preview and which cells fall between the ends.
+  "fields/daterange-field.ts": "createDaterangeFieldController",
   "fields/file-field.ts": "fileSelectionTransition",
   "fields/colors-field.ts": "colorValueTransition",
 };

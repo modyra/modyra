@@ -4,7 +4,7 @@
 
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor } from "@modyra/core";
 
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
@@ -22,25 +22,43 @@ export interface MdyOptionFieldController<TValue>
   setValue(value: TValue | null): void;
   /** Update the readonly state. */
   setReadonly(readonly: boolean): void;
+  /**
+   * Replace the option list.
+   *
+   * A host whose options arrive later, or change, tells the controller rather than building a new
+   * one: a fresh controller forgets which option the keyboard was on, so a list that reorders
+   * beneath an open group would drop the roving focus.
+   */
+  setOptions(options: readonly MdySelectOption<TValue>[]): void;
 }
 
 export function createOptionFieldController<TValue>(
   options: MdyOptionFieldControllerOptions<TValue>,
-  reactivity: MdyReactivity = vanillaReactivity(),
+  reactivity?: MdyReactivity,
 ): MdyOptionFieldController<TValue> {
+  // Observed through the runtime that owns the handle. A caller that supplies one keeps it
+  // and is told when it does not match — a fresh runtime over another form's handle is the
+  // defect this registry was added for, and it fails by rendering nothing rather than by
+  // raising.
+  reactivity = observerFor(options.handle, reactivity);
   const {
     widgetId,
     handle,
-    options: allOptions,
+    options: initialOptions,
     keyFor = (option) => String(option.value),
     variant = "radio",
     readonly: initialReadonly = false,
   } = options;
 
+  // The list is a signal because the projection and the roving focus both read it: a host that
+  // replaces it has to move every derived answer with it, not just the next lookup.
+  const optionList = reactivity.signal<readonly MdySelectOption<TValue>[]>(initialOptions);
+  const allOptions = (): readonly MdySelectOption<TValue>[] => optionList();
+
   const optionByKey = new Map<string, MdySelectOption<TValue>>();
   function rebuildIndex(): void {
     optionByKey.clear();
-    for (const option of allOptions) {
+    for (const option of optionList()) {
       optionByKey.set(keyFor(option), option);
     }
   }
@@ -50,10 +68,19 @@ export function createOptionFieldController<TValue>(
     value === null ? null : [...optionByKey.entries()].find(([, o]) => o.value === value)?.[0] ?? null;
 
   const enabledKeys = (): readonly string[] =>
-    allOptions.filter((o) => !o.disabled).map(keyFor);
+    allOptions().filter((o) => !o.disabled).map(keyFor);
 
   const readonly = reactivity.signal(initialReadonly);
-  const selectedKey = reactivity.signal<string | null>(keyForValue(handle.value()));
+  /**
+   * Which option is chosen, derived rather than copied.
+   *
+   * It was a signal seeded from the value and written beside every `handle.set` — which carries no
+   * information the value does not, since selecting always writes both. What it did carry was the
+   * chance of disagreeing: a value written from anywhere else — a draft restored, a server
+   * response, `patch()` — left the state reporting the live value beside a stale key, and a
+   * renderer checks the radio from the key.
+   */
+  const selectedKey = reactivity.computed(() => keyForValue(handle.value()));
   const activeKey = reactivity.signal<string | null>(null);
 
   const state: MdySignal<MdyOptionFieldState<TValue>> = reactivity.computed(() => ({
@@ -78,12 +105,12 @@ export function createOptionFieldController<TValue>(
     const a11y = projectOptionFieldA11y(currentState, handle.errors(), {
       widgetId,
       variant,
-      optionCount: allOptions.length,
+      optionCount: allOptions().length,
       ...(options.errorsVisible ? { errorsVisible: options.errorsVisible(currentState) } : {}),
     });
 
     const parts: Record<string, ReturnType<typeof a11yOption>> = {};
-    for (const option of allOptions) {
+    for (const option of allOptions()) {
       const key = keyFor(option);
       parts[key] = a11yOption(key, option, currentState, currentActiveKey);
     }
@@ -132,7 +159,6 @@ export function createOptionFieldController<TValue>(
     if (key === null) return [];
     const option = optionByKey.get(key);
     if (!option || option.disabled) return [];
-    selectedKey.set(key);
     handle.set(option.value);
     handle.markAsDirty();
     handle.markAsTouched();
@@ -188,8 +214,16 @@ export function createOptionFieldController<TValue>(
   }
 
   function setValue(value: TValue | null): void {
-    selectedKey.set(keyForValue(value));
     handle.set(value);
+  }
+
+  function setOptions(next: readonly MdySelectOption<TValue>[]): void {
+    optionList.set(next);
+    rebuildIndex();
+    // The selection follows the value on its own, because it is derived from it: a list replaced
+    // under a chosen value keeps it selected while it is still offered, and selects nothing when it
+    // is not.
+    if (activeKey() !== null && !optionByKey.has(activeKey() as string)) activeKey.set(null);
   }
 
   function setReadonly(nextReadonly: boolean): void {
@@ -206,6 +240,7 @@ export function createOptionFieldController<TValue>(
     dispatch,
     setValue,
     setReadonly,
+    setOptions,
     destroy,
   };
 }

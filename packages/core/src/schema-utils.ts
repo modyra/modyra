@@ -8,7 +8,7 @@ import type {
   MdyFormPatch,
   MdyFormSchema,
   MdyFormValue,
-} from "./typed-form.js";
+} from "./contracts/descriptors.js";
 import type { ValidatorFn } from "./types.js";
 
 /** Schema traversal result used by typed forms. */
@@ -61,6 +61,37 @@ export function walkSchema(
 }
 
 /** Collects leaf paths, group prefixes, array paths and record paths from a schema. */
+/**
+ * The collections declared inside a row, as patterns.
+ *
+ * A row's key is chosen at runtime, so the path of a collection inside one cannot be enumerated —
+ * `orders.o1.lines` and `orders.o2.lines` are the same declaration. `*` stands for the row segment,
+ * and every reader of these sets matches against the pattern rather than the literal path.
+ */
+function collectItemPaths(
+  prefix: string,
+  item: unknown,
+  arrayPaths: Set<string>,
+  recordPaths: Set<string>,
+): void {
+  const node = item as { readonly kind?: string; readonly children?: MdyFormSchema; readonly item?: unknown };
+  if (node.kind === "group" && node.children) {
+    for (const [key, child] of Object.entries(node.children)) {
+      collectItemPaths(`${prefix}.${key}`, child, arrayPaths, recordPaths);
+    }
+    return;
+  }
+  if (node.kind === "array") {
+    arrayPaths.add(prefix);
+    collectItemPaths(`${prefix}.*`, node.item, arrayPaths, recordPaths);
+    return;
+  }
+  if (node.kind === "record") {
+    recordPaths.add(prefix);
+    collectItemPaths(`${prefix}.*`, node.item, arrayPaths, recordPaths);
+  }
+}
+
 export function collectSchemaPaths(nodes: MdyFormSchema): MdySchemaPaths {
   const leafPaths: string[] = [];
   const groupPaths = new Set<string>();
@@ -71,8 +102,14 @@ export function collectSchemaPaths(nodes: MdyFormSchema): MdySchemaPaths {
     "",
     (path) => leafPaths.push(path),
     (path) => groupPaths.add(path),
-    (path) => arrayPaths.add(path),
-    (path) => recordPaths.add(path),
+    (path, node) => {
+      arrayPaths.add(path);
+      collectItemPaths(`${path}.*`, node.item, arrayPaths, recordPaths);
+    },
+    (path, node) => {
+      recordPaths.add(path);
+      collectItemPaths(`${path}.*`, node.item, arrayPaths, recordPaths);
+    },
   );
   return { leafPaths, groupPaths, arrayPaths, recordPaths };
 }
@@ -129,6 +166,13 @@ export function numericKeysToArrays(
   recordPaths: ReadonlySet<string> = new Set(),
 ): Record<string, unknown> {
   if (arrayPaths.size === 0 && recordPaths.size === 0) return nested;
+  /**
+   * The value, with each collection shaped as its declaration says.
+   *
+   * `prefix` is a *pattern*, not the literal path: a row's key is chosen at runtime, so descending
+   * through one substitutes `*` for it. Without that a collection inside a row is not recognised as
+   * a collection, and an empty one disappears from the value entirely.
+   */
   const walk = (node: unknown, prefix: string): unknown => {
     if (!isRecord(node)) return node;
     const out: Record<string, unknown> = {};
@@ -137,13 +181,16 @@ export function numericKeysToArrays(
       if (recordPaths.has(path)) {
         // Keys are kept as they are; the collection's own phantom field reads null, and a record is
         // an object even when it holds no rows.
-        out[key] = isRecord(v) && !Array.isArray(v) ? v : {};
+        const rows = isRecord(v) && !Array.isArray(v) ? v : {};
+        out[key] = Object.fromEntries(
+          Object.entries(rows).map(([rowKey, row]) => [rowKey, walk(row, `${path}.*`)]),
+        );
       } else if (arrayPaths.has(path)) {
         out[key] = isIndexRecord(v)
           ? Object.keys(v)
             .map(Number)
             .sort((a, b) => a - b)
-            .map((i) => v[String(i)])
+            .map((i) => walk(v[String(i)], `${path}.*`))
           : [];
       } else {
         out[key] = walk(v, path);
@@ -196,11 +243,28 @@ export function pathGet(value: unknown, path: string): unknown {
 }
 
 /** Type guard: an array item matches the item descriptor's shape. */
-function isSchemaItemValue(
-  value: unknown,
-  item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor,
-): boolean {
-  return item.kind === "field" ? true : isSchemaValue(value, item.children);
+/**
+ * A row's value against the shape its item declares.
+ *
+ * A row may hold a collection of its own, so this recurses rather than stopping at a group: a
+ * nested collection whose shape went unchecked is a value the engine accepts and then cannot
+ * flatten back.
+ */
+function isSchemaItemValue(value: unknown, item: unknown): boolean {
+  const node = item as {
+    readonly kind: string;
+    readonly children?: MdyFormSchema;
+    readonly item?: unknown;
+  };
+  if (node.kind === "field") return true;
+  if (node.kind === "array") {
+    return Array.isArray(value) && value.every((row) => isSchemaItemValue(row, node.item));
+  }
+  if (node.kind === "record") {
+    return isRecord(value) && !Array.isArray(value)
+      && Object.values(value).every((row) => isSchemaItemValue(row, node.item));
+  }
+  return isSchemaValue(value, node.children ?? {});
 }
 
 /** Type guard: the value contains every key declared by the schema. */

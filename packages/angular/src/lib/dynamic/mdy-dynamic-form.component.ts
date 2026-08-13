@@ -9,14 +9,14 @@ import {
   untracked,
   viewChild,
 } from "@angular/core";
+import { applyFlatValidators } from "@modyra/core";
 import {
-  buildDynamicFieldValidators,
   mdyEmptyValueFor,
   MdyDynamicField,
   MdyDynamicLayoutChild,
   MdyDynamicLayoutNode,
   MdyDynamicLayoutSlot,
-} from "@modyra/core/dynamic-config";
+} from "@modyra/core";
 import { layoutNodeAttributes, layoutSlotStyle, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { MdyFormSubmitEvent } from "../core/types";
 import { MdyFormComponent } from "../form/mdy-form.component";
@@ -342,14 +342,10 @@ export class MdyDynamicFormComponent {
     effect(() => {
       const fields = this.fields();
       const form = this.form();
-      untracked(() => {
-        for (const f of fields) {
-          // buildDynamicFieldValidators includes the automatic option
-          // whitelist (anti-tampering) for select/radio/segmented/multiselect.
-          const { validators, marksRequired } = buildDynamicFieldValidators(f);
-          form.upsertValidators(f.name, "mdy-dynamic", validators, marksRequired);
-        }
-      });
+      // The engine's own, under this binding's key. Written out here it was a fourth copy of a rule
+      // that lives upstream — including the automatic option whitelist that stops a tampered
+      // document from widening a select's accepted values.
+      untracked(() => { applyFlatValidators(form, fields, "mdy-dynamic"); });
     });
   }
 }
