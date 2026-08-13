@@ -210,6 +210,8 @@ table.keyed-rows .mdy-label {
   white-space: nowrap;
 }
 table.keyed-rows {
+  display: block;
+  overflow-x: auto;
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
