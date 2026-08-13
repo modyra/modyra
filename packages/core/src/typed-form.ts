@@ -1162,28 +1162,70 @@ export abstract class MdyTypedFormBase<
    * closing over one, so a row removed and declared again is answered by the manager it has now.
    */
   private _buildNestedCollectionHandle(path: string, node: MdyAnyRecordDescriptor | MdyAnyArrayDescriptor): unknown {
+    const rx = this._adapter.reactivity;
+    if (node.kind === "array") {
+      const manager = (): MdyArrayManager => {
+        const found = this._collectionAt(path);
+        if (!(found instanceof MdyArrayManager)) {
+          throw new Error(`[modyra] Collection "${path}" is not declared — its row is not either`);
+        }
+        return found;
+      };
+      const arrayAt = (): MdyArrayManager | undefined => {
+        const found = this._collectionAt(path);
+        return found instanceof MdyArrayManager ? found : undefined;
+      };
+      const rows = rx.computed(() => {
+        const found = arrayAt();
+        const count = found ? found.rowCount() : 0;
+        return Array.from({ length: count }, (_, i) =>
+          node.item.kind === "field"
+            ? this.cellHandle(`${path}.${i}`)
+            : this._buildCellTree((node.item as MdyAnyGroupDescriptor).children, `${path}.${i}`),
+        );
+      });
+      const errors = this._adapter.errorsFor(path);
+      return {
+        path,
+        length: rx.computed(() => arrayAt()?.rowCount() ?? 0),
+        rows,
+        errors,
+        valid: rx.computed(() => errors().length === 0),
+        push: (value: unknown) => manager().push(value),
+        insert: (index: number, value: unknown) => manager().insert(index, value),
+        remove: (index: number) => manager().remove(index),
+        move: (from: number, to: number) => manager().move(from, to),
+        setAll: (values: ReadonlyArray<unknown>) => manager().setAll(values),
+        at: (index: number) => (rows() as unknown[])[index] ?? null,
+      };
+    }
     const manager = (): MdyRecordManager => {
       const found = this._collectionAt(path);
-      if (!found) throw new Error(`[modyra] Collection "${path}" is not declared — its row is not either`);
+      if (!(found instanceof MdyRecordManager)) {
+        throw new Error(`[modyra] Collection "${path}" is not declared — its row is not either`);
+      }
       return found;
     };
-    const rx = this._adapter.reactivity;
+    const recordAt = (): MdyRecordManager | undefined => {
+      const found = this._collectionAt(path);
+      return found instanceof MdyRecordManager ? found : undefined;
+    };
     const rowTree = (key: string): unknown =>
       node.item.kind === "field"
         ? this.cellHandle(`${path}.${key}`)
         : this._buildCellTree((node.item as MdyAnyGroupDescriptor).children, `${path}.${key}`);
     return {
       path,
-      keys: rx.computed(() => this._collectionAt(path)?.keys() ?? []),
+      keys: rx.computed(() => recordAt()?.keys() ?? []),
       value: rx.computed(() => {
         this._adapter.value();
-        const found = this._collectionAt(path);
+        const found = recordAt();
         if (!found) return {};
         return Object.fromEntries(found.keys().map((key) => [key, this._pathGet(this.getValue() as Record<string, unknown>, `${path}.${key}`)]));
       }),
       errors: this._adapter.errorsFor(path),
-      valid: rx.computed(() => this._collectionAt(path)?.keys().every((key) => manager().validOf(key)) ?? true),
-      has: (key: string) => this._collectionAt(path)?.has(key) ?? false,
+      valid: rx.computed(() => recordAt()?.keys().every((key) => manager().validOf(key)) ?? true),
+      has: (key: string) => recordAt()?.has(key) ?? false,
       row: rowTree,
       cell: <T,>(key: string, leaf?: string) =>
         this.cellHandle(leaf === undefined ? `${path}.${key}` : `${path}.${key}.${leaf}`) as MdyFieldHandle<T>,
@@ -1197,7 +1239,7 @@ export abstract class MdyTypedFormBase<
   }
 
   /** The manager for a collection at `path`, declared by the form or by a row below it. */
-  private _collectionAt(path: string): MdyRecordManager | undefined {
+  private _collectionAt(path: string): MdyRecordManager | MdyArrayManager | undefined {
     const own = this._records.get(path);
     if (own) return own;
     for (const [at, manager] of this._records) {

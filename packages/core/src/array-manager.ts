@@ -179,6 +179,13 @@ export class MdyArrayManager {
     return this._currentValues();
   }
 
+  /** Every leaf path of every current row — what a parent collection treats as this array's fields. */
+  leafPathsNow(): string[] {
+    return Array.from({ length: this.rowCount() }, (_, index) =>
+      this._leafPaths(`${this._deps.path}.${index}`, this._deps.item),
+    ).flat();
+  }
+
   /** Rebuilds the rows back to the schema's declared initial array. */
   resetToInitial(): void {
     this.setAll(this._initial);

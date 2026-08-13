@@ -977,14 +977,17 @@ test("a nesting the runtime cannot execute is refused when the form is built", a
 
   // Not when a row arrives: a shape that cannot run must not survive long enough to produce paths
   // nobody owns. The message says what a row may hold, so the list is readable from the failure.
+  // An array's row may hold neither kind: its rows are positional, so a descendant's whole path
+  // moves on every insert, remove and move.
   assert.throws(
     () => createForm({ list: array(group({ inner: record(field("")) })) }),
     /Nested collections/,
   );
-  assert.throws(
-    () => createForm({ rows: record(group({ inner: array(field("")) })) }),
-    /cannot contain an array yet.*a row may hold: record/s,
-  );
+  // A record's row may hold both — that is phases A and B, and this is the shape they produce.
+  const nested = createForm({ rows: record(group({ inner: array(field("")) })) });
+  nested.f.rows.upsert("r1", { inner: ["a", "b"] });
+  assert.deepEqual(nested.value().rows.r1.inner, ["a", "b"]);
+  nested.destroy();
 });
 
 // ─── The document's limits ───────────────────────────────────────────────────
