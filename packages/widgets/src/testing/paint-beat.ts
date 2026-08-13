@@ -12,8 +12,13 @@
  * about it is derived from that, once.
  */
 
-/** How a renderer's rendering becomes visible after a value changes. */
-export const MDY_PAINT_BEATS = [
+/**
+ * How a renderer's rendering becomes visible after a value changes.
+ *
+ * The tuple type is written out rather than inferred: an annotation is emitted verbatim, so the
+ * declaration file does not depend on any compiler's printing of an inferred tuple.
+ */
+export const MDY_PAINT_BEATS: readonly ["synchronous", "microtask", "task", "host"] = [
   /** The write renders when the host is asked to render: a flush, and nothing pending after it. */
   "synchronous",
   /** The host flushes on the microtask queue. */
