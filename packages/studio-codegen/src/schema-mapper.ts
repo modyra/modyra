@@ -11,6 +11,7 @@
 import {
   buildIndexes,
   type ArrayNode,
+  type RecordNode,
   type FieldNode,
   type GroupNode,
   type MdyStudioProject,
@@ -142,7 +143,7 @@ function mapFieldValidator(
   }
 }
 
-function mapArrayValidator(v: StudioArrayValidator, node: ArrayNode, imports: ImportResolver, diagnostics: StudioDiagnostic[], validatorSource: string): string | null {
+function mapArrayValidator(v: StudioArrayValidator, node: ArrayNode | RecordNode, imports: ImportResolver, diagnostics: StudioDiagnostic[], validatorSource: string): string | null {
   const msgArg = v.message !== undefined ? [printString(v.message)] : [];
   if ((v.kind === "min" || v.kind === "max") && typeof v.value === "number") {
     const fn = v.kind === "min" ? "minLength" : "maxLength";
@@ -196,8 +197,9 @@ function mapGroup(node: GroupNode, idx: StudioIndexes, imports: ImportResolver, 
   return printCall("group", [printObject(props)]);
 }
 
-function mapArray(node: ArrayNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, profile: TargetProfile, validatorSource: string): string {
-  imports.add(profile.factoryImportSource, "array");
+/** A collection of either kind: the factory is the node's own name, and a row is a whole node. */
+function mapCollection(node: ArrayNode | RecordNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, profile: TargetProfile, validatorSource: string): string {
+  imports.add(profile.factoryImportSource, node.node);
   const itemCode = mapNode(node.item, idx, imports, diagnostics, stubNameFor, profile, validatorSource);
   const validatorCodes = node.validators
     .map((v) => mapArrayValidator(v, node, imports, diagnostics, validatorSource))
@@ -205,13 +207,13 @@ function mapArray(node: ArrayNode, idx: StudioIndexes, imports: ImportResolver, 
 
   const optionProps: TsProp[] = [{ key: "initial", value: literalCode(node.initialRows) }];
   if (validatorCodes.length) optionProps.push({ key: "validators", value: printArray(validatorCodes) });
-  return printCall("array", [itemCode, printObject(optionProps)]);
+  return printCall(node.node, [itemCode, printObject(optionProps)]);
 }
 
 function mapNode(node: StudioSchemaNode, idx: StudioIndexes, imports: ImportResolver, diagnostics: StudioDiagnostic[], stubNameFor: Map<string, string>, profile: TargetProfile, validatorSource: string): string {
   if (node.node === "field") return mapField(node, idx, imports, diagnostics, stubNameFor, profile, validatorSource);
   if (node.node === "group") return mapGroup(node, idx, imports, diagnostics, stubNameFor, profile, validatorSource);
-  return mapArray(node, idx, imports, diagnostics, stubNameFor, profile, validatorSource);
+  return mapCollection(node, idx, imports, diagnostics, stubNameFor, profile, validatorSource);
 }
 
 function mapFormValidator(fv: StudioFormValidator, idx: StudioIndexes): string {

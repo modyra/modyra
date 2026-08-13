@@ -122,6 +122,14 @@ const VALUE_TYPE_BY_TEMPLATE: Record<string, FieldNode["valueType"]> = {
 };
 
 /** Ranks the catalog against a free-text query. Empty query keeps catalog order. */
+/** What a collection's row is, in one word the canvas can print and the shape select can match. */
+function rowShapeOf(item: StudioSchemaNode): string {
+  if (item.node === "group") return "group";
+  if (item.node === "record") return "record";
+  if (item.node === "array") return "array";
+  return item.fieldKind;
+}
+
 function filterTemplates(query: string): readonly FieldTemplate[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return TEMPLATE_CATALOG;
@@ -488,10 +496,14 @@ export function getPreviewHandle(form: MdyTypedForm<never> | null, path: string)
 }
 
 /** Initial value for a newly-pushed array row, built from the item schema's own field defaults (nested arrays inside an array item are not supported — a documented limitation). */
-export function defaultRowValue(item: FieldNode | GroupNode): unknown {
+export function defaultRowValue(item: StudioSchemaNode): unknown {
   if (item.node === "field") return item.initialValue;
+  // A collection starts a new row empty rather than repeating the rows the author declared: those
+  // belong to the form as it opens, not to every row added afterwards.
+  if (item.node === "array") return [];
+  if (item.node === "record") return {};
   const row: Record<string, unknown> = {};
-  for (const child of item.children) if (child.node !== "array") row[child.name] = defaultRowValue(child as FieldNode | GroupNode);
+  for (const child of item.children) row[child.name] = defaultRowValue(child);
   return row;
 }
 
@@ -724,7 +736,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
         return { kind: "inside", parentId: shape.id, index: shape.children.length };
       }
     }
-    if (current && current.node !== "field" && current.node !== "array") {
+    if (current && current.node === "group") {
       return { kind: "inside", parentId: current.id, index: current.children.length };
     }
     if (current && current.id !== project.schema.id) return { kind: "after", targetId: current.id };
@@ -1882,12 +1894,12 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       itemSchema.className = "plain-canvas-array-item";
       itemSchema.dataset.plainSelect = array.item.id;
       itemSchema.setAttribute("aria-label", `Edit item schema for ${array.name}`);
-      itemSchema.textContent = `Item schema: ${array.item.node === "group" ? "group" : array.item.fieldKind}`;
+      itemSchema.textContent = `Item schema: ${rowShapeOf(array.item)}`;
       const rowShape = document.createElement("select");
       rowShape.className = "plain-canvas-array-shape";
       rowShape.dataset.plainArrayShape = array.id;
       rowShape.setAttribute("aria-label", `Row shape for ${array.name}`);
-      const currentShape = array.item.node === "group" ? "group" : array.item.fieldKind;
+      const currentShape = rowShapeOf(array.item);
       rowShape.append(new Option("Group of fields", "group", false, currentShape === "group"));
       for (const template of TEMPLATE_CATALOG) {
         if (template.group === "Structure") continue;

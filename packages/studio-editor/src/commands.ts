@@ -103,7 +103,7 @@ function placementAfterSibling(parent: GroupNode, index: number): Placement {
 function collectIds(node: StudioSchemaNode, out: string[] = []): string[] {
   out.push(node.id);
   if (node.node === "group") node.children.forEach((c) => collectIds(c, out));
-  else if (node.node === "array") collectIds(node.item, out);
+  else if (node.node === "array" || node.node === "record") collectIds(node.item, out);
   return out;
 }
 
@@ -114,7 +114,7 @@ function cloneWithFreshIds(node: StudioSchemaNode): StudioSchemaNode {
     if (n.node === "field") {
       for (const validator of n.validators) validator.id = createId("val");
       if (n.serverValidator) n.serverValidator.id = createId("val");
-    } else if (n.node === "array") {
+    } else if (n.node === "array" || n.node === "record") {
       n.validators.forEach((v) => (v.id = createId("val")));
       visit(n.item);
     } else {

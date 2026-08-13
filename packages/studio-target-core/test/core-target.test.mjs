@@ -87,3 +87,51 @@ test("generated Core files compile against package declarations", { skip: !exist
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("a record node generates record(), imported as itself and seeded with the rows the author declared", async () => {
+  const project = createCheckoutProject();
+  const withRecord = {
+    ...project,
+    formValidators: [],
+    behaviors: {},
+    implementations: [],
+    presentation: { ...project.presentation, layout: [] },
+    schema: {
+      ...project.schema,
+      children: [
+        {
+          node: "record",
+          id: "nd_lines",
+          name: "lines",
+          label: "Lines",
+          item: {
+            node: "group",
+            id: "nd_line",
+            name: "line",
+            children: [
+              {
+                node: "field",
+                id: "nd_sku",
+                name: "sku",
+                fieldKind: "text",
+                valueType: "string",
+                initialValue: "",
+                validators: [{ id: "val_sku_required", kind: "required" }],
+              },
+            ],
+          },
+          initialRows: { "tmp:1": { sku: "TSHIRT-BLK-M" } },
+          validators: [],
+        },
+      ],
+    },
+  };
+
+  const artifact = await createCoreTarget().generate(withRecord, {});
+  const formFile = artifact.files.find((f) => f.path === "form.ts");
+
+  assert.match(formFile.content, /lines: record\(/, "the keyed collection is generated as record()");
+  assert.match(formFile.content, /import \{[^}]*record[^}]*\} from "@modyra\/core"/, "and record is imported, not assumed");
+  assert.match(formFile.content, /initial: \{"tmp:1":\{"sku":"TSHIRT-BLK-M"\}\}/, "the declared rows are the form's initial ones");
+  assert.deepEqual(artifact.diagnostics, []);
+});
