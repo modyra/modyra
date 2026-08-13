@@ -54,12 +54,41 @@ test("the toolbar exposes the templates, history and project I/O", () => {
 
   const panel = host.querySelector("[data-dock-panel]");
   assert.equal(panel.hidden, false);
-  for (const template of ["text", "textarea", "email", "number", "checkbox", "select", "multiselect", "date", "group", "array"]) {
+  for (const template of ["text", "textarea", "email", "number", "checkbox", "select", "multiselect", "date", "group", "array", "record"]) {
     assert.ok(panel.querySelector(`[data-template="${template}"]`), `missing template ${template}`);
   }
   for (const action of ["[data-undo]", "[data-redo]", "[data-new]", "[data-import]"]) {
     assert.ok(panel.querySelector(action), `missing action ${action}`);
   }
+});
+
+test("the keyed-rows template adds a record whose row is drawn from the start", () => {
+  const host = createHost();
+  mountStudio(host);
+  openDock(host);
+
+  click(host.querySelector('[data-dock-panel] [data-template="record"]'));
+
+  // The outline is the tree the canvas draws from, so a node it does not carry is a node nobody
+  // can select — which is how a template that adds nothing looks from the outside.
+  const outline = host.querySelector(".outline").outerHTML;
+  assert.match(outline, /New keyed rows/, "the new collection is in the tree");
+
+  // The canvas draws the collection itself, not only its row shape: without its own box the row
+  // template lands at the form root and the collection is invisible to everything that selects it.
+  const surface = host.querySelector("[data-canvas-surface]");
+  const box = surface.querySelector(".plain-canvas-array");
+  assert.ok(box, "the keyed collection has a box of its own on the canvas");
+  assert.match(box.getAttribute("aria-label"), /keyed rows field/);
+  // A collection with no rows draws no controls, so the row the author is designing must exist.
+  assert.equal(box.querySelector("[data-plain-array-row]").dataset.plainArrayRow, "tmp:1");
+  // A key is data, not a position: it is removed, never reordered.
+  assert.equal(box.querySelector('[data-plain-array-row-action="up"]'), null);
+  assert.ok(box.querySelector('[data-plain-array-row-action="remove"]'));
+
+  click(box.querySelector("[data-plain-array-add]"));
+  const keys = [...host.querySelectorAll("[data-plain-array-row]")].map((el) => el.dataset.plainArrayRow);
+  assert.deepEqual(keys, ["tmp:1", "tmp:2"], "a new row takes a provisional key of its own");
 });
 
 test("the form name is edited in the header and committed through a real command", () => {
