@@ -1,0 +1,124 @@
+/**
+ * Generated campaigns against an independent model.
+ *
+ * Each run draws a sequence of operations aimed at the boundaries — declare, mount, edit, remove
+ * while mounted, rename onto a free and an occupied key, re-declare, reset — applies it to both a
+ * real form and a model that shares none of its design, and compares what a consumer can see.
+ *
+ * A divergence is shrunk before it is reported: the sequence that reaches the report is the smallest
+ * one that still produces it, and the seed that produced the original is printed either way.
+ */
+
+import { battle } from "../../harness/battle.mjs";
+import { BattleBreak } from "../../harness/assertions.mjs";
+import { createBattleContext } from "../../harness/context.mjs";
+import { createRng, runCount, runSeed } from "../../harness/seed.mjs";
+import { shrink } from "../../harness/shrinking.mjs";
+import { diffCanonical, encodeValue } from "../../models/observations.mjs";
+import { createReferenceModel } from "../reference-model.mjs";
+import { generateSequence } from "../generators/operations.mjs";
+
+const CELLS = Object.freeze({ code: "", note: "unset" });
+const CELL_NAMES = Object.keys(CELLS);
+
+const SPEC = Object.freeze({
+  version: 1,
+  fields: Object.freeze({
+    rows: Object.freeze({
+      kind: "record",
+      of: Object.freeze({
+        code: Object.freeze({ kind: "text" }),
+        note: Object.freeze({ kind: "text", initial: "unset" }),
+      }),
+    }),
+  }),
+});
+
+/** Everything a consumer can see about the collection, from the form and from the model alike. */
+function observableOf(form, rowsHandle) {
+  return encodeValue(
+    {
+      keys: [...rowsHandle.keys()],
+      value: form.getValue().rows ?? {},
+      submitted: form.submitValue().rows ?? {},
+    },
+    "observable",
+  );
+}
+
+function expectedOf(model) {
+  return encodeValue({ keys: model.keys(), value: model.value(), submitted: model.submitted() }, "observable");
+}
+
+/**
+ * Apply a sequence to a fresh form and a fresh model, and report the first operation after which
+ * they disagreed. Building both from scratch is what makes a candidate sequence testable in
+ * isolation, which is what shrinking needs.
+ */
+async function runSequence(operations, { log }) {
+  const context = createBattleContext({ spec: SPEC, log });
+  const model = createReferenceModel({ cells: CELLS });
+
+  try {
+    for (const [index, operation] of operations.entries()) {
+      await context.execute(operation);
+      model.apply(operation);
+
+      const actual = observableOf(context.form, context.collections.rows);
+      const expected = expectedOf(model);
+      const divergence = diffCanonical(expected, actual);
+      if (divergence) return { divergence, index, operation, expected, actual };
+    }
+    return { divergence: null };
+  } finally {
+    await context.dispose();
+  }
+}
+
+battle(
+  {
+    claims: ["COL-001", "COL-002", "COL-004", "COL-007", "COL-008", "SUB-001", "SUB-002"],
+    title: "a keyed collection means what a much simpler model says it means",
+    environments: ["node"],
+    requires: ["structural", "operations"],
+  },
+  async (ctx) => {
+    // The campaign builds its own contexts, so it states the schema a report must rebuild from.
+    ctx.attach("schema", SPEC);
+
+    const runs = runCount(20);
+    const length = 24;
+    ctx.log.note("campaign", { seed: ctx.seed, runs, length });
+    console.log(`  campaign seed ${ctx.seed}, ${runs} run(s) of ${length} operation(s)`);
+
+    for (let run = 0; run < runs; run += 1) {
+      const seed = runSeed(ctx.seed, run);
+      const rng = createRng(seed);
+      const model = createReferenceModel({ cells: CELLS });
+      const operations = generateSequence(rng, model, {
+        length,
+        cells: CELL_NAMES,
+        collectionPath: "rows",
+      });
+
+      const outcome = await runSequence(operations, { log: ctx.log });
+      if (!outcome.divergence) continue;
+
+      // Reduce before reporting: what reaches the report is the smallest sequence that still fails.
+      const stillFails = async (candidate) => (await runSequence(candidate, { log: ctx.log })).divergence !== null;
+      const { minimized, attempts } = await shrink(operations, stillFails);
+      ctx.attach("minimizedOperations", minimized);
+
+      const minimalOutcome = await runSequence(minimized, { log: ctx.log });
+      throw new BattleBreak({
+        claimIds: ["COL-001", "COL-002", "COL-004", "COL-007", "COL-008", "SUB-001", "SUB-002"],
+        message:
+          `run ${run} (seed ${seed}) diverged from the reference model at operation ${outcome.index} ` +
+          `(${outcome.operation.type}); minimized to ${minimized.length} operation(s) in ${attempts} attempt(s)`,
+        divergence: minimalOutcome.divergence ?? outcome.divergence,
+        expected: minimalOutcome.expected ?? outcome.expected,
+        actual: minimalOutcome.actual ?? outcome.actual,
+      });
+    }
+  },
+);

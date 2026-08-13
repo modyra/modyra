@@ -78,6 +78,17 @@ const CLAIMS = [
     permittedDifferences: ["dirty is not named by the contract as carried"],
   },
   {
+    id: "COL-008",
+    title: "A row declared without a value is the row the template describes.",
+    area: "collection",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/core MdyRecordHandle.upsert — value is optional",
+      "@modyra/core record(item) — the item descriptor is the template every row is built from",
+      "@modyra/core MdyFieldDescriptor.initial",
+    ],
+  },
+  {
     id: "LIF-001",
     title: "Destroy leaves no observable reactive or asynchronous work.",
     area: "lifecycle",
@@ -164,6 +175,16 @@ const CLAIMS = [
     area: "submission",
     severity: "S0",
     publicEvidence: ["@modyra/core MdyTypedForm.submitValue/buildSubmitEvent"],
+  },
+  {
+    id: "SUB-002",
+    title: "The shape of a form's value follows the schema, not the order controls mounted.",
+    area: "submission",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/core MdyTypedForm.getValue/submitValue",
+      "@modyra/core record(item) — the item descriptor is a row's shape",
+    ],
   },
   {
     id: "PER-001",
