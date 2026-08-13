@@ -41,6 +41,22 @@ were aborted with it.
 - The synchronous window is closed at the cost of one extra value read per undo/redo call — O(fields),
   on an operation triggered by a user gesture.
 
+## Amendment: the affordance answers the same question
+
+`undo()` and `redo()` acting on the value as it is now is only half the decision. `canUndo` and
+`canRedo` are what a consumer binds an Undo and a Redo button to, and they were stored flags updated
+by the snapshot effect — so they answered for the last state the scheduler had seen. In the window
+this record exists to close, `canUndo()` read `false` while `undo()` would have removed the row that
+had just been declared, and `canRedo()` stayed true after an edit that had already invalidated the
+redo stack.
+
+**Both signals are derived from the current value**, not stored: `canUndo` is true when a stack entry
+exists *or* the value has moved since the last snapshot; `canRedo` is true when a redo entry exists
+*and* it has not. The affordance and the operation now answer the same question in the same task.
+
+The cost is one shallow value comparison per read after a change — on signals a consumer reads to
+paint a button, so the read is already tied to a render.
+
 ## Alternatives rejected
 
 **Managers notify history on every structural change.** More moving parts — a notification path
@@ -57,6 +73,8 @@ of defect this repository exists to not ship.
 - `packages/core/test/nested-collections.test.mjs` — structural undo/redo claims: synchronous undo
   of a declaration, a removed subtree restored whole at two depths, rename as one step, redo
   re-applying a rename, undo of a parent whose child had a verdict pending.
+- `packages/core/test/nested-collections.test.mjs` — the amendment's claim: `canUndo` true in the
+  task that declared a row, `canRedo` false once an unrecorded edit has invalidated the redo stack.
 - `packages/core/test/async-validation.test.mjs` — a late async result for a removed row resurrects
   nothing.
 - `npm run test:core` — the value-history suite and the collection host double pass unchanged,

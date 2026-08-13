@@ -21,12 +21,18 @@ import { diffCanonical } from "../models/observations.mjs";
 import { createBattleContext } from "./context.mjs";
 
 export async function replay(report) {
-  const context = createBattleContext({ spec: report.schema });
+  const context = createBattleContext({
+    spec: report.schema,
+    formOptions: report.formOptions?.options ?? {},
+  });
   const operations = report.minimizedOperations?.length > 0 ? report.minimizedOperations : report.operations;
 
   try {
     for (const operation of operations) {
-      await context.execute(operation);
+      // `sync` is part of the sequence, not decoration: an operation the attack made without
+      // yielding is replayed the same way, or the window it attacked is never reopened.
+      if (operation.sync) context.executeNow(operation);
+      else await context.execute(operation);
     }
     const actual = context.observe("replay");
     const divergence = report.actual ? diffCanonical(report.actual, actual) : null;
@@ -46,6 +52,9 @@ async function main() {
   const report = JSON.parse(readFileSync(resolve(file), "utf8"));
   console.log(`Replaying ${report.failureId} — ${report.message}`);
   console.log(`Seed: ${report.seed}  Environment: ${report.environment?.name ?? "node"}`);
+  if (report.formOptions?.dropped?.length > 0) {
+    console.log(`Options not carried by the report: ${report.formOptions.dropped.join(", ")}`);
+  }
 
   const outcome = await replay(report);
   console.log(`Applied ${outcome.operations.length} operation(s).`);

@@ -514,3 +514,37 @@ test("a validator two collections down answers for its own instance, not for its
   assert.equal(form.state.valid(), true);
   form.destroy();
 });
+
+/**
+ * `canUndo` and `canRedo` answer for the value as it is now.
+ *
+ * `undo()` records any change the snapshot effect has not seen before popping, so a structural
+ * change is undoable in the task that made it. The affordance a consumer binds a button to has to
+ * answer the same question: a disabled Undo over a change that undo would revert offers the user
+ * nothing, and a lit Redo over an edit that just invalidated the redo stack offers a no-op.
+ */
+test("canUndo is true in the task that declared a row, and canRedo false once an edit invalidates redo", async () => {
+  const form = createForm({ rows: record(group({ code: field("") })) }, { history: true });
+
+  form.f.rows.upsert("a", { code: "A" });
+  assert.equal(form.canUndo(), true, "the declaration is undoable in the task that made it");
+
+  form.undo();
+  assert.deepEqual(form.f.rows.keys(), [], "and undoing it in the same task removes the row");
+  assert.equal(form.canRedo(), true);
+
+  form.redo();
+  await tick();
+  assert.deepEqual(form.f.rows.keys(), ["a"]);
+
+  form.undo();
+  await tick();
+  assert.equal(form.canRedo(), true, "the undone declaration is redoable");
+
+  // An edit after an undo invalidates the redo stack; the signal says so before redo is called.
+  form.f.rows.upsert("b", { code: "B" });
+  assert.equal(form.canRedo(), false, "an unrecorded edit has already invalidated redo");
+
+  form.redo();
+  assert.deepEqual(form.f.rows.keys(), ["b"], "redo did nothing, exactly as canRedo said");
+});

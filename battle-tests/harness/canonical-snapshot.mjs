@@ -89,6 +89,16 @@ export function canonicalObservation({
  */
 export const RENDERER_ONLY_FIELDS = Object.freeze(["mountedPaths"]);
 
+/**
+ * What two mount strategies are allowed to disagree about.
+ *
+ * Diagnostics join the list only here: mounting a cell before its row exists is a documented,
+ * warned-about thing to do, so a strategy that does it says so and one that does not stays silent.
+ * A test using this list owes an explicit assertion about the diagnostics it excluded — dropping
+ * them without one is how a real warning stops being read.
+ */
+export const MOUNT_COMPARISON_FIELDS = Object.freeze([...RENDERER_ONLY_FIELDS, "diagnostics"]);
+
 function compareErrors(a, b) {
   return (
     a.path.localeCompare(b.path) || a.kind.localeCompare(b.kind) || a.message.localeCompare(b.message)
