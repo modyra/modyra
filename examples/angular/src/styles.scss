@@ -209,9 +209,63 @@ table.keyed-rows .mdy-label {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-table.keyed-rows { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-table.keyed-rows th { text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; padding: 0 .75rem .5rem; }
-table.keyed-rows td { padding: .25rem .75rem; vertical-align: top; border-top: 1px solid var(--mdy-outline-variant); }
-table.keyed-rows tr.editing { background: var(--mdy-surface-container-low); }
-.keyed-rows-actions { display: flex; gap: .5rem; margin-top: .75rem; }
+table.keyed-rows {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 1rem;
+  background: var(--mdy-surface);
+  border: 1px solid var(--mdy-outline-variant);
+  border-radius: 10px;
+  overflow: hidden;
+}
+table.keyed-rows th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mdy-on-surface-variant);
+  background: var(--mdy-surface-container-low);
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--mdy-outline-variant);
+}
+table.keyed-rows td {
+  padding: 0.55rem 0.85rem;
+  vertical-align: middle;
+  border-top: 1px solid var(--mdy-outline-variant);
+}
+table.keyed-rows tbody tr:first-child td { border-top: 0; }
+table.keyed-rows tbody tr:hover { background: color-mix(in srgb, var(--mdy-primary) 4%, transparent); }
+table.keyed-rows tr.editing { background: color-mix(in srgb, var(--mdy-primary) 8%, transparent); }
+table.keyed-rows td:first-child {
+  font-variant-numeric: tabular-nums;
+  color: var(--mdy-on-surface-variant);
+  width: 4.5rem;
+}
+table.keyed-rows th:nth-child(3), table.keyed-rows td:nth-child(3) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.keyed-rows-lot {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  margin: 0 0.3rem 0.15rem 0;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: color-mix(in srgb, var(--mdy-primary) 12%, transparent);
+  white-space: nowrap;
+}
+td.keyed-rows-lots, td.keyed-rows-actions { white-space: nowrap; }
+td.keyed-rows-lots button, td.keyed-rows-actions button { font-size: 0.78rem; padding: 0.25rem 0.6rem; }
+.keyed-rows-state {
+  font-size: 0.8125rem;
+  border-left: 3px solid var(--mdy-primary);
+  padding: 0.6rem 0.85rem;
+  background: var(--mdy-surface-container-low);
+  border-radius: 0 8px 8px 0;
+  overflow-x: auto;
+}
+
+
+div.keyed-rows-actions { display: flex; gap: .5rem; margin-top: .75rem; }
 .keyed-rows-state { font-size: .8125rem; }
