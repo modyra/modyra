@@ -33,6 +33,7 @@ export const MDY_OPERATION_TYPES = Object.freeze([
   "async.reject",
   "flush",
   "destroy",
+  "observe",
 ]);
 
 /** The fields each operation type requires, beyond `type`. */
@@ -59,6 +60,7 @@ const REQUIRED = Object.freeze({
   "async.reject": ["token", "message"],
   flush: [],
   destroy: [],
+  observe: [],
 });
 
 /**
@@ -140,6 +142,8 @@ export function describeOperation(operation) {
       return `resolve ${operation.token}`;
     case "async.reject":
       return `reject ${operation.token} (${operation.message})`;
+    case "observe":
+      return `observe ${operation.label ?? ""}`.trim();
     default:
       return operation.path ? `${operation.type} ${operation.path}` : operation.type;
   }

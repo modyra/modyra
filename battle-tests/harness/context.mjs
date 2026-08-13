@@ -17,6 +17,9 @@ import { createAsyncValidatorController } from "./async-controller.mjs";
 import { createOperationLog } from "./operation-log.mjs";
 import { createScheduler } from "./scheduler.mjs";
 
+/** Operations whose execution is a wait by definition, and so cannot happen "now". */
+const ASYNC_ONLY = new Set(["flush", "async.resolve", "async.reject", "draft.save", "draft.restore"]);
+
 export function createBattleContext({
   spec,
   formOptions = {},
@@ -36,9 +39,11 @@ export function createBattleContext({
   const mounted = new Set();
   const disabledSignals = new Map();
   let consumedDiagnostics = 0;
+  let lastObservation = null;
 
   const context = {
     spec,
+    formOptions,
     form,
     log,
     scheduler,
@@ -87,18 +92,66 @@ export function createBattleContext({
      * comparing two snapshots would have to ignore the field — which is exactly where a real
      * diagnostic goes unnoticed.
      */
-    observe(label = "observation") {
-      log.observed(label);
+    /**
+     * Read the public state without recording anything.
+     *
+     * Kept apart from {@link observe} because reading a form is itself an act: computed values are
+     * evaluated and pending work is given a chance to settle, so a replay that skips the reads an
+     * attack made does not reproduce what the attack saw.
+     */
+    snapshot() {
       const emitted = diagnostics();
       const fresh = emitted.slice(consumedDiagnostics);
       consumedDiagnostics = emitted.length;
-      return canonicalObservation({
+      lastObservation = canonicalObservation({
         form,
         collections,
         mounted: [...mounted],
         diagnostics: fresh,
         activeAsyncRuns: asyncValidators.activeRunCount(),
       });
+      return lastObservation;
+    },
+
+    /** Read the state and record that the attack read it, so a replay reads it too. */
+    observe(label = "observation") {
+      log.record({ type: "observe", label, sync: true });
+      log.observed(label);
+      return context.snapshot();
+    },
+
+    /** The most recent observation, which a failure report uses when an assertion carried no state. */
+    lastObservation: () => lastObservation,
+
+    /**
+     * The form options as a report can carry them.
+     *
+     * Options are how a form differs from another built on the same schema — history on or off, a
+     * submit mode, a draft key — so a replay that ignored them would rebuild a different form and
+     * report the break as unreproducible. Anything not expressible as data (a storage
+     * implementation, a validator function) is dropped and named, because a replay that silently
+     * substituted one would be reproducing something else.
+     */
+    replayableOptions() {
+      const carried = {};
+      const dropped = [];
+      for (const [key, value] of Object.entries(formOptions)) {
+        if (typeof value === "function") {
+          dropped.push(key);
+          continue;
+        }
+        if (value !== null && typeof value === "object") {
+          const nested = {};
+          for (const [innerKey, innerValue] of Object.entries(value)) {
+            if (typeof innerValue === "function" || typeof innerValue === "object") dropped.push(`${key}.${innerKey}`);
+            else nested[innerKey] = innerValue;
+          }
+          carried[key] = nested;
+          continue;
+        }
+        carried[key] = value;
+      }
+      return { options: carried, dropped };
     },
 
     async execute(operation) {
@@ -109,6 +162,28 @@ export function createBattleContext({
 
     async executeAll(operations) {
       for (const operation of operations) await context.execute(operation);
+      return context;
+    },
+
+    /**
+     * Apply an operation without yielding to the scheduler.
+     *
+     * `execute` is `await`ed, and an `await` is a microtask boundary: effects that run on the
+     * reactivity's schedule have already run by the time the next line reads anything. That hides
+     * every claim about the window between a change and the tick that follows it — the window a
+     * click handler making two calls in a row actually lives in.
+     *
+     * Only operations that are synchronous by nature are accepted here; asking for a resolution or
+     * a flush in the same breath is a contradiction, and is refused rather than quietly awaited.
+     */
+    executeNow(operation) {
+      if (ASYNC_ONLY.has(operation.type)) {
+        throw new Error(`${operation.type} cannot be executed without yielding; use execute()`);
+      }
+      // The log carries the fact: a replay that awaited here would close the window the attack
+      // opened, and would report the break as unreproducible.
+      log.record({ ...operation, sync: true });
+      void executeOperation(context, operation);
       return context;
     },
 
@@ -215,6 +290,9 @@ export async function executeOperation(context, operation) {
       break;
     case "destroy":
       form.destroy();
+      break;
+    case "observe":
+      context.snapshot();
       break;
 
     default:

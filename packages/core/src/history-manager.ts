@@ -66,12 +66,27 @@ export class MdyHistoryManager {
   private _timer: ReturnType<typeof setTimeout> | null = null;
   private _maxEntries = 100;
   private _debounceMs = 0;
-  private readonly _canUndo: MdyWritableSignal<boolean>;
-  private readonly _canRedo: MdyWritableSignal<boolean>;
+  /** Whether the stacks hold an entry — what the snapshot effect has seen, and only that. */
+  private readonly _stackedUndo: MdyWritableSignal<boolean>;
+  private readonly _stackedRedo: MdyWritableSignal<boolean>;
 
-  /** True when {@link undo} has state to restore (see {@link enableHistory}). */
+  /**
+   * True when {@link undo} has state to restore (see {@link enableHistory}).
+   *
+   * Derived rather than stored, because {@link undo} acts on the value as it is *now*: it records
+   * any change the snapshot effect has not seen before popping, so a structural change made in this
+   * task is undoable in this task. A stored flag would answer for the last state the scheduler saw
+   * and leave an Undo button disabled over a change that is undoable — the affordance and the
+   * operation have to answer the same question.
+   */
   readonly canUndo: MdySignal<boolean>;
-  /** True when {@link redo} has state to restore. */
+  /**
+   * True when {@link redo} has state to restore.
+   *
+   * The mirror of {@link canUndo}: a change made after an undo invalidates the redo stack, and
+   * `redo()` enforces that by recording before popping. An unrecorded change therefore means redo
+   * would do nothing, and this says so before it is called rather than after.
+   */
   readonly canRedo: MdySignal<boolean>;
 
   constructor(deps: HistoryManagerDeps) {
@@ -82,10 +97,10 @@ export class MdyHistoryManager {
     this._scope = deps.scope;
     this._isMutating = deps.isMutating;
     this._isDeactivated = deps.isDeactivated;
-    this._canUndo = deps.rx.signal(false);
-    this._canRedo = deps.rx.signal(false);
-    this.canUndo = this._canUndo.asReadonly();
-    this.canRedo = this._canRedo.asReadonly();
+    this._stackedUndo = deps.rx.signal(false);
+    this._stackedRedo = deps.rx.signal(false);
+    this.canUndo = deps.rx.computed(() => this._stackedUndo() || this._hasUnrecordedChange());
+    this.canRedo = deps.rx.computed(() => this._stackedRedo() && !this._hasUnrecordedChange());
   }
 
   /**
@@ -194,8 +209,8 @@ export class MdyHistoryManager {
       this._undoStack.push(last);
       if (this._undoStack.length > this._maxEntries) this._undoStack.shift();
       this._redoStack.length = 0;
-      this._canUndo.set(true);
-      this._canRedo.set(false);
+      this._stackedUndo.set(true);
+      this._stackedRedo.set(false);
     }
     this._lastSnapshot = current;
   }
@@ -245,6 +260,20 @@ export class MdyHistoryManager {
     this._record(this._rx.untracked(() => this._getValue()));
   }
 
+  /**
+   * Whether the value has moved since the last snapshot — the change {@link undo} would record
+   * before popping, and the one that has already invalidated the redo stack.
+   *
+   * Read tracked, not untracked: it is what makes {@link canUndo} and {@link canRedo} recompute when
+   * the value changes. During a restore it answers false, because the value is mid-write and the
+   * snapshot it is being restored to is already recorded.
+   */
+  private _hasUnrecordedChange(): boolean {
+    const last = this._lastSnapshot;
+    if (last === null || this._restoring) return false;
+    return !shallowEqualRecords(last, this._getValue());
+  }
+
   /** Restores the previous recorded form value (no-op when history is empty). */
   undo(): void {
     this._flush();
@@ -262,8 +291,8 @@ export class MdyHistoryManager {
     } finally {
       this._restoring = false;
     }
-    this._canUndo.set(this._undoStack.length > 0);
-    this._canRedo.set(true);
+    this._stackedUndo.set(this._undoStack.length > 0);
+    this._stackedRedo.set(true);
   }
 
   /** Re-applies the value undone by the last {@link undo}. */
@@ -283,8 +312,8 @@ export class MdyHistoryManager {
     } finally {
       this._restoring = false;
     }
-    this._canRedo.set(this._redoStack.length > 0);
-    this._canUndo.set(true);
+    this._stackedRedo.set(this._redoStack.length > 0);
+    this._stackedUndo.set(true);
   }
 
   /** Releases timers, effects and clears the stacks. */
@@ -298,7 +327,7 @@ export class MdyHistoryManager {
     this._undoStack.length = 0;
     this._redoStack.length = 0;
     this._lastSnapshot = null;
-    this._canUndo.set(false);
-    this._canRedo.set(false);
+    this._stackedUndo.set(false);
+    this._stackedRedo.set(false);
   }
 }

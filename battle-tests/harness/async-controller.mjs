@@ -28,10 +28,15 @@ export function createAsyncValidatorController({ log = null } = {}) {
     /**
      * The validator to hand to a field. Each invocation registers a run and hands back a promise
      * the test settles later; a superseded run is marked aborted by the engine's own signal.
+     *
+     * Runs are filed under the path the engine states at call time, not the schema path the
+     * validator was declared for: one declaration in a row template serves every row, and an attack
+     * that renames a row needs to name the run belonging to the row it is talking about.
      */
-    validatorFor(path) {
-      const slot = slotFor(path);
+    validatorFor(declaredPath) {
       return (value, ctx) => {
+        const path = ctx.path ?? declaredPath;
+        const slot = slotFor(path);
         const run = {
           id: nextRunId++,
           path,
@@ -61,10 +66,21 @@ export function createAsyncValidatorController({ log = null } = {}) {
       return [...slotFor(path).runs];
     },
 
-    /** Runs that have neither settled nor been superseded. */
+    /**
+     * Runs still capable of affecting the form: neither settled by the test nor aborted by the
+     * engine. A superseded run whose promise nobody ever resolves is not work in flight — the engine
+     * stopped listening the moment it aborted it.
+     */
     activeRuns(path = null) {
       const paths = path === null ? [...byPath.keys()] : [path];
-      return paths.flatMap((each) => slotFor(each).runs.filter((run) => run.settled === null));
+      return paths.flatMap((each) =>
+        slotFor(each).runs.filter((run) => run.settled === null && !run.aborted),
+      );
+    },
+
+    /** Every run the engine started and the test has not settled, aborted or not. */
+    outstandingRuns() {
+      return [...byPath.values()].flatMap((slot) => slot.runs.filter((run) => run.settled === null));
     },
 
     /** How many runs are still outstanding anywhere — the number a canonical snapshot carries. */
@@ -102,12 +118,9 @@ export function createAsyncValidatorController({ log = null } = {}) {
       }
     },
 
-    /** What survived: outstanding runs that were never aborted, by path. */
+    /** What survived a teardown: runs the engine neither aborted nor let settle. */
     survivors() {
-      return controller
-        .activeRuns()
-        .filter((run) => !run.aborted)
-        .map((run) => ({ path: run.path, run: run.id }));
+      return controller.activeRuns().map((run) => ({ path: run.path, run: run.id }));
     },
   };
 
