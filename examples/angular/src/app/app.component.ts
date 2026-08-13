@@ -17,6 +17,7 @@ import { EnterpriseSelectSectionComponent } from "./sections/enterprise-select-s
 import { ConditionalSectionComponent } from "./sections/conditional-section.component";
 import { KeyedRowsSectionComponent } from "./sections/keyed-rows-section.component";
 import { OrdersSectionComponent } from "./sections/orders-section.component";
+import { InvoicesSectionComponent } from "./sections/invoices-section.component";
 import { TypedFormSectionComponent } from "./sections/typed-form-section.component";
 import { ZodFormSectionComponent } from "./sections/zod-form-section.component";
 
@@ -35,6 +36,7 @@ import { ZodFormSectionComponent } from "./sections/zod-form-section.component";
     EnterpriseSelectSectionComponent,
     KeyedRowsSectionComponent,
     OrdersSectionComponent,
+    InvoicesSectionComponent,
     ConditionalSectionComponent,
   ],
   template: `
@@ -60,6 +62,7 @@ import { ZodFormSectionComponent } from "./sections/zod-form-section.component";
 
       <app-keyed-rows-section />
       <app-orders-section />
+      <app-invoices-section />
 
       <app-conditional-section />
     </main>
