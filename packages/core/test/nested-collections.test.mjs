@@ -11,6 +11,7 @@ import { test } from "node:test";
 import { MdyFormEngine, array, createForm, field, group, record, required as mdyRequired, vanillaReactivity } from "../dist/index.js";
 
 const rows = () => group({ sku: field(""), qty: field(0) });
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 // ── What the refusal does today ────────────────────────────────────────────
 
@@ -282,19 +283,84 @@ test("record → record: a restored draft rebuilds both levels", async () => {
  * honest answer is a limitation, not a pass: a form that undoes a cell edit but not the row it sits
  * in is a promise half kept, and the phase that fixes it should start from here.
  */
-test("history does not cross a structural change, at either depth", () => {
+test("history crosses a structural change, at either depth and on any schedule", async () => {
+  // Synchronously: undo records what the scheduler has not seen yet, so a row declared a moment
+  // ago is undoable in the same task.
   const oneLevel = createForm({ orders: record(group({ customer: field("") })) }, { history: true });
+  await tick();
   oneLevel.f.orders.upsert("o1", { customer: "Ada" });
   oneLevel.undo();
-  assert.deepEqual(oneLevel.getValue(), { orders: { o1: { customer: "Ada" } } },
-    "one level: the row survives an undo");
+  assert.deepEqual(oneLevel.getValue(), { orders: {} }, "one level: a declared row is undoable synchronously");
+  oneLevel.redo();
+  assert.deepEqual(oneLevel.getValue(), { orders: { o1: { customer: "Ada" } } }, "and redo declares it again");
   oneLevel.destroy();
 
-  const nested = nestedForm();
+  // Removing a parent and undoing brings the whole subtree back — keys and values, both levels.
+  const nested = createForm(
+    { orders: record(group({ customer: field(""), lines: record(rows()) })) },
+    { history: true },
+  );
   nested.f.orders.upsert("o1", { customer: "Ada", lines: { l1: { sku: "S", qty: 1 } } });
+  await tick();
+  nested.f.orders.remove("o1");
   nested.undo();
-  assert.deepEqual(nested.getValue(), { orders: { o1: { customer: "Ada", lines: { l1: { sku: "S", qty: 1 } } } } },
-    "two levels: the same, which is what says this is not about nesting");
+  assert.deepEqual(nested.getValue(),
+    { orders: { o1: { customer: "Ada", lines: { l1: { sku: "S", qty: 1 } } } } },
+    "two levels: the removed subtree comes back whole");
+  nested.destroy();
+});
+
+test("undo of a parent whose child had a verdict pending stays coherent", async () => {
+  let release = () => {};
+  const gate = new Promise((r) => { release = r; });
+  const form = createForm({
+    orders: record(group({
+      customer: field(""),
+      lines: record(group({ lot: field("", [], { asyncValidators: [async () => { await gate; return ["bad lot"]; }] }) })),
+    })),
+  }, { history: true });
+  form.f.orders.upsert("o1", { customer: "Ada", lines: { l1: { lot: "L-9" } } });
+  await tick(); // async run starts, snapshot recorded
+  form.f.orders.remove("o1");
+  form.undo(); // the subtree comes back — as a fresh declaration, not a resurrection
+  release();
+  await tick(); await tick();
+  assert.deepEqual([...form.f.orders.keys()], ["o1"]);
+  assert.equal(form.f.orders.row("o1").lines.row("l1").lot.value(), "L-9");
+  // The restored row is a new declaration: the old run was aborted with its field, and the fresh
+  // field re-ran its validator against the restored value — so the verdict belongs to this row.
+  form.destroy();
+});
+
+test("redo after an undone rename applies the rename again, once", async () => {
+  const form = createForm(
+    { orders: record(group({ customer: field(""), lines: record(rows()) })) },
+    { history: true },
+  );
+  form.f.orders.upsert("o1", { customer: "Ada", lines: {} });
+  await tick();
+  form.f.orders.rename("o1", "o2");
+  form.undo();
+  assert.deepEqual([...form.f.orders.keys()], ["o1"]);
+  form.redo();
+  assert.deepEqual([...form.f.orders.keys()], ["o2"], "redo re-applies the whole rename");
+  assert.equal(form.canRedo(), false);
+  form.destroy();
+});
+
+test("a rename is one undo step, and what is not restored is stated", async () => {
+  const nested = createForm(
+    { orders: record(group({ customer: field(""), lines: record(rows()) })) },
+    { history: true },
+  );
+  nested.f.orders.upsert("o1", { customer: "Ada", lines: { l1: { sku: "S", qty: 1 } } });
+  await tick();
+  nested.f.orders.rename("o1", "o2");
+  nested.undo();
+  assert.deepEqual([...nested.f.orders.keys()], ["o1"], "one undo takes the rename back");
+  assert.equal(nested.f.orders.row("o1").lines.row("l1").sku.value(), "S", "with its subtree's values");
+  // The boundary history keeps: only the value is recorded — touched, dirty and validation
+  // verdicts are not restored, for structure exactly as for edits.
   nested.destroy();
 });
 

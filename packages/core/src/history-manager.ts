@@ -234,9 +234,21 @@ export class MdyHistoryManager {
     this._lastSnapshot = current;
   }
 
+  /**
+   * Records any change the snapshot effect has not seen yet, so undo/redo act on the value as it
+   * is *now*. The effect runs on the reactivity's schedule (a microtask for the vanilla graph), and
+   * a structural change — a row declared, removed or renamed — followed synchronously by undo()
+   * would otherwise find no entry and silently keep the change. With this, a change is undoable
+   * the moment it is made, not the moment the scheduler noticed it.
+   */
+  private _recordCurrent(): void {
+    this._record(this._rx.untracked(() => this._getValue()));
+  }
+
   /** Restores the previous recorded form value (no-op when history is empty). */
   undo(): void {
     this._flush();
+    this._recordCurrent();
     const prev = this._undoStack.pop();
     if (!prev) return;
     const current = this._rx.untracked(() => this._getValue());
@@ -257,6 +269,9 @@ export class MdyHistoryManager {
   /** Re-applies the value undone by the last {@link undo}. */
   redo(): void {
     this._flush();
+    // A change made after the undo invalidates what was undone — recording it clears the redo
+    // stack, which is the semantics every editor ships. Unchanged value, no-op.
+    this._recordCurrent();
     const next = this._redoStack.pop();
     if (!next) return;
     const current = this._rx.untracked(() => this._getValue());

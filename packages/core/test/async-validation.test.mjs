@@ -210,3 +210,25 @@ test("serverValidator factory produces a working field option", async () => {
     ["Email taken"],
   );
 });
+
+test("an async result that lands after its row was removed resurrects nothing", async () => {
+  const { record, group } = await import("../dist/index.js");
+  let release = () => {};
+  const gate = new Promise((r) => { release = r; });
+  const form = createForm({
+    lines: record(group({
+      lot: field("", [], { asyncValidators: [async () => { await gate; return ["Lot unavailable"]; }] }),
+    })),
+  });
+  form.f.lines.upsert("l1", { lot: "LOT-9" });
+  await tick(); // the async run starts
+  form.f.lines.remove("l1");
+  release();
+  await tick();
+  await tick();
+  // Nothing of the removed subtree came back: no key, no field, no error anywhere.
+  assert.deepEqual([...form.f.lines.keys()], []);
+  assert.deepEqual(form.getValue(), { lines: {} });
+  assert.equal(form.state.valid(), true, "a late verdict for a dead row must not gate the form");
+  form.destroy();
+});
