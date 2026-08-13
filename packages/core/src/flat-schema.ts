@@ -50,27 +50,65 @@ export function buildFlatFormSchema(
     return flat as MdyFormSchema;
   }
 
-  // Deepest first, so a collection inside a collection is built before the one that holds it.
-  const declared = [...collections].sort((a, b) => b.path.length - a.path.length);
+  const declared = [...collections];
+  const isUnder = (name: string, prefix: string): boolean => name.startsWith(`${prefix}.`);
+
+  /**
+   * The item a collection's rows share, and the row keys the fields imply.
+   *
+   * A declared collection may live *inside* another's row (`orders.o1.lines` inside `orders`), and
+   * its path carries the row key it was flattened under. Structurally every row shares one item, so
+   * the first row that declares a child describes it — the same convention the fields follow — and
+   * the child's subtree becomes a real collection descriptor rather than a group of dotted keys.
+   * Values are not read here: each row's own leaves arrive through the parent's initial, one row at
+   * a time, exactly as they were flattened.
+   */
   const rowOf = (prefix: string): { item: unknown; rows: Set<string> } => {
+    const inside = declared.filter((c) => isUnder(c.path, prefix));
+    const direct = inside.filter((c) => !inside.some((o) => o.path !== c.path && isUnder(c.path, o.path)));
+    // Sub-path within a row → the first row that declares it.
+    const children = new Map<string, { kind: "array" | "record"; path: string }>();
+    for (const c of direct) {
+      const [key, ...sub] = c.path.slice(prefix.length + 1).split(".");
+      const within = sub.join(".");
+      if (key !== undefined && within.length > 0 && !children.has(within)) {
+        children.set(within, { kind: c.kind, path: c.path });
+      }
+    }
+    const claimedByChild = (within: string): boolean =>
+      [...children.keys()].some((s) => within === s || within.startsWith(`${s}.`));
+
     const rows = new Set<string>();
     const item: Record<string, unknown> = {};
+    let leaf: unknown = null;
     for (const f of fields) {
-      if (!f.name.startsWith(`${prefix}.`)) continue;
+      if (!isUnder(f.name, prefix)) continue;
       const rest = f.name.slice(prefix.length + 1);
       const [key, ...tail] = rest.split(".");
       rows.add(key!);
       // Every row has the same shape, so the first one describes the item and the rest confirm it.
       const within = tail.join(".");
-      if (within.length === 0) return { item: field(mdyEmptyValueFor(f) as never, []), rows };
+      if (within.length === 0) { leaf = field(mdyEmptyValueFor(f) as never, []); continue; }
+      if (claimedByChild(within)) continue;
       if (!(within in item)) item[within] = field(mdyEmptyValueFor(f) as never, []);
+    }
+    // A row may exist only because a child collection was declared under it.
+    for (const c of direct) rows.add(c.path.slice(prefix.length + 1).split(".")[0]!);
+    if (leaf !== null) return { item: leaf, rows };
+    for (const [within, child] of children) {
+      const { item: childItem } = rowOf(child.path);
+      item[within] = child.kind === "array" ? array(childItem as never) : record(childItem as never);
     }
     return { item: group(nest(item)), rows };
   };
 
+  // Only a collection not inside another one anchors a schema key; nested ones live in their
+  // parent's item, where the row that owns them declares them.
+  const roots = declared.filter((c) => !declared.some((o) => o.path !== c.path && isUnder(c.path, o.path)));
+
   const schema: Record<string, unknown> = {};
   const claimed = new Set<string>();
-  for (const { path, kind } of declared) {
+  for (const { path, kind } of roots) {
     const { item, rows } = rowOf(path);
     for (const f of fields) if (f.name.startsWith(`${path}.`)) claimed.add(f.name);
     // Each row carries its own values: the flattened fields hold them one leaf at a time, and a row
