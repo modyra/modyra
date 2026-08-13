@@ -211,6 +211,28 @@ describe("typed form — compile-time contracts", () => {
     expect(form.f.lines.path).toBe("lines");
   });
 
+  it("a record row's own record is typed all the way down", () => {
+    const form = mdyForm({
+      orders: record(group({
+        customer: field(""),
+        lines: record(group({ sku: field(""), qty: field<number>(1) })),
+      })),
+    });
+
+    // The nested handle is this framework's: its cells carry signals like a top-level one.
+    const sku: string = form.f.orders.row("o1").lines.row("l1").sku.value();
+    const qty: number = form.f.orders.row("o1").lines.row("l1").qty.value();
+    assertType<Equal<typeof sku, string>>();
+    assertType<Equal<typeof qty, number>>();
+
+    // And the value type nests the same way the schema does.
+    assertType<Equal<ReturnType<typeof form.value>["orders"], Record<string, {
+      customer: string;
+      lines: Record<string, { sku: string; qty: number }>;
+    }>>>();
+    form.destroy();
+  });
+
   it("MdyTypedFormLike is a structural supertype of every typed form", () => {
     const form = makeForm();
     const like: MdyTypedFormLike = form; // must be assignable

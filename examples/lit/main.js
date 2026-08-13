@@ -252,6 +252,8 @@ class KeyedRows extends LitElement {
       group({
         item: field("", [required()]),
         qty: field(1, [(value) => (Number(value) >= 1 ? [] : ["At least 1"])]),
+        // A row's own collection: the lots this line draws from, keyed by lot code.
+        lots: record(field(1)),
       }),
     ),
   });
@@ -261,9 +263,9 @@ class KeyedRows extends LitElement {
     this.editing = new Set(["tmp:1"]);
     this.descending = false;
     this.rows.f.lines.setAll({
-      12: { item: "Espresso", qty: 2 },
-      34: { item: "Cornetto", qty: 1 },
-      "tmp:1": { item: "", qty: 1 },
+      12: { item: "Espresso", qty: 2, lots: { A: 2 } },
+      34: { item: "Cornetto", qty: 1, lots: { B: 1 } },
+      "tmp:1": { item: "", qty: 1, lots: {} },
     });
     // The value and the verdict are read in `render`, so the controller keeps them fresh without
     // this component knowing which cell changed.
@@ -294,6 +296,13 @@ class KeyedRows extends LitElement {
     this.editing = next;
   }
 
+  #addLot(key) {
+    const lots = this.rows.f.lines.row(key).lots;
+    const taken = new Set(lots.keys());
+    const code = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].find((c) => !taken.has(c)) ?? `L${taken.size}`;
+    lots.upsert(code, 1);
+  }
+
   #remove(key) {
     this.rows.f.lines.remove(key);
     const next = new Set(this.editing);
@@ -306,7 +315,7 @@ class KeyedRows extends LitElement {
     return html`
       <table class="keyed-rows">
         <thead>
-          <tr><th>Key</th><th>Item</th><th>Qty</th><th></th></tr>
+          <tr><th>Key</th><th>Item</th><th>Qty</th><th>Lots</th><th></th></tr>
         </thead>
         <tbody>
           ${keys.map((key) => html`
@@ -324,6 +333,11 @@ class KeyedRows extends LitElement {
             .field=${this.rows.f.lines.cell(key, "qty")}></mdy-number-field>`
         : html`${this.rows.f.lines.cell(key, "qty").value() ?? ""}`}
               </td>
+              <td class="keyed-rows-lots">
+                ${[...this.rows.f.lines.row(key).lots.keys()].map((code) => html`<span
+                  class="keyed-rows-lot">${code}×${this.rows.f.lines.row(key).lots.row(code).value()}</span>`)}
+                <button type="button" @click=${() => this.#addLot(key)}>Add lot</button>
+              </td>
               <td>
                 <button type="button" @click=${() => this.#toggle(key)}>
                   ${this.editing.has(key) ? "Done" : "Edit"}
@@ -340,7 +354,7 @@ class KeyedRows extends LitElement {
         <button type="button" @click=${() => { this.descending = !this.descending; }}>
           ${this.descending ? "Sort ascending" : "Sort descending"}
         </button>
-        <button type="button" @click=${() => this.rows.f.lines.upsert(`tmp:${Date.now()}`, { item: "", qty: 1 })}>
+        <button type="button" @click=${() => this.rows.f.lines.upsert(`tmp:${Date.now()}`, { item: "", qty: 1, lots: {} })}>
           Add row
         </button>
         <button type="button" @click=${() => { this.editing = new Set(); }}>Close every editor</button>

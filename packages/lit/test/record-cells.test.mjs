@@ -74,3 +74,27 @@ test("removing the row empties an element still mounted on it", async () => {
   assert.equal(inputOf(cell).value, "");
   assert.deepEqual(form.value().rows, {});
 });
+
+test("an element bound two collections deep follows its own row's subtree", async () => {
+  const form = createLitForm({
+    orders: record(group({
+      customer: field(""),
+      lines: record(group({ sku: field(""), qty: field(0) })),
+    })),
+  });
+  form.f.orders.upsert("o1", { customer: "Ada", lines: { l1: { sku: "SKU-1", qty: 2 } } });
+
+  const cell = await mount("mdy-text-field", (el) => {
+    el.field = form.f.orders.row("o1").lines.row("l1").sku;
+  });
+  assert.equal(inputOf(cell).value, "SKU-1");
+
+  inputOf(cell).value = "SKU-typed";
+  inputOf(cell).dispatchEvent(new window.Event("input", { bubbles: true }));
+  assert.equal(form.value().orders.o1.lines.l1.sku, "SKU-typed");
+
+  // Removing the order takes the subtree; the mounted element goes inert rather than throwing.
+  form.f.orders.remove("o1");
+  await settled(cell);
+  assert.deepEqual(form.value().orders, {});
+});

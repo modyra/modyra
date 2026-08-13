@@ -65,3 +65,31 @@ test("removing a row takes its value with it", async ({ page }) => {
   await expect(page.locator(rowByKey("34"))).toHaveCount(0);
   await expect(page.locator(verdict)).not.toContainText('"Cornetto"');
 });
+
+test("a row's own lots belong to that row, whatever happens around them", async ({ page }) => {
+  // Seeded: row 12 holds lot A, row 34 holds lot B — visible in the row and in the verdict.
+  await expect(page.locator(rowByKey("12")).locator(".keyed-rows-lots")).toContainText("A×2");
+  await expect(page.locator(rowByKey("34")).locator(".keyed-rows-lots")).toContainText("B×1");
+  await expect(page.locator(verdict)).toContainText('"A": 2');
+
+  // Adding a lot touches one row's collection and no other's.
+  await page.locator(rowByKey("12")).getByRole("button", { name: "Add lot" }).click();
+  await expect(page.locator(rowByKey("12")).locator(".keyed-rows-lots")).toContainText("B×1");
+  await expect(page.locator(rowByKey("34")).locator(".keyed-rows-lots")).toHaveText(/^(?!.*A×).*B×1.*$/s);
+
+  // Sorting moves rows, not their subtrees: each row keeps its own lots.
+  await page.getByRole("button", { name: "Sort descending" }).click();
+  await expect(page.locator(rowByKey("12")).locator(".keyed-rows-lots")).toContainText("A×2");
+  await expect(page.locator(rowByKey("34")).locator(".keyed-rows-lots")).toContainText("B×1");
+});
+
+test("removing a row takes its lots out of the value with it", async ({ page }) => {
+  await expect(page.locator(verdict)).toContainText('"B": 1');
+
+  await page.locator(rowByKey("34")).getByRole("button", { name: "Remove" }).click();
+
+  await expect(page.locator(rowByKey("34"))).toHaveCount(0);
+  await expect(page.locator(verdict)).not.toContainText('"B": 1');
+  // The sibling's subtree is untouched.
+  await expect(page.locator(verdict)).toContainText('"A": 2');
+});

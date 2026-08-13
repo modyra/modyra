@@ -438,15 +438,18 @@ if (rowsHost && rowsState) {
       mdyGroup({
         item: mdyField("", [(value) => (value ? [] : ["Required"])]),
         qty: mdyField(1, [(value) => (Number(value) >= 1 ? [] : ["At least 1"])]),
+        // A row's own collection: the lots this line draws from, keyed by lot code. It lives and
+        // dies with its row, and no other row can see it.
+        lots: mdyRecord(mdyField(1)),
       }),
     ),
   });
 
   // The rows a server would have sent: its ids, serialised, plus one the user started here.
   lines.f.lines.setAll({
-    12: { item: "Espresso", qty: 2 },
-    34: { item: "Cornetto", qty: 1 },
-    "tmp:1": { item: "", qty: 1 },
+    12: { item: "Espresso", qty: 2, lots: { A: 2 } },
+    34: { item: "Cornetto", qty: 1, lots: { B: 1 } },
+    "tmp:1": { item: "", qty: 1, lots: {} },
   });
 
   const editing = new Set(["tmp:1"]);
@@ -481,7 +484,7 @@ if (rowsHost && rowsState) {
     const table = document.createElement("table");
     table.className = "keyed-rows";
     table.innerHTML =
-      "<thead><tr><th>Key</th><th>Item</th><th>Qty</th><th></th></tr></thead><tbody></tbody>";
+      "<thead><tr><th>Key</th><th>Item</th><th>Qty</th><th>Lots</th><th></th></tr></thead><tbody></tbody>";
     const body = table.querySelector("tbody");
 
     for (const key of keys) {
@@ -507,6 +510,26 @@ if (rowsHost && rowsState) {
         }
         row.append(cell);
       }
+
+      // The row's own lots, read through the row's own handle — no path is spelled here.
+      const lots = document.createElement("td");
+      lots.className = "keyed-rows-lots";
+      const lotHandles = lines.f.lines.row(key).lots;
+      for (const code of lotHandles.keys()) {
+        const chip = document.createElement("span");
+        chip.className = "keyed-rows-lot";
+        chip.textContent = `${code}×${lotHandles.row(code).value()}`;
+        lots.append(chip);
+      }
+      lots.append(
+        button("Add lot", () => {
+          const taken = new Set(lotHandles.keys());
+          const code = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].find((c) => !taken.has(c)) ?? `L${taken.size}`;
+          lotHandles.upsert(code, 1);
+          renderRows();
+        }),
+      );
+      row.append(lots);
 
       const actions = document.createElement("td");
       actions.className = "keyed-rows-actions";
@@ -553,7 +576,7 @@ if (rowsHost && rowsState) {
         renderRows();
       }),
       button("Add row", () => {
-        lines.f.lines.upsert(`tmp:${Date.now()}`, { item: "", qty: 1 });
+        lines.f.lines.upsert(`tmp:${Date.now()}`, { item: "", qty: 1, lots: {} });
         renderRows();
       }),
       button("Close every editor", () => {

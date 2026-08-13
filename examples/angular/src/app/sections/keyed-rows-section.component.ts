@@ -27,7 +27,7 @@ import { required as mdyRequired } from "@modyra/core";
       <mdy-form [form]="rows">
       <table class="keyed-rows">
         <thead>
-          <tr><th>Key</th><th>Item</th><th>Qty</th><th></th></tr>
+          <tr><th>Key</th><th>Item</th><th>Qty</th><th>Lots</th><th></th></tr>
         </thead>
         <tbody>
           @for (key of orderedKeys(); track key) {
@@ -54,6 +54,14 @@ import { required as mdyRequired } from "@modyra/core";
                 } @else {
                   {{ rows.f.lines.row(key).qty.value() }}
                 }
+              </td>
+
+              <!-- The row's own collection, reached through the row's typed handle. -->
+              <td class="keyed-rows-lots">
+                @for (lot of lotEntries(key); track lot.code) {
+                  <span class="keyed-rows-lot">{{ lot.code }}×{{ lot.qty }}</span>
+                }
+                <button type="button" (click)="addLot(key)">Add lot</button>
               </td>
 
               <td class="keyed-rows-actions">
@@ -92,6 +100,8 @@ export class KeyedRowsSectionComponent {
       group({
         item: field("", [mdyRequired()]),
         qty: field<number>(1, [(value) => (Number(value) >= 1 ? [] : ["At least 1"])]),
+        // A row's own collection: the lots this line draws from, keyed by lot code.
+        lots: record(field<number>(1)),
       }),
     ),
   });
@@ -102,15 +112,27 @@ export class KeyedRowsSectionComponent {
   constructor() {
     // The rows a server would have sent: its ids, serialised, plus one started here.
     this.rows.f.lines.setAll({
-      12: { item: "Espresso", qty: 2 },
-      34: { item: "Cornetto", qty: 1 },
-      "tmp:1": { item: "", qty: 1 },
+      12: { item: "Espresso", qty: 2, lots: { A: 2 } },
+      34: { item: "Cornetto", qty: 1, lots: { B: 1 } },
+      "tmp:1": { item: "", qty: 1, lots: {} },
     });
   }
 
   orderedKeys(): readonly string[] {
     const keys = [...this.rows.f.lines.keys()];
     return keys.sort((a, b) => (this.descending() ? b.localeCompare(a) : a.localeCompare(b)));
+  }
+
+  lotEntries(key: string): ReadonlyArray<{ code: string; qty: number }> {
+    const lots = this.rows.f.lines.row(key).lots;
+    return [...lots.keys()].map((code) => ({ code, qty: lots.row(code).value() }));
+  }
+
+  addLot(key: string): void {
+    const lots = this.rows.f.lines.row(key).lots;
+    const taken = new Set(lots.keys());
+    const code = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].find((c) => !taken.has(c)) ?? `L${taken.size}`;
+    lots.upsert(code, 1);
   }
 
   closeEveryEditor(): void {
@@ -142,7 +164,7 @@ export class KeyedRowsSectionComponent {
   }
 
   add(): void {
-    this.rows.f.lines.upsert(`tmp:${Date.now()}`, { item: "", qty: 1 });
+    this.rows.f.lines.upsert(`tmp:${Date.now()}`, { item: "", qty: 1, lots: {} });
   }
 
   /** Read through the form's own value signal, so the panel follows a cell edit. */
