@@ -108,7 +108,10 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           npx playwright install --with-deps chromium
-          pnpm run test:e2e -- --project=angular --project=plain --project=lit
+          node scripts/audit-baseline-parity.mjs
+          pnpm run build:demo
+          pnpm run build:examples
+          npx playwright test --project=angular --project=plain --project=lit
 
       - name: Browser smoke test (full matrix, main)
         if: github.event_name != 'pull_request'
