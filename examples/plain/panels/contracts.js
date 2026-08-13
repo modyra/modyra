@@ -197,7 +197,7 @@ export const contractsPanel = {
       if (last) bands.row(last).price.set(99);
       draw();
     });
-    actionWithHint(bar, "Sort descending", "inverte solo l'ordine di lettura: le chiavi non cambiano", () => {
+    actionWithHint(bar, "Sort bands descending", "inverte solo l'ordine di lettura: le chiavi non cambiano", () => {
       descending = !descending;
       draw();
     });

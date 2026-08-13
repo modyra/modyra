@@ -39,7 +39,9 @@ test("an approved line is readonly but consulted: not editable, still in the val
   const scope = scopeOf(page, testInfo.project.name);
   await scope.getByRole("button", { name: "Approve the line" }).click();
   await expect(scope.locator("[data-line] input").first()).not.toBeEditable();
+  // The readout is written after the paint it describes, so the model is asked until it answers.
+  await expect.poll(async () => (await state(page, testInfo.project.name)).approved)
+    .toContain("invoices.INV-1.lines.l1");
   const s = await state(page, testInfo.project.name);
   expect(s.value["INV-1"].lines.l1.desc).toBe("Consulting");
-  expect(s.approved).toContain("invoices.INV-1.lines.l1");
 });

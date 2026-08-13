@@ -61,7 +61,7 @@ test("a price that rises with volume is refused one level up, on the line that o
 test("sorting for reading never renames: the keys are the model's, the order is the screen's", async ({ page }, testInfo) => {
   const scope = scopeOf(page, testInfo.project.name);
   const before = await state(page, testInfo.project.name);
-  await scope.getByRole("button", { name: "Sort descending" }).click();
+  await scope.getByRole("button", { name: "Sort bands descending" }).click();
   await expect.poll(async () => (await state(page, testInfo.project.name)).readingOrder)
     .toEqual([...before.readingOrder].reverse());
   const after = await state(page, testInfo.project.name);
