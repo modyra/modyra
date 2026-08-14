@@ -72,6 +72,14 @@ export function createHydratedDraftStorage(
 ): MdyAsyncDraftStorage {
   const { backend, keys, onError } = options;
   const cache = new Map<string, string>();
+  /**
+   * Keys the consumer removed while hydration was still in flight.
+   *
+   * An absent cache entry means two different things during hydration — never set, and deliberately
+   * discarded — and the arriving value has to be kept in the first case and dropped in the second.
+   * Without the distinction a draft the user discarded comes back when the backend answers.
+   */
+  const discarded = new Set<string>();
   let inFlight: Promise<unknown> = Promise.resolve();
 
   const report = (key: string, error: unknown): void => {
@@ -84,8 +92,9 @@ export function createHydratedDraftStorage(
     keys.map(async (key) => {
       try {
         const value = await backend.getItem(key);
-        // A write that landed while hydration was in flight is newer than what the store held.
-        if (value !== null && !cache.has(key)) cache.set(key, value);
+        // Anything the consumer did while the read was in flight is newer than what the store held:
+        // a write keeps what was written, and a removal stays removed.
+        if (value !== null && !cache.has(key) && !discarded.has(key)) cache.set(key, value);
       } catch (error) {
         report(key, error);
       }
@@ -107,11 +116,14 @@ export function createHydratedDraftStorage(
 
     write(key, value) {
       cache.set(key, value);
+      // A write is newer than a removal that preceded it, so the key is a live one again.
+      discarded.delete(key);
       enqueue(key, () => backend.setItem(key, value));
     },
 
     remove(key) {
       cache.delete(key);
+      discarded.add(key);
       enqueue(key, () => backend.removeItem(key));
     },
   };

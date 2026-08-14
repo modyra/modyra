@@ -20,9 +20,14 @@ function fakeBackend({ seed = {}, delay = 5, failWrites = false, failReads = fal
     setFailWrites(v) { failWrites = v; },
     async getItem(key) {
       calls.get++;
+      // What the read will answer is decided when the read is *issued*: a request that has left for
+      // an out-of-process store cannot see a removal made while it is in flight. Reading the map
+      // after the delay instead makes every race here resolve consistently by accident, and a store
+      // that resurrects a discarded draft passes.
+      const answer = store.has(key) ? store.get(key) : null;
       await tick(delay);
       if (failReads) throw new Error("read failed: " + key);
-      return store.has(key) ? store.get(key) : null;
+      return answer;
     },
     async setItem(key, value) {
       calls.set++;
@@ -189,4 +194,36 @@ test("an onError that throws does not break the flush chain", async () => {
   storage.write("form", "two");
   await storage.flushed();
   assert.equal(backend.store.get("form"), "two", "the queue survived a throwing reporter");
+});
+
+test("a draft discarded while the store was still reading stays discarded", async () => {
+  // An absent cache entry means two things during hydration — never set, and thrown away by the
+  // user — and the arriving value must be kept only in the first. A React Native app opens, the
+  // user presses discard before startup finishes, and the draft came back.
+  const backend = fakeBackend({ seed: { form: "older, from the backend" }, delay: 20 });
+  const storage = createHydratedDraftStorage({ backend, keys: ["form"] });
+
+  storage.remove("form");
+  assert.equal(storage.read("form"), null);
+
+  await storage.ready;
+  assert.equal(storage.read("form"), null, "hydration resurrected a draft the user discarded");
+
+  await storage.flushed();
+  assert.equal(backend.store.has("form"), false, "the removal never reached the store");
+});
+
+test("a write after a discard during hydration is the value that survives", async () => {
+  // The removal is not sticky: a write is newer than the discard that preceded it, and hydration
+  // must not treat the key as discarded once something has been written to it again.
+  const backend = fakeBackend({ seed: { form: "older, from the backend" }, delay: 20 });
+  const storage = createHydratedDraftStorage({ backend, keys: ["form"] });
+
+  storage.remove("form");
+  storage.write("form", "typed after the discard");
+
+  await storage.ready;
+  assert.equal(storage.read("form"), "typed after the discard");
+  await storage.flushed();
+  assert.equal(backend.store.get("form"), "typed after the discard");
 });
