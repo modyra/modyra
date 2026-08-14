@@ -201,12 +201,61 @@ export const integer = (message = 'Enter a whole number'): ValidatorFn<number | 
   }, { step: 1 });
 
 /**
- * Option whitelist: the value must be one of `values` (compared with
- * `Object.is`). This is the client-side anti-tampering guard for
- * option-based fields — a select offering "one"/"two" must not accept a
- * scripted `set("three")`. Empty values pass (pair with `required()` to
- * mandate a choice). Remember client-side checks are defense-in-depth:
- * the server must re-validate (see docs/guides/security.md).
+ * Whether a value is the option that was offered.
+ *
+ * `Object.is` is the whole answer for a primitive option and the wrong one for an object: a draft is
+ * written as JSON and read back as JSON, so a user who picked `{ id: 1, label: "One" }`, left the
+ * form and came back was told their own choice is not on the list — with nothing to do about it but
+ * pick the same thing again. An option is "whatever the option list holds", which the value contract
+ * states in those words, so an object option has to be recognised by what it is rather than by which
+ * copy of it this is.
+ *
+ * Compared by structure, and only for the shapes JSON round-trips: plain objects, arrays, dates and
+ * primitives. Anything else — a class instance, a Map, an option carrying a function — keeps
+ * identity, because a copy of one is not a value this can claim to recognise.
+ *
+ * This does not weaken the guard it exists for. A scripted `set({ id: 3 })` is refused, and so is an
+ * offered option with a member missing, a member of the wrong type, or a member added.
+ */
+function sameOption(offered: unknown, value: unknown, depth = 0): boolean {
+  if (Object.is(offered, value)) return true;
+  // A depth this reaches is a structure no option list has; refusing to recurse further reports "not
+  // that option", which is the safe direction.
+  if (depth > 8) return false;
+  if (offered === null || value === null) return false;
+  if (typeof offered !== "object" || typeof value !== "object") return false;
+
+  if (offered instanceof Date || value instanceof Date) {
+    return offered instanceof Date && value instanceof Date && offered.getTime() === value.getTime();
+  }
+  if (Array.isArray(offered) || Array.isArray(value)) {
+    if (!Array.isArray(offered) || !Array.isArray(value) || offered.length !== value.length) return false;
+    return offered.every((entry, index) => sameOption(entry, value[index], depth + 1));
+  }
+  if (!isPlainObject(offered) || !isPlainObject(value)) return false;
+
+  const offeredKeys = Object.keys(offered);
+  if (offeredKeys.length !== Object.keys(value).length) return false;
+  return offeredKeys.every(
+    (key) => Object.hasOwn(value, key) && sameOption(offered[key], value[key], depth + 1),
+  );
+}
+
+/** An object carrying data rather than behaviour — what a document or a JSON draft can produce. */
+function isPlainObject(value: object): value is Record<string, unknown> {
+  const prototype = Object.getPrototypeOf(value) as unknown;
+  return prototype === Object.prototype || prototype === null;
+}
+
+/**
+ * Option whitelist: the value must be one of `values`. This is the client-side anti-tampering guard
+ * for option-based fields — a select offering "one"/"two" must not accept a scripted `set("three")`.
+ * Empty values pass (pair with `required()` to mandate a choice). Remember client-side checks are
+ * defense-in-depth: the server must re-validate (see docs/guides/security.md).
+ *
+ * An option is compared by what it is: a primitive by value, an object by its members. A draft is
+ * written and read back as JSON, so an object option arrives as a different object holding the same
+ * data, and identity would call a user's own saved choice tampering.
  */
 export const oneOf = (
   values: readonly unknown[],
@@ -214,7 +263,7 @@ export const oneOf = (
 ): ValidatorFn<unknown> =>
   (value) => {
     if (value === null || value === undefined || value === "") return [];
-    return values.some((allowed) => Object.is(allowed, value))
+    return values.some((allowed) => sameOption(allowed, value))
       ? []
       : [message ?? `Value must be one of: ${values.map(String).join(", ")}`];
   };
@@ -229,7 +278,7 @@ export const eachOneOf = (
 ): ValidatorFn<readonly unknown[] | null> =>
   (value) => {
     if (!Array.isArray(value) || value.length === 0) return [];
-    return value.every((item) => values.some((allowed) => Object.is(allowed, item)))
+    return value.every((item) => values.some((allowed) => sameOption(allowed, item)))
       ? []
       : [message ?? `Every value must be one of: ${values.map(String).join(", ")}`];
   };

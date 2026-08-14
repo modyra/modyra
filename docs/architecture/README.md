@@ -66,6 +66,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0048: A panel does not print what it masks](0048-a-panel-does-not-print-what-it-masks.md) — a masked field's value is taken out of the errors beside it, and a snapshot describes a file rather than handing it over
 - [ADR 0049: A released custodian owes no focus](0049-a-released-custodian-owes-no-focus.md) — `release()` ends the borrow, so a widget being torn down places no focus; a named target is still honoured, and the fallback keeps the case it was written for
 - [ADR 0050: A document cannot make the form stop answering](0050-a-document-cannot-make-the-form-stop-answering.md) — a pattern whose shape backtracks exponentially is refused like one that will not parse, and the field survives the refusal
+- [ADR 0051: An option is recognised by what it holds](0051-an-option-is-recognised-by-what-it-holds.md) — `oneOf` compares an object option by its members, so a draft's round trip is not tampering, and every forgery it refused it still refuses
 
 ## Security-relevant records
 
