@@ -98,3 +98,27 @@ test("a row that is a collection is declared and read on this adapter's graph", 
   assert.equal(form.f.orders.row("o1").lines.at(0).sku.value(), "S-2");
   form.destroy();
 });
+
+test("a row is taken apart as one change: rename and remove on this adapter's graph", () => {
+  // Declaring a row was made atomic; ending one was not, and the two are the same hazard. A row ends
+  // cell by cell, so a runtime whose computations run eagerly reads the form between two of them and
+  // finds a shape the schema does not describe.
+  const form = createForm(
+    { rows: record(group({ a: field(""), b: field("") })), lines: array(group({ a: field(""), b: field("") })) },
+    { reactivity: solidReactivity() },
+  );
+
+  form.f.rows.upsert("r", { a: "A" });
+  form.f.rows.rename("r", "q");
+  assert.deepEqual(form.getValue().rows, { q: { a: "A", b: "" } });
+  form.f.rows.remove("q");
+  assert.deepEqual(form.getValue().rows, {});
+
+  form.f.lines.push({ a: "A", b: "B" });
+  form.f.lines.push({ a: "C", b: "D" });
+  form.f.lines.remove(0);
+  assert.deepEqual(form.getValue().lines, [{ a: "C", b: "D" }]);
+  form.f.lines.setAll([{ a: "X", b: "Y" }]);
+  assert.deepEqual(form.getValue().lines, [{ a: "X", b: "Y" }]);
+  form.destroy();
+});

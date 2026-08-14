@@ -76,20 +76,25 @@ export interface MdyArrayManagerDeps {
  * at the first `push` in front of a user.
  */
 function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record"; readonly item?: unknown }): void {
-  if (node.kind === "array" || node.kind === "record") {
-    assertRowShape((node as { readonly item: MdyRowNode }).item);
-    return;
-  }
-  if (node.kind === "group") {
-    for (const child of Object.values(node.children)) {
-      assertRowShape(child as MdyRowNode);
+  // Over a stack: the depth this walks is the schema's own, and a schema built from a document has
+  // no cap — a recursive check would refuse a deep form by exhausting the stack, which is not the
+  // refusal this function exists to give.
+  const pending: Array<MdyRowNode | { readonly kind: "array" | "record"; readonly item?: unknown }> = [node];
+  while (pending.length > 0) {
+    const current = pending.pop()!;
+    if (current.kind === "array" || current.kind === "record") {
+      pending.push((current as { readonly item: MdyRowNode }).item);
+      continue;
     }
-    return;
-  }
-  if (node.kind !== "field") {
-    throw new Error(
-      `[modyra] A row may hold a field, a group or a collection — not ${String((node as { kind: string }).kind)}`,
-    );
+    if (current.kind === "group") {
+      for (const child of Object.values(current.children)) pending.push(child as MdyRowNode);
+      continue;
+    }
+    if (current.kind !== "field") {
+      throw new Error(
+        `[modyra] A row may hold a field, a group or a collection — not ${String((current as { kind: string }).kind)}`,
+      );
+    }
   }
 }
 
@@ -325,6 +330,14 @@ export class MdyArrayManager implements MdyNestedCollection {
    * survive are marked clean here rather than by being destroyed.
    */
   private _rebuild(values: unknown[], movedFrom = 0): void {
+    // The whole structural change is one change to observe, ending rows included. Registration alone
+    // was batched, which left the other half exposed: a runtime whose computations run eagerly reads
+    // the form between a row's cells ending and finds a shape the schema does not describe, so a
+    // `remove` or a `setAll` raised where a `push` had been made safe.
+    this._batched(() => this._rebuildNow(values, movedFrom));
+  }
+
+  private _rebuildNow(values: unknown[], movedFrom: number): void {
     const prevCount = this._rowCountSig();
     // What the list holds now, as plain data: the state to go back to if writing the new rows raises.
     const before = this._currentValues();
@@ -339,12 +352,7 @@ export class MdyArrayManager implements MdyNestedCollection {
     this._rowCountSig.set(values.length);
     if (values.length < prevCount) this._deps.engine.refreshPathGate(this._deps.path);
     try {
-      // One structural change, one change to observe: a runtime whose computations run eagerly would
-      // otherwise re-read the form between two of a row's cells and find a shape the schema does not
-      // describe. A runtime without batching runs exactly as before.
-      this._batched(() => {
-        values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
-      });
+      values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
     } catch (error) {
       // Reading a row's value can raise — a getter over a store that is not loaded, a proxy that
       // refuses. The list goes back to the rows it had, because a count that says one thing while
@@ -352,9 +360,7 @@ export class MdyArrayManager implements MdyNestedCollection {
       // engine, so restoring it cannot raise in turn.
       this._rowCountSig.set(before.length);
       this._deps.engine.refreshPathGate(this._deps.path);
-      this._batched(() => {
-        before.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
-      });
+      before.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
       throw error;
     }
     // Update tracking after rebuild (structural ops are always atomic)

@@ -304,9 +304,14 @@ export class MdyRecordManager implements MdyNestedCollection {
 
   remove(key: string): void {
     if (!this._declared.delete(key)) return;
-    this._destroyNestedUnder(`${this._deps.path}.${key}`);
-    this._keysSig.update((keys) => keys.filter((k) => k !== key));
-    this._deps.engine.refreshPathGate(this._deps.path);
+    // One change, like the declaration is: a row ends cell by cell, and a runtime whose computations
+    // run eagerly reads the form between two of them — finding a row holding some of its cells,
+    // which is a shape the schema does not describe and a read that raises.
+    this._batched(() => {
+      this._destroyNestedUnder(`${this._deps.path}.${key}`);
+      this._keysSig.update((keys) => keys.filter((k) => k !== key));
+      this._deps.engine.refreshPathGate(this._deps.path);
+    });
   }
 
   /**
@@ -391,9 +396,13 @@ export class MdyRecordManager implements MdyNestedCollection {
     this._deps.engine.carryBindings(
       leaves.map((suffix) => [`${this._deps.path}.${from}${suffix}`, `${this._deps.path}.${to}${suffix}`] as const),
     );
-    this.remove(from);
-    this.upsert(to, value);
-    this._writeFlags(to, flags);
+    // The row leaves one key and arrives at another as one change: between the two it exists under
+    // neither, and an eager runtime reading there sees a form the schema cannot describe.
+    this._batched(() => {
+      this.remove(from);
+      this.upsert(to, value);
+      this._writeFlags(to, flags);
+    });
   }
 
   /** Runs `write` as one change where the runtime can, and plainly where it cannot. */

@@ -8,7 +8,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MdyFormEngine, array, createForm, field, group, record, required as mdyRequired, vanillaReactivity } from "../dist/index.js";
+import { MdyFormEngine, array, buildDynamicFormSchema, createForm, field, group, parseDynamicForm, record, required as mdyRequired, vanillaReactivity } from "../dist/index.js";
 
 const rows = () => group({ sku: field(""), qty: field(0) });
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -633,4 +633,51 @@ test("a nested collection is reachable through the handle tree, at both kinds", 
   positional.f.items.at(0).upsert("j", { bin: "B" });
   assert.deepEqual(positional.getValue().items[0], { k: { bin: "A" }, j: { bin: "B" } });
   positional.destroy();
+});
+
+test("a document the contract accepts is a document the engine builds", () => {
+  // The parser was made iterative when the depth cap came out; the walks after it were not, so a
+  // document passed every check the contract offers and failed when it was used — as a stack
+  // overflow, which carries no path, cannot be caught by name, and looks like a defect in the
+  // consumer's own code. No number is pinned here: what breaks a recursive walk is how much stack
+  // was left, which is a property of the run and not of the document.
+  const depth = 5000;
+  let node = { node: "field", field: { kind: "text" } };
+  for (let level = 0; level < depth; level += 1) node = { node: "array", item: node };
+  const schema = { node: "group", children: { deep: node } };
+
+  const parsed = parseDynamicForm({ version: 3, schema });
+  assert.deepEqual(parsed.diagnostics ?? [], [], "the parser refused a document it is supposed to accept");
+
+  const form = createForm(buildDynamicFormSchema(schema), {
+    reactivity: vanillaReactivity(),
+    autoActivate: false,
+  });
+  assert.deepEqual(form.getValue().deep, [], "the collection the document declared is not there");
+  form.destroy();
+});
+
+test("rows at every level are bounded by the stack, and the bound is far above what a form holds", () => {
+  // The declaration walks are iterative; instantiating a row at *every* level is not — each level's
+  // manager builds the next while its own call is still on the stack. This pins the working depth
+  // rather than the breaking one: what a form is asked to hold in practice is orders of magnitude
+  // below it, and the exact ceiling moves with the runtime.
+  const depth = 200;
+  let node = { node: "field", field: { kind: "text" } };
+  let value = "leaf";
+  for (let level = 0; level < depth; level += 1) {
+    node = { node: "array", item: node, initialValue: [value] };
+    value = [value];
+  }
+  const form = createForm(buildDynamicFormSchema({ node: "group", children: { deep: node } }), {
+    reactivity: vanillaReactivity(),
+    autoActivate: false,
+  });
+
+  let held = form.getValue().deep;
+  let levels = 0;
+  while (Array.isArray(held)) { held = held[0]; levels += 1; }
+  assert.equal(levels, depth, "a row at every level did not survive the build");
+  assert.equal(held, "leaf");
+  form.destroy();
 });
