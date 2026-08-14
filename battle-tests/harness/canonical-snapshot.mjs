@@ -54,10 +54,17 @@ export function canonicalObservation({
     .sort()
     .map((path) => {
       const handle = collections[path];
+      // The two kinds answer the same question differently: a keyed collection names its rows, a
+      // positional one counts them. Both are reported as the row names a path would carry, so one
+      // comparison reads either.
+      const keyed = typeof handle.keys === "function";
       return {
         path,
-        // Declaration order, deliberately unsorted.
-        keys: [...handle.keys()],
+        kind: keyed ? "record" : "array",
+        // Declaration order for a record, index order for an array; deliberately unsorted.
+        keys: keyed
+          ? [...handle.keys()]
+          : Array.from({ length: handle.length() }, (_, index) => String(index)),
         valid: handle.valid(),
         errors: handle.errors().map((error) => ({ kind: error.kind, message: error.message })),
       };

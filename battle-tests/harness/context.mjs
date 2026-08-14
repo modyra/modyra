@@ -247,6 +247,22 @@ export async function executeOperation(context, operation) {
       collections[operation.path].setAll(operation.value);
       break;
 
+    case "array.push":
+      collections[operation.path].push(operation.value);
+      break;
+    case "array.insert":
+      collections[operation.path].insert(operation.index, operation.value);
+      break;
+    case "array.remove":
+      collections[operation.path].remove(operation.index);
+      break;
+    case "array.move":
+      collections[operation.path].move(operation.from, operation.to);
+      break;
+    case "array.setAll":
+      collections[operation.path].setAll(operation.value ?? []);
+      break;
+
     case "field.set":
       fieldOf(context, operation.path, (handle) => handle.set(operation.value));
       break;
@@ -321,9 +337,20 @@ export async function executeOperation(context, operation) {
  */
 function fieldOf(context, path, use) {
   const collectionPath = context.collectionOf(path);
-  if (collectionPath) {
-    const [key, ...rest] = path.slice(collectionPath.length + 1).split(".");
-    return use(context.collections[collectionPath].cell(key, rest.join(".") || undefined));
+  if (!collectionPath) return use(resolveHandle(context.form, path));
+
+  const collection = context.collections[collectionPath];
+  const [key, ...rest] = path.slice(collectionPath.length + 1).split(".");
+
+  // A keyed collection hands out a cell handle before its row exists — that is the affordance under
+  // test. A positional one has no such thing: `at(index)` answers for a row that is there, and
+  // nothing at all for one that is not, which is what a write to a missing index means.
+  if (typeof collection.cell === "function") {
+    return use(collection.cell(key, rest.join(".") || undefined));
   }
-  return use(resolveHandle(context.form, path));
+
+  const row = collection.at(Number(key));
+  if (row === null || row === undefined) return undefined;
+  const handle = rest.reduce((node, segment) => (node == null ? node : node[segment]), row);
+  return handle == null ? undefined : use(handle);
 }

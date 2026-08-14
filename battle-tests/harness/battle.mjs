@@ -28,6 +28,8 @@ import { buildReport, formatSummary, writeReport } from "./reporting.mjs";
  * @param meta.title        What the attack tries to make happen.
  * @param meta.severity     Optional override; defaults to the worst severity among the claims.
  * @param meta.environments Where this attack is meaningful; declared for the CI tiers.
+ * @param meta.open        Why this attack is reported rather than enforced — a finding waiting on a
+ *                          decision. Reports as a todo instead of failing the run.
  * @param meta.requires     Counters that must be positive for the battle to count as executed
  *                          (`structural`, `mountedPhases`, `unmountedPhases`, `observations`,
  *                          `asyncStarted`) — `actions` is always required.
@@ -37,7 +39,12 @@ export function battle(meta, attack) {
   const severity = meta.severity ? assertSeverity(meta.severity) : worstSeverity(meta.claims);
   const name = `[${severity}][${meta.claims.join(",")}] ${meta.title}`;
 
-  return test(name, { concurrency: false }, async (t) => {
+  // `open` marks a finding that is real, reproduced, and waiting on a decision nobody has taken yet.
+  // It reports without failing, so the evidence stays in the suite instead of in a note somewhere,
+  // and the suite stays usable as a gate. A battle is never marked open to make it pass.
+  const options = meta.open ? { concurrency: false, todo: meta.open } : { concurrency: false };
+
+  return test(name, options, async (t) => {
     const seed = resolveSeed();
     const log = createOperationLog();
     const scheduler = createScheduler();

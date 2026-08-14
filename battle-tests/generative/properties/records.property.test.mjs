@@ -105,7 +105,14 @@ battle(
       if (!outcome.divergence) continue;
 
       // Reduce before reporting: what reaches the report is the smallest sequence that still fails.
-      const stillFails = async (candidate) => (await runSequence(candidate, { log: ctx.log })).divergence !== null;
+      // The same divergence, not merely some divergence: a shorter sequence can reach a *different*
+      // finding, and a shrinker that accepts one minimises the report into a break nobody was
+      // looking at.
+      const signature = `${outcome.divergence.path}|${outcome.divergence.expected}|${outcome.divergence.actual}`;
+      const stillFails = async (candidate) => {
+        const { divergence } = await runSequence(candidate, { log: ctx.log });
+        return divergence !== null && `${divergence.path}|${divergence.expected}|${divergence.actual}` === signature;
+      };
       const { minimized, attempts } = await shrink(operations, stillFails);
       ctx.attach("minimizedOperations", minimized);
 

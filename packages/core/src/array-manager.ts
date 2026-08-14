@@ -175,27 +175,33 @@ export class MdyArrayManager implements MdyNestedCollection {
   push(value: unknown): void {
     const values = this._currentValues();
     values.push(value);
-    this._rebuild(values);
+    // The new row is the only one that is new; nothing above it moved.
+    this._rebuild(values, values.length - 1);
   }
 
   insert(index: number, value: unknown): void {
     const values = this._currentValues();
-    values.splice(index, 0, value);
-    this._rebuild(values);
+    const at = Math.max(0, Math.min(values.length, index));
+    values.splice(at, 0, value);
+    this._rebuild(values, at);
   }
 
   remove(index: number): void {
     const values = this._currentValues();
+    // An index the list does not have is not a removal, and a change that changes nothing must not
+    // reset what the user did.
+    if (index < 0 || index >= values.length) return;
     values.splice(index, 1);
-    this._rebuild(values);
+    this._rebuild(values, index);
   }
 
   move(from: number, to: number): void {
     const values = this._currentValues();
     const removed = values.splice(from, 1);
     if (removed.length === 0) return;
-    values.splice(to, 0, removed[0]);
-    this._rebuild(values);
+    const at = Math.max(0, Math.min(values.length, to));
+    values.splice(at, 0, removed[0]);
+    this._rebuild(values, Math.min(from, at));
   }
 
   setAll(values: ReadonlyArray<unknown>): void {
@@ -238,13 +244,40 @@ export class MdyArrayManager implements MdyNestedCollection {
     return out;
   }
 
-  private _rebuild(values: unknown[]): void {
+  /**
+   * Writes the rows the collection now has.
+   *
+   * Only the rows past the new end are removed. The ones that remain are registered again in place,
+   * because a push at one end is not the other rows ending: a control bound to one of them never
+   * moved, and tearing its field down would release the claim it holds and drop what it said about
+   * the cell — a disabled column would come back enabled and be submitted.
+   *
+   * What a structural change *does* end is the state the user's interaction produced. Touched and
+   * dirty do not travel with a row across an insert, a move or a whole-value write, so the rows that
+   * survive are marked clean here rather than by being destroyed.
+   */
+  private _rebuild(values: unknown[], movedFrom = 0): void {
     const prevCount = this._rowCountSig();
-    for (let i = 0; i < prevCount; i++) this._removeRow(i);
+    for (let i = values.length; i < prevCount; i++) this._removeRow(i);
+    // Only from the first row the change actually moved. Appending a line moves nothing above it,
+    // and a user's marks are theirs: clearing them all would make the errors a form only shows on a
+    // visited field vanish when a row is added at the other end.
+    for (let i = movedFrom; i < Math.min(prevCount, values.length); i++) this._clearRowInteraction(i);
     values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
     this._rowCountSig.set(values.length);
     // Update tracking after rebuild (structural ops are always atomic)
     this._lastPresentIndices = new Set(Array.from({length: values.length}, (_, i) => i));
+  }
+
+  /** Forgets what the user did to a row that a structural change is rewriting. */
+  private _clearRowInteraction(index: number): void {
+    for (const path of this._leafPaths(`${this._deps.path}.${index}`, this._deps.item)) {
+      const ref = this._deps.engine.peekField(path);
+      if (!ref) continue;
+      const state = ref();
+      state.touched.set(false);
+      state.dirty.set(false);
+    }
   }
 
   /** The row a path belongs to, as the value an enclosing condition reads. */

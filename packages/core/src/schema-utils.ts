@@ -291,6 +291,31 @@ export function isSchemaValue<S extends MdyFormSchema>(
   return true;
 }
 
+/**
+ * A row's value where any leaf may be absent.
+ *
+ * The counterpart of {@link isSchemaItemValue} for the shapes that are partial by definition: what a
+ * submit sends, which omits every disabled field, and what `getChanges` reports, which carries only
+ * the leaves that moved. A row of either is a row with holes, and demanding a complete one made a
+ * list with a single disabled cell unable to state what it would send.
+ */
+function isSchemaItemPatch(value: unknown, item: unknown): boolean {
+  const node = item as {
+    readonly kind: string;
+    readonly children?: MdyFormSchema;
+    readonly item?: unknown;
+  };
+  if (node.kind === "field") return true;
+  if (node.kind === "array") {
+    return Array.isArray(value) && value.every((row) => isSchemaItemPatch(row, node.item));
+  }
+  if (node.kind === "record") {
+    return isRecord(value) && !Array.isArray(value)
+      && Object.values(value).every((row) => isSchemaItemPatch(row, node.item));
+  }
+  return isSchemaPatch(value, node.children ?? {});
+}
+
 /** Type guard: the value only contains keys declared by the schema. */
 export function isSchemaPatch<S extends MdyFormSchema>(
   value: unknown,
@@ -303,11 +328,14 @@ export function isSchemaPatch<S extends MdyFormSchema>(
     if (node.kind === "field") continue;
     if (node.kind === "array") {
       if (!Array.isArray(child)) return false;
-      if (!child.every((row) => isSchemaItemValue(row, node.item))) return false;
+      // Rows as a patch has them: a submitted row is missing its disabled cells, and a changed row
+      // carries only what moved. A keyed collection's rows are read the same way, below.
+      if (!child.every((row) => isSchemaItemPatch(row, node.item))) return false;
       continue;
     }
     if (node.kind === "record") {
       if (!isRecord(child) || Array.isArray(child)) return false;
+      if (!Object.values(child).every((row) => isSchemaItemPatch(row, node.item))) return false;
       continue;
     }
     if (!isSchemaPatch(child, node.children)) return false;
