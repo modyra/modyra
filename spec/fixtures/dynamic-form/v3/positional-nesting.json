@@ -1,0 +1,75 @@
+{
+  "version": 3,
+  "id": "positional-nesting",
+  "schema": {
+    "node": "group",
+    "children": {
+      "orders": {
+        "node": "array",
+        "label": "Orders",
+        "item": {
+          "node": "group",
+          "children": {
+            "customer": {
+              "node": "field",
+              "field": {
+                "kind": "text",
+                "label": "Customer",
+                "name": "customer"
+              }
+            },
+            "lines": {
+              "node": "array",
+              "label": "Lines",
+              "item": {
+                "node": "group",
+                "children": {
+                  "sku": {
+                    "node": "field",
+                    "field": {
+                      "kind": "text",
+                      "label": "SKU",
+                      "name": "sku"
+                    }
+                  },
+                  "allocations": {
+                    "node": "array",
+                    "label": "Allocations",
+                    "item": {
+                      "node": "group",
+                      "children": {
+                        "qty": {
+                          "node": "field",
+                          "field": {
+                            "kind": "number",
+                            "label": "Quantity",
+                            "name": "qty"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "matrix": {
+        "node": "array",
+        "label": "Matrix",
+        "item": {
+          "node": "array",
+          "item": {
+            "node": "field",
+            "field": {
+              "kind": "number",
+              "label": "Cell",
+              "name": "cell"
+            }
+          }
+        }
+      }
+    }
+  }
+}
