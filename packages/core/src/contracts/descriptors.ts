@@ -61,15 +61,30 @@ export interface MdyAnyGroupDescriptor {
 /** Array descriptor produced by {@link array}. Rows follow the value — see array-manager.ts. */
 export interface MdyArrayDescriptor<TItem> {
   readonly kind: "array";
-  /** Item schema: a group descriptor (rows are objects) or a field descriptor (rows are leaves). */
+  /**
+   * Row schema: a field (rows are leaves), a group (rows are objects), or a collection of either
+   * kind — a row may hold as many levels as the form needs.
+   */
   readonly item: TItem;
   readonly initial: ReadonlyArray<unknown>;
   readonly validators: ReadonlyArray<ValidatorFn<readonly unknown[]>>;
 }
 
+/**
+ * What a row of a collection may be, whatever kind declared it.
+ *
+ * Named rather than spelled out at each site because it is recursive: a row holds fields, groups and
+ * collections, and a collection's row holds the same again, for as many levels as a form needs.
+ */
+export type MdyAnyRowDescriptor =
+  | MdyAnyFieldDescriptor
+  | MdyAnyGroupDescriptor
+  | MdyAnyArrayDescriptor
+  | MdyAnyRecordDescriptor;
+
 export interface MdyAnyArrayDescriptor {
   readonly kind: "array";
-  readonly item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
+  readonly item: MdyAnyRowDescriptor;
   readonly initial: ReadonlyArray<unknown>;
   readonly validators: ReadonlyArray<ValidatorFn<never>>;
 }
@@ -86,7 +101,10 @@ export interface MdyAnyArrayDescriptor {
  */
 export interface MdyRecordDescriptor<TItem> {
   readonly kind: "record";
-  /** Row schema: a group descriptor (rows are objects) or a field descriptor (rows are leaves). */
+  /**
+   * Row schema: a field (rows are leaves), a group (rows are objects), or a collection of either
+   * kind — a row may hold as many levels as the form needs.
+   */
   readonly item: TItem;
   readonly initial: Readonly<Record<string, unknown>>;
   readonly validators: ReadonlyArray<ValidatorFn<Readonly<Record<string, unknown>>>>;
@@ -94,7 +112,7 @@ export interface MdyRecordDescriptor<TItem> {
 
 export interface MdyAnyRecordDescriptor {
   readonly kind: "record";
-  readonly item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
+  readonly item: MdyAnyRowDescriptor;
   readonly initial: Readonly<Record<string, unknown>>;
   readonly validators: ReadonlyArray<ValidatorFn<never>>;
 }

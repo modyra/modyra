@@ -37,25 +37,6 @@ import { registerRowNode, type MdyRowRegistration } from "./collections/register
 /** A row's own schema node. A record may sit inside an array's item; another array may not. */
 type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
 
-/**
- * What an array's row may hold.
- *
- * A record, yes: it is keyed, so a row's descendants are addressed by name below a positional
- * prefix and a reorder rebuilds them under the new index. Another array, no: two positional levels
- * make a descendant's whole path move for two independent reasons, and nothing in the contract can
- * tell which one moved it (ADR 0040).
- */
-function assertNotNestedCollection(
-  node: MdyRowNode | { readonly kind: "array" | "record" },
-): asserts node is MdyRowNode {
-  if (node.kind === "array") {
-    throw new Error(
-      "[modyra] Nested collections (an array item containing another array) are not supported",
-    );
-  }
-}
-
-
 export interface MdyArrayManagerDeps {
   /**
    * The conditions of the sections this collection sits under.
@@ -69,7 +50,8 @@ export interface MdyArrayManagerDeps {
   readonly engine: MdyCollectionHost;
   /** Dotted array path, e.g. "items" or "order.items". */
   readonly path: string;
-  readonly item: MdyAnyGroupDescriptor | MdyAnyFieldDescriptor;
+  /** A row's shape: a field, a group, or a collection of either kind. */
+  readonly item: MdyRowNode | MdyAnyArrayDescriptor | MdyAnyRecordDescriptor;
   /** The host's development channel, so `devWarnings: false` silences these too. */
   readonly warn?: (message: string) => void;
   /** How to build a collection declared inside one of this collection's rows. */
@@ -83,13 +65,14 @@ export interface MdyArrayManagerDeps {
 /**
  * Refuses, when the form is built, a shape this manager cannot run.
  *
- * Everything below an array sits under a positional level, and a path may cross **one**: the walk
- * therefore goes *through* a record a row declares, and refuses any array it finds there — the
- * failure belongs where the schema was written, not to the first `push` in front of a user.
+ * A row may hold fields, groups and collections of either kind, at any depth: a collection inside a
+ * row is addressed by the pattern its declaration has — `items.*`, `orders.*.lines` — so a second
+ * positional level names its rows as unambiguously as the first. What is still walked is the *kind*
+ * of every node, so a shape that is not a form at all fails where the schema was written rather than
+ * at the first `push` in front of a user.
  */
 function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record"; readonly item?: unknown }): void {
-  assertNotNestedCollection(node as MdyRowNode);
-  if (node.kind === "record") {
+  if (node.kind === "array" || node.kind === "record") {
     assertRowShape((node as { readonly item: MdyRowNode }).item);
     return;
   }
@@ -97,6 +80,12 @@ function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record"; 
     for (const child of Object.values(node.children)) {
       assertRowShape(child as MdyRowNode);
     }
+    return;
+  }
+  if (node.kind !== "field") {
+    throw new Error(
+      `[modyra] A row may hold a field, a group or a collection — not ${String((node as { kind: string }).kind)}`,
+    );
   }
 }
 
@@ -342,8 +331,7 @@ export class MdyArrayManager implements MdyNestedCollection {
       readNode: (path, node) => this._readNode(path, node as MdyRowNode),
       rowValue: (rowPath) => this._rowValue(rowPath),
       onCollection: (path, node, value) => {
-        if (node.kind === "array") assertNotNestedCollection(node);
-        this._declareNested(path, node as MdyAnyRecordDescriptor, value);
+        this._declareNested(path, node as MdyAnyRecordDescriptor | MdyAnyArrayDescriptor, value);
       },
     };
   }
@@ -351,16 +339,21 @@ export class MdyArrayManager implements MdyNestedCollection {
   /** The record managers rows declared, keyed by their full path. */
   private readonly _nested = new Map<string, MdyNestedCollection>();
 
-  private _declareNested(path: string, node: MdyAnyRecordDescriptor, value: unknown): void {
+  private _declareNested(
+    path: string,
+    node: MdyAnyRecordDescriptor | MdyAnyArrayDescriptor,
+    value: unknown,
+  ): void {
     this._nested.get(path)?.destroy();
     this._nested.set(path, this._deps.createCollection(
-      "record",
+      node.kind,
       {
         rx: this._deps.rx,
         engine: this._deps.engine,
         path,
-        item: node.item as MdyAnyFieldDescriptor | MdyAnyGroupDescriptor,
-        // Everything below an array is under a positional level, and one is the limit.
+        item: node.item,
+        // Everything below an array is under a positional level; the flag says so for the readers
+        // that order a rebuild by it, and refuses nothing.
         positionalAncestor: true,
         // Nothing here has a name to complain about that the engine has not already reported, so a
         // nested record's diagnostics go where the engine's do.
@@ -441,15 +434,14 @@ export class MdyArrayManager implements MdyNestedCollection {
       | MdyAnyArrayDescriptor
       | MdyAnyRecordDescriptor,
   ): string[] {
-    if (rowNode.kind === "record") {
-      const nested = this._nested.get(fullPath);
-      if (!nested) return [];
-      return nested.leafPathsNow();
+    // Either kind of collection inside the row answers for its own subtree; a manager that is not
+    // there yet has no leaves, which is what an undeclared row means.
+    if (rowNode.kind === "record" || rowNode.kind === "array") {
+      return this._nested.get(fullPath)?.leafPathsNow() ?? [];
     }
-    assertNotNestedCollection(rowNode);
     if (rowNode.kind === "field") return [fullPath];
-    return Object.entries(rowNode.children).flatMap(([key, child]) =>
-      this._leafPaths(`${fullPath}.${key}`, child),
+    return Object.entries((rowNode as MdyAnyGroupDescriptor).children).flatMap(([key, child]) =>
+      this._leafPaths(`${fullPath}.${key}`, child as MdyAnyFieldDescriptor | MdyAnyGroupDescriptor),
     );
   }
 
@@ -461,18 +453,19 @@ export class MdyArrayManager implements MdyNestedCollection {
       | MdyAnyArrayDescriptor
       | MdyAnyRecordDescriptor,
   ): unknown {
-    if (rowNode.kind === "record") {
+    if (rowNode.kind === "record" || rowNode.kind === "array") {
       const nested = this._nested.get(fullPath);
-      return nested ? nested.getValues() : {};
+      if (nested) return nested.getValues();
+      // The empty shape its kind has, so a collection nobody has declared into still reads as one.
+      return rowNode.kind === "array" ? [] : {};
     }
-    assertNotNestedCollection(rowNode);
     if (rowNode.kind === "field") {
       const ref = this._deps.engine.getField(fullPath);
       return ref ? ref().value() : null;
     }
     const out: Record<string, unknown> = {};
-    for (const [key, child] of Object.entries(rowNode.children)) {
-      out[key] = this._readNode(`${fullPath}.${key}`, child);
+    for (const [key, child] of Object.entries((rowNode as MdyAnyGroupDescriptor).children)) {
+      out[key] = this._readNode(`${fullPath}.${key}`, child as MdyAnyFieldDescriptor | MdyAnyGroupDescriptor);
     }
     return out;
   }
