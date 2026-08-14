@@ -828,3 +828,59 @@ test("a cross-field error naming no live field surfaces at the form", async () =
     "and the form's own bucket is where it can be read",
   );
 });
+
+test("oneOf: an object option is recognised by what it holds, not by which copy it is", () => {
+  // A draft is written as JSON and read back as JSON, so the value that comes back is a different
+  // object holding the same data. Compared by identity, a user who left a form half-filled and came
+  // back was told their own choice is not on the list.
+  const OPTIONS = [{ id: 1, label: "One" }, { id: 2, label: "Two" }];
+  const v = oneOf(OPTIONS);
+
+  assert.deepEqual(v(OPTIONS[0]), []);
+  assert.deepEqual(v(JSON.parse(JSON.stringify(OPTIONS[0]))), [], "a round-tripped choice was refused");
+  assert.deepEqual(v({ label: "One", id: 1 }), [], "key order decided whether a choice was offered");
+});
+
+test("oneOf: the guard still refuses what was never offered", () => {
+  // The reason oneOf exists. Every one of these is a value no option list contained, and structural
+  // comparison must not turn "looks like an option" into "is one".
+  const OPTIONS = [{ id: 1, label: "One" }, { id: 2, label: "Two" }];
+  const v = oneOf(OPTIONS);
+
+  assert.equal(v({ id: 3, label: "Three" }).length, 1, "an option that was never offered");
+  assert.equal(v({ id: 1 }).length, 1, "a member missing");
+  assert.equal(v({ id: 1, label: "One", admin: true }).length, 1, "a member added");
+  assert.equal(v({ id: "1", label: "One" }).length, 1, "a member of the wrong type");
+  assert.equal(v("One").length, 1, "the label alone is not the option");
+  assert.equal(v({ id: 1, label: "one" }).length, 1, "a member differing in case");
+});
+
+test("oneOf: only what JSON round-trips is compared structurally", () => {
+  // A class instance is not data this can claim to recognise a copy of, so it keeps identity — the
+  // behaviour every option had before objects were compared at all.
+  class Choice {
+    constructor(id) { this.id = id; }
+  }
+  const offered = new Choice(1);
+  const v = oneOf([offered]);
+  assert.deepEqual(v(offered), []);
+  assert.equal(v(new Choice(1)).length, 1, "a copy of a class instance was accepted");
+
+  // Arrays and dates are data, and are compared as such.
+  const withArray = oneOf([{ tags: ["a", "b"] }]);
+  assert.deepEqual(withArray({ tags: ["a", "b"] }), []);
+  assert.equal(withArray({ tags: ["b", "a"] }).length, 1, "order inside an option stopped mattering");
+
+  const day = new Date("2026-08-14T00:00:00.000Z");
+  const withDate = oneOf([{ day }]);
+  assert.deepEqual(withDate({ day: new Date("2026-08-14T00:00:00.000Z") }), []);
+  assert.equal(withDate({ day: new Date("2026-08-15T00:00:00.000Z") }).length, 1);
+});
+
+test("eachOneOf: a multiselect survives the same round trip, and refuses the same forgeries", () => {
+  const OPTIONS = [{ id: 1 }, { id: 2 }, { id: 3 }];
+  const v = eachOneOf(OPTIONS);
+
+  assert.deepEqual(v(JSON.parse(JSON.stringify([OPTIONS[0], OPTIONS[2]]))), []);
+  assert.equal(v([{ id: 1 }, { id: 9 }]).length, 1, "one forged element among offered ones");
+});
