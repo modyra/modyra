@@ -437,6 +437,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "STU-001",
+    title: "Generated code compiles.",
+    area: "studio",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/studio-codegen buildStubsModule — emits a module a consumer compiles",
+      "@modyra/studio-codegen isValidIdentifier — decides whether a name is emitted as written",
+      "@modyra/studio-codegen — a name that cannot be a binding is sanitized before it is emitted",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
