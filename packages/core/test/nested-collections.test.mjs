@@ -15,37 +15,82 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 // ── What the refusal does today ────────────────────────────────────────────
 
-test("a nesting the runtime cannot execute is refused when the form is built", () => {
-  // Not when a row arrives: a shape the runtime cannot execute must not survive long enough to
-  // produce paths that look valid. This is the property the recursion has to keep.
-  // A record's row may hold either kind; an array's row may hold a record. What no row may hold is
-  // a second *positional* level: two of them make a descendant's path move for two independent
-  // reasons, and nothing in the contract can say which one moved it.
-  for (const [name, schema] of [
-    ["array in array", { orders: array(group({ lines: array(rows()) })) }],
-    ["array in an array's record", { orders: array(group({ lines: record(group({ deep: array(rows()) })) })) }],
-  ]) {
-    // The two managers word it differently — "nested collections … are not supported" against
-    // "a record's row cannot contain another record". Asserted as a refusal that names the kind,
-    // because pinning either sentence would make a reworded message look like a regression.
-    assert.throws(() => createForm(schema), (error) => {
-      assert.match(error.message, /^\[modyra\]/, `${name} should be refused by the engine`);
-      assert.match(error.message, /record|array/, `${name}'s refusal should name a collection kind`);
-      return true;
-    }, `${name} should be refused`);
-  }
+test("a second positional level is addressable, and the runtime executes it", () => {
+  // What used to be refused: two positional levels. A row's path is a pattern — `orders.*`,
+  // `orders.*.allocations.*` — so a descendant is named as unambiguously under the second index as
+  // under the first, and the engine registers the whole subtree.
+  const form = createForm({
+    orders: array(group({
+      ref: field(""),
+      allocations: array(group({ bin: field(""), qty: field(0) })),
+    })),
+  });
+
+  form.f.orders.push({ ref: "R1", allocations: [{ bin: "A", qty: 2 }, { bin: "B", qty: 3 }] });
+  form.f.orders.push({ ref: "R2", allocations: [] });
+
+  assert.deepEqual(form.getValue().orders, [
+    { ref: "R1", allocations: [{ bin: "A", qty: 2 }, { bin: "B", qty: 3 }] },
+    { ref: "R2", allocations: [] },
+  ]);
+  assert.ok(
+    form.fieldNames().includes("orders.0.allocations.1.bin"),
+    "a descendant two positional levels down has a field of its own",
+  );
+
+  // And it is writable through the handle tree, at both levels.
+  form.f.orders.at(0).allocations.push({ bin: "C", qty: 1 });
+  assert.equal(form.getValue().orders[0].allocations.length, 3);
+  form.destroy();
 });
 
-test("the refusal names the shape it refused, not the row that reached it", () => {
-  try {
-    createForm({ orders: array(group({ lines: array(rows()) })) });
-    assert.fail("expected a refusal");
-  } catch (error) {
-    assert.match(String(error.message), /array/, "the message says which kind was nested");
-  }
+test("a form may nest as deep as it needs", () => {
+  // Four levels, mixing both kinds: nothing refuses a depth, and the value keeps the shape each
+  // level declares.
+  const form = createForm({
+    orders: record(group({
+      lines: array(group({
+        allocations: record(group({
+          bins: array(field("")),
+        })),
+      })),
+    })),
+  });
+
+  form.f.orders.upsert("o1", {
+    lines: [{ allocations: { a1: { bins: ["north", "south"] } } }],
+  });
+
+  assert.deepEqual(form.getValue().orders.o1.lines[0].allocations.a1.bins, ["north", "south"]);
+  assert.equal(Array.isArray(form.getValue().orders.o1.lines), true, "a positional level is an array");
+  assert.equal(
+    Array.isArray(form.getValue().orders.o1.lines[0].allocations),
+    false,
+    "and a keyed level inside it is an object",
+  );
+  assert.ok(form.fieldNames().includes("orders.o1.lines.0.allocations.a1.bins.0"));
+  form.destroy();
 });
 
-test("one level is unaffected, in both directions", () => {
+test("a removal at an outer level takes every level below it", () => {
+  const form = createForm({
+    orders: array(group({ allocations: array(group({ bin: field("") })) })),
+  });
+  form.f.orders.push({ allocations: [{ bin: "A" }] });
+  form.f.orders.push({ allocations: [{ bin: "B" }] });
+
+  form.f.orders.remove(0);
+
+  assert.deepEqual(form.getValue().orders, [{ allocations: [{ bin: "B" }] }]);
+  assert.equal(
+    form.fieldNames().filter((name) => name.startsWith("orders.1.")).length,
+    0,
+    "nothing of the row that ended survives under its old index",
+  );
+  form.destroy();
+});
+
+test("one level still behaves as it always did, in both directions", () => {
   const form = createForm({ orders: record(rows()), items: array(rows()) });
   form.f.orders.upsert("a", { sku: "S", qty: 1 });
   form.f.items.push({ sku: "T", qty: 2 });
@@ -164,13 +209,26 @@ test("array → record: a move rebuilds the descendant record and says which fla
   assert.equal(form.fieldNames().some((n) => n.includes("a1")), false, "nothing of the row is left registered");
   form.destroy();
 });
-test("depth beyond the document's cap is refused when the form is built", () => {
-  // Eight, the number the document validator has published since before collections could nest:
-  // one limit for the whole engine, refused where the form is built rather than on first use.
+test("a form deeper than any published cap still builds and runs", () => {
+  // There is no number to refuse. A collection inside a row is addressed by the pattern its
+  // declaration has, at every level, so depth is the form's business rather than the engine's.
   const nest = (depth) => (depth === 0 ? field("") : record(group({ next: nest(depth - 1) })));
-  assert.doesNotThrow(() => createForm({ a: nest(2) }).destroy(), "a shallow form builds");
-  assert.throws(() => createForm({ a: nest(12) }), /nest 8 levels deep/,
-    "a form deeper than the cap is refused, and the message says the number");
+
+  const form = createForm({ a: nest(12) });
+  const write = (depth) => {
+    let path = "a";
+    let handle = form.f.a;
+    for (let level = 0; level < depth; level += 1) {
+      handle.upsert("k", {});
+      path = `${path}.k.next`;
+      handle = handle.row("k").next;
+    }
+    return path;
+  };
+
+  const deepest = write(11);
+  assert.ok(deepest.split(".").length > 20, "the path crosses every level");
+  form.destroy();
 });
 
 /**

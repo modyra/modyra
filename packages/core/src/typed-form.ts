@@ -59,6 +59,7 @@ import type {
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
   MdyAnyRecordDescriptor,
+  MdyAnyRowDescriptor,
   MdyArrayDescriptor,
   MdyFieldDescriptor,
   MdyFormPatch,
@@ -320,7 +321,7 @@ export function group<TChildren extends MdyFormSchema>(
  * `patch`/`setValue`/`reset` that touches this path) — touched/dirty/errors
  * of affected rows reset on structural changes (v1 semantics, see docs).
  */
-export function array<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescriptor>(
+export function array<TItem extends MdyAnyRowDescriptor>(
   item: TItem,
   options?: {
     readonly initial?: ReadonlyArray<unknown>;
@@ -346,7 +347,7 @@ export function array<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescripto
  * The consequence worth stating: validity belongs to the declared row. Sorting, filtering or
  * collapsing rows unmounts controls and changes nothing about whether the form is valid.
  */
-export function record<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescriptor>(
+export function record<TItem extends MdyAnyRowDescriptor>(
   item: TItem,
   options?: {
     readonly initial?: Readonly<Record<string, unknown>>;

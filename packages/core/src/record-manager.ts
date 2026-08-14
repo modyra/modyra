@@ -27,9 +27,9 @@ import {
   MdyWritableSignal,
 } from "./reactivity-contract.js";
 import type {
-  MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
   MdyAnyRecordDescriptor,
+  MdyAnyRowDescriptor,
 } from "./contracts/descriptors.js";
 import { isRecord } from "./record-utils.js";
 import type {
@@ -39,75 +39,38 @@ import type {
 } from "./contracts/collection-manager.js";
 import { registerRowNode, type MdyRowRegistration } from "./collections/register.js";
 
-/** A row's own schema node — a record's row is a field or a group, never another collection. */
-type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
-
 /**
- * The nestings the runtime can execute today.
+ * A row's own schema node.
  *
- * A shape outside this set fails when the form is built rather than producing paths nobody owns —
- * the property the blanket refusal had, kept while the set grows. ADR 0040 states the order the
- * combinations arrive in, and why a record inside a record is first: both levels have declared
- * identity, so rename and late binding are answerable without a rebase.
+ * A row is a field, a group, or a collection of either kind: what a row may hold is what a form may
+ * hold, at any depth.
  */
-const NESTABLE_IN_RECORD: ReadonlySet<string> = new Set(["record", "array"]);
+type MdyRowNode = MdyAnyRowDescriptor;
 
-/**
- * How deep a form may nest, collections included.
- *
- * One number for the whole engine: the document validator has published 8 since before collections
- * could nest at all, and a second limit in the same system is a limit someone reads wrong. A
- * document a network sends describing a thousand-deep nesting is refused where it is built, before
- * anything is allocated.
- */
-const MAX_NESTING_DEPTH = 8;
-
-function assertRowNode(
-  node: MdyRowNode | { readonly kind: "array" | "record" },
-): asserts node is MdyRowNode {
-  if (node.kind === "array" || node.kind === "record") {
-    throw new Error(
-      `[modyra] A record's row cannot contain ${node.kind === "array" ? "an array" : "another record"} yet — ` +
-      `a row may hold: ${[...NESTABLE_IN_RECORD].join(", ")}`,
-    );
-  }
-}
-
-/** Refuses a nested collection anywhere in the row, when the form is built rather than when a row arrives. */
 /**
  * Refuses a shape the runtime cannot execute, when the form is built rather than when a row arrives.
  *
- * A supported nesting is walked into rather than waved through: a combination this manager can run
- * may still hold one it cannot, and a document saying so must fail at construction.
+ * There is no depth to refuse and no combination of collections to refuse: a row may hold fields,
+ * groups and collections of either kind, and a collection inside a row is addressed by the pattern
+ * its declaration has — `orders.*.lines`, `items.*` — which is what makes a second positional level
+ * as addressable as the first. What is still walked is the *kind* of every node, so a shape that is
+ * not a form at all fails at construction rather than at the first row.
  */
-function assertRowShape(
-  node: MdyRowNode | { readonly kind: "array" | "record" },
-  depth = 1,
-  positionalAncestor = false,
-): void {
-  if (depth > MAX_NESTING_DEPTH) {
-    throw new Error(
-      `[modyra] A form may nest ${MAX_NESTING_DEPTH} levels deep, collections included — this one goes deeper`,
-    );
-  }
+function assertRowShape(node: MdyRowNode | { readonly kind: "array" | "record" }): void {
   if (node.kind === "array" || node.kind === "record") {
-    if (!NESTABLE_IN_RECORD.has(node.kind)) assertRowNode(node);
-    if (node.kind === "array" && positionalAncestor) {
-      throw new Error(
-        "[modyra] Nested collections (an array below another array) are not supported — a path may cross one positional level",
-      );
-    }
-    assertRowShape(
-      (node as MdyAnyRecordDescriptor).item as MdyRowNode,
-      depth + 1,
-      positionalAncestor || node.kind === "array",
-    );
+    assertRowShape((node as MdyAnyRecordDescriptor).item as MdyRowNode);
     return;
   }
   if (node.kind === "group") {
     for (const child of Object.values(node.children)) {
-      assertRowShape(child as MdyRowNode, depth + 1, positionalAncestor);
+      assertRowShape(child as MdyRowNode);
     }
+    return;
+  }
+  if (node.kind !== "field") {
+    throw new Error(
+      `[modyra] A row may hold a field, a group or a collection — not ${String((node as { kind: string }).kind)}`,
+    );
   }
 }
 
@@ -173,7 +136,7 @@ export class MdyRecordManager implements MdyNestedCollection {
   readonly keys: MdySignal<readonly string[]>;
 
   constructor(deps: MdyRecordManagerDeps, initial: Readonly<Record<string, unknown>>) {
-    assertRowShape(deps.item, 1, deps.positionalAncestor ?? false);
+    assertRowShape(deps.item);
     this._deps = deps;
     this._initial = initial;
     this._keysSig = deps.rx.signal<readonly string[]>([]);
@@ -498,7 +461,6 @@ export class MdyRecordManager implements MdyNestedCollection {
       readNode: (path, node) => this._readNode(path, node as MdyRowNode),
       rowValue: (rowPath) => this._rowValue(rowPath),
       onCollection: (path, node, value) => {
-        if (!NESTABLE_IN_RECORD.has(node.kind)) assertRowNode(node);
         this._declareNested(path, node as MdyAnyRecordDescriptor, value);
       },
     };
@@ -511,18 +473,22 @@ export class MdyRecordManager implements MdyNestedCollection {
       if (ref) ref().value.set(value);
       return;
     }
+    // A collection is written whole, by its own manager, rather than walked into here.
+    if (rowNode.kind === "record" || rowNode.kind === "array") {
+      this._nested.get(fullPath)?.setAllFrom(value);
+      return;
+    }
     if (!isRecord(value)) return;
-    for (const [key, child] of Object.entries(rowNode.children)) {
+    for (const [key, child] of Object.entries((rowNode as MdyAnyGroupDescriptor).children)) {
       if (!(key in value)) continue;
       const at = `${fullPath}.${key}`;
-      if (child.kind === "record" || child.kind === "array") {
+      if ((child as MdyAnyRowDescriptor).kind === "record" || (child as MdyAnyRowDescriptor).kind === "array") {
         // `setAll`, because a whole-row write says what the row is: a nested collection the write
         // does not mention is emptied, not left behind.
         this._nested.get(at)?.setAllFrom(value[key]);
         continue;
       }
-      assertRowNode(child);
-      this._writeInto(at, child, value[key]);
+      this._writeInto(at, child as MdyRowNode, value[key]);
     }
   }
 

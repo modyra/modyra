@@ -34,20 +34,48 @@ const SPEC = Object.freeze({
   }),
 });
 
-/** Everything a consumer can see about the collection, from the form and from the model alike. */
+/**
+ * Everything a consumer can see about the collection, from the form and from the model alike.
+ *
+ * The interaction state is here as well as the value. The generator draws `touch`, `disable` and
+ * `enable`, and a campaign that compares only what a row holds cannot tell whether the flag that
+ * survived a rename, a removal or an undo is the one that belongs to the row now standing there —
+ * which is where a collection loses track of an identity without ever losing a value.
+ */
+function statePathsUnder(form, prefix, read) {
+  const paths = [];
+  for (const name of form.fieldNames()) {
+    if (!name.startsWith(prefix)) continue;
+    const ref = form.getField(name);
+    if (ref && read(ref())) paths.push(name.slice(prefix.length));
+  }
+  return paths.sort();
+}
+
 function observableOf(form, rowsHandle) {
   return encodeValue(
     {
       keys: [...rowsHandle.keys()],
       value: form.getValue().rows ?? {},
       submitted: form.submitValue().rows ?? {},
+      touched: statePathsUnder(form, "rows.", (state) => state.touched()),
+      disabled: statePathsUnder(form, "rows.", (state) => state.disabled()),
     },
     "observable",
   );
 }
 
 function expectedOf(model) {
-  return encodeValue({ keys: model.keys(), value: model.value(), submitted: model.submitted() }, "observable");
+  return encodeValue(
+    {
+      keys: model.keys(),
+      value: model.value(),
+      submitted: model.submitted(),
+      touched: model.touchedPaths(),
+      disabled: model.disabledPaths(),
+    },
+    "observable",
+  );
 }
 
 /**
