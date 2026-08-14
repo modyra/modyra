@@ -351,6 +351,16 @@ const CLAIMS = [
     ],
   },
   {
+    id: "UI-001",
+    title: "An open overlay keeps its shape while its anchor moves.",
+    area: "widgets",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/widgets stabilizeOverlayPlacement — the shape is a decision taken when it opened",
+      "@modyra/widgets decideOverlayPlacement/MdyOverlayDecision — placement, maxHeight, alignment, fits",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
