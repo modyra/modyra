@@ -312,3 +312,65 @@ battle(
     }
   },
 );
+
+battle(
+  {
+    claims: ["DYN-001", "DYN-003"],
+    title: "the same document names every other kind of defect it carries",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The scope of the silence, measured from the other side. A v2 document's rules, validations and
+    // layout are all checked and every defect in them is named — so the parser has the machinery and
+    // uses it everywhere except on the fields themselves.
+    const field = { node: "field", field: { kind: "text", label: "F" } };
+    const envelope = (extra) => ({
+      version: 2,
+      schema: { node: "group", children: { a: field, b: field } },
+      ...extra,
+    });
+
+    // Each of these is written in the shape `spec/dynamic-form-v3.schema.json` describes, so a
+    // refusal is about the defect rather than about the spelling.
+    const workingRule = { effect: "hidden", target: "b", when: { field: "a", operator: "equals", value: "x" } };
+
+    const accepted = parseDynamicForm(envelope({ rules: [workingRule] }), { mode: "strict" });
+    ctx.log.note("a rule with nothing wrong with it", {
+      ok: accepted.ok,
+      diagnostics: accepted.diagnostics.map((each) => each.code),
+    });
+
+    expectEqual([accepted.ok, accepted.diagnostics.length], [true, 0], {
+      claimIds: ["DYN-001"],
+      what: "a rule written the way the spec describes was refused, so the refusals below prove nothing",
+      detail: JSON.stringify(accepted.diagnostics),
+    });
+
+    for (const [what, extra] of [
+      ["a rule aimed at a field nobody declared", { rules: [{ ...workingRule, target: "nope" }] }],
+      ["a rule reading a field nobody declared", { rules: [{ ...workingRule, when: { ...workingRule.when, field: "nope" } }] }],
+      ["a rule with an effect nobody declared", { rules: [{ ...workingRule, effect: "wormhole" }] }],
+      ["a rule with an operator nobody declared", { rules: [{ ...workingRule, when: { ...workingRule.when, operator: "wormhole" } }] }],
+      ["a rule aimed at __proto__", { rules: [{ ...workingRule, target: "__proto__" }] }],
+      [
+        "a validation aimed at a field nobody declared",
+        { validations: [{ when: { op: "equals", operands: [{ path: "a" }, "x"] }, message: "no", target: "nope" }] },
+      ],
+      ["a layout placing a field nobody declared", { layout: { id: "l", kind: "section", children: [{ id: "s", field: "nope" }] } }],
+    ]) {
+      const parsed = parseDynamicForm(envelope(extra), { mode: "lenient" });
+      const strict = parseDynamicForm(envelope(extra), { mode: "strict" });
+      ctx.log.note("a defect outside the fields", {
+        what,
+        codes: parsed.diagnostics.map((each) => each.code),
+        strictOk: strict.ok,
+      });
+
+      expectClaim(parsed.diagnostics.length > 0 && strict.ok === false, {
+        claimIds: ["DYN-003"],
+        what: `${what} was accepted without a word`,
+        detail: JSON.stringify({ lenient: parsed.diagnostics, strictOk: strict.ok }),
+      });
+    }
+  },
+);
