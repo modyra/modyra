@@ -508,3 +508,92 @@ battle(
     }
   },
 );
+
+/** Compile one field per declared kind, and report what reached the contract. */
+const FIELD_KINDS = `
+import { compileToContract } from "@modyra/studio-contract";
+import { createBlankProject, loadProject } from "@modyra/studio-model";
+
+const KINDS = [
+  ["a kind this build knows", "text"],
+  ["a kind nobody declared", "wormhole"],
+  ["no kind at all", undefined],
+];
+
+const blank = createBlankProject();
+const out = KINDS.map(([label, fieldKind]) => {
+  const draft = JSON.parse(JSON.stringify(blank));
+  draft.schema = {
+    node: "group", id: "root", name: "root",
+    children: [{
+      node: "field", id: "f1", name: "email", initialValue: "", valueType: "string", validators: [],
+      ...(fieldKind === undefined ? {} : { fieldKind }),
+    }],
+  };
+  const loaded = loadProject(draft);
+  const compiled = compileToContract(loaded.project);
+  const document = compiled.contract ?? compiled.document ?? compiled;
+  const field = document?.schema?.children?.email?.field ?? null;
+  return {
+    label,
+    kindInContract: field === null ? null : (field.kind ?? null),
+    loadDiagnostics: loaded.diagnostics.map((each) => each.code),
+    compileDiagnostics: (compiled.diagnostics ?? []).map((each) => each.code),
+  };
+});
+console.log(JSON.stringify(out));
+`;
+
+battle(
+  {
+    claims: ["STU-003"],
+    title: "a field kind nobody recognises is reported, not quietly removed",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // A field's kind is what makes it a field: the contract's consumer builds a control from it, and
+    // an entry with none is dropped when the schema is built. The question is whether anything says
+    // so between the project and there.
+    const result = runInConsumer(FIELD_KINDS);
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-003"],
+        what: "the studio packages could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      const rows = result.out;
+      const byLabel = (label) => rows.find((each) => each.label === label);
+      ctx.log.note("what each field kind became in the contract", {
+        rows: rows.map((each) => [each.label, each.kindInContract, each.loadDiagnostics, each.compileDiagnostics]),
+      });
+
+      // The control: a kind this build knows reaches the contract, so the assertions below are
+      // about the unknown ones rather than about kinds never travelling.
+      expectEqual(byLabel("a kind this build knows").kindInContract, "text", {
+        claimIds: ["STU-003"],
+        what: "a declared field kind no longer reaches the contract",
+        detail: JSON.stringify(byLabel("a kind this build knows")),
+      });
+
+      // A kind this build does not know is the ordinary case, not a hostile one: a project written
+      // by a newer Studio, a file edited by hand, a kind added to the catalogue after the generator
+      // shipped. Whatever the answer is, silence is not one — the field arrives in the contract as
+      // an entry with no kind, and is dropped where the schema is built, far from anyone who could
+      // fix it.
+      for (const label of ["a kind nobody declared", "no kind at all"]) {
+        const row = byLabel(label);
+        const reported = row.loadDiagnostics.length + row.compileDiagnostics.length;
+
+        expectClaim(row.kindInContract !== null || reported > 0, {
+          claimIds: ["STU-003"],
+          what: `${label} produced a field with no kind in the contract, and neither the loader nor the compiler said anything`,
+          detail: JSON.stringify(row),
+        });
+      }
+    } finally {
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);

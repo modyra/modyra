@@ -68,5 +68,6 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `UI-007` | A stepper lands on the values its step declares. | Stepping a price by 0.1 submits 0.30000000000000004. |
 | `STU-001` | Generated code compiles. | A project name becomes a declaration the language refuses. |
 | `STU-002` | A rule the author wrote reaches the generated form, or is reported as lost. | A bound becomes `null` and the field accepts everything. |
+| `STU-003` | A field the author declared reaches the output, or is reported as dropped. | A field kind nobody recognises leaves a field with no kind and no diagnostic. |
 | `A11Y-002` | Focus is borrowed by a widget and handed back once. | A widget takes focus again after it has already returned it. |
 | `PKG-001` | Packed consumers observe the same public behaviour as workspace tests. | The tarball behaves differently, or resolves two copies of a package. |
