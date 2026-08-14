@@ -238,3 +238,77 @@ battle(
     }
   },
 );
+
+battle(
+  {
+    claims: ["DYN-001", "DYN-003"],
+    title: "a defect a flat document is told about is one a tree document is told about",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const flat = (fields) => parseDynamicForm(fields, { mode: "lenient" });
+    const tree = (name, field) =>
+      parseDynamicForm(
+        { version: 2, schema: { node: "group", children: { [name]: { node: "field", field } } } },
+        { mode: "lenient" },
+      );
+
+    // The control: a field with nothing wrong with it is kept and reported on identically in both
+    // shapes, so a difference below is the defect rather than the shape.
+    const goodFlat = flat([{ name: "a", kind: "text" }]);
+    const goodTree = tree("a", { kind: "text", label: "F" });
+    expectEqual(
+      [goodFlat.fields.length, goodFlat.diagnostics.length, goodTree.fields.length, goodTree.diagnostics.length],
+      [1, 0, 1, 0],
+      {
+        claimIds: ["DYN-001"],
+        what: "the two shapes already disagree about a field with nothing wrong with it",
+      },
+    );
+
+    // And the one that does agree, which is why this is about reporting rather than about the tree
+    // parser checking nothing: a name the contract forbids is refused in both shapes, by name.
+    const unsafeFlat = flat([{ name: "__proto__", kind: "text" }]);
+    const unsafeTree = parseDynamicForm(
+      JSON.parse('{"version":2,"schema":{"node":"group","children":{"__proto__":{"node":"field","field":{"kind":"text","label":"F"}}}}}'),
+      { mode: "lenient" },
+    );
+    expectClaim(unsafeFlat.diagnostics.length > 0 && unsafeTree.diagnostics.length > 0, {
+      claimIds: ["DYN-003"],
+      what: "a name the contract forbids is not reported in both shapes",
+      detail: JSON.stringify({ flat: unsafeFlat.diagnostics, tree: unsafeTree.diagnostics }),
+    });
+
+    for (const [what, fields, field] of [
+      ["a kind nobody declared", [{ name: "a", kind: "wormhole" }], { kind: "wormhole", label: "F" }],
+      ["no kind at all", [{ name: "a" }], { label: "F" }],
+      ["a select with no options", [{ name: "a", kind: "select" }], { kind: "select", label: "F" }],
+      ["a select whose options are not a list", [{ name: "a", kind: "select", options: "x" }], { kind: "select", label: "F", options: "x" }],
+      [
+        "a pattern that backtracks exponentially",
+        [{ name: "a", kind: "text", validators: { pattern: "(a+)+$" } }],
+        { kind: "text", label: "F", validators: { pattern: "(a+)+$" } },
+      ],
+    ]) {
+      const asList = flat(fields);
+      const asTree = tree("a", field);
+      ctx.log.note("one defect in both shapes", {
+        what,
+        flat: { kept: asList.fields.length, codes: asList.diagnostics.map((each) => each.code) },
+        tree: { kept: asTree.fields.length, codes: asTree.diagnostics.map((each) => each.code) },
+      });
+
+      // The flat shape names each of these. The tree shape drops the field, or the rule inside it,
+      // and says nothing — so a document that lost a rule the author wrote looks like one that
+      // never had it, and the form accepts what the document said to refuse.
+      expectClaim(asList.diagnostics.length === 0 || asTree.diagnostics.length > 0, {
+        claimIds: ["DYN-001", "DYN-003"],
+        what: `${what}: reported as a flat field list, silent as a v2 document`,
+        detail: JSON.stringify({
+          flat: asList.diagnostics.map((each) => each.code),
+          tree: asTree.diagnostics.map((each) => each.code),
+        }),
+      });
+    }
+  },
+);
