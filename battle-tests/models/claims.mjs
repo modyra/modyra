@@ -221,6 +221,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "PER-003",
+    title: "A restored draft is as valid as the state it was saved from.",
+    area: "persistence",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/core oneOf — the anti-tampering guard for option fields",
+      "@modyra/core value-contracts — an option's value is whatever the option list holds",
+      "docs/guides/typed-forms.md — a draft restores what the user had",
+    ],
+  },
+  {
     id: "SEC-001",
     title: "Unsafe path segments never register fields or pollute prototypes.",
     area: "security",
