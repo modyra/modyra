@@ -440,7 +440,7 @@ test("a record compiles to the contract's record node, and a keyed row may sit u
   assert.deepEqual(parsed.diagnostics.filter((d) => d.severity === "error"), []);
 });
 
-test("an array below another array is refused where it is written, not emitted", () => {
+test("an array below another array is emitted, as any other nesting is", () => {
   const project = createNestedProject();
   const nested = {
     ...project,
@@ -475,9 +475,67 @@ test("an array below another array is refused where it is written, not emitted",
   };
 
   const { contract, diagnostics } = compileToContract(nested);
-  assert.ok(
-    diagnostics.some((d) => d.code === "UNSUPPORTED_NESTING" && d.severity === "error"),
-    "a second positional level is named, with the node that declared it",
+  assert.deepEqual(
+    diagnostics.filter((d) => d.severity === "error"),
+    [],
+    "a second positional level is addressable, so nothing is refused",
   );
-  assert.equal(contract?.schema.children.outer, undefined, "and nothing unaddressable is emitted");
+
+  const outer = contract?.schema.children.outer;
+  assert.equal(outer?.node, "array", "the outer collection is emitted");
+  assert.equal(outer?.item.node, "array", "and its row is the collection it declares");
+  assert.equal(outer?.item.item.node, "field", "down to the leaf");
+});
+
+test("a project may nest collections of either kind, as deep as it declares them", () => {
+  // Three levels, both kinds, with the positional one inside a keyed row and another positional one
+  // inside that: the shape ADR 0043 unlocked, compiled rather than refused.
+  const project = createNestedProject();
+  const deep = {
+    ...project,
+    schema: {
+      ...project.schema,
+      children: [
+        {
+          node: "record",
+          id: "nd_orders",
+          name: "orders",
+          item: {
+            node: "array",
+            id: "nd_lines",
+            name: "lines",
+            item: {
+              node: "array",
+              id: "nd_allocations",
+              name: "allocations",
+              item: {
+                node: "field",
+                id: "nd_bin",
+                name: "bin",
+                fieldKind: "text",
+                valueType: "string",
+                initialValue: "",
+                validators: [],
+              },
+              initialRows: [],
+              validators: [],
+            },
+            initialRows: [],
+            validators: [],
+          },
+          initialRows: {},
+          validators: [],
+        },
+      ],
+    },
+  };
+
+  const { contract, diagnostics } = compileToContract(deep);
+  assert.deepEqual(diagnostics.filter((d) => d.severity === "error"), []);
+
+  const orders = contract?.schema.children.orders;
+  assert.equal(orders?.node, "record");
+  assert.equal(orders?.item.node, "array", "a keyed row holds a positional collection");
+  assert.equal(orders?.item.item.node, "array", "which holds another one");
+  assert.equal(orders?.item.item.item.node, "field", "down to the leaf");
 });
