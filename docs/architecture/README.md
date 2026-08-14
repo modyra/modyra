@@ -64,6 +64,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0046: An adapter states no less than the engine](0046-an-adapter-states-no-less-than-the-engine.md) — a capability the engine gains ships only when every package that restates it has it, checked by a consumer program rather than by a green suite; a nested collection's value has the same type as a top-level one
 - [ADR 0047: An expression reads what a field could name](0047-an-expression-reads-what-a-field-could-name.md) — a document's predicate passes the engine's path guard and answers from the value's own properties; `""` stays the root reference
 - [ADR 0048: A panel does not print what it masks](0048-a-panel-does-not-print-what-it-masks.md) — a masked field's value is taken out of the errors beside it, and a snapshot describes a file rather than handing it over
+- [ADR 0049: A released custodian owes no focus](0049-a-released-custodian-owes-no-focus.md) — `release()` ends the borrow, so a widget being torn down places no focus; a named target is still honoured, and the fallback keeps the case it was written for
 
 ## Security-relevant records
 
