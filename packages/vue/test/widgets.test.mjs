@@ -16,6 +16,7 @@ runCommandExecutionTests(test, assert, executeVueCommands, tick);
 
 test("useMdySelect exposes reactive select API", async () => {
   const api = useMdySelect({
+    widgetId: "select-under-test",
     options: [
       { value: "a", label: "A" },
       { value: "b", label: "B" },

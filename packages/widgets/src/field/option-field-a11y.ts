@@ -3,6 +3,7 @@
  */
 
 import type { MdyFieldError } from "@modyra/core";
+import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_CSS_PROPERTIES } from "../css.js";
 import { MDY_FIELD_STATE_CLASSES, MDY_FIELD_SHELL_CLASSES } from "../structure.js";
@@ -36,6 +37,7 @@ export function optionFieldPartIds(widgetId: string): {
   readonly descriptionId: string;
   readonly errorId: string;
 } {
+  assertUsableWidgetId(widgetId);
   return {
     labelId: `${widgetId}__label`,
     groupId: `${widgetId}__group`,

@@ -17,6 +17,7 @@ runCommandExecutionTests(test, assert, executeSvelteCommands, tick);
 
 test("useMdySelect exposes reactive select stores", async () => {
   const api = useMdySelect({
+    widgetId: "select-under-test",
     options: [
       { value: "a", label: "A" },
       { value: "b", label: "B" },

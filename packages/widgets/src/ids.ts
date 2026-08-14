@@ -50,6 +50,31 @@ export function isValidWidgetId(widgetId: string): boolean {
     && !/[\t\n\f\r ]/.test(widgetId);
 }
 
+/**
+ * Refuses a widget id that cannot be one, where a widget's part ids are built.
+ *
+ * {@link isValidWidgetId} is the question a host can ask; this is the answer they get if they do not.
+ * A predicate only protects the renderers that remember to call it, and this package is the surface
+ * third-party renderers are built on — the one nobody has written yet is who this is for.
+ *
+ * Not in {@link defaultWidgetIdFactory}: that is a joining primitive a consumer may replace, it is
+ * documented as deterministic and reversible, and something constructing ids speculatively is
+ * entitled to use it. The per-kind builders are this contract's own front door, and a widget whose
+ * ids cannot be referenced is not a widget anyone can render.
+ *
+ * Loud rather than repaired: an id is consumer-visible, so rewriting one silently would change what
+ * a host's tests and stylesheets look for. An id containing whitespace was never a usable id, so
+ * nothing correct is refused.
+ */
+export function assertUsableWidgetId(widgetId: string): void {
+  if (isValidWidgetId(widgetId)) return;
+  throw new Error(
+    `[modyra] "${widgetId}" cannot be a widget id: it must be non-empty, and may contain neither ` +
+    `whitespace nor "${MDY_ID_DELIMITER}". Whitespace splits every ARIA reference built from it ` +
+    "into several, each resolving to nothing, so the control ends up with no accessible name.",
+  );
+}
+
 /** Default deterministic ID factory. */
 export const defaultWidgetIdFactory: MdyWidgetIdFactory = {
   part(widgetId, part) {
