@@ -105,8 +105,14 @@ function mapFieldValidator(
     case "max":
     case "minLength":
     case "maxLength": {
-      if (typeof v.value !== "number") {
-        diagnostics.push({ code: "MISSING_VALIDATOR_VALUE", severity: "warning", message: `Validator "${v.kind}" on "${node.name}" has no numeric value and was omitted`, nodeId: node.id, validatorId: v.id });
+      // `Number.isFinite`, not `typeof`. NaN and both infinities have a number's type and survive a
+      // type check, and `literalCode` is `JSON.stringify`, which turns each of them into `null` —
+      // so `minLength: NaN` became `minLength(null)`, which accepts everything and declares
+      // `minLength: null` as a fact the control then carries. An author writes a minimum, the
+      // generated form has none, and nothing between the two says a word. A bound that is not a
+      // finite number is no more usable than a bound that is a string, which was already reported.
+      if (!Number.isFinite(v.value)) {
+        diagnostics.push({ code: "MISSING_VALIDATOR_VALUE", severity: "warning", message: `Validator "${v.kind}" on "${node.name}" has no finite numeric value and was omitted`, nodeId: node.id, validatorId: v.id });
         return null;
       }
       imports.add(validatorSource, v.kind);
@@ -145,7 +151,8 @@ function mapFieldValidator(
 
 function mapArrayValidator(v: StudioArrayValidator, node: ArrayNode | RecordNode, imports: ImportResolver, diagnostics: StudioDiagnostic[], validatorSource: string): string | null {
   const msgArg = v.message !== undefined ? [printString(v.message)] : [];
-  if ((v.kind === "min" || v.kind === "max") && typeof v.value === "number") {
+  // The same distinction as the field bounds above: a row count of NaN is not a row count.
+  if ((v.kind === "min" || v.kind === "max") && Number.isFinite(v.value)) {
     const fn = v.kind === "min" ? "minLength" : "maxLength";
     imports.add(validatorSource, fn);
     return printCall(fn, [literalCode(v.value), ...msgArg]);
