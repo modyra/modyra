@@ -42,6 +42,7 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 
 | Id | Promise | A break looks like |
 | --- | --- | --- |
+| `VAL-004` | A native constraint never promises less than the validators it came from. | Two rules meet and the browser is told the looser one. |
 | `DYN-001` | Typed and dynamic forms agree for the supported common subset. | The same operations produce different canonical states. |
 | `DYN-002` | Collection kind survives flattening and reconstruction. | A record comes back as an array. |
 | `PER-001` | Draft restore reconstructs declared structure without resurrecting removed rows. | A removed row returns after a restore. |
