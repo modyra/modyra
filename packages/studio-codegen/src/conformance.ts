@@ -30,13 +30,34 @@ export async function runConformanceSuite<T>(target: StudioTarget<T>, project: M
     failures.push("generate() is not deterministic — same project+options produced different output");
   }
 
+  // Nothing generated *and* nothing said. A target that finds a project it cannot express reports it
+  // — that is what diagnostics are for, and `analyze` answers the same question earlier — so silence
+  // with no output is a target claiming it succeeded at producing nothing. This suite exists to be
+  // passed before a target ships, and passing by having nothing to check is the emptiest way through
+  // it. A target that emits no files and says why is conformant, which is the legitimate case.
+  if (first.files.length === 0 && !first.diagnostics.some((d) => d.severity === "error")) {
+    failures.push("generate() produced no files and reported no error explaining why");
+  }
+
+  const seenPaths = new Set<string>();
   for (const file of first.files) {
-    if (file.path.startsWith("/") || file.path.split("/").includes("..")) {
+    if (!isWritableRelativePath(file.path)) {
       failures.push(`unsafe file path: "${file.path}"`);
     }
     if (!file.path || !file.language || !file.role) {
       failures.push(`file "${file.path}" is missing path/language/role`);
     }
+    // A file is a path, a language, a role **and content**. Three were checked, so a file with no
+    // content, or content that is a number, was conformant — and a host writes what it is handed.
+    if (typeof file.content !== "string") {
+      failures.push(`file "${file.path}" has no string content`);
+    }
+    // Two files at one path is a target overwriting its own output: whichever a host writes second
+    // is the one that survives, and which that is depends on how the host iterates.
+    if (seenPaths.has(file.path)) {
+      failures.push(`two files share the path "${file.path}"`);
+    }
+    seenPaths.add(file.path);
   }
 
   for (const d of first.diagnostics) {
@@ -50,4 +71,25 @@ export async function runConformanceSuite<T>(target: StudioTarget<T>, project: M
   }
 
   return { passed: failures.length === 0, failures };
+}
+
+/**
+ * Whether a generated file's path stays inside the directory a host writes into.
+ *
+ * Both separators, because a path is written by a target and resolved by a host — and a host on
+ * Windows reads `..\\out.ts` exactly as this reads `../out.ts`. Checking one notation is the same
+ * shape of hole as a rule that catches `(a|a)*` and misses `([a-z]|[a-z])*`: right about the
+ * examples it was written against, blind to the other spelling.
+ *
+ * Refused: an absolute path in either notation, a drive letter, a UNC share, and `..` as a segment
+ * however the segments are separated.
+ */
+function isWritableRelativePath(path: string): boolean {
+  if (typeof path !== "string" || path.length === 0) return false;
+  const separator = String.fromCharCode(92);
+  if (path.startsWith("/") || path.startsWith(separator)) return false;
+  // `C:` or `c:/…` — a drive-qualified path is absolute on the host that understands it.
+  if (/^[A-Za-z]:/.test(path)) return false;
+  const segments = path.split(new RegExp(`[/${separator}${separator}]`));
+  return !segments.includes("..");
 }
