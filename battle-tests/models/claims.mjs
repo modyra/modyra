@@ -382,6 +382,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "UI-004",
+    title: "A choice the list no longer offers is still shown as the choice it is.",
+    area: "widgets",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/widgets optionsWithUnrecognizedValue — what it will not erase, it has to show",
+      "@modyra/widgets options-reconciliation — unrecognised values are named by themselves",
+      "@modyra/core value-contracts — an option's value is whatever the option list holds",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
