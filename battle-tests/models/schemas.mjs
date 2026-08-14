@@ -104,3 +104,27 @@ export const KEYED_ROWS_SPEC = Object.freeze({
     }),
   }),
 });
+
+/**
+ * The same row shape, addressed by position instead of by key.
+ *
+ * A record and an array answer the same questions about a row and answer them differently: one has
+ * an identity a rename can change, the other an index a move can change. Attacks on collection
+ * semantics that exist only for the keyed shape prove half a claim, so the positional counterpart is
+ * declared here rather than inline in whichever battle needed it first.
+ */
+export const POSITIONAL_ROWS_SPEC = Object.freeze({
+  version: MDY_SCHEMA_SPEC_VERSION,
+  fields: Object.freeze({
+    title: Object.freeze({ kind: "text", required: true, initial: "invoice" }),
+    items: Object.freeze({
+      kind: "array",
+      of: Object.freeze({
+        code: Object.freeze({ kind: "text", required: true }),
+        note: Object.freeze({ kind: "text" }),
+        tax: Object.freeze({ kind: "text", async: true }),
+      }),
+      initial: Object.freeze([]),
+    }),
+  }),
+});
