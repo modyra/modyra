@@ -996,7 +996,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   function rowColumnsAt(row: StudioLayoutNode & { kind: "columns" }, size: StudioLayoutBreakpoint): number {
     for (let i = BREAKPOINT_ORDER.indexOf(size); i >= 0; i -= 1) {
       const count = row.at?.[BREAKPOINT_ORDER[i]!];
-      if (typeof count === "number") return count;
+      // Finite, not merely a number: `at` is authored data, and NaN has a number's type. A track
+      // count of NaN reaches the grid as `repeat(NaN, …)`, which paints nothing and reads as a
+      // layout the author never wrote.
+      if (Number.isFinite(count)) return count as number;
     }
     // What the foundation does with no `at`: stacked at base, the declared tracks from `sm` up.
     return size === "base" ? 1 : row.columns.length;

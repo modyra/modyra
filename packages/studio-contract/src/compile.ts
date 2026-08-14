@@ -245,8 +245,13 @@ function mapCollectionNode(
     label: node.label,
     item: row,
     initialValue: node.initialRows,
-    ...(typeof minItems === "number" ? { minItems } : {}),
-    ...(typeof maxItems === "number" ? { maxItems } : {}),
+    // `Number.isFinite`, not `typeof`: NaN and both infinities have a number's type and serialise to
+    // `null` in the JSON this contract is written as, so a row count the author wrote left the
+    // project as `"minItems": null` — a rule that is absent from the output with nothing between
+    // the project and the engine saying so. A value that is not a finite number is no more usable
+    // than one of the wrong type, which is already dropped.
+    ...(Number.isFinite(minItems) ? { minItems } : {}),
+    ...(Number.isFinite(maxItems) ? { maxItems } : {}),
   };
 }
 

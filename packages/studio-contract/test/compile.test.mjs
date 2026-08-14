@@ -629,3 +629,27 @@ test("a project two collections deep compiles into a form that runs", async () =
     form.destroy();
   }
 });
+
+test("a row count that is not a finite number is left out rather than written as null", () => {
+  // The contract is JSON, so NaN and both infinities serialise to `null` — and they have a number's
+  // type, so a `typeof` gate let them through. The author's rule left the project as
+  // `"minItems": null`, absent from the output with nothing between the project and the engine
+  // saying so. The wrong *type* was already dropped, which is what shows the gate was too narrow
+  // rather than the handling missing.
+  const compiled = (value) => {
+    const project = createCheckoutProject();
+    const items = project.schema.children.find((n) => n.id === "nd_items");
+    items.validators.push({ id: "val_items_min", kind: "min", value });
+    return compileToContract(project).contract.schema.children.items;
+  };
+
+  for (const value of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, "3"]) {
+    const node = compiled(value);
+    assert.equal("minItems" in node, false, `${String(value)} reached the contract`);
+  }
+
+  // The control: a whole number reaches it, and a collection with no rule carries none.
+  assert.equal(compiled(2).minItems, 2);
+  const untouched = compileToContract(createCheckoutProject()).contract.schema.children.items;
+  assert.equal("minItems" in untouched, false);
+});
