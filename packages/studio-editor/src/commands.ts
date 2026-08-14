@@ -669,14 +669,31 @@ export function createSequenceCommand(steps: readonly Command[], description: st
     kind: "sequence",
     description,
     affectedIds: [...new Set(steps.flatMap((step) => step.affectedIds))],
+    /**
+     * Every step's findings, not the first step's.
+     *
+     * Returning at the first step that says *anything* is what a reader expects to mean "stop at the
+     * first problem", and it does not: `CommandHistory` rejects on an **error**, so a step producing
+     * an advisory made the sequence stop looking — and an invalid step after it was applied.
+     *
+     * Latent today, because every diagnostic in this file goes through one helper that hardcodes
+     * `severity: "error"`. That is exactly why it is worth being right about now: the day a warning
+     * is added, sequences stop being validated, and nothing about that change looks like it touches
+     * sequences.
+     *
+     * An error still stops the walk — a step that must not apply cannot be threaded through to give
+     * the next one a project to look at — while an advisory is collected and the walk goes on.
+     */
     validate(project: MdyStudioProject): StudioDiagnostic[] {
+      const found: StudioDiagnostic[] = [];
       let current = project;
       for (const step of steps) {
         const diagnostics = step.validate(current);
-        if (diagnostics.length) return diagnostics;
+        found.push(...diagnostics);
+        if (diagnostics.some((d) => d.severity === "error")) return found;
         current = step.apply(current);
       }
-      return [];
+      return found;
     },
     apply(project: MdyStudioProject): MdyStudioProject {
       return steps.reduce((current, step) => step.apply(current), project);

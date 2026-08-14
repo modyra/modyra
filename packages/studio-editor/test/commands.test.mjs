@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   createDeleteCommand,
+  createSequenceCommand,
   createInsertCommand,
   createMoveCommand,
   createUpdateNodeCommand,
@@ -406,4 +407,36 @@ test("addImplementation registers a stub and round-trips; rejects duplicate id",
 
   const dup = createAddImplementationCommand({ ...ref, displayName: "different" });
   assert.ok(dup.validate(applied).some((d) => d.code === "DUPLICATE_ID"));
+});
+
+test("a sequence looks at every step, and an advisory one does not hide an invalid one", () => {
+  // `validate` returned at the first step that said *anything*, and `CommandHistory` rejects on an
+  // **error** — so an advisory step made the sequence stop looking, and an invalid step after it was
+  // applied. Latent while every diagnostic in commands.ts is an error, which is why it is worth
+  // being right about now: the day a warning is added, sequences stop being validated and nothing
+  // about that change looks like it touches sequences.
+  const step = (diagnostics, mark) => ({
+    kind: "test",
+    description: mark,
+    affectedIds: [],
+    validate: () => diagnostics,
+    apply: (project) => ({ ...project, metadata: { ...project.metadata, [mark]: true } }),
+    inverse: () => step([], `undo-${mark}`),
+  });
+  const advisory = [{ code: "ADVICE", severity: "warning", message: "worth knowing" }];
+  const invalid = [{ code: "NOPE", severity: "error", message: "cannot" }];
+  const project = createCheckoutProject();
+
+  const hidden = createSequenceCommand([step(advisory, "a"), step(invalid, "b")], "two steps");
+  const found = hidden.validate(project);
+  assert.ok(found.some((d) => d.severity === "error"), "the invalid step was hidden by the advisory one");
+  assert.ok(found.some((d) => d.code === "ADVICE"), "the advisory finding was dropped");
+
+  // An error still stops the walk: a step that must not apply cannot be threaded through to give the
+  // next one a project to look at.
+  const stopped = createSequenceCommand([step(invalid, "a"), step(invalid, "b")], "two invalid");
+  assert.equal(stopped.validate(project).length, 1);
+
+  // The known-good case in the same run: a clean sequence validates clean.
+  assert.deepEqual(createSequenceCommand([step([], "a"), step([], "b")], "clean").validate(project), []);
 });
