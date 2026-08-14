@@ -9,6 +9,7 @@ import { createId } from "./ids.js";
 import {
   RESERVED_NAMES,
   STUDIO_LAYOUT_MAX_DEPTH,
+  STUDIO_SCHEMA_MAX_DEPTH,
   STUDIO_VERSION,
   type MdyStudioProject,
   type StudioDiagnostic,
@@ -190,6 +191,21 @@ function diagnoseProject(project: MdyStudioProject, idx: StudioIndexes): StudioD
   for (const validator of project.formValidators) {
     diagnostics.push(...diagnoseCondition(validator.condition, validator.id));
   }
+  // Deeper than this editor will place. Reported rather than refused: an import or a generator can
+  // legitimately produce it and the value is the author's, but a project nobody can then edit is
+  // something they have to be told about — the editor's own bound, read from one place so the two
+  // cannot disagree again.
+  // Counted the way a placement is: the editor asks how many ancestors a node would have, and the
+  // root is not one of them. Two bounds that mean different things by "depth" agree on the number
+  // and disagree by one, which is the kind of difference nobody finds until a project sits on it.
+  const nesting = Math.max(0, schemaDepth(project.schema).depth - 1);
+  if (nesting > STUDIO_SCHEMA_MAX_DEPTH) {
+    diagnostics.push({
+      code: "SCHEMA_TOO_DEEP",
+      severity: "warning",
+      message: `Schema nests ${nesting} levels, deeper than the ${STUDIO_SCHEMA_MAX_DEPTH} this editor will place`,
+    });
+  }
   diagnostics.push(...diagnoseLayout(project, idx));
 
   return diagnostics;
@@ -309,6 +325,32 @@ const STUDIO_LAYOUT_MAX_STRUCTURAL_DEPTH = 100;
  * survived the clone and was reported as `LAYOUT_TOO_DEEP`. That is technically true and is the
  * wrong message: a person reading it goes looking for a deep nesting they do not have.
  */
+function schemaDepth(schema: unknown): { depth: number; cyclic: boolean } {
+  // The same walk the layout gets, on the other structure that goes through the same clone. A
+  // project carries two nested things and `structuredClone` recurses through both: the layout was
+  // guarded ahead of it and the schema went on reaching the identical frame, at the identical depth.
+  let deepest = 0;
+  const pending: Array<{ node: unknown; depth: number; ancestors: ReadonlySet<unknown> }> = [
+    { node: schema, depth: 1, ancestors: new Set() },
+  ];
+  while (pending.length > 0) {
+    const { node, depth, ancestors } = pending.pop()!;
+    if (typeof node !== "object" || node === null) continue;
+    if (ancestors.has(node)) return { depth: deepest, cyclic: true };
+    if (depth > deepest) deepest = depth;
+    // Deep enough to be unprocessable is deep enough to stop counting: the answer cannot get smaller
+    // and walking the rest of a generated tree costs the memory the guard exists to protect.
+    if (deepest > STUDIO_LAYOUT_MAX_STRUCTURAL_DEPTH) return { depth: deepest, cyclic: false };
+    const here = new Set(ancestors).add(node);
+    const record = node as { children?: unknown; item?: unknown };
+    if (Array.isArray(record.children)) {
+      for (const child of record.children) pending.push({ node: child, depth: depth + 1, ancestors: here });
+    }
+    if (record.item !== undefined) pending.push({ node: record.item, depth: depth + 1, ancestors: here });
+  }
+  return { depth: deepest, cyclic: false };
+}
+
 function unprocessableLayout(layout: unknown): { code: string; message: string } | null {
   if (!Array.isArray(layout)) return null;
   const pending: Array<{ node: unknown; depth: number; ancestors: ReadonlySet<unknown> }> =
@@ -359,6 +401,18 @@ export function loadProject(raw: unknown): NormalizeResult {
   // A layout nobody can walk is dropped rather than carried: this module's own rule is that a stale
   // arrangement degrades to "unarranged" and never blocks opening the project, and a layout that
   // cannot be cloned is the most stale one there is. The finding says which of the two it was.
+  // The schema is not arrangement: a project without it is not a project, so a schema nobody can
+  // clone is refused rather than degraded. `loadProject` already throws for input it cannot use.
+  const schema = schemaDepth((migrated as { schema?: unknown }).schema);
+  if (schema.cyclic) {
+    throw new StudioModelError("Studio project schema contains itself, so it has no depth to walk");
+  }
+  if (schema.depth > STUDIO_LAYOUT_MAX_STRUCTURAL_DEPTH) {
+    throw new StudioModelError(
+      `Studio project schema nests deeper than ${STUDIO_LAYOUT_MAX_STRUCTURAL_DEPTH} levels and cannot be processed`,
+    );
+  }
+
   const unprocessable = unprocessableLayout(
     (migrated as { presentation?: { layout?: unknown } }).presentation?.layout,
   );
