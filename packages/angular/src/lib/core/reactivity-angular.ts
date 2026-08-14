@@ -58,6 +58,35 @@ function normalizeOptions(
   };
 }
 
+
+/**
+ * Whether effects can actually be run with this injector, asked rather than inferred.
+ *
+ * Holding an injector was taken to mean effects work, which is a proxy for the question and not the
+ * question. An injector created with no parent — `Injector.create({ providers: [] })` — has no
+ * `ChangeDetectionScheduler`, so `effect()` raises `NG0201` from inside Angular *after* the
+ * capability has already promised effects. The no-injector path degrades honestly and warns; the
+ * better-looking input produced the worse failure.
+ *
+ * Measured, so the boundary is stated rather than guessed: a parentless `Injector.create` raises,
+ * while `TestBed.inject(Injector)` and a `createEnvironmentInjector` child of an application
+ * injector both run. So this is reached by a detached container rather than by anything `inject()`
+ * hands a component — but the cost of asking is one effect created and destroyed at construction,
+ * and the cost of inferring is a capability that lies.
+ *
+ * The same shape as `solidReactivity` probing its graph rather than matching a build.
+ */
+function canRunEffects(injector: Injector | undefined): boolean {
+  if (injector === undefined) return false;
+  try {
+    effect(() => { /* nothing: the question is whether creating one is allowed */ }, { injector })
+      .destroy();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Binds the framework-agnostic form engine to Angular's native signals: the
  * engine's state IS Angular signal state, so templates, `computed`s and
@@ -75,7 +104,7 @@ export function angularReactivity(
 ): MdyReactivity {
   const { injector, unsupported, diagnostics } =
     normalizeOptions(injectorOrOptions);
-  const hasEffects = injector !== undefined;
+  const hasEffects = canRunEffects(injector);
 
   return {
     id: Symbol("angular"),
