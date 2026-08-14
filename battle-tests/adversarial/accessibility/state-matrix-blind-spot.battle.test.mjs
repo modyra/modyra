@@ -11,19 +11,20 @@
  * "about the states a widget is not in", mounts one more fixture and inspects it — with nothing
  * driven. So the widget is inspected in its default state only.
  *
- * A projection that emits the forbidden attribute unconditionally would be caught. One that emits it
- * only when a consumer sets the state cannot be: the state is undeclared, so the matrix never drives
- * it, so the attribute never appears while the check is looking. `state.readonly ? "true" : null` is
- * the second shape, and it is the shape the defect actually has.
+ * A projection that emits the forbidden attribute unconditionally was caught. One that emits it only
+ * when a consumer sets the state was not: the state is undeclared, so the matrix never drove it, so
+ * the attribute was never present while the check looked. `state.readonly ? "true" : null` is the
+ * second shape, and it is the shape the defect had — a checkbox announcing `aria-readonly` was live
+ * while three adapter suites asserted the verdict was empty.
  *
- * The gap is structural rather than a missing case: the loop's own bound is the declared states, so
- * no fixture reaches an undeclared one. Widening it means driving each kind into the states it does
- * not declare and asserting nothing is announced — which is what a consumer does the moment they set
- * `readonly` on a checkbox because their form has a read-only mode.
+ * The gap was structural rather than a missing case: the loop's bound was the declared states, so no
+ * fixture reached an undeclared one. It now drives each kind into the states it does *not* declare,
+ * fresh mount per state, which is what a consumer does the moment their form has a read-only mode.
  *
- * Both halves are asserted here with a fixture this battle owns, so the finding does not depend on
- * any adapter's renderer: the checker catches the attribute when it is there, and the matrix returns
- * a clean verdict on a widget that carries it under a state the matrix will not drive.
+ * These battles are what that fix has to keep true, asserted through a fixture this file owns so
+ * nothing depends on an adapter's renderer: a widget announcing the forbidden attribute is reported
+ * whether it does so at all times or only in the state nobody declared, and the undeclared states
+ * are actually reached rather than assumed to be.
  */
 
 import { collectStateMatrix, inspectUnsupportedStateAria } from "@modyra/widgets/testing";
@@ -57,7 +58,7 @@ function readonlyAnnouncingCheckbox(document) {
 battle(
   {
     claims: ["A11Y-004"],
-    title: "the matrix reports a clean widget while the widget announces an undeclared state",
+    title: "a widget announcing a state only when it is in it is still reported",
     environments: ["node"],
   },
   async (ctx) => {
@@ -109,26 +110,26 @@ battle(
         unsupportedAria: matrix.unsupportedAria,
       });
 
-      // The matrix never asks for the undeclared state, which is what leaves the widget in its
-      // default shape for the one pass that would have reported it.
-      expectClaim(!driven.includes("readonly"), {
+      // The undeclared state has to be asked for. Without this the assertion below could pass on a
+      // widget that was never put into the state at all.
+      expectClaim(driven.includes("readonly"), {
         claimIds: ["A11Y-004"],
-        what: "the matrix drove checkbox into readonly, so the blind spot this battle describes is closed",
+        what: "the matrix never drove checkbox into readonly, so it cannot see what is announced there",
         detail: JSON.stringify(driven),
       });
 
-      // And so it returns clean on a widget that announces a state its kind does not have. This is
-      // the assertion a fix turns: driving each kind through the states it does *not* declare, and
-      // reporting what is announced there.
+      // And the verdict names the kind. A projection emitting the attribute only under the state
+      // nobody declared is exactly the shape that was invisible, and it is the shape the fix exists
+      // for — this is the assertion that turns if the drive is narrowed back.
       expectEqual(matrix.unsupportedAria, ["checkbox"], {
         claimIds: ["A11Y-004"],
-        what: "the matrix reported no undeclared-state ARIA for a widget that announces it under that very state",
+        what: "a widget announcing an undeclared state under that state was reported clean",
         detail: JSON.stringify({ driven, unsupportedAria: matrix.unsupportedAria }),
       });
 
-      // The control for the control: the same widget, inspected while it is in the state the
-      // matrix declined to drive it into, is reported. So the empty verdict above is where the
-      // check was pointed and not the checker failing on this fixture.
+      // The control for the control: the same widget inspected directly, while it is in the state,
+      // is reported. So the verdict above is the matrix reaching the state and not the checker
+      // answering the same way for everything.
       const inState = readonlyAnnouncingCheckbox(dom.document);
       inState.setReadonly(true);
       expectClaim(inspectUnsupportedStateAria(inState.root, "checkbox").length > 0, {
