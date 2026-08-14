@@ -47,6 +47,7 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `PER-001` | Draft restore reconstructs declared structure without resurrecting removed rows. | A removed row returns after a restore. |
 | `PER-002` | Undo and redo preserve the documented structural semantics. | Undo across a structural change loses or duplicates a row. |
 | `SEC-001` | Unsafe path segments never register fields or pollute prototypes. | `__proto__` in a key, contract, patch or draft reaches the model. |
+| `SEC-003` | A sanitized value cannot form markup, wherever it entered the form. | A cell reached through a patch or a row keeps the angle brackets a set would have stripped. |
 | `SEC-002` | A value the panel masks is not readable elsewhere in the same panel. | The value is bulleted and the error beside it quotes it. |
 | `SSR-001` | A widget command that needs a DOM is not executed where there is none. | A server render is told to focus an element that does not exist. |
 | `A11Y-001` | Partial and late rendering never leaves dangling ID references after settling. | `aria-controls` points at a removed element. |
