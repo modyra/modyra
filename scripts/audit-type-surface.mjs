@@ -144,6 +144,47 @@ function unionMembersOf(type) {
 }
 
 /**
+ * A class's members, from outside.
+ *
+ * Classes were outside this audit entirely: it walked interfaces, type aliases and functions, so
+ * `MdyTypedForm`'s thirty-odd methods, `MdyFormEngine`'s and every error class's were under no
+ * classification at all. Adding, renaming or removing one of them reported `patch`, which is
+ * finding K's shape one level further out than the unions were.
+ *
+ * A method records its signature rather than its name, for the reason `signatureOf` gives: a method
+ * that gains a required parameter breaks every caller and would otherwise read as unchanged.
+ *
+ * `protected` is recorded and marked. A plain consumer never sees one, but `MdyTypedFormBase` is
+ * built to be extended and an adapter that extends it depends on those members exactly as a
+ * consumer depends on a public one — while the mark keeps the two readable apart in a diff.
+ */
+function classMembersOf(node) {
+  const members = [];
+  for (const member of node.members ?? []) {
+    const modifiers = member.modifiers ?? [];
+    if (modifiers.some((m) => m.kind === ts.SyntaxKind.PrivateKeyword)) continue;
+    // `#name` is private at the language level and never reaches a declaration a consumer reads.
+    if (member.name && ts.isPrivateIdentifier(member.name)) continue;
+    if (ts.isConstructorDeclaration(member)) {
+      members.push(`constructor${signatureOf(member)}`);
+      continue;
+    }
+    const name = member.name && ts.isIdentifier(member.name)
+      ? member.name.text
+      : member.name?.getText?.();
+    if (!name) continue;
+    const scope = modifiers.some((m) => m.kind === ts.SyntaxKind.ProtectedKeyword) ? "protected " : "";
+    if (ts.isMethodDeclaration(member) || ts.isMethodSignature(member)) {
+      members.push(`${scope}${name}${signatureOf(member)}`);
+      continue;
+    }
+    const type = member.type?.getText?.().replace(/\s+/g, " ").trim() ?? "(inferred)";
+    members.push(`${scope}${name}${member.questionToken ? "?" : ""}: ${type}`);
+  }
+  return members.sort();
+}
+
+/**
  * A recorded entry back into name, optionality and declared type.
  *
  * Entries come in two shapes, because two kinds of thing are recorded: `name?: type` for a member of
@@ -209,6 +250,8 @@ for (const entry of ENTRIES) {
       // coverage. Anything that is not a union of literals is recorded as present but opaque, so
       // its disappearance is still caught while its contents make no claim.
       surface[node.name.text] = unionMembersOf(node.type);
+    } else if (exported && ts.isClassDeclaration(node) && node.name) {
+      surface[node.name.text] = classMembersOf(node);
     } else if (exported && ts.isFunctionDeclaration(node) && node.name) {
       // A function is public surface too, and the projections made that concrete: each returns an
       // inline type literal naming which parts it hands back, so "which parts does this projection
