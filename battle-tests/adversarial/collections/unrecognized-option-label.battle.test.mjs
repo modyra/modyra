@@ -25,7 +25,11 @@
  * comparison was hardened against exactly the coercion the label still performs.
  */
 
-import { optionsWithUnrecognizedValue, optionsWithUnrecognizedValues } from "@modyra/widgets";
+import {
+  createSelectController,
+  optionsWithUnrecognizedValue,
+  optionsWithUnrecognizedValues,
+} from "@modyra/widgets";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";

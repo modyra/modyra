@@ -53,17 +53,20 @@ battle(
     });
 
     try {
-      // The default `keyFor` is the same one the select uses, in a separate file. Every option
-      // answers to the same key, so the index holds whichever was written last.
-      const keys = options.map((option) => String(option.value));
-      ctx.log.note("the key a multiselect derives for each option", { keys });
+      // The keys the controller published for its own options, read the way a renderer reads them
+      // rather than re-derived here — the derivation is what was wrong, so a copy of it in this
+      // file could only confirm what the battle already assumed.
+      const structural = ["label", "trigger", "placeholder", "chips", "popup", "search", "group", "description", "error"];
+      const keys = Object.keys(controller.view().parts).filter((part) => !structural.includes(part));
+      ctx.log.note("the key a multiselect binds each option under", { keys });
 
       expectEqual(new Set(keys).size, options.length, {
         claimIds: ["UI-003"],
-        what: "a multiselect gives two different options the same key",
+        what: "a multiselect binds two different options under the same key",
         detail: JSON.stringify(keys),
       });
 
+      // Toggling by the key the first option is drawn with, which is what a click on it sends.
       controller.dispatch({ type: "toggle", optionKey: keys[0] });
       const held = form.getValue().picks;
       ctx.log.note("what the form holds after toggling the first option", { held });
