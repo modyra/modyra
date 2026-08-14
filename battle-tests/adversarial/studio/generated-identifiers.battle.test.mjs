@@ -64,7 +64,7 @@ console.log(JSON.stringify(emitted));
  * manifest and refuses to install — which is what a consumer would meet, and is why the packing tool
  * is part of what this battle depends on rather than an implementation detail of it.
  */
-function generateInConsumer() {
+function runInConsumer(script) {
   const work = mkdtempSync(join(tmpdir(), "mdy-studio-"));
   try {
     for (const pkg of ["studio-model", "studio-codegen"]) {
@@ -85,13 +85,13 @@ function generateInConsumer() {
       stdio: ["ignore", "ignore", "pipe"],
     });
 
-    writeFileSync(join(consumer, "generate.mjs"), GENERATE, "utf8");
-    const stdout = execFileSync(process.execPath, [join(consumer, "generate.mjs")], {
+    writeFileSync(join(consumer, "run.mjs"), script, "utf8");
+    const stdout = execFileSync(process.execPath, [join(consumer, "run.mjs")], {
       cwd: consumer,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });
-    return { ran: true, emitted: JSON.parse(stdout.trim()), work };
+    return { ran: true, out: JSON.parse(stdout.trim()), work };
   } catch (error) {
     return { ran: false, message: `${error.stderr ?? error.message}`.split("\n").slice(0, 2).join(" ") };
   } finally {
@@ -124,7 +124,8 @@ battle(
     environments: ["node"],
   },
   async (ctx) => {
-    const result = generateInConsumer();
+    const result = { ...runInConsumer(GENERATE) };
+    result.emitted = result.out;
     const scratch = mkdtempSync(join(tmpdir(), "mdy-ident-"));
 
     try {
@@ -171,6 +172,134 @@ battle(
       });
     } finally {
       rmSync(scratch, { recursive: true, force: true });
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);
+
+/**
+ * Compile one condition per operand, through the loader a project file passes.
+ *
+ * The operands are built in the consumer rather than sent as JSON so that an object and an array
+ * arrive as themselves; both are outside `StudioOperand`, which is the point.
+ */
+const COMPILE = `
+import { compileExpressionToJs } from "@modyra/studio-codegen";
+import { createBlankProject, loadProject } from "@modyra/studio-model";
+
+const OPERANDS = [
+  ["a string", "hello"],
+  ["a string that reads like code", "1; globalThis.taken = 1"],
+  ["a number", 42],
+  ["a boolean", true],
+  ["null", null],
+  ["an array carrying an assignment", ["globalThis.taken = 1"]],
+  ["an array carrying a call", ["fetch('//elsewhere')"]],
+  ["an object", { a: 1 }],
+];
+
+const blank = createBlankProject();
+const out = OPERANDS.map(([label, operand]) => {
+  const draft = JSON.parse(JSON.stringify(blank));
+  draft.formValidators = [{
+    id: "v1", kind: "crossField", dependencies: [], message: "nope",
+    condition: { op: "equals", operands: [{ nodeId: draft.schema.id }, operand] },
+  }];
+  const { project, diagnostics } = loadProject(draft);
+  const condition = project.formValidators?.[0]?.condition ?? null;
+  let compiled = null;
+  let raised = null;
+  if (condition) {
+    try { compiled = compileExpressionToJs(condition, () => "a"); }
+    catch (error) { raised = String(error.message).slice(0, 60); }
+  }
+  return { label, diagnostics: diagnostics.map((each) => each.code), compiled, raised };
+});
+console.log(JSON.stringify(out));
+`;
+
+battle(
+  {
+    claims: ["STU-001", "SEC-001"],
+    title: "a value in a project file does not become code in the generated module",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const result = runInConsumer(COMPILE);
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-001"],
+        what: "studio-codegen and studio-model could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      const compiled = result.out;
+      ctx.log.note("what each operand compiled to", {
+        rows: compiled.map((each) => [each.label, each.compiled ?? each.raised]),
+      });
+
+      // The control, and the half that is right: a string operand is printed as a string literal,
+      // so text that reads like code stays text. Whatever a fix does, it must not disturb this.
+      const asText = compiled.find((each) => each.label === "a string that reads like code");
+      expectEqual(asText.compiled, 'value["a"] === "1; globalThis.taken = 1"', {
+        claimIds: ["STU-001"],
+        what: "a string operand stopped being printed as a string literal",
+        detail: JSON.stringify(asText),
+      });
+
+      // And the primitives the type does allow, which must keep compiling to themselves.
+      for (const [label, expected] of [["a number", "42"], ["a boolean", "true"], ["null", "null"]]) {
+        const each = compiled.find((row) => row.label === label);
+        expectEqual(each.compiled, `value["a"] === ${expected}`, {
+          claimIds: ["STU-001"],
+          what: `${label} no longer compiles to itself`,
+          detail: JSON.stringify(each),
+        });
+      }
+
+      // An operand outside `StudioOperand` — the type admits a node reference, a string, a number,
+      // a boolean, null or a nested expression, and nothing else. `String(operand)` puts whatever it
+      // is into the emitted expression unquoted, so an array becomes its own join and a project file
+      // decides what the generated module executes.
+      const outside = compiled.filter((each) => each.label.startsWith("an array") || each.label === "an object");
+      const emitted = outside.map((each) => ({
+        operand: each.label,
+        compiled: each.compiled,
+        reported: each.diagnostics,
+      }));
+
+      // Either the loader refuses it, or the compiler does. What must not happen is that it reaches
+      // the output as text.
+      //
+      // The right-hand side is what the operand became, so that is what is inspected — asking
+      // whether the whole expression "contains a quote" would be answered by `value["a"]` and pass
+      // for every operand there is.
+      const literalSide = (line) => (line ?? "").split(" === ")[1] ?? "";
+      const isALiteral = (text) => /^(?:"(?:[^"\\]|\\.)*"|-?\d+(?:\.\d+)?|true|false|null)$/.test(text);
+
+      const leaked = emitted
+        .filter((each) => each.compiled !== null && !isALiteral(literalSide(each.compiled)))
+        .map((each) => ({ ...each, became: literalSide(each.compiled) }));
+
+      // The control on the detector itself: the operands that are in the type do read as literals,
+      // so `isALiteral` is answering rather than refusing everything.
+      const inType = compiled
+        .filter((each) => ["a string", "a number", "a boolean", "null"].includes(each.label))
+        .filter((each) => !isALiteral(literalSide(each.compiled)));
+
+      expectEqual(inType, [], {
+        claimIds: ["STU-001"],
+        what: "the check that decides whether an operand became a literal refuses ones that plainly are",
+        detail: JSON.stringify(inType.map((each) => [each.label, literalSide(each.compiled)])),
+      });
+
+      expectEqual(leaked, [], {
+        claimIds: ["STU-001", "SEC-001"],
+        what: "an operand outside the expression type was written into the generated module as raw text",
+        detail: JSON.stringify(emitted),
+      });
+    } finally {
       if (result.work) rmSync(result.work, { recursive: true, force: true });
     }
   },
