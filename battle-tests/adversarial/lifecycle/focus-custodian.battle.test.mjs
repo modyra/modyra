@@ -11,9 +11,11 @@
  * that is still open, and a target that was removed while the widget was open. All three hold, and
  * are here because the module's fallbacks are the part a single-overlay test never exercises.
  *
- * What does not hold is repetition. A widget that closes and is then disposed calls `restore` twice
- * — the two paths do not know about each other — and the second call takes focus back into the
- * widget it had just handed it away from.
+ * The borrow ends once. A widget that closes and is then disposed calls `restore` twice — the two
+ * paths do not know about each other — and the second call places nothing; a `release`, which is
+ * teardown and has one caller in the workspace, ends it too. ADR 0049 settled both, and the
+ * fallback keeps the case it was written for: while the borrow is live and the remembered owner has
+ * left the document, focus still lands inside the widget, because somewhere real beats nowhere.
  *
  * Out of scope, and said so by the module rather than by this battle: whether a candidate is
  * visible. `isReachable` reads `isConnected`, `disabled`, `aria-hidden` and the `hidden` attribute,
@@ -155,6 +157,56 @@ battle(
     expectEqual(activeId(), "trigger", {
       claimIds: ["A11Y-002"],
       what: "a second restore moved focus away from where the first had put it",
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["A11Y-002"],
+    title: "a released widget places no focus, and still honours one it is handed",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // `release` is teardown: its only caller in the workspace is an overlay control's `onDestroy`.
+    // So a widget that has released has ended the borrow and owes nothing — ADR 0049.
+    const page = staged();
+    const custodian = createFocusCustodian(() => page.root);
+    custodian.remember();
+    page.within.focus();
+    custodian.release();
+    ctx.log.note("a custodian released while the widget still held focus", {});
+
+    expectEqual(custodian.restore(), null, {
+      claimIds: ["A11Y-002"],
+      what: "a released widget still placed focus somewhere",
+    });
+
+    expectEqual(activeId(), page.within.id, {
+      claimIds: ["A11Y-002"],
+      what: "a released widget moved focus rather than leaving it",
+    });
+
+    // Naming a target is the caller placing focus rather than asking for what was borrowed, so it
+    // is honoured whether anything is borrowed or not.
+    expectEqual(custodian.restore(page.trigger)?.id ?? null, "trigger", {
+      claimIds: ["A11Y-002"],
+      what: "a released custodian refused an element it was handed",
+    });
+
+    // And the case the fallback was written for, which a release is not: the borrow is live and the
+    // remembered owner has left the document. Somewhere real beats nowhere for a keyboard user
+    // whose trigger was removed under them.
+    const second = staged();
+    const live = createFocusCustodian(() => second.root);
+    live.remember();
+    second.within.focus();
+    second.trigger.remove();
+    ctx.log.note("the remembered owner removed while the borrow is live", {});
+
+    expectEqual(live.restore()?.id ?? null, second.within.id, {
+      claimIds: ["A11Y-002"],
+      what: "a live borrow whose owner had left placed no focus at all",
     });
   },
 );
