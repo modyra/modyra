@@ -150,7 +150,7 @@ export {
 export type { MdyBuiltInLocale, MdyI18nMessages } from "./i18n.js";
 export type { MdyIconName } from "./icons.js";
 export { calendarKeyboardTarget, listboxNextIndex } from "./keyboard.js";
-export { filterOptionsByQuery } from "./options-utils.js";
+export { defaultOptionKey, filterOptionsByQuery } from "./options-utils.js";
 
 export { portalRootFor } from "./portal.js";
 export { createLightDismiss, isPrimaryInteraction } from "./dismissal.js";

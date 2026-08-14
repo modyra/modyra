@@ -1,7 +1,7 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 665,
+    "published": 666,
     "asserted": 405,
     "shown": 69
   },
@@ -2633,6 +2633,12 @@
       "asserted": true,
       "shown": false,
       "reason": "published and never shown"
+    },
+    {
+      "name": "defaultOptionKey",
+      "asserted": false,
+      "shown": false,
+      "reason": "published, neither asserted nor shown"
     },
     {
       "name": "defaultWidgetIdFactory",

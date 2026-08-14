@@ -13,6 +13,7 @@ import {
   MDY_WIDGET_CONTRACTS,
   MDY_WIDGET_KINDS,
   createCatalogWidgetController,
+  defaultOptionKey,
   multiselectChipClasses,
   partClasses,
   projectBooleanFieldA11y,
@@ -218,4 +219,15 @@ test("a destroyed controller answers without acting", () => {
   assert.deepEqual(controller.dispatch({ type: "open" }), []);
   // Readable, like a destroyed form's value: what it last held.
   assert.equal(controller.state().open, true);
+});
+
+test("the default option key is reachable from the package a consumer imports", () => {
+  // A consumer writing their own `keyFor` needs the default to fall back to, and ADR 0054 says this
+  // is exported. It was added to the wrong export block and the barrel carried nothing — the deep
+  // path worked, so nothing in this package noticed.
+  assert.equal(typeof defaultOptionKey, "function");
+  assert.notEqual(defaultOptionKey({ id: 1 }), defaultOptionKey({ id: 2 }));
+  // A primitive keys exactly as it always did, which is what makes the change safe for existing ids.
+  assert.equal(defaultOptionKey("en"), "en");
+  assert.equal(defaultOptionKey(3), "3");
 });
