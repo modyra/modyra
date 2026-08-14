@@ -20,7 +20,8 @@ form.state.valid();       // still true — nothing recomputes
 It failed in the permissive direction, silently: a server consulting the form to decide whether to
 accept a submission was told yes. The adapter meanwhile reported `capabilities.effects: true`.
 
-`solidReactivity()` now probes the graph it resolved — one signal, one memo, once per call — and when
+`solidReactivity()` now probes the graph it resolved — one signal, one memo, once per process, since
+which build was resolved is fixed when the module loads — and when
 computations do not re-run it returns the framework-agnostic graph carrying `kind: "solid"`, warning
 once with the cause. A server render reads each value once and emits markup, which that graph does
 correctly and the inert build cannot do at all.

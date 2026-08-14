@@ -33,9 +33,10 @@ production SSR path.
 ## Decision
 
 **`solidReactivity()` probes the graph it resolved and, when computations do not re-run, returns the
-framework-agnostic graph wearing Solid's name.** One signal and one memo, once per call: the question
-is whether a computation re-runs, and asking it directly answers for any build, bundler or version,
-where matching a filename would answer for one.
+framework-agnostic graph wearing Solid's name.** One signal and one memo, **once per process**: the
+question is whether a computation re-runs, and asking it directly answers for any build, bundler or
+version, where matching a filename would answer for one. Which build was resolved is fixed when the
+module loads, so a consumer building many forms does not pay for the answer many times.
 
 A server render reads each value once and emits markup. Vanilla does that correctly and the inert
 build cannot do it at all, so the fallback renders a form that tells the truth. The client build has
