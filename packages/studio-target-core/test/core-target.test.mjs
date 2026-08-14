@@ -9,7 +9,7 @@ import { promisify } from "node:util";
 import { test } from "node:test";
 import { createCoreTarget, coreTargetManifest } from "../dist/index.js";
 import { runConformanceSuite } from "@modyra/studio-codegen";
-import { createCheckoutProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";
+import { createCheckoutProject, createNestedCollectionProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";
 
 const execFileAsync = promisify(execFile);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -58,6 +58,39 @@ test("coreTargetManifest loads lazily to a target with id 'core'", async () => {
 test("generated Core files compile against package declarations", { skip: !existsSync(coreTypesPath) && "packages/core is not built (run npm run build:core first)" }, async () => {
   const artifact = await createCoreTarget().generate(createCheckoutProject(), {});
   const dir = await mkdtemp(join(tmpdir(), "mdy-studio-target-core-typecheck-"));
+  try {
+    for (const file of artifact.files) {
+      await writeFile(join(dir, file.path.replace(/\.ts$/, ".ts")), file.content, "utf8");
+    }
+    await writeFile(
+      join(dir, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: {
+          strict: true,
+          target: "ES2022",
+          module: "NodeNext",
+          moduleResolution: "nodenext",
+          noEmit: true,
+          skipLibCheck: true,
+          noUnusedLocals: true,
+          noUnusedParameters: false,
+          lib: ["ES2022"],
+          paths: { "@modyra/core": [coreTypesPath] },
+        },
+        include: ["*.ts"],
+      }),
+      "utf8",
+    );
+    const tscBin = join(__dirname, "../../../node_modules/typescript/bin/tsc");
+    await execFileAsync(process.execPath, [tscBin, "-p", join(dir, "tsconfig.json")]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("generated Core files compile when a row is a collection", { skip: !existsSync(coreTypesPath) && "packages/core is not built (run npm run build:core first)" }, async () => {
+  const artifact = await createCoreTarget().generate(createNestedCollectionProject(), {});
+  const dir = await mkdtemp(join(tmpdir(), "mdy-studio-target-core-nested-"));
   try {
     for (const file of artifact.files) {
       await writeFile(join(dir, file.path.replace(/\.ts$/, ".ts")), file.content, "utf8");
