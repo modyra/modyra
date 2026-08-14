@@ -26,7 +26,16 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
   /** Declaration order is data: it is the order `keys()` promises. */
   let order = [];
   const rows = new Map();
-  const mounted = new Set();
+  /**
+   * How many controls are bound to a path, not whether any is.
+   *
+   * `claimField` and `removeField` are balanced calls: two controls on one path is two claims, and
+   * one of them leaving does not unbind the other. A set would say the path is free after the first
+   * `removeField`, and everything that follows from being bound — a binding surviving the row it
+   * was made on — would be judged against the wrong state.
+   */
+  const mounted = new Map();
+  const isMounted = (path) => (mounted.get(path) ?? 0) > 0;
   const disabled = new Set();
   const touched = new Set();
 
@@ -48,7 +57,7 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
     rows.delete(key);
     for (const path of [...touched]) if (path.startsWith(`${key}.`)) touched.delete(path);
     for (const path of [...disabled]) {
-      if (path.startsWith(`${key}.`) && !mounted.has(path)) disabled.delete(path);
+      if (path.startsWith(`${key}.`) && !isMounted(path)) disabled.delete(path);
     }
   };
 
@@ -96,7 +105,7 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
       return out;
     },
 
-    mountedPaths: () => [...mounted].sort(),
+    mountedPaths: () => [...mounted.keys()].sort(),
     touchedPaths: () => [...touched].sort(),
     disabledPaths: () => [...disabled].sort(),
 
@@ -160,10 +169,18 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
           disabled.delete(local(operation.path));
           break;
         case "mount":
-          for (const path of operation.paths) mounted.add(local(path));
+          for (const path of operation.paths) {
+            const name = local(path);
+            mounted.set(name, (mounted.get(name) ?? 0) + 1);
+          }
           break;
         case "unmount":
-          for (const path of operation.paths) mounted.delete(local(path));
+          for (const path of operation.paths) {
+            const name = local(path);
+            const remaining = (mounted.get(name) ?? 0) - 1;
+            if (remaining > 0) mounted.set(name, remaining);
+            else mounted.delete(name);
+          }
           break;
         case "reset":
           // The form's own state goes back to what the schema declared. What a renderer mounted is

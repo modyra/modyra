@@ -2,18 +2,13 @@
  * A control bound to a row of a list that does not exist yet.
  *
  * A keyed collection refuses it: the claim waits, and nothing is declared. A positional collection
- * has no gate over existence by design — "its rows follow its value", which is how a restored draft
- * brings a row back — and a claim is indistinguishable from a write at the level the reconciliation
- * reads, so binding a control to `items.1.sku` on an empty list:
+ * had no gate over existence, and a claim was indistinguishable from a write at the level its
+ * reconciliation reads — so binding a control to `items.1.sku` on an empty list made `getValue()`
+ * throw on the hole where row 0 should be, put a row nobody declared into `submitValue()`, and grew
+ * the list to two rows a tick later.
  *
- *   - makes `getValue()` throw, because the list now has a hole where row 0 should be;
- *   - puts a row nobody declared into `submitValue()`, with a null cell;
- *   - and, one tick later, grows the list to two rows.
- *
- * Reported rather than enforced: closing it means either giving an array a gate that refuses a claim
- * beyond its length (the record's answer, at the cost of the rule that an array refuses nothing), or
- * teaching the reconciliation to tell a written path from a claimed one. That is a contract decision.
- * The attack is kept here, red, so the decision is taken against evidence rather than a description.
+ * A list now answers the same way a keyed collection does: a *claim* waits for the row, while a
+ * *write* still grows the list to receive it, which is how a restored draft brings a row back.
  */
 
 import { array, createForm, field, group, record } from "@modyra/core";
@@ -34,7 +29,6 @@ battle(
     claims: ["COL-001", "SUB-001"],
     title: "binding a control to a row of a list does not create rows",
     environments: ["node"],
-    open: "arrays have no gate over existence; closing this is a contract decision (see the file header)",
   },
   async (ctx) => {
     const withArray = createForm(

@@ -465,3 +465,39 @@ test("inserting at the front resets every row it moved", () => {
     [[false, false], [false, false], [false, false]],
   );
 });
+
+/**
+ * A control bound to a row the list does not have waits for it.
+ *
+ * An array's rows follow its *value* — a write below the path is a row of it, which is how a
+ * restored draft brings one back. A claim is not a write: binding a control to `items.1.n` on an
+ * empty list used to create the row, and row 0 with it, leaving a hole `getValue()` could not
+ * describe and a row nobody declared in the payload.
+ */
+test("claiming a row the list does not have declares nothing", async () => {
+  const form = createForm({ items: array(group({ n: field("") })) });
+
+  form.claimField("items.1.n");
+
+  assert.equal(form.f.items.length(), 0);
+  assert.deepEqual(form.getValue(), { items: [] });
+  assert.deepEqual(form.submitValue(), { items: [] });
+
+  await tick();
+  assert.equal(form.f.items.length(), 0, "and still nothing a tick later");
+
+  // The waiting control binds when the row arrives, as it does in a keyed collection.
+  form.f.items.push({ n: "first" });
+  form.f.items.push({ n: "second" });
+  assert.equal(form.f.items.at(1).n.value(), "second");
+});
+
+test("a value written below the path still grows the list", () => {
+  const form = createForm({ items: array(group({ n: field("") })) });
+
+  // What a restored draft does: write flat paths for rows that are not there yet.
+  form.patchValue({ "items.1.n": "restored" });
+
+  assert.equal(form.f.items.length(), 2);
+  assert.equal(form.getValue().items[1].n, "restored");
+});

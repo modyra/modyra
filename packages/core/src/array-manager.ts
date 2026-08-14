@@ -129,10 +129,41 @@ export class MdyArrayManager implements MdyNestedCollection {
     this._rebuild(initial.slice());
 
     this._releaseGate = deps.engine.registerPathGate(deps.path, {
-      // No `isOpen`: an array does not govern existence. Its rows follow its value — a write below
-      // this path is a row of it, which is how a restored draft brings one back — so nothing is
-      // refused and the field stays the owner's to remove.
-      //
+      /**
+       * Which rows are in play: the ones this collection has.
+       *
+       * Its rows still follow its *value* — a write below this path is a row of it, which is how a
+       * restored draft brings one back, and `onRefusedWrite` below grows the list to receive it. A
+       * *claim* is not a write: a control binding to a row the list does not have waits for it, as
+       * it does in a keyed collection, instead of bringing a row into being. Without that
+       * distinction, rendering decided what existed — a control bound to row 1 of an empty list made
+       * two rows, one of them a hole `getValue()` could not describe.
+       */
+      isOpen: (name) => {
+        // The collection's own path is not a row of it: the phantom field there carries the
+        // collection-level errors, and a gate that refused it would take the collection out of its
+        // own form's value.
+        if (name === this._deps.path) return true;
+        const index = this._indexUnder(name);
+        return index !== null && index < this._deps.rx.untracked(() => this._rowCountSig());
+      },
+      /**
+       * A value arriving for a row the list does not have yet is the owner's own data — a restored
+       * draft, an undo across the moment a row was pushed — so the list grows to receive it rather
+       * than dropping it.
+       */
+      onRefusedWrite: (name) => {
+        const index = this._indexUnder(name);
+        if (index === null) return;
+        const count = this._deps.rx.untracked(() => this._rowCountSig());
+        if (index < count) return;
+        // The count first: the rows are in play before their fields are written, or the gate this
+        // very callback exists to open would refuse the registration it is making.
+        this._rowCountSig.set(index + 1);
+        for (let i = count; i <= index; i += 1) {
+          this._registerNode(`${this._deps.path}.${i}`, this._deps.item, undefined, `${this._deps.path}.${i}`, this._deps.sections ?? []);
+        }
+      },
       // A whole-value write is a statement of which rows there are. Read as such it is the only
       // thing that can say a row *ceased* to exist: the engine writes flat paths and sets an absent
       // field to null rather than removing it, so a name that stays is a row that stays — which is
@@ -169,7 +200,9 @@ export class MdyArrayManager implements MdyNestedCollection {
     for (let index = 0; index < count; index += 1) {
       if (!present.has(index)) this._removeRow(index);
     }
-    this._rowCountSig.set(Math.min(count, highest + 1));
+    const kept = Math.min(count, highest + 1);
+    this._rowCountSig.set(kept);
+    if (kept < count) this._deps.engine.refreshPathGate(this._deps.path);
   }
 
   push(value: unknown): void {
@@ -263,8 +296,12 @@ export class MdyArrayManager implements MdyNestedCollection {
     // and a user's marks are theirs: clearing them all would make the errors a form only shows on a
     // visited field vanish when a row is added at the other end.
     for (let i = movedFrom; i < Math.min(prevCount, values.length); i++) this._clearRowInteraction(i);
-    values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
+    // The rows are in play before their fields are written: the gate answers from this count, and a
+    // registration is the collection declaring a row rather than something asking for one. The
+    // refresh in between is what takes the fields of the rows that just ended.
     this._rowCountSig.set(values.length);
+    if (values.length < prevCount) this._deps.engine.refreshPathGate(this._deps.path);
+    values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
     // Update tracking after rebuild (structural ops are always atomic)
     this._lastPresentIndices = new Set(Array.from({length: values.length}, (_, i) => i));
   }
@@ -376,6 +413,14 @@ export class MdyArrayManager implements MdyNestedCollection {
     if (Array.isArray(value)) this.setAll(value as unknown[]);
   }
 
+  /**
+   * Ends a row: its subtree, its ownership, and then its fields.
+   *
+   * The fields go when the gate stops admitting them — the count falls and
+   * {@link MdyFormEngine.refreshPathGate} destroys what the collection no longer has, putting the
+   * claims of controls still bound there back into waiting. Calling `removeField` here instead
+   * would ask the engine to release a *control's* claim, which is not what a row ending means.
+   */
   private _removeRow(index: number): void {
     // The leaves are read before the subtree is destroyed: a nested collection answers what its
     // rows are, and a destroyed manager answers nothing — which used to leave its fields behind.
@@ -385,7 +430,6 @@ export class MdyArrayManager implements MdyNestedCollection {
       // Ownership goes first: this is the row ending, which is the one thing that may take the
       // field with it.
       this._deps.engine.disownField(path);
-      this._deps.engine.removeField(path);
     }
   }
 
@@ -433,6 +477,15 @@ export class MdyArrayManager implements MdyNestedCollection {
     return out;
   }
 
+  /** The row index a path names under this collection, or `null` when it names no row of it. */
+  private _indexUnder(name: string): number | null {
+    const prefix = `${this._deps.path}.`;
+    if (!name.startsWith(prefix)) return null;
+    const segment = name.slice(prefix.length).split(".")[0] ?? "";
+    const index = Number(segment);
+    return Number.isInteger(index) && index >= 0 && String(index) === segment ? index : null;
+  }
+
   private _presentIndices(names: readonly string[]): Set<number> {
     const prefix = `${this._deps.path}.`;
     const out = new Set<number>();
@@ -453,9 +506,11 @@ export class MdyArrayManager implements MdyNestedCollection {
     const count = this._rowCountSig();
     let maxIndex = -1;
 
-    // Register new rows that appeared (e.g., from draft restore or undo of a delete)
+    // Register new rows that appeared (e.g., from draft restore or undo of a delete). The count is
+    // raised first for the same reason as in `_rebuild`: the gate reads it.
+    for (const idx of present) if (idx > maxIndex) maxIndex = idx;
+    if (maxIndex + 1 > count) this._rowCountSig.set(maxIndex + 1);
     for (const idx of present) {
-      if (idx > maxIndex) maxIndex = idx;
       if (idx >= count) {
         const value = this._readNode(`${this._deps.path}.${idx}`, this._deps.item);
         this._registerNode(`${this._deps.path}.${idx}`, this._deps.item, value, `${this._deps.path}.${idx}`, this._deps.sections ?? []);
@@ -463,14 +518,20 @@ export class MdyArrayManager implements MdyNestedCollection {
     }
 
     // Clean up rows that disappeared (e.g., undo of a push leaves a stale field)
+    let removedAny = false;
     for (const idx of this._lastPresentIndices) {
       if (!present.has(idx)) {
         this._removeRow(idx);
+        removedAny = true;
       }
     }
 
     const grown = maxIndex + 1;
     if (grown > count) this._rowCountSig.set(grown);
+    if (removedAny) {
+      this._rowCountSig.set(Math.max(grown, 0));
+      this._deps.engine.refreshPathGate(this._deps.path);
+    }
 
     // Update tracking for next reconciliation
     this._lastPresentIndices = new Set(present);
