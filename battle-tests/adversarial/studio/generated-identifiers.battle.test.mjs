@@ -1226,3 +1226,130 @@ battle(
     }
   },
 );
+
+/** Run every command this battle can construct, and report whether the input project moved. */
+const PURITY = `
+import {
+  CommandHistory,
+  createAddFormValidatorCommand,
+  createAddValidatorCommand,
+  createDeleteCommand,
+  createDuplicateCommand,
+  createInsertCommand,
+  createMoveCommand,
+  createRenameProjectCommand,
+  createSequenceCommand,
+  createSetFieldOptionsCommand,
+  createUpdateBehaviorCommand,
+  createUpdateLayoutCommand,
+  createUpdateNodeCommand,
+} from "@modyra/studio-editor";
+import { createBlankProject, loadProject } from "@modyra/studio-model";
+
+const field = (id, name) => ({ node: "field", id, name, fieldKind: "text", valueType: "string", initialValue: "", validators: [] });
+
+const base = () => {
+  const draft = createBlankProject();
+  draft.schema = {
+    node: "group", id: "root", name: "root",
+    children: [field("f1", "email"), { node: "group", id: "g1", name: "sect", children: [field("f2", "sku")] }],
+  };
+  return loadProject(draft).project;
+};
+
+const COMMANDS = [
+  ["rename the project", () => createRenameProjectCommand("New name")],
+  ["update a node", () => createUpdateNodeCommand("f1", { name: "renamed" })],
+  ["delete a node", () => createDeleteCommand("f1", true)],
+  ["duplicate a node", () => createDuplicateCommand("f1")],
+  ["move a node", () => createMoveCommand("f1", { kind: "inside", parentId: "g1", index: 0 })],
+  ["insert a node", () => createInsertCommand(field("n1", "n1"), { kind: "inside", parentId: "root", index: 0 })],
+  ["add a validator", () => createAddValidatorCommand("f1", { id: "v1", kind: "required" })],
+  ["set field options", () => createSetFieldOptionsCommand("f1", [{ value: "a", label: "A" }])],
+  ["update a behavior", () => createUpdateBehaviorCommand({ draft: { key: "k" } })],
+  ["update the layout", () => createUpdateLayoutCommand([{ kind: "section", id: "s1", children: [] }])],
+  ["add a form validator", () => createAddFormValidatorCommand({
+    id: "fv1", kind: "crossField", dependencies: [], message: "nope",
+    condition: { op: "isNotEmpty", operands: [{ nodeId: "f1" }] },
+  })],
+  ["a sequence of two", () => createSequenceCommand(
+    [createRenameProjectCommand("One"), createUpdateNodeCommand("f1", { name: "two" })],
+    "two steps",
+  )],
+];
+
+const out = COMMANDS.map(([label, make]) => {
+  const project = base();
+  const before = JSON.stringify(project);
+  try {
+    const command = make();
+    command.validate(project);
+    const afterValidate = JSON.stringify(project);
+    command.apply(project);
+    const afterApply = JSON.stringify(project);
+    new CommandHistory().apply(base(), command);
+    return {
+      label,
+      built: true,
+      movedByValidate: afterValidate !== before,
+      movedByApply: afterApply !== before,
+    };
+  } catch (error) {
+    return { label, built: false, why: String(error.message).slice(0, 60) };
+  }
+});
+console.log(JSON.stringify(out));
+`;
+
+battle(
+  {
+    claims: ["STU-006"],
+    title: "a command leaves the project it was given where it found it",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // `validate` walks a sequence by *applying* each step to reach the next one's starting state, so
+    // validating calls `apply`. That is only work while every command returns a new project instead
+    // of changing the one it was handed — and nothing in the `Command` type says it must. A command
+    // that changed its input would change it while being judged, before anything was decided, and
+    // `CommandHistory` computes an inverse against the pre-apply project it would already have lost.
+    //
+    // So the purity is load-bearing and undeclared, which is what this pins. It is the same shape as
+    // a severity that is always "error" because one helper hardcodes it.
+    const result = runInConsumer(PURITY);
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-006"],
+        what: "the studio packages could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      const rows = result.out;
+      const built = rows.filter((each) => each.built);
+      ctx.log.note("what each command did to the project it was given", {
+        rows: rows.map((each) => [each.label, each.built ? [each.movedByValidate, each.movedByApply] : each.why]),
+      });
+
+      // The known-good case, in the same run: enough commands were constructible to be asking the
+      // question of the surface rather than of one or two of it.
+      expectClaim(built.length >= 10, {
+        claimIds: ["STU-006"],
+        what: "too few commands could be built, so this battle is about a handful rather than the command surface",
+        detail: JSON.stringify(rows.filter((each) => !each.built)),
+      });
+
+      const moved = built
+        .filter((each) => each.movedByValidate || each.movedByApply)
+        .map((each) => ({ command: each.label, byValidate: each.movedByValidate, byApply: each.movedByApply }));
+
+      expectEqual(moved, [], {
+        claimIds: ["STU-006"],
+        what: "a command changed the project it was given rather than returning a new one",
+        detail: JSON.stringify(moved),
+      });
+    } finally {
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);
