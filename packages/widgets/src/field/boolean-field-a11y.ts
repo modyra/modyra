@@ -91,8 +91,15 @@ export function projectBooleanFieldA11y(
         // text input behind.
         type: "checkbox",
         role: isSwitch ? "switch" : "checkbox",
-        checked: state.checked,
-        "aria-checked": String(state.checked),
+        checked: state.checked === true,
+        // One of the tokens the attribute is allowed to hold, never `String(whatever arrived)`.
+        // This projection is published, so the state is the caller's to supply and its shape is not
+        // ours to guarantee — but the attribute's value is, and `aria-checked="undefined"` maps to
+        // nothing in any assistive technology, on the single attribute that says whether the box is
+        // ticked. `mixed` is not produced: `MdyBooleanFieldState.checked` is a boolean and no field
+        // in the engine has an indeterminate value, so emitting a third token would describe a state
+        // nothing can be in.
+        "aria-checked": state.checked === true ? "true" : "false",
         "aria-invalid": String(hasErrors),
         "aria-required": String(state.required),
         // `aria-disabled` reflects `disabled` alone. A read-only control is not disabled: it takes
@@ -101,15 +108,14 @@ export function projectBooleanFieldA11y(
         // carries read-only, and only on the kinds that declare the state.
         "aria-disabled": String(state.disabled),
         "aria-describedby": describedBy,
-        // Emitted only when true. A control that is not read-only says nothing, rather than
-        // announcing `aria-readonly="false"` — which on a slider, a checkbox or a radio group
-        // told a screen reader that read-only was a meaningful axis for something where the
-        // concept does not exist. That was the signature of an ARIA shell applied mechanically
-        // to every control; the states each kind actually admits are declared in
-        // `widget-states.ts`, and none of these three is among them.
-        "aria-readonly": state.readonly ? "true" : null,
+        // No read-only, in either half. `MDY_WIDGET_STATE_SUPPORT` does not list the state for a
+        // boolean — "read-only would be a checkbox you can focus but not toggle, which is what
+        // disabled already means" — and the two halves were failing in opposite directions: HTML
+        // ignores `readonly` on a checkbox, so a renderer binding it bound nothing and the box
+        // still toggled, while `aria-readonly="true"` told a screen-reader user it could not. An
+        // omission is better than that pair. A form that means "this cannot be changed" says
+        // `disabled`, which both halves implement.
         disabled: state.disabled,
-        readonly: state.readonly,
       },
     },
     description: {

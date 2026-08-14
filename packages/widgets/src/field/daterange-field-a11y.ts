@@ -84,7 +84,10 @@ export function projectDaterangeFieldA11y(
       // The native attribute too: `aria-disabled` alone would announce a disabled field that still
       // accepts a typed date.
       disabled: state.disabled,
-      readonly: state.readonly,
+      // No `readonly`: a range is a chooser in `MDY_WIDGET_STATE_SUPPORT`, and the state was
+      // reaching the DOM on a kind that declares no carrier for it — a control the user could not
+      // type into, with nothing in the accessibility tree saying so and nothing stopping the
+      // calendar from setting the same value.
     },
   });
 
