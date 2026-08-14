@@ -86,17 +86,22 @@ for (const [description, document] of Object.entries(FIELD_LEVEL)) {
   });
 }
 
-test("a field-level finding underlines the fields property, which is as precise as the path is", () => {
-  // The parser stamps every field diagnostic `/fields` rather than `/fields/1`, so this is the
-  // limit of what the rule can position. Sharpening it is a change to the parser, not to the rule.
+test("a field-level finding underlines the field it is about", () => {
+  // This asserted the opposite, and said why: the parser stamped every field diagnostic `/fields`
+  // rather than `/fields/1`, and sharpening it was a change to the parser rather than to the rule.
+  // The parser now names the entry, and the rule positions it with no edit here — which is what
+  // "walk the literal as far as the path reaches" buys.
   const document = FIELD_LEVEL["a choice with no options"];
-  assert.deepEqual(
-    parseDynamicForm(document).diagnostics.map((d) => d.path),
-    ["/fields"],
-  );
+  const [diagnostic] = parseDynamicForm(document).diagnostics;
+  assert.match(diagnostic.path, /^\/fields\/\d+$/, "the parser stopped naming the entry");
 
-  const [message] = lint(`const form = ${JSON.stringify(document, null, 2)};`);
-  assert.equal(message.line, 3, "expected the finding on the `fields` property");
+  const source = `const form = ${JSON.stringify(document, null, 2)};`;
+  const [message] = lint(source);
+  const fieldsLine = source.split("\n").findIndex((line) => line.includes('"fields"')) + 1;
+  assert.ok(
+    message.line > fieldsLine,
+    `expected the finding inside the array, not on its \`fields\` property (line ${message.line})`,
+  );
 });
 
 test("an indexed path underlines the element it names, not the document", () => {

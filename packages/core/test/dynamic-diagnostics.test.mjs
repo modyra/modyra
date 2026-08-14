@@ -142,3 +142,33 @@ test("an ordinary pattern still runs, in both directions", () => {
   assert.deepEqual(form.f.zip.errors(), []);
   form.destroy();
 });
+
+test("a finding names the entry it is about, not the array it is in", () => {
+  // The path is what an editor underlines and what a reader is sent to. Every per-field finding
+  // carried `/fields` — the line the array opens on — so a two-hundred-line document assembled by a
+  // CMS pointed at the same line whichever entry was wrong, and the underline stopped being worth
+  // more than the console message.
+  const at = (fields) => parseDynamicForm(fields).diagnostics.map((d) => [d.code, d.path]);
+
+  assert.deepEqual(
+    at([{ name: "a", kind: "text" }, { name: "b", kind: "text" }, { name: "c", kind: "wormhole" }]),
+    [["MDY_DYNAMIC_UNKNOWN_KIND", "/fields/2"]],
+  );
+  assert.deepEqual(
+    at([{ name: "a", kind: "text" }, { name: "__proto__", kind: "text" }]),
+    [["MDY_DYNAMIC_UNSAFE_NAME", "/fields/1"]],
+  );
+
+  // A duplicate names the *second* occurrence: the first is legitimate until the second exists, and
+  // the second is the one a reader has to change.
+  assert.deepEqual(
+    at([{ name: "a", kind: "text" }, { name: "b", kind: "text" }, { name: "a", kind: "text" }]),
+    [["MDY_DYNAMIC_DUPLICATE_NAME", "/fields/2"]],
+  );
+
+  // An envelope-level refusal is about the list rather than about an entry, and still says so.
+  assert.deepEqual(
+    parseDynamicForm({ version: 99, fields: [{ name: "a", kind: "text" }] }).diagnostics.map((d) => d.path),
+    ["/fields"],
+  );
+});
