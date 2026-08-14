@@ -481,6 +481,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "STU-005",
+    title: "The model reports a layout it cannot use, rather than raising on it.",
+    area: "studio",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/studio-model loadProject — returns { project, diagnostics }",
+      "@modyra/studio-model STUDIO_LAYOUT_MAX_DEPTH and LAYOUT_TOO_DEEP",
+      "@modyra/studio-codegen arrangementDiagnostics — reads the layout a loaded project carries",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
