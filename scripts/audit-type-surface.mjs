@@ -226,6 +226,7 @@ function signatureOf(node) {
 }
 
 const surface = {};
+const classNames = new Set();
 for (const entry of ENTRIES) {
   const file = resolve(ROOT, entry);
   if (!existsSync(file)) {
@@ -252,6 +253,7 @@ for (const entry of ENTRIES) {
       surface[node.name.text] = unionMembersOf(node.type);
     } else if (exported && ts.isClassDeclaration(node) && node.name) {
       surface[node.name.text] = classMembersOf(node);
+      classNames.add(node.name.text);
     } else if (exported && ts.isFunctionDeclaration(node) && node.name) {
       // A function is public surface too, and the projections made that concrete: each returns an
       // inline type literal naming which parts it hands back, so "which parts does this projection
@@ -264,6 +266,13 @@ for (const entry of ENTRIES) {
   ts.forEachChild(source, visit);
 }
 
+/**
+ * Which recorded shapes are classes.
+ *
+ * Derived from the current declarations rather than stored in the baseline: the baseline is a flat
+ * map of names to members, and the distinction only matters when comparing, where the current
+ * surface is in hand anyway.
+ */
 const names = Object.keys(surface).sort();
 const current = Object.fromEntries(names.map((name) => [name, surface[name]]));
 
@@ -305,9 +314,17 @@ for (const name of Object.keys(baseline)) {
   }
   for (const [member, after] of now) {
     if (was.has(member)) continue;
+    // A member appearing on a class is additive: nobody implements `MdyFormEngine`, so a new method
+    // breaks no caller. On an interface it is not — a consumer implements one, and a required member
+    // appearing means their implementation no longer satisfies it.
+    //
+    // A method whose signature grew is not this case: the signature is part of the recorded name, so
+    // it reads as one member removed and another added, and the removal is already major. That is
+    // the half that breaks a caller, and it stays reported as such.
+    const additive = classNames.has(name) || after.optional;
     changes.push([
-      after.optional ? "minor" : "major",
-      `${name}.${member} was added${after.optional ? " (optional)" : " (required)"}`,
+      additive ? "minor" : "major",
+      `${name}.${member} was added${after.optional ? " (optional)" : classNames.has(name) ? "" : " (required)"}`,
     ]);
   }
 }
