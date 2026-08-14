@@ -10,7 +10,7 @@ import { test } from "node:test";
 import { installDomGlobals, mount } from "./support/dom-env.mjs";
 
 installDomGlobals();
-const { createLitForm, field, group, record } = await import("../dist/adapter.js");
+const { array, createLitForm, field, group, record } = await import("../dist/adapter.js");
 const { defineMdyElements } = await import("../dist/ui.js");
 
 defineMdyElements();
@@ -97,4 +97,34 @@ test("an element bound two collections deep follows its own row's subtree", asyn
   form.f.orders.remove("o1");
   await settled(cell);
   assert.deepEqual(form.value().orders, {});
+});
+
+test("an element bound inside a list inside a list follows a reorder above it", async () => {
+  // The keyed case above is the one the elements were written against. A positional level names its
+  // rows by where they sit, so a move at the outer level rebuilds everything below it — and a cell
+  // handle taken before the move has to keep addressing the row it was taken from.
+  const form = createLitForm({
+    orders: array(group({
+      customer: field(""),
+      lines: array(group({ sku: field("") })),
+    })),
+  });
+  form.f.orders.push({ customer: "Ada", lines: [{ sku: "A-1" }] });
+  form.f.orders.push({ customer: "Grace", lines: [{ sku: "G-1" }] });
+
+  const cell = await mount("mdy-text-field", (el) => {
+    el.field = form.f.orders.at(0).lines.at(0).sku;
+  });
+  assert.equal(inputOf(cell).value, "A-1");
+
+  form.f.orders.move(0, 1);
+  await settled(cell);
+
+  // Position 0 now holds Grace's order, and the element bound to position 0 shows its line.
+  assert.deepEqual(form.value().orders.map((o) => o.customer), ["Grace", "Ada"]);
+  assert.equal(inputOf(cell).value, "G-1");
+
+  inputOf(cell).value = "G-typed";
+  inputOf(cell).dispatchEvent(new window.Event("input", { bubbles: true }));
+  assert.equal(form.value().orders[0].lines[0].sku, "G-typed");
 });

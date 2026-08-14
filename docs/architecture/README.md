@@ -61,6 +61,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0043: A collection nests without a limit](0043-a-collection-nests-without-a-limit.md) — an array may hold an array, a form may nest as deep as it needs, and a document is bounded by the caller rather than by a number; supersedes ADR 0040's one-positional-level rule
 - [ADR 0044: A binding belongs to the row](0044-a-binding-belongs-to-the-row.md) — what a control said about a cell travels with the row across a rename or a move, as its value and its marks already did
 - [ADR 0045: A declaration is all or nothing](0045-a-declaration-is-all-or-nothing.md) — a row whose value raises while it is read is not declared; a row reads the object it was given, prototype chain included; a schema is read by its own properties
+- [ADR 0046: An adapter states no less than the engine](0046-an-adapter-states-no-less-than-the-engine.md) — a capability the engine gains ships only when every package that restates it has it, checked by a consumer program rather than by a green suite; a nested collection's value has the same type as a top-level one
 
 ## Security-relevant records
 

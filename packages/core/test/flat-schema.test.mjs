@@ -135,6 +135,54 @@ test("three levels of declared collections stay collections all the way down", (
   form.destroy();
 });
 
+test("a positional collection inside a row is seeded as a list, not as digits", () => {
+  // A row's own value arrives flat, so a collection inside it is keyed "0", "1" — the shape a record
+  // holds and the one an array refuses. Seeded as digits, a nested array starts with no rows at all
+  // and every field below it has nowhere to mount, while the same document made of records works.
+  const fields = [
+    { name: "orders.0.customer", kind: "text", label: "Customer" },
+    { name: "orders.0.lines.0.sku", kind: "text", label: "SKU" },
+    { name: "orders.0.lines.0.allocations.0.qty", kind: "number", label: "Qty" },
+    { name: "orders.1.customer", kind: "text", label: "Customer" },
+    { name: "orders.1.lines.0.sku", kind: "text", label: "SKU" },
+    { name: "orders.1.lines.0.allocations.0.qty", kind: "number", label: "Qty" },
+  ];
+  const collections = [
+    { path: "orders", kind: "array" },
+    { path: "orders.0.lines", kind: "array" },
+    { path: "orders.0.lines.0.allocations", kind: "array" },
+  ];
+  const form = createForm(buildFlatFormSchema(fields, collections));
+
+  assert.equal(form.f.orders.length(), 2);
+  assert.equal(form.f.orders.at(0).lines.length(), 1);
+  assert.equal(form.f.orders.at(0).lines.at(0).allocations.length(), 1);
+  form.f.orders.at(1).lines.at(0).allocations.at(0).qty.set(7);
+  assert.deepEqual(form.getValue().orders, [
+    { customer: "", lines: [{ sku: "", allocations: [{ qty: null }] }] },
+    { customer: "", lines: [{ sku: "", allocations: [{ qty: 7 }] }] },
+  ]);
+  form.destroy();
+});
+
+test("a list inside a keyed row, and a keyed row inside a list, keep their own shapes", () => {
+  const fields = [
+    { name: "orders.o1.lines.0.sku", kind: "text", label: "SKU" },
+    { name: "batches.0.rows.r1.amount", kind: "number", label: "Amount" },
+  ];
+  const collections = [
+    { path: "orders", kind: "record" },
+    { path: "orders.o1.lines", kind: "array" },
+    { path: "batches", kind: "array" },
+    { path: "batches.0.rows", kind: "record" },
+  ];
+  const form = createForm(buildFlatFormSchema(fields, collections));
+
+  assert.deepEqual(form.getValue().orders, { o1: { lines: [{ sku: "" }] } });
+  assert.deepEqual(form.getValue().batches, [{ rows: { r1: { amount: null } } }]);
+  form.destroy();
+});
+
 test("a hostile key anywhere in a flattened path is refused before any schema exists", () => {
   const fields = [{ name: "orders.__proto__.lines.l1.sku", kind: "text", label: "SKU" }];
   const collections = [

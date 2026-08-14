@@ -71,6 +71,8 @@ export type {
   MdyAnyArrayDescriptor,
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
+  MdyAnyRecordDescriptor,
+  MdyAnyRowDescriptor,
   MdyArrayDescriptor,
   MdyArrayHandle,
   MdyArrayItemValue,
@@ -84,6 +86,8 @@ export type {
   MdyFormValue,
   MdyGroupDescriptor,
   MdyItemHandleTree,
+  MdyRecordDescriptor,
+  MdyRecordHandle,
   MdyTypedFormLike
 } from "./lib/core/typed-form";
 

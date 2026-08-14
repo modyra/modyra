@@ -35,10 +35,22 @@ import {
 } from "@modyra/core";
 import { z } from "zod";
 
-/** Maps the schema of a collection's element — an array's item, a record's value — to a row descriptor. */
+/**
+ * Maps the schema of a collection's element — an array's item, a record's value — to a row
+ * descriptor.
+ *
+ * A row is whatever a schema key is: an object is a group, a collection is a collection of its own,
+ * and everything else is a leaf. `z.record(z.array(z.object()))` describes rows that hold rows, and
+ * mapping the inner collection to a leaf would hand the consumer one opaque value where the schema
+ * declared a list.
+ */
 export type MdyZodItemDescriptor<Elem extends z.ZodType> =
   Elem extends z.ZodObject<infer Inner>
     ? MdyGroupDescriptor<MdyZodSchemaTree<Inner>>
+    : Elem extends z.ZodArray<infer Item extends z.ZodType>
+    ? MdyArrayDescriptor<MdyZodItemDescriptor<Item>>
+    : Elem extends z.ZodRecord<infer _K, infer Value extends z.ZodType>
+    ? MdyRecordDescriptor<MdyZodItemDescriptor<Value>>
     : MdyFieldDescriptor<z.output<Elem> | null>;
 
 /**
@@ -141,11 +153,13 @@ function buildZodNode(
   return field<unknown>(initialFor(piece), [pieceValidator(piece)]);
 }
 
-/** A collection's row: a group when the element is an object, a leaf otherwise. */
-function rowDescriptor(element: z.ZodType): MdyAnyFieldDescriptor | MdyAnyGroupDescriptor {
-  return element instanceof z.ZodObject
-    ? group(buildZodTree(element))
-    : field<unknown>(initialFor(element), [pieceValidator(element)]);
+/** A collection's row is read exactly like a schema key: the row of a row is a row too. */
+function rowDescriptor(element: z.ZodType):
+  | MdyAnyFieldDescriptor
+  | MdyAnyGroupDescriptor
+  | MdyAnyArrayDescriptor
+  | MdyAnyRecordDescriptor {
+  return buildZodNode(element);
 }
 
 /** Initial value: what the piece parses `undefined` into (default/optional), else null. */

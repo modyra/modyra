@@ -101,21 +101,47 @@ test("a record of scalars, a record in a group, and a record with a default", ()
   assert.deepEqual(seeded.getValue().m, { a: "x" });
 });
 
-test("only a record becomes a record: every other shape degrades as it did", () => {
+test("what the engine has no node for stays a leaf", () => {
   // The risk of teaching the adapter a new node is teaching it too much. The engine has no tuple, no
   // set and no map, and inventing a structure the schema does not declare would be worse than a leaf.
   const others = createZodForm(
     z.object({
       t: z.tuple([z.string()]),
       s: z.set(z.string()),
-      nestedArrays: z.array(z.array(z.string())),
     }),
   );
   const value = others.getValue();
   assert.equal(value.t, null, "a tuple stopped being a leaf");
   assert.equal(value.s, null, "a set stopped being a leaf");
-  assert.deepEqual(value.nestedArrays, [], "an array of arrays is still an array of leaves");
-  assert.equal(typeof others.f.nestedArrays.push, "function");
+});
+
+test("a collection inside a collection maps to one, at any depth and in either kind", () => {
+  // A row is read exactly like a schema key, so what a key would become a row becomes too. Mapping
+  // the inner collection to a leaf handed the consumer one opaque value where the schema declared a
+  // list, and no row could be added to it.
+  const form = createZodForm(
+    z.object({
+      orders: z.array(z.object({
+        customer: z.string(),
+        lines: z.array(z.object({ sku: z.string(), qty: z.number() })),
+      })),
+      byKey: z.record(z.string(), z.array(z.object({ sku: z.string() }))),
+      matrix: z.array(z.array(z.string())),
+    }),
+  );
+
+  form.f.orders.push({ customer: "C", lines: [] });
+  form.f.orders.at(0).lines.push({ sku: "S", qty: 2 });
+  form.f.byKey.upsert("k", [{ sku: "K" }]);
+  form.f.byKey.row("k").push({ sku: "K2" });
+  form.f.matrix.push(["a"]);
+
+  assert.deepEqual(form.getValue().orders, [
+    { customer: "C", lines: [{ sku: "S", qty: 2 }] },
+  ]);
+  assert.deepEqual(form.getValue().byKey, { k: [{ sku: "K" }, { sku: "K2" }] });
+  assert.deepEqual(form.getValue().matrix, [["a"]]);
+  assert.equal(typeof form.f.orders.at(0).lines.push, "function", "the nested row is not a collection");
 });
 
 test("serverValidate rejects a forged payload with submit-shaped errors", () => {

@@ -250,6 +250,46 @@ describe("typed form — compile-time contracts", () => {
     form.destroy();
   });
 
+  it("a positional collection nests, and this framework's handles carry it", () => {
+    // The engine takes any row descriptor, collections included, at any depth. These factories are
+    // this framework's own, so a row shape the engine accepts and they refuse is a form a consumer
+    // can write against `@modyra/core` and not against this package.
+    const form = mdyForm({
+      orders: array(group({
+        customer: field(""),
+        lines: array(group({
+          sku: field(""),
+          allocations: array(group({ qty: field<number>(0) })),
+        })),
+      })),
+      matrix: array(array(field<number>(0))),
+      byKey: record(array(group({ sku: field("") }))),
+    });
+
+    const qty: number | undefined = form.f.orders
+      .at(0)?.lines.at(0)?.allocations.at(0)?.qty.value();
+    const cell: number | undefined = form.f.matrix.at(0)?.at(0)?.value();
+    const sku: string | undefined = form.f.byKey.row("k").at(0)?.sku.value();
+    assertType<Equal<typeof qty, number | undefined>>();
+    assertType<Equal<typeof cell, number | undefined>>();
+    assertType<Equal<typeof sku, string | undefined>>();
+
+    assertType<Equal<ReturnType<typeof form.value>["orders"], Array<{
+      customer: string;
+      lines: Array<{ sku: string; allocations: Array<{ qty: number }> }>;
+    }>>>();
+    assertType<Equal<ReturnType<typeof form.value>["matrix"], number[][]>>();
+
+    form.f.orders.push({ customer: "C", lines: [] });
+    form.f.orders.at(0)!.lines.push({ sku: "S", allocations: [] });
+    form.f.orders.at(0)!.lines.at(0)!.allocations.push({ qty: 2 });
+    expect(form.value().orders[0]!.lines[0]!.allocations[0]!.qty).toBe(2);
+
+    // @ts-expect-error — a nested row keeps its declared shape
+    form.f.orders.at(0)!.lines.at(0)!.allocations.push({ qty: "two" });
+    form.destroy();
+  });
+
   it("MdyTypedFormLike is a structural supertype of every typed form", () => {
     const form = makeForm();
     const like: MdyTypedFormLike = form; // must be assignable

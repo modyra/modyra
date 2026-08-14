@@ -19,7 +19,7 @@ import {
   type MdyFieldHandle as CoreFieldHandle,
   type MdyArrayHandle as CoreArrayHandle,
   type MdyRecordHandle as CoreRecordHandle,
-  type MdyRecordDescriptor,
+  type MdyRecordDescriptor as CoreRecordDescriptor,
 } from "@modyra/core";
 import {
   MdyDeclarativeAdapter,
@@ -42,6 +42,8 @@ import type {
   MdyAnyArrayDescriptor as CoreAnyArrayDescriptor,
   MdyAnyFieldDescriptor as CoreAnyFieldDescriptor,
   MdyAnyGroupDescriptor as CoreAnyGroupDescriptor,
+  MdyAnyRecordDescriptor as CoreAnyRecordDescriptor,
+  MdyAnyRowDescriptor as CoreAnyRowDescriptor,
   MdyArrayDescriptor as CoreArrayDescriptor,
   MdyArrayItemValue as CoreArrayItemValue,
   MdyFieldDescriptor as CoreFieldDescriptor,
@@ -56,7 +58,10 @@ import type {
 export type MdyAnyArrayDescriptor = CoreAnyArrayDescriptor;
 export type MdyAnyFieldDescriptor = CoreAnyFieldDescriptor;
 export type MdyAnyGroupDescriptor = CoreAnyGroupDescriptor;
+export type MdyAnyRecordDescriptor = CoreAnyRecordDescriptor;
+export type MdyAnyRowDescriptor = CoreAnyRowDescriptor;
 export type MdyArrayDescriptor<TItem> = CoreArrayDescriptor<TItem>;
+export type MdyRecordDescriptor<TItem> = CoreRecordDescriptor<TItem>;
 export type MdyArrayItemValue<I> = CoreArrayItemValue<I>;
 export type MdyFieldDescriptor<TValue> = CoreFieldDescriptor<TValue>;
 export type MdyFieldOptions<TValue> = CoreFieldOptions<TValue>;
@@ -176,7 +181,7 @@ export function group<TChildren extends MdyFormSchema>(
 }
 
 /** Declares a repeatable array of fields or groups (`items.0.name` paths on the adapter). */
-export function array<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescriptor>(
+export function array<TItem extends MdyAnyRowDescriptor>(
   item: TItem,
   options?: {
     readonly initial?: ReadonlyArray<unknown>;
@@ -187,7 +192,7 @@ export function array<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescripto
 }
 
 /** Declares a collection keyed by data (`rows.a3f9.name` paths on the adapter). */
-export function record<TItem extends MdyAnyGroupDescriptor | MdyAnyFieldDescriptor>(
+export function record<TItem extends MdyAnyRowDescriptor>(
   item: TItem,
   options?: {
     readonly initial?: Readonly<Record<string, unknown>>;
