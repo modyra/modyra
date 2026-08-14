@@ -48,6 +48,30 @@ function currentTimeAsParsed(): ParsedTime {
   return parseTime(getCurrentTime())!;
 }
 
+/**
+ * The working copy a picker opens on, for a field that already holds a time.
+ *
+ * `parseAnyTime` is strict per format — a `"12h"` picker reads `"10:37 AM"` and not `"10:37"` — so a
+ * value in the other notation parsed to nothing and the draft became the current wall-clock time.
+ * Confirm writes the draft, so the user opened a field showing one time, saw another on the dial,
+ * and pressed the button the dial is for: **the ordinary action lost their value**, while cancelling
+ * preserved it.
+ *
+ * The notation a value arrives in is not something the value contracts constrain: a draft written by
+ * a `"24h"` build, an API, a patch or a hand-written document all supply the other one. So both are
+ * read, and the field's own format decides only how it is written back — which is the repair this
+ * package already permits, the same shape as replacing a loosely-matched option value with the
+ * option's own.
+ *
+ * `null` still opens at the current time. An empty picker has nothing to preserve, and opening it
+ * anywhere else would be a worse answer than the one every picker gives.
+ */
+function draftFor(value: string | null, format: MdyTimeFormat): ParsedTime {
+  return parseAnyTime(value, format)
+    ?? parseAnyTime(value, format === "12h" ? "24h" : "12h")
+    ?? currentTimeAsParsed();
+}
+
 export function createTimepickerFieldController(
   options: MdyTimepickerFieldControllerOptions,
   reactivity?: MdyReactivity,
@@ -65,7 +89,7 @@ export function createTimepickerFieldController(
   // The clock is the picker; the number fields are the alternative a user asks for. Starting on the
   // dial is what makes "pick a time" mean the same gesture in every renderer.
   const viewMode = reactivity.signal<MdyTimepickerViewMode>("dial");
-  const draft = reactivity.signal<ParsedTime>(parseAnyTime(handle.value(), format) ?? currentTimeAsParsed());
+  const draft = reactivity.signal<ParsedTime>(draftFor(handle.value(), format));
 
   const state: MdySignal<MdyTimepickerFieldState> = reactivity.computed(() => ({
     value: handle.value(),
@@ -105,7 +129,7 @@ export function createTimepickerFieldController(
   });
 
   function openPicker(): readonly MdyUiCommand[] {
-    draft.set(parseAnyTime(handle.value(), format) ?? currentTimeAsParsed());
+    draft.set(draftFor(handle.value(), format));
     focusedField.set("hour");
     // Every opening starts on the hours, on the clock: where the last session left the popup is
     // not where the next one should resume.
@@ -187,7 +211,7 @@ export function createTimepickerFieldController(
 
   function setValue(value: string | null): void {
     handle.set(value);
-    draft.set(parseAnyTime(value, format) ?? currentTimeAsParsed());
+    draft.set(draftFor(value, format));
   }
 
   function setReadonly(nextReadonly: boolean): void {
