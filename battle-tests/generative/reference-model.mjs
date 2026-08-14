@@ -38,6 +38,7 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
   const isMounted = (path) => (mounted.get(path) ?? 0) > 0;
   const disabled = new Set();
   const touched = new Set();
+  const dirty = new Set();
 
   const declare = (key, value) => {
     if (!rows.has(key)) order.push(key);
@@ -56,6 +57,7 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
     order = order.filter((each) => each !== key);
     rows.delete(key);
     for (const path of [...touched]) if (path.startsWith(`${key}.`)) touched.delete(path);
+    for (const path of [...dirty]) if (path.startsWith(`${key}.`)) dirty.delete(path);
     for (const path of [...disabled]) {
       if (path.startsWith(`${key}.`) && !isMounted(path)) disabled.delete(path);
     }
@@ -107,6 +109,7 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
 
     mountedPaths: () => [...mounted.keys()].sort(),
     touchedPaths: () => [...touched].sort(),
+    dirtyPaths: () => [...dirty].sort(),
     /**
      * The cells a binding is actually suppressing.
      *
@@ -142,12 +145,14 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
           if (!rows.has(from) || rows.has(to)) break;
           const value = { ...rows.get(from) };
           const carriedMarks = [...touched].filter((path) => path.startsWith(`${from}.`));
+          const carriedEdits = [...dirty].filter((path) => path.startsWith(`${from}.`));
           // What a binder said about a cell is the row's, like its value and its marks: a rename
           // moves the row, so the exclusion moves with it rather than staying on a key nobody holds.
           const carriedBindings = [...disabled].filter((path) => path.startsWith(`${from}.`));
           forget(from);
           declare(to, value);
           for (const path of carriedMarks) touched.add(path.replace(`${from}.`, `${to}.`));
+          for (const path of carriedEdits) dirty.add(path.replace(`${from}.`, `${to}.`));
           for (const path of carriedBindings) {
             disabled.delete(path);
             disabled.add(path.replace(`${from}.`, `${to}.`));
@@ -176,6 +181,11 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
         case "field.touch":
           if (rows.has(keyOf(operation.path))) touched.add(local(operation.path));
           break;
+        // A mark like `touched`, made by a different gesture and carried the same way: what a
+        // control said about a cell belongs to the row, so a rename moves it and a removal ends it.
+        case "field.dirty":
+          if (rows.has(keyOf(operation.path))) dirty.add(local(operation.path));
+          break;
         case "field.disable":
           disabled.add(local(operation.path));
           break;
@@ -201,6 +211,7 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
           // not the form's to reset, and the rows end the way any removal ends them.
           for (const key of [...order]) forget(key);
           touched.clear();
+          dirty.clear();
           for (const [key, value] of Object.entries(initial)) declare(key, rowFrom(value));
           break;
         default:
