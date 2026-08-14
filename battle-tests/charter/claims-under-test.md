@@ -58,5 +58,6 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `LOC-001` | A localized date is read in the reader's own order, and an impossible one is refused. | `12/31/2026` becomes the 12th somewhere, or Feb 30 is accepted. |
 | `A11Y-003` | A palette derived from any brand colour keeps its text above the contrast floor. | Some hue produces a chip whose label cannot be read. |
 | `A11Y-004` | A widget asserts only the ARIA states its kind declares, on the part that carries them. | A kind announces a state its own contract says it does not have. |
+| `UI-001` | An open overlay keeps its shape while its anchor moves. | A popup flips sides, resizes or jitters as the page scrolls under it. |
 | `A11Y-002` | Focus is borrowed by a widget and handed back once. | A widget takes focus again after it has already returned it. |
 | `PKG-001` | Packed consumers observe the same public behaviour as workspace tests. | The tarball behaves differently, or resolves two copies of a package. |
