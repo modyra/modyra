@@ -15,7 +15,7 @@
 import { buildDynamicFormSchema, createForm, flattenDynamicForm, parseDynamicForm } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
-import { expectClaim, expectSameObservation } from "../../harness/assertions.mjs";
+import { expectClaim, expectEqual, expectSameObservation } from "../../harness/assertions.mjs";
 import { canonicalObservation } from "../../harness/canonical-snapshot.mjs";
 import { buildSchema, NESTED_ORDERS_SPEC } from "../../models/schemas.mjs";
 
@@ -56,6 +56,28 @@ const DOCUMENT = Object.freeze({
     },
   },
 });
+
+/**
+ * The same document with one row declared at every level.
+ *
+ * `flattenDynamicForm` walks a collection through its own `initialValue`, so what it can report is
+ * what the document says exists. A document with no rows has no concrete paths, which is why the
+ * empty one names only the outermost collection.
+ */
+function withRows(schema) {
+  return {
+    ...schema,
+    children: {
+      ...schema.children,
+      orders: {
+        ...schema.children.orders,
+        initialValue: {
+          o1: { ref: "R1", lines: [{ sku: "S1", allocations: [{ bin: "A", qty: "1" }] }] },
+        },
+      },
+    },
+  };
+}
 
 /** The same structural story both paths have to tell: build it, move it, rename over it. */
 function drive(schema) {
@@ -122,20 +144,33 @@ battle(
       detail: JSON.stringify(kinds),
     });
 
-    // Measured and not asserted: `collections` lists the top level only. A flat document's row cells
-    // are absent from `fields` in exactly the same way, so this is the summary's scope rather than
-    // something nesting loses — and nothing public says whether it is meant to be exhaustive.
-    // Reconstruction does not read it: `buildDynamicFormSchema` walks the schema node, which is why
-    // the two forms above agree at a depth this list does not mention.
-    ctx.log.note("nested collections are outside the flattened summary", {
-      listed: Object.keys(kinds),
-      built: [...fromDocument.collections.map((each) => each.path)],
+    // The summary is exhaustive over the rows the document declares, and only over those: the walk
+    // descends into a collection through its own `initialValue`, so a document with no rows has no
+    // concrete paths to report. That is scope rather than loss — reconstruction never reads this
+    // list, which is why the two forms above agree at a depth the empty document does not mention.
+    // Declared rows make every level appear.
+    const seeded = flattenDynamicForm(withRows(DOCUMENT.schema));
+    ctx.log.note("the collections a document with rows declares", {
+      paths: seeded.collections.map((each) => each.path),
     });
 
-    expectClaim(fromDocument.collections.some((each) => each.path === "orders"), {
+    expectEqual(seeded.collections, [
+      { path: "orders", kind: "record" },
+      { path: "orders.o1.lines", kind: "array" },
+      { path: "orders.o1.lines.0.allocations", kind: "array" },
+    ], {
       claimIds: ["DYN-002"],
-      what: "the built form does not report the collection the document declared",
-      detail: JSON.stringify(fromDocument.collections.map((each) => each.path)),
+      what: "a document that declares its rows does not report every collection under them",
+    });
+
+    expectEqual(seeded.fields.map((each) => each.name), [
+      "orders.o1.ref",
+      "orders.o1.lines.0.sku",
+      "orders.o1.lines.0.allocations.0.bin",
+      "orders.o1.lines.0.allocations.0.qty",
+    ], {
+      claimIds: ["DYN-002", "SUB-002"],
+      what: "the leaves under those collections are not reported, or not in schema order",
     });
   },
 );
