@@ -106,3 +106,72 @@ battle(
     });
   },
 );
+
+/**
+ * Declare a row and then take it apart, in a child process under a chosen condition.
+ *
+ * The teardown is the half the registration fix does not reach: a row ends cell by cell, and a
+ * runtime whose computations run eagerly reads the form between two of them.
+ */
+function structuralOperation({ runtime, condition, operation }) {
+  const dir = mkdtempSync(join(BATTLE_ROOT, ".tmp-condition-"));
+  const script = join(dir, "structural.mjs");
+
+  writeFileSync(
+    script,
+    [
+      `import { createForm, field, group, record } from "@modyra/core";`,
+      `import { ${runtime}Reactivity } from "@modyra/${runtime}";`,
+      `const form = createForm({ rows: record(group({ a: field(""), b: field("") })) },`,
+      `  { reactivity: ${runtime}Reactivity(), devWarnings: false });`,
+      `form.f.rows.upsert("r", { a: "A" });`,
+      operation === "rename" ? `form.f.rows.rename("r", "q");` : `form.f.rows.remove("r");`,
+      `console.log(JSON.stringify(form.getValue()));`,
+      `form.destroy();`,
+    ].join("\n"),
+    "utf8",
+  );
+
+  try {
+    const argv = condition ? [`--conditions=${condition}`, script] : [script];
+    const stdout = execFileSync(process.execPath, argv, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    return { ok: true, value: stdout.trim() };
+  } catch (error) {
+    return { ok: false, message: `${error.stderr ?? ""}`.split("\n").find((line) => line.includes("modyra")) ?? "raised" };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+battle(
+  {
+    claims: ["COL-005", "COL-007"],
+    title: "a row can be renamed and removed on every published runtime",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // Declaring a row works on solid now — that fix batched the registration. Taking one apart is
+    // the other half, and it is reached by a different path: a row ends cell by cell, so a runtime
+    // that recomputes eagerly reads the form between two of them and finds a shape the schema does
+    // not describe.
+    for (const operation of ["rename", "remove"]) {
+      const sibling = structuralOperation({ runtime: "vue", condition: "browser", operation });
+      ctx.log.note("a row taken apart on a sibling adapter", { operation, ok: sibling.ok });
+
+      expectClaim(sibling.ok, {
+        claimIds: ["COL-005"],
+        what: `a row could not be ${operation}d on another adapter under the same condition`,
+        detail: sibling.message ?? "",
+      });
+
+      const onSolid = structuralOperation({ runtime: "solid", condition: "browser", operation });
+      ctx.log.note("the same row taken apart on solid", { operation, ok: onSolid.ok });
+
+      expectClaim(onSolid.ok, {
+        claimIds: ["COL-005", "COL-007"],
+        what: `${operation} on a row raised instead of taking the row apart`,
+        detail: onSolid.message ?? "",
+      });
+    }
+  },
+);
