@@ -291,6 +291,14 @@ export function buildFormModule(project: MdyStudioProject, stubNameFor: Map<stri
   const exportStatement = profile.hookExportName
     ? `export function ${profile.hookExportName}() {\n  return ${call.split("\n").join("\n  ")};\n}\n`
     : `export const form = ${call};\n`;
+  // What the resolver refused, surfaced where every other target-profile finding is: a name it could
+  // not import is a module that would not have compiled, and the person who can fix it is the one
+  // who wrote the profile.
+  for (const problem of imports.problems) {
+    diagnostics.push({ code: "INVALID_TARGET_PROFILE", severity: "error", message: problem });
+  }
+  if (imports.problems.length > 0) return { code: "", diagnostics };
+
   const code = `${imports.print()}\n\nconst schema = ${schemaCode};\n\n${exportStatement}`;
   return { code, diagnostics };
 }
