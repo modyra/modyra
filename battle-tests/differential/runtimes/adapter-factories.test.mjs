@@ -11,12 +11,18 @@
  * Both are the kind of divergence that shows up as one framework's users reporting a bug nobody else
  * can reproduce.
  *
- * Solid runs in a child process under `--conditions=browser`, the same way
- * `adversarial/reactivity/solid-collection-rows` runs it. Without that condition Solid resolves to a
- * build whose computations do not run — it reports a form with an empty `required` field as valid,
- * with no errors — so including it here under this process's condition would compare against a
- * runtime that is not evaluating anything, and agreement would mean nothing. Vue and Svelte are
- * driven in process and the sequence is identical in both places.
+ * Solid is driven in a child process under each export condition, and the third battle is why. Node
+ * resolves `solid-js` to its server build when the `browser` condition is absent, and that is not a
+ * test-runner quirk — it is what a server render resolves. On that build a form once froze at
+ * creation and reported itself valid with an empty `required` field, which made a server asking
+ * whether to accept a submission answer yes about a form that should have been refused.
+ *
+ * `solidReactivity()` now probes the graph it resolved and falls back to the framework-agnostic one
+ * when computations do not re-run, so the **verdicts** are the same on both builds. What is still
+ * not the same is **tracking**: a Solid computation reading a form value re-runs on the client build
+ * and does not on the server one. Both halves are asserted, because they are the line every other
+ * battle in this suite has to draw — a comparison of what a form *means* may include Solid in any
+ * process, and one that asserts a Solid computation *noticed* still needs the condition.
  */
 
 import { execFileSync } from "node:child_process";
@@ -205,43 +211,103 @@ battle(
 
 battle(
   {
-    claims: ["REA-001"],
-    title: "solid without its export condition is not a runtime to compare against",
+    claims: ["REA-001", "SSR-001"],
+    title: "a form means the same thing on the build a server render resolves",
     environments: ["node"],
   },
   async (ctx) => {
-    // Why the battle above pays for a child process. This is the state every other differential in
-    // the suite excludes solid to avoid, asserted rather than assumed — if it ever stops being
-    // true, those exclusions are costing coverage for no reason.
-    const lenient = driveThere({ importFrom: "@modyra/solid", factory: "createSolidForm" });
-    const proper = driveThere({ importFrom: "@modyra/solid", factory: "createSolidForm", condition: "browser" });
-    ctx.log.note("solid under each condition", { lenient: lenient.ok, proper: proper.ok });
+    // The build a server render gets, against the one a browser gets. A verdict that differed
+    // between them is a server accepting a submission the client would have refused.
+    const server = driveThere({ importFrom: "@modyra/solid", factory: "createSolidForm" });
+    const client = driveThere({ importFrom: "@modyra/solid", factory: "createSolidForm", condition: "browser" });
+    ctx.log.note("solid on each build", { server: server.ok, client: client.ok });
 
-    expectClaim(lenient.ok && proper.ok, {
+    expectClaim(server.ok && client.ok, {
       claimIds: ["REA-001"],
-      what: "solid could not be driven under one of the two conditions, so they cannot be compared",
-      detail: JSON.stringify({ lenient: lenient.message, proper: proper.message }),
+      what: "solid could not be driven on one of the two builds, so they cannot be compared",
+      detail: JSON.stringify({ server: server.message, client: client.message }),
     });
 
-    const first = (run) => JSON.parse(run.observed[0]);
-    ctx.log.note("what each condition says about an empty required field", {
-      lenient: first(lenient).valid,
-      proper: first(proper).valid,
+    // The control: some step in the sequence is invalid, so agreement is agreement about a verdict
+    // rather than about a form that was never asked anything.
+    expectClaim(server.observed.some((step) => JSON.parse(step).valid === false), {
+      claimIds: ["SSR-001"],
+      what: "no step was ever invalid, so the builds agree about nothing",
+      detail: JSON.stringify(server.observed.slice(0, 1)),
     });
 
-    // The proper condition sees the rule.
-    expectEqual(first(proper).valid, false, {
+    expectEqual(server.observed, client.observed, {
+      claimIds: ["REA-001", "SSR-001"],
+      what: "the build a server render resolves answers differently from the one a browser resolves",
+      detail: JSON.stringify({ server: server.observed, client: client.observed }),
+    });
+  },
+);
+
+battle(
+  {
+    claims: ["REA-001"],
+    title: "tracking is the half that does not travel between the builds",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The residual, and the line every other battle here has to draw. Verdicts are portable now;
+    // whether a Solid computation *notices* a write is not, because the server build's `createMemo`
+    // computes once and its `createEffect` never runs.
+    //
+    // Asserted rather than assumed so that a battle needing the condition can point at a measured
+    // reason, and so that a future Solid whose server graph recomputes turns this and lets the last
+    // condition come off.
+    const tracked = (condition) => {
+      const dir = mkdtempSync(join(BATTLE_ROOT, ".tmp-tracking-"));
+      const script = join(dir, "track.mjs");
+      writeFileSync(
+        script,
+        [
+          `import { createForm, field } from "@modyra/core";`,
+          `import { createComputed, createRoot } from "solid-js";`,
+          `import { solidReactivity } from "@modyra/solid";`,
+          `const form = createForm({ name: field("a") }, { reactivity: solidReactivity(), devWarnings: false });`,
+          `let runs = 0;`,
+          `const dispose = createRoot((stop) => { createComputed(() => { form.f.name.value(); runs += 1; }); return stop; });`,
+          `const atCreation = runs;`,
+          `form.f.name.set("b");`,
+          `console.log(JSON.stringify({ atCreation, afterWrite: runs }));`,
+          `dispose(); form.destroy();`,
+        ].join("\n"),
+        "utf8",
+      );
+      try {
+        const argv = condition ? [`--conditions=${condition}`, script] : [script];
+        const stdout = execFileSync(process.execPath, argv, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+        return JSON.parse(stdout.trim().split("\n").pop());
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    };
+
+    const client = tracked("browser");
+    const server = tracked(null);
+    ctx.log.note("whether a solid computation re-runs on a write", { client, server });
+
+    // The control: the computation ran once when it was created on both builds, so a difference
+    // below is about re-running rather than about the computation never existing.
+    expectEqual([client.atCreation, server.atCreation], [1, 1], {
       claimIds: ["REA-001"],
-      what: "solid under its own export condition does not see an unsatisfied required rule",
-      detail: JSON.stringify(first(proper)),
+      what: "a solid computation did not run when it was created, so nothing below measures tracking",
+      detail: JSON.stringify({ client, server }),
     });
 
-    // The lenient one does not, which is exactly why folding solid into a differential run in this
-    // process would report agreement about a runtime that is not evaluating anything.
-    expectEqual(first(lenient).valid, true, {
+    expectClaim(client.afterWrite > client.atCreation, {
       claimIds: ["REA-001"],
-      what: "solid without the browser condition now evaluates its rules, so the exclusions elsewhere in this suite can be lifted",
-      detail: JSON.stringify(first(lenient)),
+      what: "a solid computation on the client build did not re-run when the form value changed",
+      detail: JSON.stringify(client),
+    });
+
+    expectEqual(server.afterWrite, server.atCreation, {
+      claimIds: ["REA-001"],
+      what: "solid's server build now tracks a form read, so the last battles holding the browser condition can drop it",
+      detail: JSON.stringify(server),
     });
   },
 );

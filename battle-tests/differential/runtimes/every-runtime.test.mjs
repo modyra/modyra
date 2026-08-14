@@ -28,16 +28,29 @@ const RUNTIMES = Object.freeze([
   ["preact", async () => (await import("@modyra/preact")).preactReactivity()],
   ["svelte", async () => (await import("@modyra/svelte")).svelteReactivity()],
   ["lit", async () => (await import("@modyra/lit")).litReactivity()],
+  ["solid", async () => (await import("@modyra/solid")).solidReactivity()],
 ]);
 
 /**
- * Solid is attacked on its own, in `adversarial/reactivity/solid-collection-rows`.
+ * Solid takes part now, and what it took to get here is worth stating.
  *
- * It cannot reach this comparison: under the export condition its own suite uses it raises while
- * declaring a two-cell row, and without that condition it resolves to a build whose computations do
- * not run — where it diverges here by starting no async work at all. Neither state is a comparison,
- * and folding it in under the lenient condition would report agreement about a runtime that was not
- * doing anything.
+ * It used to be excluded because without the `browser` export condition it resolved to a build whose
+ * computations never re-run, and a form on it froze at creation — reporting itself valid with an
+ * empty `required` field. That was read here as a property of how this suite is run. It was the
+ * server build, which is what a server render resolves, so the frozen verdict was a production
+ * answer and not a test artefact.
+ *
+ * `solidReactivity()` now probes the graph it resolved and falls back to the framework-agnostic one
+ * when computations do not re-run, so the verdicts are the same on both builds and Solid belongs in
+ * this comparison.
+ *
+ * What it emits is not the same: the fallback says so once, and no other runtime says anything. That
+ * is compared separately below rather than ignored, because a runtime that started reporting a
+ * diagnostic nobody expected is exactly what this file exists to catch.
+ *
+ * Solid's *tracking* is still not portable — reads on the server build are not tracked by Solid's
+ * own primitives — so a battle asserting that a Solid computation observed a handle still needs the
+ * condition. This one asserts what a form means, not who noticed.
  */
 
 const SEQUENCE = Object.freeze([
@@ -69,7 +82,7 @@ async function drive(context) {
 battle(
   {
     claims: ["COL-001", "COL-003", "COL-007", "VAL-002", "SUB-001", "SUB-002"],
-    title: "a form means the same thing on vue, react, preact, svelte and lit",
+    title: "a form means the same thing on every runtime a consumer can hand it",
     environments: ["node"],
     requires: ["structural", "mountedPhases", "unmountedPhases", "observations"],
   },
@@ -103,10 +116,29 @@ battle(
       });
 
       const state = await drive(ctx.open(KEYED_ROWS_SPEC, { reactivity }));
+
+      // The form itself, everywhere but the diagnostics: what a runtime *says* about the process it
+      // resolved is not part of what a form means.
       expectSameObservation(state, baseline, {
         claimIds: ["COL-001", "COL-003", "COL-007", "VAL-002", "SUB-001", "SUB-002"],
-        ignore: [...RENDERER_ONLY_FIELDS],
+        ignore: [...RENDERER_ONLY_FIELDS, "diagnostics"],
         what: `the same operations on ${name}'s reactivity produced a different form`,
+      });
+
+      // And the diagnostics, compared rather than ignored. Every runtime is silent except a Solid
+      // that resolved the server build, which says so once — anything else appearing here is a
+      // runtime reporting something no consumer was told to expect.
+      const spoke = (state.diagnostics ?? []).map((entry) => entry.code ?? entry.message ?? String(entry));
+      ctx.log.note("what the runtime said while doing it", { runtime: name, spoke });
+
+      const permitted = name === "solid"
+        ? spoke.every((line) => String(line).includes("server build"))
+        : spoke.length === 0;
+
+      expectClaim(permitted, {
+        claimIds: ["COL-001"],
+        what: `${name}'s reactivity reported something this comparison does not account for`,
+        detail: JSON.stringify(spoke),
       });
     }
   },
