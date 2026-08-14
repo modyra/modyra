@@ -181,3 +181,34 @@ function findNode(node, id) {
 function normalizeAndCheck(project) {
   return normalize(project);
 }
+
+test("a condition holding something a condition cannot hold is reported when the project is read", () => {
+  // The other end of the same defect. A condition is compiled into source a consumer builds, so an
+  // operand outside the declared kinds is not a display problem — and the project that carries it
+  // was accepted with nothing said. Reported rather than thrown: a project that cannot be opened
+  // cannot be repaired in the editor that reports this.
+  const withOperand = (operand) => ({
+    studioVersion: 1, id: "p", name: "P",
+    schema: { node: "group", id: "root", name: "root", children: [
+      { node: "field", id: "nd_a", name: "a", fieldKind: "text", valueType: "string", initialValue: "", validators: [] },
+    ] },
+    formValidators: [{
+      id: "fv_1", message: "no", dependencies: [],
+      condition: { op: "equals", operands: [{ nodeId: "nd_a" }, operand] },
+    }],
+    behaviors: {}, implementations: {}, presentation: {}, targets: {}, metadata: {},
+  });
+
+  const codesFor = (operand) => loadProject(withOperand(operand)).diagnostics.map((d) => d.code);
+
+  assert.deepEqual(codesFor(["globalThis.taken = 1"]), ["BAD_CONDITION_OPERAND"]);
+  // A plain object rather than one carrying a function: the project goes through a structured
+  // clone on the way in, so a function operand never reaches this check — it is refused earlier, by
+  // the clone, which is a different door and already closed.
+  assert.deepEqual(codesFor({ nested: { deep: true } }), ["BAD_CONDITION_OPERAND"]);
+
+  // And every kind a condition does hold is accepted in silence.
+  for (const operand of ["a string", 42, true, null, { nodeId: "nd_a" }]) {
+    assert.deepEqual(codesFor(operand), [], `${JSON.stringify(operand)} was reported`);
+  }
+});

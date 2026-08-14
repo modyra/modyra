@@ -33,7 +33,25 @@ function compileOperand(operand: StudioOperand | undefined, pathOf: (nodeId: str
   if (isExpression(operand)) return compileAt(operand, pathOf, depth + 1);
   if (isNodeRef(operand)) return memberAccess(pathOf(operand.nodeId));
   if (typeof operand === "string") return printString(operand);
-  return String(operand);
+  // Printed by kind, never by `String(operand)`. What is left after the branches above is a number,
+  // a boolean, or something `StudioOperand` does not describe — and the last case is the whole
+  // problem: `String(["globalThis.taken = 1"])` is its own join, so an array operand put an
+  // assignment into the emitted expression *unquoted*, in a module a consumer compiles, decided by a
+  // project file. An object gave `[object Object]`, which is the same defect failing loudly.
+  //
+  // Refused rather than coerced. A value outside the type is not a value this can print faithfully,
+  // and guessing produces source nobody wrote.
+  if (typeof operand === "number") {
+    if (!Number.isFinite(operand)) {
+      throw new Error(`Expression operand is ${String(operand)}, which is not a value a condition can hold`);
+    }
+    return String(operand);
+  }
+  if (typeof operand === "boolean") return String(operand);
+  throw new Error(
+    `Expression operand is ${Array.isArray(operand) ? "an array" : `a ${typeof operand}`}, which is not one of the ` +
+    "kinds a condition may hold: a node reference, a string, a number, a boolean, null, or a nested expression",
+  );
 }
 
 function isEmptyExpr(target: string): string {

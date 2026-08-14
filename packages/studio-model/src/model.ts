@@ -13,6 +13,7 @@ import {
   type MdyStudioProject,
   type StudioDiagnostic,
   type StudioFieldKind,
+  type StudioExpression,
   type StudioLayoutChild,
   type StudioLayoutNode,
   type StudioSchemaNode,
@@ -186,9 +187,53 @@ function diagnoseProject(project: MdyStudioProject, idx: StudioIndexes): StudioD
   if (project.behaviors.submit) {
     checkImplementationRef(project.behaviors.submit.implementationRef, "behaviors.submit");
   }
+  for (const validator of project.formValidators) {
+    diagnostics.push(...diagnoseCondition(validator.condition, validator.id));
+  }
   diagnostics.push(...diagnoseLayout(project, idx));
 
   return diagnostics;
+}
+
+
+/**
+ * Operands a condition may hold, checked where the project is read.
+ *
+ * A condition is compiled into the source a consumer builds, so an operand outside the declared
+ * kinds is not a display problem: an array reaches the emitted expression through its own join, and
+ * `["globalThis.taken = 1"]` becomes an assignment in generated code. The compiler refuses it too —
+ * these are two different consumers, and the one holding the file is the one who can fix it.
+ *
+ * Reported rather than thrown, like every other finding here: a project that cannot be opened cannot
+ * be repaired in the editor that reports this.
+ */
+function diagnoseCondition(
+  condition: StudioExpression | undefined,
+  validatorId: string,
+  depth = 0,
+): StudioDiagnostic[] {
+  if (condition === undefined || depth > STUDIO_LAYOUT_MAX_DEPTH) return [];
+  const operands = condition.operands ?? (condition.operand !== undefined ? [condition.operand] : []);
+  const found: StudioDiagnostic[] = [];
+  for (const operand of operands) {
+    if (operand === null || operand === undefined) continue;
+    if (typeof operand === "object" && "op" in operand) {
+      found.push(...diagnoseCondition(operand as StudioExpression, validatorId, depth + 1));
+      continue;
+    }
+    if (typeof operand === "object" && "nodeId" in operand) continue;
+    if (typeof operand === "string" || typeof operand === "boolean") continue;
+    if (typeof operand === "number" && Number.isFinite(operand)) continue;
+    found.push({
+      code: "BAD_CONDITION_OPERAND",
+      severity: "error",
+      message:
+        `Condition of "${validatorId}" holds ${Array.isArray(operand) ? "an array" : `a ${typeof operand}`}, ` +
+        "which is not a node reference, a string, a finite number, a boolean, null or a nested condition",
+      validatorId,
+    });
+  }
+  return found;
 }
 
 /**

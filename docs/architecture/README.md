@@ -71,6 +71,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0053: A widget id is refused where it is used, not only where it is asked about](0053-a-widget-id-is-refused-where-it-is-used.md) — the part-id builders throw on an id that cannot be referenced; the joining factory does not, and nothing is repaired silently
 - [ADR 0054: A list shows the choice it will not erase](0054-a-list-shows-the-choice-it-will-not-erase.md) — an option is keyed by what it holds, a survivor keeps the label it was painted with and gets a part, and a radio group stops being the exception
 - [ADR 0055: A runtime that cannot recompute is not the one to run on](0055-a-runtime-that-cannot-recompute-is-not-the-one-to-run-on.md) — Solid's server build freezes every derived value and reported an invalid form as valid; the adapter probes the graph and falls back to one that answers
+- [ADR 0056: A project file does not decide what the generated module does](0056-a-project-file-does-not-decide-what-the-generated-module-does.md) — an operand outside the expression vocabulary was printed unquoted into generated source; refused at the compiler and reported where the project is read
 
 ## Security-relevant records
 
