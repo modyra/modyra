@@ -27,6 +27,30 @@
 7. **Leave the generative property active.** The regression pins one sequence; the campaign keeps
    looking for the next.
 
+## When an attack finds a break
+
+The seven steps above assume a report: a battle failed, `reports/failures/<id>.json` exists, and
+there is a seed to replay and a sequence to shrink. Most breaks are not found that way. They are
+found by reading a public promise, building the case that contradicts it, and watching it
+contradict — and there is no report, because no battle existed yet.
+
+For those, steps 1 to 3 have already happened by construction: the sequence is the one you wrote, it
+is minimal because you wrote it minimal, and it reproduces because you have run nothing else. What
+replaces them is the same evidence stated differently:
+
+1. **Write the battle before reporting the break**, and let it fail. A probe convinces you; a battle
+   convinces the code, and the two are independent — see [principles](principles.md) 8. A finding
+   reported from a terminal beside a battle that never asserted it is unbacked, however real the
+   defect turns out to be.
+2. **Check that the red is the one you wrote.** Not merely that it is red — [principle 10](principles.md).
+3. **Keep the battle where its claim lives**, in `adversarial/<area>/` beside the others that cite
+   it, rather than in `regressions/`. That directory is for a sequence a campaign found and a human
+   reduced; a hand-built case is already at its smallest and gains nothing from being moved away
+   from the claim it is about.
+
+Steps 5 to 7 are unchanged. A break found by attack is classified, fixed and recorded exactly as one
+found by a campaign — what differs is only where the evidence came from and where the battle lives.
+
 ## Prohibited
 
 - Importing implementation source to make setup easier.
