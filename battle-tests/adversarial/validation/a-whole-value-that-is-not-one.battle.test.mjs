@@ -18,6 +18,13 @@
  *
  * The assertion admits both repairs: refuse the argument, or leave the form as it was. What it does
  * not admit is the present answer, which is neither.
+ *
+ * `setInitialValue` is the same gap with a longer reach. It plants what it is given rather than
+ * writing it once: the initial is what `reset()` returns to and what `dirty` measures against, so a
+ * number in a text field's initial is a baseline the form can never be clean against and can always
+ * be reset into. Every other write door was handed the same six values and damaged nothing —
+ * `patch`, `patchValue`, `rows.upsert`, `rows.patch`, `rows.setAll` and `items.setAll` — which is
+ * what makes these two the exception rather than the convention.
  */
 
 import { createForm, explainValueMismatch, vanillaReactivity } from "@modyra/core";
@@ -121,6 +128,61 @@ battle(
         claimIds: ["SUB-001"],
         what: `setValue given ${what} left a form reporting itself valid with a value it cannot hold`,
         detail: JSON.stringify({ value: form.getValue(), valid: form.state.valid() }),
+      });
+
+      form.destroy();
+    }
+  },
+);
+
+battle(
+  {
+    claims: ["VAL-004", "COL-001"],
+    title: "an initial value a field cannot hold is not planted where reset will find it",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The control: a legitimate initial is taken and reset returns to it.
+    const proper = filled();
+    proper.setInitialValue("note", "a new baseline");
+    proper.reset();
+    expectEqual(proper.getValue().note, "a new baseline", {
+      claimIds: ["VAL-004"],
+      what: "a legitimate initial value did not become the baseline",
+    });
+    proper.destroy();
+
+    for (const [what, value] of [
+      ["a number", 42],
+      ["null", null],
+      ["nothing at all", undefined],
+      ["an array", []],
+      ["an object", { wat: 1 }],
+    ]) {
+      const form = filled();
+
+      let refused = false;
+      try {
+        form.setInitialValue("note", value);
+      } catch {
+        refused = true;
+      }
+      form.reset();
+
+      const complaints = refused ? [] : forbidden(form);
+      ctx.log.note("an initial value the field cannot hold", {
+        what,
+        refused,
+        afterReset: form.getValue().note,
+        complaints,
+      });
+
+      // A baseline is what a form returns to for the rest of its life. Planting one the field
+      // cannot hold makes every reset land on a value the engine's own checker condemns.
+      expectEqual(complaints, [], {
+        claimIds: ["VAL-004", "COL-001"],
+        what: `an initial of ${what} survived into the form that reset onto it`,
+        detail: JSON.stringify(form.getValue()),
       });
 
       form.destroy();
