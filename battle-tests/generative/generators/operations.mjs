@@ -34,6 +34,7 @@ export function generateOperation(rng, model, { collectionPath = "rows", cells, 
     ["set-cell", anyDeclared ? 5 : 0],
     ["set-cell-absent", 2],
     ["touch", anyDeclared ? 2 : 0],
+    ["dirty", anyDeclared ? 2 : 0],
     ["mount", 4],
     ["unmount", 3],
     ["disable", anyDeclared ? 2 : 0],
@@ -99,6 +100,8 @@ export function generateOperation(rng, model, { collectionPath = "rows", cells, 
       };
     case "touch":
       return { type: "field.touch", path: `${collectionPath}.${key}.${cell}` };
+    case "dirty":
+      return { type: "field.dirty", path: `${collectionPath}.${key}.${cell}` };
     case "mount":
       return { type: "mount", paths: [`${collectionPath}.${key}.${cell}`] };
     case "unmount":
