@@ -497,7 +497,7 @@
               "$ref": "#/$defs/arrayNode"
             }
           ],
-          "description": "A row's shape. It may hold a keyed collection \u2014 its descendants are then addressed by name below this array's index. It may not hold another array: a path crosses one positional level."
+          "description": "A row's shape, a collection of either kind included. A row's descendants are addressed below this array's index, and a collection the row declares names its own rows the same way, so a second positional level is as addressable as the first (ADR 0043)."
         },
         "initialValue": {
           "type": "array",
