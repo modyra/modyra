@@ -13,7 +13,7 @@
 import { buildDynamicFormSchema, createForm, flattenDynamicForm, parseDynamicForm } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
-import { expectClaim, expectSameObservation } from "../../harness/assertions.mjs";
+import { expectClaim, expectSameObservation, expectSamePaths } from "../../harness/assertions.mjs";
 import { canonicalObservation, RENDERER_ONLY_FIELDS } from "../../harness/canonical-snapshot.mjs";
 import { executeOperation } from "../../harness/context.mjs";
 import { KEYED_ROWS_SPEC } from "../../models/schemas.mjs";
@@ -109,10 +109,34 @@ battle(
         what: "the document-built form diverged from the typed one",
       });
 
-      // What was excluded, asserted rather than dropped: neither form has undeclared async work.
+      // Everything excluded, asserted rather than dropped — which the snapshot's own contract
+      // requires and which this comparison had only half done.
       expectClaim(!dynamicState.pending, {
         claimIds: ["DYN-001"],
         what: "a document-built form has no pending work of its own",
+      });
+
+      expectClaim(dynamicState.activeAsyncRuns === 0, {
+        claimIds: ["DYN-001"],
+        what: "a document-built form started async work the document never declared",
+        detail: `${dynamicState.activeAsyncRuns} run(s)`,
+      });
+
+      // The typed side is stated too. Excluding a field because one side is driven by the harness
+      // says nothing about what the other side did, and "both were ignored" is how a differential
+      // stops testing anything.
+      expectClaim(typedState.pending === (typedState.activeAsyncRuns > 0), {
+        claimIds: ["DYN-001"],
+        what: "the typed form is pending exactly while the harness holds a run for it",
+        detail: `pending=${typedState.pending}, ${typedState.activeAsyncRuns} run(s)`,
+      });
+
+      // And the diagnostics, which were dropped with nothing said about them at all. Neither form
+      // may complain while doing what the other does without complaint: a warning on one side and
+      // silence on the other is a difference between two public paths, which is the claim.
+      expectSamePaths(dynamicState.diagnostics, typedState.diagnostics, {
+        claimIds: ["DYN-001"],
+        what: "the two ways of declaring the same form did not report the same things",
       });
 
       // The kind survives the round trip through the flat wire form. `flattenDynamicForm` walks a
