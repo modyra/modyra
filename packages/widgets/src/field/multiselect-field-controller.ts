@@ -12,7 +12,7 @@
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
-import { filterOptionsByQuery } from "../options-utils.js";
+import { filterOptionsByQuery, defaultOptionKey } from "../options-utils.js";
 
 import { overlayLifecycleTransition } from "../behavior.js";
 import { optionsWithUnrecognizedValues } from "../options-reconciliation.js";
@@ -58,7 +58,7 @@ export function createMultiselectFieldController<TValue>(
     widgetId,
     handle,
     options: initialOptions,
-    keyFor = (option) => String(option.value),
+    keyFor = (option) => defaultOptionKey(option.value),
     mode = "single",
     readonly: initialReadonly = false,
   } = options;
@@ -136,7 +136,7 @@ export function createMultiselectFieldController<TValue>(
   });
 
   const filteredOptions: MdySignal<readonly MdySelectOption<TValue>[]> = reactivity.computed(() =>
-    filterOptionsByQuery(allOptions(), query()),
+    filterOptionsByQuery(effectiveOptions(), query()),
   );
 
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
@@ -144,7 +144,11 @@ export function createMultiselectFieldController<TValue>(
     const a11y = projectMultiselectFieldA11y(currentState, handle.errors(), { widgetId });
 
     const parts: Record<string, ReturnType<typeof a11yOption>> = {};
-    for (const option of allOptions()) {
+    // What is painted, not what was declared: a choice the list no longer offers is kept — that is
+    // this widget's rule — and building parts from the declared list left it with no id, no
+    // `role="option"` and nothing `aria-activedescendant` could point at. The one entry the user
+    // needs in order to take their choice back is the one that could not be bound.
+    for (const option of effectiveOptions()) {
       const key = keyFor(option);
       parts[key] = a11yOption(key, option, currentState);
     }

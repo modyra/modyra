@@ -3,6 +3,7 @@
  */
 
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
+import { optionsWithUnrecognizedValue } from "../options-reconciliation.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 
@@ -53,12 +54,26 @@ export function createOptionFieldController<TValue>(
   // The list is a signal because the projection and the roving focus both read it: a host that
   // replaces it has to move every derived answer with it, not just the next lookup.
   const optionList = reactivity.signal<readonly MdySelectOption<TValue>[]>(initialOptions);
-  const allOptions = (): readonly MdySelectOption<TValue>[] => optionList();
+  /**
+   * The options this control paints: the declared list, plus the held value when the list does not
+   * offer it.
+   *
+   * `options-reconciliation` names its own scope — *"Any control that offers a list faces this: a
+   * form holds `"fr"`, the options arrive without it, and the control has to show something"* — and
+   * a radio group is such a control. Without this it painted nothing for the value it was holding:
+   * an unanswered question that has an answer, kept through a submit the user cannot see.
+   *
+   * The phantom entry is the price and it is the smaller one. A group with an extra radio the list
+   * did not declare is legible and correctable; a group silently holding a value it does not show is
+   * neither.
+   */
+  const allOptions = (): readonly MdySelectOption<TValue>[] =>
+    optionsWithUnrecognizedValue(optionList(), handle.value());
 
   const optionByKey = new Map<string, MdySelectOption<TValue>>();
   function rebuildIndex(): void {
     optionByKey.clear();
-    for (const option of optionList()) {
+    for (const option of allOptions()) {
       optionByKey.set(keyFor(option), option);
     }
   }

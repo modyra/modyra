@@ -69,6 +69,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0051: An option is recognised by what it holds](0051-an-option-is-recognised-by-what-it-holds.md) — `oneOf` compares an object option by its members, so a draft's round trip is not tampering, and every forgery it refused it still refuses
 - [ADR 0052: A widget announces only the states it has](0052-a-widget-announces-only-the-states-it-has.md) — `readonly` leaves the kinds whose contract never had it, in both halves, and `aria-checked` holds one of the three values the standard allows
 - [ADR 0053: A widget id is refused where it is used, not only where it is asked about](0053-a-widget-id-is-refused-where-it-is-used.md) — the part-id builders throw on an id that cannot be referenced; the joining factory does not, and nothing is repaired silently
+- [ADR 0054: A list shows the choice it will not erase](0054-a-list-shows-the-choice-it-will-not-erase.md) — an option is keyed by what it holds, a survivor keeps the label it was painted with and gets a part, and a radio group stops being the exception
 
 ## Security-relevant records
 

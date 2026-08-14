@@ -2798,11 +2798,13 @@
   "optionsWithUnrecognizedValue": [
     "(0) options: readonly MdySelectOption<TValue>[]",
     "(1) value: TValue | null",
+    "(2) labelFor?: (value: TValue) => string",
     "-> returns: readonly MdySelectOption<TValue>[]"
   ],
   "optionsWithUnrecognizedValues": [
     "(0) options: readonly MdySelectOption<TValue>[]",
     "(1) values: readonly TValue[] | null | undefined",
+    "(2) labelFor?: (value: TValue) => string",
     "-> returns: readonly MdySelectOption<TValue>[]"
   ],
   "orderDates": [

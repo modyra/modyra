@@ -178,9 +178,29 @@ test("replacing the options moves everything derived from them", () => {
   assert.ok(active, "some option is reachable after the list changed");
 });
 
-/** A value no longer on offer selects nothing rather than a stale key. */
-test("a replaced list that drops the chosen value selects nothing", () => {
+/**
+ * A value no longer on offer is shown rather than hidden.
+ *
+ * This asserted the opposite — that the selection reads as nothing — which was true of this
+ * controller alone. A select and a multiselect keep such a value *and paint it*, because the widget
+ * does not erase what the form holds and the user is the only one who can resolve it. A radio group
+ * has no trigger to show it in, so hiding it left an unanswered question that has an answer, kept
+ * through a submit nobody could see. ADR 0054.
+ */
+test("a replaced list that drops the chosen value still shows it", () => {
   const { controller } = setup("radio", "medium");
   controller.setOptions([{ value: "huge", label: "Huge" }]);
-  assert.equal(controller.state().selectedKey, null);
+
+  // The value is untouched — that half never changed — and now it has an option to sit in.
+  assert.equal(controller.state().selectedValue, "medium");
+  assert.ok(controller.state().selectedKey, "the held value has no key to render against");
+  assert.ok("medium" in controller.view().parts, "the held value has no part to bind");
+  assert.ok("huge" in controller.view().parts, "the declared option lost its part");
+
+  // And a value the list does offer adds nothing: the survivor is only there when it is needed.
+  controller.setOptions([{ value: "medium", label: "Medium" }]);
+  assert.deepEqual(
+    Object.keys(controller.view().parts).filter((key) => key === "medium").length,
+    1,
+  );
 });
