@@ -19,12 +19,12 @@
 
 import { z } from "zod";
 
-import { createForm, field, group, record } from "@modyra/core";
+import { array, createForm, field, group, record } from "@modyra/core";
 import { buildStandardTree } from "@modyra/standard-schema";
 import { buildZodTree } from "@modyra/zod";
 
 import { battle } from "../../harness/battle.mjs";
-import { expectClaim, expectSameObservation } from "../../harness/assertions.mjs";
+import { expectClaim, expectEqual, expectSameObservation } from "../../harness/assertions.mjs";
 import { canonicalObservation } from "../../harness/canonical-snapshot.mjs";
 
 const SCHEMA = z.object({
@@ -138,5 +138,84 @@ battle(
       ignore: [],
       what: "patching a vendor's defaults through Standard Schema changed the form",
     });
+  },
+);
+
+/**
+ * A collection whose rows hold a collection, declared from a schema.
+ *
+ * The flat case above proves the derivation makes a collection at all. It cannot prove the
+ * derivation makes one *inside a row* — a schema adapter that mapped the row's element to a group or
+ * a leaf produces a form whose value looks structurally right and whose inner list is one opaque
+ * field with no rows to address. That shape is invisible to a value comparison alone, so what is
+ * asserted here is that the inner handle is a list a consumer can drive.
+ */
+const NESTED_SCHEMA = z.object({
+  rows: z.record(
+    z.string(),
+    z.object({
+      code: z.string(),
+      lines: z.array(z.object({ sku: z.string() })),
+    }),
+  ),
+});
+
+const nestedByHand = () => ({
+  rows: record(group({ code: field(null), lines: array(group({ sku: field(null) })) })),
+});
+
+function driveNested(tree) {
+  const form = createForm(tree, { devWarnings: false });
+  form.f.rows.upsert("a", { code: "A", lines: [{ sku: "S1" }] });
+  form.f.rows.row("a").lines.push({ sku: "S2" });
+  form.f.rows.row("a").lines.move(0, 1);
+  form.f.rows.upsert("b", { code: "B", lines: [] });
+  form.f.rows.rename("a", "z");
+  const state = canonicalObservation({ form, collections: { rows: form.f.rows } });
+  const handle = form.f.rows.row("z")?.lines ?? null;
+  const drivable = typeof handle?.push === "function" && typeof handle?.length === "function";
+  form.destroy();
+  return { state, drivable };
+}
+
+battle(
+  {
+    claims: ["DYN-002", "COL-001", "COL-007", "SUB-002"],
+    title: "a collection inside a row survives being derived from a schema",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const written = driveNested(nestedByHand());
+    const derived = driveNested(buildZodTree(NESTED_SCHEMA));
+    ctx.log.note("a record of rows holding a list, declared two ways", {});
+
+    // The control, on both sides: the inner list has to be a list. A row whose `lines` came back as
+    // one opaque value agrees about the form's value and cannot be pushed to, moved in, or counted.
+    expectClaim(written.drivable, {
+      claimIds: ["DYN-002"],
+      what: "the hand-written inner collection is not a list a consumer can drive",
+    });
+
+    expectClaim(derived.drivable, {
+      claimIds: ["DYN-002"],
+      what: "a schema-derived row's collection is not a list a consumer can drive",
+    });
+
+    // The verdict fields differ for the reason the flat comparison already states — a derived tree
+    // carries the schema's rules — so they are excluded here and asserted there.
+    expectSameObservation(derived.state, written.state, {
+      claimIds: ["DYN-002", "COL-001", "COL-007", "SUB-002"],
+      ignore: ["valid", "errors", "collections"],
+      what: "a schema-derived nested collection diverged from the hand-written one",
+    });
+
+    expectEqual(
+      derived.state.collections.map(({ path, kind, keys }) => ({ path, kind, keys })),
+      written.state.collections.map(({ path, kind, keys }) => ({ path, kind, keys })),
+      {
+        claimIds: ["COL-001", "COL-007"],
+        what: "the derived collection holds different rows after the rename",
+      },
+    );
   },
 );
