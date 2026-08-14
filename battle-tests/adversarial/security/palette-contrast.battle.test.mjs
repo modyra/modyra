@@ -81,7 +81,7 @@ console.log(JSON.stringify({ checked, refused, under: under.slice(0, 5), underCo
 `;
 
 /** Pack the package and run the sweep against the installed copy. */
-function sweepInConsumer() {
+function runInStylesConsumer(script) {
   const work = mkdtempSync(join(tmpdir(), "mdy-styles-"));
   try {
     execFileSync("npm", ["pack", "--pack-destination", work, "--silent"], {
@@ -99,7 +99,7 @@ function sweepInConsumer() {
       stdio: ["ignore", "ignore", "pipe"],
     });
 
-    writeFileSync(join(consumer, "sweep.mjs"), SWEEP, "utf8");
+    writeFileSync(join(consumer, "sweep.mjs"), script, "utf8");
     const stdout = execFileSync(process.execPath, [join(consumer, "sweep.mjs")], {
       cwd: consumer,
       encoding: "utf8",
@@ -118,7 +118,7 @@ battle(
     environments: ["node"],
   },
   async (ctx) => {
-    const result = sweepInConsumer();
+    const result = runInStylesConsumer(SWEEP);
     ctx.log.note("a palette swept over the hue circle, from an installed package", {
       checked: result.checked,
       worst: result.worst,
@@ -157,5 +157,103 @@ battle(
       what: "the closest pair in the sweep sits under the floor",
       detail: JSON.stringify(result.worst),
     });
+  },
+);
+
+/** Ask the gamut predicate about the colours sRGB is defined by. */
+const CORNERS = `
+import { derivePalette, hexToOklch, isInSrgb, oklchToLinearRgb } from "@modyra/styles";
+
+/** The eight corners of the sRGB cube, which are in sRGB by construction. */
+const CORNERS = [
+  "#000000", "#ffffff", "#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#ff00ff",
+];
+
+/** How far past [0, 1] a channel went, after the round trip the predicate is asked about. */
+const overshoot = (hex) => {
+  const linear = oklchToLinearRgb(hexToOklch(hex));
+  return Math.max(...Object.values(linear).map((channel) => Math.max(channel - 1, -channel)));
+};
+
+const corners = CORNERS.map((hex) => ({
+  hex,
+  inSrgb: isInSrgb(oklchToLinearRgb(hexToOklch(hex))),
+  overshoot: overshoot(hex),
+  atLooserTolerance: isInSrgb(oklchToLinearRgb(hexToOklch(hex)), 1e-6),
+}));
+
+/** And what a palette derived from each corner contains, since a seed passes through as primary. */
+const palettes = CORNERS.map((hex) => {
+  const palette = derivePalette(hex);
+  const colours = Object.entries(palette).filter(([, value]) => typeof value === "string" && value.startsWith("#"));
+  return {
+    seed: hex,
+    rejected: colours
+      .filter(([, value]) => !isInSrgb(oklchToLinearRgb(hexToOklch(value))))
+      .map(([role, value]) => role + "=" + value),
+  };
+});
+
+console.log(JSON.stringify({ corners, palettes }));
+`;
+
+battle(
+  {
+    claims: ["STY-001"],
+    title: "the gamut predicate admits the colours the gamut is defined by",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // `isInSrgb` answers whether a colour can be shown, and it is asked after a round trip through
+    // Oklch — so it carries a tolerance for that transform's own error. The eight corners of the
+    // cube are the cases where the answer is not a judgement: they are sRGB.
+    //
+    // The tolerance is 1e-7 and the round trip's error is larger than that for two of them, so the
+    // predicate says a colour that came from sRGB is not in it. White clears the same threshold by
+    // a factor of one and a half, which is close enough to say the margin is luck rather than a
+    // margin.
+    const result = runInStylesConsumer(CORNERS);
+
+    try {
+      expectClaim(result.packed === true, {
+        claimIds: ["STY-001"],
+        what: "@modyra/styles could not be packed and installed",
+      });
+
+      const { corners, palettes } = result;
+      ctx.log.note("what the predicate said about each corner", {
+        corners: corners.map((each) => [each.hex, each.inSrgb, each.overshoot.toExponential(3)]),
+      });
+
+      // The known-good cases, in the same run: most corners are admitted, so the predicate is
+      // answering about the colour rather than rejecting everything it is handed.
+      const admitted = corners.filter((each) => each.inSrgb);
+      expectClaim(admitted.length >= 5, {
+        claimIds: ["STY-001"],
+        what: "the predicate rejects most of the cube, so it is not answering about these colours in particular",
+        detail: JSON.stringify(corners.map((each) => [each.hex, each.inSrgb])),
+      });
+
+      const rejected = corners
+        .filter((each) => !each.inSrgb)
+        .map((each) => ({ hex: each.hex, overshoot: each.overshoot.toExponential(3), atLooserTolerance: each.atLooserTolerance }));
+
+      expectEqual(rejected, [], {
+        claimIds: ["STY-001"],
+        what: "a corner of sRGB was judged to be outside sRGB",
+        detail: JSON.stringify(rejected),
+      });
+
+      // And the consequence for a consumer: a seed passes through a palette as its primary, so the
+      // package emits a colour its own predicate rejects.
+      const emitted = palettes.filter((each) => each.rejected.length > 0);
+      expectEqual(emitted, [], {
+        claimIds: ["STY-001"],
+        what: "a derived palette contains a colour the package's own gamut predicate rejects",
+        detail: JSON.stringify(emitted),
+      });
+    } finally {
+      // The runner removes its own working directory.
+    }
   },
 );
