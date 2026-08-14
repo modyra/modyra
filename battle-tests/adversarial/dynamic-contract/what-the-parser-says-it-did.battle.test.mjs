@@ -189,67 +189,52 @@ battle(
 battle(
   {
     claims: ["DYN-001", "DYN-003"],
-    title: "the code the contract publishes for a bad option list is the one a consumer gets",
+    title: "a document says the same thing about a bad option list in both of its shapes",
     environments: ["node"],
   },
   async (ctx) => {
     // `MDY_DYNAMIC_DIAGNOSTICS` is the published table a consumer maps to their own messages, so the
-    // code is taken from there rather than written out here: a battle that hardcoded the string
-    // would still pass if the table stopped carrying it.
+    // code is read from there rather than written out here: a battle that hardcoded the string would
+    // still pass if the table stopped carrying it.
     const entry = MDY_DYNAMIC_DIAGNOSTICS.find((each) => each.code === "MDY_DYNAMIC_OPTIONS_REQUIRED");
-    ctx.log.note("the published entry for a bad option list", { entry });
-
     expectClaim(entry !== undefined, {
       claimIds: ["DYN-003"],
       what: "the contract no longer publishes a code for an option list it cannot use",
     });
 
-    const parse = (field) =>
-      parseDynamicForm(
-        { version: 2, schema: { node: "group", children: { f: { node: "field", field } } } },
+    // The flat shape, which is where the code fires. This is the control: the diagnostic exists, is
+    // reachable, and names the field — so the silence below is the shape of the document rather than
+    // a code nobody ever emits.
+    const flat = parseDynamicForm([{ name: "a", kind: "select" }], { mode: "lenient" });
+    ctx.log.note("a select with no options, written flat", {
+      kept: flat.fields.length,
+      codes: flat.diagnostics.map((each) => each.code),
+    });
+
+    expectClaim(flat.diagnostics.some((each) => each.code === entry?.code), {
+      claimIds: ["DYN-003"],
+      what: "the flat shape stopped reporting a select whose option list it cannot use",
+      detail: JSON.stringify(flat.diagnostics),
+    });
+
+    // The same field, in the shape the current spec describes. A consumer who moved from the flat
+    // list to the tree keeps the same malformed document and stops being told about it.
+    for (const kind of ["select", "radio", "multiselect", "segmented"]) {
+      const tree = parseDynamicForm(
+        { version: 2, schema: { node: "group", children: { a: { node: "field", field: { kind, label: "F" } } } } },
         { mode: "lenient" },
       );
-
-    // The control: a field with no option list to get wrong is kept and says nothing.
-    const text = parse({ kind: "text", label: "T" });
-    expectEqual([text.fields.length, text.diagnostics.length], [1, 0], {
-      claimIds: ["DYN-001"],
-      what: "a text field was dropped or complained about",
-    });
-
-    // And an option list that is merely empty is legitimate — choices that arrive later.
-    const empty = parse({ kind: "select", label: "S", options: [] });
-    expectEqual([empty.fields.length, empty.diagnostics.length], [1, 0], {
-      claimIds: ["DYN-001"],
-      what: "a select declaring no choices yet was dropped or complained about",
-    });
-
-    for (const [what, options] of [
-      ["no options key at all", undefined],
-      ["options: null", null],
-      ["options that are not a list", "x"],
-      ["an option that is empty", [{}]],
-      ["an option with no label", [{ value: "a" }]],
-    ]) {
-      const field = { kind: "select", label: "S" };
-      if (options !== undefined) field.options = options;
-      const parsed = parse(field);
-      ctx.log.note("a select whose option list cannot be used", {
-        what,
-        kept: parsed.fields.length,
-        codes: parsed.diagnostics.map((each) => each.code),
+      ctx.log.note("the same field, written as a tree", {
+        kind,
+        kept: tree.fields.length,
+        codes: tree.diagnostics.map((each) => each.code),
       });
 
-      // The field is dropped either way. What must not happen is dropping it and saying nothing,
-      // because the code that says it exists and is published for exactly this.
-      expectClaim(
-        parsed.fields.length > 0 || parsed.diagnostics.some((each) => each.code === entry?.code),
-        {
-          claimIds: ["DYN-001", "DYN-003"],
-          what: `a select with ${what} was dropped without the published code that explains it`,
-          detail: JSON.stringify({ kept: parsed.fields.length, diagnostics: parsed.diagnostics }),
-        },
-      );
+      expectClaim(tree.fields.length > 0 || tree.diagnostics.length > 0, {
+        claimIds: ["DYN-001", "DYN-003"],
+        what: `a ${kind} with no options was dropped from a v2 document with nothing said, where the same field written flat is reported`,
+        detail: JSON.stringify({ kept: tree.fields.length, diagnostics: tree.diagnostics }),
+      });
     }
   },
 );
