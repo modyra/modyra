@@ -7,7 +7,8 @@ import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import type { MdyFieldState } from "./field-types.js";
 import type { MdyFieldConstraints } from "@modyra/core";
-import type { MdyWidgetKind } from "../catalog.js";
+import { MDY_WIDGET_KINDS, type MdyWidgetKind } from "../catalog.js";
+import { widgetSupportsState } from "../widget-states.js";
 import { projectFieldShellA11y } from "./shell-a11y.js";
 import { shownErrors } from "./verdict.js";
 export interface MdyTextFieldA11yOptions {
@@ -73,6 +74,12 @@ export function projectTextFieldA11y<TValue>(
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
   // text renders are four faces of one question, answered once in verdict.ts.
   const hasErrors = shownErrors(state, errors).length > 0;
+  // Whether this kind admits read-only at all, asked of the contract. A kind this contract does not
+  // know is not this contract's to police: a consumer rendering their own kind keeps what they had.
+  const kind = options.kind;
+  const announcesReadonly = kind === undefined
+    || !(MDY_WIDGET_KINDS as readonly string[]).includes(kind)
+    || widgetSupportsState(kind as MdyWidgetKind, "readonly");
 
   return {
     root: {
@@ -109,11 +116,14 @@ export function projectTextFieldA11y<TValue>(
           },
         ).control.attributes,
         // The shell has no notion of read-only: it is a state only some kinds admit, and the field
-        // projection is the one that knows this control does.
-        "aria-readonly": state.readonly ? "true" : null,
+        // projection is the one that knows whether this control does — asked of the contract rather
+        // than assumed from the file the projection lives in. A slider is drawn by this same
+        // projection and declares no read-only state, so it was announcing one: the state belongs to
+        // the kind, not to the function that happens to draw it.
+        "aria-readonly": announcesReadonly && state.readonly ? "true" : null,
         inputmode: options.inputMode ?? options.constraints?.inputMode ?? null,
         disabled: state.disabled,
-        readonly: state.readonly,
+        readonly: announcesReadonly && state.readonly,
       },
     },
     description: {
