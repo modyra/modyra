@@ -14,9 +14,10 @@
  * for it: opening a form that had a draft leaves `canUndo` true, and one undo takes back one row of
  * the restore. Three rows restored are four undos, each landing on a form nobody ever had.
  *
- * The single-row control is in the same battle on purpose. Undo is not broken: what is broken is
- * undoing an operation that ended or wrote more than one row, and a fix that made the control red
- * would be trading one defect for another.
+ * The controls are in the same battle on purpose. Undo is not broken, and neither is writing many
+ * rows at once: `form.patch` and `form.patchValue` change two rows and undo as one step, which is
+ * the behaviour the collection handle's own whole-value write does not have. A fix that made either
+ * control red would be trading one defect for another.
  */
 
 import { battle } from "../../harness/battle.mjs";
@@ -181,5 +182,46 @@ battle(
         `one undo after a restore left ${afterUndo} — neither the restored form nor the empty one, ` +
         `so it is a form the user never had`,
     });
+  },
+);
+
+battle(
+  {
+    claims: ["PER-002", "COL-001"],
+    title: "a patch that writes two rows undoes as the one thing it was",
+    environments: ["node"],
+    requires: ["structural"],
+  },
+  async (ctx) => {
+    // The precedent inside the same engine: a form-level write that touches two rows is one step of
+    // history, and one undo returns both. Whatever groups these writes is what the collection
+    // handle's whole-value write does not do.
+    for (const [name, write] of [
+      ["patch", (form) => form.patch({ rows: { a: { code: "A2" }, b: { code: "B2" } } })],
+      ["patchValue", (form) => form.patchValue({ rows: { a: { code: "A3" }, b: { code: "B3" } } })],
+    ]) {
+      const context = ctx.open(SPEC, { history: true });
+      for (const key of ["a", "b"]) {
+        await context.execute({ type: "record.upsert", path: "rows", key, value: { code: key.toUpperCase() } });
+      }
+      const before = JSON.stringify(context.form.getValue().rows);
+
+      write(context.form);
+      const written = JSON.stringify(context.form.getValue().rows);
+
+      context.form.undo();
+      const afterUndo = JSON.stringify(context.form.getValue().rows);
+      ctx.log.note("two rows written by one call, then one undo", { name, before, written, afterUndo });
+
+      expectEqual(written !== before, true, {
+        claimIds: ["COL-001"],
+        what: `${name} changed nothing, so the undo below is not about undoing it`,
+      });
+
+      expectEqual(afterUndo, before, {
+        claimIds: ["PER-002", "COL-001"],
+        what: `one undo of a two-row ${name} left ${afterUndo}`,
+      });
+    }
   },
 );
