@@ -415,6 +415,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "UI-006",
+    title: "A widget does not replace a value the model holds in order to make itself consistent.",
+    area: "widgets",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/widgets options-reconciliation — the widget does not write to the model to make itself consistent",
+      "@modyra/widgets options-reconciliation — erasing the value destroys the one thing that would let the user fix it",
+      "@modyra/core MDY_VALUE_CONTRACTS — a timepicker's value is nullable",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
