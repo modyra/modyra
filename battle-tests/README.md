@@ -128,3 +128,14 @@ Each tier's command is the same one a maintainer runs locally; nothing is expres
 See [`charter/contribution-policy.md`](charter/contribution-policy.md). In short: keep the report,
 replay it, shrink it, promote it to `regressions/` red, then fix the implementation — a break is the
 material for making the framework harder to break, not a note to file.
+
+## Before you believe a result
+
+[`charter/principles.md`](charter/principles.md) 8–12 are about reading what a battle tells you
+rather than about writing one: where a finding's evidence has to come from, why a check that derives
+what it asserts can only agree with itself, the three signals that mean the instrument is wrong
+rather than the product, what a boundary assertion is really worth, and why the stack decides where a
+defect lives.
+
+Each was learned by getting it wrong here. They cost a paragraph to read and they are the cheapest
+part of this suite to skip.
