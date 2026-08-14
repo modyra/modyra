@@ -1,8 +1,8 @@
 {
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
   "score": {
-    "published": 663,
-    "asserted": 401,
+    "published": 664,
+    "asserted": 403,
     "shown": 69
   },
   "uncovered": [
@@ -320,9 +320,15 @@
     },
     {
       "name": "MdyAnyRecordDescriptor",
-      "asserted": false,
+      "asserted": true,
       "shown": false,
-      "reason": "published, neither asserted nor shown"
+      "reason": "published and never shown"
+    },
+    {
+      "name": "MdyAnyRowDescriptor",
+      "asserted": true,
+      "shown": false,
+      "reason": "published and never shown"
     },
     {
       "name": "MdyArrayDescriptor",
