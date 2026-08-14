@@ -49,4 +49,5 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `SEC-002` | A value the panel masks is not readable elsewhere in the same panel. | The value is bulleted and the error beside it quotes it. |
 | `A11Y-001` | Partial and late rendering never leaves dangling ID references after settling. | `aria-controls` points at a removed element. |
 | `LOC-001` | A localized date is read in the reader's own order, and an impossible one is refused. | `12/31/2026` becomes the 12th somewhere, or Feb 30 is accepted. |
+| `A11Y-002` | Focus is borrowed by a widget and handed back once. | A widget takes focus again after it has already returned it. |
 | `PKG-001` | Packed consumers observe the same public behaviour as workspace tests. | The tarball behaves differently, or resolves two copies of a package. |

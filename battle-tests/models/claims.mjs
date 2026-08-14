@@ -254,6 +254,16 @@ const CLAIMS = [
     ],
   },
   {
+    id: "A11Y-002",
+    title: "Focus is borrowed by a widget and handed back once.",
+    area: "accessibility",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/widgets createFocusCustodian — focus is borrowed, not taken",
+      "docs/guides/ui-toolkit.md — focus restoration when overlays close",
+    ],
+  },
+  {
     id: "PKG-001",
     title: "Packed consumers observe the same public behaviour as workspace tests.",
     area: "lifecycle",
