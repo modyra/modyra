@@ -174,7 +174,13 @@ export type MdyFormPatch<S extends MdyFormSchema> = {
   : S[K] extends MdyArrayDescriptor<infer I>
   ? ReadonlyArray<MdyArrayItemValue<I>>
   : S[K] extends MdyRecordDescriptor<infer I>
-  ? Readonly<Record<string, MdyArrayItemValue<I>>>
+  // A row as a patch names it: a keyed collection merges what a patch carries and leaves the cells
+  // it does not name alone, so requiring the whole row here would make the documented call
+  // impossible to write without a cast. A positional collection is not partial in the same way — a
+  // whole-array write states which rows there are — so it keeps complete item values above.
+  ? Readonly<Record<string, I extends MdyGroupDescriptor<infer C>
+    ? MdyFormPatch<C>
+    : MdyArrayItemValue<I>>>
   : never;
 };
 

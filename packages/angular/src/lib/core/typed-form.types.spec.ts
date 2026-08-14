@@ -97,6 +97,23 @@ describe("typed form — compile-time contracts", () => {
     expect(form.getValue().address.city).toBe("Milan");
   });
 
+  it("patch() names one cell of one row of a keyed collection", () => {
+    const form = mdyForm({
+      rows: record(group({ sku: field(""), qty: field(0) })),
+    });
+
+    // The runtime merges a partial row and leaves the cells it does not name alone; the type has to
+    // let a consumer say that without a cast.
+    form.patch({ rows: { a: { sku: "A" } } });
+    form.patch({ rows: { a: { sku: "A", qty: 1 } } });
+    // @ts-expect-error — a cell the row does not have
+    form.patch({ rows: { a: { nope: 1 } } });
+    // @ts-expect-error — the wrong type for a cell it does have
+    form.patch({ rows: { a: { qty: "one" } } });
+
+    expect(form.f.rows).toBeTruthy();
+  });
+
   it("schema validators must match the field's value type", () => {
     // minLength targets string | readonly unknown[] — a number field rejects it.
     // @ts-expect-error — validator type mismatch
