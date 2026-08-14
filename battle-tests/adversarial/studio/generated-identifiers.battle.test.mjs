@@ -67,7 +67,7 @@ console.log(JSON.stringify(emitted));
 function runInConsumer(script) {
   const work = mkdtempSync(join(tmpdir(), "mdy-studio-"));
   try {
-    for (const pkg of ["studio-model", "studio-codegen", "studio-target-core", "studio-contract"]) {
+    for (const pkg of ["studio-model", "studio-codegen", "studio-target-core", "studio-contract", "studio-editor"]) {
       execFileSync("pnpm", ["pack", "--pack-destination", work], {
         cwd: join(REPO, "packages", pkg),
         stdio: ["ignore", "ignore", "pipe"],
@@ -1008,6 +1008,96 @@ battle(
         claimIds: ["STU-005"],
         what: "a layout that contains itself raised in a later package, after the loader accepted it",
         detail: JSON.stringify(cyclic),
+      });
+    } finally {
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);
+
+/** Load schemas of increasing depth, and report what the model made of each. */
+const SCHEMAS = `
+import { MAX_DEPTH } from "@modyra/studio-editor";
+import { createBlankProject, loadProject } from "@modyra/studio-model";
+
+const nest = (levels) => {
+  let node = { node: "field", id: "leaf", name: "leaf", fieldKind: "text", valueType: "string", initialValue: "", validators: [] };
+  for (let level = 0; level < levels; level += 1) {
+    node = { node: "group", id: "g" + level, name: "g" + level, children: [node] };
+  }
+  return node;
+};
+
+const attempt = (label, levels) => {
+  const draft = { ...createBlankProject(), schema: { node: "group", id: "root", name: "root", children: [nest(levels)] } };
+  try {
+    const { diagnostics } = loadProject(draft);
+    return { label, levels, raised: null, diagnostics: diagnostics.map((each) => each.code) };
+  } catch (error) {
+    return { label, levels, raised: error.constructor.name, diagnostics: [] };
+  }
+};
+
+console.log(JSON.stringify({
+  placementBound: MAX_DEPTH,
+  ordinary: attempt("an ordinary schema", 5),
+  atTheEditorsBound: attempt("as deep as the editor will place", MAX_DEPTH),
+  pastIt: attempt("deeper than the editor will place", MAX_DEPTH + 8),
+  far: attempt("far deeper than anything", 4000),
+}));
+`;
+
+battle(
+  {
+    claims: ["STU-005"],
+    title: "a schema too deep to use is reported, however much too deep it is",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // STU-005 was registered against the layout because that is where the first evidence was; the
+    // promise it names is the model's, and a project carries two nested structures through the same
+    // clone. This is the other one.
+    //
+    // The editor refuses to *place* a node deeper than `MAX_DEPTH`, so nothing built in it goes
+    // past 32. A project arrives from a file, and the loader asks nothing.
+    const result = runInConsumer(SCHEMAS);
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-005"],
+        what: "the studio packages could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      const { placementBound, ordinary, atTheEditorsBound, pastIt, far } = result.out;
+      ctx.log.note("what the model made of each schema depth", {
+        placementBound, ordinary, atTheEditorsBound, pastIt, far,
+      });
+
+      // The known-good cases, in the same run: an ordinary schema loads silently, and so does one at
+      // the depth the editor itself will build to.
+      for (const each of [ordinary, atTheEditorsBound]) {
+        expectClaim(each.raised === null && each.diagnostics.length === 0, {
+          claimIds: ["STU-005"],
+          what: `${each.label} did not load cleanly, so nothing below is about depth`,
+          detail: JSON.stringify(each),
+        });
+      }
+
+      // A schema deeper than the editor will place is one no editor session produced — a file, an
+      // import, a generator. The editor has an opinion about this depth and the loader has none.
+      expectClaim(pastIt.raised === null && pastIt.diagnostics.length > 0, {
+        claimIds: ["STU-005"],
+        what: `a schema deeper than the editor's own bound of ${placementBound} loaded with nothing said about it`,
+        detail: JSON.stringify(pastIt),
+      });
+
+      // And the depth that defeats the clone the project passes through on the way in. The layout
+      // is guarded ahead of that clone now; the schema goes through the same one.
+      expectEqual(far.raised, null, {
+        claimIds: ["STU-005"],
+        what: "a deep schema raised instead of being reported, so the guard ahead of the clone covers one of the two structures it walks",
+        detail: JSON.stringify(far),
       });
     } finally {
       if (result.work) rmSync(result.work, { recursive: true, force: true });
