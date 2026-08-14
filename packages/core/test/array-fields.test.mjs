@@ -13,6 +13,7 @@ import {
   group,
   minLength,
   required,
+  vanillaReactivity,
 } from "../dist/index.js";
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -411,4 +412,56 @@ test("a patch member that is an array still replaces the rows", () => {
 
   assert.equal(form.f.items.length(), 1);
   assert.deepEqual(form.getValue().items, [{ name: "Only", qty: 9 }]);
+});
+
+/**
+ * A structural change resets the rows it moves, and only those.
+ *
+ * Rebuilding every row on every call cost more than flags: a control bound to a row that nothing
+ * moved lost its claim and, with it, what a binder had said about the cell — a disabled column came
+ * back enabled and was submitted. Rows that survive a change are now written in place, and only the
+ * ones the change moved are marked clean.
+ */
+test("appending a row leaves the marks and bindings of the rows above it", () => {
+  const rx = vanillaReactivity();
+  const form = createForm(
+    { items: array(group({ name: field(""), qty: field(0) })) },
+    { reactivity: rx },
+  );
+  form.f.items.push({ name: "first", qty: 1 });
+  form.f.items.at(0).name.markAsTouched();
+  form.setDisabled("items.0.qty", rx.signal(true));
+
+  form.f.items.push({ name: "second", qty: 2 });
+
+  assert.equal(form.f.items.at(0).name.touched(), true, "a row nothing moved keeps its marks");
+  assert.equal(form.getField("items.0.qty")().disabled(), true, "and what a binder said about it");
+  assert.deepEqual(form.submitValue().items[0], { name: "first" }, "so the disabled cell stays unsent");
+  assert.equal(form.f.items.at(1).name.touched(), false, "the new row arrives clean");
+});
+
+test("removing an index the list does not have changes nothing", () => {
+  const form = createForm({ items: array(group({ name: field("") })) });
+  form.f.items.push({ name: "only" });
+  form.f.items.at(0).name.markAsTouched();
+
+  form.f.items.remove(9);
+
+  assert.equal(form.f.items.length(), 1);
+  assert.equal(form.f.items.at(0).name.touched(), true);
+});
+
+test("inserting at the front resets every row it moved", () => {
+  const form = createForm({ items: array(group({ name: field("") })) });
+  for (const name of ["a", "b"]) form.f.items.push({ name });
+  form.f.items.at(0).name.markAsTouched();
+  form.f.items.at(1).name.markAsDirty();
+
+  form.f.items.insert(0, { name: "z" });
+
+  assert.deepEqual(form.getValue().items.map((row) => row.name), ["z", "a", "b"]);
+  assert.deepEqual(
+    form.f.items.rows().map((row) => [row.name.touched(), row.name.dirty()]),
+    [[false, false], [false, false], [false, false]],
+  );
 });

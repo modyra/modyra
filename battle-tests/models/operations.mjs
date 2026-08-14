@@ -16,6 +16,11 @@ export const MDY_OPERATION_TYPES = Object.freeze([
   "record.rename",
   "record.patch",
   "record.setAll",
+  "array.push",
+  "array.insert",
+  "array.remove",
+  "array.move",
+  "array.setAll",
   "field.set",
   "field.touch",
   "field.dirty",
@@ -43,6 +48,11 @@ const REQUIRED = Object.freeze({
   "record.rename": ["path", "from", "to"],
   "record.patch": ["path", "value"],
   "record.setAll": ["path", "value"],
+  "array.push": ["path"],
+  "array.insert": ["path", "index"],
+  "array.remove": ["path", "index"],
+  "array.move": ["path", "from", "to"],
+  "array.setAll": ["path", "value"],
   "field.set": ["path"],
   "field.touch": ["path"],
   "field.dirty": ["path"],
@@ -72,6 +82,11 @@ export const MDY_STRUCTURAL_OPERATIONS = Object.freeze([
   "record.remove",
   "record.rename",
   "record.setAll",
+  "array.push",
+  "array.insert",
+  "array.remove",
+  "array.move",
+  "array.setAll",
   "draft.restore",
   "undo",
   "redo",
@@ -133,6 +148,16 @@ export function describeOperation(operation) {
       return `patch ${operation.path} {${Object.keys(operation.value ?? {}).join(",")}}`;
     case "record.setAll":
       return `setAll ${operation.path} {${Object.keys(operation.value ?? {}).join(",")}}`;
+    case "array.push":
+      return `push ${operation.path}`;
+    case "array.insert":
+      return `insert ${operation.path}[${operation.index}]`;
+    case "array.remove":
+      return `remove ${operation.path}[${operation.index}]`;
+    case "array.move":
+      return `move ${operation.path} ${operation.from} -> ${operation.to}`;
+    case "array.setAll":
+      return `setAll ${operation.path} (${(operation.value ?? []).length} row(s))`;
     case "field.set":
       return `set ${operation.path} = ${JSON.stringify(operation.value)}`;
     case "mount":
