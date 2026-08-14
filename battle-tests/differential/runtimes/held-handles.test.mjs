@@ -77,6 +77,7 @@ const RUNTIMES = Object.freeze([
   ["preact", async () => (await import("@modyra/preact")).preactReactivity()],
   ["svelte", async () => (await import("@modyra/svelte")).svelteReactivity()],
   ["lit", async () => (await import("@modyra/lit")).litReactivity()],
+  ["solid", async () => (await import("@modyra/solid")).solidReactivity()],
 ]);
 
 battle(
@@ -126,10 +127,10 @@ battle(
     }
 
     // Solid is the runtime where a handle can be owned by the computation that built it, so it is
-    // the one this comparison most wants — and it cannot reach it yet: under the condition where its
-    // computations run, renaming or removing a row raises before any handle can be read. That is
-    // `adversarial/reactivity/solid-collection-rows`'s subject, and folding it in here would make
-    // this battle red for a reason that is not about handles.
-    ctx.log.note("solid is attacked on its own until a row can be taken apart there", {});
+    // the one this comparison most wants, and it takes part now. It could not before for two
+    // reasons that have both been removed: declaring a nested two-cell row raised, and without the
+    // `browser` export condition its computations never re-ran, which froze every verdict. Neither
+    // is true here — the scenario runs to completion on both builds and the answers agree.
+    ctx.log.note("solid takes part in the comparison it was most wanted for", {});
   },
 );
