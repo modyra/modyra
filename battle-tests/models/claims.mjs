@@ -265,6 +265,16 @@ const CLAIMS = [
     ],
   },
   {
+    id: "A11Y-003",
+    title: "A palette derived from any brand colour keeps its text above the contrast floor.",
+    area: "accessibility",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/styles derivePalette/contrastRatio/MDY_ON_COLOR_FLOOR",
+      "docs/architecture/0015 — the floor is 3.5:1, deliberately",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
