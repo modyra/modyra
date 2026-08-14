@@ -47,18 +47,26 @@ battle(
 
 - **Every battle cites a claim.** The registry is [`models/claims.mjs`](models/claims.mjs); citing an
   id that is not registered is an error, because a break nobody can name is a break nobody can act on.
-- **Every battle proves it attacked.** `requires` names counters that must be positive — structural
-  changes, mount and unmount phases, observations compared, async runs started. A battle whose
-  selector or generator returned an empty set fails instead of passing.
+- **Every battle proves it attacked, and that it concluded something.** `requires` names counters
+  that must be positive — structural changes, mount and unmount phases, observations compared, async
+  runs started. `actions` and `assertions` are always required on top of those, so a battle whose
+  selector or generator returned an empty set fails instead of passing, and so does one that
+  exercised a path without ever stating what the path had to do.
 - **Every failure is an artefact.** The wrapper writes `reports/failures/<id>.json` with the seed,
-  the schema as data, the operation log, both states and the replay command.
+  the schema as data, the operation log, both states and the replay command. `MDY_BATTLE_REPORTS`
+  points one battle at a directory of its own, which is what a check that reads its own report back
+  uses so it cannot destroy another battle's.
+- **A blocker is enforced, never reported.** `open` marks a finding that is real and waiting on a
+  decision; it is refused for a battle citing an S0 or S1 claim, because a release or merge blocker
+  that reports without failing is not a blocker.
 
 ## Rules this suite holds itself to
 
 1. **Black box.** Battle tests import published entry points only — `@modyra/core`,
-   `@modyra/widgets`, `@modyra/widgets/testing`, `@modyra/plain`, `@modyra/lit` — which resolve to
-   each package's built output. `harness/black-box-audit.mjs` fails the suite if any file reaches
-   into a package's source tree, and it runs as part of every battle run.
+   `@modyra/widgets`, `@modyra/widgets/testing`, `@modyra/lit`, `@modyra/react`, `@modyra/vue`,
+   `@modyra/zod` — which resolve to each package's built output. `@modyra/plain` is reached the same
+   way from the browser tier, which bundles it. `harness/black-box-audit.mjs` fails the suite if any
+   file reaches into a package's source tree, and it runs as part of every battle run.
 2. **One interpreter.** Hand-written battles, generated campaigns and the replay command all execute
    operations through `harness/context.mjs`. A second execution path would replay the harness rather
    than the failure.
@@ -95,7 +103,7 @@ ignores dotfiles.
 | `adversarial/` | Attacks on one surface: lifecycle, collections, validation, reactivity, security. |
 | `differential/` | Two public paths that claim the same semantics, fed the same operations. |
 | `generative/` | Seeded campaigns, the independent reference model, shrinking. |
-| `hostile-consumers/` | Consumers built the way a stranger would build one, including packed installs. |
+| `hostile-consumers/` | A consumer that installed the tarball, compared against the workspace. |
 | `scenarios/` | Realistic end-to-end battles: keyed invoice, virtual inventory, async registration. |
 | `browser/` | The host page a real browser mounts, and the lifecycle battles that read its DOM. |
 | `regressions/` | Confirmed breaks, minimised, red before the fix that closed them. |
