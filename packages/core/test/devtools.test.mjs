@@ -84,3 +84,36 @@ test("a field decides whether the panel shows its value, and the name heuristic 
   assert.equal(isSensitivePath("cardStyle", false), false);
   assert.equal(isSensitivePath("notes", true), true);
 });
+
+test("a masked value is not readable through the error printed beside it", () => {
+  // Masking the value column and printing the value in the next one does not mask the value, and
+  // quoting what was rejected is the most ordinary way to write a validation message. The server
+  // half is worse: a message that arrives over the wire is not the consumer's to rewrite.
+  const form = makeForm("password", "hunter2-the-actual-password", '"hunter2-the-actual-password" is not long enough');
+  const snapshot = mdyFormSnapshot(form);
+  const field = snapshot.fields[0];
+
+  assert.equal(field.value, "•••");
+  assert.equal(
+    JSON.stringify(snapshot).includes("hunter2-the-actual-password"),
+    false,
+    "the secret is somewhere in the snapshot",
+  );
+  // The reason survives — a panel exists to say why a field is invalid.
+  assert.match(field.errors[0], /is not long enough/);
+});
+
+test("a masked number and a masked list of values are redacted too", () => {
+  const pin = mdyFormSnapshot(makeForm("cardSecret", 1234, "1234 is not a valid code"));
+  assert.equal(JSON.stringify(pin).includes("1234"), false);
+
+  const list = mdyFormSnapshot(makeForm("tokenList", ["tok_a", "tok_bb"], "tok_a and tok_bb were revoked"));
+  assert.equal(JSON.stringify(list).includes("tok_a"), false, "a value inside a list stayed readable");
+  assert.equal(JSON.stringify(list).includes("tok_bb"), false);
+});
+
+test("a field nobody masked keeps its message as it was written", () => {
+  const snapshot = mdyFormSnapshot(makeForm("nickname", "ada", '"ada" is already taken'));
+  assert.equal(snapshot.fields[0].value, "ada");
+  assert.equal(snapshot.fields[0].errors[0], '[server] "ada" is already taken');
+});
