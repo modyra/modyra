@@ -32,9 +32,22 @@ export interface MdyWidgetIdFactory {
  */
 export { MDY_ID_DELIMITER } from "@modyra/core";
 
-/** Whether a widget id can safely be a segment of a generated id. */
+/**
+ * Whether a widget id can safely be a segment of a generated id.
+ *
+ * Whitespace is refused for the reason the delimiter is: it makes one reference into several.
+ * `aria-labelledby` and `aria-describedby` are **space-separated lists** of ids, so a widget id of
+ * `"my form"` produces `aria-labelledby="my form__label"`, which an assistive technology reads as
+ * two references — `my` and `form__label` — and resolves to nothing anyone rendered. The control
+ * then has no accessible name at all, and the markup looks correct while it says nothing.
+ *
+ * The HTML rule is the same one, written from the other side: an id must not contain ASCII
+ * whitespace.
+ */
 export function isValidWidgetId(widgetId: string): boolean {
-  return widgetId.length > 0 && !widgetId.includes(MDY_ID_DELIMITER);
+  return widgetId.length > 0
+    && !widgetId.includes(MDY_ID_DELIMITER)
+    && !/[\t\n\f\r ]/.test(widgetId);
 }
 
 /** Default deterministic ID factory. */
