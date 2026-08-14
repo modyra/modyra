@@ -501,3 +501,35 @@ test("a value written below the path still grows the list", () => {
   assert.equal(form.f.items.length(), 2);
   assert.equal(form.getValue().items[1].n, "restored");
 });
+
+/**
+ * A row whose value raises does not lengthen the list.
+ *
+ * `length()` and the value are the same sentence said twice, so a row committed to the count before
+ * its fields were written left them disagreeing — a list a consumer cannot iterate.
+ */
+test("a push whose value raises leaves the list as it was", () => {
+  const form = createForm({ items: array(group({ name: field(""), qty: field(0) })) });
+  form.f.items.push({ name: "kept", qty: 1 });
+
+  assert.throws(() => form.f.items.push({
+    get name() { throw new Error("not loaded"); },
+    qty: 2,
+  }), /not loaded/);
+
+  assert.equal(form.f.items.length(), 1);
+  assert.deepEqual(form.getValue().items, [{ name: "kept", qty: 1 }]);
+});
+
+test("a setAll whose second row raises leaves the rows that were there", () => {
+  const form = createForm({ items: array(group({ name: field(""), qty: field(0) })) });
+  form.f.items.setAll([{ name: "first", qty: 1 }]);
+
+  assert.throws(() => form.f.items.setAll([
+    { name: "a", qty: 1 },
+    { get name() { throw new Error("not loaded"); }, qty: 2 },
+  ]), /not loaded/);
+
+  assert.equal(form.f.items.length(), 1);
+  assert.deepEqual(form.getValue().items, [{ name: "first", qty: 1 }]);
+});

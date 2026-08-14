@@ -325,6 +325,8 @@ export class MdyArrayManager implements MdyNestedCollection {
    */
   private _rebuild(values: unknown[], movedFrom = 0): void {
     const prevCount = this._rowCountSig();
+    // What the list holds now, as plain data: the state to go back to if writing the new rows raises.
+    const before = this._currentValues();
     for (let i = values.length; i < prevCount; i++) this._removeRow(i);
     // Only from the first row the change actually moved. Appending a line moves nothing above it,
     // and a user's marks are theirs: clearing them all would make the errors a form only shows on a
@@ -335,7 +337,18 @@ export class MdyArrayManager implements MdyNestedCollection {
     // refresh in between is what takes the fields of the rows that just ended.
     this._rowCountSig.set(values.length);
     if (values.length < prevCount) this._deps.engine.refreshPathGate(this._deps.path);
-    values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
+    try {
+      values.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
+    } catch (error) {
+      // Reading a row's value can raise — a getter over a store that is not loaded, a proxy that
+      // refuses. The list goes back to the rows it had, because a count that says one thing while
+      // the value says another is a list a consumer cannot iterate. `before` was read out of the
+      // engine, so restoring it cannot raise in turn.
+      this._rowCountSig.set(before.length);
+      this._deps.engine.refreshPathGate(this._deps.path);
+      before.forEach((v, i) => this._registerNode(`${this._deps.path}.${i}`, this._deps.item, v, `${this._deps.path}.${i}`, this._deps.sections ?? []));
+      throw error;
+    }
     // Update tracking after rebuild (structural ops are always atomic)
     this._lastPresentIndices = new Set(Array.from({length: values.length}, (_, i) => i));
   }

@@ -1225,3 +1225,37 @@ test("a row's value keys follow the template, not the order controls mounted", (
   assert.deepEqual(Object.keys(form.value().rows.k), ["nome", "qta"]);
   assert.deepEqual(Object.keys(form.submitValue().rows.k), ["nome", "qta"]);
 });
+
+/**
+ * A declaration that raises while it is read leaves nothing behind.
+ *
+ * A row's value is not always plain data: an ORM entity behind a lazy association, or a proxy over a
+ * store, raises when a column nobody loaded is read. The key was committed before the row's fields
+ * were registered, so a caller who caught the error was left with `keys()` naming a row that
+ * `getValue()` did not have — two public reads disagreeing about whether a row exists.
+ */
+test("a row whose value raises while it is read is not declared", () => {
+  const form = createForm({ rows: record(group({ code: field(""), note: field("") })) });
+  form.f.rows.upsert("ok", { code: "OK", note: "n" });
+
+  assert.throws(() => form.f.rows.upsert("bad", {
+    get code() { throw new Error("not loaded"); },
+    note: "kept",
+  }), /not loaded/);
+
+  assert.deepEqual([...form.f.rows.keys()], ["ok"], "the key that could not be read is not declared");
+  assert.deepEqual(form.getValue().rows, { ok: { code: "OK", note: "n" } });
+  assert.equal(form.fieldNames().some((name) => name.startsWith("rows.bad")), false);
+});
+
+test("a rewrite that raises leaves the row it was rewriting", () => {
+  const form = createForm({ rows: record(group({ code: field(""), note: field("") })) });
+  form.f.rows.upsert("k", { code: "first", note: "n" });
+
+  assert.throws(() => form.f.rows.upsert("k", {
+    get code() { throw new Error("not loaded"); },
+    note: "second",
+  }), /not loaded/);
+
+  assert.deepEqual(form.getValue().rows.k, { code: "first", note: "n" });
+});

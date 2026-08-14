@@ -13,6 +13,7 @@ import {
   draftShapeMatches,
   field,
   group,
+  record,
 } from "../dist/index.js";
 
 const BIDI = "admin\u202E"; // right-to-left override
@@ -347,4 +348,45 @@ test("a restored draft cannot add a field the schema never declared", () => {
   assert.deepEqual(form.fieldNames(), ["name"]);
   assert.equal(form.getValue().name, "restored", "what the schema declares still restores");
   assert.deepEqual(form.submitValue(), { name: "restored" });
+});
+
+/**
+ * A polluted prototype does not answer for a schema.
+ *
+ * The normaliser accumulates a plain object, so `Object.prototype.note` set by anything else on the
+ * page answered a read for a name the schema never declared: building a form with a `note` field
+ * failed with "declared twice, once as a field and once as a group" — a message naming a defect in
+ * the caller's schema for a cause that is nowhere in it.
+ */
+test("a form builds while Object.prototype carries a name the schema uses", () => {
+  Object.prototype.note = "polluted";
+  try {
+    const form = createForm({ note: field(""), rows: record(group({ note: field("") })) });
+    assert.deepEqual(form.getValue(), { note: "", rows: {} });
+    form.f.rows.upsert("k", { note: "own" });
+    assert.deepEqual(form.getValue().rows.k, { note: "own" });
+    form.destroy();
+  } finally {
+    delete Object.prototype.note;
+  }
+});
+
+/**
+ * A row reads the object it was given, prototype included.
+ *
+ * A class instance and an ORM entity keep cells on their prototype — a computed column, a getter
+ * over a loaded association — and a row built from one has to see them. Untrusted shapes enter
+ * through other doors (a document, a draft, a patch), which are filtered to what the schema declares.
+ */
+test("a row built from a class instance reads its inherited cells", () => {
+  class Line {
+    constructor(code) { this.code = code; }
+    get note() { return `derived:${this.code}`; }
+  }
+  const form = createForm({ rows: record(group({ code: field(""), note: field("unset") })) });
+
+  form.f.rows.upsert("k", new Line("A"));
+
+  assert.deepEqual(form.getValue().rows.k, { code: "A", note: "derived:A" });
+  form.destroy();
 });
