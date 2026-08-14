@@ -4,6 +4,7 @@ import { contrastRatio, hexToOklch, parseHex } from "../dist/color-utils.js";
 import {
   compileMdyTheme,
   deltaEOK,
+  MDY_SRGB_EPSILON,
   isInSrgb,
   maxSrgbChroma,
   oklchToLinearRgb,
@@ -96,4 +97,48 @@ test("an unknown model is named, not left to fail as a missing property", () => 
       /salience/.test(error.message),
     "an unknown model arrived as a TypeError three calls away",
   );
+});
+
+test("every corner of sRGB is judged to be inside sRGB", () => {
+  // The predicate is asked after a round trip through Oklch, so its tolerance exists to absorb that
+  // transform's error — and it was smaller than the error: pure green and pure yellow overshoot by
+  // 1.00e-7 and 1.30e-7 against a tolerance of 1e-7. A palette derived from such a seed emitted a
+  // `primary` this package's own predicate rejects.
+  const corners = ["#000000", "#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff", "#ffffff"];
+  for (const hex of corners) {
+    assert.ok(isInSrgb(oklchToLinearRgb(hexToOklch(hex))), `${hex} was judged outside sRGB`);
+  }
+});
+
+test("the tolerance is larger than the error it exists to absorb", () => {
+  // The premise of the constant, measured rather than trusted. A change to the transform's
+  // coefficients fails here — saying the tolerance needs revisiting — instead of putting a corner of
+  // sRGB back outside it.
+  const overshootOf = (hex) => {
+    const { r, g, b } = oklchToLinearRgb(hexToOklch(hex));
+    return Math.max(0, -r, -g, -b, r - 1, g - 1, b - 1);
+  };
+  let worst = 0;
+  for (let r = 0; r <= 255; r += 17) {
+    for (let g = 0; g <= 255; g += 17) {
+      for (let b = 0; b <= 255; b += 17) {
+        const hex = `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+        worst = Math.max(worst, overshootOf(hex));
+      }
+    }
+  }
+  assert.ok(worst < MDY_SRGB_EPSILON, `an in-gamut colour overshoots by ${worst}, past the ${MDY_SRGB_EPSILON} tolerance`);
+  // …and the tolerance is not so wide that it stops meaning anything: it must still be the smaller
+  // number, or it is measuring nothing.
+  assert.ok(MDY_SRGB_EPSILON < 1e-4, "the tolerance grew past the point of describing a round trip");
+});
+
+test("a colour genuinely outside the gamut is still refused", () => {
+  // The other side of widening: a chroma past the boundary overshoots by orders of magnitude more
+  // than the transform's error, and must still be refused.
+  for (const [l, h] of [[0.6, 30], [0.75, 100], [0.5, 250]]) {
+    const edge = maxSrgbChroma(l, h);
+    assert.ok(isInSrgb(oklchToLinearRgb({ l, c: edge, h })), "the boundary itself was refused");
+    assert.ok(!isInSrgb(oklchToLinearRgb({ l, c: edge + 0.002, h })), "a colour past the boundary was admitted");
+  }
 });

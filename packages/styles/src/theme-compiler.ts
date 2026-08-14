@@ -105,7 +105,34 @@ export function oklchToLinearRgb(color: Oklch): LinearRgb {
   };
 }
 
-export function isInSrgb(rgb: LinearRgb, epsilon = 1e-7): boolean {
+/**
+ * How far outside `[0, 1]` a channel may land and still be called displayable.
+ *
+ * It exists to absorb the error of the round trip through Oklch, and it was **smaller than that
+ * error**: the worst case over the sRGB cube is `1.303e-7`, at `#ffff00`, and the tolerance was
+ * `1e-7`. So two of the eight corners of sRGB — pure green and pure yellow — were judged to be
+ * outside sRGB, and a palette derived from such a seed emitted a `primary` this package's own
+ * predicate rejects.
+ *
+ * Derived rather than picked, in both directions:
+ *
+ * - **large enough**: the measured worst-case overshoot for a colour that *is* in gamut is
+ *   `1.303e-7` over a 4096-colour grid plus the eight corners, so this leaves roughly seven times
+ *   that as headroom. `#ffffff` clearing the old threshold by a factor of one and a half was luck
+ *   rather than a margin — nothing about white at `6.95e-8` is safer in principle than green at
+ *   `1.00e-7`.
+ * - **small enough**: a colour one part in a million of chroma beyond the true gamut boundary
+ *   overshoots by `7e-7` to `2e-6`, so this admits at most about `1.5e-6` of chroma past the edge.
+ *   Chroma runs to `0.45`; that is three orders of magnitude below anything a consumer could act on
+ *   and below what the boundary search itself resolves.
+ *
+ * `theme-compiler.spec.mjs` measures the first of those and fails if it ever exceeds this, so the
+ * premise is checked rather than trusted: a change to the transform's coefficients says so here
+ * instead of putting a corner of sRGB back outside it.
+ */
+export const MDY_SRGB_EPSILON = 1e-6;
+
+export function isInSrgb(rgb: LinearRgb, epsilon = MDY_SRGB_EPSILON): boolean {
   return [rgb.r, rgb.g, rgb.b].every((v) => v >= -epsilon && v <= 1 + epsilon);
 }
 
