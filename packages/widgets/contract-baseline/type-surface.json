@@ -2157,6 +2157,10 @@
     "(0) fields: ReadonlyArray<{ readonly name: string; }>",
     "-> returns: void"
   ],
+  "assertUsableWidgetId": [
+    "(0) widgetId: string",
+    "-> returns: void"
+  ],
   "assertWidgetDomContract": [
     "(0) root: Element",
     "(1) kind: MdyWidgetKind",
@@ -2399,7 +2403,7 @@
     "-> returns: string | null"
   ],
   "dateWithinBounds": [
-    "(0) iso: string",
+    "(0) iso: string | null | undefined",
     "(1) minIso: string | null | undefined",
     "(2) maxIso: string | null | undefined",
     "-> returns: boolean"
