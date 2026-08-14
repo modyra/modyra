@@ -243,6 +243,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "SEC-004",
+    title: "A document cannot make the form stop answering.",
+    area: "security",
+    severity: "S0",
+    publicEvidence: [
+      "@modyra/core buildDynamicValidators — a document supplies `pattern`",
+      "@modyra/core — an invalid RegExp source is skipped with a diagnostic",
+      "docs/guides/usage-modes.md — a document is untrusted input",
+    ],
+  },
+  {
     id: "SEC-002",
     title: "A value the panel masks is not readable elsewhere in the same panel.",
     area: "security",
