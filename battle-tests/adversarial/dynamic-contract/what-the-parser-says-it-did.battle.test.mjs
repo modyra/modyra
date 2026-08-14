@@ -20,6 +20,13 @@
  * What is wrong under either reading is the counting. If the document was refused whole, three
  * children were rejected and the count says none. If the valid fields should have survived, they did
  * not. The assertions below are the ones that hold whichever way that decision goes.
+ *
+ * The same silence reaches the gate that is supposed to stop it. `mode: "strict"` is what the guide
+ * says to run before accepting a document into a registry, and its rule is that any diagnostic makes
+ * `ok` false. A select declared with no options at all produces no diagnostic, so `ok` stays true —
+ * for a document whose only field the parser has already dropped. What is stored renders nothing
+ * where a select was, and building a form from it directly raises a `TypeError` about reading `map`
+ * of undefined.
  */
 
 import { parseDynamicForm } from "@modyra/core";
@@ -125,5 +132,56 @@ battle(
       what: "the refusal did not say which part of the document caused it",
       detail: JSON.stringify(refused.diagnostics),
     });
+  },
+);
+
+battle(
+  {
+    claims: ["DYN-001", "DYN-003", "SEC-001"],
+    title: "strict mode does not approve a document whose field it dropped",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const strictly = (field) =>
+      parseDynamicForm(
+        { version: 2, schema: { node: "group", children: { f: { node: "field", field } } } },
+        { mode: "strict" },
+      );
+
+    // The control: an option-bearing field declared properly is kept, so the case below is the
+    // missing options rather than the kind never being supported.
+    const proper = strictly({ kind: "select", label: "S", options: [{ value: "a", label: "A" }] });
+    expectEqual([proper.ok, proper.fields.length], [true, 1], {
+      claimIds: ["DYN-001"],
+      what: "a select declared with options did not survive strict parsing",
+      detail: JSON.stringify(proper.diagnostics),
+    });
+
+    // And an empty option list is a legitimate document — a select whose choices arrive later. It
+    // is kept, which is what makes the missing key below a different thing from an empty one.
+    const emptyList = strictly({ kind: "select", label: "S", options: [] });
+    expectEqual([emptyList.ok, emptyList.fields.length], [true, 1], {
+      claimIds: ["DYN-001"],
+      what: "a select declaring no choices yet was refused",
+      detail: JSON.stringify(emptyList.diagnostics),
+    });
+
+    for (const kind of ["select", "radio", "multiselect", "segmented"]) {
+      const parsed = strictly({ kind, label: "F" });
+      ctx.log.note("an option-bearing field declared without options", {
+        kind,
+        ok: parsed.ok,
+        kept: parsed.fields.length,
+        diagnostics: parsed.diagnostics.map((each) => each.code),
+      });
+
+      // Approving a document and keeping none of it are the two halves of the same answer, and the
+      // gate gives both at once. Whichever is right, they have to agree.
+      expectClaim(parsed.ok === false || parsed.fields.length > 0, {
+        claimIds: ["DYN-003", "SEC-001"],
+        what: `strict mode approved a ${kind} document and kept none of its fields`,
+        detail: JSON.stringify({ ok: parsed.ok, fields: parsed.fields, diagnostics: parsed.diagnostics }),
+      });
+    }
   },
 );
