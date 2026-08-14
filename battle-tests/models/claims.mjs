@@ -222,6 +222,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "SEC-002",
+    title: "A value the panel masks is not readable elsewhere in the same panel.",
+    area: "security",
+    severity: "S0",
+    publicEvidence: [
+      "@modyra/core/devtools mdyFormSnapshot/isSensitivePath",
+      "docs/guides/devtools.md — values of sensitive paths are replaced with bullets",
+      "docs/guides/devtools.md — in both the table and the JSON view",
+    ],
+  },
+  {
     id: "A11Y-001",
     title: "Partial and late rendering never produces dangling ID references after settling.",
     area: "accessibility",
