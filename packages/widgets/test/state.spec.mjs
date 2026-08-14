@@ -12,6 +12,7 @@ import {
   MDY_CHIP_CLASSES,
   MDY_WIDGET_CONTRACTS,
   MDY_WIDGET_KINDS,
+  createCatalogWidgetController,
   multiselectChipClasses,
   partClasses,
   projectBooleanFieldA11y,
@@ -173,4 +174,48 @@ test("aria-checked holds one of the three values the standard allows", () => {
   }
   assert.equal(projectBooleanFieldA11y({ ...base, checked: true }, [], { widgetId: "w", variant: "checkbox" }).input.attributes["aria-checked"], "true");
   assert.equal(projectBooleanFieldA11y({ ...base, checked: false }, [], { widgetId: "w", variant: "checkbox" }).input.attributes["aria-checked"], "false");
+});
+
+test("a disabled widget can still be left, and is not left holding an overlay", () => {
+  // The guard `if (value.disabled) return []` is right for intents that start something and wrong
+  // for `close`, which ends something already happening. Every route out of an overlay goes through
+  // it — Escape, a click away, choosing an option — so a field disabled while its picker was open
+  // became a popup over a dead control with no way out.
+  const controller = createCatalogWidgetController("select");
+
+  controller.dispatch({ type: "open" });
+  assert.equal(controller.state().open, true);
+
+  // Disabling closes what it can no longer be used to close.
+  const onDisable = controller.dispatch({ type: "disable", disabled: true });
+  assert.deepEqual(onDisable.map((c) => c.type), ["close-overlay"]);
+  assert.equal(controller.state().open, false);
+
+  // Disabling a closed widget stays quiet, so no renderer gets a command on every disable.
+  assert.deepEqual(controller.dispatch({ type: "disable", disabled: true }), []);
+
+  // And a close while disabled is answered rather than swallowed, whatever left it open.
+  controller.dispatch({ type: "disable", disabled: false });
+  controller.dispatch({ type: "open" });
+  controller.dispatch({ type: "disable", disabled: false });
+  const escape = controller.dispatch({ type: "close", restoreFocus: true });
+  assert.deepEqual(escape.map((c) => c.type), ["close-overlay", "restore-focus"]);
+
+  // What the guard is for is untouched: a disabled widget does not start anything.
+  controller.dispatch({ type: "disable", disabled: true });
+  assert.deepEqual(controller.dispatch({ type: "open" }), []);
+  assert.deepEqual(controller.dispatch({ type: "focus", part: "trigger" }), []);
+});
+
+test("a destroyed controller answers without acting", () => {
+  // The rule the form engine already holds. A renderer may have torn its elements down, and
+  // `close-overlay` for a widget that is gone is a command about nothing.
+  const controller = createCatalogWidgetController("select");
+  controller.dispatch({ type: "open" });
+  controller.destroy();
+
+  assert.deepEqual(controller.dispatch({ type: "close" }), []);
+  assert.deepEqual(controller.dispatch({ type: "open" }), []);
+  // Readable, like a destroyed form's value: what it last held.
+  assert.equal(controller.state().open, true);
 });
