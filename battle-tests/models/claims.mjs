@@ -371,6 +371,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "UI-003",
+    title: "A select holds the option the user chose, whatever an option's value is.",
+    area: "widgets",
+    severity: "S0",
+    publicEvidence: [
+      "@modyra/widgets createSelectController — keyFor is optional and defaults to String(option.value)",
+      "@modyra/core value-contracts — an option's value is whatever the option list holds",
+      "@modyra/widgets MdySelectControllerOptions — TValue is unconstrained",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
