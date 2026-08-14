@@ -7,3 +7,7 @@ reports/*.json
 hostile-consumers/**/node_modules/
 hostile-consumers/**/*.tgz
 .tmp-consumer/
+
+# The browser host page, rebuilt by battle:browser.
+.tmp-browser/
+test-results/

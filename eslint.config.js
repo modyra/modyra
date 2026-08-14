@@ -18,6 +18,8 @@ module.exports = defineConfig([
       "packages/styles/src/*.html",
       "**/stackblitz/**",
       "benchmarks/*.html",
+      // The battle host page, bundled from published output by battle:browser.
+      "battle-tests/.tmp-browser/**",
     ],
   },
   {

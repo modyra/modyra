@@ -1,0 +1,141 @@
+name: Battle tests
+
+# Three tiers, as the suite's charter defines them. The pull-request tier is the deterministic
+# attacks and a fixed seed, so a run is reproducible from its log alone. The main tier adds the
+# browser lifecycle. The scheduled tier runs a long campaign under a seed drawn per run and printed
+# before anything executes, and keeps whatever it produced when it finds something.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # 03:17 UTC — off the hour, so it does not queue behind everything else scheduled at :00.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: "Campaign seed (blank draws one and prints it)"
+        required: false
+      runs:
+        description: "Generated runs per campaign"
+        required: false
+        default: "400"
+
+concurrency:
+  group: battle-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  deterministic:
+    name: Deterministic attacks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Black-box rule
+        run: pnpm run battle:audit
+
+      - name: Adversarial, differential and regression battles
+        env:
+          MDY_BATTLE_SEED: "20260814"
+          MDY_BATTLE_RUNS: "25"
+        run: pnpm run battle
+
+      - name: Failure reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: battle-reports-deterministic
+          path: battle-tests/reports/failures
+          if-no-files-found: ignore
+
+  browser:
+    name: Plain lifecycle in a browser
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Browser battles
+        run: pnpm run battle:browser
+
+      - name: Traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: battle-browser-traces
+          path: battle-tests/test-results
+          if-no-files-found: ignore
+
+  campaign:
+    name: Extended seed campaign
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the packages the suite consumes
+        run: pnpm run build:packages && pnpm run build:plain
+
+      # Drawn here rather than inside the run, so the seed is in the log before anything executes and
+      # a failure can be replayed with `MDY_BATTLE_SEED=<seed> pnpm run battle:campaign`.
+      - name: Draw the seed
+        id: seed
+        run: |
+          SEED="${{ inputs.seed }}"
+          if [ -z "$SEED" ]; then SEED=$(( RANDOM * 32768 + RANDOM )); fi
+          echo "seed=$SEED" >> "$GITHUB_OUTPUT"
+          echo "Campaign seed: $SEED"
+
+      - name: Campaign
+        env:
+          MDY_BATTLE_SEED: ${{ steps.seed.outputs.seed }}
+          MDY_BATTLE_RUNS: ${{ inputs.runs || '400' }}
+        run: pnpm run battle:campaign
+
+      - name: Seeds, operation logs and minimized sequences
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: battle-campaign-seed-${{ steps.seed.outputs.seed }}
+          path: battle-tests/reports/failures
+          if-no-files-found: ignore

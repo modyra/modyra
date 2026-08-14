@@ -13,6 +13,9 @@ contradiction. A green run means only that these attacks did not falsify a claim
 ```sh
 npm run battle              # build the consumed packages, then every battle
 npm run battle:quick        # the adversarial suites only
+npm run battle:generative   # the seeded campaigns alone
+npm run battle:campaign     # a long campaign (MDY_BATTLE_RUNS, default 400)
+npm run battle:browser      # the Plain lifecycle, in Chromium, on a bundled host page
 npm run battle:audit        # the black-box rule: no reach past a package entry point
 npm run battle:replay -- battle-tests/reports/failures/<id>.json
 ```
@@ -94,8 +97,21 @@ ignores dotfiles.
 | `generative/` | Seeded campaigns, the independent reference model, shrinking. |
 | `hostile-consumers/` | Consumers built the way a stranger would build one, including packed installs. |
 | `scenarios/` | Realistic end-to-end battles: keyed invoice, virtual inventory, async registration. |
+| `browser/` | The host page a real browser mounts, and the lifecycle battles that read its DOM. |
 | `regressions/` | Confirmed breaks, minimised, red before the fix that closed them. |
 | `reports/` | Failure artefacts from the last run. Not committed. |
+
+## Tiers
+
+`.github/workflows/battle-tests.yml` runs three of them:
+
+- **pull request** — the black-box rule, then every deterministic battle and a fixed-seed campaign
+  (`MDY_BATTLE_SEED=20260814`, 25 runs), so a red run is reproducible from its log alone;
+- **main** — the same, plus the browser lifecycle in Chromium;
+- **scheduled and manual** — a long campaign under a seed drawn and printed before anything runs,
+  400 generated runs by default, uploading every failure report when it finds one.
+
+Each tier's command is the same one a maintainer runs locally; nothing is expressed only in YAML.
 
 ## When a battle finds a break
 
