@@ -64,5 +64,6 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `UI-004` | A choice the list no longer offers is still shown as the choice it is. | A surviving selection is displayed as text that names nothing. |
 | `LOC-002` | What a user types matches the label they can see. | Typing the first letter of a visible label finds nothing. |
 | `UI-005` | An overlay closes only on an interaction that happened entirely outside it. | A drag out of a popup, a right-click, or a second finger closes it. |
+| `UI-006` | A widget does not replace a value the model holds in order to make itself consistent. | Opening a picker on a value it cannot read overwrites it. |
 | `A11Y-002` | Focus is borrowed by a widget and handed back once. | A widget takes focus again after it has already returned it. |
 | `PKG-001` | Packed consumers observe the same public behaviour as workspace tests. | The tarball behaves differently, or resolves two copies of a package. |
