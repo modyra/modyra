@@ -181,3 +181,30 @@ test("a target that looks reachable but refuses focus falls through", () => {
   assert.equal(w.custodian.restore(inert), w.trigger, "asking is not the same as being taken");
   assert.equal(w.document.activeElement, w.trigger);
 });
+
+test("a widget that has handed focus back does not take it again", () => {
+  // A widget that closes and is then disposed restores twice, and the two paths do not know about
+  // each other. The second call used to find nothing remembered and fall through to the first
+  // focusable inside the widget — pulling focus back out of wherever the first call had put it,
+  // and into a panel that is on its way out.
+  const w = widget();
+  const outside = w.document.createElement("button");
+  w.document.body.append(outside);
+  outside.focus();
+  w.custodian.remember();
+  w.search.focus();
+
+  assert.equal(w.custodian.restore(), outside, "the first restore hands focus back");
+  assert.equal(w.custodian.restore(), null, "the second restore took focus again");
+  assert.equal(w.document.activeElement, outside, "focus moved after it had been handed back");
+});
+
+test("a preferred element is honoured even when nothing is borrowed", () => {
+  // Naming an element is the caller placing focus deliberately, which is a different request from
+  // asking for what the widget borrowed.
+  const w = widget();
+  const target = w.document.createElement("button");
+  w.document.body.append(target);
+
+  assert.equal(w.custodian.restore(target), target);
+});

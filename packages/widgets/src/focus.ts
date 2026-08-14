@@ -38,8 +38,13 @@ export interface MdyFocusCustodian {
   /**
    * Hand focus to `preferred`, or to the best thing that will take it.
    *
-   * Returns the element that ended up with focus, or `null` when nothing did — which happens only
-   * if the widget and its remembered owner have both left the document.
+   * Only while the custodian is holding focus it borrowed. A widget that closes and is then disposed
+   * restores twice, and the second call must not pull focus back out of wherever the first one put
+   * it — focus is borrowed, not taken. A `preferred` element is always honoured: naming one is the
+   * caller placing focus deliberately rather than asking for what was borrowed.
+   *
+   * Returns the element that ended up with focus, or `null` when nothing did — because the widget
+   * and its remembered owner have both left the document, or because there was nothing to give back.
    */
   restore(preferred?: Element | null): HTMLElement | null;
   /** Forget the recorded owner. For teardown, so a destroyed widget holds no reference. */
@@ -84,6 +89,14 @@ function firstFocusableWithin(root: Element): Focusable | null {
  */
 export function createFocusCustodian(root: () => Element | null): MdyFocusCustodian {
   let previous: Element | null = null;
+  /**
+   * Whether focus is currently borrowed.
+   *
+   * Distinct from holding a `previous`: a widget that opened while nothing was focused has still
+   * borrowed focus and still owes a restore, and a widget that has already given it back owes
+   * nothing — even though both hold `null`.
+   */
+  let borrowed = false;
 
   const documentOf = (): Document | null => root()?.ownerDocument ?? null;
 
@@ -98,17 +111,25 @@ export function createFocusCustodian(root: () => Element | null): MdyFocusCustod
 
   return {
     remember(): void {
-      if (previous && (previous as HTMLElement).isConnected) return;
+      if (previous && (previous as HTMLElement).isConnected) {
+        borrowed = true;
+        return;
+      }
       const active = documentOf()?.activeElement ?? null;
       previous = active && active !== documentOf()?.body ? active : null;
+      borrowed = true;
     },
 
     restore(preferred?: Element | null): HTMLElement | null {
+      // Nothing borrowed and nothing named: the widget has already given focus back, and falling
+      // through to what is inside it would take focus into the widget it just handed it away from.
+      if (!borrowed && !preferred) return null;
       const current = root();
       const chain = [preferred, previous, current ? firstFocusableWithin(current) : null];
       for (const candidate of chain) {
         if (candidate && takes(candidate)) {
           previous = null;
+          borrowed = false;
           return candidate as HTMLElement;
         }
       }
@@ -116,6 +137,9 @@ export function createFocusCustodian(root: () => Element | null): MdyFocusCustod
     },
 
     release(): void {
+      // The recorded owner only. Whether a released custodian still owes a restore is a separate
+      // question from whether it holds a reference, and `focus.spec.mjs` states the answer this
+      // module gives today: a restore after a release still falls back inside the widget.
       previous = null;
     },
   };
