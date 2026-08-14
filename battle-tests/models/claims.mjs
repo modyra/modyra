@@ -448,6 +448,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "STU-002",
+    title: "A rule the author wrote reaches the generated form, or is reported as lost.",
+    area: "studio",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/studio-codegen buildFormModule — MISSING_VALIDATOR_VALUE reports a rule it omits",
+      "@modyra/studio-codegen — a validator with no usable value is omitted rather than emitted empty",
+      "docs/guides/usage-modes.md — a generated form is the project a person authored",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",

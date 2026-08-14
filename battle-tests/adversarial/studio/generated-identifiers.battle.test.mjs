@@ -67,7 +67,7 @@ console.log(JSON.stringify(emitted));
 function runInConsumer(script) {
   const work = mkdtempSync(join(tmpdir(), "mdy-studio-"));
   try {
-    for (const pkg of ["studio-model", "studio-codegen"]) {
+    for (const pkg of ["studio-model", "studio-codegen", "studio-target-core"]) {
       execFileSync("pnpm", ["pack", "--pack-destination", work], {
         cwd: join(REPO, "packages", pkg),
         stdio: ["ignore", "ignore", "pipe"],
@@ -299,6 +299,110 @@ battle(
         what: "an operand outside the expression type was written into the generated module as raw text",
         detail: JSON.stringify(emitted),
       });
+    } finally {
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);
+
+/** Generate a form module for one field carrying one validator, per value under test. */
+const VALIDATORS = `
+import { buildFormModule } from "@modyra/studio-codegen";
+import { createBlankProject, loadProject } from "@modyra/studio-model";
+import { createCoreTarget } from "@modyra/studio-target-core";
+
+const VALUES = [
+  ["a whole number", 3],
+  ["a string", "3"],
+  ["not a number", NaN],
+  ["without bound", Infinity],
+  ["negative infinity", -Infinity],
+];
+
+const blank = createBlankProject();
+const out = VALUES.map(([label, value]) => {
+  const draft = JSON.parse(JSON.stringify(blank));
+  draft.schema = {
+    node: "group", id: "root", name: "root",
+    children: [{ node: "field", id: "f1", name: "amount", kind: "text",
+      validators: [{ id: "v1", kind: "minLength", value }] }],
+  };
+  const { project } = loadProject(draft);
+  const built = buildFormModule(project, new Map(), createCoreTarget());
+  // Matched with a multiline regex rather than split on a newline: this source is carried through a
+  // template literal, where a lone escape collapses into the character it names.
+  const line = ((built.code ?? "").match(/^.*amount.*$/m) ?? [null])[0]?.trim() ?? null;
+  return { label, line, diagnostics: (built.diagnostics ?? []).map((each) => each.code) };
+});
+console.log(JSON.stringify(out));
+`;
+
+battle(
+  {
+    claims: ["STU-002"],
+    title: "a bound the author wrote is emitted, or reported as omitted",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const result = runInConsumer(VALIDATORS);
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-002"],
+        what: "the studio packages could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      const rows = result.out;
+      ctx.log.note("what each bound became", { rows: rows.map((each) => [each.label, each.line, each.diagnostics]) });
+
+      const byLabel = (label) => rows.find((each) => each.label === label);
+
+      // The control: a usable bound is emitted as itself and nothing is reported. Everything below
+      // is measured against this.
+      expectClaim(byLabel("a whole number").line?.includes("minLength(3)") === true, {
+        claimIds: ["STU-002"],
+        what: "a whole-number bound is no longer emitted as itself",
+        detail: JSON.stringify(byLabel("a whole number")),
+      });
+
+      // The second control, and the reason this is a gap rather than a missing feature: a value of
+      // the wrong *type* is already caught and reported, and the rule is left out rather than
+      // emitted hollow. The machinery exists.
+      const wrongType = byLabel("a string");
+      expectClaim(wrongType.diagnostics.includes("MISSING_VALIDATOR_VALUE") && !wrongType.line?.includes("minLength"), {
+        claimIds: ["STU-002"],
+        what: "a bound of the wrong type is no longer reported and omitted, which is the behaviour the rest of this battle is measured against",
+        detail: JSON.stringify(wrongType),
+      });
+
+      // And the values that have a number's type and are not bounds. `typeof value === "number"`
+      // admits them; `JSON.stringify` turns each into `null`; the emitted rule is `minLength(null)`,
+      // which accepts every string there is. The author wrote a minimum and the form has none, with
+      // nothing anywhere saying so.
+      const unusable = ["not a number", "without bound", "negative infinity"].map(byLabel);
+      const silentlyEmpty = unusable
+        .filter((each) => each.line?.includes("minLength(null)") === true)
+        .map((each) => ({ value: each.label, emitted: each.line, reported: each.diagnostics }));
+
+      expectEqual(silentlyEmpty, [], {
+        claimIds: ["STU-002"],
+        what: "a bound that is not a number was emitted as an empty rule instead of being reported",
+        detail: JSON.stringify(unusable),
+      });
+
+      // Whichever way it is fixed — reported and omitted, like the wrong type, or refused earlier —
+      // what must not survive is a rule in the output that constrains nothing.
+      for (const each of unusable) {
+        expectClaim(
+          each.diagnostics.length > 0 || each.line?.includes("minLength") !== true,
+          {
+            claimIds: ["STU-002"],
+            what: `${each.label} produced a rule in the generated form and no diagnostic`,
+            detail: JSON.stringify(each),
+          },
+        );
+      }
     } finally {
       if (result.work) rmSync(result.work, { recursive: true, force: true });
     }
