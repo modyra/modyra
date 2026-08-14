@@ -26,7 +26,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 import { battle } from "../../harness/battle.mjs";
-import { expectClaim } from "../../harness/assertions.mjs";
+import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
 const HERE = dirname(new URL(import.meta.url).pathname);
 const REPO = resolve(HERE, "..", "..", "..");
@@ -251,6 +251,110 @@ battle(
         claimIds: ["STY-001"],
         what: "a derived palette contains a colour the package's own gamut predicate rejects",
         detail: JSON.stringify(emitted),
+      });
+    } finally {
+      // The runner removes its own working directory.
+    }
+  },
+);
+
+/** Compile the same theme with each spelling of "no model chosen", and with values that are not models. */
+const MODELS = `
+import { compileMdyTheme } from "@modyra/styles";
+
+const theme = (model) => ({
+  name: "t",
+  selector: "[data-theme='t']",
+  seed: "#3b82f6",
+  ...(model === undefined ? {} : { model }),
+});
+
+const attempt = (label, model) => {
+  try {
+    const css = compileMdyTheme(theme(model));
+    const text = typeof css === "string" ? css : JSON.stringify(css);
+    return { label, compiled: true, length: text.length, digest: text.slice(0, 200) };
+  } catch (error) {
+    return { label, compiled: false, message: String(error.message).slice(0, 60) };
+  }
+};
+
+console.log(JSON.stringify({
+  absent: attempt("no model given", undefined),
+  nulled: attempt("model null", null),
+  named: attempt("model salience", "salience"),
+  refused: [
+    attempt("an empty string", ""),
+    attempt("a number", 42),
+    attempt("a name nobody declared", "wormhole"),
+  ],
+}));
+`;
+
+battle(
+  {
+    claims: ["STY-001"],
+    title: "not choosing a palette model is not the same as choosing a bad one",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // `model` is optional and the compiler reaches its default with `??`, so `null` and an absent
+    // key mean the same thing — while an empty string, a number or a name nobody declared are
+    // refused by name.
+    //
+    // That asymmetry reads like an oversight and is not: `??` falls through for the two spellings of
+    // "not chosen" and for nothing else. It is pinned because the plausible tidying — a strict
+    // membership check on whatever `model` holds — looks like a correction and takes the default
+    // away from every consumer who wrote `model: undefined` into a config object.
+    const result = runInStylesConsumer(MODELS);
+
+    try {
+      expectClaim(result.packed === true, {
+        claimIds: ["STY-001"],
+        what: "@modyra/styles could not be packed and installed",
+      });
+
+      const { absent, nulled, named, refused } = result;
+      ctx.log.note("what each spelling of the model produced", {
+        absent: absent.length ?? absent.message,
+        nulled: nulled.length ?? nulled.message,
+        named: named.length ?? named.message,
+        refused: refused.map((each) => [each.label, each.compiled ? "compiled" : each.message]),
+      });
+
+      // The known-good case, in the same run: naming the default explicitly compiles.
+      expectClaim(named.compiled === true, {
+        claimIds: ["STY-001"],
+        what: "naming the default palette model did not compile, so nothing below is about the default",
+        detail: JSON.stringify(named),
+      });
+
+      // The two spellings of "not chosen" reach the same stylesheet, byte for byte.
+      expectEqual([absent.compiled, nulled.compiled], [true, true], {
+        claimIds: ["STY-001"],
+        what: "one of the two ways of not choosing a model was refused",
+        detail: JSON.stringify({ absent, nulled }),
+      });
+
+      expectEqual([absent.length, absent.digest], [named.length, named.digest], {
+        claimIds: ["STY-001"],
+        what: "leaving the model out produced a different stylesheet from naming the default",
+        detail: JSON.stringify({ absent: absent.length, named: named.length }),
+      });
+
+      expectEqual([nulled.length, nulled.digest], [named.length, named.digest], {
+        claimIds: ["STY-001"],
+        what: "a null model produced a different stylesheet from naming the default",
+        detail: JSON.stringify({ nulled: nulled.length, named: named.length }),
+      });
+
+      // And everything that is not a model is still refused, so the fall-through is for the two
+      // spellings of "not chosen" rather than for anything falsy.
+      const admitted = refused.filter((each) => each.compiled).map((each) => each.label);
+      expectEqual(admitted, [], {
+        claimIds: ["STY-001"],
+        what: "a value that is not a palette model was accepted as one",
+        detail: JSON.stringify(refused),
       });
     } finally {
       // The runner removes its own working directory.
