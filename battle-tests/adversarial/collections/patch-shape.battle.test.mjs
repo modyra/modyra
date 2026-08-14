@@ -83,6 +83,21 @@ battle(
         const keyedKept = keyed.f.rows.keys().length === 1;
         const positionalKept = positional.f.items.length() === 1;
 
+        // What each kind had to do, not merely that they agreed: two collections that both drop the
+        // row on a malformed patch agree perfectly and have both broken COL-001. Agreement is
+        // asserted as well, because a divergence between the kinds is its own finding.
+        expectClaim(keyedKept, {
+          claimIds: ["COL-001"],
+          what: `a record keeps its row through ${what}`,
+          detail: `keys=${JSON.stringify(keyed.f.rows.keys())}`,
+        });
+
+        expectClaim(positionalKept, {
+          claimIds: ["COL-001"],
+          what: `an array keeps its row through ${what}`,
+          detail: `length=${positional.f.items.length()}`,
+        });
+
         expectClaim(keyedKept === positionalKept, {
           claimIds: ["COL-001"],
           what: `a record and an array answer ${what} the same way`,

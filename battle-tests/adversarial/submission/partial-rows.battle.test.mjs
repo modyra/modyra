@@ -12,7 +12,7 @@
 import { array, createForm, field, group, record, vanillaReactivity } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
-import { expectClaim } from "../../harness/assertions.mjs";
+import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
 const attempt = (read) => {
   try {
@@ -86,6 +86,22 @@ battle(
         what: "getChanges answers when only part of a row moved",
         detail: changes.message ?? "",
       });
+
+      // What it answered, not merely that it answered. A getChanges that returns an empty object,
+      // or the whole form, satisfies "it did not throw" while telling a consumer the wrong thing
+      // about what moved.
+      const moved = JSON.stringify(changes.value ?? null);
+      expectClaim(moved.includes("changed"), {
+        claimIds: ["SUB-001"],
+        what: "the edited cell is among the changes",
+        detail: moved,
+      });
+
+      expectClaim(!moved.includes(`"B"`), {
+        claimIds: ["SUB-001"],
+        what: "a row nobody edited is not reported as a change",
+        detail: moved,
+      });
     } finally {
       form.destroy();
     }
@@ -114,10 +130,39 @@ battle(
       const fromKeyed = attempt(() => keyed.submitValue());
       const fromPositional = attempt(() => positional.submitValue());
 
-      expectClaim(fromKeyed.ok === fromPositional.ok, {
+      // "Both refuse" is agreement too, and it is a broken form in both kinds. Each has to answer,
+      // and the answers are then compared as answers rather than as outcomes: the battle's title
+      // promises the two kinds treat a disabled cell alike, which nothing here checked.
+      expectClaim(fromKeyed.ok, {
         claimIds: ["SUB-001"],
-        what: "a record and an array both answer, or both refuse",
-        detail: `record=${fromKeyed.ok ? "answered" : fromKeyed.message}, array=${fromPositional.ok ? "answered" : fromPositional.message}`,
+        what: "a record answers submitValue with a disabled cell in a row",
+        detail: fromKeyed.message ?? "",
+      });
+
+      expectClaim(fromPositional.ok, {
+        claimIds: ["SUB-001"],
+        what: "an array answers submitValue with a disabled cell in a row",
+        detail: fromPositional.message ?? "",
+      });
+
+      const keyedRow = fromKeyed.value?.rows?.a ?? null;
+      const positionalRow = fromPositional.value?.items?.[0] ?? null;
+
+      expectClaim(keyedRow !== null && !("note" in keyedRow), {
+        claimIds: ["VAL-002"],
+        what: "a record excludes the disabled cell from the submitted row",
+        detail: JSON.stringify(keyedRow),
+      });
+
+      expectClaim(positionalRow !== null && !("note" in positionalRow), {
+        claimIds: ["VAL-002"],
+        what: "an array excludes the disabled cell from the submitted row",
+        detail: JSON.stringify(positionalRow),
+      });
+
+      expectEqual(positionalRow, keyedRow, {
+        claimIds: ["SUB-001", "VAL-002"],
+        what: "a record and an array submit the same row for the same disabled cell",
       });
     } finally {
       keyed.destroy();
