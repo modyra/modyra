@@ -404,6 +404,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "UI-005",
+    title: "An overlay closes only on an interaction that happened entirely outside it.",
+    area: "widgets",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/widgets createLightDismiss — called at most once per interaction, when one completes entirely outside",
+      "@modyra/widgets isPrimaryInteraction — primary pointer, primary button",
+      "@modyra/widgets MdyLightDismiss — an interaction beginning while closed decides nothing",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
