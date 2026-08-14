@@ -6,7 +6,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { TargetRegistry } from "../dist/index.js";
+import { TargetRegistry, buildFormModule } from "../dist/index.js";
 import { createDummyTargetManifest } from "./fixtures/dummy-target.mjs";
 
 test("register + list: a registered manifest appears without ever calling load()", () => {
@@ -58,4 +58,31 @@ test("loading an unregistered id throws without corrupting the registry", async 
   // The registry is still fully usable after the rejected load — a failure here can't corrupt it.
   const dummy = await registry.load("dummy");
   assert.equal(dummy.id, "dummy");
+});
+
+test("a target profile that names no import source is refused, not emitted as `from \"undefined\"`", () => {
+  // `TargetProfile.factoryImportSource` is required by the type, and `buildFormModule` and
+  // `TargetRegistry` are both exported — a custom target supplying a profile is what they are for.
+  // Without the source every import became `from "undefined"`: a module that cannot compile, with
+  // no diagnostic, and the target's own author the only person who could act on it.
+  const project = {
+    studioVersion: 1, id: "p", name: "P",
+    schema: { node: "group", id: "root", name: "root", children: [
+      { node: "field", id: "nd_a", name: "a", fieldKind: "text", valueType: "string", initialValue: "", validators: [] },
+    ] },
+    formValidators: [], behaviors: {}, implementations: {}, presentation: {}, targets: {}, metadata: {},
+  };
+
+  const { code, diagnostics } = buildFormModule(project, new Map(), { createCallName: "createForm" });
+  assert.deepEqual(diagnostics.map((d) => d.code), ["INVALID_TARGET_PROFILE"]);
+  assert.equal(code, "");
+
+  // The control: a complete profile emits the module and reports nothing.
+  const complete = buildFormModule(project, new Map(), {
+    factoryImportSource: "@modyra/core",
+    createCallName: "createForm",
+  });
+  assert.deepEqual(complete.diagnostics, []);
+  assert.match(complete.code, /from "@modyra\/core"/);
+  assert.doesNotMatch(complete.code, /from "undefined"/);
 });

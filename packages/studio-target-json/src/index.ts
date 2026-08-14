@@ -18,6 +18,8 @@ const CAPABILITIES: TargetCapabilities = {
   supportsLayout: true,
 };
 
+const JSON_TARGET_DEFAULTS: JsonTargetOptions = { pretty: true };
+
 export function createJsonTarget(): StudioTarget<JsonTargetOptions> {
   return {
     id: "json",
@@ -25,16 +27,22 @@ export function createJsonTarget(): StudioTarget<JsonTargetOptions> {
     version: "0.1.0",
     capabilities: CAPABILITIES,
     defaults(): JsonTargetOptions {
-      return { pretty: true };
+      return { ...JSON_TARGET_DEFAULTS };
     },
     async analyze(project: MdyStudioProject): Promise<TargetAnalysis> {
       const { diagnostics } = compileToContract(project);
       return { compatible: !diagnostics.some((d) => d.severity === "error"), diagnostics };
     },
-    async generate(project: MdyStudioProject, options: JsonTargetOptions): Promise<Artifact> {
+    async generate(project: MdyStudioProject, options?: Partial<JsonTargetOptions>): Promise<Artifact> {
+      // A target answers with what it declared. `defaults()` is public and says `pretty: true`, and
+      // this read `options.pretty` off whatever it was handed — so a host iterating the registry the
+      // same way worked for three targets and raised on the fourth, which is a difference in
+      // interface rather than in output. The other three ignore options entirely; honouring one's
+      // own defaults is the version of that which still lets a caller choose.
+      const { pretty } = { ...JSON_TARGET_DEFAULTS, ...options };
       const projectJson = serializeProject(project);
       const { contract, diagnostics } = compileToContract(project);
-      const contractJson = contract ? JSON.stringify(contract, null, options.pretty ? 2 : 0) : null;
+      const contractJson = contract ? JSON.stringify(contract, null, pretty ? 2 : 0) : null;
 
       const files: Artifact["files"] = [
         { path: "project.mdy-studio.json", language: "json", content: projectJson, role: "source" },
