@@ -152,6 +152,16 @@ const CLAIMS = [
     publicEvidence: ["@modyra/core flattenDynamicForm/flattenDynamicSchema"],
   },
   {
+    id: "DYN-003",
+    title: "A contract's findings are the parser's, wherever they are reported.",
+    area: "dynamic",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/eslint-plugin — the findings are the parser's; this package positions them",
+      "@modyra/eslint-plugin static-value — the whole document is refused when any part is unknown",
+    ],
+  },
+  {
     id: "REA-001",
     title: "Every handle a form hands out is observed through its owning runtime.",
     area: "reactivity",

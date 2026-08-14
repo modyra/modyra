@@ -24,6 +24,7 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | --- | --- | --- |
 | `LIF-001` | Destroy leaves no observable reactive or asynchronous work. | A timer, effect or validator run fires after destroy. |
 | `LIF-002` | Repeated mount/unmount does not alter value or registration ownership. | Field registration counts drift across remounts. |
+| `DYN-003` | A contract's findings are the parser's, wherever they are reported. | An editor reports a defect the parser does not, or misses one it does. |
 | `REA-001` | Every handle a form hands out is observed through its owning runtime. | A collection handle or row tree is unknown to the registry, so a foreign runtime is accepted in silence. |
 | `REA-002` | Cross-runtime misuse produces the documented diagnostic. | The mismatch is silent, or the diagnostic names the wrong thing. |
 
