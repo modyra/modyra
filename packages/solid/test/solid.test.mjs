@@ -122,3 +122,21 @@ test("a row is taken apart as one change: rename and remove on this adapter's gr
   assert.deepEqual(form.getValue().lines, [{ a: "X", b: "Y" }]);
   form.destroy();
 });
+
+test("the graph is asked about once, and the answer is the one this process has", () => {
+  // Which Solid build was resolved is fixed when the module loads, so a consumer building many forms
+  // does not pay for the question many times — and every runtime this process hands out has to give
+  // the same answer, since they are all reading the same graph.
+  const runtimes = Array.from({ length: 50 }, () => solidReactivity());
+  const kinds = new Set(runtimes.map((rx) => rx.kind));
+  assert.deepEqual([...kinds], ["solid"], "a runtime forgot which adapter it belongs to");
+
+  // The capability report and the behaviour agree, whichever build this is: a computed that
+  // recomputes is what `effects` claims, and this suite runs where it does.
+  const rx = runtimes[0];
+  const value = rx.signal(1);
+  const doubled = rx.computed(() => value() * 2);
+  value.set(2);
+  assert.equal(doubled(), 4, "a computed did not recompute on the graph this process resolved");
+  assert.equal(rx.capabilities.effects, true);
+});

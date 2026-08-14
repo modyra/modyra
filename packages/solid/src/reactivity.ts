@@ -85,14 +85,20 @@ function makeEffectRef(
  * submission is told yes about a form that is not valid, and nothing raises.
  *
  * Probed rather than sniffed for a filename: the question is whether a computation re-runs, and
- * asking it directly answers for any build, bundler or future version. One signal and one memo, once
- * per call.
+ * asking it directly answers for any build, bundler or future version.
+ *
+ * Asked once per process. Which build was resolved is fixed when the module loads and cannot change
+ * under a running program, so a consumer building many forms does not pay for the answer many times.
  */
+let liveGraph: boolean | undefined;
+
 function graphRecomputes(): boolean {
+  if (liveGraph !== undefined) return liveGraph;
   const value = createSignal(0);
   const doubled = createMemo(() => value[0]() * 2);
   value[1](1);
-  return doubled() === 2;
+  liveGraph = doubled() === 2;
+  return liveGraph;
 }
 
 let inertGraphReported = false;
