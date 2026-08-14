@@ -146,6 +146,17 @@ test("a kind projects read-only only when its contract has the state", () => {
   const text = projectTextFieldA11y({ ...readonly, value: "" }, [], { widgetId: "w", kind: "text" });
   assert.equal(text.input.attributes["aria-readonly"], "true");
   assert.equal(text.input.attributes.readonly, true);
+
+  // One projection draws several kinds, and the state belongs to the kind. A slider is a numeric
+  // field structurally and declares no read-only rendering, so the same function must not announce
+  // one for it — which is how `@modyra/plain` came to expose it on every slider it drew.
+  const slider = projectTextFieldA11y({ ...readonly, value: 0 }, [], { widgetId: "w", kind: "slider" });
+  assert.equal(slider.input.attributes["aria-readonly"], null);
+  assert.equal(slider.input.attributes.readonly, false);
+
+  // A kind this contract does not know is not this contract's to police.
+  const custom = projectTextFieldA11y({ ...readonly, value: "" }, [], { widgetId: "w", kind: "my-own-kind" });
+  assert.equal(custom.input.attributes["aria-readonly"], "true");
 });
 
 test("aria-checked holds one of the three values the standard allows", () => {

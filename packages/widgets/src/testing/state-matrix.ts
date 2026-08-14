@@ -11,7 +11,7 @@
  * the divergence bookkeeping. Assertions stay with the caller, because the three suites run under
  * two different test runners.
  */
-import { MDY_WIDGET_STATE_SUPPORT, type MdyWidgetState } from "../widget-states.js";
+import { MDY_WIDGET_STATES, MDY_WIDGET_STATE_SUPPORT, type MdyWidgetState } from "../widget-states.js";
 import type { MdyWidgetKind } from "../catalog.js";
 import { inspectUnsupportedStateAria, inspectWidgetState } from "./state-tests.js";
 import type { MdyDomPartMap } from "./dom-tests.js";
@@ -113,12 +113,31 @@ export async function collectStateMatrix(
     }
 
     // Separate pass: this one is about the states a widget is *not* in.
-    const fixture = await options.mount(kind);
-    try {
-      await fixture.settle();
-      if (inspectUnsupportedStateAria(fixture.root, kind).length > 0) unsupportedAria.push(kind);
-    } finally {
-      fixture.dispose();
+    //
+    // Driven into each of them, not merely mounted. Inspecting the default state catches a
+    // projection that emits the forbidden attribute unconditionally, and cannot catch the shape the
+    // defect actually had — `state.readonly ? "true" : null`, absent until a consumer sets a state
+    // the kind does not declare. Which is what a consumer does the moment a form has a read-only
+    // mode, so the loop that never drives it is the one place the contract went unchecked.
+    //
+    // A fresh mount per state, because an attribute left behind by an earlier drive answers for the
+    // next one and the pass goes green for the wrong reason.
+    const undeclared = MDY_WIDGET_STATES.filter(
+      (state) => !MDY_WIDGET_STATE_SUPPORT[kind].includes(state),
+    );
+    for (const state of [null, ...undeclared]) {
+      const fixture = await options.mount(kind);
+      try {
+        // An undeclared state the adapter cannot drive is not a finding: what is being asked is
+        // whether the widget announces one, and a state it will not enter announces nothing.
+        if (state !== null) await fixture.drive(state);
+        await fixture.settle();
+        if (inspectUnsupportedStateAria(fixture.root, kind).length > 0) {
+          if (!unsupportedAria.includes(kind)) unsupportedAria.push(kind);
+        }
+      } finally {
+        fixture.dispose();
+      }
     }
   }
 

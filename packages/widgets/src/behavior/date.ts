@@ -1,10 +1,15 @@
 /** A single date: bounds, the value transition, and the draft a modal picker edits. */
 import { isDateInRange, parseIsoDate } from "@modyra/core/datetime";
 export function dateWithinBounds(
-  iso: string,
+  iso: string | null | undefined,
   minIso: string | null | undefined,
   maxIso: string | null | undefined,
 ): boolean {
+  // A date field holds `null` before anyone picks — `MDY_VALUE_CONTRACTS` declares the kind nullable
+  // — and a host greying a calendar reads whatever the field holds. Nothing is not within bounds:
+  // the question "may I pick this" has an answer for the empty value, and it is no. Raising made it
+  // the caller's job to know that the commonest state of the field is one they must not ask about.
+  if (iso === null || iso === undefined || iso === "") return false;
   // Delegates rather than comparing strings of its own. The calendar bounds its cells with
   // `isDateInRange` over parsed dates, and this took the same decision by lexicographic comparison
   // — two spellings of one rule, which is the shape that drifts. The shape check stays here because
