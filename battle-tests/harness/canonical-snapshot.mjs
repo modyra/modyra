@@ -22,6 +22,18 @@ import { encodeValue, sortedPaths } from "../models/observations.mjs";
  * @param mounted      Which paths a mount strategy currently holds claimed.
  * @param activeAsyncRuns  Async validator runs the harness has started and not yet settled.
  */
+/**
+ * Whether undo and redo are on offer, for a form that keeps history and one that does not.
+ *
+ * A form built without history answers `null` rather than `false`: "not offered" and "there is no
+ * history here" are different statements, and collapsing them would make a form that lost its
+ * history indistinguishable from one that never had any.
+ */
+function historyAffordance(form) {
+  if (typeof form.canUndo !== "function" || typeof form.canRedo !== "function") return null;
+  return { canUndo: form.canUndo(), canRedo: form.canRedo() };
+}
+
 export function canonicalObservation({
   form,
   collections = {},
@@ -75,6 +87,10 @@ export function canonicalObservation({
     submittedValue: encodeValue(form.submitValue(), "submittedValue"),
     valid: form.state.valid(),
     pending: form.state.pending(),
+    // What the form offers a toolbar to do next. It is state a consumer renders, and it broke once
+    // without any snapshot being able to show it: `canUndo` answered false in the task where `undo`
+    // still worked, and only a battle reading the form directly could see the disagreement.
+    history: historyAffordance(form),
     fieldNames: [...fieldNames],
     errors: errors.sort(compareErrors),
     touchedPaths,
