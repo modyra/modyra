@@ -135,6 +135,17 @@ const CLAIMS = [
     publicEvidence: ["@modyra/core MdyTypedForm.state.valid", "@modyra/core MdyGroupOptions.when"],
   },
   {
+    id: "VAL-004",
+    title: "A native constraint never promises less than the validators it came from.",
+    area: "validation",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/core factsOf/factsOfAll/mergeFacts",
+      "@modyra/core MDY_VALIDATOR_FACTS — what a validator says about itself",
+      "docs/architecture/0030 — an external schema's constraints crossing over",
+    ],
+  },
+  {
     id: "DYN-001",
     title: "Typed and dynamic forms agree for the supported common subset.",
     area: "dynamic-contract",
