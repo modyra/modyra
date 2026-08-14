@@ -869,3 +869,148 @@ export {};
     }
   },
 );
+
+/** Load layouts of increasing depth, and one that contains itself, reporting how each went. */
+const LAYOUTS = `
+import { arrangementDiagnostics } from "@modyra/studio-codegen";
+import { STUDIO_LAYOUT_MAX_DEPTH, createBlankProject, loadProject } from "@modyra/studio-model";
+
+const nest = (levels) => {
+  let node = { kind: "section", id: "leaf", children: [] };
+  for (let level = 0; level < levels; level += 1) node = { kind: "section", id: "s" + level, children: [node] };
+  return [node];
+};
+
+const withLayout = (layout) => ({ ...createBlankProject(), presentation: { layout } });
+const TARGET = { id: "battle", capabilities: { supportsLayout: false } };
+
+const attempt = (label, layout) => {
+  let loaded = null;
+  let loadRaised = null;
+  try { loaded = loadProject(withLayout(layout)); }
+  catch (error) { loadRaised = error.constructor.name; }
+
+  let arrangementRaised = null;
+  if (loaded) {
+    try { arrangementDiagnostics(loaded.project, TARGET); }
+    catch (error) { arrangementRaised = error.constructor.name; }
+  }
+
+  return {
+    label,
+    loadRaised,
+    loadDiagnostics: loaded ? loaded.diagnostics.map((each) => each.code) : [],
+    arrangementRaised,
+  };
+};
+
+const cyclic = { kind: "section", id: "a", children: [] };
+cyclic.children.push(cyclic);
+
+const out = {
+  declaredMax: STUDIO_LAYOUT_MAX_DEPTH,
+  ordinary: attempt("within the declared depth", nest(3)),
+  past: attempt("past the declared depth", nest(STUDIO_LAYOUT_MAX_DEPTH + 2)),
+  far: attempt("far past the declared depth", nest(4000)),
+  cyclic: attempt("a section that contains itself", [cyclic]),
+};
+console.log(JSON.stringify(out));
+`;
+
+battle(
+  {
+    claims: ["STU-005"],
+    title: "a layout too deep to use is reported, however much too deep it is",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // `loadProject` returns `{ project, diagnostics }` — reporting is how it answers, and
+    // `LAYOUT_TOO_DEEP` is what it says about a layout past `STUDIO_LAYOUT_MAX_DEPTH`. The guard
+    // exists and works. What it does not survive is more of the thing it guards against: its own
+    // walk is recursive and unbounded, so a layout deep enough raises instead of reporting.
+    //
+    // A project file some thousands of sections deep is not exotic — it is what a generator, an
+    // import, or a loop in an editor produces — and the difference between a diagnostic and a
+    // RangeError is the difference between a message and a host that stopped.
+    const result = runInConsumer(LAYOUTS);
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-005"],
+        what: "the studio packages could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      const { declaredMax, ordinary, past, far } = result.out;
+      ctx.log.note("what the model made of each depth", { declaredMax, ordinary, past, far });
+
+      // The known-good case, in the same run: an ordinary layout loads silently and is walked.
+      expectClaim(ordinary.loadRaised === null && ordinary.loadDiagnostics.length === 0, {
+        claimIds: ["STU-005"],
+        what: "a layout within the declared depth did not load cleanly, so nothing below is about depth",
+        detail: JSON.stringify(ordinary),
+      });
+
+      // And the guard doing its job just past the bound, which is what makes the case below a gap
+      // in it rather than its absence.
+      expectClaim(past.loadRaised === null && past.loadDiagnostics.includes("LAYOUT_TOO_DEEP"), {
+        claimIds: ["STU-005"],
+        what: "a layout past the declared depth was not reported, so there is no guard for the deeper case to defeat",
+        detail: JSON.stringify(past),
+      });
+
+      expectEqual(far.loadRaised, null, {
+        claimIds: ["STU-005"],
+        what: "a layout far past the declared depth raised instead of being reported, so the depth guard is defeated by depth",
+        detail: JSON.stringify(far),
+      });
+    } finally {
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);
+
+battle(
+  {
+    claims: ["STU-005"],
+    title: "a layout that contains itself is reported by the stage that can see it",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // A section dropped into itself is what an editor with drag-and-drop produces, and the model
+    // clones a project structurally on the way in — which preserves the cycle rather than breaking
+    // it. `loadProject` reports `LAYOUT_TOO_DEEP`, which is the symptom of a cycle rather than the
+    // cycle, and then hands the project on.
+    //
+    // The stage that raises is `arrangementDiagnostics`, one package along, whose whole job is to
+    // count what it was given. A cycle has no count.
+    const result = runInConsumer(LAYOUTS);
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-005"],
+        what: "the studio packages could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      const { ordinary, cyclic } = result.out;
+      ctx.log.note("what a self-containing section did to each stage", { cyclic });
+
+      // The known-good case again: an ordinary layout is walked without raising, so the raise below
+      // is the cycle rather than the walker.
+      expectEqual(ordinary.arrangementRaised, null, {
+        claimIds: ["STU-005"],
+        what: "an ordinary layout raised while being counted, so nothing below is about the cycle",
+        detail: JSON.stringify(ordinary),
+      });
+
+      expectEqual(cyclic.arrangementRaised, null, {
+        claimIds: ["STU-005"],
+        what: "a layout that contains itself raised in a later package, after the loader accepted it",
+        detail: JSON.stringify(cyclic),
+      });
+    } finally {
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);
