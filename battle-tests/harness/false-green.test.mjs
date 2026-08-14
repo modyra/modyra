@@ -12,11 +12,17 @@
 
 import assert from "node:assert/strict";
 import test from "node:test";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { createOperationLog, assertExercised, EmptyBattleError } from "./operation-log.mjs";
 import { createRng, runSeed, resolveSeed, runCount } from "./seed.mjs";
 import { shrink } from "./shrinking.mjs";
 import { replay } from "./replay.mjs";
+import { buildReport, formatSummary } from "./reporting.mjs";
 import { createBattleContext } from "./context.mjs";
 import { diffCanonical, encodeValue } from "../models/observations.mjs";
 import { KEYED_ROWS_SPEC } from "../models/schemas.mjs";
@@ -171,4 +177,108 @@ test("replaying a report whose log is missing an operation says it did not repro
   // for the missing operation rather than for anything else about the report's shape.
   const whole = await replay({ schema: KEYED_ROWS_SPEC, operations, actual: recorded });
   assert.equal(whole.reproduced, true, "the complete log reproduces the recorded state");
+});
+
+test("a report that cannot be re-run does not print a command that pretends it can", () => {
+  const base = {
+    claimIds: ["COL-001"],
+    severity: "S1",
+    seed: 7,
+    environment: { name: "node", runtime: "node" },
+    message: "a break",
+    operations: [],
+  };
+
+  // A battle that attacks the public API directly has no schema and no sequence. Its report is a
+  // record; offering a replay command on it points the reader at a crash, and a reader who runs it
+  // and sees no failure learns the opposite of the truth.
+  const record = buildReport({ ...base, schema: null });
+  assert.equal(record.replayCommand, null, "a report with no schema offers no replay");
+  assert.match(formatSummary(record), /Replay: none/);
+
+  // A schema with nothing to drive it rebuilds an untouched form. Comparing that against the state
+  // a battle recorded would report a divergence the sequence never caused.
+  const nothingToDrive = buildReport({ ...base, schema: KEYED_ROWS_SPEC });
+  assert.equal(nothingToDrive.replayCommand, null, "a schema alone is not a replayable report");
+
+  const replayable = buildReport({
+    ...base,
+    schema: KEYED_ROWS_SPEC,
+    operations: [{ type: "record.upsert", path: "rows", key: "a", value: { code: "A" } }],
+  });
+  assert.ok(replayable.replayCommand, "a report carrying both halves says how to re-run it");
+  assert.match(formatSummary(replayable), /Replay: npm run battle:replay/);
+});
+
+test("the replay command answers about the report it was given, separator or not", async () => {
+  const context = createBattleContext({ spec: KEYED_ROWS_SPEC });
+  const operations = [
+    { type: "record.upsert", path: "rows", key: "a", value: { code: "A" } },
+    { type: "field.set", path: "rows.a.note", value: "one" },
+  ];
+  for (const operation of operations) await context.execute(operation);
+  const actual = context.observe("after the sequence");
+  await context.dispose();
+
+  const dir = mkdtempSync(join(tmpdir(), "mdy-replay-"));
+  const write = (name, report) => {
+    const file = join(dir, name);
+    writeFileSync(file, JSON.stringify(report), "utf8");
+    return file;
+  };
+  const run = (...args) =>
+    spawnSync(process.execPath, [fileURLToPath(new URL("./replay.mjs", import.meta.url)), ...args], {
+      encoding: "utf8",
+    });
+
+  try {
+    const good = write("reproduces.json", {
+      failureId: "SELF-CHECK-1",
+      message: "a sequence that reproduces",
+      seed: 1,
+      schema: KEYED_ROWS_SPEC,
+      operations,
+      actual,
+    });
+
+    const plain = run(good);
+    assert.equal(plain.status, 0, `a reproducing report exits clean: ${plain.stderr}`);
+    assert.match(plain.stdout, /Reproduced/);
+
+    // `npm run` eats the separator before the script sees it; pnpm hands it through. The command
+    // printed on every report is the same string under both, so a bare separator must not be read
+    // as the file to replay.
+    const separated = run("--", good);
+    assert.equal(separated.status, 0, `the separator is not an argument: ${separated.stderr}`);
+    assert.equal(separated.stdout, plain.stdout, "the separator changed nothing about the answer");
+
+    // And the answer it must never give: a report it cannot rebuild is refused, not called clean.
+    const unreplayable = write("record.json", {
+      failureId: "SELF-CHECK-2",
+      message: "a battle that attacked the API directly",
+      seed: 1,
+      schema: null,
+      operations: [],
+      actual,
+    });
+    const refused = run(unreplayable);
+    assert.notEqual(refused.status, 0, "an unreplayable report must not exit as though it passed");
+    assert.match(refused.stderr, /Not replayable/);
+
+    // A report that carries a state the tool cannot compare is the same answer for a different
+    // reason: the sequence ran, and reproduction is still unproven.
+    const incomparable = write("projection.json", {
+      failureId: "SELF-CHECK-3",
+      message: "a battle comparing its own projection",
+      seed: 1,
+      schema: KEYED_ROWS_SPEC,
+      operations,
+      actual: { rows: { a: { code: "A" } } },
+    });
+    const unproven = run(incomparable);
+    assert.notEqual(unproven.status, 0, "'I could not tell' must not exit as 'verified'");
+    assert.match(unproven.stderr, /Not verified/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
