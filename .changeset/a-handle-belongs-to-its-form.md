@@ -1,5 +1,5 @@
 ---
-"@modyra/core": patch
+"@modyra/core": minor
 ---
 
 A handle belongs to its form, not to the computation that asked for it
