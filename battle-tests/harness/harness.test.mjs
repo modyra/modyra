@@ -22,7 +22,6 @@ import { replay } from "./replay.mjs";
 
 const HARNESS_DIR = dirname(new URL(import.meta.url).pathname);
 const BATTLE_ROOT = resolve(HARNESS_DIR, "..");
-const FAILURES_DIR = join(BATTLE_ROOT, "reports", "failures");
 
 /**
  * Run a fixture battle in its own process and hand back its exit code and output.
@@ -31,8 +30,8 @@ const FAILURES_DIR = join(BATTLE_ROOT, "reports", "failures");
  * report into this process's runner and exit 0, which would turn "the fixture failed as designed"
  * into a silent pass — the exact shape of failure this file exists to rule out.
  */
-function runFixture(name) {
-  const env = { ...process.env };
+function runFixture(name, extraEnv = {}) {
+  const env = { ...process.env, ...extraEnv };
   for (const key of Object.keys(env)) {
     if (key.startsWith("NODE_TEST")) delete env[key];
   }
@@ -49,15 +48,17 @@ function runFixture(name) {
 }
 
 test("a failing battle writes a report that replays to the same state", async () => {
-  rmSync(FAILURES_DIR, { recursive: true, force: true });
+  // A directory of this check's own. The shared one holds the artefacts of every battle in the run,
+  // so emptying it would destroy a real failure's evidence, and reading "whichever JSON is there"
+  // would pick up another battle's report whenever one landed between the two steps.
+  const reportsDir = mkdtempSync(join(tmpdir(), "mdy-battle-reports-"));
 
-  const run = runFixture("failing-battle.fixture.mjs");
+  const run = runFixture("failing-battle.fixture.mjs", { MDY_BATTLE_REPORTS: reportsDir });
   assert.notEqual(run.code, 0, "the deliberately failing battle must fail");
   assert.match(run.output, /Replay: npm run battle:replay/, "the failure names how to replay it");
 
-  const reports = existsSync(FAILURES_DIR)
-    ? readFileSync(join(FAILURES_DIR, findReport(FAILURES_DIR)), "utf8")
-    : null;
+  const found = existsSync(reportsDir) ? findReport(reportsDir) : undefined;
+  const reports = found ? readFileSync(join(reportsDir, found), "utf8") : null;
   assert.ok(reports, "a failing battle writes a JSON artefact");
 
   const report = JSON.parse(reports);
@@ -70,6 +71,8 @@ test("a failing battle writes a report that replays to the same state", async ()
 
   const outcome = await replay(report);
   assert.equal(outcome.reproduced, true, "replaying the report reaches the recorded state");
+
+  rmSync(reportsDir, { recursive: true, force: true });
 });
 
 test("a battle that records no action fails", () => {

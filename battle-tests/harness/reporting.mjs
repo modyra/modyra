@@ -17,7 +17,17 @@ export const REPORT_SCHEMA_VERSION = 1;
 
 const BATTLE_ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..");
 const REPO_ROOT = resolve(BATTLE_ROOT, "..");
-export const FAILURES_DIR = join(BATTLE_ROOT, "reports", "failures");
+/**
+ * Where failure artefacts land.
+ *
+ * Overridable so a check that has to read back the report it just caused can point one battle at a
+ * directory of its own. The shared directory is one place, and a run executes many battles: a
+ * self-check that emptied it and then read whichever file appeared would delete a real failure's
+ * artefact and might read another battle's in its place.
+ */
+export const FAILURES_DIR = process.env.MDY_BATTLE_REPORTS
+  ? resolve(process.env.MDY_BATTLE_REPORTS)
+  : join(BATTLE_ROOT, "reports", "failures");
 
 /** Stable per failure content, so the same break rewrites one file instead of accumulating many. */
 export function failureId({ claimIds, message, seed, environment }) {
