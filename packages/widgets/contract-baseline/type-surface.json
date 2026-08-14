@@ -14,6 +14,14 @@
     "\"labelledby\"",
     "\"native\""
   ],
+  "MdyActivationError": [
+    "constructor(0) feature: string,-> returns: (inferred)",
+    "feature: string"
+  ],
+  "MdyAdapterContractError": [
+    "adapterKind: string",
+    "constructor(0) adapterKind: string,(1) reason: string,-> returns: (inferred)"
+  ],
   "MdyAffordance": [
     "part: string",
     "role: MdyAffordanceRole"
@@ -66,6 +74,9 @@
     "item: MdyAnyRowDescriptor",
     "kind: \"record\"",
     "validators: ReadonlyArray<ValidatorFn<never>>"
+  ],
+  "MdyAnyRowDescriptor": [
+    "(opaque)"
   ],
   "MdyArrayDescriptor": [
     "initial: ReadonlyArray<unknown>",
@@ -318,6 +329,11 @@
     "submitMode?: MdySubmitMode",
     "validators?: ReadonlyArray<MdyFormValidatorFn<TValue>>"
   ],
+  "MdyCrossRuntimeObservationError": [
+    "constructor(0) observerKind: string,(1) ownerKind?: string | undefined,-> returns: (inferred)",
+    "observerKind: string",
+    "ownerKind?: string | undefined"
+  ],
   "MdyDateDraftIntent": [
     "(opaque)"
   ],
@@ -457,6 +473,10 @@
     "viewMode: MdyCalendarViewMode",
     "viewMonth: number",
     "viewYear: number"
+  ],
+  "MdyDestroyedScopeError": [
+    "constructor(0) scopeId?: symbol | undefined,-> returns: (inferred)",
+    "scopeId?: symbol | undefined"
   ],
   "MdyDiagnostic": [
     "adapter?: string | undefined",
@@ -930,6 +950,61 @@
     "submit: Promise<void>",
     "submitValue: TSubmit",
     "value: MdySignal<T>"
+  ],
+  "MdyFormEngine": [
+    "activate-> returns: void",
+    "addValidators(0) name: string,(1) validators: ReadonlyArray<ValidatorFn<T>>,(2) isRequired?: boolean,-> returns: void",
+    "buildSubmitEvent(0) value: Record<string, unknown>,-> returns: MdyFormSubmitEvent<Record<string, unknown>>",
+    "canRedo: MdySignal<boolean>",
+    "canUndo: MdySignal<boolean>",
+    "carryBindings(0) pairs: ReadonlyArray<readonly [from: string, to: string]>,-> returns: void",
+    "claimField(0) name: string,-> returns: void",
+    "clearBindings(0) name: string,-> returns: void",
+    "clearDraft-> returns: void",
+    "constructor(0) _rx: MdyReactivity,(1) _formValue?: MdySignal<Record<string, unknown> | undefined>,(2) _submitMode?: MdySignal<MdySubmitMode>,(3) options?: MdyFormEngineOptions,-> returns: (inferred)",
+    "deactivate-> returns: void",
+    "deactivated: boolean",
+    "destroy-> returns: void",
+    "destroyed: boolean",
+    "disownField(0) name: string,-> returns: void",
+    "enableDraft(0) options: MdyDraftOptions,-> returns: void",
+    "enableHistory(0) options?: { readonly maxEntries?: number; readonly debounceMs?: number; },-> returns: void",
+    "endField(0) name: string,-> returns: void",
+    "errorsFor(0) path: string,-> returns: MdySignal<ReadonlyArray<MdyFormError>>",
+    "fieldNames: MdySignal<readonly string[]>",
+    "getChanges-> returns: Record<string, unknown>",
+    "getField(0) name: string,-> returns: MdyFieldRef<unknown> | null",
+    "getValue-> returns: Record<string, unknown>",
+    "hasDraft: MdySignal<boolean>",
+    "markAllTouched-> returns: void",
+    "mutate(0) fn: () => void,-> returns: void",
+    "ownField(0) name: string,-> returns: void",
+    "patchValue(0) partial: Partial<Record<string, unknown>>,-> returns: void",
+    "peekField(0) name: string,-> returns: MdyFieldRef<unknown> | null",
+    "protected _rx: MdyReactivity",
+    "reactivity: MdyReactivity",
+    "redo-> returns: void",
+    "refreshPathGate(0) prefix: string,-> returns: void",
+    "registerPathGate(0) prefix: string,(1) gate: MdyPathGate,-> returns: () => void",
+    "removeField(0) name: string,-> returns: void",
+    "removeValidators(0) name: string,(1) key: string,-> returns: void",
+    "reset-> returns: void",
+    "restoreValue(0) value: Record<string, unknown>,-> returns: void",
+    "setDisabled(0) name: string,(1) disabled: MdySignal<boolean>,-> returns: void",
+    "setFormValidators(0) validators: ReadonlyArray<MdyFormValidatorFn<Record<string, unknown>>>,-> returns: void",
+    "setInactive(0) name: string,(1) inactive: MdySignal<boolean>,-> returns: void",
+    "setInitialValue(0) name: string,(1) value: unknown,-> returns: void",
+    "setReadonly(0) name: string,(1) readonly: MdySignal<boolean>,-> returns: void",
+    "setSanitizer(0) name: string,(1) sanitizer: MdySanitizer,-> returns: void",
+    "setValue(0) value: Record<string, unknown>,-> returns: void",
+    "state: MdyFormState",
+    "submit(0) action: (v: Record<string, unknown>) => Promise<MdyFormError[] | void> | MdyFormError[] | void,-> returns: Promise<void>",
+    "submitValue-> returns: Record<string, unknown>",
+    "undo-> returns: void",
+    "upsertAsyncValidators(0) name: string,(1) key: string,(2) validators: ReadonlyArray<MdyAsyncValidatorFn<T>>,(3) options?: MdyAsyncValidatorOptions,-> returns: void",
+    "upsertValidators(0) name: string,(1) key: string,(2) validators: ReadonlyArray<ValidatorFn<T>>,(3) marksRequired?: boolean,-> returns: void",
+    "value: MdySignal<Record<string, unknown>>",
+    "warnDev(0) message: string,-> returns: void"
   ],
   "MdyFormEngineOptions": [
     "autoActivate?: boolean",
@@ -1712,6 +1787,82 @@
     "idleMs?: number",
     "now?: () => number"
   ],
+  "MdyTypedForm": [
+    "constructor(0) schema: S,(1) options?: MdyCoreFormOptions<MdyFormValue<S>>,-> returns: (inferred)",
+    "f: MdyFieldHandleTree<S>",
+    "protected _buildHandle(0) path: string,-> returns: MdyFieldHandle<unknown>",
+    "protected _flatToPatch(0) flat: Record<string, unknown>,-> returns: MdyFormPatch<S>",
+    "protected _flatToValue(0) flat: Record<string, unknown>,-> returns: MdyFormValue<S>",
+    "state: MdyFormState",
+    "value: MdySignal<MdyFormValue<S>>"
+  ],
+  "MdyTypedFormBase": [
+    "activate-> returns: void",
+    "addValidators(0) name: string,(1) validators: ReadonlyArray<ValidatorFn<T>>,(2) isRequired?: boolean,-> returns: void",
+    "buildSubmitEvent(0) value: MdySubmittedValue<S>,-> returns: MdyFormSubmitEvent<MdyFormValue<S>, MdySubmittedValue<S>>",
+    "canRedo: MdySignal<boolean>",
+    "canUndo: MdySignal<boolean>",
+    "claimField(0) name: string,-> returns: void",
+    "clearDraft-> returns: void",
+    "constructor(0) schema: S,(1) adapter: MdyFormEngine,(2) options?: MdyTypedFormBaseOptions<MdyFormValue<S>>,-> returns: (inferred)",
+    "deactivate-> returns: void",
+    "deactivated: boolean",
+    "destroy-> returns: void",
+    "destroyed: boolean",
+    "errorsFor(0) path: keyof MdyFormValue<S> | string,-> returns: MdySignal<ReadonlyArray<MdyFormError>>",
+    "f: unknown",
+    "fieldNames: MdySignal<readonly string[]>",
+    "getChanges-> returns: MdyFormPatch<S>",
+    "getField(0) name: K,-> returns: MdyFieldRef<MdyFormValue<S>[K]> | null",
+    "getField(0) name: string,-> returns: MdyFieldRef<unknown> | null",
+    "getValue-> returns: MdyFormValue<S>",
+    "hasDraft: MdySignal<boolean>",
+    "markAllTouched-> returns: void",
+    "mutate(0) fn: () => void,-> returns: void",
+    "onDestroy(0) teardown: () => void,-> returns: () => void",
+    "patch(0) partial: MdyFormPatch<S>,-> returns: void",
+    "patchValue(0) partial: Partial<MdyFormValue<S>>,-> returns: void",
+    "protected _adapter: MdyFormEngine",
+    "protected _applyFlatWithArrays(0) flat: Record<string, unknown>,-> returns: void",
+    "protected _arrayPaths: ReadonlySet<string>",
+    "protected _arrays: ReadonlyMap<string, MdyArrayManager>",
+    "protected _buildHandle(0) path: string,-> returns: THandle",
+    "protected _buildHandleTree(0) nodes: MdyFormSchema,(1) prefix: string,-> returns: Record<string, unknown>",
+    "protected _described(0) flat: Record<string, unknown>,-> returns: Record<string, unknown>",
+    "protected _describes(0) path: string,-> returns: boolean",
+    "protected _flatToPatch(0) flat: Record<string, unknown>,-> returns: MdyFormPatch<S>",
+    "protected _flatToSubmitted(0) flat: Record<string, unknown>,-> returns: MdySubmittedValue<S>",
+    "protected _flatToValue(0) flat: Record<string, unknown>,-> returns: MdyFormValue<S>",
+    "protected _flattenPatch(0) partial: Partial<MdyFormValue<S>> | MdyFormPatch<S>,-> returns: Record<string, unknown>",
+    "protected _groupPaths: ReadonlySet<string>",
+    "protected _leafPathSet: ReadonlySet<string>",
+    "protected _leafPaths: readonly string[]",
+    "protected _own(0) handle: T,-> returns: T",
+    "protected _pathGet(0) value: unknown,(1) path: string,-> returns: unknown",
+    "protected _recordPaths: ReadonlySet<string>",
+    "protected _records: ReadonlyMap<string, MdyRecordManager>",
+    "protected _registerSchema(0) nodes: MdyFormSchema,-> returns: void",
+    "protected _schema: S",
+    "protected cellHandle(0) path: string,-> returns: MdyFieldHandle<unknown>",
+    "reactivity: MdyReactivity",
+    "redo-> returns: void",
+    "removeField(0) name: string,-> returns: void",
+    "removeValidators(0) name: string,(1) key: string,-> returns: void",
+    "reset-> returns: void",
+    "setDisabled(0) name: string,(1) disabled: TBooleanSignal,-> returns: void",
+    "setInactive(0) name: string,(1) inactive: TBooleanSignal,-> returns: void",
+    "setInitialValue(0) name: string,(1) value: unknown,-> returns: void",
+    "setReadonly(0) name: string,(1) readonly: TBooleanSignal,-> returns: void",
+    "setSanitizer(0) name: string,(1) sanitizer: MdySanitizer,-> returns: void",
+    "setValue(0) value: MdyFormValue<S>,-> returns: void",
+    "state: MdyFormState",
+    "submit(0) action: (value: MdySubmittedValue<S>) => Promise<MdyFormError[] | void> | MdyFormError[] | void,-> returns: Promise<void>",
+    "submitValue-> returns: MdySubmittedValue<S>",
+    "undo-> returns: void",
+    "upsertAsyncValidators(0) name: string,(1) key: string,(2) validators: ReadonlyArray<MdyAsyncValidatorFn<T>>,(3) options?: MdyAsyncValidatorOptions,-> returns: void",
+    "upsertValidators(0) name: string,(1) key: string,(2) validators: ReadonlyArray<ValidatorFn<T>>,(3) marksRequired?: boolean,-> returns: void",
+    "value: MdySignal<MdyFormValue<S>>"
+  ],
   "MdyTypedFormBaseOptions": [
     "autoActivate?: boolean",
     "draft?: string | MdyDraftOptions",
@@ -1731,6 +1882,11 @@
     "errorsAfterDispose?: () => readonly string[]",
     "idsWhileMounted: ReadonlySet<string>",
     "pokeAfterDispose?: () => void"
+  ],
+  "MdyUnsupportedCapabilityError": [
+    "adapterKind: string",
+    "capability: string",
+    "constructor(0) capability: string,(1) adapterKind: string,-> returns: (inferred)"
   ],
   "MdyValidatorFacts": [
     "inputMode?: string",
