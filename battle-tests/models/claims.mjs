@@ -340,6 +340,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "A11Y-004",
+    title: "A widget asserts only the ARIA states its kind declares, on the part that carries them.",
+    area: "accessibility",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/widgets stateCarriers — which part exposes each state, per kind",
+      "@modyra/widgets widget-states — an undeclared state asserted is as much a defect as a declared state unchecked",
+      "@modyra/widgets widget-states — readonly is declared only where the concept means something",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
