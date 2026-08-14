@@ -7,7 +7,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import assert from "node:assert/strict";
@@ -16,6 +16,7 @@ import test from "node:test";
 import { auditBlackBox, auditedFileCount } from "./black-box-audit.mjs";
 import { diffCanonical, encodeValue, BattleHarnessError } from "../models/observations.mjs";
 import { createOperationLog, assertExercised, EmptyBattleError } from "./operation-log.mjs";
+import { assertFreshBuild, buildFreshness } from "./build-freshness.mjs";
 import { createRng, runSeed } from "./seed.mjs";
 import { claim } from "../models/claims.mjs";
 import { replay } from "./replay.mjs";
@@ -177,3 +178,41 @@ test("the black-box audit catches a source-level import", () => {
 function findReport(dir) {
   return readdirSync(dir).find((name) => name.endsWith(".json"));
 }
+
+test("a build older than its source is refused before anything is measured", () => {
+  const root = mkdtempSync(join(tmpdir(), "mdy-freshness-"));
+  try {
+    const pkg = join(root, "packages", "sample");
+    mkdirSync(join(pkg, "src"), { recursive: true });
+    mkdirSync(join(pkg, "dist"), { recursive: true });
+
+    // Built first, written second: the shape a fix in source and no rebuild leaves behind.
+    writeFileSync(join(pkg, "dist", "index.js"), "export {};\n", "utf8");
+    const built = Date.now() - 60_000;
+    utimesSync(join(pkg, "dist", "index.js"), built / 1000, built / 1000);
+    writeFileSync(join(pkg, "src", "index.ts"), "export {};\n", "utf8");
+
+    const stale = buildFreshness("sample", { root });
+    assert.equal(stale.known, true);
+    assert.equal(stale.fresh, false);
+    assert.ok(stale.behindBySeconds >= 30, `behind by ${stale.behindBySeconds}s`);
+    assert.throws(() => assertFreshBuild("sample", { root }), /built before it was last written/);
+
+    // And the other way round, so the guard is answering about the order rather than refusing any
+    // package it is handed.
+    const rebuilt = Date.now();
+    utimesSync(join(pkg, "dist", "index.js"), rebuilt / 1000, rebuilt / 1000);
+    const fresh = buildFreshness("sample", { root });
+    assert.equal(fresh.fresh, true);
+    assert.doesNotThrow(() => assertFreshBuild("sample", { root }));
+
+    // A package with nothing to compare is not a failure — it is a question this cannot answer.
+    const bare = join(root, "packages", "nodist");
+    mkdirSync(join(bare, "src"), { recursive: true });
+    writeFileSync(join(bare, "src", "index.ts"), "export {};\n", "utf8");
+    assert.equal(buildFreshness("nodist", { root }).known, false);
+    assert.doesNotThrow(() => assertFreshBuild("nodist", { root }));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

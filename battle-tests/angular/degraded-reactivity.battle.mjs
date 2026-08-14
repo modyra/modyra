@@ -29,6 +29,7 @@ import { createForm, field, minLength, required } from "@modyra/core";
 
 import { battle } from "../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../harness/assertions.mjs";
+import { assertFreshBuild } from "../harness/build-freshness.mjs";
 
 /** Collect what the engine says while `run` executes, without losing this battle's own output. */
 async function withConsoleCaptured(run) {
@@ -55,6 +56,12 @@ battle(
     environments: ["node"],
   },
   async (ctx) => {
+    // What this battle imports is a built artefact, and `packages/angular/dist` is written only by
+    // `build:angular` — nothing else touches it. Measuring it after a source change and before a
+    // rebuild reports the older version, and the report that produces is "the fix is not there",
+    // aimed at whoever wrote the fix.
+    ctx.log.note("the build this battle is about to measure", assertFreshBuild("angular"));
+
     const { angularReactivity } = await import("@modyra/angular/adapter");
     const reactivity = angularReactivity();
     ctx.log.note("what angular's reactivity reports with no injector", {
