@@ -16,6 +16,7 @@ npm run battle:quick        # the adversarial suites only
 npm run battle:generative   # the seeded campaigns alone
 npm run battle:campaign     # a long campaign (MDY_BATTLE_RUNS, default 400)
 npm run battle:browser      # the Plain lifecycle, in Chromium, on a bundled host page
+npm run battle:angular      # the Angular adapter, packed and installed, after building it
 npm run battle:audit        # the black-box rule: no reach past a package entry point
 npm run battle:replay -- battle-tests/reports/failures/<id>.json
 ```
@@ -106,6 +107,7 @@ ignores dotfiles.
 | `hostile-consumers/` | A consumer that installed the tarball, compared against the workspace. |
 | `scenarios/` | Realistic end-to-end battles: keyed invoice, virtual inventory, async registration. |
 | `browser/` | The host page a real browser mounts, and the lifecycle battles that read its DOM. |
+| `angular/` | The Angular adapter, which needs `build:angular` and so has a tier of its own. |
 | `regressions/` | Confirmed breaks, minimised, red before the fix that closed them. |
 | `reports/` | Failure artefacts from the last run. Not committed. |
 
