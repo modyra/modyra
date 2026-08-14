@@ -119,6 +119,9 @@ test("a collection inside a collection maps to one, at any depth and in either k
   // A row is read exactly like a schema key, so what a key would become a row becomes too. Mapping
   // the inner collection to a leaf handed the consumer one opaque value where the schema declared a
   // list, and no row could be added to it.
+  //
+  // A collection nests without a limit (ADR 0043), so a bridge that flattens the inner one states a
+  // restriction the engine does not have.
   const form = createZodForm(
     z.object({
       orders: z.array(z.object({
