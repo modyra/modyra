@@ -16,6 +16,12 @@
  * Either answer is defensible: refuse the argument at the call, or hold something the reads can
  * survive. What a public setter may not do is take the argument, return, and leave the form to
  * fail every later question.
+ *
+ * That this is a gap rather than a house style is what the second battle here establishes. Every
+ * other public entry point on a form, a collection handle and a cell — patch, setValue, upsert,
+ * setAll, rename, remove, cell, set — was handed the same seven wrong-shaped values and left the
+ * form answering all of them. `getField` and `removeField` go further and refuse everything that is
+ * not a path. The engine checks its arguments where they arrive; these setters are the exception.
  */
 
 import { createForm, vanillaReactivity } from "@modyra/core";
@@ -121,5 +127,45 @@ battle(
         // A form that cannot even be torn down is the same finding, already stated above.
       }
     }
+  },
+);
+
+battle(
+  {
+    claims: ["REA-002"],
+    title: "the engine checks a path at the door, and this is what makes the setter a gap",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // A path-taking entry point refuses everything that is not a path, at the call. That is the
+    // convention the setters above depart from — the same kind of parameter, the opposite answer.
+    for (const wrong of [undefined, null, 42, [], {}, () => "x"]) {
+      let refused = false;
+      const { form } = openWithRow();
+      try {
+        form.getField(wrong);
+      } catch {
+        refused = true;
+      }
+      ctx.log.note("a path-taking entry point handed something that is not a path", {
+        given: typeof wrong,
+        refused,
+      });
+
+      expectClaim(refused, {
+        claimIds: ["REA-002"],
+        what: `getField accepted ${String(wrong)} as a field path`,
+      });
+      form.destroy();
+    }
+
+    // And the control on the control: a real path is not refused, so the refusals above are the
+    // argument rather than getField refusing everything.
+    const { form } = openWithRow();
+    expectClaim(form.getField(PATH) !== undefined, {
+      claimIds: ["REA-002"],
+      what: "getField refused a path that names a declared cell",
+    });
+    form.destroy();
   },
 );
