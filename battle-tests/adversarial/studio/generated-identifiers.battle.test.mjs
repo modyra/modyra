@@ -767,3 +767,105 @@ battle(
     }
   },
 );
+
+/** Build one import block per case and report it, so the module can be checked out here. */
+const IMPORTS = `
+import { ImportResolver } from "@modyra/studio-codegen";
+
+const CASES = [
+  ["one source", (r) => r.add("@modyra/core", "field", "group")],
+  ["the same source twice", (r) => { r.add("@modyra/core", "field"); r.add("@modyra/core", "group"); }],
+  ["two sources, different names", (r) => { r.add("@modyra/core", "field"); r.add("@modyra/widgets", "required"); }],
+  ["two sources, the same name", (r) => { r.add("@modyra/core", "field"); r.add("@modyra/widgets", "field"); }],
+  ["a name that is not an identifier", (r) => r.add("@modyra/core", "with space")],
+  ["a name that is a reserved word", (r) => r.add("@modyra/core", "class")],
+  ["a source carrying a quote", (r) => r.add(String.fromCharCode(97, 34, 98), "field")],
+];
+
+const out = CASES.map(([label, build]) => {
+  const resolver = new ImportResolver();
+  build(resolver);
+  return { label, block: resolver.print() };
+});
+console.log(JSON.stringify(out));
+`;
+
+battle(
+  {
+    claims: ["STU-001"],
+    title: "an import block is one a module can be built from",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // `ImportResolver` is published, and a target assembling its own module uses it directly. What
+    // it prints is the first thing in the file, so anything wrong here costs the whole module rather
+    // than one declaration.
+    //
+    // Three of the cases below have their answer in this same package: a reserved word is what
+    // `isValidBindingName` decides, a name that is not identifier-shaped is what `toBindingName`
+    // repairs, and a source carrying a quote is what `printString` is for. None is consulted.
+    const result = runInConsumer(IMPORTS);
+    const scratch = mkdtempSync(join(tmpdir(), "mdy-imports-"));
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-001"],
+        what: "studio-codegen could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      /** Whether an import block can begin a module — asked of the parser, not of a rule. */
+      const compiles = (block) => {
+        const file = join(scratch, `m${Math.random().toString(36).slice(2)}.mjs`);
+        writeFileSync(file, `${block}
+export {};
+`, "utf8");
+        try {
+          execFileSync(process.execPath, ["--check", file], { stdio: "ignore" });
+          return true;
+        } catch {
+          return false;
+        }
+      };
+
+      const checked = result.out.map((each) => ({ ...each, compiles: compiles(each.block) }));
+      ctx.log.note("what each import block amounts to", {
+        blocks: checked.map((each) => [each.label, each.compiles, each.block.replace(/\n/g, " ")]),
+      });
+
+      // The known-good cases, in the same run: an ordinary block compiles, the same source twice is
+      // merged rather than repeated, and two sources with different names are two lines. So a
+      // failure below is the case under test rather than a check that refuses every import block.
+      for (const label of ["one source", "the same source twice", "two sources, different names"]) {
+        const each = checked.find((row) => row.label === label);
+        expectClaim(each.compiles === true, {
+          claimIds: ["STU-001"],
+          what: `${label} does not produce a usable import block, so nothing below is about the hostile cases`,
+          detail: JSON.stringify(each),
+        });
+      }
+
+      // And merging is what makes the same source twice safe, which is worth stating separately:
+      // two lines importing from one module is legal but is not what this resolver promises.
+      const merged = checked.find((each) => each.label === "the same source twice");
+      expectEqual((merged.block.match(/^import /gm) ?? []).length, 1, {
+        claimIds: ["STU-001"],
+        what: "the same source twice produced two import lines instead of one",
+        detail: JSON.stringify(merged),
+      });
+
+      const broken = checked
+        .filter((each) => !each.compiles)
+        .map((each) => ({ case: each.label, block: each.block.replace(/\n/g, " | ") }));
+
+      expectEqual(broken, [], {
+        claimIds: ["STU-001"],
+        what: "an import block was printed that no module can be built from",
+        detail: JSON.stringify(broken),
+      });
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);
