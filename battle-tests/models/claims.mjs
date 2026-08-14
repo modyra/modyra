@@ -232,6 +232,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "SEC-003",
+    title: "A sanitized value cannot form markup, wherever it entered the form.",
+    area: "security",
+    severity: "S0",
+    publicEvidence: [
+      "@modyra/core applyValueSecurity/MdySanitizeProfile",
+      "docs/guides/security.md — strict removes <, backtick and >; the value can never form markup",
+      "docs/guides/security.md — field sanitize, then security.sanitize, then off",
+    ],
+  },
+  {
     id: "SEC-002",
     title: "A value the panel masks is not readable elsewhere in the same panel.",
     area: "security",
