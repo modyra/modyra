@@ -29,7 +29,7 @@
  * of undefined.
  */
 
-import { parseDynamicForm } from "@modyra/core";
+import { MDY_DYNAMIC_DIAGNOSTICS, parseDynamicForm } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
@@ -182,6 +182,74 @@ battle(
         what: `strict mode approved a ${kind} document and kept none of its fields`,
         detail: JSON.stringify({ ok: parsed.ok, fields: parsed.fields, diagnostics: parsed.diagnostics }),
       });
+    }
+  },
+);
+
+battle(
+  {
+    claims: ["DYN-001", "DYN-003"],
+    title: "the code the contract publishes for a bad option list is the one a consumer gets",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // `MDY_DYNAMIC_DIAGNOSTICS` is the published table a consumer maps to their own messages, so the
+    // code is taken from there rather than written out here: a battle that hardcoded the string
+    // would still pass if the table stopped carrying it.
+    const entry = MDY_DYNAMIC_DIAGNOSTICS.find((each) => each.code === "MDY_DYNAMIC_OPTIONS_REQUIRED");
+    ctx.log.note("the published entry for a bad option list", { entry });
+
+    expectClaim(entry !== undefined, {
+      claimIds: ["DYN-003"],
+      what: "the contract no longer publishes a code for an option list it cannot use",
+    });
+
+    const parse = (field) =>
+      parseDynamicForm(
+        { version: 2, schema: { node: "group", children: { f: { node: "field", field } } } },
+        { mode: "lenient" },
+      );
+
+    // The control: a field with no option list to get wrong is kept and says nothing.
+    const text = parse({ kind: "text", label: "T" });
+    expectEqual([text.fields.length, text.diagnostics.length], [1, 0], {
+      claimIds: ["DYN-001"],
+      what: "a text field was dropped or complained about",
+    });
+
+    // And an option list that is merely empty is legitimate — choices that arrive later.
+    const empty = parse({ kind: "select", label: "S", options: [] });
+    expectEqual([empty.fields.length, empty.diagnostics.length], [1, 0], {
+      claimIds: ["DYN-001"],
+      what: "a select declaring no choices yet was dropped or complained about",
+    });
+
+    for (const [what, options] of [
+      ["no options key at all", undefined],
+      ["options: null", null],
+      ["options that are not a list", "x"],
+      ["an option that is empty", [{}]],
+      ["an option with no label", [{ value: "a" }]],
+    ]) {
+      const field = { kind: "select", label: "S" };
+      if (options !== undefined) field.options = options;
+      const parsed = parse(field);
+      ctx.log.note("a select whose option list cannot be used", {
+        what,
+        kept: parsed.fields.length,
+        codes: parsed.diagnostics.map((each) => each.code),
+      });
+
+      // The field is dropped either way. What must not happen is dropping it and saying nothing,
+      // because the code that says it exists and is published for exactly this.
+      expectClaim(
+        parsed.fields.length > 0 || parsed.diagnostics.some((each) => each.code === entry?.code),
+        {
+          claimIds: ["DYN-001", "DYN-003"],
+          what: `a select with ${what} was dropped without the published code that explains it`,
+          detail: JSON.stringify({ kept: parsed.fields.length, diagnostics: parsed.diagnostics }),
+        },
+      );
     }
   },
 );
