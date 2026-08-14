@@ -43,7 +43,10 @@ function buildNode(node, path, collectionPaths, asyncFor) {
     case "boolean":
       return buildLeaf(node, path, asyncFor);
     case "group":
-      return group(buildChildren(node.of, path, collectionPaths, asyncFor), node.when ? { when: node.when } : undefined);
+      return group(
+        buildChildren(node.of, path, collectionPaths, asyncFor),
+        node.when ? { when: compileCondition(node.when, path) } : undefined,
+      );
     case "record":
       collectionPaths.push(path);
       return record(buildItem(node.of, `${path}.*`, collectionPaths, asyncFor), {
@@ -59,9 +62,44 @@ function buildNode(node, path, collectionPaths, asyncFor) {
   }
 }
 
+/**
+ * A section's condition, written as data.
+ *
+ * `when` cannot be a function here. The spec's whole purpose is that a failure report rebuilds the
+ * identical form, and a function does not survive the JSON the report is written as: it arrives back
+ * as `null`, the section becomes unconditional, and the replay reconstructs a form that submits a
+ * branch the original excluded — a report that lies rather than one that fails to reproduce.
+ *
+ * So the shape is `{ field, equals }`, read against the value enclosing the section: a sibling cell
+ * for a section inside a row, a sibling field for one at the top of the form. It covers what the
+ * attacks need and no more; it grows when one of them needs a comparison it cannot state.
+ */
+function compileCondition(when, path) {
+  if (typeof when === "function") {
+    throw new Error(
+      `schema spec at ${path} declares \`when\` as a function; a report cannot carry one. ` +
+        `Use { field, equals } so the condition survives being written down.`,
+    );
+  }
+  if (!when || typeof when.field !== "string" || !("equals" in when)) {
+    throw new Error(
+      `schema spec at ${path} declares an unreadable \`when\`: ${JSON.stringify(when)}. ` +
+        `Expected { field, equals }.`,
+    );
+  }
+  const { field: name, equals } = when;
+  return (value, enclosing) => (enclosing ?? value)?.[name] === equals;
+}
+
 function buildItem(of, path, collectionPaths, asyncFor) {
   // A collection item is either a leaf or a group of leaves; the row shape is the item, once.
-  return of.kind ? buildNode(of, path, collectionPaths, asyncFor) : group(buildChildren(of, path, collectionPaths, asyncFor));
+  //
+  // The discriminator is a string, tested as one: a row whose cells include one named `kind` has a
+  // `kind` that is an object, and reading it as truthy silently declares the whole row to be that
+  // one cell. A fixture may name a cell whatever the domain calls it.
+  return typeof of.kind === "string"
+    ? buildNode(of, path, collectionPaths, asyncFor)
+    : group(buildChildren(of, path, collectionPaths, asyncFor));
 }
 
 function buildChildren(children, path, collectionPaths, asyncFor) {
@@ -125,6 +163,41 @@ export const POSITIONAL_ROWS_SPEC = Object.freeze({
         tax: Object.freeze({ kind: "text", async: true }),
       }),
       initial: Object.freeze([]),
+    }),
+  }),
+});
+
+/**
+ * A row whose shape depends on what the row says about itself.
+ *
+ * The section inside the row is the case a flat fixture cannot reach: its cells exist for some rows
+ * and not others, in a collection where the rows are data. It is where `VAL-003` — hidden controls
+ * do not alter validation semantics — and `COL-003` — validity is independent from what is mounted —
+ * meet, because a cell can now be absent for two unrelated reasons at once: nobody mounted it, and
+ * the row it belongs to does not have it.
+ *
+ * `tier` decides. The `full` branch carries a required cell, so an inactive section holding an
+ * unsatisfied requirement is expressible — the shape most likely to make a form unsubmittable for a
+ * reason no control can show.
+ */
+export const CONDITIONAL_ROWS_SPEC = Object.freeze({
+  version: MDY_SCHEMA_SPEC_VERSION,
+  fields: Object.freeze({
+    rows: Object.freeze({
+      kind: "record",
+      of: Object.freeze({
+        tier: Object.freeze({ kind: "text", initial: "basic" }),
+        code: Object.freeze({ kind: "text", required: true, initial: "C" }),
+        extras: Object.freeze({
+          kind: "group",
+          when: Object.freeze({ field: "tier", equals: "full" }),
+          of: Object.freeze({
+            reference: Object.freeze({ kind: "text", required: true }),
+            memo: Object.freeze({ kind: "text", initial: "unset" }),
+          }),
+        }),
+      }),
+      initial: Object.freeze({}),
     }),
   }),
 });
