@@ -235,6 +235,18 @@ export interface StudioPresentationModel {
 /** Depth cap for nested layout, matching Contract v2's own guard. */
 export const STUDIO_LAYOUT_MAX_DEPTH = 6;
 
+/**
+ * How deep a schema may nest, as a judgement about what an author can work with.
+ *
+ * Declared here because two packages hold an opinion about it and they were not the same one: the
+ * editor refuses to *place* a node past this, so nothing built in a session goes deeper, while the
+ * loader accepted any depth from a file and said nothing. A loader silently accepting what its own
+ * editor refuses to build is the shape of a project nobody can then edit.
+ *
+ * The editor reads this rather than declaring its own, so the two cannot drift apart again.
+ */
+export const STUDIO_SCHEMA_MAX_DEPTH = 32;
+
 export type StudioProjectMetadata = Record<string, unknown>;
 
 export interface MdyStudioProject {

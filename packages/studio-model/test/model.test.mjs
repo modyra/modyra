@@ -254,3 +254,37 @@ test("a layout nobody can walk is dropped and named, not carried to a crash", ()
   assert.ok(arranged.diagnostics.some((d) => d.code === "LAYOUT_TOO_DEEP"));
   assert.equal(arranged.project.presentation.layout.length, 1, "a walkable layout was dropped");
 });
+
+test("a schema deeper than the editor will place is reported, and one it cannot clone is refused", () => {
+  // A project carries two nested structures through the same `structuredClone`. The layout was
+  // guarded ahead of it and the schema reached the identical frame at the identical depth — the
+  // threshold was the evidence that it is one frame and not two defects that look alike.
+  const nest = (levels) => {
+    let node = { node: "field", id: "leaf", name: "leaf", fieldKind: "text", valueType: "string", initialValue: "", validators: [] };
+    for (let level = 0; level < levels; level += 1) {
+      node = { node: "group", id: `g${level}`, name: `g${level}`, children: [node] };
+    }
+    return node;
+  };
+  const withSchema = (schema) => ({
+    studioVersion: 1, id: "p", name: "P", schema,
+    formValidators: [], behaviors: {}, implementations: {}, presentation: {}, targets: {}, metadata: {},
+  });
+  const root = (levels) => withSchema({ node: "group", id: "root", name: "root", children: [nest(levels)] });
+
+  // Counted the way a placement is: `validatePlacement` accepts a leaf under `root + nest(31)` and
+  // refuses it under `root + nest(32)`, so that is where this has to change too.
+  assert.deepEqual(loadProject(root(31)).diagnostics, []);
+  assert.ok(loadProject(root(32)).diagnostics.some((d) => d.code === "SCHEMA_TOO_DEEP"));
+
+  // Past what can be processed the project is refused rather than degraded: a schema is not
+  // arrangement, and a project without one is not a project.
+  assert.throws(() => loadProject(root(4000)), /cannot be processed/);
+
+  const cyclic = { node: "group", id: "g", name: "g", children: [] };
+  cyclic.children.push(cyclic);
+  assert.throws(() => loadProject(withSchema(cyclic)), /contains itself/);
+
+  // The known-good case in the same run: an ordinary schema loads with nothing said.
+  assert.deepEqual(loadProject(root(5)).diagnostics, []);
+});

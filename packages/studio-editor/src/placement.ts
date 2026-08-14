@@ -3,11 +3,17 @@
  * max depth, duplicate sibling name, second array item, reserved name,
  * malformed command — *before* any command mutates the project.
  */
-import { RESERVED_NAMES } from "@modyra/studio-model";
+import { RESERVED_NAMES, STUDIO_SCHEMA_MAX_DEPTH } from "@modyra/studio-model";
 import type { MdyStudioProject, StudioDiagnostic, StudioIndexes } from "@modyra/studio-model";
 import type { Placement } from "./types.js";
 
-export const MAX_DEPTH = 32;
+/**
+ * How deep this editor will place a node.
+ *
+ * The model's bound rather than one of its own: a loader that accepts what this refuses produces a
+ * project nobody can edit, and two constants with the same job drift.
+ */
+export const MAX_DEPTH = STUDIO_SCHEMA_MAX_DEPTH;
 
 function depthOf(idx: StudioIndexes, nodeId: string): number {
   let depth = 0;
