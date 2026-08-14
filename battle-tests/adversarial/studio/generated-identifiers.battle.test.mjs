@@ -309,7 +309,11 @@ battle(
 const VALIDATORS = `
 import { buildFormModule } from "@modyra/studio-codegen";
 import { createBlankProject, loadProject } from "@modyra/studio-model";
-import { createCoreTarget } from "@modyra/studio-target-core";
+
+// A profile, not a target. \`buildFormModule\` takes the third of these and a target is not one —
+// handed a target it used to emit \`from "undefined"\` and say nothing, which this battle asserted
+// nothing about because it only ever looked at the bound.
+const PROFILE = { factoryImportSource: "@modyra/core", createCallName: "createForm" };
 
 const VALUES = [
   ["a whole number", 3],
@@ -328,11 +332,14 @@ const out = VALUES.map(([label, value]) => {
       validators: [{ id: "v1", kind: "minLength", value }] }],
   };
   const { project } = loadProject(draft);
-  const built = buildFormModule(project, new Map(), createCoreTarget());
+  const built = buildFormModule(project, new Map(), PROFILE);
+  // Matched with a multiline regex rather than split on a newline: this source is carried through a
+  // template literal, where a lone escape collapses into the character it names.
   // Matched with a multiline regex rather than split on a newline: this source is carried through a
   // template literal, where a lone escape collapses into the character it names.
   const line = ((built.code ?? "").match(/^.*amount.*$/m) ?? [null])[0]?.trim() ?? null;
-  return { label, line, diagnostics: (built.diagnostics ?? []).map((each) => each.code) };
+  const sources = [...(built.code ?? "").matchAll(/from "([^"]+)"/g)].map((each) => each[1]);
+  return { label, line, sources, diagnostics: (built.diagnostics ?? []).map((each) => each.code) };
 });
 console.log(JSON.stringify(out));
 `;
@@ -357,6 +364,20 @@ battle(
       ctx.log.note("what each bound became", { rows: rows.map((each) => [each.label, each.line, each.diagnostics]) });
 
       const byLabel = (label) => rows.find((each) => each.label === label);
+
+      // Before anything about bounds: the module this battle reads has to be one a consumer could
+      // compile. A profile missing its import source emits `from "undefined"`, and every assertion
+      // below would still pass while inspecting a module that cannot be used — which is what this
+      // battle did until the generator started refusing that profile.
+      const unresolvable = rows
+        .flatMap((each) => (each.sources ?? []).map((source) => ({ label: each.label, source })))
+        .filter((each) => !each.source.startsWith("@modyra/"));
+
+      expectEqual(unresolvable, [], {
+        claimIds: ["STU-002"],
+        what: "the generated module imports from somewhere no consumer could resolve, so nothing below is about a usable module",
+        detail: JSON.stringify(rows.map((each) => [each.label, each.sources])),
+      });
 
       // The control: a usable bound is emitted as itself and nothing is reported. Everything below
       // is measured against this.
