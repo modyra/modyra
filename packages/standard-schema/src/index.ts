@@ -190,8 +190,9 @@ export function buildStandardValidator<
       return [{ path: null, kind: "schema", message: ASYNC_MESSAGE }];
     }
     if (result.issues) {
+      const vendor = schema["~standard"].vendor;
       return result.issues.map((issue) => ({
-        path: issuePath(issue),
+        path: issuePath(issue, vendor),
         kind: "schema",
         message: issue.message,
       }));
@@ -216,8 +217,9 @@ export async function serverValidate(
 ): Promise<ReadonlyArray<MdyFormError>> {
   const result = await schema["~standard"].validate(payload);
   if (!result.issues) return [];
+  const vendor = schema["~standard"].vendor;
   return result.issues.map((issue) => ({
-    path: issuePath(issue),
+    path: issuePath(issue, vendor),
     kind: "schema",
     message: issue.message,
   }));
@@ -307,15 +309,59 @@ function patchInitials(
 }
 
 /** Issue path → dotted field path (`address.city`), null when global. */
-function issuePath(issue: MdyStandardIssue): string | null {
-  if (!issue.path || issue.path.length === 0) return null;
-  return issue.path
-    .map((segment) =>
-      String(
-        typeof segment === "object" && segment !== null && "key" in segment
-          ? segment.key
-          : segment,
-      ),
-    )
-    .join(".");
+function issuePath(issue: MdyStandardIssue, vendor: string): string | null {
+  const path: unknown = issue.path;
+  if (path === undefined || path === null) return null;
+  // The contract on this side is a TypeScript interface — a structural copy, with nothing checking
+  // the other end at runtime — so an issue is untrusted input like a document or a draft, and it is
+  // treated the way those are: reported and skipped, never thrown. A path that is not an array threw
+  // out of form-level validation, which runs on construction and on every write, so a library
+  // spelling one segment without its array left the consumer with no form at all.
+  if (!Array.isArray(path)) {
+    reportMalformedPath(vendor, "issue.path is not an array");
+    return null;
+  }
+  if (path.length === 0) return null;
+  const segments: string[] = [];
+  for (const segment of path) {
+    const key = segmentKey(segment);
+    if (key === null) {
+      reportMalformedPath(vendor, "a path segment is neither a key nor { key }");
+      return null;
+    }
+    segments.push(key);
+  }
+  return segments.join(".");
+}
+
+/** One path segment as the spec allows it to be written, or `null` when it is neither spelling. */
+function segmentKey(segment: unknown): string | null {
+  if (typeof segment === "string") return segment;
+  if (typeof segment === "number") return String(segment);
+  if (typeof segment === "object" && segment !== null && "key" in segment) {
+    const key: unknown = (segment as { key: unknown }).key;
+    if (typeof key === "string") return key;
+    if (typeof key === "number") return String(key);
+  }
+  return null;
+}
+
+/**
+ * Reported once per vendor and shape.
+ *
+ * Form-level validation runs on every write, so a malformed issue would otherwise write a line per
+ * keystroke — and the finding is about the library, which does not become truer by repetition. The
+ * vendor is named because `~standard.vendor` is right there and it is what ends the investigation.
+ */
+const reportedPaths = new Set<string>();
+
+function reportMalformedPath(vendor: string, what: string): void {
+  const key = `${vendor}:${what}`;
+  if (reportedPaths.has(key)) return;
+  reportedPaths.add(key);
+  console.warn(
+    `[modyra] @modyra/standard-schema: "${vendor}" returned an issue where ${what}. ` +
+    "Standard Schema v1 says a path is an array of keys or { key } objects; " +
+    "the message is kept and attributed to the form rather than to a field.",
+  );
 }

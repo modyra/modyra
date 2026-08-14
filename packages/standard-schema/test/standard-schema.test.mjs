@@ -234,3 +234,62 @@ test("serverValidate awaits async schemas (unlike the sync form-level validator)
     ["Invalid email"],
   );
 });
+
+test("a library that breaks the spec is reported, and the form still exists", () => {
+  // The contract on this side is a TypeScript interface — nothing checks the other end at runtime —
+  // so an issue is untrusted input. A path that is not an array threw out of form-level validation,
+  // which runs on construction and on every write: not a form missing one message, no form at all.
+  const malformed = (path) => ({
+    "~standard": {
+      version: 1,
+      vendor: "pretend-validator",
+      validate: () => ({ issues: [{ message: "something is wrong", path }] }),
+    },
+  });
+
+  for (const path of ["name", 3, { key: "name" }, new Set(["name"]), true, [() => {}], [undefined]]) {
+    const form = createStandardForm(malformed(path), { name: field("") });
+    // The message survives and is attributed to the form: a rule the engine cannot place is still a
+    // rule the user has to be told about.
+    assert.deepEqual(
+      form.errorsFor("")().map((e) => e.message),
+      ["something is wrong"],
+      `path ${JSON.stringify(String(path))} did not land at form level`,
+    );
+    form.destroy();
+  }
+});
+
+test("both spellings the spec allows still reach their field", () => {
+  // The boundary of the fix: reporting a malformed path must not make a legal one form-level.
+  const issue = (path) => ({
+    "~standard": {
+      version: 1,
+      vendor: "pretend-validator",
+      validate: () => ({ issues: [{ message: "too short", path }] }),
+    },
+  });
+
+  for (const path of [["name"], [{ key: "name" }], ["profile", "city"], [{ key: "profile" }, { key: "city" }]]) {
+    const form = createStandardForm(issue(path), { name: field(""), profile: group({ city: field("") }) });
+    const expected = path.map((segment) => (typeof segment === "object" ? segment.key : segment)).join(".");
+    assert.deepEqual(form.errorsFor(expected)().map((e) => e.message), ["too short"], `${expected} did not receive it`);
+    assert.deepEqual(form.errorsFor("")(), [], "a legal path was reported at form level as well");
+    form.destroy();
+  }
+});
+
+test("an absent, empty or null path stays form-level", () => {
+  for (const path of [undefined, null, []]) {
+    const schema = {
+      "~standard": {
+        version: 1,
+        vendor: "pretend-validator",
+        validate: () => ({ issues: [{ message: "form-level rule", path }] }),
+      },
+    };
+    const form = createStandardForm(schema, { name: field("") });
+    assert.deepEqual(form.errorsFor("")().map((e) => e.message), ["form-level rule"]);
+    form.destroy();
+  }
+});
