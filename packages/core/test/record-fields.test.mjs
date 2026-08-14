@@ -645,8 +645,8 @@ test("removing a row while its async validator is in flight settles cleanly", as
   assert.deepEqual(form.fieldNames(), ["rows"], "nothing of the row is left registered");
 });
 
-test("a document may nest a collection, and the parser answers for the same rule the runtime does", async () => {
-  const { parseDynamicForm, buildDynamicFormSchema, array } = await import("../dist/index.js");
+test("a document may nest a collection of either kind, at any depth", async () => {
+  const { parseDynamicForm, buildDynamicFormSchema } = await import("../dist/index.js");
 
   const recordInsideArray = {
     node: "group",
@@ -667,51 +667,25 @@ test("a document may nest a collection, and the parser answers for the same rule
   assert.deepEqual(built.getValue(), { rows: [{ k: "written" }] });
   built.destroy();
 
-  // What both refuse is a second *positional* level, wherever it sits.
-  const arrayInsideArray = parseDynamicForm({
-    version: 3,
-    schema: {
-      node: "group",
-      children: {
-        rows: {
-          node: "array",
-          item: { node: "array", item: { node: "field", field: { name: "leaf", kind: "text" } } },
-        },
+  // And a second positional level, which the parser used to refuse: its rows are named below the
+  // outer index, which is as addressable as the first level.
+  const arrayInsideArray = {
+    node: "group",
+    children: {
+      rows: {
+        node: "array",
+        item: { node: "array", item: { node: "field", field: { name: "leaf", kind: "text" } } },
       },
     },
-  });
-  assert.ok(
-    arrayInsideArray.diagnostics.some((d) => d.code === "MDY_DYNAMIC_INVALID_ARRAY"),
-    "the parser names the shape it cannot address",
-  );
-  const arrayUnderARowsRecord = parseDynamicForm({
-    version: 3,
-    schema: {
-      node: "group",
-      children: {
-        rows: {
-          node: "array",
-          item: {
-            node: "record",
-            item: { node: "array", item: { node: "field", field: { name: "leaf", kind: "text" } } },
-          },
-        },
-      },
-    },
-  });
-  assert.ok(
-    arrayUnderARowsRecord.diagnostics.some((d) => d.code === "MDY_DYNAMIC_INVALID_RECORD"),
-    "one positional level per path, however deep the second one sits",
-  );
+  };
+  const nestedParse = parseDynamicForm({ version: 3, schema: arrayInsideArray });
+  assert.deepEqual(nestedParse.diagnostics, [], "two positional levels parse");
 
-  assert.throws(
-    () => createForm({ rows: array(group({ inner: array(field("")) })) }),
-    /Nested collections/,
-  );
-  assert.throws(
-    () => createForm({ rows: array(group({ inner: record(group({ deep: array(field("")) })) })) }),
-    /Nested collections/,
-  );
+  const deep = createForm(buildDynamicFormSchema(arrayInsideArray));
+  deep.f.rows.push([]);
+  deep.f.rows.at(0).push("written");
+  assert.deepEqual(deep.getValue(), { rows: [["written"]] });
+  deep.destroy();
 });
 
 test("an array inside a record row is a document a form can run", async () => {
@@ -1013,22 +987,22 @@ test("reset returns both collections to what the schema declared", async () => {
   assert.deepEqual([...form.f.rows.keys()], ["s"]);
 });
 
-test("a nesting the runtime cannot execute is refused when the form is built", async () => {
+test("a row may hold a collection of either kind, at any depth", async () => {
   const { array } = await import("../dist/index.js");
 
-  // Not when a row arrives: a shape that cannot run must not survive long enough to produce paths
-  // nobody owns. The message says what a row may hold, so the list is readable from the failure.
-  // A path may cross one positional level: an array's row may hold a record, and that record may
-  // not hold an array.
+  // An array's row holding a keyed collection, and that keyed collection holding an array: three
+  // levels, both kinds, nothing refused.
   const inArray = createForm({ list: array(group({ inner: record(field("")) })) });
   inArray.f.list.push({ inner: { a: "x" } });
   assert.deepEqual(inArray.value().list, [{ inner: { a: "x" } }]);
   inArray.destroy();
-  assert.throws(
-    () => createForm({ list: array(group({ inner: array(field("")) })) }),
-    /Nested collections/,
-  );
-  // A record's row may hold both — that is phases A and B, and this is the shape they produce.
+
+  const twoPositional = createForm({ list: array(group({ inner: array(field("")) })) });
+  twoPositional.f.list.push({ inner: ["a", "b"] });
+  twoPositional.f.list.at(0).inner.push("c");
+  assert.deepEqual(twoPositional.value().list, [{ inner: ["a", "b", "c"] }]);
+  twoPositional.destroy();
+
   const nested = createForm({ rows: record(group({ inner: array(field("")) })) });
   nested.f.rows.upsert("r1", { inner: ["a", "b"] });
   assert.deepEqual(nested.value().rows.r1.inner, ["a", "b"]);
@@ -1037,31 +1011,36 @@ test("a nesting the runtime cannot execute is refused when the form is built", a
 
 // ─── The document's limits ───────────────────────────────────────────────────
 
-test("a document is held to its limits with records as with anything else", async () => {
+test("a deep document is walked rather than refused, and its content is still checked", async () => {
   const { parseDynamicForm } = await import("../dist/index.js");
   const leaf = () => ({ node: "field", field: { name: "leaf", kind: "text" } });
 
+  // Depth is the document's business. A hundred levels is a document, and the walk is iterative, so
+  // what used to be a refusal — and, without the cap, a stack overflow — is now an answer.
   let deep = leaf();
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 100; i += 1) {
     deep = { node: "record", item: { node: "group", children: { inner: deep } } };
   }
   const nested = parseDynamicForm({ version: 3, schema: { node: "group", children: { root: deep } } });
-  assert.ok(
-    nested.diagnostics.some((d) => d.code === "MDY_DYNAMIC_SCHEMA_LIMIT"),
-    "past the depth limit the document is refused, not walked for ever",
-  );
+  assert.deepEqual(nested.diagnostics, [], "a deep document parses");
 
-  const rows = Object.fromEntries(Array.from({ length: 101 }, (_, i) => [String(i), { n: "x" }]));
-  const tooMany = parseDynamicForm({
+  // What is still checked is content: a row key that cannot be a path segment names a row nothing
+  // can address, at any depth. Parsed from text, because that is how a document arrives — and
+  // because a `__proto__` key written as a literal sets a prototype instead of becoming one.
+  const unsafe = parseDynamicForm(JSON.parse(JSON.stringify({
     version: 3,
     schema: {
       node: "group",
       children: {
-        rows: { node: "record", item: { node: "group", children: { n: leaf() } }, initialValue: rows },
+        rows: {
+          node: "record",
+          item: { node: "group", children: { n: leaf() } },
+          initialValue: { placeholder: { n: "x" } },
+        },
       },
     },
-  });
-  assert.ok(tooMany.diagnostics.some((d) => d.code === "MDY_DYNAMIC_SCHEMA_LIMIT"));
+  }).replace('"placeholder"', '"__proto__"')));
+  assert.ok(unsafe.diagnostics.some((d) => d.code === "MDY_DYNAMIC_UNSAFE_NAME"));
 });
 
 test("a layout slot and a validation may address a row's leaf", async () => {
