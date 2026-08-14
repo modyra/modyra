@@ -126,20 +126,35 @@ battle(
     environments: ["node"],
   },
   async (ctx) => {
-    // The mechanism under the symptom, asserted directly so a fix can be checked without driving a
-    // selection: distinct options must have distinct keys, or every lookup through the index is a
-    // coin toss decided by insertion order.
-    const { options } = objectOptions();
+    // The mechanism under the symptom, asked through the controller's own derivation rather than a
+    // copy of it in this file. A battle that computes the key it then asserts about can only
+    // confirm what it already assumed — and the derivation was the defect.
+    const { values, options } = objectOptions();
     const controller = createSelectController({ widgetId: "w", options });
 
     try {
-      const keys = options.map((option) => String(option.value));
-      ctx.log.note("the key the default derives for each option", { keys });
+      // The key each option is bound under, read the way a renderer reads it.
+      const structural = ["trigger", "search", "listbox"];
+      const keys = Object.keys(controller.view().parts).filter((part) => !structural.includes(part));
+
+      // And the key the controller resolves each value to, which is the other half of the index:
+      // a list of distinct part keys is no use if two values still land on one of them.
+      const selected = values.map((value) => {
+        controller.setValue(value);
+        return controller.state().selectedKey;
+      });
+      ctx.log.note("the key each option is bound and selected under", { keys, selected });
 
       expectEqual(new Set(keys).size, options.length, {
         claimIds: ["UI-003"],
-        what: "the default key derivation gives two different options the same key",
+        what: "two different options are bound under the same part key",
         detail: JSON.stringify(keys),
+      });
+
+      expectEqual(new Set(selected).size, options.length, {
+        claimIds: ["UI-003"],
+        what: "two different options resolve to the same selected key",
+        detail: JSON.stringify(selected),
       });
 
       // The control: the controller does surface all three options, so the collapse is in the key

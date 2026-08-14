@@ -6,22 +6,24 @@
  * destroys the one thing that would let the user fix it", and a value that arrived from outside is
  * exactly the row a person has to see in order to resolve it.
  *
- * The timepicker seeds its draft with
- * `parseAnyTime(handle.value(), format) ?? currentTimeAsParsed()`. `parseAnyTime` is strict per
- * format — a `"12h"` picker reads `"10:37 AM"` and not `"10:37"` — so a value in the other notation
- * parses to `null` and the draft becomes **the current wall-clock time**. Confirming writes that.
+ * The timepicker seeded its draft with
+ * `parseAnyTime(handle.value(), format) ?? currentTimeAsParsed()`, and `parseAnyTime` read only the
+ * configured notation — a `"12h"` picker read `"10:37 AM"` and not `"10:37"`. A value in the other
+ * notation parsed to `null`, the draft became **the current wall-clock time**, and confirming wrote
+ * that over a time the user could see on the field.
  *
- *     field holds "10:37 AM", 12h picker  ->  draft 10:37 AM      (correct)
- *     field holds "10:37",    12h picker  ->  draft = now, and confirm writes now
+ * Both notations are read now, so what this battle guards is the property rather than the bug: the
+ * **instant** a field holds survives being opened and confirmed. That is deliberately not the same
+ * as the string surviving. A `"12h"` picker handed `"22:37"` writes back `"10:37 PM"` — the same
+ * moment, in the notation the field declares — and normalising the representation is what this
+ * package already does when it replaces a loosely matched option value with the option's own.
  *
- * A user opens the picker on a field that already shows a time, sees a different time on the dial,
- * and pressing the confirm button — which is what the dial is for — replaces what they had. Cancel
- * preserves it, so the loss requires the user to do the ordinary thing rather than the careful one.
+ * Asserting the string instead would demand that the output depend on whether the dial moved, which
+ * makes the same user action produce different data for invisible reasons.
  *
- * The mismatched value is reachable without anyone doing anything strange: a draft written by a
- * build configured `"24h"` and restored into one configured `"12h"`, an API or a `patch` supplying
- * the other notation, or a document whose author wrote the value by hand. `MDY_VALUE_CONTRACTS`
- * declares a timepicker's value nullable and says nothing about which notation it is in.
+ * Midnight and noon are in the fixtures because they are where a twelve-hour conversion goes wrong
+ * and where an off-by-twelve is invisible in every other case: `"00:15"` is `12:15 AM`, not
+ * `0:15 AM`, and `"12:00"` is `12:00 PM`, not `12:00 AM`.
  *
  * `null` is the case where "now" is the right answer and it is asserted as such: an empty picker
  * opening at the current time is what every picker does, and a fix must not take that away.
@@ -36,6 +38,23 @@ import {
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
+
+/**
+ * The instant a formatted time names, as minutes past midnight.
+ *
+ * Written here rather than taken from the package, so that a change to the engine's own parsing
+ * cannot make this battle agree with it by construction.
+ */
+function minutesPastMidnight(text) {
+  const twelveHour = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(String(text));
+  if (twelveHour) {
+    const hour = Number(twelveHour[1]) % 12;
+    const afternoon = twelveHour[3].toUpperCase() === "PM";
+    return (hour + (afternoon ? 12 : 0)) * 60 + Number(twelveHour[2]);
+  }
+  const twentyFour = /^(\d{1,2}):(\d{2})$/.exec(String(text));
+  return twentyFour ? Number(twentyFour[1]) * 60 + Number(twentyFour[2]) : null;
+}
 
 /** Open a picker over a field holding `initial`, confirm, and report what the field ends up with. */
 function openAndConfirm(initial, options = {}) {
@@ -59,8 +78,9 @@ battle(
     environments: ["node"],
   },
   async (ctx) => {
-    // The control: a value in the picker's own notation round-trips, so a failure below is the
-    // notation rather than confirm always overwriting.
+    // The control: a value in the picker's own notation comes back unchanged, character for
+    // character. Where the notation already matches there is nothing to normalise, so a failure
+    // here would be confirm overwriting rather than confirm normalising.
     const readable = openAndConfirm("10:37 AM");
     ctx.log.note("a value the picker can read", readable);
 
@@ -70,15 +90,27 @@ battle(
       detail: JSON.stringify(readable),
     });
 
-    // And one it cannot. The user did nothing but open the dial and press the button it is for.
-    for (const written of ["10:37", "22:37", "07:05"]) {
-      const outcome = openAndConfirm(written);
-      ctx.log.note("a value the picker cannot read in its configured notation", { written, ...outcome });
+    // And the notations the field may hold that the picker was not configured for. The moment has
+    // to survive; the spelling is the field's to declare.
+    for (const [written, format] of [
+      ["10:37", "12h"],
+      ["22:37", "12h"],
+      ["07:05", "12h"],
+      ["00:15", "12h"],
+      ["12:00", "12h"],
+      ["10:37 AM", "24h"],
+      ["10:37 PM", "24h"],
+      ["12:00 AM", "24h"],
+    ]) {
+      const outcome = openAndConfirm(written, { format });
+      const before = minutesPastMidnight(written);
+      const after = minutesPastMidnight(outcome.held);
+      ctx.log.note("a field whose notation is not the picker's", { written, format, ...outcome, before, after });
 
-      expectClaim(outcome.held === written, {
+      expectEqual(after, before, {
         claimIds: ["UI-006"],
-        what: `a time field holding ${JSON.stringify(written)} was replaced by opening the picker and confirming`,
-        detail: JSON.stringify(outcome),
+        what: `a time field holding ${JSON.stringify(written)} named a different moment after being opened and confirmed`,
+        detail: JSON.stringify({ written, format, held: outcome.held, before, after }),
       });
     }
   },
