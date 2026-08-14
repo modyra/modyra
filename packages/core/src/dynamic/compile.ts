@@ -133,34 +133,69 @@ export function buildDynamicFieldValidators(field: MdyDynamicField): {
  * contract's runtime support, not a preference about how to build forms.
  */
 export function buildDynamicFormSchema(schema: MdyDynamicGroupNode): MdyFormSchema {
+  /**
+   * Built bottom-up over an explicit stack, for the reason `validateDynamicSchema` is: a document is
+   * untrusted, its nesting has no cap, and a recursive walk lets the document decide how much stack
+   * to use. Overflowing is not a refusal a consumer can act on — it carries no path, cannot be
+   * caught by name, and looks exactly like a bug in their own code.
+   */
+  const built = new Map<MdyDynamicNode, unknown>();
+  const leaf = (node: MdyDynamicNode & { node: "field" }, name: string): unknown => {
+    const descriptor = { ...node.field, name } as MdyDynamicField;
+    // `marksRequired` is not passed on: a `required()` validator in the list already raises the
+    // field's own `required` signal, so the flag would be a second spelling of the same fact.
+    const { validators } = buildDynamicFieldValidators(descriptor);
+    return field(mdyEmptyValueFor(descriptor) as never, validators as never);
+  };
+
   const build = (node: MdyDynamicNode, name: string): unknown => {
-    if (node.node === "field") {
-      const descriptor = { ...node.field, name } as MdyDynamicField;
-      // `marksRequired` is not passed on: a `required()` validator in the list already raises the
-      // field's own `required` signal, so the flag would be a second spelling of the same fact.
-      const { validators } = buildDynamicFieldValidators(descriptor);
-      return field(mdyEmptyValueFor(descriptor) as never, validators as never);
+    const pending: Array<{ node: MdyDynamicNode; name: string; expanded: boolean }> = [
+      { node, name, expanded: false },
+    ];
+    while (pending.length > 0) {
+      const frame = pending[pending.length - 1]!;
+      if (frame.node.node === "field") {
+        built.set(frame.node, leaf(frame.node, frame.name));
+        pending.pop();
+        continue;
+      }
+      if (!frame.expanded) {
+        frame.expanded = true;
+        if (frame.node.node === "group") {
+          for (const [key, child] of Object.entries(frame.node.children)) {
+            pending.push({ node: child, name: key, expanded: false });
+          }
+        } else {
+          pending.push({ node: frame.node.item, name: frame.name, expanded: false });
+        }
+        continue;
+      }
+      pending.pop();
+      if (frame.node.node === "group") {
+        const children: Record<string, unknown> = {};
+        for (const [key, child] of Object.entries(frame.node.children)) children[key] = built.get(child);
+        built.set(frame.node, group(children as MdyFormSchema));
+        continue;
+      }
+      const item = built.get(frame.node.item) as never;
+      if (frame.node.node === "record") {
+        // Same template idea as an array's item: one row shape, whatever key it ends up under.
+        built.set(frame.node, record(item, {
+          ...(frame.node.initialValue !== undefined ? { initial: frame.node.initialValue } : {}),
+        }));
+        continue;
+      }
+      // The item descriptor is the template every row is built from, which is what keeps a pushed
+      // row identical to an initial one.
+      const validators: ValidatorFn<readonly unknown[]>[] = [];
+      if (frame.node.minItems !== undefined) validators.push(minLength(frame.node.minItems) as ValidatorFn<readonly unknown[]>);
+      if (frame.node.maxItems !== undefined) validators.push(maxLength(frame.node.maxItems) as ValidatorFn<readonly unknown[]>);
+      built.set(frame.node, array(item, {
+        ...(frame.node.initialValue !== undefined ? { initial: frame.node.initialValue } : {}),
+        ...(validators.length ? { validators } : {}),
+      }));
     }
-    if (node.node === "group") {
-      const children: Record<string, unknown> = {};
-      for (const [key, child] of Object.entries(node.children)) children[key] = build(child, key);
-      return group(children as MdyFormSchema);
-    }
-    if (node.node === "record") {
-      // Same template idea as an array's item: one row shape, whatever key it ends up under.
-      return record(build(node.item, name) as never, {
-        ...(node.initialValue !== undefined ? { initial: node.initialValue } : {}),
-      });
-    }
-    // The item descriptor is the template every row is built from, which is what keeps a pushed row
-    // identical to an initial one.
-    const validators: ValidatorFn<readonly unknown[]>[] = [];
-    if (node.minItems !== undefined) validators.push(minLength(node.minItems) as ValidatorFn<readonly unknown[]>);
-    if (node.maxItems !== undefined) validators.push(maxLength(node.maxItems) as ValidatorFn<readonly unknown[]>);
-    return array(build(node.item, name) as never, {
-      ...(node.initialValue !== undefined ? { initial: node.initialValue } : {}),
-      ...(validators.length ? { validators } : {}),
-    });
+    return built.get(node);
   };
 
   const root: Record<string, unknown> = {};

@@ -35,6 +35,20 @@ positional rule and no maximum depth, in a typed schema or in a parsed document.
   must not be the limit: a thousand-deep document is answered on its own merits rather than
   overflowing while being read.
 
+## Amendment: what "no limit" bounds, measured
+
+Removing the caps made the *parser* iterative and left the walks after it recursive, so the contract
+accepted documents the engine could not build — a `RangeError` at `createForm`, carrying no path and
+catchable by nothing. `buildDynamicFormSchema`, `walkSchema`, `collectItemPaths`, the
+collection-validator registration walk, the row-shape check and the schema normaliser now walk over
+explicit stacks; a document 100,000 levels deep parses, builds and creates a form.
+
+One bound remains and is stated rather than removed: instantiating a **row at every level** costs a
+frame per level, because each level's collection manager builds the next while its own call is on the
+stack. Measured, 200 levels of rows build and read back; 1000 do not. That is the runtime's stack
+rather than a rule of this decision, which is why no number is pinned in a test — the check that
+exists asserts the working depth and the agreement between parser and builder, not a ceiling.
+
 ## Consequences
 
 **A structural change at an outer level rebuilds every collection below it.** That was already true

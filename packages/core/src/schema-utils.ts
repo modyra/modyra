@@ -45,18 +45,27 @@ export function walkSchema(
   onArray?: (path: string, node: MdyAnyArrayDescriptor) => void,
   onRecord?: (path: string, node: MdyAnyRecordDescriptor) => void,
 ): void {
-  for (const [key, node] of Object.entries(nodes)) {
-    const path = prefix ? `${prefix}.${key}` : key;
-    if (node.kind === "field") {
-      onField(path, node);
-    } else if (node.kind === "array") {
-      onArray?.(path, node);
-    } else if (node.kind === "record") {
-      onRecord?.(path, node);
-    } else {
-      onGroup?.(path, node);
-      walkSchema(node.children, path, onField, onGroup, onArray, onRecord);
+  // Walked over an explicit stack: a schema built from a document has no declared depth limit, and a
+  // recursive walk would let the document decide how much stack the engine uses. The order is the
+  // one a recursive walk produced — a group's children immediately after the group.
+  const pending: Array<{ nodes: MdyFormSchema; prefix: string }> = [{ nodes, prefix }];
+  while (pending.length > 0) {
+    const { nodes: level, prefix: at } = pending.pop()!;
+    const groups: Array<{ nodes: MdyFormSchema; prefix: string }> = [];
+    for (const [key, node] of Object.entries(level)) {
+      const path = at ? `${at}.${key}` : key;
+      if (node.kind === "field") {
+        onField(path, node);
+      } else if (node.kind === "array") {
+        onArray?.(path, node);
+      } else if (node.kind === "record") {
+        onRecord?.(path, node);
+      } else {
+        onGroup?.(path, node);
+        groups.push({ nodes: node.children, prefix: path });
+      }
     }
+    for (let index = groups.length - 1; index >= 0; index -= 1) pending.push(groups[index]!);
   }
 }
 
@@ -74,21 +83,33 @@ function collectItemPaths(
   arrayPaths: Set<string>,
   recordPaths: Set<string>,
 ): void {
-  const node = item as { readonly kind?: string; readonly children?: MdyFormSchema; readonly item?: unknown };
-  if (node.kind === "group" && node.children) {
-    for (const [key, child] of Object.entries(node.children)) {
-      collectItemPaths(`${prefix}.${key}`, child, arrayPaths, recordPaths);
+  // Over a stack for the same reason `walkSchema` is: nesting is unbounded, and the depth a document
+  // declares must cost memory rather than stack.
+  const pending: Array<{ prefix: string; item: unknown }> = [{ prefix, item }];
+  while (pending.length > 0) {
+    const current = pending.pop()!;
+    const node = current.item as {
+      readonly kind?: string;
+      readonly children?: MdyFormSchema;
+      readonly item?: unknown;
+    };
+    if (node.kind === "group" && node.children) {
+      const entries = Object.entries(node.children);
+      for (let index = entries.length - 1; index >= 0; index -= 1) {
+        const [key, child] = entries[index]!;
+        pending.push({ prefix: `${current.prefix}.${key}`, item: child });
+      }
+      continue;
     }
-    return;
-  }
-  if (node.kind === "array") {
-    arrayPaths.add(prefix);
-    collectItemPaths(`${prefix}.*`, node.item, arrayPaths, recordPaths);
-    return;
-  }
-  if (node.kind === "record") {
-    recordPaths.add(prefix);
-    collectItemPaths(`${prefix}.*`, node.item, arrayPaths, recordPaths);
+    if (node.kind === "array") {
+      arrayPaths.add(current.prefix);
+      pending.push({ prefix: `${current.prefix}.*`, item: node.item });
+      continue;
+    }
+    if (node.kind === "record") {
+      recordPaths.add(current.prefix);
+      pending.push({ prefix: `${current.prefix}.*`, item: node.item });
+    }
   }
 }
 

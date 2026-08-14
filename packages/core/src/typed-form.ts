@@ -215,6 +215,47 @@ export interface MdyGroupOptions {
  * as nested groups, and a form that must round-trip a list declares {@link array} itself.
  */
 function nestDottedKeys<S extends MdyFormSchema>(schema: S): S {
+  return nestLevel(schema, normalizedBelow(schema)) as S;
+}
+
+/**
+ * Every node below `schema`, normalized, computed from the bottom up.
+ *
+ * A group's children and a collection's item are schemas of their own, and normalizing one by
+ * calling back into this file's entry point makes the schema's depth the call stack's depth. A
+ * schema built from a document has no declared limit, so the walk is explicit: nodes are collected
+ * downwards, then rebuilt in reverse, by which point every child a node needs is already done.
+ */
+function normalizedBelow(schema: MdyFormSchema): Map<unknown, unknown> {
+  const order: unknown[] = [];
+  const pending: unknown[] = Object.values(schema);
+  while (pending.length > 0) {
+    const node = pending.pop();
+    if (isGroupDescriptor(node)) {
+      order.push(node);
+      pending.push(...Object.values(node.children as MdyFormSchema));
+    } else if (isCollectionDescriptor(node)) {
+      order.push(node);
+      pending.push(node.item);
+    }
+  }
+  const normalized = new Map<unknown, unknown>();
+  for (let index = order.length - 1; index >= 0; index -= 1) {
+    const node = order[index];
+    if (isGroupDescriptor(node)) {
+      const children = nestLevel(node.children as MdyFormSchema, normalized);
+      normalized.set(node, children === node.children ? node : { ...node, children });
+      continue;
+    }
+    const collection = node as { readonly item: unknown };
+    const item = normalized.get(collection.item) ?? collection.item;
+    normalized.set(node, item === collection.item ? node : { ...(node as object), item });
+  }
+  return normalized;
+}
+
+/** One level of a schema, with dotted keys turned into the structure they describe. */
+function nestLevel(schema: MdyFormSchema, normalized: Map<unknown, unknown>): MdyFormSchema {
   const nested: Record<string, unknown> = {};
 
   /** Puts a node at `segments` under `level`, building the groups the path passes through. */
@@ -275,24 +316,11 @@ function nestDottedKeys<S extends MdyFormSchema>(schema: S): S {
   for (const [key, node] of Object.entries(schema)) {
     // A collection's item and a group's children are schemas of their own, and a path spelled
     // inside one describes structure exactly as it does at the root.
-    const normalized = normalizeNode(node);
-    if (normalized !== node || key.includes(".")) moved = true;
-    place(nested, key.split("."), key, normalized);
+    const replacement = normalized.get(node) ?? node;
+    if (replacement !== node || key.includes(".")) moved = true;
+    place(nested, key.split("."), key, replacement);
   }
-  return moved ? (nested as S) : schema;
-}
-
-/** The same normalization, one level down: a group's children, a collection's item. */
-function normalizeNode(node: unknown): unknown {
-  if (isGroupDescriptor(node)) {
-    const children = nestDottedKeys(node.children as MdyFormSchema);
-    return children === node.children ? node : { ...node, children };
-  }
-  if (isCollectionDescriptor(node)) {
-    const item = normalizeNode(node.item);
-    return item === node.item ? node : { ...node, item };
-  }
-  return node;
+  return moved ? nested as MdyFormSchema : schema;
 }
 
 /** A schema node whose shape repeats: an array's rows, a record's entries. */
@@ -1530,17 +1558,28 @@ export abstract class MdyTypedFormBase<
 
     /** The collections directly inside a row's item, with their sub-path through any groups. */
     const nestedIn = (item: unknown, prefix: string): Array<{ sub: string; node: CollectionNode }> => {
-      if (item === null || typeof item !== "object") return [];
-      const node = item as { kind?: string; children?: Record<string, unknown> };
-      if (node.kind === "group" && node.children) {
-        return Object.entries(node.children).flatMap(([key, child]) =>
-          nestedIn(child, prefix.length > 0 ? `${prefix}.${key}` : key),
-        );
+      const found: Array<{ sub: string; node: CollectionNode }> = [];
+      const pending: Array<{ item: unknown; prefix: string }> = [{ item, prefix }];
+      while (pending.length > 0) {
+        const current = pending.pop()!;
+        if (current.item === null || typeof current.item !== "object") continue;
+        const node = current.item as { kind?: string; children?: Record<string, unknown> };
+        if (node.kind === "group" && node.children) {
+          const entries = Object.entries(node.children);
+          for (let index = entries.length - 1; index >= 0; index -= 1) {
+            const [key, child] = entries[index]!;
+            pending.push({
+              item: child,
+              prefix: current.prefix.length > 0 ? `${current.prefix}.${key}` : key,
+            });
+          }
+          continue;
+        }
+        if (node.kind === "array" || node.kind === "record") {
+          found.push({ sub: current.prefix, node: node as unknown as CollectionNode });
+        }
       }
-      if (node.kind === "array" || node.kind === "record") {
-        return [{ sub: prefix, node: node as unknown as CollectionNode }];
-      }
-      return [];
+      return found;
     };
 
     const rowsOf = (node: CollectionNode, value: unknown): Array<[string, unknown]> =>
@@ -1548,7 +1587,28 @@ export abstract class MdyTypedFormBase<
         ? (Array.isArray(value) ? value.map((row, index) => [String(index), row] as [string, unknown]) : [])
         : (isRecordValue(value) ? Object.entries(value) : []);
 
-    const register = (node: CollectionNode, instances: (nested: unknown) => Instance[]): void => {
+    /**
+     * Registers a collection's validators and those of every collection below it.
+     *
+     * Over a queue rather than by recursion: nesting has no cap, and a document deep enough to
+     * exhaust the stack here would fail while the form is being built, with an error naming neither
+     * the document nor the path.
+     */
+    const register = (root: CollectionNode, rootInstances: (nested: unknown) => Instance[]): void => {
+      const pending: Array<{ node: CollectionNode; instances: (nested: unknown) => Instance[] }> = [
+        { node: root, instances: rootInstances },
+      ];
+      while (pending.length > 0) {
+        const { node, instances } = pending.pop()!;
+        registerOne(node, instances, pending);
+      }
+    };
+
+    const registerOne = (
+      node: CollectionNode,
+      instances: (nested: unknown) => Instance[],
+      pending: Array<{ node: CollectionNode; instances: (nested: unknown) => Instance[] }>,
+    ): void => {
       if (node.validators.length > 0) {
         out.push((flat) => {
           const nested = numericKeysToArrays(unflatten(flat), this._arrayPaths, this._recordPaths);
@@ -1566,14 +1626,16 @@ export abstract class MdyTypedFormBase<
         });
       }
       for (const { sub, node: child } of nestedIn(node.item, "")) {
-        register(child, (nested) =>
-          instances(nested).flatMap(({ path, value }) =>
-            rowsOf(node, value).map(([key, row]) => ({
-              path: `${path}.${key}.${sub}`,
-              value: this._pathGet(row, sub),
-            })),
-          ),
-        );
+        pending.push({
+          node: child,
+          instances: (nested) =>
+            instances(nested).flatMap(({ path, value }) =>
+              rowsOf(node, value).map(([key, row]) => ({
+                path: `${path}.${key}.${sub}`,
+                value: this._pathGet(row, sub),
+              })),
+            ),
+        });
       }
     };
 
