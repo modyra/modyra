@@ -17,6 +17,7 @@ import {
   MdyOnCleanup,
   MdyReactiveScope,
   MdyReactivity,
+  vanillaReactivity,
   MdyScopeOptions,
   MdySignal,
   MdySignalOptions,
@@ -71,11 +72,56 @@ function makeEffectRef(
   };
 }
 
+/**
+ * Whether the Solid build this process resolved has a live graph.
+ *
+ * Node without the `browser` export condition resolves `solid-js/dist/server.cjs` — the build a
+ * **server render** uses. There `createMemo` computes once and never again and `createEffect` never
+ * runs, so every derived value in a form freezes at the state it was created in: a form with an
+ * empty `required` field reports `valid: true` and `canSubmit: true`, and keeps reporting it after a
+ * write.
+ *
+ * That is the dangerous direction. A server consulting the form to decide whether to accept a
+ * submission is told yes about a form that is not valid, and nothing raises.
+ *
+ * Probed rather than sniffed for a filename: the question is whether a computation re-runs, and
+ * asking it directly answers for any build, bundler or future version. One signal and one memo, once
+ * per call.
+ */
+function graphRecomputes(): boolean {
+  const value = createSignal(0);
+  const doubled = createMemo(() => value[0]() * 2);
+  value[1](1);
+  return doubled() === 2;
+}
+
+let inertGraphReported = false;
+
 /** Modyra's reactive contract implemented on Solid's native signals. */
 export function solidReactivity(): MdyReactivity &
   MdyBatchingCapability &
   MdyFlushCapability &
   MdyObserveCapability {
+  if (!graphRecomputes()) {
+    // The vanilla graph, wearing this runtime's name. A server render reads each value once and
+    // emits markup, which vanilla does correctly and this build cannot do at all — so falling back
+    // renders a form that tells the truth, where refusing would render nothing and continuing would
+    // render a form claiming to be valid. The client build has a live graph and never reaches here,
+    // so hydration runs on Solid's own signals as always.
+    if (!inertGraphReported) {
+      inertGraphReported = true;
+      console.warn(
+        "[modyra] @modyra/solid: this process resolved Solid's server build, whose computations " +
+        "never re-run — a form on it would freeze at its initial state and report itself valid. " +
+        "Falling back to the framework-agnostic graph for this render; the client build is " +
+        "unaffected.",
+      );
+    }
+    return { ...vanillaReactivity(), kind: "solid" } as MdyReactivity &
+      MdyBatchingCapability &
+      MdyFlushCapability &
+      MdyObserveCapability;
+  }
   return {
     id: Symbol("solid"),
     kind: "solid",
