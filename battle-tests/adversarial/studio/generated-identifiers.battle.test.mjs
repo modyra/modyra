@@ -1041,7 +1041,10 @@ const attempt = (label, levels) => {
 console.log(JSON.stringify({
   placementBound: MAX_DEPTH,
   ordinary: attempt("an ordinary schema", 5),
-  atTheEditorsBound: attempt("as deep as the editor will place", MAX_DEPTH),
+  // A leaf wrapped in N groups sits inside a root group too, so it has N + 1 ancestors. The
+  // editor's bound counts ancestors, which makes one fewer wrapping group the deepest it will
+  // place — verified against the loader, which changes its answer at exactly that point.
+  atTheEditorsBound: attempt("as deep as the editor will place", MAX_DEPTH - 1),
   pastIt: attempt("deeper than the editor will place", MAX_DEPTH + 8),
   far: attempt("far deeper than anything", 4000),
 }));
@@ -1058,8 +1061,13 @@ battle(
     // promise it names is the model's, and a project carries two nested structures through the same
     // clone. This is the other one.
     //
-    // The editor refuses to *place* a node deeper than `MAX_DEPTH`, so nothing built in it goes
-    // past 32. A project arrives from a file, and the loader asks nothing.
+    // The editor refuses to *place* a node past `MAX_DEPTH` ancestors, so nothing built in a session
+    // goes deeper. A project arrives from a file, and the loader asks nothing.
+    //
+    // The two bounds count different things and agree on the number: this fixture nests inside a
+    // root group, so `MAX_DEPTH - 1` wrapping groups is the deepest the editor will place. Reading
+    // the constant and reasoning about it gave the wrong fixture; the loader's own answer gave the
+    // right one.
     const result = runInConsumer(SCHEMAS);
 
     try {
@@ -1092,11 +1100,16 @@ battle(
         detail: JSON.stringify(pastIt),
       });
 
-      // And the depth that defeats the clone the project passes through on the way in. The layout
-      // is guarded ahead of that clone now; the schema goes through the same one.
-      expectEqual(far.raised, null, {
+      // And the depth that defeats the clone the project passes through on the way in.
+      //
+      // Refusing is right here and reporting was not: an arrangement can be dropped because a
+      // project without one is still a project, and a project without a schema is not. What the
+      // refusal must not be is the clone giving way — a RangeError is the runtime running out of
+      // stack, which names nothing, arrives from a frame nobody wrote, and looks the same as a
+      // defect in the host.
+      expectEqual(far.raised, "StudioModelError", {
         claimIds: ["STU-005"],
-        what: "a deep schema raised instead of being reported, so the guard ahead of the clone covers one of the two structures it walks",
+        what: "a schema too deep to process was refused by something other than the model, so the guard is not ahead of the clone",
         detail: JSON.stringify(far),
       });
     } finally {
