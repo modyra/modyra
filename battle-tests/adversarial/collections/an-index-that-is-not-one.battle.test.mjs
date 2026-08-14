@@ -20,14 +20,16 @@
  * rather than a lost one.
  *
  * The assertion is the engine's own answer applied consistently: a value that cannot name a position
- * is treated the way `-1` already is.
+ * is treated the way `-1` already is. The keyed collection beside it already answers that way for
+ * every one of these values, which is the second battle here — same engine, same operation, and a
+ * row is never removed for a key that names none.
  */
 
 import { createForm, vanillaReactivity } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectEqual } from "../../harness/assertions.mjs";
-import { buildSchema, POSITIONAL_ROWS_SPEC } from "../../models/schemas.mjs";
+import { KEYED_ROWS_SPEC, buildSchema, POSITIONAL_ROWS_SPEC } from "../../models/schemas.mjs";
 
 /** Values a computed index arrives as when the computation had nothing to work with. */
 const NOT_POSITIONS = Object.freeze([
@@ -113,6 +115,66 @@ battle(
       expectEqual(afterMove, "ABC", {
         claimIds: ["COL-001", "COL-005"],
         what: `move(0, ${what}) reordered the list`,
+      });
+    }
+  },
+);
+
+battle(
+  {
+    claims: ["COL-001", "COL-002"],
+    title: "a key that names no row removes none, whatever it is",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const twoRows = () => {
+      const form = createForm(buildSchema(KEYED_ROWS_SPEC).schema, {
+        reactivity: vanillaReactivity(),
+        devWarnings: false,
+      });
+      for (const key of ["a", "b"]) form.f.rows.upsert(key, { code: key.toUpperCase() });
+      return form;
+    };
+    const keys = (form) => [...form.f.rows.keys()].join(",");
+
+    // The control: a key that names a row removes it, so the collection below is not one that
+    // ignores everything.
+    const working = twoRows();
+    working.f.rows.remove("a");
+    expectEqual(keys(working), "b", {
+      claimIds: ["COL-001"],
+      what: "remove did not remove the row its key named",
+    });
+    working.destroy();
+
+    // Everything a computed key arrives as when the computation had nothing: refused at the call or
+    // ignored, and never read as "the first one". This is the behaviour the positional collection
+    // above does not have.
+    for (const [what, key] of [
+      ["undefined", undefined],
+      ["null", null],
+      ["a number", 1],
+      ["zero", 0],
+      ["an object", {}],
+      ["an array", []],
+      ["an empty string", ""],
+      ["__proto__", "__proto__"],
+      ["a boolean", true],
+    ]) {
+      const form = twoRows();
+      let refused = false;
+      try {
+        form.f.rows.remove(key);
+      } catch {
+        refused = true;
+      }
+      const after = keys(form);
+      ctx.log.note("a keyed collection given something that is not a key", { what, refused, after });
+      form.destroy();
+
+      expectEqual(after, "a,b", {
+        claimIds: ["COL-001", "COL-002"],
+        what: `remove(${what}) took a row out of a keyed collection`,
       });
     }
   },
