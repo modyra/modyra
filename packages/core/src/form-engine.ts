@@ -110,6 +110,12 @@ export interface MdyFormEngineOptions {
  * from who may create a field.
  */
 
+/** What a binder has said about one path: the halves of {@link MdyInteractivity} it may state. */
+interface MdyPathBinding {
+  readonly disabled?: MdySignal<boolean>;
+  readonly readonly?: MdySignal<boolean>;
+}
+
 export class MdyFormEngine
   implements MdyFormAdapter<Record<string, unknown>>, MdyCollectionHost {
   private readonly _fields = new Map<string, FieldRecord>();
@@ -145,10 +151,7 @@ export class MdyFormEngine
    * held only there would be dropped by a structural change the control never saw — leaving a
    * control that believes it is disabled over a field that is submitted.
    */
-  private readonly _bindings = new Map<string, {
-    disabled?: MdySignal<boolean>;
-    readonly?: MdySignal<boolean>;
-  }>();
+  private readonly _bindings = new Map<string, MdyPathBinding>();
   /**
    * Records handed to callers for refused paths: inert, absent from `_fields` and from
    * `fieldNames`, so they contribute neither value nor validity. Cached so repeated lookups of the
@@ -524,6 +527,20 @@ export class MdyFormEngine
   }
 
   /** Drops the record and everything keyed by its name. */
+  /**
+   * Ends a field because the collection that declared it says so.
+   *
+   * {@link removeField} answers to a control releasing its claim and refuses to end a field a row
+   * owns; this is the row's own word, used when a collection replaces a subtree in place — a nested
+   * list rewritten by a reorder above it, whose old rows are nobody's any more. Without it those
+   * fields survive, and the reconciliation that reads field names absorbs them back as rows.
+   */
+  endField(name: string): void {
+    this._claims.delete(name);
+    this._owned.delete(name);
+    this._destroyField(name);
+  }
+
   private _destroyField(name: string): void {
     const rec = this._fields.get(name);
     if (!rec) return;
@@ -689,10 +706,50 @@ export class MdyFormEngine
     this._getOrCreate(name).readonly.set(readonly);
   }
 
-  private _bind(name: string, binding: {
-    disabled?: MdySignal<boolean>;
-    readonly?: MdySignal<boolean>;
-  }): void {
+  /**
+   * Moves what a binder said about a set of paths onto the paths their rows now have.
+   *
+   * A row that changes identity — renamed, or moved to another index — carries its value, its
+   * verdicts and the marks a user left on it. What a control said about a cell is the same kind of
+   * thing: it belongs to the row, not to the spelling of its path, and a binding left behind would
+   * suppress a cell of whichever row arrives at that path next.
+   *
+   * The *value* is carried, not the signal. The signal belongs to a control bound to the old path,
+   * and a control stays where it is while rows move under it: carrying the signal itself would let
+   * that control keep speaking for a row it no longer shows. A control that follows its row says so
+   * again on its next render, which replaces this snapshot.
+   *
+   * Every pair is read before any is written, so a swap does not clear what it has just carried.
+   */
+  carryBindings(pairs: ReadonlyArray<readonly [from: string, to: string]>): void {
+    const carried: Array<{ from: string; to: string; binding: MdyPathBinding }> = [];
+    for (const [from, to] of pairs) {
+      const binding = this._bindings.get(from);
+      if (binding) carried.push({ from, to, binding });
+    }
+    for (const { from } of carried) this.clearBindings(from);
+    for (const { to, binding } of carried) {
+      const snapshot: { disabled?: MdySignal<boolean>; readonly?: MdySignal<boolean> } = {};
+      if (binding.disabled) snapshot.disabled = this._rx.signal(this._rx.untracked(() => binding.disabled!()));
+      if (binding.readonly) snapshot.readonly = this._rx.signal(this._rx.untracked(() => binding.readonly!()));
+      this._bindings.set(to, { ...this._bindings.get(to), ...snapshot });
+      const rec = this._fields.get(to) ?? this._detachedFields.get(to);
+      if (!rec) continue;
+      if (snapshot.disabled) rec.disabled.set(snapshot.disabled);
+      if (snapshot.readonly) rec.readonly.set(snapshot.readonly);
+    }
+  }
+
+  /** Releases a path's binding and, where the field is there, what it was saying. */
+  clearBindings(name: string): void {
+    this._bindings.delete(name);
+    const rec = this._fields.get(name) ?? this._detachedFields.get(name);
+    if (!rec) return;
+    rec.disabled.set(this._rx.signal(false));
+    rec.readonly.set(this._rx.signal(false));
+  }
+
+  private _bind(name: string, binding: MdyPathBinding): void {
     this._bindings.set(name, { ...this._bindings.get(name), ...binding });
   }
 

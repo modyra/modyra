@@ -71,11 +71,13 @@ const CLAIMS = [
   },
   {
     id: "COL-007",
-    title: "Rename preserves the state promised by the public contract.",
+    title: "Rename preserves the state promised by the public contract, bindings included.",
     area: "collection",
     severity: "S1",
-    publicEvidence: ["@modyra/core MdyRecordHandle.rename — carries value, validity and touched"],
-    permittedDifferences: ["dirty is not named by the contract as carried"],
+    publicEvidence: [
+      "@modyra/core MdyRecordHandle.rename — carries value, validity and touched",
+      "docs/architecture/0044-a-binding-belongs-to-the-row.md",
+    ],
   },
   {
     id: "COL-008",
@@ -151,11 +153,12 @@ const CLAIMS = [
   },
   {
     id: "REA-001",
-    title: "Handles are observed through their owning runtime.",
+    title: "Every handle a form hands out is observed through its owning runtime.",
     area: "reactivity",
     severity: "S1",
     publicEvidence: [
       "@modyra/core observerFor/registerHandleOwner/getFieldHandleOwner",
+      "@modyra/core MdyTypedForm.f — field handles, collection handles and row trees alike",
       "docs/architecture/0033-one-engine-in-the-tree.md",
     ],
   },

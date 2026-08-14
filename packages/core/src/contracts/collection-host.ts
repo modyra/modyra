@@ -35,6 +35,19 @@ export interface MdyCollectionHost<TBooleanSignal = MdySignal<boolean>>
   getField(name: string): MdyFieldRef<unknown> | null;
   /** Every field name the form currently holds. */
   fieldNames(): readonly string[];
+  /**
+   * Moves what a binder said about these paths onto the paths their rows now have — see
+   * {@link import("../form-engine.js").MdyFormEngine.carryBindings}. A collection calls it when a
+   * row changes identity, so a disabled cell stays disabled on the row the consumer disabled.
+   */
+  carryBindings(pairs: ReadonlyArray<readonly [from: string, to: string]>): void;
+  /**
+   * Ends a field because the collection that declared it says so — see
+   * {@link import("../form-engine.js").MdyFormEngine.endField}.
+   */
+  endField(name: string): void;
+  /** Releases a path's binding: the row that held it has ended. */
+  clearBindings(name: string): void;
   /** The errors attributed to a path, including the form-level ones that name it. */
   errorsFor(path: string): MdySignal<ReadonlyArray<MdyFormError>>;
 

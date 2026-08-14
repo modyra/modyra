@@ -221,7 +221,15 @@ export class MdyRecordManager implements MdyNestedCollection {
    * and two managers over one path would both answer the gate for it.
    */
   private _declareNested(path: string, node: MdyAnyRecordDescriptor, value: unknown): void {
-    this._nested.get(path)?.destroy();
+    // The subtree being replaced ends with the declaration that held it: its manager goes, and so do
+    // the fields it registered. Left behind, they are read back as rows by the reconciliation and the
+    // old list reappears under the new one.
+    const replaced = this._nested.get(path);
+    if (replaced) {
+      const leaves = replaced.leafPathsNow();
+      replaced.destroy();
+      for (const leaf of leaves) this._deps.engine.endField(leaf);
+    }
     const kind = (node as { kind: MdyCollectionKind }).kind;
     this._nested.set(path, this._deps.createCollection(
       kind,
@@ -357,6 +365,15 @@ export class MdyRecordManager implements MdyNestedCollection {
     if (!this._acceptKey(to)) return;
     const value = this._readRow(from);
     const flags = this._readFlags(from);
+    // The row's leaves, before and after: what a binder said about a cell moves with the row, like
+    // its value and its marks. Read before the removal, because removing the row releases them.
+    const leaves = this._leafPaths(`${this._deps.path}.${from}`, this._deps.item)
+      .map((path) => path.slice(`${this._deps.path}.${from}`.length));
+    // Moved before the removal: ending the row releases what a binder said about its cells, and the
+    // row is not ending — it is arriving under another key.
+    this._deps.engine.carryBindings(
+      leaves.map((suffix) => [`${this._deps.path}.${from}${suffix}`, `${this._deps.path}.${to}${suffix}`] as const),
+    );
     this.remove(from);
     this.upsert(to, value);
     this._writeFlags(to, flags);

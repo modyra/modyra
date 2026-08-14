@@ -37,6 +37,9 @@ import { registerRowNode, type MdyRowRegistration } from "./collections/register
 /** A row's own schema node. A record may sit inside an array's item; another array may not. */
 type MdyRowNode = MdyAnyFieldDescriptor | MdyAnyGroupDescriptor;
 
+/** The place in a reordering that no row came from: the row the change created. */
+const NEW_ROW = -1;
+
 export interface MdyArrayManagerDeps {
   /**
    * The conditions of the sections this collection sits under.
@@ -204,7 +207,10 @@ export class MdyArrayManager implements MdyNestedCollection {
   insert(index: number, value: unknown): void {
     const values = this._currentValues();
     const at = Math.max(0, Math.min(values.length, index));
+    const order = this._identityOrder(values.length);
+    order.splice(at, 0, NEW_ROW);
     values.splice(at, 0, value);
+    this._carryBindings(order);
     this._rebuild(values, at);
   }
 
@@ -213,7 +219,10 @@ export class MdyArrayManager implements MdyNestedCollection {
     // An index the list does not have is not a removal, and a change that changes nothing must not
     // reset what the user did.
     if (index < 0 || index >= values.length) return;
+    const order = this._identityOrder(values.length);
+    order.splice(index, 1);
     values.splice(index, 1);
+    this._carryBindings(order, [index]);
     this._rebuild(values, index);
   }
 
@@ -223,7 +232,43 @@ export class MdyArrayManager implements MdyNestedCollection {
     if (removed.length === 0) return;
     const at = Math.max(0, Math.min(values.length, to));
     values.splice(at, 0, removed[0]);
+    const order = this._identityOrder(values.length + 1);
+    const [moved] = order.splice(from, 1);
+    order.splice(at, 0, moved!);
+    this._carryBindings(order);
     this._rebuild(values, Math.min(from, at));
+  }
+
+  /** `[0, 1, … length - 1]`, the order before a structural change rearranges it. */
+  private _identityOrder(length: number): number[] {
+    return Array.from({ length }, (_, index) => index);
+  }
+
+  /**
+   * Carries what a binder said about each row to the index that row now has.
+   *
+   * `order[newIndex]` is the index the row had before the change, or {@link NEW_ROW} for one the
+   * change created. A binding is the consumer's word about a *row* — this cell is not for editing —
+   * so leaving it at the index while the rows move under it would suppress a cell of whichever row
+   * arrived there. `ended` names the rows the change removed, whose bindings go with them.
+   */
+  private _carryBindings(order: readonly number[], ended: readonly number[] = []): void {
+    const suffixes = this._leafPaths(`${this._deps.path}.0`, this._deps.item)
+      .map((path) => path.slice(`${this._deps.path}.0`.length));
+    if (suffixes.length === 0) return;
+
+    const pathAt = (index: number, suffix: string): string => `${this._deps.path}.${index}${suffix}`;
+
+    for (const index of ended) {
+      for (const suffix of suffixes) this._deps.engine.clearBindings(pathAt(index, suffix));
+    }
+
+    const pairs: Array<readonly [string, string]> = [];
+    for (const [newIndex, oldIndex] of order.entries()) {
+      if (oldIndex === NEW_ROW || oldIndex === newIndex) continue;
+      for (const suffix of suffixes) pairs.push([pathAt(oldIndex, suffix), pathAt(newIndex, suffix)]);
+    }
+    if (pairs.length > 0) this._deps.engine.carryBindings(pairs);
   }
 
   setAll(values: ReadonlyArray<unknown>): void {
@@ -344,7 +389,15 @@ export class MdyArrayManager implements MdyNestedCollection {
     node: MdyAnyRecordDescriptor | MdyAnyArrayDescriptor,
     value: unknown,
   ): void {
-    this._nested.get(path)?.destroy();
+    // The subtree being replaced ends with the declaration that held it: its manager goes, and so do
+    // the fields it registered. Left behind, they are read back as rows by the reconciliation and the
+    // old list reappears under the new one.
+    const replaced = this._nested.get(path);
+    if (replaced) {
+      const leaves = replaced.leafPathsNow();
+      replaced.destroy();
+      for (const leaf of leaves) this._deps.engine.endField(leaf);
+    }
     this._nested.set(path, this._deps.createCollection(
       node.kind,
       {
