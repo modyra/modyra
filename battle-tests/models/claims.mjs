@@ -233,6 +233,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "SSR-001",
+    title: "A widget command that needs a DOM is not executed where there is none.",
+    area: "lifecycle",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/widgets ssrRuntimeCapabilities/browserRuntimeCapabilities",
+      "@modyra/widgets processWidgetCommands",
+      "packages/widgets/src/runtime.ts — on a server it would be told to focus something that does not exist",
+    ],
+  },
+  {
     id: "A11Y-001",
     title: "Partial and late rendering never produces dangling ID references after settling.",
     area: "accessibility",
