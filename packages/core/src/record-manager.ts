@@ -202,7 +202,17 @@ export class MdyRecordManager implements MdyNestedCollection {
       this._declared.add(key);
       this._keysSig.update((keys) => [...keys, key]);
     }
-    this._registerNode(`${this._deps.path}.${key}`, this._deps.item, rowValue, `${this._deps.path}.${key}`, this._deps.sections ?? []);
+    try {
+      this._registerNode(`${this._deps.path}.${key}`, this._deps.item, rowValue, `${this._deps.path}.${key}`, this._deps.sections ?? []);
+    } catch (error) {
+      // Reading the value can raise — a getter over a store that is not loaded, a proxy that
+      // refuses — and the caller catching that would reasonably assume the row was not declared.
+      // The key goes back, so `keys()` and `getValue()` cannot disagree about a row that half
+      // arrived. A key that was already there keeps the row it had, which is what a rewrite that
+      // never reached a write leaves behind anyway.
+      if (isNew) this.remove(key);
+      throw error;
+    }
     // Admits the waiting claims of controls that mounted before this row was declared — after the
     // row has registered its own fields, so that the row's shape is the template's and not the
     // order in which controls happened to arrive. A value whose keys follow the rendering is a

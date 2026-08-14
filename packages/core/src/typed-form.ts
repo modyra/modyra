@@ -234,7 +234,10 @@ function nestDottedKeys<S extends MdyFormSchema>(schema: S): S {
   const place = (level: Record<string, unknown>, segments: string[], key: string, node: unknown): void => {
     const [head, ...rest] = segments;
     if (rest.length === 0) {
-      const held = level[head];
+      // Own properties only. The accumulator is a plain object, so a polluted `Object.prototype`
+      // would otherwise answer for a name this schema never declared — and the failure it produced
+      // named a defect in the caller's schema for a cause that is nowhere in it.
+      const held = Object.hasOwn(level, head) ? level[head] : undefined;
       // Two groups meeting at the same name are one group: `shipping: group({ zip })` beside
       // `"shipping.city"` describes a single `shipping`, whichever was written first.
       if (isGroupDescriptor(held) && isGroupDescriptor(node)) {
@@ -252,7 +255,7 @@ function nestDottedKeys<S extends MdyFormSchema>(schema: S): S {
       level[head] = node;
       return;
     }
-    const held = level[head];
+    const held = Object.hasOwn(level, head) ? level[head] : undefined;
     if (held === undefined) {
       const children: Record<string, unknown> = {};
       level[head] = group(children as MdyFormSchema);
