@@ -69,5 +69,6 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `STU-001` | Generated code compiles. | A project name becomes a declaration the language refuses. |
 | `STU-002` | A rule the author wrote reaches the generated form, or is reported as lost. | A bound becomes `null` and the field accepts everything. |
 | `STU-003` | A field the author declared reaches the output, or is reported as dropped. | A field kind nobody recognises leaves a field with no kind and no diagnostic. |
+| `STU-004` | The conformance suite refuses a target that should not ship. | A target writing outside its directory, or emitting nothing, is declared conformant. |
 | `A11Y-002` | Focus is borrowed by a widget and handed back once. | A widget takes focus again after it has already returned it. |
 | `PKG-001` | Packed consumers observe the same public behaviour as workspace tests. | The tarball behaves differently, or resolves two copies of a package. |

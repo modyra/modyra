@@ -470,6 +470,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "STU-004",
+    title: "The conformance suite refuses a target that should not ship.",
+    area: "studio",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/studio-codegen runConformanceSuite — every target must pass this before it ships",
+      "@modyra/studio-codegen conformance — checks safe file paths and a stable diagnostic shape",
+      "@modyra/studio-codegen StudioTarget — a generated file carries a path, a language, a role and content",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",

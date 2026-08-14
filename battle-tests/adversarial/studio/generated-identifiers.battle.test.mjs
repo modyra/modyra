@@ -618,3 +618,152 @@ battle(
     }
   },
 );
+
+/**
+ * Drive the published conformance suite with targets the battle owns.
+ *
+ * Written as source for the consumer because studio is reached through a packed install; the
+ * separator is built from its character code so it never has to survive this file, a template
+ * literal and a heredoc intact.
+ */
+const CONFORMANCE = `
+import { runConformanceSuite } from "@modyra/studio-codegen";
+import { createBlankProject, loadProject } from "@modyra/studio-model";
+
+const BACKSLASH = String.fromCharCode(92);
+const GOOD_FILE = { path: "form.ts", language: "ts", role: "source", content: "export {};" };
+const fileAt = (path) => ({ ...GOOD_FILE, path });
+
+const targetEmitting = (files) => ({
+  id: "battle", displayName: "Battle target", version: "1.0.0", capabilities: {},
+  defaults: () => ({}),
+  analyze: async () => ({ compatible: true, diagnostics: [] }),
+  generate: async () => ({ targetId: "battle", files, diagnostics: [] }),
+});
+
+const { project } = loadProject(createBlankProject());
+const judge = async (label, files) => {
+  const result = await runConformanceSuite(targetEmitting(files), project);
+  return { label, passed: result.passed, failures: result.failures };
+};
+
+const out = {
+  ordinary: await judge("an ordinary file", [GOOD_FILE]),
+  posix: [
+    await judge("a parent directory", [fileAt("../out.ts")]),
+    await judge("two levels up", [fileAt("a/../../out.ts")]),
+    await judge("an absolute path", [fileAt("/etc/passwd")]),
+  ],
+  windows: [
+    await judge("a parent directory", [fileAt(".." + BACKSLASH + "out.ts")]),
+    await judge("two levels up", [fileAt("a" + BACKSLASH + ".." + BACKSLASH + ".." + BACKSLASH + "out.ts")]),
+    await judge("a drive-absolute path", [fileAt("C:" + BACKSLASH + "out.ts")]),
+    await judge("a network share", [fileAt(BACKSLASH + BACKSLASH + "server" + BACKSLASH + "share")]),
+    await judge("mixed separators", [fileAt("a/.." + BACKSLASH + ".." + BACKSLASH + "out.ts")]),
+  ],
+  shape: [
+    await judge("a file with no content", [{ path: "form.ts", language: "ts", role: "source" }]),
+    await judge("a file whose content is a number", [{ ...GOOD_FILE, content: 42 }]),
+    await judge("two files at one path", [{ ...GOOD_FILE, content: "1" }, { ...GOOD_FILE, content: "2" }]),
+    await judge("no files at all", []),
+  ],
+  missingRole: await judge("a file with no role", [{ path: "form.ts", language: "ts", content: "export {};" }]),
+};
+console.log(JSON.stringify(out));
+`;
+
+battle(
+  {
+    claims: ["STU-004"],
+    title: "a path that leaves the output directory is refused however it is spelled",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // `runConformanceSuite` states its own standing: every target must pass it before it ships. It
+    // is what stands between a third-party target — `TargetRegistry` is exported — and a host that
+    // writes whatever it is handed to disk.
+    //
+    // Its path check is `startsWith("/") || split("/").includes("..")`, which is one of the two ways
+    // a path is spelled.
+    const result = runInConsumer(CONFORMANCE);
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-004"],
+        what: "the studio packages could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      const { ordinary, posix, windows } = result.out;
+      ctx.log.note("what the suite made of each path", { ordinary, posix, windows });
+
+      // The known-good case, in the same run: an ordinary file passes, so a refusal below is the
+      // path rather than a suite that refuses everything.
+      expectClaim(ordinary.passed === true, {
+        claimIds: ["STU-004"],
+        what: "a well-formed target did not pass, so nothing below distinguishes a bad path from a bad suite",
+        detail: JSON.stringify(ordinary.failures),
+      });
+
+      // The spellings the check was written against, so the comparison is between two notations of
+      // one escape rather than between a check and nothing.
+      const missedPosix = posix.filter((each) => each.passed).map((each) => each.label);
+      expectEqual(missedPosix, [], {
+        claimIds: ["STU-004"],
+        what: "a POSIX escape was admitted, so the path check is not the thing this battle is about",
+        detail: JSON.stringify(posix),
+      });
+
+      // And the same escapes spelled for the other platform. A host on Windows resolves each of
+      // these exactly as it reads.
+      const admitted = windows.filter((each) => each.passed).map((each) => each.label);
+      expectEqual(admitted, [], {
+        claimIds: ["STU-004"],
+        what: "a path that leaves the output directory was admitted because of how it is spelled",
+        detail: JSON.stringify(windows),
+      });
+    } finally {
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);
+
+battle(
+  {
+    claims: ["STU-004"],
+    title: "a target that generates nothing usable does not pass",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // A generated file is a path, a language, a role and content. Three of those are checked.
+    const result = runInConsumer(CONFORMANCE);
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-004"],
+        what: "the studio packages could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      const { shape, missingRole } = result.out;
+      ctx.log.note("what the suite made of each target", { shape, missingRole });
+
+      // The known-good case for this half: the suite does refuse a file missing one of the three
+      // fields it checks, so it is answering about the target rather than passing everything.
+      expectClaim(missingRole.passed === false, {
+        claimIds: ["STU-004"],
+        what: "a file missing its role was admitted, so the suite is not checking file shape at all",
+        detail: JSON.stringify(missingRole.failures),
+      });
+
+      const admitted = shape.filter((each) => each.passed).map((each) => each.label);
+      expectEqual(admitted, [], {
+        claimIds: ["STU-004"],
+        what: "a target that generates nothing a host could write was declared conformant",
+        detail: JSON.stringify(shape),
+      });
+    } finally {
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);
