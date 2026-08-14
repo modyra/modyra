@@ -36,12 +36,21 @@ const SPEC = Object.freeze({
   }),
 });
 
-/** Which paths carry a user's mark, as local `index.cell` names both sides can state. */
-function touchedOf(form) {
+/**
+ * Which paths carry a mark, as local `index.cell` names both sides can state.
+ *
+ * A positional collection is where interaction state is easiest to lose track of: an index is not an
+ * identity, so a row that moves takes its value with it and a flag left behind at the old index
+ * belongs to whichever row arrives there. Comparing only what the rows hold cannot see that.
+ */
+function markedOf(form, read) {
   return form
     .fieldNames()
     .filter((name) => name.startsWith("items."))
-    .filter((name) => form.getField(name)?.().touched())
+    .filter((name) => {
+      const ref = form.getField(name);
+      return ref ? read(ref()) : false;
+    })
     .map((name) => name.slice("items.".length))
     .sort();
 }
@@ -52,7 +61,8 @@ function observableOf(form, handle) {
       length: handle.length(),
       value: form.getValue().items ?? [],
       submitted: form.submitValue().items ?? [],
-      touched: touchedOf(form),
+      touched: markedOf(form, (state) => state.touched()),
+      disabled: markedOf(form, (state) => state.disabled()),
     },
     "observable",
   );
@@ -65,6 +75,7 @@ function expectedOf(model) {
       value: model.value(),
       submitted: model.submitted(),
       touched: model.touchedPaths(),
+      disabled: model.disabledPaths(),
     },
     "observable",
   );
