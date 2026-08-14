@@ -459,6 +459,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "STU-003",
+    title: "A field the author declared reaches the output, or is reported as dropped.",
+    area: "studio",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/studio-contract compileToContract — the project's contract output",
+      "@modyra/studio-model loadProject — reports what it cannot use",
+      "@modyra/core parseDynamicForm — a contract's findings are the parser's",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
