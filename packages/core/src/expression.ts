@@ -10,7 +10,22 @@
  * a visual builder — and evaluating arbitrary source from such a document is a remote-code-execution
  * hole. Every operator here is a closed, enumerated case; there is no `eval`, no `new Function`, and
  * no operator that can reach outside the value it is given.
+ *
+ * A path in an expression is untrusted for the same reason a field name is, and passes the same
+ * guard: a document that asks about `constructor` is asking about the prototype behind the form
+ * rather than about a field, and every answer it gets is one the form's data did not give.
  */
+import { isSafeFieldPath } from "./path-utils.js";
+
+/**
+ * True for a path an expression may read: a field path, or `""` for the root value itself.
+ *
+ * The root is the one reference `isSafeFieldPath` refuses and this contract has always allowed —
+ * a form-level rule reads the whole object.
+ */
+function isReadablePath(path: string): boolean {
+  return path === "" || isSafeFieldPath(path);
+}
 
 /** The closed set of operators an expression may use. */
 export type MdyExpressionOp =
@@ -92,6 +107,10 @@ function memberAccess(value: unknown, path: string): unknown {
   if (!path) return value;
   return path.split(".").reduce<unknown>((accumulator, segment) => {
     if (accumulator === null || accumulator === undefined || typeof accumulator !== "object") return undefined;
+    // Own properties only: a form's value is data, and a member it inherits is not an answer the
+    // form gave. Without this an empty form answers `isNotEmpty` about `constructor` with true, and
+    // a document chooses which branch applies by naming something no field ever declared.
+    if (!Object.hasOwn(accumulator as object, segment)) return undefined;
     return (accumulator as Record<string, unknown>)[segment];
   }, value);
 }
@@ -209,7 +228,9 @@ export function expressionPaths(expr: MdyExpression): readonly string[] {
       for (const nested of operandsOf(operand)) walk(nested, depth + 1);
       return;
     }
-    if (isPathRef(operand)) paths.add(operand.path);
+    // A path the engine will not register is not a dependency; `validateExpression` refuses the
+    // document that carries one, so nothing downstream has to subscribe to it.
+    if (isPathRef(operand) && isReadablePath(operand.path)) paths.add(operand.path);
   };
   for (const operand of operandsOf(expr)) walk(operand, 1);
   return [...paths];
@@ -252,7 +273,11 @@ function validateAt(expr: unknown, where: string, depth: number): readonly strin
 
   operands.forEach((operand, index) => {
     if (isExpression(operand)) problems.push(...validateAt(operand, `${where}.operands[${index}]`, depth + 1));
-    else if (typeof operand === "object" && operand !== null && !isPathRef(operand)) {
+    else if (isPathRef(operand)) {
+      if (!isReadablePath(operand.path)) {
+        problems.push(`${where}.operands[${index}]: "${operand.path}" is not a field path`);
+      }
+    } else if (typeof operand === "object" && operand !== null) {
       problems.push(`${where}.operands[${index}]: an object operand must be {path} or a nested expression`);
     }
   });
