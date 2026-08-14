@@ -393,6 +393,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "LOC-002",
+    title: "What a user types matches the label they can see.",
+    area: "localization",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/widgets typeaheadMatch — the first option whose label starts with the query",
+      "@modyra/widgets filterOptionsByQuery — the list a search narrows to",
+      "docs/guides/i18n.md — labels are the consumer's own text",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",

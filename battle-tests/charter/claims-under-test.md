@@ -62,5 +62,6 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `UI-002` | The same key does the same thing on every widget offering the same affordance. | A key that works on one widget does nothing on its neighbour. |
 | `UI-003` | A select holds the option the user chose, whatever an option's value is. | Choosing one option leaves the form holding another. |
 | `UI-004` | A choice the list no longer offers is still shown as the choice it is. | A surviving selection is displayed as text that names nothing. |
+| `LOC-002` | What a user types matches the label they can see. | Typing the first letter of a visible label finds nothing. |
 | `A11Y-002` | Focus is borrowed by a widget and handed back once. | A widget takes focus again after it has already returned it. |
 | `PKG-001` | Packed consumers observe the same public behaviour as workspace tests. | The tarball behaves differently, or resolves two copies of a package. |
