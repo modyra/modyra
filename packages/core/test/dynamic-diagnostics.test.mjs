@@ -10,7 +10,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MDY_DYNAMIC_DIAGNOSTICS, parseDynamicForm } from "../dist/index.js";
+import { MDY_DYNAMIC_DIAGNOSTICS, applyFlatValidators, buildFlatFormSchema, createForm, parseDynamicForm } from "../dist/index.js";
 
 /** A document refused for each named reason. */
 const REFUSALS = {
@@ -20,6 +20,7 @@ const REFUSALS = {
   MDY_DYNAMIC_UNKNOWN_KIND: [{ name: "a", kind: "wormhole" }],
   MDY_DYNAMIC_OPTIONS_REQUIRED: [{ name: "a", kind: "select" }],
   MDY_DYNAMIC_PATTERN_TOO_LONG: [{ name: "a", kind: "text", validators: { pattern: "x".repeat(300) } }],
+  MDY_DYNAMIC_PATTERN_TOO_COSTLY: [{ name: "a", kind: "text", validators: { pattern: "(a+)+$" } }],
 };
 
 test("every named code is one the parser can actually produce", () => {
@@ -101,4 +102,43 @@ test("a finding stays with the document that produced it", async () => {
 
   assert.equal(seen, "read");
   assert.deepEqual(outer, ["outer finding"], "a nested read that threw did not keep the sink");
+});
+
+test("a pattern that backtracks exponentially is refused, and its field is kept", () => {
+  // A document's pattern is a string from a CMS, a saved project or a POST. Syntax was checked and
+  // cost was not, so `(a+)+$` against thirty characters and a miss took twelve seconds — a
+  // synchronous match, so the whole thread, between two keystrokes.
+  const parsed = parseDynamicForm([
+    { name: "code", kind: "text", validators: { pattern: "(a+)+$", required: true } },
+  ]);
+
+  // The field stays: one rule the engine will not run is not a reason to take an input away.
+  assert.deepEqual(parsed.fields.map((f) => f.name), ["code"]);
+  assert.equal(parsed.diagnostics[0].code, "MDY_DYNAMIC_PATTERN_TOO_COSTLY");
+
+  // And the rule really is gone, rather than reported and run anyway.
+  const started = Date.now();
+  const form = createForm(buildFlatFormSchema(parsed.fields), { autoActivate: false });
+  applyFlatValidators(form, parsed.fields);
+  form.f.code.set("a".repeat(34) + "!");
+  assert.equal(form.f.code.errors().some((e) => e.kind === "pattern"), false);
+  assert.ok(Date.now() - started < 1000, "the refused pattern ran anyway");
+  form.destroy();
+});
+
+test("an ordinary pattern still runs, in both directions", () => {
+  // The control: the refusal is about a shape, not about patterns. A document whose rule is
+  // ordinary keeps it, and it still rejects what it is meant to reject.
+  const parsed = parseDynamicForm([
+    { name: "zip", kind: "text", validators: { pattern: "^\\d{5}$" } },
+  ]);
+  assert.deepEqual(parsed.diagnostics, []);
+
+  const form = createForm(buildFlatFormSchema(parsed.fields), { autoActivate: false });
+  applyFlatValidators(form, parsed.fields);
+  form.f.zip.set("1234");
+  assert.equal(form.f.zip.errors().length, 1, "an ordinary pattern stopped rejecting");
+  form.f.zip.set("12345");
+  assert.deepEqual(form.f.zip.errors(), []);
+  form.destroy();
 });

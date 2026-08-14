@@ -24,6 +24,7 @@ import {
 } from "../validators.js";
 
 import { MDY_MAX_DYNAMIC_PATTERN_LENGTH, warnDev } from "./guards.js";
+import { dynamicPatternRefusal } from "./pattern-cost.js";
 import {
   mdyEmptyValueFor,
   type MdyDynamicField,
@@ -58,12 +59,23 @@ export function buildDynamicValidators(config: MdyDynamicValidators): {
         `Skipped dynamic pattern validator: pattern length ${config.pattern.length} exceeds max ${MDY_MAX_DYNAMIC_PATTERN_LENGTH}.`,
       );
     } else {
-      try {
-        out.push(pattern(new RegExp(config.pattern)) as ValidatorFn<never>);
-      } catch {
+      // Cost, on the same terms as syntax: a pattern whose shape backtracks exponentially stops the
+      // field answering — the match is synchronous, so it is the whole thread — and a document is
+      // not a place to accept that from. Refused the way an unparseable source is: a diagnostic and
+      // no validator, rather than a form that half-works.
+      const refusal = dynamicPatternRefusal(config.pattern);
+      if (refusal !== null) {
         warnDev(
-          `Skipped dynamic pattern validator: invalid RegExp source "${config.pattern}".`,
+          `Skipped dynamic pattern validator: "${config.pattern}" has ${refusal}.`,
         );
+      } else {
+        try {
+          out.push(pattern(new RegExp(config.pattern)) as ValidatorFn<never>);
+        } catch {
+          warnDev(
+            `Skipped dynamic pattern validator: invalid RegExp source "${config.pattern}".`,
+          );
+        }
       }
     }
   }
