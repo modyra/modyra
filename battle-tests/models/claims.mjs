@@ -232,6 +232,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "LOC-001",
+    title: "A localized date is read in the reader's own order, and an impossible one is refused.",
+    area: "localization",
+    severity: "S0",
+    publicEvidence: [
+      "@modyra/core/datetime parseLocalizedDate/localeDateOrder",
+      "docs/guides/i18n.md — day/month order from Intl.DateTimeFormat.formatToParts,",
+      "docs/guides/i18n.md — two-digit years map to 2000-2099, Feb 30 rejected, leap years validated",
+    ],
+  },
+  {
     id: "PKG-001",
     title: "Packed consumers observe the same public behaviour as workspace tests.",
     area: "lifecycle",

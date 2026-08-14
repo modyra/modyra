@@ -47,4 +47,5 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `PER-002` | Undo and redo preserve the documented structural semantics. | Undo across a structural change loses or duplicates a row. |
 | `SEC-001` | Unsafe path segments never register fields or pollute prototypes. | `__proto__` in a key, contract, patch or draft reaches the model. |
 | `A11Y-001` | Partial and late rendering never leaves dangling ID references after settling. | `aria-controls` points at a removed element. |
+| `LOC-001` | A localized date is read in the reader's own order, and an impossible one is refused. | `12/31/2026` becomes the 12th somewhere, or Feb 30 is accepted. |
 | `PKG-001` | Packed consumers observe the same public behaviour as workspace tests. | The tarball behaves differently, or resolves two copies of a package. |
