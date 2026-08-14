@@ -27,11 +27,9 @@ export function generateArrayOperation(rng, model, { collectionPath = "items", c
       ["set-cell", has ? 5 : 0],
       ["set-cell-out-of-range", 2],
       ["touch", has ? 2 : 0],
-      // Mounting is not generated here. What a control binds to in a *positional* collection — a
-      // position that outlives the rows passing through it, or a row that takes the binding with it
-      // when it ends — is an open question, pinned in
-      // adversarial/collections/array-claim-creates-rows.battle.test.mjs. Generating mounts makes
-      // every campaign rediscover that one instead of looking for the next thing.
+      ["mount", 4],
+      ["unmount", 3],
+      ["mount-beyond-the-end", 2],
       ["disable", has ? 2 : 0],
       ["enable", has ? 1 : 0],
       ["reset", 1],
@@ -73,6 +71,13 @@ export function generateArrayOperation(rng, model, { collectionPath = "items", c
       return { type: "field.disable", path: `${collectionPath}.${index}.${cell}` };
     case "enable":
       return { type: "field.enable", path: `${collectionPath}.${index}.${cell}` };
+    case "mount":
+      return { type: "mount", paths: [`${collectionPath}.${index}.${cell}`] };
+    case "unmount":
+      return { type: "unmount", paths: [`${collectionPath}.${index}.${cell}`] };
+    case "mount-beyond-the-end":
+      // A control bound to a row the list does not have: it waits, and declares nothing.
+      return { type: "mount", paths: [`${collectionPath}.${beyond}.${cell}`] };
     case "reset":
       return { type: "reset" };
     default:

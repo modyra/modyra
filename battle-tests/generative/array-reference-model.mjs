@@ -24,7 +24,16 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
 
   /** @type {Array<Record<string, unknown>>} */
   let rows = [];
-  const mounted = new Set();
+  /**
+   * How many controls are bound to a path, not whether any is.
+   *
+   * `claimField` and `removeField` are balanced calls: two controls on one path is two claims, and
+   * one of them leaving does not unbind the other. A set would say the path is free after the first
+   * `removeField`, and everything that follows from being bound — a binding surviving the row it
+   * was made on — would be judged against the wrong state.
+   */
+  const mounted = new Map();
+  const isMounted = (path) => (mounted.get(path) ?? 0) > 0;
   const disabled = new Set();
   const touched = new Set();
 
@@ -57,15 +66,16 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
   };
 
   /**
-   * A position that no longer exists carries nothing.
+   * A row ending takes with it what a binder said about its cells — unless a control is still
+   * mounted there, which is the binder saying it still.
    *
-   * Whether a control mounted there should keep the binding for the row that arrives next is the
-   * open question pinned beside this campaign; the model follows the observed answer — the row's end
-   * takes the binding with it — so the campaign measures everything else.
+   * A binding made for a position that never had a row is *not* dropped: it waits, and applies to
+   * the row that arrives there, exactly as a binding made before a keyed row is declared does.
    */
-  const dropBindingsBeyond = (length) => {
+  const dropBindingsBeyond = (length, previousLength) => {
     for (const path of [...disabled]) {
-      if (Number(path.split(".")[0]) >= length) disabled.delete(path);
+      const index = Number(path.split(".")[0]);
+      if (index >= length && index < previousLength && !isMounted(path)) disabled.delete(path);
     }
   };
 
@@ -101,7 +111,7 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
       return out;
     },
 
-    mountedPaths: () => [...mounted].sort(),
+    mountedPaths: () => [...mounted.keys()].sort(),
     touchedPaths: () => [...touched].sort(),
     disabledPaths: () => [...disabled].sort(),
 
@@ -118,9 +128,10 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
         }
         case "array.remove": {
           if (operation.index < 0 || operation.index >= rows.length) break;
+          const before = rows.length;
           rows.splice(operation.index, 1);
           rebuildClean(operation.index);
-          dropBindingsBeyond(rows.length);
+          dropBindingsBeyond(rows.length, before);
           break;
         }
         case "array.move": {
@@ -132,12 +143,14 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
           rebuildClean(Math.min(from, at));
           break;
         }
-        case "array.setAll":
+        case "array.setAll": {
           // A whole-value write states which rows there are.
+          const before = rows.length;
           rows = (operation.value ?? []).map((each) => rowFrom(each));
           rebuildClean();
-          dropBindingsBeyond(rows.length);
+          dropBindingsBeyond(rows.length, before);
           break;
+        }
 
         case "field.set": {
           const index = indexOf(operation.path);
@@ -160,16 +173,26 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
           disabled.delete(localOf(operation.path));
           break;
         case "mount":
-          for (const path of operation.paths) mounted.add(localOf(path));
+          for (const path of operation.paths) {
+            const local = localOf(path);
+            mounted.set(local, (mounted.get(local) ?? 0) + 1);
+          }
           break;
         case "unmount":
-          for (const path of operation.paths) mounted.delete(localOf(path));
+          for (const path of operation.paths) {
+            const local = localOf(path);
+            const remaining = (mounted.get(local) ?? 0) - 1;
+            if (remaining > 0) mounted.set(local, remaining);
+            else mounted.delete(local);
+          }
           break;
-        case "reset":
+        case "reset": {
+          const before = rows.length;
           rows = initial.map((each) => rowFrom(each));
           rebuildClean();
-          dropBindingsBeyond(rows.length);
+          dropBindingsBeyond(rows.length, before);
           break;
+        }
         default:
           break;
       }
