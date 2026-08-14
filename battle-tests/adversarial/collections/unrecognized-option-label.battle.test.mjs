@@ -121,3 +121,60 @@ battle(
     }
   },
 );
+
+battle(
+  {
+    claims: ["UI-004", "A11Y-001"],
+    title: "the surviving choice is an option the listbox can name",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // The state contract is explicit about what a renderer paints: "A renderer paints this rather
+    // than the list it was handed. That is what makes 'a widget does not erase what it cannot show'
+    // a property of the contract instead of a habit each renderer has to remember."
+    //
+    // The view builds its option parts from the *declared* list instead. So a renderer that follows
+    // the contract paints one element more than it has parts for, and the extra one is the survivor
+    // — the single entry the user needs in order to see and replace their value.
+    const controller = createSelectController({
+      widgetId: "w",
+      options: [{ value: "en", label: "English" }],
+    });
+
+    try {
+      controller.setValue("en");
+      controller.setOptions([{ value: "de", label: "Deutsch" }]);
+
+      const painted = controller.state().options;
+      const parts = controller.view().parts;
+      const missing = painted
+        .map((option) => String(option.value))
+        .filter((key) => parts[key] === undefined);
+      ctx.log.note("what a renderer paints against what it can bind", {
+        painted: painted.map((option) => option.label),
+        parts: Object.keys(parts),
+        missing,
+      });
+
+      // The control: the survivor is in the list the contract says to paint, and the declared option
+      // does have a part — so a failure below is the survivor specifically rather than the view
+      // being empty.
+      expectClaim(painted.some((option) => option.value === "en") && parts.de !== undefined, {
+        claimIds: ["UI-004"],
+        what: "the survivor is not painted or the declared option has no part, so this compares nothing",
+        detail: JSON.stringify({ painted: painted.map((option) => option.value), parts: Object.keys(parts) }),
+      });
+
+      // Every painted option needs a part. Without one it renders with no id, no `role="option"`
+      // and no `aria-selected` — an element inside a listbox that is not an option, and one that
+      // `aria-activedescendant` could never point at.
+      expectEqual(missing, [], {
+        claimIds: ["UI-004", "A11Y-001"],
+        what: "a painted option has no part to bind, so it renders inside the listbox as something that is not an option",
+        detail: JSON.stringify({ missing, parts: Object.keys(parts) }),
+      });
+    } finally {
+      controller.destroy();
+    }
+  },
+);
