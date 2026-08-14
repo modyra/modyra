@@ -3,8 +3,15 @@
  *
  * A widget controller guards every intent behind its disabled state: a disabled control does not
  * open, does not move focus, does not act. That is right for the intents that *start* something.
- * `close` is not one of those. It ends something that is already happening, and guarding it the same
- * way means a widget disabled while its overlay is open can never emit the command that closes it.
+ * `close` is not one of those — it ends something already happening — and guarding it the same way
+ * left a widget disabled mid-overlay unable to emit the command that closes it.
+ *
+ * The rule that replaced it is one sentence rather than two exceptions: *a disabled widget is not
+ * operable and does not hold an overlay*. So the state this battle names is unreachable by two
+ * independent routes — disabling closes what is open, and `close` passes the guard whatever left it
+ * open — and asserting either mechanism would pin one of them and let the other rot. What is
+ * asserted instead is the outcome: after any sequence, a disabled widget is not sitting behind an
+ * open popup.
  *
  * The sequence is ordinary. A form disables a field because a dependent value changed, an async
  * check came back, or a section became irrelevant — and the user has the picker open at that moment,
@@ -30,7 +37,7 @@ import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 battle(
   {
     claims: ["LIF-002"],
-    title: "an overlay open when its field is disabled can still be closed",
+    title: "a disabled field is never left holding an open overlay",
     environments: ["node"],
   },
   async (ctx) => {
@@ -59,21 +66,34 @@ battle(
       what: "the field did not take the disabled state",
     });
 
-    // Every route out of an overlay goes through `close`. Escape is one, clicking away is another,
-    // and both arrive here.
+    // The outcome, whichever route reached it: nothing is open over a control that no longer
+    // responds. Disabling may have closed it, or the close below may have — both are fixes and the
+    // user cannot tell them apart.
     const closed = controller.dispatch({ type: "close", restoreFocus: true });
-    ctx.log.note("the user presses Escape", { state: controller.state(), commands: closed });
-
-    expectClaim(closed.length > 0, {
-      claimIds: ["LIF-002"],
-      what: "a disabled widget emitted no command to close the overlay it still has open",
-      detail: JSON.stringify({ state: controller.state(), closed }),
+    ctx.log.note("the user presses Escape after the field was disabled", {
+      state: controller.state(),
+      commands: closed,
     });
 
     expectEqual(controller.state().open, false, {
       claimIds: ["LIF-002"],
-      what: "the overlay is still open over a field that no longer takes input",
-      detail: JSON.stringify(controller.state()),
+      what: "an overlay is still open over a field that no longer takes input",
+      detail: JSON.stringify({ state: controller.state(), closed }),
+    });
+
+    // And the same widget re-enabled and driven again: a controller that reached the right state by
+    // losing track of its own would pass the assertion above and fail here.
+    controller.dispatch({ type: "disable", disabled: false });
+    const reopened = controller.dispatch({ type: "open" });
+    ctx.log.note("the field is enabled again and the user reopens it", {
+      state: controller.state(),
+      commands: reopened,
+    });
+
+    expectClaim(controller.state().open === true && reopened.length > 0, {
+      claimIds: ["LIF-002"],
+      what: "a widget that was disabled while open cannot be opened again after it is enabled",
+      detail: JSON.stringify({ state: controller.state(), reopened }),
     });
   },
 );

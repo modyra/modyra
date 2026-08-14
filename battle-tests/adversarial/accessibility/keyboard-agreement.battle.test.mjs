@@ -7,26 +7,35 @@
  * to fix: one table for all seventeen kinds, so a text field claimed ArrowDown and a slider was told
  * to move through options it does not have.
  *
- * Per-kind bindings fixed that, and introduce the opposite risk. Six kinds open an overlay from a
- * trigger the user has focused. Four of them open on Space; two do not:
+ * Per-kind bindings fixed that, and the question this battle first got wrong is what the remaining
+ * differences mean. Six kinds open an overlay, and only four take Space:
  *
- *     select, multiselect   Enter, Space, ArrowDown, ArrowUp
- *     daterange, colors     Enter, Space
- *     datepicker            Enter
- *     timepicker            Enter
+ *     select       opener: trigger        Enter, Space, ArrowDown, ArrowUp
+ *     multiselect  opener: searchButton   Enter, Space, ArrowDown, ArrowUp
+ *     daterange    opener: toggle         Enter, Space
+ *     colors       opener: toggle         Enter, Space
+ *     datepicker   opener: control        Enter
+ *     timepicker   opener: control        Enter
  *
- * The arrow split is coherent — arrows navigate a list of options, and a calendar dialog has none to
- * navigate from a closed trigger. The Space split is not: `daterange` and `datepicker` are the same
- * control opening the same calendar, and a trigger that behaves as a button is expected to activate
- * on Space as well as Enter. A user who learned the gesture on one field finds it dead on the next,
- * with nothing on screen to explain why.
+ * That reads as a gap and is a rule, and `MDY_POPUP_OPENERS` is where it is legible: the part that
+ * opens the overlay is a *button* for the four, and the control itself for the two. In a control the
+ * user types into, the space bar is a space character — a datepicker that opened its calendar
+ * instead could not accept "12 March". Enter is safe there because Enter types nothing.
  *
- * The rest of the mapping agrees exactly, which is what makes this a gap rather than an area nobody
- * finished: all six cancel on Escape restoring focus, and all six cancel on Tab without restoring it
- * — focus is leaving on purpose, and pulling it back is the bug that would be.
+ * So the invariant is not "everything opens on Space". It is that Space follows the opener: a button
+ * takes it, a typeable control does not. Written the other way round this battle asserted something
+ * the contract deliberately does not hold, which is the failure mode of an invariant guessed from a
+ * table rather than read from the thing that generates it.
+ *
+ * The arrow split is the same shape and was right the first time: arrows navigate a list, and only
+ * two of these have one behind a closed opener.
+ *
+ * The rest of the mapping agrees exactly: all six cancel on Escape restoring focus, and all six
+ * cancel on Tab without restoring it — focus is leaving on purpose, and pulling it back is the bug
+ * that would be.
  */
 
-import { widgetKeyIntent } from "@modyra/widgets";
+import { MDY_POPUP_OPENERS, widgetKeyIntent } from "@modyra/widgets";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
@@ -41,31 +50,52 @@ function opensOn(kind) {
   );
 }
 
+/** The part a kind opens its overlay from, which is what decides whether Space is available. */
+function openerOf(kind) {
+  const declared = MDY_POPUP_OPENERS[kind];
+  return typeof declared === "string" ? declared : declared?.opener ?? null;
+}
+
 battle(
   {
     claims: ["UI-002"],
-    title: "every trigger that opens on Enter also opens on Space",
+    title: "Space opens a widget exactly when the part that opens it is not typed into",
     environments: ["node"],
   },
   async (ctx) => {
     for (const kind of OVERLAY_KINDS) {
       const keys = opensOn(kind);
-      ctx.log.note("what opens a widget from its trigger", { kind, keys });
+      const opener = openerOf(kind);
+      // The opener is the control itself only where the user types into it; every other kind opens
+      // from a button beside the value.
+      const typeable = opener === "control";
+      ctx.log.note("what opens a widget, and from which part", { kind, opener, typeable, keys });
 
-      // The control: the kind opens at all, so a failure below is the missing key rather than a
-      // kind that has no overlay to open.
+      // Enter is available everywhere, because Enter types nothing. It is also the control: a kind
+      // that opened on neither key would pass the Space assertion below for the wrong reason.
       expectClaim(keys.includes("Enter"), {
         claimIds: ["UI-002"],
         what: `${kind} owns an overlay and does not open on Enter`,
         detail: JSON.stringify(keys),
       });
 
-      expectClaim(keys.includes(" "), {
+      expectEqual(keys.includes(" "), !typeable, {
         claimIds: ["UI-002"],
-        what: `${kind} opens on Enter and does nothing on Space, which its neighbours accept`,
-        detail: JSON.stringify(keys),
+        what: typeable
+          ? `${kind} opens on Space from a control the user types into, where Space is a space character`
+          : `${kind} opens from a button and does not take Space, which every other button-opened kind does`,
+        detail: JSON.stringify({ opener, keys }),
       });
     }
+
+    // The control on the rule itself: both groups are populated, so the assertion above is a
+    // division and not a property every kind happens to satisfy.
+    const typeableKinds = OVERLAY_KINDS.filter((kind) => openerOf(kind) === "control");
+    expectClaim(typeableKinds.length > 0 && typeableKinds.length < OVERLAY_KINDS.length, {
+      claimIds: ["UI-002"],
+      what: "every overlay kind opens from the same sort of part, so the rule above divides nothing",
+      detail: JSON.stringify(typeableKinds),
+    });
   },
 );
 
