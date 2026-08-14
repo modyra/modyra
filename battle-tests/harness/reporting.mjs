@@ -75,8 +75,24 @@ export function buildReport({
     counts,
     diagnostics,
     console: consoleOutput,
-    replayCommand: `npm run battle:replay -- ${relative(REPO_ROOT, file)}`,
+    replayCommand: isReplayable({ schema, operations, minimizedOperations })
+      ? `npm run battle:replay -- ${relative(REPO_ROOT, file)}`
+      : null,
   };
+}
+
+/**
+ * Whether a report holds enough to be run again.
+ *
+ * Both halves are needed: the schema rebuilds the form, the operations drive it. A battle that
+ * attacks the public API directly carries neither, and its report is a record of what was observed
+ * rather than a sequence — announcing a replay command on it sends every reader to a crash, and
+ * answering "reproduced" for it would be worse.
+ */
+export function isReplayable(report) {
+  const schema = report?.schema;
+  if (schema === null || schema === undefined) return false;
+  return (report.minimizedOperations?.length ?? 0) > 0 || (report.operations?.length ?? 0) > 0;
 }
 
 export function writeReport(report) {
@@ -100,6 +116,11 @@ export function formatSummary(report) {
   if (firstOperations.length > 0) {
     lines.push(`Operations: ${report.operations.length} (${firstOperations.length} shown)`);
   }
-  lines.push(`Replay: ${report.replayCommand}`);
+  lines.push(
+    report.replayCommand
+      ? `Replay: ${report.replayCommand}`
+      : "Replay: none — this failure was not driven through the operation interpreter, so the report " +
+        "records what was observed rather than a sequence that reproduces it.",
+  );
   return lines.join("\n");
 }

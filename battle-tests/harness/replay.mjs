@@ -19,6 +19,7 @@ import { resolve } from "node:path";
 
 import { diffCanonical } from "../models/observations.mjs";
 import { createBattleContext } from "./context.mjs";
+import { isReplayable } from "./reporting.mjs";
 
 /** The shape {@link canonicalObservation} produces, as opposed to a battle's own projection. */
 function isCanonicalObservation(state) {
@@ -60,13 +61,30 @@ export async function replay(report) {
 }
 
 async function main() {
-  const [file] = process.argv.slice(2);
+  // `npm run` swallows the `--` that separates its own arguments from the script's; pnpm hands it
+  // through as an argument. The command printed on every failure report names one file, so a bare
+  // separator is not one of its arguments under either package manager.
+  const [file] = process.argv.slice(2).filter((argument) => argument !== "--");
   if (!file) {
     console.error("usage: node battle-tests/harness/replay.mjs <report.json>");
     process.exit(2);
   }
 
   const report = JSON.parse(readFileSync(resolve(file), "utf8"));
+
+  // Refusing by name is the difference between "this report is a record" and a stack trace from
+  // inside the schema builder. The same predicate decides whether the report advertised a command
+  // at all, so the two cannot disagree about which reports are re-runnable.
+  if (!isReplayable(report)) {
+    console.error(
+      `Not replayable — ${report.failureId} carries no schema or no operations, so the form it ` +
+        `failed against cannot be rebuilt and driven. A battle that attacks the public API directly ` +
+        `records what it observed instead.`,
+    );
+    process.exitCode = 3;
+    return;
+  }
+
   console.log(`Replaying ${report.failureId} — ${report.message}`);
   console.log(`Seed: ${report.seed}  Environment: ${report.environment?.name ?? "node"}`);
   if (report.formOptions?.dropped?.length > 0) {
@@ -76,13 +94,17 @@ async function main() {
   const outcome = await replay(report);
   console.log(`Applied ${outcome.operations.length} operation(s).`);
 
+  // A report the tool cannot compare against is not a report that reproduced. The sequence ran, and
+  // that is all this can say: exiting 0 here would let a caller checking the status read "I could
+  // not tell" as "verified", which is the one answer replay must never give.
   if (outcome.reproduced === null) {
-    console.log(
+    console.error(
       outcome.comparable === false
-        ? "Report carried a battle-specific observation; the sequence replayed, final state:"
-        : "Report carried no observed state; nothing to compare. Final state:",
+        ? "Not verified — the report carried a battle-specific observation rather than a canonical one, so the sequence replayed but nothing could be compared. Final state:"
+        : "Not verified — the report carried no observed state, so there was nothing to compare. Final state:",
     );
     console.log(JSON.stringify(outcome.actual, null, 2));
+    process.exitCode = 3;
     return;
   }
   if (outcome.reproduced) {
