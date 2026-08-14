@@ -103,7 +103,62 @@ const dynamic = [
 ];
 const whenUnknown = dynamic.map((source) => linter.verify(source, config, "doc.mjs").map((m) => m.message));
 
-console.log(JSON.stringify({ out, whenUnknown }));
+// Where a finding lands. A document written over several lines, with one defect, on a line this
+// battle knows — so "reported" can be told apart from "reported where the reader has to look".
+const ANCHORED = [
+  {
+    name: "a duplicate name, three fields down",
+    defectOn: 6,
+    source: [
+      'const doc = {',
+      '  version: 3,',
+      '  fields: [',
+      '    { name: "alpha", kind: "text" },',
+      '    { name: "beta", kind: "text" },',
+      '    { name: "alpha", kind: "text" },',
+      '  ],',
+      '};',
+    ].join("\\n"),
+  },
+  {
+    name: "a kind nobody declared, deep in the list",
+    defectOn: 7,
+    source: [
+      'const doc = {',
+      '  version: 3,',
+      '  fields: [',
+      '    { name: "a", kind: "text" },',
+      '    { name: "b", kind: "text" },',
+      '    { name: "c", kind: "text" },',
+      '    { name: "d", kind: "wormhole" },',
+      '  ],',
+      '};',
+    ].join("\\n"),
+  },
+  {
+    name: "a name that is a path, on the last field",
+    defectOn: 6,
+    source: [
+      'const doc = {',
+      '  version: 3,',
+      '  fields: [',
+      '    { name: "a", kind: "text" },',
+      '    { name: "b", kind: "text" },',
+      '    { name: "__proto__", kind: "text" },',
+      '  ],',
+      '};',
+    ].join("\\n"),
+  },
+];
+
+const anchors = ANCHORED.map((each) => ({
+  name: each.name,
+  defectOn: each.defectOn,
+  lines: linter.verify(each.source, config, "doc.mjs").map((m) => m.line),
+  totalLines: each.source.split("\\n").length,
+}));
+
+console.log(JSON.stringify({ out, whenUnknown, anchors }));
 `;
 
 /** Pack both packages, install them with eslint, and run the comparison inside. */
@@ -182,5 +237,67 @@ battle(
         what: `a document whose defect is written dynamically was judged anyway (case ${index})`,
       });
     }
+  },
+);
+
+battle(
+  {
+    claims: ["DYN-003"],
+    title: "a finding lands on the thing it is about",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // Codes travelling faithfully is half of what an editor adds. The other half is *where*: a
+    // linter that puts every finding on the same line has told the reader nothing they could not
+    // get from the console, and a document assembled by a CMS is long.
+    //
+    // The plugin does its part — `resolvePath` walks the literal as far as the diagnostic's path
+    // reaches and underlines the deepest node it got to. What it is given is `/fields` for every
+    // finding, so it underlines the array and the reader is sent to the line where the list opens
+    // whichever entry is wrong.
+    //
+    // So this is a claim about the *path a diagnostic carries*, not about the rule. A finding that
+    // named its entry would land on it with nothing in the plugin changing.
+    const result = compareInConsumer();
+    ctx.log.note("linting documents whose defect is on a known line", {
+      cases: result.anchors?.length ?? 0,
+    });
+
+    expectClaim(result.ran === true, {
+      claimIds: ["DYN-003"],
+      what: "the packages could not be packed and installed together",
+    });
+
+    ctx.log.note("where each finding landed", { anchors: result.anchors });
+
+    // The controls first, so the comparison below is between two meaningful numbers.
+    for (const each of result.anchors) {
+      // Exactly one finding, or "the" finding is a choice this battle would be making.
+      expectEqual(each.lines.length, 1, {
+        claimIds: ["DYN-003"],
+        what: `${each.name} produced ${each.lines.length} findings, so this battle cannot say where the finding landed`,
+        detail: JSON.stringify(each),
+      });
+
+      // And the defect is never the first or last line, so landing on the document root cannot
+      // pass by coincidence.
+      expectClaim(each.defectOn > 1 && each.defectOn < each.totalLines, {
+        claimIds: ["DYN-003"],
+        what: `${each.name} puts its defect at the edge of the document, where landing on the root would pass`,
+        detail: JSON.stringify(each),
+      });
+    }
+
+    // Every case at once rather than the first that fails, because where the anchor *does* land is
+    // most of what a fix needs to know.
+    const misplaced = result.anchors
+      .filter((each) => each.lines[0] !== each.defectOn)
+      .map((each) => ({ case: each.name, reportedOn: each.lines[0], writtenOn: each.defectOn }));
+
+    expectEqual(misplaced, [], {
+      claimIds: ["DYN-003"],
+      what: "a finding was reported on a line other than the one its defect is written on",
+      detail: JSON.stringify({ misplaced, anchors: result.anchors }),
+    });
   },
 );
