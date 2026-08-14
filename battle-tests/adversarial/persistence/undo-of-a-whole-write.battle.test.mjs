@@ -10,9 +10,13 @@
  * it is a collection the form was never in, and a consumer who submits there sends one row where
  * the user had three.
  *
+ * A restored draft is the third route to the same place, and the one a user meets without asking
+ * for it: opening a form that had a draft leaves `canUndo` true, and one undo takes back one row of
+ * the restore. Three rows restored are four undos, each landing on a form nobody ever had.
+ *
  * The single-row control is in the same battle on purpose. Undo is not broken: what is broken is
- * undoing an operation that ended more than one row, and a fix that made the control red would be
- * trading one defect for another.
+ * undoing an operation that ended or wrote more than one row, and a fix that made the control red
+ * would be trading one defect for another.
  */
 
 import { battle } from "../../harness/battle.mjs";
@@ -109,6 +113,73 @@ battle(
     expectEqual(afterUndo, before, {
       claimIds: ["PER-002", "COL-001"],
       what: "one undo of a single removal did not restore the collection it was made from",
+    });
+  },
+);
+
+/** Storage a battle owns, so nothing depends on an environment having one. */
+function memoryStorage() {
+  const written = new Map();
+  return {
+    written,
+    read: (key) => written.get(key) ?? null,
+    write: (key, value) => written.set(key, value),
+    remove: (key) => written.delete(key),
+  };
+}
+
+const saved = () => new Promise((resolve) => setTimeout(resolve, 60));
+
+battle(
+  {
+    claims: ["PER-002", "PER-001", "COL-001"],
+    title: "a restored draft is one step of history or none, not one per row",
+    environments: ["node"],
+    requires: ["structural"],
+  },
+  async (ctx) => {
+    const storage = memoryStorage();
+    const draft = { key: "rows", storage, debounceMs: 5 };
+
+    const filling = ctx.open(SPEC, { draft, history: true });
+    for (const key of ["a", "b", "c"]) {
+      await filling.execute({ type: "record.upsert", path: "rows", key, value: { code: key.toUpperCase() } });
+    }
+    await saved();
+    const written = [...filling.collections.rows.keys()];
+    filling.form.destroy();
+
+    // The control: the draft holds what the user left, so what follows is about the restoring rather
+    // than about a draft that never carried the rows.
+    expectEqual(written, ["a", "b", "c"], {
+      claimIds: ["PER-001"],
+      what: "the form that wrote the draft did not hold the rows this battle is about",
+    });
+
+    const reopened = ctx.open(SPEC, { draft, history: true });
+    await saved();
+    const restored = [...reopened.collections.rows.keys()];
+
+    expectEqual(restored, ["a", "b", "c"], {
+      claimIds: ["PER-001"],
+      what: "the draft did not come back",
+    });
+
+    // The whole value, not the keys: a restore undone a row at a time keeps every key and empties
+    // one row's cells, so a check that counted keys would pass over exactly the defect.
+    const restoredValue = JSON.stringify(reopened.form.getValue().rows);
+    reopened.form.undo();
+    const afterUndo = JSON.stringify(reopened.form.getValue().rows);
+    ctx.log.note("one undo on a form that had just been restored", { restoredValue, afterUndo });
+
+    // Either the restore was not a step the user can undo — they did nothing — or it was one step
+    // and undoing it leaves the form as it opens without a draft. A row at a time is neither.
+    const acceptable = afterUndo === restoredValue || afterUndo === "{}";
+    expectEqual(acceptable, true, {
+      claimIds: ["PER-002", "PER-001", "COL-001"],
+      what:
+        `one undo after a restore left ${afterUndo} — neither the restored form nor the empty one, ` +
+        `so it is a form the user never had`,
     });
   },
 );
