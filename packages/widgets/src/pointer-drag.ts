@@ -48,7 +48,23 @@ export function dragPointOf(event: MouseEvent | TouchEvent): MdyDragPoint | null
 }
 
 export function createPointerDrag(options: MdyPointerDragOptions): MdyPointerDrag {
-  const target = options.document ?? (typeof document === "undefined" ? undefined : document);
+  /**
+   * The document, asked for when a gesture needs one rather than when the drag was built.
+   *
+   * Resolved once at construction, a controller built before a document exists stayed bound to
+   * nothing for its whole life: `bind()` returned immediately every time, while `start()` still set
+   * `dragging`. A slider in that window does not drag *and reports that it is dragging*, which no
+   * host can end except by calling `stop()`.
+   *
+   * The window is the one `browserRuntimeCapabilities` probes for on every call rather than once at
+   * module scope: the same module is evaluated where there is no DOM and used after one exists. An
+   * explicit `options.document` widens it rather than closing it — a host living in an iframe or a
+   * popup is exactly where the document arrives after the controller is made.
+   */
+  const documentFor = (): Document | undefined =>
+    options.document ?? (typeof document === "undefined" ? undefined : document);
+  /** The document a live gesture bound to, so it unbinds from the one it bound to. */
+  let bound: Document | undefined;
   let live = false;
 
   const move = (event: Event): void => {
@@ -69,7 +85,9 @@ export function createPointerDrag(options: MdyPointerDragOptions): MdyPointerDra
   };
 
   function bind(): void {
+    const target = documentFor();
     if (!target) return;
+    bound = target;
     target.addEventListener("mousemove", move);
     target.addEventListener("touchmove", move, { passive: false });
     target.addEventListener("mouseup", end);
@@ -78,7 +96,9 @@ export function createPointerDrag(options: MdyPointerDragOptions): MdyPointerDra
   }
 
   function unbind(): void {
+    const target = bound;
     if (!target) return;
+    bound = undefined;
     target.removeEventListener("mousemove", move);
     target.removeEventListener("touchmove", move);
     target.removeEventListener("mouseup", end);

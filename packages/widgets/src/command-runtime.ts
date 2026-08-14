@@ -6,7 +6,7 @@
  * {@link MdyUiCommand}s into real DOM/overlay side effects.
  */
 
-import type { MdyUiCommand } from "./commands.js";
+import type { MdyUiCommand, MdyElementTarget } from "./commands.js";
 import type { MdyWidgetRuntimeCapabilities } from "./runtime.js";
 
 /**
@@ -41,8 +41,15 @@ export interface MdyWidgetCommandHandlers {
 export interface MdyWidgetCommandContext {
   readonly lookup: MdyElementLookup;
   readonly handlers: MdyWidgetCommandHandlers;
-  scheduleFocus(el: HTMLElement): void;
-  scheduleScroll(el: HTMLElement): void;
+  /**
+   * Both the element as it is now and the target that named it.
+   *
+   * A caller that acts immediately uses the element. One that defers until the host has rendered
+   * needs the target, because the render is what may replace the node — resolving before it and
+   * focusing after it is how focus lands on something no longer in the document.
+   */
+  scheduleFocus(el: HTMLElement, target: MdyElementTarget): void;
+  scheduleScroll(el: HTMLElement, target: MdyElementTarget): void;
   announce(message: string): void;
   /**
    * What the runtime can do, from {@link browserRuntimeCapabilities}.
@@ -76,12 +83,12 @@ export function processWidgetCommands(
       case "focus":
       case "restore-focus": {
         const el = context.lookup(command.target.part, command.target.key);
-        if (el) context.scheduleFocus(el);
+        if (el) context.scheduleFocus(el, command.target);
         break;
       }
       case "scroll-into-view": {
         const el = context.lookup(command.target.part, command.target.key);
-        if (el) context.scheduleScroll(el);
+        if (el) context.scheduleScroll(el, command.target);
         break;
       }
       case "announce": {
@@ -183,24 +190,33 @@ export function createCommandRuntime(options: MdyCommandRuntimeOptions): MdyComm
 
   return {
     execute(commands, lookup, handlers): void {
-      const deferred: Array<{ readonly el: HTMLElement; readonly type: "focus" | "scroll" }> = [];
+      // The target, not the node. Deferring exists *because* the host is about to render, and a
+      // render replaces elements: resolved before it and focused after it, `focus()` lands on a
+      // detached node — silently, since focusing one is a no-op with no error and no warning, and
+      // the only symptom is a keyboard user quietly returned to the body.
+      const deferred: Array<{ readonly target: MdyElementTarget; readonly type: "focus" | "scroll" }> = [];
 
       processWidgetCommands(commands, {
         lookup,
         handlers,
-        scheduleFocus: (el) => deferred.push({ el, type: "focus" }),
-        scheduleScroll: (el) => deferred.push({ el, type: "scroll" }),
+        scheduleFocus: (_el, target) => deferred.push({ target, type: "focus" }),
+        scheduleScroll: (_el, target) => deferred.push({ target, type: "scroll" }),
         announce: (message) => announcer.announce(message),
       });
 
       if (deferred.length === 0) return;
       options.defer(() => {
         for (const item of deferred) {
-          if (item.type === "focus") item.el.focus();
+          // Resolved again, after the render. A target that no longer resolves is left alone rather
+          // than chased through the node it used to be: focus stays on something the document still
+          // contains, which is what a removed trigger has to leave behind.
+          const el = lookup(item.target.part, item.target.key);
+          if (!el) continue;
+          if (item.type === "focus") el.focus();
           // Every browser has `scrollIntoView`; some minimal DOM implementations — the one every
           // adapter's own suite runs under — do not implement it at all. A missing scroll affordance
           // must not take the whole interaction down with it.
-          else item.el.scrollIntoView?.({ block: "nearest" });
+          else el.scrollIntoView?.({ block: "nearest" });
         }
       });
     },

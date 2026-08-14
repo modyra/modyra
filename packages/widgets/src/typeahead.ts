@@ -80,6 +80,22 @@ export function createTypeahead(options: MdyTypeaheadOptions = {}): MdyTypeahead
 }
 
 /**
+ * A label and a query, in a form that can be compared character by character.
+ *
+ * `É` has two encodings — one code point, or `E` followed by a combining acute — and they render
+ * identically. The two sides arrive from different places: labels come from a CMS, an API or a file
+ * listing, and macOS hands back decomposed text, while a browser's keyboard input is composed. So a
+ * user typing the accent they can see on screen filtered the list to nothing.
+ *
+ * `NFC` and not `NFKD`, and no accent stripping: two spellings of the *same* character are the same
+ * character, and `e` is a different letter from `é`. Folding those together would make `resume` and
+ * `résumé` one option, which is a separate decision with its own costs.
+ */
+function comparableText(value: string): string {
+  return value.normalize("NFC").toLowerCase();
+}
+
+/**
  * The option a query selects: the first whose label starts with it, case-insensitively.
  *
  * Prefix rather than substring, because that is what a user typing a name expects — `an` should reach
@@ -91,6 +107,6 @@ export function typeaheadMatch<T extends { readonly label: string }>(
   query: string,
 ): T | null {
   if (query === "") return null;
-  const needle = query.toLowerCase();
-  return options.find((option) => option.label.toLowerCase().startsWith(needle)) ?? null;
+  const needle = comparableText(query);
+  return options.find((option) => comparableText(option.label).startsWith(needle)) ?? null;
 }
