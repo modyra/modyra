@@ -47,7 +47,13 @@ export interface MdyFocusCustodian {
    * and its remembered owner have both left the document, or because there was nothing to give back.
    */
   restore(preferred?: Element | null): HTMLElement | null;
-  /** Forget the recorded owner. For teardown, so a destroyed widget holds no reference. */
+  /**
+   * End the borrow. For teardown, so a destroyed widget holds no reference and owes no restore.
+   *
+   * A {@link restore} after this places no focus and returns `null` unless it names a `preferred`
+   * element — the widget has said it is done, and taking focus afterwards is what this module exists
+   * to prevent.
+   */
   release(): void;
 }
 
@@ -137,10 +143,12 @@ export function createFocusCustodian(root: () => Element | null): MdyFocusCustod
     },
 
     release(): void {
-      // The recorded owner only. Whether a released custodian still owes a restore is a separate
-      // question from whether it holds a reference, and `focus.spec.mjs` states the answer this
-      // module gives today: a restore after a release still falls back inside the widget.
+      // The borrow ends here, not only the reference. A released custodian owes nothing, so a
+      // restore after it places no focus: a widget being torn down pulling focus into itself is the
+      // same taking whichever route reaches it. A caller that wants focus placed says where with
+      // `restore(preferred)`, which is honoured whether anything is borrowed or not.
       previous = null;
+      borrowed = false;
     },
   };
 }

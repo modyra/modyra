@@ -20,7 +20,15 @@ whether it holds a remembered element: a widget that opened while nothing was fo
 borrowed focus, and one that has already given it back owes nothing. A `restore(preferred)` naming an
 element is always honoured — that is the caller placing focus, not asking for what was borrowed.
 
-`release()` is unchanged: it forgets the recorded owner, and a restore after it still falls back
-inside the widget, which `packages/widgets/test/focus.spec.mjs` states.
+`release()` now ends the borrow rather than only forgetting the remembered element: a restore after
+it places no focus and returns `null`. The workspace's one caller releases at destroy, which is what
+the method is for. A consumer that released and relied on the next restore to place focus inside the
+widget names the target instead — `restore(preferred)` is honoured whether anything is borrowed or
+not.
+
+While the borrow is live and the remembered owner has left the document, the fallback inside the
+widget is unchanged: somewhere real beats nowhere, and that is the case it was written for.
+
+Recorded as [ADR 0049](https://github.com/modyra/modyra/blob/main/docs/architecture/0049-a-released-custodian-owes-no-focus.md).
 
 Found by `battle-tests/adversarial/lifecycle/focus-custodian.battle.test.mjs`.

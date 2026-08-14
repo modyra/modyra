@@ -130,7 +130,7 @@ test("remember keeps the owner from outside the interaction, not the widget's ow
   assert.equal(w.custodian.restore(), w.trigger, "the first owner is still the one worth returning to");
 });
 
-test("release forgets the owner, so a destroyed widget holds no reference", () => {
+test("release ends the borrow, so a released widget places no focus", () => {
   const w = widget();
   // Remembered from *outside* the widget, so falling back inside it is distinguishable from
   // handing it back. With the owner inside, both answers are the same element and the test would
@@ -143,8 +143,37 @@ test("release forgets the owner, so a destroyed widget holds no reference", () =
 
   w.custodian.release();
   const landed = w.custodian.restore();
-  assert.notEqual(landed, outside, "the remembered owner was released");
-  assert.ok(w.root.contains(landed), "so focus falls back inside the widget");
+  assert.equal(landed, null, "a released custodian placed focus");
+  assert.equal(w.document.activeElement, w.search, "focus moved after the widget said it was done");
+});
+
+test("a released custodian still honours an element the caller names", () => {
+  // Ending the borrow says the widget owes nothing, not that focus can no longer be placed: a
+  // caller naming a target is placing focus itself.
+  const w = widget();
+  const outside = w.document.createElement("button");
+  w.document.body.append(outside);
+  outside.focus();
+  w.custodian.remember();
+  w.search.focus();
+  w.custodian.release();
+
+  assert.equal(w.custodian.restore(outside), outside);
+});
+
+test("a remembered owner that has gone still falls back inside the widget", () => {
+  // The fallback the module was written for, and the case release() was being read as: the borrow
+  // is live, and what it borrowed from is no longer in the document.
+  const w = widget();
+  const outside = w.document.createElement("button");
+  w.document.body.append(outside);
+  outside.focus();
+  w.custodian.remember();
+  w.search.focus();
+  outside.remove();
+
+  const landed = w.custodian.restore();
+  assert.ok(w.root.contains(landed), "focus did not fall back inside the widget");
 });
 
 test("without release, an owner outside the widget still gets it back", () => {
