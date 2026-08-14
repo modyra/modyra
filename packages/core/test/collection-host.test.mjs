@@ -20,6 +20,7 @@ function hostDouble(rx) {
   const calls = [];
   const fields = new Map();
   const gates = new Map();
+  const bindings = new Map();
   const note = (name, ...args) => calls.push(`${name}(${args.filter((a) => typeof a === "string").join(",")})`);
 
   const refFor = (name) => {
@@ -69,6 +70,16 @@ function hostDouble(rx) {
       return () => gates.delete(prefix);
     },
     refreshPathGate: (prefix) => note("refreshPathGate", prefix),
+    // What a binder said about a path, held by the host rather than by the field, so a row that
+    // changes identity can carry it — see MdyCollectionHost.
+    carryBindings: (pairs) => {
+      note("carryBindings", ...pairs.map(([from]) => from));
+      const carried = pairs.map(([from, to]) => [to, bindings.get(from)]).filter(([, binding]) => binding);
+      for (const [from] of pairs) bindings.delete(from);
+      for (const [to, binding] of carried) bindings.set(to, binding);
+    },
+    clearBindings: (name) => { note("clearBindings", name); bindings.delete(name); },
+
     peekField: (name) => fields.get(name) ?? null,
     getField: (name) => refFor(name),
     fieldNames: () => [...fields.keys()],

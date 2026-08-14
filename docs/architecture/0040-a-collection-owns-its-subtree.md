@@ -1,6 +1,6 @@
 # ADR 0040: A collection owns its subtree
 
-Status: Accepted — amended 2026-08-13 (phases B and C landed; the rule is one positional level)
+Status: Accepted — amended 2026-08-13 (phases B and C landed); the one-positional-level rule is superseded by [ADR 0043](0043-a-collection-nests-without-a-limit.md), which removes it along with the depth cap
 
 ## Context
 

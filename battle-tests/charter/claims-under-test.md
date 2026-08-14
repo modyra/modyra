@@ -15,7 +15,7 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `COL-004` | Numeric record keys remain object keys. | `{"0": …}` becomes an array after a patch, draft or undo. |
 | `COL-005` | Removing a row removes its value and settles descendant async work. | A removed row's validator answers, or its path is submitted. |
 | `COL-006` | A waiting cell binds when its row arrives and waits again after removal. | The handle held before declaration is not the one the row arrives on. |
-| `COL-007` | Rename preserves the state promised by the contract. | Value, validity or touched is lost across a rename. |
+| `COL-007` | Rename preserves the state promised by the contract. | Value, validity, touched or a binding is lost across a rename. |
 | `COL-008` | A row declared without a value is the row the template describes. | Cells come back `null` instead of the initial the schema declares. |
 
 ## Lifecycle and reactivity
@@ -24,7 +24,7 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | --- | --- | --- |
 | `LIF-001` | Destroy leaves no observable reactive or asynchronous work. | A timer, effect or validator run fires after destroy. |
 | `LIF-002` | Repeated mount/unmount does not alter value or registration ownership. | Field registration counts drift across remounts. |
-| `REA-001` | Handles are observed through their owning runtime. | A handle observed with a foreign runtime shows a stale view. |
+| `REA-001` | Every handle a form hands out is observed through its owning runtime. | A collection handle or row tree is unknown to the registry, so a foreign runtime is accepted in silence. |
 | `REA-002` | Cross-runtime misuse produces the documented diagnostic. | The mismatch is silent, or the diagnostic names the wrong thing. |
 
 ## Validation and submission

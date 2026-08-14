@@ -40,7 +40,7 @@
   ],
   "MdyAnyArrayDescriptor": [
     "initial: ReadonlyArray<unknown>",
-    "item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor",
+    "item: MdyAnyRowDescriptor",
     "kind: \"array\"",
     "validators: ReadonlyArray<ValidatorFn<never>>"
   ],
@@ -63,7 +63,7 @@
   ],
   "MdyAnyRecordDescriptor": [
     "initial: Readonly<Record<string, unknown>>",
-    "item: MdyAnyFieldDescriptor | MdyAnyGroupDescriptor",
+    "item: MdyAnyRowDescriptor",
     "kind: \"record\"",
     "validators: ReadonlyArray<ValidatorFn<never>>"
   ],
@@ -547,7 +547,7 @@
   ],
   "MdyDynamicArrayNode": [
     "initialValue?: ReadonlyArray<unknown>",
-    "item: MdyDynamicFieldNode | MdyDynamicGroupNode | MdyDynamicRecordNode",
+    "item: MdyDynamicNode",
     "label?: string",
     "maxItems?: number",
     "minItems?: number",
@@ -674,7 +674,7 @@
   ],
   "MdyDynamicRecordNode": [
     "initialValue?: Readonly<Record<string, unknown>>",
-    "item: MdyDynamicFieldNode | MdyDynamicGroupNode | MdyDynamicRecordNode | MdyDynamicArrayNode",
+    "item: MdyDynamicNode",
     "label?: string",
     "node: \"record\""
   ],

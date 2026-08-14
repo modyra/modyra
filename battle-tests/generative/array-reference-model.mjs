@@ -66,8 +66,7 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
   };
 
   /**
-   * A row ending takes with it what a binder said about its cells — unless a control is still
-   * mounted there, which is the binder saying it still.
+   * A row ending takes with it what a binder said about its cells.
    *
    * A binding made for a position that never had a row is *not* dropped: it waits, and applies to
    * the row that arrives there, exactly as a binding made before a keyed row is declared does.
@@ -75,9 +74,34 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
   const dropBindingsBeyond = (length, previousLength) => {
     for (const path of [...disabled]) {
       const index = Number(path.split(".")[0]);
+      // A control still bound to the path is the binder still saying it, so the binding waits for
+      // the next row to arrive there — the same rule a keyed collection follows.
       if (index >= length && index < previousLength && !isMounted(path)) disabled.delete(path);
     }
   };
+
+  /**
+   * Carries the bindings with the rows a structural change rearranged.
+   *
+   * `order[newIndex]` is the index that row had before. A binding is the consumer's word about a
+   * row — *this cell is not for editing* — so it travels with the row rather than staying at the
+   * index, where it would suppress a cell of whoever arrived.
+   */
+  const carryBindings = (order) => {
+    const carried = [];
+    for (const [newIndex, oldIndex] of order.entries()) {
+      if (oldIndex === null || oldIndex === newIndex) continue;
+      for (const path of disabled) {
+        const [index, ...rest] = path.split(".");
+        if (Number(index) === oldIndex) carried.push([path, [newIndex, ...rest].join(".")]);
+      }
+    }
+    for (const [from] of carried) disabled.delete(from);
+    for (const [, to] of carried) disabled.add(to);
+  };
+
+  /** `[0, 1, … length - 1]` — the order before a change rearranged it. */
+  const identityOrder = (length) => Array.from({ length }, (_, index) => index);
 
   const indexOf = (path) => {
     const [, index] = path.split(".");
@@ -113,7 +137,13 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
 
     mountedPaths: () => [...mounted.keys()].sort(),
     touchedPaths: () => [...touched].sort(),
-    disabledPaths: () => [...disabled].sort(),
+    /**
+     * The cells a binding is actually suppressing.
+     *
+     * A binding stated for a position with no row waits there; until a row arrives, there is no cell
+     * to be disabled and nothing a consumer can read.
+     */
+    disabledPaths: () => [...disabled].filter((path) => Number(path.split(".")[0]) < rows.length).sort(),
 
     apply(operation) {
       switch (operation.type) {
@@ -122,14 +152,24 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
           break;
         case "array.insert": {
           const at = Math.max(0, Math.min(rows.length, operation.index));
+          const order = identityOrder(rows.length);
+          order.splice(at, 0, null);
           rows.splice(at, 0, rowFrom(operation.value));
+          carryBindings(order);
           rebuildClean(at);
           break;
         }
         case "array.remove": {
           if (operation.index < 0 || operation.index >= rows.length) break;
           const before = rows.length;
+          const order = identityOrder(rows.length);
+          order.splice(operation.index, 1);
+          // The row that ended releases its bindings; the rows above it carry theirs down.
+          for (const path of [...disabled]) {
+            if (Number(path.split(".")[0]) === operation.index) disabled.delete(path);
+          }
           rows.splice(operation.index, 1);
+          carryBindings(order);
           rebuildClean(operation.index);
           dropBindingsBeyond(rows.length, before);
           break;
@@ -137,9 +177,13 @@ export function createArrayReferenceModel({ cells, initial = [] } = {}) {
         case "array.move": {
           const { from, to } = operation;
           if (from < 0 || from >= rows.length) break;
+          const order = identityOrder(rows.length);
           const [moved] = rows.splice(from, 1);
           const at = Math.max(0, Math.min(rows.length, to));
           rows.splice(at, 0, moved);
+          const [movedIndex] = order.splice(from, 1);
+          order.splice(at, 0, movedIndex);
+          carryBindings(order);
           rebuildClean(Math.min(from, at));
           break;
         }

@@ -704,7 +704,8 @@ export abstract class MdyTypedFormBase<
   ): MdyFieldRef<MdyFormValue<S>[K]> | null;
   getField(name: string): MdyFieldRef<unknown> | null;
   getField(name: string): MdyFieldRef<unknown> | null {
-    return this._adapter.getField(name);
+    const ref = this._adapter.getField(name);
+    return ref === null ? null : this._own(ref);
   }
 
   errorsFor(
@@ -1073,9 +1074,23 @@ export abstract class MdyTypedFormBase<
       }
     }
     if (isFieldHandleTree(out, nodes)) {
-      return out;
+      return this._own(out);
     }
     throw new Error("[modyra] Failed to build typed handle tree");
+  }
+
+  /**
+   * Marks something the form hands out as belonging to this form and its runtime.
+   *
+   * `observerFor` falls back to a fresh vanilla runtime for anything it does not recognise, and a
+   * fresh runtime observes nothing anyone else can see — silently. Every shape a consumer can hold
+   * is registered, not only the field handles: a collection handle's `keys`, `length` and `rows` are
+   * signals, and a row's tree is what a template walks to reach them.
+   */
+  protected _own<T extends object>(handle: T): T {
+    registerHandleOwner(handle, this._adapter.reactivity);
+    registerHandleForm(handle, this);
+    return handle;
   }
 
   protected abstract _buildHandle(path: string): THandle;
@@ -1100,7 +1115,7 @@ export abstract class MdyTypedFormBase<
       Array.from({ length: manager.rowCount() }, (_, i) => this._rowHandle(node.item, `${path}.${i}`)),
     );
     const errors = this._adapter.errorsFor(path);
-    return {
+    return this._own({
       path,
       length: manager.rowCount,
       rows,
@@ -1112,7 +1127,7 @@ export abstract class MdyTypedFormBase<
       move: (from: number, to: number) => manager.move(from, to),
       setAll: (values: ReadonlyArray<unknown>) => manager.setAll(values),
       at: (index: number) => rows()[index] ?? null,
-    };
+    });
   }
 
   private _buildRecordHandle(
@@ -1126,7 +1141,7 @@ export abstract class MdyTypedFormBase<
     const rx = this._adapter.reactivity;
     const errors = this._adapter.errorsFor(path);
     const row = (key: string): unknown => this._rowHandle(node.item, `${path}.${key}`);
-    return {
+    return this._own({
       path,
       keys: manager.keys,
       value: rx.computed(() => {
@@ -1164,7 +1179,7 @@ export abstract class MdyTypedFormBase<
       patch: (values: Readonly<Record<string, unknown>>) => manager.patch(values),
       rename: (from: string, to: string) => manager.rename(from, to),
       validOf: (key: string) => manager.validOf(key),
-    };
+    });
   }
 
   /**
@@ -1199,7 +1214,7 @@ export abstract class MdyTypedFormBase<
         out[key] = this.cellHandle(path);
       }
     }
-    return out;
+    return this._own(out);
   }
 
   /**
@@ -1233,7 +1248,7 @@ export abstract class MdyTypedFormBase<
         );
       });
       const errors = this._adapter.errorsFor(path);
-      return {
+      return this._own({
         path,
         length: rx.computed(() => arrayAt()?.rowCount() ?? 0),
         rows,
@@ -1245,7 +1260,7 @@ export abstract class MdyTypedFormBase<
         move: (from: number, to: number) => manager().move(from, to),
         setAll: (values: ReadonlyArray<unknown>) => manager().setAll(values),
         at: (index: number) => (rows() as unknown[])[index] ?? null,
-      };
+      });
     }
     const manager = (): MdyRecordManager => {
       const found = this._collectionAt(path);

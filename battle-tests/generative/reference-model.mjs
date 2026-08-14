@@ -107,7 +107,14 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
 
     mountedPaths: () => [...mounted.keys()].sort(),
     touchedPaths: () => [...touched].sort(),
-    disabledPaths: () => [...disabled].sort(),
+    /**
+     * The cells a binding is actually suppressing.
+     *
+     * A binding may be stated for a row that does not exist — it waits, and applies when the row
+     * arrives — but until then there is no cell to be disabled, and nothing a consumer can read.
+     * What is compared is what a consumer sees.
+     */
+    disabledPaths: () => [...disabled].filter((path) => rows.has(path.split(".")[0])).sort(),
 
     /** Apply one operation. Unknown or inapplicable operations are no-ops, as the contract says. */
     apply(operation) {
@@ -134,10 +141,17 @@ export function createReferenceModel({ cells, initial = {} } = {}) {
           // and one from a key that does not exist has nothing to move.
           if (!rows.has(from) || rows.has(to)) break;
           const value = { ...rows.get(from) };
-          const carried = [...touched].filter((path) => path.startsWith(`${from}.`));
+          const carriedMarks = [...touched].filter((path) => path.startsWith(`${from}.`));
+          // What a binder said about a cell is the row's, like its value and its marks: a rename
+          // moves the row, so the exclusion moves with it rather than staying on a key nobody holds.
+          const carriedBindings = [...disabled].filter((path) => path.startsWith(`${from}.`));
           forget(from);
           declare(to, value);
-          for (const path of carried) touched.add(path.replace(`${from}.`, `${to}.`));
+          for (const path of carriedMarks) touched.add(path.replace(`${from}.`, `${to}.`));
+          for (const path of carriedBindings) {
+            disabled.delete(path);
+            disabled.add(path.replace(`${from}.`, `${to}.`));
+          }
           break;
         }
         case "record.patch":

@@ -58,6 +58,8 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0040: A collection owns its subtree](0040-a-collection-owns-its-subtree.md) — nested collections: gates compose along the whole chain, ownership is explicit, and the eight semantics decided before a line of runtime
 - [ADR 0041: History crosses structural changes](0041-history-crosses-structural-changes.md) — undo acts on the value as it is now: a declared, removed or renamed row is undoable the moment it happens, at any depth; only the value is restored
 - [ADR 0042: An adversarial suite attacks from outside](0042-an-adversarial-suite-attacks-from-outside.md) — `battle-tests/` consumes published entry points only and exists to falsify public claims: every battle cites a registered claim, proves it attacked, and writes a replayable artefact when it breaks something
+- [ADR 0043: A collection nests without a limit](0043-a-collection-nests-without-a-limit.md) — an array may hold an array, a form may nest as deep as it needs, and a document is bounded by the caller rather than by a number; supersedes ADR 0040's one-positional-level rule
+- [ADR 0044: A binding belongs to the row](0044-a-binding-belongs-to-the-row.md) — what a control said about a cell travels with the row across a rename or a move, as its value and its marks already did
 
 ## Security-relevant records
 

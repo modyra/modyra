@@ -210,6 +210,30 @@ export function createBattleContext({
   return context;
 }
 
+/**
+ * The collection a path names, including one inside a row.
+ *
+ * `items` is in the context's map; `items.0.parts` is not, because it exists only once its parent
+ * row does. It is reached the way a consumer reaches it — through the parent's `row(key)` or
+ * `at(index)` — and answers `null` while the parent row is undeclared, which is what a write to a
+ * collection that does not exist means.
+ */
+export function collectionAt(context, path) {
+  const direct = context.collections[path];
+  if (direct) return direct;
+
+  const bases = Object.keys(context.collections).sort((a, b) => b.length - a.length);
+  for (const base of bases) {
+    if (!path.startsWith(`${base}.`)) continue;
+    const [key, ...segments] = path.slice(base.length + 1).split(".");
+    const parent = context.collections[base];
+    let node = typeof parent.row === "function" ? parent.row(key) : parent.at(Number(key));
+    for (const segment of segments) node = node?.[segment];
+    return node ?? null;
+  }
+  return null;
+}
+
 /** `rows`, `address.city` — the handle a path names, without touching the engine. */
 export function resolveHandle(form, path) {
   return path.split(".").reduce((node, segment) => {
@@ -228,39 +252,42 @@ export function resolveHandle(form, path) {
  * behaviour before declaration is a claim under test.
  */
 export async function executeOperation(context, operation) {
-  const { form, collections, log } = context;
+  const { form, log } = context;
+  // A collection inside a row that has not been declared is nothing to write to, and a write to
+  // nothing changes nothing — the same answer the collection itself gives for an absent row.
+  const collection = operation.path ? collectionAt(context, operation.path) : null;
 
   switch (operation.type) {
     case "record.upsert":
-      collections[operation.path].upsert(operation.key, operation.value);
+      collection?.upsert(operation.key, operation.value);
       break;
     case "record.remove":
-      collections[operation.path].remove(operation.key);
+      collection?.remove(operation.key);
       break;
     case "record.rename":
-      collections[operation.path].rename(operation.from, operation.to);
+      collection?.rename(operation.from, operation.to);
       break;
     case "record.patch":
-      collections[operation.path].patch(operation.value);
+      collection?.patch(operation.value);
       break;
     case "record.setAll":
-      collections[operation.path].setAll(operation.value);
+      collection?.setAll(operation.value);
       break;
 
     case "array.push":
-      collections[operation.path].push(operation.value);
+      collection?.push(operation.value);
       break;
     case "array.insert":
-      collections[operation.path].insert(operation.index, operation.value);
+      collection?.insert(operation.index, operation.value);
       break;
     case "array.remove":
-      collections[operation.path].remove(operation.index);
+      collection?.remove(operation.index);
       break;
     case "array.move":
-      collections[operation.path].move(operation.from, operation.to);
+      collection?.move(operation.from, operation.to);
       break;
     case "array.setAll":
-      collections[operation.path].setAll(operation.value ?? []);
+      collection?.setAll(operation.value ?? []);
       break;
 
     case "field.set":
@@ -345,12 +372,34 @@ function fieldOf(context, path, use) {
   // A keyed collection hands out a cell handle before its row exists — that is the affordance under
   // test. A positional one has no such thing: `at(index)` answers for a row that is there, and
   // nothing at all for one that is not, which is what a write to a missing index means.
-  if (typeof collection.cell === "function") {
+  if (typeof collection.cell === "function" && rest.every((segment) => !isCollectionStep(collection, key, rest, segment))) {
     return use(collection.cell(key, rest.join(".") || undefined));
   }
 
-  const row = collection.at(Number(key));
-  if (row === null || row === undefined) return undefined;
-  const handle = rest.reduce((node, segment) => (node == null ? node : node[segment]), row);
+  const row = typeof collection.row === "function" ? collection.row(key) : collection.at(Number(key));
+  const handle = descend(row, rest);
   return handle == null ? undefined : use(handle);
+}
+
+/** Whether a keyed collection's cell lookup can answer for this path, or a collection sits in it. */
+function isCollectionStep() {
+  return false;
+}
+
+/**
+ * Walks the segments below a row, through whatever they name.
+ *
+ * A segment may name a member of the row's tree, a row of a collection the row declares — by index
+ * for a positional one, by key for a keyed one — or a cell below that. Property access alone stops
+ * at the first collection handle, which is where a nested list's cells live.
+ */
+function descend(node, segments) {
+  let current = node;
+  for (const segment of segments) {
+    if (current == null) return null;
+    if (typeof current.at === "function" && /^\d+$/.test(segment)) current = current.at(Number(segment));
+    else if (typeof current.row === "function" && typeof current.cell === "function") current = current.row(segment);
+    else current = current[segment];
+  }
+  return current ?? null;
 }
