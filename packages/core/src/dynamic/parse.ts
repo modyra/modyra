@@ -481,19 +481,24 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     return [];
   }
   const seenNames = new Set<string>();
-  return items.filter((item): item is MdyDynamicField => {
+  return items.filter((item, index): item is MdyDynamicField => {
+    // Where this entry is written, so a finding underlines the entry rather than the array. A
+    // duplicate names the *second* occurrence: the first is legitimate until the second exists, and
+    // the second is the one a reader has to change.
+    const at = `/fields/${index}`;
     if (typeof item !== "object" || item === null) {
-      warnDev(`Dropped non-object dynamic field: ${JSON.stringify(item)}`);
+      warnDev(`Dropped non-object dynamic field: ${JSON.stringify(item)}`, at);
       return false;
     }
     const f = item as Partial<MdyDynamicField>;
     if (typeof f.name !== "string" || f.name.length === 0) {
-      warnDev(`Dropped dynamic field without a name: ${JSON.stringify(item)}`);
+      warnDev(`Dropped dynamic field without a name: ${JSON.stringify(item)}`, at);
       return false;
     }
     if (!isSafeDynamicSegment(f.name)) {
       warnDev(
         `Dropped dynamic field "${f.name}": name is reserved or contains forbidden path separators.`,
+      at,
       );
       return false;
     }
@@ -501,29 +506,31 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       warnDev(
         `Dropped dynamic field "${f.name}": "${MDY_ID_DELIMITER}" separates the segments of a generated id, ` +
           `so this name would collide with another field's parts.`,
+      at,
       );
       return false;
     }
     if (seenNames.has(f.name)) {
-      warnDev(`Dropped duplicate dynamic field name "${f.name}".`);
+      warnDev(`Dropped duplicate dynamic field name "${f.name}".`, at);
       return false;
     }
     seenNames.add(f.name);
     if (!(MDY_DYNAMIC_FIELD_KINDS as readonly unknown[]).includes(f.kind)) {
-      warnDev(`Dropped dynamic field "${f.name}" with unknown kind "${String(f.kind)}".`);
+      warnDev(`Dropped dynamic field "${f.name}" with unknown kind "${String(f.kind)}".`, at);
       return false;
     }
     if (f.label !== undefined && typeof f.label !== "string") {
-      warnDev(`Dropped dynamic field "${f.name}": label must be a string.`);
+      warnDev(`Dropped dynamic field "${f.name}": label must be a string.`, at);
       return false;
     }
     if (f.sensitive !== undefined && typeof f.sensitive !== "boolean") {
-      warnDev(`Dropped dynamic field "${f.name}": sensitive must be a boolean.`);
+      warnDev(`Dropped dynamic field "${f.name}": sensitive must be a boolean.`, at);
       return false;
     }
     if (f.placeholder !== undefined && typeof f.placeholder !== "string") {
       warnDev(
         `Dropped dynamic field "${f.name}": placeholder must be a string.`,
+      at,
       );
       return false;
     }
@@ -533,11 +540,11 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     if (f.kind === "number" || f.kind === "slider") {
       const numberField = f as Partial<MdyDynamicNumberField>;
       if (numberField.min !== undefined && !isFiniteNumber(numberField.min)) {
-        warnDev(`Dropped dynamic field "${f.name}": min must be a finite number.`);
+        warnDev(`Dropped dynamic field "${f.name}": min must be a finite number.`, at);
         return false;
       }
       if (numberField.max !== undefined && !isFiniteNumber(numberField.max)) {
-        warnDev(`Dropped dynamic field "${f.name}": max must be a finite number.`);
+        warnDev(`Dropped dynamic field "${f.name}": max must be a finite number.`, at);
         return false;
       }
       if (
@@ -545,16 +552,16 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         numberField.max !== undefined &&
         numberField.min > numberField.max
       ) {
-        warnDev(`Dropped dynamic field "${f.name}": min cannot exceed max.`);
+        warnDev(`Dropped dynamic field "${f.name}": min cannot exceed max.`, at);
         return false;
       }
       if (numberField.step !== undefined) {
         if (!isFiniteNumber(numberField.step)) {
-          warnDev(`Dropped dynamic field "${f.name}": step must be a finite number.`);
+          warnDev(`Dropped dynamic field "${f.name}": step must be a finite number.`, at);
           return false;
         }
         if (numberField.step <= 0) {
-          warnDev(`Dropped dynamic field "${f.name}": step must be greater than zero.`);
+          warnDev(`Dropped dynamic field "${f.name}": step must be greater than zero.`, at);
           return false;
         }
       }
@@ -568,6 +575,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       if (!hasValidOptions(options)) {
         warnDev(
           `Dropped dynamic field "${f.name}": kind "${String(f.kind)}" requires a valid options array.`,
+        at,
         );
         return false;
       }
@@ -798,8 +806,10 @@ export function parseDynamicForm(
     : undefined;
   let collections: MdyDynamicCollection[] = [];
   let fields: MdyDynamicField[] = collectingDiagnostics(
-    (message) => diagnostics.push({
-      code: diagnosticCode(message), severity: "error", path: "/fields", message,
+    // `/fields` only when the reporter did not say which entry: an envelope-level refusal is about
+    // the list, and a field's own is about the field.
+    (message, path) => diagnostics.push({
+      code: diagnosticCode(message), severity: "error", path: path ?? "/fields", message,
     }),
     () => (rawEnvelope?.version === 2 || rawEnvelope?.version === 3) && rawEnvelope.schema !== undefined
       ? []

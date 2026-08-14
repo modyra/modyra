@@ -82,7 +82,7 @@ export function assertSafeDynamicFieldNames(
 }
 
 
-let diagnosticSink: ((message: string) => void) | undefined;
+let diagnosticSink: ((message: string, path?: string) => void) | undefined;
 
 /**
  * Runs `read` with every `warnDev` finding going to `sink` instead of the console.
@@ -90,7 +90,18 @@ let diagnosticSink: ((message: string) => void) | undefined;
  * The sink is restored on the way out, including when `read` throws: a reader that abandons a
  * malformed document must not leave the next one reporting into its result.
  */
-export function collectingDiagnostics<T>(sink: (message: string) => void, read: () => T): T {
+/**
+ * Where a finding is, as a JSON pointer into the document, when the code that reports it knows.
+ *
+ * A reader is sent to the place they have to change. Without it every per-field finding pointed at
+ * `/fields` — the line the array opens on — so a two-hundred-line document assembled by a CMS sent
+ * the reader to the same line whichever entry was wrong, and an editor's underline stopped being
+ * worth more than the console message.
+ */
+export function collectingDiagnostics<T>(
+  sink: (message: string, path?: string) => void,
+  read: () => T,
+): T {
   const previous = diagnosticSink;
   diagnosticSink = sink;
   try {
@@ -100,13 +111,13 @@ export function collectingDiagnostics<T>(sink: (message: string) => void, read: 
   }
 }
 
-export function warnDev(message: string): void {
+export function warnDev(message: string, path?: string): void {
   // A caller holding a sink is collecting these into a result it is about to read, so writing to the
   // console as well duplicates every finding into a channel it did not ask for — and a tool that
   // parses a document per keystroke turns that into a stream. With no sink the console is the only
   // way the finding reaches anyone, which is why it stays the fallback rather than an option.
   if (diagnosticSink) {
-    diagnosticSink(message);
+    diagnosticSink(message, path);
     return;
   }
   console.warn(`[modyra] ${message}`);
