@@ -67,7 +67,7 @@ console.log(JSON.stringify(emitted));
 function runInConsumer(script) {
   const work = mkdtempSync(join(tmpdir(), "mdy-studio-"));
   try {
-    for (const pkg of ["studio-model", "studio-codegen", "studio-target-core"]) {
+    for (const pkg of ["studio-model", "studio-codegen", "studio-target-core", "studio-contract"]) {
       execFileSync("pnpm", ["pack", "--pack-destination", work], {
         cwd: join(REPO, "packages", pkg),
         stdio: ["ignore", "ignore", "pipe"],
@@ -403,6 +403,106 @@ battle(
           },
         );
       }
+    } finally {
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);
+
+/** Compile the same array bound to a contract, which is the project's other output. */
+const CONTRACT = `
+import { compileToContract } from "@modyra/studio-contract";
+import { createBlankProject, loadProject } from "@modyra/studio-model";
+
+const VALUES = [
+  ["no rule at all", undefined],
+  ["a whole number", 3],
+  ["not a number", NaN],
+  ["without bound", Infinity],
+  ["a string", "3"],
+];
+
+const blank = createBlankProject();
+const out = VALUES.map(([label, value]) => {
+  const draft = JSON.parse(JSON.stringify(blank));
+  draft.schema = {
+    node: "group", id: "root", name: "root",
+    children: [{
+      node: "array", id: "a1", name: "rows", initialRows: [],
+      item: { node: "group", id: "g1", name: "row",
+        children: [{ node: "field", id: "f1", name: "sku", kind: "text", validators: [] }] },
+      validators: value === undefined ? [] : [{ id: "v1", kind: "min", value }],
+    }],
+  };
+  const { project } = loadProject(draft);
+  const compiled = compileToContract(project);
+  const document = compiled.document ?? compiled.contract ?? compiled;
+  const found = JSON.stringify(document).match(/"minItems":([^,}]*)/);
+  return { label, minItems: found ? found[1] : null, diagnostics: (compiled.diagnostics ?? []).map((each) => each.code) };
+});
+console.log(JSON.stringify(out));
+`;
+
+battle(
+  {
+    claims: ["STU-002"],
+    title: "a row count the author wrote reaches the contract, or is reported as lost",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // A project has two outputs. The battle above is the generated module; this is the Dynamic Form
+    // Contract, compiled by a different package from the same validators — so a bound repaired in
+    // one is not repaired in the other, and the same question has to be asked twice.
+    const result = runInConsumer(CONTRACT);
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-002"],
+        what: "the studio packages could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      const rows = result.out;
+      const byLabel = (label) => rows.find((each) => each.label === label);
+      ctx.log.note("what each row count became in the contract", {
+        rows: rows.map((each) => [each.label, each.minItems, each.diagnostics]),
+      });
+
+      // The controls: a usable bound reaches the contract, and no rule leaves it out entirely, so
+      // the assertions below are about a bound that is neither.
+      expectEqual(byLabel("a whole number").minItems, "3", {
+        claimIds: ["STU-002"],
+        what: "a whole-number row count no longer reaches the contract",
+        detail: JSON.stringify(byLabel("a whole number")),
+      });
+
+      expectEqual(byLabel("no rule at all").minItems, null, {
+        claimIds: ["STU-002"],
+        what: "a collection with no row-count rule carries one in the contract anyway",
+        detail: JSON.stringify(byLabel("no rule at all")),
+      });
+
+      // And the wrong *type*, which is already dropped — the same control that makes this a gap
+      // rather than a missing feature in the module battle above.
+      expectEqual(byLabel("a string").minItems, null, {
+        claimIds: ["STU-002"],
+        what: "a row count of the wrong type reached the contract",
+        detail: JSON.stringify(byLabel("a string")),
+      });
+
+      // The values with a number's type that are not counts. `typeof` admits them and the contract
+      // is written as JSON, where both become `null` — a rule the author wrote, present in the
+      // output as nothing, with no diagnostic between the two.
+      const unusable = ["not a number", "without bound"].map(byLabel);
+      const emptied = unusable
+        .filter((each) => each.minItems === "null" && each.diagnostics.length === 0)
+        .map((each) => ({ bound: each.label, minItems: each.minItems }));
+
+      expectEqual(emptied, [], {
+        claimIds: ["STU-002"],
+        what: "a row count that is not a finite number reached the contract as null, with nothing reported",
+        detail: JSON.stringify(unusable),
+      });
     } finally {
       if (result.work) rmSync(result.work, { recursive: true, force: true });
     }
