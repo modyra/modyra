@@ -426,6 +426,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "UI-007",
+    title: "A stepper lands on the values its step declares.",
+    area: "widgets",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/widgets createValueWidgetController — increment/decrement take a step",
+      "HTMLInputElement.stepUp/stepDown — the control this widget replaces snaps to the step",
+      "CLAUDE.md — a migration preserves validation and runtime behaviour unless change is authorized",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
