@@ -37,7 +37,6 @@ import {
   parseDynamicForm,
   type MdyDynamicField,
   type MdyDynamicFieldNode,
-  type MdyDynamicRecordNode,
   type MdyDynamicFormConfigV2,
   type MdyDynamicFormConfigV3,
   type MdyDynamicGroupNode,
@@ -207,9 +206,9 @@ export function dynamicFieldForNode(node: FieldNode, name: string): MdyDynamicFi
 /**
  * A collection, positional or keyed.
  *
- * A row may hold a collection of its own — the Contract accepts one keyed level below a positional
- * one, and any depth of keyed levels — with one rule enforced here as it is everywhere: a path
- * crosses **one** positional level, so an array below another array is refused rather than emitted.
+ * A row may hold a collection of its own, of either kind and at any depth: a collection inside a row
+ * is addressed by the pattern its declaration has, so a second positional level names its rows as
+ * unambiguously as the first (ADR 0043).
  */
 function mapCollectionNode(
   node: ArrayNode | RecordNode,
@@ -218,15 +217,6 @@ function mapCollectionNode(
 ): MdyDynamicNode | null {
   const item = mapNode(node.item, diagnostics, positional || node.node === "array");
   if (!item) return null;
-  if (item.node === "array" && (positional || node.node === "array")) {
-    diagnostics.push({
-      code: "UNSUPPORTED_NESTING",
-      severity: "error",
-      message: "A path crosses one positional level: an array below another array is not addressable",
-      nodeId: node.id,
-    });
-    return null;
-  }
 
   for (const v of node.validators) {
     if (v.kind !== "min" && v.kind !== "max") {
@@ -245,8 +235,7 @@ function mapCollectionNode(
     // document can only carry the ones the author declared.
     return { node: "record", label: node.label, item, initialValue: node.initialRows };
   }
-  // Refused above, so an array's row is never another array by the time it is emitted.
-  const row = item as MdyDynamicFieldNode | MdyDynamicGroupNode | MdyDynamicRecordNode;
+  const row = item;
 
   const minItems = node.validators.find((v): v is typeof v & { value: number } => v.kind === "min")?.value;
   const maxItems = node.validators.find((v): v is typeof v & { value: number } => v.kind === "max")?.value;

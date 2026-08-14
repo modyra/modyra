@@ -1,6 +1,6 @@
 # ADR 0043: A collection nests without a limit
 
-Status: Accepted — supersedes the one-positional-level rule of
+Status: Accepted — amended 2026-08-14 (Studio followed); supersedes the one-positional-level rule of
 [ADR 0040](0040-a-collection-owns-its-subtree.md)
 
 ## Context
@@ -52,9 +52,10 @@ documents from elsewhere should still bound what it accepts before handing it ov
 still refuses is content: a node that is not a node, an unsafe segment name, an `initialValue` of the
 wrong shape.
 
-**Studio lags deliberately.** `studio-model`, `studio-contract` and `studio-editor` still state one
-positional level. A document core accepts that Studio cannot express is expected until that pass
-lands, not a defect in either.
+**Studio followed** — *amended 2026-08-14.* `studio-model`'s `ArrayNode.item` is any schema node, `studio-editor` no longer refuses an array
+inside an array's row, and `studio-contract` emits the nesting rather than reporting
+`UNSUPPORTED_NESTING`, a diagnostic code that no longer exists. What a project can draw and what the
+engine can run are the same set again.
 
 ## Alternatives rejected
 
@@ -80,6 +81,8 @@ walk itself, where it belongs.
   and builds; a hundred-level document parses; unsafe row keys are still refused at any depth.
 - `battle-tests/generative/properties/nested.property.test.mjs` — generated campaigns across the
   boundary, against a model that knows only "a child row lives while its parent row does".
+- `packages/studio-contract/test/compile.test.mjs` — a project nesting collections of either kind
+  three deep compiles with no error diagnostic, and the emitted contract carries every level.
 
 ## Security and privacy
 

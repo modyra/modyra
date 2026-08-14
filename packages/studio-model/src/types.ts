@@ -143,10 +143,10 @@ export interface GroupNode extends NodeBase {
 export interface ArrayNode extends NodeBase {
   node: "array";
   /**
-   * A row's shape. It may hold a keyed collection — its descendants are then addressed by name
-   * below this array's index. It may not hold another array: a path crosses one positional level.
+   * A row's shape, a collection of either kind included: a row's descendants are addressed below
+   * this array's index, and a collection the row declares names its own rows the same way (ADR 0043).
    */
-  item: FieldNode | GroupNode | RecordNode;
+  item: StudioSchemaNode;
   initialRows: unknown[];
   validators: StudioArrayValidator[];
 }

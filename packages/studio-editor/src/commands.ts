@@ -88,11 +88,8 @@ function insert(root: StudioSchemaNode, node: StudioSchemaNode, placement: Place
   if (!array || (array.node !== "array" && array.node !== "record")) {
     throw new Error(`insert: "arrayItem" target "${placement.arrayId}" is not a collection node`);
   }
-  // A path crosses one positional level: a row below a positional collection may be keyed, and a
-  // keyed row may hold either kind, but two positional levels address nothing.
-  if (node.node === "array" && array.node === "array") {
-    throw new Error("insert: an array's item cannot itself be an array");
-  }
+  // A row may hold a collection of either kind, at any depth: a collection inside a row is addressed
+  // by the pattern its declaration has, so a second positional level is as addressable as the first.
   array.item = node;
 }
 
