@@ -127,16 +127,16 @@ export function createKeyedNestedReferenceModel({ orderCells, lineCells, allocat
           case "record.remove":
             orders.delete(operation.key);
             break;
+          // A rename onto a key that is taken is refused, not resolved: one key names one order, and
+          // the engine will not decide which of two orders that is. `rename-onto-occupied` pins it.
           case "record.rename": {
             const moving = orders.get(operation.from);
-            if (!moving) break;
-            // Renaming onto an occupied key replaces what was there: one key names one order.
+            if (!moving || orders.has(operation.to)) break;
             const next = new Map();
             for (const [key, order] of orders) {
               if (key === operation.from) next.set(operation.to, moving);
-              else if (key !== operation.to) next.set(key, order);
+              else next.set(key, order);
             }
-            if (!next.has(operation.to)) next.set(operation.to, moving);
             orders = next;
             break;
           }
