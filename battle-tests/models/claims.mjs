@@ -492,6 +492,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "STU-006",
+    title: "A command sequence is validated to its end before any of it is applied.",
+    area: "studio",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/studio-editor createSequenceCommand — validates each step against the project the one before it produced",
+      "@modyra/studio-editor CommandHistory — validates, and rejects a command whose diagnostics contain an error",
+      "@modyra/studio-model StudioDiagnostic — severity is error, warning or info",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",

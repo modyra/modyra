@@ -1117,3 +1117,112 @@ battle(
     }
   },
 );
+
+/** Run a three-step sequence whose first step is advisory and whose last is invalid. */
+const SEQUENCE = `
+import { CommandHistory, createSequenceCommand } from "@modyra/studio-editor";
+import { createBlankProject } from "@modyra/studio-model";
+
+/** A step this battle owns, so the sequence's own logic is what is under test. */
+const step = (name, diagnostics, ran) => ({
+  kind: "battle",
+  description: name,
+  affectedIds: [],
+  validate: () => diagnostics,
+  apply: (project) => { ran.push(name); return project; },
+  inverse: () => step("undo " + name, [], ran),
+});
+
+const ADVISORY = [{ code: "SOMETHING_ADVISORY", severity: "warning", message: "advisory" }];
+const INVALID = [{ code: "REALLY_WRONG", severity: "error", message: "invalid" }];
+
+const project = createBlankProject();
+
+const attempt = (label, steps) => {
+  const ran = [];
+  const sequence = createSequenceCommand(steps(ran), label);
+  const reported = sequence.validate(project).map((each) => each.severity + ":" + each.code);
+  ran.length = 0;
+  let rejected = null;
+  try { new CommandHistory().apply(project, sequence); }
+  catch (error) { rejected = error.constructor.name; }
+  return { label, reported, rejected, ran };
+};
+
+console.log(JSON.stringify({
+  clean: attempt("every step fine", (ran) => [step("a", [], ran), step("b", [], ran)]),
+  invalidAlone: attempt("one invalid step", (ran) => [step("only", INVALID, ran)]),
+  hidden: attempt("advisory first, invalid last", (ran) => [
+    step("first", ADVISORY, ran), step("second", [], ran), step("third", INVALID, ran),
+  ]),
+}));
+`;
+
+battle(
+  {
+    claims: ["STU-006"],
+    title: "an invalid step is not hidden by an advisory one before it",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    // `createSequenceCommand.validate` threads the project through each step, which is the careful
+    // half: a step is checked against what the one before it produced rather than against the
+    // start. What it does at the first step that says anything is return, whatever the severity —
+    // and `CommandHistory` rejects only on an error.
+    //
+    // So a step whose diagnostic is advisory ends validation, and every step after it is applied
+    // without ever having been checked. No editor command emits anything but an error today, which
+    // is what makes this latent rather than live — and is exactly why it is worth pinning now: the
+    // day a warning is added, a sequence stops being validated and nothing about that change looks
+    // like it touches sequences.
+    const result = runInConsumer(SEQUENCE);
+
+    try {
+      expectClaim(result.ran === true, {
+        claimIds: ["STU-006"],
+        what: "the studio packages could not be packed and installed",
+        detail: result.message ?? "",
+      });
+
+      const { clean, invalidAlone, hidden } = result.out;
+      ctx.log.note("what the history made of each sequence", { clean, invalidAlone, hidden });
+
+      // The known-good cases, in the same run: a clean sequence is applied, and an invalid step on
+      // its own is refused. So a failure below is the concealment rather than the history never
+      // rejecting or never applying.
+      // Applied, and that its steps ran — not how many times. Threading the project through
+      // `validate`, computing an `inverse` and applying all walk the sequence, so a step's `apply`
+      // runs more than once per command. That is a cost rather than a contract and pinning the
+      // number here would make this battle about the implementation instead of the concealment.
+      expectClaim(clean.rejected === null && clean.ran.length > 0, {
+        claimIds: ["STU-006"],
+        what: "a sequence with nothing wrong with it was not applied, so nothing below is about concealment",
+        detail: JSON.stringify(clean),
+      });
+
+      expectEqual(invalidAlone.rejected, "CommandRejectedError", {
+        claimIds: ["STU-006"],
+        what: "an invalid step on its own was applied, which is a wider failure than the one under test",
+        detail: JSON.stringify(invalidAlone),
+      });
+
+      // And the sequence that carries both. The invalid step is the same one refused above.
+      expectEqual(hidden.rejected, "CommandRejectedError", {
+        claimIds: ["STU-006"],
+        what: "a sequence containing an invalid step was applied because an earlier step reported something advisory",
+        detail: JSON.stringify(hidden),
+      });
+
+      // And the invalid step in particular never runs against the project the history holds. The
+      // other two may be walked while the sequence is being judged; the third is the one that must
+      // not be.
+      expectClaim(!hidden.ran.includes("third"), {
+        claimIds: ["STU-006"],
+        what: "the invalid step of a rejected sequence was applied",
+        detail: JSON.stringify(hidden),
+      });
+    } finally {
+      if (result.work) rmSync(result.work, { recursive: true, force: true });
+    }
+  },
+);
