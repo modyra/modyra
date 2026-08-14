@@ -9,6 +9,7 @@
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import { blocksFocus } from "../interactivity.js";
 import type { MdyFieldError } from "@modyra/core";
+import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import type { MdyMultiselectFieldState } from "./multiselect-field-types.js";
@@ -28,6 +29,7 @@ export function multiselectFieldPartIds(widgetId: string): {
   readonly descriptionId: string;
   readonly errorId: string;
 } {
+  assertUsableWidgetId(widgetId);
   return {
     labelId: `${widgetId}__label`,
     groupId: `${widgetId}__group`,

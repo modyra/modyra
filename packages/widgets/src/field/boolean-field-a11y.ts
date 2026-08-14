@@ -3,6 +3,7 @@
  */
 
 import type { MdyFieldError } from "@modyra/core";
+import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import { shownErrors } from "./verdict.js";
@@ -24,6 +25,7 @@ export function booleanFieldPartIds(widgetId: string): {
   readonly descriptionId: string;
   readonly errorId: string;
 } {
+  assertUsableWidgetId(widgetId);
   return {
     inputId: `${widgetId}__input`,
     labelId: `${widgetId}__label`,

@@ -14,7 +14,7 @@
 import type { MdyFieldConstraints, MdyFieldError } from "@modyra/core";
 import { NO_CONSTRAINTS } from "@modyra/core";
 import { nativeConstraintAttributes } from "../native-constraints.js";
-import { defaultWidgetIdFactory as idFactory } from "../ids.js";
+import { defaultWidgetIdFactory as idFactory, assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import { shownErrors } from "./verdict.js";
@@ -73,6 +73,7 @@ export function fieldShellPartIds(widgetId: string): {
   readonly descriptionId: string;
   readonly errorId: string;
 } {
+  assertUsableWidgetId(widgetId);
   return {
     labelId: idFactory.part(widgetId, "label"),
     descriptionId: idFactory.part(widgetId, "description"),

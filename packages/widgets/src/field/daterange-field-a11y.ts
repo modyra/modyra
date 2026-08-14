@@ -10,6 +10,7 @@
 import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import type { MdyFieldError } from "@modyra/core";
+import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyDaterangeFieldState } from "./daterange-field-types.js";
@@ -31,6 +32,7 @@ export function daterangeFieldPartIds(widgetId: string): {
   readonly descriptionId: string;
   readonly errorId: string;
 } {
+  assertUsableWidgetId(widgetId);
   return {
     labelId: `${widgetId}__label`,
     startId: `${widgetId}__start`,

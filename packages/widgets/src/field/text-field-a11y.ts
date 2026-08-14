@@ -2,7 +2,7 @@
  * Accessibility projection for primitive field widgets.
  */
 import type { MdyFieldError } from "@modyra/core";
-import { defaultWidgetIdFactory as idFactory } from "../ids.js";
+import { defaultWidgetIdFactory as idFactory, assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
 import type { MdyFieldState } from "./field-types.js";
@@ -39,6 +39,7 @@ export function textFieldPartIds(widgetId: string): {
   readonly descriptionId: string;
   readonly errorId: string;
 } {
+  assertUsableWidgetId(widgetId);
   return {
     inputId: widgetId,
     labelId: idFactory.part(widgetId, "label"),

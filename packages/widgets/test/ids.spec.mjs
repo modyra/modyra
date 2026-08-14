@@ -8,7 +8,14 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MDY_ID_DELIMITER, defaultWidgetIdFactory, isValidWidgetId } from "../dist/index.js";
+import {
+  MDY_ID_DELIMITER,
+  booleanFieldPartIds,
+  defaultWidgetIdFactory,
+  isValidWidgetId,
+  optionFieldPartIds,
+  textFieldPartIds,
+} from "../dist/index.js";
 
 test("an id that would split an ARIA reference is not a valid widget id", () => {
   // `aria-labelledby` and `aria-describedby` are space-separated *lists*, so a widget id carrying a
@@ -39,4 +46,26 @@ test("the factory joins what it is given, and the guard is what decides", () => 
     defaultWidgetIdFactory.item("field", "option", "3"),
     `field${MDY_ID_DELIMITER}option${MDY_ID_DELIMITER}3`,
   );
+});
+
+test("a widget's part ids are refused when its id cannot be referenced", () => {
+  // A predicate protects the renderers that remember to call it, and this package is the surface a
+  // third-party renderer is built on. The builders are the contract's front door, so they answer
+  // even when nobody asked the question first.
+  assert.throws(() => textFieldPartIds("my form"), /cannot be a widget id/);
+  assert.throws(() => booleanFieldPartIds(""), /cannot be a widget id/);
+  assert.throws(() => optionFieldPartIds(`a${MDY_ID_DELIMITER}b`), /cannot be a widget id/);
+
+  // …and an ordinary id is built exactly as before. The control carries the widget id itself, which
+  // is why the delimiter may not appear in one: `field__label` as a widget id and the label of
+  // `field` would be the same string.
+  const ids = textFieldPartIds("field");
+  assert.equal(ids.inputId, "field");
+  assert.equal(ids.labelId, `field${MDY_ID_DELIMITER}label`);
+});
+
+test("the joining primitive stays a joining primitive", () => {
+  // Deliberately not guarded: a consumer may replace the factory, it is documented as deterministic
+  // and reversible, and something constructing ids speculatively is entitled to use it.
+  assert.equal(defaultWidgetIdFactory.part("my form", "label"), `my form${MDY_ID_DELIMITER}label`);
 });

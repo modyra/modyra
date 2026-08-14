@@ -63,6 +63,7 @@ export type { MdyWidgetState, MdyWidgetStateContract } from "./widget-states.js"
 
 export {
   defaultWidgetIdFactory,
+  assertUsableWidgetId,
   isValidWidgetId,
   MDY_ID_DELIMITER,
 } from "./ids.js";
