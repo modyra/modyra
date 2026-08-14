@@ -15,6 +15,11 @@
  * consumer. It is a file rather than a string here because the payloads are made of quotes,
  * backticks and `${`: nesting them in a template literal is how a probe ends up testing its own
  * escaping instead of the thing it was pointed at.
+ *
+ * This is the heaviest battle in the suite — seven packs and an install, around six seconds — and
+ * the only one whose first assertion is about its own machinery. On a loaded machine that step can
+ * fail, and it says so in those words: a red here is read by looking at which assertion broke
+ * before it is read as a finding about a target.
  */
 
 import { execFileSync } from "node:child_process";
