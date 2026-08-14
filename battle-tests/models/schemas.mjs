@@ -241,3 +241,42 @@ export const NESTED_ORDERS_SPEC = Object.freeze({
     }),
   }),
 });
+
+/**
+ * Nesting from a positional root.
+ *
+ * Every other nested fixture is keyed at the outermost level, and that is not an accident of taste:
+ * a keyed row addresses its children by a name the domain chose, while a positional row addresses
+ * them by an index the collection chose. A collection *inside* a positional row therefore arrives at
+ * a path whose parent segment is `0`, `1`, `2` — which is what a record's keys look like and what an
+ * array's indices are, and reading one as the other is a mistake no keyed fixture can provoke.
+ *
+ * `batches` holds `readings` positionally and `tags` by key, so both crossings are expressible: an
+ * array under an array, and a record under an array.
+ */
+export const POSITIONAL_ROOT_SPEC = Object.freeze({
+  version: MDY_SCHEMA_SPEC_VERSION,
+  fields: Object.freeze({
+    batches: Object.freeze({
+      kind: "array",
+      of: Object.freeze({
+        label: Object.freeze({ kind: "text", initial: "batch" }),
+        readings: Object.freeze({
+          kind: "array",
+          of: Object.freeze({
+            value: Object.freeze({ kind: "text", initial: "0" }),
+          }),
+          initial: Object.freeze([]),
+        }),
+        tags: Object.freeze({
+          kind: "record",
+          of: Object.freeze({
+            note: Object.freeze({ kind: "text", initial: "unset" }),
+          }),
+          initial: Object.freeze({}),
+        }),
+      }),
+      initial: Object.freeze([]),
+    }),
+  }),
+});
