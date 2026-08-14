@@ -139,3 +139,65 @@ export function createCheckoutProject() {
     metadata: {},
   };
 }
+
+/**
+ * The checkout project with a row that is itself a collection, and one that holds another.
+ *
+ * The project above holds a single flat array, which no row constraint can refuse: a collection
+ * inside a *group* inside a row has always been legal, because a group's children hold whatever a
+ * schema key holds. What distinguishes an engine that nests without a limit from one that does not
+ * is a row that **is** a collection, and that is what a target's generated code has to compile.
+ */
+export function createNestedCollectionProject() {
+  const project = createCheckoutProject();
+  const items = project.schema.children.find((child) => child.name === "items");
+  items.item.children.push({
+    node: "array",
+    id: "nd_allocations",
+    name: "allocations",
+    label: "Allocations",
+    item: {
+      node: "group",
+      id: "nd_allocation",
+      name: "allocation",
+      children: [
+        {
+          node: "field",
+          id: "nd_warehouse",
+          name: "warehouse",
+          fieldKind: "text",
+          valueType: "string",
+          initialValue: "",
+          validators: [],
+        },
+      ],
+    },
+    initialRows: [{ warehouse: "MI-1" }],
+    validators: [],
+  });
+  project.schema.children.push({
+    node: "array",
+    id: "nd_matrix",
+    name: "matrix",
+    label: "Matrix",
+    item: {
+      node: "array",
+      id: "nd_matrix_row",
+      name: "row",
+      item: {
+        node: "field",
+        id: "nd_cell",
+        name: "cell",
+        fieldKind: "number",
+        valueType: "number",
+        initialValue: 0,
+        validators: [],
+      },
+      initialRows: [],
+      validators: [],
+    },
+    initialRows: [],
+    validators: [],
+  });
+  return project;
+}

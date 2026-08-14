@@ -10,7 +10,7 @@ import { test } from "node:test";
 import { createReactTarget, reactTargetManifest } from "../dist/index.js";
 import { createCoreTarget } from "../../studio-target-core/dist/index.js";
 import { runConformanceSuite } from "@modyra/studio-codegen";
-import { createCheckoutProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";
+import { createCheckoutProject, createNestedCollectionProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";
 
 const execFileAsync = promisify(execFile);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -84,6 +84,44 @@ test(
   async () => {
     const artifact = await createReactTarget().generate(createCheckoutProject(), {});
     const dir = await mkdtemp(join(tmpdir(), "mdy-studio-target-react-typecheck-"));
+    try {
+      for (const file of artifact.files) {
+        await writeFile(join(dir, file.path), file.content, "utf8");
+      }
+      await writeFile(
+        join(dir, "tsconfig.json"),
+        JSON.stringify({
+          compilerOptions: {
+            strict: true,
+            target: "ES2022",
+            module: "NodeNext",
+            moduleResolution: "nodenext",
+            jsx: "react-jsx",
+            noEmit: true,
+            skipLibCheck: true,
+            noUnusedLocals: true,
+            noUnusedParameters: false,
+            lib: ["ES2022", "DOM"],
+            paths: { "@modyra/react": [reactTypesPath], "@modyra/core": [coreTypesPath] },
+          },
+          include: ["*.ts"],
+        }),
+        "utf8",
+      );
+      const tscBin = join(__dirname, "../../../node_modules/typescript/bin/tsc");
+      await execFileAsync(process.execPath, [tscBin, "-p", join(dir, "tsconfig.json")]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "generated React files compile when a row is a collection",
+  { skip: (!existsSync(reactTypesPath) || !existsSync(coreTypesPath)) && "packages/react and packages/core must both be built first (npm run build:packages)" },
+  async () => {
+    const artifact = await createReactTarget().generate(createNestedCollectionProject(), {});
+    const dir = await mkdtemp(join(tmpdir(), "mdy-studio-target-react-nested-"));
     try {
       for (const file of artifact.files) {
         await writeFile(join(dir, file.path), file.content, "utf8");
