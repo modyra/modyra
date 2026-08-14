@@ -1,14 +1,15 @@
 /**
- * A form that refuses to submit and cannot say why.
+ * A form that refuses to submit must be able to say why.
  *
  * A form-level validator returns errors attributed to field paths. A keyed collection's paths are
  * data, so a rule about rows names one — `rows.a.code` — and the row it named can leave: the rule
- * is computed from a server response, a snapshot, a list of ids. When the field behind the path is
- * gone, the error still counts towards `valid`, and no public read returns it: not the path it
- * names, not the form's own bucket, not the submit event.
+ * is computed from a server response, a snapshot, a list of ids. The error still counts towards
+ * `valid`, and the path it names no longer has a field to carry it.
  *
- * The engine already states the principle for server errors, where a path matching no field surfaces
- * at the form instead of being dropped. This is the same situation, one validator over.
+ * It surfaces at the form's own bucket instead, the principle the engine already states for server
+ * errors, where a path matching no field surfaces at the form rather than being dropped. Both halves
+ * are under attack here: an error that stops counting is as much a break as one that becomes
+ * unreadable, because each leaves a consumer unable to explain a form that will not submit.
  */
 
 import { createForm, field, group, record } from "@modyra/core";
@@ -62,7 +63,16 @@ battle(
       const stuck = !form.state.valid();
       const readable = visibleErrors(form, "rows.a.code");
 
-      expectClaim(!stuck || readable.length > 0, {
+      // Both halves, positively. As an implication this passes whenever the form is valid — which is
+      // the other way the promise breaks: a rule that still names a path, silently dropped from the
+      // verdict as well as from every read. Neither escape is left open.
+      expectClaim(stuck, {
+        claimIds: ["VAL-003"],
+        what: "a rule that still names a departed row's cell still counts towards the verdict",
+        detail: `valid=${form.state.valid()} canSubmit=${form.state.canSubmit()}`,
+      });
+
+      expectClaim(readable.length > 0, {
         claimIds: ["VAL-003", "SUB-001"],
         what: "a form that will not submit says why through some public read",
         detail: `valid=${form.state.valid()} canSubmit=${form.state.canSubmit()} readable=${JSON.stringify(readable)}`,
@@ -94,7 +104,16 @@ battle(
       await ctx.scheduler.flush();
 
       const readable = visibleErrors(form, "rows.ghost.code");
-      expectClaim(form.state.valid() || readable.length > 0, {
+
+      // Stated positively for the same reason as above: as an implication, a form that quietly went
+      // valid would pass while the rule it was given had vanished without trace.
+      expectClaim(!form.state.valid(), {
+        claimIds: ["VAL-003"],
+        what: "a rule naming a path that never existed still counts towards the verdict",
+        detail: `valid=${form.state.valid()}`,
+      });
+
+      expectClaim(readable.length > 0, {
         claimIds: ["VAL-003"],
         what: "the verdict that made the form invalid can be read",
         detail: `valid=${form.state.valid()} readable=${JSON.stringify(readable)}`,

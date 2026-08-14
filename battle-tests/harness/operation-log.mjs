@@ -17,9 +17,11 @@ export function createOperationLog() {
   let mountedPhases = 0;
   let unmountedPhases = 0;
   let asyncStarted = 0;
+  let assertions = 0;
 
   const counts = () => ({
     actions: operations.length + notes.length,
+    assertions,
     operations: operations.length,
     structural,
     mountedPhases,
@@ -49,12 +51,16 @@ export function createOperationLog() {
     asyncRunStarted() {
       asyncStarted += 1;
     },
+    /** A claim-carrying assertion this battle made. Counted, so "concluded nothing" cannot pass. */
+    asserted() {
+      assertions += 1;
+    },
     operations: () => [...operations],
     notes: () => [...notes],
     lines: () => operations.map((operation, index) => `${index}. ${describeOperation(operation)}`),
     /**
-     * The counters a battle can assert on. `actions` is the coarse one the wrapper enforces; the
-     * rest let a suite state the specific thing it must have exercised.
+     * The counters a battle can assert on. `actions` and `assertions` are the coarse pair the
+     * wrapper enforces; the rest let a suite state the specific thing it must have exercised.
      */
     counts,
     toJSON: () => ({ operations: [...operations], notes: [...notes], counts: counts() }),
@@ -71,8 +77,8 @@ export class EmptyBattleError extends Error {
   constructor(counts, expectations) {
     const missing = expectations.map(({ what, need, got }) => `${what}: needed ${need}, got ${got}`);
     super(
-      `battle recorded no meaningful action — ${missing.join("; ")}. ` +
-        `A battle that can pass without attacking is not evidence.`,
+      `battle did not do what it declared — ${missing.join("; ")}. ` +
+        `A battle that can pass without attacking, or without concluding anything, is not evidence.`,
     );
     this.name = "EmptyBattleError";
     this.counts = counts;
@@ -82,13 +88,14 @@ export class EmptyBattleError extends Error {
 /**
  * Enforce what a battle claims to have exercised.
  *
- * `requires` names counters that must be positive; `actions` is always required, so the default
- * already refuses an empty test.
+ * `requires` names counters that must be positive. `actions` and `assertions` are always required:
+ * a battle that exercised nothing proves nothing, and so does one that exercised a path and never
+ * stated what the path had to do. The two halves fail the same way.
  */
 export function assertExercised(log, requires = []) {
   const counts = log.counts();
   const failures = [];
-  for (const what of ["actions", ...requires]) {
+  for (const what of ["actions", "assertions", ...requires]) {
     const got = counts[what];
     if (got === undefined) throw new Error(`unknown battle counter ${JSON.stringify(what)}`);
     if (got <= 0) failures.push({ what, need: "> 0", got });

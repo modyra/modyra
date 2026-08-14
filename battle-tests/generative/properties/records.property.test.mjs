@@ -10,11 +10,11 @@
  */
 
 import { battle } from "../../harness/battle.mjs";
-import { BattleBreak } from "../../harness/assertions.mjs";
+import { BattleBreak, compareCanonical } from "../../harness/assertions.mjs";
 import { createBattleContext } from "../../harness/context.mjs";
 import { createRng, runCount, runSeed } from "../../harness/seed.mjs";
 import { shrink } from "../../harness/shrinking.mjs";
-import { diffCanonical, encodeValue } from "../../models/observations.mjs";
+import { encodeValue } from "../../models/observations.mjs";
 import { createReferenceModel } from "../reference-model.mjs";
 import { generateSequence } from "../generators/operations.mjs";
 
@@ -66,7 +66,7 @@ async function runSequence(operations, { log }) {
 
       const actual = observableOf(context.form, context.collections.rows);
       const expected = expectedOf(model);
-      const divergence = diffCanonical(expected, actual);
+      const divergence = compareCanonical(expected, actual);
       if (divergence) return { divergence, index, operation, expected, actual };
     }
     return { divergence: null };

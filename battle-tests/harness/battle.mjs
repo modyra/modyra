@@ -17,6 +17,7 @@ import test from "node:test";
 import { claimsFor, worstSeverity } from "../models/claims.mjs";
 import { assertSeverity } from "../models/severity.mjs";
 import { createBattleContext } from "./context.mjs";
+import { withAssertionScope } from "./assertion-scope.mjs";
 import { createOperationLog, assertExercised } from "./operation-log.mjs";
 import { createRng, resolveSeed } from "./seed.mjs";
 import { createScheduler } from "./scheduler.mjs";
@@ -28,8 +29,9 @@ import { buildReport, formatSummary, writeReport } from "./reporting.mjs";
  * @param meta.title        What the attack tries to make happen.
  * @param meta.severity     Optional override; defaults to the worst severity among the claims.
  * @param meta.environments Where this attack is meaningful; declared for the CI tiers.
- * @param meta.open        Why this attack is reported rather than enforced — a finding waiting on a
- *                          decision. Reports as a todo instead of failing the run.
+ * @param meta.open         Why this attack is reported rather than enforced — a finding waiting on
+ *                          a decision. Reports as a todo instead of failing the run. Refused at S0
+ *                          and S1, which block a release and a merge respectively.
  * @param meta.requires     Counters that must be positive for the battle to count as executed
  *                          (`structural`, `mountedPhases`, `unmountedPhases`, `observations`,
  *                          `asyncStarted`) — `actions` is always required.
@@ -41,7 +43,19 @@ export function battle(meta, attack) {
 
   // `open` marks a finding that is real, reproduced, and waiting on a decision nobody has taken yet.
   // It reports without failing, so the evidence stays in the suite instead of in a note somewhere,
-  // and the suite stays usable as a gate. A battle is never marked open to make it pass.
+  // and the suite stays usable as a gate.
+  //
+  // It stops at S1. The severity model makes S0 a release blocker and S1 a merge blocker for the
+  // affected package: a blocker that reports without failing is not a blocker, and the suite would
+  // go green carrying the finding it exists to raise. An attack on an integrity or correctness
+  // promise is enforced or it is not in the suite.
+  if (meta.open && (severity === "S0" || severity === "S1")) {
+    throw new Error(
+      `battle "${meta.title}" cites ${meta.claims.join(", ")} at ${severity} and is marked open. ` +
+        `${severity} blocks a release or a merge, so it cannot report without failing. ` +
+        `Fix the break, or state the narrower claim the suite can enforce today.`,
+    );
+  }
   const options = meta.open ? { concurrency: false, todo: meta.open } : { concurrency: false };
 
   return test(name, options, async (t) => {
@@ -88,7 +102,7 @@ export function battle(meta, attack) {
 
     let failure = null;
     try {
-      await attack(ctx);
+      await withAssertionScope(log, () => attack(ctx));
       assertExercised(log, meta.requires ?? []);
     } catch (error) {
       failure = error;

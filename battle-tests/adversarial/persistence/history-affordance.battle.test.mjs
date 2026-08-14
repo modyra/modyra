@@ -43,9 +43,18 @@ battle(
 
     const undoDidSomething = JSON.stringify(afterUndo.value) !== JSON.stringify(declared.value);
 
-    expectClaim(!undoDidSomething || offered, {
+    // The premise, asserted rather than assumed: declaring a row is an undoable change. Left as the
+    // antecedent of an implication, an undo that silently stopped working would satisfy this battle
+    // by doing nothing — the regression it exists to catch would read as a pass.
+    expectClaim(undoDidSomething, {
       claimIds: ["PER-002"],
-      what: "undo changed the value while canUndo said there was nothing to undo",
+      what: "undo in the same task reverses the row that was just declared",
+      detail: `value ${JSON.stringify(declared.value.of.rows.keys)} became ${JSON.stringify(afterUndo.value.of.rows.keys)}`,
+    });
+
+    expectClaim(offered, {
+      claimIds: ["PER-002"],
+      what: "canUndo offered the undo that the same task then performed",
       detail: `canUndo=${offered}, value ${JSON.stringify(declared.value.of.rows.keys)} became ${JSON.stringify(afterUndo.value.of.rows.keys)}`,
     });
 
@@ -62,9 +71,15 @@ battle(
     const after = settled.observe("undo, next tick");
 
     const changedLater = JSON.stringify(after.value) !== JSON.stringify(before.value);
-    expectClaim(!changedLater || offeredLater, {
+    expectClaim(changedLater, {
       claimIds: ["PER-002"],
-      what: "one tick later, canUndo still agrees with what undo does",
+      what: "one tick later, undo still reverses the row that was declared",
+      detail: `${JSON.stringify(before.value.of.rows.keys)} became ${JSON.stringify(after.value.of.rows.keys)}`,
+    });
+
+    expectClaim(offeredLater, {
+      claimIds: ["PER-002"],
+      what: "one tick later, canUndo still offers the undo that then performs",
       detail: `canUndo=${offeredLater}`,
     });
   },
@@ -95,9 +110,19 @@ battle(
     const afterRedo = redo.observe("redo after that edit");
 
     const redoDidNothing = JSON.stringify(afterRedo.value) === JSON.stringify(beforeRedo.value);
-    expectClaim(!redoDidNothing || !redoOffered, {
+
+    // Both halves stated positively. As an implication, a redo that resurrected the discarded row
+    // would satisfy the battle by making the antecedent false — the stack-invalidation semantics
+    // under attack would go unchecked in exactly the case that breaks them.
+    expectClaim(redoDidNothing, {
       claimIds: ["PER-002"],
-      what: "canRedo said there was something to redo and redo did nothing",
+      what: "an edit after an undo invalidates the redo stack, so redo does nothing",
+      detail: `keys ${JSON.stringify(beforeRedo.value.of.rows.keys)} became ${JSON.stringify(afterRedo.value.of.rows.keys)}`,
+    });
+
+    expectClaim(!redoOffered, {
+      claimIds: ["PER-002"],
+      what: "canRedo does not offer the redo that the invalidated stack cannot perform",
       detail: `canRedo=${redoOffered}, keys ${JSON.stringify(beforeRedo.value.of.rows.keys)} stayed ${JSON.stringify(afterRedo.value.of.rows.keys)}`,
     });
   },

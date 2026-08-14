@@ -6,6 +6,7 @@
  * {@link BattleBreak}, which the wrapper turns into a replayable artefact.
  */
 
+import { countAssertion } from "./assertion-scope.mjs";
 import { diffCanonical } from "../models/observations.mjs";
 import { claim } from "../models/claims.mjs";
 
@@ -30,6 +31,7 @@ export class BattleBreak extends Error {
  * how a differential test stops testing anything, so the list is stated per call and read in review.
  */
 export function expectSameObservation(actual, expected, { claimIds, ignore = [], what }) {
+  countAssertion();
   const divergence = diffCanonical(expected, actual, { ignore });
   if (!divergence) return;
   throw new BattleBreak({
@@ -42,6 +44,7 @@ export function expectSameObservation(actual, expected, { claimIds, ignore = [],
 }
 
 export function expectClaim(condition, { claimIds, what, detail = null }) {
+  countAssertion();
   if (condition) return;
   throw new BattleBreak({
     claimIds,
@@ -50,6 +53,7 @@ export function expectClaim(condition, { claimIds, what, detail = null }) {
 }
 
 export function expectEqual(actual, expected, { claimIds, what }) {
+  countAssertion();
   const divergence = diffCanonical(expected, actual);
   if (!divergence) return;
   throw new BattleBreak({
@@ -63,6 +67,7 @@ export function expectEqual(actual, expected, { claimIds, what }) {
 
 /** The set-shaped comparison: same members, order irrelevant. */
 export function expectSamePaths(actual, expected, { claimIds, what }) {
+  countAssertion();
   const missing = expected.filter((path) => !actual.includes(path));
   const extra = actual.filter((path) => !expected.includes(path));
   if (missing.length === 0 && extra.length === 0) return;
@@ -72,4 +77,17 @@ export function expectSamePaths(actual, expected, { claimIds, what }) {
     expected,
     actual,
   });
+}
+
+/**
+ * Compare two canonical observations and hand back where they first disagree, without throwing.
+ *
+ * A campaign cannot use {@link expectSameObservation}: it has to shrink a divergence to its minimal
+ * sequence before it reports one, and a throw at the point of comparison would skip that. The
+ * comparison is still the campaign's assertion, so it is counted here — a campaign that compared
+ * nothing has concluded nothing, exactly like a battle that asserted nothing.
+ */
+export function compareCanonical(expected, actual, { ignore = [] } = {}) {
+  countAssertion();
+  return diffCanonical(expected, actual, { ignore });
 }

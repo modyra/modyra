@@ -75,7 +75,7 @@ test("a failing battle writes a report that replays to the same state", async ()
 test("a battle that records no action fails", () => {
   const run = runFixture("empty-battle.fixture.mjs");
   assert.notEqual(run.code, 0, "an empty battle must not pass");
-  assert.match(run.output, /recorded no meaningful action/);
+  assert.match(run.output, /battle did not do what it declared/);
 });
 
 test("assertExercised refuses a log that did nothing, and accepts one that did", () => {
@@ -83,8 +83,33 @@ test("assertExercised refuses a log that did nothing, and accepts one that did",
   assert.throws(() => assertExercised(log), EmptyBattleError);
 
   log.record({ type: "record.upsert", path: "rows", key: "a" });
+  log.asserted();
   assert.equal(assertExercised(log, ["structural"]).structural, 1);
   assert.throws(() => assertExercised(log, ["asyncStarted"]), EmptyBattleError);
+});
+
+test("assertExercised refuses a log that acted and concluded nothing", () => {
+  const log = createOperationLog();
+  log.record({ type: "record.upsert", path: "rows", key: "a" });
+  log.record({ type: "mount", paths: ["rows.a.code"] });
+  // Acted, and by every counter a battle can name: structural, mounted, and a note besides.
+  log.note("mounted the row");
+  assert.throws(() => assertExercised(log, ["structural", "mountedPhases"]), EmptyBattleError);
+
+  log.asserted();
+  assert.equal(assertExercised(log, ["structural", "mountedPhases"]).assertions, 1);
+});
+
+test("a battle citing an S0 or S1 claim may not report instead of failing", () => {
+  const run = runFixture("open-blocker.fixture.mjs");
+  assert.notEqual(run.code, 0, "an open battle on a blocking claim must not be accepted");
+  assert.match(run.output, /cannot report without failing/);
+});
+
+test("a battle that attacks and asserts nothing fails", () => {
+  const run = runFixture("unchecked-battle.fixture.mjs");
+  assert.notEqual(run.code, 0, "a battle that concluded nothing must not pass");
+  assert.match(run.output, /assertions: needed > 0/);
 });
 
 test("the operation log refuses an operation that cannot be written down", () => {
