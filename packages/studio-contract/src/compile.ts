@@ -134,7 +134,31 @@ function mapValidators(node: FieldNode, diagnostics: StudioDiagnostic[]): MdyDyn
 }
 
 function mapFieldNode(node: FieldNode, diagnostics: StudioDiagnostic[]): MdyDynamicFieldNode | null {
-  const kind = FIELD_KIND_MAP[node.fieldKind];
+  const mapped = FIELD_KIND_MAP[node.fieldKind];
+  // A kind this map does not know is the ordinary case, not a hostile one: a project written by a
+  // newer Studio, a file edited by hand, a kind added to the catalogue after this shipped. Left
+  // unreported, the contract carried a field with **no kind** — and the only signal anywhere came
+  // from the engine's schema builder, naming a synthesised path rather than the field the author
+  // named, in a package the author never invoked.
+  //
+  // Degraded rather than dropped: a field that vanishes takes its parent collection's rules with it,
+  // and the author loses more than the one thing that was wrong. Text is what every value can be
+  // shown as, and the diagnostic is what says the rendering is not the one that was asked for.
+  const kind = mapped ?? "text";
+  if (mapped === undefined) {
+    diagnostics.push({
+      code: "UNSUPPORTED_FIELD_KIND",
+      // A warning, like every other thing this contract cannot express: an error blocks the whole
+      // compilation, so one unknown kind would cost the author every other field as well. What they
+      // get instead is a contract they can use and a line naming the one field that is not the one
+      // they drew.
+      severity: "warning",
+      message:
+        `Field "${node.name}" has kind "${String(node.fieldKind)}", which this contract has no equivalent for — ` +
+        "compiled as a text field so the field survives",
+      nodeId: node.id,
+    });
+  }
   const validators = mapValidators(node, diagnostics);
 
   if (node.serverValidator) {

@@ -241,6 +241,19 @@ export function buildFormModule(project: MdyStudioProject, stubNameFor: Map<stri
     return { code: "", diagnostics };
   }
 
+  // The profile is a caller's, and `TargetRegistry` is public — a custom target supplying one is the
+  // case this exists for. Without a factory source every import became `from "undefined"`: a module
+  // that cannot compile, emitted with no diagnostic, and the target's own author is the only person
+  // who could act on it.
+  if (typeof profile.factoryImportSource !== "string" || profile.factoryImportSource.length === 0) {
+    diagnostics.push({
+      code: "INVALID_TARGET_PROFILE",
+      severity: "error",
+      message: "Target profile has no factoryImportSource, so the generated module would import from nowhere",
+    });
+    return { code: "", diagnostics };
+  }
+
   const validatorSource = profile.validatorsImportSource ?? "@modyra/core";
   const idx = buildIndexes(project);
   const schemaProps: TsProp[] = project.schema.children.map((child) => ({

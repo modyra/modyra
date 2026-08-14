@@ -653,3 +653,25 @@ test("a row count that is not a finite number is left out rather than written as
   const untouched = compileToContract(createCheckoutProject()).contract.schema.children.items;
   assert.equal("minItems" in untouched, false);
 });
+
+test("a field kind nobody recognises is reported, and the field survives as text", () => {
+  // The ordinary case, not a hostile one: a project written by a newer Studio, a file edited by
+  // hand, a kind added to the catalogue after this shipped. It compiled to a field with **no kind**,
+  // and the only signal anywhere was the engine's schema builder naming a synthesised path rather
+  // than the field the author named, in a package the author never invoked.
+  const project = createCheckoutProject();
+  const field = project.schema.children.find((child) => child.node === "field");
+  field.fieldKind = "wormhole";
+
+  const { contract, diagnostics } = compileToContract(project);
+  const reported = diagnostics.find((d) => d.code === "UNSUPPORTED_FIELD_KIND");
+  assert.ok(reported, "an unknown kind was dropped in silence");
+  assert.match(reported.message, /wormhole/);
+  assert.equal(reported.nodeId, field.id);
+
+  // Degraded rather than dropped: a field that vanishes takes its parent's rules with it, and the
+  // author loses more than the one thing that was wrong.
+  const compiled = contract.schema.children[field.name];
+  assert.equal(compiled.node, "field");
+  assert.equal(compiled.field.kind, "text");
+});
