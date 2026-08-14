@@ -231,25 +231,42 @@ fn accepts_the_shared_nested_collections_fixture() {
 }
 
 #[test]
-fn refuses_a_second_positional_level_wherever_it_sits() {
-    // A path crosses one positional level: the two shapes that would make it cross two are named
-    // where they are written, with the code the other parsers use.
+fn a_collection_nests_without_a_limit() {
+    // This asserted the opposite: a path crossing one positional level, with an array below another
+    // array refused where it was written. ADR 0043 removed that rule from the engine — a collection
+    // is addressed by the pattern its declaration has, so a second positional level names its rows
+    // as unambiguously as the first — and this SDK went on refusing documents the runtime accepts.
     let array_in_array = r#"{"version":3,"schema":{"node":"array","item":
         {"node":"array","item":{"node":"field","field":{"kind":"text","name":"leaf"}}}}}"#;
     let result = parse_v2(array_in_array, ValidationMode::Strict).unwrap();
-    assert!(!result.valid);
-    assert!(result
-        .diagnostics
-        .iter()
-        .any(|d| d.code == "MDY_DYNAMIC_INVALID_ARRAY"));
+    assert!(result.valid, "an array of arrays was refused: {:?}", result.diagnostics);
 
     let array_under_a_rows_record = r#"{"version":3,"schema":{"node":"array","item":
         {"node":"record","item":{"node":"array","item":
         {"node":"field","field":{"kind":"text","name":"leaf"}}}}}}"#;
     let nested = parse_v2(array_under_a_rows_record, ValidationMode::Strict).unwrap();
-    assert!(!nested.valid);
-    assert!(nested
+    assert!(nested.valid, "an array below a row's record was refused: {:?}", nested.diagnostics);
+
+    // Deeper than the eight levels this SDK used to cap at, since that limit went with the rule.
+    let mut deep = String::from(r#"{"version":3,"schema":"#);
+    for _ in 0..40 {
+        deep.push_str(r#"{"node":"array","item":"#);
+    }
+    deep.push_str(r#"{"node":"field","field":{"kind":"text","name":"leaf"}}"#);
+    for _ in 0..40 {
+        deep.push('}');
+    }
+    deep.push('}');
+    let forty = parse_v2(&deep, ValidationMode::Strict).unwrap();
+    assert!(forty.valid, "forty positional levels were refused: {:?}", forty.diagnostics);
+
+    // The known-good refusal in the same test: what the walk still reports, it still reports.
+    let unsafe_key = r#"{"version":3,"schema":{"node":"record","item":
+        {"node":"field","field":{"kind":"text","name":"leaf"}},"initialValue":{"__proto__":{}}}}"#;
+    let refused = parse_v2(unsafe_key, ValidationMode::Strict).unwrap();
+    assert!(!refused.valid);
+    assert!(refused
         .diagnostics
         .iter()
-        .any(|d| d.code == "MDY_DYNAMIC_INVALID_RECORD"));
+        .any(|d| d.code == "MDY_DYNAMIC_UNSAFE_NAME"));
 }

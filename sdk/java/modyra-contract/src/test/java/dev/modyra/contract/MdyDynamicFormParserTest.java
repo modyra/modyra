@@ -395,23 +395,32 @@ class MdyDynamicFormParserTest {
   }
 
   /**
-   * A path crosses one positional level, so an array below another array is refused where it is
-   * written — with the code the collection that found it owns.
+   * A collection nests without a limit, in either direction.
+   *
+   * <p>This asserted the opposite — a path crossing one positional level, with an array below
+   * another array refused where it was written. ADR 0043 removed that rule from the engine, and this
+   * SDK went on refusing documents the runtime accepts, which is the one thing an SDK must not do.
    */
   @Test
-  void refusesASecondPositionalLevelWhereverItSits() {
+  void aCollectionNestsWithoutALimit() {
     String arrayInArray = "{\"version\":3,\"schema\":{\"node\":\"array\",\"item\":"
         + "{\"node\":\"array\",\"item\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"}}}}}";
-    MdyDynamicFormParseResult refused = parser.parse(arrayInArray, MdyDynamicFormParser.Mode.STRICT);
-    assertFalse(refused.ok());
-    assertTrue(refused.diagnostics().stream().anyMatch((d) -> "MDY_DYNAMIC_INVALID_ARRAY".equals(d.code())));
+    MdyDynamicFormParseResult accepted = parser.parse(arrayInArray, MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(accepted.ok(), () -> String.valueOf(accepted.diagnostics()));
 
     String arrayUnderARowsRecord = "{\"version\":3,\"schema\":{\"node\":\"array\",\"item\":"
         + "{\"node\":\"record\",\"item\":{\"node\":\"array\",\"item\":"
         + "{\"node\":\"field\",\"field\":{\"kind\":\"text\"}}}}}}";
     MdyDynamicFormParseResult nested = parser.parse(arrayUnderARowsRecord, MdyDynamicFormParser.Mode.STRICT);
-    assertFalse(nested.ok());
-    assertTrue(nested.diagnostics().stream().anyMatch((d) -> "MDY_DYNAMIC_INVALID_RECORD".equals(d.code())));
+    assertTrue(nested.ok(), () -> String.valueOf(nested.diagnostics()));
+
+    // The known-good refusal in the same test: what this walk still reports, it still reports.
+    String unsafeKey = "{\"version\":3,\"schema\":{\"node\":\"record\",\"item\":"
+        + "{\"node\":\"field\",\"field\":{\"kind\":\"text\"}},"
+        + "\"initialValue\":{\"__proto__\":\"x\"}}}";
+    MdyDynamicFormParseResult refused = parser.parse(unsafeKey, MdyDynamicFormParser.Mode.STRICT);
+    assertFalse(refused.ok());
+    assertTrue(refused.diagnostics().stream().anyMatch((d) -> "MDY_DYNAMIC_UNSAFE_NAME".equals(d.code())));
   }
 
   /** A record's declared rows are named in the flat view, by key rather than by index. */
