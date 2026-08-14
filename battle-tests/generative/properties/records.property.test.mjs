@@ -12,6 +12,7 @@
 import { battle } from "../../harness/battle.mjs";
 import { BattleBreak, compareCanonical } from "../../harness/assertions.mjs";
 import { createBattleContext } from "../../harness/context.mjs";
+import { betweenRuns } from "../../harness/campaign.mjs";
 import { createRng, runCount, runSeed } from "../../harness/seed.mjs";
 import { shrink } from "../../harness/shrinking.mjs";
 import { encodeValue } from "../../models/observations.mjs";
@@ -122,6 +123,7 @@ battle(
     console.log(`  campaign seed ${ctx.seed}, ${runs} run(s) of ${length} operation(s)`);
 
     for (let run = 0; run < runs; run += 1) {
+      await betweenRuns(run);
       const seed = runSeed(ctx.seed, run);
       const rng = createRng(seed);
       const model = createReferenceModel({ cells: CELLS });

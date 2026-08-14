@@ -19,6 +19,7 @@ import { createForm, vanillaReactivity } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { BattleBreak, compareCanonical } from "../../harness/assertions.mjs";
+import { betweenRuns } from "../../harness/campaign.mjs";
 import { createRng, runCount, runSeed } from "../../harness/seed.mjs";
 import { shrink } from "../../harness/shrinking.mjs";
 import { encodeValue } from "../../models/observations.mjs";
@@ -203,6 +204,7 @@ battle(
     console.log(`  conditional campaign seed ${ctx.seed}, ${runs} run(s) of ${length} operation(s)`);
 
     for (let run = 0; run < runs; run += 1) {
+      await betweenRuns(run);
       const rng = createRng(runSeed(ctx.seed, run));
       const operations = generateSequence(rng, length);
 
