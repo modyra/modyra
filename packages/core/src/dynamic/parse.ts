@@ -17,6 +17,7 @@ import {
   isSafeDynamicSegment,
   warnDev,
 } from "./guards.js";
+import { dynamicPatternRefusal } from "./pattern-cost.js";
 import type { MdySelectOption } from "../types.js";
 
 import {
@@ -265,6 +266,16 @@ function hasValidValidatorConfig(
         `Dropped dynamic field "${fieldName}": validators.pattern length exceeds max ${MDY_MAX_DYNAMIC_PATTERN_LENGTH}.`,
       );
       return false;
+    }
+    // Reported where the document is read, and the field stays: one rule the engine will not run is
+    // not a reason to take an input away from the person filling the form. The rule itself is
+    // refused where validators are built, which is the only place that can refuse it for every
+    // caller rather than only for this parse.
+    const refusal = dynamicPatternRefusal(config.pattern);
+    if (refusal !== null) {
+      warnDev(
+        `Dropped validators.pattern on dynamic field "${fieldName}": the pattern has ${refusal}.`,
+      );
     }
   }
   return true;
@@ -587,6 +598,7 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   { code: "MDY_DYNAMIC_UNKNOWN_KIND", phrase: "unknown kind" },
   { code: "MDY_DYNAMIC_OPTIONS_REQUIRED", phrase: "requires a valid options" },
   { code: "MDY_DYNAMIC_PATTERN_TOO_LONG", phrase: "pattern length" },
+  { code: "MDY_DYNAMIC_PATTERN_TOO_COSTLY", phrase: "backtracks exponentially" },
 ];
 
 /** What a refusal is called when none of the named ones fits. */
