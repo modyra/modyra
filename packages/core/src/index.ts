@@ -151,6 +151,7 @@ export type {
   MdyAnyFieldDescriptor,
   MdyAnyGroupDescriptor,
   MdyAnyRecordDescriptor,
+  MdyAnyRowDescriptor,
   MdyArrayDescriptor,
   MdyArrayHandle,
   MdyArrayItemValue,

@@ -19,6 +19,7 @@ import {
   type MdyFormSchema,
 } from "./typed-form.js";
 import type { MdyFormRegistry } from "./contracts/form-registry.js";
+import { collectSchemaPaths, numericKeysToArrays } from "./schema-utils.js";
 import {
   assertSafeDynamicFieldNames,
   buildDynamicFieldValidators,
@@ -125,9 +126,20 @@ export function buildFlatFormSchema(
       return nestValue(row);
     };
     const seeded = [...rows];
+    // A row's own value is flat, so a collection inside it arrives keyed `"0"`, `"1"` — which is
+    // what a record holds and not what an array does. The descriptor says which is which at every
+    // depth, so the seed is shaped against it rather than against the digits it happens to carry:
+    // without this a nested array is seeded with a shape it rejects and starts out with no rows,
+    // and every field below it has nowhere to mount.
+    const descriptor = kind === "array"
+      ? array(item as never)
+      : record(item as never);
+    const { arrayPaths, recordPaths } = collectSchemaPaths({ [path]: descriptor } as MdyFormSchema);
+    const rowValues = Object.fromEntries(seeded.map((key) => [key, seedOf(key)]));
+    const initial = numericKeysToArrays({ [path]: rowValues }, arrayPaths, recordPaths)[path];
     schema[path] = kind === "array"
-      ? array(item as never, { initial: seeded.map(seedOf) })
-      : record(item as never, { initial: Object.fromEntries(seeded.map((key) => [key, seedOf(key)])) });
+      ? array(item as never, { initial: initial as ReadonlyArray<unknown> })
+      : record(item as never, { initial: initial as Readonly<Record<string, unknown>> });
   }
   for (const f of fields) {
     if (claimed.has(f.name)) continue;

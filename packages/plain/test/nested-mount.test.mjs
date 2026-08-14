@@ -66,3 +66,37 @@ test("a hostile key in the middle of a path refuses the whole mount, container u
   );
   assert.equal(container.querySelectorAll("p").length, 1, "a refused mount must not clear the container");
 });
+
+test("a field three positional collections deep mounts, and typing reaches its cell", async () => {
+  // The nesting above is keyed at every level, and a keyed row is seeded from an object — so it
+  // never exercised the shape a list needs. A document made of arrays flattens its rows to "0",
+  // "1", and a collection seeded with those digits holds no rows at all: the value was right in
+  // structure and empty in fact, and the screen showed one control out of three.
+  const fields = [
+    { name: "orders.0.customer", kind: "text", label: "Customer" },
+    { name: "orders.0.lines.0.sku", kind: "text", label: "SKU" },
+    { name: "orders.0.lines.0.allocations.0.qty", kind: "number", label: "Qty" },
+  ];
+  const collections = [
+    { path: "orders", kind: "array" },
+    { path: "orders.0.lines", kind: "array" },
+    { path: "orders.0.lines.0.allocations", kind: "array" },
+  ];
+  const container = document.createElement("div");
+  document.body.append(container);
+  const handle = mountMdyForm(container, fields, { collections, submitLabel: null });
+
+  const mounted = [...container.querySelectorAll("input")].map((i) => i.id);
+  assert.equal(mounted.length, 3, `expected a control per field, mounted ${mounted.join(", ")}`);
+
+  const qty = [...container.querySelectorAll("input")].find((i) => i.id.includes("qty"));
+  qty.value = "7";
+  qty.dispatchEvent(new window.Event("input", { bubbles: true }));
+  await handle.reactivity.flush();
+
+  assert.deepEqual(handle.form.getValue().orders, [
+    { customer: "", lines: [{ sku: "", allocations: [{ qty: 7 }] }] },
+  ]);
+  handle.dispose();
+  container.remove();
+});
