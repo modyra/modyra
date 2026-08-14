@@ -168,3 +168,35 @@ test("a record node generates record(), imported as itself and seeded with the r
   assert.match(formFile.content, /initial: \{"tmp:1":\{"sku":"TSHIRT-BLK-M"\}\}/, "the declared rows are the form's initial ones");
   assert.deepEqual(artifact.diagnostics, []);
 });
+
+test("a bound that is not a finite number is reported and left out, never emitted as null", async () => {
+  // NaN and both infinities have a number's type, so a `typeof` gate let them through — and
+  // `JSON.stringify` turns each into `null`. `minLength(null)` accepts everything *and* declares
+  // `minLength: null` as a fact the control carries, so an author writes a minimum and the
+  // generated form has none, with nothing between the two saying a word.
+  const withBound = (value) => {
+    const project = createCheckoutProject();
+    const field = project.schema.children.find((child) => child.node === "field" && child.name === "coupon");
+    field.validators = [{ id: "val_bound", kind: "minLength", value }];
+    return project;
+  };
+
+  for (const value of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, "3"]) {
+    const artifact = await createCoreTarget().generate(withBound(value), {});
+    const form = artifact.files.find((file) => file.path === "form.ts").content;
+
+    assert.doesNotMatch(form, /minLength\(null\)/, `${String(value)} was emitted as a null bound`);
+    assert.doesNotMatch(form, /minLength\(/, `${String(value)} was emitted as a bound at all`);
+    assert.deepEqual(
+      artifact.diagnostics.map((d) => d.code),
+      ["MISSING_VALIDATOR_VALUE"],
+      `${String(value)} was dropped in silence`,
+    );
+  }
+
+  // The control: a finite bound is emitted, and nothing is reported.
+  const artifact = await createCoreTarget().generate(withBound(3), {});
+  const form = artifact.files.find((file) => file.path === "form.ts").content;
+  assert.match(form, /minLength\(3\)/);
+  assert.deepEqual(artifact.diagnostics, []);
+});
