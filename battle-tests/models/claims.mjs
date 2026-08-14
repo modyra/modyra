@@ -503,6 +503,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "STY-001",
+    title: "A colour that came from sRGB is in sRGB.",
+    area: "styles",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/styles isInSrgb — the gamut predicate, with a declared tolerance",
+      "@modyra/styles hexToOklch/oklchToLinearRgb — the transform whose error the tolerance exists for",
+      "@modyra/styles derivePalette — emits a palette a consumer writes into a stylesheet",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
