@@ -222,6 +222,23 @@ export class MdyFormEngine
    * as a backstop alongside their existing explicit `destroy()` calls.
    */
   private readonly _scope: MdyReactiveScope | undefined;
+  /**
+   * Builds a long-lived reactive object under this form's ownership.
+   *
+   * A handle is made of computations, and it outlives the read that asked for it: a row handle is
+   * built inside the collection's `rows` computation, and a cell handle inside whatever the consumer
+   * was computing when it called `cell()`. On a runtime that owns computations — Solid owns them by
+   * the computation that created them — the owner re-running disposes everything created under it,
+   * and a disposed computation keeps answering with the value it last held. The handle then reports
+   * a row's cell as `null` for the rest of its life while the form's value is correct.
+   *
+   * Runtimes without ownership are unaffected: with no scope, this is a direct call.
+   */
+  runOwned<T>(build: () => T): T {
+    const scope = this._scope;
+    return scope && !scope.destroyed ? scope.run(build) : build();
+  }
+
   /** True while {@link mutate} is running its callback. */
   private _mutating = false;
   /**

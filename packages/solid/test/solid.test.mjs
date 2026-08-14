@@ -76,3 +76,25 @@ test("a positional row with several cells is declared, and reads back whole", ()
   assert.equal(form.f.items.length(), 1);
   form.destroy();
 });
+
+test("a row that is a collection is declared and read on this adapter's graph", () => {
+  // The engine nests without a limit, and every adapter's own reactivity has to carry it: a row of a
+  // row is registered under the row that owns it, so a runtime that batches or schedules differently
+  // is exactly where a partially built subtree would show.
+  const form = createForm(
+    { orders: record(group({ customer: field(""), lines: array(group({ sku: field(""), qty: field(0) })) })) },
+    { reactivity: solidReactivity() },
+  );
+
+  form.f.orders.upsert("o1", { customer: "Ada" });
+  form.f.orders.row("o1").lines.push({ sku: "S-1", qty: 3 });
+  form.f.orders.row("o1").lines.push({ sku: "S-2", qty: 1 });
+  form.f.orders.row("o1").lines.move(0, 1);
+
+  assert.deepEqual(form.getValue().orders.o1, {
+    customer: "Ada",
+    lines: [{ sku: "S-2", qty: 1 }, { sku: "S-1", qty: 3 }],
+  });
+  assert.equal(form.f.orders.row("o1").lines.at(0).sku.value(), "S-2");
+  form.destroy();
+});

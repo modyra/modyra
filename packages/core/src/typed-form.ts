@@ -1236,9 +1236,13 @@ export abstract class MdyTypedFormBase<
    * collection — `record(array(field()))` is a keyed list of lists, and the row is the list.
    */
   private _rowHandle(item: MdyFormSchema[string], path: string): unknown {
-    if (item.kind === "field") return this.cellHandle(path);
-    if (item.kind === "record" || item.kind === "array") return this._buildNestedCollectionHandle(path, item);
-    return this._buildCellTree(item.children, path);
+    // Under the form's ownership: a row handle is built inside the collection's `rows` computation,
+    // and a runtime that owns computations disposes it the next time that computation runs.
+    return this._adapter.runOwned(() => {
+      if (item.kind === "field") return this.cellHandle(path);
+      if (item.kind === "record" || item.kind === "array") return this._buildNestedCollectionHandle(path, item);
+      return this._buildCellTree(item.children, path);
+    });
   }
 
   private _buildCellTree(nodes: MdyFormSchema, prefix: string): Record<string, unknown> {
@@ -1376,6 +1380,12 @@ export abstract class MdyTypedFormBase<
   protected cellHandle(path: string): MdyFieldHandle<unknown> {
     const existing = this._cellHandles.get(path)?.deref();
     if (existing) return existing;
+    // The handle is cached and handed back for the life of the form, so it cannot belong to the
+    // computation that happened to ask for it first.
+    return this._adapter.runOwned(() => this._buildCellHandle(path));
+  }
+
+  private _buildCellHandle(path: string): MdyFieldHandle<unknown> {
     const rx = this._adapter.reactivity;
     const state = (): MdyFieldState<unknown> | null => {
       // Depends on *which* fields exist, not only on their values: the row this cell belongs to may
