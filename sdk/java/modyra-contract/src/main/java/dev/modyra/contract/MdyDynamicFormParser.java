@@ -36,16 +36,24 @@ public final class MdyDynamicFormParser {
   public enum Mode { STRICT, LENIENT }
 
   private static final Set<String> FORBIDDEN_NAMES = Set.of("__proto__", "prototype", "constructor");
-  /** What both collections say when a second positional level would make a path unaddressable. */
-  private static final String POSITIONAL_LEVEL =
-      "a path crosses one positional level — an array below another array is not addressable.";
 
   private static final Set<String> SCHEMA_NODE_KINDS = Set.of("field", "group", "array", "record");
   private static final Set<String> RULE_EFFECTS = Set.of("visible", "hidden", "enabled", "disabled");
   private static final Set<String> RULE_OPERATORS = Set.of(
       "equals", "notEquals", "in", "notIn", "isEmpty", "isNotEmpty",
       "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual");
-  private static final int SCHEMA_MAX_DEPTH = 8;
+  /**
+   * How deep a schema may nest before this parser stops walking it.
+   *
+   * <p>Not the contract's rule: a collection nests without a limit (ADR 0043), and this parser
+   * accepted eight levels while the runtime accepted any — so a document the engine runs was refused
+   * here. What remains is a bound on what <em>this walk</em> can process: it recurses, and a
+   * document deep enough would end the thread rather than produce a diagnostic a caller can answer.
+   *
+   * <p>Generous on purpose. No form a person arranges comes near it, and a document that does was
+   * made by a generator or a loop.
+   */
+  private static final int SCHEMA_MAX_DEPTH = 100;
   private static final int SCHEMA_MAX_NODES = 500;
   private static final int SCHEMA_MAX_ARRAY_ROWS = 100;
 
@@ -223,15 +231,14 @@ public final class MdyDynamicFormParser {
 
   // ─── v2 recursive schema: validate + flatten (mirrors validateDynamicSchema / flattenDynamicSchema) ───
 
-  private void validateSchema(JsonNode node, String path, int depth, List<MdyDynamicDiagnostic> out, int[] count) {
-    validateSchema(node, path, depth, out, count, false);
-  }
-
   /**
-   * {@code positional} says an array already encloses this node. A path crosses one positional
-   * level, so an array below another array is refused where it is written.
+   * Walks a schema, reporting what it cannot use.
+   *
+   * <p>It used to carry a {@code positional} flag saying an array already enclosed this node, so a
+   * second one could be refused. ADR 0043 removed that rule from the engine and the flag decided
+   * nothing afterwards, so it is gone rather than threaded through inert.
    */
-  private void validateSchema(JsonNode node, String path, int depth, List<MdyDynamicDiagnostic> out, int[] count, boolean positional) {
+  private void validateSchema(JsonNode node, String path, int depth, List<MdyDynamicDiagnostic> out, int[] count) {
     count[0]++;
     if (depth > SCHEMA_MAX_DEPTH || count[0] > SCHEMA_MAX_NODES) {
       out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_SCHEMA_LIMIT", MdyDynamicDiagnostic.ERROR, path, "schema exceeds depth/node limits."));
@@ -260,7 +267,7 @@ public final class MdyDynamicFormParser {
         if (!isSafeSegment(key)) {
           out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, childPath, "unsafe child name."));
         } else {
-          validateSchema(entry.getValue(), childPath, depth + 1, out, count, positional);
+          validateSchema(entry.getValue(), childPath, depth + 1, out, count);
         }
       }
       return;
@@ -269,10 +276,8 @@ public final class MdyDynamicFormParser {
     if (kind.equals("record")) {
       if (!item.isObject()) {
         out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RECORD", MdyDynamicDiagnostic.ERROR, path, "record requires an item node."));
-      } else if (positional && item.path("node").asText("").equals("array")) {
-        out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RECORD", MdyDynamicDiagnostic.ERROR, path + "/item", POSITIONAL_LEVEL));
       } else {
-        validateSchema(item, path + "/item", depth + 1, out, count, positional);
+        validateSchema(item, path + "/item", depth + 1, out, count);
       }
       JsonNode rows = node.path("initialValue");
       if (!rows.isMissingNode() && !rows.isObject()) {
@@ -293,10 +298,8 @@ public final class MdyDynamicFormParser {
     // array
     if (!item.isObject()) {
       out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_ARRAY", MdyDynamicDiagnostic.ERROR, path, "array requires an item node."));
-    } else if (item.path("node").asText("").equals("array")) {
-      out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_ARRAY", MdyDynamicDiagnostic.ERROR, path + "/item", POSITIONAL_LEVEL));
     } else {
-      validateSchema(item, path + "/item", depth + 1, out, count, true);
+      validateSchema(item, path + "/item", depth + 1, out, count);
     }
     JsonNode initialValue = node.path("initialValue");
     if (!initialValue.isMissingNode() && !initialValue.isArray()) {
