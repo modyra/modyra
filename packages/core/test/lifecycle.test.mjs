@@ -248,3 +248,45 @@ test("getValue and the value signal answer after destroy", () => {
   assert.deepEqual(form.value(), before);
   assert.equal(form.destroyed, true);
 });
+
+/**
+ * What was made from a form ends with it.
+ *
+ * A binding built from one of a form's handles — a store a component subscribes to, a watcher an
+ * adapter opens — outlives the form whenever the two teardowns race, and a component does not always
+ * get to run its cleanup first. `onDestroy` is how a binding says it belongs to this form.
+ */
+test("onDestroy runs teardowns when the form is destroyed, and stops when released", () => {
+  const form = createForm({ name: field("") });
+  const ran = [];
+
+  form.onDestroy(() => ran.push("first"));
+  const release = form.onDestroy(() => ran.push("released"));
+  form.onDestroy(() => ran.push("last"));
+  release();
+
+  form.destroy();
+
+  assert.deepEqual(ran, ["first", "last"], "in registration order, without the released one");
+});
+
+test("a teardown registered on a destroyed form runs at once", () => {
+  const form = createForm({ name: field("") });
+  form.destroy();
+
+  let ran = false;
+  form.onDestroy(() => { ran = true; });
+
+  assert.equal(ran, true, "a binding built from a dead form's handle is dead too");
+});
+
+test("a teardown that throws does not stop the others or the engine", () => {
+  const form = createForm({ name: field("") }, { devWarnings: false });
+  const ran = [];
+  form.onDestroy(() => { throw new Error("teardown failed"); });
+  form.onDestroy(() => ran.push("still ran"));
+
+  assert.doesNotThrow(() => form.destroy());
+  assert.deepEqual(ran, ["still ran"]);
+  assert.equal(form.destroyed, true);
+});
