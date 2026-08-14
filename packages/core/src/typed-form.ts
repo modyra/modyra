@@ -482,6 +482,8 @@ export abstract class MdyTypedFormBase<
   protected readonly _adapter: MdyFormEngine;
   /** Leaf paths in schema order. */
   protected readonly _leafPaths: readonly string[];
+  /** What the form held when it was destroyed — see {@link MdyTypedFormBase.getValue}. */
+  private _valueAtDestroy: MdyFormValue<S> | null = null;
   /** The same paths as a set, for the reads that ask about one path at a time. */
   protected readonly _leafPathSet: ReadonlySet<string>;
   /** Group prefixes — used to flatten nested patches. */
@@ -689,6 +691,10 @@ export abstract class MdyTypedFormBase<
   // ── MdyFormAdapter ──────────────────────────────────────────────────────────
 
   getValue(): MdyFormValue<S> {
+    // Teardown is a read path: a renderer unmounting, an effect evaluating once more, a consumer
+    // logging what it held. A destroyed form has no fields left, so building the value from them
+    // produces a shape the schema does not describe — the answer is what it held when it ended.
+    if (this._valueAtDestroy !== null) return this._valueAtDestroy;
     return this._flatToValue(this._adapter.getValue());
   }
 
@@ -890,6 +896,14 @@ export abstract class MdyTypedFormBase<
    * scope goes away (unmount, dispose, disconnect).
    */
   destroy(): void {
+    if (this._valueAtDestroy === null) {
+      try {
+        this._valueAtDestroy = this.getValue();
+      } catch {
+        // A form that could not state its value while it was alive cannot state it afterwards; the
+        // read then fails as it did before, which is the honest answer.
+      }
+    }
     for (const manager of this._arrays.values()) manager.destroy();
     for (const manager of this._records.values()) manager.destroy();
     this._adapter.destroy();
@@ -1547,9 +1561,9 @@ export class MdyTypedForm<S extends MdyFormSchema>
     );
     super(schema, engine, options);
     this.state = engine.state;
-    this.value = rx.computed(
-      () => this._flatToValue(this._adapter.getValue()),
-    );
+    // Through `getValue`, so a read after destroy answers rather than throwing — the signal is what
+    // a template holds, and a template is read once more on the way out.
+    this.value = rx.computed(() => this.getValue());
     // `this._schema`, not the argument: the base normalizes a key that spells a path into the
     // structure it describes, and the handle tree has to be the one the value has.
     this.f = this._buildHandleTree(this._schema, "") as MdyFieldHandleTree<S>;

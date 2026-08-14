@@ -225,3 +225,26 @@ test("a field a control invented still dies with it", () => {
   engine.removeField("adhoc");
   assert.equal(engine.fieldNames().includes("adhoc"), false);
 });
+
+/**
+ * A destroyed form answers a read.
+ *
+ * Teardown is a read path: a renderer unmounts, an effect evaluates once more, a consumer logs what
+ * it held. `destroy()` removes every field, so building the value from them produced a shape the
+ * schema does not describe and `getValue()` — and the `value` signal a template holds — threw with
+ * an internal invariant's message. The form answers with what it held when it ended.
+ */
+test("getValue and the value signal answer after destroy", () => {
+  const form = createForm({
+    name: field("x"),
+    rows: record(group({ code: field("") })),
+  });
+  form.f.rows.upsert("a", { code: "C" });
+
+  const before = form.getValue();
+  form.destroy();
+
+  assert.deepEqual(form.getValue(), before);
+  assert.deepEqual(form.value(), before);
+  assert.equal(form.destroyed, true);
+});
