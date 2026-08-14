@@ -4,6 +4,7 @@
  * couples to the host graph). Sensitive-looking paths are masked.
  */
 import { MdyReactivity, MdySignal, reactivityRunsEffects } from "./reactivity-contract.js";
+import { mdyFormSerialize } from "./serialize.js";
 import { MdyFormState } from "./types.js";
 
 interface InspectableForm {
@@ -54,6 +55,35 @@ function escapeHtml(text: string): string {
     .replace(/'/g, "&#39;");
 }
 
+
+/** What a masked value reads as, wherever it would otherwise be printed. */
+const MASK = "•••";
+
+/**
+ * The message with the field's own value taken out of it.
+ *
+ * Masking a value and printing it back in the column beside it does not mask the value, and quoting
+ * what was rejected — `"hunter2" is not long enough` — is the most ordinary way there is to write a
+ * validation message. The server half cannot be fixed by the consumer at all: a message that arrives
+ * over the wire is not theirs to rewrite.
+ *
+ * The message is kept rather than dropped: why a field is invalid is what a panel exists to show.
+ */
+function withoutValue(message: string, raw: unknown): string {
+  const literals: string[] = [];
+  const collect = (value: unknown): void => {
+    if (typeof value === "string") { if (value.length > 0) literals.push(value); return; }
+    if (typeof value === "number" || typeof value === "bigint") { literals.push(String(value)); return; }
+    if (Array.isArray(value)) { for (const entry of value) collect(entry); }
+  };
+  collect(raw);
+  // Longest first: a value that contains another must not leave the shorter one's occurrence behind
+  // as a fragment of a mask it already replaced.
+  return literals
+    .sort((a, b) => b.length - a.length)
+    .reduce((text, literal) => text.split(literal).join(MASK), message);
+}
+
 /** One immutable snapshot of a form's state — also handy in tests/logs. */
 export function mdyFormSnapshot(form: InspectableForm, options: MdySnapshotOptions = {}): {
   readonly valid: boolean;
@@ -80,14 +110,18 @@ export function mdyFormSnapshot(form: InspectableForm, options: MdySnapshotOptio
       const state = form.getField(path)?.();
       const masked = isSensitivePath(path, options.sensitive?.(path));
       const raw = state?.value() ?? null;
+      const messages = state?.errors().map((e) => `[${e.kind}] ${e.message}`) ?? [];
       return {
         path,
-        value: masked && raw !== null && raw !== "" ? "•••" : raw,
+        // Described rather than handed over: a `File` carries no `toJSON`, so a snapshot that
+        // passed it through read as `{}` — the same as a field nobody filled — where the panel
+        // beside it shows the name and size the guide promises.
+        value: masked && raw !== null && raw !== "" ? MASK : mdyFormSerialize(raw),
         valid: state?.valid() ?? true,
         touched: state?.touched() ?? false,
         dirty: state?.dirty() ?? false,
         pending: state?.pending() ?? false,
-        errors: state?.errors().map((e) => `[${e.kind}] ${e.message}`) ?? [],
+        errors: masked ? messages.map((message) => withoutValue(message, raw)) : messages,
       };
     }),
   };
