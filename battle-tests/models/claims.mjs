@@ -361,6 +361,16 @@ const CLAIMS = [
     ],
   },
   {
+    id: "UI-002",
+    title: "The same key does the same thing on every widget offering the same affordance.",
+    area: "widgets",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/widgets widgetKeyIntent/keyBindingFor — the canonical keyboard mapping",
+      "@modyra/widgets — framework adapters must not reinterpret these keys",
+    ],
+  },
+  {
     id: "A11Y-002",
     title: "Focus is borrowed by a widget and handed back once.",
     area: "accessibility",
