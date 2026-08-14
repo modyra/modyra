@@ -17,6 +17,72 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const coreTypesPath = join(__dirname, "../../core/dist/index.d.ts");
 const angularAdapterTypesPath = join(__dirname, "../../angular/dist/types/modyra-angular-adapter.d.ts");
 
+
+/**
+ * The checkout project with a collection inside its collection's row.
+ *
+ * The fixture holds one flat array, so the typecheck below never exercised a nested row — and the
+ * factories this target generates against are the adapter's own, which constrained a row to a field
+ * or a group long after the engine stopped doing so. Generated code that does not compile is the
+ * only symptom a Studio user ever sees.
+ */
+function nestedProject() {
+  const project = createCheckoutProject();
+  const items = project.schema.children.find((child) => child.name === "items");
+  // A row that *is* a collection, not a group holding one: `array(array(...))` is the shape the
+  // adapter's factories refused, and a group in between hides it because a group's children have
+  // always been able to hold a collection.
+  project.schema.children.push({
+    node: "array",
+    id: "nd_matrix",
+    name: "matrix",
+    label: "Matrix",
+    item: {
+      node: "array",
+      id: "nd_matrix_row",
+      name: "row",
+      item: {
+        node: "field",
+        id: "nd_cell",
+        name: "cell",
+        fieldKind: "number",
+        valueType: "number",
+        initialValue: 0,
+        validators: [],
+      },
+      initialRows: [],
+      validators: [],
+    },
+    initialRows: [],
+    validators: [],
+  });
+  items.item.children.push({
+    node: "array",
+    id: "nd_allocations",
+    name: "allocations",
+    label: "Allocations",
+    item: {
+      node: "group",
+      id: "nd_allocation",
+      name: "allocation",
+      children: [
+        {
+          node: "field",
+          id: "nd_warehouse",
+          name: "warehouse",
+          fieldKind: "text",
+          valueType: "string",
+          initialValue: "",
+          validators: [],
+        },
+      ],
+    },
+    initialRows: [{ warehouse: "MI-1" }],
+    validators: [],
+  });
+  return project;
+}
+
 test("angular target passes the full conformance suite against checkout", async () => {
   const result = await runConformanceSuite(createAngularTarget(), createCheckoutProject());
   assert.deepEqual(result.failures, []);
@@ -62,6 +128,49 @@ test(
   async () => {
     const artifact = await createAngularTarget().generate(createCheckoutProject(), {});
     const dir = await mkdtemp(join(tmpdir(), "mdy-studio-target-angular-typecheck-"));
+    try {
+      for (const file of artifact.files) {
+        await writeFile(join(dir, file.path), file.content, "utf8");
+      }
+      await writeFile(
+        join(dir, "tsconfig.json"),
+        JSON.stringify({
+          compilerOptions: {
+            strict: true,
+            target: "ES2022",
+            module: "NodeNext",
+            moduleResolution: "nodenext",
+            noEmit: true,
+            skipLibCheck: true,
+            noUnusedLocals: true,
+            noUnusedParameters: false,
+            lib: ["ES2022"],
+            paths: {
+              "@modyra/core": [coreTypesPath],
+              "@modyra/angular/adapter": [angularAdapterTypesPath],
+            },
+          },
+          include: ["*.ts"],
+        }),
+        "utf8",
+      );
+      const tscBin = join(__dirname, "../../../node_modules/typescript/bin/tsc");
+      await execFileAsync(process.execPath, [tscBin, "-p", join(dir, "tsconfig.json")]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "generated Angular files compile when a collection holds a collection",
+  { skip: (!existsSync(coreTypesPath) || !existsSync(angularAdapterTypesPath)) && "packages/core and packages/angular must both be built first (npm run build:core && npm run build:angular)" },
+  async () => {
+    const artifact = await createAngularTarget().generate(nestedProject(), {});
+    const form = artifact.files.find((file) => file.path === "form.ts");
+    assert.match(form.content, /array\(\s*group\(/, "the nested collection was not emitted");
+
+    const dir = await mkdtemp(join(tmpdir(), "mdy-studio-target-angular-nested-"));
     try {
       for (const file of artifact.files) {
         await writeFile(join(dir, file.path), file.content, "utf8");

@@ -16,8 +16,10 @@ both still constrained a row to a field or a group:
 array(group({ lines: array(group({ sku: field("") })) }))  // ok in @modyra/core, refused here
 ```
 
-They now take what the engine's take. `@modyra/studio-target-angular` generates code against these
-factories, so a project with a nested collection generated Angular code that did not compile.
+They now take what the engine's take. The refusal bites when a row **is** a collection — a collection
+inside a group inside a row was always legal, since a group's children have always been able to hold
+one. `@modyra/studio-target-angular` generates code against these factories, so a project whose row
+is a collection generated Angular code that did not compile.
 `MdyAnyRowDescriptor`, `MdyAnyRecordDescriptor`, `MdyRecordDescriptor` and `MdyRecordHandle` are
 exported too: the array half was nameable and the record half was not.
 
