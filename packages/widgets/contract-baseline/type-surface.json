@@ -2429,6 +2429,10 @@
     "(0) input: MdyOverlayGeometry",
     "-> returns: MdyOverlayDecision"
   ],
+  "defaultOptionKey": [
+    "(0) value: unknown",
+    "-> returns: string"
+  ],
   "draftShapeMatches": [
     "(0) initial: unknown",
     "(1) value: unknown",

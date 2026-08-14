@@ -19,7 +19,7 @@ asked for { id: 2 }  →  held { id: 3 }
 Not a failure to select — selecting the wrong thing, silently, while staying internally consistent.
 The default now keys a plain object by **what it holds**, the same rule `oneOf` uses. Primitives and
 arrays key exactly as before, because keys are consumer-visible: they become part ids and land in
-`aria-activedescendant`. `defaultOptionKey` is exported.
+`aria-activedescendant`. `defaultOptionKey` is exported from the package root, so a consumer writing their own `keyFor` has the default to fall back to.
 
 **The survivor was unreadable.** A kept value was labelled `String(value)`, so an object read
 `[object Object]` — worse than clearing, because it looks like a value and gives nothing to act on.
