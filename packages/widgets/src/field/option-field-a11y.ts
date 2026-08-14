@@ -104,13 +104,11 @@ export function projectOptionFieldA11y<TValue>(
         // carries read-only, and only on the kinds that declare the state.
         "aria-disabled": String(state.disabled),
         "aria-describedby": describedBy,
-        // Emitted only when true. A control that is not read-only says nothing, rather than
-        // announcing `aria-readonly="false"` — which on a slider, a checkbox or a radio group
-        // told a screen reader that read-only was a meaningful axis for something where the
-        // concept does not exist. That was the signature of an ARIA shell applied mechanically
-        // to every control; the states each kind actually admits are declared in
-        // `widget-states.ts`, and none of these three is among them.
-        "aria-readonly": state.readonly ? "true" : null,
+        // No read-only. A radio group and a segmented control are choosers, and
+        // `MDY_WIDGET_STATE_SUPPORT` does not list the state for either: there is no read-only
+        // rendering of "pick one of these", only an operable one and a disabled one. Announcing
+        // `aria-readonly="true"` on the group made read-only look like a meaningful axis for a
+        // widget where nothing implements it.
       },
       // The segmented theme sizes its tick gutter from the number of segments; the count is the
       // widget's own knowledge, so it travels with the part rather than being restated per adapter.

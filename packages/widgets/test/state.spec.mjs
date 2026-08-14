@@ -14,6 +14,9 @@ import {
   MDY_WIDGET_KINDS,
   multiselectChipClasses,
   partClasses,
+  projectBooleanFieldA11y,
+  projectOptionFieldA11y,
+  projectTextFieldA11y,
   partStates,
   stateClass,
   widgetStateClasses,
@@ -118,4 +121,45 @@ test("a widget's full class surface is finite and derivable", () => {
   // Nothing outside the contract creeps in, and the list is sorted so a diff of it reads.
   assert.deepEqual([...datepicker].sort(), [...datepicker]);
   for (const className of datepicker) assert.match(className, /^mdy-/);
+});
+
+test("a kind projects read-only only when its contract has the state", () => {
+  // The two tables and the projections are three statements of one fact, and they had drifted:
+  // `MDY_WIDGET_STATE_SUPPORT` says a boolean, a chooser and a range have no read-only rendering —
+  // "either operable or disabled" — while the projections announced `aria-readonly="true"` anyway,
+  // and the checkbox bound a native `readonly` that HTML ignores on a checkbox. The user was told
+  // the control could not change, and space changed it.
+  const readonly = { readonly: true, disabled: false, invalid: false, required: false, checked: false, errorIds: [], describedBy: null };
+
+  const boolean = projectBooleanFieldA11y({ ...readonly }, [], { widgetId: "w", variant: "checkbox" });
+  assert.equal(boolean.input.attributes["aria-readonly"], undefined);
+  assert.equal(boolean.input.attributes.readonly, undefined);
+
+  const option = projectOptionFieldA11y(
+    { ...readonly, options: [] },
+    [],
+    { widgetId: "w", variant: "radio", optionCount: 0 },
+  );
+  assert.equal(option.group.attributes["aria-readonly"], undefined);
+
+  // …and the kinds whose contract does have it keep both halves.
+  const text = projectTextFieldA11y({ ...readonly, value: "" }, [], { widgetId: "w", kind: "text" });
+  assert.equal(text.input.attributes["aria-readonly"], "true");
+  assert.equal(text.input.attributes.readonly, true);
+});
+
+test("aria-checked holds one of the three values the standard allows", () => {
+  // The projection is published, so the state is the caller's to supply — but the attribute's value
+  // is this contract's, and `aria-checked="undefined"` maps to nothing in any assistive technology,
+  // on the single attribute that says whether the box is ticked.
+  const base = { readonly: false, disabled: false, invalid: false, required: false, errorIds: [], describedBy: null };
+  for (const checked of [undefined, null, "indeterminate", 0, "", "true"]) {
+    const projected = projectBooleanFieldA11y({ ...base, checked }, [], { widgetId: "w", variant: "checkbox" });
+    assert.ok(
+      ["true", "false", "mixed"].includes(projected.input.attributes["aria-checked"]),
+      `checked ${JSON.stringify(checked)} projected aria-checked=${JSON.stringify(projected.input.attributes["aria-checked"])}`,
+    );
+  }
+  assert.equal(projectBooleanFieldA11y({ ...base, checked: true }, [], { widgetId: "w", variant: "checkbox" }).input.attributes["aria-checked"], "true");
+  assert.equal(projectBooleanFieldA11y({ ...base, checked: false }, [], { widgetId: "w", variant: "checkbox" }).input.attributes["aria-checked"], "false");
 });
