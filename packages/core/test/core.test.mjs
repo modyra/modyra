@@ -130,7 +130,7 @@ test("dynamic validators skip invalid/oversized regexp patterns", () => {
   assert.equal(oversized.validators.length, 0);
 });
 
-test("oneOf: whitelists scalar values, empties pass, Object.is semantics", () => {
+test("oneOf: whitelists scalar values, empties pass, no coercion", () => {
   const v = oneOf(["one", "two"]);
   assert.deepEqual(v("one"), []);
   assert.deepEqual(v("two"), []);

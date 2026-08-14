@@ -38,8 +38,10 @@ Two shapes are refused, and they are the ones that turn backtracking from quadra
 
 - **nested unbounded repetition** — a repeated group that itself contains unbounded repetition,
   `(a+)+`, `(a*)*`, `(([a-z])+)+`;
-- **repeated alternatives that can match the same text** — `(a|a)*`, `(a|ab)+`, compared by the
-  characters each alternative can start with.
+- **repeated alternatives that can match the same text** — `(a|a)*`, `(a|ab)+`,
+  `([a-z]|[a-z])*`, `(\w|[a-z])*`, compared by *what each alternative accepts* rather than by how it
+  is written: a class, a class escape, a dot and a literal are four notations for a set of
+  characters, and what decides ambiguity is whether two of those sets share one.
 
 **Structure is what is checked, not slowness.** JavaScript offers no way to bound a match's cost from
 outside it — no deadline, no step limit, nothing synchronous — so the source's shape is the only
@@ -48,8 +50,13 @@ caught, and this is the reason the claim is stated as it is rather than as "patt
 
 **The check is conservative, and where it cannot decide it allows.** A refusal removes a rule the
 document's author wrote, and a rule that vanishes is worse than a slow one: bounded repetition is
-left alone, and alternatives whose first characters cannot be read cheaply — a class, a dot, a nested
-group — are not refused on suspicion.
+left alone, and a branch this cannot read — one starting with a nested group, a backreference, or
+something that may not be there at all — is not refused on suspicion.
+
+Sets are compared over a sample alphabet rather than by reasoning about notations, which keeps the
+line where it has to be: `([a-z]|[0-9])+` and `(.|\n)*` are **not** ambiguous — a digit is not a
+letter, and `.` does not match a newline — and refusing them would delete rules that are perfectly
+safe.
 
 **The field survives the refusal.** The parser reports `MDY_DYNAMIC_PATTERN_TOO_COSTLY` and keeps the
 field: one rule the engine will not run is not a reason to take an input away from the person filling
@@ -63,9 +70,10 @@ not know the cost, and their form now accepts values it used to reject, with a d
 pattern as the only warning. That is the trade: a rule that is not applied against a form that stops
 responding.
 
-The heuristic is fooled by shapes it does not model — a nested quantifier reached through a
-backreference, alternation over classes that overlap — so this narrows the hole rather than closing
-it. A consumer who accepts documents from outside their own organisation should still treat pattern
+The heuristic is fooled by shapes it does not model — a branch beginning with a nested group or a
+backreference is undecidable and therefore allowed — so this narrows the hole rather than closing it.
+Nested repetition was attacked through a class, a dot, a non-capturing group, a named group, a lazy
+inner quantifier, a bounded outer one and two levels of nesting, and is refused through all of them. A consumer who accepts documents from outside their own organisation should still treat pattern
 authorship as a privilege.
 
 Two places now read a pattern's shape: the parser, so the document's author is told where the
