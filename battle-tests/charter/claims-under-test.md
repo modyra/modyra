@@ -66,5 +66,6 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `UI-005` | An overlay closes only on an interaction that happened entirely outside it. | A drag out of a popup, a right-click, or a second finger closes it. |
 | `UI-006` | A widget does not replace a value the model holds in order to make itself consistent. | Opening a picker on a value it cannot read overwrites it. |
 | `UI-007` | A stepper lands on the values its step declares. | Stepping a price by 0.1 submits 0.30000000000000004. |
+| `STU-001` | Generated code compiles. | A project name becomes a declaration the language refuses. |
 | `A11Y-002` | Focus is borrowed by a widget and handed back once. | A widget takes focus again after it has already returned it. |
 | `PKG-001` | Packed consumers observe the same public behaviour as workspace tests. | The tarball behaves differently, or resolves two copies of a package. |
