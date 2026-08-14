@@ -990,6 +990,7 @@
     "removeValidators(0) name: string,(1) key: string,-> returns: void",
     "reset-> returns: void",
     "restoreValue(0) value: Record<string, unknown>,-> returns: void",
+    "runOwned(0) build: () => T,-> returns: T",
     "setDisabled(0) name: string,(1) disabled: MdySignal<boolean>,-> returns: void",
     "setFormValidators(0) validators: ReadonlyArray<MdyFormValidatorFn<Record<string, unknown>>>,-> returns: void",
     "setInactive(0) name: string,(1) inactive: MdySignal<boolean>,-> returns: void",
