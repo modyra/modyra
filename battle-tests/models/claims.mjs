@@ -243,6 +243,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "SCH-001",
+    title: "Any Standard Schema v1 library's findings reach the fields they name.",
+    area: "schema-adapters",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/standard-schema — one adapter for every Standard Schema v1 library (Zod, Valibot, ArkType)",
+      "@modyra/standard-schema — a structural copy of the spec, zero dependencies",
+      "@modyra/standard-schema — issues are attributed to their dotted field paths",
+    ],
+  },
+  {
     id: "SEC-001",
     title: "Unsafe path segments never register fields or pollute prototypes.",
     area: "security",

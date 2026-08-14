@@ -48,6 +48,7 @@ Every battle cites at least one id. Citing an unregistered id is an error.
 | `PER-001` | Draft restore reconstructs declared structure without resurrecting removed rows. | A removed row returns after a restore. |
 | `PER-002` | Undo and redo preserve the documented structural semantics. | Undo across a structural change loses or duplicates a row. |
 | `PER-003` | A restored draft is as valid as the state it was saved from. | A form the user had filled in comes back invalid, naming a choice they made. |
+| `SCH-001` | Any Standard Schema v1 library's findings reach the fields they name. | A schema's issue is dropped, attributed to the wrong field, or takes the form down. |
 | `SEC-001` | Unsafe path segments never register fields or pollute prototypes. | `__proto__` in a key, contract, patch or draft reaches the model. |
 | `SEC-003` | A sanitized value cannot form markup, wherever it entered the form. | A cell reached through a patch or a row keeps the angle brackets a set would have stripped. |
 | `SEC-004` | A document cannot make the form stop answering. | A pattern from a contract takes seconds to answer about one field. |
