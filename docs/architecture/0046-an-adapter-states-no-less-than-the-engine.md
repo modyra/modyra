@@ -10,8 +10,16 @@ actually imports could not express what the engine had gained:
 
 - `@modyra/angular` re-declares `array()` and `record()` so their handles carry Angular signals. The
   declarations still constrained a row to a field or a group, so `array(array(field(0)))` compiled
-  against `@modyra/core` and was refused by `@modyra/angular` — including in the code
-  `@modyra/studio-target-angular` generates, which imports those factories.
+  against `@modyra/core` and was refused by `@modyra/angular`. It bites when a row **is** a
+  collection; a collection inside a group inside a row was always legal, because a group's children
+  have always been able to hold one. `@modyra/studio-target-angular` generates code against these
+  factories, and the studio model lets a row be a collection, so such a project generated Angular
+  code that did not compile:
+
+  ```
+  form.ts(28,17): error TS2345: Argument of type 'MdyArrayDescriptor<MdyFieldDescriptor<number>>'
+    is not assignable to parameter of type 'MdyAnyFieldDescriptor | MdyAnyGroupDescriptor'.
+  ```
 - `@modyra/zod` mapped a collection's element to a group or a leaf, so `z.record(z.array(...))`
   became one opaque value where the schema declared a list.
 - A document made of arrays reached `buildFlatFormSchema` with its rows keyed `"0"`, `"1"` — a row's
@@ -80,6 +88,9 @@ justified by three sites; worth revisiting if a fourth kind of drift appears.
   factories, with the value types asserted.
 - `packages/zod/test/zod.test.mjs` — a collection inside a collection maps to a collection, in both
   kinds, and the shapes the engine has no node for still degrade to a leaf.
+- `packages/studio-target-angular/test/angular-target.test.mjs` — a project whose row is a collection
+  generates Angular code that compiles against the built adapter declarations. The existing typecheck
+  used a fixture holding one flat array, which no adapter constraint could refuse.
 - `packages/core/test/flat-schema.test.mjs` — a positional collection inside a row is seeded as a
   list; a list inside a keyed row and a keyed row inside a list keep their own shapes.
 - `packages/plain/test/nested-mount.test.mjs` — a field three positional collections deep mounts a
