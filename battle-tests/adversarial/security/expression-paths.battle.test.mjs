@@ -5,15 +5,15 @@
  * saved project — the same places a hostile field name arrives from — and its operands name paths by
  * the same dotted grammar the rest of the engine uses.
  *
- * The engine has a guard for that grammar: `isSafeFieldPath` refuses `__proto__`, `constructor` and
- * the empty string, and every other door consults it. `validateExpression` does not, and evaluation
- * then reads the named path off the form's value with an ordinary property read — so a predicate can
- * ask about a member of `Object.prototype` and get an answer about the prototype rather than about
- * the form.
+ * The engine has a guard for that grammar, and this door consults it: an operand naming `__proto__`,
+ * `prototype` or `constructor` is refused where the document is read, omitted from the paths a
+ * consumer is told to depend on, and answered as absent if a caller evaluates one anyway — because
+ * `evaluateExpression` is exported and can be handed a value nobody validated. The root reference is
+ * let through, being the one spelling the field guard refuses that an operand legitimately uses.
  *
- * The depth limit, by contrast, holds: `MDY_MAX_EXPRESSION_DEPTH` is 32, an expression one level
- * deeper is refused, and one half a million levels deep is refused too rather than exhausting the
- * stack — which is what makes the reading question the finding rather than the walking one.
+ * The depth limit holds alongside it: `MDY_MAX_EXPRESSION_DEPTH` is 32, an expression one level
+ * deeper is refused, and one half a million levels deep is refused rather than exhausting the stack.
+ * A limit implemented by a walk that overflows before it can report is not a limit.
  */
 
 import {
@@ -27,8 +27,18 @@ import {
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim } from "../../harness/assertions.mjs";
 
-/** Spellings the engine's own path guard refuses. */
-const REFUSED_ELSEWHERE = Object.freeze(["__proto__", "constructor", "prototype", "a.__proto__.b", ""]);
+/** Spellings the engine's own path guard refuses, and that name no field a document may declare. */
+const REFUSED_ELSEWHERE = Object.freeze(["__proto__", "constructor", "prototype", "a.__proto__.b"]);
+
+/**
+ * The empty path is not one of them, though `isSafeFieldPath` refuses it too.
+ *
+ * It refuses it as a *field* path, and an operand is not one: `MdyPathRef`'s own docblock says
+ * `""` is the root value itself, which is how a form-level rule reads the whole object. Treating the
+ * field guard as universal was this battle's own mistake, and it is written down here because the
+ * two look identical and only one of them is a hostile spelling.
+ */
+const ROOT = "";
 
 const leaf = Object.freeze({ op: "equals", operands: [{ path: "a" }, 1] });
 
@@ -56,8 +66,8 @@ battle(
       detail: JSON.stringify(REFUSED_ELSEWHERE.map((path) => [path, isSafeFieldPath(path)])),
     });
 
-    // A predicate over an empty form may not find anything: an empty object has no cells, and every
-    // answer about one has to be an answer about nothing.
+    // A predicate naming one of them over an empty form may not find anything: the path names no
+    // field a document can declare, so every answer about it has to be an answer about nothing.
     for (const path of REFUSED_ELSEWHERE) {
       const present = evaluateExpression({ op: "isNotEmpty", operand: { path } }, {});
       ctx.log.note("a predicate asking about a path the form does not have", { path, present });
@@ -78,7 +88,38 @@ battle(
         what: `an operand naming ${JSON.stringify(path)} was accepted where the same path is refused`,
         detail: `${issues.length} issue(s), paths ${JSON.stringify(expressionPaths({ op: "equals", operands: [{ path }, 1] }))}`,
       });
+
+      // And it is not offered as a dependency: a path the engine will not register is not something
+      // a consumer should be told to watch.
+      expectClaim(expressionPaths({ op: "equals", operands: [{ path }, 1] }).length === 0, {
+        claimIds: ["SEC-001"],
+        what: `${JSON.stringify(path)} was reported as a path to depend on`,
+      });
     }
+
+    // The root, which the same guard has to let through. A form-level rule reads the whole object
+    // this way, and refusing it would take the feature out with the attack.
+    const rootRef = { op: "equals", operands: [{ path: ROOT }, 1] };
+    expectClaim(validateExpression(rootRef, "document").length === 0, {
+      claimIds: ["SEC-001"],
+      what: "the root reference was refused along with the hostile spellings",
+      detail: JSON.stringify(validateExpression(rootRef, "document")),
+    });
+
+    expectClaim(expressionPaths(rootRef).includes(ROOT), {
+      claimIds: ["SEC-001"],
+      what: "the root reference is not reported as the dependency it is",
+      detail: JSON.stringify(expressionPaths(rootRef)),
+    });
+
+    // What the root answers is `isEmptyValue`'s contract rather than this battle's to decide: an
+    // object is not empty, in the same sentence that makes `0` and `false` answers. So the root of
+    // `{}` reads as not-empty. It is stated here because it is surprising and because a change to it
+    // would change what `isEmpty` means for every group value in every document.
+    expectClaim(evaluateExpression({ op: "isNotEmpty", operand: { path: ROOT } }, {}) === true, {
+      claimIds: ["SEC-001"],
+      what: "the root of an empty form stopped reading as a value that exists",
+    });
   },
 );
 
