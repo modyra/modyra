@@ -201,3 +201,43 @@ export const CONDITIONAL_ROWS_SPEC = Object.freeze({
     }),
   }),
 });
+
+/**
+ * Two positional levels under a keyed one.
+ *
+ * `orders` is keyed, so its rows have identities a rename can change; `lines` and `allocations` are
+ * positional, so their rows have indices a move can change. The three together are the shape where a
+ * reorder at the middle level happens while the identity above it is changing — the two kinds of
+ * structural change interfering, each rebuilding rows the other is also rebuilding.
+ *
+ * A subtree that is replaced rather than ended leaves its fields behind, and the level above then
+ * carries them into whichever row it rebuilds next. Nothing shallower can express that: it needs a
+ * collection whose rows themselves contain a collection.
+ */
+export const NESTED_ORDERS_SPEC = Object.freeze({
+  version: MDY_SCHEMA_SPEC_VERSION,
+  fields: Object.freeze({
+    orders: Object.freeze({
+      kind: "record",
+      of: Object.freeze({
+        ref: Object.freeze({ kind: "text", initial: "R" }),
+        lines: Object.freeze({
+          kind: "array",
+          of: Object.freeze({
+            sku: Object.freeze({ kind: "text", required: true }),
+            allocations: Object.freeze({
+              kind: "array",
+              of: Object.freeze({
+                bin: Object.freeze({ kind: "text", initial: "" }),
+                qty: Object.freeze({ kind: "text", initial: "0" }),
+              }),
+              initial: Object.freeze([]),
+            }),
+          }),
+          initial: Object.freeze([]),
+        }),
+      }),
+      initial: Object.freeze({}),
+    }),
+  }),
+});
