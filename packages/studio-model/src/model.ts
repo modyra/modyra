@@ -283,6 +283,67 @@ function diagnoseLayout(project: MdyStudioProject, idx: StudioIndexes): StudioDi
 
 const SENSITIVE_FIELD_NAME = /password|secret|token|ssn|credit.?card|cvv|\bpin\b/i;
 
+
+/**
+ * A hard bound on how deeply a layout may nest at all, distinct from the arrangement warning.
+ *
+ * `STUDIO_LAYOUT_MAX_DEPTH` is a judgement about arrangement — six levels is more than a form should
+ * need, and past it the walk reports and carries on. This is a different question: what can be
+ * *processed*. `structuredClone` recurses, so a layout a few thousand deep raised a `RangeError`
+ * inside the clone before any guard ran, and the difference between a diagnostic and a `RangeError`
+ * is the difference between a message and a host that stopped.
+ *
+ * Generous on purpose. No arrangement a person makes comes near it, and a project that does was made
+ * by a generator, an import or a loop.
+ */
+const STUDIO_LAYOUT_MAX_STRUCTURAL_DEPTH = 100;
+
+/**
+ * What is wrong with a layout before it can be cloned, or `null` when it can.
+ *
+ * Walked over an explicit stack, on the **raw** input, ahead of `structuredClone` — a guard that
+ * runs after the clone is a guard the clone can defeat.
+ *
+ * Cycles are looked for by identity along the current path: `structuredClone` *preserves* a cycle
+ * rather than breaking it, so a section dropped into itself — which is what a drag produces —
+ * survived the clone and was reported as `LAYOUT_TOO_DEEP`. That is technically true and is the
+ * wrong message: a person reading it goes looking for a deep nesting they do not have.
+ */
+function unprocessableLayout(layout: unknown): { code: string; message: string } | null {
+  if (!Array.isArray(layout)) return null;
+  const pending: Array<{ node: unknown; depth: number; ancestors: ReadonlySet<unknown> }> =
+    layout.map((node) => ({ node, depth: 1, ancestors: new Set() }));
+
+  while (pending.length > 0) {
+    const { node, depth, ancestors } = pending.pop()!;
+    if (typeof node !== "object" || node === null) continue;
+    if (ancestors.has(node)) {
+      return {
+        code: "LAYOUT_CYCLE",
+        message: "A layout node contains itself, so the arrangement has no depth to walk",
+      };
+    }
+    if (depth > STUDIO_LAYOUT_MAX_STRUCTURAL_DEPTH) {
+      return {
+        code: "LAYOUT_TOO_DEEP",
+        message: `Layout nests deeper than ${STUDIO_LAYOUT_MAX_STRUCTURAL_DEPTH} levels and cannot be processed`,
+      };
+    }
+    const here = new Set(ancestors).add(node);
+    const record = node as { children?: unknown; columns?: unknown };
+    if (Array.isArray(record.children)) {
+      for (const child of record.children) pending.push({ node: child, depth: depth + 1, ancestors: here });
+    }
+    if (Array.isArray(record.columns)) {
+      for (const column of record.columns) {
+        if (!Array.isArray(column)) continue;
+        for (const child of column) pending.push({ node: child, depth: depth + 1, ancestors: here });
+      }
+    }
+  }
+  return null;
+}
+
 /** Deep-clones input — normalize never mutates its argument (plan section 5 rule). */
 export function normalize(project: MdyStudioProject): NormalizeResult {
   const cloned = structuredClone(project);
@@ -295,6 +356,26 @@ export function normalize(project: MdyStudioProject): NormalizeResult {
 export function loadProject(raw: unknown): NormalizeResult {
   assertStructurallyValidProject(raw);
   const migrated = migrate(raw);
+  // A layout nobody can walk is dropped rather than carried: this module's own rule is that a stale
+  // arrangement degrades to "unarranged" and never blocks opening the project, and a layout that
+  // cannot be cloned is the most stale one there is. The finding says which of the two it was.
+  const unprocessable = unprocessableLayout(
+    (migrated as { presentation?: { layout?: unknown } }).presentation?.layout,
+  );
+  if (unprocessable) {
+    const withoutLayout = {
+      ...migrated,
+      presentation: { ...migrated.presentation, layout: undefined },
+    } as MdyStudioProject;
+    const result = normalize(withoutLayout);
+    return {
+      project: result.project,
+      diagnostics: [
+        { code: unprocessable.code, severity: "error", message: unprocessable.message, propertyPath: "presentation.layout" },
+        ...result.diagnostics,
+      ],
+    };
+  }
   return normalize(migrated);
 }
 

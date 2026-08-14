@@ -212,3 +212,45 @@ test("a condition holding something a condition cannot hold is reported when the
     assert.deepEqual(codesFor(operand), [], `${JSON.stringify(operand)} was reported`);
   }
 });
+
+test("a layout nobody can walk is dropped and named, not carried to a crash", () => {
+  // `STUDIO_LAYOUT_MAX_DEPTH` is a judgement about arrangement and reports from seven levels. What
+  // can be *processed* is a different question: `structuredClone` recurses, so a layout a few
+  // thousand deep raised a RangeError inside the clone before any guard ran — the check that exists
+  // to catch depth, defeated by more of exactly the thing it catches.
+  const nest = (depth) => {
+    let node = { kind: "section", id: "s0", children: [] };
+    for (let i = 1; i <= depth; i += 1) node = { kind: "section", id: `s${i}`, children: [node] };
+    return node;
+  };
+  const withLayout = (layout) => ({
+    studioVersion: 1, id: "p", name: "P",
+    schema: { node: "group", id: "root", name: "root", children: [] },
+    formValidators: [], behaviors: {}, implementations: {},
+    presentation: { layout: [layout] }, targets: {}, metadata: {},
+  });
+
+  const deep = loadProject(withLayout(nest(4000)));
+  assert.ok(deep.diagnostics.some((d) => d.code === "LAYOUT_TOO_DEEP"));
+  assert.equal(deep.project.presentation.layout, undefined, "a layout that cannot be walked was kept");
+
+  // A section dropped into itself, which is what a drag produces. `structuredClone` *preserves* a
+  // cycle rather than breaking it, so this survived the clone and was reported as LAYOUT_TOO_DEEP —
+  // technically true and the wrong message, since a reader goes looking for a nesting they do not
+  // have.
+  const cyclic = { kind: "section", id: "s", children: [] };
+  cyclic.children.push(cyclic);
+  const looped = loadProject(withLayout(cyclic));
+  assert.deepEqual(looped.diagnostics.filter((d) => d.code === "LAYOUT_CYCLE").length, 1);
+  assert.equal(looped.project.presentation.layout, undefined);
+
+  // The known-good cases in the same run: an ordinary layout is kept untouched, and one that is
+  // merely deeper than the arrangement bound still loads with its warning and its layout.
+  const ordinary = loadProject(withLayout(nest(2)));
+  assert.deepEqual(ordinary.diagnostics, []);
+  assert.equal(ordinary.project.presentation.layout.length, 1);
+
+  const arranged = loadProject(withLayout(nest(8)));
+  assert.ok(arranged.diagnostics.some((d) => d.code === "LAYOUT_TOO_DEEP"));
+  assert.equal(arranged.project.presentation.layout.length, 1, "a walkable layout was dropped");
+});
