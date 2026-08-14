@@ -1279,11 +1279,10 @@ export abstract class MdyTypedFormBase<
         this._adapter.value();
         const found = arrayAt();
         const count = found ? found.rowCount() : 0;
-        return Array.from({ length: count }, (_, i) =>
-          node.item.kind === "field"
-            ? this.cellHandle(`${path}.${i}`)
-            : this._buildCellTree((node.item as MdyAnyGroupDescriptor).children, `${path}.${i}`),
-        );
+        // Through `_rowHandle`, so a row that is itself a collection answers as one. Reading the
+        // item's `children` directly assumed every row was a group, and a row that is a list has
+        // none — the read then threw where a nested list should have answered.
+        return Array.from({ length: count }, (_, i) => this._rowHandle(node.item, `${path}.${i}`));
       });
       const errors = this._adapter.errorsFor(path);
       return this._own({
@@ -1311,10 +1310,9 @@ export abstract class MdyTypedFormBase<
       const found = this._collectionAt(path);
       return found instanceof MdyRecordManager ? found : undefined;
     };
-    const rowTree = (key: string): unknown =>
-      node.item.kind === "field"
-        ? this.cellHandle(`${path}.${key}`)
-        : this._buildCellTree((node.item as MdyAnyGroupDescriptor).children, `${path}.${key}`);
+    // Through `_rowHandle` for the same reason as the positional branch above: a row may be a
+    // collection, and a collection has no `children` to walk.
+    const rowTree = (key: string): unknown => this._rowHandle(node.item, `${path}.${key}`);
     return {
       path,
       // The value is read first so a structural change invalidates this: a move rebuilds the row's

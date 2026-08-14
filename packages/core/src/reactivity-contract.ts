@@ -96,6 +96,22 @@ export interface MdyObserveCapability {
   ): MdyEffectRef;
 }
 
+/**
+ * Narrows to a reactivity that reports (and implements) real runtime batching.
+ *
+ * Used where a change is one statement made of several writes — a row's cells, a list's rows. A
+ * runtime whose computations run eagerly observes each write on its own otherwise, and sees a form
+ * that is half-written: a shape its own schema does not describe.
+ */
+export function reactivityBatches(
+  rx: MdyReactivity,
+): rx is MdyReactivity & MdyBatchingCapability {
+  return (
+    rx.capabilities?.batching === true &&
+    typeof (rx as Partial<MdyBatchingCapability>).batch === "function"
+  );
+}
+
 export interface MdyReactivityCapabilities {
   readonly effects: boolean;
   readonly effectOwnership: boolean;

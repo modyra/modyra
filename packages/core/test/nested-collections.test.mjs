@@ -606,3 +606,31 @@ test("canUndo is true in the task that declared a row, and canRedo false once an
   form.redo();
   assert.deepEqual(form.f.rows.keys(), ["b"], "redo did nothing, exactly as canRedo said");
 });
+
+/**
+ * A row that is itself a collection answers as one through the handle tree.
+ *
+ * `rows` and `row(key)` built a row by walking the item's `children` — which every row has, unless
+ * the row *is* a list or a map. Reaching a nested list through the handle tree then threw where it
+ * should have answered, while the same data read through `getValue()` was correct: the value was
+ * right and the handle could not reach it.
+ */
+test("a nested collection is reachable through the handle tree, at both kinds", () => {
+  const keyed = createForm({
+    orders: record(group({ lines: array(array(field(""))) })),
+  });
+  keyed.f.orders.upsert("o1", { lines: [["a"], []] });
+
+  assert.equal(keyed.f.orders.row("o1").lines.at(0).length(), 1, "a list inside a list answers");
+  keyed.f.orders.row("o1").lines.at(1).push("b");
+  assert.deepEqual(keyed.getValue().orders.o1.lines, [["a"], ["b"]]);
+  keyed.destroy();
+
+  const positional = createForm({ items: array(record(group({ bin: field("") }))) });
+  positional.f.items.push({ k: { bin: "A" } });
+
+  assert.deepEqual([...positional.f.items.at(0).keys()], ["k"], "a map inside a list answers");
+  positional.f.items.at(0).upsert("j", { bin: "B" });
+  assert.deepEqual(positional.getValue().items[0], { k: { bin: "A" }, j: { bin: "B" } });
+  positional.destroy();
+});

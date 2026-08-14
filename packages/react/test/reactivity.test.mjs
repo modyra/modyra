@@ -11,6 +11,7 @@
  * `destroy: () => {}` never did.
  */
 import assert from "node:assert/strict";
+import { array, createForm, field, group, record } from "../../core/dist/index.js";
 import { test } from "node:test";
 import { runReactivityContractTests } from "../../core/dist/testing/index.js";
 import { reactReactivity } from "../dist/index.js";
@@ -36,4 +37,43 @@ test("reactReactivity is core's graph, correctly re-tagged", () => {
   for (const member of ["signal", "computed", "effect", "untracked", "createScope", "capabilities"]) {
     assert.ok(rx[member] !== undefined, `reactReactivity lost \`${member}\` in the re-tag`);
   }
+});
+
+/**
+ * A collection row, declared on this adapter's own reactivity.
+ *
+ * The adapter suites had four files each and none declared a collection, so every claim about rows
+ * was proven on the vanilla graph alone. That is how a runtime whose computations run eagerly could
+ * ship unable to declare a row with more than one cell: a row registers its cells one at a time, and
+ * a read landing between two of them sees a shape the schema does not describe.
+ */
+test("a keyed row with several cells is declared, and reads back whole", () => {
+  const form = createForm(
+    { rows: record(group({ code: field(""), note: field(""), qty: field(0) })) },
+    { reactivity: reactReactivity() },
+  );
+
+  form.f.rows.upsert("a", { code: "A" });
+
+  assert.deepEqual(form.getValue().rows.a, { code: "A", note: "", qty: 0 });
+  assert.deepEqual([...form.f.rows.keys()], ["a"]);
+  assert.deepEqual(form.submitValue().rows.a, { code: "A", note: "", qty: 0 });
+  form.destroy();
+});
+
+test("a positional row with several cells is declared, and survives a reorder", () => {
+  const form = createForm(
+    { items: array(group({ code: field(""), note: field("") })) },
+    { reactivity: reactReactivity() },
+  );
+
+  form.f.items.push({ code: "A", note: "first" });
+  form.f.items.push({ code: "B", note: "second" });
+  form.f.items.move(0, 1);
+
+  assert.deepEqual(form.getValue().items, [
+    { code: "B", note: "second" },
+    { code: "A", note: "first" },
+  ]);
+  form.destroy();
 });

@@ -539,3 +539,93 @@ test("a project may nest collections of either kind, as deep as it declares them
   assert.equal(orders?.item.item.node, "array", "which holds another one");
   assert.equal(orders?.item.item.item.node, "field", "down to the leaf");
 });
+
+/**
+ * A project, compiled, parsed and run — the whole way down, two collections deep.
+ *
+ * Three artefacts sit between what an author draws and what a user types into: the project, the
+ * contract it compiles to, and the form built from that contract. Each leg is covered on its own,
+ * and until nesting was unlocked (ADR 0043) the deep shapes could not cross any of them. What this
+ * asserts is the end of the chain: the form a compiled project produces holds the rows the project
+ * declared, at every level, and answers for them.
+ */
+test("a project two collections deep compiles into a form that runs", async () => {
+  const { createForm } = await import("../../core/dist/index.js");
+  const { buildDynamicFormSchema } = await import("../../core/dist/dynamic-config.js");
+
+  const project = createNestedProject();
+  const deep = {
+    ...project,
+    schema: {
+      ...project.schema,
+      children: [
+        {
+          node: "record",
+          id: "nd_orders",
+          name: "orders",
+          item: {
+            node: "group",
+            id: "nd_order",
+            name: "order",
+            children: [
+              {
+                node: "field",
+                id: "nd_ref",
+                name: "ref",
+                fieldKind: "text",
+                valueType: "string",
+                initialValue: "",
+                validators: [],
+              },
+              {
+                node: "array",
+                id: "nd_lines",
+                name: "lines",
+                item: {
+                  node: "array",
+                  id: "nd_allocations",
+                  name: "allocations",
+                  item: {
+                    node: "field",
+                    id: "nd_bin",
+                    name: "bin",
+                    fieldKind: "text",
+                    valueType: "string",
+                    initialValue: "",
+                    validators: [],
+                  },
+                  initialRows: [],
+                  validators: [],
+                },
+                initialRows: [],
+                validators: [],
+              },
+            ],
+          },
+          initialRows: {},
+          validators: [],
+        },
+      ],
+    },
+  };
+
+  const { contract, diagnostics } = compileToContract(deep);
+  assert.deepEqual(diagnostics.filter((d) => d.severity === "error"), [], "the project compiles");
+
+  const parsed = parseDynamicForm(contract);
+  assert.deepEqual(parsed.diagnostics, [], "and the contract it emitted parses");
+
+  const form = createForm(buildDynamicFormSchema(contract.schema));
+  try {
+    form.f.orders.upsert("o1", { ref: "R1", lines: [[{ bin: "A" }], []] });
+    form.f.orders.row("o1").lines.at(1).push({ bin: "B" });
+
+    assert.deepEqual(form.getValue().orders.o1, {
+      ref: "R1",
+      lines: [[{ bin: "A" }], [{ bin: "B" }]],
+    }, "the form holds what was written at every level the project declared");
+    assert.deepEqual(form.submitValue().orders.o1.lines[1], [{ bin: "B" }]);
+  } finally {
+    form.destroy();
+  }
+});
